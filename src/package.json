@@ -15,6 +15,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "flexsearch": "^0.6.32"
+    "flexsearch": "^0.6.32",
+    "nedb": "^1.8.0"
+  },
+  "devDependencies": {
+    "@types/nedb": "^1.8.11"
   }
 }
