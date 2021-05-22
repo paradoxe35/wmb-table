@@ -1,0 +1,120 @@
+@import '~antd/dist/antd.css';
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.logo {
+  float: left;
+  top: 0;
+  margin-top: 0;
+  padding: 0 20px;
+  border-color: #001529;
+  border-bottom: 0;
+  color: rgb(218, 218, 218);
+  font-size: large;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.layout__sidebar {
+  max-height: 100%;
+}
+
+.site-layout-content {
+  position: relative;
+  overflow: auto;
+  height: 100%;
+  mask-image: linear-gradient(to top, transparent, black),
+    linear-gradient(to left, transparent 17px, black 17px);
+  mask-size: 100% 20000px;
+  mask-position: left bottom;
+  -webkit-mask-image: linear-gradient(to top, transparent, black),
+    linear-gradient(to left, transparent 17px, black 17px);
+  -webkit-mask-size: 100% 20000px;
+  -webkit-mask-position: left bottom;
+  transition: mask-position 0.5s, -webkit-mask-position 0.5s;
+}
+
+.site-layout-content:hover {
+  -webkit-mask-position: left top;
+}
+.row__center {
+  display: flex;
+  justify-content: center;
+}
+
+.container-y {
+  overflow-y: auto;
+  height: 100%;
+  mask-image: linear-gradient(to top, transparent, black),
+    linear-gradient(to left, transparent 17px, black 17px);
+  mask-size: 100% 20000px;
+  mask-position: left bottom;
+  -webkit-mask-image: linear-gradient(to top, transparent, black),
+    linear-gradient(to left, transparent 17px, black 17px);
+  -webkit-mask-size: 100% 20000px;
+  -webkit-mask-position: left bottom;
+  transition: mask-position 0.5s, -webkit-mask-position 0.5s;
+}
+
+.container-y:hover {
+  -webkit-mask-position: left top;
+}
+
+.smart-editable {
+  display: block;
+  white-space: nowrap;
+  padding: 3px 5px;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+  background-color: transparent;
+  box-shadow: none;
+  position: relative;
+  cursor: pointer;
+}
+.smart-editable:hover {
+  background-color: rgba(24, 143, 255, 0.281);
+}
+
+.smart-editable u {
+  font-size: 13px;
+  color: #91999e;
+  vertical-align: middle;
+  background-color: #6d7275;
+  width: 8px;
+  height: 10px;
+  display: inline-block;
+  border-top-right-radius: 4px;
+  margin-right: 4px;
+  text-decoration: none;
+  position: relative;
+}
+
+.smart-editable span {
+  display: block;
+  white-space: nowrap;
+  padding: 2px 5px;
+  border-radius: 2px;
+  transition: background-color 0.2s ease;
+}
+
+.smart-editable b {
+  color: inherit;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  line-height: 14px;
+  vertical-align: middle;
+  margin: 0px 2px;
+  padding: 3px 4px;
+  border-radius: 2px;
+  max-width: 92%;
+  font-weight: normal;
+}
