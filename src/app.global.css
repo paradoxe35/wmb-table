@@ -118,3 +118,8 @@ body {
   max-width: 92%;
   font-weight: normal;
 }
+
+.spinner-bg {
+  margin: 20px 0;
+  text-align: center;
+}

@@ -1,18 +1,37 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Layout } from 'antd';
 import { Input, Space, Card } from 'antd';
 import ContainerScrollY from '../container-scroll-y';
+import { Title } from '../../types';
+import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
+import { IPC_EVENTS } from '../../utils/ipc-events';
+import DocumentViewer from '../viewer/document-viewer';
+import { strNormalize } from '../../utils/functions';
 
 const { Search } = Input;
 
 const { Sider } = Layout;
 
-const data = new Array(110).fill({
-  title: 'Ant Design Title 1',
-});
-
 export default function SidebarDocuments() {
-  const onSearch = (value: string) => console.log(value);
+  const odatas = useRef<Title[]>([]);
+  const [datas, setDatas] = useState<Title[]>([]);
+
+  useEffect(() => {
+    sendIpcRequest<Title[]>(IPC_EVENTS.title_documents).then((titles) => {
+      odatas.current = titles;
+      setDatas(titles);
+    });
+  }, []);
+
+  const onSearch = (value: string) => {
+    if (odatas.current.length) {
+      setDatas(
+        odatas.current.filter((d) =>
+          strNormalize(d.title).includes(strNormalize(value))
+        )
+      );
+    }
+  };
 
   return (
     <Sider
@@ -27,21 +46,23 @@ export default function SidebarDocuments() {
         </Card>
       </Space>
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
-        {data.map((d, i) => (
-          <ItemOutline key={i} name={d.title} />
+        {datas.map((d) => (
+          <ItemOutline key={d._id} id={d._id} name={d.title} />
         ))}
       </ContainerScrollY>
     </Sider>
   );
 }
 
-const ItemOutline: React.FC<{ name: string }> = ({ name }) => {
+const ItemOutline: React.FC<{ name: string; id: string }> = ({ name, id }) => {
   return (
-    <span className="smart-editable">
-      <u>
-        <span></span>
-      </u>
-      <b className="name">{name} </b>
-    </span>
+    <DocumentViewer name={name} id={id}>
+      <span className="smart-editable" title={name}>
+        <u>
+          <span></span>
+        </u>
+        <b className="name">{name} </b>
+      </span>
+    </DocumentViewer>
   );
 };

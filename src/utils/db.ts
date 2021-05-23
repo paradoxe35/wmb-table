@@ -1,15 +1,46 @@
 import Datastore from 'nedb';
 
 interface Db {
-  history?: Datastore;
-  documents?: Datastore;
-  subject?: Datastore;
+  history?: Datastore | undefined;
+  documents?: Datastore | undefined;
+  subject?: Datastore | undefined;
 }
 
 const db: Db = {};
 
-db.history = new Datastore('../../assets/datas/history.db');
-db.subject = new Datastore('../../assets/datas/subject.db');
-db.documents = new Datastore('../../assets/datas/documents.db');
+db.history = new Datastore({
+  filename: './assets/datas/history.db',
+  autoload: true,
+});
+db.subject = new Datastore({
+  filename: './assets/datas/subject.db',
+  autoload: true,
+});
+db.documents = new Datastore({
+  filename: './assets/datas/documents.db',
+  autoload: true,
+});
+
+export const queryDb = {
+  find<T>(
+    database: Datastore | undefined,
+    fields = {},
+    projection = {}
+  ): Promise<T[]> {
+    if (!database) return Promise.reject(null);
+    return new Promise((resolve, reject) => {
+      database
+        .find(fields)
+        .projection(projection)
+        .exec(function (err, docs: T[]) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(docs);
+          }
+        });
+    });
+  },
+};
 
 export default db;
