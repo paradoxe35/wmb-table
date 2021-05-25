@@ -16,3 +16,5 @@ export type OptionView = {
   subject: string | JSX.Element;
   history: string | JSX.Element;
 };
+
+export type HandlerIPC = (event: Electron.IpcMainEvent, ...args: []) => any;

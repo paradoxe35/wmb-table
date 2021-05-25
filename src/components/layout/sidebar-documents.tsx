@@ -21,6 +21,7 @@ export default function SidebarDocuments() {
 
   useEffect(() => {
     sendIpcRequest<Title[]>(IPC_EVENTS.title_documents).then((titles) => {
+      titles.reverse();
       odatas.current = titles;
       setDatas(titles);
       setDocumentTitles(titles);
