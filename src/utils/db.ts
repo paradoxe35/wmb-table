@@ -1,4 +1,5 @@
 import Datastore from 'nedb';
+import { getAssetPath } from '../sys';
 
 interface Db {
   history?: Datastore | undefined;
@@ -12,7 +13,7 @@ const db: Db = {};
 
 const dbStore = (name: string) =>
   new Datastore({
-    filename: `./assets/datas/${name}.db`,
+    filename: getAssetPath(`datas/${name}.db`),
     autoload: true,
   });
 
