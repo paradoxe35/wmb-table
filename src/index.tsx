@@ -1,26 +1,35 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { render } from 'react-dom';
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import frFR from 'antd/lib/locale/fr_FR';
-import History from './views/options/history';
 import AppLayout from './components/layout';
 import './app.global.scss';
-import { RecoilRoot, useRecoilState } from 'recoil';
-import { appViewState, MAIN_VIEWS } from './store';
+import { RecoilRoot, useRecoilState, useRecoilValue } from 'recoil';
+import { appViewState, MAIN_VIEWS, optionViewState } from './store';
 import DocumentView from './views/document-view';
 import { IPC_EVENTS } from './utils/ipc-events';
 import sendIpcRequest from './message-control/ipc/ipc-renderer';
 
-const RouterApp = () => {
-  return (
-    <Router>
-      <Switch>
-        <Route path="/" component={History} />
-      </Switch>
-    </Router>
-  );
-};
+import Search from './views/options/search';
+import History from './views/options/history';
+import Subject from './views/options/subject';
+import { OptionView } from './types';
+
+const RouterApp = React.memo(
+  (): JSX.Element => {
+    const view = useRecoilValue<string>(optionViewState);
+    const views: OptionView = useMemo(
+      () => ({
+        search: (<Search />) as JSX.Element,
+        history: (<History />) as JSX.Element,
+        subject: (<Subject />) as JSX.Element,
+      }),
+      []
+    );
+    //@ts-ignore
+    return views[view];
+  }
+);
 
 function ContentHandler() {
   const [view, setView] = useRecoilState(appViewState);
@@ -28,8 +37,6 @@ function ContentHandler() {
   useEffect(() => {
     (async () => {
       const menu_viewer = await sendIpcRequest<string>(IPC_EVENTS.menu_viewer);
-      console.log(menu_viewer);
-
       menu_viewer && setView(menu_viewer);
     })();
   }, []);

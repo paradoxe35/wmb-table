@@ -10,3 +10,9 @@ export type DocumentTab = {
   title: string;
   active: boolean;
 };
+
+export type OptionView = {
+  search: string | JSX.Element;
+  subject: string | JSX.Element;
+  history: string | JSX.Element;
+};
