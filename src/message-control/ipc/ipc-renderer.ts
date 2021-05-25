@@ -11,6 +11,6 @@ export default function sendIpcRequest<T>(eventName: string, ...args: any[]) {
         resolve(arg);
       }
     });
-    ipcRenderer.send(eventName, args);
+    ipcRenderer.send(eventName, ...args);
   }) as Promise<T>;
 }
