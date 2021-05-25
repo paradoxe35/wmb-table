@@ -9,6 +9,8 @@ body {
   user-select: none;
 }
 
+@import './modules/chrome-tabs.scss';
+
 .logo {
   float: left;
   top: 0;
@@ -24,6 +26,15 @@ body {
 
 .layout__sidebar {
   max-height: 100%;
+}
+
+.mock-browser-content {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  padding: 1em 0.5em;
+  margin-top: -1px;
+  min-height: 280px;
 }
 
 .site-layout-content {

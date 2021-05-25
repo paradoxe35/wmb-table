@@ -7,6 +7,8 @@ import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import DocumentViewer from '../viewer/document-viewer';
 import { strNormalize } from '../../utils/functions';
+import { useSetRecoilState } from 'recoil';
+import { documentTitles } from '../../store';
 
 const { Search } = Input;
 
@@ -15,11 +17,13 @@ const { Sider } = Layout;
 export default function SidebarDocuments() {
   const odatas = useRef<Title[]>([]);
   const [datas, setDatas] = useState<Title[]>([]);
+  const setDocumentTitles = useSetRecoilState(documentTitles);
 
   useEffect(() => {
     sendIpcRequest<Title[]>(IPC_EVENTS.title_documents).then((titles) => {
       odatas.current = titles;
       setDatas(titles);
+      setDocumentTitles(titles);
     });
   }, []);
 

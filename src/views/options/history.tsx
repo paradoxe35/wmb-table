@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button, DatePicker, version } from 'antd';
 
-export default function App() {
+export default function History() {
   return (
     <div>
       <h1>antd version: {version}</h1>
