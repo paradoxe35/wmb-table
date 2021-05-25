@@ -1,14 +1,25 @@
 import { atom, selector } from 'recoil';
-import { DocumentTab, Title } from '../types';
+import { DocumentTab, OptionView, Title } from '../types';
 
 export const MAIN_VIEWS = {
   options: 'options',
   document: 'document',
 };
 
+export const OPTIONS_VIEWS: OptionView = {
+  search: 'search',
+  subject: 'subject',
+  history: 'history',
+};
+
 export const appViewState = atom({
   key: 'appViewerState',
   default: MAIN_VIEWS.options, // options | document
+});
+
+export const optionViewState = atom({
+  key: 'optionViewState',
+  default: OPTIONS_VIEWS.search as string, // options | document
 });
 
 export const documentTitles = atom<Title[]>({
