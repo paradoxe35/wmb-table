@@ -18,7 +18,7 @@ import { getAssetPath } from './sys';
 import { indexFlexSearchDocuments } from './utils/main/flexsearch';
 
 require('./message-control/main-messages');
-// indexFlexSearchDocuments();
+indexFlexSearchDocuments();
 
 export default class AppUpdater {
   constructor() {

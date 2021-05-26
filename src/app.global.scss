@@ -134,3 +134,19 @@ body {
   margin: 20px 0;
   text-align: center;
 }
+
+.mt-2 {
+  margin-top: 10px;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.flex-center {
+  justify-content: center;
+}
