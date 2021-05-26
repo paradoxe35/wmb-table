@@ -1,5 +1,5 @@
 import Datastore from 'nedb';
-import { getAssetPath } from '../sys';
+import { getAssetPath } from '../../sys';
 
 interface Db {
   history?: Datastore | undefined;
@@ -13,13 +13,17 @@ const db: Db = {};
 
 const dbStore = (name: string) =>
   new Datastore({
-    filename: getAssetPath(`datas/${name}.db`),
+    filename: getAssetPath(`datas/db/${name}.db`),
     autoload: true,
   });
 
+db.documents = new Datastore({
+  filename: getAssetPath(`datas/documents.db`),
+  autoload: true,
+});
+
 db.history = dbStore('history');
 db.subject = dbStore('subject');
-db.documents = dbStore('documents');
 db.menus = dbStore('menus');
 
 export const queryDb = {

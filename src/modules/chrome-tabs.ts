@@ -89,10 +89,11 @@ class ChromeTabs {
   }
 
   setupEvents() {
-    window.addEventListener('resize', (_) => {
+    const resize = (_) => {
       this.cleanUpPreviouslyDraggedTabs();
       this.layoutTabs();
-    });
+    };
+    window.addEventListener('resize', resize);
 
     // this.el.addEventListener('dblclick', (event) => {
     //   if ([this.el, this.tabContentEl].includes(event.target)) this.addTab();
