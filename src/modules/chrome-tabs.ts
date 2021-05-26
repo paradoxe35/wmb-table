@@ -56,6 +56,7 @@ let instanceId = 0;
 class ChromeTabs {
   constructor() {
     this.draggabillies = [];
+    this.dragEndValueEvent = null;
   }
 
   init(el) {
@@ -99,7 +100,8 @@ class ChromeTabs {
     //   if ([this.el, this.tabContentEl].includes(event.target)) this.addTab();
     // });
 
-    this.tabEls.forEach((tabEl) => this.setTabCloseEventListener(tabEl));
+    this.tabEls.length > 1 &&
+      this.tabEls.forEach((tabEl) => this.setTabCloseEventListener(tabEl));
   }
 
   get tabEls() {
@@ -260,7 +262,8 @@ class ChromeTabs {
         this.setCurrentTab(tabEl.previousElementSibling);
       }
     }
-    tabEl.parentNode.removeChild(tabEl);
+    // tabEl.parentNode.removeChild(tabEl);
+    tabEl.style.display = 'none';
     this.emit('tabRemove', { tabEl });
     this.cleanUpPreviouslyDraggedTabs();
     this.layoutTabs();
@@ -335,7 +338,6 @@ class ChromeTabs {
         this.isDragging = false;
         const finalTranslateX = parseFloat(tabEl.style.left, 10);
         tabEl.style.transform = `translate3d(0, 0, 0)`;
-
         // Animate dragged tab back into its place
         requestAnimationFrame((_) => {
           tabEl.style.left = '0';
@@ -355,6 +357,8 @@ class ChromeTabs {
             });
           });
         });
+
+        this.emit('tabReorder', this.dragEndValueEvent);
       });
 
       draggabilly.on('dragMove', (event, pointer, moveVector) => {
@@ -385,7 +389,8 @@ class ChromeTabs {
     } else {
       tabEl.parentNode.insertBefore(tabEl, this.tabEls[destinationIndex + 1]);
     }
-    this.emit('tabReorder', { tabEl, originIndex, destinationIndex });
+    // this.emit('tabReorder', { tabEl, originIndex, destinationIndex });
+    this.dragEndValueEvent = { tabEl, originIndex, destinationIndex };
     this.layoutTabs();
   }
 }

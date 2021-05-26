@@ -4,7 +4,6 @@ import ChromeTabs from '../modules/chrome-tabs';
 import { currentDocumentTabs, documentTabs } from '../store';
 import { DocumentTab } from '../types';
 import { FileFilled } from '@ant-design/icons';
-import { strNormalize } from '../utils/functions';
 
 function Tab({ tab }: { tab: DocumentTab }) {
   const tabRef = useRef<HTMLDivElement | null>(null);
@@ -16,12 +15,7 @@ function Tab({ tab }: { tab: DocumentTab }) {
   }, []);
   return (
     //@ts-ignore
-    <div
-      className="chrome-tab"
-      data-ref={strNormalize(tab.title).split(' ').join('-')}
-      title={tab.title}
-      ref={tabRef}
-    >
+    <div className="chrome-tab" title={tab.title} ref={tabRef}>
       <div className="chrome-tab-dividers"></div>
       <div className="chrome-tab-background">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg">
@@ -86,7 +80,7 @@ const Tabs = React.forwardRef<HTMLDivElement, { tabs: DocumentTab[] }>(
   }
 );
 
-export default function DocumentTabs() {
+const useDocumentTabs = () => {
   const tabRef = useRef<HTMLDivElement | null>(null);
 
   const currentTitle = useRecoilValue(currentDocumentTabs);
@@ -95,12 +89,8 @@ export default function DocumentTabs() {
 
   const [key, setKey] = useState(0);
 
-  useEffect(() => {
-    if (tabRef.current) {
-      const chromeTabs = new ChromeTabs();
-      chromeTabs.init(tabRef.current);
-    }
-  }, [key]);
+  const reloadRef = useRef<boolean>(true);
+  const tabsRef = useRef<DocumentTab[]>(tabs);
 
   useEffect(() => {
     if (!tabs.length && currentTitle) {
@@ -108,7 +98,72 @@ export default function DocumentTabs() {
     }
   }, [currentTitle]);
 
-  useEffect(() => setKey((c) => c + 1), [tabs]);
+  useEffect(() => {
+    if (reloadRef.current) {
+      tabsRef.current = tabs;
+      setKey((c) => c + 1);
+    } else {
+      reloadRef.current = true;
+    }
+  }, [tabs]);
+
+  return {
+    tabRef,
+    key,
+    setKey,
+    setTabs,
+    tabs: tabsRef.current,
+    reloadRef,
+  };
+};
+
+export default function DocumentTabs() {
+  const { tabRef, setTabs, tabs, key, reloadRef } = useDocumentTabs();
+
+  useEffect(() => {
+    if (tabRef.current) {
+      const chromeTabs = new ChromeTabs();
+      chromeTabs.init(tabRef.current);
+
+      tabRef.current.addEventListener(
+        'tabReorder',
+        (event: CustomEventInit) => {
+          if (!event.detail) return;
+          const arr = Array.from(
+            tabRef.current?.querySelectorAll('.chrome-tab') || []
+          )
+            .map((el) => tabs.find((t) => t.title === el.getAttribute('title')))
+            .filter(Boolean) as DocumentTab[];
+
+          reloadRef.current = false;
+          setTabs(arr);
+        }
+      );
+      tabRef.current.addEventListener(
+        'activeTabChange',
+        (event: CustomEventInit) => {
+          const { tabEl } = event.detail as { tabEl: HTMLDivElement };
+          setTabs((ts) =>
+            ts.map((t) => {
+              const nt = { ...t };
+              if (nt.title === tabEl.getAttribute('title')) {
+                nt.active = true;
+              } else {
+                nt.active = false;
+              }
+              return nt;
+            })
+          );
+        }
+      );
+      tabRef.current.addEventListener('tabRemove', (event: CustomEventInit) => {
+        const { tabEl } = event.detail as { tabEl: HTMLDivElement };
+        setTabs((ts) =>
+          ts.filter((t) => t.title != tabEl.getAttribute('title'))
+        );
+      });
+    }
+  }, [key]);
 
   return <Tabs key={key} tabs={tabs} ref={tabRef} />;
 }
