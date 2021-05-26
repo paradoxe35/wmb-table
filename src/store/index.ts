@@ -14,7 +14,7 @@ export const OPTIONS_VIEWS: OptionView = {
 
 export const appViewState = atom({
   key: 'appViewerState',
-  default: MAIN_VIEWS.options, // options | document
+  default: MAIN_VIEWS.document, // options | document
 });
 
 export const optionViewState = atom({

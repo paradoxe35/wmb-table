@@ -4,6 +4,8 @@ import ChromeTabs from '../modules/chrome-tabs';
 import { currentDocumentTabs, documentTabs } from '../store';
 import { DocumentTab } from '../types';
 import { FileFilled } from '@ant-design/icons';
+import sendIpcRequest from '../message-control/ipc/ipc-renderer';
+import { IPC_EVENTS } from '../utils/ipc-events';
 
 function Tab({ tab }: { tab: DocumentTab }) {
   const tabRef = useRef<HTMLDivElement | null>(null);
@@ -94,9 +96,21 @@ const useDocumentTabs = () => {
 
   useEffect(() => {
     if (!tabs.length && currentTitle) {
-      setTabs([{ title: currentTitle, active: true, scrollY: 0 }]);
+      sendIpcRequest<DocumentTab[] | null>(IPC_EVENTS.document_tabs).then(
+        (docs) => {
+          if (!docs || (docs && !docs.length)) {
+            setTabs([{ title: currentTitle, active: true, scrollY: 0 }]);
+          } else {
+            setTabs(docs);
+          }
+        }
+      );
     }
   }, [currentTitle]);
+
+  useEffect(() => {
+    tabs.length && sendIpcRequest(IPC_EVENTS.document_tabs, tabs);
+  }, [tabs]);
 
   useEffect(() => {
     if (reloadRef.current) {

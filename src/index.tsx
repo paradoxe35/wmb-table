@@ -1,14 +1,12 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { render } from 'react-dom';
 import { ConfigProvider } from 'antd';
 import frFR from 'antd/lib/locale/fr_FR';
 import AppLayout from './components/layout';
 import './app.global.scss';
-import { RecoilRoot, useRecoilState, useRecoilValue } from 'recoil';
+import { RecoilRoot, useRecoilValue } from 'recoil';
 import { appViewState, MAIN_VIEWS, optionViewState } from './store';
 import DocumentView from './views/document-view';
-import { IPC_EVENTS } from './utils/ipc-events';
-import sendIpcRequest from './message-control/ipc/ipc-renderer';
 
 import Search from './views/options/search';
 import History from './views/options/history';
@@ -32,14 +30,7 @@ const RouterApp = React.memo(
 );
 
 function ContentHandler() {
-  const [view, setView] = useRecoilState(appViewState);
-
-  useEffect(() => {
-    (async () => {
-      const menu_viewer = await sendIpcRequest<string>(IPC_EVENTS.menu_viewer);
-      menu_viewer && setView(menu_viewer);
-    })();
-  }, []);
+  const view = useRecoilValue(appViewState);
 
   return (
     <>
