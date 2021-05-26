@@ -26,12 +26,10 @@ const AppLayout: React.FC = ({ children }) => {
       <Layout>
         <SidebarMenu collapsed={collapsed} />
         <Layout>
-          <div
-            ref={containerScroll}
-            className="site-layout-content"
-            style={{ padding: '0 24px 24px' }}
-          >
-            <Content style={{ padding: 24 }}>{children}</Content>
+          <div ref={containerScroll} className="site-layout-content">
+            <Content style={{ padding: 24, paddingBottom: 0 }}>
+              {children}
+            </Content>
           </div>
         </Layout>
         <SidebarDocuments />

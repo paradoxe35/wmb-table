@@ -37,7 +37,7 @@ const DocumentViewer: React.FC<{ name: string; id: string }> = ({
           return nt;
         });
         const narr = [...nts, { title: name, active: true }];
-        narr.length >= 11 && narr.shift();
+        narr.length >= 7 && narr.shift();
 
         return narr;
       });

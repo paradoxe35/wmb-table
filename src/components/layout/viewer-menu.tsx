@@ -1,15 +1,12 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { FundViewOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
 import { appViewState, MAIN_VIEWS } from '../../store';
 import { useRecoilState } from 'recoil';
-import { IPC_EVENTS } from '../../utils/ipc-events';
-import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 
 export default function ViewerMenu() {
   const [view, setView] = useRecoilState(appViewState);
   const selectable = { [MAIN_VIEWS.document]: '2', [MAIN_VIEWS.options]: '1' };
-  const firstLoad = useRef<string | null>(null);
 
   const m1 = useCallback(() => {
     setView(MAIN_VIEWS.options);
@@ -18,13 +15,6 @@ export default function ViewerMenu() {
   const m2 = useCallback(() => {
     setView(MAIN_VIEWS.document);
   }, []);
-
-  useEffect(() => {
-    if (firstLoad.current) {
-      sendIpcRequest<string>(IPC_EVENTS.menu_viewer, view);
-    }
-    firstLoad.current = view;
-  }, [view]);
 
   return (
     <Menu

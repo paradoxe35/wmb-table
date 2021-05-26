@@ -13,7 +13,7 @@ export default function DocumentView() {
   const title = useRecoilValue(currentDocumentTabs);
   const [path, setPath] = useState<string | null>(null);
 
-  const iframeRef = useContainerScrollY<HTMLIFrameElement>([window], 68, true);
+  const iframeRef = useContainerScrollY<HTMLIFrameElement>([window], 40, true);
 
   useEffect(() => {
     sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then((p) =>
