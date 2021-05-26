@@ -23,6 +23,8 @@ const DocumentViewer: React.FC<{ name: string; id: string }> = ({
           const nt = { ...t };
           if (nt.title === name) {
             nt.active = true;
+          } else {
+            nt.active = false;
           }
           return nt;
         })
@@ -34,7 +36,10 @@ const DocumentViewer: React.FC<{ name: string; id: string }> = ({
           nt.active = false;
           return nt;
         });
-        return [...nts, { title: name, active: true }];
+        const narr = [...nts, { title: name, active: true }];
+        narr.length >= 11 && narr.shift();
+
+        return narr;
       });
     }
   };

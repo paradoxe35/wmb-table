@@ -1,4 +1,4 @@
-import db, { queryDb } from '../../utils/db';
+import db, { queryDb } from '../../utils/main/db';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 
 export default async (_: Electron.IpcMainEvent, menu: string | undefined) => {

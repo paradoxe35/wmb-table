@@ -15,6 +15,10 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { getAssetPath } from './sys';
+import { indexFlexSearchDocuments } from './utils/main/flexsearch';
+
+require('./message-control/main-messages');
+// indexFlexSearchDocuments();
 
 export default class AppUpdater {
   constructor() {
@@ -70,8 +74,6 @@ const createWindow = async () => {
   });
 
   mainWindow.loadURL(`file://${__dirname}/index.html`);
-
-  require('./message-control/main-messages');
 
   // @TODO: Use 'ready-to-show' event
   //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
