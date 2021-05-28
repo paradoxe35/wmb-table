@@ -37,7 +37,14 @@ export default function DocumentView() {
         page.scrollTop = tab.scrollY;
       }
 
-      const onScroll = () => {
+      const load = {
+        count: 0,
+      };
+
+      const onScroll = (): number | void => {
+        if (load.count === 0) {
+          return (load.count = 1);
+        }
         setTabs((ts) => {
           return ts.map((t) => {
             const nt = { ...t };

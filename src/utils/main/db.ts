@@ -6,6 +6,7 @@ interface Db {
   documents?: Datastore | undefined;
   subject?: Datastore | undefined;
   tabs?: Datastore | undefined;
+  suggestions?: Datastore | undefined;
 }
 
 const db: Db = {};
@@ -24,6 +25,7 @@ db.documents = new Datastore({
 db.history = dbStore('history');
 db.subject = dbStore('subject');
 db.tabs = dbStore('tabs');
+db.suggestions = dbStore('suggestions');
 
 export const queryDb = {
   promiseResolve(resolve: Function, reject: Function) {
@@ -63,6 +65,16 @@ export const queryDb = {
     if (!database) return Promise.reject(null);
     return new Promise((resolve, reject) => {
       database.insert(datas, this.promiseResolve(resolve, reject));
+    });
+  },
+  remove<T>(
+    database: Datastore | undefined,
+    query = {},
+    options: Datastore.RemoveOptions = {}
+  ): Promise<T> {
+    if (!database) return Promise.reject(null);
+    return new Promise((resolve, reject) => {
+      database.remove(query, options, this.promiseResolve(resolve, reject));
     });
   },
   update(

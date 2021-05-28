@@ -19,3 +19,17 @@ export type OptionView = {
 };
 
 export type HandlerIPC = (event: Electron.IpcMainEvent, ...args: []) => any;
+
+export type Suggestions = {
+  searchText: string;
+  found: number;
+};
+
+declare global {
+  interface Array<T> {
+    paginate: <T>(
+      pageNumber: number,
+      itemsPerPage: number
+    ) => { data: T[]; end: boolean };
+  }
+}
