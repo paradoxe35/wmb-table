@@ -11,6 +11,10 @@ export function debounce(callback: Function, delay: number) {
   };
 }
 
+export function getRandomInt(max: number, min: number = 0) {
+  return Math.floor(Math.random() * (max - min + 1)) + min; // eslint-disable-line no-mixed-operators
+}
+
 export function array_move(
   arr: any[],
   old_index: number,
