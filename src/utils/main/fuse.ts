@@ -12,7 +12,7 @@ let pageNumber: number = 0;
 export async function indexSearchDocuments() {
   const documents = await queryDb.find<DataDocument>(db.documents, {});
 
-  const fuseIndex = await require(getAssetPath('datas/documents-index.json'));
+  const fuseIndex = await require(getAssetPath('datas/fuse-index.json'));
   const myIndex = Fuse.parseIndex(fuseIndex);
 
   fuseSearch = new Fuse(
