@@ -74,7 +74,7 @@ const createWindow = async () => {
     },
   });
 
-  // mainWindow.maximize();
+  mainWindow.maximize();
 
   mainWindow.loadURL(`file://${__dirname}/index.html`);
 

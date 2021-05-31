@@ -33,3 +33,23 @@ declare global {
     ) => { data: T[]; end: boolean };
   }
 }
+
+type FuseSearchMatchersValue = {
+  indices: [number, number][];
+  key: string;
+  value: string;
+};
+interface FuseSearchItem {
+  item: DataDocument;
+  matches: FuseSearchMatchersValue[];
+  refIndex: number;
+  score: number;
+}
+
+export interface FuseSearchResult {
+  data: FuseSearchItem[];
+  end: boolean;
+  itemsPerPage: number;
+  pageNumber: number;
+  total: number;
+}
