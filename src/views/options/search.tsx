@@ -24,6 +24,40 @@ type SearchFn = {
   hasNewResult: React.MutableRefObject<number>;
 };
 
+type InputSearchType = {
+  onSearch: (value: string) => void;
+  loading: boolean;
+  suggestions: React.MutableRefObject<Suggestions[]>;
+};
+
+function InputSearch({ onSearch, loading, suggestions }: InputSearchType) {
+  const [options, setOptions] = useState<SelectProps<object>['options']>([]);
+  const handleSearchAutoComplete = (value: string) => {
+    setOptions(value ? searchSuggestions(value, suggestions.current) : []);
+  };
+
+  return (
+    <AutoComplete
+      dropdownMatchSelectWidth={252}
+      style={{ width: 300 }}
+      options={options}
+      onSelect={onSearch}
+      onSearch={handleSearchAutoComplete}
+    >
+      <Input.Search
+        size="large"
+        minLength={3}
+        allowClear
+        loading={loading}
+        placeholder="Faites vos recherches ici"
+        enterButton
+        onPressEnter={(e) => onSearch(e.currentTarget.value)}
+        onSearch={onSearch}
+      />
+    </AutoComplete>
+  );
+}
+
 const useSearch = (): SearchFn => {
   const lastSearch = useRef<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -61,7 +95,7 @@ const useSearch = (): SearchFn => {
 
 export default function Search() {
   const suggestions = useRef<Suggestions[]>([]);
-  const [options, setOptions] = useState<SelectProps<object>['options']>([]);
+
   const {
     loading,
     onSearch,
@@ -70,12 +104,6 @@ export default function Search() {
     hasNewResult,
     onPageChange,
   } = useSearch();
-
-  const handleSearchAutoComplete = (value: string) => {
-    setOptions(value ? searchSuggestions(value, suggestions.current) : []);
-  };
-
-  console.log(results);
 
   useEffect(() => {
     const can =
@@ -95,24 +123,11 @@ export default function Search() {
   return (
     <>
       <div className="flex-center flex">
-        <AutoComplete
-          dropdownMatchSelectWidth={252}
-          style={{ width: 300 }}
-          options={options}
-          onSelect={onSearch}
-          onSearch={handleSearchAutoComplete}
-        >
-          <Input.Search
-            size="large"
-            minLength={3}
-            allowClear
-            loading={loading}
-            placeholder="Faites vos recherches ici"
-            enterButton
-            onPressEnter={(e) => onSearch(e.currentTarget.value)}
-            onSearch={onSearch}
-          />
-        </AutoComplete>
+        <InputSearch
+          onSearch={onSearch}
+          loading={loading}
+          suggestions={suggestions}
+        />
       </div>
       <SearchResultComponent results={results} onPageChange={onPageChange} />
     </>
@@ -185,12 +200,15 @@ function MatcherFn(
   textContent: string
 ): string | void {
   const term = textContent.slice(match[0], match[1]);
-  const start = match[0] - 100;
+
+  let start = match[0] - 100;
+
+  start = start < 0 ? 0 : start;
+
   const content =
-    textContent.substr(0, textContent.indexOf(' ')) +
-    '...' +
+    (start > 0 ? textContent.substr(0, textContent.indexOf(' ')) + '...' : '') +
     textContent.slice(
-      start >= 0 ? start : match[0],
+      start,
       match[1] + (term.length > 300 ? term.length + 150 : 300)
     ) +
     '...';
