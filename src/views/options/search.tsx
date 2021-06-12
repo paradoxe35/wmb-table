@@ -50,6 +50,8 @@ const useSearch = (): SearchFn => {
       lastSearch.current.trim(),
       page
     ).then((datas) => {
+      const lc = document.querySelector('.site-layout-content');
+      lc && lc.scrollTo({ top: 0, behavior: 'smooth' });
       setResults(datas);
     });
   }, []);
@@ -72,6 +74,8 @@ export default function Search() {
   const handleSearchAutoComplete = (value: string) => {
     setOptions(value ? searchSuggestions(value, suggestions.current) : []);
   };
+
+  console.log(results);
 
   useEffect(() => {
     const can =
@@ -187,7 +191,7 @@ function MatcherFn(
     '...' +
     textContent.slice(
       start >= 0 ? start : match[0],
-      match[1] + (term.length > 300 ? term.length + 300 : 300)
+      match[1] + (term.length > 300 ? term.length + 150 : 300)
     ) +
     '...';
 
