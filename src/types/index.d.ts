@@ -34,20 +34,19 @@ declare global {
   }
 }
 
-type FuseSearchMatchersValue = {
-  indices: [number, number][];
-  key: string;
-  value: string;
+type SearchMatchersValue = {
+  term: string;
+  start: number | undefined;
+  end: number | undefined;
 };
-interface FuseSearchItem {
+interface SearchItem {
   item: DataDocument;
-  matches: FuseSearchMatchersValue[];
+  matches: SearchMatchersValue[];
   refIndex: number;
-  score: number;
 }
 
-export interface FuseSearchResult {
-  data: FuseSearchItem[];
+export interface SearchResult {
+  data: SearchItem[];
   end: boolean;
   itemsPerPage: number;
   pageNumber: number;

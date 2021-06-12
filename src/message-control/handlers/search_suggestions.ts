@@ -5,7 +5,11 @@ export default async (
   _: Electron.IpcMainEvent,
   suggs: Suggestions | undefined
 ) => {
-  const suggestions = await queryDb.find<Suggestions>(db.suggestions);
+  let suggestions = await queryDb.find<Suggestions>(db.suggestions);
+
+  if (suggs) {
+    suggestions = suggestions.filter((r) => r.searchText != suggs.searchText);
+  }
 
   if (suggestions.length && suggs && suggestions.length + 1 > 20) {
     await queryDb.remove(db.suggestions, {}, { multi: true });
@@ -14,5 +18,5 @@ export default async (
     await queryDb.insert(db.suggestions, suggs);
   }
 
-  return suggestions;
+  return [...suggestions, ...(suggs ? [suggs] : [])];
 };

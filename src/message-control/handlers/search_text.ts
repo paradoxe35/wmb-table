@@ -1,5 +1,5 @@
-import { search } from '../../utils/main/fuse';
+import { search } from '../../utils/main/search';
 
-export default (_: any, text: string) => {
-  return search(text.trim());
+export default (_: any, text: string, page?: number) => {
+  return search(text.trim(), page);
 };
