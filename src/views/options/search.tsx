@@ -1,54 +1,34 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Input,
   AutoComplete,
-  Select,
   Typography,
   List,
   Divider,
   Pagination,
 } from 'antd';
 import { SelectProps } from 'antd/es/select';
-import { strNormalize } from '../../utils/functions';
-import {
-  FuseSearchMatchersValue,
-  FuseSearchResult,
-  Suggestions,
-} from '../../types';
+import { regexpMatcher, strNormalize } from '../../utils/functions';
+import { SearchItem, SearchResult, Suggestions } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 
-const { Option } = Select;
-
 const { Text } = Typography;
-
-//@ts-ignore
-function Options() {
-  function handleChange(value: string) {
-    console.log(`selected ${value}`);
-  }
-
-  return (
-    <div className="flex-center flex mt-2">
-      <Select defaultValue="and" size="small" onChange={handleChange}>
-        <Option value="and">Avec</Option>
-        <Option value="or">Ou</Option>
-        <Option value="not">Sans</Option>
-      </Select>
-    </div>
-  );
-}
 
 type SearchFn = {
   onSearch: (value: string) => void;
   loading: boolean;
-  results: FuseSearchResult | null;
+  lastSearch: React.MutableRefObject<string>;
+  results: SearchResult | null;
+  onPageChange: (page: any) => void;
+  hasNewResult: React.MutableRefObject<number>;
 };
 
 const useSearch = (): SearchFn => {
   const lastSearch = useRef<string>('');
   const [loading, setLoading] = useState<boolean>(false);
-  const [results, setResults] = useState<FuseSearchResult | null>(null);
+  const [results, setResults] = useState<SearchResult | null>(null);
+  const hasNewResult = useRef(0);
 
   const onSearch = (value: string) => {
     if (value.trim().length < 3 || lastSearch.current == value) {
@@ -56,30 +36,57 @@ const useSearch = (): SearchFn => {
     }
     lastSearch.current = value;
     setLoading(true);
-    sendIpcRequest<FuseSearchResult>(IPC_EVENTS.search_text, value.trim())
-      .then((datas) => setResults(datas))
+    sendIpcRequest<SearchResult>(IPC_EVENTS.search_text, value.trim())
+      .then((datas) => {
+        hasNewResult.current += 1;
+        setResults(datas);
+      })
       .finally(() => setLoading(false));
   };
 
-  return { onSearch, loading, results };
+  const onPageChange = useCallback((page: number) => {
+    sendIpcRequest<SearchResult>(
+      IPC_EVENTS.search_text,
+      lastSearch.current.trim(),
+      page
+    ).then((datas) => {
+      setResults(datas);
+    });
+  }, []);
+
+  return { onSearch, loading, results, onPageChange, lastSearch, hasNewResult };
 };
 
 export default function Search() {
   const suggestions = useRef<Suggestions[]>([]);
   const [options, setOptions] = useState<SelectProps<object>['options']>([]);
-  const { loading, onSearch, results } = useSearch();
+  const {
+    loading,
+    onSearch,
+    results,
+    lastSearch,
+    hasNewResult,
+    onPageChange,
+  } = useSearch();
 
   const handleSearchAutoComplete = (value: string) => {
     setOptions(value ? searchSuggestions(value, suggestions.current) : []);
   };
 
-  console.log(results);
-
   useEffect(() => {
-    sendIpcRequest<Suggestions[]>(IPC_EVENTS.search_suggestions).then(
-      (suggests) => (suggestions.current = suggests)
-    );
-  }, []);
+    const can =
+      lastSearch.current.trim().length > 0 && !!results && results.total > 0;
+
+    sendIpcRequest<Suggestions[]>(
+      IPC_EVENTS.search_suggestions,
+      can
+        ? ({
+            searchText: lastSearch.current.trim(),
+            found: results?.total,
+          } as Suggestions)
+        : undefined
+    ).then((suggests) => (suggestions.current = suggests));
+  }, [hasNewResult.current]);
 
   return (
     <>
@@ -103,16 +110,21 @@ export default function Search() {
           />
         </AutoComplete>
       </div>
-
-      <SearchResult results={results} />
+      <SearchResultComponent results={results} onPageChange={onPageChange} />
     </>
   );
 }
 
-const SearchResult = React.memo(
-  ({ results }: { results: FuseSearchResult | null }) => {
-    console.log(results);
-
+const SearchResultComponent = React.memo(
+  ({
+    results,
+    onPageChange,
+  }: {
+    results: SearchResult | null;
+    onPageChange?:
+      | ((page: number, pageSize?: number | undefined) => void)
+      | undefined;
+  }) => {
     return (
       <>
         {results && (
@@ -129,9 +141,7 @@ const SearchResult = React.memo(
             size="large"
             style={{ width: '100%' }}
             pagination={false}
-            dataSource={
-              results?.data && results?.data.length ? [results?.data[0]] : []
-            }
+            dataSource={results?.data || []}
             renderItem={(result) => (
               <>
                 <List.Item key={result.item.title}>
@@ -139,12 +149,11 @@ const SearchResult = React.memo(
                     title={<a>{result.item.title}</a>}
                     description={
                       <span>
-                        {result.matches[0].indices.length} correspondances
-                        trouvées.
+                        {result.matches.length} correspondances trouvées.
                       </span>
                     }
                   />
-                  <ContentItem matcher={result.matches[0]} />
+                  <ContentItem key={result.item.title} item={result} />
                 </List.Item>
                 <Divider />
               </>
@@ -154,6 +163,7 @@ const SearchResult = React.memo(
         {results && (
           <div className="mt-2 flex flex-center mb-2">
             <Pagination
+              onChange={onPageChange}
               defaultCurrent={results.pageNumber}
               showSizeChanger={false}
               total={results.total}
@@ -165,103 +175,51 @@ const SearchResult = React.memo(
   }
 );
 
-//@ts-ignore
-function MatcherFn(element: Element, matchesArr: [number, number][]) {
-  let nodeFilter = {
-    acceptNode: function (node: any) {
-      if (/^[\t\n\r ]*$/.test(node.nodeValue)) {
-        return NodeFilter.FILTER_SKIP;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  };
+function MatcherFn(
+  element: Element,
+  match: [number, number],
+  textContent: string
+): string | void {
+  const term = textContent.slice(match[0], match[1]);
+  const start = match[0] - 100;
+  const content =
+    textContent.substr(0, textContent.indexOf(' ')) +
+    '...' +
+    textContent.slice(
+      start >= 0 ? start : match[0],
+      match[1] + (term.length > 300 ? term.length + 300 : 300)
+    ) +
+    '...';
 
-  let index = 0;
-  let matches = matchesArr
-    .sort(function (a, b) {
-      return a[0] - b[0];
-    })
-    .slice();
-  let previousMatch = [-1, -1];
-  let match = matches.shift();
-  let walker = document.createTreeWalker(
-    element,
-    NodeFilter.SHOW_TEXT,
-    nodeFilter,
-    false
-  );
+  const matcher = regexpMatcher(term, content)[0];
 
-  let node: Node | null;
+  const node = document.createTextNode(content);
+  element.appendChild(node);
 
-  while ((node = walker.nextNode())) {
-    if (match == undefined) break;
-    if (match[0] == previousMatch[0]) continue;
+  if (matcher && matcher.start && matcher.end) {
+    const range = document.createRange();
+    const tag = document.createElement('mark');
+    const rangeStart = matcher.start;
+    const rangeEnd = matcher.end;
 
-    // let text = node.textContent;
-    //@ts-ignore
-    let nodeEndIndex = index + node.length;
-
-    if (match[0] < nodeEndIndex) {
-      var range = document.createRange(),
-        tag = document.createElement('mark'),
-        rangeStart = match[0] - index,
-        rangeEnd = rangeStart + match[1];
-
-      tag.dataset.rangeStart = rangeStart.toString();
-      tag.dataset.rangeEnd = rangeEnd.toString();
-
-      range.setStart(node, rangeStart);
-      range.setEnd(node, rangeEnd);
-      range.surroundContents(tag);
-
-      index = match[0] + match[1];
-
-      // the next node will now actually be the text we just wrapped, so
-      // we need to skip it
-      walker.nextNode();
-      previousMatch = match;
-      match = matches.shift();
-    } else {
-      index = nodeEndIndex;
-    }
+    range.setStart(node, rangeStart);
+    range.setEnd(node, rangeEnd);
+    range.surroundContents(tag);
   }
 }
 
-const ContentItem = ({ matcher }: { matcher: FuseSearchMatchersValue }) => {
+const ContentItem = ({ item }: { item: SearchItem }) => {
   const parentRef = useRef<HTMLSpanElement | null>(null);
+
   useEffect(() => {
     if (parentRef.current) {
-      parentRef.current.hidden = true;
+      const matches = item.matches
+        .map((m) => (m.start ? [m.start, m.end] : undefined))
+        .filter(Boolean) as [number, number][];
 
-      const node = document.createTextNode(matcher.value);
-      parentRef.current.appendChild(node);
-
-      // const l = matcher.indices[matcher.indices.length - 1];
-      console.log(matcher);
-
-      matcher.indices.forEach((l) => {
-        console.log(matcher.value.slice(l[0], l[1] + 1));
-      });
-
-      // MatcherFn(parentRef.current, [matcher.indices[0]]);
-
-      // matcher.indices.forEach((mtch) => {
-      //   if (!matcher.value[mtch[0]] || !matcher.value[mtch[1]]) {
-      //     return;
-      //   }
-      //   const range = document.createRange();
-      //   const tag = document.createElement('mark');
-
-      //   tag.dataset.rangeStart = mtch[0].toString();
-      //   tag.dataset.rangeEnd = mtch[1].toString();
-
-      //   range.setStart(node, mtch[0]);
-      //   range.setEnd(node, mtch[1]);
-
-      //   range.surroundContents(tag);
-      // });
+      MatcherFn(parentRef.current, matches[0], item.item.textContent);
     }
-  }, [matcher]);
+  }, []);
 
   return <span ref={parentRef}></span>;
 };
@@ -280,7 +238,7 @@ const searchSuggestions = (query: string, suggestions: Suggestions[]) =>
             }}
           >
             <span>
-              {query}, trouvé <Text type="secondary">{sgg.searchText}</Text>
+              <Text type="secondary">{sgg.searchText}</Text>
             </span>
             <span>{sgg.found} resultat</span>
           </div>

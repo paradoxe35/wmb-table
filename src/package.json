@@ -15,7 +15,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "fuse.js": "^6.4.6",
     "nedb": "^1.8.0",
     "underscore": "^1.13.1"
   },

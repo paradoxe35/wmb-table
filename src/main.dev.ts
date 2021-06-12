@@ -16,10 +16,8 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { getAssetPath } from './sys';
-import { indexSearchDocuments } from './utils/main/fuse';
 
 require('./message-control/main-messages');
-indexSearchDocuments();
 
 export default class AppUpdater {
   constructor() {
@@ -68,6 +66,7 @@ const createWindow = async () => {
     show: false,
     width: 1024,
     height: 800,
+    title: 'Wmb Table',
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,

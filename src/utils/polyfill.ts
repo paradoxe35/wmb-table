@@ -21,7 +21,7 @@ Array.prototype.paginate = function <T>(
     this[loopCount] && result.data.push(this[loopCount]);
   }
 
-  if (loopCount == this.length) {
+  if (loopCount >= this.length) {
     result.end = true;
   }
 

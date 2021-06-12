@@ -58,3 +58,18 @@ export function strNormalize(str: string) {
     .replace(/[\u0300-\u036f]/g, '')
     .toLocaleLowerCase();
 }
+
+export function strNormalizeNoLower(str: string) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+export function regexpMatcher(pattern: string | RegExp, headstack: string) {
+  const regexp = new RegExp(pattern, 'gi');
+  const matches = [...headstack.matchAll(regexp)];
+
+  return matches.map((match) => ({
+    term: match[0],
+    start: match.index,
+    end: match.index ? match.index + match[0].length : undefined,
+  }));
+}

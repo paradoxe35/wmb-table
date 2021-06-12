@@ -5,4 +5,5 @@ export const IPC_EVENTS = {
   document_tabs: 'document_tabs',
   search_suggestions: 'search_suggestions',
   search_text: 'search_text',
+  search_content: 'search_content',
 };
