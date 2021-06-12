@@ -12,6 +12,7 @@ import { regexpMatcher, strNormalize } from '../../utils/functions';
 import { SearchItem, SearchResult, Suggestions } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
+import DocumentViewer from '../../components/viewer/document-viewer';
 
 const { Text } = Typography;
 
@@ -165,7 +166,14 @@ const SearchResultComponent = React.memo(
               <>
                 <List.Item key={result.item.title}>
                   <List.Item.Meta
-                    title={<a>{result.item.title}</a>}
+                    title={
+                      <DocumentViewer
+                        name={result.item.title}
+                        id={result.item._id as string}
+                      >
+                        <a>{result.item.title}</a>
+                      </DocumentViewer>
+                    }
                     description={
                       <span>
                         {result.matches.length} correspondances trouvées.

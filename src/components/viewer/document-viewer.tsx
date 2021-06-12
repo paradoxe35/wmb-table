@@ -2,10 +2,11 @@ import React from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import { appViewState, documentTabs, MAIN_VIEWS } from '../../store';
 
-const DocumentViewer: React.FC<{ name: string; id: string }> = ({
-  children,
-  name,
-}) => {
+const DocumentViewer: React.FC<{
+  name: string;
+  id: string;
+  onItemClick?: Function;
+}> = ({ children, name, onItemClick }) => {
   const [tabs, setTabs] = useRecoilState(documentTabs);
   const setDocumentViewer = useSetRecoilState(appViewState);
 
@@ -14,6 +15,8 @@ const DocumentViewer: React.FC<{ name: string; id: string }> = ({
 
     const activated = tabs.some((t) => t.title === name && t.active);
     setDocumentViewer(MAIN_VIEWS.document);
+
+    onItemClick && onItemClick();
 
     if (activated) return;
 
@@ -37,7 +40,7 @@ const DocumentViewer: React.FC<{ name: string; id: string }> = ({
           return nt;
         });
         const narr = [...nts, { title: name, active: true }];
-        narr.length >= 7 && narr.shift();
+        narr.length >= 5 && narr.shift();
 
         return narr;
       });
