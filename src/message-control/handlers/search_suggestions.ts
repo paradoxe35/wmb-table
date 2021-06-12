@@ -6,17 +6,27 @@ export default async (
   suggs: Suggestions | undefined
 ) => {
   let suggestions = await queryDb.find<Suggestions>(db.suggestions);
+  let newSuggestions = [];
 
   if (suggs) {
-    suggestions = suggestions.filter((r) => r.searchText != suggs.searchText);
+    newSuggestions = suggestions.filter(
+      (r) => r.searchText != suggs.searchText
+    );
+  } else {
+    newSuggestions = suggestions;
   }
 
-  if (suggestions.length && suggs && suggestions.length + 1 > 20) {
+  if (suggs && suggestions.length + 1 > 20) {
     await queryDb.remove(db.suggestions, {}, { multi: true });
-    await queryDb.insert(db.suggestions, [...suggestions, suggs]);
+    await queryDb.insert(
+      db.suggestions,
+      [suggs, ...newSuggestions].slice(0, 20)
+    );
   } else if (suggs) {
-    await queryDb.insert(db.suggestions, suggs);
+    if (!suggestions.some((r) => r.searchText == suggs.searchText)) {
+      await queryDb.insert(db.suggestions, suggs);
+    }
   }
 
-  return [...suggestions, ...(suggs ? [suggs] : [])];
+  return [...(suggs ? [suggs] : []), ...newSuggestions];
 };
