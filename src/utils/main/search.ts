@@ -54,6 +54,7 @@ export async function search(
     total: searchResults.length as number,
     pageNumber: pageNumber,
     itemsPerPage,
+    query: text,
     ...searchResults.paginate<SearchItem>(pageNumber, itemsPerPage),
   } as SearchResult;
 }

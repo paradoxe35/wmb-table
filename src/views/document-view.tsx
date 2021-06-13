@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import DocumentTabs from '../components/document-tabs';
 import { Layout } from 'antd';
-import { currentDocumentTabs, documentTabs } from '../store';
+import { currentDocumentTabs, documentTabs, documentViewQuery } from '../store';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../utils/ipc-events';
 import { useContainerScrollY } from '../utils/hooks';
 import { debounce } from '../utils/functions';
+import { DocumentViewQuery } from '../types';
 
 const { Content } = Layout;
 
@@ -19,6 +20,19 @@ export default function DocumentView() {
 
   const [tabs, setTabs] = useRecoilState(documentTabs);
 
+  const viewQuery = useRecoilValue(documentViewQuery);
+
+  const documentQuery = useRef<DocumentViewQuery | null>(null);
+
+  useEffect(() => {
+    const query = viewQuery.find((v) => v.documentTitle == title);
+    if (query) {
+      documentQuery.current = query;
+    } else {
+      documentQuery.current = null;
+    }
+  }, [title]);
+
   useEffect(() => {
     sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then((p) =>
       setPath(p)
@@ -26,6 +40,8 @@ export default function DocumentView() {
   }, [title]);
 
   const onIframeLoad = () => {
+    console.log(documentQuery.current);
+
     if (iframeRef.current) {
       const page = iframeRef.current.contentDocument?.querySelector(
         '#page-container'

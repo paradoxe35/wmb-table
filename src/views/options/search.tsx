@@ -13,6 +13,8 @@ import { SearchItem, SearchResult, Suggestions } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import DocumentViewer from '../../components/viewer/document-viewer';
+import { useSetRecoilState } from 'recoil';
+import { documentViewQuery } from '../../store';
 
 const { Text } = Typography;
 
@@ -135,6 +137,49 @@ export default function Search() {
   );
 }
 
+const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
+  const setDocumentViewQuery = useSetRecoilState(documentViewQuery);
+
+  const handleDocumentClick = useCallback(() => {
+    setDocumentViewQuery((docs) => {
+      const datas = docs.filter((d) => d.documentTitle != result.item.title);
+      return [
+        ...datas,
+        {
+          documentTitle: result.item.title,
+          matches: result.matches,
+          term: query,
+        },
+      ];
+    });
+  }, [result, setDocumentViewQuery, query]);
+
+  return (
+    <>
+      <List.Item key={result.item.title}>
+        <List.Item.Meta
+          title={
+            <a>
+              <DocumentViewer
+                onItemClick={handleDocumentClick}
+                name={result.item.title}
+                id={result.item._id as string}
+              >
+                {result.item.title}
+              </DocumentViewer>
+            </a>
+          }
+          description={
+            <span>{result.matches.length} correspondances trouvées.</span>
+          }
+        />
+        <ContentItem key={result.item.title} item={result} />
+      </List.Item>
+      <Divider />
+    </>
+  );
+};
+
 const SearchResultComponent = React.memo(
   ({
     results,
@@ -163,27 +208,7 @@ const SearchResultComponent = React.memo(
             pagination={false}
             dataSource={results?.data || []}
             renderItem={(result) => (
-              <>
-                <List.Item key={result.item.title}>
-                  <List.Item.Meta
-                    title={
-                      <DocumentViewer
-                        name={result.item.title}
-                        id={result.item._id as string}
-                      >
-                        <a>{result.item.title}</a>
-                      </DocumentViewer>
-                    }
-                    description={
-                      <span>
-                        {result.matches.length} correspondances trouvées.
-                      </span>
-                    }
-                  />
-                  <ContentItem key={result.item.title} item={result} />
-                </List.Item>
-                <Divider />
-              </>
+              <ListView result={result} query={results?.query as string} />
             )}
           />
         </div>
