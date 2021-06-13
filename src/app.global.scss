@@ -9,7 +9,7 @@ body {
   user-select: none;
 }
 
-@import './modules/chrome-tabs.scss';
+@import './plugins/chrome-tabs/chrome-tabs.scss';
 
 .logo {
   float: left;

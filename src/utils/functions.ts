@@ -73,3 +73,10 @@ export function regexpMatcher(pattern: string | RegExp, headstack: string) {
     end: match.index ? match.index + match[0].length : undefined,
   }));
 }
+
+export function injectStyleText(content: string) {
+  const css = document.createElement('style');
+  css.type = 'text/css';
+  css.innerHTML = content;
+  document.head.appendChild(css);
+}
