@@ -40,7 +40,7 @@ declare global {
   }
 }
 
-type SearchMatchersValue = {
+export type SearchMatchersValue = {
   term: string;
   start: number | undefined;
   end: number | undefined;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import ChromeTabs from '../modules/chrome-tabs';
+import ChromeTabs from '../plugins/chrome-tabs/chrome-tabs';
 import { currentDocumentTabs, documentTabs } from '../store';
 import { DocumentTab } from '../types';
 import { FileFilled } from '@ant-design/icons';

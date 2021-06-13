@@ -13,6 +13,8 @@ import History from './views/options/history';
 import Subject from './views/options/subject';
 import { OptionView } from './types';
 
+import './plugins/context-menu/kali_dark.css';
+
 const RouterApp = React.memo(
   (): JSX.Element => {
     const view = useRecoilValue<string>(optionViewState);
