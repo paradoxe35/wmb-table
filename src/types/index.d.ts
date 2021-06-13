@@ -6,6 +6,12 @@ export type DataDocument = {
   textContent: string;
 };
 
+export type DocumentViewQuery = {
+  term: string;
+  documentTitle: string;
+  matches: SearchMatchersValue[];
+};
+
 export type DocumentTab = {
   title: string;
   scrollY?: number;
@@ -49,6 +55,7 @@ export interface SearchResult {
   data: SearchItem[];
   end: boolean;
   itemsPerPage: number;
+  query: string;
   pageNumber: number;
   total: number;
 }

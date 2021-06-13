@@ -25,7 +25,12 @@ const RouterApp = React.memo(
       []
     );
     //@ts-ignore
-    return views[view];
+    return Object.keys(views).map((k: string) => (
+      <div key={k} hidden={k !== view}>
+        {/* @ts-ignore */}
+        {views[k] as JSX.Element}
+      </div>
+    ));
   }
 );
 
