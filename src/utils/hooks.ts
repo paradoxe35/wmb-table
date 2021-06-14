@@ -22,6 +22,16 @@ export function resizeByHeiht<T>(
   };
 }
 
+export function useValueStateRef<T>(value: T) {
+  const ref = useRef<T>(value);
+
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+
+  return ref;
+}
+
 export function useContainerScrollY<T>(
   resizers = [window],
   susDiff = 0,
