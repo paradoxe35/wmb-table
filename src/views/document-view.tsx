@@ -13,15 +13,32 @@ import { SearchOutlined } from '@ant-design/icons';
 
 const { Content } = Layout;
 
+function postMessage(
+  iframeEl: HTMLIFrameElement,
+  type: string,
+  detail: any,
+  path: string
+) {
+  window.setTimeout(() => {
+    iframeEl.contentWindow?.postMessage({ type, detail }, path as string);
+  }, 1000);
+}
+
 function ModalSearchDocument({
   documentQuery,
+  title,
 }: {
   documentQuery: DocumentViewQuery | null;
+  title: string;
 }) {
+  const titleRef = useValueStateRef<string>(title);
+
   const documentQueryRef = useValueStateRef<DocumentViewQuery | null>(
     documentQuery
   );
+
   const searchValue = useValueStateRef<string>(documentQuery?.term || '');
+
   const setDocumentViewQuery = useSetRecoilState(documentViewQuery);
 
   const onSearch = () => {
@@ -32,13 +49,11 @@ function ModalSearchDocument({
       return;
     }
     setDocumentViewQuery((docs) => {
-      const datas = docs.filter(
-        (d) => d.documentTitle != documentQueryRef.current?.documentTitle
-      );
+      const datas = docs.filter((d) => d.documentTitle != titleRef.current);
       return [
         ...datas,
         {
-          documentTitle: documentQueryRef.current?.documentTitle as string,
+          documentTitle: titleRef.current,
           matches: [],
           term: searchValue.current.trim(),
         },
@@ -93,7 +108,7 @@ export default function DocumentView() {
 
   const [tabs, setTabs] = useRecoilState(documentTabs);
 
-  const viewQuery = useRecoilValue(documentViewQuery);
+  const [viewQuery, setDocumentViewQuery] = useRecoilState(documentViewQuery);
 
   const documentQuery = useRef<DocumentViewQuery | null>(null);
 
@@ -106,8 +121,24 @@ export default function DocumentView() {
     }
   }, [title, viewQuery]);
 
+  const titleRef = useValueStateRef(title);
+
   useEffect(() => {
-    iframeRef.current?.contentWindow?.location.reload();
+    const closeDocumentQuery = () => {
+      setDocumentViewQuery((qs) =>
+        qs.filter((q) => q.documentTitle != titleRef.current)
+      );
+    };
+    window.addEventListener('close-document-query', closeDocumentQuery);
+    return () => {
+      window.removeEventListener('close-document-query', closeDocumentQuery);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (documentQuery.current) {
+      iframeRef.current?.contentWindow?.location.reload();
+    }
   }, [viewQuery]);
 
   useEffect(() => {
@@ -116,14 +147,22 @@ export default function DocumentView() {
     );
   }, [title]);
 
-  const handleSearchQuery = (iframeEl: HTMLIFrameElement) => {
-    if (documentQuery.current && path) {
-      window.setTimeout(() => {
-        iframeEl.contentWindow?.postMessage(
-          { type: 'document-query', detail: documentQuery.current },
-          path
-        );
-      }, 1000);
+  const handleSearchQuery = (
+    iframeEl: HTMLIFrameElement,
+    hasOwnPosition: boolean
+  ) => {
+    if (documentQuery.current) {
+      postMessage(
+        iframeEl,
+        'document-query',
+        documentQuery.current,
+        path as string
+      );
+    } else if (!hasOwnPosition) {
+      const container = iframeEl.contentDocument?.getElementById(
+        'page-container'
+      )?.firstElementChild?.firstElementChild;
+      container?.querySelector('div')?.scrollIntoView({ inline: 'center' });
     }
   };
 
@@ -134,9 +173,26 @@ export default function DocumentView() {
       );
 
       const tab = tabs.find((t) => t.title === title);
+      let hasOwnPosition = false;
 
-      if (tab?.scrollY && page) {
-        page.scrollTop = tab.scrollY;
+      if ((tab?.scrollY || tab?.scrollX) && page) {
+        hasOwnPosition = true;
+
+        postMessage(
+          iframeRef.current,
+          'window-position',
+          {
+            top: tab.scrollY || undefined,
+            left: tab.scrollX || undefined,
+          },
+          path as string
+        );
+
+        page.scrollTo({
+          top: tab.scrollY || undefined,
+          left: tab.scrollX || undefined,
+          behavior: 'smooth',
+        });
       }
 
       const load = {
@@ -150,14 +206,17 @@ export default function DocumentView() {
         setTabs((ts) => {
           return ts.map((t) => {
             const nt = { ...t };
-            nt.title === title && (nt.scrollY = page?.scrollTop);
+            if (nt.title === title) {
+              nt.scrollY = page?.scrollTop;
+              nt.scrollX = page?.scrollLeft;
+            }
             return nt;
           });
         });
       };
 
-      page?.addEventListener('scroll', debounce(onScroll, 1000));
-      handleSearchQuery(iframeRef.current);
+      page?.addEventListener('scroll', debounce(onScroll, 2000));
+      handleSearchQuery(iframeRef.current, hasOwnPosition);
     }
   };
 
@@ -174,7 +233,10 @@ export default function DocumentView() {
           frameBorder="0"
         />
       </Content>
-      <ModalSearchDocument documentQuery={documentQuery.current} />
+      <ModalSearchDocument
+        documentQuery={documentQuery.current}
+        title={title}
+      />
     </>
   );
 }

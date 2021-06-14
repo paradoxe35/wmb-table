@@ -25,3 +25,12 @@ export function setSearchResult(data) {
   SEARCH_RESULT = data;
   window.dispatchEvent(new CustomEvent('search-result', { detail: data }));
 }
+
+/**
+ * @type { { top: number | undefined, left: number | undefined } }
+ */
+export let WINDOW_POSITION = null;
+
+export function setWindowPostion(data) {
+  WINDOW_POSITION = data;
+}

@@ -15,6 +15,7 @@ export type DocumentViewQuery = {
 export type DocumentTab = {
   title: string;
   scrollY?: number;
+  scrollX?: number;
   active: boolean;
 };
 
