@@ -100,6 +100,7 @@ function ModalSearchDocument({
           }}
         >
           <Input
+            autoFocus={true}
             size="large"
             minLength={3}
             allowClear
@@ -166,8 +167,8 @@ export default function DocumentView() {
   }, [viewQuery]);
 
   useEffect(() => {
-    sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then((p) =>
-      setPath(p)
+    sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then(
+      (p) => p && setPath(p)
     );
   }, [title]);
 
