@@ -188,7 +188,7 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
             <span>{result.matches.length} correspondances trouvées.</span>
           }
         />
-        <ContentItem key={result.item.title} item={result} />
+        <ContentItem key={`${result.item.title}-${query}`} item={result} />
       </List.Item>
       <Divider />
     </>
@@ -230,6 +230,7 @@ const SearchResultComponent = React.memo(
         {results && (
           <div className="mt-2 flex flex-center mb-2">
             <Pagination
+              key={results.query}
               onChange={onPageChange}
               defaultCurrent={results.pageNumber}
               showSizeChanger={false}
