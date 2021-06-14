@@ -26,11 +26,6 @@ window.addEventListener(
         setSearchQuery(e.data.detail);
         searchTemplate();
         break;
-      case 'search-query':
-        if (!SEARCH_QUERY || SEARCH_QUERY.term !== e.data.detail) {
-          window.location.reload();
-        }
-        break;
     }
   },
   false
