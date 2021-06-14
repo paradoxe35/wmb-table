@@ -31,6 +31,8 @@ function defaultPosition() {
 // call fn
 contextMenuHander();
 
+window.focus();
+
 //events
 window.addEventListener(
   'message',
