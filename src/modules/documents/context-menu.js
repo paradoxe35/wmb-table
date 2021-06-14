@@ -15,7 +15,7 @@ function searchOpen() {
 
 export default () => {
   const chromeContextMenu = new ContextMenu(document.body, [
-    { text: 'Copier Texte', hotkey: 'Ctrl+C', onclick: copyTextSelection },
+    { text: 'Copier texte', hotkey: 'Ctrl+C', onclick: copyTextSelection },
     { text: 'Recherche', onclick: searchOpen },
   ]);
 

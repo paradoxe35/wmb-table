@@ -63,6 +63,16 @@ export function strNormalizeNoLower(str: string) {
   return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
 
+export function eventListenOne (parent: null | Window | HTMLElement | Element, eventName: string, callback: Function) {
+  const el = (parent || window);
+  const h = (e: Event) => {
+      callback(e)
+      el.removeEventListener(eventName, h);
+  }
+  el.removeEventListener(eventName, h);
+  el.addEventListener(eventName, h);
+}
+
 export function regexpMatcher(pattern: string | RegExp, headstack: string) {
   const regexp = new RegExp(pattern, 'gi');
   const matches = [...headstack.matchAll(regexp)];

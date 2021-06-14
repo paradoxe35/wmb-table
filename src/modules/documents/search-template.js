@@ -4,7 +4,8 @@ import {
   injectStyleText,
 } from './html.js';
 
-import { SEARCH_RESULT, SEARCH_QUERY, setSearchResult } from './seach-query.js';
+import { SEARCH_RESULT, SEARCH_QUERY } from './seach-query.js';
+import { performSearch } from './peform-search.js';
 
 function addClass(el, className) {
   el && !el.classList.contains(className) && el.classList.add(className);
@@ -31,7 +32,7 @@ export function handleSearch() {
   const searchNext = document.querySelector('.search--next--js');
   const searchResult = document.querySelector('.search--result--js');
 
-  let indexSearch = 0;
+  let indexSearch = 1;
 
   const updateResult = () => {
     searchResult.textContent = `${indexSearch}/${SEARCH_RESULT.matches.length}`;
@@ -44,44 +45,44 @@ export function handleSearch() {
       searchResult.textContent = `0/0`;
     } else {
       addClass(searchPrev, 'disabled');
-      removeClass(searchNext, 'disabled');
+      if (indexSearch == SEARCH_RESULT.matches.length) {
+        addClass(searchNext, 'disabled');
+      } else {
+        removeClass(searchNext, 'disabled');
+      }
       updateResult();
     }
   });
 
   searchPrev.addEventListener('click', () => {
-    if (
-      !SEARCH_RESULT ||
-      indexSearch == 0 ||
-      searchPrev.classList.contains('disabled')
-    )
-      return;
+    if (searchPrev.classList.contains('disabled')) return;
 
     indexSearch -= 1;
 
-    if (indexSearch <= 0) {
+    if (indexSearch <= 1) {
       addClass(searchPrev, 'disabled');
-    } else {
+    }
+
+    if (indexSearch < SEARCH_RESULT.matches.length) {
       removeClass(searchNext, 'disabled');
     }
+
     updateResult();
   });
 
   searchNext.addEventListener('click', () => {
-    if (
-      !SEARCH_RESULT ||
-      indexSearch == SEARCH_RESULT.matches.length - 1 ||
-      searchNext.classList.contains('disabled')
-    )
-      return;
+    if (searchNext.classList.contains('disabled')) return;
 
     indexSearch += 1;
 
-    if (indexSearch >= SEARCH_RESULT.matches.length - 1) {
+    if (indexSearch == SEARCH_RESULT.matches.length) {
       addClass(searchNext, 'disabled');
-    } else {
+    }
+
+    if (indexSearch > 1) {
       removeClass(searchPrev, 'disabled');
     }
+
     updateResult();
   });
 }
@@ -106,18 +107,11 @@ export default function initTemplate() {
 
   handleSearch();
 
-  searcPerform(SEARCH_QUERY ? SEARCH_QUERY.term : undefined);
+  performSearch(SEARCH_QUERY ? SEARCH_QUERY.term : undefined);
 
   searchOpen && searchOpen.addEventListener('click', () => openSearchModal());
 }
 
 export function openSearchModal() {
   window.parent.dispatchEvent(new Event('open-search-modal'));
-}
-
-export function searcPerform(term) {
-  if (!term) {
-    setSearchResult(null);
-    return;
-  }
 }

@@ -156,7 +156,7 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
 
   return (
     <>
-      <List.Item key={result.item.title}>
+      <List.Item key={`${result.item.title}-${query}`}>
         <List.Item.Meta
           title={
             <a>
