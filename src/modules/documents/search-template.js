@@ -17,6 +17,36 @@ function removeClass(el, className) {
 
 let hasOpened = false;
 
+let lastIndex = null;
+
+function navigateOnResult(index) {
+  if (index == lastIndex) return;
+
+  if (lastIndex) {
+    /** @type { HTMLElement[] } */
+    const pMarks = document.querySelectorAll(
+      `mark[data-mark-id="${lastIndex}"]`
+    );
+    pMarks.forEach((el) => (el.style.backgroundColor = 'yellow'));
+  }
+
+  /** @type { HTMLElement[] } */
+  const marks = Array.from(
+    document.querySelectorAll(`mark[data-mark-id="${index}"]`)
+  );
+
+  marks.forEach((el) => (el.style.backgroundColor = '#57aeff'));
+
+  if (marks[0]) {
+    marks[0].scrollIntoView({
+      behavior: 'smooth',
+      inline: 'center',
+      block: 'center',
+    });
+    lastIndex = index;
+  }
+}
+
 window.addEventListener('search-open', () => {
   if (hasOpened) {
     const searchContainer = document.querySelector('.search--template');
@@ -39,6 +69,11 @@ export function handleSearch() {
   };
 
   window.addEventListener('search-result', (e) => {
+    if (!SEARCH_RESULT || SEARCH_RESULT.matches.length < 1) {
+      indexSearch = 0;
+    } else {
+      indexSearch = 1;
+    }
     if (!SEARCH_RESULT) {
       addClass(searchPrev, 'disabled');
       addClass(searchNext, 'disabled');
@@ -50,8 +85,15 @@ export function handleSearch() {
       } else {
         removeClass(searchNext, 'disabled');
       }
+      lastIndex = null;
+      navigateOnResult(indexSearch);
+
       updateResult();
     }
+  });
+
+  window.addEventListener('result-constructed', () => {
+    navigateOnResult(indexSearch);
   });
 
   searchPrev.addEventListener('click', () => {
@@ -66,6 +108,8 @@ export function handleSearch() {
     if (indexSearch < SEARCH_RESULT.matches.length) {
       removeClass(searchNext, 'disabled');
     }
+
+    navigateOnResult(indexSearch);
 
     updateResult();
   });
@@ -82,6 +126,8 @@ export function handleSearch() {
     if (indexSearch > 1) {
       removeClass(searchPrev, 'disabled');
     }
+
+    navigateOnResult(indexSearch);
 
     updateResult();
   });
@@ -103,6 +149,7 @@ export default function initTemplate() {
   searchClose &&
     searchClose.addEventListener('click', () => {
       searchContainer && searchContainer.classList.remove('active');
+      window.parent.dispatchEvent(new Event('close-document-query'));
     });
 
   handleSearch();

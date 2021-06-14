@@ -8,7 +8,7 @@ import {
   Pagination,
 } from 'antd';
 import { SelectProps } from 'antd/es/select';
-import { regexpMatcher, strNormalize } from '../../utils/functions';
+import { debounce, regexpMatcher, strNormalize } from '../../utils/functions';
 import { SearchItem, SearchResult, Suggestions } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
@@ -35,16 +35,32 @@ type InputSearchType = {
 
 function InputSearch({ onSearch, loading, suggestions }: InputSearchType) {
   const [options, setOptions] = useState<SelectProps<object>['options']>([]);
+  const searchValue = useRef<string | null>(null);
+
   const handleSearchAutoComplete = (value: string) => {
     setOptions(value ? searchSuggestions(value, suggestions.current) : []);
   };
+
+  const onSelect = useCallback((value: string) => {
+    searchValue.current = value;
+  }, []);
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      if (searchValue.current || value) {
+        onSearch && onSearch(searchValue.current || value);
+        searchValue.current = null;
+      }
+    },
+    [onSearch]
+  );
 
   return (
     <AutoComplete
       dropdownMatchSelectWidth={252}
       style={{ width: 300 }}
       options={options}
-      onSelect={onSearch}
+      onSelect={onSelect}
       onSearch={handleSearchAutoComplete}
     >
       <Input.Search
@@ -54,8 +70,7 @@ function InputSearch({ onSearch, loading, suggestions }: InputSearchType) {
         loading={loading}
         placeholder="Faites vos recherches ici"
         enterButton
-        onPressEnter={(e) => onSearch(e.currentTarget.value)}
-        onSearch={onSearch}
+        onSearch={debounce(handleSearch, 100)}
       />
     </AutoComplete>
   );

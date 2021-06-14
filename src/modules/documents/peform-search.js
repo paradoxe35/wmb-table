@@ -140,7 +140,6 @@ function markMaches(element, matches, textContentLength) {
 
     for (const matcher of matchers) {
       if (matcher.start >= index && matcher.end < index + node.length) {
-        console.log(matcher.start, matcher.end);
         try {
           surroundContentsTag(
             node,
@@ -186,4 +185,5 @@ function markMaches(element, matches, textContentLength) {
 
     index += node.length;
   }
+  window.dispatchEvent(new Event('result-constructed'));
 }
