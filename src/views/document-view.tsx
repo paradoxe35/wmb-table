@@ -24,12 +24,31 @@ function postMessage(
   }, 1000);
 }
 
+const ModalController = ({
+  isOpened,
+  iframeRef,
+}: {
+  isOpened: React.MutableRefObject<boolean>;
+  iframeRef: React.MutableRefObject<HTMLIFrameElement | null>;
+}) => {
+  useEffect(() => {
+    isOpened.current = true;
+    return () => {
+      iframeRef.current?.contentWindow?.focus();
+      isOpened.current = false;
+    };
+  });
+  return <> </>;
+};
+
 function ModalSearchDocument({
   documentQuery,
   title,
+  iframeRef,
 }: {
   documentQuery: DocumentViewQuery | null;
   title: string;
+  iframeRef: React.MutableRefObject<HTMLIFrameElement | null>;
 }) {
   const titleRef = useValueStateRef<string>(title);
 
@@ -40,6 +59,8 @@ function ModalSearchDocument({
   const searchValue = useValueStateRef<string>(documentQuery?.term || '');
 
   const setDocumentViewQuery = useSetRecoilState(documentViewQuery);
+
+  const isOpened = useRef(false);
 
   const onSearch = () => {
     if (
@@ -62,6 +83,8 @@ function ModalSearchDocument({
   };
 
   const modal = useCallback(() => {
+    if (isOpened.current) return;
+
     const modalInstance = Modal.info({
       closable: true,
       icon: null,
@@ -84,6 +107,7 @@ function ModalSearchDocument({
             defaultValue={searchValue.current}
             placeholder="Entrez votre texte"
           />
+          <ModalController iframeRef={iframeRef} isOpened={isOpened} />
         </form>
       ),
     });
@@ -234,6 +258,7 @@ export default function DocumentView() {
         />
       </Content>
       <ModalSearchDocument
+        iframeRef={iframeRef}
         documentQuery={documentQuery.current}
         title={title}
       />

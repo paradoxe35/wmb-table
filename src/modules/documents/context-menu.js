@@ -16,8 +16,14 @@ function searchOpen() {
 export default () => {
   const chromeContextMenu = new ContextMenu(document.body, [
     { text: 'Copier texte', hotkey: 'Ctrl+C', onclick: copyTextSelection },
-    { text: 'Recherche', onclick: searchOpen },
+    { text: 'Recherche', hotkey: 'Ctrl+F', onclick: searchOpen },
   ]);
+
+  document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.key.toLocaleLowerCase() === 'f') {
+      searchOpen();
+    }
+  });
 
   chromeContextMenu.install();
 };
