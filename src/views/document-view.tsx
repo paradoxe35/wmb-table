@@ -15,22 +15,20 @@ const { Content } = Layout;
 
 function ModalSearchDocument({
   documentQuery,
-  iframeRef,
-  path,
 }: {
-  path: string | null;
   documentQuery: DocumentViewQuery | null;
-  iframeRef: React.MutableRefObject<HTMLIFrameElement | null>;
 }) {
   const documentQueryRef = useValueStateRef<DocumentViewQuery | null>(
     documentQuery
   );
   const searchValue = useValueStateRef<string>(documentQuery?.term || '');
-  const pathRef = useValueStateRef<string | null>(path);
   const setDocumentViewQuery = useSetRecoilState(documentViewQuery);
 
   const onSearch = () => {
-    if (searchValue.current.trim().length < 3) {
+    if (
+      searchValue.current.trim().length < 3 ||
+      documentQueryRef.current?.term == searchValue.current
+    ) {
       return;
     }
     setDocumentViewQuery((docs) => {
@@ -46,13 +44,6 @@ function ModalSearchDocument({
         },
       ];
     });
-
-    if (pathRef.current) {
-      iframeRef.current?.contentWindow?.postMessage(
-        { type: 'search-query', detail: searchValue.current.trim() },
-        pathRef.current
-      );
-    }
   };
 
   const modal = useCallback(() => {
@@ -114,6 +105,10 @@ export default function DocumentView() {
       documentQuery.current = null;
     }
   }, [title, viewQuery]);
+
+  useEffect(() => {
+    iframeRef.current?.contentWindow?.location.reload();
+  }, [viewQuery]);
 
   useEffect(() => {
     sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then((p) =>
@@ -179,11 +174,7 @@ export default function DocumentView() {
           frameBorder="0"
         />
       </Content>
-      <ModalSearchDocument
-        path={path}
-        iframeRef={iframeRef}
-        documentQuery={documentQuery.current}
-      />
+      <ModalSearchDocument documentQuery={documentQuery.current} />
     </>
   );
 }

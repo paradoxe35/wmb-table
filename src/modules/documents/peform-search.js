@@ -181,7 +181,6 @@ function markMaches(element, matches, textContentLength) {
     }
 
     if (!matchers.length || index >= textContentLength) {
-      console.log(matchers);
       break;
     }
 
