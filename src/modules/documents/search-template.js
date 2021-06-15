@@ -7,23 +7,38 @@ import {
 import { SEARCH_RESULT, SEARCH_QUERY } from './seach-query.js';
 import { performSearch } from './peform-search.js';
 
+/**
+ * @param {Element | null} el
+ * @param {string} className
+ */
 function addClass(el, className) {
   el && !el.classList.contains(className) && el.classList.add(className);
 }
 
+/**
+ * @param {Element | null} el
+ * @param {string} className
+ */
 function removeClass(el, className) {
   el && el.classList.contains(className) && el.classList.remove(className);
 }
 
 let hasOpened = false;
 
+/**
+ * @type {null | number}
+ */
 let lastIndex = null;
 
+/**
+ * @param {number | null} index
+ */
 function navigateOnResult(index) {
   if (index == lastIndex) return;
 
   if (lastIndex) {
     /** @type { HTMLElement[] } */
+    // @ts-ignore
     const pMarks = document.querySelectorAll(
       `mark[data-mark-id="${lastIndex}"]`
     );
@@ -65,10 +80,13 @@ export function handleSearch() {
   let indexSearch = 1;
 
   const updateResult = () => {
-    searchResult.textContent = `${indexSearch}/${SEARCH_RESULT.matches.length}`;
+    if (!searchResult) return;
+    searchResult.textContent = `${indexSearch}/${
+      SEARCH_RESULT ? SEARCH_RESULT.matches.length : 0
+    }`;
   };
 
-  window.addEventListener('search-result', (e) => {
+  window.addEventListener('search-result', (_e) => {
     if (!SEARCH_RESULT || SEARCH_RESULT.matches.length < 1) {
       indexSearch = 0;
     } else {
@@ -77,6 +95,7 @@ export function handleSearch() {
     if (!SEARCH_RESULT) {
       addClass(searchPrev, 'disabled');
       addClass(searchNext, 'disabled');
+      // @ts-ignore
       searchResult.textContent = `0/0`;
     } else {
       addClass(searchPrev, 'disabled');
@@ -96,41 +115,43 @@ export function handleSearch() {
     navigateOnResult(indexSearch);
   });
 
-  searchPrev.addEventListener('click', () => {
-    if (searchPrev.classList.contains('disabled')) return;
+  searchPrev &&
+    searchPrev.addEventListener('click', () => {
+      if (searchPrev.classList.contains('disabled') || !SEARCH_RESULT) return;
 
-    indexSearch -= 1;
+      indexSearch -= 1;
 
-    if (indexSearch <= 1) {
-      addClass(searchPrev, 'disabled');
-    }
+      if (indexSearch <= 1) {
+        addClass(searchPrev, 'disabled');
+      }
 
-    if (indexSearch < SEARCH_RESULT.matches.length) {
-      removeClass(searchNext, 'disabled');
-    }
+      if (indexSearch < SEARCH_RESULT.matches.length) {
+        removeClass(searchNext, 'disabled');
+      }
 
-    navigateOnResult(indexSearch);
+      navigateOnResult(indexSearch);
 
-    updateResult();
-  });
+      updateResult();
+    });
 
-  searchNext.addEventListener('click', () => {
-    if (searchNext.classList.contains('disabled')) return;
+  searchNext &&
+    searchNext.addEventListener('click', () => {
+      if (searchNext.classList.contains('disabled') || !SEARCH_RESULT) return;
 
-    indexSearch += 1;
+      indexSearch += 1;
 
-    if (indexSearch == SEARCH_RESULT.matches.length) {
-      addClass(searchNext, 'disabled');
-    }
+      if (indexSearch == SEARCH_RESULT.matches.length) {
+        addClass(searchNext, 'disabled');
+      }
 
-    if (indexSearch > 1) {
-      removeClass(searchPrev, 'disabled');
-    }
+      if (indexSearch > 1) {
+        removeClass(searchPrev, 'disabled');
+      }
 
-    navigateOnResult(indexSearch);
+      navigateOnResult(indexSearch);
 
-    updateResult();
-  });
+      updateResult();
+    });
 }
 
 export default function initTemplate() {

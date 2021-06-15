@@ -59,6 +59,9 @@ const style = `
   float: right;
 }
 `;
+/**
+ * @param {string} content
+ */
 function injectStyleText(content) {
   const css = document.createElement('style');
   css.type = 'text/css';

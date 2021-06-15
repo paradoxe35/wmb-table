@@ -1,3 +1,4 @@
+//@ts-nocheck
 /* Author: @UnrealSec */
 export class ContextMenu {
     constructor(container, items) {

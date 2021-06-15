@@ -3,28 +3,28 @@ import '../plugins/context-menu/kali_dark.css.js';
 import contextMenuHander from './documents/context-menu.js';
 import {
   setSearchQuery,
-  SEARCH_QUERY,
   SEARCH_RESULT,
-  setSearchQueryTerm,
   setWindowPostion,
   WINDOW_POSITION,
 } from './documents/seach-query.js';
 import searchTemplate from './documents/search-template.js';
-import { performSearch } from './documents/peform-search.js';
 
 // center page to center
 function defaultPosition() {
-  var container = document.getElementById('page-container').firstElementChild
-    .firstElementChild;
+  // @ts-ignore
+  const container = document.getElementById('page-container');
   if (WINDOW_POSITION) {
-    const page = document.querySelector('#page-container');
-    page.scrollTo({
+    // @ts-ignore
+    container.scrollTo({
       top: WINDOW_POSITION.top || undefined,
       left: WINDOW_POSITION.left || undefined,
       behavior: 'smooth',
     });
   } else {
-    container.querySelector('div').scrollIntoView({ inline: 'center' });
+    // @ts-ignore
+    container.firstElementChild.firstElementChild
+      .querySelector('div')
+      .scrollIntoView({ inline: 'center' });
   }
 }
 

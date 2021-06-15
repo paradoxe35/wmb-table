@@ -94,6 +94,9 @@ export const searchTemplateCss = `
 }
 `;
 
+/**
+ * @param {string} content
+ */
 export function injectStyleText(content) {
   const css = document.createElement('style');
   css.type = 'text/css';

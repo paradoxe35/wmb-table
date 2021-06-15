@@ -2,13 +2,18 @@
   "compilerOptions": {
     "target": "ES2018",
     "module": "CommonJS",
-    "lib": ["dom", "esnext", "ES2020.String"],
+    "lib": [
+      "dom",
+      "esnext",
+      "ES2020.String"
+    ],
     "declaration": true,
     "declarationMap": true,
     "noEmit": true,
     "jsx": "react",
     "strict": true,
-    "pretty": true,
+    "checkJs": true,
+    "pretty": false,
     "sourceMap": true,
     /* Additional Checks */
     "noUnusedLocals": true,
