@@ -5,7 +5,10 @@ import document_content_path from './handlers/document_content_path';
 import document_tabs from './handlers/document_tabs';
 import search_suggestions from './handlers/search_suggestions';
 import search_text from './handlers/search_text';
-import subject_document from './handlers/subject_document';
+import subject_document, {
+  subject_document_delete,
+} from './handlers/subject_document';
+import subject_items, { subject_items_delete } from './handlers/subject_items';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -18,3 +21,12 @@ mainMessageTransport(IPC_EVENTS.search_suggestions, search_suggestions);
 mainMessageTransport(IPC_EVENTS.search_text, search_text);
 
 mainMessageTransport(IPC_EVENTS.subject_document, subject_document);
+
+mainMessageTransport(
+  IPC_EVENTS.subject_document_delete,
+  subject_document_delete
+);
+
+mainMessageTransport(IPC_EVENTS.subject_items, subject_items);
+
+mainMessageTransport(IPC_EVENTS.subject_items_delete, subject_items_delete);

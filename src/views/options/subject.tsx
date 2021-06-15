@@ -15,48 +15,26 @@ import {
   Modal,
   Divider,
   Empty,
+  message,
+  List,
 } from 'antd';
-import { SubjectDocument } from '../../types';
+import { SubjectDocument, SubjectDocumentItem } from '../../types';
 import { useSetRecoilState } from 'recoil';
 import { subjectDocument } from '../../store';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { getDateTime, strNormalize } from '../../utils/functions';
 import { useValueStateRef } from '../../utils/hooks';
+import { DeleteBtn } from '../../components/delete-btn';
 
 function ModalNewSubject({
-  setDatas,
-  odatas,
+  onSaveNewSubject,
 }: {
-  setDatas: React.Dispatch<React.SetStateAction<SubjectDocument[]>>;
-  odatas: React.MutableRefObject<SubjectDocument[]>;
+  onSaveNewSubject: (searchValue: string) => void;
 }) {
   const searchValue = useValueStateRef<string>('');
-  const setSubjectDocument = useSetRecoilState(subjectDocument);
 
-  const onSave = () => {
-    const value = searchValue.current.trim();
-    if (value.length < 2 || odatas.current.some((d) => d.name === value)) {
-      return;
-    }
-    const dateTime = getDateTime();
-    const subject: SubjectDocument = {
-      name: value,
-      date: dateTime.date,
-      active: true,
-      documents: [],
-    };
-    odatas.current = [
-      subject,
-      ...odatas.current.map((d) => {
-        const nd = { ...d };
-        nd.active = false;
-        return nd;
-      }),
-    ];
-    setDatas(odatas.current);
-    setSubjectDocument(odatas.current);
-  };
+  const onSave = () => onSaveNewSubject(searchValue.current);
 
   const modal = useCallback(() => {
     const modalInstance = Modal.info({
@@ -95,18 +73,16 @@ function ModalNewSubject({
 
 function Title({
   onSearch,
-  setDatas,
-  odatas,
+  onSaveNewSubject,
 }: {
   onSearch: (value: string) => void;
-  setDatas: React.Dispatch<React.SetStateAction<SubjectDocument[]>>;
-  odatas: React.MutableRefObject<SubjectDocument[]>;
+  onSaveNewSubject: (searchValue: string) => void;
 }) {
   return (
     <Space direction="horizontal">
       <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
       <div />
-      <ModalNewSubject setDatas={setDatas} odatas={odatas} />
+      <ModalNewSubject onSaveNewSubject={onSaveNewSubject} />
     </Space>
   );
 }
@@ -141,6 +117,24 @@ export default function Subject() {
     }
   }, [datas]);
 
+  useEffect(() => {
+    const subject = datas.find((d) => d.active);
+    if (subject) {
+      sendIpcRequest<SubjectDocumentItem[]>(
+        IPC_EVENTS.subject_items,
+        subject.name
+      ).then((items) => {
+        setDatas((its) =>
+          its.map((sj) => {
+            const nsj = { ...sj };
+            nsj.documents = items;
+            return nsj;
+          })
+        );
+      });
+    }
+  }, [datas]);
+
   const onSearch = useCallback((value: string) => {
     if (odatas.current.length) {
       setDatas(
@@ -163,31 +157,124 @@ export default function Subject() {
     });
   }, []);
 
+  const saveNewSubject = (searchValue: string) => {
+    const value = searchValue.trim();
+    if (value.length < 2 || odatas.current.some((d) => d.name === value)) {
+      return;
+    }
+    const dateTime = getDateTime();
+    const subject: SubjectDocument = {
+      name: value,
+      date: dateTime.date,
+      active: true,
+      documents: [],
+    };
+
+    sendIpcRequest<SubjectDocument[]>(IPC_EVENTS.subject_document, {
+      name: value,
+      date: dateTime.date,
+    });
+
+    odatas.current = [
+      subject,
+      ...odatas.current.map((d) => {
+        const nd = { ...d };
+        nd.active = false;
+        return nd;
+      }),
+    ];
+    setDatas(odatas.current);
+    setSubjectDocument(odatas.current);
+  };
+
+  const handleSubjectDeletion = (item: SubjectDocument) => {
+    sendIpcRequest<boolean>(IPC_EVENTS.subject_document_delete, item.name).then(
+      (deleted) => {
+        if (!deleted) return;
+        odatas.current = odatas.current.filter((d) => d.name != item.name);
+        setDatas(odatas.current);
+        setSubjectDocument(odatas.current);
+      }
+    );
+  };
+
   return (
     <Row>
       <Col span={12}>
         <Card
           title={
-            <Title setDatas={setDatas} odatas={odatas} onSearch={onSearch} />
+            <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
           }
           style={{ width: '95%', minHeight: '300px' }}
         >
-          <ShowSubjectList datas={datas} onSelect={onSelectItem} />
+          {datas.map((item) => (
+            <ItemOutline
+              key={item.name}
+              item={item}
+              onSelectItem={onSelectItem}
+              onDeleteSubject={handleSubjectDeletion}
+            />
+          ))}
         </Card>
       </Col>
       <Col span={12}>
-        {activeDocument && <ShowActiveDocuments subject={activeDocument} />}
+        {activeDocument && (
+          <ShowActiveDocuments subject={activeDocument} setDatas={setDatas} />
+        )}
       </Col>
     </Row>
   );
 }
 
-function ShowActiveDocuments({ subject }: { subject: SubjectDocument }) {
+function ShowActiveDocuments({
+  subject,
+  setDatas,
+}: {
+  subject: SubjectDocument;
+  setDatas: React.Dispatch<React.SetStateAction<SubjectDocument[]>>;
+}) {
   const documents = subject.documents;
+
+  function confirm(item: SubjectDocumentItem) {
+    sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(
+      (deleted) => {
+        if (!deleted) return;
+        setDatas((its) =>
+          its.map((sj) => {
+            const nsj = { ...sj };
+            nsj.documents = nsj.documents.filter(
+              (d) => d.documentTitle !== item.documentTitle
+            );
+            return nsj;
+          })
+        );
+        message.success('Supprimé');
+      }
+    );
+  }
+
   return (
     <>
       {documents.length > 0 ? (
-        <> </>
+        <List
+          className="demo-loadmore-list"
+          itemLayout="horizontal"
+          dataSource={documents}
+          renderItem={(item) => (
+            <>
+              <List.Item
+                actions={[<DeleteBtn confirm={() => confirm(item)} />]}
+              >
+                <List.Item.Meta
+                  title={<a>item.documentTitle</a>}
+                  description={subject.name}
+                />
+                <span>{item.textContent}...</span>
+              </List.Item>
+              <Divider />
+            </>
+          )}
+        />
       ) : (
         <Empty description={`Aucun touvé dans le suject: ${subject.name}`} />
       )}
@@ -195,23 +282,12 @@ function ShowActiveDocuments({ subject }: { subject: SubjectDocument }) {
   );
 }
 
-const ShowSubjectList: React.FC<{
-  datas: SubjectDocument[];
-  onSelect: (name: string) => void;
-}> = ({ datas, onSelect }) => {
-  return (
-    <>
-      {datas.map((item) => (
-        <ItemOutline key={item.name} item={item} onSelectItem={onSelect} />
-      ))}
-    </>
-  );
-};
-
 const ItemOutline: React.FC<{
   item: SubjectDocument;
   onSelectItem: (name: string) => void;
-}> = ({ item, onSelectItem }) => {
+  onDeleteSubject: (item: SubjectDocument) => void;
+}> = ({ item, onSelectItem, onDeleteSubject }) => {
+  //
   const onSelect = useCallback(() => {
     !item.active && onSelectItem(item.name);
   }, [item, onSelectItem]);
@@ -234,7 +310,9 @@ const ItemOutline: React.FC<{
           }}
         >
           <b>{item.name}</b>
-          <b style={{ paddingRight: '20px' }}>{item.documents.length}</b>
+          <b style={{ paddingRight: '20px' }}>
+            <DeleteBtn confirm={() => onDeleteSubject(item)} />
+          </b>
         </div>
       </span>
       <Divider style={{ margin: '7px 0' }} />

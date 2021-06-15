@@ -61,15 +61,24 @@ export interface SearchResult {
   total: number;
 }
 
-type SubjectDocumentItem = {
+export type SubjectDocumentItem = {
+  _id?: string;
+  subject: string;
   documentTitle: string;
   documentHtmlTree: number[];
   textContent: string;
 };
 
 export interface SubjectDocument {
+  _id?: string;
   name: string;
   date: string;
   documents: SubjectDocumentItem[];
   active?: boolean;
+}
+
+export interface SubjectDoc {
+  _id: string;
+  name: string;
+  date: string;
 }
