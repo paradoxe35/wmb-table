@@ -1,5 +1,11 @@
 import { atom, selector } from 'recoil';
-import { DocumentTab, DocumentViewQuery, OptionView, Title } from '../types';
+import {
+  DocumentTab,
+  DocumentViewQuery,
+  OptionView,
+  SubjectDocument,
+  Title,
+} from '../types';
 
 export const MAIN_VIEWS = {
   options: 'options',
@@ -14,17 +20,17 @@ export const OPTIONS_VIEWS: OptionView = {
 
 export const appViewState = atom({
   key: 'appViewerState',
-  default: MAIN_VIEWS.document, // options | document
+  default: MAIN_VIEWS.document,
 });
 
 export const optionViewState = atom({
   key: 'optionViewState',
-  default: OPTIONS_VIEWS.search as string, // options | document
+  default: OPTIONS_VIEWS.search as string,
 });
 
 export const documentTitles = atom<Title[]>({
   key: 'documentTitles',
-  default: [], // options | document
+  default: [],
 });
 
 export const documentViewQuery = atom<DocumentViewQuery[]>({
@@ -34,7 +40,7 @@ export const documentViewQuery = atom<DocumentViewQuery[]>({
 
 export const documentTabs = atom<DocumentTab[]>({
   key: 'documentTabs',
-  default: [], // options | document
+  default: [],
 });
 
 export const currentDocumentTabs = selector<string>({
@@ -45,4 +51,9 @@ export const currentDocumentTabs = selector<string>({
 
     return tab?.title || titles[0]?.title;
   },
+});
+
+export const subjectDocument = atom<SubjectDocument[]>({
+  key: 'subjectDocument',
+  default: [],
 });

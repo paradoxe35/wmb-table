@@ -88,46 +88,55 @@ body {
   box-shadow: none;
   position: relative;
   cursor: pointer;
-}
-.smart-editable:hover {
-  background-color: rgba(24, 143, 255, 0.281);
-}
 
-.smart-editable u {
-  font-size: 13px;
-  color: #91999e;
-  vertical-align: middle;
-  background-color: #6d7275;
-  width: 8px;
-  height: 10px;
-  display: inline-block;
-  border-top-right-radius: 4px;
-  margin-right: 4px;
-  text-decoration: none;
-  position: relative;
-}
+  &.big {
+    font-size: 20px;
+    u {
+      width: 15px;
+      height: 17px;
+    }
+  }
 
-.smart-editable span {
-  display: block;
-  white-space: nowrap;
-  padding: 2px 5px;
-  border-radius: 2px;
-  transition: background-color 0.2s ease;
-}
+  &:hover,
+  &.active {
+    background-color: rgba(24, 143, 255, 0.281);
+  }
+  u {
+    font-size: 13px;
+    color: #91999e;
+    vertical-align: middle;
+    background-color: #6d7275;
+    width: 8px;
+    height: 10px;
+    display: inline-block;
+    border-top-right-radius: 4px;
+    margin-right: 4px;
+    text-decoration: none;
+    position: relative;
+  }
 
-.smart-editable b {
-  color: inherit;
-  font-size: 13px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
-  line-height: 14px;
-  vertical-align: middle;
-  margin: 0px 2px;
-  padding: 3px 4px;
-  border-radius: 2px;
-  max-width: 92%;
-  font-weight: normal;
+  span {
+    display: block;
+    white-space: nowrap;
+    padding: 2px 5px;
+    border-radius: 2px;
+    transition: background-color 0.2s ease;
+  }
+
+  b {
+    color: inherit;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+    line-height: 14px;
+    vertical-align: middle;
+    margin: 0px 2px;
+    padding: 3px 4px;
+    border-radius: 2px;
+    max-width: 92%;
+    font-weight: normal;
+  }
 }
 
 .spinner-bg {

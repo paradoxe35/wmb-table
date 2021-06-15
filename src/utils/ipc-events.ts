@@ -6,4 +6,5 @@ export const IPC_EVENTS = {
   search_suggestions: 'search_suggestions',
   search_text: 'search_text',
   search_content: 'search_content',
+  subject_document: 'subject_document',
 };
