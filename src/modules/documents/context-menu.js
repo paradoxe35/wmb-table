@@ -1,8 +1,8 @@
 import { ContextMenu } from '../../plugins/context-menu/context.js';
 
 function copyTextSelection() {
-  var selObj = window.getSelection();
-  var text = null;
+  let selObj = window.getSelection();
+  let text = null;
   if ((text = selObj?.toString())) {
     navigator.clipboard.writeText(text);
   }
@@ -61,14 +61,7 @@ export default () => {
   });
 
   // @ts-ignore
-  chromeContextMenu.container.addEventListener('contextmenu', (e) => {
-    // console.log(Array.prototype.indexOf.call(document.body.ners, e.target));
-    const target = document.body;
-    const childTree = closestChildParent(e.target, target);
-    console.log(childTree);
-    // @ts-ignore
-    console.log(getChildByTreeArr(target, childTree));
-  });
+  chromeContextMenu.container.addEventListener('contextmenu', (e) => {});
 
   chromeContextMenu.install();
 };

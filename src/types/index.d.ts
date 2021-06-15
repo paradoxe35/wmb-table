@@ -60,3 +60,16 @@ export interface SearchResult {
   pageNumber: number;
   total: number;
 }
+
+type SubjectDocumentItem = {
+  documentTitle: string;
+  documentHtmlTree: number[];
+  textContent: string;
+};
+
+export interface SubjectDocument {
+  name: string;
+  date: string;
+  documents: SubjectDocumentItem[];
+  active?: boolean;
+}

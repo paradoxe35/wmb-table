@@ -98,3 +98,15 @@ export function injectStyleText(content: string) {
   css.innerHTML = content;
   document.head.appendChild(css);
 }
+
+export function getDateTime() {
+  const date = new Date();
+  const int = new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'full',
+    timeStyle: undefined,
+  });
+  return {
+    date: capitalizeFirstLetter(int.format(date)),
+    time: date.toTimeString().split(' ')[0],
+  };
+}
