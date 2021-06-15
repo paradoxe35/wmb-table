@@ -1,4 +1,5 @@
 import { ContextMenu } from '../../plugins/context-menu/context.js';
+import { closestChildParent } from './functions.js';
 
 function copyTextSelection() {
   let selObj = window.getSelection();
@@ -8,50 +9,38 @@ function copyTextSelection() {
   }
 }
 
-/**
- * @param { HTMLElement | Element } element
- * @param { HTMLElement | Element } target
- */
-function closestChildParent(element, target) {
-  if (!target || !element) return null;
-
-  let child = element;
-  const arr = [];
-
-  while (child && child !== target && child !== document.body) {
-    // @ts-ignore
-    arr.push(Array.prototype.indexOf.call(child.parentElement.children, child));
-    // @ts-ignore
-    child = child.parentElement;
-  }
-
-  return [...arr.reverse()];
-}
-
-/**
- * @param { HTMLElement | Element } target
- * @param { Array<number> } arr
- */
-function getChildByTreeArr(target, arr) {
-  // @ts-ignore
-  let element = null;
-  let lastEl = target;
-  arr.forEach((index) => {
-    if (lastEl) {
-      lastEl = lastEl.children[index];
-    }
-  });
-  return lastEl;
-}
-
 function searchOpen() {
   window.dispatchEvent(new Event('search-open'));
+}
+
+/**
+ * @type {Element | null}
+ */
+let lastNodeTargetFromContent = null;
+
+function addDocumentNodeToSubject() {
+  if (!lastNodeTargetFromContent) return;
+  const documentHtmlTree = closestChildParent(
+    lastNodeTargetFromContent,
+    document.body
+  );
+  const textContent = lastNodeTargetFromContent.textContent;
+
+  window.parent.dispatchEvent(
+    new CustomEvent('add-document-ref-subject', {
+      detail: { textContent, documentHtmlTree },
+    })
+  );
 }
 
 export default () => {
   const chromeContextMenu = new ContextMenu(document.body, [
     { text: 'Copier texte', hotkey: 'Ctrl+C', onclick: copyTextSelection },
     { text: 'Recherche', hotkey: 'Ctrl+F', onclick: searchOpen },
+    {
+      text: 'Ajouter à un sujet',
+      onclick: addDocumentNodeToSubject,
+    },
   ]);
 
   document.addEventListener('keydown', (event) => {
@@ -61,7 +50,9 @@ export default () => {
   });
 
   // @ts-ignore
-  chromeContextMenu.container.addEventListener('contextmenu', (e) => {});
+  chromeContextMenu.container.addEventListener('contextmenu', (e) => {
+    lastNodeTargetFromContent = e.target;
+  });
 
   chromeContextMenu.install();
 };

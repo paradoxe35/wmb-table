@@ -4,7 +4,8 @@ import { getAssetPath } from '../../sys';
 interface Db {
   history?: Datastore | undefined;
   documents?: Datastore | undefined;
-  subject?: Datastore | undefined;
+  subjects?: Datastore | undefined;
+  subjectItems?: Datastore | undefined;
   tabs?: Datastore | undefined;
   suggestions?: Datastore | undefined;
 }
@@ -23,9 +24,10 @@ db.documents = new Datastore({
 });
 
 db.history = dbStore('history');
-db.subject = dbStore('subject');
+db.subjects = dbStore('subjects');
 db.tabs = dbStore('tabs');
 db.suggestions = dbStore('suggestions');
+db.subjectItems = dbStore('subject-items');
 
 export const queryDb = {
   promiseResolve(resolve: Function, reject: Function) {
