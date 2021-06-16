@@ -17,15 +17,25 @@ import {
   Empty,
   message,
   List,
+  Typography,
 } from 'antd';
 import { SubjectDocument, SubjectDocumentItem } from '../../types';
-import { useSetRecoilState } from 'recoil';
-import { subjectDocument } from '../../store';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { getDateTime, strNormalize } from '../../utils/functions';
 import { useValueStateRef } from '../../utils/hooks';
 import { DeleteBtn } from '../../components/delete-btn';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
+import {
+  selectedSubjectDocumentItem,
+  subjectDocument,
+  subjectDocumentItem,
+} from '../../store';
+import ContainerScrollY from '../../components/container-scroll-y';
+import { BookOutlined } from '@ant-design/icons';
+import DocumentViewer from '../../components/viewer/document-viewer';
+
+const { Text } = Typography;
 
 function ModalNewSubject({
   onSaveNewSubject,
@@ -87,10 +97,38 @@ function Title({
   );
 }
 
-export default function Subject() {
+export function useSubjectsDatas() {
   const odatas = useRef<SubjectDocument[]>([]);
   const [datas, setDatas] = useState<SubjectDocument[]>([]);
   const setSubjectDocument = useSetRecoilState(subjectDocument);
+
+  const onSearch = useCallback((value: string) => {
+    if (odatas.current.length) {
+      setDatas(
+        odatas.current.filter((d) =>
+          strNormalize(d.name).includes(strNormalize(value))
+        )
+      );
+    }
+  }, []);
+
+  return { odatas, datas, setDatas, setSubjectDocument, onSearch };
+}
+
+export default function Subject() {
+  const {
+    odatas,
+    datas,
+    setDatas,
+    setSubjectDocument,
+    onSearch,
+  } = useSubjectsDatas();
+
+  const subjectItems = useRecoilValue(subjectDocumentItem);
+
+  const [subjectItemsData, setSubjectItemData] = useState<
+    SubjectDocumentItem[]
+  >([]);
 
   useEffect(() => {
     sendIpcRequest<SubjectDocument[]>(IPC_EVENTS.subject_document).then(
@@ -124,26 +162,10 @@ export default function Subject() {
         IPC_EVENTS.subject_items,
         subject.name
       ).then((items) => {
-        setDatas((its) =>
-          its.map((sj) => {
-            const nsj = { ...sj };
-            nsj.documents = items;
-            return nsj;
-          })
-        );
+        setSubjectItemData(items);
       });
     }
-  }, [datas]);
-
-  const onSearch = useCallback((value: string) => {
-    if (odatas.current.length) {
-      setDatas(
-        odatas.current.filter((d) =>
-          strNormalize(d.name).includes(strNormalize(value))
-        )
-      );
-    }
-  }, []);
+  }, [datas, subjectItems]);
 
   const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
 
@@ -201,26 +223,41 @@ export default function Subject() {
   return (
     <Row>
       <Col span={12}>
-        <Card
-          title={
-            <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
-          }
-          style={{ width: '95%', minHeight: '300px' }}
+        <div
+          style={{ width: '95%', minHeight: '300px', backgroundColor: '#fff' }}
+          className="layout__sidebar"
         >
-          {datas.map((item) => (
-            <ItemOutline
-              key={item.name}
-              item={item}
-              onSelectItem={onSelectItem}
-              onDeleteSubject={handleSubjectDeletion}
-            />
-          ))}
-        </Card>
+          <Card style={{ width: '100%' }}>
+            <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
+          </Card>
+          <ContainerScrollY
+            className="mt-2"
+            style={{
+              padding: '22px',
+              overflowX: 'hidden',
+            }}
+          >
+            {datas.map((item) => (
+              <ItemSubject
+                key={item.name}
+                item={item}
+                onSelectItem={onSelectItem}
+                onDeleteSubject={handleSubjectDeletion}
+              />
+            ))}
+          </ContainerScrollY>
+        </div>
       </Col>
       <Col span={12}>
-        {activeDocument && (
-          <ShowActiveDocuments subject={activeDocument} setDatas={setDatas} />
-        )}
+        <ContainerScrollY style={{ padding: '0 10px' }}>
+          {activeDocument && (
+            <ShowActiveDocuments
+              subject={activeDocument}
+              documents={subjectItemsData}
+              setDocuments={setSubjectItemData}
+            />
+          )}
+        </ContainerScrollY>
       </Col>
     </Row>
   );
@@ -228,25 +265,21 @@ export default function Subject() {
 
 function ShowActiveDocuments({
   subject,
-  setDatas,
+  documents,
+  setDocuments,
 }: {
   subject: SubjectDocument;
-  setDatas: React.Dispatch<React.SetStateAction<SubjectDocument[]>>;
+  documents: SubjectDocumentItem[];
+  setDocuments: React.Dispatch<React.SetStateAction<SubjectDocumentItem[]>>;
 }) {
-  const documents = subject.documents;
+  const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItem);
 
   function confirm(item: SubjectDocumentItem) {
     sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(
       (deleted) => {
         if (!deleted) return;
-        setDatas((its) =>
-          its.map((sj) => {
-            const nsj = { ...sj };
-            nsj.documents = nsj.documents.filter(
-              (d) => d.documentTitle !== item.documentTitle
-            );
-            return nsj;
-          })
+        setDocuments((ds) =>
+          ds.filter((d) => d.documentTitle !== item.documentTitle)
         );
         message.success('Supprimé');
       }
@@ -256,25 +289,42 @@ function ShowActiveDocuments({
   return (
     <>
       {documents.length > 0 ? (
-        <List
-          className="demo-loadmore-list"
-          itemLayout="horizontal"
-          dataSource={documents}
-          renderItem={(item) => (
-            <>
-              <List.Item
-                actions={[<DeleteBtn confirm={() => confirm(item)} />]}
-              >
-                <List.Item.Meta
-                  title={<a>item.documentTitle</a>}
-                  description={subject.name}
-                />
-                <span>{item.textContent}...</span>
-              </List.Item>
-              <Divider />
-            </>
-          )}
-        />
+        <>
+          <div className="flex flex-center">
+            <Text type="secondary">Documents {documents.length}</Text>
+          </div>
+          <div className="mt-2 flex flex-center">
+            <List
+              itemLayout="vertical"
+              size="small"
+              style={{ width: '100%' }}
+              dataSource={documents}
+              renderItem={(item) => (
+                <>
+                  <List.Item
+                    actions={[<DeleteBtn confirm={() => confirm(item)} />]}
+                  >
+                    <List.Item.Meta
+                      title={
+                        <a>
+                          <DocumentViewer
+                            onItemClick={() => setSubjectItemSelected(item)}
+                            name={item.documentTitle}
+                          >
+                            {item.documentTitle}
+                          </DocumentViewer>
+                        </a>
+                      }
+                      description={<span>Sujet: {subject.name}</span>}
+                    />
+                    <span>{item.textContent}...</span>
+                  </List.Item>
+                  <Divider />
+                </>
+              )}
+            />
+          </div>
+        </>
       ) : (
         <Empty description={`Aucun touvé dans le suject: ${subject.name}`} />
       )}
@@ -282,7 +332,7 @@ function ShowActiveDocuments({
   );
 }
 
-const ItemOutline: React.FC<{
+const ItemSubject: React.FC<{
   item: SubjectDocument;
   onSelectItem: (name: string) => void;
   onDeleteSubject: (item: SubjectDocument) => void;
@@ -299,9 +349,9 @@ const ItemOutline: React.FC<{
         onClick={onSelect}
         title={item.name}
       >
-        <u>
-          <span></span>
-        </u>
+        <div className="o-icon">
+          <BookOutlined />
+        </div>
         <div
           style={{
             width: '100%',

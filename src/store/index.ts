@@ -4,6 +4,7 @@ import {
   DocumentViewQuery,
   OptionView,
   SubjectDocument,
+  SubjectDocumentItem,
   Title,
 } from '../types';
 
@@ -56,4 +57,15 @@ export const currentDocumentTabs = selector<string>({
 export const subjectDocument = atom<SubjectDocument[]>({
   key: 'subjectDocument',
   default: [],
+});
+
+export const subjectDocumentItem = atom<SubjectDocumentItem | null>({
+  key: 'subjectDocumentItem',
+  default: null,
+});
+
+
+export const selectedSubjectDocumentItem = atom<SubjectDocumentItem | null>({
+  key: 'selectedSubjectDocumentItem',
+  default: null,
 });

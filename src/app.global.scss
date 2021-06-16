@@ -101,6 +101,19 @@ body {
   &.active {
     background-color: rgba(24, 143, 255, 0.281);
   }
+
+  .o-icon {
+    font-size: 15px;
+    vertical-align: middle;
+    width: 16px;
+    height: 18px;
+    display: inline-block;
+    border-top-right-radius: 4px;
+    margin-right: 5px;
+    text-decoration: none;
+    position: relative;
+  }
+
   u {
     font-size: 13px;
     color: #91999e;

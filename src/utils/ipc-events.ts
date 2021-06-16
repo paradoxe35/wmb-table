@@ -10,4 +10,5 @@ export const IPC_EVENTS = {
   subject_items: 'subject_items',
   subject_items_delete: 'subject_items_delete',
   subject_document_delete: 'subject_document_delete',
+  subject_items_store: 'subject_items_store',
 };

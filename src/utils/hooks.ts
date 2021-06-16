@@ -1,26 +1,5 @@
 import { useEffect, useRef } from 'react';
-
-export function resizeByHeiht<T>(
-  containerRef: React.MutableRefObject<T | null>,
-  susDiff: number
-) {
-  return function () {
-    if (containerRef.current) {
-      const winHeight = window.innerHeight;
-      //@ts-ignore
-      const { top } = containerRef.current.getBoundingClientRect();
-
-      const diff = winHeight - top;
-      if (diff > 0) {
-        //@ts-ignore
-        containerRef.current.style.height = `${diff - susDiff}px`;
-        if (containerRef.current instanceof HTMLIFrameElement) {
-          containerRef.current.height = `${diff - susDiff}`;
-        }
-      }
-    }
-  };
-}
+import { respondToVisibility } from './functions';
 
 export function useValueStateRef<T>(value: T) {
   const ref = useRef<T>(value);
@@ -40,19 +19,52 @@ export function useContainerScrollY<T>(
   const containerRef = useRef<T | null>(null);
 
   useEffect(() => {
-    const rebuildEl = resizeByHeiht(containerRef, susDiff);
+    if (containerRef.current) {
+      let hasWidth = 0;
 
-    timeout
-      ? window.setTimeout(rebuildEl, 500)
-      : requestAnimationFrame(rebuildEl);
-    window.addEventListener('load', rebuildEl);
+      const rebuildEl = () => {
+        const winHeight = window.innerHeight;
+        //@ts-ignore
+        const { top, width } = containerRef.current.getBoundingClientRect();
+        if (hasWidth === width) return;
+        hasWidth = width;
 
-    resizers.forEach((w) => w.addEventListener('resize', rebuildEl));
+        const diff = winHeight - top;
+        if (diff > 0) {
+          //@ts-ignore
+          containerRef.current.style.height = `${diff - susDiff}px`;
+          if (containerRef.current instanceof HTMLIFrameElement) {
+            containerRef.current.height = `${diff - susDiff}`;
+          }
+        }
+      };
 
-    return () => {
-      resizers.forEach((w) => w.removeEventListener('resize', rebuildEl));
-      window.removeEventListener('load', rebuildEl);
-    };
+      timeout
+        ? window.setTimeout(rebuildEl, 500)
+        : requestAnimationFrame(rebuildEl);
+
+      window.addEventListener('load', rebuildEl);
+
+      resizers.forEach((w) => w.addEventListener('resize', rebuildEl));
+
+      let unobserve: { (): any; (): void } | null = null;
+      if (hasWidth === 0) {
+        unobserve = respondToVisibility(
+          (containerRef.current as unknown) as Element,
+          (isVisible) => {
+            if (hasWidth === 0 && isVisible) rebuildEl();
+          }
+        );
+      }
+
+      return () => {
+        resizers.forEach((w) => w.removeEventListener('resize', rebuildEl));
+        window.removeEventListener('load', rebuildEl);
+        unobserve && unobserve();
+      };
+    }
+
+    return () => {};
   }, []);
 
   return containerRef;

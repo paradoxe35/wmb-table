@@ -1,10 +1,10 @@
 /**
- * @type { import('../../types/index').DocumentViewQuery | null }
+ * @type { import('../../src/types/index').DocumentViewQuery | null }
  */
 export let SEARCH_QUERY = null;
 
 /**
- * @param {import("../../types/index").DocumentViewQuery | null} data
+ * @param {import("../../src/types/index").DocumentViewQuery | null} data
  */
 export function setSearchQuery(data) {
   SEARCH_QUERY = data;
@@ -20,12 +20,12 @@ export function setSearchQueryTerm(term) {
 }
 
 /**
- * @type { { term: string; matches: import('../../types/index').SearchMatchersValue[]} | null }
+ * @type { { term: string; matches: import('../../src/types/index').SearchMatchersValue[]} | null }
  */
 export let SEARCH_RESULT = null;
 
 /**
- * @param { { term: string; matches: import('../../types/index').SearchMatchersValue[]} | null } data
+ * @param { { term: string; matches: import('../../src/types/index').SearchMatchersValue[]} | null } data
  */
 export function setSearchResult(data) {
   SEARCH_RESULT = data;

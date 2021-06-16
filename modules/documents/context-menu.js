@@ -1,4 +1,4 @@
-import { ContextMenu } from '../../plugins/context-menu/context.js';
+import { ContextMenu } from '../context-menu/context.js';
 import { closestChildParent } from './functions.js';
 
 function copyTextSelection() {

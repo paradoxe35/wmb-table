@@ -110,3 +110,19 @@ export function getDateTime() {
     time: date.toTimeString().split(' ')[0],
   };
 }
+
+export const respondToVisibility = (
+  element: Element,
+  callback: (value: boolean) => void
+) => {
+  const options = {
+    root: document.documentElement,
+  };
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      callback(entry.intersectionRatio > 0);
+    });
+  }, options);
+  observer.observe(element);
+  return () => observer.unobserve(element);
+};

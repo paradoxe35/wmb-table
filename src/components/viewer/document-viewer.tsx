@@ -4,7 +4,7 @@ import { appViewState, documentTabs, MAIN_VIEWS } from '../../store';
 
 const DocumentViewer: React.FC<{
   name: string;
-  id: string;
+  id?: string;
   onItemClick?: Function;
 }> = ({ children, name, onItemClick }) => {
   const [tabs, setTabs] = useRecoilState(documentTabs);
