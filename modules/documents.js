@@ -44,7 +44,6 @@ window.addEventListener(
         searchTemplate();
         break;
       case 'subject-item':
-        console.log(e.data.detail);
         scrollToViewTree(e.data.detail);
         break;
       case 'window-position':
