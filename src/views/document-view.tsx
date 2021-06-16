@@ -89,9 +89,11 @@ export default function DocumentView() {
   }, [subjectItemSelected]);
 
   useEffect(() => {
-    sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then(
-      (p) => p && setPath(p)
-    );
+    if (title) {
+      sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then(
+        (p) => p && setPath(p)
+      );
+    }
   }, [title]);
 
   const handleSearchQuery = (
@@ -117,7 +119,9 @@ export default function DocumentView() {
       const container = iframeEl.contentDocument?.getElementById(
         'page-container'
       )?.firstElementChild?.firstElementChild;
-      container?.querySelector('div')?.scrollIntoView({ inline: 'center' });
+      container
+        ?.querySelector('div')
+        ?.scrollIntoView({ inline: 'center', behavior: 'smooth' });
     }
   };
 
@@ -132,6 +136,8 @@ export default function DocumentView() {
 
       if ((tab?.scrollY || tab?.scrollX) && page) {
         hasOwnPosition = true;
+
+        if (subjectItemSelectedRef.current || documentQuery.current) return;
 
         postMessage(
           iframeRef.current,

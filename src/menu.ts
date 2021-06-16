@@ -160,6 +160,15 @@ export default class MenuBuilder {
       {
         label: '&Fichier',
         submenu: [
+          ...(process.platform === 'win32'
+            ? [
+                {
+                  label: 'Documents',
+                  accelerator: 'Ctrl+N',
+                  click: () => {},
+                },
+              ]
+            : []),
           {
             label: '&Fermer',
             accelerator: 'Ctrl+W',
