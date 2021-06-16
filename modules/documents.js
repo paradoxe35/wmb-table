@@ -1,6 +1,7 @@
 //@ts-check
-import '../plugins/context-menu/kali_dark.css.js';
+import './context-menu/kali_dark.css.js';
 import contextMenuHander from './documents/context-menu.js';
+import { scrollToViewTree } from './documents/document-tree.js';
 import {
   setSearchQuery,
   SEARCH_RESULT,
@@ -41,6 +42,10 @@ window.addEventListener(
       case 'document-query':
         setSearchQuery(e.data.detail);
         searchTemplate();
+        break;
+      case 'subject-item':
+        console.log(e.data.detail);
+        scrollToViewTree(e.data.detail);
         break;
       case 'window-position':
         setWindowPostion(e.data.detail);

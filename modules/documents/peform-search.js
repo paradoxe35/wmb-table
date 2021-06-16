@@ -28,7 +28,7 @@ export function performSearch(term) {
 /**
  * @param {string | RegExp} pattern
  * @param {string} headstack
- * @returns {import('../../types/index').SearchMatchersValue[]}
+ * @returns {import('../../src/types/index').SearchMatchersValue[]}
  */
 function regexpMatcher(pattern, headstack) {
   const regexp = new RegExp(pattern, 'gi');
@@ -69,7 +69,7 @@ function surroundContentsTag(node, index, start, end) {
 
 /**
  * @param {HTMLElement} element
- * @param {import('../../types/index').SearchMatchersValue[]} matches
+ * @param {import('../../src/types/index').SearchMatchersValue[]} matches
  * @param { number } textContentLength
  */
 function markMaches(element, matches, textContentLength) {

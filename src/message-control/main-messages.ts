@@ -8,7 +8,10 @@ import search_text from './handlers/search_text';
 import subject_document, {
   subject_document_delete,
 } from './handlers/subject_document';
-import subject_items, { subject_items_delete } from './handlers/subject_items';
+import subject_items, {
+  subject_items_delete,
+  subject_items_store,
+} from './handlers/subject_items';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -30,3 +33,5 @@ mainMessageTransport(
 mainMessageTransport(IPC_EVENTS.subject_items, subject_items);
 
 mainMessageTransport(IPC_EVENTS.subject_items_delete, subject_items_delete);
+
+mainMessageTransport(IPC_EVENTS.subject_items_store, subject_items_store);
