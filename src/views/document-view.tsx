@@ -170,7 +170,7 @@ export default function DocumentView() {
         });
       };
 
-      page?.addEventListener('scroll', debounce(onScroll, 2000));
+      page?.addEventListener('scroll', debounce(onScroll, 1000));
       handleSearchQuery(iframeRef.current, hasOwnPosition);
     }
   };

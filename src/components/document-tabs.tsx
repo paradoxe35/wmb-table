@@ -94,6 +94,8 @@ const useDocumentTabs = () => {
   const reloadRef = useRef<boolean>(true);
   const tabsRef = useRef<DocumentTab[]>(tabs);
 
+  const prevTabsRef = useRef<DocumentTab[]>([]);
+
   useEffect(() => {
     if (!tabs.length && currentTitle) {
       sendIpcRequest<DocumentTab[] | null>(IPC_EVENTS.document_tabs).then(
@@ -113,12 +115,20 @@ const useDocumentTabs = () => {
   }, [tabs]);
 
   useEffect(() => {
+    const preveTab = prevTabsRef.current;
+    if (
+      preveTab.length === tabs.length &&
+      preveTab.every((v) => tabs.map((t) => t.title).includes(v.title))
+    ) {
+      return;
+    }
     if (reloadRef.current) {
       tabsRef.current = tabs;
       setKey((c) => c + 1);
     } else {
       reloadRef.current = true;
     }
+    prevTabsRef.current = tabs;
   }, [tabs]);
 
   return {

@@ -7,7 +7,19 @@
 }
 
 .chrome-tabs .chrome-tab:nth-child(2) {
-  transform: translate3d(239px, 0, 0);
+  transform: translate3d(calc(239px * 1), 0, 0);
+}
+
+.chrome-tabs .chrome-tab:nth-child(3) {
+  transform: translate3d(calc(239px * 2), 0, 0);
+}
+
+.chrome-tabs .chrome-tab:nth-child(4) {
+  transform: translate3d(calc(239px * 3), 0, 0);
+}
+
+.chrome-tabs .chrome-tab:nth-child(5) {
+  transform: translate3d(calc(239px * 4), 0, 0);
 }
 
 .chrome-tabs {
