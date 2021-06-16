@@ -1,6 +1,6 @@
 //@ts-nocheck
 
-const Draggabilly = require('draggabilly');
+import Draggabilly from 'draggabilly';
 
 const TAB_CONTENT_MARGIN = 9;
 const TAB_CONTENT_OVERLAP_DISTANCE = 1;
@@ -30,6 +30,9 @@ const closest = (value, array) => {
 
   return closestIndex;
 };
+
+let draggabillies = [];
+let previousEvents = [];
 
 const tabTemplate = `
   <div class="chrome-tab">
@@ -94,7 +97,15 @@ class ChromeTabs {
       this.cleanUpPreviouslyDraggedTabs();
       this.layoutTabs();
     };
+
+    previousEvents.forEach((data) => {
+      data.element.removeEventListener(data.event, data.callback);
+    });
+
+    previousEvents = [];
+
     window.addEventListener('resize', resize);
+    previousEvents.push({ element: window, event: 'resize', callback: resize });
 
     // this.el.addEventListener('dblclick', (event) => {
     //   if ([this.el, this.tabContentEl].includes(event.target)) this.addTab();
@@ -233,9 +244,12 @@ class ChromeTabs {
   }
 
   setTabCloseEventListener(tabEl) {
-    tabEl
-      .querySelector('.chrome-tab-close')
-      .addEventListener('click', (_) => this.removeTab(tabEl));
+    const closeTab = (_) => this.removeTab(tabEl);
+
+    const el = tabEl.querySelector('.chrome-tab-close');
+    el.addEventListener('click', closeTab);
+
+    previousEvents.push({ element: el, event: 'click', callback: closeTab });
   }
 
   get activeTabEl() {
@@ -311,7 +325,8 @@ class ChromeTabs {
       this.draggabillyDragging = null;
     }
 
-    this.draggabillies.forEach((d) => d.destroy());
+    draggabillies.forEach((d) => d.destroy());
+    draggabillies = [];
 
     tabEls.forEach((tabEl, originalIndex) => {
       const originalTabPositionX = tabPositions[originalIndex];
@@ -321,7 +336,7 @@ class ChromeTabs {
         containment: this.tabContentEl,
       });
 
-      this.draggabillies.push(draggabilly);
+      draggabillies.push(draggabilly);
 
       draggabilly.on('pointerDown', (_) => {
         this.setCurrentTab(tabEl);
