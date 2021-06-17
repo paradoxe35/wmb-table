@@ -8,6 +8,7 @@ interface Db {
   subjectItems?: Datastore | undefined;
   tabs?: Datastore | undefined;
   suggestions?: Datastore | undefined;
+  customDocuments?: Datastore | undefined;
 }
 
 const db: Db = {};
@@ -25,9 +26,10 @@ db.documents = new Datastore({
 
 db.history = dbStore('history');
 db.subjects = dbStore('subjects');
+db.subjectItems = dbStore('subject-items');
 db.tabs = dbStore('tabs');
 db.suggestions = dbStore('suggestions');
-db.subjectItems = dbStore('subject-items');
+db.customDocuments = dbStore('custom-documents');
 
 export const queryDb = {
   promiseResolve(resolve: Function, reject: Function) {

@@ -46,8 +46,6 @@ $css
 @compatibility.min.js
 #TEST_IGNORE_END
 
-# Custom Web app js
-@webapp.js
 
 # entry point of pdf2htmlEX.Viewer
 # You can override default configuration by passing an object to the constructor of Viewer

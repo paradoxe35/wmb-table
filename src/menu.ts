@@ -1,4 +1,5 @@
 import { app, Menu, BrowserWindow, MenuItemConstructorOptions } from 'electron';
+import { IPC_EVENTS } from './utils/ipc-events';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
   selector?: string;
@@ -165,7 +166,11 @@ export default class MenuBuilder {
                 {
                   label: 'Documents',
                   accelerator: 'Ctrl+N',
-                  click: () => {},
+                  click: () => {
+                    this.mainWindow.webContents.send(
+                      IPC_EVENTS.open_modal_document_from_main
+                    );
+                  },
                 },
               ]
             : []),
