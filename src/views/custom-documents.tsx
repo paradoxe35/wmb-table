@@ -138,6 +138,7 @@ function CustomDocumentItem() {
     documentsRef.current = documentsRef.current.filter(
       (d) => d.title != document.title
     );
+    setTitles((ts) => ts.filter((t) => t.title != document.title));
     setDocuments(documentsRef.current);
   };
 
