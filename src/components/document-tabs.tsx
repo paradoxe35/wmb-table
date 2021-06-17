@@ -116,9 +116,12 @@ const useDocumentTabs = () => {
 
   useEffect(() => {
     const preveTab = prevTabsRef.current;
+    const active = prevTabsRef.current.find((d) => d.active);
     if (
       preveTab.length === tabs.length &&
-      preveTab.every((v) => tabs.map((t) => t.title).includes(v.title))
+      preveTab.every((v) => tabs.map((t) => t.title).includes(v.title)) &&
+      active &&
+      tabs.some((t) => t.title === active.title && t.active === active.active)
     ) {
       return;
     }
