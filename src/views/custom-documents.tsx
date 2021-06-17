@@ -294,15 +294,17 @@ function Uploader() {
           </Dragger>
         </div>
       </div>
-      <Button
-        type="primary"
-        onClick={handleUpload}
-        disabled={fileList.length === 0}
-        loading={uploading}
-        style={{ margin: '0 10px' }}
-      >
-        {uploading ? 'Téléchargement' : 'Télécharger'}
-      </Button>
+      <div className="flex flex-center">
+        <Button
+          type="primary"
+          onClick={handleUpload}
+          disabled={fileList.length === 0}
+          loading={uploading}
+          style={{ margin: '0 10px' }}
+        >
+          {uploading ? 'Téléchargement' : 'Télécharger'}
+        </Button>
+      </div>
     </>
   );
 }
