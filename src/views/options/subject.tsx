@@ -278,9 +278,7 @@ function ShowActiveDocuments({
     sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(
       (deleted) => {
         if (!deleted) return;
-        setDocuments((ds) =>
-          ds.filter((d) => d.documentTitle !== item.documentTitle)
-        );
+        setDocuments((ds) => ds.filter((d) => d._id !== item._id));
         message.success('Supprimé');
       }
     );
