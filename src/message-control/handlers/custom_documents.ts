@@ -15,16 +15,10 @@ export async function custom_documents_delete(
 ) {
   try {
     fs.unlinkSync(getAssetPath(`datas/documents/${document.title}.html`));
-    await queryDb.remove<boolean>(
-      db.documents,
-      { _id: document.title },
-      { multi: true }
-    );
-    await queryDb.remove<boolean>(
-      db.customDocuments,
-      { _id: document.title },
-      { multi: true }
-    );
+    await queryDb.remove<boolean>(db.documents, { title: document.title });
+    await queryDb.remove<boolean>(db.customDocuments, {
+      title: document.title,
+    });
   } catch (error) {
     return true;
   }
