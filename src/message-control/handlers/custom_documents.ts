@@ -15,8 +15,8 @@ export async function custom_documents_delete(
 ) {
   try {
     fs.unlinkSync(getAssetPath(`datas/documents/${document.title}.html`));
-    await queryDb.remove<boolean>(db.customDocuments, { _id: document._id });
     await queryDb.remove<boolean>(db.documents, { _id: document.documentId });
+    await queryDb.remove<boolean>(db.customDocuments, { _id: document._id });
   } catch (error) {
     return true;
   }
