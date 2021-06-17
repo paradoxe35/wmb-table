@@ -136,7 +136,7 @@ function CustomDocumentItem() {
   const handleDeletion = (document: CustomDocument) => {
     sendIpcRequest(IPC_EVENTS.custom_documents_delete, document);
     documentsRef.current = documentsRef.current.filter(
-      (d) => d.id != document.id
+      (d) => d._id != document._id
     );
     setDocuments(documentsRef.current);
   };
@@ -185,7 +185,7 @@ function validateFile(file: File, showMessage: boolean = true) {
   if (!isJpgOrPng) {
     showMessage && message.error(`seul le format pdf est pris en charge.`);
   }
-  const isLt2M = file.size / 1024 / 1024 <= 2;
+  const isLt2M = file.size / 1024 / 1024 <= 1;
   if (!isLt2M) {
     showMessage &&
       message.error('Le fichier doit être inférieur ou égal à 2Mo !');
@@ -249,7 +249,13 @@ function Uploader() {
 
     sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents_store, paths)
       .then((docs) => {
-        console.log(docs);
+        window.dispatchEvent(
+          new CustomEvent<CustomDocument[]>('custom-document-added', {
+            detail: docs,
+          })
+        );
+        message.error(`Documents ajoutés avec succès`);
+        setFileList([]);
       })
       .finally(() => setUploading(false));
     return;
@@ -274,14 +280,16 @@ function Uploader() {
             <p className="ant-upload-drag-icon">
               <InboxOutlined />
             </p>
-            <p className="ant-upload-text">
-              Cliquez pour déposer les fichiers dans cette zone pour Télécharger
-            </p>
-            <p className="ant-upload-hint">
-              Seuls les fichiers PDF sont pris en charge (taille maximale 2Mo)
-              <br />
-              Vous ne pouvez envoyer que 10 fichiers par téléchargement
-            </p>
+            <div style={{ padding: '0 9px' }}>
+              <p className="ant-upload-text">
+                Cliquez et déposer les fichiers dans cette zone pour Télécharger
+              </p>
+              <p className="ant-upload-hint">
+                Seuls les fichiers PDF sont pris en charge (taille maximale 1Mo)
+                <br />
+                Vous ne pouvez envoyer que 10 fichiers par téléchargement
+              </p>
+            </div>
           </Dragger>
         </div>
       </div>

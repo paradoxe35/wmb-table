@@ -84,7 +84,7 @@ export interface SubjectDoc {
 }
 
 export type CustomDocument = {
-  id?: string;
+  _id?: string;
   documentId: string;
   title: string;
 };

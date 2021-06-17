@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Layout } from 'antd';
 import { Input, Space, Card } from 'antd';
 import ContainerScrollY from '../container-scroll-y';
@@ -7,7 +7,7 @@ import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import DocumentViewer from '../viewer/document-viewer';
 import { strNormalize } from '../../utils/functions';
-import { useSetRecoilState } from 'recoil';
+import { useRecoilState } from 'recoil';
 import { documentTitles } from '../../store';
 
 const { Search } = Input;
@@ -15,22 +15,23 @@ const { Search } = Input;
 const { Sider } = Layout;
 
 export default function SidebarDocuments() {
-  const odatas = useRef<Title[]>([]);
   const [datas, setDatas] = useState<Title[]>([]);
-  const setDocumentTitles = useSetRecoilState(documentTitles);
+  const [documents, setDocumentTitles] = useRecoilState(documentTitles);
+
+  useEffect(() => {
+    setDatas(documents);
+  }, [documents]);
 
   useEffect(() => {
     sendIpcRequest<Title[]>(IPC_EVENTS.title_documents).then((titles) => {
-      odatas.current = titles;
-      setDatas(titles);
       setDocumentTitles(titles);
     });
   }, []);
 
   const onSearch = (value: string) => {
-    if (odatas.current.length) {
+    if (documents.length) {
       setDatas(
-        odatas.current.filter((d) =>
+        documents.filter((d) =>
           strNormalize(d.title).includes(strNormalize(value))
         )
       );
@@ -46,7 +47,12 @@ export default function SidebarDocuments() {
     >
       <Space direction="vertical">
         <Card>
-          <Search placeholder="Recherche" allowClear onSearch={onSearch} />
+          <Search
+            key={documents.length}
+            placeholder="Recherche"
+            allowClear
+            onSearch={onSearch}
+          />
         </Card>
       </Space>
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
