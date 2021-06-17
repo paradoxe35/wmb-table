@@ -14,6 +14,7 @@ import Subject from './views/options/subject';
 import { OptionView } from './types';
 
 import '../modules/context-menu/kali_dark.css';
+import CustomDocuments from './views/custom-documents';
 
 const RouterApp = React.memo(
   (): JSX.Element => {
@@ -53,6 +54,7 @@ function ContentHandler() {
       >
         <DocumentView />
       </div>
+      {process.platform === 'win32' && <CustomDocuments />}
     </>
   );
 }

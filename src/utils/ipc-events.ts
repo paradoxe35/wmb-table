@@ -11,4 +11,8 @@ export const IPC_EVENTS = {
   subject_items_delete: 'subject_items_delete',
   subject_document_delete: 'subject_document_delete',
   subject_items_store: 'subject_items_store',
+  open_modal_document_from_main: 'open_modal_document_from_main',
+  custom_documents: 'custom_documents',
+  custom_documents_delete: 'custom_documents_delete',
+  custom_documents_store: 'custom_documents_store',
 };

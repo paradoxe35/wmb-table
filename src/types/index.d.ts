@@ -82,3 +82,14 @@ export interface SubjectDoc {
   name: string;
   date: string;
 }
+
+export type CustomDocument = {
+  id?: string;
+  documentId: string;
+  title: string;
+};
+
+export type UploadDocument = {
+  name: string;
+  path: string;
+};

@@ -12,6 +12,10 @@ import subject_items, {
   subject_items_delete,
   subject_items_store,
 } from './handlers/subject_items';
+import custom_documents, {
+  custom_documents_delete,
+  custom_documents_store,
+} from './handlers/custom_documents';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -35,3 +39,12 @@ mainMessageTransport(IPC_EVENTS.subject_items, subject_items);
 mainMessageTransport(IPC_EVENTS.subject_items_delete, subject_items_delete);
 
 mainMessageTransport(IPC_EVENTS.subject_items_store, subject_items_store);
+
+mainMessageTransport(IPC_EVENTS.custom_documents, custom_documents);
+
+mainMessageTransport(
+  IPC_EVENTS.custom_documents_delete,
+  custom_documents_delete
+);
+
+mainMessageTransport(IPC_EVENTS.custom_documents_store, custom_documents_store);
