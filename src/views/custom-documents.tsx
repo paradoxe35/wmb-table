@@ -136,7 +136,7 @@ function CustomDocumentItem() {
   const handleDeletion = (document: CustomDocument) => {
     sendIpcRequest(IPC_EVENTS.custom_documents_delete, document);
     documentsRef.current = documentsRef.current.filter(
-      (d) => d._id != document._id
+      (d) => d.title != document.title
     );
     setDocuments(documentsRef.current);
   };

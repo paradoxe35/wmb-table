@@ -17,12 +17,12 @@ export async function custom_documents_delete(
     fs.unlinkSync(getAssetPath(`datas/documents/${document.title}.html`));
     await queryDb.remove<boolean>(
       db.documents,
-      { _id: document.documentId },
+      { _id: document.title },
       { multi: true }
     );
     await queryDb.remove<boolean>(
       db.customDocuments,
-      { _id: document._id },
+      { _id: document.title },
       { multi: true }
     );
   } catch (error) {
