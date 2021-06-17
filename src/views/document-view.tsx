@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DocumentTabs from '../components/document-tabs';
 import { Layout } from 'antd';
 import {
@@ -49,19 +49,6 @@ export default function DocumentView() {
 
   const subjectItemSelectedRef = useRef<SubjectDocumentItem | null>(null);
 
-  useEffect(() => {
-    subjectItemSelectedRef.current = subjectItemSelected;
-  }, [subjectItemSelected]);
-
-  useEffect(() => {
-    const query = viewQuery.find((v) => v.documentTitle == title);
-    if (query) {
-      documentQuery.current = query;
-    } else {
-      documentQuery.current = null;
-    }
-  }, [title, viewQuery]);
-
   const titleRef = useValueStateRef(title);
 
   useEffect(() => {
@@ -75,6 +62,14 @@ export default function DocumentView() {
       window.removeEventListener('close-document-query', closeDocumentQuery);
     };
   }, []);
+
+  subjectItemSelectedRef.current = useMemo(() => {
+    return subjectItemSelected;
+  }, [subjectItemSelected]);
+
+  documentQuery.current = useMemo(() => {
+    return viewQuery.find((v) => v.documentTitle == title) || null;
+  }, [title, viewQuery]);
 
   useEffect(() => {
     if (documentQuery.current) {
@@ -137,23 +132,23 @@ export default function DocumentView() {
       if ((tab?.scrollY || tab?.scrollX) && page) {
         hasOwnPosition = true;
 
-        if (subjectItemSelectedRef.current || documentQuery.current) return;
+        if (!(subjectItemSelectedRef.current || documentQuery.current)) {
+          postMessage(
+            iframeRef.current,
+            'window-position',
+            {
+              top: tab.scrollY || undefined,
+              left: tab.scrollX || undefined,
+            },
+            path as string
+          );
 
-        postMessage(
-          iframeRef.current,
-          'window-position',
-          {
+          page.scrollTo({
             top: tab.scrollY || undefined,
             left: tab.scrollX || undefined,
-          },
-          path as string
-        );
-
-        page.scrollTo({
-          top: tab.scrollY || undefined,
-          left: tab.scrollX || undefined,
-          behavior: 'smooth',
-        });
+            behavior: 'smooth',
+          });
+        }
       }
 
       const load = {
