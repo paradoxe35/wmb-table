@@ -23,6 +23,7 @@ export type OptionView = {
   search: string | JSX.Element;
   subject: string | JSX.Element;
   history: string | JSX.Element;
+  editor: string | JSX.Element;
 };
 
 export type HandlerIPC = (event: Electron.IpcMainEvent, ...args: []) => any;

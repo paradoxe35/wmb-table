@@ -17,6 +17,7 @@ export const OPTIONS_VIEWS: OptionView = {
   search: 'search',
   subject: 'subject',
   history: 'history',
+  editor: 'editor',
 };
 
 export const appViewState = atom({
@@ -63,7 +64,6 @@ export const subjectDocumentItem = atom<SubjectDocumentItem | null>({
   key: 'subjectDocumentItem',
   default: null,
 });
-
 
 export const selectedSubjectDocumentItem = atom<SubjectDocumentItem | null>({
   key: 'selectedSubjectDocumentItem',
