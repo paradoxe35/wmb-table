@@ -6,7 +6,7 @@ import { convert } from '../../plugins/main/pdf2html-ex';
 
 export default async () => {
   const datas = await queryDb.find<CustomDocument[]>(db.customDocuments);
-  return datas || [];
+  return (datas || []).reverse();
 };
 
 export async function custom_documents_delete(
@@ -15,7 +15,7 @@ export async function custom_documents_delete(
 ) {
   try {
     fs.unlinkSync(getAssetPath(`datas/documents/${document.title}.html`));
-    await queryDb.remove<boolean>(db.customDocuments, { _id: document.id });
+    await queryDb.remove<boolean>(db.customDocuments, { _id: document._id });
     await queryDb.remove<boolean>(db.documents, { _id: document.documentId });
   } catch (error) {
     return true;
