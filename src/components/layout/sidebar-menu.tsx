@@ -3,6 +3,7 @@ import {
   HistoryOutlined,
   GroupOutlined,
   SearchOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
 import OptionViewer from '../viewer/option-viewer';
@@ -33,6 +34,11 @@ export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
         <Menu.Item key="3" icon={<GroupOutlined />}>
           <OptionViewer component={OPTIONS_VIEWS.subject as string}>
             Sujets
+          </OptionViewer>
+        </Menu.Item>
+        <Menu.Item key="4" icon={<EditOutlined />}>
+          <OptionViewer component={OPTIONS_VIEWS.editor as string}>
+            Editeur
           </OptionViewer>
         </Menu.Item>
       </Menu>
