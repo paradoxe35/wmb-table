@@ -8,6 +8,7 @@ import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { getDateTime } from '../../utils/functions';
 import { HistoryOutlined } from '@ant-design/icons';
+import DocumentViewer from '../../components/viewer/document-viewer';
 
 const { Panel } = Collapse;
 
@@ -19,15 +20,11 @@ export default function History() {
 
   const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
 
+  const [reloadKey, setReloadKey] = useState(0);
+
   const onChange = (key: string | string[]) => {
     if (typeof key === 'string') setKey(key);
   };
-
-  useEffect(() => {
-    if (histories.length > 0) {
-      setKey(histories[0]._id as string);
-    }
-  }, [histories]);
 
   useEffect(() => {
     if (key) {
@@ -41,7 +38,7 @@ export default function History() {
         });
       }
     }
-  }, [key, histories]);
+  }, [key]);
 
   useEffect(() => {
     if (title && !defaultTitle.isDefault) {
@@ -58,43 +55,52 @@ export default function History() {
     }
   }, [title]);
 
+  useEffect(() => {
+    if (histories.length > 0) {
+      setKey(histories[0]._id as string);
+      setReloadKey((d) => d + 1);
+    }
+  }, [histories]);
+
   return (
     <>
       {histories.length === 0 && <Empty description="Aucune historique" />}
       <Collapse
-        key={!key ? histories.length : undefined}
+        key={reloadKey}
         defaultActiveKey={key || undefined}
         accordion
         onChange={onChange}
         style={{ margin: '20px 0' }}
       >
-        {histories
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .map((h) => {
-            return (
-              <Panel header={h.date} key={h._id as string}>
-                {key === h._id && (
-                  <>
-                    <List
-                      itemLayout="horizontal"
-                      dataSource={historyItems.sort((a, b) =>
-                        b.time.localeCompare(a.time)
-                      )}
-                      renderItem={(item) => (
-                        <List.Item>
-                          <List.Item.Meta
-                            avatar={<HistoryOutlined />}
-                            title={item.documentTitle}
-                            description={`${item.date} - ${item.time}`}
-                          />
-                        </List.Item>
-                      )}
-                    />
-                  </>
-                )}
-              </Panel>
-            );
-          })}
+        {histories.map((h) => {
+          return (
+            <Panel header={h.date} key={h._id as string}>
+              {key === h._id && (
+                <>
+                  <List
+                    itemLayout="horizontal"
+                    dataSource={historyItems}
+                    renderItem={(item) => (
+                      <List.Item>
+                        <List.Item.Meta
+                          avatar={<HistoryOutlined />}
+                          title={
+                            <a>
+                              <DocumentViewer name={item.documentTitle}>
+                                {item.documentTitle}
+                              </DocumentViewer>
+                            </a>
+                          }
+                          description={`${item.date} - ${item.time}`}
+                        />
+                      </List.Item>
+                    )}
+                  />
+                </>
+              )}
+            </Panel>
+          );
+        })}
       </Collapse>
     </>
   );

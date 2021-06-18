@@ -13,17 +13,10 @@ export default function Editor() {
   );
 }
 
-function styleProperty() {
+function styleProperty(color = '#fff') {
   return {
-    backgroundColor: '#fff',
+    backgroundColor: color,
   };
-}
-function styleEditor(editor: any) {
-  const editorEl: HTMLElement = editor.ui.getEditableElement();
-  Object.keys(styleProperty()).forEach((k) => {
-    //@ts-ignore
-    editorEl.style[k] = styleProperty()[k];
-  });
 }
 
 function EditorContent() {
@@ -40,11 +33,12 @@ function EditorContent() {
       <ContainerScrollY
         susDiff={47}
         style={{
-          padding: '20px 0',
+          background: '#949494',
+          padding: '20px',
           borderRadius: '2px',
         }}
       >
-        <div style={styleProperty()}>
+        <div style={{ ...styleProperty(), borderRadius: "5px" }}>
           <CKEditor
             //@ts-ignore
             onReady={(editor) => {
@@ -64,7 +58,6 @@ function EditorContent() {
               }
             }}
             //@ts-ignore
-            onChange={(event, editor) => console.log({ event, editor })}
             editor={DecoupledEditor}
             data="<p>Hello from CKEditor 5's decoupled editor!</p>"
             // config={/* the editor configuration */}

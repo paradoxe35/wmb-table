@@ -55,7 +55,9 @@ export default async (_: any, history: HistoryDateUpload | undefined) => {
     await historyItemStore(historyRef, history);
   }
 
-  return (await queryDb.find<HistoryData>(db.history)).reverse();
+  return (await queryDb.find<HistoryData>(db.history))
+    .reverse()
+    .sort((a, b) => b.date.localeCompare(a.date));
 };
 
 export async function history_data_item(_: any, history: HistoryData) {
@@ -63,5 +65,5 @@ export async function history_data_item(_: any, history: HistoryData) {
     historyId: history._id,
   });
 
-  return items;
+  return items.sort((a, b) => b.time.localeCompare(a.time));
 }
