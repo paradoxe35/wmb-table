@@ -156,7 +156,7 @@ function markMaches(element, matches, textContentLength) {
 
     for (const matcher of matchers) {
       // @ts-ignore
-      if (matcher.start >= index && matcher.end < index + node.length) {
+      if (matcher.start >= index && matcher.end <= index + node.length) {
         try {
           surroundContentsTag(
             node,
