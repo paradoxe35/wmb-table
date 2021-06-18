@@ -99,8 +99,8 @@ export function injectStyleText(content: string) {
   document.head.appendChild(css);
 }
 
-export function getDateTime() {
-  const date = new Date();
+export function getDateTime(date?: Date) {
+  date = date || new Date();
   const int = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'full',
     timeStyle: undefined,

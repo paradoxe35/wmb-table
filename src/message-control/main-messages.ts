@@ -16,6 +16,7 @@ import custom_documents, {
   custom_documents_delete,
   custom_documents_store,
 } from './handlers/custom_documents';
+import history_item, { history_data_item } from './handlers/history_item';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -48,3 +49,7 @@ mainMessageTransport(
 );
 
 mainMessageTransport(IPC_EVENTS.custom_documents_store, custom_documents_store);
+
+mainMessageTransport(IPC_EVENTS.history_data, history_item);
+
+mainMessageTransport(IPC_EVENTS.history_data_item, history_data_item);

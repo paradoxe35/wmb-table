@@ -15,4 +15,6 @@ export const IPC_EVENTS = {
   custom_documents: 'custom_documents',
   custom_documents_delete: 'custom_documents_delete',
   custom_documents_store: 'custom_documents_store',
+  history_data: 'history_data',
+  history_data_item: 'history_data_item',
 };

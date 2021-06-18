@@ -177,6 +177,7 @@
     "@teamsupercell/typings-for-css-modules-loader": "^2.4.0",
     "@testing-library/jest-dom": "^5.11.6",
     "@testing-library/react": "^11.2.2",
+    "@types/ckeditor__ckeditor5-core": "^27.0.23",
     "@types/enzyme": "^3.10.5",
     "@types/enzyme-adapter-react-16": "^1.0.6",
     "@types/history": "4.7.6",
@@ -249,7 +250,8 @@
     "yarn-deduplicate": "^3.1.0"
   },
   "dependencies": {
-    "@types/pdf-parse": "^1.1.0",
+    "@ckeditor/ckeditor5-build-decoupled-document": "^28.0.0",
+    "@ckeditor/ckeditor5-react": "^3.0.2",
     "antd": "^4.15.6",
     "draggabilly": "^2.3.0",
     "electron-debug": "^3.1.0",

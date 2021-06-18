@@ -45,13 +45,26 @@ export const documentTabs = atom<DocumentTab[]>({
   default: [],
 });
 
+export const defaultTitle = {
+  isDefault: false,
+};
+
 export const currentDocumentTabs = selector<string>({
   key: 'currentDocumentTabs',
   get: ({ get }) => {
     const tab = get(documentTabs).find((v) => v.active);
     const titles = get(documentTitles);
+    let title = null;
 
-    return tab?.title || titles[0]?.title;
+    if (tab?.title) {
+      defaultTitle.isDefault = false;
+      title = tab?.title;
+    } else {
+      title = titles[0]?.title;
+      defaultTitle.isDefault = true;
+    }
+
+    return title;
   },
 });
 

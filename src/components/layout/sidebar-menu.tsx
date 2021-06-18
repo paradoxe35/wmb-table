@@ -38,7 +38,7 @@ export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
         </Menu.Item>
         <Menu.Item key="4" icon={<EditOutlined />}>
           <OptionViewer component={OPTIONS_VIEWS.editor as string}>
-            Editeur
+            Notes
           </OptionViewer>
         </Menu.Item>
       </Menu>
