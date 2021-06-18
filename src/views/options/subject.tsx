@@ -237,14 +237,19 @@ export default function Subject() {
               overflowX: 'hidden',
             }}
           >
-            {datas.map((item) => (
-              <ItemSubject
-                key={item.name}
-                item={item}
-                onSelectItem={onSelectItem}
-                onDeleteSubject={handleSubjectDeletion}
-              />
-            ))}
+            <List
+              itemLayout="vertical"
+              style={{ width: '100%' }}
+              dataSource={datas}
+              renderItem={(item) => (
+                <ItemSubject
+                  key={item.name}
+                  item={item}
+                  onSelectItem={onSelectItem}
+                  onDeleteSubject={handleSubjectDeletion}
+                />
+              )}
+            />
           </ContainerScrollY>
         </div>
       </Col>
