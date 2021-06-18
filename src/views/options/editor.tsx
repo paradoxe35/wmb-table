@@ -1,38 +1,80 @@
-import React, { useState } from 'react';
-import { EditFilled, AppstoreOutlined } from '@ant-design/icons';
-import { Menu } from 'antd';
+import React, { useEffect, useRef } from 'react';
+//@ts-ignore
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+//@ts-ignore
+import DecoupledEditor from '@ckeditor/ckeditor5-build-decoupled-document';
+import ContainerScrollY from '../../components/container-scroll-y';
 
 export default function Editor() {
-  const [tab, setTab] = useState<string>('editor');
-
-  const handleClick = (e: { key: string | number }) => {
-    setTab(e.key as string);
-  };
   return (
     <>
-      <Menu onClick={handleClick} selectedKeys={[tab]} mode="horizontal">
-        <Menu.Item key="editor" icon={<EditFilled />}>
-          Editeur
-        </Menu.Item>
-        <Menu.Item key="documents" icon={<AppstoreOutlined />}>
-          Documents
-        </Menu.Item>
-      </Menu>
-      <div className="mt-2 mb-2" />
-      <div hidden={tab !== 'editor'}>
-        <EditorContent />
-      </div>
-      <div hidden={tab !== 'documents'}>
-        <Documents />
-      </div>
+      <EditorContent />
     </>
   );
 }
 
-function EditorContent() {
-  return <>editor</>;
+function styleProperty() {
+  return {
+    backgroundColor: '#fff',
+  };
+}
+function styleEditor(editor: any) {
+  const editorEl: HTMLElement = editor.ui.getEditableElement();
+  Object.keys(styleProperty()).forEach((k) => {
+    //@ts-ignore
+    editorEl.style[k] = styleProperty()[k];
+  });
 }
 
-function Documents() {
-  return <>documents</>;
+function EditorContent() {
+  const editorRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (editorRef.current && editorRef.current.editor) {
+      editorRef.current.editor.ui.view.toolbar.element.remove();
+    }
+  }, []);
+
+  return (
+    <div>
+      <ContainerScrollY
+        susDiff={47}
+        style={{
+          padding: '20px 0',
+          borderRadius: '2px',
+        }}
+      >
+        <div style={styleProperty()}>
+          <CKEditor
+            //@ts-ignore
+            onReady={(editor) => {
+              console.log('Editor is ready to use!', editor);
+              editor.ui
+                .getEditableElement()
+                .parentElement.parentElement.parentElement.insertBefore(
+                  editor.ui.view.toolbar.element,
+                  editor.ui.getEditableElement().parentElement.parentElement
+                );
+              editorRef.current = editor;
+            }}
+            //@ts-ignore
+            onError={({ willEditorRestart }) => {
+              if (willEditorRestart) {
+                editorRef.current.editor.ui.view.toolbar.element.remove();
+              }
+            }}
+            //@ts-ignore
+            onChange={(event, editor) => console.log({ event, editor })}
+            editor={DecoupledEditor}
+            data="<p>Hello from CKEditor 5's decoupled editor!</p>"
+            // config={/* the editor configuration */}
+          />
+        </div>
+      </ContainerScrollY>
+    </div>
+  );
+}
+
+function Notes() {
+  return <>editor</>;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { respondToVisibility } from './functions';
 
 export function useValueStateRef<T>(value: T) {
@@ -68,4 +68,12 @@ export function useContainerScrollY<T>(
   }, []);
 
   return containerRef;
+}
+
+export function useDataStateRef<T>(datas: T) {
+  const ref = useRef<T>();
+
+  ref.current = useMemo(() => datas, [datas]);
+
+  return ref;
 }

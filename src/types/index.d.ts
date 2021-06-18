@@ -94,3 +94,22 @@ export type UploadDocument = {
   name: string;
   path: string;
 };
+
+export type HistoryData = {
+  _id?: string;
+  date: string;
+};
+
+export type HistoryDataItem = {
+  _id?: string;
+  historyId: string;
+  date: string;
+  time: string;
+  documentTitle: string;
+};
+
+export type HistoryDateUpload = {
+  date: string;
+  time: string;
+  documentTitle: string;
+};

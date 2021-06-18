@@ -1,6 +1,7 @@
 //@ts-check
 import pdftohtml from './pdf2html-ex/pdftohtml';
 import fs from 'fs';
+//@ts-ignore
 import pdf from 'pdf-parse';
 import { getAssetPath } from '../../sys';
 import { strNormalizeNoLower } from '../../utils/functions';
