@@ -23,7 +23,6 @@ import { SubjectDocument, SubjectDocumentItem } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { getDateTime, strNormalize } from '../../utils/functions';
-import { useValueStateRef } from '../../utils/hooks';
 import { DeleteBtn } from '../../components/delete-btn';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
@@ -42,7 +41,7 @@ function ModalNewSubject({
 }: {
   onSaveNewSubject: (searchValue: string) => void;
 }) {
-  const searchValue = useValueStateRef<string>('');
+  const searchValue = useRef<string>('');
 
   const onSave = () => onSaveNewSubject(searchValue.current);
 
@@ -185,6 +184,7 @@ export default function Subject() {
       return;
     }
     const dateTime = getDateTime();
+    //@ts-ignore
     const subject: SubjectDocument = {
       name: value,
       date: dateTime.date,

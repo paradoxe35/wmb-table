@@ -17,4 +17,10 @@ export const IPC_EVENTS = {
   custom_documents_store: 'custom_documents_store',
   history_data: 'history_data',
   history_data_item: 'history_data_item',
+  notes_items: 'notes_items',
+  notes_items_store: 'notes_items_store',
+  notes_items_delete: 'notes_items_delete',
+  notes_items_rename: 'notes_items_rename',
+  notes_items_update_content: 'notes_items_update_content',
+  notes_items_get: 'notes_items_get',
 };

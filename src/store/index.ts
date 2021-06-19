@@ -82,3 +82,8 @@ export const selectedSubjectDocumentItem = atom<SubjectDocumentItem | null>({
   key: 'selectedSubjectDocumentItem',
   default: null,
 });
+
+export const workingNoteApp = atom<string | null>({
+  key: 'workingNoteApp',
+  default: null,
+});

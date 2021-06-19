@@ -10,6 +10,9 @@ interface Db {
   tabs?: Datastore | undefined;
   suggestions?: Datastore | undefined;
   customDocuments?: Datastore | undefined;
+
+  notes?: Datastore | undefined;
+  notesReference?: Datastore | undefined;
 }
 
 const db: Db = {};
@@ -41,6 +44,8 @@ db.subjectItems = dbStore('subject-items');
 db.tabs = dbStore('tabs');
 db.suggestions = dbStore('suggestions');
 db.customDocuments = dbStore('custom-documents');
+db.notes = dbStore('notes');
+db.notesReference = dbStore('notes-reference');
 
 export const queryDb = {
   promiseResolve(resolve: Function, reject: Function) {
@@ -61,6 +66,13 @@ export const queryDb = {
     loadDatabase(database);
     return new Promise((resolve, reject) => {
       database.find(fields, projection, this.promiseResolve(resolve, reject));
+    });
+  },
+  count(database: Datastore | undefined, fields = {}): Promise<number> {
+    if (!database) return Promise.reject(null);
+    loadDatabase(database);
+    return new Promise((resolve, reject) => {
+      database.count(fields, this.promiseResolve(resolve, reject));
     });
   },
   findOne<T>(
