@@ -1,6 +1,10 @@
 //@ts-nocheck
 /* Author: @UnrealSec */
 export class ContextMenu {
+  /**
+   * @param { HTMLElement } container
+   * @param { any[] } items
+   */
     constructor(container, items) {
         this.container = container;
         this.dom = null;

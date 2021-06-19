@@ -18,7 +18,7 @@ import CustomDocuments from './views/custom-documents';
 import { LoadingOutlined } from '@ant-design/icons';
 import LoadByVisibility from './components/load-by-visibility';
 
-const Editor = lazy(() => import('./views/options/editor'));
+const Notes = lazy(() => import('./views/options/notes'));
 
 const Loader: React.FC = ({ children }) => {
   return (
@@ -48,7 +48,7 @@ const RouterApp = React.memo(
         subject: (<Subject />) as JSX.Element,
         editor: (
           <Loader>
-            <Editor />
+            <Notes />
           </Loader>
         ) as JSX.Element,
       }),

@@ -6,7 +6,7 @@ export default async (_: any, subjectName: string) => {
     subject: subjectName,
   });
 
-  return documents.reverse();
+  return documents;
 };
 
 export async function subject_items_delete(_: any, id: string) {

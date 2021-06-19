@@ -1,10 +1,15 @@
+interface TimeStampData {
+  _id: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export type Title = { _id: string; title: string };
 
-export type DataDocument = {
-  _id?: string;
+export interface DataDocument extends Readonly<TimeStampData> {
   title: string;
   textContent: string;
-};
+}
 
 export type DocumentViewQuery = {
   term: string;
@@ -28,10 +33,10 @@ export type OptionView = {
 
 export type HandlerIPC = (event: Electron.IpcMainEvent, ...args: []) => any;
 
-export type Suggestions = {
+export interface Suggestions extends Readonly<TimeStampData> {
   searchText: string;
   found: number;
-};
+}
 
 declare global {
   interface Array<T> {
@@ -62,51 +67,46 @@ export interface SearchResult {
   total: number;
 }
 
-export type SubjectDocumentItem = {
-  _id?: string;
+export interface SubjectDocumentItem extends Readonly<TimeStampData> {
   subject: string;
   documentTitle: string;
   documentHtmlTree: number[];
   textContent: string;
-};
+}
 
-export interface SubjectDocument {
-  _id?: string;
+export interface SubjectDocument extends Readonly<TimeStampData> {
   name: string;
   date: string;
   documents: SubjectDocumentItem[];
   active?: boolean;
 }
 
-export interface SubjectDoc {
+export interface SubjectDoc extends Readonly<TimeStampData> {
   _id: string;
   name: string;
   date: string;
 }
 
-export type CustomDocument = {
-  _id?: string;
+export interface CustomDocument extends Readonly<TimeStampData> {
   documentId: string;
   title: string;
-};
+}
 
 export type UploadDocument = {
   name: string;
   path: string;
 };
 
-export type HistoryData = {
-  _id?: string;
+export interface HistoryData extends Readonly<TimeStampData> {
   date: string;
-};
+}
 
-export type HistoryDataItem = {
-  _id?: string;
+export interface HistoryDataItem extends Readonly<TimeStampData> {
   historyId: string;
   date: string;
   time: string;
   documentTitle: string;
-};
+}
 
 export type HistoryDateUpload = {
   date: string;
