@@ -175,8 +175,6 @@ export default function EditorContent({
   }, []);
 
   const onChangeData = () => {
-    console.log(workingNoteId);
-
     sendIpcRequest(
       IPC_EVENTS.notes_items_update_content,
       workingNoteId,
