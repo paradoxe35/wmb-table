@@ -41,6 +41,7 @@ body {
   position: relative;
   overflow: auto;
   height: 100%;
+  overflow-x: hidden;
   mask-image: linear-gradient(to top, transparent, black),
     linear-gradient(to left, transparent 17px, black 17px);
   mask-size: 100% 20000px;
