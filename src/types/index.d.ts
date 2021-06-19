@@ -117,7 +117,9 @@ export interface NoteItem extends Readonly<TimeStampData> {
 }
 
 export interface NoteItemReference extends Readonly<TimeStampData> {
+  label: string;
   noteId: string;
   documentTitle: string;
+  documentHtmlTree: number[];
   textContent: string;
 }

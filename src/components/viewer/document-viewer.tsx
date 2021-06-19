@@ -2,15 +2,11 @@ import React from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import { appViewState, documentTabs, MAIN_VIEWS } from '../../store';
 
-const DocumentViewer: React.FC<{
-  name: string;
-  id?: string;
-  onItemClick?: Function;
-}> = ({ children, name, onItemClick }) => {
+export const useDocumentViewOpen = () => {
   const [tabs, setTabs] = useRecoilState(documentTabs);
   const setDocumentViewer = useSetRecoilState(appViewState);
 
-  const onClick = () => {
+  const onClick = (name: string, onItemClick?: Function) => {
     const existTab = tabs.some((t) => t.title === name);
 
     const activated = tabs.some((t) => t.title === name && t.active);
@@ -46,7 +42,20 @@ const DocumentViewer: React.FC<{
       });
     }
   };
-  return <span onClick={onClick}>{children}</span>;
+
+  return onClick;
+};
+
+const DocumentViewer: React.FC<{
+  name: string;
+  id?: string;
+  onItemClick?: Function;
+}> = ({ children, name, onItemClick }) => {
+  const viewDocument = useDocumentViewOpen();
+
+  return (
+    <span onClick={() => viewDocument(name, onItemClick)}>{children}</span>
+  );
 };
 
 export default DocumentViewer;
