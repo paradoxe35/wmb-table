@@ -128,3 +128,7 @@ export const respondToVisibility = (
   observer.observe(element);
   return () => observer.unobserve(element);
 };
+
+export const substrAfter = (str: string, substr: string) => {
+  return str.slice(str.indexOf(substr) + substr.length, str.length);
+};

@@ -24,6 +24,11 @@ import notes_items, {
   notes_items_store,
   notes_items_update_content,
 } from './handlers/notes_items';
+import notes_references, {
+  notes_references_get,
+  notes_references_store,
+  notes_references_sync,
+} from './handlers/notes_references';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -31,9 +36,13 @@ mainMessageTransport(IPC_EVENTS.document_content_path, document_content_path);
 
 mainMessageTransport(IPC_EVENTS.document_tabs, document_tabs);
 
+// search_suggestions
+
 mainMessageTransport(IPC_EVENTS.search_suggestions, search_suggestions);
 
 mainMessageTransport(IPC_EVENTS.search_text, search_text);
+
+// subject document
 
 mainMessageTransport(IPC_EVENTS.subject_document, subject_document);
 
@@ -42,12 +51,14 @@ mainMessageTransport(
   subject_document_delete
 );
 
+// subject items
 mainMessageTransport(IPC_EVENTS.subject_items, subject_items);
 
 mainMessageTransport(IPC_EVENTS.subject_items_delete, subject_items_delete);
 
 mainMessageTransport(IPC_EVENTS.subject_items_store, subject_items_store);
 
+// custom documents
 mainMessageTransport(IPC_EVENTS.custom_documents, custom_documents);
 
 mainMessageTransport(
@@ -57,9 +68,13 @@ mainMessageTransport(
 
 mainMessageTransport(IPC_EVENTS.custom_documents_store, custom_documents_store);
 
+// note history
+
 mainMessageTransport(IPC_EVENTS.history_data, history_item);
 
 mainMessageTransport(IPC_EVENTS.history_data_item, history_data_item);
+
+// note items
 
 mainMessageTransport(IPC_EVENTS.notes_items, notes_items);
 
@@ -75,3 +90,12 @@ mainMessageTransport(
 );
 
 mainMessageTransport(IPC_EVENTS.notes_items_get, notes_items_get);
+
+// note reference
+mainMessageTransport(IPC_EVENTS.notes_references, notes_references);
+
+mainMessageTransport(IPC_EVENTS.notes_references_store, notes_references_store);
+
+mainMessageTransport(IPC_EVENTS.notes_references_get, notes_references_get);
+
+mainMessageTransport(IPC_EVENTS.notes_references_sync, notes_references_sync);
