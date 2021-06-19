@@ -9,10 +9,12 @@ export default async (_: any, subject: SubjectDocument | undefined) => {
     subjects.unshift(subject);
   }
 
-  return subjects.map((subject) => {
-    subject.documents = [];
-    return subject;
-  });
+  return subjects
+    .map((subject) => {
+      subject.documents = [];
+      return subject;
+    })
+    .sort((a, b) => b.createdAt - a.createdAt);
 };
 
 export async function subject_document_delete(_: any, subjectName: string) {

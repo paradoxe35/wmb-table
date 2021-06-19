@@ -6,7 +6,7 @@ export default async (_: any, subjectName: string) => {
     subject: subjectName,
   });
 
-  return documents;
+  return documents.sort((a, b) => b.createdAt - a.createdAt);
 };
 
 export async function subject_items_delete(_: any, id: string) {

@@ -5,8 +5,8 @@ import { getAssetPath } from '../../sys';
 import { convert } from '../../plugins/main/pdf2html-ex';
 
 export default async () => {
-  const datas = await queryDb.find<CustomDocument[]>(db.customDocuments);
-  return datas || [];
+  const datas = await queryDb.find<CustomDocument>(db.customDocuments);
+  return (datas || []).sort((a, b) => b.createdAt - a.createdAt);
 };
 
 export async function custom_documents_delete(
@@ -46,5 +46,5 @@ export async function custom_documents_store(
     }
   }
 
-  return docs;
+  return docs.sort((a, b) => b.createdAt - a.createdAt);
 }

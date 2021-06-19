@@ -1,12 +1,14 @@
 import { HistoryData, HistoryDataItem, HistoryDateUpload } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
 
-const getHistoryRef = async (history: HistoryDateUpload) => {
+const getHistoryRefOrInsert = async (history: HistoryDateUpload) => {
   const ref = await queryDb.findOne<HistoryData>(db.history, {
     date: history.date,
   });
   if (ref) return ref;
-  const histories = await queryDb.find<HistoryData>(db.history);
+  const histories = (await queryDb.find<HistoryData>(db.history)).sort(
+    (a, b) => b.milliseconds - a.milliseconds
+  );
   if (histories.length >= 30) {
     const id = histories[histories.length - 1]._id;
     await queryDb.remove(db.history, {
@@ -21,7 +23,10 @@ const getHistoryRef = async (history: HistoryDateUpload) => {
     );
   }
 
-  return await queryDb.insert<HistoryData>(db.history, { date: history.date });
+  return await queryDb.insert<HistoryData>(db.history, {
+    date: history.date,
+    milliseconds: history.milliseconds,
+  });
 };
 
 const historyItemStore = async (
@@ -49,11 +54,13 @@ const historyItemStore = async (
 
 export default async (_: any, history: HistoryDateUpload | undefined) => {
   if (history) {
-    const historyRef = await getHistoryRef(history);
+    const historyRef = await getHistoryRefOrInsert(history);
     await historyItemStore(historyRef, history);
   }
 
-  return await queryDb.find<HistoryData>(db.history);
+  return (await queryDb.find<HistoryData>(db.history)).sort(
+    (a, b) => b.milliseconds - a.milliseconds
+  );
 };
 
 export async function history_data_item(_: any, history: HistoryData) {

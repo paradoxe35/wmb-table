@@ -1,7 +1,7 @@
 interface TimeStampData {
   _id: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: any;
+  updatedAt: any;
 }
 
 export type Title = { _id: string; title: string };
@@ -99,6 +99,7 @@ export type UploadDocument = {
 
 export interface HistoryData extends Readonly<TimeStampData> {
   date: string;
+  milliseconds: number;
 }
 
 export interface HistoryDataItem extends Readonly<TimeStampData> {
@@ -109,6 +110,7 @@ export interface HistoryDataItem extends Readonly<TimeStampData> {
 }
 
 export type HistoryDateUpload = {
+  milliseconds: number;
   date: string;
   time: string;
   documentTitle: string;
