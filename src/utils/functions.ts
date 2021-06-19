@@ -105,9 +105,11 @@ export function getDateTime(date?: Date) {
     dateStyle: 'full',
     timeStyle: undefined,
   });
+
   return {
     date: capitalizeFirstLetter(int.format(date)),
     time: date.toTimeString().split(' ')[0],
+    milliseconds: date.getTime(),
   };
 }
 
