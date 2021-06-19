@@ -4,11 +4,21 @@ import ContainerScrollY from '../../../components/container-scroll-y';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 //@ts-ignore
 import DecoupledEditor from '@ckeditor/ckeditor5-build-decoupled-document';
-import  '@ckeditor/ckeditor5-build-decoupled-document/build/translations/fr';
+import '@ckeditor/ckeditor5-build-decoupled-document/build/translations/fr';
 import { ContextMenu } from '../../../../modules/context-menu/context';
+import { Button, Space, Tooltip } from 'antd';
+import {
+  LeftOutlined,
+  FileWordOutlined,
+  FilePdfOutlined,
+  EditOutlined,
+} from '@ant-design/icons';
+import { capitalizeFirstLetter } from '../../../utils/functions';
 
-const items = DecoupledEditor.defaultConfig.toolbar.items as string[]
-DecoupledEditor.defaultConfig.toolbar.items = items.filter(i => !['mediaEmbed', 'uploadImage'].includes(i))
+const items = DecoupledEditor.defaultConfig.toolbar.items as string[];
+DecoupledEditor.defaultConfig.toolbar.items = items.filter(
+  (i) => !['mediaEmbed', 'uploadImage'].includes(i)
+);
 
 function styleProperty(color = '#fff') {
   return {
@@ -24,7 +34,31 @@ function ButtonsControllers() {
         justifyContent: 'space-between',
         margin: '12px 0',
       }}
-    ></div>
+    >
+      <Space direction="horizontal">
+        <Button type="dashed" icon={<LeftOutlined />}>
+          Notes
+        </Button>
+      </Space>
+
+      <Space direction="horizontal">
+        <span>{capitalizeFirstLetter('demo')}</span>
+        <a>
+          <Tooltip title="Modifier le nom">
+            <EditOutlined />
+          </Tooltip>
+        </a>
+      </Space>
+
+      <Space direction="horizontal">
+        <Tooltip title="Exporter au format PDF">
+          <Button type="dashed" icon={<FilePdfOutlined />} />
+        </Tooltip>
+        <Tooltip title="Exporter au format Word">
+          <Button type="dashed" icon={<FileWordOutlined />} />
+        </Tooltip>
+      </Space>
+    </div>
   );
 }
 
@@ -34,8 +68,6 @@ export default function EditorContent({}) {
   const contextEvent = useRef<MouseEvent | null>(null);
 
   useEffect(() => {
-    console.log(DecoupledEditor.defaultConfig);
-
     if (editorRef.current && editorRef.current.editor) {
       editorRef.current.editor.ui.view.toolbar.element.remove();
     }
@@ -80,9 +112,8 @@ export default function EditorContent({}) {
       <ButtonsControllers />
       <div>
         <ContainerScrollY
-          susDiff={47}
+          susDiff={60}
           style={{
-            background: '#949494',
             padding: '20px',
             borderRadius: '2px',
           }}
@@ -110,8 +141,8 @@ export default function EditorContent({}) {
               editor={DecoupledEditor}
               data="<p>Hello from CKEditor 5's decoupled editor!</p>"
               config={{
-                language: 'fr'
-               }}
+                language: 'fr',
+              }}
             />
           </div>
         </ContainerScrollY>
