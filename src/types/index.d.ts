@@ -81,12 +81,6 @@ export interface SubjectDocument extends Readonly<TimeStampData> {
   active?: boolean;
 }
 
-export interface SubjectDoc extends Readonly<TimeStampData> {
-  _id: string;
-  name: string;
-  date: string;
-}
-
 export interface CustomDocument extends Readonly<TimeStampData> {
   documentId: string;
   title: string;
@@ -115,3 +109,15 @@ export type HistoryDateUpload = {
   time: string;
   documentTitle: string;
 };
+
+export interface NoteItem extends Readonly<TimeStampData> {
+  name: string;
+  content?: string;
+  defaultName: boolean;
+}
+
+export interface NoteItemReference extends Readonly<TimeStampData> {
+  noteId: string;
+  documentTitle: string;
+  textContent: string;
+}

@@ -17,6 +17,13 @@ import custom_documents, {
   custom_documents_store,
 } from './handlers/custom_documents';
 import history_item, { history_data_item } from './handlers/history_item';
+import notes_items, {
+  notes_items_delete,
+  notes_items_get,
+  notes_items_rename,
+  notes_items_store,
+  notes_items_update_content,
+} from './handlers/notes_items';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -53,3 +60,18 @@ mainMessageTransport(IPC_EVENTS.custom_documents_store, custom_documents_store);
 mainMessageTransport(IPC_EVENTS.history_data, history_item);
 
 mainMessageTransport(IPC_EVENTS.history_data_item, history_data_item);
+
+mainMessageTransport(IPC_EVENTS.notes_items, notes_items);
+
+mainMessageTransport(IPC_EVENTS.notes_items_delete, notes_items_delete);
+
+mainMessageTransport(IPC_EVENTS.notes_items_store, notes_items_store);
+
+mainMessageTransport(IPC_EVENTS.notes_items_rename, notes_items_rename);
+
+mainMessageTransport(
+  IPC_EVENTS.notes_items_update_content,
+  notes_items_update_content
+);
+
+mainMessageTransport(IPC_EVENTS.notes_items_get, notes_items_get);
