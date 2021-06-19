@@ -6,7 +6,7 @@ import { convert } from '../../plugins/main/pdf2html-ex';
 
 export default async () => {
   const datas = await queryDb.find<CustomDocument[]>(db.customDocuments);
-  return (datas || []).reverse();
+  return datas || [];
 };
 
 export async function custom_documents_delete(

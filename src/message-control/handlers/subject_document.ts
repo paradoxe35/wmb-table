@@ -2,9 +2,7 @@ import { SubjectDocument } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
 
 export default async (_: any, subject: SubjectDocument | undefined) => {
-  const subjects = (
-    (await queryDb.find<SubjectDocument>(db.subjects)) || []
-  ).reverse();
+  const subjects = (await queryDb.find<SubjectDocument>(db.subjects)) || [];
 
   if (subject) {
     await queryDb.insert<SubjectDocument>(db.subjects, subject);

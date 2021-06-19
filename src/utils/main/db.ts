@@ -15,16 +15,17 @@ interface Db {
 const db: Db = {};
 const databases: Datastore<any>[] = [];
 
-const dbStore = (name: string) =>
-  new Datastore({
-    filename: getAssetPath(`datas/db/${name}.db`),
-    autoload: false,
-  });
-
 db.documents = new Datastore({
   filename: getAssetPath(`datas/documents.db`),
   autoload: false,
 });
+
+const dbStore = (name: string) =>
+  new Datastore({
+    filename: getAssetPath(`datas/db/${name}.db`),
+    autoload: false,
+    timestampData: true,
+  });
 
 export const loadDatabase = function (database: Datastore<any> | undefined) {
   if (database && !databases.includes(database)) {

@@ -6,7 +6,7 @@ const getHistoryRef = async (history: HistoryDateUpload) => {
     date: history.date,
   });
   if (ref) return ref;
-  const histories = (await queryDb.find<HistoryData>(db.history)).reverse();
+  const histories = await queryDb.find<HistoryData>(db.history);
   if (histories.length >= 30) {
     const id = histories[histories.length - 1]._id;
     await queryDb.remove(db.history, {
@@ -32,9 +32,7 @@ const historyItemStore = async (
     date: history.date,
     documentTitle: history.documentTitle,
   });
-  const historyItems = (
-    await queryDb.find<HistoryDataItem>(db.historyItem)
-  ).reverse();
+  const historyItems = await queryDb.find<HistoryDataItem>(db.historyItem);
   if (historyItems.length >= 50) {
     await queryDb.remove(db.historyItem, {
       _id: historyItems[historyItems.length - 1]._id,
@@ -55,9 +53,7 @@ export default async (_: any, history: HistoryDateUpload | undefined) => {
     await historyItemStore(historyRef, history);
   }
 
-  return (await queryDb.find<HistoryData>(db.history))
-    .reverse()
-    .sort((a, b) => b.date.localeCompare(a.date));
+  return await queryDb.find<HistoryData>(db.history);
 };
 
 export async function history_data_item(_: any, history: HistoryData) {

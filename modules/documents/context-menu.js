@@ -51,6 +51,7 @@ export default () => {
 
   // @ts-ignore
   chromeContextMenu.container.addEventListener('contextmenu', (e) => {
+    // @ts-ignore
     lastNodeTargetFromContent = e.target;
   });
 
