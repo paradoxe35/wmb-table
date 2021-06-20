@@ -1,7 +1,7 @@
 {
-  "name": "WmbTable",
+  "name": "wmb-table",
   "productName": "Wmb Table",
-  "description": "Handle all william marion branham pdf preatching",
+  "description": "Gestion livres et prédications",
   "scripts": {
     "build": "concurrently \"yarn build:main\" \"yarn build:renderer\"",
     "build:main": "cross-env NODE_ENV=production webpack --config ./.erb/configs/webpack.config.main.prod.babel.js",
