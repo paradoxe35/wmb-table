@@ -16,6 +16,7 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { getAssetPath } from './sys';
+import Dialogs from './dialogs/dialogs';
 
 require('./message-control/main-messages');
 
@@ -73,6 +74,8 @@ const createWindow = async () => {
       spellcheck: false,
     },
   });
+
+  Dialogs(mainWindow);
 
   mainWindow.maximize();
 

@@ -103,11 +103,46 @@ const useRenameNote = (note: NoteItem | null) => {
 function ButtonsControllers({
   backToNotes,
   workingNote,
+  editorRef,
 }: {
   backToNotes: () => void;
   workingNote: NoteItem | null;
+  editorRef: React.MutableRefObject<any>;
 }) {
   const openModal = useRenameNote(workingNote);
+
+  const workingNoteRef = useValueStateRef(workingNote);
+
+  const [loadingWord, setLoadingWord] = useState(false);
+  const [loadingPdf, setLoadingPdf] = useState(false);
+
+  const exportWord = () => {
+    const editor = editorRef.current;
+    if (!editor || !editor.getData().trim()) {
+      return;
+    }
+    setLoadingWord(true);
+
+    sendIpcRequest(
+      IPC_EVENTS.notes_export_word,
+      editor.getData(),
+      workingNoteRef.current?.name
+    ).finally(() => setLoadingWord(false));
+  };
+
+  const exportPdf = () => {
+    const editor = editorRef.current;
+    if (!editor || !editor.getData().trim()) {
+      return;
+    }
+    setLoadingPdf(true);
+
+    sendIpcRequest(
+      IPC_EVENTS.notes_export_pdf,
+      editor.getData(),
+      workingNoteRef.current?.name
+    ).finally(() => setLoadingPdf(false));
+  };
 
   return (
     <div
@@ -136,10 +171,20 @@ function ButtonsControllers({
 
       <Space direction="horizontal">
         <Tooltip title="Exporter au format PDF">
-          <Button type="dashed" icon={<FilePdfOutlined />} />
+          <Button
+            type="dashed"
+            onClick={exportPdf}
+            loading={loadingPdf}
+            icon={<FilePdfOutlined />}
+          />
         </Tooltip>
         <Tooltip title="Exporter au format Word">
-          <Button type="dashed" icon={<FileWordOutlined />} />
+          <Button
+            type="dashed"
+            onClick={exportWord}
+            loading={loadingWord}
+            icon={<FileWordOutlined />}
+          />
         </Tooltip>
       </Space>
     </div>
@@ -337,7 +382,11 @@ export default function EditorContent({
 
   return (
     <>
-      <ButtonsControllers workingNote={workingNote} backToNotes={backToNotes} />
+      <ButtonsControllers
+        editorRef={editorRef}
+        workingNote={workingNote}
+        backToNotes={backToNotes}
+      />
       <Editor
         ready={ready}
         setReady={setReady}
