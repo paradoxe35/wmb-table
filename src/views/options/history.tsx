@@ -27,7 +27,7 @@ export default function History() {
   };
 
   useEffect(() => {
-    if (key) {
+    if (key && title && !defaultTitle.isDefault) {
       const history = histories.find((k) => k._id == key);
       if (history) {
         sendIpcRequest<HistoryDataItem[]>(
@@ -38,7 +38,7 @@ export default function History() {
         });
       }
     }
-  }, [key]);
+  }, [key, title]);
 
   useEffect(() => {
     if (title && !defaultTitle.isDefault) {
