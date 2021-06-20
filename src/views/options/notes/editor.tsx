@@ -15,12 +15,7 @@ import {
   message,
   Typography,
 } from 'antd';
-import {
-  LeftOutlined,
-  FileWordOutlined,
-  FilePdfOutlined,
-  EditOutlined,
-} from '@ant-design/icons';
+import { LeftOutlined, FilePdfOutlined, EditOutlined } from '@ant-design/icons';
 import { debounce, substrAfter } from '../../../utils/functions';
 import { NoteItem, NoteItemReference } from '../../../types';
 import sendIpcRequest from '../../../message-control/ipc/ipc-renderer';
@@ -113,22 +108,7 @@ function ButtonsControllers({
 
   const workingNoteRef = useValueStateRef(workingNote);
 
-  const [loadingWord, setLoadingWord] = useState(false);
   const [loadingPdf, setLoadingPdf] = useState(false);
-
-  const exportWord = () => {
-    const editor = editorRef.current;
-    if (!editor || !editor.getData().trim()) {
-      return;
-    }
-    setLoadingWord(true);
-
-    sendIpcRequest(
-      IPC_EVENTS.notes_export_word,
-      editor.getData(),
-      workingNoteRef.current?.name
-    ).finally(() => setLoadingWord(false));
-  };
 
   const exportPdf = () => {
     const editor = editorRef.current;
@@ -176,14 +156,6 @@ function ButtonsControllers({
             onClick={exportPdf}
             loading={loadingPdf}
             icon={<FilePdfOutlined />}
-          />
-        </Tooltip>
-        <Tooltip title="Exporter au format Word">
-          <Button
-            type="dashed"
-            onClick={exportWord}
-            loading={loadingWord}
-            icon={<FileWordOutlined />}
           />
         </Tooltip>
       </Space>
