@@ -1,13 +1,13 @@
 {
-  "name": "WmbTable",
+  "name": "wmb-table",
   "productName": "Wmb Table",
-  "description": "Handle all william marion branham pdf preatching",
+  "description": "Gestion livres et prédications",
   "version": "2.3.0",
   "main": "./main.prod.js",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://github.com/electron-react-boilerplate"
+    "name": "Paradoxe Ngwasi",
+    "email": "paradoxngwasi@gmail.com",
+    "url": "https://png-me.web.app"
   },
   "scripts": {
     "electron-rebuild": "node -r ../.erb/scripts/BabelRegister.js ../.erb/scripts/ElectronRebuild.js",
