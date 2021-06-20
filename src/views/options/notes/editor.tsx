@@ -406,7 +406,10 @@ function Editor({
           borderRadius: '2px',
         }}
       >
-        <div style={{ ...styleProperty(), borderRadius: '5px' }}>
+        <div
+          className="cke5-decoupled-custom-document-editable"
+          style={{ ...styleProperty(), borderRadius: '5px' }}
+        >
           <CKEditor
             id={workingNoteId}
             onReady={(editor: any) => {
