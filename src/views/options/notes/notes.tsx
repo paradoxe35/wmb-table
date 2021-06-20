@@ -5,8 +5,6 @@ import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../../utils/ipc-events';
 import { DeleteBtn } from '../../../components/delete-btn';
-import { useSetRecoilState } from 'recoil';
-import { workingNoteApp } from '../../../store';
 import { strNormalize } from '../../../utils/functions';
 
 export function Notes({
@@ -15,7 +13,6 @@ export function Notes({
   setWorkingNote: React.Dispatch<React.SetStateAction<string | null>>;
 }) {
   const [loaded, setLoaded] = useState<boolean>(false);
-  const setWorkingNoteApp = useSetRecoilState(workingNoteApp);
 
   const [notes, setNotes] = useState<NoteItem[]>([]);
   const odatas = useRef<NoteItem[]>([]);
@@ -39,13 +36,11 @@ export function Notes({
   const newNote = () => {
     sendIpcRequest<NoteItem>(IPC_EVENTS.notes_items_store).then((note) => {
       setWorkingNote(note._id);
-      setWorkingNoteApp(note._id);
     });
   };
 
   const editDocument = (note: NoteItem) => {
     setWorkingNote(note._id);
-    setWorkingNoteApp(note._id);
   };
 
   const onSearch = useCallback((value: string) => {

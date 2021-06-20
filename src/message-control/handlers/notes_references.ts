@@ -42,3 +42,16 @@ export async function notes_references_sync(
 
   return true;
 }
+
+export async function notes_references_put(
+  _: any,
+  _id: string,
+  referenceItem: NoteItemReference
+) {
+  await queryDb.update(
+    db.notesReference,
+    { _id },
+    { $set: { ...referenceItem } }
+  );
+  return true;
+}

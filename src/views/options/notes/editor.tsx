@@ -150,42 +150,49 @@ const useShowReferenceDetail = () => {
   const viewDocument = useDocumentViewOpen();
   const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItem);
 
-  const modal = useCallback((reference: NoteItemReference) => {
-    const assigned = (reference.documentHtmlTree || []).length > 0;
+  const modal = useCallback(
+    (reference: NoteItemReference, workingNote: NoteItem) => {
+      const assigned = (reference.documentHtmlTree || []).length > 0;
 
-    const openDocument = () => {
-      viewDocument(reference.documentTitle, () => {
-        //@ts-ignore
-        setSubjectItemSelected({
-          subject: '',
-          documentHtmlTree: reference.documentHtmlTree,
-          documentTitle: reference.documentTitle,
-          textContent: reference.textContent,
+      const openDocument = () => {
+        viewDocument(reference.documentTitle, () => {
+          //@ts-ignore
+          setSubjectItemSelected({
+            subject: '',
+            documentHtmlTree: reference.documentHtmlTree,
+            documentTitle: reference.documentTitle,
+            textContent: reference.textContent,
+          });
         });
-      });
-    };
+      };
 
-    Modal[assigned ? 'info' : 'warning']({
-      closable: true,
-      onOk: assigned ? openDocument : undefined,
-      okText: assigned ? 'Ouvrir' : 'Fermer',
-      title: reference.label,
-      content: assigned ? (
-        <div>
-          <p>Document: {reference.documentTitle}</p>
-          <p>
-            <Typography.Text>
-              {(reference.textContent || '').slice(0, 15)}...
-            </Typography.Text>
-          </p>
-        </div>
-      ) : (
-        <div>
-          <p>Aucun document n'a été attribué pour cette référence</p>
-        </div>
-      ),
-    });
-  }, []);
+      Modal[assigned ? 'info' : 'warning']({
+        closable: true,
+        onOk: assigned ? openDocument : undefined,
+        okText: assigned ? 'Ouvrir' : 'Fermer',
+        title: (
+          <span>
+            {workingNote.name} - {reference.label}
+          </span>
+        ),
+        content: assigned ? (
+          <div>
+            <p>Document: {reference.documentTitle}</p>
+            <p>
+              <Typography.Text>
+                {(reference.textContent || '').slice(0, 30)}...
+              </Typography.Text>
+            </p>
+          </div>
+        ) : (
+          <div>
+            <p>Aucun document n'a été attribué pour cette référence</p>
+          </div>
+        ),
+      });
+    },
+    []
+  );
 
   return modal;
 };
@@ -208,6 +215,8 @@ export default function EditorContent({
   const [workingNote, setWorkingNote] = useState<NoteItem | null>(null);
 
   const [ready, setReady] = useState(false);
+
+  const workingNoteRef = useValueStateRef(workingNote);
 
   useEffect(() => {
     sendIpcRequest<NoteItem>(
@@ -239,7 +248,7 @@ export default function EditorContent({
       idRef
     ).then((data) => {
       if (data) {
-        modalRefence(data);
+        modalRefence(data, workingNoteRef.current as NoteItem);
       } else {
         message.error('La référence est invalide');
       }

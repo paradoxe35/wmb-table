@@ -24,11 +24,6 @@ export function SubjectSelectModal({ title }: { title: string }) {
   const [datas, setDatas] = useState<SubjectDocument[]>([]);
   const odatas = useRecoilValue<SubjectDocument[]>(subjectDocument);
 
-  const showModal = (e: CustomEvent) => {
-    documentRefTree.current = e.detail;
-    setIsModalVisible(true);
-  };
-
   const handleOk = () => {
     setIsModalVisible(false);
   };
@@ -40,6 +35,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
   const onSelectItem = (name: string) => {
     if (!documentRefTree.current) return;
 
+    //@ts-ignore
     const subjectItem: SubjectDocumentItem = {
       documentHtmlTree: documentRefTree.current.documentHtmlTree,
       documentTitle: titleRef.current,
@@ -74,6 +70,11 @@ export function SubjectSelectModal({ title }: { title: string }) {
   }, [odatas]);
 
   useEffect(() => {
+    const showModal = (e: CustomEvent) => {
+      documentRefTree.current = e.detail;
+      setIsModalVisible(true);
+    };
+
     //@ts-ignore
     window.addEventListener('add-document-ref-subject', showModal);
     return () => {

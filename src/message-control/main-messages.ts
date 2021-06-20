@@ -26,6 +26,7 @@ import notes_items, {
 } from './handlers/notes_items';
 import notes_references, {
   notes_references_get,
+  notes_references_put,
   notes_references_store,
   notes_references_sync,
 } from './handlers/notes_references';
@@ -99,3 +100,5 @@ mainMessageTransport(IPC_EVENTS.notes_references_store, notes_references_store);
 mainMessageTransport(IPC_EVENTS.notes_references_get, notes_references_get);
 
 mainMessageTransport(IPC_EVENTS.notes_references_sync, notes_references_sync);
+
+mainMessageTransport(IPC_EVENTS.notes_references_put, notes_references_put);
