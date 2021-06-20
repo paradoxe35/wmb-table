@@ -1,12 +1,17 @@
 import React from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
 import { appViewState, documentTabs, MAIN_VIEWS } from '../../store';
+import { useValueStateRef } from '../../utils/hooks';
 
 export const useDocumentViewOpen = () => {
   const [tabs, setTabs] = useRecoilState(documentTabs);
   const setDocumentViewer = useSetRecoilState(appViewState);
 
+  const tabsRef = useValueStateRef(tabs);
+
   const onClick = (name: string, onItemClick?: Function) => {
+    const tabs = tabsRef.current;
+
     const existTab = tabs.some((t) => t.title === name);
 
     const activated = tabs.some((t) => t.title === name && t.active);

@@ -16,6 +16,7 @@ import { DocumentViewQuery, SubjectDocumentItem } from '../types';
 
 import { SubjectSelectModal } from './components/subject-select-modal';
 import { ModalSearchDocument } from './components/modal-search-document';
+import { NoteReferencesModal } from './components/note-references-modal';
 
 const { Content } = Layout;
 
@@ -195,6 +196,7 @@ export default function DocumentView() {
         title={title}
       />
       <SubjectSelectModal title={title} />
+      <NoteReferencesModal title={title} />
     </>
   );
 }

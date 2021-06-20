@@ -18,16 +18,24 @@ function searchOpen() {
  */
 let lastNodeTargetFromContent = null;
 
-function addDocumentNodeToSubject() {
+/**
+ * @param {string} event
+ */
+function addDocumentNodeToItem(event) {
   if (!lastNodeTargetFromContent) return;
+  if (lastNodeTargetFromContent.tagName === 'MARK') {
+    lastNodeTargetFromContent = lastNodeTargetFromContent.parentElement;
+  }
   const documentHtmlTree = closestChildParent(
+    // @ts-ignore
     lastNodeTargetFromContent,
     document.body
   );
+  // @ts-ignore
   const textContent = lastNodeTargetFromContent.textContent;
 
   window.parent.dispatchEvent(
-    new CustomEvent('add-document-ref-subject', {
+    new CustomEvent(event, {
       detail: { textContent, documentHtmlTree },
     })
   );
@@ -39,7 +47,11 @@ export default () => {
     { text: 'Recherche', hotkey: 'Ctrl+F', onclick: searchOpen },
     {
       text: 'Ajouter à un sujet',
-      onclick: addDocumentNodeToSubject,
+      onclick: () => addDocumentNodeToItem('add-document-ref-subject'),
+    },
+    {
+      text: 'Ajouter comme référence',
+      onclick: () => addDocumentNodeToItem('add-document-ref-note'),
     },
   ]);
 
