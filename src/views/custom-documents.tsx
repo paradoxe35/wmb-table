@@ -75,7 +75,7 @@ export default function CustomDocuments() {
       >
         <Row>
           <Col span={11}>
-            <CustomDocumentItem />
+            <CustomDocumentItem handleCancel={handleCancel} />
           </Col>
           <Col span={2}>
             <Divider style={{ minHeight: '400px' }} type="vertical" />
@@ -89,7 +89,7 @@ export default function CustomDocuments() {
   );
 }
 
-function CustomDocumentItem() {
+function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
   const documentsRef = useRef<CustomDocument[]>([]);
   const [documents, setDocuments] = useState<CustomDocument[]>([]);
   const setTitles = useSetRecoilState(documentTitles);
@@ -163,7 +163,11 @@ function CustomDocumentItem() {
           renderItem={(document) => (
             <List.Item
               actions={[
-                <DocumentViewer name={document.title} id={document.documentId}>
+                <DocumentViewer
+                  onItemClick={() => handleCancel()}
+                  name={document.title}
+                  id={document.documentId}
+                >
                   <Button shape="circle" icon={<EyeOutlined />} />
                 </DocumentViewer>,
                 <DeleteBtn confirm={() => handleDeletion(document)} />,
@@ -255,7 +259,7 @@ function Uploader() {
             detail: docs,
           })
         );
-        message.error(`Documents ajoutés avec succès`);
+        message.success(`Documents ajoutés avec succès`);
         setFileList([]);
       })
       .finally(() => setUploading(false));
