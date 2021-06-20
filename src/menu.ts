@@ -1,4 +1,10 @@
-import { app, Menu, BrowserWindow, MenuItemConstructorOptions } from 'electron';
+import {
+  app,
+  Menu,
+  BrowserWindow,
+  MenuItemConstructorOptions,
+  dialog,
+} from 'electron';
 import { IPC_EVENTS } from './utils/ipc-events';
 
 interface DarwinMenuItemConstructorOptions extends MenuItemConstructorOptions {
@@ -224,6 +230,31 @@ export default class MenuBuilder {
                   },
                 },
               ],
+      },
+      {
+        label: 'Aide',
+        submenu: [
+          {
+            label: 'À propos',
+            click: () => {
+              dialog.showMessageBoxSync(this.mainWindow, {
+                title: 'À propos',
+                type: 'info',
+                message: `
+                    Produit: Wmb Table
+                    Language: Français
+                    ----- ------ -----
+                    Auteur: Paradoxe Ngwasi
+                    Email: paradoxngwasi@gmail.com
+                    Web: https://png-me.web.app
+                    Licence: GNU GPLv3
+                `,
+                buttons: ['Ok'],
+                cancelId: 0,
+              });
+            },
+          },
+        ],
       },
     ];
 
