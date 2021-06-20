@@ -28,4 +28,6 @@ export const IPC_EVENTS = {
   notes_references_get: 'notes_references_get',
   notes_references_sync: 'notes_references_sync',
   notes_references_put: 'notes_references_put',
+  notes_export_pdf: 'notes_export_pdf',
+  notes_export_word: 'notes_export_word',
 };
