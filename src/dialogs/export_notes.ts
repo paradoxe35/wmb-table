@@ -13,7 +13,7 @@ export function export_note_pdf(
     defaultPath: `${name.split(' ').join('-').toLocaleLowerCase()}.pdf`,
   });
 
-  pdf.create(data, { format: 'A4' }).toFile(path, () => {});
+  path && pdf.create(data, { format: 'A4' }).toFile(path, () => {});
 
   return true;
 }
