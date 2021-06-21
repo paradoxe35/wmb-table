@@ -18,6 +18,7 @@ export const OPTIONS_VIEWS: OptionView = {
   subject: 'subject',
   history: 'history',
   editor: 'editor',
+  bible: 'bible',
 };
 
 export const appDatasLoaded = atom({

@@ -324,7 +324,7 @@ export default function EditorContent({
           message.success(`Label: ${ref.label}`);
         });
       } else {
-        message.error('Pas de sélection pour référence');
+        message.error('Aucune sélection trouvée pour la référence');
       }
     }
   }, []);

@@ -8,6 +8,7 @@ import {
 import { Menu, Layout } from 'antd';
 import OptionViewer from '../viewer/option-viewer';
 import { OPTIONS_VIEWS } from '../../store';
+import { BibleIcons } from '../icons';
 
 const { Sider } = Layout;
 
@@ -39,6 +40,14 @@ export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
         <Menu.Item key="4" icon={<EditOutlined />}>
           <OptionViewer component={OPTIONS_VIEWS.editor as string}>
             Notes
+          </OptionViewer>
+        </Menu.Item>
+
+        <Menu.Divider />
+
+        <Menu.Item key="5" icon={<BibleIcons />}>
+          <OptionViewer component={OPTIONS_VIEWS.bible as string}>
+            Bible
           </OptionViewer>
         </Menu.Item>
       </Menu>

@@ -29,4 +29,6 @@ export const IPC_EVENTS = {
   notes_references_sync: 'notes_references_sync',
   notes_references_put: 'notes_references_put',
   notes_export_pdf: 'notes_export_pdf',
+  bible_indexes: 'bible_indexes',
+  bible_books: 'bible_books',
 };
