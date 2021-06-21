@@ -32,6 +32,7 @@ import notes_references, {
 } from './handlers/notes_references';
 import bible_indexes from './handlers/bible_indexes';
 import bible_books from './handlers/bible_books';
+import bible_search from './handlers/bible_search';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -110,3 +111,6 @@ mainMessageTransport(IPC_EVENTS.bible_indexes, bible_indexes);
 
 // bible books
 mainMessageTransport(IPC_EVENTS.bible_books, bible_books);
+
+// bible_search
+mainMessageTransport(IPC_EVENTS.bible_search, bible_search);

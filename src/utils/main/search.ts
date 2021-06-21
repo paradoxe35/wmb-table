@@ -4,25 +4,13 @@ import {
   SearchMatchersValue,
   SearchResult,
 } from '../../types';
-import { regexpMatcher, strNormalizeNoLower } from '../functions';
+import { performSearch } from '../functions';
 import db, { queryDb } from './db';
 
 let searchResults: SearchItem[] = [];
 let lastSearch: string;
 let pageNumber: number = 1;
 const itemsPerPage = 10;
-
-function performSearch(
-  needle: string,
-  headstack: string
-): SearchMatchersValue[] {
-  const terms = strNormalizeNoLower(needle.trim())
-    .split(' ')
-    .filter(Boolean)
-    .join(`[a-z]*([^\s+]*)?`);
-
-  return regexpMatcher(`${terms}[a-z]*`, headstack) as SearchMatchersValue[];
-}
 
 export async function search(
   text: string,
@@ -38,7 +26,8 @@ export async function search(
 
     searchResults = documents
       .map((doc: DataDocument, i) => {
-        const datas = performSearch(text, doc.textContent);
+        const datas = performSearch<SearchMatchersValue>(text, doc.textContent);
+
         return !!datas.length
           ? {
               item: doc,

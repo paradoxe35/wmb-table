@@ -31,4 +31,5 @@ export const IPC_EVENTS = {
   notes_export_pdf: 'notes_export_pdf',
   bible_indexes: 'bible_indexes',
   bible_books: 'bible_books',
+  bible_search: 'bible_search',
 };
