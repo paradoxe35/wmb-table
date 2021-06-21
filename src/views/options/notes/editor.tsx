@@ -2,8 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ContainerScrollY from '../../../components/container-scroll-y';
 //@ts-ignore
 import { CKEditor } from '@ckeditor/ckeditor5-react';
-//@ts-ignore
-import './ckeditor/ckeditor';
 
 import { ContextMenu } from '../../../../modules/context-menu/context';
 import {
@@ -25,7 +23,16 @@ import { useDocumentViewOpen } from '../../../components/viewer/document-viewer'
 import { selectedSubjectDocumentItem } from '../../../store';
 import { useSetRecoilState } from 'recoil';
 
-declare var DecoupledDocumentEditor: any;
+//@ts-ignore
+let DecoupledDocumentEditor: any;
+
+if (process.env.NODE_ENV === 'development') {
+  require('./ckeditor/ckeditor');
+  //@ts-ignore
+  DecoupledDocumentEditor = window.DecoupledDocumentEditor;
+} else {
+  DecoupledDocumentEditor = require('./ckeditor/ckeditor');
+}
 
 function styleProperty(color = '#fff') {
   return {

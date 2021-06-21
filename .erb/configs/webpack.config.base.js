@@ -13,25 +13,13 @@ export default {
     rules: [
       {
         test: /\.tsx?$/,
-        exclude: [/node_modules/, /ckeditor\.js$/],
+        exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           options: {
             cacheDirectory: true,
           },
         },
-      },
-      {
-        test: /ckeditor\.js$/,
-        exclude: [/node_modules/],
-        use: [
-          {
-            loader: require.resolve('babel-loader'),
-            options: {
-              compact: false,
-            },
-          },
-        ],
       },
     ],
   },
