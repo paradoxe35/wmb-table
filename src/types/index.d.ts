@@ -59,13 +59,16 @@ interface SearchItem {
   refIndex: number;
 }
 
-export interface SearchResult {
-  data: SearchItem[];
+interface SearchResultStructure {
   end: boolean;
   itemsPerPage: number;
   query: string;
   pageNumber: number;
   total: number;
+}
+
+export interface SearchResult extends SearchResultStructure {
+  data: SearchItem[];
 }
 
 export interface SubjectDocumentItem extends Readonly<TimeStampData> {
@@ -151,3 +154,13 @@ export type BookRequest = {
   chapter: string;
   verse?: string;
 };
+
+interface BibleSearchItem {
+  item: BibleBook;
+  matches: SearchMatchersValue[];
+  refIndex: number;
+}
+
+export interface BibleSearchResult extends SearchResultStructure {
+  data: BibleSearchItem[];
+}

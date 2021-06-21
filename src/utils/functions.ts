@@ -132,3 +132,12 @@ export const respondToVisibility = (
 export const substrAfter = (str: string, substr: string) => {
   return str.slice(str.indexOf(substr) + substr.length, str.length);
 };
+
+export function performSearch<T>(needle: string, headstack: string): T[] {
+  const terms = strNormalizeNoLower(needle.trim())
+    .split(' ')
+    .filter(Boolean)
+    .join(`[a-z]*([^\s+]*)?`);
+
+  return (regexpMatcher(`${terms}[a-z]*`, headstack) as unknown) as T[];
+}
