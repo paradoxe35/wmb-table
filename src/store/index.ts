@@ -20,6 +20,11 @@ export const OPTIONS_VIEWS: OptionView = {
   editor: 'editor',
 };
 
+export const appDatasLoaded = atom({
+  key: 'appDatasLoaded',
+  default: false,
+});
+
 export const appViewState = atom({
   key: 'appViewerState',
   default: MAIN_VIEWS.document,

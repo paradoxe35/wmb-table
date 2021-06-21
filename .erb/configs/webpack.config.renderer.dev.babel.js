@@ -59,7 +59,7 @@ export default merge(baseConfig, {
     rules: [
       {
         test: /\.[jt]sx?$/,
-        exclude: [/node_modules/, /ckeditor\.js$/],
+        exclude: /node_modules/,
         use: [
           {
             loader: require.resolve('babel-loader'),
