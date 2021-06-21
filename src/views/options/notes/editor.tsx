@@ -3,8 +3,8 @@ import ContainerScrollY from '../../../components/container-scroll-y';
 //@ts-ignore
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 //@ts-ignore
-import DecoupledEditor from '@ckeditor/ckeditor5-build-decoupled-document';
-import '@ckeditor/ckeditor5-build-decoupled-document/build/translations/fr';
+import './ckeditor/ckeditor';
+
 import { ContextMenu } from '../../../../modules/context-menu/context';
 import {
   Button,
@@ -25,10 +25,7 @@ import { useDocumentViewOpen } from '../../../components/viewer/document-viewer'
 import { selectedSubjectDocumentItem } from '../../../store';
 import { useSetRecoilState } from 'recoil';
 
-const items = DecoupledEditor.defaultConfig.toolbar.items as string[];
-DecoupledEditor.defaultConfig.toolbar.items = items.filter(
-  (i) => !['mediaEmbed', 'uploadImage'].includes(i)
-);
+declare var DecoupledDocumentEditor: any;
 
 function styleProperty(color = '#fff') {
   return {
@@ -36,7 +33,7 @@ function styleProperty(color = '#fff') {
   };
 }
 
-const referenceBrandLink = '#reference-';
+const referenceBrandLink = 'http://w.t/#reference-';
 
 const useRenameNote = (note: NoteItem | null) => {
   const searchValue = useValueStateRef<string>(note?.name || '');
@@ -275,7 +272,10 @@ export default function EditorContent({
   useEffect(() => {
     const editor = editorRef.current;
     const handleEditorLinks = (e: MouseEvent) => {
-      const target = e.target as HTMLLinkElement;
+      let target = e.target as HTMLElement;
+      target =
+        target.tagName === 'A' ? target : (target.parentElement as HTMLElement);
+
       if (
         target.tagName === 'A' &&
         target.getAttribute('href')?.startsWith(referenceBrandLink)
@@ -430,7 +430,7 @@ function Editor({
   return (
     <div>
       <ContainerScrollY
-        susDiff={60}
+        susDiff={40}
         style={{
           padding: '20px',
           borderRadius: '2px',
@@ -457,11 +457,64 @@ function Editor({
                 editorRef.current.editor.ui.view.toolbar.element.remove();
               }
             }}
+            className="paradoxe"
             onChange={debounce(onChange, 1000)}
-            editor={DecoupledEditor}
+            editor={DecoupledDocumentEditor}
             data={data || ''}
             config={{
+              toolbar: {
+                items: [
+                  'heading',
+                  '|',
+                  'fontSize',
+                  'fontFamily',
+                  '|',
+                  'pageBreak',
+                  'fontColor',
+                  'fontBackgroundColor',
+                  '|',
+                  'bold',
+                  'italic',
+                  'underline',
+                  'strikethrough',
+                  '|',
+                  'alignment',
+                  '|',
+                  'numberedList',
+                  'bulletedList',
+                  '|',
+                  'outdent',
+                  'indent',
+                  '|',
+                  'todoList',
+                  'link',
+                  'blockQuote',
+                  'insertTable',
+                  '|',
+                  'undo',
+                  'redo',
+                  'subscript',
+                  'superscript',
+                  'horizontalLine',
+                  'textPartLanguage',
+                ],
+              },
+              link: {
+                decorators: {
+                  addTargetToExternalLinks: {
+                    mode: 'automatic',
+                    callback: (url: string) =>
+                      typeof url === 'string' &&
+                      url.includes(referenceBrandLink),
+                    attributes: {
+                      title: 'Référence',
+                      reference: 'true',
+                    },
+                  },
+                },
+              },
               language: 'fr',
+              licenseKey: '',
             }}
           />
         </div>

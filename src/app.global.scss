@@ -25,8 +25,54 @@ body {
 }
 
 .cke5-decoupled-custom-document-editable {
-  font-size: 1rem;
-  line-height: 1.8rem;
+  font-size: 1.09rem;
+  line-height: 1.6rem;
+  h1 {
+    display: block;
+    font-size: 1.7em;
+    margin-block-start: 0.67em;
+    margin-block-end: 0.67em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    font-weight: bold;
+  }
+  a[reference='true'] {
+    color: #049c95;
+    background-color: rgba(4, 156, 148, 0.089);
+    &::after {
+      content: '🗎 ';
+      font-size: 18px;
+    }
+  }
+}
+
+:root {
+  --ck-sample-base-spacing: 2em;
+  --ck-sample-color-white: #fff;
+  --ck-sample-color-green: #279863;
+  --ck-sample-color-blue: #1a9aef;
+  --ck-sample-container-width: 1285px;
+  --ck-sample-sidebar-width: 350px;
+  --ck-sample-editor-min-height: 400px;
+  --ck-sample-editor-z-index: 10;
+}
+
+/* --------- EDITOR STYLES  ---------------------------------------------------------------------------------------- */
+
+.editor__editable,
+/* Classic build. */
+main .ck-editor[role='application'] .ck.ck-content,
+/* Decoupled document build. */
+.ck.editor__editable[role='textbox'],
+.ck.ck-editor__editable[role='textbox'],
+/* Inline & Balloon build. */
+.ck.editor[role='textbox'] {
+  width: 100%;
+  background: #fff;
+  font-size: 1em;
+  line-height: 1.6em;
+  min-height: var(--ck-sample-editor-min-height);
+  padding: 1.5em 2em;
 }
 
 .layout__sidebar {
