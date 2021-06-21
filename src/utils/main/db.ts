@@ -13,6 +13,7 @@ interface Db {
 
   notes?: Datastore | undefined;
   notesReference?: Datastore | undefined;
+  bible?: Datastore | undefined;
 }
 
 const db: Db = {};
@@ -20,6 +21,11 @@ const databases: Datastore<any>[] = [];
 
 db.documents = new Datastore({
   filename: getAssetPath(`datas/documents.db`),
+  autoload: false,
+});
+
+db.bible = new Datastore({
+  filename: getAssetPath(`datas/bible/bible.db`),
   autoload: false,
 });
 

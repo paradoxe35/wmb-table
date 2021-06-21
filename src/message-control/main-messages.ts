@@ -30,6 +30,8 @@ import notes_references, {
   notes_references_store,
   notes_references_sync,
 } from './handlers/notes_references';
+import bible_indexes from './handlers/bible_indexes';
+import bible_books from './handlers/bible_books';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -102,3 +104,9 @@ mainMessageTransport(IPC_EVENTS.notes_references_get, notes_references_get);
 mainMessageTransport(IPC_EVENTS.notes_references_sync, notes_references_sync);
 
 mainMessageTransport(IPC_EVENTS.notes_references_put, notes_references_put);
+
+// bible index
+mainMessageTransport(IPC_EVENTS.bible_indexes, bible_indexes);
+
+// bible books
+mainMessageTransport(IPC_EVENTS.bible_books, bible_books);

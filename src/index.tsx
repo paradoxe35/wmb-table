@@ -17,6 +17,7 @@ import '../modules/context-menu/kali_dark.css';
 import CustomDocuments from './views/custom-documents';
 import { LoadingOutlined } from '@ant-design/icons';
 import LoadByVisibility from './components/load-by-visibility';
+import Bible from './views/options/bible';
 
 const Notes = lazy(() => import('./views/options/notes'));
 
@@ -51,6 +52,7 @@ const RouterApp = React.memo(
             <Notes />
           </Loader>
         ) as JSX.Element,
+        bible: (<Bible />) as JSX.Element,
       }),
       []
     );

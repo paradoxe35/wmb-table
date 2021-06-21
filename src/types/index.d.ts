@@ -29,6 +29,7 @@ export type OptionView = {
   subject: string | JSX.Element;
   history: string | JSX.Element;
   editor: string | JSX.Element;
+  bible: string | JSX.Element;
 };
 
 export type HandlerIPC = (event: Electron.IpcMainEvent, ...args: []) => any;
@@ -123,3 +124,30 @@ export interface NoteItemReference extends Readonly<TimeStampData> {
   documentHtmlTree: number[];
   textContent: string;
 }
+
+export type BibleIndexValue = {
+  book: string;
+  chapters: string;
+  verses: string;
+  testament: string;
+};
+
+export interface BibleIndex {
+  [x: string]: BibleIndexValue;
+}
+
+export interface BibleBook {
+  _id: Readonly<string>;
+  bookName: Readonly<string>;
+  book: Readonly<string>;
+  testament: Readonly<string>;
+  chapter: Readonly<string>;
+  verse: Readonly<string>;
+  content: Readonly<string>;
+}
+
+export type BookRequest = {
+  book: string;
+  chapter: string;
+  verse?: string;
+};
