@@ -27,6 +27,13 @@ body {
   cursor: pointer;
 }
 
+.list__clickable {
+  cursor: pointer;
+  &:hover {
+    background-color: rgba(238, 238, 238, 0.493);
+  }
+}
+
 .cke5-decoupled-custom-document-editable {
   font-size: 1.09rem;
   line-height: 1.6rem;

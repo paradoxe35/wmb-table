@@ -1,4 +1,13 @@
-import { Col, Divider, List, Modal, Row, Space, Typography } from 'antd';
+import {
+  Col,
+  Divider,
+  List,
+  message,
+  Modal,
+  Row,
+  Space,
+  Typography,
+} from 'antd';
 import React, { useState } from 'react';
 import { useCallback } from 'react';
 import { useSetRecoilState } from 'recoil';
@@ -112,12 +121,12 @@ export function ReferenceBibleModal({
     React.SetStateAction<NoteItemReferenceBible | undefined>
   >;
 }) {
-  const referenceIdRef = useValueStateRef(reference);
+  const referenceRef = useValueStateRef(reference);
 
   const handleDeletionRef = (ref: BibleBook) => {
     sendIpcRequest(
       IPC_EVENTS.notes_references_bible_remove,
-      referenceIdRef.current,
+      referenceRef.current?._id,
       ref._id
     ).then(() => {
       setReference((r) => {
@@ -129,6 +138,28 @@ export function ReferenceBibleModal({
       });
     });
   };
+
+  const onClickVerse = useCallback((refId: string) => {
+    const exists = referenceRef.current?.references.some(
+      (d) => (d as BibleBook)._id == refId
+    );
+    if (exists) {
+      message.warning('Le vers cliqué existe déjà dans la références !');
+      return;
+    }
+    sendIpcRequest<BibleBook>(
+      IPC_EVENTS.notes_references_bible_add,
+      referenceRef.current?._id,
+      refId
+    ).then((item) => {
+      setReference((r) => {
+        const nr = { ...r } as NoteItemReferenceBible;
+        nr.references = (nr.references as BibleBook[]).slice();
+        nr.references.push(item);
+        return nr;
+      });
+    });
+  }, []);
 
   return (
     <>
@@ -158,34 +189,49 @@ export function ReferenceBibleModal({
       >
         <Row>
           <Col span={11}>
-            {reference && (
-              <List
-                itemLayout="horizontal"
-                dataSource={reference.references as BibleBook[]}
-                renderItem={(ref) => (
-                  <List.Item
-                    actions={[
-                      <DeleteBtn confirm={() => handleDeletionRef(ref)} />,
-                    ]}
-                  >
-                    <List.Item.Meta
-                      title={
-                        <span>
-                          {ref.bookName} {ref.chapter}:{ref.verse}
-                        </span>
-                      }
-                      description={ref.content}
-                    />
-                  </List.Item>
-                )}
-              />
-            )}
+            <div
+              style={{
+                overflow: 'auto',
+                maxHeight: '400px',
+              }}
+            >
+              {reference && (
+                <List
+                  itemLayout="horizontal"
+                  dataSource={reference.references as BibleBook[]}
+                  renderItem={(ref) => (
+                    <List.Item
+                      actions={[
+                        <DeleteBtn confirm={() => handleDeletionRef(ref)} />,
+                      ]}
+                    >
+                      <List.Item.Meta
+                        title={
+                          <span>
+                            {ref.bookName} {ref.chapter}:{ref.verse}
+                          </span>
+                        }
+                        description={ref.content}
+                      />
+                    </List.Item>
+                  )}
+                />
+              )}
+            </div>
           </Col>
-          <Col span={2}>
+          <Col span={1}>
             <Divider style={{ minHeight: '250px' }} type="vertical" />
           </Col>
-          <Col span={11}>
-            <BibleContent />
+          <Col span={12}>
+            <div
+              style={{
+                overflow: 'auto',
+                maxHeight: '400px',
+                paddingRight: '9px',
+              }}
+            >
+              <BibleContent onClick={onClickVerse} />
+            </div>
           </Col>
         </Row>
       </Modal>

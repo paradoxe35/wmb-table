@@ -107,7 +107,11 @@ function BookContent({
             renderItem={(item) => {
               const onClickItem = () => onClick && onClick(item._id);
               return (
-                <List.Item onClick={onClickItem} key={item._id}>
+                <List.Item
+                  className={onClick ? 'list__clickable' : undefined}
+                  onClick={onClickItem}
+                  key={item._id}
+                >
                   <List.Item.Meta
                     avatar={<span>{item.verse}.</span>}
                     description={
