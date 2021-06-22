@@ -144,7 +144,7 @@ export function ReferenceBibleModal({
       (d) => (d as BibleBook)._id == refId
     );
     if (exists) {
-      message.warning('Le vers cliqué existe déjà dans la références !');
+      message.warning('Le verset cliqué existe déjà dans la références !');
       return;
     }
     sendIpcRequest<BibleBook>(
