@@ -211,7 +211,11 @@ export function ReferenceBibleModal({
                             {ref.bookName} {ref.chapter}:{ref.verse}
                           </span>
                         }
-                        description={ref.content}
+                        description={
+                          <span style={{ fontSize: '1.2em' }}>
+                            {ref.content}
+                          </span>
+                        }
                       />
                     </List.Item>
                   )}
