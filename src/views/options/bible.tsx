@@ -55,7 +55,13 @@ export default function Bible() {
   );
 }
 
-function BookContent({ bookDetail }: { bookDetail: BibleIndexValue }) {
+function BookContent({
+  bookDetail,
+  onClick,
+}: {
+  bookDetail: BibleIndexValue;
+  onClick?: (id: string) => void;
+}) {
   const [chaptersKey, setChaptersKey] = useState(1);
   const [verses, setVerses] = useState<BibleBook[]>();
 
@@ -98,18 +104,21 @@ function BookContent({ bookDetail }: { bookDetail: BibleIndexValue }) {
           <List
             itemLayout="horizontal"
             dataSource={verses.sort((a, b) => +a.verse - +b.verse)}
-            renderItem={(item) => (
-              <List.Item key={item._id}>
-                <List.Item.Meta
-                  avatar={<span>{item.verse}.</span>}
-                  description={
-                    <Typography.Text style={{ fontSize: '1.2em' }}>
-                      {item.content}
-                    </Typography.Text>
-                  }
-                />
-              </List.Item>
-            )}
+            renderItem={(item) => {
+              const onClickItem = () => onClick && onClick(item._id);
+              return (
+                <List.Item onClick={onClickItem} key={item._id}>
+                  <List.Item.Meta
+                    avatar={<span>{item.verse}.</span>}
+                    description={
+                      <Typography.Text style={{ fontSize: '1.2em' }}>
+                        {item.content}
+                      </Typography.Text>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
           />
         )}
       </Collapse.Panel>
@@ -117,7 +126,13 @@ function BookContent({ bookDetail }: { bookDetail: BibleIndexValue }) {
   );
 }
 
-function BibleTestamentContent({ bibleIndex }: { bibleIndex: BibleIndex }) {
+function BibleTestamentContent({
+  bibleIndex,
+  onClick,
+}: {
+  bibleIndex: BibleIndex;
+  onClick?: (id: string) => void;
+}) {
   const [currentKey, setCurrentKey] = useState<string>();
 
   function onChangeKey(key: string | string[]) {
@@ -131,7 +146,9 @@ function BibleTestamentContent({ bibleIndex }: { bibleIndex: BibleIndex }) {
           const book = bibleIndex[key];
           return (
             <Collapse.Panel header={key} key={book.book}>
-              {currentKey === book.book && <BookContent bookDetail={book} />}
+              {currentKey === book.book && (
+                <BookContent onClick={onClick} bookDetail={book} />
+              )}
             </Collapse.Panel>
           );
         })}
@@ -139,7 +156,7 @@ function BibleTestamentContent({ bibleIndex }: { bibleIndex: BibleIndex }) {
   );
 }
 
-function BibleContent() {
+export function BibleContent({ onClick }: { onClick?: (id: string) => void }) {
   const [bibleIndex, setBibleIndex] = useState<{ [name: string]: BibleIndex }>(
     {}
   );
@@ -162,7 +179,11 @@ function BibleContent() {
                 <Typography.Title type="secondary" level={5}>
                   {key === 'N' ? 'Nouveau' : 'Ancien'} Testament
                 </Typography.Title>
-                <BibleTestamentContent key={key} bibleIndex={bibleIndex[key]} />
+                <BibleTestamentContent
+                  key={key}
+                  onClick={onClick}
+                  bibleIndex={bibleIndex[key]}
+                />
               </Space>
             );
           })}

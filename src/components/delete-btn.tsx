@@ -1,4 +1,4 @@
-import { Button, Popconfirm, Tooltip } from 'antd';
+import { Button, Popconfirm } from 'antd';
 import React from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 
@@ -10,9 +10,9 @@ export function DeleteBtn({ confirm }: { confirm: Function }) {
       okText="Oui"
       cancelText="Non"
     >
-      <Tooltip title="Supprimer">
-        <Button shape="circle" icon={<DeleteOutlined />} />
-      </Tooltip>
+      {/* <Tooltip title="Supprimer"> */}
+      <Button shape="circle" icon={<DeleteOutlined />} />
+      {/* </Tooltip> */}
     </Popconfirm>
   );
 }

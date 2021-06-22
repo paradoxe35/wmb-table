@@ -84,7 +84,7 @@ export function Notes({
               >
                 <Card.Meta
                   title={
-                    <Typography.Text type="secondary">
+                    <Typography.Text title={note.name} type="secondary">
                       {note.name}
                     </Typography.Text>
                   }

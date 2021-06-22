@@ -33,6 +33,13 @@ import notes_references, {
 import bible_indexes from './handlers/bible_indexes';
 import bible_books from './handlers/bible_books';
 import bible_search from './handlers/bible_search';
+import {
+  notes_references_bible_add,
+  notes_references_bible_get,
+  notes_references_bible_remove,
+  notes_references_bible_store,
+  notes_references_bible_sync,
+} from './handlers/notes_references_bible';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -114,3 +121,29 @@ mainMessageTransport(IPC_EVENTS.bible_books, bible_books);
 
 // bible_search
 mainMessageTransport(IPC_EVENTS.bible_search, bible_search);
+
+// notes_references_bible
+mainMessageTransport(
+  IPC_EVENTS.notes_references_bible_store,
+  notes_references_bible_store
+);
+
+mainMessageTransport(
+  IPC_EVENTS.notes_references_bible_sync,
+  notes_references_bible_sync
+);
+
+mainMessageTransport(
+  IPC_EVENTS.notes_references_bible_get,
+  notes_references_bible_get
+);
+
+mainMessageTransport(
+  IPC_EVENTS.notes_references_bible_add,
+  notes_references_bible_add
+);
+
+mainMessageTransport(
+  IPC_EVENTS.notes_references_bible_remove,
+  notes_references_bible_remove
+);
