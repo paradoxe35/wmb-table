@@ -4,24 +4,24 @@ import ContainerScrollY from '../../../components/container-scroll-y';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 
 import { ContextMenu } from '../../../../modules/context-menu/context';
-import {
-  Button,
-  Input,
-  Modal,
-  Space,
-  Tooltip,
-  message,
-  Typography,
-} from 'antd';
+import { Button, Input, Modal, Space, Tooltip, message } from 'antd';
 import { LeftOutlined, FilePdfOutlined, EditOutlined } from '@ant-design/icons';
 import { debounce, substrAfter } from '../../../utils/functions';
-import { NoteItem, NoteItemReference } from '../../../types';
+import {
+  NoteItem,
+  NoteItemReference,
+  NoteItemReferenceBible,
+} from '../../../types';
 import sendIpcRequest from '../../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../../utils/ipc-events';
 import { useValueStateRef } from '../../../utils/hooks';
-import { useDocumentViewOpen } from '../../../components/viewer/document-viewer';
-import { selectedSubjectDocumentItem } from '../../../store';
-import { useSetRecoilState } from 'recoil';
+import {
+  referenceBibleBrandLink,
+  referenceBrandLink as referenceDocumentBrandLink,
+  ReferenceBibleModal,
+  useBibleReferenceModal,
+  useShowReferenceDetail,
+} from './references';
 
 //@ts-ignore
 let DecoupledDocumentEditor: any;
@@ -39,8 +39,6 @@ function styleProperty(color = '#fff') {
     backgroundColor: color,
   };
 }
-
-const referenceBrandLink = 'http://w.t/#reference-';
 
 const useRenameNote = (note: NoteItem | null) => {
   const searchValue = useValueStateRef<string>(note?.name || '');
@@ -167,57 +165,6 @@ function ButtonsControllers({
   );
 }
 
-const useShowReferenceDetail = () => {
-  const viewDocument = useDocumentViewOpen();
-  const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItem);
-
-  const modal = useCallback(
-    (reference: NoteItemReference, workingNote: NoteItem) => {
-      const assigned = (reference.documentHtmlTree || []).length > 0;
-
-      const openDocument = () => {
-        viewDocument(reference.documentTitle, () => {
-          //@ts-ignore
-          setSubjectItemSelected({
-            subject: '',
-            documentHtmlTree: reference.documentHtmlTree,
-            documentTitle: reference.documentTitle,
-            textContent: reference.textContent,
-          });
-        });
-      };
-
-      Modal[assigned ? 'info' : 'warning']({
-        closable: true,
-        onOk: assigned ? openDocument : undefined,
-        okText: assigned ? 'Ouvrir' : 'Fermer',
-        title: (
-          <span>
-            {workingNote.name} - {reference.label}
-          </span>
-        ),
-        content: assigned ? (
-          <div>
-            <p>Document: {reference.documentTitle}</p>
-            <p>
-              <Typography.Text>
-                {(reference.textContent || '').slice(0, 30)}...
-              </Typography.Text>
-            </p>
-          </div>
-        ) : (
-          <div>
-            <p>Aucun document n'a été attribué pour cette référence</p>
-          </div>
-        ),
-      });
-    },
-    []
-  );
-
-  return modal;
-};
-
 export default function EditorContent({
   workingNoteId,
   backToNotes,
@@ -238,6 +185,8 @@ export default function EditorContent({
   const [ready, setReady] = useState(false);
 
   const workingNoteRef = useValueStateRef(workingNote);
+
+  const bibleReferenceModal = useBibleReferenceModal();
 
   useEffect(() => {
     sendIpcRequest<NoteItem>(
@@ -276,6 +225,19 @@ export default function EditorContent({
     });
   }, []);
 
+  const handleEditorLinksBibleClick = useCallback((idRef: string) => {
+    sendIpcRequest<NoteItemReferenceBible | null>(
+      IPC_EVENTS.notes_references_bible_get,
+      idRef
+    ).then((data) => {
+      if (data) {
+        bibleReferenceModal.showModal(data);
+      } else {
+        message.error('La référence biblique est invalide');
+      }
+    });
+  }, []);
+
   useEffect(() => {
     const editor = editorRef.current;
     const handleEditorLinks = (e: MouseEvent) => {
@@ -285,11 +247,18 @@ export default function EditorContent({
 
       if (
         target.tagName === 'A' &&
-        target.getAttribute('href')?.startsWith(referenceBrandLink)
+        target.getAttribute('href')?.startsWith(referenceDocumentBrandLink)
       ) {
         const str = target.getAttribute('href') as string;
-        const substr = referenceBrandLink;
+        const substr = referenceDocumentBrandLink;
         handleEditorLinksClick(substrAfter(str, substr));
+      } else if (
+        target.tagName === 'A' &&
+        target.getAttribute('href')?.startsWith(referenceBibleBrandLink)
+      ) {
+        const str = target.getAttribute('href') as string;
+        const substr = referenceBibleBrandLink;
+        handleEditorLinksBibleClick(substrAfter(str, substr));
       }
     };
     if (editor) {
@@ -302,13 +271,13 @@ export default function EditorContent({
     return;
   }, [ready]);
 
-  const refereToDocument = useCallback(async () => {
+  const refereToDocument = useCallback(async (type: string) => {
     const editor = editorRef.current;
     if (contextEvent.current && contextEvent.current.target) {
       const target = contextEvent.current.target as HTMLElement;
       if (
         target.tagName === 'A' &&
-        target.getAttribute('href')?.startsWith(referenceBrandLink)
+        target.getAttribute('href')?.startsWith(referenceDocumentBrandLink)
       ) {
         return;
       }
@@ -316,36 +285,59 @@ export default function EditorContent({
       const selected = window.getSelection()?.toString().trim();
 
       if (selected && selected.length > 1) {
-        sendIpcRequest<NoteItemReference>(
-          IPC_EVENTS.notes_references_store,
-          workingNoteIdRef.current
-        ).then((ref) => {
-          editor.execute('link', referenceBrandLink + ref._id);
-          message.success(`Label: ${ref.label}`);
-        });
+        switch (type) {
+          case 'document':
+            sendIpcRequest<NoteItemReference>(
+              IPC_EVENTS.notes_references_store,
+              workingNoteIdRef.current
+            ).then((ref) => {
+              editor.execute('link', referenceDocumentBrandLink + ref._id);
+              message.success(`Référence document: ${ref.label}`);
+            });
+            break;
+
+          case 'bible':
+            sendIpcRequest<NoteItemReferenceBible>(
+              IPC_EVENTS.notes_references_bible_store,
+              workingNoteIdRef.current
+            ).then((ref) => {
+              editor.execute('link', referenceBibleBrandLink + ref._id);
+              message.success(`Référence biblique: ${ref.label}`);
+              bibleReferenceModal.showModal(ref);
+            });
+            break;
+          default:
+            message.error('Aucune sélection trouvée pour la référence');
+            break;
+        }
       } else {
         message.error('Aucune sélection trouvée pour la référence');
       }
     }
   }, []);
 
-  const syncAvalaibleReferences = () => {
+  const referencesIds = (type: string) => {
     const editor = editorRef.current;
     const editorEl = editor.ui.getEditableElement() as HTMLElement;
-    const references = Array.from(editorEl.querySelectorAll('a[href]'))
-      .filter((link) =>
-        link.getAttribute('href')?.startsWith(referenceBrandLink)
-      )
+    return Array.from(editorEl.querySelectorAll('a[href]'))
+      .filter((link) => link.getAttribute('href')?.startsWith(type))
       .map((link) => {
         const str = link.getAttribute('href') as string;
-        const substr = referenceBrandLink;
+        const substr = type;
         return substrAfter(str, substr);
       });
+  };
 
-    sendIpcRequest(
+  const syncAvalaibleReferences = async () => {
+    await sendIpcRequest(
       IPC_EVENTS.notes_references_sync,
       workingNoteIdRef.current,
-      references
+      referencesIds(referenceDocumentBrandLink)
+    );
+    await sendIpcRequest(
+      IPC_EVENTS.notes_references_bible_sync,
+      workingNoteIdRef.current,
+      referencesIds(referenceBibleBrandLink)
     );
   };
 
@@ -376,6 +368,8 @@ export default function EditorContent({
         contextEvent={contextEvent}
         editorRef={editorRef}
       />
+
+      <ReferenceBibleModal {...bibleReferenceModal} />
     </>
   );
 }
@@ -393,7 +387,7 @@ function Editor({
   data: string | null;
   workingNoteId: string;
   ready: boolean;
-  refereToDocument: () => void;
+  refereToDocument: (type: string) => void;
   setReady: React.Dispatch<React.SetStateAction<boolean>>;
   onChange: () => void;
   contextEvent: React.MutableRefObject<MouseEvent | null>;
@@ -415,7 +409,16 @@ function Editor({
     if (editorRef.current) {
       chromeContextMenu = new ContextMenu(
         editorRef.current.ui.getEditableElement().parentElement,
-        [{ text: 'Référence', onclick: refereToDocument }]
+        [
+          {
+            text: 'Référence document',
+            onclick: () => refereToDocument('document'),
+          },
+          {
+            text: 'Référence biblique',
+            onclick: () => refereToDocument('bible'),
+          },
+        ]
       );
 
       chromeContextMenu.container.addEventListener(
@@ -507,18 +510,30 @@ function Editor({
                 ],
               },
               link: {
-                decorators: {
-                  addTargetToExternalLinks: {
+                addTargetToExternalLinks: true,
+                decorators: [
+                  {
                     mode: 'automatic',
                     callback: (url: string) =>
                       typeof url === 'string' &&
-                      url.includes(referenceBrandLink),
+                      url.includes(referenceDocumentBrandLink),
                     attributes: {
-                      title: 'Référence',
+                      title: 'Référence document',
                       reference: 'true',
                     },
                   },
-                },
+                  {
+                    mode: 'automatic',
+                    callback: (url: string) =>
+                      typeof url === 'string' &&
+                      url.includes(referenceBibleBrandLink),
+                    attributes: {
+                      title: 'Référence document',
+                      reference: 'true',
+                      bible: 'true',
+                    },
+                  },
+                ],
               },
               language: 'fr',
               licenseKey: '',

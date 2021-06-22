@@ -13,6 +13,7 @@ interface Db {
 
   notes?: Datastore | undefined;
   notesReference?: Datastore | undefined;
+  notesBibleReference?: Datastore | undefined;
   bible?: Datastore | undefined;
 }
 
@@ -52,6 +53,7 @@ db.suggestions = dbStore('suggestions');
 db.customDocuments = dbStore('custom-documents');
 db.notes = dbStore('notes');
 db.notesReference = dbStore('notes-reference');
+db.notesBibleReference = dbStore('notes-bible-reference');
 
 export const queryDb = {
   promiseResolve(resolve: Function, reject: Function) {

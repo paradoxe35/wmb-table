@@ -7,6 +7,9 @@ body {
   padding: 0;
   overflow: hidden;
   user-select: none;
+  .ant-list-item {
+    user-select: text;
+  }
 }
 
 @import './plugins/chrome-tabs/chrome-tabs.scss';
@@ -42,6 +45,12 @@ body {
     &::after {
       content: '🗎 ';
       font-size: 18px;
+    }
+  }
+
+  a[reference='true'][bible='true'] {
+    &::after {
+      content: '📖 ';
     }
   }
 }

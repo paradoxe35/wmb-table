@@ -128,6 +128,12 @@ export interface NoteItemReference extends Readonly<TimeStampData> {
   textContent: string;
 }
 
+export interface NoteItemReferenceBible extends Readonly<TimeStampData> {
+  label: string;
+  noteId: string;
+  references: BibleBook[] | string[];
+}
+
 export type BibleIndexValue = {
   book: string;
   chapters: string;

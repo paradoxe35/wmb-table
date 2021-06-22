@@ -54,7 +54,7 @@ export default function CustomDocuments() {
   return (
     <>
       <Modal
-        width={(window.innerWidth * 80) / 100}
+        width="80%"
         title={
           <>
             <Space direction="horizontal">
@@ -78,7 +78,7 @@ export default function CustomDocuments() {
             <CustomDocumentItem handleCancel={handleCancel} />
           </Col>
           <Col span={2}>
-            <Divider style={{ minHeight: '400px' }} type="vertical" />
+            <Divider style={{ minHeight: '250px' }} type="vertical" />
           </Col>
           <Col span={11}>
             <Uploader />
@@ -156,7 +156,7 @@ function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
         </Space>
       </div>
 
-      <div style={{ overflow: 'auto', height: '300px' }}>
+      <div style={{ overflow: 'auto', maxHeight: '300px' }}>
         <List
           itemLayout="horizontal"
           dataSource={documents}
@@ -275,7 +275,7 @@ function Uploader() {
       <div
         style={{
           overflow: 'auto',
-          height: '400px',
+          maxHeight: '400px',
           padding: '0 10px',
           marginBottom: '10px',
         }}
