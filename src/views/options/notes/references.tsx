@@ -14,6 +14,7 @@ import { useSetRecoilState } from 'recoil';
 import { useDocumentViewOpen } from '../../../components/viewer/document-viewer';
 import sendIpcRequest from '../../../message-control/ipc/ipc-renderer';
 import { selectedSubjectDocumentItem } from '../../../store';
+import { FileOutlined } from '@ant-design/icons';
 import {
   BibleBook,
   NoteItem,
@@ -59,11 +60,10 @@ export const useShowReferenceDetail = () => {
         ),
         content: assigned ? (
           <div>
-            <p>Document: {reference.documentTitle}</p>
+            <p><Typography.Text type="secondary"><FileOutlined /> Document:</Typography.Text> {reference.documentTitle}</p>
             <p>
-              <Typography.Text>
-                {(reference.textContent || '').slice(0, 30)}...
-              </Typography.Text>
+              <Typography.Text type="secondary">- </Typography.Text>
+              {(reference.textContent || '').slice(0, 80)}...
             </p>
           </div>
         ) : (
@@ -174,7 +174,7 @@ export function ReferenceBibleModal({
                 <Typography.Text type="secondary">
                   {reference && (
                     <span>
-                      {reference.label}({reference.references.length})
+                      {reference.label} ({reference.references.length})
                     </span>
                   )}
                 </Typography.Text>

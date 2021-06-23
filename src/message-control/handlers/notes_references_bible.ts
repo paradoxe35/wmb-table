@@ -38,6 +38,8 @@ export async function notes_references_bible_get(_: any, _id: string) {
     { _id }
   );
 
+  if(!datas) return null;
+
   const ids = datas.references as string[];
   const refs = [] as BibleBook[];
 
