@@ -316,10 +316,8 @@ export default function EditorContent({
     }
   }, []);
 
-  const referencesIds = (type: string) => {
-    const editor = editorRef.current;
-    const editorEl = editor.ui.getEditableElement() as HTMLElement;
-    return Array.from(editorEl.querySelectorAll('a[href]'))
+  const referencesIds = (fragment: DocumentFragment, type: string) => {
+    return Array.from(fragment.querySelectorAll('a[href]'))
       .filter((link) => link.getAttribute('href')?.startsWith(type))
       .map((link) => {
         const str = link.getAttribute('href') as string;
@@ -328,27 +326,35 @@ export default function EditorContent({
       });
   };
 
-  const syncAvalaibleReferences = async () => {
+  const syncAvalaibleReferences = async (fragment: DocumentFragment) => {
     await sendIpcRequest(
       IPC_EVENTS.notes_references_sync,
       workingNoteIdRef.current,
-      referencesIds(referenceDocumentBrandLink)
+      referencesIds(fragment, referenceDocumentBrandLink)
     );
     await sendIpcRequest(
       IPC_EVENTS.notes_references_bible_sync,
       workingNoteIdRef.current,
-      referencesIds(referenceBibleBrandLink)
+      referencesIds(fragment, referenceBibleBrandLink)
     );
   };
+
+  const firstSync = useRef(false);
+
+  useEffect(() => {
+    if(workingNote && workingNote.content && !firstSync.current) {
+      const fragment = document.createRange().createContextualFragment(workingNote.content)
+      syncAvalaibleReferences(fragment)
+      firstSync.current = true;
+    }
+  }, [workingNote])
 
   const onChangeData = async () => {
     sendIpcRequest(
       IPC_EVENTS.notes_items_update_content,
       workingNoteId,
       editorRef.current.getData()
-    ).finally(() => {
-      syncAvalaibleReferences();
-    });
+    );
   };
 
   return (
@@ -528,7 +534,7 @@ function Editor({
                       typeof url === 'string' &&
                       url.includes(referenceBibleBrandLink),
                     attributes: {
-                      title: 'Référence document',
+                      title: 'Référence biblique',
                       reference: 'true',
                       bible: 'true',
                     },

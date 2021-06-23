@@ -50,7 +50,7 @@ export default () => {
       onclick: () => addDocumentNodeToItem('add-document-ref-subject'),
     },
     {
-      text: 'Ajouter comme référence',
+      text: 'Ajouter comme référence note',
       onclick: () => addDocumentNodeToItem('add-document-ref-note'),
     },
   ]);
