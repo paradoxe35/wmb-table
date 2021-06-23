@@ -11,7 +11,7 @@ export function performSearch(term) {
 
   const textContent = strNormalizeNoLower(document.body.textContent);
 
-  const terms = strNormalizeNoLower(term.trim())
+  const terms = strNormalizeNoLower(escapeRegExp(term.trim()))
     .split(' ')
     .filter(Boolean)
     .join(`[a-z]*([^\s+]*)?`);
@@ -27,6 +27,13 @@ export function performSearch(term) {
   markMaches(document.body, matches, textContent.length);
 
   window.parent.dispatchEvent(new Event('frame-document-search-end'));
+}
+
+/**
+ * @param {string} text
+ */
+function escapeRegExp(text) {
+  return text.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&');
 }
 
 /**
