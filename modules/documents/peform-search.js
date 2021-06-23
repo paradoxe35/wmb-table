@@ -33,7 +33,7 @@ export function performSearch(term) {
  * @param {string} text
  */
 function escapeRegExp(text) {
-  return text.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&');
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

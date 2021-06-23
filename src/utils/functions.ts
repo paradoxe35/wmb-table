@@ -82,7 +82,7 @@ export function capitalizeFirstLetter(string: string) {
 }
 
 export function escapeRegExp(text: string) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');;
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function regexpMatcher(pattern: string | RegExp, headstack: string) {
