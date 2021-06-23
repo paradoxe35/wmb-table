@@ -8,7 +8,12 @@ import {
   Pagination,
 } from 'antd';
 import { SelectProps } from 'antd/es/select';
-import { debounce, regexpMatcher, strNormalize } from '../../utils/functions';
+import {
+  debounce,
+  escapeRegExp,
+  regexpMatcher,
+  strNormalize,
+} from '../../utils/functions';
 import { SearchItem, SearchResult, Suggestions } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
@@ -262,7 +267,7 @@ function MatcherFn(
     ) +
     '...';
 
-  const matcher = regexpMatcher(term, content)[0];
+  const matcher = regexpMatcher(escapeRegExp(term), content)[0];
 
   const node = document.createTextNode(content);
   element.appendChild(node);

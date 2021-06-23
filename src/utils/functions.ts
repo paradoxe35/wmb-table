@@ -81,6 +81,10 @@ export function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+export function escapeRegExp(text: string) {
+  return text.replace(/[\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
 export function regexpMatcher(pattern: string | RegExp, headstack: string) {
   const regexp = new RegExp(pattern, 'gi');
   const matches = [...headstack.matchAll(regexp)];
@@ -134,7 +138,7 @@ export const substrAfter = (str: string, substr: string) => {
 };
 
 export function performSearch<T>(needle: string, headstack: string): T[] {
-  const terms = strNormalizeNoLower(needle.trim())
+  const terms = strNormalizeNoLower(escapeRegExp(needle.trim()))
     .split(' ')
     .filter(Boolean)
     .join(`[a-z]*([^\s+]*)?`);
