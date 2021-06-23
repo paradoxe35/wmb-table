@@ -5,7 +5,7 @@ import { CKEditor } from '@ckeditor/ckeditor5-react';
 
 import { ContextMenu } from '../../../../modules/context-menu/context';
 import { Button, Input, Modal, Space, Tooltip, message } from 'antd';
-import { LeftOutlined, FilePdfOutlined, EditOutlined } from '@ant-design/icons';
+import { LeftOutlined, FilePdfOutlined, EditOutlined, ReadOutlined } from '@ant-design/icons';
 import { debounce, substrAfter } from '../../../utils/functions';
 import {
   NoteItem,
@@ -126,6 +126,14 @@ function ButtonsControllers({
     ).finally(() => setLoadingPdf(false));
   };
 
+  const [readOnly,setReadOnly] = useState(false)
+
+  const readOnlyMode = () => {
+      if(!editorRef.current) return
+      setReadOnly(r => !r)
+      editorRef.current.isReadOnly = !editorRef.current.isReadOnly;
+  }
+
   return (
     <div
       style={{
@@ -152,6 +160,13 @@ function ButtonsControllers({
       </Space>
 
       <Space direction="horizontal">
+        <Tooltip title={`${!readOnly ? 'Activer' : 'Désactiver'} mode lecture`}>
+          <Button
+            onClick={readOnlyMode}
+            type={readOnly ? 'primary': 'dashed'}
+            icon={<ReadOutlined />}
+          />
+        </Tooltip>
         <Tooltip title="Exporter au format PDF">
           <Button
             type="dashed"
@@ -473,7 +488,6 @@ function Editor({
                 editorRef.current.editor.ui.view.toolbar.element.remove();
               }
             }}
-            className="paradoxe"
             onChange={debounce(onChange, 1000)}
             editor={DecoupledDocumentEditor}
             data={data || ''}
@@ -526,6 +540,7 @@ function Editor({
                     attributes: {
                       title: 'Référence document',
                       reference: 'true',
+                      onclick: "event.preventDefault()"
                     },
                   },
                   {
@@ -537,6 +552,7 @@ function Editor({
                       title: 'Référence biblique',
                       reference: 'true',
                       bible: 'true',
+                      onclick: "event.preventDefault()"
                     },
                   },
                 ],
