@@ -74,6 +74,7 @@ export default function DocumentView() {
 
   useEffect(() => {
     if (documentQuery.current) {
+      window.dispatchEvent(new Event('frame-document-search-start'))
       iframeRef.current?.contentWindow?.location.reload();
     }
   }, [viewQuery]);

@@ -3,18 +3,37 @@ import { useRecoilState, useRecoilValue } from 'recoil';
 import ChromeTabs from '../plugins/chrome-tabs/chrome-tabs';
 import { currentDocumentTabs, documentTabs } from '../store';
 import { DocumentTab } from '../types';
-import { FileFilled } from '@ant-design/icons';
+import { FileFilled, LoadingOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../utils/ipc-events';
+import { Spin } from 'antd';
 
 function Tab({ tab }: { tab: DocumentTab }) {
   const tabRef = useRef<HTMLDivElement | null>(null);
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (tabRef.current && tab.active) {
       tabRef.current.setAttribute('active', `${tab.active}`);
     }
   }, []);
+
+  useEffect(() => {
+    const startLoading = () => tab && tab.active && setLoading(true)
+    const endLoading = () => setLoading(false)
+
+    if(tab && tab.active) {
+      window.addEventListener('frame-document-search-start', startLoading)
+      window.addEventListener('frame-document-search-end', endLoading)
+
+      return () => {
+        window.removeEventListener('frame-document-search-start', startLoading)
+        window.removeEventListener('frame-document-search-end', endLoading)
+      }
+    }
+    return;
+  }, [])
+
   return (
     //@ts-ignore
     <div className="chrome-tab" title={tab.title} ref={tabRef}>
@@ -54,7 +73,9 @@ function Tab({ tab }: { tab: DocumentTab }) {
       </div>
       <div className="chrome-tab-content">
         <div className="chrome-tab-favicon">
-          <FileFilled />
+          {loading ? (
+            <Spin indicator={<LoadingOutlined  spin />} />
+          ): (<FileFilled />)}
         </div>
         <div className="chrome-tab-title">{tab.title}</div>
         <div className="chrome-tab-drag-handle"></div>
