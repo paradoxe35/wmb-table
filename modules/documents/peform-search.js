@@ -7,6 +7,8 @@ export function performSearch(term) {
   setSearchResult(null);
   if (!term) return;
 
+  window.parent.dispatchEvent(new Event('frame-document-search-start'));
+
   const textContent = strNormalizeNoLower(document.body.textContent);
 
   const terms = strNormalizeNoLower(term.trim())
@@ -23,6 +25,8 @@ export function performSearch(term) {
   setSearchResult({ term, matches });
 
   markMaches(document.body, matches, textContent.length);
+
+  window.parent.dispatchEvent(new Event('frame-document-search-end'));
 }
 
 /**
