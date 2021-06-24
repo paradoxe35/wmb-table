@@ -15,10 +15,14 @@ import {
 import electron from 'electron';
 import { IPC_EVENTS } from '../utils/ipc-events';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { documentTitles } from '../store';
+import { appDatasLoaded, documentTitles } from '../store';
 import { CustomDocument, UploadDocument } from '../types';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
-import { FileAddOutlined, EyeOutlined } from '@ant-design/icons';
+import {
+  FileAddOutlined,
+  EyeOutlined,
+  LoadingOutlined,
+} from '@ant-design/icons';
 import { DeleteBtn } from '../components/delete-btn';
 import { strNormalize } from '../utils/functions';
 import DocumentViewer from '../components/viewer/document-viewer';
@@ -26,6 +30,8 @@ import DocumentViewer from '../components/viewer/document-viewer';
 import { InboxOutlined } from '@ant-design/icons';
 import { DraggerProps } from 'antd/lib/upload';
 import { UploadFile } from 'antd/lib/upload/interface';
+
+import { Spin } from 'antd';
 
 const { Dragger } = Upload;
 
@@ -89,6 +95,19 @@ export default function CustomDocuments() {
   );
 }
 
+const DocumentTitle = ({ length }: { length: number }) => {
+  const appLoaded = useRecoilValue(appDatasLoaded);
+
+  return (
+    <Space direction="horizontal">
+      <Typography.Text type="secondary">
+        Documents ajoutés ({length})
+      </Typography.Text>
+      {!appLoaded && <Spin indicator={<LoadingOutlined spin />} />}
+    </Space>
+  );
+};
+
 function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
   const documentsRef = useRef<CustomDocument[]>([]);
   const [documents, setDocuments] = useState<CustomDocument[]>([]);
@@ -133,21 +152,25 @@ function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
     }
   };
 
+  const setAppDataLoaded = useSetRecoilState(appDatasLoaded);
+
   const handleDeletion = (document: CustomDocument) => {
-    sendIpcRequest(IPC_EVENTS.custom_documents_delete, document);
-    documentsRef.current = documentsRef.current.filter(
-      (d) => d.title != document.title
-    );
-    setTitles((ts) => ts.filter((t) => t.title != document.title));
-    setDocuments(documentsRef.current);
+    setAppDataLoaded(false);
+    sendIpcRequest(IPC_EVENTS.custom_documents_delete, document)
+      .then(() => {
+        documentsRef.current = documentsRef.current.filter(
+          (d) => d.title != document.title
+        );
+        setTitles((ts) => ts.filter((t) => t.title != document.title));
+        setDocuments(documentsRef.current);
+      })
+      .finally(() => setAppDataLoaded(true));
   };
 
   return (
     <>
       <div className="flex flex-center">
-        <Typography.Text type="secondary">
-          Documents ajoutés ({documents.length})
-        </Typography.Text>
+        <DocumentTitle length={documents.length} />
       </div>
 
       <div className="flex flex-center mt-2 mb-2">
