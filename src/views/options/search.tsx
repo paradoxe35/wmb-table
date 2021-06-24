@@ -190,7 +190,11 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
             </a>
           }
           description={
-            <span>{result.matches.length} correspondances trouvées.</span>
+            <span>
+              {result.matches.length} correspondance
+              {result.matches.length > 1 ? 's' : ''} trouvée
+              {result.matches.length > 1 ? 's' : ''}.
+            </span>
           }
         />
         <ContentItem key={`${result.item.title}-${query}`} item={result} />
@@ -215,7 +219,8 @@ const SearchResultComponent = React.memo(
         {results && (
           <div className="mt-2 flex flex-center">
             <Text type="secondary">
-              Environ {results?.total} résultats, page({results.pageNumber}/
+              Trouvé dans {results?.total} document
+              {results?.total > 1 ? 's' : ''}, page({results.pageNumber}/
               {Math.ceil(results.total / results.itemsPerPage)})
             </Text>
           </div>

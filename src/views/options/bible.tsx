@@ -237,7 +237,8 @@ function SearchResult({
       {results && (
         <div className="mt-2 flex flex-center">
           <Typography.Text type="secondary">
-            Environ {results?.total} résultats, page({results.pageNumber}/
+            Trouvé dans {results?.total} verset
+            {results?.total > 1 ? 's' : ''}, page({results.pageNumber}/
             {Math.ceil(results.total / results.itemsPerPage)})
           </Typography.Text>
         </div>
