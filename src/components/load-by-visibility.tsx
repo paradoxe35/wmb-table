@@ -21,7 +21,7 @@ const LoadByVisibility: React.FC = function ({ children }) {
     let unobserve: { (): any; (): void } | null = null;
     if (hasWidth === 0) {
       unobserve = respondToVisibility(
-        (containerRef.current as unknown) as Element,
+        containerRef.current as Element,
         (isVisible) => {
           if (hasWidth === 0 && isVisible) rebuildEl();
         }

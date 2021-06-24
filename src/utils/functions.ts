@@ -123,12 +123,12 @@ export function getDateTime(date?: Date) {
 }
 
 export const respondToVisibility = (
-  element: Element,
+  element: Element | HTMLElement,
   callback: (value: boolean) => void
 ) => {
   const options = {
     root: document.documentElement,
-  };
+  } as IntersectionObserverInit;
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry) => {
       callback(entry.intersectionRatio > 0);
