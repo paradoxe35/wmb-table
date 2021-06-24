@@ -93,10 +93,14 @@
       }
     ],
     "publish": {
-      "provider": "png_",
-      "owner": "paradoxe ngwasi",
-      "repo": "paradoxe ngwasi"
+      "provider": "bintray",
+      "owner": "paradoxe35",
+      "repo": "paradoxe35"
     }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://pngwasi@bitbucket.org/pngwasi/wmb-table.git"
   },
   "author": {
     "name": "Paradoxe Ngwasi",
