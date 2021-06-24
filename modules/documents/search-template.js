@@ -154,6 +154,11 @@ export function handleSearch() {
     });
 }
 
+/**
+ * @type {{ (this: Window, ev: KeyboardEvent): any; (e: KeyboardEvent): void; } | null}
+ */
+let lastCloseFn = null;
+
 export default function initTemplate() {
   hasOpened = true;
 
@@ -172,6 +177,19 @@ export default function initTemplate() {
       searchContainer && searchContainer.classList.remove('active');
       window.parent.dispatchEvent(new Event('close-document-query'));
     });
+
+  lastCloseFn && document.removeEventListener('keypress', lastCloseFn);
+
+  const closeSearchBar = (/** @type {KeyboardEvent} */ e) => {
+    if (e.key === 'Escape') {
+      searchContainer && searchContainer.classList.remove('active');
+      window.parent.dispatchEvent(new Event('close-document-query'));
+    }
+  };
+
+  document.addEventListener('keypress', closeSearchBar);
+
+  lastCloseFn = closeSearchBar;
 
   handleSearch();
 
