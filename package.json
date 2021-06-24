@@ -103,7 +103,7 @@
     "email": "paradoxngwasi@gmail.com",
     "url": "https://png-me.web.app"
   },
-  "license": "GNU GPLv3",
+  "license": "MIT",
   "keywords": [
     "electron",
     "react",
