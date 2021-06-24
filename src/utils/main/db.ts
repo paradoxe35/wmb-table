@@ -5,6 +5,7 @@ interface Db {
   history?: Datastore | undefined;
   historyItem?: Datastore | undefined;
   documents?: Datastore | undefined;
+  documentsTitle?: Datastore | undefined;
   subjects?: Datastore | undefined;
   subjectItems?: Datastore | undefined;
   tabs?: Datastore | undefined;
@@ -21,7 +22,12 @@ const db: Db = {};
 const databases: Datastore<any>[] = [];
 
 db.documents = new Datastore({
-  filename: getAssetPath(`datas/documents.db`),
+  filename: getAssetPath(`datas/documents-db/documents.db`),
+  autoload: false,
+});
+
+db.documentsTitle = new Datastore({
+  filename: getAssetPath(`datas/documents-db/documents-title.db`),
   autoload: false,
 });
 
