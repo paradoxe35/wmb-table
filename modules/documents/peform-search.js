@@ -42,7 +42,12 @@ function escapeRegExp(text) {
  * @returns {import('../../src/types/index').SearchMatchersValue[]}
  */
 function regexpMatcher(pattern, headstack) {
-  const regexp = new RegExp(pattern, 'gi');
+  const regexp = new RegExp(
+    typeof pattern === 'string'
+      ? pattern.replace(/[\'|\’]/g, "['’]").replace(/(œ|oe)/g, '(œ|oe)')
+      : pattern,
+    'gi'
+  );
   const matches = [...headstack.matchAll(regexp)];
 
   return matches.map((match) => ({
