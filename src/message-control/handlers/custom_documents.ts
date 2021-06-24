@@ -1,5 +1,5 @@
 import { CustomDocument, DataDocument, UploadDocument } from '../../types';
-import db, { queryDb } from '../../utils/main/db';
+import db, { loadDatabase, queryDb } from '../../utils/main/db';
 import fs from 'fs';
 import { getAssetPath } from '../../sys';
 import { convert } from '../../plugins/main/pdf2html-ex';
@@ -13,6 +13,9 @@ export async function custom_documents_delete(
   _: any,
   document: CustomDocument
 ) {
+  // preload document db to make sur the reste proccess of storing will success
+  loadDatabase(db.documents);
+
   try {
     fs.unlink(getAssetPath(`datas/documents/${document.title}.html`), () => {});
     await queryDb.remove<boolean>(db.documents, { _id: document.documentId });
@@ -29,6 +32,9 @@ export async function custom_documents_store(
   documents: UploadDocument[]
 ) {
   const docs: CustomDocument[] = [];
+
+  // preload document db to make sur the reste proccess of storing will success
+  loadDatabase(db.documents);
 
   for (const file of documents) {
     const getContent = await convert(file.path, file.name);
