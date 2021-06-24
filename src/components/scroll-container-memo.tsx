@@ -25,6 +25,7 @@ const ScrollContainerMemo: React.FC = function ({ children }) {
 
         isVisible &&
           contentLayoutEl.scrollTo({
+            behavior: 'smooth',
             top: lastScroll.current,
           });
       });
