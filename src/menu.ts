@@ -189,6 +189,23 @@ export default class MenuBuilder {
           },
         ],
       },
+      ({
+        label: 'Éditer',
+        submenu: [
+          { label: 'Défaire', accelerator: 'Ctrl+Z', role: 'undo' },
+          { label: 'Refaire', accelerator: 'Ctrl+Y', role: 'redo' },
+          { type: 'separator' },
+          { label: 'Couper', accelerator: 'Ctrl+X', role: 'cut' },
+          { label: 'Copier', accelerator: 'Ctrl+C', role: 'copy' },
+          { label: 'Coller', accelerator: 'Ctrl+V', role: 'paste' },
+          { type: 'separator' },
+          {
+            label: 'Tout sélectionner',
+            accelerator: 'Ctrl+A',
+            role: 'selectAll',
+          },
+        ],
+      } as unknown) as Electron.MenuItem,
       {
         label: '&Vue',
         submenu:
