@@ -47,6 +47,9 @@ main.js.map
 assets/datas
 assets/tmp
 
+
+modules-output/
+
 .idea
 npm-debug.log.*
 *.css.d.ts
