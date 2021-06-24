@@ -72,6 +72,16 @@ window.addEventListener('search-open', () => {
   openSearchModal();
 });
 
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const searchContainer = document.querySelector('.search--template');
+    if (searchContainer && searchContainer.classList.contains('active')) {
+      searchContainer.classList.remove('active');
+      window.parent.dispatchEvent(new Event('close-document-query'));
+    }
+  }
+});
+
 export function handleSearch() {
   const searchPrev = document.querySelector('.search--prev--js');
   const searchNext = document.querySelector('.search--next--js');
@@ -154,11 +164,6 @@ export function handleSearch() {
     });
 }
 
-/**
- * @type {{ (this: Window, ev: KeyboardEvent): any; (e: KeyboardEvent): void; } | null}
- */
-let lastCloseFn = null;
-
 export default function initTemplate() {
   hasOpened = true;
 
@@ -174,22 +179,11 @@ export default function initTemplate() {
 
   searchClose &&
     searchClose.addEventListener('click', () => {
-      searchContainer && searchContainer.classList.remove('active');
-      window.parent.dispatchEvent(new Event('close-document-query'));
+      if (searchContainer && searchContainer.classList.contains('active')) {
+        searchContainer.classList.remove('active');
+        window.parent.dispatchEvent(new Event('close-document-query'));
+      }
     });
-
-  lastCloseFn && document.removeEventListener('keypress', lastCloseFn);
-
-  const closeSearchBar = (/** @type {KeyboardEvent} */ e) => {
-    if (e.key === 'Escape') {
-      searchContainer && searchContainer.classList.remove('active');
-      window.parent.dispatchEvent(new Event('close-document-query'));
-    }
-  };
-
-  document.addEventListener('keypress', closeSearchBar);
-
-  lastCloseFn = closeSearchBar;
 
   handleSearch();
 
