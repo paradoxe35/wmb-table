@@ -18,6 +18,7 @@ import CustomDocuments from './views/custom-documents';
 import { LoadingOutlined } from '@ant-design/icons';
 import LoadByVisibility from './components/load-by-visibility';
 import Bible from './views/options/bible';
+import ScrollContainerMemo from './components/scroll-container-memo';
 
 const Notes = lazy(() => import('./views/options/notes'));
 
@@ -58,10 +59,14 @@ const RouterApp = React.memo(
     );
     //@ts-ignore
     return Object.keys(views).map((k: string) => (
-      <div key={k} hidden={k !== view}>
-        {/* @ts-ignore */}
-        {views[k] as JSX.Element}
-      </div>
+      <ScrollContainerMemo key={k}>
+        {(ref: React.LegacyRef<HTMLDivElement> | undefined) => (
+          <div ref={ref} hidden={k !== view}>
+            {/* @ts-ignore */}
+            {views[k] as JSX.Element}
+          </div>
+        )}
+      </ScrollContainerMemo>
     ));
   }
 );
