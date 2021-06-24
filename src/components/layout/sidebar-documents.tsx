@@ -60,7 +60,7 @@ export default function SidebarDocuments() {
       </Space>
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
         {datas.map((d) => (
-          <ItemOutline key={d._id} id={d._id} name={d.title} />
+          <ItemOutline key={d.title} id={d.title} name={d.title} />
         ))}
       </ContainerScrollY>
     </Sider>

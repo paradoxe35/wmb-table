@@ -17,8 +17,9 @@ export async function custom_documents_delete(
     fs.unlink(getAssetPath(`datas/documents/${document.title}.html`), () => {});
     await queryDb.remove<boolean>(db.documents, { _id: document.documentId });
     await queryDb.remove<boolean>(db.customDocuments, { _id: document._id });
+    await queryDb.remove<boolean>(db.documentsTitle, { title: document.title });
   } catch (error) {
-    return true;
+    return false;
   }
   return true;
 }
@@ -36,6 +37,8 @@ export async function custom_documents_store(
         db.documents,
         getContent
       );
+
+      await queryDb.insert<any>(db.documentsTitle, { title: savedDoc.title });
 
       const doc = await queryDb.insert<CustomDocument>(db.customDocuments, {
         documentId: savedDoc._id,
