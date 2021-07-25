@@ -41,6 +41,19 @@ export const documentTitles = atom<Title[]>({
   default: [],
 });
 
+export const titlesDocumentByFileName = selector<{ [fileName: string]: Title }>(
+  {
+    key: 'titleDocumentByFileName',
+    get: ({ get }) => {
+      const titles = get(documentTitles);
+      return titles.reduce((acc, doc) => {
+        acc[doc.title] = doc;
+        return acc;
+      }, {} as { [title: string]: Title });
+    },
+  }
+);
+
 export const documentViewQuery = atom<DocumentViewQuery[]>({
   key: 'documentViewQuery',
   default: [],

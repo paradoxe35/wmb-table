@@ -29,6 +29,7 @@ import {
   selectedSubjectDocumentItem,
   subjectDocument,
   subjectDocumentItem,
+  titlesDocumentByFileName,
 } from '../../store';
 import ContainerScrollY from '../../components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
@@ -279,6 +280,8 @@ function ShowActiveDocuments({
 }) {
   const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItem);
 
+  const $titles = useRecoilValue(titlesDocumentByFileName);
+
   function confirm(item: SubjectDocumentItem) {
     sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(
       (deleted) => {
@@ -314,7 +317,7 @@ function ShowActiveDocuments({
                             onItemClick={() => setSubjectItemSelected(item)}
                             name={item.documentTitle}
                           >
-                            {item.documentTitle}
+                            {$titles[item.documentTitle].name}
                           </DocumentViewer>
                         </a>
                       }
@@ -329,7 +332,9 @@ function ShowActiveDocuments({
           </div>
         </>
       ) : (
-        <Empty description={`Aucun document touvé dans le suject: ${subject.name}`} />
+        <Empty
+          description={`Aucun document touvé dans le suject: ${subject.name}`}
+        />
       )}
     </>
   );

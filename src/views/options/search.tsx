@@ -18,8 +18,8 @@ import { SearchItem, SearchResult, Suggestions } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import DocumentViewer from '../../components/viewer/document-viewer';
-import { useSetRecoilState } from 'recoil';
-import { documentViewQuery } from '../../store';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { documentViewQuery, titlesDocumentByFileName } from '../../store';
 
 const { Text } = Typography;
 
@@ -160,6 +160,8 @@ export default function Search() {
 const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
   const setDocumentViewQuery = useSetRecoilState(documentViewQuery);
 
+  const $titles = useRecoilValue(titlesDocumentByFileName);
+
   const handleDocumentClick = useCallback(() => {
     setDocumentViewQuery((docs) => {
       const datas = docs.filter((d) => d.documentTitle != result.item.title);
@@ -185,7 +187,7 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
                 name={result.item.title}
                 id={result.item._id as string}
               >
-                {result.item.title}
+                {$titles[result.item.title].name}
               </DocumentViewer>
             </a>
           }

@@ -1,4 +1,9 @@
-import { CustomDocument, DataDocument, UploadDocument } from '../../types';
+import {
+  CustomDocument,
+  DataDocument,
+  Title,
+  UploadDocument,
+} from '../../types';
 import db, { loadDatabase, queryDb } from '../../utils/main/db';
 import fs from 'fs';
 import { getAssetPath } from '../../sys';
@@ -44,7 +49,11 @@ export async function custom_documents_store(
         getContent
       );
 
-      await queryDb.insert<any>(db.documentsTitle, { title: savedDoc.title });
+      await queryDb.insert<any>(db.documentsTitle, ({
+        title: savedDoc.title,
+        name: savedDoc.title,
+        year: null,
+      } as unknown) as Partial<Title>);
 
       const doc = await queryDb.insert<CustomDocument>(db.customDocuments, {
         documentId: savedDoc._id,

@@ -7,11 +7,16 @@ export function export_note_pdf(
   data: string,
   name: string
 ) {
-  const path = dialog.showSaveDialogSync(mainWindow, {
-    title: 'Exporter PDF',
-    filters: [{ name: 'Pdf', extensions: ['pdf'] }],
-    defaultPath: `${name.split(' ').join('-').toLocaleLowerCase()}.pdf`,
-  });
+  let path = null;
+  try {
+    path = dialog.showSaveDialogSync(mainWindow, {
+      title: 'Exporter PDF',
+      filters: [{ name: 'Pdf', extensions: ['pdf'] }],
+      defaultPath: `${name.split(' ').join('-').toLocaleLowerCase()}.pdf`,
+    });
+  } catch (error) {
+    return false;
+  }
 
   path && pdf.create(data, { format: 'A4' }).toFile(path, () => {});
 
