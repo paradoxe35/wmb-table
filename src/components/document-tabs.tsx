@@ -1,16 +1,20 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import ChromeTabs from '../plugins/chrome-tabs/chrome-tabs';
-import { currentDocumentTabs, documentTabs } from '../store';
+import {
+  currentDocumentTabs,
+  documentTabs,
+  titlesDocumentByFileName,
+} from '../store';
 import { DocumentTab } from '../types';
 import { FileFilled, LoadingOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../utils/ipc-events';
 import { Spin } from 'antd';
 
-function Tab({ tab }: { tab: DocumentTab }) {
+function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
   const tabRef = useRef<HTMLDivElement | null>(null);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (tabRef.current && tab.active) {
@@ -19,20 +23,20 @@ function Tab({ tab }: { tab: DocumentTab }) {
   }, []);
 
   useEffect(() => {
-    const startLoading = () => tab && tab.active && setLoading(true)
-    const endLoading = () => setLoading(false)
+    const startLoading = () => tab && tab.active && setLoading(true);
+    const endLoading = () => setLoading(false);
 
-    if(tab && tab.active) {
-      window.addEventListener('frame-document-search-start', startLoading)
-      window.addEventListener('frame-document-search-end', endLoading)
+    if (tab && tab.active) {
+      window.addEventListener('frame-document-search-start', startLoading);
+      window.addEventListener('frame-document-search-end', endLoading);
 
       return () => {
-        window.removeEventListener('frame-document-search-start', startLoading)
-        window.removeEventListener('frame-document-search-end', endLoading)
-      }
+        window.removeEventListener('frame-document-search-start', startLoading);
+        window.removeEventListener('frame-document-search-end', endLoading);
+      };
     }
     return;
-  }, [])
+  }, []);
 
   return (
     //@ts-ignore
@@ -74,10 +78,12 @@ function Tab({ tab }: { tab: DocumentTab }) {
       <div className="chrome-tab-content">
         <div className="chrome-tab-favicon">
           {loading ? (
-            <Spin indicator={<LoadingOutlined  spin />} />
-          ): (<FileFilled />)}
+            <Spin indicator={<LoadingOutlined spin />} />
+          ) : (
+            <FileFilled />
+          )}
         </div>
-        <div className="chrome-tab-title">{tab.title}</div>
+        <div className="chrome-tab-title">{title}</div>
         <div className="chrome-tab-drag-handle"></div>
         <div className="chrome-tab-close"></div>
       </div>
@@ -87,12 +93,14 @@ function Tab({ tab }: { tab: DocumentTab }) {
 
 const Tabs = React.forwardRef<HTMLDivElement, { tabs: DocumentTab[] }>(
   (props, ref: React.LegacyRef<HTMLDivElement>) => {
+    const $titles = useRecoilValue(titlesDocumentByFileName);
+
     return (
       <>
         <div className="chrome-tabs" ref={ref}>
           <div className="chrome-tabs-content">
             {props.tabs.map((tab) => (
-              <Tab key={tab.title} tab={tab} />
+              <Tab key={tab.title} tab={tab} title={$titles[tab.title].name} />
             ))}
           </div>
           <div className="chrome-tabs-bottom-bar"></div>

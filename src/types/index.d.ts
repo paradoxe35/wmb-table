@@ -4,7 +4,12 @@ interface TimeStampData {
   updatedAt: any;
 }
 
-export type Title = { _id: string; title: string };
+export type Title = {
+  _id: string;
+  title: string;
+  name: string;
+  year: string;
+};
 
 export interface DataDocument extends Readonly<TimeStampData> {
   title: string;
@@ -22,6 +27,7 @@ export type DocumentTab = {
   scrollY?: number;
   scrollX?: number;
   active: boolean;
+  zoom?: number;
 };
 
 export type OptionView = {

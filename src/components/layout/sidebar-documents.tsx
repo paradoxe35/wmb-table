@@ -7,8 +7,12 @@ import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import DocumentViewer from '../viewer/document-viewer';
 import { strNormalize } from '../../utils/functions';
-import { useRecoilState, useSetRecoilState } from 'recoil';
-import { appDatasLoaded, documentTitles } from '../../store';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import {
+  appDatasLoaded,
+  documentTitles,
+  titlesDocumentByFileName,
+} from '../../store';
 
 const { Search } = Input;
 
@@ -18,6 +22,8 @@ export default function SidebarDocuments() {
   const [datas, setDatas] = useState<Title[]>([]);
   const [documents, setDocumentTitles] = useRecoilState(documentTitles);
   const setAppDataLoaded = useSetRecoilState(appDatasLoaded);
+
+  const $titles = useRecoilValue(titlesDocumentByFileName);
 
   useEffect(() => {
     setDatas(documents);
@@ -60,21 +66,30 @@ export default function SidebarDocuments() {
       </Space>
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
         {datas.map((d) => (
-          <ItemOutline key={d.title} id={d.title} name={d.title} />
+          <ItemOutline
+            key={d.title}
+            id={d.title}
+            name={d.title}
+            title={$titles[d.title].name}
+          />
         ))}
       </ContainerScrollY>
     </Sider>
   );
 }
 
-const ItemOutline: React.FC<{ name: string; id: string }> = ({ name, id }) => {
+const ItemOutline: React.FC<{ name: string; id: string; title: string }> = ({
+  name,
+  id,
+  title,
+}) => {
   return (
     <DocumentViewer name={name} id={id}>
       <span className="smart-editable" title={name}>
         <u>
           <span></span>
         </u>
-        <b className="name">{name} </b>
+        <b className="name">{title} </b>
       </span>
     </DocumentViewer>
   );
