@@ -52,6 +52,8 @@ export default function DocumentView() {
 
   const titleRef = useValueStateRef(title);
 
+  const pageRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     const closeDocumentQuery = () => {
       setDocumentViewQuery((qs) =>
@@ -131,6 +133,20 @@ export default function DocumentView() {
       const tab = tabs.find((t) => t.title === title);
       let hasOwnPosition = false;
 
+      pageRef.current = page as HTMLElement;
+
+      // handle zoom
+      page && (page.style.zoom = (tab?.zoom || 100) + '%');
+
+      if (tab?.zoom) {
+        postMessage(
+          iframeRef.current,
+          'document-zoom',
+          tab?.zoom,
+          path as string
+        );
+      }
+
       if ((tab?.scrollY || tab?.scrollX) && page) {
         hasOwnPosition = true;
 
@@ -151,18 +167,6 @@ export default function DocumentView() {
             behavior: 'smooth',
           });
         }
-      }
-
-      // handle zoom
-      page && (page.style.zoom = (tab?.zoom || 100) + '%');
-
-      if (tab?.zoom) {
-        postMessage(
-          iframeRef.current,
-          'document-zoom',
-          tab?.zoom,
-          path as string
-        );
       }
 
       const load = {
@@ -195,13 +199,17 @@ export default function DocumentView() {
       setTabs((ts) => {
         return ts.map((t) => {
           const nt = { ...t };
-          if (nt.title === title) {
+          if (nt.title === titleRef.current) {
             // @ts-ignore
             nt.zoom = e.detail.zoom;
           }
           return nt;
         });
       });
+
+      if (pageRef.current) {
+        pageRef.current.dispatchEvent(new Event('scroll'));
+      }
     };
 
     window.addEventListener('document-current-zoom', documentZoom);
