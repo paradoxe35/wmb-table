@@ -228,15 +228,17 @@ const SearchResultComponent = React.memo(
     return (
       <>
         {results && (
-          <div className="mt-2 flex flex-center">
-            <Text type="secondary">
-              Trouvé dans {results?.total} document
-              {results?.total > 1 ? 's' : ''}, page({results.pageNumber}/
-              {Math.ceil(results.total / results.itemsPerPage)})
-            </Text>
-          </div>
+          <>
+            <div className="mt-2 flex flex-center">
+              <Text type="secondary">
+                Trouvé dans {results?.total} document
+                {results?.total > 1 ? 's' : ''}, page({results.pageNumber}/
+                {Math.ceil(results.total / results.itemsPerPage)})
+              </Text>
+            </div>
+            <Divider style={{ padding: '0', margin: '0' }} />
+          </>
         )}
-        <Divider style={{ padding: '0', margin: '0' }} />
         <ContainerScrollY id="search__div_element">
           <div className="mt-2 flex flex-center">
             <List
