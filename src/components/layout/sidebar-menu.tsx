@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   HistoryOutlined,
   GroupOutlined,
@@ -7,12 +7,68 @@ import {
 } from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
 import OptionViewer from '../viewer/option-viewer';
-import { OPTIONS_VIEWS } from '../../store';
+import { OPTIONS_VIEWS, optionViewState } from '../../store';
 import { BibleIcons } from '../icons';
+import { useRecoilValue } from 'recoil';
+import { ipcRenderer } from 'electron';
+import { IPC_EVENTS } from '../../utils/ipc-events';
+import { useOptionsMenu, useValueStateRef } from '../../utils/hooks';
 
 const { Sider } = Layout;
 
+type Options = {
+  key: string;
+  name: string;
+  icon: JSX.Element;
+};
+
 export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
+  const optionViewer = useRecoilValue(optionViewState);
+  const optionViewerRef = useValueStateRef(optionViewer);
+  const setOption = useOptionsMenu();
+
+  const options: (Options | null)[] = useMemo(
+    () => [
+      {
+        key: OPTIONS_VIEWS.history as string,
+        name: 'Historique',
+        icon: <HistoryOutlined />,
+      },
+      {
+        key: OPTIONS_VIEWS.search as string,
+        name: 'Recherche',
+        icon: <SearchOutlined />,
+      },
+      {
+        key: OPTIONS_VIEWS.subject as string,
+        name: 'Sujets',
+        icon: <GroupOutlined />,
+      },
+      {
+        key: OPTIONS_VIEWS.editor as string,
+        name: 'Notes',
+        icon: <EditOutlined />,
+      },
+      null,
+      {
+        key: OPTIONS_VIEWS.bible as string,
+        name: 'Bible',
+        icon: <BibleIcons />,
+      },
+    ],
+    []
+  );
+
+  useEffect(() => {
+    const nOptions = options.filter((r) => r != null);
+    const switch_on_options = () => {
+      let index = nOptions.findIndex((v) => optionViewerRef.current == v?.key);
+      index = index >= 0 && nOptions[index + 1] ? index + 1 : 0;
+      setOption(nOptions[index]?.key as string);
+    };
+    ipcRenderer.on(IPC_EVENTS.switch_on_options, switch_on_options);
+  }, []);
+
   return (
     <Sider
       trigger={null}
@@ -21,35 +77,16 @@ export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
       collapsible
       collapsed={collapsed}
     >
-      <Menu mode="inline" defaultSelectedKeys={['1']}>
-        <Menu.Item key="2" icon={<HistoryOutlined />}>
-          <OptionViewer component={OPTIONS_VIEWS.history as string}>
-            Historique
-          </OptionViewer>
-        </Menu.Item>
-        <Menu.Item key="1" icon={<SearchOutlined />}>
-          <OptionViewer component={OPTIONS_VIEWS.search as string}>
-            Recherche
-          </OptionViewer>
-        </Menu.Item>
-        <Menu.Item key="3" icon={<GroupOutlined />}>
-          <OptionViewer component={OPTIONS_VIEWS.subject as string}>
-            Sujets
-          </OptionViewer>
-        </Menu.Item>
-        <Menu.Item key="4" icon={<EditOutlined />}>
-          <OptionViewer component={OPTIONS_VIEWS.editor as string}>
-            Notes
-          </OptionViewer>
-        </Menu.Item>
-
-        <Menu.Divider />
-
-        <Menu.Item key="5" icon={<BibleIcons />}>
-          <OptionViewer component={OPTIONS_VIEWS.bible as string}>
-            Bible
-          </OptionViewer>
-        </Menu.Item>
+      <Menu mode="inline" selectedKeys={[optionViewer]}>
+        {options.map((op, i) => {
+          return op === null ? (
+            <Menu.Divider key={i} />
+          ) : (
+            <Menu.Item key={op.key} icon={op.icon}>
+              <OptionViewer component={op.key}>{op.name}</OptionViewer>
+            </Menu.Item>
+          );
+        })}
       </Menu>
     </Sider>
   );

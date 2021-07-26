@@ -16,7 +16,7 @@ import electron from 'electron';
 import { IPC_EVENTS } from '../utils/ipc-events';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { appDatasLoaded, documentTitles } from '../store';
-import { CustomDocument, UploadDocument } from '../types';
+import { CustomDocument, Title, UploadDocument } from '../types';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import {
   FileAddOutlined,
@@ -127,10 +127,15 @@ function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
       documentsRef.current = [...e.detail, ...documentsRef.current];
       setDocuments(documentsRef.current);
 
-      const titles = e.detail.map((f) => ({
-        title: f.title,
-        _id: f.documentId,
-      }));
+      const titles = e.detail.map(
+        (f) =>
+          (({
+            title: f.title,
+            _id: f.documentId,
+            name: f.title,
+            year: null,
+          } as unknown) as Title)
+      );
 
       setTitles((ts) => [...titles, ...ts]);
     };

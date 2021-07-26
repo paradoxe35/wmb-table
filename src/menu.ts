@@ -208,8 +208,29 @@ export default class MenuBuilder {
       } as unknown) as Electron.MenuItem,
       {
         label: '&Vue',
-        submenu:
-          process.env.NODE_ENV === 'development' ||
+        submenu: [
+          {
+            label: 'Basculer la barre latérale',
+            accelerator: 'Ctrl+B',
+            click: () => {
+              this.mainWindow.webContents.send(IPC_EVENTS.toggle_sidebar);
+            },
+          },
+          {
+            label: 'Changer de menu',
+            accelerator: 'Ctrl+Tab',
+            click: () => {
+              this.mainWindow.webContents.send(IPC_EVENTS.switch_on_menu);
+            },
+          },
+          {
+            label: "Changer d'option",
+            accelerator: 'Ctrl+Shift+Tab',
+            click: () => {
+              this.mainWindow.webContents.send(IPC_EVENTS.switch_on_options);
+            },
+          },
+          ...(process.env.NODE_ENV === 'development' ||
           process.env.DEBUG_PROD === 'true'
             ? [
                 {
@@ -246,7 +267,8 @@ export default class MenuBuilder {
                     );
                   },
                 },
-              ],
+              ]),
+        ],
       },
       {
         label: 'Aide',
