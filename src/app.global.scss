@@ -244,3 +244,107 @@ main .ck-editor[role='application'] .ck.ck-content,
 .flex-center {
   justify-content: center;
 }
+
+// panel group
+
+.panel__group {
+  --tabs-background: rgb(218, 218, 218);
+  --panel-background: #fff;
+  .tabs {
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: var(--tabs-background);
+    flex-shrink: 0;
+    font-size: 12px;
+  }
+
+  .tab-squeeze {
+    position: relative;
+    overflow: hidden;
+    width: 100%;
+    .tab-holder {
+      display: flex;
+    }
+  }
+
+  .tab-holder {
+    overflow: visible;
+    transition: transform 0.2s;
+    white-space: nowrap;
+  }
+
+  .tabs .tab:first-child {
+    border-left-width: 0;
+  }
+
+  .tab-holder .tab {
+    position: relative;
+    transition: transform 0.2s, z-index 0.4s;
+    white-space: nowrap;
+    max-width: 240px;
+    z-index: 1;
+  }
+
+  .tabs .tab:first-child {
+    border-left-width: 0;
+  }
+
+  .tab-holder .tab {
+    position: relative;
+    transition: transform 0.2s, z-index 0.4s;
+    white-space: nowrap;
+    max-width: 240px;
+    z-index: 1;
+  }
+
+  .tabs .active {
+    background: var(--panel-background);
+    color: inherit;
+  }
+
+  .tabs .tab {
+    color: #45474a;
+    padding: 9px 12px;
+    float: left;
+    position: relative;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  .tabs .tab.active:before,
+  .editor-tabs .tab.active:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(255, 255, 255, 0.4), transparent);
+    z-index: -1;
+  }
+
+  .tab > div {
+    overflow: hidden;
+  }
+}
+
+.document_grouped {
+  overflow: hidden;
+  & > :first-child {
+    width: 0;
+  }
+  .ant-tree-title {
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ant-tree-node-content-wrapper {
+    display: flex;
+  }
+}

@@ -33,3 +33,21 @@ export function getChildByTreeArr(parent, arr) {
   });
   return lastEl;
 }
+
+export function initBodyZoom() {
+  document.body.style.zoom = '100%';
+}
+
+export function zoomIn() {
+  const Page = document.body;
+  const zoom = parseInt(Page.style.zoom) + 10 + '%';
+  Page.style.zoom = zoom;
+  return zoom;
+}
+
+export function zoomOut() {
+  const Page = document.body;
+  const zoom = parseInt(Page.style.zoom) - 10 + '%';
+  Page.style.zoom = zoom;
+  return zoom;
+}

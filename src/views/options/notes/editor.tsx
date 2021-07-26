@@ -5,7 +5,12 @@ import { CKEditor } from '@ckeditor/ckeditor5-react';
 
 import { ContextMenu } from '../../../../modules/context-menu/context';
 import { Button, Input, Modal, Space, Tooltip, message } from 'antd';
-import { LeftOutlined, FilePdfOutlined, EditOutlined, ReadOutlined } from '@ant-design/icons';
+import {
+  LeftOutlined,
+  FilePdfOutlined,
+  EditOutlined,
+  ReadOutlined,
+} from '@ant-design/icons';
 import { debounce, substrAfter } from '../../../utils/functions';
 import {
   NoteItem,
@@ -126,13 +131,20 @@ function ButtonsControllers({
     ).finally(() => setLoadingPdf(false));
   };
 
-  const [readOnly,setReadOnly] = useState(false)
+  const [readOnly, setReadOnly] = useState(false);
+
+  useEffect(() => {
+    window.addEventListener('rename-note-modal', openModal);
+    return () => {
+      window.removeEventListener('rename-note-modal', openModal);
+    };
+  }, []);
 
   const readOnlyMode = () => {
-      if(!editorRef.current) return
-      setReadOnly(r => !r)
-      editorRef.current.isReadOnly = !editorRef.current.isReadOnly;
-  }
+    if (!editorRef.current) return;
+    setReadOnly((r) => !r);
+    editorRef.current.isReadOnly = !editorRef.current.isReadOnly;
+  };
 
   return (
     <div
@@ -163,7 +175,7 @@ function ButtonsControllers({
         <Tooltip title={`${!readOnly ? 'Activer' : 'Désactiver'} mode lecture`}>
           <Button
             onClick={readOnlyMode}
-            type={readOnly ? 'primary': 'dashed'}
+            type={readOnly ? 'primary' : 'dashed'}
             icon={<ReadOutlined />}
           />
         </Tooltip>
@@ -204,10 +216,16 @@ export default function EditorContent({
   const bibleReferenceModal = useBibleReferenceModal();
 
   useEffect(() => {
-    sendIpcRequest<NoteItem>(
-      IPC_EVENTS.notes_items_get,
-      workingNoteId
-    ).then((note) => setWorkingNote(note));
+    sendIpcRequest<NoteItem>(IPC_EVENTS.notes_items_get, workingNoteId).then(
+      (note) => {
+        setWorkingNote(note);
+        note.created &&
+          note.defaultName &&
+          window.setTimeout(() => {
+            window.dispatchEvent(new Event('rename-note-modal'));
+          }, 1000);
+      }
+    );
   }, [workingNoteId]);
 
   useEffect(() => {
@@ -357,12 +375,14 @@ export default function EditorContent({
   const firstSync = useRef(false);
 
   useEffect(() => {
-    if(workingNote && workingNote.content && !firstSync.current) {
-      const fragment = document.createRange().createContextualFragment(workingNote.content)
-      syncAvalaibleReferences(fragment)
+    if (workingNote && workingNote.content && !firstSync.current) {
+      const fragment = document
+        .createRange()
+        .createContextualFragment(workingNote.content);
+      syncAvalaibleReferences(fragment);
       firstSync.current = true;
     }
-  }, [workingNote])
+  }, [workingNote]);
 
   const onChangeData = async () => {
     sendIpcRequest(
@@ -540,7 +560,7 @@ function Editor({
                     attributes: {
                       title: 'Référence document',
                       reference: 'true',
-                      onclick: "event.preventDefault()"
+                      onclick: 'event.preventDefault()',
                     },
                   },
                   {
@@ -552,7 +572,7 @@ function Editor({
                       title: 'Référence biblique',
                       reference: 'true',
                       bible: 'true',
-                      onclick: "event.preventDefault()"
+                      onclick: 'event.preventDefault()',
                     },
                   },
                 ],

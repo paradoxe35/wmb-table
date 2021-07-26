@@ -1,24 +1,101 @@
 import React, { useEffect, useState } from 'react';
-import { Layout } from 'antd';
-import { Input, Space, Card } from 'antd';
+import { Input, Space, Card, Layout, Tree } from 'antd';
 import ContainerScrollY from '../container-scroll-y';
 import { Title } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
-import DocumentViewer from '../viewer/document-viewer';
+import DocumentViewer, { useDocumentViewOpen } from '../viewer/document-viewer';
 import { strNormalize } from '../../utils/functions';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   appDatasLoaded,
   documentTitles,
   titlesDocumentByFileName,
+  titlesGroupedByYear,
 } from '../../store';
+import PanelGroup from './components/documents-menu';
+import { DataNode } from 'antd/lib/tree';
+
+const { DirectoryTree } = Tree;
 
 const { Search } = Input;
 
 const { Sider } = Layout;
 
 export default function SidebarDocuments() {
+  return (
+    <Sider
+      width="263px"
+      trigger={null}
+      className="layout__sidebar"
+      theme="light"
+    >
+      <PanelGroup
+        tabs={[
+          { name: 'Tous', active: true },
+          { name: 'Années', active: false },
+        ]}
+      >
+        {(index: number) => {
+          return (
+            <>
+              <div hidden={index !== 0}>
+                <DocumentSearch />
+              </div>
+              <div hidden={index !== 1}>
+                <ContainerScrollY>
+                  <DocumentByYears />
+                </ContainerScrollY>
+              </div>
+            </>
+          );
+        }}
+      </PanelGroup>
+    </Sider>
+  );
+}
+
+const DocumentByYears = () => {
+  const documents = useRecoilValue(titlesGroupedByYear);
+  const $titles = useRecoilValue(titlesDocumentByFileName);
+  const viewDocument = useDocumentViewOpen();
+
+  const dataTree = Object.keys(documents).map((year) => {
+    const docs = documents[year]
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((doc) => {
+        const title = $titles[doc.title].name;
+        return {
+          key: doc.title + year,
+          title: (
+            <span title={title} onClick={() => viewDocument(doc.title)}>
+              {title}
+            </span>
+          ),
+          className: 'document_grouped',
+          isLeaf: true,
+        };
+      }) as DataNode[];
+    return {
+      title: (
+        <span>
+          {year} - ({docs.length})
+        </span>
+      ),
+      key: year,
+      children: docs,
+    } as DataNode;
+  });
+  return (
+    <>
+      <div className="mt-2" />
+      <DirectoryTree treeData={dataTree} />
+    </>
+  );
+};
+
+const DocumentSearch = () => {
   const [datas, setDatas] = useState<Title[]>([]);
   const [documents, setDocumentTitles] = useRecoilState(documentTitles);
   const setAppDataLoaded = useSetRecoilState(appDatasLoaded);
@@ -48,12 +125,7 @@ export default function SidebarDocuments() {
   };
 
   return (
-    <Sider
-      width="263px"
-      trigger={null}
-      className="layout__sidebar"
-      theme="light"
-    >
+    <>
       <Space direction="vertical">
         <Card>
           <Search
@@ -65,18 +137,21 @@ export default function SidebarDocuments() {
         </Card>
       </Space>
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
-        {datas.map((d) => (
-          <ItemOutline
-            key={d.title}
-            id={d.title}
-            name={d.title}
-            title={$titles[d.title].name}
-          />
-        ))}
+        {datas
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((d) => (
+            <ItemOutline
+              key={d.title}
+              id={d.title}
+              name={d.title}
+              title={$titles[d.title].name}
+            />
+          ))}
       </ContainerScrollY>
-    </Sider>
+    </>
   );
-}
+};
 
 const ItemOutline: React.FC<{ name: string; id: string; title: string }> = ({
   name,
@@ -85,7 +160,7 @@ const ItemOutline: React.FC<{ name: string; id: string; title: string }> = ({
 }) => {
   return (
     <DocumentViewer name={name} id={id}>
-      <span className="smart-editable" title={name}>
+      <span className="smart-editable" title={title}>
         <u>
           <span></span>
         </u>

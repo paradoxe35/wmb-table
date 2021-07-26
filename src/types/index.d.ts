@@ -124,6 +124,7 @@ export interface NoteItem extends Readonly<TimeStampData> {
   name: string;
   content?: string;
   defaultName: boolean;
+  created: boolean;
 }
 
 export interface NoteItemReference extends Readonly<TimeStampData> {

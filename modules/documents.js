@@ -2,6 +2,7 @@
 import './context-menu/kali_dark.css.js';
 import contextMenuHander from './documents/context-menu.js';
 import { scrollToViewTree } from './documents/document-tree.js';
+import { initBodyZoom } from './documents/functions.js';
 import {
   setSearchQuery,
   SEARCH_RESULT,
@@ -30,6 +31,8 @@ function defaultPosition() {
 }
 
 // call fn
+initBodyZoom();
+
 contextMenuHander();
 
 window.focus();

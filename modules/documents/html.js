@@ -52,7 +52,7 @@ export const searchTemplateCss = `
   right: 30px;
   top: 5px;
   color: #000;
-  opacity: 0.9;
+  opacity: 1;
   box-shadow: 0 7px 14px rgba(50, 50, 93, .1), 0 3px 6px rgba(0, 0, 0, 0.041);
   background-color: #e4e3e3;
   transform: translateY(calc(-100% - 10px));

@@ -10,10 +10,13 @@ import {
 } from 'antd';
 import React, { useState } from 'react';
 import { useCallback } from 'react';
-import { useSetRecoilState } from 'recoil';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { useDocumentViewOpen } from '../../../components/viewer/document-viewer';
 import sendIpcRequest from '../../../message-control/ipc/ipc-renderer';
-import { selectedSubjectDocumentItem } from '../../../store';
+import {
+  selectedSubjectDocumentItem,
+  titlesDocumentByFileName,
+} from '../../../store';
 import { FileOutlined } from '@ant-design/icons';
 import {
   BibleBook,
@@ -32,6 +35,7 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 export const useShowReferenceDetail = () => {
   const viewDocument = useDocumentViewOpen();
   const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItem);
+  const $titles = useRecoilValue(titlesDocumentByFileName);
 
   const modal = useCallback(
     (reference: NoteItemReference, workingNote: NoteItem) => {
@@ -60,7 +64,12 @@ export const useShowReferenceDetail = () => {
         ),
         content: assigned ? (
           <div>
-            <p><Typography.Text type="secondary"><FileOutlined /> Document:</Typography.Text> {reference.documentTitle}</p>
+            <p>
+              <Typography.Text type="secondary">
+                <FileOutlined /> Document:
+              </Typography.Text>{' '}
+              {$titles[reference.documentTitle].name}
+            </p>
             <p>
               <Typography.Text type="secondary">- </Typography.Text>
               {(reference.textContent || '').slice(0, 80)}...

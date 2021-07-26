@@ -43,7 +43,7 @@ export const documentTitles = atom<Title[]>({
 
 export const titlesDocumentByFileName = selector<{ [fileName: string]: Title }>(
   {
-    key: 'titleDocumentByFileName',
+    key: 'titlesDocumentByFileName',
     get: ({ get }) => {
       const titles = get(documentTitles);
       return titles.reduce((acc, doc) => {
@@ -53,6 +53,24 @@ export const titlesDocumentByFileName = selector<{ [fileName: string]: Title }>(
     },
   }
 );
+
+export const titlesGroupedByYear = selector<{ [year: string]: Title[] }>({
+  key: 'titleDocumentByFileName',
+  get: ({ get }) => {
+    const titles = get(documentTitles);
+    return titles
+      .slice()
+      .filter(t => t.year)
+      .sort((a, b) => a.year.localeCompare(b.year))
+      .reduce((acc, v) => {
+        if (!acc[v.year]) {
+          acc[v.year] = [];
+        }
+        acc[v.year].push(v);
+        return acc;
+      }, {} as { [year: string]: Title[] });
+  },
+});
 
 export const documentViewQuery = atom<DocumentViewQuery[]>({
   key: 'documentViewQuery',

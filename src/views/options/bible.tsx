@@ -26,6 +26,7 @@ import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { LoadingOutlined } from '@ant-design/icons';
 import { debounce } from '../../utils/functions';
+import ContainerScrollY from '../../components/container-scroll-y';
 
 export default function Bible() {
   const [menu, setMenu] = useState('bible');
@@ -46,10 +47,14 @@ export default function Bible() {
       </Menu>
       <div className="mt-2 mb-3" />
       <div hidden={menu !== 'bible'}>
-        <BibleContent />
+        <ContainerScrollY>
+          <BibleContent />
+        </ContainerScrollY>
       </div>
       <div hidden={menu !== 'search'}>
-        <SearchContent />
+        <ContainerScrollY>
+          <SearchContent />
+        </ContainerScrollY>
       </div>
     </LoadByVisibility>
   );
