@@ -2,12 +2,12 @@
 import './context-menu/kali_dark.css.js';
 import contextMenuHander from './documents/context-menu.js';
 import { scrollToViewTree } from './documents/document-tree.js';
-import { initBodyZoom } from './documents/functions.js';
 import {
   setSearchQuery,
   SEARCH_RESULT,
   setWindowPostion,
   WINDOW_POSITION,
+  setWindowZoom,
 } from './documents/seach-query.js';
 import searchTemplate from './documents/search-template.js';
 
@@ -30,9 +30,6 @@ function defaultPosition() {
   }
 }
 
-// call fn
-initBodyZoom();
-
 contextMenuHander();
 
 window.focus();
@@ -51,6 +48,9 @@ window.addEventListener(
         break;
       case 'window-position':
         setWindowPostion(e.data.detail);
+        break;
+      case 'document-zoom':
+        setWindowZoom(e.data.detail);
         break;
     }
   },

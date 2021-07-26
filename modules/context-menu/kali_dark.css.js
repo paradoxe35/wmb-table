@@ -4,7 +4,7 @@ const style = `
   position: fixed;
   top: 0px;
   left: 0px;
-  min-width: 270px;
+  min-width: 200px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #fff;
   background: #262933;

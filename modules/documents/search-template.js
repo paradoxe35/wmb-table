@@ -2,9 +2,11 @@ import {
   searchTemplateHtml,
   searchTemplateCss,
   injectStyleText,
+  zoomInTemplate,
+  zoomOutTemplate,
 } from './html.js';
 
-import { SEARCH_RESULT, SEARCH_QUERY } from './seach-query.js';
+import { SEARCH_RESULT, SEARCH_QUERY, WINDOW_ZOOM } from './seach-query.js';
 import { performSearch } from './peform-search.js';
 
 /**
@@ -62,13 +64,35 @@ function navigateOnResult(index) {
   }
 }
 
-window.addEventListener('search-open', () => {
+const showZoomDetail = () => {
+  const el = document.querySelector('.search--zoom--js');
+  if (WINDOW_ZOOM >= 100) {
+    // @ts-ignore
+    el?.querySelector('.icon-data')?.innerHTML = zoomInTemplate;
+  } else {
+    // @ts-ignore
+    el?.querySelector('.icon-data')?.innerHTML = zoomOutTemplate;
+  }
+  // @ts-ignore
+  el?.querySelector('.zoom-data')?.textContent = WINDOW_ZOOM + '%';
+};
+
+const searchOpenPopup = () => {
   if (hasOpened) {
     const searchContainer = document.querySelector('.search--template');
     addClass(searchContainer, 'active');
   } else {
     initTemplate();
   }
+  showZoomDetail();
+};
+
+window.addEventListener('search-open-popup', () => {
+  searchOpenPopup();
+});
+
+window.addEventListener('search-open', () => {
+  searchOpenPopup();
   openSearchModal();
 });
 

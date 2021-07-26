@@ -1,5 +1,6 @@
 import { ContextMenu } from '../context-menu/context.js';
-import { closestChildParent } from './functions.js';
+import { closestChildParent, zoomIn, zoomOut } from './functions.js';
+import { setWindowZoom } from './seach-query.js';
 
 function copyTextSelection() {
   let selObj = window.getSelection();
@@ -11,6 +12,10 @@ function copyTextSelection() {
 
 function searchOpen() {
   window.dispatchEvent(new Event('search-open'));
+}
+
+function searchOpenPopup() {
+  window.dispatchEvent(new Event('search-open-popup'));
 }
 
 /**
@@ -41,10 +46,54 @@ function addDocumentNodeToItem(event) {
   );
 }
 
+const handleZoomIn = () => {
+  const zoom = zoomIn();
+  if (zoom === false) return;
+  setWindowZoom(zoom);
+  searchOpenPopup();
+  window.parent.dispatchEvent(
+    new CustomEvent('document-current-zoom', {
+      detail: { zoom },
+    })
+  );
+};
+
+const handleZoomOut = () => {
+  const zoom = zoomOut();
+  if (zoom === false) return;
+  setWindowZoom(zoom);
+  searchOpenPopup();
+  window.parent.dispatchEvent(
+    new CustomEvent('document-current-zoom', {
+      detail: { zoom },
+    })
+  );
+};
+
 export default () => {
   const chromeContextMenu = new ContextMenu(document.body, [
-    { text: 'Copier texte', hotkey: 'Ctrl+C', onclick: copyTextSelection },
-    { text: 'Recherche', hotkey: 'Ctrl+F', onclick: searchOpen },
+    {
+      text: 'Agrandir',
+      hotkey: 'Ctrl+Shift+',
+      onclick: handleZoomIn,
+    },
+    {
+      text: 'Dézoomer',
+      hotkey: 'Ctrl-',
+      onclick: handleZoomOut,
+    },
+    null,
+    {
+      text: 'Copier texte',
+      hotkey: 'Ctrl+C',
+      onclick: copyTextSelection,
+    },
+    {
+      text: 'Recherche',
+      hotkey: 'Ctrl+F',
+      onclick: searchOpen,
+    },
+    null,
     {
       text: 'Ajouter à un sujet',
       onclick: () => addDocumentNodeToItem('add-document-ref-subject'),
@@ -56,8 +105,20 @@ export default () => {
   ]);
 
   document.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && event.key.toLocaleLowerCase() === 'f') {
-      searchOpen();
+    if (event.ctrlKey) {
+      switch (event.key.toLocaleLowerCase()) {
+        case 'f':
+          searchOpen();
+          break;
+        case '+':
+          handleZoomIn();
+          break;
+        case '-':
+          handleZoomOut();
+          break;
+        default:
+          break;
+      }
     }
   });
 

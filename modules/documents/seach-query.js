@@ -43,3 +43,12 @@ export let WINDOW_POSITION = null;
 export function setWindowPostion(data) {
   WINDOW_POSITION = data;
 }
+
+export let WINDOW_ZOOM = 100;
+
+/**
+ * @param {number} data
+ */
+export function setWindowZoom(data) {
+  WINDOW_ZOOM = data;
+}
