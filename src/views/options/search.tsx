@@ -236,6 +236,7 @@ const SearchResultComponent = React.memo(
                 {Math.ceil(results.total / results.itemsPerPage)})
               </Text>
             </div>
+            <Divider style={{ padding: '0', margin: '0' }} />
           </>
         )}
         <ContainerScrollY id="search__div_element">

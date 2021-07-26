@@ -5,15 +5,19 @@ const ContainerScrollY: React.FC<
   React.DetailedHTMLProps<
     React.HTMLAttributes<HTMLDivElement>,
     HTMLDivElement
-  > & { susDiff?: number }
-> = ({ children, susDiff = 0, ...props }) => {
+  > & { susDiff?: number; canRef?: boolean }
+> = ({ children, susDiff = 0, canRef = true, ...props }) => {
   const containerScroll = useContainerScrollY<HTMLDivElement>(
     [window],
     susDiff
   );
 
   return (
-    <div {...props} className="container-y" ref={containerScroll}>
+    <div
+      {...props}
+      className="container-y"
+      ref={canRef ? containerScroll : undefined}
+    >
       {children}
     </div>
   );
