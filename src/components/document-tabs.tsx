@@ -40,7 +40,12 @@ function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
 
   return (
     //@ts-ignore
-    <div className="chrome-tab" title={tab.title} ref={tabRef}>
+    <div
+      className="chrome-tab"
+      title={title}
+      data-title={tab.title}
+      ref={tabRef}
+    >
       <div className="chrome-tab-dividers"></div>
       <div className="chrome-tab-background">
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg">
@@ -188,7 +193,9 @@ export default function DocumentTabs() {
           const arr = Array.from(
             tabRef.current?.querySelectorAll('.chrome-tab') || []
           )
-            .map((el) => tabs.find((t) => t.title === el.getAttribute('title')))
+            .map((el) =>
+              tabs.find((t) => t.title === el.getAttribute('data-title'))
+            )
             .filter(Boolean) as DocumentTab[];
 
           reloadRef.current = false;
@@ -202,7 +209,7 @@ export default function DocumentTabs() {
           setTabs((ts) =>
             ts.map((t) => {
               const nt = { ...t };
-              if (nt.title === tabEl.getAttribute('title')) {
+              if (nt.title === tabEl.getAttribute('data-title')) {
                 nt.active = true;
               } else {
                 nt.active = false;
@@ -215,7 +222,7 @@ export default function DocumentTabs() {
       tabRef.current.addEventListener('tabRemove', (event: CustomEventInit) => {
         const { tabEl } = event.detail as { tabEl: HTMLDivElement };
         setTabs((ts) =>
-          ts.filter((t) => t.title != tabEl.getAttribute('title'))
+          ts.filter((t) => t.title != tabEl.getAttribute('data-title'))
         );
       });
     }

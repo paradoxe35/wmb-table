@@ -6,7 +6,7 @@ import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { useRecoilValue } from 'recoil';
-import { workingNoteApp } from '../../store';
+import { titlesDocumentByFileName, workingNoteApp } from '../../store';
 
 export function NoteReferencesModal({ title }: { title: string }) {
   const titleRef = useValueStateRef(title);
@@ -109,6 +109,8 @@ function ContentModal({
   onSelectItem: (item: NoteItemReference) => void;
   datas: NoteItemReference[];
 }) {
+  const $titles = useRecoilValue(titlesDocumentByFileName);
+
   return (
     <>
       <List
@@ -132,7 +134,7 @@ function ContentModal({
                 avatar={<BookOutlined />}
                 description={
                   assigned
-                    ? `Référencé à: ${item.documentTitle}`
+                    ? `Référencé à: ${$titles[item.documentTitle].name}`
                     : 'Aucun document attribué à cette référence'
                 }
                 title={

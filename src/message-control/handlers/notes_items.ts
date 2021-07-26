@@ -3,6 +3,16 @@ import { capitalizeFirstLetter } from '../../utils/functions';
 import db, { queryDb } from '../../utils/main/db';
 
 export default async (_: any) => {
+  await queryDb.remove(
+    db.notes,
+    {
+      $where: function () {
+        // @ts-ignore
+        return (this.content || '').trim().length < 2;
+      },
+    },
+    { multi: true }
+  );
   let notes = await queryDb.find<NoteItem>(db.notes, {}, { content: 0 });
 
   return notes.sort((a, b) => b.createdAt - a.createdAt);
@@ -15,7 +25,11 @@ export async function notes_items_delete(_: any, _id: string) {
 }
 
 export async function notes_items_get(_: any, _id: string) {
-  return await queryDb.findOne<NoteItem>(db.notes, { _id });
+  const note = await queryDb.findOne<NoteItem>(db.notes, { _id });
+  if (note.created) {
+    await queryDb.update(db.notes, { _id }, { $set: { created: false } });
+  }
+  return note;
 }
 
 export async function notes_items_store() {
@@ -23,6 +37,7 @@ export async function notes_items_store() {
   return await queryDb.insert(db.notes, {
     name: `Note ${notes + 1}`,
     defaultName: true,
+    created: true,
   } as NoteItem);
 }
 
