@@ -34,20 +34,34 @@ export function getChildByTreeArr(parent, arr) {
   return lastEl;
 }
 
-export function initBodyZoom(zoom = '100') {
-  document.body.style.zoom = zoom + '%';
+/**
+ * @returns {HTMLElement }
+ */
+export function pageContainer() {
+  //@ts-ignore
+  return document.getElementById('page-container');
 }
 
-export function zoomIn() {
-  const Page = document.body;
+export function initBodyZoom(zoom = '100') {
+  pageContainer().style.zoom = zoom + '%';
+}
+
+/**
+ * @param {HTMLElement|null} [el]
+ */
+export function zoomIn(el) {
+  const Page = el || pageContainer();
   const zoom = parseInt(Page.style.zoom) + 10;
   if (zoom >= 200) return false;
   Page.style.zoom = zoom + '%';
   return zoom;
 }
 
-export function zoomOut() {
-  const Page = document.body;
+/**
+ * @param {HTMLElement|null} [el]
+ */
+export function zoomOut(el) {
+  const Page = el || pageContainer();
   const zoom = parseInt(Page.style.zoom) - 10;
   if (zoom <= 10) return false;
   Page.style.zoom = zoom + '%';
