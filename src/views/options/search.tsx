@@ -20,7 +20,6 @@ import { IPC_EVENTS } from '../../utils/ipc-events';
 import DocumentViewer from '../../components/viewer/document-viewer';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { documentViewQuery, titlesDocumentByFileName } from '../../store';
-import ContainerScrollY from '../../components/container-scroll-y';
 
 const { Text } = Typography;
 
@@ -108,6 +107,8 @@ const useSearch = (): SearchFn => {
       lastSearch.current.trim(),
       page
     ).then((datas) => {
+      const lc = document.querySelector('.site-layout-content');
+      lc && lc.scrollTo({ top: 0, behavior: 'smooth' });
       setResults(datas);
     });
   }, []);
@@ -215,55 +216,40 @@ const SearchResultComponent = React.memo(
       | ((page: number, pageSize?: number | undefined) => void)
       | undefined;
   }) => {
-    const handleOnChange = useCallback(
-      (page: number) => {
-        if (onPageChange) {
-          onPageChange(page);
-          const lc = document.getElementById('search__div_element');
-          lc && lc.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      },
-      [onPageChange]
-    );
     return (
       <>
         {results && (
-          <>
-            <div className="mt-2 flex flex-center">
-              <Text type="secondary">
-                Trouvé dans {results?.total} document
-                {results?.total > 1 ? 's' : ''}, page({results.pageNumber}/
-                {Math.ceil(results.total / results.itemsPerPage)})
-              </Text>
-            </div>
-            <Divider style={{ padding: '0', margin: '0' }} />
-          </>
-        )}
-        <ContainerScrollY id="search__div_element">
           <div className="mt-2 flex flex-center">
-            <List
-              itemLayout="vertical"
-              size="large"
-              style={{ width: '100%' }}
-              pagination={false}
-              dataSource={results?.data || []}
-              renderItem={(result) => (
-                <ListView result={result} query={results?.query as string} />
-              )}
+            <Text type="secondary">
+              Trouvé dans {results?.total} document
+              {results?.total > 1 ? 's' : ''}, page({results.pageNumber}/
+              {Math.ceil(results.total / results.itemsPerPage)})
+            </Text>
+          </div>
+        )}
+        <div className="mt-2 flex flex-center">
+          <List
+            itemLayout="vertical"
+            size="large"
+            style={{ width: '100%' }}
+            pagination={false}
+            dataSource={results?.data || []}
+            renderItem={(result) => (
+              <ListView result={result} query={results?.query as string} />
+            )}
+          />
+        </div>
+        {results && (
+          <div className="mt-2 flex flex-center mb-2">
+            <Pagination
+              key={results.query}
+              onChange={onPageChange}
+              defaultCurrent={results.pageNumber}
+              showSizeChanger={false}
+              total={results.total}
             />
           </div>
-          {results && (
-            <div className="mt-2 flex flex-center mb-2">
-              <Pagination
-                key={results.query}
-                onChange={handleOnChange}
-                defaultCurrent={results.pageNumber}
-                showSizeChanger={false}
-                total={results.total}
-              />
-            </div>
-          )}
-        </ContainerScrollY>
+        )}
       </>
     );
   }
