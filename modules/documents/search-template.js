@@ -66,15 +66,14 @@ function navigateOnResult(index) {
 
 const showZoomDetail = () => {
   const el = document.querySelector('.search--zoom--js');
+  const iconEl = el?.querySelector('.icon-data');
+  const detailEl = el?.querySelector('.zoom-data');
   if (WINDOW_ZOOM >= 100) {
-    // @ts-ignore
-    el?.querySelector('.icon-data')?.innerHTML = zoomInTemplate;
+    iconEl && (iconEl.innerHTML = zoomInTemplate);
   } else {
-    // @ts-ignore
-    el?.querySelector('.icon-data')?.innerHTML = zoomOutTemplate;
+    iconEl && (iconEl.innerHTML = zoomOutTemplate);
   }
-  // @ts-ignore
-  el?.querySelector('.zoom-data')?.textContent = WINDOW_ZOOM + '%';
+  detailEl && (detailEl.textContent = WINDOW_ZOOM.toString());
 };
 
 const searchOpenPopup = () => {

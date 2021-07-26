@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Input, Space, Card, Layout, Tree } from 'antd';
+import { Input, Card, Layout, Tree, Divider } from 'antd';
 import ContainerScrollY from '../container-scroll-y';
 import { Title } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
@@ -126,16 +126,15 @@ const DocumentSearch = () => {
 
   return (
     <>
-      <Space direction="vertical">
-        <Card>
-          <Search
-            key={documents.length}
-            placeholder="Recherche"
-            allowClear
-            onSearch={onSearch}
-          />
-        </Card>
-      </Space>
+      <Card bordered={false}>
+        <Search
+          key={documents.length}
+          placeholder="Recherche"
+          allowClear
+          onSearch={onSearch}
+        />
+      </Card>
+      <Divider style={{ padding: '0', margin: '0' }} />
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
         {datas
           .slice()

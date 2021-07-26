@@ -126,7 +126,7 @@ export default function DocumentView() {
     if (iframeRef.current) {
       const page = iframeRef.current.contentDocument?.querySelector(
         '#page-container'
-      );
+      ) as HTMLElement | null | undefined;
 
       const tab = tabs.find((t) => t.title === title);
       let hasOwnPosition = false;
@@ -154,9 +154,8 @@ export default function DocumentView() {
       }
 
       // handle zoom
-      //@ts-ignore
-      iframeRef.current.contentDocument.body.style.zoom =
-        (tab?.zoom || 100) + '%';
+      page && (page.style.zoom = (tab?.zoom || 100) + '%');
+
       if (tab?.zoom) {
         postMessage(
           iframeRef.current,
