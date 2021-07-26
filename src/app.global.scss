@@ -14,8 +14,12 @@ body {
 
 @import './plugins/chrome-tabs/chrome-tabs.scss';
 
+.app-header {
+  display: flex;
+  justify-content: space-between;
+}
+
 .logo {
-  float: left;
   top: 0;
   margin-top: 0;
   padding: 0 20px;

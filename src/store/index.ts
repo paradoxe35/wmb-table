@@ -60,7 +60,7 @@ export const titlesGroupedByYear = selector<{ [year: string]: Title[] }>({
     const titles = get(documentTitles);
     return titles
       .slice()
-      .filter(t => t.year)
+      .filter((t) => t.year)
       .sort((a, b) => a.year.localeCompare(b.year))
       .reduce((acc, v) => {
         if (!acc[v.year]) {
@@ -75,6 +75,11 @@ export const titlesGroupedByYear = selector<{ [year: string]: Title[] }>({
 export const documentViewQuery = atom<DocumentViewQuery[]>({
   key: 'documentViewQuery',
   default: [],
+});
+
+export const sidebarStatusHidden = atom<boolean>({
+  key: 'sidebarStatusHidden',
+  default: true,
 });
 
 export const documentTabs = atom<DocumentTab[]>({

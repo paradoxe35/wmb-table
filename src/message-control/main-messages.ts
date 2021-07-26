@@ -40,6 +40,7 @@ import {
   notes_references_bible_store,
   notes_references_bible_sync,
 } from './handlers/notes_references_bible';
+import sidebar_status, { sidebar_status_set } from './handlers/sidebar_status';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -147,3 +148,9 @@ mainMessageTransport(
   IPC_EVENTS.notes_references_bible_remove,
   notes_references_bible_remove
 );
+
+// sidebar status
+
+mainMessageTransport(IPC_EVENTS.sidebar_status, sidebar_status);
+
+mainMessageTransport(IPC_EVENTS.sidebar_status_set, sidebar_status_set);

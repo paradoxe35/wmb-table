@@ -7,6 +7,7 @@ interface Db {
   documents?: Datastore | undefined;
   documentsTitle?: Datastore | undefined;
   subjects?: Datastore | undefined;
+  sidebarStatus?: Datastore | undefined;
   subjectItems?: Datastore | undefined;
   tabs?: Datastore | undefined;
   suggestions?: Datastore | undefined;
@@ -56,6 +57,7 @@ db.subjects = dbStore('subjects');
 db.subjectItems = dbStore('subject-items');
 db.tabs = dbStore('tabs');
 db.suggestions = dbStore('suggestions');
+db.sidebarStatus = dbStore('sidebar-status');
 db.customDocuments = dbStore('custom-documents');
 db.notes = dbStore('notes');
 db.notesReference = dbStore('notes-reference');
