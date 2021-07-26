@@ -213,6 +213,8 @@ export default function initTemplate() {
   performSearch(SEARCH_QUERY ? SEARCH_QUERY.term : undefined);
 
   searchOpen && searchOpen.addEventListener('click', () => openSearchModal());
+
+  showZoomDetail();
 }
 
 export function openSearchModal() {

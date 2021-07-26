@@ -14,6 +14,7 @@ import { LeftCircleOutlined, RightCircleOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../utils/ipc-events';
 import { SidebarStatus } from '../types';
+import { ipcRenderer } from 'electron';
 
 const { Header, Content } = Layout;
 
@@ -51,6 +52,10 @@ const SidebarStatusHanlder = () => {
         statusRef.current.hidden
       );
     }
+  }, []);
+
+  useEffect(() => {
+    ipcRenderer.on(IPC_EVENTS.toggle_sidebar, toggleCollapsed);
   }, []);
 
   return (
