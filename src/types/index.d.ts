@@ -45,6 +45,10 @@ export interface Suggestions extends Readonly<TimeStampData> {
   found: number;
 }
 
+export interface SidebarStatus extends Readonly<TimeStampData> {
+  hidden: boolean;
+}
+
 declare global {
   interface Array<T> {
     paginate: <T>(

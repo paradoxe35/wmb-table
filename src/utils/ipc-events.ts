@@ -37,4 +37,6 @@ export const IPC_EVENTS = {
   bible_indexes: 'bible_indexes',
   bible_books: 'bible_books',
   bible_search: 'bible_search',
+  sidebar_status: 'sidebar_status',
+  sidebar_status_set: 'sidebar_status_set',
 };

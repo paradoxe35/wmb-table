@@ -10,6 +10,7 @@ import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   appDatasLoaded,
   documentTitles,
+  sidebarStatusHidden,
   titlesDocumentByFileName,
   titlesGroupedByYear,
 } from '../../store';
@@ -23,8 +24,10 @@ const { Search } = Input;
 const { Sider } = Layout;
 
 export default function SidebarDocuments() {
+  const status = useRecoilValue(sidebarStatusHidden);
   return (
     <Sider
+      hidden={status}
       width="263px"
       trigger={null}
       className="layout__sidebar"
@@ -111,7 +114,7 @@ const DocumentSearch = () => {
       .then((titles) => {
         setDocumentTitles(titles);
       })
-      .then(() => setAppDataLoaded(true));
+      .finally(() => setAppDataLoaded(true));
   }, []);
 
   const onSearch = (value: string) => {
