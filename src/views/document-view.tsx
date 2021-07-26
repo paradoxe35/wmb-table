@@ -74,7 +74,7 @@ export default function DocumentView() {
 
   useEffect(() => {
     if (documentQuery.current) {
-      window.dispatchEvent(new Event('frame-document-search-start'))
+      window.dispatchEvent(new Event('frame-document-search-start'));
       iframeRef.current?.contentWindow?.location.reload();
     }
   }, [viewQuery]);
@@ -153,6 +153,19 @@ export default function DocumentView() {
         }
       }
 
+      // handle zoom
+      //@ts-ignore
+      iframeRef.current.contentDocument.body.style.zoom =
+        (tab?.zoom || 100) + '%';
+      if (tab?.zoom) {
+        postMessage(
+          iframeRef.current,
+          'document-zoom',
+          tab?.zoom,
+          path as string
+        );
+      }
+
       const load = {
         count: 0,
       };
@@ -177,6 +190,26 @@ export default function DocumentView() {
       handleSearchQuery(iframeRef.current, hasOwnPosition);
     }
   };
+
+  useEffect(() => {
+    const documentZoom = (e: Event) => {
+      setTabs((ts) => {
+        return ts.map((t) => {
+          const nt = { ...t };
+          if (nt.title === title) {
+            // @ts-ignore
+            nt.zoom = e.detail.zoom;
+          }
+          return nt;
+        });
+      });
+    };
+
+    window.addEventListener('document-current-zoom', documentZoom);
+    return () => {
+      window.addEventListener('document-current-zoom', documentZoom);
+    };
+  }, []);
 
   return (
     <>
