@@ -107,7 +107,7 @@ const useSearch = (): SearchFn => {
       lastSearch.current.trim(),
       page
     ).then((datas) => {
-      const lc = document.querySelector('.site-layout-content');
+      const lc = document.querySelector('.search__option__content');
       lc && lc.scrollTo({ top: 0, behavior: 'smooth' });
       setResults(datas);
     });

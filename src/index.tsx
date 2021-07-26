@@ -59,7 +59,11 @@ const RouterApp = React.memo(
     );
     //@ts-ignore
     return Object.keys(views).map((k: string) => (
-      <ContainerScrollY key={k} hidden={k !== view}>
+      <ContainerScrollY
+        className={`${k}__option__content`}
+        key={k}
+        hidden={k !== view}
+      >
         {/* @ts-ignore */}
         {views[k] as JSX.Element}
       </ContainerScrollY>
