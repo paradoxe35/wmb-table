@@ -67,3 +67,23 @@ export function zoomOut(el) {
   Page.style.zoom = zoom + '%';
   return zoom;
 }
+
+/**
+ * @param {{ apply: (arg0: any, arg1: IArguments) => void; }} callback
+ * @param {number} delay
+ */
+export function debounce(callback, delay) {
+  /**
+   * @type {NodeJS.Timeout}
+   */
+  let timer;
+  return function () {
+    let args = arguments;
+    //@ts-ignore
+    let context = this;
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      callback.apply(context, args);
+    }, delay);
+  };
+}
