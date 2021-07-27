@@ -54,10 +54,8 @@ export default function SidebarDocuments() {
                 </ContainerScrollY>
               </div>
               <div hidden={index !== 2}>
-                <ContainerScrollY>
-                  <div className="mt-2" />
-                  <DocumentsAdded />
-                </ContainerScrollY>
+                <div className="mt-2" />
+                <DocumentsAdded />
               </div>
             </>
           );
@@ -70,11 +68,11 @@ export default function SidebarDocuments() {
 const DocumentsAdded = () => {
   const customDocuments = useRecoilValue(customDocumentsStore);
   return (
-    <>
+    <ContainerScrollY style={{ paddingLeft: '10px' }}>
       {customDocuments.map((d) => (
         <ItemOutline key={d._id} id={d._id} name={d.title} title={d.title} />
       ))}
-    </>
+    </ContainerScrollY>
   );
 };
 
