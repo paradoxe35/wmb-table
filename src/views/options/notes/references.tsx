@@ -34,12 +34,14 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 
 export const useShowReferenceDetail = () => {
   const viewDocument = useDocumentViewOpen();
-  const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItemStore);
+  const setSubjectItemSelected = useSetRecoilState(
+    selectedSubjectDocumentItemStore
+  );
   const $titles = useRecoilValue(titlesDocumentSelector);
 
   const modal = useCallback(
     (reference: NoteItemReference, workingNote: NoteItem) => {
-      const assigned = (reference.documentHtmlTree || []).length > 0;
+      const assigned = (reference.documentHtmlTree.tree || []).length > 0;
 
       const openDocument = () => {
         viewDocument(reference.documentTitle, () => {

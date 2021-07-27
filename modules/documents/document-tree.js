@@ -1,10 +1,18 @@
-import { getChildByTreeArr } from './functions.js';
+import { getChildByTreeArr, pageContainer } from './functions.js';
 
 /**
  * @param { import('../../src/types').SubjectDocumentItem } item
  */
 export function scrollToViewTree(item) {
-  const element = getChildByTreeArr(document.body, item.documentHtmlTree);
+  const element = getChildByTreeArr(document.body, item.documentHtmlTree.tree);
+  const container = pageContainer();
+
+  container.scrollTo({
+    top: item.documentHtmlTree.scrollY,
+    left: item.documentHtmlTree.scrollX,
+    behavior: 'smooth',
+  });
+
   if (element) {
     // @ts-ignore
     element.style.backgroundColor = '#57aeff';

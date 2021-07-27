@@ -1,5 +1,10 @@
 import { ContextMenu } from '../context-menu/context.js';
-import { closestChildParent, zoomIn, zoomOut } from './functions.js';
+import {
+  closestChildParent,
+  pageContainer,
+  zoomIn,
+  zoomOut,
+} from './functions.js';
 import { setWindowZoom } from './seach-query.js';
 
 function copyTextSelection() {
@@ -39,9 +44,18 @@ function addDocumentNodeToItem(event) {
   // @ts-ignore
   const textContent = lastNodeTargetFromContent.textContent;
 
+  const container = pageContainer();
+
   window.parent.dispatchEvent(
     new CustomEvent(event, {
-      detail: { textContent, documentHtmlTree },
+      detail: {
+        textContent,
+        documentHtmlTree: {
+          tree: documentHtmlTree,
+          scrollY: container.scrollTop,
+          scrollX: container.scrollLeft,
+        },
+      },
     })
   );
 }

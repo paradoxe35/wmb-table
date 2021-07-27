@@ -2,7 +2,11 @@ import { Divider, Input, Modal, Space } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { subjectDocumentStore, subjectDocumentItemStore } from '../../store';
-import { SubjectDocument, SubjectDocumentItem } from '../../types';
+import {
+  DocumentHtmlTree,
+  SubjectDocument,
+  SubjectDocumentItem,
+} from '../../types';
 import { strNormalize } from '../../utils/functions';
 import { useValueStateRef } from '../../utils/hooks';
 import { BookOutlined } from '@ant-design/icons';
@@ -16,7 +20,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
 
   const documentRefTree = useRef<{
     textContent: string;
-    documentHtmlTree: number[];
+    documentHtmlTree: DocumentHtmlTree;
   }>();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -35,8 +39,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
   const onSelectItem = (name: string) => {
     if (!documentRefTree.current) return;
 
-    //@ts-ignore
-    const subjectItem: SubjectDocumentItem = {
+    const subjectItem: Partial<SubjectDocumentItem> = {
       documentHtmlTree: documentRefTree.current.documentHtmlTree,
       documentTitle: titleRef.current,
       textContent: documentRefTree.current.textContent,

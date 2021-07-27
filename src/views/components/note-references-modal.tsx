@@ -1,6 +1,6 @@
 import { Button, List, Modal, Tooltip } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
-import { NoteItem, NoteItemReference } from '../../types';
+import { DocumentHtmlTree, NoteItem, NoteItemReference } from '../../types';
 import { useValueStateRef } from '../../utils/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
@@ -12,7 +12,7 @@ export function NoteReferencesModal({ title }: { title: string }) {
   const titleRef = useValueStateRef(title);
   const documentRefTree = useRef<{
     textContent: string;
-    documentHtmlTree: number[];
+    documentHtmlTree: DocumentHtmlTree;
   }>();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
@@ -114,7 +114,7 @@ function ContentModal({
         itemLayout="horizontal"
         dataSource={datas}
         renderItem={(item) => {
-          const assigned = (item.documentHtmlTree || []).length > 0;
+          const assigned = (item.documentHtmlTree.tree || []).length > 0;
           return (
             <List.Item
               actions={[

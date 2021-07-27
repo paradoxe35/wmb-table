@@ -2,6 +2,7 @@
 import './context-menu/kali_dark.css.js';
 import contextMenuHander from './documents/context-menu.js';
 import { scrollToViewTree } from './documents/document-tree.js';
+import { pageContainer } from './documents/functions.js';
 import {
   setSearchQuery,
   SEARCH_RESULT,
@@ -13,8 +14,8 @@ import searchTemplate from './documents/search-template.js';
 
 // center page to center
 function defaultPosition() {
-  // @ts-ignore
-  const container = document.getElementById('page-container');
+  const container = pageContainer();
+
   if (WINDOW_POSITION) {
     // @ts-ignore
     container.scrollTo({
@@ -44,6 +45,7 @@ window.addEventListener(
         searchTemplate();
         break;
       case 'subject-item':
+        console.log(pdf2htmlEX, e.data.detail);
         scrollToViewTree(e.data.detail);
         break;
       case 'window-position':
