@@ -6,7 +6,7 @@ import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { useRecoilValue } from 'recoil';
-import { titlesDocumentByFileName, workingNoteApp } from '../../store';
+import { titlesDocumentByFileNameSelector, workingNoteAppStore } from '../../store';
 
 export function NoteReferencesModal({ title }: { title: string }) {
   const titleRef = useValueStateRef(title);
@@ -18,7 +18,7 @@ export function NoteReferencesModal({ title }: { title: string }) {
 
   const [datas, setDatas] = useState<NoteItemReference[]>([]);
   const workingNote = useRef<NoteItem | null>(null);
-  const workingNoteId = useRecoilValue(workingNoteApp);
+  const workingNoteId = useRecoilValue(workingNoteAppStore);
 
   useEffect(() => {
     if (!workingNoteId) {
@@ -66,15 +66,13 @@ export function NoteReferencesModal({ title }: { title: string }) {
   };
 
   useEffect(() => {
-    const showModal = (e: CustomEvent) => {
+    const showModal = (e: CustomEventInit) => {
       documentRefTree.current = e.detail;
       setIsModalVisible(true);
     };
 
-    //@ts-ignore
     window.addEventListener('add-document-ref-note', showModal);
     return () => {
-      //@ts-ignore
       window.removeEventListener('add-document-ref-note', showModal);
     };
   }, []);
@@ -109,7 +107,7 @@ function ContentModal({
   onSelectItem: (item: NoteItemReference) => void;
   datas: NoteItemReference[];
 }) {
-  const $titles = useRecoilValue(titlesDocumentByFileName);
+  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
 
   return (
     <>
@@ -134,7 +132,7 @@ function ContentModal({
                 avatar={<BookOutlined />}
                 description={
                   assigned
-                    ? `Référencé à: ${$titles[item.documentTitle].name}`
+                    ? `Référencé à: ${$titles[item.documentTitle]?.name}`
                     : 'Aucun document attribué à cette référence'
                 }
                 title={

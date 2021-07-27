@@ -2,7 +2,7 @@ import { Input, Modal } from 'antd';
 import React, { useEffect } from 'react';
 import { useCallback, useRef } from 'react';
 import { useSetRecoilState } from 'recoil';
-import { documentViewQuery } from '../../store';
+import { documentViewQueryStore } from '../../store';
 import { DocumentViewQuery } from '../../types';
 import { useValueStateRef } from '../../utils/hooks';
 import { SearchOutlined } from '@ant-design/icons';
@@ -41,7 +41,7 @@ export function ModalSearchDocument({
 
   const searchValue = useValueStateRef<string>(documentQuery?.term || '');
 
-  const setDocumentViewQuery = useSetRecoilState(documentViewQuery);
+  const setDocumentViewQuery = useSetRecoilState(documentViewQueryStore);
 
   const isOpened = useRef(false);
 

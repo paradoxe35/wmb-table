@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Button,
   Col,
@@ -14,8 +14,12 @@ import {
 } from 'antd';
 import electron from 'electron';
 import { IPC_EVENTS } from '../utils/ipc-events';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { appDatasLoaded, documentTitles } from '../store';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import {
+  appDatasLoadedStore,
+  customDocumentsStore,
+  documentTitlesStore,
+} from '../store';
 import { CustomDocument, Title, UploadDocument } from '../types';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import {
@@ -39,7 +43,7 @@ const { ipcRenderer } = electron;
 
 export default function CustomDocuments() {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const titles = useRecoilValue(documentTitles);
+  const titles = useRecoilValue(documentTitlesStore);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -96,7 +100,7 @@ export default function CustomDocuments() {
 }
 
 const DocumentTitle = ({ length }: { length: number }) => {
-  const appLoaded = useRecoilValue(appDatasLoaded);
+  const appLoaded = useRecoilValue(appDatasLoadedStore);
 
   return (
     <Space direction="horizontal">
@@ -109,25 +113,30 @@ const DocumentTitle = ({ length }: { length: number }) => {
 };
 
 function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
-  const documentsRef = useRef<CustomDocument[]>([]);
+  const [customDocuments, setCustomDocuments] = useRecoilState<
+    CustomDocument[]
+  >(customDocumentsStore);
+
   const [documents, setDocuments] = useState<CustomDocument[]>([]);
-  const setTitles = useSetRecoilState(documentTitles);
+  const setTitles = useSetRecoilState(documentTitlesStore);
+
+  useEffect(() => {
+    setDocuments(customDocuments);
+  }, [customDocuments]);
 
   useEffect(() => {
     sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents).then(
       (datas) => {
-        documentsRef.current = datas;
-        setDocuments(datas);
+        setCustomDocuments(datas);
       }
     );
   }, []);
 
   useEffect(() => {
-    const addDoc = (e: CustomEvent<CustomDocument[]>) => {
-      documentsRef.current = [...e.detail, ...documentsRef.current];
-      setDocuments(documentsRef.current);
+    const addDoc = (e: CustomEventInit<CustomDocument[]>) => {
+      setCustomDocuments((ds) => [...(e.detail || []), ...ds]);
 
-      const titles = e.detail.map(
+      const titles = (e.detail || []).map(
         (f) =>
           (({
             title: f.title,
@@ -139,35 +148,35 @@ function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
 
       setTitles((ts) => [...titles, ...ts]);
     };
-    //@ts-ignore
     window.addEventListener('custom-document-added', addDoc);
     return () => {
-      //@ts-ignore
       window.removeEventListener('custom-document-added', addDoc);
     };
   }, []);
 
   const onSearch = (value: string) => {
-    if (documentsRef.current.length) {
+    if (customDocuments.length) {
       setDocuments(
-        documentsRef.current.filter((d) =>
+        customDocuments.filter((d) =>
           strNormalize(d.title).includes(strNormalize(value))
         )
       );
     }
   };
 
-  const setAppDataLoaded = useSetRecoilState(appDatasLoaded);
+  const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
 
   const handleDeletion = (document: CustomDocument) => {
     setAppDataLoaded(false);
     sendIpcRequest(IPC_EVENTS.custom_documents_delete, document)
       .then(() => {
-        documentsRef.current = documentsRef.current.filter(
-          (d) => d.title != document.title
-        );
+        setCustomDocuments((ds) => ds.filter((d) => d.title != document.title));
         setTitles((ts) => ts.filter((t) => t.title != document.title));
-        setDocuments(documentsRef.current);
+        window.dispatchEvent(
+          new CustomEvent<CustomDocument>('custom-document-removed', {
+            detail: document,
+          })
+        );
       })
       .finally(() => setAppDataLoaded(true));
   };
@@ -229,7 +238,7 @@ function validateFile(file: File, showMessage: boolean = true) {
 function Uploader() {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState<boolean>(false);
-  const titles = useRecoilValue(documentTitles);
+  const titles = useRecoilValue(documentTitlesStore);
 
   const props: DraggerProps = {
     name: 'file',

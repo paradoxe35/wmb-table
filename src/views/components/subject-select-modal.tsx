@@ -1,7 +1,7 @@
 import { Divider, Input, Modal, Space } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { subjectDocument, subjectDocumentItem } from '../../store';
+import { subjectDocumentStore, subjectDocumentItemStore } from '../../store';
 import { SubjectDocument, SubjectDocumentItem } from '../../types';
 import { strNormalize } from '../../utils/functions';
 import { useValueStateRef } from '../../utils/hooks';
@@ -12,7 +12,7 @@ import { IPC_EVENTS } from '../../utils/ipc-events';
 export function SubjectSelectModal({ title }: { title: string }) {
   const titleRef = useValueStateRef(title);
 
-  const setSubjectItems = useSetRecoilState(subjectDocumentItem);
+  const setSubjectItems = useSetRecoilState(subjectDocumentItemStore);
 
   const documentRefTree = useRef<{
     textContent: string;
@@ -22,7 +22,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const [datas, setDatas] = useState<SubjectDocument[]>([]);
-  const odatas = useRecoilValue<SubjectDocument[]>(subjectDocument);
+  const odatas = useRecoilValue<SubjectDocument[]>(subjectDocumentStore);
 
   const handleOk = () => {
     setIsModalVisible(false);
@@ -70,15 +70,13 @@ export function SubjectSelectModal({ title }: { title: string }) {
   }, [odatas]);
 
   useEffect(() => {
-    const showModal = (e: CustomEvent) => {
+    const showModal = (e: CustomEventInit) => {
       documentRefTree.current = e.detail;
       setIsModalVisible(true);
     };
 
-    //@ts-ignore
     window.addEventListener('add-document-ref-subject', showModal);
     return () => {
-      //@ts-ignore
       window.removeEventListener('add-document-ref-subject', showModal);
     };
   }, []);

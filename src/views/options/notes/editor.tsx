@@ -229,18 +229,17 @@ export default function EditorContent({
   }, [workingNoteId]);
 
   useEffect(() => {
-    const renameUpdate = (e: CustomEvent<{ name: string }>) => {
+    const renameUpdate = (e: CustomEventInit<{ name: string }>) => {
+      if (!e.detail) return;
       setWorkingNote((n) => {
         if (!n) return n;
         const nn = { ...n };
-        nn.name = e.detail.name;
+        nn.name = e.detail?.name || '';
         return nn;
       });
     };
-    //@ts-ignore
     window.addEventListener('rename-note', renameUpdate);
     return () => {
-      //@ts-ignore
       window.removeEventListener('rename-note', renameUpdate);
     };
   }, []);

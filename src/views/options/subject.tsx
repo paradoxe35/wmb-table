@@ -26,10 +26,10 @@ import { getDateTime, strNormalize } from '../../utils/functions';
 import { DeleteBtn } from '../../components/delete-btn';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
-  selectedSubjectDocumentItem,
-  subjectDocument,
-  subjectDocumentItem,
-  titlesDocumentByFileName,
+  selectedSubjectDocumentItemStore,
+  subjectDocumentStore,
+  subjectDocumentItemStore,
+  titlesDocumentByFileNameSelector,
 } from '../../store';
 import ContainerScrollY from '../../components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
@@ -100,7 +100,7 @@ function Title({
 export function useSubjectsDatas() {
   const odatas = useRef<SubjectDocument[]>([]);
   const [datas, setDatas] = useState<SubjectDocument[]>([]);
-  const setSubjectDocument = useSetRecoilState(subjectDocument);
+  const setSubjectDocument = useSetRecoilState(subjectDocumentStore);
 
   const onSearch = useCallback((value: string) => {
     if (odatas.current.length) {
@@ -124,7 +124,7 @@ export default function Subject() {
     onSearch,
   } = useSubjectsDatas();
 
-  const subjectItems = useRecoilValue(subjectDocumentItem);
+  const subjectItems = useRecoilValue(subjectDocumentItemStore);
 
   const [subjectItemsData, setSubjectItemData] = useState<
     SubjectDocumentItem[]
@@ -278,9 +278,9 @@ function ShowActiveDocuments({
   documents: SubjectDocumentItem[];
   setDocuments: React.Dispatch<React.SetStateAction<SubjectDocumentItem[]>>;
 }) {
-  const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItem);
+  const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItemStore);
 
-  const $titles = useRecoilValue(titlesDocumentByFileName);
+  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
 
   function confirm(item: SubjectDocumentItem) {
     sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(
@@ -317,7 +317,7 @@ function ShowActiveDocuments({
                             onItemClick={() => setSubjectItemSelected(item)}
                             name={item.documentTitle}
                           >
-                            {$titles[item.documentTitle].name}
+                            {$titles[item.documentTitle]?.name}
                           </DocumentViewer>
                         </a>
                       }

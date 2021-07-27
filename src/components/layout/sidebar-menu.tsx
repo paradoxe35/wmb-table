@@ -7,7 +7,7 @@ import {
 } from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
 import OptionViewer from '../viewer/option-viewer';
-import { OPTIONS_VIEWS, optionViewState } from '../../store';
+import { OPTIONS_VIEWS, optionViewStore } from '../../store';
 import { BibleIcons } from '../icons';
 import { useRecoilValue } from 'recoil';
 import { ipcRenderer } from 'electron';
@@ -23,7 +23,7 @@ type Options = {
 };
 
 export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
-  const optionViewer = useRecoilValue(optionViewState);
+  const optionViewer = useRecoilValue(optionViewStore);
   const optionViewerRef = useValueStateRef(optionViewer);
   const setOption = useOptionsMenu();
 
