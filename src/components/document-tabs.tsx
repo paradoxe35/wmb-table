@@ -231,7 +231,21 @@ export default function DocumentTabs() {
   useEffect(() => {
     const removeFromCustomDocument = (e: CustomEventInit<CustomDocument>) => {
       if (e.detail) {
-        setTabs((ts) => ts.filter((t) => t.title != e.detail?.title));
+        setTabs((ts) => {
+          const nts = ts.find((t) => t.title == e.detail?.title)
+            ? ts.filter((t) => t.title != e.detail?.title)
+            : ts;
+
+          const hasActive = nts.find((t) => t.active);
+
+          return hasActive
+            ? nts
+            : nts.map((t, i) => {
+                const nt = { ...t };
+                nt.active = i == 0;
+                return nt;
+              });
+        });
       }
     };
 
