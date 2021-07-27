@@ -85,7 +85,9 @@ export default function History() {
                 <>
                   <List
                     itemLayout="horizontal"
-                    dataSource={historyItems}
+                    dataSource={historyItems.filter(
+                      (i) => $titles[i.documentTitle]
+                    )}
                     renderItem={(item) => (
                       <List.Item>
                         <List.Item.Meta
@@ -93,7 +95,8 @@ export default function History() {
                           title={
                             <a>
                               <DocumentViewer name={item.documentTitle}>
-                                {$titles[item.documentTitle]?.name}
+                                {$titles[item.documentTitle]?.name ||
+                                  item.documentTitle}
                               </DocumentViewer>
                             </a>
                           }
