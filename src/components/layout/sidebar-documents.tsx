@@ -12,7 +12,7 @@ import {
   customDocumentsStore,
   documentTitlesStore,
   sidebarStatusHiddenStore,
-  titlesDocumentByFileNameSelector,
+  titlesDocumentSelector,
   titlesGroupedByYearSelector,
 } from '../../store';
 import PanelGroup from './components/documents-menu';
@@ -80,7 +80,7 @@ const DocumentsAdded = () => {
 
 const DocumentByYears = () => {
   const documents = useRecoilValue(titlesGroupedByYearSelector);
-  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
+  const $titles = useRecoilValue(titlesDocumentSelector);
   const viewDocument = useDocumentViewOpen();
 
   const dataTree = Object.keys(documents).map((year) => {
@@ -122,7 +122,7 @@ const DocumentSearch = () => {
   const [documents, setdocuments] = useRecoilState(documentTitlesStore);
   const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
 
-  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
+  const $titles = useRecoilValue(titlesDocumentSelector);
 
   useEffect(() => {
     setDatas(documents);

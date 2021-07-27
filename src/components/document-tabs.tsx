@@ -4,7 +4,7 @@ import ChromeTabs from '../plugins/chrome-tabs/chrome-tabs';
 import {
   currentDocumentTabsSelector,
   documentTabsStore,
-  titlesDocumentByFileNameSelector,
+  titlesDocumentSelector,
 } from '../store';
 import { CustomDocument, DocumentTab } from '../types';
 import { FileFilled, LoadingOutlined } from '@ant-design/icons';
@@ -98,7 +98,7 @@ function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
 
 const Tabs = React.forwardRef<HTMLDivElement, { tabs: DocumentTab[] }>(
   (props, ref: React.LegacyRef<HTMLDivElement>) => {
-    const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
+    const $titles = useRecoilValue(titlesDocumentSelector);
 
     return (
       <>
