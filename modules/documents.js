@@ -2,7 +2,7 @@
 import './context-menu/kali_dark.css.js';
 import contextMenuHander from './documents/context-menu.js';
 import { scrollToViewTree } from './documents/document-tree.js';
-import { pageContainer } from './documents/functions.js';
+import { debounce, pageContainer } from './documents/functions.js';
 import {
   setSearchQuery,
   SEARCH_RESULT,
@@ -12,10 +12,10 @@ import {
 } from './documents/seach-query.js';
 import searchTemplate from './documents/search-template.js';
 
+const container = pageContainer();
+
 // center page to center
 function defaultPosition() {
-  const container = pageContainer();
-
   if (WINDOW_POSITION) {
     // @ts-ignore
     container.scrollTo({
@@ -32,8 +32,6 @@ function defaultPosition() {
 }
 
 contextMenuHander();
-
-window.focus();
 
 //events
 window.addEventListener(
@@ -63,3 +61,8 @@ window.addEventListener('result-constructed', () => {
     defaultPosition();
   }
 });
+
+const refocus = () => container.focus();
+refocus();
+
+container.addEventListener('scroll', debounce(refocus, 1000));
