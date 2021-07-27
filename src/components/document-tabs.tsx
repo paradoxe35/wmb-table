@@ -122,31 +122,31 @@ const useDocumentTabs = () => {
   const currentTitle = useRecoilValue(currentDocumentTabsSelector);
 
   const [tabs, setTabs] = useRecoilState(documentTabsStore);
+  const prevTabsRef = useRef<DocumentTab[]>(tabs);
 
   const [key, setKey] = useState(0);
 
   const reloadRef = useRef<boolean>(true);
   const tabsRef = useRef<DocumentTab[]>(tabs);
 
-  const prevTabsRef = useRef<DocumentTab[]>([]);
-
   useEffect(() => {
-    if (!tabs.length && currentTitle) {
-      sendIpcRequest<DocumentTab[] | null>(IPC_EVENTS.document_tabs).then(
-        (docs) => {
-          if (!docs || (docs && !docs.length)) {
-            setTabs([{ title: currentTitle, active: true, scrollY: 0 }]);
-          } else {
-            setTabs(docs);
+    (async () => {
+      if (tabs !== prevTabsRef.current) {
+        await sendIpcRequest(IPC_EVENTS.document_tabs, tabs);
+      }
+      if (!tabs.length && currentTitle) {
+        sendIpcRequest<DocumentTab[] | null>(IPC_EVENTS.document_tabs).then(
+          (docs) => {
+            if (!docs || (docs && !docs.length)) {
+              setTabs([{ title: currentTitle, active: true, scrollY: 0 }]);
+            } else {
+              setTabs(docs);
+            }
           }
-        }
-      );
-    }
-  }, [currentTitle]);
-
-  useEffect(() => {
-    tabs.length && sendIpcRequest(IPC_EVENTS.document_tabs, tabs);
-  }, [tabs]);
+        );
+      }
+    })();
+  }, [tabs, currentTitle]);
 
   useEffect(() => {
     const preveTab = prevTabsRef.current;

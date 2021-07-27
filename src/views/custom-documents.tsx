@@ -14,7 +14,12 @@ import {
 } from 'antd';
 import electron from 'electron';
 import { IPC_EVENTS } from '../utils/ipc-events';
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import {
+  SetterOrUpdater,
+  useRecoilState,
+  useRecoilValue,
+  useSetRecoilState,
+} from 'recoil';
 import {
   appDatasLoadedStore,
   customDocumentsStore,
@@ -44,6 +49,18 @@ const { ipcRenderer } = electron;
 export default function CustomDocuments() {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const titles = useRecoilValue(documentTitlesStore);
+
+  const [customDocuments, setCustomDocuments] = useRecoilState<
+    CustomDocument[]
+  >(customDocumentsStore);
+
+  useEffect(() => {
+    sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents).then(
+      (datas) => {
+        setCustomDocuments(datas);
+      }
+    );
+  }, []);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -85,7 +102,11 @@ export default function CustomDocuments() {
       >
         <Row>
           <Col span={11}>
-            <CustomDocumentItem handleCancel={handleCancel} />
+            <CustomDocumentItem
+              customDocuments={customDocuments}
+              setCustomDocuments={setCustomDocuments}
+              handleCancel={handleCancel}
+            />
           </Col>
           <Col span={2}>
             <Divider style={{ minHeight: '250px' }} type="vertical" />
@@ -112,25 +133,21 @@ const DocumentTitle = ({ length }: { length: number }) => {
   );
 };
 
-function CustomDocumentItem({ handleCancel }: { handleCancel: Function }) {
-  const [customDocuments, setCustomDocuments] = useRecoilState<
-    CustomDocument[]
-  >(customDocumentsStore);
-
+function CustomDocumentItem({
+  handleCancel,
+  customDocuments,
+  setCustomDocuments,
+}: {
+  handleCancel: Function;
+  customDocuments: CustomDocument[];
+  setCustomDocuments: SetterOrUpdater<CustomDocument[]>;
+}) {
   const [documents, setDocuments] = useState<CustomDocument[]>([]);
   const setTitles = useSetRecoilState(documentTitlesStore);
 
   useEffect(() => {
     setDocuments(customDocuments);
   }, [customDocuments]);
-
-  useEffect(() => {
-    sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents).then(
-      (datas) => {
-        setCustomDocuments(datas);
-      }
-    );
-  }, []);
 
   useEffect(() => {
     const addDoc = (e: CustomEventInit<CustomDocument[]>) => {
