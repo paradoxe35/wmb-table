@@ -1,5 +1,6 @@
 import { atom, selector } from 'recoil';
 import {
+  CustomDocument,
   DocumentTab,
   DocumentViewQuery,
   OptionView,
@@ -21,43 +22,50 @@ export const OPTIONS_VIEWS: OptionView = {
   bible: 'bible',
 };
 
-export const appDatasLoaded = atom({
-  key: 'appDatasLoaded',
+export const appDatasLoadedStore = atom({
+  key: 'appDatasLoadedStore',
   default: false,
 });
 
-export const appViewState = atom({
+export const appViewStore = atom({
   key: 'appViewerState',
   default: MAIN_VIEWS.document,
 });
 
-export const optionViewState = atom({
-  key: 'optionViewState',
+export const optionViewStore = atom({
+  key: 'optionViewStore',
   default: OPTIONS_VIEWS.search as string,
 });
 
-export const documentTitles = atom<Title[]>({
-  key: 'documentTitles',
+export const documentTitlesStore = atom<Title[]>({
+  key: 'documentTitlesStore',
   default: [],
 });
 
-export const titlesDocumentByFileName = selector<{ [fileName: string]: Title }>(
-  {
-    key: 'titlesDocumentByFileName',
-    get: ({ get }) => {
-      const titles = get(documentTitles);
-      return titles.reduce((acc, doc) => {
-        acc[doc.title] = doc;
-        return acc;
-      }, {} as { [title: string]: Title });
-    },
-  }
-);
+export const customDocumentsStore = atom<CustomDocument[]>({
+  key: 'customDocumentsStore',
+  default: [],
+});
 
-export const titlesGroupedByYear = selector<{ [year: string]: Title[] }>({
+export const titlesDocumentByFileNameSelector = selector<{
+  [fileName: string]: Title;
+}>({
+  key: 'titlesDocumentByFileNameSelector',
+  get: ({ get }) => {
+    const titles = get(documentTitlesStore);
+    return titles.reduce((acc, doc) => {
+      acc[doc.title] = doc;
+      return acc;
+    }, {} as { [title: string]: Title });
+  },
+});
+
+export const titlesGroupedByYearSelector = selector<{
+  [year: string]: Title[];
+}>({
   key: 'titleDocumentByFileName',
   get: ({ get }) => {
-    const titles = get(documentTitles);
+    const titles = get(documentTitlesStore);
     return titles
       .slice()
       .filter((t) => t.year)
@@ -72,18 +80,18 @@ export const titlesGroupedByYear = selector<{ [year: string]: Title[] }>({
   },
 });
 
-export const documentViewQuery = atom<DocumentViewQuery[]>({
-  key: 'documentViewQuery',
+export const documentViewQueryStore = atom<DocumentViewQuery[]>({
+  key: 'documentViewQueryStore',
   default: [],
 });
 
-export const sidebarStatusHidden = atom<boolean>({
-  key: 'sidebarStatusHidden',
+export const sidebarStatusHiddenStore = atom<boolean>({
+  key: 'sidebarStatusHiddenStore',
   default: true,
 });
 
-export const documentTabs = atom<DocumentTab[]>({
-  key: 'documentTabs',
+export const documentTabsStore = atom<DocumentTab[]>({
+  key: 'documentTabsStore',
   default: [],
 });
 
@@ -91,11 +99,11 @@ export const defaultTitle = {
   isDefault: false,
 };
 
-export const currentDocumentTabs = selector<string>({
-  key: 'currentDocumentTabs',
+export const currentDocumentTabsSelector = selector<string>({
+  key: 'currentDocumentTabsSelector',
   get: ({ get }) => {
-    const tab = get(documentTabs).find((v) => v.active);
-    const titles = get(documentTitles);
+    const tab = get(documentTabsStore).find((v) => v.active);
+    const titles = get(documentTitlesStore);
     let title = null;
 
     if (tab?.title) {
@@ -110,22 +118,24 @@ export const currentDocumentTabs = selector<string>({
   },
 });
 
-export const subjectDocument = atom<SubjectDocument[]>({
-  key: 'subjectDocument',
+export const subjectDocumentStore = atom<SubjectDocument[]>({
+  key: 'subjectDocumentStore',
   default: [],
 });
 
-export const subjectDocumentItem = atom<SubjectDocumentItem | null>({
-  key: 'subjectDocumentItem',
+export const subjectDocumentItemStore = atom<SubjectDocumentItem | null>({
+  key: 'subjectDocumentItemStore',
   default: null,
 });
 
-export const selectedSubjectDocumentItem = atom<SubjectDocumentItem | null>({
-  key: 'selectedSubjectDocumentItem',
-  default: null,
-});
+export const selectedSubjectDocumentItemStore = atom<SubjectDocumentItem | null>(
+  {
+    key: 'selectedSubjectDocumentItemStore',
+    default: null,
+  }
+);
 
-export const workingNoteApp = atom<string | null>({
-  key: 'workingNoteApp',
+export const workingNoteAppStore = atom<string | null>({
+  key: 'workingNoteAppStore',
   default: null,
 });

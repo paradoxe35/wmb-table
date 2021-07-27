@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
 import {
-  currentDocumentTabs,
+  currentDocumentTabsSelector,
   defaultTitle,
-  titlesDocumentByFileName,
+  titlesDocumentByFileNameSelector,
 } from '../../store';
 import { Empty, List } from 'antd';
 import { HistoryData, HistoryDataItem, HistoryDateUpload } from '../../types';
@@ -17,7 +17,7 @@ import DocumentViewer from '../../components/viewer/document-viewer';
 const { Panel } = Collapse;
 
 export default function History() {
-  const title = useRecoilValue(currentDocumentTabs);
+  const title = useRecoilValue(currentDocumentTabsSelector);
   const [histories, setHistories] = useState<HistoryData[]>([]);
 
   const [key, setKey] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function History() {
 
   const [reloadKey, setReloadKey] = useState(0);
 
-  const $titles = useRecoilValue(titlesDocumentByFileName);
+  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
 
   const onChange = (key: string | string[]) => {
     if (typeof key === 'string') setKey(key);
@@ -93,7 +93,7 @@ export default function History() {
                           title={
                             <a>
                               <DocumentViewer name={item.documentTitle}>
-                                {$titles[item.documentTitle].name}
+                                {$titles[item.documentTitle]?.name}
                               </DocumentViewer>
                             </a>
                           }

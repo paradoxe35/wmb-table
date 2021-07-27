@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import DocumentTabs from '../components/document-tabs';
 import { Layout } from 'antd';
 import {
-  currentDocumentTabs,
-  documentTabs,
-  documentViewQuery,
-  selectedSubjectDocumentItem,
+  currentDocumentTabsSelector,
+  documentTabsStore,
+  documentViewQueryStore,
+  selectedSubjectDocumentItemStore,
 } from '../store';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
@@ -32,20 +32,20 @@ function postMessage(
 }
 
 export default function DocumentView() {
-  const title = useRecoilValue(currentDocumentTabs);
+  const title = useRecoilValue(currentDocumentTabsSelector);
 
   const [path, setPath] = useState<string | null>(null);
 
   const iframeRef = useContainerScrollY<HTMLIFrameElement>([window], 40, true);
 
-  const [tabs, setTabs] = useRecoilState(documentTabs);
+  const [tabs, setTabs] = useRecoilState(documentTabsStore);
 
-  const [viewQuery, setDocumentViewQuery] = useRecoilState(documentViewQuery);
+  const [viewQuery, setDocumentViewQuery] = useRecoilState(documentViewQueryStore);
 
   const documentQuery = useRef<DocumentViewQuery | null>(null);
 
   const [subjectItemSelected, setSubjectItemSelected] = useRecoilState(
-    selectedSubjectDocumentItem
+    selectedSubjectDocumentItemStore
   );
 
   const subjectItemSelectedRef = useRef<SubjectDocumentItem | null>(null);

@@ -1,11 +1,11 @@
 import React from 'react';
 import { useRecoilState, useSetRecoilState } from 'recoil';
-import { appViewState, documentTabs, MAIN_VIEWS } from '../../store';
+import { appViewStore, documentTabsStore, MAIN_VIEWS } from '../../store';
 import { useValueStateRef } from '../../utils/hooks';
 
 export const useDocumentViewOpen = () => {
-  const [tabs, setTabs] = useRecoilState(documentTabs);
-  const setDocumentViewer = useSetRecoilState(appViewState);
+  const [tabs, setTabs] = useRecoilState(documentTabsStore);
+  const setDocumentViewer = useSetRecoilState(appViewStore);
 
   const tabsRef = useValueStateRef(tabs);
 

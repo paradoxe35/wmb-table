@@ -8,11 +8,12 @@ import DocumentViewer, { useDocumentViewOpen } from '../viewer/document-viewer';
 import { strNormalize } from '../../utils/functions';
 import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
-  appDatasLoaded,
-  documentTitles,
-  sidebarStatusHidden,
-  titlesDocumentByFileName,
-  titlesGroupedByYear,
+  appDatasLoadedStore,
+  customDocumentsStore,
+  documentTitlesStore,
+  sidebarStatusHiddenStore,
+  titlesDocumentByFileNameSelector,
+  titlesGroupedByYearSelector,
 } from '../../store';
 import PanelGroup from './components/documents-menu';
 import { DataNode } from 'antd/lib/tree';
@@ -24,7 +25,7 @@ const { Search } = Input;
 const { Sider } = Layout;
 
 export default function SidebarDocuments() {
-  const status = useRecoilValue(sidebarStatusHidden);
+  const status = useRecoilValue(sidebarStatusHiddenStore);
   return (
     <Sider
       hidden={status}
@@ -37,6 +38,7 @@ export default function SidebarDocuments() {
         tabs={[
           { name: 'Tous', active: true },
           { name: 'Années', active: false },
+          { name: 'Ajoutés', active: false },
         ]}
       >
         {(index: number) => {
@@ -47,7 +49,14 @@ export default function SidebarDocuments() {
               </div>
               <div hidden={index !== 1}>
                 <ContainerScrollY>
+                  <div className="mt-2" />
                   <DocumentByYears />
+                </ContainerScrollY>
+              </div>
+              <div hidden={index !== 2}>
+                <ContainerScrollY>
+                  <div className="mt-2" />
+                  <DocumentsAdded />
                 </ContainerScrollY>
               </div>
             </>
@@ -58,9 +67,20 @@ export default function SidebarDocuments() {
   );
 }
 
+const DocumentsAdded = () => {
+  const customDocuments = useRecoilValue(customDocumentsStore);
+  return (
+    <>
+      {customDocuments.map((d) => (
+        <ItemOutline key={d._id} id={d._id} name={d.title} title={d.title} />
+      ))}
+    </>
+  );
+};
+
 const DocumentByYears = () => {
-  const documents = useRecoilValue(titlesGroupedByYear);
-  const $titles = useRecoilValue(titlesDocumentByFileName);
+  const documents = useRecoilValue(titlesGroupedByYearSelector);
+  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
   const viewDocument = useDocumentViewOpen();
 
   const dataTree = Object.keys(documents).map((year) => {
@@ -68,7 +88,7 @@ const DocumentByYears = () => {
       .slice()
       .sort((a, b) => a.name.localeCompare(b.name))
       .map((doc) => {
-        const title = $titles[doc.title].name;
+        const title = $titles[doc.title]?.name;
         return {
           key: doc.title + year,
           title: (
@@ -92,7 +112,6 @@ const DocumentByYears = () => {
   });
   return (
     <>
-      <div className="mt-2" />
       <DirectoryTree treeData={dataTree} />
     </>
   );
@@ -100,10 +119,10 @@ const DocumentByYears = () => {
 
 const DocumentSearch = () => {
   const [datas, setDatas] = useState<Title[]>([]);
-  const [documents, setDocumentTitles] = useRecoilState(documentTitles);
-  const setAppDataLoaded = useSetRecoilState(appDatasLoaded);
+  const [documents, setdocuments] = useRecoilState(documentTitlesStore);
+  const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
 
-  const $titles = useRecoilValue(titlesDocumentByFileName);
+  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
 
   useEffect(() => {
     setDatas(documents);
@@ -112,7 +131,7 @@ const DocumentSearch = () => {
   useEffect(() => {
     sendIpcRequest<Title[]>(IPC_EVENTS.title_documents)
       .then((titles) => {
-        setDocumentTitles(titles);
+        setdocuments(titles);
       })
       .finally(() => setAppDataLoaded(true));
   }, []);
@@ -147,7 +166,7 @@ const DocumentSearch = () => {
               key={d.title}
               id={d.title}
               name={d.title}
-              title={$titles[d.title].name}
+              title={$titles[d.title]?.name}
             />
           ))}
       </ContainerScrollY>

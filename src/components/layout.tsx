@@ -8,7 +8,7 @@ import { useContainerScrollY } from '../utils/hooks';
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useRecoilState, useRecoilValue } from 'recoil';
-import { appDatasLoaded, sidebarStatusHidden } from '../store';
+import { appDatasLoadedStore, sidebarStatusHiddenStore } from '../store';
 
 import { LeftCircleOutlined, RightCircleOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
@@ -19,7 +19,7 @@ import { ipcRenderer } from 'electron';
 const { Header, Content } = Layout;
 
 function Title() {
-  const appLoaded = useRecoilValue(appDatasLoaded);
+  const appLoaded = useRecoilValue(appDatasLoadedStore);
 
   return (
     <Space direction="horizontal">
@@ -32,7 +32,7 @@ function Title() {
 }
 
 const SidebarStatusHanlder = () => {
-  const [hidden, setHidden] = useRecoilState(sidebarStatusHidden);
+  const [hidden, setHidden] = useRecoilState(sidebarStatusHiddenStore);
   const statusRef = useRef<SidebarStatus | null>(null);
 
   useEffect(() => {

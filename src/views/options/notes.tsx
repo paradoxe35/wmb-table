@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import EditorContent from './notes/editor';
 import { Notes } from './notes/notes';
 import { useSetRecoilState } from 'recoil';
-import { workingNoteApp } from '../../store';
+import { workingNoteAppStore } from '../../store';
 
 export default function Editor() {
   const [workingNote, setWorkingNote] = useState<string | null>(null);
-  const setWorkingNoteApp = useSetRecoilState(workingNoteApp);
+  const setWorkingNoteApp = useSetRecoilState(workingNoteAppStore);
 
   const backToNotes = () => setWorkingNote(null);
 

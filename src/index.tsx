@@ -5,7 +5,7 @@ import frFR from 'antd/lib/locale/fr_FR';
 import AppLayout from './components/layout';
 import './app.global.scss';
 import { RecoilRoot, useRecoilValue } from 'recoil';
-import { appViewState, MAIN_VIEWS, optionViewState } from './store';
+import { appViewStore, MAIN_VIEWS, optionViewStore } from './store';
 import DocumentView from './views/document-view';
 
 import Search from './views/options/search';
@@ -42,7 +42,7 @@ const Loader: React.FC = ({ children }) => {
 
 const RouterApp = React.memo(
   (): JSX.Element => {
-    const view = useRecoilValue<string>(optionViewState);
+    const view = useRecoilValue<string>(optionViewStore);
     const views: OptionView = useMemo(
       () => ({
         search: (<Search />) as JSX.Element,
@@ -72,7 +72,7 @@ const RouterApp = React.memo(
 );
 
 function ContentHandler() {
-  const view = useRecoilValue(appViewState);
+  const view = useRecoilValue(appViewStore);
 
   return (
     <>

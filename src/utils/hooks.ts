@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSetRecoilState } from 'recoil';
-import { appViewState, MAIN_VIEWS, optionViewState } from '../store';
+import { appViewStore, MAIN_VIEWS, optionViewStore } from '../store';
 import { respondToVisibility } from './functions';
 
 export function useValueStateRef<T>(value: T) {
@@ -87,8 +87,8 @@ export function useDataStateRef<T>(datas: T) {
 }
 
 export function useOptionsMenu() {
-  const setDocumentViewer = useSetRecoilState(appViewState);
-  const setOptionViewer = useSetRecoilState(optionViewState);
+  const setDocumentViewer = useSetRecoilState(appViewStore);
+  const setOptionViewer = useSetRecoilState(optionViewStore);
 
   const onClick = useCallback((option: string) => {
     setDocumentViewer(MAIN_VIEWS.options);

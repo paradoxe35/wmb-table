@@ -1,14 +1,14 @@
 import React, { useCallback, useEffect } from 'react';
 import { FundViewOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
-import { appViewState, MAIN_VIEWS } from '../../store';
+import { appViewStore, MAIN_VIEWS } from '../../store';
 import { useRecoilState } from 'recoil';
 import { ipcRenderer } from 'electron';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { useValueStateRef } from '../../utils/hooks';
 
 export default function ViewerMenu() {
-  const [view, setView] = useRecoilState(appViewState);
+  const [view, setView] = useRecoilState(appViewStore);
   const viewRef = useValueStateRef(view);
 
   const m1 = useCallback(() => {

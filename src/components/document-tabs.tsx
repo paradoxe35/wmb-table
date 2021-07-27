@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import ChromeTabs from '../plugins/chrome-tabs/chrome-tabs';
 import {
-  currentDocumentTabs,
-  documentTabs,
-  titlesDocumentByFileName,
+  currentDocumentTabsSelector,
+  documentTabsStore,
+  titlesDocumentByFileNameSelector,
 } from '../store';
-import { DocumentTab } from '../types';
+import { CustomDocument, DocumentTab } from '../types';
 import { FileFilled, LoadingOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../utils/ipc-events';
@@ -98,14 +98,14 @@ function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
 
 const Tabs = React.forwardRef<HTMLDivElement, { tabs: DocumentTab[] }>(
   (props, ref: React.LegacyRef<HTMLDivElement>) => {
-    const $titles = useRecoilValue(titlesDocumentByFileName);
+    const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
 
     return (
       <>
         <div className="chrome-tabs" ref={ref}>
           <div className="chrome-tabs-content">
             {props.tabs.map((tab) => (
-              <Tab key={tab.title} tab={tab} title={$titles[tab.title].name} />
+              <Tab key={tab.title} tab={tab} title={$titles[tab.title]?.name} />
             ))}
           </div>
           <div className="chrome-tabs-bottom-bar"></div>
@@ -119,9 +119,9 @@ const Tabs = React.forwardRef<HTMLDivElement, { tabs: DocumentTab[] }>(
 const useDocumentTabs = () => {
   const tabRef = useRef<HTMLDivElement | null>(null);
 
-  const currentTitle = useRecoilValue(currentDocumentTabs);
+  const currentTitle = useRecoilValue(currentDocumentTabsSelector);
 
-  const [tabs, setTabs] = useRecoilState(documentTabs);
+  const [tabs, setTabs] = useRecoilState(documentTabsStore);
 
   const [key, setKey] = useState(0);
 
@@ -227,6 +227,25 @@ export default function DocumentTabs() {
       });
     }
   }, [key]);
+
+  useEffect(() => {
+    const removeFromCustomDocument = (e: CustomEventInit<CustomDocument>) => {
+      if (e.detail) {
+        setTabs((ts) => ts.filter((t) => t.title != e.detail?.title));
+      }
+    };
+
+    window.addEventListener(
+      'custom-document-removed',
+      removeFromCustomDocument
+    );
+    return () => {
+      window.removeEventListener(
+        'custom-document-removed',
+        removeFromCustomDocument
+      );
+    };
+  }, []);
 
   return <Tabs key={key} tabs={tabs} ref={tabRef} />;
 }
