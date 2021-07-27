@@ -81,10 +81,16 @@ export interface SearchResult extends SearchResultStructure {
   data: SearchItem[];
 }
 
+export type DocumentHtmlTree = {
+  tree: number[];
+  scrollY?: number;
+  scrollX?: number;
+};
+
 export interface SubjectDocumentItem extends Readonly<TimeStampData> {
   subject: string;
   documentTitle: string;
-  documentHtmlTree: number[];
+  documentHtmlTree: DocumentHtmlTree;
   textContent: string;
 }
 
@@ -135,7 +141,7 @@ export interface NoteItemReference extends Readonly<TimeStampData> {
   label: string;
   noteId: string;
   documentTitle: string;
-  documentHtmlTree: number[];
+  documentHtmlTree: DocumentHtmlTree;
   textContent: string;
 }
 
