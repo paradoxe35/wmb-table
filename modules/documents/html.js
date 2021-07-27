@@ -41,7 +41,7 @@ export const searchTemplateHtml = /* html */ `
 
       <div tabindex="0" style="margin: 0 5px">|</div>
 
-      <div title="zoom" tabindex="0" style="width: 46px;" class="button search--zoom--js" role="button">
+      <div title="zoom" tabindex="0" class="button search--zoom--js" role="button">
         <span class="zoom-data"></span>
         <div style="margin: 0 2px"></div>
         <span class="icon-data"></span>
@@ -101,7 +101,7 @@ export const searchTemplateCss = `
 }
 
 .search--template .button {
-  width: 23px;
+  min-width: 23px;
   height: 23px;
   flex: initial;
   margin-left: 5px;
