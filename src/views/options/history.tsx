@@ -3,7 +3,7 @@ import { useRecoilValue } from 'recoil';
 import {
   currentDocumentTabsSelector,
   defaultTitle,
-  titlesDocumentByFileNameSelector,
+  titlesDocumentSelector,
 } from '../../store';
 import { Empty, List } from 'antd';
 import { HistoryData, HistoryDataItem, HistoryDateUpload } from '../../types';
@@ -26,7 +26,7 @@ export default function History() {
 
   const [reloadKey, setReloadKey] = useState(0);
 
-  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
+  const $titles = useRecoilValue(titlesDocumentSelector);
 
   const onChange = (key: string | string[]) => {
     if (typeof key === 'string') setKey(key);

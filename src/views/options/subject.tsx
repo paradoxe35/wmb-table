@@ -29,7 +29,7 @@ import {
   selectedSubjectDocumentItemStore,
   subjectDocumentStore,
   subjectDocumentItemStore,
-  titlesDocumentByFileNameSelector,
+  titlesDocumentSelector,
 } from '../../store';
 import ContainerScrollY from '../../components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
@@ -280,7 +280,7 @@ function ShowActiveDocuments({
 }) {
   const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItemStore);
 
-  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
+  const $titles = useRecoilValue(titlesDocumentSelector);
 
   function confirm(item: SubjectDocumentItem) {
     sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(

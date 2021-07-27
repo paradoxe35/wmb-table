@@ -47,10 +47,10 @@ export const customDocumentsStore = atom<CustomDocument[]>({
   default: [],
 });
 
-export const titlesDocumentByFileNameSelector = selector<{
+export const titlesDocumentSelector = selector<{
   [fileName: string]: Title;
 }>({
-  key: 'titlesDocumentByFileNameSelector',
+  key: 'titlesDocumentSelector',
   get: ({ get }) => {
     const titles = get(documentTitlesStore);
     return titles.reduce((acc, doc) => {

@@ -6,7 +6,7 @@ import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { useRecoilValue } from 'recoil';
-import { titlesDocumentByFileNameSelector, workingNoteAppStore } from '../../store';
+import { titlesDocumentSelector, workingNoteAppStore } from '../../store';
 
 export function NoteReferencesModal({ title }: { title: string }) {
   const titleRef = useValueStateRef(title);
@@ -53,8 +53,7 @@ export function NoteReferencesModal({ title }: { title: string }) {
   const onSelectItem = (item: NoteItemReference) => {
     if (!documentRefTree.current) return;
 
-    //@ts-ignore
-    const referenceItem: NoteItemReference = {
+    const referenceItem: Partial<NoteItemReference> = {
       documentHtmlTree: documentRefTree.current.documentHtmlTree,
       documentTitle: titleRef.current,
       textContent: documentRefTree.current.textContent,
@@ -107,7 +106,7 @@ function ContentModal({
   onSelectItem: (item: NoteItemReference) => void;
   datas: NoteItemReference[];
 }) {
-  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
+  const $titles = useRecoilValue(titlesDocumentSelector);
 
   return (
     <>

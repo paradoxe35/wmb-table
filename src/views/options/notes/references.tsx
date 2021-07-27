@@ -15,7 +15,7 @@ import { useDocumentViewOpen } from '../../../components/viewer/document-viewer'
 import sendIpcRequest from '../../../message-control/ipc/ipc-renderer';
 import {
   selectedSubjectDocumentItemStore,
-  titlesDocumentByFileNameSelector,
+  titlesDocumentSelector,
 } from '../../../store';
 import { FileOutlined } from '@ant-design/icons';
 import {
@@ -35,7 +35,7 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 export const useShowReferenceDetail = () => {
   const viewDocument = useDocumentViewOpen();
   const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItemStore);
-  const $titles = useRecoilValue(titlesDocumentByFileNameSelector);
+  const $titles = useRecoilValue(titlesDocumentSelector);
 
   const modal = useCallback(
     (reference: NoteItemReference, workingNote: NoteItem) => {
