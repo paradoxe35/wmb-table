@@ -218,5 +218,16 @@ export default function initTemplate() {
 }
 
 export function openSearchModal() {
-  window.parent.dispatchEvent(new Event('open-search-modal'));
+  let text = null;
+
+  const selection = window.getSelection()
+    ? // @ts-ignore
+      window.getSelection().toString().trim()
+    : null;
+  if (selection && selection.length > 1 && selection.length <= 80) {
+    text = selection;
+  }
+  window.parent.dispatchEvent(
+    new CustomEvent('open-search-modal', { detail: text })
+  );
 }

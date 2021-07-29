@@ -1,6 +1,6 @@
 //@ts-check
 import './context-menu/kali_dark.css.js';
-import contextMenuHander from './documents/context-menu.js';
+import contextMenuHandler from './documents/context-menu.js';
 import { scrollToViewTree } from './documents/document-tree.js';
 import { debounce, pageContainer } from './documents/functions.js';
 import {
@@ -31,7 +31,7 @@ function defaultPosition() {
   }
 }
 
-contextMenuHander();
+contextMenuHandler();
 
 //events
 window.addEventListener(
