@@ -8,7 +8,7 @@ import {
   Space,
   Typography,
 } from 'antd';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useCallback } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { useDocumentViewOpen } from '../../../components/viewer/document-viewer';
@@ -133,6 +133,7 @@ export function ReferenceBibleModal({
   >;
 }) {
   const referenceRef = useValueStateRef(reference);
+  const versesRef = useRef<HTMLDivElement | null>(null);
 
   const handleDeletionRef = (ref: BibleBook) => {
     sendIpcRequest(
@@ -169,6 +170,8 @@ export function ReferenceBibleModal({
         nr.references.push(item);
         return nr;
       });
+      versesRef.current &&
+        versesRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
     });
   }, []);
 
@@ -201,6 +204,7 @@ export function ReferenceBibleModal({
         <Row>
           <Col span={11}>
             <div
+              ref={versesRef}
               style={{
                 overflow: 'auto',
                 maxHeight: '400px',

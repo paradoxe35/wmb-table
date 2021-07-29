@@ -65,7 +65,7 @@ export function ModalSearchDocument({
     });
   };
 
-  const modal = useCallback(() => {
+  const modal = useCallback((event: CustomEventInit<string | null>) => {
     if (isOpened.current) return;
 
     const modalInstance = Modal.info({
@@ -88,7 +88,7 @@ export function ModalSearchDocument({
             minLength={3}
             allowClear
             onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
-            defaultValue={searchValue.current}
+            defaultValue={event.detail || searchValue.current}
             placeholder="Entrez votre texte"
           />
           <ModalController iframeRef={iframeRef} isOpened={isOpened} />
