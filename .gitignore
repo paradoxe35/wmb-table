@@ -51,6 +51,7 @@ assets/tmp
 modules-output/
 db/
 datas/
+publish.cmd
 .idea
 npm-debug.log.*
 *.css.d.ts
