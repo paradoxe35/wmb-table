@@ -17,6 +17,11 @@ export async function notes_references_store(_: any, noteId: string) {
   return await queryDb.insert<NoteItemReference>(db.notesReference, {
     noteId,
     label: `Référence ${refCount + 1}`,
+    documentHtmlTree: {
+      tree: [],
+      scrollY: null,
+      scrollX: null,
+    },
   });
 }
 
