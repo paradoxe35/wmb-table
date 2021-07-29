@@ -88,7 +88,7 @@ export function ModalSearchDocument({
             minLength={3}
             allowClear
             onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
-            defaultValue={event.detail || searchValue.current}
+            defaultValue={event?.detail || searchValue.current}
             placeholder="Entrez votre texte"
           />
           <ModalController iframeRef={iframeRef} isOpened={isOpened} />
