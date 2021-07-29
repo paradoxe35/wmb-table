@@ -1,7 +1,7 @@
 import { BrowserWindow } from 'electron';
 import { mainMessageTransport } from '../message-control/ipc/ipc-main';
 import { IPC_EVENTS } from '../utils/ipc-events';
-import { export_note_pdf } from './export_notes';
+import { export_note_pdf } from './handlers/export_notes';
 
 export default (mainWindow: BrowserWindow) => {
   mainMessageTransport(

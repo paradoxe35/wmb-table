@@ -94,9 +94,9 @@
       }
     ],
     "publish": {
-      "provider": "bintray",
+      "provider": "github",
       "owner": "paradoxe35",
-      "repo": "paradoxe35"
+      "repo": "wmb-table"
     }
   },
   "repository": {
