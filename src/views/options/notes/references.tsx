@@ -41,7 +41,7 @@ export const useShowReferenceDetail = () => {
 
   const modal = useCallback(
     (reference: NoteItemReference, workingNote: NoteItem) => {
-      const assigned = (reference.documentHtmlTree.tree || []).length > 0;
+      const assigned = (reference.documentHtmlTree?.tree || []).length > 0;
 
       const openDocument = () => {
         viewDocument(reference.documentTitle, () => {

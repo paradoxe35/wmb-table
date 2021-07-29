@@ -114,7 +114,7 @@ function ContentModal({
         itemLayout="horizontal"
         dataSource={datas}
         renderItem={(item) => {
-          const assigned = (item.documentHtmlTree.tree || []).length > 0;
+          const assigned = (item.documentHtmlTree?.tree || []).length > 0;
           return (
             <List.Item
               actions={[
