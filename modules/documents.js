@@ -33,6 +33,8 @@ function defaultPosition() {
 
 contextMenuHandler();
 
+window.focus();
+
 //events
 window.addEventListener(
   'message',
