@@ -163,16 +163,22 @@ export function ReferenceBibleModal({
       IPC_EVENTS.notes_references_bible_add,
       referenceRef.current?._id,
       refId
-    ).then((item) => {
-      setReference((r) => {
-        const nr = { ...r } as NoteItemReferenceBible;
-        nr.references = (nr.references as BibleBook[]).slice();
-        nr.references.push(item);
-        return nr;
+    )
+      .then((item) => {
+        setReference((r) => {
+          const nr = { ...r } as NoteItemReferenceBible;
+          nr.references = (nr.references as BibleBook[]).slice();
+          nr.references.push(item);
+          return nr;
+        });
+      })
+      .finally(() => {
+        window.setTimeout(() => {
+          if (versesRef.current) {
+            versesRef.current.scrollTop = versesRef.current.scrollHeight;
+          }
+        }, 500);
       });
-      versesRef.current &&
-        versesRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    });
   }, []);
 
   return (

@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useSetRecoilState } from 'recoil';
-import { appViewStore, MAIN_VIEWS, optionViewStore } from '../store';
+import sendIpcRequest from '../message-control/ipc/ipc-renderer';
+import {
+  appDatasLoadedStore,
+  appViewStore,
+  MAIN_VIEWS,
+  optionViewStore,
+} from '../store';
 import { respondToVisibility } from './functions';
 
 export function useValueStateRef<T>(value: T) {
@@ -97,3 +103,16 @@ export function useOptionsMenu() {
 
   return onClick;
 }
+
+export const useIpcRequestWithLoader = () => {
+  const setAppLoader = useSetRecoilState(appDatasLoadedStore);
+
+  const handler = useCallback(<T>(eventName: string, ...args: any[]) => {
+    setAppLoader(true);
+    return sendIpcRequest<T>(eventName, ...args).finally(() =>
+      setAppLoader(false)
+    );
+  }, []);
+
+  return handler;
+};
