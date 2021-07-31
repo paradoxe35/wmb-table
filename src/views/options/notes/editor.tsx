@@ -19,7 +19,10 @@ import {
 } from '../../../types';
 import sendIpcRequest from '../../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../../utils/ipc-events';
-import { useValueStateRef } from '../../../utils/hooks';
+import {
+  useIpcRequestWithLoader,
+  useValueStateRef,
+} from '../../../utils/hooks';
 import {
   referenceBibleBrandLink,
   referenceBrandLink as referenceDocumentBrandLink,
@@ -215,6 +218,8 @@ export default function EditorContent({
 
   const bibleReferenceModal = useBibleReferenceModal();
 
+  const ipcRequestWithLoader = useIpcRequestWithLoader();
+
   useEffect(() => {
     sendIpcRequest<NoteItem>(IPC_EVENTS.notes_items_get, workingNoteId).then(
       (note) => {
@@ -245,7 +250,7 @@ export default function EditorContent({
   }, []);
 
   const handleEditorLinksClick = useCallback((idRef: string) => {
-    sendIpcRequest<NoteItemReference | null>(
+    ipcRequestWithLoader<NoteItemReference | null>(
       IPC_EVENTS.notes_references_get,
       idRef
     ).then((data) => {
@@ -258,7 +263,7 @@ export default function EditorContent({
   }, []);
 
   const handleEditorLinksBibleClick = useCallback((idRef: string) => {
-    sendIpcRequest<NoteItemReferenceBible | null>(
+    ipcRequestWithLoader<NoteItemReferenceBible | null>(
       IPC_EVENTS.notes_references_bible_get,
       idRef
     ).then((data) => {
@@ -319,7 +324,7 @@ export default function EditorContent({
       if (selected && selected.length > 1) {
         switch (type) {
           case 'document':
-            sendIpcRequest<NoteItemReference>(
+            ipcRequestWithLoader<NoteItemReference>(
               IPC_EVENTS.notes_references_store,
               workingNoteIdRef.current
             ).then((ref) => {
@@ -329,7 +334,7 @@ export default function EditorContent({
             break;
 
           case 'bible':
-            sendIpcRequest<NoteItemReferenceBible>(
+            ipcRequestWithLoader<NoteItemReferenceBible>(
               IPC_EVENTS.notes_references_bible_store,
               workingNoteIdRef.current
             ).then((ref) => {
