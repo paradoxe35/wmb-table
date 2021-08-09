@@ -150,3 +150,29 @@ export function performSearch<T>(needle: string, headstack: string): T[] {
 
   return (regexpMatcher(`${terms}[a-z]*`, headstack) as unknown) as T[];
 }
+
+export const rafThrottle = (callback: Function) => {
+  let requestId: number | null = null;
+
+  let lastArgs: any[];
+
+  const later = (context: any) => () => {
+    requestId = null;
+    callback.apply(context, lastArgs);
+  };
+
+  const throttled = function (...args: any[]) {
+    lastArgs = args;
+    if (requestId === null) {
+      //@ts-ignore
+      requestId = requestAnimationFrame(later(this));
+    }
+  };
+
+  throttled.cancel = () => {
+    cancelAnimationFrame(requestId as number);
+    requestId = null;
+  };
+
+  return throttled;
+};

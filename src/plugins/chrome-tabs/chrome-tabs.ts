@@ -1,6 +1,7 @@
 //@ts-nocheck
 
 import Draggabilly from 'draggabilly';
+import { rafThrottle } from '../../utils/functions';
 
 const TAB_CONTENT_MARGIN = 9;
 const TAB_CONTENT_OVERLAP_DISTANCE = 1;
@@ -104,7 +105,7 @@ class ChromeTabs {
 
     previousEvents = [];
 
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', rafThrottle(resize));
     previousEvents.push({ element: window, event: 'resize', callback: resize });
 
     // this.el.addEventListener('dblclick', (event) => {
