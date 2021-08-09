@@ -12,7 +12,7 @@ import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../utils/ipc-events';
 import { useContainerScrollY, useValueStateRef } from '../utils/hooks';
 import { debounce } from '../utils/functions';
-import { DocumentViewQuery, SubjectDocumentItem } from '../types';
+import { DocumentViewQuery } from '../types';
 
 import { SubjectSelectModal } from './components/subject-select-modal';
 import { ModalSearchDocument } from './components/modal-search-document';
@@ -40,7 +40,9 @@ export default function DocumentView() {
 
   const [tabs, setTabs] = useRecoilState(documentTabsStore);
 
-  const [viewQuery, setDocumentViewQuery] = useRecoilState(documentViewQueryStore);
+  const [viewQuery, setDocumentViewQuery] = useRecoilState(
+    documentViewQueryStore
+  );
 
   const documentQuery = useRef<DocumentViewQuery | null>(null);
 
@@ -48,7 +50,7 @@ export default function DocumentView() {
     selectedSubjectDocumentItemStore
   );
 
-  const subjectItemSelectedRef = useRef<SubjectDocumentItem | null>(null);
+  const subjectItemSelectedRef = useValueStateRef(subjectItemSelected);
 
   const titleRef = useValueStateRef(title);
 
@@ -65,10 +67,6 @@ export default function DocumentView() {
       window.removeEventListener('close-document-query', closeDocumentQuery);
     };
   }, []);
-
-  subjectItemSelectedRef.current = useMemo(() => {
-    return subjectItemSelected;
-  }, [subjectItemSelected]);
 
   documentQuery.current = useMemo(() => {
     return viewQuery.find((v) => v.documentTitle == title) || null;
