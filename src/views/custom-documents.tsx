@@ -41,6 +41,7 @@ import { DraggerProps } from 'antd/lib/upload';
 import { UploadFile } from 'antd/lib/upload/interface';
 
 import { Spin } from 'antd';
+import { useIpcRequestWithLoader } from '../utils/hooks';
 
 const { Dragger } = Upload;
 
@@ -181,12 +182,11 @@ function CustomDocumentItem({
     }
   };
 
-  const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
+  const ipcRequestWithLoader = useIpcRequestWithLoader();
 
   const handleDeletion = (document: CustomDocument) => {
-    setAppDataLoaded(false);
-    sendIpcRequest(IPC_EVENTS.custom_documents_delete, document)
-      .then(() => {
+    ipcRequestWithLoader(IPC_EVENTS.custom_documents_delete, document).then(
+      () => {
         setCustomDocuments((ds) => ds.filter((d) => d.title != document.title));
         setTitles((ts) => ts.filter((t) => t.title != document.title));
         window.dispatchEvent(
@@ -194,8 +194,8 @@ function CustomDocumentItem({
             detail: document,
           })
         );
-      })
-      .finally(() => setAppDataLoaded(true));
+      }
+    );
   };
 
   return (
