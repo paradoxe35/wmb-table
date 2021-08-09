@@ -7,7 +7,7 @@ import {
   MAIN_VIEWS,
   optionViewStore,
 } from '../store';
-import { respondToVisibility } from './functions';
+import { rafThrottle, respondToVisibility } from './functions';
 
 export function useValueStateRef<T>(value: T) {
   const ref = useRef<T>(value);
@@ -56,7 +56,9 @@ export function useContainerScrollY<T>(
 
       window.addEventListener('load', rebuildEl);
 
-      resizers.forEach((w) => w.addEventListener('resize', rebuildEl));
+      resizers.forEach((w) =>
+        w.addEventListener('resize', rafThrottle(rebuildEl))
+      );
 
       let unobserve: { (): any; (): void } | null = null;
       unobserve = respondToVisibility(
