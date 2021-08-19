@@ -1,5 +1,5 @@
-import { getAssetPath } from '../../sys';
+import { getAssetDocumentsPath } from '../../sys';
 
 export default (_: any, filename: string) => {
-  return getAssetPath(`datas/documents/${filename}.html`);
+  return getAssetDocumentsPath(`${filename}.html`);
 };

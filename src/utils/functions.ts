@@ -176,3 +176,19 @@ export const rafThrottle = (callback: Function) => {
 
   return throttled;
 };
+
+export const kebabize = (str: string) => {
+  return str
+    .split('')
+    .map((letter, idx) => {
+      return letter.toUpperCase() === letter
+        ? `${idx !== 0 ? '-' : ''}${letter.toLowerCase()}`
+        : letter;
+    })
+    .join('');
+};
+
+export const getFilename = (path: string): string => {
+  const splitted = path.split(/[\/\\]/);
+  return splitted[splitted.length - 1];
+};

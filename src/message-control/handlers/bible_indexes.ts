@@ -1,10 +1,10 @@
 import fs from 'fs';
-import { getAssetPath } from '../../sys';
+import { getAssetBiblePath } from '../../sys';
 import { BibleIndex } from '../../types';
 
 export default () => {
   const content = fs
-    .readFileSync(getAssetPath('datas/bible/bible-index.json'))
+    .readFileSync(getAssetBiblePath('bible-index.json'))
     .toString('utf-8');
 
   let indexes = JSON.parse(content) as BibleIndex;

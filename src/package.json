@@ -15,8 +15,11 @@
   },
   "license": "MIT",
   "dependencies": {
+    "googleapis": "39",
     "html-pdf": "^3.0.1",
+    "lazy": "^1.0.11",
     "nedb": "^1.8.0",
+    "node-watch": "^0.7.1",
     "pdf-parse": "^1.1.1",
     "underscore": "^1.13.1"
   },

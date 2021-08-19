@@ -1,7 +1,14 @@
 import Datastore from 'nedb';
-import { getAssetPath } from '../../sys';
+import {
+  getAssetBackupPath,
+  getAssetBiblePath,
+  getAssetDbPath,
+  getAssetDocumentsDbPath,
+} from '../../sys';
+import { loadedDb } from '../backup/backup';
 
 interface Db {
+  configurations?: Datastore | undefined;
   history?: Datastore | undefined;
   historyItem?: Datastore | undefined;
   documents?: Datastore | undefined;
@@ -17,40 +24,49 @@ interface Db {
   notesReference?: Datastore | undefined;
   notesBibleReference?: Datastore | undefined;
   bible?: Datastore | undefined;
+
+  backupDbReferences?: Datastore | undefined;
 }
 
 const db: Db = {};
 const databases: Datastore<any>[] = [];
 
-db.documents = new Datastore({
-  filename: getAssetPath(`datas/documents-db/documents.db`),
-  autoload: false,
-});
-
-db.documentsTitle = new Datastore({
-  filename: getAssetPath(`datas/documents-db/documents-title.db`),
-  autoload: false,
-});
-
-db.bible = new Datastore({
-  filename: getAssetPath(`datas/bible/bible.db`),
-  autoload: false,
-});
-
-const dbStore = (name: string) =>
-  new Datastore({
-    filename: getAssetPath(`datas/db/${name}.db`),
-    autoload: false,
-    timestampData: true,
-  });
-
 export const loadDatabase = function (database: Datastore<any> | undefined) {
   if (database && !databases.includes(database)) {
     database.loadDatabase();
     databases.push(database);
+    loadedDb.loadDb(database);
   }
 };
 
+const dbStore = (name: string) =>
+  new Datastore({
+    filename: getAssetDbPath(`${name}.db`),
+    autoload: false,
+    timestampData: true,
+  });
+
+db.documents = new Datastore({
+  filename: getAssetDocumentsDbPath(`documents.db`),
+  autoload: false,
+});
+
+db.documentsTitle = new Datastore({
+  filename: getAssetDocumentsDbPath(`documents-title.db`),
+  autoload: false,
+});
+
+db.bible = new Datastore({
+  filename: getAssetBiblePath(`bible.db`),
+  autoload: false,
+});
+
+db.backupDbReferences = new Datastore({
+  filename: getAssetBackupPath(`backup-db-references.db`),
+  autoload: false,
+});
+
+db.configurations = dbStore('configurations');
 db.history = dbStore('history');
 db.historyItem = dbStore('history-item');
 db.subjects = dbStore('subjects');
