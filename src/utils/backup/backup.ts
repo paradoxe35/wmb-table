@@ -114,8 +114,6 @@ const performUniqueBackup = async (filename: string) => {
     loadedDb.dbFiles[filename],
     +ref.lines
   );
-  console.log(rangeLines[0]);
-
   if (rangeLines.length === 0) return;
   const grouped = groupChangedLinesByAction(rangeLines);
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
