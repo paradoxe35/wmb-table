@@ -6,7 +6,7 @@ import {
 } from '../../types';
 import db, { loadDatabase, queryDb } from '../../utils/main/db';
 import fs from 'fs';
-import { getAssetPath } from '../../sys';
+import { getAssetDocumentsPath } from '../../sys';
 import { convert } from '../../plugins/main/pdf2html-ex';
 
 export default async () => {
@@ -22,7 +22,7 @@ export async function custom_documents_delete(
   loadDatabase(db.documents);
 
   try {
-    fs.unlink(getAssetPath(`datas/documents/${document.title}.html`), () => {});
+    fs.unlink(getAssetDocumentsPath(`${document.title}.html`), () => {});
     await queryDb.remove<boolean>(db.documents, { _id: document.documentId });
     await queryDb.remove<boolean>(db.customDocuments, { _id: document._id });
     await queryDb.remove<boolean>(db.documentsTitle, { title: document.title });

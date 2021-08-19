@@ -1,13 +1,6 @@
 const fs = require('fs-extra');
 const path = require('path');
 
-//copy and overwrite original document db
-const odatasDir = path.resolve(__dirname, '../datas/');
-const datasDir = path.resolve(__dirname, '../assets/datas/');
-if (fs.existsSync(odatasDir) && fs.existsSync(datasDir)) {
-  fs.copySync(odatasDir, datasDir, { overwrite: true });
-}
-
 /**
  * @param {string} directory
  */
@@ -30,8 +23,19 @@ function cleanAllFileDir(directory) {
     });
   }
 }
+
+//copy and overwrite original document db
+const odatasDir = path.resolve(__dirname, '../datas/');
+const datasDir = path.resolve(__dirname, '../assets/datas/');
+if (fs.existsSync(odatasDir) && fs.existsSync(datasDir)) {
+  fs.copySync(odatasDir, datasDir, { overwrite: true });
+}
+
 // clean db files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
+
+// clean db backup files for production
+cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'));
 
 // clean dist src compiled souces
 

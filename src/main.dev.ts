@@ -17,8 +17,10 @@ import log from 'electron-log';
 import MenuBuilder from './menu';
 import { getAssetPath } from './sys';
 import Dialogs from './dialogs/dialogs';
+import backupHandler from './utils/backup/backup';
 
 require('./message-control/main-messages');
+backupHandler();
 
 export default class AppUpdater {
   constructor() {

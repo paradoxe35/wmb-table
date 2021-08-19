@@ -94,6 +94,12 @@ export interface SubjectDocumentItem extends Readonly<TimeStampData> {
   textContent: string;
 }
 
+export interface BackupDbReference {
+  _id: string;
+  filename: string;
+  lines: string;
+}
+
 export interface SubjectDocument extends Readonly<TimeStampData> {
   name: string;
   date: string;
