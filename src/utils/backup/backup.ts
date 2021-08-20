@@ -84,18 +84,12 @@ const groupChangedLinesByAction = (range: string[]) => {
     try {
       const json = JSON.parse(current) as { [n: string]: any; _id: string };
       const keys = Object.keys(json);
-      if (keys.includes('$$deleted')) {
-        acc[json._id] = {
-          _id: json._id,
-          deleted: true,
-        };
-      } else {
-        acc[json._id] = {
-          _id: json._id,
-          deleted: false,
-          data: json,
-        };
-      }
+      const deleted = keys.includes('$$deleted');
+      acc[json._id] = {
+        _id: json._id,
+        deleted: deleted,
+        data: deleted ? {} : json,
+      };
     } catch (_) {}
     return acc;
   }, {} as RangedLines);
@@ -151,8 +145,6 @@ const syncedFirstDbReferences = async (filename: string) => {
  */
 const performBackup = async (evt: string, name: string) => {
   const filename = getFilename(name);
-  console.log(filename);
-
   if (
     evt !== 'update' ||
     !loadedDb.dbs.includes(filename) ||

@@ -33,6 +33,7 @@ node_modules
 # App packaged
 release
 src/main.prod.js
+src/*.child.prod.js
 src/main.prod.js.LICENSE.txt
 src/main.prod.js.map
 src/renderer.prod.js
@@ -57,3 +58,5 @@ npm-debug.log.*
 *.css.d.ts
 *.sass.d.ts
 *.scss.d.ts
+
+.env

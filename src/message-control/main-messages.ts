@@ -41,6 +41,7 @@ import {
   notes_references_bible_sync,
 } from './handlers/notes_references_bible';
 import sidebar_status, { sidebar_status_set } from './handlers/sidebar_status';
+import { initialized_app } from './handlers/app_settings';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -154,3 +155,6 @@ mainMessageTransport(
 mainMessageTransport(IPC_EVENTS.sidebar_status, sidebar_status);
 
 mainMessageTransport(IPC_EVENTS.sidebar_status_set, sidebar_status_set);
+
+// request app settings status
+mainMessageTransport(IPC_EVENTS.initialized_app, initialized_app);

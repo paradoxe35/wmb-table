@@ -14,11 +14,13 @@ import Subject from './views/options/subject';
 import { OptionView } from './types';
 
 import '../modules/context-menu/kali_dark.css';
-import CustomDocuments from './views/custom-documents';
+import CustomDocuments from './views/components/custom-documents';
 import { LoadingOutlined } from '@ant-design/icons';
 import LoadByVisibility from './components/load-by-visibility';
 import Bible from './views/options/bible';
 import ContainerScrollY from './components/container-scroll-y';
+import BackupProfile from './views/components/backup-profile-modal';
+import Welcome from './views/components/welcome-modal';
 
 const Notes = lazy(() => import('./views/options/notes'));
 
@@ -40,7 +42,7 @@ const Loader: React.FC = ({ children }) => {
   );
 };
 
-const RouterApp = React.memo(
+const AppOptions = React.memo(
   (): JSX.Element => {
     const view = useRecoilValue<string>(optionViewStore);
     const views: OptionView = useMemo(
@@ -80,7 +82,7 @@ function ContentHandler() {
         id={`app-view-${MAIN_VIEWS.options}`}
         hidden={view !== MAIN_VIEWS.options}
       >
-        <RouterApp />
+        <AppOptions />
       </div>
       <div
         id={`app-view-${MAIN_VIEWS.document}`}
@@ -89,6 +91,8 @@ function ContentHandler() {
         <DocumentView />
       </div>
       {process.platform === 'win32' && <CustomDocuments />}
+      <BackupProfile />
+      <Welcome />
     </>
   );
 }

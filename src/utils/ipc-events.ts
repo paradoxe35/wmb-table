@@ -39,8 +39,10 @@ export const IPC_EVENTS = {
   bible_search: 'bible_search',
   sidebar_status: 'sidebar_status',
   sidebar_status_set: 'sidebar_status_set',
+  initialized_app: 'initialized_app',
   // events from main process
   open_modal_document_from_main: 'open_modal_document_from_main',
+  open_backup_modal_from_main: 'open_backup_modal_from_main',
   toggle_sidebar: 'toggle_sidebar',
   switch_on_menu: 'switch_on_menu',
   switch_on_options: 'switch_on_options',

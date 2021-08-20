@@ -18,6 +18,7 @@ import MenuBuilder from './menu';
 import { getAssetPath } from './sys';
 import Dialogs from './dialogs/dialogs';
 import backupHandler from './utils/backup/backup';
+import { APP_NAME } from './utils/constants';
 
 require('./message-control/main-messages');
 backupHandler();
@@ -73,7 +74,7 @@ const createWindow = async () => {
     show: false,
     width: 1024,
     height: 800,
-    title: 'Wmb Table',
+    title: APP_NAME,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       nodeIntegration: true,

@@ -15,6 +15,7 @@ import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../utils/ipc-events';
 import { SidebarStatus } from '../types';
 import { ipcRenderer } from 'electron';
+import { APP_NAME } from '../utils/constants';
 
 const { Header, Content } = Layout;
 
@@ -23,7 +24,7 @@ function Title() {
 
   return (
     <Space direction="horizontal">
-      <span>Wmb Table</span>
+      <span>{APP_NAME}</span>
       {!appLoaded && (
         <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />
       )}

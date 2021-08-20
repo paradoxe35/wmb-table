@@ -100,6 +100,11 @@ export interface BackupDbReference {
   lines: string;
 }
 
+export interface AppSettingsStatus {
+  _id: string;
+  initialized: boolean;
+}
+
 export interface SubjectDocument extends Readonly<TimeStampData> {
   name: string;
   date: string;
