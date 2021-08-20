@@ -13,7 +13,7 @@ import {
   message,
 } from 'antd';
 import electron from 'electron';
-import { IPC_EVENTS } from '../utils/ipc-events';
+import { IPC_EVENTS } from '../../utils/ipc-events';
 import {
   SetterOrUpdater,
   useRecoilState,
@@ -24,31 +24,37 @@ import {
   appDatasLoadedStore,
   customDocumentsStore,
   documentTitlesStore,
-} from '../store';
-import { CustomDocument, Title, UploadDocument } from '../types';
-import sendIpcRequest from '../message-control/ipc/ipc-renderer';
+} from '../../store';
+import { CustomDocument, Title, UploadDocument } from '../../types';
+import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import {
   FileAddOutlined,
   EyeOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
-import { DeleteBtn } from '../components/delete-btn';
-import { strNormalize } from '../utils/functions';
-import DocumentViewer from '../components/viewer/document-viewer';
+import { DeleteBtn } from '../../components/delete-btn';
+import { strNormalize } from '../../utils/functions';
+import DocumentViewer from '../../components/viewer/document-viewer';
 
 import { InboxOutlined } from '@ant-design/icons';
 import { DraggerProps } from 'antd/lib/upload';
 import { UploadFile } from 'antd/lib/upload/interface';
 
 import { Spin } from 'antd';
-import { useIpcRequestWithLoader } from '../utils/hooks';
+import { useIpcRequestWithLoader, useModalVisible } from '../../utils/hooks';
 
 const { Dragger } = Upload;
 
 const { ipcRenderer } = electron;
 
 export default function CustomDocuments() {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const {
+    showModal,
+    isModalVisible,
+    handleOk,
+    handleCancel,
+  } = useModalVisible();
+
   const titles = useRecoilValue(documentTitlesStore);
 
   const [customDocuments, setCustomDocuments] = useRecoilState<
@@ -62,18 +68,6 @@ export default function CustomDocuments() {
       }
     );
   }, []);
-
-  const showModal = () => {
-    setIsModalVisible(true);
-  };
-
-  const handleOk = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
 
   useEffect(() => {
     ipcRenderer.on(IPC_EVENTS.open_modal_document_from_main, showModal);

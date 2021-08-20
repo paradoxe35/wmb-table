@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSetRecoilState } from 'recoil';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
 import {
@@ -115,4 +115,28 @@ export const useIpcRequestWithLoader = () => {
   }, []);
 
   return handler;
+};
+
+export const useModalVisible = () => {
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const showModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleOk = () => {
+    setIsModalVisible(false);
+  };
+
+  const handleCancel = () => {
+    setIsModalVisible(false);
+  };
+
+  return {
+    isModalVisible,
+    handleCancel,
+    handleOk,
+    showModal,
+    setIsModalVisible,
+  };
 };

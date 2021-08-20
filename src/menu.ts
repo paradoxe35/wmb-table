@@ -1,4 +1,10 @@
-import { app, Menu, BrowserWindow, MenuItemConstructorOptions } from 'electron';
+import {
+  app,
+  Menu,
+  BrowserWindow,
+  MenuItemConstructorOptions,
+  shell,
+} from 'electron';
 import showAboutDialog from './dialogs/handlers/about';
 import { IPC_EVENTS } from './utils/ipc-events';
 
@@ -266,8 +272,31 @@ export default class MenuBuilder {
         ],
       },
       {
+        label: 'Outils',
+        submenu: [
+          {
+            label: 'Sauvegarde',
+            accelerator: 'Ctrl+Shift+R',
+            click: () => {
+              this.mainWindow.webContents.send(
+                IPC_EVENTS.open_backup_modal_from_main
+              );
+            },
+          },
+        ],
+      },
+      {
         label: 'Aide',
         submenu: [
+          {
+            label: 'Documentation',
+            click: () => {
+              const url = process.env.DOCS_LINK;
+              if (url) {
+                shell.openExternal(url);
+              }
+            },
+          },
           {
             label: 'À propos',
             click: () => {

@@ -1,7 +1,7 @@
 import { Button, List, Modal, Tooltip } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
 import { DocumentHtmlTree, NoteItem, NoteItemReference } from '../../types';
-import { useValueStateRef } from '../../utils/hooks';
+import { useModalVisible, useValueStateRef } from '../../utils/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
@@ -14,7 +14,13 @@ export function NoteReferencesModal({ title }: { title: string }) {
     textContent: string;
     documentHtmlTree: DocumentHtmlTree;
   }>();
-  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const {
+    isModalVisible,
+    handleOk,
+    handleCancel,
+    setIsModalVisible,
+  } = useModalVisible();
 
   const [datas, setDatas] = useState<NoteItemReference[]>([]);
   const workingNote = useRef<NoteItem | null>(null);
@@ -41,14 +47,6 @@ export function NoteReferencesModal({ title }: { title: string }) {
       }
     })();
   }, [workingNoteId, isModalVisible]);
-
-  const handleOk = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
 
   const onSelectItem = (item: NoteItemReference) => {
     if (!documentRefTree.current) return;

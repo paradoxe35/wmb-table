@@ -8,7 +8,7 @@ import {
   SubjectDocumentItem,
 } from '../../types';
 import { strNormalize } from '../../utils/functions';
-import { useValueStateRef } from '../../utils/hooks';
+import { useModalVisible, useValueStateRef } from '../../utils/hooks';
 import { BookOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
@@ -23,18 +23,15 @@ export function SubjectSelectModal({ title }: { title: string }) {
     documentHtmlTree: DocumentHtmlTree;
   }>();
 
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const {
+    isModalVisible,
+    handleOk,
+    handleCancel,
+    setIsModalVisible,
+  } = useModalVisible();
 
   const [datas, setDatas] = useState<SubjectDocument[]>([]);
   const odatas = useRecoilValue<SubjectDocument[]>(subjectDocumentStore);
-
-  const handleOk = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
 
   const onSelectItem = (name: string) => {
     if (!documentRefTree.current) return;
