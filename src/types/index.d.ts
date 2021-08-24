@@ -56,6 +56,10 @@ declare global {
       itemsPerPage: number
     ) => { data: T[]; end: boolean };
   }
+
+  interface Date {
+    addDays: (days: number) => Date;
+  }
 }
 
 export type SearchMatchersValue = {
@@ -103,6 +107,7 @@ export interface BackupDbReference {
 export interface AppSettingsStatus {
   _id: string;
   initialized: boolean;
+  lastCheckBackupStatus: Date;
 }
 
 export interface BackupStatus {

@@ -3,7 +3,10 @@ import db, { queryDb } from '../../utils/main/db';
 
 // let config: AppSettingsStatus | undefined;
 
-export async function initialized_app() {
+export async function initialized_app(
+  _: any,
+  getInstance?: boolean
+): Promise<AppSettingsStatus | boolean> {
   const settings = await queryDb.find<AppSettingsStatus>(db.configurations);
   // if (settings[0]) config = settings[0];
 
@@ -15,10 +18,13 @@ export async function initialized_app() {
         { $set: { initialized: true } }
       );
     } else {
-      await queryDb.insert(db.configurations, { initialized: true });
+      await queryDb.insert(db.configurations, {
+        initialized: true,
+        lastCheckBackupStatus: new Date(),
+      });
     }
     return false;
   }
 
-  return true;
+  return getInstance ? settings[0] : true;
 }

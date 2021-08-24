@@ -42,6 +42,13 @@ import {
 } from './handlers/notes_references_bible';
 import sidebar_status, { sidebar_status_set } from './handlers/sidebar_status';
 import { initialized_app } from './handlers/app_settings';
+import assets from './handlers/assets';
+import {
+  backup_reminder,
+  backup_status,
+  handle_backup_login,
+  handle_backup_status,
+} from './handlers/backup';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -158,3 +165,15 @@ mainMessageTransport(IPC_EVENTS.sidebar_status_set, sidebar_status_set);
 
 // request app settings status
 mainMessageTransport(IPC_EVENTS.initialized_app, initialized_app);
+
+// assets
+mainMessageTransport(IPC_EVENTS.get_asset, assets);
+
+// backup
+mainMessageTransport(IPC_EVENTS.backup_status, backup_status);
+
+mainMessageTransport(IPC_EVENTS.backup_reminder, backup_reminder);
+
+mainMessageTransport(IPC_EVENTS.backup_login, handle_backup_login);
+
+mainMessageTransport(IPC_EVENTS.backup_status_put, handle_backup_status);

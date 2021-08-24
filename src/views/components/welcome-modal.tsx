@@ -1,11 +1,10 @@
 import { Button, Modal, Space } from 'antd';
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useEffect } from 'react';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { useModalVisible } from '../../utils/hooks';
 import { IPC_EVENTS } from '../../utils/ipc-events';
-import { Avatar, Image } from 'antd';
-import { getAssetPath } from '../../sys';
+import { Avatar } from 'antd';
 import { APP_NAME } from '../../utils/constants';
 import { Typography } from 'antd';
 import { useRecoilValue } from 'recoil';
@@ -21,9 +20,14 @@ export default function Welcome() {
     handleCancel,
   } = useModalVisible();
 
+  const [image, setImage] = useState<undefined | string>(undefined);
+
   useEffect(() => {
     sendIpcRequest<boolean>(IPC_EVENTS.initialized_app).then(
       (initialized) => !initialized && showModal()
+    );
+    sendIpcRequest<string>(IPC_EVENTS.get_asset, 'icon.png').then((path) =>
+      setImage(path)
     );
   }, []);
 
@@ -36,26 +40,27 @@ export default function Welcome() {
     <>
       <Modal
         centered
+        width="60%"
         title={
           <>
             <Space direction="horizontal">
-              <Avatar
-                size="large"
-                src={<Image src={getAssetPath('icon.png')} />}
-              />
+              <Avatar size="large" src={image} />
               <span>{APP_NAME}</span>
             </Space>
           </>
         }
         visible={isModalVisible}
         footer={[
-          <Button onClick={handleCancel}>Commencer</Button>,
-          <Button type="dashed" onClick={goToBackupModal}>
+          <Button key={0} onClick={handleCancel}>
+            Commencer
+          </Button>,
+          <Button key={1} type="dashed" onClick={goToBackupModal}>
             Restaurer vos données
           </Button>,
-          <Button type="primary">
+          <Button key={2} type="primary">
             <Link
               style={{ color: '#fff', textDecoration: 'none' }}
+              target="_blank"
               href={process.env.DOCS_LINK}
             >
               Documentation
@@ -89,12 +94,18 @@ const WelcomeContent = () => {
           <li>
             Regroupez vos références de documents par sujet(pour plus d'infos,
             allez dans la{' '}
-            <Link href={process.env.DOCS_SUBJECT_LINK}>documentation</Link>).
+            <Link target="_blank" href={process.env.DOCS_SUBJECT_LINK}>
+              documentation
+            </Link>
+            ).
           </li>
           <li>Créer des notes et les modifier.</li>
           <li>
             Ajoutez des références de documents ou de la Bible dans vos notes(
-            <Link href={process.env.DOCS_NOTE_LINK}>documentation</Link>).
+            <Link target="_blank" href={process.env.DOCS_NOTE_LINK}>
+              documentation
+            </Link>
+            ).
           </li>
           <li>Bible (Louis Segond)</li>
           <li>
