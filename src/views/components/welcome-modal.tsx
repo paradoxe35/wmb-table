@@ -35,7 +35,6 @@ export default function Welcome() {
   return (
     <>
       <Modal
-        width="60%"
         centered
         title={
           <>

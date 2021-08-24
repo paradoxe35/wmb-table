@@ -105,6 +105,13 @@ export interface AppSettingsStatus {
   initialized: boolean;
 }
 
+export interface BackupStatus {
+  _id: string;
+  email: string;
+  active: boolean;
+  lastUpdate: Date;
+}
+
 export interface SubjectDocument extends Readonly<TimeStampData> {
   name: string;
   date: string;
