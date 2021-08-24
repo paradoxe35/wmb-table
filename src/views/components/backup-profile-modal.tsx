@@ -1,10 +1,12 @@
-import { Button, Modal, Space } from 'antd';
+import { Button, Modal, Space, message } from 'antd';
 import { ipcRenderer } from 'electron';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useEffect } from 'react';
 import { useModalVisible } from '../../utils/hooks';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { Typography } from 'antd';
+import { BackupStatus } from '../../types';
+import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 
 const { Paragraph } = Typography;
 
@@ -16,11 +18,65 @@ export default function BackupProfile() {
     handleCancel,
   } = useModalVisible();
 
-  const [activeBackup, setActiveBackup] = useState(undefined);
+  const [activeBackup, setActiveBackup] = useState<BackupStatus | undefined>(
+    undefined
+  );
+
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     ipcRenderer.on(IPC_EVENTS.open_backup_modal_from_main, showModal);
     window.addEventListener(IPC_EVENTS.open_backup_modal_from_main, showModal);
+    sendIpcRequest<boolean>(IPC_EVENTS.backup_reminder).then(
+      (canOpen) => canOpen && showModal()
+    );
+  }, []);
+
+  useEffect(() => {
+    updateStatus(sendIpcRequest<BackupStatus>(IPC_EVENTS.backup_status));
+
+    ipcRenderer.on(IPC_EVENTS.backup_status, (_: any, status: BackupStatus) => {
+      if (status) setActiveBackup(status);
+    });
+  }, []);
+
+  const updateStatus = useCallback(
+    (peddingRequest: Promise<BackupStatus | null>) => {
+      peddingRequest.then((status) => {
+        if (status) setActiveBackup(status);
+      });
+    },
+    []
+  );
+
+  const handleLogin = useCallback(() => {
+    setLoading(true);
+    const showError = (error: string) => {
+      switch (error) {
+        case 'network':
+          message.warn('Vous êtes hors ligne');
+          break;
+        default:
+          message.error(
+            "Une erreur s'est produite lors de la connexion, réessayez plus tard"
+          );
+          break;
+      }
+    };
+    const pedding = sendIpcRequest<any>(IPC_EVENTS.backup_login)
+      .then((res: BackupStatus & { errors: string }) => {
+        if (res.errors) {
+          showError(res.errors);
+          return false;
+        }
+        return res;
+      })
+      .finally(() => setLoading(false));
+    updateStatus(pedding as Promise<BackupStatus>);
+  }, []);
+
+  const handleBackupStatus = useCallback(() => {
+    updateStatus(sendIpcRequest<BackupStatus>(IPC_EVENTS.backup_status_put));
   }, []);
 
   return (
@@ -35,21 +91,50 @@ export default function BackupProfile() {
         }
         visible={isModalVisible}
         footer={[
-          <Button onClick={handleCancel}>
-            {activeBackup ? 'Fermer' : 'Plus Tard'}
+          <Button key={0} onClick={handleCancel}>
+            {activeBackup ? 'Fermer' : 'Plus tard'}
           </Button>,
-          <Button type="dashed" onClick={undefined}>
-            Restaurer vos données
+          <Button
+            key={1}
+            loading={loading}
+            type="primary"
+            onClick={activeBackup ? handleBackupStatus : handleLogin}
+          >
+            {activeBackup
+              ? activeBackup.active
+                ? 'Pause'
+                : 'Reprendre'
+              : 'Connexion'}
           </Button>,
         ]}
         onOk={handleOk}
         onCancel={handleCancel}
       >
-        <BackupContent />
+        {activeBackup ? (
+          <ActiveBackup activeBackup={activeBackup} />
+        ) : (
+          <BackupContent />
+        )}
       </Modal>
     </>
   );
 }
+
+const ActiveBackup = ({
+  activeBackup: status,
+}: {
+  activeBackup: BackupStatus;
+}) => {
+  return (
+    <Typography>
+      <Paragraph>Email: {status.email}</Paragraph>
+      <Paragraph>Stockage: {'Google Drive'}</Paragraph>
+      <Paragraph>
+        Dernière mise à jour: {status.lastUpdate.toLocaleTimeString('fr')}
+      </Paragraph>
+    </Typography>
+  );
+};
 
 const BackupContent = () => {
   return (

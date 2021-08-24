@@ -8,24 +8,25 @@ import {
 import { loadedDb } from '../backup/backup';
 
 interface Db {
-  configurations?: Datastore | undefined;
-  history?: Datastore | undefined;
-  historyItem?: Datastore | undefined;
-  documents?: Datastore | undefined;
-  documentsTitle?: Datastore | undefined;
-  subjects?: Datastore | undefined;
-  sidebarStatus?: Datastore | undefined;
-  subjectItems?: Datastore | undefined;
-  tabs?: Datastore | undefined;
-  suggestions?: Datastore | undefined;
-  customDocuments?: Datastore | undefined;
+  configurations?: Datastore;
+  history?: Datastore;
+  historyItem?: Datastore;
+  documents?: Datastore;
+  documentsTitle?: Datastore;
+  subjects?: Datastore;
+  sidebarStatus?: Datastore;
+  subjectItems?: Datastore;
+  tabs?: Datastore;
+  suggestions?: Datastore;
+  customDocuments?: Datastore;
 
-  notes?: Datastore | undefined;
-  notesReference?: Datastore | undefined;
-  notesBibleReference?: Datastore | undefined;
-  bible?: Datastore | undefined;
+  notes?: Datastore;
+  notesReference?: Datastore;
+  notesBibleReference?: Datastore;
+  bible?: Datastore;
 
-  backupDbReferences?: Datastore | undefined;
+  backupDbReferences?: Datastore;
+  backupStatus?: Datastore;
 }
 
 const db: Db = {};
@@ -63,6 +64,11 @@ db.bible = new Datastore({
 
 db.backupDbReferences = new Datastore({
   filename: getAssetBackupPath(`backup-db-references.db`),
+  autoload: false,
+});
+
+db.backupStatus = new Datastore({
+  filename: getAssetBackupPath(`backup-status.db`),
   autoload: false,
 });
 

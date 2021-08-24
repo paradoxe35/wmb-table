@@ -40,6 +40,11 @@ export const IPC_EVENTS = {
   sidebar_status: 'sidebar_status',
   sidebar_status_set: 'sidebar_status_set',
   initialized_app: 'initialized_app',
+  get_asset: 'get_asset',
+  backup_status: 'backup_status',
+  backup_status_put: 'backup_status_put',
+  backup_reminder: 'backup_reminder',
+  backup_login: 'backup_login',
   // events from main process
   open_modal_document_from_main: 'open_modal_document_from_main',
   open_backup_modal_from_main: 'open_backup_modal_from_main',

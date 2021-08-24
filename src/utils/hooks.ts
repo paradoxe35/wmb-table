@@ -120,17 +120,17 @@ export const useIpcRequestWithLoader = () => {
 export const useModalVisible = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const showModal = () => {
+  const showModal = useCallback(() => {
     setIsModalVisible(true);
-  };
+  }, []);
 
-  const handleOk = () => {
+  const handleOk = useCallback(() => {
     setIsModalVisible(false);
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setIsModalVisible(false);
-  };
+  }, []);
 
   return {
     isModalVisible,

@@ -582,7 +582,6 @@ function Editor({
                 ],
               },
               language: 'fr',
-              licenseKey: '',
             }}
           />
         </div>

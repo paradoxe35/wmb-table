@@ -1,4 +1,8 @@
-import { getAssetDbPath, getAssetDocumentsDbPath } from '../../sys';
+import {
+  getAssetBackupPeddingPath,
+  getAssetDbPath,
+  getAssetDocumentsDbPath,
+} from '../../sys';
 import { debounce, getFilename } from '../functions';
 import { countFileLines, readRangeLinesInFile } from '../main/count-file-lines';
 import { EventEmitter } from 'events';
@@ -10,7 +14,11 @@ const watch = require('node-watch');
 
 const eventEmiter = new EventEmitter({ captureRejections: true });
 const loadedDbEventName = 'loadedDb';
-const dbFilesExludedRegx = /(configurations|backup\-db\-references)\.db/;
+const dbFilesExludedRegx = /(configurations|backup.*)\.db$/;
+
+const penddingDb = {
+  dbs: {} as { [x: string]: Datastore<any> },
+};
 
 export const loadedDb = {
   dbs: [] as string[],
@@ -131,6 +139,11 @@ const syncedFirstDbReferences = async (filename: string) => {
   ) {
     await syncDbLinesAsBackupRef(filename);
     loadedDb.syncedRefsDb.push(filename);
+    // init pedding database per watched db
+    penddingDb.dbs[filename] = new Datastore({
+      filename: getAssetBackupPeddingPath(filename),
+      autoload: false,
+    });
     return false;
   }
   return true;
