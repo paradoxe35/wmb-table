@@ -9,17 +9,24 @@ import { EventEmitter } from 'events';
 import Datastore from 'nedb';
 import db, { queryDb } from '../main/db';
 import { BackupDbReference } from '../../types';
-
+import { BackupHandler, RestaureHanlder } from './backup-handler';
 const watch = require('node-watch');
 
 const eventEmiter = new EventEmitter({ captureRejections: true });
+// event name used to emit event with filename database
 const loadedDbEventName = 'loadedDb';
+// exluded files regex
 const dbFilesExludedRegx = /(configurations|backup.*)\.db$/;
 
+// directories to watch in
+export const WATCHED_DIRS = [getAssetDocumentsDbPath(), getAssetDbPath()];
+
+// collect unique database to be used to saved his pedding datas
 const penddingDb = {
   dbs: {} as { [x: string]: Datastore<any> },
 };
 
+// used to collect all loaded databases that will be backuped
 export const loadedDb = {
   dbs: [] as string[],
   dbFiles: {} as { [x: string]: string },
@@ -34,6 +41,7 @@ export const loadedDb = {
   },
 };
 
+// after load database start event corresponding to database filename
 eventEmiter.on(loadedDbEventName, (filenameEvent) => {
   eventEmiter.on(filenameEvent, debounce(performUniqueBackup, 2000));
 });
@@ -181,7 +189,7 @@ const filterWatchedFiles = function (file: string, skip: any) {
 };
 
 export default () => {
-  const watcher = watch([getAssetDocumentsDbPath(), getAssetDbPath()], {
+  const watcher = watch(WATCHED_DIRS, {
     filter: filterWatchedFiles,
   }).on('change', performBackup);
 
@@ -189,3 +197,10 @@ export default () => {
     close: () => watcher.close(),
   };
 };
+
+export function initBackupAndRestoration(
+  oAuth2Client: import('google-auth-library').OAuth2Client
+) {
+  BackupHandler.setOAuth2Client(oAuth2Client);
+  RestaureHanlder.setOAuth2Client(oAuth2Client);
+}

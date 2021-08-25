@@ -1,9 +1,13 @@
 import path from 'path';
-import { app } from 'electron';
+import { app, BrowserWindow } from 'electron';
 
 export const RESOURCES_PATH = app.isPackaged
   ? path.join(process.resourcesPath, 'assets')
   : path.join(__dirname, '../assets');
+
+export let mainWindow: BrowserWindow | null = null;
+
+export const setMainWindow = (mWindow: BrowserWindow) => (mainWindow = mWindow);
 
 export const getAssetPath = (...paths: string[]): string => {
   return path.join(RESOURCES_PATH, ...paths);
