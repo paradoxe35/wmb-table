@@ -3,9 +3,9 @@ const path = require('path');
 
 /**
  * @param {string} directory
- * @param {string | null} except
+ * @param {string[]} excepts
  */
-function cleanAllFileDir(directory, except = null) {
+function cleanAllFileDir(directory, excepts = []) {
   if (fs.existsSync(directory)) {
     fs.readdir(directory, (err, files) => {
       if (err) {
@@ -14,7 +14,7 @@ function cleanAllFileDir(directory, except = null) {
       }
 
       for (const file of files) {
-        if (!(except && file.includes(except))) {
+        if (!excepts.includes(file)) {
           fs.unlink(path.join(directory, file), (err) => {
             if (err) {
               console.log(err);
@@ -41,10 +41,10 @@ cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'));
 
 // clean db backup files for production
-cleanAllFileDir(
-  path.resolve(__dirname, '../assets/credentials/'),
-  'google-drive-credentials.json'
-);
+cleanAllFileDir(path.resolve(__dirname, '../assets/credentials/'), [
+  'google-drive-credentials.json',
+  '.gitignore',
+]);
 
 // clean dist src compiled souces
 cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
