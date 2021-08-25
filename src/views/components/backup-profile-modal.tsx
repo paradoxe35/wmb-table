@@ -64,9 +64,9 @@ export default function BackupProfile() {
       }
     };
     const pedding = sendIpcRequest<any>(IPC_EVENTS.backup_login)
-      .then((res: BackupStatus & { errors: string }) => {
-        if (res.errors) {
-          showError(res.errors);
+      .then((res: BackupStatus & { error: string }) => {
+        if (res.error) {
+          showError(res.error);
           return false;
         }
         return res;

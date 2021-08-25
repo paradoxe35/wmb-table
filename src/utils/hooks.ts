@@ -108,9 +108,9 @@ export const useIpcRequestWithLoader = () => {
   const setAppLoader = useSetRecoilState(appDatasLoadedStore);
 
   const handler = useCallback(<T>(eventName: string, ...args: any[]) => {
-    setAppLoader(false);
+    setAppLoader(!true);
     return sendIpcRequest<T>(eventName, ...args).finally(() =>
-      setAppLoader(true)
+      setAppLoader(!false)
     );
   }, []);
 

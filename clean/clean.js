@@ -3,8 +3,9 @@ const path = require('path');
 
 /**
  * @param {string} directory
+ * @param {string | null} except
  */
-function cleanAllFileDir(directory) {
+function cleanAllFileDir(directory, except = null) {
   if (fs.existsSync(directory)) {
     fs.readdir(directory, (err, files) => {
       if (err) {
@@ -13,12 +14,14 @@ function cleanAllFileDir(directory) {
       }
 
       for (const file of files) {
-        fs.unlink(path.join(directory, file), (err) => {
-          if (err) {
-            console.log(err);
-            return;
-          }
-        });
+        if (!(except && file.includes(except))) {
+          fs.unlink(path.join(directory, file), (err) => {
+            if (err) {
+              console.log(err);
+              return;
+            }
+          });
+        }
       }
     });
   }
@@ -37,6 +40,11 @@ cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
 // clean db backup files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'));
 
-// clean dist src compiled souces
+// clean db backup files for production
+cleanAllFileDir(
+  path.resolve(__dirname, '../assets/credentials/'),
+  'google-drive-credentials.json'
+);
 
+// clean dist src compiled souces
 cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));

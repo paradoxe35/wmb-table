@@ -1,15 +1,16 @@
 import { AppSettingsStatus, BackupStatus } from '../../types';
+import googleOAuth2, { getUserInfo } from '../../utils/backup/googleapi';
 import db, { queryDb } from '../../utils/main/db';
-import { initialized_app } from './app_settings';
+const isOnline = require('is-online');
 
 export async function backup_status(): Promise<BackupStatus | null> {
   return await queryDb.findOne<BackupStatus | null>(db.backupStatus);
 }
 
 export async function backup_reminder(): Promise<boolean> {
-  let settings = await initialized_app(true);
-  if (!settings) return false;
-  const status = settings as AppSettingsStatus;
+  let settings = await queryDb.find<AppSettingsStatus>(db.configurations);
+  if (!settings[0]) return false;
+  const status = settings[0] as AppSettingsStatus;
 
   const lastUpdate = status.lastCheckBackupStatus.addDays(2);
   const now = new Date();
@@ -22,6 +23,21 @@ export async function backup_reminder(): Promise<boolean> {
   return true;
 }
 
-export async function handle_backup_login() {}
+export async function handle_backup_login() {
+  if (!(await isOnline())) {
+    return { error: 'network' };
+  }
+  const googleAuth = await googleOAuth2();
+  if (!googleAuth) {
+    return { error: 'auth' };
+  }
+
+  const info = await getUserInfo(googleAuth.credentials.access_token as string);
+  console.log(info);
+
+  // googleAuth.credentials.access_token
+  // google.acc
+  return false;
+}
 
 export async function handle_backup_status() {}
