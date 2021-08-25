@@ -32,3 +32,7 @@ export const getAssetDbPath = (...paths: string[]): string => {
 export const getAssetDocumentsPath = (...paths: string[]): string => {
   return getAssetPath('datas/documents', ...paths);
 };
+
+export const getAssetCredentialsPath = (...paths: string[]): string => {
+  return getAssetPath('credentials', ...paths);
+};
