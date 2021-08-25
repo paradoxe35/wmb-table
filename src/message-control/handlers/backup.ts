@@ -1,4 +1,5 @@
 import { AppSettingsStatus, BackupStatus } from '../../types';
+import { initBackupAndRestoration } from '../../utils/backup/backup';
 import googleOAuth2, { getUserInfo } from '../../utils/backup/googleapi';
 import db, { queryDb } from '../../utils/main/db';
 const isOnline = require('is-online');
@@ -37,12 +38,25 @@ export async function handle_backup_login() {
     email: payload.email,
     name: payload.name,
     active: true,
+    restaured: false,
     lastUpdate: new Date(),
   };
 
   await queryDb.insert(db.backupStatus, payload);
 
+  initBackupAndRestoration(googleAuth);
+
   return statusBackup;
 }
 
-export async function handle_backup_status() {}
+export async function handle_backup_status() {
+  const status = (await queryDb.find<BackupStatus>(db.backupStatus))[0];
+  if (!status) return null;
+  status.active = !status.active;
+  await queryDb.update(
+    db.backupStatus,
+    { _id: status._id },
+    { $set: { active: status.active } }
+  );
+  return status;
+}

@@ -15,12 +15,14 @@ import { app, BrowserWindow, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
-import { getAssetPath } from './sys';
+import { getAssetPath, setMainWindow } from './sys';
 import Dialogs from './dialogs/dialogs';
 import backupHandler from './utils/backup/backup';
 import { APP_NAME } from './utils/constants';
 
 require('./message-control/main-messages');
+
+// init backup watcher files
 const watcher = backupHandler();
 
 export default class AppUpdater {
@@ -81,6 +83,8 @@ const createWindow = async () => {
       spellcheck: false,
     },
   });
+
+  setMainWindow(mainWindow);
 
   Dialogs(mainWindow);
 
