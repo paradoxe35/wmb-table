@@ -31,13 +31,18 @@ export async function handle_backup_login() {
   if (!googleAuth) {
     return { error: 'auth' };
   }
+  const payload = await getUserInfo(googleAuth);
 
-  const info = await getUserInfo(googleAuth.credentials.access_token as string);
-  console.log(info);
+  const statusBackup: Partial<BackupStatus> = {
+    email: payload.email,
+    name: payload.name,
+    active: true,
+    lastUpdate: new Date(),
+  };
 
-  // googleAuth.credentials.access_token
-  // google.acc
-  return false;
+  await queryDb.insert(db.backupStatus, payload);
+
+  return statusBackup;
 }
 
 export async function handle_backup_status() {}

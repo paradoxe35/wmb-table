@@ -21,7 +21,7 @@ import backupHandler from './utils/backup/backup';
 import { APP_NAME } from './utils/constants';
 
 require('./message-control/main-messages');
-backupHandler();
+const watcher = backupHandler();
 
 export default class AppUpdater {
   constructor() {
@@ -104,6 +104,7 @@ const createWindow = async () => {
 
   mainWindow.on('closed', () => {
     mainWindow = null;
+    watcher.close();
   });
 
   const menuBuilder = new MenuBuilder(mainWindow);
