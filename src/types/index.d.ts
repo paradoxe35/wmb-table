@@ -113,6 +113,7 @@ export interface AppSettingsStatus {
 export interface BackupStatus {
   _id: string;
   email: string;
+  name: string;
   active: boolean;
   lastUpdate: Date;
 }

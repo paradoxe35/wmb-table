@@ -181,12 +181,11 @@ const filterWatchedFiles = function (file: string, skip: any) {
 };
 
 export default () => {
-  watch(getAssetDocumentsDbPath(), { filter: filterWatchedFiles }).on(
-    'change',
-    performBackup
-  );
-  watch(getAssetDbPath(), { filter: filterWatchedFiles }).on(
-    'change',
-    performBackup
-  );
+  const watcher = watch([getAssetDocumentsDbPath(), getAssetDbPath()], {
+    filter: filterWatchedFiles,
+  }).on('change', performBackup);
+
+  return {
+    close: () => watcher.close(),
+  };
 };

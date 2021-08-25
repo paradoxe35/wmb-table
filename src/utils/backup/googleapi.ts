@@ -5,14 +5,18 @@ import { shell } from 'electron';
 import webServer, { TmpServer } from './webserver';
 import { promisify } from 'util';
 import { loggedIn } from './response-html';
-import https from 'https';
 import { getAssetCredentialsPath } from '../../sys';
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly'];
+const SCOPES = [
+  'https://www.googleapis.com/auth/userinfo.profile',
+  'https://www.googleapis.com/auth/userinfo.email',
+  'https://www.googleapis.com/auth/drive.file',
+];
 
 const TOKEN_PATH = getAssetCredentialsPath('google-client-token.json');
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
+export let lastCode: string | null = null;
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -52,7 +56,9 @@ async function redirectedRoute(server: TmpServer): Promise<string | null> {
     server.app.get('/', (_req, res) => {
       res.send(loggedIn);
       if (_req.query.code) {
-        resolve(_req.query.code.toString());
+        const code = _req.query.code.toString();
+        lastCode = code;
+        resolve(code);
       } else {
         resolve(null);
       }
@@ -122,33 +128,11 @@ export default async function googleOAuth2(): Promise<OAuth2Client | null> {
   return null;
 }
 
-export function getUserInfo(
-  access_token: string
-): Promise<{ [x: string]: string; email: string } | null> {
-  const options = {
-    hostname: 'https://www.googleapis.com',
-    path: '/oauth2/v3/userinfo',
-    method: 'GET',
-    port: 443,
-    headers: {
-      Authorization: 'Bearer ' + access_token,
-    },
-  };
-
-  return new Promise((resolve) => {
-    https
-      .get(options, (resp) => {
-        let data = '';
-        resp.on('data', (chunk) => {
-          data += chunk;
-        });
-        resp.on('end', () => {
-          resolve(JSON.parse(data));
-        });
-      })
-      .on('error', (_err) => {
-        console.log(_err);
-        resolve(null);
-      });
+export async function getUserInfo(oAuth2Client: OAuth2Client) {
+  const auth = google.oauth2({
+    auth: oAuth2Client,
+    version: 'v2',
   });
+  const userInfo = await auth.userinfo.get();
+  return userInfo.data;
 }
