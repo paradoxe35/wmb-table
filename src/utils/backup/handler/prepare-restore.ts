@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import { getAssetBackupPeddingPath, getAssetDbPath } from '../../../sys';
+import { getAssetBackupPendingPath, getAssetDbPath } from '../../../sys';
 import { asyncify, whilst } from '../../async';
 import Datastore from 'nedb';
 import { camelCase, getFilename } from '../../functions';
@@ -40,7 +40,7 @@ export class PrepareRestore {
 
   static pendingDatastore(filename: string) {
     return new Datastore({
-      filename: getAssetBackupPeddingPath(filename),
+      filename: getAssetBackupPendingPath(filename),
       autoload: true,
     });
   }

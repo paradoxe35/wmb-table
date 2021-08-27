@@ -1,5 +1,5 @@
 import {
-  getAssetBackupPeddingPath,
+  getAssetBackupPendingPath,
   getAssetDbPath,
   getAssetDocumentsDbPath,
 } from '../../sys';
@@ -154,7 +154,7 @@ const syncedFirstDbReferences = async (filename: string) => {
     loadedDb.syncedRefsDb.push(filename);
     // init pedding database per watched db
     pendingDb.dbs[filename] = new Datastore({
-      filename: getAssetBackupPeddingPath(filename),
+      filename: getAssetBackupPendingPath(filename),
       autoload: false,
     });
     return false;
