@@ -38,7 +38,7 @@ export async function handle_backup_login() {
   if (!(await isOnline())) {
     return { error: 'network' };
   }
-  const googleAuth = await googleOAuth2();
+  const googleAuth = await googleOAuth2(true);
   if (!googleAuth) {
     return { error: 'auth' };
   }
