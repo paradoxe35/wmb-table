@@ -9,7 +9,8 @@ import { EventEmitter } from 'events';
 import Datastore from 'nedb';
 import db, { queryDb } from '../main/db';
 import { BackupDbReference } from '../../types';
-import { BackupHandler, RestoreHanlder } from './backup-handler';
+import { BackupHandler } from './handler/backup-handler';
+import { RestoreHanlder } from './handler/restore-handler';
 const watch = require('node-watch');
 
 const eventEmiter = new EventEmitter({ captureRejections: true });
