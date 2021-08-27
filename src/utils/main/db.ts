@@ -36,11 +36,12 @@ const db: Db = {};
 const databases: Datastore<any>[] = [];
 
 export const getDatastoreFileName = (
-  datastore: (Datastore<any> & { filename?: string }) | undefined
+  datastore: (Datastore<any> & { filename?: string }) | undefined,
+  extension: boolean = true
 ) => {
   if (!datastore || !datastore.filename) return null;
   const filename = getFilename(datastore.filename);
-  return filename.split('.db')[0];
+  return extension ? filename : filename.split('.db')[0];
 };
 
 export const loadDatabase = function (database: Datastore<any> | undefined) {
