@@ -119,6 +119,23 @@ export interface BackupStatus {
   lastUpdate: Date;
 }
 
+export type ProgressionType<K extends number> = `progress-${K}`;
+
+export type RestoreProgressEventType =
+  | 'start'
+  | 'complete'
+  | 'error'
+  | 'prepare'
+  | ProgressionType<number>;
+
+export interface RestoreProgressEvent {
+  type: RestoreProgressEventType;
+  progression: {
+    proceed: number;
+    total: number;
+  };
+}
+
 export interface SubjectDocument extends Readonly<TimeStampData> {
   name: string;
   date: string;

@@ -15,7 +15,7 @@
   },
   "license": "MIT",
   "dependencies": {
-    "async": "2.6.3",
+    "async": "^3.2.1",
     "express": "^4.17.1",
     "googleapis": "39",
     "html-pdf": "^3.0.1",
