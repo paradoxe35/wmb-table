@@ -13,7 +13,7 @@ import { DriveHandler, ParentFolder } from './drive-handler';
 import { commitBackupProgress, setDataRestoring } from '../constants';
 import { asyncify, doWhilst, whilst } from '../../async';
 
-export class RestoreHanlder extends DriveHandler {
+export class RestoreHandler extends DriveHandler {
   /**
    * restoration progression
    * @property

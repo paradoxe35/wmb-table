@@ -10,7 +10,7 @@ import Datastore from 'nedb';
 import db, { queryDb } from '../main/db';
 import { BackupDbReference, BackupStatus } from '../../types';
 // import { BackupHandler } from './handler/backup-handler';
-import { RestoreHanlder } from './handler/restore-handler';
+import { RestoreHandler } from './handler/restore-handler';
 import googleOAuth2 from './googleapi';
 import { DriveHandler } from './handler/drive-handler';
 import { excludedDbFilesRegex } from './constants';
@@ -208,7 +208,7 @@ export async function initBackupAndRestoration(
 ) {
   DriveHandler.setOAuth2Client(oAuth2Client);
   await PrepareRestore.handle();
-  await RestoreHanlder.handle();
+  await RestoreHandler.handle();
 }
 
 export function resumeRestoration(_status: BackupStatus) {
@@ -216,8 +216,8 @@ export function resumeRestoration(_status: BackupStatus) {
     if (online) {
       googleOAuth2().then((oAuth2Client) => {
         if (oAuth2Client) {
-          RestoreHanlder.setOAuth2Client(oAuth2Client);
-          RestoreHanlder.handle();
+          RestoreHandler.setOAuth2Client(oAuth2Client);
+          RestoreHandler.handle();
         }
       });
     }
