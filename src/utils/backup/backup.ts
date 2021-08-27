@@ -8,9 +8,13 @@ import { countFileLines, readRangeLinesInFile } from '../main/count-file-lines';
 import { EventEmitter } from 'events';
 import Datastore from 'nedb';
 import db, { queryDb } from '../main/db';
-import { BackupDbReference } from '../../types';
-import { BackupHandler } from './handler/backup-handler';
+import { BackupDbReference, BackupStatus } from '../../types';
+// import { BackupHandler } from './handler/backup-handler';
 import { RestoreHanlder } from './handler/restore-handler';
+import googleOAuth2 from './googleapi';
+import { DriveHandler } from './handler/drive-handler';
+
+const isOnline = require('is-online');
 const watch = require('node-watch');
 
 const eventEmiter = new EventEmitter({ captureRejections: true });
@@ -199,9 +203,23 @@ export default () => {
   };
 };
 
-export function initBackupAndRestoration(
+export async function initBackupAndRestoration(
   oAuth2Client: import('google-auth-library').OAuth2Client
 ) {
-  BackupHandler.setOAuth2Client(oAuth2Client);
-  RestoreHanlder.setOAuth2Client(oAuth2Client);
+  DriveHandler.setOAuth2Client(oAuth2Client);
+  // BackupHandler.setOAuth2Client(oAuth2Client);
+  // RestoreHanlder.setOAuth2Client(oAuth2Client);
+}
+
+export function resumeRestoration(_status: BackupStatus) {
+  isOnline().then((online: boolean) => {
+    if (online) {
+      googleOAuth2(true).then((oAuth2Client) => {
+        if (oAuth2Client) {
+          RestoreHanlder.setOAuth2Client(oAuth2Client);
+          RestoreHanlder.handle();
+        }
+      });
+    }
+  });
 }

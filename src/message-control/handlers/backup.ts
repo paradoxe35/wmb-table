@@ -1,15 +1,21 @@
 import { BackupStatus } from '../../types';
-import { initBackupAndRestoration } from '../../utils/backup/backup';
+import {
+  initBackupAndRestoration,
+  resumeRestoration,
+} from '../../utils/backup/backup';
+import { setDataRestored } from '../../utils/backup/constans';
 import googleOAuth2, { getUserInfo } from '../../utils/backup/googleapi';
 import db, { queryDb } from '../../utils/main/db';
 import { app_settings } from './app_settings';
 const isOnline = require('is-online');
 
-export let DATA_RESTORED = false;
-
 export async function backup_status(): Promise<BackupStatus | null> {
   const status = await queryDb.findOne<BackupStatus | null>(db.backupStatus);
-  if (status) DATA_RESTORED = status.restored;
+  if (status) {
+    setDataRestored(status.restored);
+    // resume restoration
+    !status.restored && resumeRestoration(status);
+  }
   return status;
 }
 
@@ -68,12 +74,15 @@ export async function handle_backup_status() {
 export async function confirmRestoration(restored: boolean = true) {
   const status = await backup_status();
   if (!status) return null;
-  DATA_RESTORED = restored;
+
+  setDataRestored(restored);
   status.restored = restored;
+
   await queryDb.update(
     db.backupStatus,
     { _id: status._id },
     { $set: { restored } }
   );
+
   return status;
 }

@@ -23,7 +23,10 @@ export let lastCode: string | null = null;
  * given callback function.
  * @param {Object} credentials The authorization client credentials.
  */
-async function authorize(credentials: any): Promise<OAuth2Client | null> {
+async function authorize(
+  credentials: any,
+  readOnly: boolean = false
+): Promise<OAuth2Client | null> {
   const { client_secret, client_id, redirect_uris } = credentials.installed;
 
   const server = await webServer();
@@ -38,7 +41,7 @@ async function authorize(credentials: any): Promise<OAuth2Client | null> {
     const token = await readFile(TOKEN_PATH);
     oAuth2Client.setCredentials(JSON.parse(token.toString('utf-8')));
   } catch (error) {
-    oAuth2Client = await getAccessToken(oAuth2Client, server);
+    oAuth2Client = readOnly ? null : await getAccessToken(oAuth2Client, server);
   }
 
   server.server.close();
@@ -51,7 +54,7 @@ async function authorize(credentials: any): Promise<OAuth2Client | null> {
  * @param server
  * @returns
  */
-async function redirectedRoute(server: TmpServer): Promise<string | null> {
+async function redirectRoute(server: TmpServer): Promise<string | null> {
   return new Promise((resolve) => {
     server.app.get('/', (_req, res) => {
       res.send(loggedIn);
@@ -81,7 +84,7 @@ async function getAccessToken(oAuth2Client: OAuth2Client, server: TmpServer) {
   shell.openExternal(authUrl);
 
   try {
-    const code = await redirectedRoute(server);
+    const code = await redirectRoute(server);
     return code ? await storeClientToken(oAuth2Client, code) : null;
   } catch (error) {
     return null;
@@ -116,12 +119,14 @@ function storeClientToken(
   });
 }
 
-export default async function googleOAuth2(): Promise<OAuth2Client | null> {
+export default async function googleOAuth2(
+  readOnly: boolean = false
+): Promise<OAuth2Client | null> {
   try {
     const content = await readFile(
       getAssetCredentialsPath('google-drive-credentials.json')
     );
-    return await authorize(JSON.parse(content.toString('utf-8')));
+    return await authorize(JSON.parse(content.toString('utf-8')), readOnly);
   } catch (error) {
     console.log('Error loading client secret file:', error);
   }
