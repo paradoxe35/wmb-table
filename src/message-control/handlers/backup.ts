@@ -3,7 +3,7 @@ import {
   initBackupAndRestoration,
   resumeRestoration,
 } from '../../utils/backup/backup';
-import { setDataRestored } from '../../utils/backup/constans';
+import { setDataRestored } from '../../utils/backup/constants';
 import googleOAuth2, { getUserInfo } from '../../utils/backup/googleapi';
 import db, { queryDb } from '../../utils/main/db';
 import { app_settings } from './app_settings';

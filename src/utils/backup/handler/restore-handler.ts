@@ -1,29 +1,17 @@
 import { drive_v3 } from 'googleapis';
-import {
-  getAssetBackupPath,
-  getAssetDocumentsPath,
-  mainWindow,
-} from '../../../sys';
+import { getAssetBackupPath, getAssetDocumentsPath } from '../../../sys';
 import { camelCase } from '../../functions';
-import { IPC_EVENTS } from '../../ipc-events';
 import db, { getDatastoreFileName, queryDb } from '../../main/db';
 import Datastore from 'nedb';
-import {
-  CustomDocument,
-  RestoreProgressEvent,
-  RestoreProgressEventType,
-} from '../../../types';
+import { CustomDocument } from '../../../types';
 import { Stream } from 'stream';
 import { checkForFile } from '../../main/count-file-lines';
 import fsPromises from 'fs/promises';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
-import { setDataRestoring } from '../constans';
-
-const doWhilst = require('async/doWhilst') as typeof import('async').doWhilst;
-const whilst = require('async/whilst') as typeof import('async').whilst;
-const asyncify = require('async/asyncify') as typeof import('async').asyncify;
+import { commitBackupProgress, setDataRestoring } from '../constants';
+import { asyncify, doWhilst, whilst } from '../../async';
 
 export class RestoreHanlder extends DriveHandler {
   /**
@@ -62,7 +50,7 @@ export class RestoreHanlder extends DriveHandler {
    * Top level method to start restoration
    */
   static async handle() {
-    this.commitBackupProgress('start', 0, 0);
+    commitRestoreProgress('start', 0, 0);
 
     this.lastProceedFile = await this.getLastProceedFile();
     if (this.lastProceedFile === this.COMPLETE) return;
@@ -100,10 +88,10 @@ export class RestoreHanlder extends DriveHandler {
         asyncify(() => !!nextToken),
         (err) => {
           if (err) {
-            this.commitBackupProgress('error', 0, 0);
+            commitRestoreProgress('error', 0, 0);
             console.log('Error on fetched files restore', err);
           } else {
-            this.commitBackupProgress(this.COMPLETE, 0, 0);
+            commitRestoreProgress(this.COMPLETE, 0, 0);
             this.makeProceedFile(this.COMPLETE);
             confirmRestoration();
           }
@@ -163,7 +151,7 @@ export class RestoreHanlder extends DriveHandler {
 
         this.continueRestore = true;
         this.progress++;
-        this.commitBackupProgress(
+        commitRestoreProgress(
           `progress-${this.progress}`,
           newFiles.length,
           files.length
@@ -218,7 +206,7 @@ export class RestoreHanlder extends DriveHandler {
     );
     await queryDb.insert(database, data);
     // handle custom document restaure
-    if (getDatastoreFileName(db.customDocuments) === parentFile.name) {
+    if (getDatastoreFileName(db.customDocuments, false) === parentFile.name) {
       await this.handleCustomDocument(data as any);
     }
   }
@@ -268,26 +256,5 @@ export class RestoreHanlder extends DriveHandler {
         data.pipe(fs.createWriteStream(filePath)).on('end', resolve);
       });
     });
-  }
-
-  /**
-   * @param type type of event commition
-   * @param proceed proceed files length
-   * @param total total of files
-   */
-  private static commitBackupProgress(
-    type: RestoreProgressEventType,
-    proceed: number,
-    total: number
-  ) {
-    if (mainWindow) {
-      mainWindow.webContents.send(IPC_EVENTS.backup_progression, {
-        type,
-        progression: {
-          proceed,
-          total,
-        },
-      } as RestoreProgressEvent);
-    }
   }
 }

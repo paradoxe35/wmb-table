@@ -64,7 +64,7 @@ export class DriveHandler {
 
   public static async parentFolder(file: drive_v3.Schema$File) {
     const drive = this.drive();
-    this.setFileId(file.name as string, file.id as string);
+
     const parentId = file.parents ? file.parents[0] : undefined;
     if (!parentId) return null;
 

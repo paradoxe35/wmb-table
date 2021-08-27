@@ -73,6 +73,13 @@ interface SearchItem {
   refIndex: number;
 }
 
+
+export interface PeddingDatastore {
+  _id?: string;
+  dbId: string;
+}
+
+
 interface SearchResultStructure {
   end: boolean;
   itemsPerPage: number;

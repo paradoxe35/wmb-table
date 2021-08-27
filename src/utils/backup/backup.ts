@@ -13,6 +13,8 @@ import { BackupDbReference, BackupStatus } from '../../types';
 import { RestoreHanlder } from './handler/restore-handler';
 import googleOAuth2 from './googleapi';
 import { DriveHandler } from './handler/drive-handler';
+import { excludedDbFilesRegex } from './constants';
+import { PrepareRestore } from './handler/prepare-restore';
 
 const isOnline = require('is-online');
 const watch = require('node-watch');
@@ -20,14 +22,12 @@ const watch = require('node-watch');
 const eventEmiter = new EventEmitter({ captureRejections: true });
 // event name used to emit event with filename database
 const loadedDbEventName = 'loadedDb';
-// exluded files regex
-const dbFilesExludedRegx = /(configurations|backup.*)\.db$/;
 
 // directories to watch in
 export const WATCHED_DIRS = [getAssetDocumentsDbPath(), getAssetDbPath()];
 
 // collect unique database to be used to saved his pedding datas
-const penddingDb = {
+const pendingDb = {
   dbs: {} as { [x: string]: Datastore<any> },
 };
 
@@ -38,7 +38,7 @@ export const loadedDb = {
   syncedRefsDb: [] as string[],
   loadDb(database: Datastore<any> & { filename?: string }) {
     const filename = getFilename(database.filename as string);
-    if (dbFilesExludedRegx.test(filename) || this.dbs.includes(filename))
+    if (excludedDbFilesRegex.test(filename) || this.dbs.includes(filename))
       return;
     this.dbs.push(filename);
     this.dbFiles[filename] = database.filename as string;
@@ -153,7 +153,7 @@ const syncedFirstDbReferences = async (filename: string) => {
     await syncDbLinesAsBackupRef(filename);
     loadedDb.syncedRefsDb.push(filename);
     // init pedding database per watched db
-    penddingDb.dbs[filename] = new Datastore({
+    pendingDb.dbs[filename] = new Datastore({
       filename: getAssetBackupPeddingPath(filename),
       autoload: false,
     });
@@ -189,7 +189,7 @@ const performBackup = async (evt: string, name: string) => {
  * @returns
  */
 const filterWatchedFiles = function (file: string, skip: any) {
-  if (dbFilesExludedRegx.test(file)) return skip;
+  if (excludedDbFilesRegex.test(file)) return skip;
   return /\.db$/.test(file);
 };
 
@@ -207,8 +207,8 @@ export async function initBackupAndRestoration(
   oAuth2Client: import('google-auth-library').OAuth2Client
 ) {
   DriveHandler.setOAuth2Client(oAuth2Client);
-  // BackupHandler.setOAuth2Client(oAuth2Client);
-  // await RestoreHanlder.handle();
+  await PrepareRestore.handle();
+  await RestoreHanlder.handle();
 }
 
 export function resumeRestoration(_status: BackupStatus) {
