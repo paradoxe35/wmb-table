@@ -8,7 +8,11 @@ import { camelCase } from '../../functions';
 import { IPC_EVENTS } from '../../ipc-events';
 import db, { getDatastoreFileName, queryDb } from '../../main/db';
 import Datastore from 'nedb';
-import { CustomDocument } from '../../../types';
+import {
+  CustomDocument,
+  RestoreProgressEvent,
+  RestoreProgressEventType,
+} from '../../../types';
 import { Stream } from 'stream';
 import { checkForFile } from '../../main/count-file-lines';
 import fsPromises from 'fs/promises';
@@ -18,18 +22,38 @@ import { DriveHandler, ParentFolder } from './drive-handler';
 
 const doWhilst = require('async/doWhilst') as typeof import('async').doWhilst;
 const whilst = require('async/whilst') as typeof import('async').whilst;
+const asyncify = require('async/asyncify') as typeof import('async').asyncify;
 
 export class RestoreHanlder extends DriveHandler {
+  /**
+   * restoration progression
+   * @property
+   */
   private static progress: number = 0;
 
+  /**
+   * if not null, used as start point file for restoration
+   * @property
+   */
   private static lastProceedFile: string | null = null;
 
+  /**
+   * filepath where to save the latest proceed file
+   * @property
+   */
   private static PATH_PROCCED_FILE: string = getAssetBackupPath(
     'proceed-file.json'
   );
 
+  /**
+   * if @property lastProceedFile is not null, then used mark restore continue
+   * @property
+   */
   private static continueRestore: boolean = false;
 
+  /**
+   * Top level method to start restoration
+   */
   static async handle() {
     this.commitBackupProgress('start', 0, 0);
 
@@ -38,6 +62,7 @@ export class RestoreHanlder extends DriveHandler {
     this.lastProceedFile = await this.getLastProceedFile();
     if (this.lastProceedFile === 'complete') return;
 
+    // callback function to doWhilst for handling files
     const fetchFiles = async (
       next: (err?: Error | null | undefined, ...results: unknown[]) => void
     ) => {
@@ -59,9 +84,10 @@ export class RestoreHanlder extends DriveHandler {
       }
     };
 
+    // async function to run all required files for restoration
     doWhilst<any>(
       (next) => fetchFiles(next),
-      () => !!nextToken,
+      asyncify(() => !!nextToken),
       (err) => {
         if (err) {
           this.commitBackupProgress('error', 0, 0);
@@ -75,6 +101,10 @@ export class RestoreHanlder extends DriveHandler {
     );
   }
 
+  /**
+   * store the latest proceed file, used to begin from if the the last restore fails
+   * @param id file id
+   */
   private static async makeProceedFile(id: string | null) {
     await fsPromises.writeFile(
       this.PATH_PROCCED_FILE,
@@ -82,7 +112,10 @@ export class RestoreHanlder extends DriveHandler {
     );
   }
 
-  private static async getLastProceedFile() {
+  /**
+   * get the latest proceed file
+   */
+  private static async getLastProceedFile(): Promise<string | null> {
     if (!fs.existsSync(this.PATH_PROCCED_FILE)) return null;
     const data = await fsPromises.readFile(this.PATH_PROCCED_FILE, {
       encoding: 'utf-8',
@@ -96,6 +129,10 @@ export class RestoreHanlder extends DriveHandler {
     return null;
   }
 
+  /**
+   * proceed files for restoration
+   * @param files
+   */
   private static proceedFiles(files: drive_v3.Schema$File[]) {
     return new Promise<any>((resolve) => {
       const newFiles = files.slice();
@@ -112,9 +149,9 @@ export class RestoreHanlder extends DriveHandler {
         }
 
         this.continueRestore = true;
-
+        this.progress++;
         this.commitBackupProgress(
-          'progress-' + this.progress++,
+          `progress-${this.progress}`,
           newFiles.length,
           files.length
         );
@@ -125,13 +162,17 @@ export class RestoreHanlder extends DriveHandler {
         next();
       };
       whilst(
-        () => newFiles.length !== 0,
+        asyncify(() => newFiles.length !== 0),
         (next) => proceed(next),
         (_err) => resolve(_err)
       );
     });
   }
 
+  /**
+   * proceed individual file for restortion
+   * @param file proceed file
+   */
   private static async restoreFile(file: drive_v3.Schema$File) {
     const parentFile = await this.parentFolder(file);
     if (!parentFile) return;
@@ -139,6 +180,12 @@ export class RestoreHanlder extends DriveHandler {
     if (datastore) await this.storeContent(datastore, file, parentFile);
   }
 
+  /**
+   * handle file save as data in datastore
+   * @param database assotiated nedb datastore used for query insertion of file data as json
+   * @param file file data or consider as column data on datastore
+   * @param parentFile represented as folder or database table contains column filez
+   */
   private static async storeContent(
     database: Datastore,
     file: drive_v3.Schema$File,
@@ -163,6 +210,10 @@ export class RestoreHanlder extends DriveHandler {
     }
   }
 
+  /**
+   * handle save related datas on custom document datastore
+   * @param data
+   */
   private static async handleCustomDocument(data: CustomDocument) {
     const filename = `${data.title}.html`;
     const drive = this.drive();
@@ -192,6 +243,11 @@ export class RestoreHanlder extends DriveHandler {
     }
   }
 
+  /**
+   * save file html form custom document handler
+   * @param data data from drive as stream
+   * @param filename filename document
+   */
   private static saveDocumentHtml(data: Stream, filename: string) {
     const filePath = getAssetDocumentsPath(filename);
     return new Promise<void>((resolve) => {
@@ -201,19 +257,24 @@ export class RestoreHanlder extends DriveHandler {
     });
   }
 
+  /**
+   * @param type type of event commition
+   * @param proceed proceed files length
+   * @param total total of files
+   */
   private static commitBackupProgress(
-    type: string,
+    type: RestoreProgressEventType,
     proceed: number,
     total: number
   ) {
     if (mainWindow) {
       mainWindow.webContents.send(IPC_EVENTS.backup_progression, {
         type,
-        data: {
+        progression: {
           proceed,
           total,
         },
-      });
+      } as RestoreProgressEvent);
     }
   }
 }

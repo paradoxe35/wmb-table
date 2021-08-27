@@ -1,14 +1,16 @@
-import { Button, Modal, Space, message } from 'antd';
+import { Button, Modal, Space, message, Progress } from 'antd';
 import { ipcRenderer } from 'electron';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useEffect } from 'react';
 import { useModalVisible } from '../../utils/hooks';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { Typography } from 'antd';
-import { BackupStatus } from '../../types';
+import { BackupStatus, RestoreProgressEvent } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
+import { Spin } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 
-const { Paragraph } = Typography;
+const { Paragraph, Text } = Typography;
 
 export default function BackupProfile() {
   const {
@@ -23,6 +25,7 @@ export default function BackupProfile() {
   );
 
   const [loading, setLoading] = useState<boolean>(false);
+  const [fetchedStatus, setFetchStatus] = useState(false);
 
   useEffect(() => {
     ipcRenderer.on(IPC_EVENTS.open_backup_modal_from_main, showModal);
@@ -33,7 +36,9 @@ export default function BackupProfile() {
   }, []);
 
   useEffect(() => {
-    updateStatus(sendIpcRequest<BackupStatus>(IPC_EVENTS.backup_status));
+    updateStatus(
+      sendIpcRequest<BackupStatus>(IPC_EVENTS.backup_status)
+    ).finally(() => setFetchStatus(true));
 
     ipcRenderer.on(IPC_EVENTS.backup_status, (_: any, status: BackupStatus) => {
       if (status) setActiveBackup(status);
@@ -42,7 +47,7 @@ export default function BackupProfile() {
 
   const updateStatus = useCallback(
     (peddingRequest: Promise<BackupStatus | null>) => {
-      peddingRequest.then((status) => {
+      return peddingRequest.then((status) => {
         if (status) setActiveBackup(status);
       });
     },
@@ -98,7 +103,13 @@ export default function BackupProfile() {
             key={1}
             loading={loading}
             type="primary"
-            onClick={activeBackup ? handleBackupStatus : handleLogin}
+            onClick={
+              activeBackup
+                ? handleBackupStatus
+                : fetchedStatus
+                ? handleLogin
+                : undefined
+            }
           >
             {activeBackup
               ? activeBackup.active
@@ -125,6 +136,57 @@ const ActiveBackup = ({
 }: {
   activeBackup: BackupStatus;
 }) => {
+  const [restoreProgress, setRestoreProgress] = useState<
+    RestoreProgressEvent
+  >();
+
+  useEffect(() => {
+    ipcRenderer.on(
+      IPC_EVENTS.backup_progression,
+      (_: any, data: RestoreProgressEvent) => setRestoreProgress(data)
+    );
+  }, []);
+
+  const restoreContentType = useMemo(() => {
+    if (!restoreProgress) return null;
+    const {
+      progression: { proceed, total },
+    } = restoreProgress;
+    return {
+      start: <Text>Début de la récupération des données</Text>,
+      complete: (
+        <Text type="success">Vos données ont été restaurées avec succès</Text>
+      ),
+      error: (
+        <Text type="danger">
+          Une erreur s'est produite lors de la restauration, veuillez réessayer
+          plus tard
+        </Text>
+      ),
+      prepare: <Text>Préparation de la restauration des données</Text>,
+      progress: (
+        <Text>
+          <Space>
+            <span>{restoreProgress.type}: </span>
+            <div style={{ width: 170 }}>
+              <Progress percent={(proceed * 100) / total} size="small" />
+            </div>
+          </Space>
+        </Text>
+      ),
+    } as { [x: string]: JSX.Element };
+  }, [restoreProgress]);
+
+  const restoreContent = useMemo(() => {
+    if (!restoreContentType || !restoreProgress) return null;
+    for (const key in restoreContentType) {
+      if (restoreProgress.type.includes(key)) {
+        return restoreContentType[key];
+      }
+    }
+    return null;
+  }, [restoreContentType]);
+
   return (
     <Typography>
       <Paragraph>Email: {status.email}</Paragraph>
@@ -132,6 +194,19 @@ const ActiveBackup = ({
       <Paragraph>
         Dernière mise à jour: {status.lastUpdate.toLocaleTimeString('fr')}
       </Paragraph>
+      {restoreContent && (
+        <Paragraph>
+          <Space direction="vertical">
+            <Space direction="horizontal">
+              <Text strong>Restauration</Text>
+              <Spin
+                indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />}
+              />
+            </Space>
+            {restoreContent}
+          </Space>
+        </Paragraph>
+      )}
     </Typography>
   );
 };
