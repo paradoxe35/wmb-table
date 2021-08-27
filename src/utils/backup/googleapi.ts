@@ -25,7 +25,7 @@ export let lastCode: string | null = null;
  */
 async function authorize(
   credentials: any,
-  readOnly: boolean = false
+  login: boolean = false
 ): Promise<OAuth2Client | null> {
   const { client_secret, client_id, redirect_uris } = credentials.installed;
 
@@ -41,7 +41,7 @@ async function authorize(
     const token = await readFile(TOKEN_PATH);
     oAuth2Client.setCredentials(JSON.parse(token.toString('utf-8')));
   } catch (error) {
-    oAuth2Client = readOnly ? null : await getAccessToken(oAuth2Client, server);
+    oAuth2Client = login ? await getAccessToken(oAuth2Client, server) : null;
   }
 
   server.server.close();
@@ -120,13 +120,13 @@ function storeClientToken(
 }
 
 export default async function googleOAuth2(
-  readOnly: boolean = false
+  login: boolean = false
 ): Promise<OAuth2Client | null> {
   try {
     const content = await readFile(
       getAssetCredentialsPath('google-drive-credentials.json')
     );
-    return await authorize(JSON.parse(content.toString('utf-8')), readOnly);
+    return await authorize(JSON.parse(content.toString('utf-8')), login);
   } catch (error) {
     console.log('Error loading client secret file:', error);
   }

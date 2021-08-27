@@ -214,7 +214,7 @@ export async function initBackupAndRestoration(
 export function resumeRestoration(_status: BackupStatus) {
   isOnline().then((online: boolean) => {
     if (online) {
-      googleOAuth2(true).then((oAuth2Client) => {
+      googleOAuth2().then((oAuth2Client) => {
         if (oAuth2Client) {
           RestoreHanlder.setOAuth2Client(oAuth2Client);
           RestoreHanlder.handle();
