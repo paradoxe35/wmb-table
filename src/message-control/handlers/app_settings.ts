@@ -1,17 +1,18 @@
 import { AppSettingsStatus } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
 
-// let config: AppSettingsStatus | undefined;
+export async function app_settings() {
+  return await queryDb.findOne<AppSettingsStatus | null>(db.configurations);
+}
 
 export async function initialized_app() {
-  const settings = await queryDb.find<AppSettingsStatus>(db.configurations);
-  // if (settings[0]) config = settings[0];
+  const settings = await app_settings();
 
-  if (settings.length === 0 || !settings[0].initialized) {
-    if (settings[0]) {
+  if (!settings || !settings.initialized) {
+    if (settings) {
       await queryDb.update(
         db.configurations,
-        { _id: settings[0]._id },
+        { _id: settings._id },
         { $set: { initialized: true } }
       );
     } else {
