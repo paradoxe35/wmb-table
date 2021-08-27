@@ -34,14 +34,14 @@ const pendingDb = {
 // used to collect all loaded databases that will be backuped
 export const loadedDb = {
   dbs: [] as string[],
-  dbFiles: {} as { [x: string]: string },
+  dbFilenames: {} as { [x: string]: string },
   syncedRefsDb: [] as string[],
   loadDb(database: Datastore<any> & { filename?: string }) {
     const filename = getFilename(database.filename as string);
     if (excludedDbFilesRegex.test(filename) || this.dbs.includes(filename))
       return;
     this.dbs.push(filename);
-    this.dbFiles[filename] = database.filename as string;
+    this.dbFilenames[filename] = database.filename as string;
     eventEmiter.emit(loadedDbEventName, filename);
   },
 };
@@ -78,7 +78,8 @@ const syncDbLinesAsBackupRef = async (
   lines?: number
 ): Promise<number> => {
   const ref = await getDbReference(filename);
-  const fileLines = lines || (await countFileLines(loadedDb.dbFiles[filename]));
+  const fileLines =
+    lines || (await countFileLines(loadedDb.dbFilenames[filename]));
   if (ref) {
     await queryDb.update(
       db.backupDbReferences,
@@ -126,7 +127,7 @@ const performUniqueBackup = async (filename: string) => {
   const ref = await getDbReference(filename);
   if (!ref) return;
   const rangeLines = await readRangeLinesInFile(
-    loadedDb.dbFiles[filename],
+    loadedDb.dbFilenames[filename],
     +ref.lines
   );
   if (rangeLines.length === 0) return;
