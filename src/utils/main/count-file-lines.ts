@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { promisify } from 'util';
 const lazy = require('lazy');
 
 export function countFileLines(filePath: string): Promise<number> {
@@ -52,4 +53,25 @@ export function readRangeLinesInFile(
     stream.on('end', () => resolve(lines));
     stream.on('error', reject);
   });
+}
+
+export async function checkForFile(
+  fileName: string,
+  callback?: (fileName: string) => any
+) {
+  const exists = promisify(fs.exists);
+  const openFile = promisify(fs.open);
+
+  const found = await exists(fileName);
+  if (!found) {
+    let dir = fileName.split(/[\/\\]/);
+    let newDir = dir.slice(0, dir.length - 1).join('/');
+    if (!fs.existsSync(newDir)) {
+      fs.mkdirSync(newDir, {
+        recursive: true,
+      });
+    }
+    await openFile(fileName, 'w');
+  }
+  if (callback) await callback(fileName);
 }

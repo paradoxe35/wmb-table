@@ -188,6 +188,13 @@ export const kebabize = (str: string) => {
     .join('');
 };
 
+export const camelCase = (str: string) => {
+  return str
+    .split(/[-_]/)
+    .map((s, i) => (i === 0 ? s : capitalizeFirstLetter(s)))
+    .join('');
+};
+
 export const getFilename = (path: string): string => {
   const splitted = path.split(/[\/\\]/);
   return splitted[splitted.length - 1];

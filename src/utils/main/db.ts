@@ -6,8 +6,11 @@ import {
   getAssetDocumentsDbPath,
 } from '../../sys';
 import { loadedDb } from '../backup/backup';
+import { getFilename } from '../functions';
 
 interface Db {
+  [name: string]: Datastore | undefined;
+
   configurations?: Datastore;
   history?: Datastore;
   historyItem?: Datastore;
@@ -31,6 +34,14 @@ interface Db {
 
 const db: Db = {};
 const databases: Datastore<any>[] = [];
+
+export const getDatastoreFileName = (
+  datastore: (Datastore<any> & { filename?: string }) | undefined
+) => {
+  if (!datastore || !datastore.filename) return null;
+  const filename = getFilename(datastore.filename);
+  return filename.split('.db')[0];
+};
 
 export const loadDatabase = function (database: Datastore<any> | undefined) {
   if (database && !databases.includes(database)) {

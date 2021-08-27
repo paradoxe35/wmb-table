@@ -115,7 +115,7 @@ export interface BackupStatus {
   email: string;
   name: string;
   active: boolean;
-  restaured: boolean;
+  restored: boolean;
   lastUpdate: Date;
 }
 
