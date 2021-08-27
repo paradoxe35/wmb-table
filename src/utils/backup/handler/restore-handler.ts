@@ -42,7 +42,7 @@ export class RestoreHanlder extends DriveHandler {
    * filepath where to save the latest proceed file
    * @property
    */
-  private static PATH_PROCCED_FILE: string = getAssetBackupPath(
+  private static PATH_PROCEED_FILE: string = getAssetBackupPath(
     'proceed-file.json'
   );
 
@@ -53,13 +53,19 @@ export class RestoreHanlder extends DriveHandler {
   private static continueRestore: boolean = false;
 
   /**
+   * Complete key, used as key event after restoration
+   * @property
+   */
+  private static COMPLETE: 'complete' = 'complete';
+
+  /**
    * Top level method to start restoration
    */
   static async handle() {
     this.commitBackupProgress('start', 0, 0);
 
     this.lastProceedFile = await this.getLastProceedFile();
-    if (this.lastProceedFile === 'complete') return;
+    if (this.lastProceedFile === this.COMPLETE) return;
 
     setDataRestoring(true);
 
@@ -97,8 +103,8 @@ export class RestoreHanlder extends DriveHandler {
             this.commitBackupProgress('error', 0, 0);
             console.log('Error on fetched files restore', err);
           } else {
-            this.commitBackupProgress('complete', 0, 0);
-            this.makeProceedFile('complete');
+            this.commitBackupProgress(this.COMPLETE, 0, 0);
+            this.makeProceedFile(this.COMPLETE);
             confirmRestoration();
           }
           setDataRestoring(false);
@@ -114,7 +120,7 @@ export class RestoreHanlder extends DriveHandler {
    */
   private static async makeProceedFile(id: string | null) {
     await fsPromises.writeFile(
-      this.PATH_PROCCED_FILE,
+      this.PATH_PROCEED_FILE,
       JSON.stringify({ proceedFile: id })
     );
   }
@@ -123,8 +129,8 @@ export class RestoreHanlder extends DriveHandler {
    * get the latest proceed file
    */
   private static async getLastProceedFile(): Promise<string | null> {
-    if (!fs.existsSync(this.PATH_PROCCED_FILE)) return null;
-    const data = await fsPromises.readFile(this.PATH_PROCCED_FILE, {
+    if (!fs.existsSync(this.PATH_PROCEED_FILE)) return null;
+    const data = await fsPromises.readFile(this.PATH_PROCEED_FILE, {
       encoding: 'utf-8',
     });
     try {
@@ -141,7 +147,7 @@ export class RestoreHanlder extends DriveHandler {
    * @param files
    */
   private static proceedFiles(files: drive_v3.Schema$File[]) {
-    return new Promise<any>((resolve) => {
+    return new Promise<any>((resolve, reject) => {
       const newFiles = files.slice();
 
       const proceed = async (next: Function) => {
@@ -163,15 +169,19 @@ export class RestoreHanlder extends DriveHandler {
           files.length
         );
         if (file) {
-          await this.restoreFile(file);
-          await this.makeProceedFile(file.id || null);
+          try {
+            await this.restoreFile(file);
+            await this.makeProceedFile(file.id || null);
+            next();
+          } catch (error) {
+            next(error);
+          }
         }
-        next();
       };
       whilst(
         asyncify(() => newFiles.length !== 0),
         (next) => proceed(next),
-        (_err) => resolve(_err)
+        (_err) => (_err ? reject(_err) : resolve(null))
       );
     });
   }
@@ -198,22 +208,18 @@ export class RestoreHanlder extends DriveHandler {
     file: drive_v3.Schema$File,
     parentFile: ParentFolder
   ) {
-    const drive = await this.drive();
-    try {
-      const { data } = await drive.files.get(
-        {
-          fileId: file.id,
-          alt: 'media',
-        },
-        { responseType: 'json' }
-      );
-      await queryDb.insert(database, data);
-      // handle custom document restaure
-      if (getDatastoreFileName(db.customDocuments) === parentFile.name) {
-        await this.handleCustomDocument(data as any);
-      }
-    } catch (error) {
-      console.error('Error parsing exported file from drive: ', error);
+    const drive = this.drive();
+    const { data } = await drive.files.get(
+      {
+        fileId: file.id,
+        alt: 'media',
+      },
+      { responseType: 'json' }
+    );
+    await queryDb.insert(database, data);
+    // handle custom document restaure
+    if (getDatastoreFileName(db.customDocuments) === parentFile.name) {
+      await this.handleCustomDocument(data as any);
     }
   }
 
