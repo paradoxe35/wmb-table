@@ -47,6 +47,7 @@ export const IPC_EVENTS = {
   backup_login: 'backup_login',
   // events from main process
   open_modal_document_from_main: 'open_modal_document_from_main',
+  backup_progression: 'backup_progression',
   open_backup_modal_from_main: 'open_backup_modal_from_main',
   toggle_sidebar: 'toggle_sidebar',
   switch_on_menu: 'switch_on_menu',

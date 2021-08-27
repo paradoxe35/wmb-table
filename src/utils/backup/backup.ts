@@ -9,7 +9,7 @@ import { EventEmitter } from 'events';
 import Datastore from 'nedb';
 import db, { queryDb } from '../main/db';
 import { BackupDbReference } from '../../types';
-import { BackupHandler, RestaureHanlder } from './backup-handler';
+import { BackupHandler, RestoreHanlder } from './backup-handler';
 const watch = require('node-watch');
 
 const eventEmiter = new EventEmitter({ captureRejections: true });
@@ -202,5 +202,5 @@ export function initBackupAndRestoration(
   oAuth2Client: import('google-auth-library').OAuth2Client
 ) {
   BackupHandler.setOAuth2Client(oAuth2Client);
-  RestaureHanlder.setOAuth2Client(oAuth2Client);
+  RestoreHanlder.setOAuth2Client(oAuth2Client);
 }
