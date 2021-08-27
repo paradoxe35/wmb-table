@@ -97,8 +97,9 @@ export class RestoreHanlder extends DriveHandler {
   }
 
   private static proceedFiles(files: drive_v3.Schema$File[]) {
-    const newFiles = files.slice();
     return new Promise<any>((resolve) => {
+      const newFiles = files.slice();
+
       const proceed = async (next: Function) => {
         const file = newFiles.shift();
         // this condition will check the last file id proceed with error or where the loop beacked
