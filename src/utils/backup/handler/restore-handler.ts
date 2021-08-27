@@ -10,7 +10,7 @@ import fsPromises from 'fs/promises';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
-import { commitBackupProgress, setDataRestoring } from '../constants';
+import { commitRestoreProgress, setDataRestoring } from '../constants';
 import { asyncify, doWhilst, whilst } from '../../async';
 
 export class RestoreHandler extends DriveHandler {
