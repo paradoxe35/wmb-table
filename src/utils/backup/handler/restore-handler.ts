@@ -19,6 +19,7 @@ import fsPromises from 'fs/promises';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
+import { setDataRestoring } from '../constans';
 
 const doWhilst = require('async/doWhilst') as typeof import('async').doWhilst;
 const whilst = require('async/whilst') as typeof import('async').whilst;
@@ -62,6 +63,8 @@ export class RestoreHanlder extends DriveHandler {
     this.lastProceedFile = await this.getLastProceedFile();
     if (this.lastProceedFile === 'complete') return;
 
+    setDataRestoring(true);
+
     // callback function to doWhilst for handling files
     const fetchFiles = async (
       next: (err?: Error | null | undefined, ...results: unknown[]) => void
@@ -97,6 +100,7 @@ export class RestoreHanlder extends DriveHandler {
           this.makeProceedFile('complete');
           confirmRestoration();
         }
+        setDataRestoring(false);
       }
     );
   }
