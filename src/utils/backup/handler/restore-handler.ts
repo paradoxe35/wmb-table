@@ -58,51 +58,54 @@ export class RestoreHanlder extends DriveHandler {
   static async handle() {
     this.commitBackupProgress('start', 0, 0);
 
-    let nextToken: undefined | string = undefined;
-
     this.lastProceedFile = await this.getLastProceedFile();
     if (this.lastProceedFile === 'complete') return;
 
     setDataRestoring(true);
 
-    // callback function to doWhilst for handling files
-    const fetchFiles = async (
-      next: (err?: Error | null | undefined, ...results: unknown[]) => void
-    ) => {
-      try {
-        const res = await this.files({
-          q: "mimeType='application/json'",
-          fields: 'nextPageToken, files(id, name, parents)',
-          pageSize: 100,
-          pageToken: nextToken,
-        });
-        nextToken = res.data.nextPageToken;
-        const files = res.data.files;
+    return await new Promise<void>((resolve) => {
+      let nextToken: undefined | string = undefined;
 
-        if (files) await this.proceedFiles(files);
+      // callback function to doWhilst for handling files
+      const fetchFiles = async (
+        next: (err?: Error | null | undefined, ...results: unknown[]) => void
+      ) => {
+        try {
+          const res = await this.files({
+            q: "mimeType='application/json'",
+            fields: 'nextPageToken, files(id, name, parents)',
+            pageSize: 100,
+            pageToken: nextToken,
+          });
+          nextToken = res.data.nextPageToken;
+          const files = res.data.files;
 
-        next(null, nextToken);
-      } catch (error) {
-        next(error);
-      }
-    };
+          if (files) await this.proceedFiles(files);
 
-    // async function to run all required files for restoration
-    doWhilst<any>(
-      (next) => fetchFiles(next),
-      asyncify(() => !!nextToken),
-      (err) => {
-        if (err) {
-          this.commitBackupProgress('error', 0, 0);
-          console.log('Error on fetched files restore', err);
-        } else {
-          this.commitBackupProgress('complete', 0, 0);
-          this.makeProceedFile('complete');
-          confirmRestoration();
+          next(null, nextToken);
+        } catch (error) {
+          next(error);
         }
-        setDataRestoring(false);
-      }
-    );
+      };
+
+      // async function to run all required files for restoration
+      doWhilst<any>(
+        (next) => fetchFiles(next),
+        asyncify(() => !!nextToken),
+        (err) => {
+          if (err) {
+            this.commitBackupProgress('error', 0, 0);
+            console.log('Error on fetched files restore', err);
+          } else {
+            this.commitBackupProgress('complete', 0, 0);
+            this.makeProceedFile('complete');
+            confirmRestoration();
+          }
+          setDataRestoring(false);
+          resolve();
+        }
+      );
+    });
   }
 
   /**

@@ -208,7 +208,7 @@ export async function initBackupAndRestoration(
 ) {
   DriveHandler.setOAuth2Client(oAuth2Client);
   // BackupHandler.setOAuth2Client(oAuth2Client);
-  // RestoreHanlder.setOAuth2Client(oAuth2Client);
+  // await RestoreHanlder.handle();
 }
 
 export function resumeRestoration(_status: BackupStatus) {
