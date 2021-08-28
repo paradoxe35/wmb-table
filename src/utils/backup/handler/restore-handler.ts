@@ -41,12 +41,6 @@ export class RestoreHandler extends DriveHandler {
   private static continueRestore: boolean = false;
 
   /**
-   * Complete key, used as key event after restoration
-   * @property
-   */
-  private static COMPLETE: 'complete' = 'complete';
-
-  /**
    * Top level method to start restoration
    */
   static async handle() {

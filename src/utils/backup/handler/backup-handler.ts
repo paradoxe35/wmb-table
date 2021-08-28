@@ -61,8 +61,10 @@ export class BackupHandler extends DriveHandler {
         (_err) => {
           if (_err) {
             reject(_err);
+            commitRestoreProgress('error', 0, 0);
           } else {
             resolve();
+            commitRestoreProgress(this.COMPLETE, 0, 0);
           }
           setDataBackingUpPending(false);
         }
@@ -105,6 +107,10 @@ export class BackupHandler extends DriveHandler {
     );
   }
 
+  static get spacesToParent() {
+    return this.STORAGE_SPACE !== 'drive' ? [this.STORAGE_SPACE] : undefined;
+  }
+
   static async getDriveFolderId(name: string): Promise<string> {
     let id = await this.getFromDriveId(
       name,
@@ -112,17 +118,20 @@ export class BackupHandler extends DriveHandler {
     );
     if (id) return id;
     const drive = this.drive();
-    const res = await drive.files.create({
+
+    const { data } = await drive.files.create({
       fields: 'id',
       requestBody: {
         name,
-        spaces: [this.STORAGE_SPACE],
+        parents: this.spacesToParent,
         mimeType: this.FOLDER_MIME_TYPE,
       },
     });
-    id = res.data.id as string;
+
+    id = data.id as string;
     this.setFileId(name, id);
-    return res.data.id as string;
+
+    return data.id as string;
   }
 
   static async handleUpload(
@@ -148,7 +157,6 @@ export class BackupHandler extends DriveHandler {
       }
       return;
     }
-    console.log('dataJson', dataJson);
 
     const body:
       | drive_v3.Params$Resource$Files$Update
@@ -156,7 +164,6 @@ export class BackupHandler extends DriveHandler {
       requestBody: {
         mimeType: this.MAIN_FILE_MIME_TYPE,
         name: dataId + this.MAIN_FILE_EXTENSION,
-        spaces: [this.STORAGE_SPACE],
       },
       fields: 'id',
       media: {
@@ -199,7 +206,7 @@ export class BackupHandler extends DriveHandler {
       requestBody: {
         mimeType: 'text/html',
         name: filename,
-        spaces: [this.STORAGE_SPACE],
+        parents: this.spacesToParent,
       },
       fields: 'id',
       media: {

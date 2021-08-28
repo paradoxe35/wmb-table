@@ -12,7 +12,8 @@ export class DriveHandler {
 
   private static driveInstance?: drive_v3.Drive;
 
-  protected static STORAGE_SPACE: 'appDataFolder' = 'appDataFolder';
+  protected static STORAGE_SPACE: 'drive' | 'appDataFolder' | 'photos' =
+    'appDataFolder';
 
   protected static FOLDER_MIME_TYPE: 'application/vnd.google-apps.folder' =
     'application/vnd.google-apps.folder';
@@ -22,6 +23,12 @@ export class DriveHandler {
   protected static MAIN_FILE_MIME_TYPE: 'application/json' = 'application/json';
 
   private static filesIds = {} as { [name: string]: string | undefined };
+
+  /**
+   * Complete key, used as key event after restoration
+   * @property
+   */
+  protected static COMPLETE: 'complete' = 'complete';
 
   private static parentFolders = {} as {
     [id: string]: ParentFolder | undefined;
