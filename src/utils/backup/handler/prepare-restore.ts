@@ -1,4 +1,3 @@
-import fs from 'fs/promises';
 import { getAssetBackupPendingPath, getAssetDbPath } from '../../../sys';
 import { asyncify, whilst } from '../../async';
 import Datastore from 'nedb';
@@ -7,12 +6,16 @@ import db, { getDatastoreFileName, queryDb } from '../../main/db';
 import { commitRestoreProgress, EXCLUDE_DB_FILES_REGEX } from '../constants';
 import { CustomDocument, PendingDatastore } from '../../../types';
 import { DB_EXTENSION } from '../../constants';
+import fs from 'fs';
+import { promisify } from 'util';
 
 export class PrepareRestore {
   static async handle() {
     commitRestoreProgress('prepare', 0, 0);
 
-    const files = await fs.readdir(getAssetDbPath());
+    const readdir = promisify(fs.readdir);
+
+    const files = await readdir(getAssetDbPath());
 
     return await new Promise<void>((resolve, reject) => {
       const newFiles = files.slice();

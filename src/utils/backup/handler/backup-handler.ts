@@ -1,5 +1,4 @@
 import { DriveHandler } from './drive-handler';
-import fsPromises from 'fs/promises';
 import fs from 'fs';
 import { getAssetBackupPendingPath, getAssetDocumentsPath } from '../../../sys';
 import { commitRestoreProgress, setDataBackingUpPending } from '../constants';
@@ -11,12 +10,14 @@ import { CustomDocument, PendingDatastore } from '../../../types';
 import { DB_EXTENSION } from '../../constants';
 import { Readable } from 'stream';
 import { drive_v3 } from 'googleapis';
+import { promisify } from 'util';
 export class BackupHandler extends DriveHandler {
   static async handlePending() {
     const dir = getAssetBackupPendingPath();
     if (!fs.existsSync(dir)) return;
+    const readdir = promisify(fs.readdir);
 
-    const files = await fsPromises.readdir(dir);
+    const files = await readdir(dir);
     setDataBackingUpPending(true);
     commitRestoreProgress('sauvegarde', 0, 100);
 
@@ -57,7 +58,14 @@ export class BackupHandler extends DriveHandler {
       whilst(
         asyncify(() => newFiles.length !== 0),
         asyncify(proceed),
-        (_err) => (_err ? reject(_err) : resolve())
+        (_err) => {
+          if (_err) {
+            reject(_err);
+          } else {
+            resolve();
+          }
+          setDataBackingUpPending(false);
+        }
       );
     });
   }
@@ -140,6 +148,7 @@ export class BackupHandler extends DriveHandler {
       }
       return;
     }
+    console.log('dataJson', dataJson);
 
     const body:
       | drive_v3.Params$Resource$Files$Update
