@@ -209,9 +209,13 @@ const ActiveBackup = ({
                   : 'Restauration'}{' '}
                 de données
               </Text>
-              <Spin
-                indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />}
-              />
+              {['start', 'prepare', 'progress', 'sauvegarde'].some((type) =>
+                restoreProgress.type.includes(type)
+              ) && (
+                <Spin
+                  indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />}
+                />
+              )}
             </Space>
             {restoreContent}
           </Space>
