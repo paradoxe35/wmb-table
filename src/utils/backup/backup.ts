@@ -7,7 +7,7 @@ import { debounce, getFilename } from '../functions';
 import { countFileLines, readRangeLinesInFile } from '../main/count-file-lines';
 import { EventEmitter } from 'events';
 import Datastore from 'nedb';
-import db, { queryDb } from '../main/db';
+import db, { getDatastoreFileName, queryDb } from '../main/db';
 import { BackupDbReference, BackupStatus, PendingDatastore } from '../../types';
 import { BackupHandler } from './handler/backup-handler';
 import { RestoreHandler } from './handler/restore-handler';
@@ -30,7 +30,7 @@ const eventEmiter = new EventEmitter({ captureRejections: true });
 // event name used to emit event with filename database
 const LOADED_DB_EVENT_NAME = 'loadedDb';
 
-const TIMEOUT = 5000;
+const TIMEOUT = 3000;
 
 // directories to watch in
 export const WATCHED_DIRS = [getAssetDocumentsDbPath(), getAssetDbPath()];
@@ -39,6 +39,34 @@ export const WATCHED_DIRS = [getAssetDocumentsDbPath(), getAssetDbPath()];
 const pendingDb = {
   dbs: {} as { [x: string]: Datastore<PendingDatastore> },
 };
+
+export class PendingDatasUnloadDb {
+  static datas: {
+    [filename: string]:
+      | { [id: string]: { deleted: boolean; data: any } }
+      | undefined;
+  } = {};
+
+  static putDataPending(
+    action: 'insertOrUpdate' | 'remove',
+    database: Datastore,
+    data: any
+  ) {
+    const filename = getDatastoreFileName(database) as string;
+    if (!this.datas[filename]) {
+      this.datas[filename] = {};
+    }
+    (this.datas[filename] as any)[data._id] = {
+      data: data,
+      deleted: action === 'remove',
+    };
+  }
+
+  static hasBeenSyncedDb(database: Datastore): boolean {
+    const filename = getDatastoreFileName(database);
+    return loadedDb.syncedRefsDb.includes(filename as string);
+  }
+}
 
 // used to collect all loaded databases that will be backuped
 export const loadedDb = {
@@ -105,15 +133,44 @@ type RangedLines = {
   [id: string]: { deleted: boolean; _id: string; data?: any };
 };
 /**
- * range to grounped data with action
+ * range to grounped data with action and merge pending data unload db
  *
- * @param range ;
+ * @param range
+ * @param filename
  * @returns
  */
-const groupChangedLinesByAction = (range: string[]) => {
+const groupChangedLinesByAction = (range: string[], filename: string) => {
+  const pendingDatas = PendingDatasUnloadDb.datas[filename];
+
+  type DbColumn = { [n: string]: any; _id: string };
+
+  if (pendingDatas) {
+    const rangeIds = range
+      .map((dataStr) => {
+        try {
+          return JSON.parse(dataStr);
+        } catch (_) {}
+        return null;
+      })
+      .filter(Boolean)
+      .map((d) => d._id) as string[];
+
+    for (const _id in pendingDatas) {
+      if (!rangeIds.includes(_id)) {
+        const pending = pendingDatas[_id];
+        range.push(
+          JSON.stringify(
+            pending.deleted ? { $$deleted: true, _id } : pending.data
+          )
+        );
+      }
+    }
+    PendingDatasUnloadDb.datas[filename] = undefined;
+  }
+
   return range.reduce((acc, current) => {
     try {
-      const json = JSON.parse(current) as { [n: string]: any; _id: string };
+      const json = JSON.parse(current) as DbColumn;
       const keys = Object.keys(json);
       const deleted = keys.includes('$$deleted');
       acc[json._id] = {
@@ -185,9 +242,13 @@ const performUniqueBackup = async (filename: string) => {
     loadedDb.dbFilenames[filename],
     +ref.lines
   );
-  if (rangeLines.length === 0) return;
-  const grouped = groupChangedLinesByAction(rangeLines);
+
+  const grouped = groupChangedLinesByAction(rangeLines, filename);
+  if (Object.keys(grouped).length === 0) return;
+
   const oAuth2Client = OAUTH2_CLIENT || (await googleOAuth2());
+  console.log(grouped);
+
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
   if (DATA_BACKINGUP_PENDING || !(await isOnline()) || !oAuth2Client) {
     putInPending(grouped, filename);
@@ -210,13 +271,18 @@ const syncedFirstDbReferences = async (filename: string) => {
     loadedDb.dbs.includes(filename)
   ) {
     await syncDbLinesAsBackupRef(filename);
+
     loadedDb.syncedRefsDb.push(filename);
+
     // init pending database per watched db
     pendingDb.dbs[filename] = new Datastore({
       filename: getAssetBackupPendingPath(filename),
       autoload: false,
     });
-    return false;
+
+    const hasPending = PendingDatasUnloadDb.datas[filename];
+
+    return hasPending && Object.keys(hasPending).length > 0;
   }
   return true;
 };

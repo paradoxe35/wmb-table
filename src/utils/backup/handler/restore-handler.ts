@@ -62,6 +62,7 @@ export class RestoreHandler extends DriveHandler {
         });
         nextToken = res.data.nextPageToken;
         const files = res.data.files;
+        this.progress++;
 
         if (files) await this.proceedFiles(files);
       };
@@ -128,6 +129,8 @@ export class RestoreHandler extends DriveHandler {
     return new Promise<any>((resolve, reject) => {
       const newFiles = files.slice();
 
+      commitRestoreProgress(`progress-${this.progress}`, 0, files.length);
+
       const proceed = async () => {
         const file = newFiles.shift();
         // this condition will check the last file id proceed with error or where the loop beacked
@@ -140,10 +143,9 @@ export class RestoreHandler extends DriveHandler {
         }
 
         this.continueRestore = true;
-        this.progress++;
         commitRestoreProgress(
           `progress-${this.progress}`,
-          newFiles.length,
+          files.length - newFiles.length,
           files.length
         );
         if (file) {

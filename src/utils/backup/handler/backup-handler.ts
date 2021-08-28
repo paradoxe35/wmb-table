@@ -19,7 +19,8 @@ export class BackupHandler extends DriveHandler {
 
     const files = await readdir(dir);
     setDataBackingUpPending(true);
-    commitRestoreProgress('sauvegarde', 0, 100);
+
+    commitRestoreProgress('sauvegarde', 0, files.length);
 
     return await new Promise<void>((resolve, reject) => {
       const newFiles = files.slice();
@@ -52,7 +53,11 @@ export class BackupHandler extends DriveHandler {
           await deletePending(pending.dbId);
         }
 
-        commitRestoreProgress('sauvegarde', newFiles.length, files.length);
+        commitRestoreProgress(
+          'sauvegarde',
+          files.length - newFiles.length,
+          files.length
+        );
       };
 
       whilst(

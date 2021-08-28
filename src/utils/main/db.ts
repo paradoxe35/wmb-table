@@ -5,7 +5,7 @@ import {
   getAssetDbPath,
   getAssetDocumentsDbPath,
 } from '../../sys';
-import { loadedDb } from '../backup/backup';
+import { loadedDb, PendingDatasUnloadDb } from '../backup/backup';
 import { DB_EXTENSION } from '../constants';
 import { getFilename } from '../functions';
 
@@ -108,6 +108,7 @@ export const queryDb = {
       }
     };
   },
+
   find<T>(
     database: Datastore | undefined,
     fields = {},
@@ -119,6 +120,7 @@ export const queryDb = {
       database.find(fields, projection, this.promiseResolve(resolve, reject));
     });
   },
+
   count(database: Datastore | undefined, fields = {}): Promise<number> {
     if (!database) return Promise.reject(null);
     loadDatabase(database);
@@ -126,6 +128,7 @@ export const queryDb = {
       database.count(fields, this.promiseResolve(resolve, reject));
     });
   },
+
   findOne<T>(
     database: Datastore | undefined,
     fields = {},
@@ -141,41 +144,79 @@ export const queryDb = {
       );
     });
   },
-  insert<T>(database: Datastore | undefined, datas: any): Promise<T> {
+
+  async insert<T>(database: Datastore | undefined, datas: any): Promise<T> {
     if (!database) return Promise.reject(null);
     loadDatabase(database);
-    return new Promise((resolve, reject) => {
+    //
+    let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
+
+    const data = await new Promise<T>((resolve, reject) => {
       database.insert(datas, this.promiseResolve(resolve, reject));
     });
+
+    canPending &&
+      PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, data);
+
+    return data;
   },
-  remove<T>(
+
+  async remove<T>(
     database: Datastore | undefined,
     query = {},
     options: Datastore.RemoveOptions = {}
   ): Promise<T> {
     if (!database) return Promise.reject(null);
     loadDatabase(database);
-    return new Promise((resolve, reject) => {
+    //
+    let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
+    if (canPending) {
+      this.findOne<T>(database, query).then((data) => {
+        data && PendingDatasUnloadDb.putDataPending('remove', database, data);
+      });
+    }
+
+    return await new Promise<T>((resolve, reject) => {
       database.remove(query, options, this.promiseResolve(resolve, reject));
     });
   },
-  update(
+  async update(
     database: Datastore | undefined,
     query: any,
     updateQuery: any,
     options?: Datastore.UpdateOptions | undefined
   ): Promise<{ numAffected: number }> {
     if (!database) return Promise.reject(null);
+
     loadDatabase(database);
-    return new Promise((resolve, reject) => {
-      database.update(query, updateQuery, options || {}, (err, numAffected) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({ numAffected });
-        }
+
+    let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
+
+    const updated = await new Promise<{ numAffected: number }>(
+      (resolve, reject) => {
+        database.update(
+          query,
+          updateQuery,
+          options || {},
+          (err, numAffected) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve({ numAffected });
+            }
+          }
+        );
+      }
+    );
+
+    if (canPending) {
+      this.findOne(database, query).then((data) => {
+        data &&
+          PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, data);
       });
-    });
+    }
+
+    return updated;
   },
 };
 
