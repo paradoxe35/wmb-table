@@ -35,7 +35,7 @@ const TIMEOUT = 5000;
 // directories to watch in
 export const WATCHED_DIRS = [getAssetDocumentsDbPath(), getAssetDbPath()];
 
-// collect unique database to be used to saved his pedding datas
+// collect unique database to be used to saved his pending datas
 const pendingDb = {
   dbs: {} as { [x: string]: Datastore<PendingDatastore> },
 };
@@ -211,7 +211,7 @@ const syncedFirstDbReferences = async (filename: string) => {
   ) {
     await syncDbLinesAsBackupRef(filename);
     loadedDb.syncedRefsDb.push(filename);
-    // init pedding database per watched db
+    // init pending database per watched db
     pendingDb.dbs[filename] = new Datastore({
       filename: getAssetBackupPendingPath(filename),
       autoload: false,

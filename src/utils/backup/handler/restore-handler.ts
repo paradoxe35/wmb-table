@@ -6,12 +6,12 @@ import Datastore from 'nedb';
 import { CustomDocument } from '../../../types';
 import { Stream } from 'stream';
 import { checkForFile } from '../../main/count-file-lines';
-import fsPromises from 'fs/promises';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
 import { commitRestoreProgress } from '../constants';
 import { asyncify, doWhilst, whilst } from '../../async';
+import { promisify } from 'util';
 
 export class RestoreHandler extends DriveHandler {
   /**
@@ -101,7 +101,8 @@ export class RestoreHandler extends DriveHandler {
    * @param id file id
    */
   private static async makeProceedFile(id: string | null) {
-    await fsPromises.writeFile(
+    const writeFile = promisify(fs.writeFile);
+    await writeFile(
       this.PATH_PROCEED_FILE,
       JSON.stringify({ proceedFile: id })
     );
@@ -112,7 +113,8 @@ export class RestoreHandler extends DriveHandler {
    */
   private static async getLastProceedFile(): Promise<string | null> {
     if (!fs.existsSync(this.PATH_PROCEED_FILE)) return null;
-    const data = await fsPromises.readFile(this.PATH_PROCEED_FILE, {
+    const readFile = promisify(fs.readFile);
+    const data = await readFile(this.PATH_PROCEED_FILE, {
       encoding: 'utf-8',
     });
     try {

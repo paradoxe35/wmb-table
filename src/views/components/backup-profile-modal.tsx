@@ -46,8 +46,8 @@ export default function BackupProfile() {
   }, []);
 
   const updateStatus = useCallback(
-    (peddingRequest: Promise<BackupStatus | null>) => {
-      return peddingRequest.then((status) => {
+    (pendingRequest: Promise<BackupStatus | null>) => {
+      return pendingRequest.then((status) => {
         if (status) setActiveBackup(status);
       });
     },
@@ -68,7 +68,7 @@ export default function BackupProfile() {
           break;
       }
     };
-    const pedding = sendIpcRequest<any>(IPC_EVENTS.backup_login)
+    const pending = sendIpcRequest<any>(IPC_EVENTS.backup_login)
       .then((res: BackupStatus & { error: string }) => {
         if (res.error) {
           showError(res.error);
@@ -77,7 +77,7 @@ export default function BackupProfile() {
         return res;
       })
       .finally(() => setLoading(false));
-    updateStatus(pedding as Promise<BackupStatus>);
+    updateStatus(pending as Promise<BackupStatus>);
   }, []);
 
   const handleBackupStatus = useCallback(() => {
@@ -157,7 +157,10 @@ const ActiveBackup = ({
         <Space>
           <span>{restoreProgress.type}: </span>
           <div style={{ width: 170 }}>
-            <Progress percent={(proceed * 100) / total} size="small" />
+            <Progress
+              percent={parseInt(((proceed * 100) / total).toFixed(2), 10)}
+              size="small"
+            />
           </div>
         </Space>
       </Text>

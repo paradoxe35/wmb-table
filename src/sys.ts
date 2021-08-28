@@ -26,7 +26,7 @@ export const getAssetBackupPath = (...paths: string[]): string => {
 };
 
 export const getAssetBackupPendingPath = (...paths: string[]): string => {
-  return getAssetPath('datas/backup/pedding', ...paths);
+  return getAssetPath('datas/backup/pending', ...paths);
 };
 
 export const getAssetDbPath = (...paths: string[]): string => {
