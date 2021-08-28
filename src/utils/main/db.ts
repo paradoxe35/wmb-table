@@ -6,6 +6,7 @@ import {
   getAssetDocumentsDbPath,
 } from '../../sys';
 import { loadedDb } from '../backup/backup';
+import { DB_EXTENSION } from '../constants';
 import { getFilename } from '../functions';
 
 interface Db {
@@ -41,7 +42,7 @@ export const getDatastoreFileName = (
 ) => {
   if (!datastore || !datastore.filename) return null;
   const filename = getFilename(datastore.filename);
-  return extension ? filename : filename.split('.db')[0];
+  return extension ? filename : filename.split(DB_EXTENSION)[0];
 };
 
 export const loadDatabase = function (database: Datastore<any> | undefined) {
@@ -54,33 +55,33 @@ export const loadDatabase = function (database: Datastore<any> | undefined) {
 
 const dbStore = (name: string) =>
   new Datastore({
-    filename: getAssetDbPath(`${name}.db`),
+    filename: getAssetDbPath(name + DB_EXTENSION),
     autoload: false,
     timestampData: true,
   });
 
 db.documents = new Datastore({
-  filename: getAssetDocumentsDbPath(`documents.db`),
+  filename: getAssetDocumentsDbPath(`documents${DB_EXTENSION}`),
   autoload: false,
 });
 
 db.documentsTitle = new Datastore({
-  filename: getAssetDocumentsDbPath(`documents-title.db`),
+  filename: getAssetDocumentsDbPath(`documents-title${DB_EXTENSION}`),
   autoload: false,
 });
 
 db.bible = new Datastore({
-  filename: getAssetBiblePath(`bible.db`),
+  filename: getAssetBiblePath(`bible${DB_EXTENSION}`),
   autoload: false,
 });
 
 db.backupDbReferences = new Datastore({
-  filename: getAssetBackupPath(`backup-db-references.db`),
+  filename: getAssetBackupPath(`backup-db-references${DB_EXTENSION}`),
   autoload: false,
 });
 
 db.backupStatus = new Datastore({
-  filename: getAssetBackupPath(`backup-status.db`),
+  filename: getAssetBackupPath(`backup-status${DB_EXTENSION}`),
   autoload: false,
 });
 

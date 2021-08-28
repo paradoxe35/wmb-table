@@ -4,8 +4,9 @@ import { asyncify, whilst } from '../../async';
 import Datastore from 'nedb';
 import { camelCase, getFilename } from '../../functions';
 import db, { getDatastoreFileName, queryDb } from '../../main/db';
-import { commitRestoreProgress, excludedDbFilesRegex } from '../constants';
-import { CustomDocument, PeddingDatastore } from '../../../types';
+import { commitRestoreProgress, EXCLUDE_DB_FILES_REGEX } from '../constants';
+import { CustomDocument, PendingDatastore } from '../../../types';
+import { DB_EXTENSION } from '../../constants';
 
 export class PrepareRestore {
   static async handle() {
@@ -16,30 +17,25 @@ export class PrepareRestore {
     return await new Promise<void>((resolve, reject) => {
       const newFiles = files.slice();
 
-      const proceed = async (next: Function) => {
-        const file = getFilename(newFiles.shift() as string);
-        if (excludedDbFilesRegex.test(file)) return next();
+      const proceed = async () => {
+        const filename = getFilename(newFiles.shift() as string);
+        if (EXCLUDE_DB_FILES_REGEX.test(filename)) return;
 
-        try {
-          const fileDb = camelCase(file.split('.db')[0]);
-          const datastore = db[fileDb];
-          if (datastore) await this.pendingData(datastore, file);
-          next();
-        } catch (error) {
-          next(error);
-        }
+        const fileDb = camelCase(filename.split(DB_EXTENSION)[0]);
+        const datastore = db[fileDb];
+        if (datastore) await this.pendingData(datastore, filename);
       };
 
       whilst(
         asyncify(() => newFiles.length !== 0),
-        (next) => proceed(next),
+        asyncify(proceed),
         (_err) => (_err ? reject(_err) : resolve())
       );
     });
   }
 
   static pendingDatastore(filename: string) {
-    return new Datastore({
+    return new Datastore<PendingDatastore>({
       filename: getAssetBackupPendingPath(filename),
       autoload: true,
     });
@@ -50,7 +46,7 @@ export class PrepareRestore {
 
     const pendingDb = this.pendingDatastore(filename);
 
-    await queryDb.insert<PeddingDatastore>(
+    await queryDb.insert<PendingDatastore>(
       pendingDb,
       ids.map((id) => ({ dbId: id._id }))
     );
@@ -79,7 +75,7 @@ export class PrepareRestore {
         { _id: 1 }
       );
       if (document) {
-        await queryDb.insert<PeddingDatastore>(documentsDb, {
+        await queryDb.insert<PendingDatastore>(documentsDb, {
           dbId: document._id,
         });
       }
@@ -98,7 +94,7 @@ export class PrepareRestore {
         { _id: 1 }
       );
       if (docTitle) {
-        await queryDb.insert<PeddingDatastore>(documentsTitleDb, {
+        await queryDb.insert<PendingDatastore>(documentsTitleDb, {
           dbId: docTitle._id,
         });
       }

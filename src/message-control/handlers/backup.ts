@@ -1,5 +1,6 @@
 import { BackupStatus } from '../../types';
 import {
+  backupPenging,
   initBackupAndRestoration,
   resumeRestoration,
 } from '../../utils/backup/backup';
@@ -9,12 +10,15 @@ import db, { queryDb } from '../../utils/main/db';
 import { app_settings } from './app_settings';
 const isOnline = require('is-online');
 
-export async function backup_status(): Promise<BackupStatus | null> {
+export async function backup_status(
+  onlyStatus: boolean = false
+): Promise<BackupStatus | null> {
   const status = await queryDb.findOne<BackupStatus | null>(db.backupStatus);
-  if (status) {
+  if (status && !onlyStatus) {
     setDataRestored(status.restored);
-    // resume restoration
+    // resume restoration or backup pending data
     !status.restored && resumeRestoration(status);
+    status.restored && backupPenging(status);
   }
   return status;
 }
@@ -60,7 +64,7 @@ export async function handle_backup_login() {
 }
 
 export async function handle_backup_status() {
-  const status = await backup_status();
+  const status = await backup_status(true);
   if (!status) return null;
   status.active = !status.active;
   await queryDb.update(
@@ -72,7 +76,7 @@ export async function handle_backup_status() {
 }
 
 export async function confirmRestoration(restored: boolean = true) {
-  const status = await backup_status();
+  const status = await backup_status(true);
   if (!status) return null;
 
   setDataRestored(restored);

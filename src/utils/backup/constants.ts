@@ -1,17 +1,25 @@
 import { mainWindow } from '../../sys';
 import { RestoreProgressEvent, RestoreProgressEventType } from '../../types';
 import { IPC_EVENTS } from '../ipc-events';
+import { OAuth2Client } from 'google-auth-library';
+import { DB_EXTENSION } from '../constants';
 
 export let DATA_RESTORED: boolean | null = false;
-export let DATA_RESTORING: boolean = false;
+export let DATA_BACKINGUP_PENDING: boolean = false;
+export let OAUTH2_CLIENT: OAuth2Client | null = null;
 
 export const setDataRestored = (value: boolean | null) =>
   (DATA_RESTORED = value);
 
-export const setDataRestoring = (value: boolean) => (DATA_RESTORING = value);
+export const setDataBackingUpPending = (value: boolean) =>
+  (DATA_BACKINGUP_PENDING = value);
 
-// exluded files regex
-export const excludedDbFilesRegex = /(configurations|backup.*)\.db$/;
+export const setOAuth2Client = (client: OAuth2Client | null) =>
+  (OAUTH2_CLIENT = client);
+
+export const EXCLUDE_DB_FILES_REGEX = new RegExp(
+  `(configurations|backup.*)\\${DB_EXTENSION}$`
+);
 
 /**
  * @param type type of event commition
