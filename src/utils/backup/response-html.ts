@@ -11,7 +11,8 @@ export const loggedIn = /*html*/ `
 	<style>
     body {
       box-sizing: border-box;
-      min-height: 100%;
+      min-height: 70vh;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
       color: white;

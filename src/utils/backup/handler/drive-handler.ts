@@ -62,13 +62,21 @@ export class DriveHandler {
       this.driveInstance = google.drive({
         version: 'v3',
         auth: this.oAuth2Client,
+        timeout: 1000 * 30,
+        retry: true,
       });
     }
     return this.driveInstance;
   }
 
-  public static async files(params: drive_v3.Params$Resource$Files$List = {}) {
+  public static async files(
+    params: drive_v3.Params$Resource$Files$List = {},
+    withTrashed: boolean = false
+  ) {
     const drive = this.drive();
+    if (params.q && !withTrashed) {
+      params.q += ' and trashed = false';
+    }
     const files = await drive.files.list({
       ...params,
       spaces: this.STORAGE_SPACE,

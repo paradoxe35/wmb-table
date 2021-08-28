@@ -168,7 +168,11 @@ const ActiveBackup = ({
     return {
       start: <Text>Début de la récupération des données</Text>,
       complete: (
-        <Text type="success">Vos données ont été restaurées avec succès</Text>
+        <Text type="success">
+          Vos données ont été restaurées et sauvegardées avec succès. <br />
+          Veuillez fermer et rouvrir l'application pour afficher les
+          modifications apportées.
+        </Text>
       ),
       error: (
         <Text type="danger">
