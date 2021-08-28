@@ -56,7 +56,7 @@ export async function handle_backup_login() {
     lastUpdate: new Date(),
   };
 
-  await queryDb.insert(db.backupStatus, payload);
+  await queryDb.insert(db.backupStatus, statusBackup);
 
   initBackupAndRestoration(googleAuth);
 

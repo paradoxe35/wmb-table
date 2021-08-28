@@ -32,7 +32,14 @@ export class PrepareRestore {
       whilst(
         asyncify(() => newFiles.length !== 0),
         asyncify(proceed),
-        (_err) => (_err ? reject(_err) : resolve())
+        (_err) => {
+          if (_err) {
+            reject(_err);
+            commitRestoreProgress('error', 0, 0);
+          } else {
+            resolve();
+          }
+        }
       );
     });
   }
