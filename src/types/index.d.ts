@@ -74,9 +74,10 @@ interface SearchItem {
 }
 
 
-export interface PeddingDatastore {
+export interface PendingDatastore {
   _id?: string;
   dbId: string;
+  deleted?: boolean;
 }
 
 
@@ -133,7 +134,8 @@ export type RestoreProgressEventType =
   | 'complete'
   | 'error'
   | 'prepare'
-  | ProgressionType<number>;
+  | 'sauvegarde'
+  | ProgressionType<number>
 
 export interface RestoreProgressEvent {
   type: RestoreProgressEventType;

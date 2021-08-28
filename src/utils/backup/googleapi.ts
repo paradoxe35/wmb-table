@@ -6,6 +6,7 @@ import webServer, { TmpServer } from './webserver';
 import { promisify } from 'util';
 import { loggedIn } from './response-html';
 import { getAssetCredentialsPath } from '../../sys';
+import { setOAuth2Client } from './constants';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
@@ -126,7 +127,12 @@ export default async function googleOAuth2(
     const content = await readFile(
       getAssetCredentialsPath('google-drive-credentials.json')
     );
-    return await authorize(JSON.parse(content.toString('utf-8')), login);
+    const client = await authorize(
+      JSON.parse(content.toString('utf-8')),
+      login
+    );
+    setOAuth2Client(client);
+    return client;
   } catch (error) {
     console.log('Error loading client secret file:', error);
   }

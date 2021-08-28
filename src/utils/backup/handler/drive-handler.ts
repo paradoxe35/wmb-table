@@ -12,7 +12,14 @@ export class DriveHandler {
 
   private static driveInstance?: drive_v3.Drive;
 
-  protected static STORAGE_SPACE: string = 'appDataFolder';
+  protected static STORAGE_SPACE: 'appDataFolder' = 'appDataFolder';
+
+  protected static FOLDER_MIME_TYPE: 'application/vnd.google-apps.folder' =
+    'application/vnd.google-apps.folder';
+
+  protected static MAIN_FILE_EXTENSION: '.json' = '.json';
+
+  protected static MAIN_FILE_MIME_TYPE: 'application/json' = 'application/json';
 
   private static filesIds = {} as { [name: string]: string | undefined };
 

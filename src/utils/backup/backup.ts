@@ -8,27 +8,36 @@ import { countFileLines, readRangeLinesInFile } from '../main/count-file-lines';
 import { EventEmitter } from 'events';
 import Datastore from 'nedb';
 import db, { queryDb } from '../main/db';
-import { BackupDbReference, BackupStatus } from '../../types';
-// import { BackupHandler } from './handler/backup-handler';
+import { BackupDbReference, BackupStatus, PendingDatastore } from '../../types';
+import { BackupHandler } from './handler/backup-handler';
 import { RestoreHandler } from './handler/restore-handler';
 import googleOAuth2 from './googleapi';
 import { DriveHandler } from './handler/drive-handler';
-import { excludedDbFilesRegex } from './constants';
+import {
+  DATA_BACKINGUP_PENDING,
+  DATA_RESTORED,
+  EXCLUDE_DB_FILES_REGEX,
+  OAUTH2_CLIENT,
+} from './constants';
 import { PrepareRestore } from './handler/prepare-restore';
+import { OAuth2Client } from 'google-auth-library';
+import { DB_EXTENSION } from '../constants';
 
 const isOnline = require('is-online');
 const watch = require('node-watch');
 
 const eventEmiter = new EventEmitter({ captureRejections: true });
 // event name used to emit event with filename database
-const loadedDbEventName = 'loadedDb';
+const LOADED_DB_EVENT_NAME = 'loadedDb';
+
+const TIMEOUT = 5000;
 
 // directories to watch in
 export const WATCHED_DIRS = [getAssetDocumentsDbPath(), getAssetDbPath()];
 
 // collect unique database to be used to saved his pedding datas
 const pendingDb = {
-  dbs: {} as { [x: string]: Datastore<any> },
+  dbs: {} as { [x: string]: Datastore<PendingDatastore> },
 };
 
 // used to collect all loaded databases that will be backuped
@@ -38,17 +47,17 @@ export const loadedDb = {
   syncedRefsDb: [] as string[],
   loadDb(database: Datastore<any> & { filename?: string }) {
     const filename = getFilename(database.filename as string);
-    if (excludedDbFilesRegex.test(filename) || this.dbs.includes(filename))
+    if (EXCLUDE_DB_FILES_REGEX.test(filename) || this.dbs.includes(filename))
       return;
     this.dbs.push(filename);
     this.dbFilenames[filename] = database.filename as string;
-    eventEmiter.emit(loadedDbEventName, filename);
+    eventEmiter.emit(LOADED_DB_EVENT_NAME, filename);
   },
 };
 
 // after load database start event corresponding to database filename
-eventEmiter.on(loadedDbEventName, (filenameEvent) => {
-  eventEmiter.on(filenameEvent, debounce(performUniqueBackup, 2000));
+eventEmiter.on(LOADED_DB_EVENT_NAME, (filenameEvent) => {
+  eventEmiter.on(filenameEvent, debounce(performUniqueBackup, TIMEOUT));
 });
 
 /**
@@ -118,6 +127,52 @@ const groupChangedLinesByAction = (range: string[]) => {
 };
 
 /**
+ * handle to put in pending data if there is other pending process or no connection network found
+ * @param grouped
+ * @param filename
+ */
+async function putInPending(grouped: RangedLines, filename: string) {
+  const pDb = pendingDb.dbs[filename];
+  for (const key in grouped) {
+    const changed = grouped[key];
+    const data = {
+      dbId: changed._id,
+    } as PendingDatastore;
+
+    // insert if doent exists
+    const exists = await queryDb.findOne(pDb, data);
+    if (!exists) queryDb.insert(pDb, { ...data, deleted: changed.deleted });
+  }
+}
+
+async function uploadModifications(
+  oAuth2Client: OAuth2Client,
+  grouped: RangedLines,
+  filename: string
+) {
+  const pDb = pendingDb.dbs[filename];
+  BackupHandler.setOAuth2Client(oAuth2Client);
+
+  for (const key in grouped) {
+    const changed = grouped[key];
+    const data = { dbId: changed._id } as PendingDatastore;
+
+    try {
+      await BackupHandler.handleUpload(
+        changed._id,
+        changed.deleted,
+        changed.data,
+        filename
+      );
+      await queryDb.remove(pDb, data, { multi: true });
+    } catch (error) {
+      const exists = await queryDb.findOne(pDb, data);
+      if (!exists) queryDb.insert(pDb, { ...data, deleted: changed.deleted });
+    }
+  }
+}
+
+/**
  * form update just specifique changed file db
  *
  * @param filename
@@ -132,12 +187,15 @@ const performUniqueBackup = async (filename: string) => {
   );
   if (rangeLines.length === 0) return;
   const grouped = groupChangedLinesByAction(rangeLines);
+  const oAuth2Client = OAUTH2_CLIENT || (await googleOAuth2());
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
-  // code ...
-
-  // after backup performence, sync file db reference
-  // syncDbLinesAsBackupRef(filename, +ref.lines + rangeLines.length);
-  console.log(grouped);
+  if (DATA_BACKINGUP_PENDING || !(await isOnline()) || !oAuth2Client) {
+    putInPending(grouped, filename);
+  } else {
+    uploadModifications(oAuth2Client, grouped, filename);
+  }
+  // sync file db reference
+  syncDbLinesAsBackupRef(filename, +ref.lines + rangeLines.length);
 };
 
 /**
@@ -171,6 +229,10 @@ const syncedFirstDbReferences = async (filename: string) => {
  * @returns
  */
 const performBackup = async (evt: string, name: string) => {
+  if (!DATA_RESTORED) {
+    return;
+  }
+
   const filename = getFilename(name);
   if (
     evt !== 'update' ||
@@ -179,6 +241,7 @@ const performBackup = async (evt: string, name: string) => {
   ) {
     return;
   }
+
   eventEmiter.emit(filename, filename);
 };
 
@@ -190,8 +253,8 @@ const performBackup = async (evt: string, name: string) => {
  * @returns
  */
 const filterWatchedFiles = function (file: string, skip: any) {
-  if (excludedDbFilesRegex.test(file)) return skip;
-  return /\.db$/.test(file);
+  if (EXCLUDE_DB_FILES_REGEX.test(file)) return skip;
+  return new RegExp(`${DB_EXTENSION}$`).test(file);
 };
 
 export default () => {
@@ -204,12 +267,33 @@ export default () => {
   };
 };
 
+// functions used as top level funcs to initialize or resume backup and restoration
+//--------------------------------------------------------------
+async function restoreHandler() {
+  try {
+    await RestoreHandler.handle();
+    await BackupHandler.handlePending();
+  } catch (error) {
+    console.log(
+      'Error occured while restore data from top level function: ',
+      error?.message
+    );
+  }
+}
+
 export async function initBackupAndRestoration(
   oAuth2Client: import('google-auth-library').OAuth2Client
 ) {
   DriveHandler.setOAuth2Client(oAuth2Client);
-  await PrepareRestore.handle();
-  await RestoreHandler.handle();
+  try {
+    await PrepareRestore.handle();
+    await restoreHandler();
+  } catch (error) {
+    console.log(
+      'Error occured while preapre and restore data from top level function: ',
+      error?.message
+    );
+  }
 }
 
 export function resumeRestoration(_status: BackupStatus) {
@@ -218,7 +302,22 @@ export function resumeRestoration(_status: BackupStatus) {
       googleOAuth2().then((oAuth2Client) => {
         if (oAuth2Client) {
           RestoreHandler.setOAuth2Client(oAuth2Client);
-          RestoreHandler.handle();
+          restoreHandler();
+        }
+      });
+    }
+  });
+}
+
+export function backupPenging(_status: BackupStatus) {
+  isOnline().then((online: boolean) => {
+    if (online) {
+      googleOAuth2().then((oAuth2Client) => {
+        if (oAuth2Client) {
+          BackupHandler.setOAuth2Client(oAuth2Client);
+          BackupHandler.handlePending().catch((error) =>
+            console.log('Error occured while backup pending: ', error?.message)
+          );
         }
       });
     }

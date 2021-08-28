@@ -10,7 +10,7 @@ import fsPromises from 'fs/promises';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
-import { commitRestoreProgress, setDataRestoring } from '../constants';
+import { commitRestoreProgress } from '../constants';
 import { asyncify, doWhilst, whilst } from '../../async';
 
 export class RestoreHandler extends DriveHandler {
@@ -55,48 +55,42 @@ export class RestoreHandler extends DriveHandler {
     this.lastProceedFile = await this.getLastProceedFile();
     if (this.lastProceedFile === this.COMPLETE) return;
 
-    setDataRestoring(true);
-
-    return await new Promise<void>((resolve) => {
+    return await new Promise<void>((resolve, reject) => {
       let nextToken: undefined | string = undefined;
 
       // callback function to doWhilst for handling files
-      const fetchFiles = async (
-        next: (err?: Error | null | undefined, ...results: unknown[]) => void
-      ) => {
-        try {
-          const res = await this.files({
-            q: "mimeType='application/json'",
-            fields: 'nextPageToken, files(id, name, parents)',
-            pageSize: 100,
-            pageToken: nextToken,
-          });
-          nextToken = res.data.nextPageToken;
-          const files = res.data.files;
+      const fetchFiles = async () => {
+        const res = await this.files({
+          q: `mimeType='${this.MAIN_FILE_MIME_TYPE}'`,
+          fields: 'nextPageToken, files(id, name, parents)',
+          pageSize: 100,
+          pageToken: nextToken,
+        });
+        nextToken = res.data.nextPageToken;
+        const files = res.data.files;
 
-          if (files) await this.proceedFiles(files);
-
-          next(null, nextToken);
-        } catch (error) {
-          next(error);
-        }
+        if (files) await this.proceedFiles(files);
       };
 
       // async function to run all required files for restoration
       doWhilst<any>(
-        (next) => fetchFiles(next),
+        asyncify(fetchFiles),
         asyncify(() => !!nextToken),
         (err) => {
           if (err) {
             commitRestoreProgress('error', 0, 0);
-            console.log('Error on fetched files restore', err);
+            console.log(
+              'Error on fetched files restore',
+              err.name,
+              err.message
+            );
+            reject(err);
           } else {
             commitRestoreProgress(this.COMPLETE, 0, 0);
             this.makeProceedFile(this.COMPLETE);
             confirmRestoration();
+            resolve();
           }
-          setDataRestoring(false);
-          resolve();
         }
       );
     });
@@ -125,7 +119,7 @@ export class RestoreHandler extends DriveHandler {
       const json = JSON.parse(data.toString()) as { proceedFile: string };
       return json.proceedFile;
     } catch (error) {
-      console.error(error);
+      console.error('getLastProceedFile error: ', error?.message);
     }
     return null;
   }
@@ -138,7 +132,7 @@ export class RestoreHandler extends DriveHandler {
     return new Promise<any>((resolve, reject) => {
       const newFiles = files.slice();
 
-      const proceed = async (next: Function) => {
+      const proceed = async () => {
         const file = newFiles.shift();
         // this condition will check the last file id proceed with error or where the loop beacked
         if (
@@ -146,7 +140,7 @@ export class RestoreHandler extends DriveHandler {
           this.lastProceedFile !== file?.id &&
           this.continueRestore === false
         ) {
-          return next();
+          return;
         }
 
         this.continueRestore = true;
@@ -157,18 +151,15 @@ export class RestoreHandler extends DriveHandler {
           files.length
         );
         if (file) {
-          try {
-            await this.restoreFile(file);
-            await this.makeProceedFile(file.id || null);
-            next();
-          } catch (error) {
-            next(error);
-          }
+          await this.restoreFile(file);
+          await this.makeProceedFile(file.id || null);
         }
       };
+
+      // top level function to proceed files
       whilst(
         asyncify(() => newFiles.length !== 0),
-        (next) => proceed(next),
+        asyncify(proceed),
         (_err) => (_err ? reject(_err) : resolve(null))
       );
     });
@@ -225,6 +216,7 @@ export class RestoreHandler extends DriveHandler {
         q: `name = '${filename}'`,
         pageSize: 1,
       });
+
       if (files && files.length > 0) {
         const file = files[0];
         const { data } = await drive.files.get(
@@ -239,7 +231,7 @@ export class RestoreHandler extends DriveHandler {
     } catch (error) {
       console.error(
         'Error fetching html file from on custom document restoration: ',
-        error
+        error?.message
       );
     }
   }

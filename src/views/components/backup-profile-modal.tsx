@@ -152,6 +152,16 @@ const ActiveBackup = ({
     const {
       progression: { proceed, total },
     } = restoreProgress;
+    const progress = (
+      <Text>
+        <Space>
+          <span>{restoreProgress.type}: </span>
+          <div style={{ width: 170 }}>
+            <Progress percent={(proceed * 100) / total} size="small" />
+          </div>
+        </Space>
+      </Text>
+    );
     return {
       start: <Text>Début de la récupération des données</Text>,
       complete: (
@@ -164,16 +174,8 @@ const ActiveBackup = ({
         </Text>
       ),
       prepare: <Text>Préparation de la restauration des données</Text>,
-      progress: (
-        <Text>
-          <Space>
-            <span>{restoreProgress.type}: </span>
-            <div style={{ width: 170 }}>
-              <Progress percent={(proceed * 100) / total} size="small" />
-            </div>
-          </Space>
-        </Text>
-      ),
+      progress: progress,
+      sauvegarde: progress,
     } as { [x: string]: JSX.Element };
   }, [restoreProgress]);
 
@@ -194,11 +196,16 @@ const ActiveBackup = ({
       <Paragraph>
         Dernière mise à jour: {status.lastUpdate.toLocaleTimeString('fr')}
       </Paragraph>
-      {restoreContent && (
+      {restoreContent && restoreProgress && (
         <Paragraph>
           <Space direction="vertical">
             <Space direction="horizontal">
-              <Text strong>Restauration</Text>
+              <Text strong>
+                {restoreProgress.type === 'sauvegarde'
+                  ? 'Sauvegarde'
+                  : 'Restauration'}{' '}
+                de données
+              </Text>
               <Spin
                 indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />}
               />
