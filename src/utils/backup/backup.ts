@@ -148,12 +148,11 @@ const groupChangedLinesByAction = (range: string[], filename: string) => {
     const rangeIds = range
       .map((dataStr) => {
         try {
-          return JSON.parse(dataStr);
+          return JSON.parse(dataStr)._id;
         } catch (_) {}
         return null;
       })
-      .filter(Boolean)
-      .map((d) => d._id) as string[];
+      .filter(Boolean) as string[];
 
     for (const _id in pendingDatas) {
       if (!rangeIds.includes(_id)) {
