@@ -147,9 +147,10 @@ export const queryDb = {
 
   async insert<T>(database: Datastore | undefined, datas: any): Promise<T> {
     if (!database) return Promise.reject(null);
-    loadDatabase(database);
     //
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
+
+    loadDatabase(database);
 
     const saved = await new Promise<T>((resolve, reject) => {
       database.insert(datas, this.promiseResolve(resolve, reject));
@@ -170,9 +171,11 @@ export const queryDb = {
     options: Datastore.RemoveOptions = {}
   ): Promise<T> {
     if (!database) return Promise.reject(null);
-    loadDatabase(database);
-    //
+
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
+
+    loadDatabase(database);
+
     if (canPending) {
       this.findOne<T>(database, query).then((data) => {
         data && PendingDatasUnloadDb.putDataPending('remove', database, data);
@@ -191,9 +194,9 @@ export const queryDb = {
   ): Promise<{ numAffected: number }> {
     if (!database) return Promise.reject(null);
 
-    loadDatabase(database);
-
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
+
+    loadDatabase(database);
 
     const updated = await new Promise<{ numAffected: number }>(
       (resolve, reject) => {
