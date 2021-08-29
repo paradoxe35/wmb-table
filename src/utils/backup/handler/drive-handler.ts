@@ -13,7 +13,7 @@ export class DriveHandler {
   private static driveInstance?: drive_v3.Drive;
 
   protected static STORAGE_SPACE: 'drive' | 'appDataFolder' | 'photos' =
-    'appDataFolder';
+    'drive';
 
   protected static FOLDER_MIME_TYPE: 'application/vnd.google-apps.folder' =
     'application/vnd.google-apps.folder';

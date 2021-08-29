@@ -52,8 +52,6 @@ export class PendingDatasUnloadDb {
     database: Datastore & { filename?: string },
     data: any
   ) {
-    console.log('inserted data', data);
-
     if (EXCLUDE_DB_FILES_REGEX.test(database.filename as string) || !data)
       return;
 
@@ -271,7 +269,7 @@ const performUniqueBackup = async (filename: string) => {
     uploadModifications(oAuth2Client, grouped, filename);
   }
   // sync file db reference
-  syncDbLinesAsBackupRef(filename, +ref.lines + rangeLines.length);
+  syncDbLinesAsBackupRef(filename);
 };
 
 /**
