@@ -151,14 +151,17 @@ export const queryDb = {
     //
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
-    const data = await new Promise<T>((resolve, reject) => {
+    const saved = await new Promise<T>((resolve, reject) => {
       database.insert(datas, this.promiseResolve(resolve, reject));
     });
 
-    canPending &&
-      PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, data);
+    if (canPending) {
+      (Array.isArray(saved) ? saved : [saved]).forEach((data) => {
+        PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, data);
+      });
+    }
 
-    return data;
+    return datas;
   },
 
   async remove<T>(

@@ -69,8 +69,13 @@ const DocumentsAdded = () => {
   const customDocuments = useRecoilValue(customDocumentsStore);
   return (
     <ContainerScrollY style={{ paddingLeft: '10px' }}>
-      {customDocuments.map((d) => (
-        <ItemOutline key={d._id} id={d._id} name={d.title} title={d.title} />
+      {customDocuments.map((d, i) => (
+        <ItemOutline
+          key={d._id || i}
+          id={d._id}
+          name={d.title}
+          title={d.title}
+        />
       ))}
     </ContainerScrollY>
   );
@@ -90,7 +95,11 @@ const DocumentByYears = () => {
         return {
           key: doc.title + year,
           title: (
-            <span title={title} onClick={() => viewDocument(doc.title)}>
+            <span
+              key={doc._id}
+              title={title}
+              onClick={() => viewDocument(doc.title)}
+            >
               {title}
             </span>
           ),
@@ -161,7 +170,7 @@ const DocumentSearch = () => {
           .sort((a, b) => a.name.localeCompare(b.name))
           .map((d) => (
             <ItemOutline
-              key={d.title}
+              key={d._id}
               id={d.title}
               name={d.title}
               title={$titles[d.title]?.name}
