@@ -168,9 +168,9 @@ const DocumentSearch = () => {
         {datas
           .slice()
           .sort((a, b) => a.name.localeCompare(b.name))
-          .map((d) => (
+          .map((d, i) => (
             <ItemOutline
-              key={d._id}
+              key={d._id || i}
               id={d.title}
               name={d.title}
               title={$titles[d.title]?.name}

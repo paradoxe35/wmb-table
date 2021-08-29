@@ -115,11 +115,12 @@ async function getAccessToken(oAuth2Client: OAuth2Client, server: TmpServer) {
       if (requestForCode.reject) {
         requestForCode.reject('TIMEOUT');
       }
-    }, 1.5 * 6000);
+    }, 3 * 60000);
 
     const code = await requestForCode;
     return code ? await storeClientToken(oAuth2Client, code) : null;
   } catch (error) {
+    console.log('signin error: ', error?.message || error);
     return null;
   }
 }
@@ -166,7 +167,7 @@ export default async function googleOAuth2(
     setOAuth2Client(client);
     return client;
   } catch (error) {
-    console.log('Error loading client secret file:', error);
+    console.log('Error loading client secret file:', error?.message || error);
   }
   return null;
 }
