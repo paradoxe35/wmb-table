@@ -49,10 +49,16 @@ export class PendingDatasUnloadDb {
 
   static putDataPending(
     action: 'insertOrUpdate' | 'remove',
-    database: Datastore,
+    database: Datastore & { filename?: string },
     data: any
   ) {
+    console.log('inserted data', data);
+
+    if (EXCLUDE_DB_FILES_REGEX.test(database.filename as string) || !data)
+      return;
+
     const filename = getDatastoreFileName(database) as string;
+
     if (!this.datas[filename]) {
       this.datas[filename] = {};
     }
@@ -75,7 +81,10 @@ export const loadedDb = {
   syncedRefsDb: [] as string[],
   loadDb(database: Datastore<any> & { filename?: string }) {
     const filename = getFilename(database.filename as string);
-    if (EXCLUDE_DB_FILES_REGEX.test(filename) || this.dbs.includes(filename))
+    if (
+      EXCLUDE_DB_FILES_REGEX.test(database.filename as string) ||
+      this.dbs.includes(filename)
+    )
       return;
     this.dbs.push(filename);
     this.dbFilenames[filename] = database.filename as string;
@@ -155,7 +164,7 @@ const groupChangedLinesByAction = (range: string[], filename: string) => {
       .filter(Boolean) as string[];
 
     for (const _id in pendingDatas) {
-      if (!rangeIds.includes(_id)) {
+      if (_id && !rangeIds.includes(_id)) {
         const pending = pendingDatas[_id];
         range.push(
           JSON.stringify(
@@ -246,7 +255,14 @@ const performUniqueBackup = async (filename: string) => {
   if (Object.keys(grouped).length === 0) return;
 
   const oAuth2Client = OAUTH2_CLIENT || (await googleOAuth2());
+
   console.log(grouped);
+  console.log(
+    'orginal range -- ',
+    rangeLines.length,
+    'Total: -- ',
+    Object.keys(grouped).length
+  );
 
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
   if (DATA_BACKINGUP_PENDING || !(await isOnline()) || !oAuth2Client) {
@@ -323,12 +339,19 @@ const filterWatchedFiles = function (file: string, skip: any) {
 };
 
 export default () => {
-  const watcher = watch(WATCHED_DIRS, {
-    filter: filterWatchedFiles,
-  }).on('change', performBackup);
+  const watchers: any[] = [];
+
+  WATCHED_DIRS.forEach((dir) => {
+    const watcher = watch(dir, {
+      filter: filterWatchedFiles,
+    });
+
+    watcher.on('change', performBackup);
+    watchers.push(watcher);
+  });
 
   return {
-    close: () => watcher.close(),
+    close: () => watchers.forEach((watcher) => watcher.close()),
   };
 };
 
