@@ -55,19 +55,43 @@ async function authorize(
  * @param server
  * @returns
  */
-async function redirectRoute(server: TmpServer): Promise<string | null> {
-  return new Promise((resolve) => {
+async function redirectRoute(server: TmpServer): Promise<string | undefined> {
+  return new Promise((resolve, reject) => {
+    server.server.on('close', resolve);
     server.app.get('/', (_req, res) => {
       res.send(loggedIn);
+
       if (_req.query.code) {
         const code = _req.query.code.toString();
         lastCode = code;
         resolve(code);
       } else {
-        resolve(null);
+        reject(null);
       }
     });
   });
+}
+
+/**
+ *
+ * @param promise
+ * @returns
+ */
+function cancellablePromise<T>(promise: Promise<T>) {
+  let _resolve, _reject;
+
+  let wrap: Promise<T> & {
+    resolve?: (value: T) => void;
+    reject?: (value: T) => void;
+  } = new Promise<any>((resolve, reject) => {
+    _resolve = resolve;
+    _reject = reject;
+    promise.then(resolve).catch(reject);
+  });
+  wrap.resolve = _resolve;
+  wrap.reject = _reject;
+
+  return wrap;
 }
 
 /**
@@ -85,7 +109,15 @@ async function getAccessToken(oAuth2Client: OAuth2Client, server: TmpServer) {
   shell.openExternal(authUrl);
 
   try {
-    const code = await redirectRoute(server);
+    const requestForCode = cancellablePromise(redirectRoute(server));
+
+    setTimeout(() => {
+      if (requestForCode.reject) {
+        requestForCode.reject('TIMEOUT');
+      }
+    }, 1.5 * 6000);
+
+    const code = await requestForCode;
     return code ? await storeClientToken(oAuth2Client, code) : null;
   } catch (error) {
     return null;
