@@ -6,7 +6,7 @@ import { asyncify, whilst } from '../../async';
 import { camelCase, getFilename } from '../../functions';
 import db, { getDatastoreFileName, queryDb } from '../../main/db';
 import Datastore from 'nedb';
-import { PendingDatastore } from '../../../types';
+import { CustomDocument, PendingDatastore } from '../../../types';
 import { DB_EXTENSION } from '../../constants';
 import { Readable } from 'stream';
 import { drive_v3 } from 'googleapis';
@@ -195,15 +195,16 @@ export class BackupHandler extends DriveHandler {
       this.setFileId(fieldName, res.data.id as string);
 
       if (getDatastoreFileName(db.customDocuments) === filename) {
-        await this.storeCustomDocument(dataId);
+        await this.storeCustomDocument(dataJson);
       }
     }
   }
 
-  static async storeCustomDocument(id: string) {
-    const filename = `${id}.html`;
-    const filepath = getAssetDocumentsPath(filename);
+  static async storeCustomDocument(data: CustomDocument) {
+    const filepath = getAssetDocumentsPath(`${data.title}.html`);
     if (!fs.existsSync(filepath)) return;
+
+    const filename = `${data._id}.html`;
 
     const drive = await this.drive();
 

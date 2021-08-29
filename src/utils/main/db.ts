@@ -213,7 +213,7 @@ export const queryDb = {
     });
 
     updated.then(({ numAffected }) => {
-      if (canPending && numAffected > 0) {
+      if (canPending && numAffected) {
         this.findOne<any>(database, query).then((data) => {
           data &&
             PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, {

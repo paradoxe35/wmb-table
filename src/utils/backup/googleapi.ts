@@ -11,7 +11,8 @@ import { setOAuth2Client } from './constants';
 const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
   'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/drive.appdata',
+  // 'https://www.googleapis.com/auth/drive.appdata',
+  'https://www.googleapis.com/auth/drive',
 ];
 
 const TOKEN_PATH = getAssetCredentialsPath('google-client-token.json');
