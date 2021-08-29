@@ -49,7 +49,7 @@ export class RestoreHandler extends DriveHandler {
     this.lastProceedFile = await this.getLastProceedFile();
     if (this.lastProceedFile === this.COMPLETE) return;
 
-    return await new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       let nextToken: undefined | string = undefined;
 
       // callback function to doWhilst for handling files
@@ -205,26 +205,25 @@ export class RestoreHandler extends DriveHandler {
    * @param data
    */
   private static async handleCustomDocument(data: CustomDocument) {
-    const filename = `${data.title}.html`;
     const drive = this.drive();
     try {
       const {
         data: { files },
       } = await this.files({
-        q: `name = '${filename}'`,
+        q: `name = '${data._id}.html'`,
         pageSize: 1,
       });
 
       if (files && files.length > 0) {
         const file = files[0];
-        const { data } = await drive.files.get(
+        const { data: fileData } = await drive.files.get(
           {
             fileId: file.id,
             alt: 'media',
           },
           { responseType: 'stream' }
         );
-        await this.saveDocumentHtml(data as Stream, filename);
+        await this.saveDocumentHtml(fileData as Stream, `${data.title}.html`);
       }
     } catch (error) {
       console.error(

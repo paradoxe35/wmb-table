@@ -6,7 +6,7 @@ import { asyncify, whilst } from '../../async';
 import { camelCase, getFilename } from '../../functions';
 import db, { getDatastoreFileName, queryDb } from '../../main/db';
 import Datastore from 'nedb';
-import { CustomDocument, PendingDatastore } from '../../../types';
+import { PendingDatastore } from '../../../types';
 import { DB_EXTENSION } from '../../constants';
 import { Readable } from 'stream';
 import { drive_v3 } from 'googleapis';
@@ -22,7 +22,7 @@ export class BackupHandler extends DriveHandler {
 
     commitRestoreProgress('sauvegarde', 0, files.length);
 
-    return await new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const newFiles = files.slice();
 
       const proceed = async () => {
@@ -158,7 +158,7 @@ export class BackupHandler extends DriveHandler {
         fileId: fileId,
       });
       if (getDatastoreFileName(db.customDocuments) === filename) {
-        await this.deleteCustomDocument(dataJson);
+        await this.deleteCustomDocument(dataId);
       }
       return;
     }
@@ -195,13 +195,13 @@ export class BackupHandler extends DriveHandler {
       this.setFileId(fieldName, res.data.id as string);
 
       if (getDatastoreFileName(db.customDocuments) === filename) {
-        await this.storeCustomDocument(dataJson);
+        await this.storeCustomDocument(dataId);
       }
     }
   }
 
-  static async storeCustomDocument(data: CustomDocument) {
-    const filename = `${data.title}.html`;
+  static async storeCustomDocument(id: string) {
+    const filename = `${id}.html`;
     const filepath = getAssetDocumentsPath(filename);
     if (!fs.existsSync(filepath)) return;
 
@@ -223,8 +223,8 @@ export class BackupHandler extends DriveHandler {
     this.setFileId(filename, res.data.id as string);
   }
 
-  static async deleteCustomDocument(data: CustomDocument) {
-    const filename = `${data.title}.html`;
+  static async deleteCustomDocument(id: string) {
+    const filename = `${id}.html`;
     const fileId = await this.getFromDriveId(filename, `name = '${filename}'`);
     if (fileId) {
       const drive = this.drive();

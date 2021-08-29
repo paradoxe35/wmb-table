@@ -17,7 +17,7 @@ export class PrepareRestore {
 
     const files = await readdir(getAssetDbPath());
 
-    return await new Promise<void>((resolve, reject) => {
+    return new Promise<void>((resolve, reject) => {
       const newFiles = files.slice();
 
       const proceed = async () => {

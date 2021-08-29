@@ -145,82 +145,83 @@ export const queryDb = {
     });
   },
 
-  async insert<T>(database: Datastore | undefined, datas: any): Promise<T> {
+  insert<T>(database: Datastore | undefined, datas: any): Promise<T> {
     if (!database) return Promise.reject(null);
+
+    loadDatabase(database);
     //
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
-    loadDatabase(database);
-
-    const saved = await new Promise<T>((resolve, reject) => {
+    const promise = new Promise<T>((resolve, reject) => {
       database.insert(datas, this.promiseResolve(resolve, reject));
     });
 
-    if (canPending) {
-      (Array.isArray(saved) ? saved : [saved]).forEach((data) => {
-        PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, data);
-      });
-    }
+    promise.then((saved) => {
+      if (canPending) {
+        (Array.isArray(saved) ? saved : [saved]).forEach((data) => {
+          PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, {
+            ...data,
+          });
+        });
+      }
+    });
 
-    return datas;
+    return promise;
   },
 
-  async remove<T>(
+  remove<T>(
     database: Datastore | undefined,
     query = {},
     options: Datastore.RemoveOptions = {}
   ): Promise<T> {
     if (!database) return Promise.reject(null);
 
-    let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
-
     loadDatabase(database);
+
+    let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
     if (canPending) {
       this.findOne<T>(database, query).then((data) => {
-        data && PendingDatasUnloadDb.putDataPending('remove', database, data);
+        data &&
+          PendingDatasUnloadDb.putDataPending('remove', database, { ...data });
       });
     }
 
-    return await new Promise<T>((resolve, reject) => {
+    return new Promise<T>((resolve, reject) => {
       database.remove(query, options, this.promiseResolve(resolve, reject));
     });
   },
-  async update(
+  update(
     database: Datastore | undefined,
     query: any,
     updateQuery: any,
     options?: Datastore.UpdateOptions | undefined
   ): Promise<{ numAffected: number }> {
     if (!database) return Promise.reject(null);
+    loadDatabase(database);
 
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
-    loadDatabase(database);
-
-    const updated = await new Promise<{ numAffected: number }>(
-      (resolve, reject) => {
-        database.update(
-          query,
-          updateQuery,
-          options || {},
-          (err, numAffected) => {
-            if (err) {
-              reject(err);
-            } else {
-              resolve({ numAffected });
-            }
-          }
-        );
-      }
-    );
-
-    if (canPending) {
-      this.findOne(database, query).then((data) => {
-        data &&
-          PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, data);
+    const updated = new Promise<{ numAffected: number }>((resolve, reject) => {
+      database.update(query, updateQuery, options || {}, (err, numAffected) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve({ numAffected });
+        }
       });
-    }
+    });
+
+    updated.then(({ numAffected }) => {
+      if (canPending && numAffected > 0) {
+        this.findOne<any>(database, query).then((data) => {
+          data &&
+            PendingDatasUnloadDb.putDataPending('insertOrUpdate', database, {
+              ...data,
+            });
+        });
+      }
+    });
 
     return updated;
   },
