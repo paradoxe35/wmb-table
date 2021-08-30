@@ -9,7 +9,7 @@ import { checkForFile } from '../../main/count-file-lines';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
-import { commitRestoreProgress } from '../constants';
+import { commitRestoreProgress, EXCLUDE_DB_FILES_REGEX } from '../constants';
 import { asyncify, doWhilst, whilst } from '../../async';
 import { promisify } from 'util';
 
@@ -169,7 +169,8 @@ export class RestoreHandler extends DriveHandler {
    */
   private static async restoreFile(file: drive_v3.Schema$File) {
     const parentFile = await this.parentFolder(file);
-    if (!parentFile) return;
+    if (!parentFile || EXCLUDE_DB_FILES_REGEX.test(parentFile.name)) return;
+
     const datastore = db[camelCase(parentFile.name)];
     if (datastore) await this.storeContent(datastore, file, parentFile);
   }
@@ -193,10 +194,12 @@ export class RestoreHandler extends DriveHandler {
       },
       { responseType: 'text' }
     );
-    await queryDb.insert(database, this.deserialize(data as string));
+    const $datas = this.deserialize(data as string);
+
+    await queryDb.insert(database, $datas);
     // handle custom document restaure
     if (getDatastoreFileName(db.customDocuments, false) === parentFile.name) {
-      await this.handleCustomDocument(data as any);
+      await this.handleCustomDocument($datas);
     }
   }
 
@@ -240,6 +243,7 @@ export class RestoreHandler extends DriveHandler {
    */
   private static saveDocumentHtml(data: Stream, filename: string) {
     const filePath = getAssetDocumentsPath(filename);
+    if (fs.existsSync(filename)) return Promise.resolve();
     return new Promise<void>((resolve, reject) => {
       checkForFile(filePath, (filePath) => {
         data
