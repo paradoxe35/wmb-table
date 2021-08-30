@@ -66,15 +66,11 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
     const newDocuments = documents.slice();
     const docs: CustomDocument[] = [];
 
+    commitUploadProgress('progress', 0, documents.length);
+
     const proceed = async () => {
       const file = newDocuments.shift();
       if (!file) return;
-
-      commitUploadProgress(
-        'progress',
-        documents.length - newDocuments.length,
-        documents.length
-      );
 
       const getContent = await convert(file.path, file.name);
       if (getContent) {
@@ -96,6 +92,12 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
 
         docs.push(doc);
       }
+
+      commitUploadProgress(
+        'progress',
+        documents.length - newDocuments.length,
+        documents.length
+      );
     };
 
     whilst(
