@@ -2,11 +2,14 @@ import { NoteItemReference } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
 
 export default async function references(_: any, noteId: string) {
-  const references = await queryDb.find<NoteItemReference>(db.notesReference, {
-    noteId,
-  });
-
-  return references.sort((a, b) => b.label.localeCompare(a.label));
+  return await queryDb.find<NoteItemReference>(
+    db.notesReference,
+    {
+      noteId,
+    },
+    {},
+    { label: -1 }
+  );
 }
 
 export async function notes_references_store(_: any, noteId: string) {

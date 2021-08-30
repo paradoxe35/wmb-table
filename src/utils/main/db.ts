@@ -5,6 +5,7 @@ import {
   getAssetDbPath,
   getAssetDocumentsDbPath,
 } from '../../sys';
+import { TimeStampData } from '../../types';
 import { loadedDb, PendingDatasUnloadDb } from '../backup/backup';
 import { DB_EXTENSION } from '../constants';
 import { getFilename } from '../functions';
@@ -98,6 +99,8 @@ db.notes = dbStore('notes');
 db.notesReference = dbStore('notes-reference');
 db.notesBibleReference = dbStore('notes-bible-reference');
 
+type Sort = Partial<TimeStampData<1 | -1>> & { [field: string]: 1 | -1 };
+
 export const queryDb = {
   promiseResolve(resolve: Function, reject: Function) {
     return function (err: any, docs: any) {
@@ -112,12 +115,16 @@ export const queryDb = {
   find<T>(
     database: Datastore | undefined,
     fields = {},
-    projection = {}
+    projection = {},
+    sort = {} as Sort
   ): Promise<T[]> {
     if (!database) return Promise.reject(null);
     loadDatabase(database);
     return new Promise((resolve, reject) => {
-      database.find(fields, projection, this.promiseResolve(resolve, reject));
+      (database.find(fields) as Nedb.Cursor<T>)
+        .projection(projection)
+        .sort(sort)
+        .exec(this.promiseResolve(resolve, reject));
     });
   },
 
@@ -132,16 +139,17 @@ export const queryDb = {
   findOne<T>(
     database: Datastore | undefined,
     fields = {},
-    projection = {}
-  ): Promise<T> {
+    projection = {},
+    sort = {} as Sort
+  ): Promise<T | null> {
     if (!database) return Promise.reject(null);
     loadDatabase(database);
     return new Promise((resolve, reject) => {
-      database.findOne(
-        fields,
-        projection,
-        this.promiseResolve(resolve, reject)
-      );
+      //@ts-ignore
+      (database.findOne(fields) as Nedb.Cursor<T>)
+        .projection(projection)
+        .sort(sort)
+        .exec(this.promiseResolve(resolve, reject));
     });
   },
 

@@ -2,19 +2,22 @@ import { SubjectDocument } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
 
 export default async (_: any, subject: SubjectDocument | undefined) => {
-  const subjects = (await queryDb.find<SubjectDocument>(db.subjects)) || [];
+  const subjects = await queryDb.find<SubjectDocument>(
+    db.subjects,
+    {},
+    {},
+    { createdAt: -1 }
+  );
 
   if (subject) {
     await queryDb.insert<SubjectDocument>(db.subjects, subject);
     subjects.unshift(subject);
   }
 
-  return subjects
-    .map((subject) => {
-      subject.documents = [];
-      return subject;
-    })
-    .sort((a, b) => b.createdAt - a.createdAt);
+  return subjects.map((subject) => {
+    subject.documents = [];
+    return subject;
+  });
 };
 
 export async function subject_document_delete(_: any, subjectName: string) {

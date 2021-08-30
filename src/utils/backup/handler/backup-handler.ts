@@ -173,7 +173,7 @@ export class BackupHandler extends DriveHandler {
       fields: 'id',
       media: {
         mimeType: this.MAIN_FILE_MIME_TYPE,
-        body: Readable.from([JSON.stringify(dataJson)]),
+        body: Readable.from([this.serialize(dataJson)]),
       },
     };
 

@@ -12,6 +12,9 @@ export default async (_: Electron.IpcMainEvent, tabs: DataDocument[]) => {
     query,
     {
       datas: 1,
+    },
+    {
+      createdAt: -1,
     }
   );
 

@@ -13,9 +13,13 @@ export default async (_: any) => {
     },
     { multi: true }
   );
-  let notes = await queryDb.find<NoteItem>(db.notes, {}, { content: 0 });
 
-  return notes.sort((a, b) => b.createdAt - a.createdAt);
+  return await queryDb.find<NoteItem>(
+    db.notes,
+    {},
+    { content: 0 },
+    { createdAt: -1 }
+  );
 };
 
 export async function notes_items_delete(_: any, _id: string) {
@@ -26,7 +30,7 @@ export async function notes_items_delete(_: any, _id: string) {
 
 export async function notes_items_get(_: any, _id: string) {
   const note = await queryDb.findOne<NoteItem>(db.notes, { _id });
-  if (note.created) {
+  if (note?.created) {
     await queryDb.update(db.notes, { _id }, { $set: { created: false } });
   }
   return note;

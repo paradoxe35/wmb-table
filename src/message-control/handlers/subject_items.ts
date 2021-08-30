@@ -2,11 +2,14 @@ import { SubjectDocument, SubjectDocumentItem } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
 
 export default async (_: any, subjectName: string) => {
-  const documents = await queryDb.find<SubjectDocument>(db.subjectItems, {
-    subject: subjectName,
-  });
-
-  return documents.sort((a, b) => b.createdAt - a.createdAt);
+  return await queryDb.find<SubjectDocument>(
+    db.subjectItems,
+    {
+      subject: subjectName,
+    },
+    {},
+    { createdAt: -1 }
+  );
 };
 
 export async function subject_items_delete(_: any, id: string) {
