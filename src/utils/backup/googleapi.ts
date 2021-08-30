@@ -108,20 +108,23 @@ async function getAccessToken(oAuth2Client: OAuth2Client, server: TmpServer) {
   });
 
   shell.openExternal(authUrl);
+  let timer: NodeJS.Timeout | null = null;
 
   try {
     const requestForCode = cancellablePromise(redirectRoute(server));
 
-    setTimeout(() => {
+    timer = setTimeout(() => {
       if (requestForCode.reject) {
         requestForCode.reject('TIMEOUT');
       }
     }, 3 * 60000);
 
     const code = await requestForCode;
+    timer && clearTimeout(timer);
     return code ? await storeClientToken(oAuth2Client, code) : null;
   } catch (error) {
     console.log('signin error: ', error?.message || error);
+    timer && clearTimeout(timer);
     return null;
   }
 }
