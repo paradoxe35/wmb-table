@@ -33,6 +33,7 @@ export function useContainerScrollY<T>(
       const rebuildEl = () => {
         if (!isVisibleEl.value) return;
         const winHeight = window.innerHeight;
+        if (!containerRef.current) return;
         const {
           top,
         } = ((containerRef.current as unknown) as HTMLElement).getBoundingClientRect();
