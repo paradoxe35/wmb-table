@@ -46,6 +46,7 @@ export const IPC_EVENTS = {
   backup_reminder: 'backup_reminder',
   backup_login: 'backup_login',
   // events from main process
+  custom_document_upload_progress: 'custom_document_upload_progress',
   open_modal_document_from_main: 'open_modal_document_from_main',
   backup_progression: 'backup_progression',
   open_backup_modal_from_main: 'open_backup_modal_from_main',
