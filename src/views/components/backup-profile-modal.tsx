@@ -64,7 +64,7 @@ export default function BackupProfile() {
         default:
           message.error(
             "Une erreur s'est produite lors de la connexion, réessayez plus tard",
-            1000 * 7
+            7
           );
           break;
       }

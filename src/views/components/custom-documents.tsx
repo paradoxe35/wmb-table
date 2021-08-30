@@ -352,7 +352,10 @@ function Uploader() {
     if (fileList.length > 0) {
       window.setTimeout(() => {
         if (uploadElRef.current) {
-          uploadElRef.current.scrollTop = uploadElRef.current.scrollHeight;
+          uploadElRef.current.scrollTo({
+            behavior: 'smooth',
+            top: uploadElRef.current.scrollHeight,
+          });
         }
       }, 500);
     }

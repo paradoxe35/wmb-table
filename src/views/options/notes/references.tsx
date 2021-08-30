@@ -175,7 +175,10 @@ export function ReferenceBibleModal({
       .finally(() => {
         window.setTimeout(() => {
           if (versesRef.current) {
-            versesRef.current.scrollTop = versesRef.current.scrollHeight;
+            versesRef.current.scrollTo({
+              behavior: 'smooth',
+              top: versesRef.current.scrollHeight,
+            });
           }
         }, 500);
       });
