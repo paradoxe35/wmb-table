@@ -252,7 +252,7 @@ const performUniqueBackup = async (filename: string) => {
   const grouped = groupChangedLinesByAction(rangeLines, filename);
   if (Object.keys(grouped).length === 0) return;
 
-  const oAuth2Client = OAUTH2_CLIENT || (await googleOAuth2());
+  const oAuth2Client = OAUTH2_CLIENT.value || (await googleOAuth2());
 
   console.log(grouped);
   console.log(
@@ -263,7 +263,7 @@ const performUniqueBackup = async (filename: string) => {
   );
 
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
-  if (DATA_BACKINGUP_PENDING || !(await isOnline()) || !oAuth2Client) {
+  if (DATA_BACKINGUP_PENDING.value || !(await isOnline()) || !oAuth2Client) {
     putInPending(grouped, filename);
   } else {
     uploadModifications(oAuth2Client, grouped, filename);
@@ -308,9 +308,10 @@ const syncedFirstDbReferences = async (filename: string) => {
  * @returns
  */
 const performBackup = async (evt: string, name: string) => {
-  if (!DATA_RESTORED) {
+  if (!DATA_RESTORED.value) {
     return;
   }
+  console.log(DATA_RESTORED);
 
   const filename = getFilename(name);
   if (
