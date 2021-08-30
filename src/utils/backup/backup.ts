@@ -311,7 +311,6 @@ const performBackup = async (evt: string, name: string) => {
   if (!DATA_RESTORED.value) {
     return;
   }
-  console.log(DATA_RESTORED);
 
   const filename = getFilename(name);
   if (

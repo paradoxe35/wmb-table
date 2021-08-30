@@ -11,10 +11,11 @@ import { app_settings } from './app_settings';
 const isOnline = require('is-online');
 
 export async function backup_status(
-  onlyStatus: boolean = false
+  onlyStatus: boolean | Object
 ): Promise<BackupStatus | null> {
   const status = await queryDb.findOne<BackupStatus | null>(db.backupStatus);
-  if (status && !onlyStatus) {
+
+  if (status && typeof onlyStatus !== 'boolean') {
     setDataRestored(status.restored);
     // resume restoration or backup pending data
     !status.restored && resumeRestoration(status);
