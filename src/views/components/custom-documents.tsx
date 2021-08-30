@@ -340,7 +340,9 @@ function Uploader() {
         if (data.type === 'progress') {
           setUploadProgress(data);
         } else {
-          setUploadProgress(undefined);
+          window.setTimeout(() => {
+            setUploadProgress(undefined);
+          }, 2000);
         }
       }
     );
