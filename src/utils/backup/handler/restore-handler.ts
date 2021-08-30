@@ -1,7 +1,7 @@
 import { drive_v3 } from 'googleapis';
 import { getAssetBackupPath, getAssetDocumentsPath } from '../../../sys';
 import { camelCase } from '../../functions';
-import db, { getDatastoreFileName, queryDb } from '../../main/db';
+import db, { DBSerializer, getDatastoreFileName, queryDb } from '../../main/db';
 import Datastore from 'nedb';
 import { CustomDocument } from '../../../types';
 import { Stream } from 'stream';
@@ -194,7 +194,7 @@ export class RestoreHandler extends DriveHandler {
       },
       { responseType: 'text' }
     );
-    const $datas = this.deserialize(data as string);
+    const $datas = DBSerializer.deserialize(data as string);
 
     await queryDb.insert(database, $datas);
     // handle custom document restaure

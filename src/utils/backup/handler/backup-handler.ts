@@ -8,7 +8,7 @@ import {
 } from '../constants';
 import { asyncify, whilst } from '../../async';
 import { camelCase, getFilename } from '../../functions';
-import db, { getDatastoreFileName, queryDb } from '../../main/db';
+import db, { DBSerializer, getDatastoreFileName, queryDb } from '../../main/db';
 import Datastore from 'nedb';
 import { CustomDocument, PendingDatastore } from '../../../types';
 import { DB_EXTENSION } from '../../constants';
@@ -179,7 +179,7 @@ export class BackupHandler extends DriveHandler {
       fields: 'id',
       media: {
         mimeType: this.MAIN_FILE_MIME_TYPE,
-        body: Readable.from([this.serialize(dataJson)]),
+        body: Readable.from([DBSerializer.serialize(dataJson)]),
       },
     };
 
