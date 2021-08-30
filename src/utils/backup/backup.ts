@@ -7,7 +7,7 @@ import { debounce, getFilename } from '../functions';
 import { countFileLines, readRangeLinesInFile } from '../main/count-file-lines';
 import { EventEmitter } from 'events';
 import Datastore from 'nedb';
-import db, { getDatastoreFileName, queryDb } from '../main/db';
+import db, { DBSerializer, getDatastoreFileName, queryDb } from '../main/db';
 import { BackupDbReference, BackupStatus, PendingDatastore } from '../../types';
 import { BackupHandler } from './handler/backup-handler';
 import { RestoreHandler } from './handler/restore-handler';
@@ -176,7 +176,7 @@ const groupChangedLinesByAction = (range: string[], filename: string) => {
 
   return range.reduce((acc, current) => {
     try {
-      const json = JSON.parse(current) as DbColumn;
+      const json = DBSerializer.deserialize(current) as DbColumn;
       const keys = Object.keys(json);
       const deleted = keys.includes('$$deleted');
       acc[json._id] = {

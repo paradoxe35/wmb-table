@@ -235,4 +235,47 @@ export const queryDb = {
   },
 };
 
+export class DBSerializer {
+  static serialize(obj: any) {
+    let res;
+    res = JSON.stringify(obj, function (k, v) {
+      if (v === undefined) {
+        return undefined;
+      }
+      if (v === null) {
+        return null;
+      }
+      // Hackish way of checking if object is Date (this way it works between execution contexts in node-webkit).
+      // We can't use value directly because for dates it is already string in this function (date.toJSON was already called), so we use this
+      if (typeof this[k].getTime === 'function') {
+        return { $$date: this[k].getTime() };
+      }
+      return v;
+    });
+
+    return res;
+  }
+
+  static deserialize(rawData: string) {
+    return JSON.parse(rawData, function (k, v) {
+      if (k === '$$date') {
+        return new Date(v);
+      }
+      if (
+        typeof v === 'string' ||
+        typeof v === 'number' ||
+        typeof v === 'boolean' ||
+        v === null
+      ) {
+        return v;
+      }
+      if (v && v.$$date) {
+        return v.$$date;
+      }
+
+      return v;
+    });
+  }
+}
+
 export default db;
