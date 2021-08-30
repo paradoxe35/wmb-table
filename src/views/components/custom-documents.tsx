@@ -373,8 +373,13 @@ function Uploader() {
       </div>
       <div className="flex flex-center">
         {uploading && uploadProgress?.type === 'progress' ? (
-          <Space direction="horizontal">
-            <span>Téléchargement</span>
+          <Space direction="vertical">
+            <Space direction="horizontal">
+              <span>Téléchargement</span>
+              <Spin
+                indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />}
+              />
+            </Space>
             <div style={{ width: 170 }}>
               <Progress
                 percent={parseInt(
