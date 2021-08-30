@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Button,
   Col,
@@ -256,6 +256,8 @@ function Uploader() {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState<boolean>(false);
 
+  const uploadElRef = useRef<HTMLDivElement | null>(null);
+
   const [uploadProgress, setUploadProgress] = useState<
     CustomDocumentUploadProgress | undefined
   >();
@@ -344,6 +346,16 @@ function Uploader() {
     );
   }, []);
 
+  useEffect(() => {
+    if (fileList.length > 0) {
+      window.setTimeout(() => {
+        if (uploadElRef.current) {
+          uploadElRef.current.scrollTop = uploadElRef.current.scrollHeight;
+        }
+      }, 500);
+    }
+  }, [fileList]);
+
   return (
     <>
       <div className="flex flex-center mb-2">
@@ -351,6 +363,7 @@ function Uploader() {
       </div>
 
       <div
+        ref={uploadElRef}
         style={{
           overflow: 'auto',
           maxHeight: '400px',
