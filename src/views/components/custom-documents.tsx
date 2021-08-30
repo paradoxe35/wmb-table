@@ -283,7 +283,13 @@ function Uploader() {
       )
         return false;
 
-      setFileList((fileList) => [...fileList, file]);
+      setFileList((fileList) => {
+        if (fileList.some((f) => f.name === file.name)) {
+          return fileList;
+        } else {
+          return [...fileList, file];
+        }
+      });
       return false;
     },
     fileList,
