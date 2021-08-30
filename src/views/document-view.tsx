@@ -17,6 +17,7 @@ import { DocumentViewQuery } from '../types';
 import { SubjectSelectModal } from './components/subject-select-modal';
 import { ModalSearchDocument } from './components/modal-search-document';
 import { NoteReferencesModal } from './components/note-references-modal';
+import { shell } from 'electron';
 
 const { Content } = Layout;
 
@@ -186,6 +187,15 @@ export default function DocumentView() {
           });
         });
       };
+
+      page?.addEventListener('click', (event: MouseEvent) => {
+        let target = event.target as HTMLElement;
+        const href = target.getAttribute('href');
+        if (target.tagName === 'A' && href) {
+          event.preventDefault();
+          shell.openExternal(href);
+        }
+      });
 
       page?.addEventListener('scroll', debounce(onScroll, 300));
       handleSearchQuery(iframeRef.current, hasOwnPosition);
