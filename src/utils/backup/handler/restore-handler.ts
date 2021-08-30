@@ -59,6 +59,7 @@ export class RestoreHandler extends DriveHandler {
           fields: 'nextPageToken, files(id, name, parents)',
           pageSize: 100,
           pageToken: nextToken,
+          orderBy: 'modifiedTime',
         });
         nextToken = res.data.nextPageToken;
         const files = res.data.files;
