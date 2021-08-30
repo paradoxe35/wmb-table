@@ -11,6 +11,7 @@ import {
   Typography,
   Upload,
   message,
+  Progress,
 } from 'antd';
 import electron from 'electron';
 import { IPC_EVENTS } from '../../utils/ipc-events';
@@ -25,7 +26,12 @@ import {
   customDocumentsStore,
   documentTitlesStore,
 } from '../../store';
-import { CustomDocument, Title, UploadDocument } from '../../types';
+import {
+  CustomDocument,
+  CustomDocumentUploadProgress,
+  Title,
+  UploadDocument,
+} from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import {
   FileAddOutlined,
@@ -249,6 +255,11 @@ function validateFile(file: File, showMessage: boolean = true) {
 function Uploader() {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState<boolean>(false);
+
+  const [uploadProgress, setUploadProgress] = useState<
+    CustomDocumentUploadProgress | undefined
+  >();
+
   const titles = useRecoilValue(documentTitlesStore);
 
   const props: DraggerProps = {
@@ -314,6 +325,19 @@ function Uploader() {
     return;
   }
 
+  useEffect(() => {
+    ipcRenderer.on(
+      IPC_EVENTS.custom_document_upload_progress,
+      (_: any, data: CustomDocumentUploadProgress) => {
+        if (data.type === 'progress') {
+          setUploadProgress(data);
+        } else {
+          setUploadProgress(undefined);
+        }
+      }
+    );
+  }, []);
+
   return (
     <>
       <div className="flex flex-center mb-2">
@@ -348,15 +372,33 @@ function Uploader() {
         </div>
       </div>
       <div className="flex flex-center">
-        <Button
-          type="primary"
-          onClick={handleUpload}
-          disabled={fileList.length === 0}
-          loading={uploading}
-          style={{ margin: '0 10px' }}
-        >
-          {uploading ? 'Téléchargement' : 'Télécharger'}
-        </Button>
+        {uploading && uploadProgress?.type === 'progress' ? (
+          <Space direction="horizontal">
+            <span>Téléchargement</span>
+            <div style={{ width: 170 }}>
+              <Progress
+                percent={parseInt(
+                  (
+                    (uploadProgress.progress * 100) /
+                    uploadProgress.total
+                  ).toFixed(2),
+                  10
+                )}
+                size="small"
+              />
+            </div>
+          </Space>
+        ) : (
+          <Button
+            type="primary"
+            onClick={handleUpload}
+            disabled={fileList.length === 0}
+            loading={uploading}
+            style={{ margin: '0 10px' }}
+          >
+            {uploading ? 'Téléchargement' : 'Télécharger'}
+          </Button>
+        )}
       </div>
     </>
   );

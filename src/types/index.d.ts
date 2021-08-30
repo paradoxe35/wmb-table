@@ -129,6 +129,14 @@ export interface BackupStatus {
 
 export type ProgressionType<K extends number> = `progress-${K}`;
 
+export type CustomDocumentUploadProgressType = 'progress' | 'finish';
+
+export type CustomDocumentUploadProgress = {
+  type: CustomDocumentUploadProgressType;
+  progress: number
+  total: number
+}
+
 export type RestoreProgressEventType =
   | 'start'
   | 'complete'
