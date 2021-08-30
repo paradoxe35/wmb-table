@@ -224,7 +224,7 @@ export default function EditorContent({
     sendIpcRequest<NoteItem>(IPC_EVENTS.notes_items_get, workingNoteId).then(
       (note) => {
         setWorkingNote(note);
-        note.created &&
+        note?.created &&
           note.defaultName &&
           window.setTimeout(() => {
             window.dispatchEvent(new Event('rename-note-modal'));
@@ -512,7 +512,7 @@ function Editor({
                 editorRef.current.editor.ui.view.toolbar.element.remove();
               }
             }}
-            onChange={debounce(onChange, 1000)}
+            onChange={debounce(onChange, 2000)}
             editor={DecoupledDocumentEditor}
             data={data || ''}
             config={{

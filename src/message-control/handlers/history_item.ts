@@ -6,8 +6,13 @@ const getHistoryRefOrInsert = async (history: HistoryDateUpload) => {
     date: history.date,
   });
   if (ref) return ref;
-  const histories = (await queryDb.find<HistoryData>(db.history)).sort(
-    (a, b) => b.milliseconds - a.milliseconds
+  const histories = await queryDb.find<HistoryData>(
+    db.history,
+    {},
+    {},
+    {
+      milliseconds: -1,
+    }
   );
   if (histories.length >= 30) {
     const id = histories[histories.length - 1]._id;

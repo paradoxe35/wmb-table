@@ -191,9 +191,9 @@ export class RestoreHandler extends DriveHandler {
         fileId: file.id,
         alt: 'media',
       },
-      { responseType: 'json' }
+      { responseType: 'text' }
     );
-    await queryDb.insert(database, data);
+    await queryDb.insert(database, this.deserialize(data as string));
     // handle custom document restaure
     if (getDatastoreFileName(db.customDocuments, false) === parentFile.name) {
       await this.handleCustomDocument(data as any);
@@ -228,7 +228,7 @@ export class RestoreHandler extends DriveHandler {
     } catch (error) {
       console.error(
         'Error fetching html file from on custom document restoration: ',
-        error?.message
+        error?.message || error
       );
     }
   }
@@ -240,9 +240,12 @@ export class RestoreHandler extends DriveHandler {
    */
   private static saveDocumentHtml(data: Stream, filename: string) {
     const filePath = getAssetDocumentsPath(filename);
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
       checkForFile(filePath, (filePath) => {
-        data.pipe(fs.createWriteStream(filePath)).on('end', resolve);
+        data
+          .pipe(fs.createWriteStream(filePath))
+          .on('finish', resolve)
+          .on('error', reject);
       });
     });
   }

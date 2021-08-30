@@ -38,15 +38,14 @@ export async function notes_references_bible_get(_: any, _id: string) {
     { _id }
   );
 
-  if(!datas) return null;
+  if (!datas) return null;
 
   const ids = datas.references as string[];
   const refs = [] as BibleBook[];
 
   for (const id of ids) {
-    refs.push(
-      await queryDb.findOne<BibleBook>(db.bible, { _id: id })
-    );
+    const ref = await queryDb.findOne<BibleBook>(db.bible, { _id: id });
+    ref && refs.push(ref);
   }
 
   datas.references = refs;

@@ -1,7 +1,7 @@
-interface TimeStampData {
+export interface TimeStampData<T = any> {
   _id: string;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: T;
+  updatedAt: T;
 }
 
 export type Title = {
