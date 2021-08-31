@@ -18,6 +18,7 @@ import {
   DATA_RESTORED,
   EXCLUDE_DB_FILES_REGEX,
   OAUTH2_CLIENT,
+  setDataBackingUpPending,
 } from './constants';
 import { PrepareRestore } from './handler/prepare-restore';
 import { OAuth2Client } from 'google-auth-library';
@@ -265,6 +266,7 @@ const performUniqueBackup = async (filename: string) => {
 
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
   if (DATA_BACKINGUP_PENDING.value || !(await isOnline()) || !oAuth2Client) {
+    setDataBackingUpPending(true);
     putInPending(grouped, filename);
   } else {
     uploadModifications(oAuth2Client, grouped, filename);
