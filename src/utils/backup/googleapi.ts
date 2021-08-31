@@ -42,15 +42,20 @@ async function authorize(
   const access = async (oAuth2Client: OAuth2Client | null) =>
     login && oAuth2Client ? await getAccessToken(oAuth2Client, server) : null;
 
+  let oneAccess: boolean = false;
+
   try {
     if (!overrideClientToken) {
       const token = await readFile(TOKEN_PATH);
       oAuth2Client.setCredentials(JSON.parse(token.toString('utf-8')));
     } else {
+      oneAccess = true;
       oAuth2Client = await access(oAuth2Client);
     }
   } catch (error) {
-    oAuth2Client = await access(oAuth2Client);
+    if (!oneAccess && !overrideClientToken) {
+      oAuth2Client = await access(oAuth2Client);
+    }
   }
 
   server.server.close();
