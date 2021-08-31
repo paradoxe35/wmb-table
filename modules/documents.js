@@ -58,6 +58,18 @@ window.addEventListener(
   false
 );
 
+container.addEventListener('click', (event) => {
+  /** @type { HTMLLinkElement} */
+  // @ts-ignore
+  let target = event.target;
+  const hasLink = [
+    target,
+    target.parentElement,
+    target.parentElement?.parentElement,
+  ].some((el) => el && el.tagName === 'A');
+  hasLink && event.preventDefault();
+});
+
 window.addEventListener('result-constructed', () => {
   if (!SEARCH_RESULT || SEARCH_RESULT.matches.length <= 0) {
     defaultPosition();
