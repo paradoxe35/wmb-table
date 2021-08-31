@@ -26,7 +26,8 @@ export let lastCode: string | null = null;
  */
 async function authorize(
   credentials: any,
-  login: boolean = false
+  login: boolean = false,
+  overrideClientToken: boolean = false
 ): Promise<OAuth2Client | null> {
   const { client_secret, client_id, redirect_uris } = credentials.installed;
 
@@ -38,11 +39,18 @@ async function authorize(
     `${redirect_uris[1]}:${server.port}`
   );
 
+  const access = async (oAuth2Client: OAuth2Client | null) =>
+    login && oAuth2Client ? await getAccessToken(oAuth2Client, server) : null;
+
   try {
-    const token = await readFile(TOKEN_PATH);
-    oAuth2Client.setCredentials(JSON.parse(token.toString('utf-8')));
+    if (!overrideClientToken) {
+      const token = await readFile(TOKEN_PATH);
+      oAuth2Client.setCredentials(JSON.parse(token.toString('utf-8')));
+    } else {
+      oAuth2Client = await access(oAuth2Client);
+    }
   } catch (error) {
-    oAuth2Client = login ? await getAccessToken(oAuth2Client, server) : null;
+    oAuth2Client = await access(oAuth2Client);
   }
 
   server.server.close();
@@ -157,7 +165,8 @@ function storeClientToken(
 }
 
 export default async function googleOAuth2(
-  login: boolean = false
+  login: boolean = false,
+  overrideClientToken: boolean = false
 ): Promise<OAuth2Client | null> {
   try {
     const content = await readFile(
@@ -165,7 +174,8 @@ export default async function googleOAuth2(
     );
     const client = await authorize(
       JSON.parse(content.toString('utf-8')),
-      login
+      login,
+      overrideClientToken
     );
     setOAuth2Client(client);
     return client;
