@@ -39,7 +39,6 @@ export default function ViewerMenu() {
     <Menu
       theme="dark"
       mode="horizontal"
-      style={{ width: '100%' }}
       className="row__center"
       selectedKeys={[view]}
     >

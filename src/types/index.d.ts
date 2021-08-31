@@ -123,6 +123,7 @@ export interface BackupStatus {
   email: string;
   name: string;
   active: boolean;
+  access: boolean;
   restored: boolean;
   lastUpdate: Date;
 }

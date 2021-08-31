@@ -1,3 +1,4 @@
+import { getAssetBackupPendingPath, mainWindow } from '../../sys';
 import { BackupStatus } from '../../types';
 import {
   backupPenging,
@@ -6,6 +7,8 @@ import {
 } from '../../utils/backup/backup';
 import { setDataRestored } from '../../utils/backup/constants';
 import googleOAuth2, { getUserInfo } from '../../utils/backup/googleapi';
+import { IPC_EVENTS } from '../../utils/ipc-events';
+import { cleanAllFileDir } from '../../utils/main/count-file-lines';
 import db, { queryDb } from '../../utils/main/db';
 import { app_settings } from './app_settings';
 const isOnline = require('is-online');
@@ -43,6 +46,12 @@ export async function handle_backup_login() {
   if (!(await isOnline())) {
     return { error: 'network' };
   }
+  // delete all pending files backup status exists
+  const status = await backup_status(true);
+  if (status) {
+    cleanAllFileDir(getAssetBackupPendingPath());
+  }
+
   const googleAuth = await googleOAuth2(true);
   if (!googleAuth) {
     return { error: 'auth' };
@@ -53,11 +62,21 @@ export async function handle_backup_login() {
     email: payload.email,
     name: payload.name,
     active: true,
+    access: true,
     restored: false,
     lastUpdate: new Date(),
   };
 
-  await queryDb.insert(db.backupStatus, statusBackup);
+  if (status) {
+    await queryDb.update(
+      db.backupStatus,
+      { _id: status._id },
+      { $set: statusBackup }
+    );
+  } else {
+    await queryDb.insert(db.backupStatus, statusBackup);
+    !status;
+  }
 
   initBackupAndRestoration(googleAuth);
 
@@ -88,6 +107,24 @@ export async function confirmRestoration(restored: boolean = true) {
     { _id: status._id },
     { $set: { restored } }
   );
+
+  return status;
+}
+
+export async function setUserAuthAccessStatus(access: boolean) {
+  const status = await backup_status(true);
+  if (!status) return null;
+
+  status.access = access;
+  await queryDb.update(
+    db.backupStatus,
+    { _id: status._id },
+    { $set: { access } }
+  );
+
+  if (mainWindow) {
+    mainWindow.webContents.send(IPC_EVENTS.backup_status, status);
+  }
 
   return status;
 }

@@ -1,4 +1,4 @@
-import { Button, Modal, Space, message, Progress } from 'antd';
+import { Button, Modal, Space, message, Progress, Alert } from 'antd';
 import { ipcRenderer } from 'electron';
 import React, { useCallback, useMemo, useState } from 'react';
 import { useEffect } from 'react';
@@ -105,14 +105,14 @@ export default function BackupProfile() {
             loading={loading}
             type="primary"
             onClick={
-              activeBackup
+              activeBackup && activeBackup.access
                 ? handleBackupStatus
                 : fetchedStatus
                 ? handleLogin
                 : undefined
             }
           >
-            {activeBackup
+            {activeBackup && activeBackup.access
               ? activeBackup.active
                 ? 'Pause'
                 : 'Reprendre'
@@ -224,6 +224,15 @@ const ActiveBackup = ({
             </Space>
             {restoreContent}
           </Space>
+        </Paragraph>
+      )}
+
+      {!status.access && (
+        <Paragraph>
+          <Alert
+            message="l'accès à votre stockage internet est limité, reconnectez-vous et assurez-vous d'avoir autorisé l'accès demandé en cochant les cases qui s'afficheront."
+            type="error"
+          />
         </Paragraph>
       )}
     </Typography>
