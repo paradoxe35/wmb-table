@@ -52,7 +52,7 @@ export async function handle_backup_login() {
     cleanAllFileDir(getAssetBackupPendingPath());
   }
 
-  const googleAuth = await googleOAuth2(true);
+  const googleAuth = await googleOAuth2(true, !!status);
   if (!googleAuth) {
     return { error: 'auth' };
   }
