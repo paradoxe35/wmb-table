@@ -27,7 +27,7 @@ export let lastCode: string | null = null;
 async function authorize(
   credentials: any,
   login: boolean = false,
-  overrideClientToken: boolean = false
+  overwriteClientToken: boolean = false
 ): Promise<OAuth2Client | null> {
   const { client_secret, client_id, redirect_uris } = credentials.installed;
 
@@ -45,7 +45,7 @@ async function authorize(
   let oneAccess: boolean = false;
 
   try {
-    if (!overrideClientToken) {
+    if (!overwriteClientToken) {
       const token = await readFile(TOKEN_PATH);
       oAuth2Client.setCredentials(JSON.parse(token.toString('utf-8')));
     } else {
@@ -53,7 +53,7 @@ async function authorize(
       oAuth2Client = await access(oAuth2Client);
     }
   } catch (error) {
-    if (!oneAccess && !overrideClientToken) {
+    if (!oneAccess && !overwriteClientToken) {
       oAuth2Client = await access(oAuth2Client);
     }
   }
@@ -171,7 +171,7 @@ function storeClientToken(
 
 export default async function googleOAuth2(
   login: boolean = false,
-  overrideClientToken: boolean = false
+  overwriteClientToken: boolean = false
 ): Promise<OAuth2Client | null> {
   try {
     const content = await readFile(
@@ -180,7 +180,7 @@ export default async function googleOAuth2(
     const client = await authorize(
       JSON.parse(content.toString('utf-8')),
       login,
-      overrideClientToken
+      overwriteClientToken
     );
     setOAuth2Client(client);
     return client;
