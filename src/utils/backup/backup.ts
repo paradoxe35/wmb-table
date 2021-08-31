@@ -24,6 +24,7 @@ import { PrepareRestore } from './handler/prepare-restore';
 import { OAuth2Client } from 'google-auth-library';
 import { DB_EXTENSION } from '../constants';
 import fs from 'fs';
+import { setUserAuthAccessStatus } from '../../message-control/handlers/backup';
 
 const isOnline = require('is-online');
 const watch = require('node-watch');
@@ -231,8 +232,14 @@ async function uploadModifications(
       );
       await queryDb.remove(pDb, data, { multi: true });
     } catch (error) {
-      const exists = await queryDb.findOne(pDb, data);
-      if (!exists) queryDb.insert(pDb, { ...data, deleted: changed.deleted });
+      console.error(
+        'Error occured while backup data from top file changed: ',
+        error?.message || error
+      );
+      if (!error?.code || error.code !== 404) {
+        const exists = await queryDb.findOne(pDb, data);
+        if (!exists) queryDb.insert(pDb, { ...data, deleted: changed.deleted });
+      }
     }
   }
 }
@@ -256,13 +263,13 @@ const performUniqueBackup = async (filename: string) => {
 
   const oAuth2Client = OAUTH2_CLIENT.value || (await googleOAuth2());
 
-  // console.log(grouped);
-  // console.log(
-  //   'orginal range -- ',
-  //   rangeLines.length,
-  //   'Total: -- ',
-  //   Object.keys(grouped).length
-  // );
+  console.log(grouped);
+  console.log(
+    'orginal range -- ',
+    rangeLines.length,
+    'Total: -- ',
+    Object.keys(grouped).length
+  );
 
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
   if (DATA_BACKINGUP_PENDING.value || !(await isOnline()) || !oAuth2Client) {
@@ -361,14 +368,19 @@ export default () => {
 
 // functions used as top level funcs to initialize or resume backup and restoration
 //--------------------------------------------------------------
-async function restoreHandler() {
+async function restoreHandler(_exception: boolean = false) {
   try {
     await RestoreHandler.handle();
     await BackupHandler.handlePending();
+    // if restore was succesfuly handled, then consider user have full access
+    setUserAuthAccessStatus(true);
   } catch (error) {
-    console.log(
+    if (error?.code && (error.code === 403 || error.code === 401)) {
+      setUserAuthAccessStatus(false);
+    }
+    console.error(
       'Error occured while restore data from top level function: ',
-      error?.message
+      error?.message || error
     );
   }
 }
@@ -379,9 +391,9 @@ export async function initBackupAndRestoration(
   DriveHandler.setOAuth2Client(oAuth2Client);
   try {
     await PrepareRestore.handle();
-    await restoreHandler();
+    await restoreHandler(true);
   } catch (error) {
-    console.log(
+    console.error(
       'Error occured while preapre and restore data from top level function: ',
       error?.message
     );
@@ -408,7 +420,10 @@ export function backupPenging(_status: BackupStatus) {
         if (oAuth2Client) {
           BackupHandler.setOAuth2Client(oAuth2Client);
           BackupHandler.handlePending().catch((error) =>
-            console.log('Error occured while backup pending: ', error?.message)
+            console.error(
+              'Error occured while backup pending: ',
+              error?.message
+            )
           );
         }
       });

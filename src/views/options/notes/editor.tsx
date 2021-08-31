@@ -10,6 +10,7 @@ import {
   FilePdfOutlined,
   EditOutlined,
   ReadOutlined,
+  ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { debounce, substrAfter } from '../../../utils/functions';
 import {
@@ -120,6 +121,8 @@ function ButtonsControllers({
 
   const [loadingPdf, setLoadingPdf] = useState(false);
 
+  const [readOnly, setReadOnly] = useState(false);
+
   const exportPdf = () => {
     const editor = editorRef.current;
     if (!editor || !editor.getData().trim()) {
@@ -134,8 +137,6 @@ function ButtonsControllers({
     ).finally(() => setLoadingPdf(false));
   };
 
-  const [readOnly, setReadOnly] = useState(false);
-
   useEffect(() => {
     window.addEventListener('rename-note-modal', openModal);
     return () => {
@@ -149,6 +150,25 @@ function ButtonsControllers({
     editorRef.current.isReadOnly = !editorRef.current.isReadOnly;
   };
 
+  const confirm = useCallback(() => {
+    Modal.confirm({
+      title: 'Alert',
+      icon: <ExclamationCircleOutlined />,
+      content: `Semble que votre note n'a pas de contenu, si vous continuez cette note sera inconsidérée et elle sera supprimée`,
+      okText: 'Continuer',
+      cancelText: 'Annuler',
+      onOk: backToNotes,
+    });
+  }, [backToNotes]);
+
+  const onBackToNotes = useCallback(() => {
+    const editor = editorRef.current;
+    if (editor && ((editor.getData() || '').trim() as string).length < 1) {
+      return confirm();
+    }
+    backToNotes();
+  }, [confirm, backToNotes]);
+
   return (
     <div
       style={{
@@ -158,7 +178,7 @@ function ButtonsControllers({
       }}
     >
       <Space direction="horizontal">
-        <Button type="dashed" onClick={backToNotes} icon={<LeftOutlined />}>
+        <Button type="dashed" onClick={onBackToNotes} icon={<LeftOutlined />}>
           Notes
         </Button>
       </Space>
@@ -512,7 +532,7 @@ function Editor({
                 editorRef.current.editor.ui.view.toolbar.element.remove();
               }
             }}
-            onChange={debounce(onChange, 2000)}
+            onChange={debounce(onChange, 1000)}
             editor={DecoupledDocumentEditor}
             data={data || ''}
             config={{

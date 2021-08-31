@@ -83,7 +83,9 @@ const AppLayout: React.FC = ({ children }) => {
         <div className="logo" onClick={toggle}>
           <Title />
         </div>
-        <ViewerMenu />
+        <div style={{ flexGrow: 1 }}>
+          <ViewerMenu />
+        </div>
         <div className="logo">
           <SidebarStatusHanlder />
         </div>

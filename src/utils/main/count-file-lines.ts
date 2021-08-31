@@ -1,5 +1,7 @@
 import fs from 'fs';
 import { promisify } from 'util';
+import path from 'path';
+
 const lazy = require('lazy');
 
 export function countFileLines(filePath: string): Promise<number> {
@@ -74,4 +76,32 @@ export async function checkForFile(
     await openFile(fileName, 'w');
   }
   if (callback) await callback(fileName);
+}
+
+/**
+ * delete file in directory
+ *
+ * @param {string} directory
+ * @param {string[]} excepts
+ */
+export function cleanAllFileDir(directory: string, excepts: string[] = []) {
+  if (fs.existsSync(directory)) {
+    fs.readdir(directory, (err, files) => {
+      if (err) {
+        console.log(err);
+        return;
+      }
+
+      for (const file of files) {
+        if (!excepts.includes(file)) {
+          fs.unlink(path.join(directory, file), (err) => {
+            if (err) {
+              console.log(err);
+              return;
+            }
+          });
+        }
+      }
+    });
+  }
 }
