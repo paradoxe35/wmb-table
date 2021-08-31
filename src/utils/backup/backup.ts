@@ -22,6 +22,7 @@ import {
 import { PrepareRestore } from './handler/prepare-restore';
 import { OAuth2Client } from 'google-auth-library';
 import { DB_EXTENSION } from '../constants';
+import fs from 'fs';
 
 const isOnline = require('is-online');
 const watch = require('node-watch');
@@ -340,6 +341,9 @@ export default () => {
   const watchers: any[] = [];
 
   WATCHED_DIRS.forEach((dir) => {
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
     const watcher = watch(dir, {
       filter: filterWatchedFiles,
     });
