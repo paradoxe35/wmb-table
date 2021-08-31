@@ -256,13 +256,13 @@ const performUniqueBackup = async (filename: string) => {
 
   const oAuth2Client = OAUTH2_CLIENT.value || (await googleOAuth2());
 
-  console.log(grouped);
-  console.log(
-    'orginal range -- ',
-    rangeLines.length,
-    'Total: -- ',
-    Object.keys(grouped).length
-  );
+  // console.log(grouped);
+  // console.log(
+  //   'orginal range -- ',
+  //   rangeLines.length,
+  //   'Total: -- ',
+  //   Object.keys(grouped).length
+  // );
 
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
   if (DATA_BACKINGUP_PENDING.value || !(await isOnline()) || !oAuth2Client) {
