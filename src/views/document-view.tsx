@@ -190,10 +190,15 @@ export default function DocumentView() {
 
       page?.addEventListener('click', (event: MouseEvent) => {
         let target = event.target as HTMLElement;
-        const href = target.getAttribute('href');
-        if (target.tagName === 'A' && href) {
+        const hasLink = [
+          target,
+          target.parentElement,
+          target.parentElement?.parentElement,
+        ].find((el) => el && el.tagName === 'A');
+        if (hasLink) {
           event.preventDefault();
-          shell.openExternal(href);
+          const href = hasLink.getAttribute('href');
+          href && shell.openExternal(href);
         }
       });
 
