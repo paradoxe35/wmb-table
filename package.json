@@ -38,6 +38,7 @@
     "files": [
       "dist/",
       "node_modules/",
+      "childs_processes/",
       "index.html",
       "main.prod.js",
       "main.prod.js.map",

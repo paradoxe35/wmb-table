@@ -2,22 +2,24 @@ import fs from 'fs';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { shell } from 'electron';
-import webServer, { TmpServer } from './webserver';
 import { promisify } from 'util';
-import { loggedIn } from './response-html';
-import { getAssetCredentialsPath } from '../../sys';
+import { childsProcessesPath, getAssetCredentialsPath } from '../../sys';
 import { setOAuth2Client } from './constants';
+import childProcess, { ChildProcess } from 'child_process';
+import { APP_NAME } from '../constants';
+import { ChildProcessMessage } from '../../childs_processes/types';
+import { cancellablePromise } from '../functions';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
   'https://www.googleapis.com/auth/userinfo.email',
   'https://www.googleapis.com/auth/drive.appdata',
+  'https://www.googleapis.com/auth/drive.file',
 ];
 
 const TOKEN_PATH = getAssetCredentialsPath('google-client-token.json');
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
-export let lastCode: string | null = null;
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -31,16 +33,34 @@ async function authorize(
 ): Promise<OAuth2Client | null> {
   const { client_secret, client_id, redirect_uris } = credentials.installed;
 
-  const server = await webServer();
+  // start webserver from child process
+
+  process.env.CHILD_APP_NAME = APP_NAME;
+  process.env.CHILD_WEBSITE_LINK = process.env.WEBSITE_LINK;
+
+  const child = childProcess.fork(childsProcessesPath() + `/loggedin.js`, {
+    env: process.env,
+  });
+
+  // wait port information from child process server
+  const port = await new Promise<number>((resolve) => {
+    child.once('message', (message: ChildProcessMessage<number>) => {
+      if (message.type === 'port') {
+        resolve(message.data);
+      } else {
+        resolve(0);
+      }
+    });
+  });
 
   let oAuth2Client: OAuth2Client | null = new google.auth.OAuth2(
     client_id,
     client_secret,
-    `${redirect_uris[1]}:${server.port}`
+    `${redirect_uris[1]}:${port}`
   );
 
   const access = async (oAuth2Client: OAuth2Client | null) =>
-    login && oAuth2Client ? await getAccessToken(oAuth2Client, server) : null;
+    login && oAuth2Client ? await getAccessToken(oAuth2Client, child) : null;
 
   let oneAccess: boolean = false;
 
@@ -58,53 +78,9 @@ async function authorize(
     }
   }
 
-  server.server.close();
+  child.kill('SIGINT');
 
   return oAuth2Client;
-}
-
-/**
- * the toute from express js server to be han
- * @param server
- * @returns
- */
-async function redirectRoute(server: TmpServer): Promise<string | undefined> {
-  return new Promise((resolve, reject) => {
-    server.server.on('close', resolve);
-    server.app.get('/', (_req, res) => {
-      res.send(loggedIn);
-
-      if (_req.query.code) {
-        const code = _req.query.code.toString();
-        lastCode = code;
-        resolve(code);
-      } else {
-        reject(null);
-      }
-    });
-  });
-}
-
-/**
- *
- * @param promise
- * @returns
- */
-function cancellablePromise<T>(promise: Promise<T>) {
-  let _resolve, _reject;
-
-  let wrap: Promise<T> & {
-    resolve?: (value: T) => void;
-    reject?: (value: T) => void;
-  } = new Promise<any>((resolve, reject) => {
-    _resolve = resolve;
-    _reject = reject;
-    promise.then(resolve).catch(reject);
-  });
-  wrap.resolve = _resolve;
-  wrap.reject = _reject;
-
-  return wrap;
 }
 
 /**
@@ -113,7 +89,7 @@ function cancellablePromise<T>(promise: Promise<T>) {
  * @param {google.auth.OAuth2} oAuth2Client The OAuth2 client to get token for.
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
-async function getAccessToken(oAuth2Client: OAuth2Client, server: TmpServer) {
+async function getAccessToken(oAuth2Client: OAuth2Client, child: ChildProcess) {
   const authUrl = oAuth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES,
@@ -123,7 +99,15 @@ async function getAccessToken(oAuth2Client: OAuth2Client, server: TmpServer) {
   let timer: NodeJS.Timeout | null = null;
 
   try {
-    const requestForCode = cancellablePromise(redirectRoute(server));
+    const requestForCodePromise = new Promise<string | null>((resolve) => {
+      child.once('message', (message: ChildProcessMessage<string | null>) => {
+        message.type === 'code' && resolve(message.data);
+        message.type !== 'code' && resolve(null);
+      });
+    });
+
+    // make the promise cancellable
+    const requestForCode = cancellablePromise(requestForCodePromise);
 
     timer = setTimeout(() => {
       if (requestForCode.reject) {
@@ -131,8 +115,12 @@ async function getAccessToken(oAuth2Client: OAuth2Client, server: TmpServer) {
       }
     }, 3 * 60000);
 
+    // now wait for response
     const code = await requestForCode;
+
+    // remove timeout timer
     timer && clearTimeout(timer);
+
     return code ? await storeClientToken(oAuth2Client, code) : null;
   } catch (error) {
     console.log('signin error: ', error?.message || error);

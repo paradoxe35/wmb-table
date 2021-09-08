@@ -116,7 +116,7 @@ export class RestoreHandler extends DriveHandler {
     try {
       const json = JSON.parse(data.toString()) as { proceedFile: string };
       return json.proceedFile;
-    } catch (error) {
+    } catch (error:any) {
       console.error('getLastProceedFile error: ', error?.message);
     }
     return null;
@@ -229,7 +229,7 @@ export class RestoreHandler extends DriveHandler {
         );
         await this.saveDocumentHtml(fileData as Stream, `${data.title}.html`);
       }
-    } catch (error) {
+    } catch (error:any) {
       console.error(
         'Error fetching html file from on custom document restoration: ',
         error?.message || error

@@ -14,7 +14,7 @@ export function export_note_pdf(
       filters: [{ name: 'Pdf', extensions: ['pdf'] }],
       defaultPath: `${name.split(' ').join('-').toLocaleLowerCase()}.pdf`,
     });
-  } catch (error) {
+  } catch (error:any) {
     return false;
   }
 

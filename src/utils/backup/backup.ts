@@ -231,7 +231,7 @@ async function uploadModifications(
         filename
       );
       await queryDb.remove(pDb, data, { multi: true });
-    } catch (error) {
+    } catch (error:any) {
       console.error(
         'Error occured while backup data from top file changed: ',
         error?.message || error
@@ -374,7 +374,7 @@ async function restoreHandler(_exception: boolean = false) {
     await BackupHandler.handlePending();
     // if restore was succesfuly handled, then consider user have full access
     setUserAuthAccessStatus(true);
-  } catch (error) {
+  } catch (error:any) {
     if (error?.code && (error.code === 403 || error.code === 401)) {
       setUserAuthAccessStatus(false);
     }
@@ -392,7 +392,7 @@ export async function initBackupAndRestoration(
   try {
     await PrepareRestore.handle();
     await restoreHandler(true);
-  } catch (error) {
+  } catch (error:any) {
     console.error(
       'Error occured while preapre and restore data from top level function: ',
       error?.message

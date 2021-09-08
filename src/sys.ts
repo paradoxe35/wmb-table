@@ -5,6 +5,10 @@ export const RESOURCES_PATH = app.isPackaged
   ? path.join(process.resourcesPath, 'assets')
   : path.join(__dirname, '../assets');
 
+export function childsProcessesPath(): string {
+  return __dirname + '/childs_processes';
+}
+
 export let mainWindow: BrowserWindow | null = null;
 
 export const setMainWindow = (mWindow: BrowserWindow) => (mainWindow = mWindow);

@@ -37,12 +37,6 @@ if (fs.existsSync(odatasDir) && fs.existsSync(datasDir)) {
 // clean db files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
 
-// clean db backup pending files
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/pending/'));
-
-// clean db backup files for production
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'));
-
 // clean db backup files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/credentials/'), [
   'google-drive-credentials.json',
@@ -51,3 +45,9 @@ cleanAllFileDir(path.resolve(__dirname, '../assets/credentials/'), [
 
 // clean dist src compiled souces
 cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
+
+// clean db backup files for production
+cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'));
+
+// clean db backup pending files
+cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/pending/'));

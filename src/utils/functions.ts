@@ -199,3 +199,25 @@ export const getFilename = (path: string): string => {
   const splitted = path.split(/[\/\\]/);
   return splitted[splitted.length - 1];
 };
+
+/**
+ *
+ * @param promise
+ * @returns
+ */
+export function cancellablePromise<T>(promise: Promise<T>) {
+  let _resolve, _reject;
+
+  let wrap: Promise<T> & {
+    resolve?: (value: T) => void;
+    reject?: (value: T) => void;
+  } = new Promise<any>((resolve, reject) => {
+    _resolve = resolve;
+    _reject = reject;
+    promise.then(resolve).catch(reject);
+  });
+  wrap.resolve = _resolve;
+  wrap.reject = _reject;
+
+  return wrap;
+}
