@@ -18,7 +18,7 @@ export async function backup_status(
 ): Promise<BackupStatus | null> {
   const status = await queryDb.findOne<BackupStatus | null>(db.backupStatus);
 
-  if (status && typeof onlyStatus !== 'boolean') {
+  if (status && status.access && typeof onlyStatus !== 'boolean') {
     setDataRestored(status.restored);
     // resume restoration or backup pending data
     !status.restored && resumeRestoration(status);

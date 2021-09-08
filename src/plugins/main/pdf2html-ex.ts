@@ -25,7 +25,7 @@ export const convert = async (srcFilePdf: string, fileName: string) => {
       title: fileName,
       textContent: strNormalizeNoLower((await pdf(dataBuffer)).text),
     };
-  } catch (err) {
+  } catch (err:any) {
     console.error(`Psst! something went wrong: ${err}`);
   }
 

@@ -15,7 +15,7 @@ function pdftohtml(filename: any, outfile: null, options: {}) {
 
     try {
       module = require(`./presets/${preset}`);
-    } catch (error) {
+    } catch (error:any) {
       module = require(preset);
     } finally {
       if (module && typeof module.load === 'function') {
