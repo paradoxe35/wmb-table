@@ -231,7 +231,7 @@ async function uploadModifications(
         filename
       );
       await queryDb.remove(pDb, data, { multi: true });
-    } catch (error:any) {
+    } catch (error) {
       console.error(
         'Error occured while backup data from top file changed: ',
         error?.message || error
@@ -263,13 +263,15 @@ const performUniqueBackup = async (filename: string) => {
 
   const oAuth2Client = OAUTH2_CLIENT.value || (await googleOAuth2());
 
-  console.log(grouped);
-  console.log(
-    'orginal range -- ',
-    rangeLines.length,
-    'Total: -- ',
-    Object.keys(grouped).length
-  );
+  if (process.env.NODE_ENV === 'development') {
+    console.log(grouped);
+    console.log(
+      'orginal range -- ',
+      rangeLines.length,
+      'Total: -- ',
+      Object.keys(grouped).length
+    );
+  }
 
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
   if (DATA_BACKINGUP_PENDING.value || !(await isOnline()) || !oAuth2Client) {
@@ -374,7 +376,7 @@ async function restoreHandler(_exception: boolean = false) {
     await BackupHandler.handlePending();
     // if restore was succesfuly handled, then consider user have full access
     setUserAuthAccessStatus(true);
-  } catch (error:any) {
+  } catch (error) {
     if (error?.code && (error.code === 403 || error.code === 401)) {
       setUserAuthAccessStatus(false);
     }
@@ -392,7 +394,7 @@ export async function initBackupAndRestoration(
   try {
     await PrepareRestore.handle();
     await restoreHandler(true);
-  } catch (error:any) {
+  } catch (error) {
     console.error(
       'Error occured while preapre and restore data from top level function: ',
       error?.message
