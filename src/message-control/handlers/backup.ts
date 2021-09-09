@@ -28,15 +28,17 @@ export async function backup_status(
 }
 
 export async function backup_reminder(): Promise<boolean> {
-  let status = await app_settings();
-  if (!status) return false;
+  let appSetting = await app_settings();
+  const status = await backup_status(true);
 
-  const lastUpdate = status.lastCheckBackupStatus.addDays(2);
+  if (!appSetting || status) return false;
+
+  const lastUpdate = appSetting.lastCheckBackupStatus.addDays(2);
   const now = new Date();
   if (lastUpdate >= now) return false;
   await queryDb.update(
     db.configurations,
-    { _id: status._id },
+    { _id: appSetting._id },
     { $set: { lastCheckBackupStatus: now } }
   );
   return true;
@@ -75,7 +77,6 @@ export async function handle_backup_login() {
     );
   } else {
     await queryDb.insert(db.backupStatus, statusBackup);
-    !status;
   }
 
   initBackupAndRestoration(googleAuth);
