@@ -8,10 +8,16 @@ import {
 } from '../../types';
 import db, { loadDatabase, queryDb } from '../../utils/main/db';
 import fs from 'fs';
-import { getAssetDocumentsPath, mainWindow } from '../../sys';
-import { convert } from '../../plugins/main/pdf2html-ex';
+import {
+  childsProcessesPath,
+  getAssetDocumentsPath,
+  getAssetPath,
+  mainWindow,
+} from '../../sys';
 import { asyncify, doWhilst, whilst } from '../../utils/async';
 import { IPC_EVENTS } from '../../utils/ipc-events';
+import childProcess from 'child_process';
+import { ConvertMessage } from '../../childs_processes/types';
 
 export default async () => {
   return await queryDb.find<CustomDocument>(
@@ -62,17 +68,45 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
   // preload document db to make sur the reste proccess of storing will success
   loadDatabase(db.documents);
 
+  process.env.ASSETS_PATH = getAssetPath();
+  process.env.ASSETS_DOCUMENTS_PATH = getAssetPath();
+
+  const child = childProcess.fork(childsProcessesPath('pdf2html.js'), {
+    env: process.env,
+  });
+
   return new Promise<CustomDocument[]>((resolve, reject) => {
     const newDocuments = documents.slice();
     const docs: CustomDocument[] = [];
 
     commitUploadProgress('progress', 0, documents.length);
 
+    const convert = <T>(file: UploadDocument) => {
+      child.send({ ...file, childForked: true });
+
+      return new Promise<T | null>((resolve) => {
+        child.once('message', (message: ConvertMessage) => {
+          if (file.name === message.fileName) {
+            resolve(({
+              title: message.title,
+              textContent: message.textContent,
+            } as unknown) as T);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    };
+
     const proceed = async () => {
       const file = newDocuments.shift();
       if (!file) return;
 
-      const getContent = await convert(file.path, file.name);
+      const getContent = await convert<{
+        title: string;
+        textContent: string;
+      }>(file);
+
       if (getContent) {
         const savedDoc = await queryDb.insert<DataDocument>(
           db.documents,
@@ -109,6 +143,7 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
         } else {
           resolve(docs.sort((a, b) => b.createdAt - a.createdAt));
         }
+        child.kill('SIGINT');
         commitUploadProgress('finish', 0, 0);
       }
     );
