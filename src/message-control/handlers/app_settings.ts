@@ -1,5 +1,6 @@
 import { AppSettingsStatus } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
+import { app } from 'electron';
 
 export async function app_settings() {
   return await queryDb.findOne<AppSettingsStatus | null>(db.configurations);
@@ -25,4 +26,9 @@ export async function initialized_app() {
   }
 
   return true;
+}
+
+export async function restart_app() {
+  app.relaunch();
+  app.quit();
 }

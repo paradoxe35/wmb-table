@@ -148,6 +148,10 @@ const ActiveBackup = ({
     );
   }, []);
 
+  const restartAppNow = useCallback(() => {
+    sendIpcRequest<boolean>(IPC_EVENTS.restart_app);
+  }, []);
+
   const restoreContentType = useMemo(() => {
     if (!restoreProgress) return null;
     const {
@@ -169,11 +173,16 @@ const ActiveBackup = ({
     return {
       start: <Text>Début de la récupération des données</Text>,
       complete: (
-        <Text type="success">
-          Vos données ont été restaurées et sauvegardées avec succès. <br />
-          Veuillez fermer et rouvrir l'application pour afficher les
-          modifications apportées.
-        </Text>
+        <Space direction="vertical">
+          <Text type="success">
+            Vos données ont été restaurées et sauvegardées avec succès. <br />
+            Veuillez fermer et rouvrir l'application ou cliquer sur le bouton
+            ci-dessous pour afficher les modifications apportées.
+          </Text>
+          <Button onClick={restartAppNow}>
+            Redémarrer l'application maintenant
+          </Button>
+        </Space>
       ),
       error: (
         <Text type="danger">
