@@ -5,7 +5,6 @@ const convert = require('./pdf2html/pdf2html-ex');
  * @param {import('../types').UploadDocument & {childForked?:boolean}} file
  */
 const hanlder = async (file) => {
-  console.log(process.env.ASSETS_PATH, process.env.ASSETS_DOCUMENTS_PATH);
   if (
     !file.childForked ||
     !process.send ||
@@ -14,11 +13,6 @@ const hanlder = async (file) => {
   )
     return;
 
-  console.log(
-    process.env.ASSETS_PATH,
-    process.env.ASSETS_DOCUMENTS_PATH,
-    'passed'
-  );
   const getContent = await convert(file.path, file.name);
   if (getContent) {
     /**
