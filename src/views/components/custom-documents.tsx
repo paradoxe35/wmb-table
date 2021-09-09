@@ -244,12 +244,12 @@ function validateFile(file: File, showMessage: boolean = true) {
   if (!isJpgOrPng) {
     showMessage && message.error(`seul le format pdf est pris en charge.`);
   }
-  const isLt5k = file.size / 1024 / 1024 <= 0.5;
-  if (!isLt5k) {
+  const isLt8k = file.size / 1024 / 1024 <= 0.8;
+  if (!isLt8k) {
     showMessage &&
       message.error('Le fichier doit être inférieur ou égal à 2Mo !');
   }
-  return isJpgOrPng && isLt5k;
+  return isJpgOrPng && isLt8k;
 }
 
 function Uploader() {
@@ -387,7 +387,7 @@ function Uploader() {
               </p>
               <p className="ant-upload-hint">
                 Seuls les fichiers PDF sont pris en charge (taille maximale
-                500K)
+                800KB)
                 <br />
                 Vous ne pouvez envoyer que 10 fichiers par téléchargement
               </p>
