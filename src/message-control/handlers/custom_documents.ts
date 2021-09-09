@@ -69,8 +69,7 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
   loadDatabase(db.documents);
 
   process.env.ASSETS_PATH = getAssetPath();
-  process.env.ASSETS_DOCUMENTS_PATH = getAssetPath();
-
+  process.env.ASSETS_DOCUMENTS_PATH = getAssetDocumentsPath();
   const child = childProcess.fork(childsProcessesPath('pdf2html.js'), {
     env: process.env,
   });
@@ -86,7 +85,7 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
 
       return new Promise<T | null>((resolve) => {
         child.once('message', (message: ConvertMessage) => {
-          if (file.name === message.fileName) {
+          if (message && file.name === message.fileName) {
             resolve(({
               title: message.title,
               textContent: message.textContent,
