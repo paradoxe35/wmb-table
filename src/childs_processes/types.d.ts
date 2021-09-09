@@ -10,3 +10,14 @@ export type ChildProcessMessage<T> = {
   type: 'port' | 'code';
   data: T;
 };
+
+export type ChildProcessConvertMessage<T> = {
+  type: 'converted';
+  data: T;
+};
+
+export type ConvertMessage = {
+  fileName: string;
+  title: string;
+  textContent: string;
+};
