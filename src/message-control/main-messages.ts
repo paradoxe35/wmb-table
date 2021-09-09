@@ -41,7 +41,7 @@ import {
   notes_references_bible_sync,
 } from './handlers/notes_references_bible';
 import sidebar_status, { sidebar_status_set } from './handlers/sidebar_status';
-import { initialized_app } from './handlers/app_settings';
+import { initialized_app, restart_app } from './handlers/app_settings';
 import assets from './handlers/assets';
 import {
   backup_reminder,
@@ -177,3 +177,6 @@ mainMessageTransport(IPC_EVENTS.backup_reminder, backup_reminder);
 mainMessageTransport(IPC_EVENTS.backup_login, handle_backup_login);
 
 mainMessageTransport(IPC_EVENTS.backup_status_put, handle_backup_status);
+
+// restart_app
+mainMessageTransport(IPC_EVENTS.restart_app, restart_app);
