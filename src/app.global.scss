@@ -352,3 +352,29 @@ main .ck-editor[role='application'] .ck.ck-content,
     display: flex;
   }
 }
+// bible
+.verse-item {
+  &:hover {
+    .verse-action {
+      visibility: visible;
+      opacity: 1;
+    }
+  }
+  .verse-action {
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s;
+  }
+}
+
+.content-description {
+  font-size: 1.2em;
+}
+
+.content-description-2 {
+  font-size: 1.1em;
+}
+
+.underline {
+  text-decoration: underline;
+}

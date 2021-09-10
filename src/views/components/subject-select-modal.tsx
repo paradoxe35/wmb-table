@@ -3,9 +3,9 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { subjectDocumentStore, subjectDocumentItemStore } from '../../store';
 import {
-  DocumentHtmlTree,
   SubjectDocument,
   SubjectDocumentItem,
+  SubjectRefTree,
 } from '../../types';
 import { strNormalize } from '../../utils/functions';
 import { useModalVisible, useValueStateRef } from '../../utils/hooks';
@@ -18,10 +18,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
 
   const setSubjectItems = useSetRecoilState(subjectDocumentItemStore);
 
-  const documentRefTree = useRef<{
-    textContent: string;
-    documentHtmlTree: DocumentHtmlTree;
-  }>();
+  const documentRefTree = useRef<SubjectRefTree>();
 
   const {
     isModalVisible,
@@ -37,10 +34,11 @@ export function SubjectSelectModal({ title }: { title: string }) {
     if (!documentRefTree.current) return;
 
     const subjectItem: Partial<SubjectDocumentItem> = {
-      documentHtmlTree: documentRefTree.current.documentHtmlTree,
+      documentHtmlTree: documentRefTree.current?.documentHtmlTree,
       documentTitle: titleRef.current,
-      textContent: documentRefTree.current.textContent,
+      textContent: documentRefTree.current?.textContent,
       subject: name,
+      bible: documentRefTree.current?.bible,
     };
 
     sendIpcRequest<SubjectDocumentItem>(
@@ -70,7 +68,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
   }, [odatas]);
 
   useEffect(() => {
-    const showModal = (e: CustomEventInit) => {
+    const showModal = (e: CustomEventInit<SubjectRefTree>) => {
       documentRefTree.current = e.detail;
       setIsModalVisible(true);
     };

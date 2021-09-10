@@ -181,15 +181,17 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
       <List.Item key={`${result.item.title}-${query}`}>
         <List.Item.Meta
           title={
-            <a>
-              <DocumentViewer
-                onItemClick={handleDocumentClick}
-                name={result.item.title}
-                id={result.item._id as string}
-              >
-                {$titles[result.item.title]?.name}
-              </DocumentViewer>
-            </a>
+            <Text underline>
+              <a>
+                <DocumentViewer
+                  onItemClick={handleDocumentClick}
+                  name={result.item.title}
+                  id={result.item._id as string}
+                >
+                  {$titles[result.item.title]?.name}
+                </DocumentViewer>
+              </a>
+            </Text>
           }
           description={
             <span>
@@ -304,7 +306,7 @@ const ContentItem = ({ item }: { item: SearchItem }) => {
     }
   }, []);
 
-  return <span ref={parentRef}></span>;
+  return <span className="content-description-2" ref={parentRef}></span>;
 };
 
 const searchSuggestions = (query: string, suggestions: Suggestions[]) =>

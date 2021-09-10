@@ -278,7 +278,9 @@ function ShowActiveDocuments({
   documents: SubjectDocumentItem[];
   setDocuments: React.Dispatch<React.SetStateAction<SubjectDocumentItem[]>>;
 }) {
-  const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItemStore);
+  const setSubjectItemSelected = useSetRecoilState(
+    selectedSubjectDocumentItemStore
+  );
 
   const $titles = useRecoilValue(titlesDocumentSelector);
 
@@ -297,7 +299,9 @@ function ShowActiveDocuments({
       {documents.length > 0 ? (
         <>
           <div className="flex flex-center">
-            <Text type="secondary">Documents {documents.length}</Text>
+            <Text type="secondary">
+              {subject.name} ({documents.length})
+            </Text>
           </div>
           <div className="mt-2 flex flex-center">
             <List
@@ -310,20 +314,41 @@ function ShowActiveDocuments({
                   <List.Item
                     actions={[<DeleteBtn confirm={() => confirm(item)} />]}
                   >
-                    <List.Item.Meta
-                      title={
-                        <a>
-                          <DocumentViewer
-                            onItemClick={() => setSubjectItemSelected(item)}
-                            name={item.documentTitle}
-                          >
-                            {$titles[item.documentTitle]?.name}
-                          </DocumentViewer>
-                        </a>
-                      }
-                      description={<span>Sujet: {subject.name}</span>}
-                    />
-                    <span>{item.textContent}...</span>
+                    {item.bible ? (
+                      <>
+                        <List.Item.Meta
+                          title={
+                            <span>
+                              {item.bible.bookName} {item.bible.chapter}:
+                              {item.bible.verse}
+                            </span>
+                          }
+                          description={<span>Référence: Biblique</span>}
+                        />
+                        <span className="content-description-2">
+                          {item.bible.content}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <List.Item.Meta
+                          title={
+                            <a className="underline">
+                              <DocumentViewer
+                                onItemClick={() => setSubjectItemSelected(item)}
+                                name={item.documentTitle}
+                              >
+                                {$titles[item.documentTitle]?.name}
+                              </DocumentViewer>
+                            </a>
+                          }
+                          description={<span>Référence: Document</span>}
+                        />
+                        <span className="content-description-2">
+                          {item.textContent}...
+                        </span>
+                      </>
+                    )}
                   </List.Item>
                   <Divider />
                 </>
