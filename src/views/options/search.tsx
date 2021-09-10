@@ -13,6 +13,7 @@ import {
   escapeRegExp,
   regexpMatcher,
   strNormalize,
+  trimBeforeDotAndComma,
 } from '../../utils/functions';
 import { SearchItem, SearchResult, Suggestions } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
@@ -276,7 +277,7 @@ function MatcherFn(
     ) +
     '...';
 
-  content = content.replace(/[\n]/g, ' ');
+  content = trimBeforeDotAndComma(content.replace(/[\n]/g, ' '), [',', '.']);
 
   const matcher = regexpMatcher(escapeRegExp(term), content)[0];
 

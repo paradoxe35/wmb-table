@@ -221,3 +221,16 @@ export function cancellablePromise<T>(promise: Promise<T>) {
 
   return wrap;
 }
+
+export function trimBeforeDotAndComma(
+  text: string = '',
+  splitters: string[] = []
+) {
+  splitters.forEach((splitter) => {
+    text = text
+      .split(splitter)
+      .map((d) => d.trimEnd())
+      .join(splitter);
+  });
+  return text;
+}
