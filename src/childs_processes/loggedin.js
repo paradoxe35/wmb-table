@@ -14,7 +14,7 @@ const handler = async () => {
   process.send && process.send(message);
 
   server.app.get('/', (_req, res) => {
-    res.send(loggedIn);
+    res.send(loggedIn(process.env.WEBSITE_LINK, process.env.APP_NAME));
 
     if (_req.query.code) {
       message = {
