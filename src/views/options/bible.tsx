@@ -2,6 +2,7 @@ import {
   Button,
   Collapse,
   Divider,
+  Dropdown,
   Input,
   List,
   Menu,
@@ -12,7 +13,7 @@ import {
 } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import LoadByVisibility from '../../components/load-by-visibility';
-import { SearchOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownOutlined } from '@ant-design/icons';
 import { BibleIcons } from '../../components/icons';
 import {
   BibleBook,
@@ -21,6 +22,7 @@ import {
   BibleSearchItem,
   BibleSearchResult,
   BookRequest,
+  SubjectRefTree,
 } from '../../types';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
 import { IPC_EVENTS } from '../../utils/ipc-events';
@@ -48,7 +50,7 @@ export default function Bible() {
       <div className="mt-2 mb-3" />
       <div hidden={menu !== 'bible'}>
         <ContainerScrollY>
-          <BibleContent />
+          <BibleContent verseMetaContent={true} />
         </ContainerScrollY>
       </div>
       <div hidden={menu !== 'search'}>
@@ -60,12 +62,42 @@ export default function Bible() {
   );
 }
 
+function AddToSubject({ verse }: { verse: BibleBook }) {
+  const handler = useCallback(() => {
+    window.dispatchEvent(
+      new CustomEvent<Partial<SubjectRefTree>>('add-document-ref-subject', {
+        detail: {
+          bible: verse,
+        },
+      })
+    );
+  }, []);
+  return (
+    <Dropdown
+      overlay={
+        <Menu>
+          <Menu.Item onClick={handler}>Ajouter à un sujet</Menu.Item>
+        </Menu>
+      }
+      placement="bottomRight"
+      arrow
+      trigger={['click']}
+    >
+      <Button>
+        <DownOutlined />
+      </Button>
+    </Dropdown>
+  );
+}
+
 function BookContent({
   bookDetail,
   onClick,
+  verseMetaContent,
 }: {
   bookDetail: BibleIndexValue;
   onClick?: (id: string) => void;
+  verseMetaContent?: boolean;
 }) {
   const [chaptersKey, setChaptersKey] = useState(1);
   const [verses, setVerses] = useState<BibleBook[]>();
@@ -113,14 +145,21 @@ function BookContent({
               const onClickItem = () => onClick && onClick(item._id);
               return (
                 <List.Item
-                  className={onClick ? 'list__clickable' : undefined}
+                  className={`verse-item ${onClick ? 'list__clickable' : ''}`}
+                  actions={[
+                    verseMetaContent && (
+                      <span className="verse-action" key="0">
+                        {<AddToSubject verse={item} />}
+                      </span>
+                    ),
+                  ]}
                   onClick={onClickItem}
                   key={item._id}
                 >
                   <List.Item.Meta
                     avatar={<span>{item.verse}.</span>}
                     description={
-                      <Typography.Text style={{ fontSize: '1.2em' }}>
+                      <Typography.Text className="content-description">
                         {item.content}
                       </Typography.Text>
                     }
@@ -138,9 +177,11 @@ function BookContent({
 function BibleTestamentContent({
   bibleIndex,
   onClick,
+  verseMetaContent,
 }: {
   bibleIndex: BibleIndex;
   onClick?: (id: string) => void;
+  verseMetaContent?: boolean;
 }) {
   const [currentKey, setCurrentKey] = useState<string>();
 
@@ -156,7 +197,11 @@ function BibleTestamentContent({
           return (
             <Collapse.Panel header={key} key={book.book}>
               {currentKey === book.book && (
-                <BookContent onClick={onClick} bookDetail={book} />
+                <BookContent
+                  verseMetaContent={verseMetaContent}
+                  onClick={onClick}
+                  bookDetail={book}
+                />
               )}
             </Collapse.Panel>
           );
@@ -165,7 +210,13 @@ function BibleTestamentContent({
   );
 }
 
-export function BibleContent({ onClick }: { onClick?: (id: string) => void }) {
+export function BibleContent({
+  onClick,
+  verseMetaContent,
+}: {
+  onClick?: (id: string) => void;
+  verseMetaContent?: boolean;
+}) {
   const [bibleIndex, setBibleIndex] = useState<{ [name: string]: BibleIndex }>(
     {}
   );
@@ -190,6 +241,7 @@ export function BibleContent({ onClick }: { onClick?: (id: string) => void }) {
                 </Typography.Title>
                 <BibleTestamentContent
                   key={key}
+                  verseMetaContent={verseMetaContent}
                   onClick={onClick}
                   bibleIndex={bibleIndex[key]}
                 />

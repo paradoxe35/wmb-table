@@ -104,7 +104,16 @@ export interface SubjectDocumentItem extends Readonly<TimeStampData> {
   documentTitle: string;
   documentHtmlTree: DocumentHtmlTree;
   textContent: string;
+  bible?: BibleBook;
 }
+
+
+export type SubjectRefTree = {
+  textContent: string;
+  documentHtmlTree: DocumentHtmlTree;
+  bible?: BibleBook;
+};
+
 
 export interface BackupDbReference {
   _id: string;

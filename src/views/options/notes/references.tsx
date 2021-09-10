@@ -236,7 +236,7 @@ export function ReferenceBibleModal({
                           </span>
                         }
                         description={
-                          <span style={{ fontSize: '1.2em' }}>
+                          <span className="content-description">
                             {ref.content}
                           </span>
                         }
