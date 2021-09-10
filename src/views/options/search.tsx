@@ -268,13 +268,15 @@ function MatcherFn(
 
   start = start < 0 ? 0 : start;
 
-  const content =
+  let content =
     (start > 0 ? textContent.substr(0, textContent.indexOf(' ')) + '...' : '') +
     textContent.slice(
       start,
       match[1] + (term.length > 300 ? term.length + 150 : 300)
     ) +
     '...';
+
+  content = content.replace(/[\n]/g, ' ');
 
   const matcher = regexpMatcher(escapeRegExp(term), content)[0];
 
