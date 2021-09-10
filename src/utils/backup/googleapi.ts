@@ -35,8 +35,8 @@ async function authorize(
 
   // start webserver from child process
 
-  process.env.APP_NAME = APP_NAME;
-  process.env.WEBSITE_LINK = process.env.WEBSITE_LINK;
+  process.env.CHLD_APP_NAME = APP_NAME;
+  process.env.CHLD_WEBSITE_LINK = process.env.WEBSITE_LINK;
 
   const child = childProcess.fork(childsProcessesPath('loggedin.js'), {
     env: process.env,
