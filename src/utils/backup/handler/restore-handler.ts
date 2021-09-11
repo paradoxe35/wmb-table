@@ -83,7 +83,7 @@ export class RestoreHandler extends DriveHandler {
             reject(err);
           } else {
             this.makeProceedFile(this.COMPLETE);
-            window.setTimeout(() => {
+            setTimeout(() => {
               commitRestoreProgress(this.COMPLETE, 0, 0);
               confirmRestoration(true);
               resolve();
