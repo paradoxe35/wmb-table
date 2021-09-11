@@ -1,11 +1,7 @@
 import { DriveHandler } from './drive-handler';
 import fs from 'fs';
 import { getAssetBackupPendingPath, getAssetDocumentsPath } from '../../../sys';
-import {
-  commitRestoreProgress,
-  EXCLUDE_DB_FILES_REGEX,
-  setDataBackingUpPending,
-} from '../constants';
+import { commitRestoreProgress, setDataBackingUpPending } from '../constants';
 import { asyncify, whilst } from '../../async';
 import { camelCase, getFilename } from '../../functions';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '../../main/db';
@@ -21,8 +17,8 @@ export class BackupHandler extends DriveHandler {
     if (!fs.existsSync(dir)) return;
     const readdir = promisify(fs.readdir);
 
-    const files = (await readdir(dir)).filter(
-      (file) => !EXCLUDE_DB_FILES_REGEX.test(file)
+    const files = (await readdir(dir)).filter((file) =>
+      file.endsWith(DB_EXTENSION)
     );
     setDataBackingUpPending(true);
 

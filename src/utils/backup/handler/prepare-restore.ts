@@ -22,7 +22,11 @@ export class PrepareRestore {
 
       const proceed = async () => {
         const filename = getFilename(newFiles.shift() as string);
-        if (EXCLUDE_DB_FILES_REGEX.test(filename)) return;
+        if (
+          EXCLUDE_DB_FILES_REGEX.test(filename) ||
+          !filename.endsWith(DB_EXTENSION)
+        )
+          return;
 
         const fileDb = camelCase(filename.split(DB_EXTENSION)[0]);
         const datastore = db[fileDb];
