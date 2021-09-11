@@ -47,12 +47,16 @@ export default function History() {
   }, [key, title]);
 
   useEffect(() => {
-    if (title && !defaultTitle.isDefault) {
-      const dateTime = getDateTime();
-      const history = {
-        ...dateTime,
-        documentTitle: title,
-      } as HistoryDateUpload;
+    let history = null;
+    if (title) {
+      if (!defaultTitle.isDefault) {
+        const dateTime = getDateTime();
+        history = {
+          ...dateTime,
+          documentTitle: title,
+        } as HistoryDateUpload;
+      }
+
       sendIpcRequest<HistoryData[]>(IPC_EVENTS.history_data, history).then(
         (items) => {
           setHistories(items);
@@ -60,6 +64,10 @@ export default function History() {
       );
     }
   }, [title]);
+
+  if (process.env.NODE_ENV === 'development') {
+    console.log('new history data');
+  }
 
   useEffect(() => {
     if (histories.length > 0) {
