@@ -129,6 +129,29 @@ async function getAccessToken(oAuth2Client: OAuth2Client, child: ChildProcess) {
   }
 }
 
+function checkHasAllPermission(token: any): boolean {
+  if (!token.scope) return true;
+  const ntoken: { scope: string | string[] } = token;
+  let scopes: string[] = [];
+
+  if (typeof ntoken.scope === 'string') {
+    scopes = ntoken.scope.split(' ').map((d: string) => d.trim());
+  } else if (Array.isArray(ntoken.scope)) {
+    scopes = ntoken.scope.map((d: string) => d.trim());
+  } else {
+    return true;
+  }
+
+  let has = true;
+  SCOPES.forEach((permission) => {
+    if (!scopes.includes(permission)) {
+      has = false;
+    }
+  });
+
+  return has;
+}
+
 /**
  * after client has been logged in, store the refresh token associedted
  *
@@ -141,10 +164,16 @@ function storeClientToken(
 ): Promise<OAuth2Client | null> {
   return new Promise((resolve) => {
     oAuth2Client.getToken(code, (err, token) => {
-      if (err) {
+      if (err || !token) {
         resolve(null);
         return console.error('Error retrieving access token', err);
       }
+
+      if (!checkHasAllPermission({ ...token })) {
+        resolve(null);
+        return;
+      }
+
       oAuth2Client.setCredentials(token as any);
       // Store the token to disk for later program executions
       writeFile(TOKEN_PATH, JSON.stringify(token))
