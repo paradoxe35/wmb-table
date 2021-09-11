@@ -82,10 +82,12 @@ export class RestoreHandler extends DriveHandler {
             );
             reject(err);
           } else {
-            commitRestoreProgress(this.COMPLETE, 0, 0);
             this.makeProceedFile(this.COMPLETE);
-            confirmRestoration();
-            resolve();
+            window.setTimeout(() => {
+              commitRestoreProgress(this.COMPLETE, 0, 0);
+              confirmRestoration(true);
+              resolve();
+            }, 3100);
           }
         }
       );
@@ -195,11 +197,18 @@ export class RestoreHandler extends DriveHandler {
       },
       { responseType: 'text' }
     );
-    if (!data) return;
 
-    const $datas = DBSerializer.deserialize(data as string);
+    let $datas = null;
 
-    await queryDb.insert(database, $datas);
+    try {
+      $datas = DBSerializer.deserialize(data as string);
+    } catch (error) {
+      console.log('deserialize error', error?.message || error);
+    }
+
+    if (!data || !$datas || !$datas._id) return;
+
+    await queryDb.insert(database, { ...$datas });
     // handle custom document restaure
     if (getDatastoreFileName(db.customDocuments, false) === parentFile.name) {
       await this.handleCustomDocument($datas);
