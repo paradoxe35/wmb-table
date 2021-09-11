@@ -156,6 +156,22 @@ export default function Subject() {
   }, [datas]);
 
   useEffect(() => {
+    const focusSubject = (event: CustomEventInit<{ name: string }>) => {
+      setDatas((ds) => {
+        return ds.map((nd) => {
+          const d = { ...nd };
+          d.active = d.name == event.detail?.name;
+          return d;
+        });
+      });
+    };
+    window.addEventListener('focus-subject', focusSubject);
+    return () => {
+      window.removeEventListener('focus-subject', focusSubject);
+    };
+  }, []);
+
+  useEffect(() => {
     const subject = datas.find((d) => d.active);
     if (subject) {
       sendIpcRequest<SubjectDocumentItem[]>(

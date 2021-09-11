@@ -9,6 +9,7 @@ import childProcess, { ChildProcess } from 'child_process';
 import { APP_NAME } from '../constants';
 import { ChildProcessMessage } from '../../childs_processes/types';
 import { cancellablePromise } from '../functions';
+import { setUserAuthAccessStatus } from '../../message-control/handlers/backup';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
@@ -146,6 +147,7 @@ function checkHasAllPermission(token: any): boolean {
   SCOPES.forEach((permission) => {
     if (!scopes.includes(permission)) {
       has = false;
+      setUserAuthAccessStatus(false);
     }
   });
 
@@ -169,10 +171,7 @@ function storeClientToken(
         return console.error('Error retrieving access token', err);
       }
 
-      if (!checkHasAllPermission({ ...token })) {
-        resolve(null);
-        return;
-      }
+      checkHasAllPermission({ ...token });
 
       oAuth2Client.setCredentials(token as any);
       // Store the token to disk for later program executions
