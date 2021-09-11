@@ -64,10 +64,6 @@ async function removeHtmlFiles() {
     }
   });
 }
-if (process.argv.includes('--force')) {
-  console.log('remove document html: --force');
-  removeHtmlFiles();
-}
 
 // clean db files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
@@ -83,3 +79,8 @@ cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
 
 // clean db backup files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), [], true);
+
+if (process.argv.includes('--force')) {
+  console.log('remove document html: --force');
+  removeHtmlFiles();
+}
