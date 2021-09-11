@@ -5,9 +5,13 @@ const path = require('path');
  * @param {string} directory
  * @param {string[]} excepts
  */
-function cleanAllFileDir(directory, excepts = []) {
+function cleanAllFileDir(directory, excepts = [], removeDir = false) {
   if (fs.existsSync(directory)) {
     try {
+      if (removeDir) {
+        fs.rm(directory, { recursive: true, force: true });
+        return;
+      }
       const files = fs.readdirSync(directory);
       for (const file of files) {
         if (!excepts.includes(file)) {
@@ -40,7 +44,4 @@ cleanAllFileDir(path.resolve(__dirname, '../assets/credentials/'), [
 cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
 
 // clean db backup files for production
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'));
-
-// clean db backup pending files
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/pending/'));
+cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), [], true);
