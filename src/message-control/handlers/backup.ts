@@ -116,8 +116,10 @@ export async function confirmRestoration(restored: boolean = true) {
 
 export async function setUserAuthAccessStatus(access: boolean) {
   const status = await backup_status(true);
+
+  ACCESS_STATUS = { value: access };
+
   if (!status) {
-    ACCESS_STATUS = { value: access };
     return null;
   }
 

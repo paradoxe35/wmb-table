@@ -147,9 +147,10 @@ function checkHasAllPermission(token: any): boolean {
   SCOPES.forEach((permission) => {
     if (!scopes.includes(permission)) {
       has = false;
-      setUserAuthAccessStatus(false);
     }
   });
+
+  setUserAuthAccessStatus(has);
 
   return has;
 }
