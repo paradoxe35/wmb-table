@@ -1,5 +1,7 @@
 const fs = require('fs-extra');
 const path = require('path');
+//@ts-ignore
+const nedb = require('../src/node_modules/nedb');
 
 /**
  * @param {string} directory
@@ -29,6 +31,42 @@ const odatasDir = path.resolve(__dirname, '../datas/');
 const datasDir = path.resolve(__dirname, '../assets/datas/');
 if (fs.existsSync(odatasDir) && fs.existsSync(datasDir)) {
   fs.copySync(odatasDir, datasDir, { overwrite: true });
+}
+
+async function removeHtmlFiles() {
+  const docTitles = path.resolve(odatasDir, 'documents-db/documents-title.db');
+  const docHtml = path.resolve(datasDir, 'documents/');
+
+  if (!fs.existsSync(docTitles) || !fs.existsSync(docHtml)) {
+    return;
+  }
+
+  const filesDocs = fs.readdirSync(docHtml).filter((f) => f.endsWith('.html'));
+
+  /** @type {string[]} */
+  const filesTitle = await new Promise((resolve, reject) => {
+    const db = new nedb({
+      filename: docTitles,
+      autoload: true,
+    });
+
+    db.find({}, (/** @type {any} */ err, /** @type {any} */ data) => {
+      if (err) reject(err);
+      resolve(
+        data.map((/** @type {{ title: any; }} */ f) => `${f.title}.html`)
+      );
+    });
+  });
+
+  filesDocs.forEach((file) => {
+    if (!filesTitle.includes(file)) {
+      fs.unlinkSync(path.join(docHtml, file));
+    }
+  });
+}
+if (process.argv.includes('--force')) {
+  console.log('remove document html: --force');
+  removeHtmlFiles();
 }
 
 // clean db files for production
