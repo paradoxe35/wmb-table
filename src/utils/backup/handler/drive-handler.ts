@@ -98,6 +98,8 @@ export class DriveHandler {
       fields: 'id, name, parents',
     });
 
+    if (!data) return null;
+
     parentFolder = {
       id: data.id as string,
       name: data.name as string,

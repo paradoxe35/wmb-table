@@ -116,7 +116,7 @@ export class RestoreHandler extends DriveHandler {
     try {
       const json = JSON.parse(data.toString()) as { proceedFile: string };
       return json.proceedFile;
-    } catch (error:any) {
+    } catch (error) {
       console.error('getLastProceedFile error: ', error?.message);
     }
     return null;
@@ -195,6 +195,8 @@ export class RestoreHandler extends DriveHandler {
       },
       { responseType: 'text' }
     );
+    if (!data) return;
+
     const $datas = DBSerializer.deserialize(data as string);
 
     await queryDb.insert(database, $datas);
@@ -214,7 +216,7 @@ export class RestoreHandler extends DriveHandler {
       const {
         data: { files },
       } = await this.files({
-        q: `name = '${data._id}.html'`,
+        q: `name = '${data?._id}.html'`,
         pageSize: 1,
       });
 
@@ -229,7 +231,7 @@ export class RestoreHandler extends DriveHandler {
         );
         await this.saveDocumentHtml(fileData as Stream, `${data.title}.html`);
       }
-    } catch (error:any) {
+    } catch (error) {
       console.error(
         'Error fetching html file from on custom document restoration: ',
         error?.message || error
