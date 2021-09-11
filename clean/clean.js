@@ -7,23 +7,16 @@ const path = require('path');
  */
 function cleanAllFileDir(directory, excepts = []) {
   if (fs.existsSync(directory)) {
-    fs.readdir(directory, (err, files) => {
-      if (err) {
-        console.log(err);
-        return;
-      }
-
+    try {
+      const files = fs.readdirSync(directory);
       for (const file of files) {
         if (!excepts.includes(file)) {
-          fs.unlink(path.join(directory, file), (err) => {
-            if (err) {
-              console.log(err);
-              return;
-            }
-          });
+          fs.unlinkSync(path.join(directory, file));
         }
       }
-    });
+    } catch (error) {
+      console.log('failed to clean: ', error?.message);
+    }
   }
 }
 
