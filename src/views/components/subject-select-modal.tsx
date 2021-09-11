@@ -46,6 +46,9 @@ export function SubjectSelectModal({ title }: { title: string }) {
       subjectItem
     ).then((item) => {
       setSubjectItems(item);
+      window.dispatchEvent(
+        new CustomEvent('focus-subject', { detail: { name } })
+      );
     });
     setIsModalVisible(false);
   };

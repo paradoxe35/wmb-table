@@ -13,6 +13,8 @@ import db, { queryDb } from '../../utils/main/db';
 import { app_settings } from './app_settings';
 const isOnline = require('is-online');
 
+let ACCESS_STATUS: { value: boolean } = { value: true };
+
 export async function backup_status(
   onlyStatus: boolean | Object
 ): Promise<BackupStatus | null> {
@@ -64,7 +66,7 @@ export async function handle_backup_login() {
     email: payload.email,
     name: payload.name,
     active: true,
-    access: true,
+    access: ACCESS_STATUS.value,
     restored: false,
     lastUpdate: new Date(),
   };
@@ -79,7 +81,7 @@ export async function handle_backup_login() {
     await queryDb.insert(db.backupStatus, statusBackup);
   }
 
-  initBackupAndRestoration(googleAuth);
+  ACCESS_STATUS.value && initBackupAndRestoration(googleAuth);
 
   return statusBackup;
 }
@@ -114,7 +116,10 @@ export async function confirmRestoration(restored: boolean = true) {
 
 export async function setUserAuthAccessStatus(access: boolean) {
   const status = await backup_status(true);
-  if (!status) return null;
+  if (!status) {
+    ACCESS_STATUS = { value: access };
+    return null;
+  }
 
   status.access = access;
   await queryDb.update(
