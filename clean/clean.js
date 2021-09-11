@@ -15,7 +15,7 @@ function cleanAllFileDir(directory, excepts = []) {
         }
       }
     } catch (error) {
-      console.log('failed to clean: ', error?.message);
+      console.log('failed to clean: ', error?.message || error);
     }
   }
 }
