@@ -1,7 +1,9 @@
 import { getAssetBackupPendingPath, mainWindow } from '../../sys';
 import { BackupStatus } from '../../types';
 import {
+  backupEventEmiter,
   backupPenging,
+  CAN_WATCH_IS_ONLINE_EVENT,
   initBackupAndRestoration,
   resumeRestoration,
 } from '../../utils/backup/backup';
@@ -24,7 +26,10 @@ export async function backup_status(
     setDataRestored(status.restored);
     // resume restoration or backup pending data
     !status.restored && resumeRestoration(status);
-    status.restored && backupPenging(status);
+    if (status.restored) {
+      backupPenging(status);
+      backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
+    }
   }
   return status;
 }
@@ -104,6 +109,10 @@ export async function confirmRestoration(restored: boolean = true) {
 
   setDataRestored(restored);
   status.restored = restored;
+
+  if (restored) {
+    backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
+  }
 
   await queryDb.update(
     db.backupStatus,
