@@ -18,7 +18,6 @@ import {
   DATA_RESTORED,
   EXCLUDE_DB_FILES_REGEX,
   OAUTH2_CLIENT,
-  setDataBackingUpPending,
 } from './constants';
 import { PrepareRestore } from './handler/prepare-restore';
 import { OAuth2Client } from 'google-auth-library';
@@ -28,12 +27,19 @@ import { setUserAuthAccessStatus } from '../../message-control/handlers/backup';
 
 const isOnline = require('is-online');
 const watch = require('node-watch');
+const IsOnlineEmitter = require('is-online-emitter');
 
+const emitterIsOnline = new IsOnlineEmitter({});
 const eventEmiter = new EventEmitter({ captureRejections: true });
+
+export { eventEmiter as backupEventEmiter };
+
 // event name used to emit event with filename database
 const LOADED_DB_EVENT_NAME = 'loadedDb';
+export const CAN_WATCH_IS_ONLINE_EVENT = 'is-online-event-start';
 
 const TIMEOUT = 3000;
+let IS_ONLINE: { value: boolean } = { value: true };
 
 // directories to watch in
 export const WATCHED_DIRS = [getAssetDocumentsDbPath(), getAssetDbPath()];
@@ -97,6 +103,9 @@ export const loadedDb = {
 eventEmiter.on(LOADED_DB_EVENT_NAME, (filenameEvent) => {
   eventEmiter.on(filenameEvent, debounce(performUniqueBackup, TIMEOUT));
 });
+
+// Listening to `connectivity.change` events.
+emitterIsOnline.on('connectivity.change', connectivityChangedHandler);
 
 /**
  * get saved file meta references
@@ -205,9 +214,7 @@ async function putInPending(grouped: RangedLines, filename: string) {
       dbId: changed._id,
     } as PendingDatastore;
 
-    // insert if doent exists
-    const exists = await queryDb.findOne(pDb, data);
-    if (!exists) queryDb.insert(pDb, { ...data, deleted: changed.deleted });
+    queryDb.insert(pDb, { ...data, deleted: changed.deleted });
   }
 }
 
@@ -244,6 +251,19 @@ async function uploadModifications(
   }
 }
 
+function connectivityChangedHandler(onlineStatus?: {
+  status: boolean;
+  updatedAt: string;
+}) {
+  if (
+    !IS_ONLINE.value &&
+    onlineStatus?.status &&
+    !DATA_BACKINGUP_PENDING.value
+  ) {
+    BackupHandler.handlePending();
+  }
+}
+
 /**
  * form update just specifique changed file db
  *
@@ -273,9 +293,12 @@ const performUniqueBackup = async (filename: string) => {
     );
   }
 
+  const isOnlineStatus = await isOnline();
+
+  IS_ONLINE.value = isOnlineStatus;
+
   // handle backup on network (google drive or any other drive) or save somewhere as pending backup
-  if (DATA_BACKINGUP_PENDING.value || !(await isOnline()) || !oAuth2Client) {
-    setDataBackingUpPending(true);
+  if (DATA_BACKINGUP_PENDING.value || !isOnlineStatus || !oAuth2Client) {
     putInPending(grouped, filename);
   } else {
     uploadModifications(oAuth2Client, grouped, filename);
@@ -351,6 +374,8 @@ const filterWatchedFiles = function (file: string, skip: any) {
 export default () => {
   const watchers: any[] = [];
 
+  eventEmiter.once(CAN_WATCH_IS_ONLINE_EVENT, emitterIsOnline.start);
+
   WATCHED_DIRS.forEach((dir) => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -364,7 +389,10 @@ export default () => {
   });
 
   return {
-    close: () => watchers.forEach((watcher) => watcher.close()),
+    close: () => {
+      emitterIsOnline.stop();
+      watchers.forEach((watcher) => watcher.close());
+    },
   };
 };
 
