@@ -2,7 +2,7 @@
 import './context-menu/kali_dark.css.js';
 import contextMenuHandler from './documents/context-menu.js';
 import { scrollToViewTree } from './documents/document-tree.js';
-import { debounce, pageContainer } from './documents/functions.js';
+import { pageContainer } from './documents/functions.js';
 import {
   setSearchQuery,
   SEARCH_RESULT,
@@ -13,27 +13,6 @@ import {
 import searchTemplate from './documents/search-template.js';
 
 const container = pageContainer();
-
-// center page to center
-function defaultPosition() {
-  if (WINDOW_POSITION) {
-    // @ts-ignore
-    container.scrollTo({
-      top: WINDOW_POSITION.top || undefined,
-      left: WINDOW_POSITION.left || undefined,
-      behavior: 'smooth',
-    });
-  } else {
-    // @ts-ignore
-    container.firstElementChild.firstElementChild
-      .querySelector('div')
-      .scrollIntoView({ inline: 'center' });
-  }
-}
-
-contextMenuHandler();
-
-window.focus();
 
 //events
 window.addEventListener(
@@ -57,6 +36,31 @@ window.addEventListener(
   },
   false
 );
+// call this when event post message has initialized
+window.setTimeout(() => {
+  window.parent.dispatchEvent(new Event('document-view-loaded'));
+}, 100);
+
+// center page to center
+function defaultPosition() {
+  if (WINDOW_POSITION) {
+    // @ts-ignore
+    container.scrollTo({
+      top: WINDOW_POSITION.top || undefined,
+      left: WINDOW_POSITION.left || undefined,
+      behavior: 'smooth',
+    });
+  } else {
+    // @ts-ignore
+    container.firstElementChild.firstElementChild
+      .querySelector('div')
+      .scrollIntoView({ inline: 'center' });
+  }
+}
+
+contextMenuHandler();
+
+container.focus();
 
 container.addEventListener('click', (event) => {
   /** @type { HTMLLinkElement} */
@@ -76,7 +80,7 @@ window.addEventListener('result-constructed', () => {
   }
 });
 
-const refocus = () => container.focus();
-refocus();
+// const refocus = () => container.focus();
+// refocus();
 
-container.addEventListener('scroll', debounce(refocus, 1000));
+// container.addEventListener('scroll', debounce(refocus, 1000));

@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import DocumentTabs from '../components/document-tabs';
 import { Layout } from 'antd';
 import {
@@ -20,17 +26,6 @@ import { NoteReferencesModal } from './components/note-references-modal';
 import { shell } from 'electron';
 
 const { Content } = Layout;
-
-function postMessage(
-  iframeEl: HTMLIFrameElement,
-  type: string,
-  detail: any,
-  path: string
-) {
-  window.setTimeout(() => {
-    iframeEl.contentWindow?.postMessage({ type, detail }, path as string);
-  }, 1000);
-}
 
 export default function DocumentView() {
   const title = useRecoilValue(currentDocumentTabsSelector);
@@ -94,34 +89,56 @@ export default function DocumentView() {
     }
   }, [title]);
 
-  const handleSearchQuery = (
-    iframeEl: HTMLIFrameElement,
-    hasOwnPosition: boolean
-  ) => {
-    if (subjectItemSelectedRef.current) {
-      postMessage(
-        iframeEl,
-        'subject-item',
-        subjectItemSelectedRef.current,
-        path as string
-      );
-      setSubjectItemSelected(null);
-    } else if (documentQuery.current) {
-      postMessage(
-        iframeEl,
-        'document-query',
-        documentQuery.current,
-        path as string
-      );
-    } else if (!hasOwnPosition) {
-      const container = iframeEl.contentDocument?.getElementById(
-        'page-container'
-      )?.firstElementChild?.firstElementChild;
-      container
-        ?.querySelector('div')
-        ?.scrollIntoView({ inline: 'center', behavior: 'smooth' });
-    }
-  };
+  // handle post message request to child only when child content has been fully loaded
+  const waitForDocumentViewStarted = useCallback(() => {
+    return new Promise<any>((resolve) => {
+      window.addEventListener('document-view-loaded', resolve, { once: true });
+    });
+  }, []);
+
+  const postMessage = useCallback(
+    async (
+      iframeEl: HTMLIFrameElement,
+      type: string,
+      detail: any,
+      path: string
+    ) => {
+      await waitForDocumentViewStarted();
+      iframeEl.contentWindow?.postMessage({ type, detail }, path as string);
+    },
+    []
+  );
+  // end of post message handler
+
+  const handleSearchQuery = useCallback(
+    (iframeEl: HTMLIFrameElement, hasOwnPosition: boolean) => {
+      if (subjectItemSelectedRef.current) {
+        postMessage(
+          iframeEl,
+          'subject-item',
+          subjectItemSelectedRef.current,
+          path as string
+        );
+        setSubjectItemSelected(null);
+      } else if (documentQuery.current) {
+        window.dispatchEvent(new Event('frame-document-search-start'));
+        postMessage(
+          iframeEl,
+          'document-query',
+          documentQuery.current,
+          path as string
+        );
+      } else if (!hasOwnPosition) {
+        const container = iframeEl.contentDocument?.getElementById(
+          'page-container'
+        )?.firstElementChild?.firstElementChild;
+        container
+          ?.querySelector('div')
+          ?.scrollIntoView({ inline: 'center', behavior: 'smooth' });
+      }
+    },
+    []
+  );
 
   const onIframeLoad = () => {
     if (iframeRef.current) {
@@ -135,6 +152,7 @@ export default function DocumentView() {
       pageRef.current = page as HTMLElement;
 
       // handle zoom
+      //@ts-ignore
       page && (page.style.zoom = (tab?.zoom || 100) + '%');
 
       if (tab?.zoom) {
