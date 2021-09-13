@@ -87,7 +87,7 @@ export class RestoreHandler extends DriveHandler {
               commitRestoreProgress(this.COMPLETE, 0, 0);
               confirmRestoration(true);
               resolve();
-            }, 3100);
+            }, 5000);
           }
         }
       );
