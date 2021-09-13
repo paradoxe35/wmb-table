@@ -267,7 +267,8 @@ function connectivityChangedHandler(onlineStatus?: {
     onlineStatus?.status &&
     !DATA_BACKINGUP_PENDING.value
   ) {
-    BackupHandler.handlePending();
+    IS_ONLINE.value = true;
+    BackupHandler.handlePending({ notify: false });
   }
 }
 
@@ -381,7 +382,9 @@ const filterWatchedFiles = function (file: string, skip: any) {
 export default () => {
   const watchers: any[] = [];
 
-  eventEmiter.once(CAN_WATCH_IS_ONLINE_EVENT, emitterIsOnline.start);
+  eventEmiter.once(CAN_WATCH_IS_ONLINE_EVENT, () => {
+    emitterIsOnline.start();
+  });
 
   WATCHED_DIRS.forEach((dir) => {
     if (!fs.existsSync(dir)) {
@@ -456,7 +459,7 @@ export function backupPenging(_status: BackupStatus) {
       googleOAuth2().then((oAuth2Client) => {
         if (oAuth2Client) {
           BackupHandler.setOAuth2Client(oAuth2Client);
-          BackupHandler.handlePending().catch((error) =>
+          BackupHandler.handlePending({ notify: false }).catch((error) =>
             console.error(
               'Error occured while backup pending: ',
               error?.message
