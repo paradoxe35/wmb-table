@@ -186,8 +186,18 @@ function BibleTestamentContent({
   const [currentKey, setCurrentKey] = useState<string>();
 
   function onChangeKey(key: string | string[]) {
-    setCurrentKey(key as string);
+    if (typeof key === 'string') {
+      setCurrentKey(key);
+    }
   }
+
+  useEffect(() => {
+    if (currentKey) {
+      document
+        .getElementById(`book-${currentKey}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [currentKey]);
 
   return (
     <Collapse onChange={onChangeKey} accordion>
@@ -195,7 +205,11 @@ function BibleTestamentContent({
         Object.keys(bibleIndex).map((key) => {
           const book = bibleIndex[key];
           return (
-            <Collapse.Panel header={key} key={book.book}>
+            <Collapse.Panel
+              id={`book-${book.book}`}
+              header={key}
+              key={book.book}
+            >
               {currentKey === book.book && (
                 <BookContent
                   verseMetaContent={verseMetaContent}
