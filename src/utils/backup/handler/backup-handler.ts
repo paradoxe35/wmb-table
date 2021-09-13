@@ -11,6 +11,7 @@ import { DB_EXTENSION } from '../../constants';
 import { Readable } from 'stream';
 import { drive_v3 } from 'googleapis';
 import { promisify } from 'util';
+import { deletePending } from '../backup';
 export class BackupHandler extends DriveHandler {
   static async handlePending() {
     const dir = getAssetBackupPendingPath();
@@ -36,15 +37,12 @@ export class BackupHandler extends DriveHandler {
         const pendingDb = this.pendingDatastore(filename);
         const pendings = await queryDb.find<PendingDatastore>(pendingDb);
 
-        const deletePending = (dbId: string) =>
-          queryDb.remove(pendingDb, { dbId }, { multi: true });
-
         for (const pending of pendings) {
           const data = await queryDb.findOne<any>(datastore, {
             _id: pending.dbId,
           });
           if (!data && !pending.deleted) {
-            return await deletePending(pending.dbId);
+            return await deletePending(pendingDb, pending.dbId, true);
           }
           await this.handleUpload(
             pending.dbId,
@@ -52,7 +50,7 @@ export class BackupHandler extends DriveHandler {
             data,
             filename
           );
-          await deletePending(pending.dbId);
+          await deletePending(pendingDb, pending.dbId);
         }
 
         commitRestoreProgress(
