@@ -218,6 +218,12 @@ async function putInPending(grouped: RangedLines, filename: string) {
   }
 }
 
+export const deletePending = (
+  pendingDb: Datastore<any>,
+  dbId: string,
+  multi: boolean = false
+) => queryDb.remove(pendingDb, { dbId }, { multi });
+
 async function uploadModifications(
   oAuth2Client: OAuth2Client,
   grouped: RangedLines,
@@ -237,7 +243,8 @@ async function uploadModifications(
         changed.data,
         filename
       );
-      await queryDb.remove(pDb, data, { multi: true });
+
+      await deletePending(pDb, data.dbId, false);
     } catch (error) {
       console.error(
         'Error occured while backup data from top file changed: ',
