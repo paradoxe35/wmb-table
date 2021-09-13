@@ -13,7 +13,7 @@ import { drive_v3 } from 'googleapis';
 import { promisify } from 'util';
 import { deletePending } from '../backup';
 export class BackupHandler extends DriveHandler {
-  static async handlePending() {
+  static async handlePending(options: { notify: boolean } = { notify: true }) {
     const dir = getAssetBackupPendingPath();
     if (!fs.existsSync(dir)) return;
     const readdir = promisify(fs.readdir);
@@ -21,9 +21,10 @@ export class BackupHandler extends DriveHandler {
     const files = (await readdir(dir)).filter((file) =>
       file.endsWith(DB_EXTENSION)
     );
+
     setDataBackingUpPending(true);
 
-    commitRestoreProgress('sauvegarde', 0, files.length);
+    options.notify && commitRestoreProgress('sauvegarde', 0, files.length);
 
     return new Promise<void>((resolve, reject) => {
       const newFiles = files.slice();
@@ -53,11 +54,12 @@ export class BackupHandler extends DriveHandler {
           await deletePending(pendingDb, pending.dbId);
         }
 
-        commitRestoreProgress(
-          'sauvegarde',
-          files.length - newFiles.length,
-          files.length
-        );
+        options.notify &&
+          commitRestoreProgress(
+            'sauvegarde',
+            files.length - newFiles.length,
+            files.length
+          );
       };
 
       whilst(
@@ -66,10 +68,10 @@ export class BackupHandler extends DriveHandler {
         (_err) => {
           if (_err) {
             reject(_err);
-            commitRestoreProgress('error', 0, 0);
+            options.notify && commitRestoreProgress('error', 0, 0);
           } else {
             resolve();
-            commitRestoreProgress(this.COMPLETE, 0, 0);
+            options.notify && commitRestoreProgress(this.COMPLETE, 0, 0);
           }
           setDataBackingUpPending(false);
         }
