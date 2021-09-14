@@ -29,16 +29,25 @@ const isOnline = require('is-online');
 const watch = require('node-watch');
 const IsOnlineEmitter = require('is-online-emitter');
 
+// emitter is online instance
 const emitterIsOnline = new IsOnlineEmitter({});
+
+// backup event emitter
 const eventEmiter = new EventEmitter({ captureRejections: true });
 
+// export backup event emitter
 export { eventEmiter as backupEventEmiter };
 
 // event name used to emit event with filename database
 const LOADED_DB_EVENT_NAME = 'loadedDb';
+
+// used as event name dispatcher to start is online stream watch network changes
 export const CAN_WATCH_IS_ONLINE_EVENT = 'is-online-event-start';
 
+// timeout to performUniqueBackup
 const TIMEOUT = 3000;
+
+// used as the actual network status
 let IS_ONLINE: { value: boolean } = { value: true };
 
 // directories to watch in
@@ -61,7 +70,11 @@ export class PendingDatasUnloadDb {
     database: Datastore & { filename?: string },
     data: any
   ) {
-    if (EXCLUDE_DB_FILES_REGEX.test(database.filename as string) || !data)
+    if (
+      !DATA_RESTORED.value ||
+      EXCLUDE_DB_FILES_REGEX.test(database.filename as string) ||
+      !data
+    )
       return;
 
     const filename = getDatastoreFileName(database) as string;
@@ -77,7 +90,9 @@ export class PendingDatasUnloadDb {
 
   static hasBeenSyncedDb(database: Datastore): boolean {
     const filename = getDatastoreFileName(database);
-    return loadedDb.syncedRefsDb.includes(filename as string);
+    return (
+      loadedDb.syncedRefsDb.includes(filename as string) && DATA_RESTORED.value
+    );
   }
 }
 
@@ -218,12 +233,27 @@ async function putInPending(grouped: RangedLines, filename: string) {
   }
 }
 
+/**
+ * delete pending data from pending datastore
+ *
+ * @param pendingDb
+ * @param dbId
+ * @param multi
+ * @returns
+ */
 export const deletePending = (
   pendingDb: Datastore<any>,
   dbId: string,
   multi: boolean = false
 ) => queryDb.remove(pendingDb, { dbId }, { multi });
 
+/**
+ * upload modirectly to cloud
+ *
+ * @param oAuth2Client
+ * @param grouped
+ * @param filename
+ */
 async function uploadModifications(
   oAuth2Client: OAuth2Client,
   grouped: RangedLines,
@@ -258,6 +288,11 @@ async function uploadModifications(
   }
 }
 
+/**
+ * callback function to handle changes network status and upload pending datas if necessary
+ *
+ * @param onlineStatus
+ */
 function connectivityChangedHandler(onlineStatus?: {
   status: boolean;
   updatedAt: string;
@@ -379,6 +414,9 @@ const filterWatchedFiles = function (file: string, skip: any) {
   return new RegExp(`${DB_EXTENSION}$`).test(file);
 };
 
+/**
+ * The top level backup function
+ */
 export default () => {
   const watchers: any[] = [];
 
