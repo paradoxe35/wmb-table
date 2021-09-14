@@ -4,9 +4,9 @@ import { IPC_EVENTS } from '../ipc-events';
 import { OAuth2Client } from 'google-auth-library';
 import { DB_EXTENSION } from '../constants';
 
-type Value = { value: boolean | null };
+type Value<T = boolean | null> = { value: T };
 
-export let DATA_RESTORED: Value = {
+export let DATA_RESTORED: Value<boolean> = {
   value: false,
 };
 
@@ -22,7 +22,7 @@ export let OAUTH2_CLIENT: { value: OAuth2Client | null } = {
   value: null,
 };
 
-export const setDataRestored = (value: boolean | null) =>
+export const setDataRestored = (value: boolean) =>
   (DATA_RESTORED.value = value);
 
 export const setDataBackingUpPending = (value: boolean) =>
