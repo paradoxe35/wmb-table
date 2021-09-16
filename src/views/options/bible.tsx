@@ -54,7 +54,7 @@ export default function Bible() {
         </ContainerScrollY>
       </div>
       <div hidden={menu !== 'search'}>
-        <ContainerScrollY>
+        <ContainerScrollY className="bible-search-content">
           <SearchContent />
         </ContainerScrollY>
       </div>
@@ -278,7 +278,7 @@ function SearchContent() {
       lastSearch.current.trim(),
       page
     ).then((datas) => {
-      const lc = document.querySelector('.site-layout-content');
+      const lc = document.querySelector('.bible-search-content');
       lc && lc.scrollTo({ top: 0, behavior: 'smooth' });
       setResults(datas);
     });
@@ -379,7 +379,7 @@ const ContentItem = ({ item }: { item: BibleSearchItem }) => {
     }
   }, []);
 
-  return <span ref={parentRef}></span>;
+  return <span className="content-description-2" ref={parentRef}></span>;
 };
 
 function InputSearch({
