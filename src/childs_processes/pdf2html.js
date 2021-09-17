@@ -10,8 +10,10 @@ const hanlder = async (file) => {
     !process.send ||
     !process.env.ASSETS_PATH ||
     !process.env.ASSETS_DOCUMENTS_PATH
-  )
+  ) {
+    process.send && process.send(null);
     return;
+  }
 
   const getContent = await convert(file.path, file.name);
   if (getContent) {
