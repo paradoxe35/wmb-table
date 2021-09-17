@@ -1,24 +1,36 @@
 import { BrowserWindow, dialog } from 'electron';
+import { childsProcessesPath } from '../../sys';
+import childProcess from 'child_process';
 
-const pdf = require('html-pdf');
-
-export function export_note_pdf(
+export async function export_note_pdf(
   mainWindow: BrowserWindow,
   data: string,
   name: string
 ) {
-  let path = null;
+  let path: string | undefined = undefined;
+
   try {
     path = dialog.showSaveDialogSync(mainWindow, {
       title: 'Exporter PDF',
       filters: [{ name: 'Pdf', extensions: ['pdf'] }],
       defaultPath: `${name.split(' ').join('-').toLocaleLowerCase()}.pdf`,
     });
-  } catch (error:any) {
+  } catch (error) {
     return false;
   }
 
-  path && pdf.create(data, { format: 'A4' }).toFile(path, () => {});
+  process.env.FILE_PATH = path;
+  process.env.HTML_DATA = data;
 
-  return true;
+  const child = childProcess.fork(childsProcessesPath('html-pdf.js'), {
+    env: process.env,
+  });
+
+  const value = await new Promise<any>((resolve) => {
+    child.once('message', resolve);
+  });
+
+  child.kill('SIGINT');
+
+  return !!value;
 }

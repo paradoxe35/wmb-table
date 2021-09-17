@@ -90,6 +90,13 @@
     "@types/qs" "*"
     "@types/serve-static" "*"
 
+"@types/html-pdf@^2.2.1":
+  version "2.2.1"
+  resolved "https://registry.yarnpkg.com/@types/html-pdf/-/html-pdf-2.2.1.tgz#0ddc00ae8d1f12b217e925416666baffe2225ef6"
+  integrity sha512-rqNEa9nO4Xs99w49ZNElmnPu7zpKrqx46Jv1uLNE8n6HJm2tRkS1ByJqfWblW42l2/BYsyR0zpQjZazZy4XXTQ==
+  dependencies:
+    "@types/node" "*"
+
 "@types/http-cache-semantics@*":
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/@types/http-cache-semantics/-/http-cache-semantics-4.0.1.tgz#0ea7b61496902b95890dc4c3a116b60cb8dae812"
