@@ -18,6 +18,7 @@ const fs = require('fs');
         childProcessOptions: { detached: false },
         phantomPath: undefined,
         format: 'A4',
+        type: 'pdf',
         border: {
           top: '0.3in',
           right: '0.3in',
