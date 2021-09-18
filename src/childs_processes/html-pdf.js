@@ -16,7 +16,7 @@ const fs = require('fs');
     pdf
       .create(data, {
         childProcessOptions: { detached: false },
-        phantomPath: undefined,
+        phantomPath: process.env.PHANTOM_PATH,
         format: 'A4',
         type: 'pdf',
         border: {
