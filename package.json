@@ -45,10 +45,6 @@
       "package.json"
     ],
     "afterSign": ".erb/scripts/Notarize.js",
-    "asar": true,
-    "asarUnpack": [
-      "node_modules/phantomjs-prebuilt"
-    ],
     "mac": {
       "target": [
         "dmg"

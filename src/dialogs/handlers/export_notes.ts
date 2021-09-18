@@ -1,6 +1,7 @@
-import { BrowserWindow, dialog } from 'electron';
+import { BrowserWindow, dialog, app } from 'electron';
 import { childsProcessesPath } from '../../sys';
 import childProcess from 'child_process';
+import pathSys from 'path';
 
 export async function export_note_pdf(
   mainWindow: BrowserWindow,
@@ -21,6 +22,16 @@ export async function export_note_pdf(
 
   process.env.FILE_PATH = path;
   process.env.HTML_DATA = data;
+
+  const phantomPath = app.isPackaged
+    ? pathSys.join(
+        process.resourcesPath,
+        'app.asar.unpacked',
+        'node_modules/phantomjs/bin/phantomjs'
+      )
+    : undefined;
+
+  process.env.PHANTOM_PATH = phantomPath;
 
   const child = childProcess.fork(childsProcessesPath('html-pdf.js'), {
     env: process.env,
