@@ -113,13 +113,39 @@ export default function CustomDocuments() {
             <Divider style={{ minHeight: '250px' }} type="vertical" />
           </Col>
           <Col span={11}>
-            <Uploader />
+            <UploaderWrapper />
           </Col>
         </Row>
       </Modal>
     </>
   );
 }
+
+const DisabledArea = ({
+  component,
+  active,
+}: {
+  component: JSX.Element;
+  active: boolean;
+}) => {
+  return active ? (
+    component
+  ) : (
+    <div className="area-wrapper">
+      <div className="area-disabled" />
+      {component}
+    </div>
+  );
+};
+
+const UploaderWrapper = () => {
+  const [canUpload] = useState<boolean>(
+    process.platform === 'win32'
+  );
+
+
+  return <DisabledArea component={<Uploader />} active={canUpload} />;
+};
 
 const DocumentTitle = ({ length }: { length: number }) => {
   const appLoaded = useRecoilValue(appDatasLoadedStore);

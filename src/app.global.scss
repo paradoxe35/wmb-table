@@ -378,3 +378,24 @@ main .ck-editor[role='application'] .ck.ck-content,
 .underline {
   text-decoration: underline;
 }
+
+// disabled area
+
+.area-wrapper {
+  position: relative;
+}
+
+.area-disabled {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  background-color: #fff;
+  opacity: 0.5;
+}
+
+.area-content {
+  position: absolute;
+}

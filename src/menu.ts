@@ -168,19 +168,15 @@ export default class MenuBuilder {
       {
         label: '&Fichier',
         submenu: [
-          ...(process.platform === 'win32'
-            ? [
-                {
-                  label: 'Documents',
-                  accelerator: 'Ctrl+N',
-                  click: () => {
-                    this.mainWindow.webContents.send(
-                      IPC_EVENTS.open_modal_document_from_main
-                    );
-                  },
-                },
-              ]
-            : []),
+          {
+            label: 'Documents',
+            accelerator: 'Ctrl+N',
+            click: () => {
+              this.mainWindow.webContents.send(
+                IPC_EVENTS.open_modal_document_from_main
+              );
+            },
+          },
           {
             label: '&Fermer',
             accelerator: 'Ctrl+W',
