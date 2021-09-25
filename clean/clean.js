@@ -7,7 +7,7 @@ const nedb = require('../src/node_modules/nedb');
  * @param {string} directory
  * @param {string[]} excepts
  */
-function cleanAllFileDir(directory, excepts = [], removeDir = false) {
+function cleanAllFileDir(directory, excepts = ['.gitignore'], removeDir = false) {
   if (fs.existsSync(directory)) {
     try {
       if (removeDir) {
@@ -78,7 +78,9 @@ cleanAllFileDir(path.resolve(__dirname, '../assets/credentials/'), [
 cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
 
 // clean db backup files for production
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), [], true);
+cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/pending'));
+
+cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), ['pending', '.gitignore']);
 
 if (process.argv.includes('--force')) {
   console.log('remove document html: --force');
