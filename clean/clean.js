@@ -7,7 +7,11 @@ const nedb = require('../src/node_modules/nedb');
  * @param {string} directory
  * @param {string[]} excepts
  */
-function cleanAllFileDir(directory, excepts = ['.gitignore'], removeDir = false) {
+function cleanAllFileDir(
+  directory,
+  excepts = ['.gitignore'],
+  removeDir = false
+) {
   if (fs.existsSync(directory)) {
     try {
       if (removeDir) {
@@ -68,11 +72,19 @@ async function removeHtmlFiles() {
 // clean db files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
 
+const credentialsPath = path.resolve(__dirname, '../assets/credentials/');
 // clean db backup files for production
-cleanAllFileDir(path.resolve(__dirname, '../assets/credentials/'), [
+cleanAllFileDir(credentialsPath, [
   'google-drive-credentials.json',
   '.gitignore',
 ]);
+
+// warn if google-drive-credentials.json doent exist
+if (
+  !fs.existsSync(path.join(credentialsPath, 'google-drive-credentials.json'))
+) {
+  console.error('Cannot find file: ', 'google-drive-credentials.json');
+}
 
 // clean dist src compiled souces
 cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
@@ -80,7 +92,10 @@ cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
 // clean db backup files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/pending'));
 
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), ['pending', '.gitignore']);
+cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), [
+  'pending',
+  '.gitignore',
+]);
 
 if (process.argv.includes('--force')) {
   console.log('remove document html: --force');
