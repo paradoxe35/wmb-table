@@ -27,7 +27,7 @@ export async function export_note_pdf(
     ? pathSys.join(
         process.resourcesPath,
         'app.asar.unpacked',
-        'node_modules/phantomjs/bin/phantomjs'
+        'node_modules/phantomjs-prebuilt/bin/phantomjs'
       )
     : undefined;
 
