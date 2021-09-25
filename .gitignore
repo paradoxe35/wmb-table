@@ -45,13 +45,13 @@ dll
 main.js
 main.js.map
 
-assets/datas
+# assets/datas
 assets/tmp
 
 
 modules-output/
-db/
-datas/
+/db/
+/datas/
 publish.cmd
 .idea
 npm-debug.log.*
