@@ -134,7 +134,7 @@ const DisabledArea = ({
     <div className="area-wrapper">
       <div className="area-content">
         <Button type="primary" shape="circle" icon={<RedoOutlined />} />
-        <Typography.Text>Non pris en charge</Typography.Text>
+        <Typography.Text type="warning">Non pris en charge</Typography.Text>
         <Button type="dashed">
           <Typography.Link
             target="_blank"
