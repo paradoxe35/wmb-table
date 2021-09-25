@@ -90,7 +90,7 @@ function ContentHandler() {
       >
         <DocumentView />
       </div>
-      {process.platform === 'win32' && <CustomDocuments />}
+      <CustomDocuments />
       <BackupProfile />
       <Welcome />
     </>
