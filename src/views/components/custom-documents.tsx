@@ -42,7 +42,7 @@ import { DeleteBtn } from '../../components/delete-btn';
 import { strNormalize } from '../../utils/functions';
 import DocumentViewer from '../../components/viewer/document-viewer';
 
-import { InboxOutlined } from '@ant-design/icons';
+import { InboxOutlined, RedoOutlined } from '@ant-design/icons';
 import { DraggerProps } from 'antd/lib/upload';
 import { UploadFile } from 'antd/lib/upload/interface';
 
@@ -132,17 +132,25 @@ const DisabledArea = ({
     component
   ) : (
     <div className="area-wrapper">
-      <div className="area-disabled" />
+      <div className="area-content">
+        <Button type="primary" shape="circle" icon={<RedoOutlined />} />
+        <Typography.Text>Non pris en charge</Typography.Text>
+        <Button type="dashed">
+          <Typography.Link
+            target="_blank"
+            href={process.env.DOCS_CUSTOM_DOCUMENT_LINK}
+          >
+            Documentation
+          </Typography.Link>
+        </Button>
+      </div>
       {component}
     </div>
   );
 };
 
 const UploaderWrapper = () => {
-  const [canUpload] = useState<boolean>(
-    process.platform === 'win32'
-  );
-
+  const [canUpload] = useState<boolean>(process.platform === 'win32');
 
   return <DisabledArea component={<Uploader />} active={canUpload} />;
 };
