@@ -2,6 +2,7 @@ const fs = require('fs-extra');
 const path = require('path');
 //@ts-ignore
 const nedb = require('../src/node_modules/nedb');
+const chalk = require('chalk');
 
 /**
  * @param {string} directory
@@ -83,7 +84,11 @@ cleanAllFileDir(credentialsPath, [
 if (
   !fs.existsSync(path.join(credentialsPath, 'google-drive-credentials.json'))
 ) {
-  console.error('Cannot find file: ', 'google-drive-credentials.json');
+  console.log(`
+    -------------------- ${chalk.redBright.bold(
+      'Cannot find file: google-drive-credentials.json'
+    )} -----------------------
+  `);
 }
 
 // clean dist src compiled souces
