@@ -5,16 +5,17 @@ export const RESOURCES_PATH = app.isPackaged
   ? path.join(process.resourcesPath, 'assets')
   : path.join(__dirname, '../assets');
 
-export function childsProcessesPath(file: string): string {
-  return __dirname + '/childs_processes/' + file;
-}
-
 export let mainWindow: BrowserWindow | null = null;
 
 export const setMainWindow = (mWindow: BrowserWindow) => (mainWindow = mWindow);
 
+// app paths
+export function childsProcessesPath(file: string): string {
+  return (__dirname + '/childs_processes/' + file).replace(/ /g, '\\ ');
+}
+
 export const getAssetPath = (...paths: string[]): string => {
-  return path.join(RESOURCES_PATH, ...paths);
+  return path.join(RESOURCES_PATH, ...paths).replace(/ /g, '\\ ');
 };
 
 export const getAssetDocumentsDbPath = (...paths: string[]): string => {
@@ -55,6 +56,6 @@ export function getImagesPath(relativePath: string) {
       /\.asar([\\/])/,
       '.asar.unpacked$1'
     );
-    return path.join(asarUnpackedPath, relativePath);
+    return path.join(asarUnpackedPath, relativePath).replace(/ /g, '\\ ');
   }
 }
