@@ -2,7 +2,7 @@ import path from 'path';
 import { app, BrowserWindow, remote } from 'electron';
 
 export const RESOURCES_PATH = app.isPackaged
-  ? path.join(process.resourcesPath, 'assets')
+  ? path.join(process.resourcesPath.replace(/ /g, '\\ '), 'assets')
   : path.join(__dirname, '../assets');
 
 export let mainWindow: BrowserWindow | null = null;
@@ -11,11 +11,11 @@ export const setMainWindow = (mWindow: BrowserWindow) => (mainWindow = mWindow);
 
 // app paths
 export function childsProcessesPath(file: string): string {
-  return (__dirname + '/childs_processes/' + file).replace(/ /g, '\\ ');
+  return __dirname.replace(/ /g, '\\ ') + '/childs_processes/' + file;
 }
 
 export const getAssetPath = (...paths: string[]): string => {
-  return path.join(RESOURCES_PATH, ...paths).replace(/ /g, '\\ ');
+  return path.join(RESOURCES_PATH, ...paths);
 };
 
 export const getAssetDocumentsDbPath = (...paths: string[]): string => {
@@ -52,10 +52,9 @@ export function getImagesPath(relativePath: string) {
   if ((app || remote.app).isPackaged === false) {
     return path.join(__dirname, relativePath);
   } else {
-    let asarUnpackedPath = __dirname.replace(
-      /\.asar([\\/])/,
-      '.asar.unpacked$1'
-    );
-    return path.join(asarUnpackedPath, relativePath).replace(/ /g, '\\ ');
+    let asarUnpackedPath = __dirname
+      .replace(/\.asar([\\/])/, '.asar.unpacked$1')
+      .replace(/ /g, '\\ ');
+    return path.join(asarUnpackedPath, relativePath);
   }
 }
