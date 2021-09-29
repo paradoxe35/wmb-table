@@ -75,19 +75,46 @@ async function removeHtmlFiles() {
 }
 
 // clean db files for production
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
+cleanAllFileDir(path.resolve(datasDir, 'db/'));
 
-const credentialsPath = path.resolve(__dirname, '../assets/datas/credentials/');
+const credentialsPath = path.resolve(datasDir, 'credentials/');
 // clean db backup files for production
 cleanAllFileDir(credentialsPath, ['google-drive-credentials.json']);
 
 // warn if google-drive-credentials.json doent exist
 if (
-  !fs.existsSync(path.join(credentialsPath, 'google-drive-credentials.json'))
+  !fs.existsSync(path.resolve(credentialsPath, 'google-drive-credentials.json'))
 ) {
-  console.log(`
+  console.log(`\n
     -------------------- ${chalk.redBright.bold(
       'Cannot find file: google-drive-credentials.json'
+    )} -----------------------
+  `);
+}
+
+// warn if documents dir doent exist
+if (!fs.existsSync(path.resolve(datasDir, 'documents/'))) {
+  console.log(`\n
+    -------------------- ${chalk.redBright.bold(
+      'Cannot find documents directory'
+    )} -----------------------
+  `);
+}
+
+// warn if documents-db dir doent exist
+if (!fs.existsSync(path.resolve(datasDir, 'documents-db/'))) {
+  console.log(`\n
+    -------------------- ${chalk.redBright.bold(
+      'Cannot find documents-db directory'
+    )} -----------------------
+  `);
+}
+
+// warn if bible dir doent exist
+if (!fs.existsSync(path.resolve(datasDir, 'bible/'))) {
+  console.log(`\n
+    -------------------- ${chalk.redBright.bold(
+      'Cannot find bible directory'
     )} -----------------------
   `);
 }
@@ -96,11 +123,9 @@ if (
 cleanAllFileDir(path.resolve(__dirname, '../src/dist/'));
 
 // clean db backup files for production
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/pending'));
+cleanAllFileDir(path.resolve(datasDir, 'backup/pending'));
 
-cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), [
-  'pending',
-]);
+cleanAllFileDir(path.resolve(datasDir, 'backup/'), ['pending']);
 
 if (process.argv.includes('--force')) {
   console.log('remove document html: --force');
