@@ -73,7 +73,7 @@ async function removeHtmlFiles() {
 // clean db files for production
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
 
-const credentialsPath = path.resolve(__dirname, '../assets/credentials/');
+const credentialsPath = path.resolve(__dirname, '../assets/datas/credentials/');
 // clean db backup files for production
 cleanAllFileDir(credentialsPath, [
   'google-drive-credentials.json',
