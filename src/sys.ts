@@ -42,7 +42,7 @@ export const getAssetDocumentsPath = (...paths: string[]): string => {
 };
 
 export const getAssetCredentialsPath = (...paths: string[]): string => {
-  return getAssetPath('credentials', ...paths);
+  return getAssetPath('datas/credentials', ...paths);
 };
 
 // get image path

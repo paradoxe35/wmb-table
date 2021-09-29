@@ -2,3 +2,4 @@
 !.gitignore
 !db/
 !backup/
+!credentials/
