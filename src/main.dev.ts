@@ -12,30 +12,17 @@ import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import './utils/polyfill';
 import { app, BrowserWindow, shell } from 'electron';
-import { autoUpdater } from 'electron-updater';
-import log from 'electron-log';
 import MenuBuilder from './menu';
 import { getAssetPath, setMainWindow } from './sys';
 import Dialogs from './dialogs/dialogs';
 import backupHandler from './utils/backup/backup';
 import { APP_NAME } from './utils/constants';
+// import AppUpdater from './utils/app-updater/updater';
 
 require('./message-control/main-messages');
 
 // init backup watcher files
 const watcher = backupHandler();
-
-export default class AppUpdater {
-  constructor() {
-    log.transports.file.level = 'info';
-    autoUpdater.logger = log;
-    autoUpdater.checkForUpdatesAndNotify({
-      title: "Mise à jour de l'application",
-      body:
-        "Une nouvelle version a été téléchargée. Redémarrez l'application pour appliquer les mises à jour.",
-    });
-  }
-}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -122,7 +109,7 @@ const createWindow = async () => {
 
   // Remove this if your app does not use auto updates
   // eslint-disable-next-line
-  new AppUpdater();
+  // new AppUpdater();
 };
 
 /**
