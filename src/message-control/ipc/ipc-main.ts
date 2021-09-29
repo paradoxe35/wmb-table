@@ -7,9 +7,12 @@ export async function mainMessageTransport(
   ipcMain.on(eventName, (event, ...arg) => {
     const cb = callback(event, ...arg);
     if (cb instanceof Promise) {
-      cb.then((data) =>
-        event.reply(`${eventName}-reply`, null, data)
-      ).catch((err) => event.reply(`${eventName}-reply`, err, null));
+      cb.then((data) => event.reply(`${eventName}-reply`, null, data)).catch(
+        (err) => {
+          console.log('error ----------------', err);
+          event.reply(`${eventName}-reply`, err, null);
+        }
+      );
     } else {
       event.reply(`${eventName}-reply`, null, cb);
     }
