@@ -13,6 +13,10 @@ function cleanAllFileDir(
   excepts = ['.gitignore'],
   removeDir = false
 ) {
+  if (!excepts.includes('.gitignore')) {
+    excepts.push('.gitignore');
+  }
+
   if (fs.existsSync(directory)) {
     try {
       if (removeDir) {
@@ -75,10 +79,7 @@ cleanAllFileDir(path.resolve(__dirname, '../assets/datas/db/'));
 
 const credentialsPath = path.resolve(__dirname, '../assets/datas/credentials/');
 // clean db backup files for production
-cleanAllFileDir(credentialsPath, [
-  'google-drive-credentials.json',
-  '.gitignore',
-]);
+cleanAllFileDir(credentialsPath, ['google-drive-credentials.json']);
 
 // warn if google-drive-credentials.json doent exist
 if (
@@ -99,7 +100,6 @@ cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/pending'));
 
 cleanAllFileDir(path.resolve(__dirname, '../assets/datas/backup/'), [
   'pending',
-  '.gitignore',
 ]);
 
 if (process.argv.includes('--force')) {
