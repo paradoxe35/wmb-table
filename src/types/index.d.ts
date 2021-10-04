@@ -256,3 +256,10 @@ interface BibleSearchItem {
 export interface BibleSearchResult extends SearchResultStructure {
   data: BibleSearchItem[];
 }
+
+export interface UpdaterInfoStatus extends TimeStampData<Date> {
+  restartedToUpdate: boolean;
+  lastUpdateCheck?: Date;
+  version?:string;
+  isUpdating?: boolean;
+}

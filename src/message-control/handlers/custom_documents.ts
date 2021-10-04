@@ -45,7 +45,7 @@ export function custom_documents_delete(_: any, document: CustomDocument) {
     doWhilst(
       asyncify(proceed),
       asyncify(() => false),
-      (_err) => (_err ? reject(_err) : resolve(true))
+      (_err: any) => (_err ? reject(_err) : resolve(true))
     );
   });
 }
@@ -136,7 +136,7 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
     whilst(
       asyncify(() => newDocuments.length !== 0),
       asyncify(proceed),
-      (_err) => {
+      (_err: any) => {
         if (_err) {
           reject(_err);
         } else {

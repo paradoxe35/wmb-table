@@ -279,6 +279,13 @@ export default class MenuBuilder {
               );
             },
           },
+          {
+            label: 'Mis à jour',
+            accelerator: 'Ctrl+U',
+            click: () => {
+              this.mainWindow.webContents.send(IPC_EVENTS.app_update_menu);
+            },
+          },
         ],
       },
       {

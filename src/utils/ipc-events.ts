@@ -46,13 +46,16 @@ export const IPC_EVENTS = {
   backup_reminder: 'backup_reminder',
   backup_login: 'backup_login',
   restart_app: 'restart_app',
+  start_download_update: 'start_download_update',
   // events from main process
   custom_document_upload_progress: 'custom_document_upload_progress',
   open_modal_document_from_main: 'open_modal_document_from_main',
   backup_progression: 'backup_progression',
   backup_access_status: 'backup_access_status',
   open_backup_modal_from_main: 'open_backup_modal_from_main',
+  app_update_menu: 'app_update_menu',
   toggle_sidebar: 'toggle_sidebar',
   switch_on_menu: 'switch_on_menu',
+  notify_for_new_update: 'notify_for_new_update',
   switch_on_options: 'switch_on_options',
 };

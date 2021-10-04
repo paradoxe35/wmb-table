@@ -10,7 +10,7 @@ import {
 import { setDataRestored } from '../../utils/backup/constants';
 import googleOAuth2, { getUserInfo } from '../../utils/backup/googleapi';
 import { IPC_EVENTS } from '../../utils/ipc-events';
-import { cleanAllFileDir } from '../../utils/main/count-file-lines';
+import { cleanAllFileDir } from '../../utils/main/functions/count-file-lines';
 import db, { queryDb } from '../../utils/main/db';
 import { app_settings } from './app_settings';
 const isOnline = require('is-online');

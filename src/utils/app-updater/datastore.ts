@@ -1,0 +1,66 @@
+import Nedb from 'nedb';
+import { UpdaterInfoStatus } from '../../types';
+
+export default class UpdaterInMemoryDatastore {
+  datastore: Nedb<UpdaterInfoStatus>;
+
+  constructor() {
+    this.datastore = new Nedb<UpdaterInfoStatus>({
+      inMemoryOnly: true,
+      filename: undefined,
+      timestampData: true,
+      autoload: true,
+    });
+  }
+
+  public async instance() {
+    let data = await this.data();
+    if (!data) {
+      data = await this.create();
+    }
+    return data;
+  }
+
+  private data(): Promise<UpdaterInfoStatus | undefined> {
+    return new Promise<UpdaterInfoStatus | undefined>((resolve) => {
+      this.datastore.findOne({}, {}, (err, document) => {
+        if (err) {
+          return resolve(undefined);
+        }
+        resolve(document);
+      });
+    });
+  }
+
+  public async update(data: Partial<UpdaterInfoStatus>) {
+    const instance = await this.instance();
+    return new Promise<number | undefined>((resolve) => {
+      this.datastore.update(
+        { _id: instance._id },
+        { $set: data },
+        { multi: true },
+        (err, num) => {
+          if (err) {
+            return resolve(undefined);
+          }
+          resolve(num);
+        }
+      );
+    });
+  }
+
+  private create() {
+    return new Promise<UpdaterInfoStatus>((resolve) => {
+      const fresh = {
+        restartedToUpdate: false,
+        lastUpdateCheck: undefined,
+      } as UpdaterInfoStatus;
+      this.datastore.insert(fresh, (err, created) => {
+        if (err) {
+          return resolve({} as UpdaterInfoStatus);
+        }
+        return resolve(created);
+      });
+    });
+  }
+}

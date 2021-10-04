@@ -36,7 +36,7 @@ export class PrepareRestore {
       whilst(
         asyncify(() => newFiles.length !== 0),
         asyncify(proceed),
-        (_err) => {
+        (_err: any) => {
           if (_err) {
             reject(_err);
             commitRestoreProgress('error', 0, 0);
