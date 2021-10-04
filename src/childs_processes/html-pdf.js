@@ -1,3 +1,4 @@
+// @ts-ignore
 const pdf = require('html-pdf');
 const fs = require('fs');
 
@@ -28,7 +29,10 @@ const fs = require('fs');
         quality: '99',
         orientation: 'portrait',
       })
-      .toStream(function (err, stream) {
+      .toStream(function (
+        /** @type {any} */ err,
+        /** @type {fs.ReadStream} */ stream
+      ) {
         if (err) {
           // @ts-ignore
           process.send(null);

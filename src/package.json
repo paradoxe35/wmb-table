@@ -28,7 +28,7 @@
     "underscore": "^1.13.1"
   },
   "devDependencies": {
-    "@types/async": "^3.2.7",
+    "@types/async": "^3.2.8",
     "@types/express": "^4.17.13",
     "@types/html-pdf": "^2.2.1",
     "@types/nedb": "^1.8.11"

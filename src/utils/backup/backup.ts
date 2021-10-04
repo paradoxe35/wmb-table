@@ -4,7 +4,7 @@ import {
   getAssetDocumentsDbPath,
 } from '../../sys';
 import { debounce, getFilename } from '../functions';
-import { countFileLines, readRangeLinesInFile } from '../main/count-file-lines';
+import { countFileLines, readRangeLinesInFile } from '../main/functions/count-file-lines';
 import { EventEmitter } from 'events';
 import Datastore from 'nedb';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '../main/db';

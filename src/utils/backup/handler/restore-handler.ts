@@ -5,7 +5,7 @@ import db, { DBSerializer, getDatastoreFileName, queryDb } from '../../main/db';
 import Datastore from 'nedb';
 import { CustomDocument } from '../../../types';
 import { Stream } from 'stream';
-import { checkForFile } from '../../main/count-file-lines';
+import { checkForFile } from '../../main/functions/count-file-lines';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
@@ -72,7 +72,7 @@ export class RestoreHandler extends DriveHandler {
       doWhilst<any>(
         asyncify(fetchFiles),
         asyncify(() => !!nextToken),
-        (err) => {
+        (err: { name: any; message: any }) => {
           if (err) {
             commitRestoreProgress('error', 0, 0);
             console.log(
@@ -161,7 +161,7 @@ export class RestoreHandler extends DriveHandler {
       whilst(
         asyncify(() => newFiles.length !== 0),
         asyncify(proceed),
-        (_err) => (_err ? reject(_err) : resolve(null))
+        (_err: any) => (_err ? reject(_err) : resolve(null))
       );
     });
   }
