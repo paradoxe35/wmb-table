@@ -2,7 +2,7 @@ import { drive_v3 } from 'googleapis';
 import { getAssetBackupPath, getAssetDocumentsPath } from '../../../sys';
 import { camelCase } from '../../functions';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '../../main/db';
-import Datastore from 'nedb';
+import Datastore from '@seald-io/nedb';
 import { CustomDocument } from '../../../types';
 import { Stream } from 'stream';
 import { checkForFile } from '../../main/functions/count-file-lines';
@@ -72,7 +72,7 @@ export class RestoreHandler extends DriveHandler {
       doWhilst<any>(
         asyncify(fetchFiles),
         asyncify(() => !!nextToken),
-        (err: { name: any; message: any }) => {
+        (err: any) => {
           if (err) {
             commitRestoreProgress('error', 0, 0);
             console.log(

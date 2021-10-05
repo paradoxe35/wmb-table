@@ -1,8 +1,8 @@
-import Nedb from 'nedb';
+import Nedb from '@seald-io/nedb';
 import { UpdaterInfoStatus } from '../../types';
 
 export default class UpdaterInMemoryDatastore {
-  datastore: Nedb<UpdaterInfoStatus>;
+  private datastore: Nedb<UpdaterInfoStatus>;
 
   constructor() {
     this.datastore = new Nedb<UpdaterInfoStatus>({

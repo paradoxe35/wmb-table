@@ -1,41 +1,36 @@
-const fs = require('fs-extra');
-const getSizeCallback = require('get-folder-size');
+import fs from 'fs-extra';
+import getSizeCallback from 'get-folder-size';
 
 async function getSize(dir: string) {
   return new Promise<number>((resolve, reject) => {
-    getSizeCallback(dir, (err: any, size: number) => {
-      if (err) reject(err);
-      resolve(size);
-    });
+    getSizeCallback(dir)
+      .then((data) => {
+        resolve(data.size);
+      })
+      .catch(reject);
   });
 }
 
 const bToMB = (val: number) => val / 1024 / 1024;
-const bToGB = (val: number) => (val / 1024 / 1024) * 0.001;
+// const bToGB = (val: number) => (val / 1024 / 1024) * 0.001;
 const millisToSecs = (val: number) => val * 0.001;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-function formatTime(secs: any) {
-  if (secs > 60) {
-    const mins = (secs / 60).toFixed(0);
-    const suffix = mins === '1' ? '' : 's';
-    return `${mins} minute${suffix}`;
-  } else {
-    secs = secs.toFixed(0);
-    const suffix = secs == '1' ? '' : 's';
-    return `${secs} second${suffix}`;
-  }
-}
+// function formatTime(secs: number) {
+//   if (secs > 60) {
+//     const mins = (secs / 60).toFixed(0);
+//     const suffix = mins === '1' ? '' : 's';
+//     return `${mins} minute${suffix}`;
+//   } else {
+//     const ssecs = secs.toFixed(0);
+//     const suffix = ssecs == '1' ? '' : 's';
+//     return `${ssecs} second${suffix}`;
+//   }
+// }
 
-const defaultProgressCallback = (_data: {
-  elapsedBytes: any;
-  totalBytes: any;
-  progress: any;
-  speed: any;
-  remainingSecs: any;
-}) => {};
+const defaultProgressCallback = (_data: any) => {};
 
-module.exports = async function copyWithProgress(
+export default async function copyWithProgress(
   src: string,
   dest: string,
   {
@@ -78,11 +73,8 @@ module.exports = async function copyWithProgress(
     });
   }, interval);
 
-  await fs.copy(src, dest);
+  await fs.copy(src, dest, { overwrite: true });
   clearInterval(intervalId);
-  console.log(
-    `\ncopy completed in ${millisToSecs(Date.now() - startTime).toFixed(
-      0
-    )} seconds`
-  );
-};
+
+  return millisToSecs(Date.now() - startTime).toFixed(0);
+}

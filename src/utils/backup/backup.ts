@@ -4,9 +4,12 @@ import {
   getAssetDocumentsDbPath,
 } from '../../sys';
 import { debounce, getFilename } from '../functions';
-import { countFileLines, readRangeLinesInFile } from '../main/functions/count-file-lines';
+import {
+  countFileLines,
+  readRangeLinesInFile,
+} from '../main/functions/count-file-lines';
 import { EventEmitter } from 'events';
-import Datastore from 'nedb';
+import Datastore from '@seald-io/nedb';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '../main/db';
 import { BackupDbReference, BackupStatus, PendingDatastore } from '../../types';
 import { BackupHandler } from './handler/backup-handler';
@@ -24,6 +27,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { DB_EXTENSION } from '../constants';
 import fs from 'fs';
 import { setUserAuthAccessStatus } from '../../message-control/handlers/backup';
+import { UPDATER_RESTORING_DATA } from '../app-updater/constants';
 
 const isOnline = require('is-online');
 const watch = require('node-watch');
@@ -332,7 +336,9 @@ const performUniqueBackup = async (filename: string) => {
       'orginal range -- ',
       rangeLines.length,
       'Total: -- ',
-      Object.keys(grouped).length
+      Object.keys(grouped).length,
+      '\n',
+      'filename: ' + filename
     );
   }
 
@@ -386,7 +392,7 @@ const syncedFirstDbReferences = async (filename: string) => {
  * @returns
  */
 const performBackup = async (evt: string, name: string) => {
-  if (!DATA_RESTORED.value) {
+  if (!DATA_RESTORED.value || UPDATER_RESTORING_DATA.value) {
     return;
   }
 

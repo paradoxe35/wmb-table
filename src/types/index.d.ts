@@ -1,3 +1,5 @@
+import { UpdateCheckResult } from "electron-updater";
+
 export interface TimeStampData<T = any> {
   _id: string;
   createdAt: T;
@@ -260,6 +262,19 @@ export interface BibleSearchResult extends SearchResultStructure {
 export interface UpdaterInfoStatus extends TimeStampData<Date> {
   restartedToUpdate: boolean;
   lastUpdateCheck?: Date;
-  version?:string;
-  isUpdating?: boolean;
+  updateCheckResult?: UpdateCheckResult;
+}
+
+export type UpdaterCopyProgress = {
+  elapsedBytes?: number;
+  totalBytes?: number;
+  progress?: number;
+  speed?: number;
+  remainingSecs?: number;
+}
+
+export type UpdaterNotification = {
+    type: "preparing" | "restoring" | "restartedToUpdate" | "hasUpdate" |  "downloading";
+    progress?: UpdaterCopyProgress,
+    status?: Partial<UpdaterInfoStatus>;
 }

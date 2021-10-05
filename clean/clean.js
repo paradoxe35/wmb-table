@@ -1,7 +1,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 //@ts-ignore
-const nedb = require('../src/node_modules/nedb');
+const nedb = require('../src/node_modules/@seald-io/nedb');
 const chalk = require('chalk');
 
 /**
