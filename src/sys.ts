@@ -18,6 +18,10 @@ export const getAssetPath = (...paths: string[]): string => {
   return path.join(RESOURCES_PATH, ...paths);
 };
 
+export const getAssetDatasPath = (...paths: string[]): string => {
+  return getAssetPath('datas', ...paths);
+};
+
 export const getAssetDocumentsDbPath = (...paths: string[]): string => {
   return getAssetPath('datas/documents-db', ...paths);
 };
