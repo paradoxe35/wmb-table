@@ -42,6 +42,9 @@ class Updater {
     // disable auto download with there's availble update
     autoUpdater.autoDownload = false;
 
+    autoUpdater.autoInstallOnAppQuit = false;
+    autoUpdater.autoInstallOnAppQuit = false;
+
     this.autoUpdater = autoUpdater;
     // used to save progress state of updater
     this.datastore = new UpdaterInMemoryDatastore();
