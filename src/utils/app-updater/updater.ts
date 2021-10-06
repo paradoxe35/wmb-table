@@ -43,7 +43,6 @@ class Updater {
     autoUpdater.autoDownload = false;
 
     autoUpdater.autoInstallOnAppQuit = false;
-    autoUpdater.autoInstallOnAppQuit = false;
 
     this.autoUpdater = autoUpdater;
     // used to save progress state of updater
