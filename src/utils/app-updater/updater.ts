@@ -172,7 +172,7 @@ class Updater {
     this.datastoreState = await this.datastore.instance();
 
     this.notifyRenderer({
-      type: 'hasUpdate',
+      type: 'none',
     });
 
     this.restartedToUpdate = !!this.datastoreState.restartedToUpdate;
