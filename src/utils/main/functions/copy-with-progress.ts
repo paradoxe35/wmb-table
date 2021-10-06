@@ -3,11 +3,12 @@ import getSizeCallback from 'get-folder-size';
 
 async function getSize(dir: string) {
   return new Promise<number>((resolve, reject) => {
-    getSizeCallback(dir)
-      .then((data) => {
-        resolve(data.size);
-      })
-      .catch(reject);
+    getSizeCallback(dir, (err, size) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(size);
+    });
   });
 }
 

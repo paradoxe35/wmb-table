@@ -263,6 +263,7 @@ export interface UpdaterInfoStatus extends TimeStampData<Date> {
   restartedToUpdate: boolean;
   lastUpdateCheck?: Date;
   updateCheckResult?: UpdateCheckResult;
+  version?: string;
 }
 
 

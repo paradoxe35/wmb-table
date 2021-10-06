@@ -21,6 +21,7 @@ import Bible from './views/options/bible';
 import ContainerScrollY from './components/container-scroll-y';
 import BackupProfile from './views/components/backup-profile-modal';
 import Welcome from './views/components/welcome-modal';
+import Updater from './views/components/updater-modal';
 
 const Notes = lazy(() => import('./views/options/notes'));
 
@@ -93,6 +94,7 @@ function ContentHandler() {
       <CustomDocuments />
       <BackupProfile />
       <Welcome />
+      <Updater />
     </>
   );
 }
