@@ -113,6 +113,7 @@ const createWindow = async () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
     }
+    console.log(app.getPath('home'));
     // call auto update
     if (app.isPackaged) {
       new Updater(mainWindow);
