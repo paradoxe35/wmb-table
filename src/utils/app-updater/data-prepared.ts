@@ -49,7 +49,7 @@ export default class UpdaterDataPrepared {
   }
 
   public async clear() {
-    if (!fs.existsSync(this.tempPath)) {
+    if (fs.existsSync(this.tempPath)) {
       await fs.rmdir(this.tempPath, { recursive: true });
     }
   }
