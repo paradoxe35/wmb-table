@@ -14,6 +14,13 @@ type ProgressType = {
   progress: { proceed?: number; total?: number; percent?: number };
   onlyPercent?: boolean;
 };
+
+const Icon = () => (
+  <Space>
+    <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />
+    <span />
+  </Space>
+);
 const ShowProgress = ({
   title,
   progress,
@@ -30,7 +37,7 @@ const ShowProgress = ({
     <Space direction="vertical">
       <Space>
         <Typography.Text strong>{title}</Typography.Text>
-        <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />
+        <Icon />
       </Space>
       <div style={{ width: 170 }}>
         <Progress percent={+rPercent} size="small" />
@@ -133,6 +140,7 @@ export default function Updater() {
             description="Début du téléchargement..."
             type="info"
             showIcon
+            icon={<Icon />}
           />
         </>
       );
@@ -177,6 +185,7 @@ export default function Updater() {
           description="Veuillez patienter pendant que nous traitons la dernière étape."
           type="success"
           showIcon
+          icon={<Icon />}
         />
       );
       break;
@@ -260,7 +269,7 @@ export default function Updater() {
             Fermer
           </Button>,
           <Button
-            key={1}
+            key={nextStepAction?.type || 1}
             onClick={nextStepAction?.action}
             disabled={!nextStepAction}
             type="primary"

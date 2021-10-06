@@ -19,7 +19,7 @@ export default class UpdaterDataPrepared {
   private tempDir() {
     const appName = APP_NAME.toLowerCase().split(' ').join('-');
 
-    const newDir = path.resolve(
+    const newDir = path.join(
       app.getPath('temp'),
       appName,
       this.updateCheckResult.updateInfo.version
