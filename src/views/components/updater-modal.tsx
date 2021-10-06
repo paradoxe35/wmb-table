@@ -58,6 +58,8 @@ export default function Updater() {
         setUpdaterInfo(info);
       }
     );
+
+    ipcRenderer.on(IPC_EVENTS.app_update_menu, showModal);
   }, []);
 
   const start_download_update = useCallback(() => {
@@ -84,7 +86,7 @@ export default function Updater() {
 
   switch (updaterInfo?.type) {
     case 'hasUpdate':
-      showModal();
+      !isModalVisible && showModal();
       preventActions = false;
       nextStepAction = {
         type: 'Mettre à jour',
@@ -166,7 +168,7 @@ export default function Updater() {
       );
       break;
     case 'restartedToUpdate':
-      showModal();
+      !isModalVisible && showModal();
       preventActions = true;
       nextStepAction = undefined;
       content = (
@@ -254,7 +256,7 @@ export default function Updater() {
         }
         visible={isModalVisible}
         footer={[
-          <Button disabled={preventActions} key={0}>
+          <Button onClick={handleCancel} disabled={preventActions} key={0}>
             Fermer
           </Button>,
           <Button
@@ -269,13 +271,23 @@ export default function Updater() {
         onOk={handleOk}
         onCancel={handleCancel}
       >
-        <UpdaterContent />
-        {content}
+        {updaterInfo && (
+          <Space direction="vertical">
+            <Typography>
+              <Typography.Paragraph>
+                Version:{' '}
+                {updaterInfo.status?.updateCheckResult?.updateInfo.version ||
+                  updaterInfo.status?.version}
+              </Typography.Paragraph>
+              <Typography.Paragraph>
+                Dernière vérification:{' '}
+                {updaterInfo.status?.lastUpdateCheck?.toLocaleString()}
+              </Typography.Paragraph>
+            </Typography>
+            {content}
+          </Space>
+        )}
       </Modal>
     </>
   );
 }
-
-const UpdaterContent = () => {
-  return <Typography></Typography>;
-};

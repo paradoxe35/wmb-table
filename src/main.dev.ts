@@ -69,6 +69,7 @@ const createWindow = async () => {
     webPreferences: {
       nodeIntegration: true,
       spellcheck: false,
+      contextIsolation: false,
     },
   });
 
@@ -108,12 +109,14 @@ const createWindow = async () => {
     shell.openExternal(url);
   });
 
-  mainWindow.webContents.on('did-finish-load', () => {
+  mainWindow.webContents.once('did-finish-load', () => {
     if (!mainWindow) {
       throw new Error('"mainWindow" is not defined');
     }
     // call auto update
-    new Updater(mainWindow);
+    if (app.isPackaged) {
+      new Updater(mainWindow);
+    }
   });
 };
 
