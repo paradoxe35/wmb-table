@@ -7,6 +7,18 @@ const progress = require('request-progress');
 const chalk = require('chalk');
 const path = require('path');
 
+const { EventEmitter } = require('events');
+
+const event = new EventEmitter({ captureRejections: true });
+
+const message = {
+  assetProgress: '',
+  dataProgress: '',
+};
+event.on('progress', () => {
+  process.stdout.write(`${message.dataProgress} - ${message.assetProgress}\r`);
+});
+
 // extract datas zip
 progress(
   request(
@@ -15,10 +27,10 @@ progress(
 )
   // @ts-ignore
   .on('progress', function (state) {
-    console.log(
-      chalk.blueBright.bold('extract data: '),
-      state.percent.toFixed(0)
-    );
+    message.dataProgress =
+      chalk.blueBright.bold('extract data: ') +
+      ((state.percent * 100) / 1).toFixed(0);
+    event.emit('progress');
   })
   .pipe(unzipper.Extract({ path: path.resolve(__dirname, '../') }));
 
@@ -30,9 +42,9 @@ progress(
 )
   // @ts-ignore
   .on('progress', function (state) {
-    console.log(
-      chalk.cyanBright.bold('extract assets data: '),
-      state.percent.toFixed(0)
-    );
+    message.assetProgress =
+      chalk.cyanBright.bold('extract assets data: ') +
+      ((state.percent * 100) / 1).toFixed(0);
+    event.emit('progress');
   })
-  .pipe(unzipper.Extract({ path: path.resolve(__dirname, '../') }));
+  .pipe(unzipper.Extract({ path: path.resolve(__dirname, '../assets') }));
