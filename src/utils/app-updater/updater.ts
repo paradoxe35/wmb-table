@@ -45,8 +45,7 @@ class Updater {
     this.autoUpdater = autoUpdater;
     // used to save progress state of updater
     this.datastore = new UpdaterInMemoryDatastore();
-    // initialize updater state and call all dependent method
-    this.state();
+
     // listen for download confirmation from rendere process
     mainMessageTransport(IPC_EVENTS.start_download_update, this.startDownload);
 
@@ -55,6 +54,9 @@ class Updater {
       IPC_EVENTS.quit_and_install_update,
       this.quitAndInstall
     );
+    // initialize updater state and call all dependent method
+    this.state();
+
     // check update with interval
     this.checkWithInterval();
     // track when update downloaded
@@ -170,7 +172,7 @@ class Updater {
     this.datastoreState = await this.datastore.instance();
 
     this.notifyRenderer({
-      type: 'none',
+      type: 'hasUpdate',
     });
 
     this.restartedToUpdate = !!this.datastoreState.restartedToUpdate;

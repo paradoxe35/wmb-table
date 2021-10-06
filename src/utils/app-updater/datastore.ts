@@ -11,7 +11,7 @@ export default class UpdaterInMemoryDatastore {
   constructor() {
     const appName = APP_NAME.toLowerCase().split(' ').join('-');
     this.datastore = new Nedb<UpdaterInfoStatus>({
-      filename: path.resolve(
+      filename: path.join(
         app.getPath('userData'),
         `${appName}-state`,
         `state.db`
