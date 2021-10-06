@@ -37,6 +37,7 @@ export default async function copyWithProgress(
     onProgress = defaultProgressCallback,
     interval = 1000,
     smoothing = 0.1,
+    overwrite = false,
   } = {}
 ) {
   const sizeSrc = await getSize(src);
@@ -73,7 +74,7 @@ export default async function copyWithProgress(
     });
   }, interval);
 
-  await fs.copy(src, dest, { overwrite: true });
+  await fs.copy(src, dest, { overwrite });
   clearInterval(intervalId);
 
   return millisToSecs(Date.now() - startTime).toFixed(0);

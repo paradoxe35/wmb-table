@@ -265,16 +265,25 @@ export interface UpdaterInfoStatus extends TimeStampData<Date> {
   updateCheckResult?: UpdateCheckResult;
 }
 
+
 export type UpdaterCopyProgress = {
   elapsedBytes?: number;
   totalBytes?: number;
   progress?: number;
   speed?: number;
   remainingSecs?: number;
+ }
+
+export type UpdaterDownloadProgress = import('electron-updater/node_modules/builder-util-runtime').ProgressInfo
+
+export type UpdaterProgress = {
+  copyProgress?: UpdaterCopyProgress,
+  downloadProgress?: UpdaterDownloadProgress
 }
 
 export type UpdaterNotification = {
-    type: "preparing" | "restoring" | "restartedToUpdate" | "hasUpdate" |  "downloading";
-    progress?: UpdaterCopyProgress,
+    type: "preparing" | "prepared" | "restoring" | "restored" | "restartedToUpdate" | "hasUpdate" |  "downloading" | 'downloaded' | "error";
+    progress?: UpdaterProgress,
     status?: Partial<UpdaterInfoStatus>;
+    message?: string;
 }

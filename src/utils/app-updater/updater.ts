@@ -1,4 +1,9 @@
-import { AppUpdater, autoUpdater, UpdateCheckResult } from 'electron-updater';
+import {
+  AppUpdater,
+  autoUpdater,
+  UpdateCheckResult,
+  UpdateDownloadedEvent,
+} from 'electron-updater';
 import log from 'electron-log';
 import UpdaterInMemoryDatastore from './datastore';
 import { BrowserWindow } from 'electron';
@@ -11,6 +16,7 @@ import {
   UpdaterNotification,
 } from '../../types';
 import { setUpdaterRestoringData } from './constants';
+import { ProgressInfo } from 'electron-updater/node_modules/builder-util-runtime';
 
 class Updater {
   private autoUpdater: AppUpdater;
@@ -22,12 +28,15 @@ class Updater {
 
   private isDownloading: boolean = false;
 
+  private isDownloaded: boolean = false;
+
   private CHECK_INTERVAL: number = 1000 * 60 * 5; // check every 5 minutes
 
   constructor(private mainWindow: BrowserWindow) {
     log.transports.file.level = 'info';
     // auto update logger
     autoUpdater.logger = log;
+    log.info('App starting...');
     // disable auto download with there's availble update
     autoUpdater.autoDownload = false;
 
@@ -38,20 +47,30 @@ class Updater {
     this.state();
     // listen for download confirmation from rendere process
     mainMessageTransport(IPC_EVENTS.start_download_update, this.startDownload);
+
+    // listen for download confirmation from rendere process
+    mainMessageTransport(
+      IPC_EVENTS.quit_and_install_update,
+      this.quitAndInstall
+    );
     // check update with interval
     this.checkWithInterval();
+    // track when update downloaded
+    this.autoUpdater.on('update-downloaded', this.updateDownloaded);
+    // track download progress
+    this.autoUpdater.on('download-progress', this.downloadProgress);
   }
 
   private checkWithInterval() {
     setInterval(this.checkForUpdates, this.CHECK_INTERVAL);
   }
 
-  private checkForUpdates = () => {
+  private checkForUpdates = async () => {
+    if (this.updateCheckResult || this.restartedToUpdate) return;
     this.autoUpdater.checkForUpdates().then(this.notifyHasUpdate);
   };
 
-  private async notifyHasUpdate(result: UpdateCheckResult) {
-    if (this.updateCheckResult || this.restartedToUpdate) return;
+  private notifyHasUpdate = async (result: UpdateCheckResult) => {
     // make update result accessible from object
     this.updateCheckResult = result;
     // put in datastore updater state
@@ -64,16 +83,49 @@ class Updater {
     // send ipc message to renderer process
     this.notifyRenderer({
       type: 'hasUpdate',
-      status: this.datastoreState,
     });
-  }
+  };
+
+  private updateDownloaded = (info: UpdateDownloadedEvent) => {
+    this.isDownloaded = true;
+    // send ipc message to renderer process about downloaded update
+    this.notifyRenderer({
+      type: 'downloaded',
+      message: info.stagingPercentage?.toString(),
+    });
+  };
+
+  private downloadProgress = (info: ProgressInfo) => {
+    // send ipc message to renderer process about backup temp process
+    this.notifyRenderer({
+      type: 'downloading',
+      progress: {
+        downloadProgress: info,
+      },
+    });
+  };
 
   private notifyRenderer(data: UpdaterNotification) {
     // send ipc message to renderer process
-    this.mainWindow.webContents.send(IPC_EVENTS.notify_for_new_update, data);
+    this.mainWindow.webContents.send(IPC_EVENTS.notify_for_new_update, {
+      status: this.datastoreState,
+      ...data,
+    });
   }
 
-  private async startDownload() {
+  private quitAndInstall = async () => {
+    if (this.isDownloaded) {
+      // set restartedToUpdate to true so then when the application will updated to restore tha datas
+      await this.datastore.update({
+        restartedToUpdate: true,
+      });
+
+      // now quit and install the update
+      this.autoUpdater.quitAndInstall();
+    }
+  };
+
+  private startDownload = async () => {
     if (!this.updateCheckResult || this.isDownloading || this.restartedToUpdate)
       return;
 
@@ -83,12 +135,34 @@ class Updater {
       // prepare and backup data temporary for update
       const prepareUpdate = new UpdaterDataPrepared(this.updateCheckResult);
       const timeUsed = await prepareUpdate.backup(this.onProgressDataPrepare);
-
+      // notify renderer process, preparation has finished
+      this.notifyRenderer({
+        type: 'prepared',
+        message: timeUsed,
+      });
       // now start download update file
-    } catch (error) {}
+      this.downloadUpdate();
+    } catch (error) {
+      this.notifyRenderer({
+        type: 'error',
+      });
+      console.error(error?.message || error);
+    }
+  };
+
+  private downloadUpdate() {
+    this.autoUpdater.downloadUpdate();
   }
 
-  private onProgressDataPrepare(progress: UpdaterCopyProgress) {}
+  private onProgressDataPrepare = (progress: UpdaterCopyProgress) => {
+    // send ipc message to renderer process about backup temp process
+    this.notifyRenderer({
+      type: 'preparing',
+      progress: {
+        copyProgress: progress,
+      },
+    });
+  };
 
   private async state() {
     this.datastoreState = await this.datastore.instance();
@@ -97,8 +171,36 @@ class Updater {
     this.restartedToUpdate && this.restoreOriginalDatas(this.datastoreState);
   }
 
+  private onProgressDataRestoring = (progress: UpdaterCopyProgress) => {
+    // send ipc message to renderer process about restoring temp process
+    this.notifyRenderer({
+      type: 'restoring',
+      progress: {
+        copyProgress: progress,
+      },
+    });
+  };
+
   private async restoreOriginalDatas(state: UpdaterInfoStatus) {
     setUpdaterRestoringData(true);
+    // prepare and backup data temporary for update
+    const prepareUpdate = new UpdaterDataPrepared(
+      state.updateCheckResult as UpdateCheckResult
+    );
+    const timeUsed = await prepareUpdate.restore(this.onProgressDataRestoring);
+
+    this.notifyRenderer({
+      type: 'restored',
+      message: timeUsed,
+    });
+
+    this.datastore.update({
+      restartedToUpdate: false,
+    });
+
+    setUpdaterRestoringData(false);
+    // delete all temp files after restored
+    prepareUpdate.clear();
   }
 }
 
