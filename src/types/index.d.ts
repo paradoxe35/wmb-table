@@ -282,7 +282,7 @@ export type UpdaterProgress = {
 }
 
 export type UpdaterNotification = {
-    type: "preparing" | "prepared" | "restoring" | "restored" | "restartedToUpdate" | "hasUpdate" |  "downloading" | 'downloaded' | "error";
+    type: "none" | "preparing" | "prepared" | "restoring" | "restored" | "restartedToUpdate" | "hasUpdate" |  "downloading" | 'downloaded' | "error";
     progress?: UpdaterProgress,
     status?: Partial<UpdaterInfoStatus>;
     message?: string;

@@ -23,9 +23,15 @@ export default function Welcome() {
   const [image, setImage] = useState<undefined | string>(undefined);
 
   useEffect(() => {
-    sendIpcRequest<boolean>(IPC_EVENTS.initialized_app).then(
-      (initialized) => !initialized && showModal()
-    );
+    sendIpcRequest<{ started_to_update: boolean }>(
+      IPC_EVENTS.started_to_update
+    ).then((status) => {
+      if (!status.started_to_update) {
+        sendIpcRequest<boolean>(IPC_EVENTS.initialized_app).then(
+          (initialized) => !initialized && showModal()
+        );
+      }
+    });
     sendIpcRequest<string>(IPC_EVENTS.get_asset, 'icon.png').then((path) =>
       setImage(path)
     );
