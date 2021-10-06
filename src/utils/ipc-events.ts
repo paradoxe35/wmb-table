@@ -47,6 +47,7 @@ export const IPC_EVENTS = {
   backup_login: 'backup_login',
   restart_app: 'restart_app',
   start_download_update: 'start_download_update',
+  started_to_update: 'started_to_update',
   quit_and_install_update: 'quit_and_install_update',
   // events from main process
   custom_document_upload_progress: 'custom_document_upload_progress',

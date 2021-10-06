@@ -1,6 +1,7 @@
 import { AppSettingsStatus } from '../../types';
 import db, { queryDb } from '../../utils/main/db';
 import { app } from 'electron';
+import UpdaterInMemoryDatastore from '../../utils/app-updater/datastore';
 
 export async function app_settings() {
   return await queryDb.findOne<AppSettingsStatus | null>(db.configurations);
@@ -31,4 +32,13 @@ export async function initialized_app() {
 export async function restart_app() {
   app.relaunch();
   app.quit();
+}
+
+export async function started_to_update() {
+  const datastore = new UpdaterInMemoryDatastore();
+  const info = await datastore.instance();
+  return {
+    started_to_update: !!info.restartedToUpdate,
+    info,
+  };
 }

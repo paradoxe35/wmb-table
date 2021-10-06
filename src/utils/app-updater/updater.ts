@@ -32,6 +32,8 @@ class Updater {
 
   private CHECK_INTERVAL: number = 1000 * 60 * 5; // check every 5 minutes
 
+  private CALLBACK_TIMEOUT = 3000;
+
   constructor(private mainWindow: BrowserWindow) {
     log.transports.file.level = 'info';
     // auto update logger
@@ -141,7 +143,7 @@ class Updater {
         message: timeUsed,
       });
       // now start download update file
-      this.downloadUpdate();
+      setTimeout(this.downloadUpdate, this.CALLBACK_TIMEOUT);
     } catch (error) {
       this.notifyRenderer({
         type: 'error',
@@ -150,9 +152,9 @@ class Updater {
     }
   };
 
-  private downloadUpdate() {
+  private downloadUpdate = () => {
     this.autoUpdater.downloadUpdate();
-  }
+  };
 
   private onProgressDataPrepare = (progress: UpdaterCopyProgress) => {
     // send ipc message to renderer process about backup temp process
@@ -167,8 +169,22 @@ class Updater {
   private async state() {
     this.datastoreState = await this.datastore.instance();
 
+    this.notifyRenderer({
+      type: 'none',
+    });
+
     this.restartedToUpdate = !!this.datastoreState.restartedToUpdate;
-    this.restartedToUpdate && this.restoreOriginalDatas(this.datastoreState);
+
+    if (this.restartedToUpdate) {
+      this.notifyRenderer({
+        type: 'restartedToUpdate',
+        status: this.datastoreState,
+      });
+
+      setTimeout(() => {
+        this.datastoreState && this.restoreOriginalDatas(this.datastoreState);
+      }, this.CALLBACK_TIMEOUT);
+    }
   }
 
   private onProgressDataRestoring = (progress: UpdaterCopyProgress) => {
