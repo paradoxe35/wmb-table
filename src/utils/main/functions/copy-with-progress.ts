@@ -1,9 +1,10 @@
 import fs from 'fs-extra';
+//@ts-ignore
 import getSizeCallback from 'get-folder-size';
 
 async function getSize(dir: string) {
   return new Promise<number>((resolve, reject) => {
-    getSizeCallback(dir, (err, size) => {
+    getSizeCallback(dir, (err: any, size: number | PromiseLike<number>) => {
       if (err) {
         return reject(err);
       }
