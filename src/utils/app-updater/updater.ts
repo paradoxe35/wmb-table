@@ -65,6 +65,8 @@ class Updater {
     this.autoUpdater.on('update-downloaded', this.updateDownloaded);
     // track download progress
     this.autoUpdater.on('download-progress', this.downloadProgress);
+    // track a available update
+    autoUpdater.on('update-available', this.notifyHasUpdate);
   }
 
   private checkWithInterval() {
@@ -73,7 +75,7 @@ class Updater {
 
   private checkForUpdates = async () => {
     if (this.updateCheckResult || this.restartedToUpdate) return;
-    this.autoUpdater.checkForUpdates().then(this.notifyHasUpdate);
+    this.autoUpdater.checkForUpdates();
   };
 
   private notifyHasUpdate = async (result: UpdateCheckResult) => {
