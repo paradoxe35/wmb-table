@@ -4,6 +4,8 @@ const request = require('request');
 const unzipper = require('unzipper');
 // @ts-ignore
 const progress = require('request-progress');
+const chalk = require('chalk');
+const path = require('path');
 
 // extract datas zip
 progress(
@@ -13,9 +15,12 @@ progress(
 )
   // @ts-ignore
   .on('progress', function (state) {
-    console.log('extract assets data: ', state.percent.toFixed(0));
+    console.log(
+      chalk.blueBright.bold('extract data: '),
+      state.percent.toFixed(0)
+    );
   })
-  .pipe(unzipper.Extract({ path: '../' }));
+  .pipe(unzipper.Extract({ path: path.resolve(__dirname, '../') }));
 
 // extract assets datas zip
 progress(
@@ -25,6 +30,9 @@ progress(
 )
   // @ts-ignore
   .on('progress', function (state) {
-    console.log('extract assets data: ', state.percent.toFixed(0));
+    console.log(
+      chalk.cyanBright.bold('extract assets data: '),
+      state.percent.toFixed(0)
+    );
   })
-  .pipe(unzipper.Extract({ path: '../assets' }));
+  .pipe(unzipper.Extract({ path: path.resolve(__dirname, '../') }));
