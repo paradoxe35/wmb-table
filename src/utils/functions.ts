@@ -234,3 +234,35 @@ export function trimBeforeDotAndComma(
   });
   return text;
 }
+
+/**
+ * Translates seconds into human readable format of seconds, minutes, hours, days, and years
+ *
+ * @param  {number} seconds The number of seconds to be processed
+ * @return {string}         The phrase describing the amount of time
+ */
+export function secondsforHumans(seconds: number | undefined) {
+  if (seconds == undefined) return 0;
+  seconds = Math.abs(seconds);
+  const levels = [
+    [Math.floor(seconds / 31536000), 'ans'],
+    [Math.floor((seconds % 31536000) / 86400), 'jours'],
+    [Math.floor(((seconds % 31536000) % 86400) / 3600), 'heurs'],
+    [Math.floor((((seconds % 31536000) % 86400) % 3600) / 60), 'minutes'],
+    [(((seconds % 31536000) % 86400) % 3600) % 60, 'secondes'],
+  ];
+  let returntext = '';
+
+  for (let i = 0, max = levels.length; i < max; i++) {
+    if (levels[i][0] === 0) continue;
+    returntext +=
+      ' ' +
+      levels[i][0] +
+      ' ' +
+      (levels[i][0] === 1
+        ? //@ts-ignore
+          levels[i][1].substr(0, levels[i][1].length - 1)
+        : levels[i][1]);
+  }
+  return returntext.trim();
+}

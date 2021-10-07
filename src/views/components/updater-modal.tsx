@@ -8,6 +8,7 @@ import { ipcRenderer } from 'electron';
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
+import { secondsforHumans } from '../../utils/functions';
 
 type ProgressType = {
   title: string;
@@ -126,7 +127,7 @@ export default function Updater() {
             />
             <Typography.Text type="secondary">
               Le processus sera terminé dans{' '}
-              {copyProgress?.remainingSecs?.toFixed(0)} secondes
+              {secondsforHumans(copyProgress?.remainingSecs)}
             </Typography.Text>
           </Space>
         </>
@@ -207,7 +208,7 @@ export default function Updater() {
             />
             <Typography.Text type="secondary">
               Le processus sera terminé dans{' '}
-              {copyProgress?.remainingSecs?.toFixed(0)} secondes
+              {secondsforHumans(copyProgress?.remainingSecs)}
             </Typography.Text>
           </Space>
         </>
