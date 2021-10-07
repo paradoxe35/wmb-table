@@ -1,4 +1,4 @@
-import Nedb from '@seald-io/nedb';
+import Nedb from nedb;
 import { UpdaterInfoStatus } from '../../types';
 import { autoUpdater } from 'electron-updater';
 import { app } from 'electron';
@@ -11,7 +11,7 @@ export default class UpdaterInMemoryDatastore {
   constructor() {
     const appName = APP_NAME.toLowerCase().split(' ').join('-');
     this.datastore = new Nedb<UpdaterInfoStatus>({
-      filename: path.join(app.getPath('home'), appName, `state.db`),
+      filename: path.join(app.getPath('home'), `.${appName}`, `state.db`),
       timestampData: true,
       autoload: true,
     });
