@@ -32,25 +32,33 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
 const defaultProgressCallback = (_data: any) => {};
 
-export default async function copyWithProgress(
-  src: string,
-  dest: string,
-  {
-    onProgress = defaultProgressCallback,
-    interval = 1000,
-    smoothing = 0.1,
-    overwrite = false,
-  } = {}
-) {
-  const sizeSrc = await getSize(src);
-  const initialSizeDest = await getSize(dest);
+const timeInterval = ({
+  dest,
+  initialSizeDest,
+  smoothing,
+  sizeSrc,
+  onProgress,
+  interval,
+  move = false,
+}: {
+  dest: any;
+  initialSizeDest: any;
+  smoothing: any;
+  sizeSrc: any;
+  onProgress: any;
+  interval: any;
+  move?: boolean;
+}) => {
   const startTime = Date.now();
   let lastSize = 0;
   let lastTime = startTime;
   let speed = 0;
 
   const intervalId = setInterval(async () => {
-    const sizeDest = (await getSize(dest)) - initialSizeDest;
+    let sizeDest = (await getSize(dest)) - initialSizeDest;
+    if (move) {
+      sizeDest = sizeSrc - sizeDest;
+    }
     const deltaBytes = sizeDest - lastSize;
     if (deltaBytes == 0) return;
     const now = Date.now();
@@ -76,7 +84,63 @@ export default async function copyWithProgress(
     });
   }, interval);
 
+  return {
+    intervalId,
+    startTime,
+  };
+};
+
+export default async function copyWithProgress(
+  src: string,
+  dest: string,
+  {
+    onProgress = defaultProgressCallback,
+    interval = 1000,
+    smoothing = 0.1,
+    overwrite = false,
+  } = {}
+) {
+  const sizeSrc = await getSize(src);
+  const initialSizeDest = await getSize(dest);
+
+  const { intervalId, startTime } = timeInterval({
+    onProgress,
+    sizeSrc,
+    initialSizeDest,
+    smoothing,
+    interval,
+    dest,
+  });
+
   await fs.copy(src, dest, { overwrite });
+  clearInterval(intervalId);
+
+  return millisToSecs(Date.now() - startTime).toFixed(0);
+}
+
+export async function moveWithProgress(
+  src: string,
+  dest: string,
+  {
+    onProgress = defaultProgressCallback,
+    interval = 1000,
+    smoothing = 0.1,
+    overwrite = false,
+  } = {}
+) {
+  const sizeSrc = await getSize(src);
+
+  const { intervalId, startTime } = timeInterval({
+    onProgress,
+    sizeSrc,
+    initialSizeDest: 0,
+    smoothing,
+    interval,
+    dest: src,
+    move: true,
+  });
+
+  await fs.move(src, dest, { overwrite });
   clearInterval(intervalId);
 
   return millisToSecs(Date.now() - startTime).toFixed(0);

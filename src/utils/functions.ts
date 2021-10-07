@@ -257,7 +257,7 @@ export function secondsforHumans(seconds: number | undefined) {
     if (levels[i][0] === 0) continue;
     returntext +=
       ' ' +
-      levels[i][0] +
+      (levels[i][0] as number).toFixed(0) +
       ' ' +
       (levels[i][0] === 1
         ? //@ts-ignore
