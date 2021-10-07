@@ -31,7 +31,7 @@ class Updater {
 
   private isDownloaded: boolean = false;
 
-  private CHECK_INTERVAL: number = 1000 * 60 * 2; // check every 3 minutes
+  private CHECK_INTERVAL: number = 1000 * 60 * 2; // check every 2 minutes
 
   private CALLBACK_TIMEOUT = 3000;
 
