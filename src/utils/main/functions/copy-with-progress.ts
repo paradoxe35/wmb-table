@@ -90,6 +90,14 @@ const timeInterval = ({
   };
 };
 
+type CypParams = {
+  onProgress?: Function;
+  interval?: number;
+  smoothing?: number;
+  overwrite?: boolean;
+  filter?: fs.CopyFilterSync | fs.CopyFilterAsync;
+};
+
 export default async function copyWithProgress(
   src: string,
   dest: string,
@@ -98,7 +106,8 @@ export default async function copyWithProgress(
     interval = 1000,
     smoothing = 0.1,
     overwrite = false,
-  } = {}
+    filter = undefined,
+  }: CypParams = {}
 ) {
   const sizeSrc = await getSize(src);
   const initialSizeDest = await getSize(dest);
@@ -112,7 +121,7 @@ export default async function copyWithProgress(
     dest,
   });
 
-  await fs.copy(src, dest, { overwrite });
+  await fs.copy(src, dest, { overwrite, filter });
   clearInterval(intervalId);
 
   return millisToSecs(Date.now() - startTime).toFixed(0);
