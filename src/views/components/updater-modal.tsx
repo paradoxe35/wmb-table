@@ -271,7 +271,7 @@ export default function Updater() {
             Fermer
           </Button>,
           <Button
-            key={nextStepAction?.type || 1}
+            key={1}
             onClick={nextStepAction?.action}
             disabled={!nextStepAction}
             type="primary"

@@ -115,13 +115,13 @@ const createWindow = async () => {
       throw new Error('"mainWindow" is not defined');
     }
     // call auto update
+    // if (app.isPackaged) {
     if (process.platform === 'win32') {
-      if (app.isPackaged) {
-        new Updater(mainWindow);
-      }
+      new Updater(mainWindow);
     } else {
       new AppAutoUpdater();
     }
+    // }
   });
 };
 
