@@ -255,6 +255,7 @@ export default function Updater() {
     <>
       <Modal
         centered
+        key={nextStepAction?.type}
         closable={!preventActions}
         keyboard={!preventActions}
         maskClosable={!preventActions}
