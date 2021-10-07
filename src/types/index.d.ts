@@ -1,4 +1,4 @@
-import { UpdateCheckResult } from "electron-updater";
+import { UpdateInfo } from "electron-updater";
 
 export interface TimeStampData<T = any> {
   _id: string;
@@ -262,7 +262,7 @@ export interface BibleSearchResult extends SearchResultStructure {
 export interface UpdaterInfoStatus extends TimeStampData<Date> {
   restartedToUpdate: boolean;
   lastUpdateCheck?: Date;
-  updateCheckResult?: UpdateCheckResult;
+  updateInfo?: UpdateInfo;
   version?: string;
 }
 

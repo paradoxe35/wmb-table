@@ -1,4 +1,4 @@
-import { UpdateCheckResult } from 'electron-updater';
+import { UpdateInfo } from 'electron-updater';
 import { app } from 'electron';
 import copyWithProgress from '../main/functions/copy-with-progress';
 import { UpdaterCopyProgress } from '../../types';
@@ -11,7 +11,7 @@ export default class UpdaterDataPrepared {
   private tempPath: string;
   private dataPath: string;
 
-  constructor(private updateCheckResult: UpdateCheckResult) {
+  constructor(private updateInfo: UpdateInfo) {
     this.tempPath = this.tempDir();
     this.dataPath = getAssetDatasPath();
   }
@@ -22,7 +22,7 @@ export default class UpdaterDataPrepared {
     const newDir = path.join(
       app.getPath('temp'),
       appName,
-      this.updateCheckResult.updateInfo.version
+      this.updateInfo.version
     );
 
     if (!fs.existsSync(newDir)) {
