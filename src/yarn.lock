@@ -104,7 +104,7 @@
     "@types/qs" "*"
     "@types/serve-static" "*"
 
-"@types/get-folder-size@^2.0.0":
+"@types/get-folder-size@2.0.0":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@types/get-folder-size/-/get-folder-size-2.0.0.tgz#acbb5bf5999410c375b2739863a9d2f9483fabf6"
   integrity sha512-6VKKrDB20E/6ovi2Pfpy9Pcz8Me1ue/tReaZrwrz9mfVdsr6WAMiDZ+F1oAAcss4U5n2k673i1leDIx2aEBDFQ==
