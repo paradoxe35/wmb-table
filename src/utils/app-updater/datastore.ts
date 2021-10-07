@@ -56,11 +56,11 @@ export default class UpdaterInMemoryDatastore {
 
   private create() {
     return new Promise<UpdaterInfoStatus>((resolve) => {
-      const fresh = ({
+      const fresh = {
         restartedToUpdate: false,
-        updateInfo: new Date(),
+        lastUpdateCheck: new Date(),
         version: autoUpdater.currentVersion.version,
-      } as unknown) as UpdaterInfoStatus;
+      } as UpdaterInfoStatus;
       this.datastore.insert(fresh, (err, created) => {
         if (err) {
           return resolve({} as UpdaterInfoStatus);
