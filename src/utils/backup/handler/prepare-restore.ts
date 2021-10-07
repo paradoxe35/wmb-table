@@ -49,10 +49,11 @@ export class PrepareRestore {
   }
 
   static pendingDatastore(filename: string) {
-    return new Datastore<PendingDatastore>({
+    const db = new Datastore<PendingDatastore>({
       filename: getAssetBackupPendingPath(filename),
-      autoload: true,
     });
+    db.loadDatabase();
+    return db;
   }
 
   static async pendingData(datastore: Datastore, filename: string) {

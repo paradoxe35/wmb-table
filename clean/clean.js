@@ -56,11 +56,12 @@ async function removeHtmlFiles() {
   const filesTitle = await new Promise((resolve, reject) => {
     const db = new nedb({
       filename: docTitles,
-      autoload: true,
     });
 
+    db.loadDatabase();
+
     db.find({}, (/** @type {any} */ err, /** @type {any} */ data) => {
-      if (err) reject(err);
+      if (err) return reject(err);
       resolve(
         data.map((/** @type {{ title: any; }} */ f) => `${f.title}.html`)
       );

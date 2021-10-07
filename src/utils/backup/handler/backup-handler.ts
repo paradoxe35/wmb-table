@@ -80,10 +80,11 @@ export class BackupHandler extends DriveHandler {
   }
 
   static pendingDatastore(filename: string) {
-    return new Datastore<PendingDatastore>({
+    const db = new Datastore<PendingDatastore>({
       filename: getAssetBackupPendingPath(filename),
-      autoload: true,
     });
+    db.loadDatabase();
+    return db;
   }
 
   static async getFromDriveId(
