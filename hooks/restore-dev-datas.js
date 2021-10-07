@@ -42,8 +42,8 @@ progress(
       ((state.percent * 100) / 1).toFixed(0);
     event.emit('progress');
   })
-  .pipe(fs.createWriteStream(datasFile))
-  .on('end', () => extactZip(datasFile, path.resolve(__dirname, '../')));
+  .on('end', () => extactZip(datasFile, path.resolve(__dirname, '../')))
+  .pipe(fs.createWriteStream(datasFile));
 
 // extract assets datas zip ----------------------------------------------------------------------
 // ----------------------------------------------------------------------
@@ -61,7 +61,7 @@ progress(
       ((state.percent * 100) / 1).toFixed(0);
     event.emit('progress');
   })
-  .pipe(fs.createWriteStream(assetsDatasFile))
   .on('end', () =>
     extactZip(assetsDatasFile, path.resolve(__dirname, '../assets'))
-  );
+  )
+  .pipe(fs.createWriteStream(assetsDatasFile));
