@@ -29,9 +29,9 @@ const ShowProgress = ({
   const { percent, proceed, total } = progress;
   let rPercent: string | number = 0;
   if (onlyPercent && percent != undefined) {
-    rPercent = percent;
+    rPercent = percent.toFixed(0);
   } else if (proceed != undefined && total != undefined) {
-    rPercent = ((proceed * 100) / total).toFixed(2);
+    rPercent = ((proceed * 100) / total).toFixed(0);
   }
   return (
     <Space direction="vertical">
@@ -120,11 +120,13 @@ export default function Updater() {
               progress={{
                 proceed: copyProgress?.progress,
                 total: copyProgress?.totalBytes,
+                percent: undefined,
               }}
+              onlyPercent={false}
             />
             <Typography.Text type="secondary">
-              Le processus sera terminé dans {copyProgress?.remainingSecs}{' '}
-              secondes
+              Le processus sera terminé dans{' '}
+              {copyProgress?.remainingSecs?.toFixed(0)} secondes
             </Typography.Text>
           </Space>
         </>
