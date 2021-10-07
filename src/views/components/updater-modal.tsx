@@ -1,5 +1,5 @@
 import { Alert, Button, Modal, Progress, Space } from 'antd';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useModalVisible } from '../../utils/hooks';
 import { Typography } from 'antd';
 import { IPC_EVENTS } from '../../utils/ipc-events';
@@ -48,12 +48,7 @@ const ShowProgress = ({
 };
 
 export default function Updater() {
-  const {
-    showModal,
-    isModalVisible,
-    handleOk,
-    handleCancel,
-  } = useModalVisible();
+  const { showModal, isModalVisible, handleCancel } = useModalVisible();
 
   const [updaterInfo, setUpdaterInfo] = useState<
     UpdaterNotification | undefined
@@ -82,6 +77,12 @@ export default function Updater() {
     sendIpcRequest<boolean>(IPC_EVENTS.restart_app);
   }, []);
 
+  const lastType = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    lastType.current = updaterInfo?.type;
+  }, [updaterInfo]);
+
   let preventActions = false;
   let content = <></>;
   let copyProgress = undefined;
@@ -94,7 +95,9 @@ export default function Updater() {
 
   switch (updaterInfo?.type) {
     case 'hasUpdate':
-      !isModalVisible && showModal();
+      if (lastType.current != 'hasUpdate') {
+        !isModalVisible && showModal();
+      }
       preventActions = false;
       nextStepAction = {
         type: 'Mettre à jour',
@@ -179,7 +182,9 @@ export default function Updater() {
       );
       break;
     case 'restartedToUpdate':
-      !isModalVisible && showModal();
+      if (lastType.current != 'restartedToUpdate') {
+        !isModalVisible && showModal();
+      }
       preventActions = true;
       nextStepAction = undefined;
       content = (
@@ -280,7 +285,6 @@ export default function Updater() {
             {!nextStepAction ? '---' : nextStepAction.type}
           </Button>,
         ]}
-        onOk={handleOk}
         onCancel={handleCancel}
       >
         {updaterInfo && (
