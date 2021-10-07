@@ -1,4 +1,4 @@
-import Datastore from nedb;
+import Datastore from 'nedb';
 import {
   getAssetBackupPath,
   getAssetBiblePath,
