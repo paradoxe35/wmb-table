@@ -82,7 +82,7 @@ class Updater {
     // make update result accessible from object
     this.updateCheckResult = result;
     // put in datastore updater state
-    this.datastore.update({
+    await this.datastore.update({
       updateCheckResult: result,
       lastUpdateCheck: new Date(),
     });
