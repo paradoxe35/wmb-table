@@ -32,7 +32,7 @@ class Updater {
 
   private CHECK_INTERVAL: number = 1000 * 60 * 3; // check every 3 minutes
 
-  private CALLBACK_TIMEOUT = 2000;
+  private CALLBACK_TIMEOUT = 3000;
 
   constructor(private mainWindow: BrowserWindow) {
     log.transports.file.level = 'info';
