@@ -118,7 +118,7 @@ export default function Updater() {
             <ShowProgress
               title="Préparation de la mise à jour"
               progress={{
-                proceed: copyProgress?.progress,
+                proceed: copyProgress?.elapsedBytes,
                 total: copyProgress?.totalBytes,
                 percent: undefined,
               }}
@@ -201,13 +201,13 @@ export default function Updater() {
             <ShowProgress
               title="Finalisation de la mise à jour"
               progress={{
-                proceed: copyProgress?.progress,
+                proceed: copyProgress?.elapsedBytes,
                 total: copyProgress?.totalBytes,
               }}
             />
             <Typography.Text type="secondary">
-              Le processus sera terminé dans {copyProgress?.remainingSecs}{' '}
-              secondes
+              Le processus sera terminé dans{' '}
+              {copyProgress?.remainingSecs?.toFixed(0)} secondes
             </Typography.Text>
           </Space>
         </>
@@ -255,7 +255,6 @@ export default function Updater() {
     <>
       <Modal
         centered
-        key={nextStepAction?.type}
         closable={!preventActions}
         keyboard={!preventActions}
         maskClosable={!preventActions}
