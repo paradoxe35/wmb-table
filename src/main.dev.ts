@@ -18,7 +18,7 @@ import Dialogs from './dialogs/dialogs';
 import backupHandler from './utils/backup/backup';
 import { APP_NAME } from './utils/constants';
 import Updater from './utils/app-updater/updater';
-import AppAutoUpdater from './utils/app-updater/auto-updater';
+// import AppAutoUpdater from './utils/app-updater/auto-updater';
 // import AppUpdater from './utils/app-updater/updater';
 
 require('./message-control/main-messages');
@@ -115,12 +115,8 @@ const createWindow = async () => {
       throw new Error('"mainWindow" is not defined');
     }
     // call auto update
-    if (process.platform === 'win32') {
-      if (app.isPackaged) {
-        new Updater(mainWindow);
-      }
-    } else {
-      new AppAutoUpdater();
+    if (app.isPackaged) {
+      new Updater(mainWindow);
     }
   });
 };
