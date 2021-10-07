@@ -2,7 +2,7 @@ import { drive_v3 } from 'googleapis';
 import { getAssetBackupPath, getAssetDocumentsPath } from '../../../sys';
 import { camelCase } from '../../functions';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '../../main/db';
-import Datastore from 'nedb';
+import Datastore from '@seald-io/nedb';
 import { CustomDocument } from '../../../types';
 import { Stream } from 'stream';
 import { checkForFile } from '../../main/functions/count-file-lines';

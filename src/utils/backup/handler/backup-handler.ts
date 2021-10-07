@@ -5,7 +5,7 @@ import { commitRestoreProgress, setDataBackingUpPending } from '../constants';
 import { asyncify, whilst } from '../../async';
 import { camelCase, getFilename } from '../../functions';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '../../main/db';
-import Datastore from 'nedb';
+import Datastore from '@seald-io/nedb';
 import { CustomDocument, PendingDatastore } from '../../../types';
 import { DB_EXTENSION } from '../../constants';
 import { Readable } from 'stream';

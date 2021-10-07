@@ -9,7 +9,7 @@ import {
   readRangeLinesInFile,
 } from '../main/functions/count-file-lines';
 import { EventEmitter } from 'events';
-import Datastore from 'nedb';
+import Datastore from '@seald-io/nedb';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '../main/db';
 import { BackupDbReference, BackupStatus, PendingDatastore } from '../../types';
 import { BackupHandler } from './handler/backup-handler';
