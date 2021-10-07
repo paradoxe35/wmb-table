@@ -64,9 +64,7 @@ export default class MenuBuilder {
           },
           {
             label: '&Fermer',
-            accelerator: this.isD(
-              'Ctrl+' + process.platform === 'darwin' ? 'Q' : 'W'
-            ),
+            accelerator: process.platform === 'darwin' ? 'Command+Q' : 'Ctrl+W',
             click: () => {
               this.mainWindow.close();
             },
