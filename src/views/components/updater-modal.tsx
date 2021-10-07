@@ -287,7 +287,7 @@ export default function Updater() {
             <Typography>
               <Typography.Paragraph>
                 Version:{' '}
-                {updaterInfo.status?.updateCheckResult?.updateInfo.version ||
+                {updaterInfo.status?.updateInfo?.version ||
                   updaterInfo.status?.version}
               </Typography.Paragraph>
               <Typography.Paragraph>

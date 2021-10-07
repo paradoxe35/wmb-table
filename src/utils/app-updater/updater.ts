@@ -1,8 +1,8 @@
 import {
   AppUpdater,
   autoUpdater,
-  UpdateCheckResult,
   UpdateDownloadedEvent,
+  UpdateInfo,
 } from 'electron-updater';
 import log from 'electron-log';
 import UpdaterInMemoryDatastore from './datastore';
@@ -23,7 +23,7 @@ class Updater {
   private datastore: UpdaterInMemoryDatastore;
   private datastoreState?: UpdaterInfoStatus;
 
-  private updateCheckResult?: UpdateCheckResult;
+  private updateInfo?: UpdateInfo;
   private restartedToUpdate: boolean = false;
 
   private isDownloading: boolean = false;
@@ -74,16 +74,16 @@ class Updater {
   }
 
   private checkForUpdates = async () => {
-    if (this.updateCheckResult || this.restartedToUpdate) return;
+    if (this.updateInfo || this.restartedToUpdate) return;
     this.autoUpdater.checkForUpdates();
   };
 
-  private notifyHasUpdate = async (result: UpdateCheckResult) => {
+  private notifyHasUpdate = async (result: UpdateInfo) => {
     // make update result accessible from object
-    this.updateCheckResult = result;
+    this.updateInfo = result;
     // put in datastore updater state
     await this.datastore.update({
-      updateCheckResult: result,
+      updateInfo: result,
       lastUpdateCheck: new Date(),
     });
 
@@ -134,14 +134,14 @@ class Updater {
   };
 
   private startDownload = async () => {
-    if (!this.updateCheckResult || this.isDownloading || this.restartedToUpdate)
+    if (!this.updateInfo || this.isDownloading || this.restartedToUpdate)
       return;
 
     this.isDownloading = true;
 
     try {
       // prepare and backup data temporary for update
-      const prepareUpdate = new UpdaterDataPrepared(this.updateCheckResult);
+      const prepareUpdate = new UpdaterDataPrepared(this.updateInfo);
       const timeUsed = await prepareUpdate.backup(this.onProgressDataPrepare);
       // notify renderer process, preparation has finished
       this.notifyRenderer({
@@ -207,7 +207,7 @@ class Updater {
     setUpdaterRestoringData(true);
     // prepare and backup data temporary for update
     const prepareUpdate = new UpdaterDataPrepared(
-      state.updateCheckResult as UpdateCheckResult
+      state.updateInfo as UpdateInfo
     );
     const timeUsed = await prepareUpdate.restore(this.onProgressDataRestoring);
 
