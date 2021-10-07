@@ -17,6 +17,7 @@ import {
 } from '../../types';
 import { setUpdaterRestoringData } from './constants';
 import { ProgressInfo } from 'electron-updater/node_modules/builder-util-runtime';
+import { DATA_RESTORING } from '../backup/constants';
 
 class Updater {
   private autoUpdater: AppUpdater;
@@ -30,7 +31,7 @@ class Updater {
 
   private isDownloaded: boolean = false;
 
-  private CHECK_INTERVAL: number = 1000 * 60 * 3; // check every 3 minutes
+  private CHECK_INTERVAL: number = 1000 * 60 * 2; // check every 3 minutes
 
   private CALLBACK_TIMEOUT = 3000;
 
@@ -74,11 +75,13 @@ class Updater {
   }
 
   private checkForUpdates = async () => {
-    if (this.updateInfo || this.restartedToUpdate) return;
+    if (this.updateInfo || this.restartedToUpdate || DATA_RESTORING.value)
+      return;
     this.autoUpdater.checkForUpdates();
   };
 
   private notifyHasUpdate = async (result: UpdateInfo) => {
+    if (DATA_RESTORING.value) return;
     // make update result accessible from object
     this.updateInfo = result;
     // put in datastore updater state

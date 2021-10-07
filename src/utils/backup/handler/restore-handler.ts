@@ -9,7 +9,11 @@ import { checkForFile } from '../../main/functions/count-file-lines';
 import fs from 'fs';
 import { confirmRestoration } from '../../../message-control/handlers/backup';
 import { DriveHandler, ParentFolder } from './drive-handler';
-import { commitRestoreProgress, EXCLUDE_DB_FILES_REGEX } from '../constants';
+import {
+  commitRestoreProgress,
+  EXCLUDE_DB_FILES_REGEX,
+  setDataRestoring,
+} from '../constants';
 import { asyncify, doWhilst, whilst } from '../../async';
 import { promisify } from 'util';
 
@@ -51,6 +55,7 @@ export class RestoreHandler extends DriveHandler {
 
     return new Promise<void>((resolve, reject) => {
       let nextToken: undefined | string = undefined;
+      setDataRestoring(true);
 
       // callback function to doWhilst for handling files
       const fetchFiles = async () => {
@@ -89,6 +94,7 @@ export class RestoreHandler extends DriveHandler {
               resolve();
             }, 3100);
           }
+          setDataRestoring(false);
         }
       );
     });

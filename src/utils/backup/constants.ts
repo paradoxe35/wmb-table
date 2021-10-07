@@ -10,6 +10,10 @@ export let DATA_RESTORED: Value<boolean> = {
   value: false,
 };
 
+export let DATA_RESTORING: Value<boolean> = {
+  value: false,
+};
+
 export let DATA_BACKINGUP_PENDING: Value = {
   value: false,
 };
@@ -25,11 +29,14 @@ export let OAUTH2_CLIENT: { value: OAuth2Client | null } = {
 export const setDataRestored = (value: boolean) =>
   (DATA_RESTORED.value = value);
 
+export const setDataRestoring = (value: boolean) =>
+  (DATA_RESTORING.value = value);
+
 export const setDataBackingUpPending = (value: boolean) =>
   (DATA_BACKINGUP_PENDING.value = value);
 
 export const setPerfomBackingUpPendingData = (value: boolean) =>
-  (DATA_BACKINGUP_PENDING.value = value);
+  (PERFORM_BACKINGUP_PENDING_DATA.value = value);
 
 export const setOAuth2Client = (client: OAuth2Client | null) =>
   (OAUTH2_CLIENT.value = client);
