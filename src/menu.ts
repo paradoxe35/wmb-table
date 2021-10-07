@@ -64,7 +64,9 @@ export default class MenuBuilder {
           },
           {
             label: '&Fermer',
-            accelerator: this.isD('Ctrl+W'),
+            accelerator: this.isD(
+              'Ctrl+' + process.platform === 'darwin' ? 'Q' : 'W'
+            ),
             click: () => {
               this.mainWindow.close();
             },
@@ -100,14 +102,14 @@ export default class MenuBuilder {
           },
           {
             label: 'Changer de menu',
-            accelerator: this.isD('Ctrl+Tab'),
+            accelerator: 'Ctrl+Tab',
             click: () => {
               this.mainWindow.webContents.send(IPC_EVENTS.switch_on_menu);
             },
           },
           {
             label: "Changer d'option",
-            accelerator: this.isD('Ctrl+Shift+Tab'),
+            accelerator: 'Ctrl+Shift+Tab',
             click: () => {
               this.mainWindow.webContents.send(IPC_EVENTS.switch_on_options);
             },
