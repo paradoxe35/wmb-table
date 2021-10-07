@@ -1,4 +1,4 @@
-import Nedb from nedb;
+import Nedb from 'nedb';
 import { UpdaterInfoStatus } from '../../types';
 import { autoUpdater } from 'electron-updater';
 import { app } from 'electron';

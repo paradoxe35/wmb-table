@@ -1,6 +1,6 @@
 import { getAssetBackupPendingPath, getAssetDbPath } from '../../../sys';
 import { asyncify, whilst } from '../../async';
-import Datastore from nedb;
+import Datastore from 'nedb';
 import { camelCase, getFilename } from '../../functions';
 import db, { getDatastoreFileName, queryDb } from '../../main/db';
 import { commitRestoreProgress, EXCLUDE_DB_FILES_REGEX } from '../constants';
