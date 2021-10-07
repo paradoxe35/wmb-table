@@ -149,7 +149,7 @@ export async function moveWithProgress(
     move: true,
   });
 
-  await fs.move(src, dest, { overwrite });
+  await fs.copy(src, dest, { overwrite });
   clearInterval(intervalId);
 
   return millisToSecs(Date.now() - startTime).toFixed(0);
