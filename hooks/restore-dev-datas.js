@@ -1,11 +1,11 @@
 // @ts-ignore
 const request = require('request');
 // @ts-ignore
-const unzipper = require('unzipper');
-// @ts-ignore
 const progress = require('request-progress');
 const chalk = require('chalk');
 const path = require('path');
+const fs = require('fs');
+const extract = require('extract-zip');
 
 const { EventEmitter } = require('events');
 
@@ -19,7 +19,17 @@ event.on('progress', () => {
   process.stdout.write(`${message.dataProgress} - ${message.assetProgress}\r`);
 });
 
+/**
+ * @param {string} filename
+ * @param {any} dist
+ */
+async function extactZip(filename, dist) {
+  await extract(filename, { dir: dist });
+  fs.unlinkSync(filename);
+}
+
 // extract datas zip
+const datasFile = path.resolve(__dirname, '../tmp/1.zip');
 progress(
   request(
     'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0/datas.zip'
@@ -32,9 +42,13 @@ progress(
       ((state.percent * 100) / 1).toFixed(0);
     event.emit('progress');
   })
-  .pipe(unzipper.Extract({ path: path.resolve(__dirname, '../') }));
+  .pipe(fs.createWriteStream(datasFile))
+  .on('end', () => extactZip(datasFile, path.resolve(__dirname, '../')));
 
-// extract assets datas zip
+// extract assets datas zip ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+
+const assetsDatasFile = path.resolve(__dirname, '../tmp/2.zip');
 progress(
   request(
     'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0/assets-datas.zip'
@@ -47,4 +61,7 @@ progress(
       ((state.percent * 100) / 1).toFixed(0);
     event.emit('progress');
   })
-  .pipe(unzipper.Extract({ path: path.resolve(__dirname, '../assets') }));
+  .pipe(fs.createWriteStream(assetsDatasFile))
+  .on('end', () =>
+    extactZip(assetsDatasFile, path.resolve(__dirname, '../assets'))
+  );

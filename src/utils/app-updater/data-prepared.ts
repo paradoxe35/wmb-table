@@ -1,8 +1,6 @@
 import { UpdateInfo } from 'electron-updater';
 import { app } from 'electron';
-import copyWithProgress, {
-  moveWithProgress,
-} from '../main/functions/copy-with-progress';
+import copyWithProgress from '../main/functions/copy-with-progress';
 import { UpdaterCopyProgress } from '../../types';
 import path from 'path';
 import fs from 'fs-extra';
@@ -69,7 +67,7 @@ export default class UpdaterDataPrepared {
   }
 
   public restore(onProgress: (progress: UpdaterCopyProgress) => void) {
-    return moveWithProgress(this.tempPath, this.dataPath, {
+    return copyWithProgress(this.tempPath, this.dataPath, {
       onProgress,
       overwrite: true,
     });

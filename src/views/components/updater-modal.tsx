@@ -199,24 +199,15 @@ export default function Updater() {
       break;
     case 'restoring':
       preventActions = true;
-      copyProgress = updaterInfo.progress?.copyProgress;
       nextStepAction = undefined;
       content = (
-        <>
-          <Space direction="vertical">
-            <ShowProgress
-              title="Finalisation de la mise à jour"
-              progress={{
-                proceed: copyProgress?.elapsedBytes,
-                total: copyProgress?.totalBytes,
-              }}
-            />
-            <Typography.Text type="secondary">
-              Le processus sera terminé dans{' '}
-              {secondsforHumans(copyProgress?.remainingSecs)}
-            </Typography.Text>
-          </Space>
-        </>
+        <Alert
+          message="L'installation mise à jour a été traitée avec succès"
+          description="Veuillez patienter pendant que nous traitons la dernière étape."
+          type="success"
+          showIcon
+          icon={<Icon />}
+        />
       );
       break;
     case 'restored':
