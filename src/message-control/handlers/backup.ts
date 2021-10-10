@@ -139,9 +139,7 @@ export async function setUserAuthAccessStatus(access: boolean) {
     { $set: { access } }
   );
 
-  if (mainWindow) {
-    mainWindow.webContents.send(IPC_EVENTS.backup_status, status);
-  }
+  mainWindow?.webContents.send(IPC_EVENTS.backup_status, status);
 
   return status;
 }

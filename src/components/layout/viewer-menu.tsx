@@ -6,6 +6,8 @@ import { useRecoilState } from 'recoil';
 import { ipcRenderer } from 'electron';
 import { IPC_EVENTS } from '../../utils/ipc-events';
 import { useValueStateRef } from '../../utils/hooks';
+import sendIpcRequest from '../../message-control/ipc/ipc-renderer';
+import { ViewMenuValue } from '../../types';
 
 export default function ViewerMenu() {
   const [view, setView] = useRecoilState(appViewStore);
@@ -33,6 +35,17 @@ export default function ViewerMenu() {
       }
     };
     ipcRenderer.on(IPC_EVENTS.switch_on_menu, switch_on_menu);
+  }, []);
+
+  useEffect(() => {
+    sendIpcRequest(IPC_EVENTS.has_change_viewer_menu, view);
+  }, [view]);
+
+  useEffect(() => {
+    const change_menu_viewer = (_: any, view: ViewMenuValue) => {
+      setView(view);
+    };
+    ipcRenderer.on(IPC_EVENTS.change_menu_viewer, change_menu_viewer);
   }, []);
 
   return (

@@ -7,9 +7,11 @@ import {
   SubjectDocument,
   SubjectDocumentItem,
   Title,
+  ViewMenu,
+  ViewMenuValue,
 } from '../types';
 
-export const MAIN_VIEWS = {
+export const MAIN_VIEWS: ViewMenu = {
   options: 'options',
   document: 'document',
 };
@@ -27,7 +29,7 @@ export const appDatasLoadedStore = atom({
   default: false,
 });
 
-export const appViewStore = atom({
+export const appViewStore = atom<ViewMenuValue>({
   key: 'appViewerState',
   default: MAIN_VIEWS.document,
 });

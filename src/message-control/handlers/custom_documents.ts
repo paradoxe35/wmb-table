@@ -55,13 +55,11 @@ function commitUploadProgress(
   progress: number,
   total: number
 ) {
-  if (mainWindow) {
-    mainWindow.webContents.send(IPC_EVENTS.custom_document_upload_progress, {
-      type,
-      progress,
-      total,
-    } as CustomDocumentUploadProgress);
-  }
+  mainWindow?.webContents.send(IPC_EVENTS.custom_document_upload_progress, {
+    type,
+    progress,
+    total,
+  } as CustomDocumentUploadProgress);
 }
 
 export function custom_documents_store(_: any, documents: UploadDocument[]) {

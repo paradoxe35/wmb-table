@@ -1,5 +1,5 @@
 import path from 'path';
-import { app, BrowserWindow, remote } from 'electron';
+import { app, BrowserWindow } from 'electron';
 
 export const RESOURCES_PATH = app.isPackaged
   ? path.join(process.resourcesPath, 'assets')
@@ -53,7 +53,7 @@ export const getAssetCredentialsPath = (...paths: string[]): string => {
 // get image path
 
 export function getImagesPath(relativePath: string) {
-  if ((app || remote.app).isPackaged === false) {
+  if (app.isPackaged === false) {
     return path.join(__dirname, relativePath);
   } else {
     let asarUnpackedPath = __dirname.replace(
