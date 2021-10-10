@@ -40,6 +40,13 @@ export type OptionView = {
   bible: string | JSX.Element;
 };
 
+
+export type ViewMenuValue = 'options' | 'document'
+
+export type ViewMenu = {
+  [x in ViewMenuValue]: ViewMenuValue;
+};
+
 export type HandlerIPC = (event: Electron.IpcMainEvent, ...args: []) => any;
 
 export interface Suggestions extends Readonly<TimeStampData> {

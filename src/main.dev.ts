@@ -18,6 +18,7 @@ import Dialogs from './dialogs/dialogs';
 import backupHandler from './utils/backup/backup';
 import { APP_NAME } from './utils/constants';
 import Updater from './utils/app-updater/updater';
+import { touchBar } from './platforms/darwin/touch-bar';
 // import AppAutoUpdater from './utils/app-updater/auto-updater';
 // import AppUpdater from './utils/app-updater/updater';
 
@@ -73,6 +74,10 @@ const createWindow = async () => {
       contextIsolation: false,
     },
   });
+
+  if (process.platform === 'darwin') {
+    mainWindow.setTouchBar(touchBar);
+  }
 
   setMainWindow(mainWindow);
 

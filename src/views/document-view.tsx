@@ -12,6 +12,7 @@ import {
   documentTabsStore,
   documentViewQueryStore,
   selectedSubjectDocumentItemStore,
+  titlesDocumentSelector,
 } from '../store';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import sendIpcRequest from '../message-control/ipc/ipc-renderer';
@@ -67,6 +68,15 @@ export default function DocumentView() {
   documentQuery.current = useMemo(() => {
     return viewQuery.find((v) => v.documentTitle == title) || null;
   }, [title, viewQuery]);
+
+  // notify main process about the active document on view
+  const $titles = useRecoilValue(titlesDocumentSelector);
+
+  useEffect(() => {
+    if (!title) return;
+    const doc = $titles[title];
+    if (doc) sendIpcRequest(IPC_EVENTS.active_document_view, doc.name);
+  }, [title, $titles]);
 
   useEffect(() => {
     if (documentQuery.current) {
