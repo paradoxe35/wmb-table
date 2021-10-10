@@ -4,14 +4,19 @@ import { autoUpdater } from 'electron-updater';
 import { app } from 'electron';
 import path from 'path';
 import { APP_NAME } from '../constants';
+import fs from 'fs';
 
 export default class UpdaterInMemoryDatastore {
   private datastore: Nedb<UpdaterInfoStatus>;
 
   constructor() {
     const appName = APP_NAME.toLowerCase().split(' ').join('-');
+    const homePath = path.join(app.getPath('home'), `.${appName}`);
+    if (!fs.existsSync(homePath)) {
+      fs.mkdirSync(homePath);
+    }
     this.datastore = new Nedb<UpdaterInfoStatus>({
-      filename: path.join(app.getPath('home'), `.${appName}`, `updater.db`),
+      filename: path.join(homePath, `updater.db`),
       timestampData: true,
     });
 
