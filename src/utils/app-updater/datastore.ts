@@ -13,7 +13,7 @@ export default class UpdaterInMemoryDatastore {
     const appName = APP_NAME.toLowerCase().split(' ').join('-');
     const homePath = path.join(app.getPath('home'), `.${appName}`);
     if (!fs.existsSync(homePath)) {
-      fs.mkdirSync(homePath);
+      fs.mkdirSync(homePath, { recursive: true });
     }
     this.datastore = new Nedb<UpdaterInfoStatus>({
       filename: path.join(homePath, `updater.db`),
