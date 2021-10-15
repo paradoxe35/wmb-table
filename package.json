@@ -36,8 +36,6 @@
   "build": {
     "productName": "Wmb Table",
     "appId": "org.erb.wmbTable",
-    "asar": true,
-    "asarUnpack": "**\\*.{node,dll}",
     "files": [
       "dist/",
       "node_modules/",
