@@ -62,9 +62,12 @@ function commitUploadProgress(
   } as CustomDocumentUploadProgress);
 }
 
-export function custom_documents_store(_: any, documents: UploadDocument[]) {
+export async function custom_documents_store(
+  _: any,
+  documents: UploadDocument[]
+) {
   // preload document db to make sur the reste proccess of storing will success
-  loadDatabase(db.documents);
+  await loadDatabase(db.documents);
 
   process.env.ASSETS_PATH = getAssetPath();
   process.env.ASSETS_DOCUMENTS_PATH = getAssetDocumentsPath();
@@ -83,7 +86,7 @@ export function custom_documents_store(_: any, documents: UploadDocument[]) {
 
       return new Promise<T | null>((resolve) => {
         child.once('message', (message: ConvertMessage) => {
-          if (message && file.name === message.fileName) {
+          if (message) {
             resolve(({
               title: message.title,
               textContent: message.textContent,

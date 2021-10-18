@@ -46,9 +46,13 @@ export const getDatastoreFileName = (
   return extension ? filename : filename.split(DB_EXTENSION)[0];
 };
 
-export const loadDatabase = function (database: Datastore<any> | undefined) {
+export const loadDatabase = async function (
+  database: Datastore<any> | undefined
+) {
   if (database && !databases.includes(database)) {
-    database.loadDatabase();
+    await new Promise<Error | null>((resolve) =>
+      database.loadDatabase(resolve)
+    );
     databases.push(database);
     loadedDb.loadDb(database);
   }
@@ -112,14 +116,16 @@ export const queryDb = {
     };
   },
 
-  find<T>(
+  async find<T>(
     database: Datastore | undefined,
     fields = {},
     projection = {},
     sort = {} as Sort
   ): Promise<T[]> {
     if (!database) return Promise.reject(null);
-    loadDatabase(database);
+
+    await loadDatabase(database);
+
     return new Promise((resolve, reject) => {
       (database.find(fields) as Nedb.Cursor<T>)
         .projection(projection)
@@ -128,22 +134,26 @@ export const queryDb = {
     });
   },
 
-  count(database: Datastore | undefined, fields = {}): Promise<number> {
+  async count(database: Datastore | undefined, fields = {}): Promise<number> {
     if (!database) return Promise.reject(null);
-    loadDatabase(database);
+
+    await loadDatabase(database);
+
     return new Promise((resolve, reject) => {
       database.count(fields, this.promiseResolve(resolve, reject));
     });
   },
 
-  findOne<T>(
+  async findOne<T>(
     database: Datastore | undefined,
     fields = {},
     projection = {},
     sort = {} as Sort
   ): Promise<T | null> {
     if (!database) return Promise.reject(null);
-    loadDatabase(database);
+
+    await loadDatabase(database);
+
     return new Promise((resolve, reject) => {
       //@ts-ignore
       (database.findOne(fields) as Nedb.Cursor<T>)
@@ -153,10 +163,10 @@ export const queryDb = {
     });
   },
 
-  insert<T>(database: Datastore | undefined, datas: any): Promise<T> {
+  async insert<T>(database: Datastore | undefined, datas: any): Promise<T> {
     if (!database) return Promise.reject(null);
 
-    loadDatabase(database);
+    await loadDatabase(database);
     //
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
@@ -177,14 +187,14 @@ export const queryDb = {
     return promise;
   },
 
-  remove<T>(
+  async remove<T>(
     database: Datastore | undefined,
     query = {},
     options: Datastore.RemoveOptions = {}
   ): Promise<T> {
     if (!database) return Promise.reject(null);
 
-    loadDatabase(database);
+    await loadDatabase(database);
 
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
@@ -199,14 +209,16 @@ export const queryDb = {
       database.remove(query, options, this.promiseResolve(resolve, reject));
     });
   },
-  update(
+
+  async update(
     database: Datastore | undefined,
     query: any,
     updateQuery: any,
     options?: Datastore.UpdateOptions | undefined
   ): Promise<{ numAffected: number }> {
     if (!database) return Promise.reject(null);
-    loadDatabase(database);
+
+    await loadDatabase(database);
 
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
