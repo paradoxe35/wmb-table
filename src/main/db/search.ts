@@ -5,7 +5,6 @@ import {
   SearchResult,
 } from '@localtypes/index';
 import { performSearch } from '@root/utils/functions';
-import db, { queryDb } from './db';
 
 let searchResults: SearchItem[] = [];
 let lastSearch: string;
@@ -16,7 +15,7 @@ export async function search(
   text: string,
   ipageNumber?: number
 ): Promise<SearchResult> {
-  const documents = await queryDb.find<DataDocument>(db.documents);
+  // const documents = await queryDb.find<DataDocument>(db.documents);
 
   if (searchResults.length && lastSearch === text) {
     pageNumber = ipageNumber || pageNumber;

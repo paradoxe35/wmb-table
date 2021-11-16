@@ -6,7 +6,11 @@ import {
   titlesDocumentSelector,
 } from '@renderer/store';
 import { Empty, List } from 'antd';
-import { HistoryData, HistoryDataItem, HistoryDateUpload } from '@localtypes/index';
+import {
+  HistoryData,
+  HistoryDataItem,
+  HistoryDateUpload,
+} from '@localtypes/index';
 import { Collapse } from 'antd';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
@@ -103,7 +107,7 @@ export default function History() {
                           title={
                             <a>
                               <DocumentViewer name={item.documentTitle}>
-                                {$titles[item.documentTitle]?.name ||
+                                {$titles[item.documentTitle]?.getTitle() ||
                                   item.documentTitle}
                               </DocumentViewer>
                             </a>

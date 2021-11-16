@@ -75,7 +75,7 @@ export default function DocumentView() {
   useEffect(() => {
     if (!title) return;
     const doc = $titles[title];
-    if (doc) sendIpcRequest(IPC_EVENTS.active_document_view, doc.name);
+    if (doc) sendIpcRequest(IPC_EVENTS.active_document_view, doc.getTitle());
   }, [title, $titles]);
 
   useEffect(() => {

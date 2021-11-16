@@ -6,17 +6,18 @@ import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import DocumentViewer, { useDocumentViewOpen } from '../viewer/document-viewer';
 import { strNormalize } from '@root/utils/functions';
-import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   appDatasLoadedStore,
   customDocumentsStore,
   documentTitlesStore,
   sidebarStatusHiddenStore,
-  titlesDocumentSelector,
   titlesGroupedByYearSelector,
+  titlesStore,
 } from '@renderer/store';
 import PanelGroup from './components/documents-menu';
 import { DataNode } from 'antd/lib/tree';
+import DocumentTitle from '@renderer/store/models/document_title';
 
 const { DirectoryTree } = Tree;
 
@@ -83,22 +84,21 @@ const DocumentsAdded = () => {
 
 const DocumentByYears = () => {
   const documents = useRecoilValue(titlesGroupedByYearSelector);
-  const $titles = useRecoilValue(titlesDocumentSelector);
   const viewDocument = useDocumentViewOpen();
 
   const dataTree = Object.keys(documents).map((year) => {
     const docs = documents[year]
       .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => a.getTitle().localeCompare(b.getTitle()))
       .map((doc) => {
-        const title = $titles[doc.title]?.name;
+        const title = doc.getTitle();
         return {
-          key: doc.title + year,
+          key: title + year,
           title: (
             <span
-              key={doc._id}
+              key={doc.getId()}
               title={title}
-              onClick={() => viewDocument(doc.title)}
+              onClick={() => viewDocument(title)}
             >
               {title}
             </span>
@@ -125,11 +125,12 @@ const DocumentByYears = () => {
 };
 
 const DocumentSearch = () => {
-  const [datas, setDatas] = useState<Title[]>([]);
-  const [documents, setdocuments] = useRecoilState(documentTitlesStore);
-  const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
+  const [datas, setDatas] = useState<DocumentTitle[]>([]);
 
-  const $titles = useRecoilValue(titlesDocumentSelector);
+  const documents = useRecoilValue(documentTitlesStore);
+  const setDocuments = useSetRecoilState(titlesStore);
+
+  const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
 
   useEffect(() => {
     setDatas(documents);
@@ -138,7 +139,7 @@ const DocumentSearch = () => {
   useEffect(() => {
     sendIpcRequest<Title[]>(IPC_EVENTS.title_documents)
       .then((titles) => {
-        setdocuments(titles);
+        setDocuments(titles);
       })
       .finally(() => setAppDataLoaded(true));
   }, []);
@@ -147,7 +148,7 @@ const DocumentSearch = () => {
     if (documents.length) {
       setDatas(
         documents.filter((d) =>
-          strNormalize(d.title).includes(strNormalize(value))
+          strNormalize(d.getTitle()).includes(strNormalize(value))
         )
       );
     }
@@ -167,13 +168,13 @@ const DocumentSearch = () => {
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
         {datas
           .slice()
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .sort((a, b) => a.getTitle().localeCompare(b.getTitle()))
           .map((d, i) => (
             <ItemOutline
-              key={d._id || i}
-              id={d.title}
-              name={d.title}
-              title={$titles[d.title]?.name}
+              key={d.getId() || i}
+              id={d.getTitle()}
+              name={d.getTitle()}
+              title={d.getTitle()}
             />
           ))}
       </ContainerScrollY>

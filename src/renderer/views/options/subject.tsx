@@ -354,7 +354,7 @@ function ShowActiveDocuments({
                                 onItemClick={() => setSubjectItemSelected(item)}
                                 name={item.documentTitle}
                               >
-                                {$titles[item.documentTitle]?.name}
+                                {$titles[item.documentTitle]?.getTitle()}
                               </DocumentViewer>
                             </a>
                           }

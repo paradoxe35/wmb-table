@@ -25,6 +25,7 @@ import {
   appDatasLoadedStore,
   customDocumentsStore,
   documentTitlesStore,
+  titlesStore,
 } from '@renderer/store';
 import {
   CustomDocument,
@@ -182,7 +183,7 @@ function CustomDocumentItem({
   setCustomDocuments: SetterOrUpdater<CustomDocument[]>;
 }) {
   const [documents, setDocuments] = useState<CustomDocument[]>([]);
-  const setTitles = useSetRecoilState(documentTitlesStore);
+  const setTitles = useSetRecoilState(titlesStore);
 
   useEffect(() => {
     setDocuments(customDocuments);
@@ -194,12 +195,19 @@ function CustomDocumentItem({
 
       const titles = (e.detail || []).map(
         (f) =>
-          (({
-            title: f.title,
+          ({
             _id: f.documentId,
-            name: f.title,
-            year: null,
-          } as unknown) as Title)
+            title: f.title,
+            frTitle: f.title,
+            enTitle: f.title,
+            date: null,
+            date_long: null,
+            web_link: null,
+            pdf_link: null,
+            audio_link: null,
+            traduction: null,
+            other_traductions: [],
+          } as Title<string | null>)
       );
 
       setTitles((ts) => [...titles, ...ts]);
@@ -338,7 +346,7 @@ function Uploader() {
   async function handleUpload() {
     if (fileList.length === 0) return;
 
-    const titlesList = titles.map((d) => `${d.title}.pdf`);
+    const titlesList = titles.map((d) => `${d.getTitle()}.pdf`);
 
     for (const file of fileList) {
       if (titlesList.includes(file.name)) {

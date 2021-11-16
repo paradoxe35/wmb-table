@@ -20,7 +20,10 @@ import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { documentViewQueryStore, titlesDocumentSelector } from '@renderer/store';
+import {
+  documentViewQueryStore,
+  titlesDocumentSelector,
+} from '@renderer/store';
 
 const { Text } = Typography;
 
@@ -189,7 +192,7 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
                   name={result.item.title}
                   id={result.item._id as string}
                 >
-                  {$titles[result.item.title]?.name}
+                  {$titles[result.item.title]?.getTitle()}
                 </DocumentViewer>
               </a>
             </Text>

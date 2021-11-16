@@ -105,7 +105,11 @@ const Tabs = React.forwardRef<HTMLDivElement, { tabs: DocumentTab[] }>(
         <div className="chrome-tabs" ref={ref}>
           <div className="chrome-tabs-content">
             {props.tabs.map((tab) => (
-              <Tab key={tab.title} tab={tab} title={$titles[tab.title]?.name} />
+              <Tab
+                key={tab.title}
+                tab={tab}
+                title={$titles[tab.title]?.getTitle()}
+              />
             ))}
           </div>
           <div className="chrome-tabs-bottom-bar"></div>
