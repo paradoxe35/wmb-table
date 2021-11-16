@@ -1,7 +1,7 @@
 import { getChildByTreeArr, pageContainer } from './functions.js';
 
 /**
- * @param { import('../../src/types').SubjectDocumentItem } item
+ * @param { import('@localtypes/index').SubjectDocumentItem } item
  */
 export function scrollToViewTree(item) {
   const element = getChildByTreeArr(document.body, item.documentHtmlTree.tree);

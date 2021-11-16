@@ -2,28 +2,28 @@ import React, { lazy, Suspense, useMemo } from 'react';
 import { render } from 'react-dom';
 import { ConfigProvider, Spin } from 'antd';
 import frFR from 'antd/lib/locale/fr_FR';
-import AppLayout from './components/layout';
+import AppLayout from './renderer/components/layout';
 import './app.global.scss';
 import { RecoilRoot, useRecoilValue } from 'recoil';
-import { appViewStore, MAIN_VIEWS, optionViewStore } from './store';
-import DocumentView from './views/document-view';
+import { appViewStore, MAIN_VIEWS, optionViewStore } from './renderer/store';
+import DocumentView from './renderer/views/document-view';
 
-import Search from './views/options/search';
-import History from './views/options/history';
-import Subject from './views/options/subject';
-import { OptionView } from './types';
+import Search from './renderer/views/options/search';
+import History from './renderer/views/options/history';
+import Subject from './renderer/views/options/subject';
+import { OptionView } from '@localtypes/index';
 
-import '../modules/context-menu/kali_dark.css';
-import CustomDocuments from './views/components/custom-documents';
+import '@modules/context-menu/kali_dark.css';
+import CustomDocuments from './renderer/views/components/custom-documents';
 import { LoadingOutlined } from '@ant-design/icons';
-import LoadByVisibility from './components/load-by-visibility';
-import Bible from './views/options/bible';
-import ContainerScrollY from './components/container-scroll-y';
-import BackupProfile from './views/components/backup-profile-modal';
-import Welcome from './views/components/welcome-modal';
-import Updater from './views/components/updater-modal';
+import LoadByVisibility from './renderer/components/load-by-visibility';
+import Bible from './renderer/views/options/bible';
+import ContainerScrollY from './renderer/components/container-scroll-y';
+import BackupProfile from './renderer/views/components/backup-profile-modal';
+import Welcome from './renderer/views/components/welcome-modal';
+import Updater from './renderer/views/components/updater-modal';
 
-const Notes = lazy(() => import('./views/options/notes'));
+const Notes = lazy(() => import('./renderer/views/options/notes'));
 
 const Loader: React.FC = ({ children }) => {
   return (

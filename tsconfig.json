@@ -26,7 +26,24 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
-    "allowJs": true
+    "allowJs": true,
+    "paths": {
+      "@localtypes/*": [
+        "./src/types/*"
+      ],
+      "@main/*": [
+        "./src/main/*"
+      ],
+      "@renderer/*": [
+        "./src/renderer/*"
+      ],
+      "@root/*": [
+        "./src/*"
+      ],
+      "@modules/*": [
+        "./modules/*"
+      ]
+    }
   },
   "exclude": [
     "test",

@@ -9,8 +9,13 @@ export interface TimeStampData<T = any> {
 export type Title = {
   _id: string;
   title: string;
-  name: string;
-  year: string;
+  frTitle: string;
+  enTitle: string;
+  traduction: string;
+  web_link: string;
+  pdf_link: string;
+  audio_link?: string;
+  date: string;
 };
 
 export interface DataDocument extends Readonly<TimeStampData> {
