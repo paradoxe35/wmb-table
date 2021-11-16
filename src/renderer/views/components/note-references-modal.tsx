@@ -1,6 +1,10 @@
 import { Button, List, Modal, Tooltip } from 'antd';
 import React, { useEffect, useRef, useState } from 'react';
-import { DocumentHtmlTree, NoteItem, NoteItemReference } from '@localtypes/index';
+import {
+  DocumentHtmlTree,
+  NoteItem,
+  NoteItemReference,
+} from '@localtypes/index';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
@@ -129,7 +133,7 @@ function ContentModal({
                 avatar={<BookOutlined />}
                 description={
                   assigned
-                    ? `Référencé à: ${$titles[item.documentTitle]?.name}`
+                    ? `Référencé à: ${$titles[item.documentTitle]?.getTitle()}`
                     : 'Aucun document attribué à cette référence'
                 }
                 title={

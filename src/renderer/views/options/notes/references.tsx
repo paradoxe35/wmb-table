@@ -70,7 +70,7 @@ export const useShowReferenceDetail = () => {
               <Typography.Text type="secondary">
                 <FileOutlined /> Document:
               </Typography.Text>{' '}
-              {$titles[reference.documentTitle]?.name}
+              {$titles[reference.documentTitle]?.getTitle()}
             </p>
             <p>
               <Typography.Text type="secondary">- </Typography.Text>

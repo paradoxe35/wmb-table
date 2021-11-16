@@ -10,6 +10,7 @@ import {
   ViewMenu,
   ViewMenuValue,
 } from '@localtypes/index';
+import DocumentTitle from './models/document_title';
 
 export const MAIN_VIEWS: ViewMenu = {
   options: 'options',
@@ -39,9 +40,17 @@ export const optionViewStore = atom({
   default: OPTIONS_VIEWS.search as string,
 });
 
-export const documentTitlesStore = atom<Title[]>({
-  key: 'documentTitlesStore',
+export const titlesStore = atom<Title[]>({
+  key: 'titlesStore',
   default: [],
+});
+
+export const documentTitlesStore = selector<DocumentTitle[]>({
+  key: 'documentTitlesStore',
+  get: ({ get }) => {
+    const titles = get(titlesStore);
+    return titles.map((doc) => new DocumentTitle(doc));
+  },
 });
 
 export const customDocumentsStore = atom<CustomDocument[]>({
@@ -50,35 +59,36 @@ export const customDocumentsStore = atom<CustomDocument[]>({
 });
 
 export const titlesDocumentSelector = selector<{
-  [fileName: string]: Title;
+  [fileName: string]: DocumentTitle;
 }>({
   key: 'titlesDocumentSelector',
   get: ({ get }) => {
-    const titles = get(documentTitlesStore);
+    const titles = get(titlesStore);
+
     return titles.reduce((acc, doc) => {
-      acc[doc.title] = doc;
+      acc[doc.title] = new DocumentTitle(doc);
       return acc;
-    }, {} as { [title: string]: Title });
+    }, {} as { [title: string]: DocumentTitle });
   },
 });
 
 export const titlesGroupedByYearSelector = selector<{
-  [year: string]: Title[];
+  [year: string]: DocumentTitle[];
 }>({
   key: 'titleDocumentByFileName',
   get: ({ get }) => {
     const titles = get(documentTitlesStore);
     return titles
       .slice()
-      .filter((t) => t.year)
-      .sort((a, b) => a.year.localeCompare(b.year))
+      .filter((t) => t.getYear())
+      .sort((a, b) => a.getYear<string>().localeCompare(b.getYear()))
       .reduce((acc, v) => {
-        if (!acc[v.year]) {
-          acc[v.year] = [];
+        if (!acc[v.getYear<string>()]) {
+          acc[v.getYear<string>()] = [];
         }
-        acc[v.year].push(v);
+        acc[v.getYear<string>()].push(v);
         return acc;
-      }, {} as { [year: string]: Title[] });
+      }, {} as { [year: string]: DocumentTitle[] });
   },
 });
 
@@ -110,9 +120,9 @@ export const currentDocumentTabsSelector = selector<string>({
 
     if (tab?.title) {
       defaultTitle.isDefault = false;
-      title = tab?.title;
+      title = tab.title;
     } else {
-      title = titles[0]?.title;
+      title = titles[0]?.getTitle();
       defaultTitle.isDefault = true;
     }
 

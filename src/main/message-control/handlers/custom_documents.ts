@@ -98,11 +98,19 @@ export async function custom_documents_store(
       }>(file);
 
       if (getContent) {
-        await queryDb.insert<any>(db.documentsTitle, {
+        await queryDb.insert<Title>(db.documentsTitle, {
+          _id: undefined,
           title: getContent.title,
-          name: getContent.title,
-          year: null,
-        } as Title);
+          frTitle: getContent.title,
+          enTitle: getContent.title,
+          date: null,
+          date_long: null,
+          web_link: null,
+          pdf_link: null,
+          audio_link: null,
+          traduction: null,
+          other_traductions: [],
+        } as Title<string | null, undefined>);
 
         const doc = await queryDb.insert<CustomDocument>(db.customDocuments, {
           title: getContent.title,

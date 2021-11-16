@@ -6,16 +6,25 @@ export interface TimeStampData<T = any> {
   updatedAt: T;
 }
 
-export type Title = {
-  _id: string;
+
+type OtherTraduction = {
+  title:string;
+  traduction:string;
+  web_link:string;
+}
+
+export type Title<T = string | null, ID = string> = {
+  _id: ID;
   title: string;
   frTitle: string;
   enTitle: string;
-  traduction: string;
-  web_link: string;
-  pdf_link: string;
-  audio_link?: string;
-  date: string;
+  traduction: T;
+  web_link: T;
+  pdf_link: T;
+  audio_link?: T;
+  date: T;
+  date_long: T | null;
+  other_traductions: OtherTraduction[];
 };
 
 export interface DataDocument extends Readonly<TimeStampData> {
