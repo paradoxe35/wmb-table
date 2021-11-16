@@ -14,7 +14,7 @@ import './utils/polyfill';
 import { app, BrowserWindow, shell } from 'electron';
 import MenuBuilder from './main/platforms/menu';
 import { getAssetPath, setMainWindow } from './sys';
-import Dialogs from 'dialogs/dialogs';
+import Dialogs from '@main/dialogs/dialogs';
 import backupHandler from './main/features/backup/backup';
 import { APP_NAME } from './utils/constants';
 import Updater from './main/features/app-updater/updater';
@@ -22,7 +22,7 @@ import { touchBar } from './main/platforms/darwin/touch-bar';
 // import AppAutoUpdater from './utils/app-updater/auto-updater';
 // import AppUpdater from './utils/app-updater/updater';
 
-require('./message-control/main-messages');
+require('@main/message-control/main-messages');
 
 // init backup watcher files
 const watcher = backupHandler();
