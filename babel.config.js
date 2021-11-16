@@ -75,7 +75,18 @@ module.exports = (api) => {
       require('@babel/plugin-proposal-numeric-separator'),
       // @ts-ignore
       require('@babel/plugin-proposal-throw-expressions'),
-
+      [
+        require.resolve('babel-plugin-module-resolver'),
+        {
+          root: ['./'],
+          alias: {
+            '@root': './src',
+            '@main': './src/main',
+            '@renderer': './src/renderer',
+            '@modules': './modules',
+          },
+        },
+      ],
       // Stage 3
       // @ts-ignore
       require('@babel/plugin-syntax-dynamic-import'),
