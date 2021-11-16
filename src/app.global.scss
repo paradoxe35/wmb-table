@@ -12,7 +12,7 @@ body {
   }
 }
 
-@import './plugins/chrome-tabs/chrome-tabs.scss';
+@import './renderer/plugins/chrome-tabs/chrome-tabs.scss';
 
 .app-header {
   display: flex;
