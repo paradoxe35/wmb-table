@@ -12,13 +12,13 @@ import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import './utils/polyfill';
 import { app, BrowserWindow, shell } from 'electron';
-import MenuBuilder from './menu';
+import MenuBuilder from './main/platforms/menu';
 import { getAssetPath, setMainWindow } from './sys';
-import Dialogs from './dialogs/dialogs';
-import backupHandler from './utils/backup/backup';
+import Dialogs from 'dialogs/dialogs';
+import backupHandler from './main/features/backup/backup';
 import { APP_NAME } from './utils/constants';
-import Updater from './utils/app-updater/updater';
-import { touchBar } from './platforms/darwin/touch-bar';
+import Updater from './main/features/app-updater/updater';
+import { touchBar } from './main/platforms/darwin/touch-bar';
 // import AppAutoUpdater from './utils/app-updater/auto-updater';
 // import AppUpdater from './utils/app-updater/updater';
 
