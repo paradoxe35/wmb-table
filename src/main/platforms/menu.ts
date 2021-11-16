@@ -1,5 +1,5 @@
 import { Menu, BrowserWindow, shell } from 'electron';
-import showAboutDialog from 'dialogs/handlers/about';
+import showAboutDialog from '@main/dialogs/handlers/about';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 
 export default class MenuBuilder {
