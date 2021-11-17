@@ -85,6 +85,15 @@ export function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+export const simpleRegExp = (term: string) => {
+  return new RegExp(
+    strNormalize(escapeRegExp(term))
+      .replace(/[\'|\’]/g, "['’]")
+      .replace(/(œ|oe)/g, '(œ|oe)'),
+    'gi'
+  );
+};
+
 export function regexpMatcher(pattern: string | RegExp, headstack: string) {
   const regexp = new RegExp(
     typeof pattern === 'string'
@@ -147,9 +156,9 @@ export function performSearch<T>(needle: string, headstack: string): T[] {
   const terms = strNormalizeNoLower(escapeRegExp(needle.trim()))
     .split(' ')
     .filter(Boolean)
-    .join(`[a-z]*([^\s+]*)?`);
+    .join(`[a-zA-Z]*([^\s+]*)?`);
 
-  return (regexpMatcher(`${terms}[a-z]*`, headstack) as unknown) as T[];
+  return (regexpMatcher(`${terms}[a-zA-Z]*`, headstack) as unknown) as T[];
 }
 
 export const rafThrottle = (callback: Function) => {
