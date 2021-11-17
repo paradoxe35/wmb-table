@@ -173,6 +173,7 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
         ...datas,
         {
           documentTitle: result.item.title,
+          textContentLength: result.item.textContent.length,
           matches: result.matches,
           term: query,
         },
@@ -190,7 +191,7 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
                 <DocumentViewer
                   onItemClick={handleDocumentClick}
                   name={result.item.title}
-                  id={result.item._id as string}
+                  id={result.item._id}
                 >
                   {$titles[result.item.title]?.getTitle()}
                 </DocumentViewer>

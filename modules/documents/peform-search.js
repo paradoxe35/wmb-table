@@ -1,33 +1,53 @@
-import { CHILD_WINDOW_EVENT, PARENT_WINDOW_EVENT } from '../shared/shared.js';
+import {
+  CHILD_WINDOW_EVENT,
+  DOCUMENT_CONTENT_ID,
+  PARENT_WINDOW_EVENT,
+} from '../shared/shared.js';
+import { pageContainer } from './functions.js';
 import { setSearchResult } from './seach-query.js';
 
 /**
  * @param {string | null | undefined} term
  */
-export function performSearch(term) {
+
+/**
+ * @param {import("@localtypes/index").DocumentViewQuery | null | undefined} query
+ */
+export function performSearch(query) {
+  /** @type {HTMLElement} */
+  const container =
+    document.querySelector(`.${DOCUMENT_CONTENT_ID}`) || pageContainer();
+
   setSearchResult(null);
-  if (!term) return;
+  if (!query) return;
 
   window.parent.dispatchEvent(
     new Event(PARENT_WINDOW_EVENT.frameDocumentSearchStart)
   );
 
-  const textContent = strNormalizeNoLower(document.body.textContent);
+  /** @type {string} */
+  let term = query.term;
 
-  const terms = strNormalizeNoLower(escapeRegExp(term.trim()))
-    .split(' ')
-    .filter(Boolean)
-    .join(`[a-z]*([^\s+]*)?`);
+  /** @type {number} */
+  let textContentLength = query.textContentLength;
 
-  const matches = regexpMatcher(`${terms}[a-z]*`, textContent).map((m, i) => {
-    //@ts-ignore
-    m.index = i + 1;
-    return m;
-  });
+  let matches = query.matches;
 
-  setSearchResult({ term, matches });
+  if (query.matches.length === 0) {
+    let textContent = strNormalizeNoLower(container.textContent);
+    let terms = strNormalizeNoLower(escapeRegExp(term.trim()))
+      .split(' ')
+      .filter(Boolean)
+      .join(`[a-z]*([^\s+]*)?`);
 
-  markMaches(document.body, matches, textContent.length);
+    matches = regexpMatcher(`${terms}[a-z]*`, textContent);
+
+    textContentLength = textContent.length;
+  }
+
+  setSearchResult({ term, matches, textContentLength });
+
+  markMaches(container, matches, textContentLength);
 
   window.parent.dispatchEvent(
     new Event(PARENT_WINDOW_EVENT.frameDocumentSearchEnd)
@@ -55,8 +75,9 @@ function regexpMatcher(pattern, headstack) {
   );
   const matches = [...headstack.matchAll(regexp)];
 
-  return matches.map((match) => ({
+  return matches.map((match, i) => ({
     term: match[0],
+    index: i + 1,
     start: match.index,
     end: match.index ? match.index + match[0].length : undefined,
   }));

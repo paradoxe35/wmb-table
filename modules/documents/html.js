@@ -1,3 +1,5 @@
+import { pageContainer } from './functions.js';
+
 export const searchTemplateHtml = /* html */ `
 <div class="search--template active">
   <div class="find-actions">
@@ -123,3 +125,50 @@ export function injectStyleText(content) {
   css.innerHTML = content;
   document.head.appendChild(css);
 }
+
+// controller bar
+// first resize container height
+const container = pageContainer();
+container.style.height = 'calc(100% - 50px)';
+
+const controllerBarHtml = /* html */ `
+  <div class="controller--bar">
+    <div class="box"></div>
+  </div>
+`;
+
+document.body.appendChild(
+  document.createRange().createContextualFragment(controllerBarHtml)
+);
+
+const controllerBarCss = /* css */ `
+  .controller--bar {
+    height: 40px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 5px;
+    overflow: hidden;
+    z-index: 35;
+    display: flex;
+    justify-content: center;
+  }
+
+  .controller--bar .box {
+    color: #000;
+    overflow: hidden;
+    width: 90%;
+    max-width: 759px;
+    height: 100%;
+    box-shadow: 0 7px 14px rgba(50, 50, 93, .01), 0 3px 6px rgba(0, 0, 0, 0.041);
+    background-color: #e4e3e3;
+    border-radius: 2px;
+    line-height: 19px;
+    transition: all .2s linear;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    box-sizing: border-box;
+  }
+`;
+
+injectStyleText(controllerBarCss);

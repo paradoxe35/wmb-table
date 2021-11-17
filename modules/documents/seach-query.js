@@ -27,7 +27,7 @@ export function setSearchQueryTerm(term) {
 export let SEARCH_RESULT = null;
 
 /**
- * @param { { term: string; matches: import('@localtypes/index').SearchMatchersValue[]} | null } data
+ * @param { { term: string; textContentLength: number; matches: import('@localtypes/index').SearchMatchersValue[]} | null } data
  */
 export function setSearchResult(data) {
   SEARCH_RESULT = data;

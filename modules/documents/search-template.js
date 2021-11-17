@@ -218,7 +218,7 @@ export default function initTemplate() {
 
   handleSearch();
 
-  performSearch(SEARCH_QUERY ? SEARCH_QUERY.term : undefined);
+  performSearch(SEARCH_QUERY ? SEARCH_QUERY : undefined);
 
   searchOpen && searchOpen.addEventListener('click', () => openSearchModal());
 
