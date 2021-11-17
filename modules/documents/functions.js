@@ -1,3 +1,5 @@
+import { DOCUMENT_CONTAINER_ID } from '../shared/shared';
+
 /**
  * @param { HTMLElement | Element } element
  * @param { HTMLElement | Element } parent
@@ -38,11 +40,12 @@ export function getChildByTreeArr(parent, arr) {
  * @returns {HTMLElement }
  */
 export function pageContainer() {
-  //@ts-ignore
-  return document.getElementById('page-container');
+  // @ts-ignore
+  return document.getElementById(DOCUMENT_CONTAINER_ID);
 }
 
 export function initBodyZoom(zoom = '100') {
+  // @ts-ignore
   pageContainer().style.zoom = zoom + '%';
 }
 
@@ -51,8 +54,10 @@ export function initBodyZoom(zoom = '100') {
  */
 export function zoomIn(el) {
   const Page = el || pageContainer();
+  // @ts-ignore
   const zoom = parseInt(Page.style.zoom) + 10;
   if (zoom >= 200) return false;
+  // @ts-ignore
   Page.style.zoom = zoom + '%';
   return zoom;
 }
@@ -62,8 +67,10 @@ export function zoomIn(el) {
  */
 export function zoomOut(el) {
   const Page = el || pageContainer();
+  // @ts-ignore
   const zoom = parseInt(Page.style.zoom) - 10;
   if (zoom <= 10) return false;
+  // @ts-ignore
   Page.style.zoom = zoom + '%';
   return zoom;
 }

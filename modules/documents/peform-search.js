@@ -1,3 +1,4 @@
+import { CHILD_WINDOW_EVENT, PARENT_WINDOW_EVENT } from '../shared/shared.js';
 import { setSearchResult } from './seach-query.js';
 
 /**
@@ -7,7 +8,9 @@ export function performSearch(term) {
   setSearchResult(null);
   if (!term) return;
 
-  window.parent.dispatchEvent(new Event('frame-document-search-start'));
+  window.parent.dispatchEvent(
+    new Event(PARENT_WINDOW_EVENT.frameDocumentSearchStart)
+  );
 
   const textContent = strNormalizeNoLower(document.body.textContent);
 
@@ -26,7 +29,9 @@ export function performSearch(term) {
 
   markMaches(document.body, matches, textContent.length);
 
-  window.parent.dispatchEvent(new Event('frame-document-search-end'));
+  window.parent.dispatchEvent(
+    new Event(PARENT_WINDOW_EVENT.frameDocumentSearchEnd)
+  );
 }
 
 /**
@@ -102,6 +107,7 @@ function markMaches(element, matches, textContentLength) {
     element,
     NodeFilter.SHOW_TEXT,
     nodeFilter,
+    // @ts-ignore
     false
   );
 
@@ -229,5 +235,5 @@ function markMaches(element, matches, textContentLength) {
     // @ts-ignore
     index += node.length;
   }
-  window.dispatchEvent(new Event('result-constructed'));
+  window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.resultConstructed));
 }

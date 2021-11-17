@@ -34,6 +34,7 @@ import {
 import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
+import { SUBJECT_EVENT } from '@modules/shared/shared';
 
 const { Text } = Typography;
 
@@ -165,9 +166,9 @@ export default function Subject() {
         });
       });
     };
-    window.addEventListener('focus-subject', focusSubject);
+    window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
     return () => {
-      window.removeEventListener('focus-subject', focusSubject);
+      window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
     };
   }, []);
 

@@ -20,10 +20,7 @@ import {
 } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
-import {
-  useIpcRequestWithLoader,
-  useValueStateRef,
-} from '@renderer/hooks';
+import { useIpcRequestWithLoader, useValueStateRef } from '@renderer/hooks';
 import {
   referenceBibleBrandLink,
   referenceBrandLink as referenceDocumentBrandLink,
@@ -31,6 +28,7 @@ import {
   useBibleReferenceModal,
   useShowReferenceDetail,
 } from './references';
+import { EDITOR_EVENT } from '@modules/shared/shared';
 
 //@ts-ignore
 let DecoupledDocumentEditor: any;
@@ -65,7 +63,7 @@ const useRenameNote = (note: NoteItem | null) => {
         message.error('Le nom entré est invalid');
       } else {
         window.dispatchEvent(
-          new CustomEvent<{ name: string }>('rename-note', {
+          new CustomEvent<{ name: string }>(EDITOR_EVENT.renameNote, {
             detail: { name: searchValue.current.trim() },
           })
         );
@@ -138,9 +136,9 @@ function ButtonsControllers({
   };
 
   useEffect(() => {
-    window.addEventListener('rename-note-modal', openModal);
+    window.addEventListener(EDITOR_EVENT.renameNoteModal, openModal);
     return () => {
-      window.removeEventListener('rename-note-modal', openModal);
+      window.removeEventListener(EDITOR_EVENT.renameNoteModal, openModal);
     };
   }, []);
 
@@ -247,7 +245,7 @@ export default function EditorContent({
         note?.created &&
           note.defaultName &&
           window.setTimeout(() => {
-            window.dispatchEvent(new Event('rename-note-modal'));
+            window.dispatchEvent(new Event(EDITOR_EVENT.renameNoteModal));
           }, 1000);
       }
     );
@@ -263,9 +261,9 @@ export default function EditorContent({
         return nn;
       });
     };
-    window.addEventListener('rename-note', renameUpdate);
+    window.addEventListener(EDITOR_EVENT.renameNote, renameUpdate);
     return () => {
-      window.removeEventListener('rename-note', renameUpdate);
+      window.removeEventListener(EDITOR_EVENT.renameNote, renameUpdate);
     };
   }, []);
 

@@ -11,6 +11,10 @@ import { FileFilled, LoadingOutlined } from '@ant-design/icons';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { Spin } from 'antd';
+import {
+  CUSTOM_DOCUMENT_EVENT,
+  PARENT_WINDOW_EVENT,
+} from '@modules/shared/shared';
 
 function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
   const tabRef = useRef<HTMLDivElement | null>(null);
@@ -27,12 +31,24 @@ function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
     const endLoading = () => setLoading(false);
 
     if (tab && tab.active) {
-      window.addEventListener('frame-document-search-start', startLoading);
-      window.addEventListener('frame-document-search-end', endLoading);
+      window.addEventListener(
+        PARENT_WINDOW_EVENT.frameDocumentSearchStart,
+        startLoading
+      );
+      window.addEventListener(
+        PARENT_WINDOW_EVENT.frameDocumentSearchEnd,
+        endLoading
+      );
 
       return () => {
-        window.removeEventListener('frame-document-search-start', startLoading);
-        window.removeEventListener('frame-document-search-end', endLoading);
+        window.removeEventListener(
+          PARENT_WINDOW_EVENT.frameDocumentSearchStart,
+          startLoading
+        );
+        window.removeEventListener(
+          PARENT_WINDOW_EVENT.frameDocumentSearchEnd,
+          endLoading
+        );
       };
     }
     return;
@@ -254,12 +270,12 @@ export default function DocumentTabs() {
     };
 
     window.addEventListener(
-      'custom-document-removed',
+      CUSTOM_DOCUMENT_EVENT.customDocumentRemoved,
       removeFromCustomDocument
     );
     return () => {
       window.removeEventListener(
-        'custom-document-removed',
+        CUSTOM_DOCUMENT_EVENT.customDocumentRemoved,
         removeFromCustomDocument
       );
     };

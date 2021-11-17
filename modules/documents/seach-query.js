@@ -1,10 +1,12 @@
+import { CHILD_WINDOW_EVENT } from '../shared/shared';
+
 /**
- * @type { import('../../src/types/index').DocumentViewQuery | null }
+ * @type { import('@localtypes/index').DocumentViewQuery | null }
  */
 export let SEARCH_QUERY = null;
 
 /**
- * @param {import("../../src/types/index").DocumentViewQuery | null} data
+ * @param {import("@localtypes/index").DocumentViewQuery | null} data
  */
 export function setSearchQuery(data) {
   SEARCH_QUERY = data;
@@ -20,16 +22,18 @@ export function setSearchQueryTerm(term) {
 }
 
 /**
- * @type { { term: string; matches: import('../../src/types/index').SearchMatchersValue[]} | null }
+ * @type { { term: string; matches: import('@localtypes/index').SearchMatchersValue[]} | null }
  */
 export let SEARCH_RESULT = null;
 
 /**
- * @param { { term: string; matches: import('../../src/types/index').SearchMatchersValue[]} | null } data
+ * @param { { term: string; matches: import('@localtypes/index').SearchMatchersValue[]} | null } data
  */
 export function setSearchResult(data) {
   SEARCH_RESULT = data;
-  window.dispatchEvent(new CustomEvent('search-result', { detail: data }));
+  window.dispatchEvent(
+    new CustomEvent(CHILD_WINDOW_EVENT.searchResult, { detail: data })
+  );
 }
 
 /**
@@ -51,4 +55,16 @@ export let WINDOW_ZOOM = 100;
  */
 export function setWindowZoom(data) {
   WINDOW_ZOOM = data;
+}
+
+/**
+ * @type {import("@localtypes/index").Title | null}
+ */
+export let DOCUMENT_TITLE_DATAS = null;
+
+/**
+ * @param {import("@localtypes/index").Title<string | null, string> | null} data
+ */
+export function setDocumentTitleData(data) {
+  DOCUMENT_TITLE_DATAS = data;
 }

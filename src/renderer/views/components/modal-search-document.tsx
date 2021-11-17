@@ -6,6 +6,7 @@ import { documentViewQueryStore } from '@renderer/store';
 import { DocumentViewQuery } from '@localtypes/index';
 import { useValueStateRef } from '@renderer/hooks';
 import { SearchOutlined } from '@ant-design/icons';
+import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
 
 const ModalController = ({
   isOpened,
@@ -100,9 +101,12 @@ export function ModalSearchDocument({
   }, []);
 
   useEffect(() => {
-    window.addEventListener('open-search-modal', modal);
+    window.addEventListener(CHILD_PARENT_WINDOW_EVENT.openSearchModal, modal);
     return () => {
-      window.removeEventListener('open-search-modal', modal);
+      window.removeEventListener(
+        CHILD_PARENT_WINDOW_EVENT.openSearchModal,
+        modal
+      );
     };
   }, []);
 
