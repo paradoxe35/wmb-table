@@ -12,6 +12,7 @@ import {
   CHILD_PARENT_WINDOW_EVENT,
   CHILD_WINDOW_EVENT,
 } from '../shared/shared.js';
+import { pageContainer } from './functions.js';
 
 /**
  * @param {Element | null} el
@@ -194,6 +195,7 @@ export function handleSearch() {
 }
 
 export default function initTemplate() {
+  const container = pageContainer();
   hasOpened = true;
 
   injectStyleText(searchTemplateCss);
@@ -208,6 +210,14 @@ export default function initTemplate() {
 
   searchClose &&
     searchClose.addEventListener('click', () => {
+      Array.from(container.querySelectorAll('[data-mark-id]')).forEach((el) => {
+        el.parentElement?.insertBefore(
+          document.createTextNode(el.textContent || ''),
+          el
+        );
+        el.parentNode?.removeChild(el);
+      });
+
       if (searchContainer && searchContainer.classList.contains('active')) {
         searchContainer.classList.remove('active');
         window.parent.dispatchEvent(
