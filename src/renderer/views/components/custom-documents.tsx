@@ -40,7 +40,7 @@ import {
   LoadingOutlined,
 } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { strNormalize } from '@root/utils/functions';
+import { simpleRegExp, strNormalize } from '@root/utils/functions';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 
 import { InboxOutlined, RedoOutlined } from '@ant-design/icons';
@@ -226,7 +226,7 @@ function CustomDocumentItem({
     if (customDocuments.length) {
       setDocuments(
         customDocuments.filter((d) =>
-          strNormalize(d.title).includes(strNormalize(value))
+          simpleRegExp(value).test(strNormalize(d.title))
         )
       );
     }

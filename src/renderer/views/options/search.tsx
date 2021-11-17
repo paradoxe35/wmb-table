@@ -12,6 +12,7 @@ import {
   debounce,
   escapeRegExp,
   regexpMatcher,
+  simpleRegExp,
   strNormalize,
   trimBeforeDotAndComma,
 } from '@root/utils/functions';
@@ -318,7 +319,7 @@ const ContentItem = ({ item }: { item: SearchItem }) => {
 
 const searchSuggestions = (query: string, suggestions: Suggestions[]) =>
   suggestions
-    .filter((sgg) => strNormalize(sgg.searchText).includes(strNormalize(query)))
+    .filter((sgg) => simpleRegExp(query).test(strNormalize(sgg.searchText)))
     .map((sgg) => {
       return {
         value: sgg.searchText,

@@ -5,7 +5,7 @@ import { Title } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import DocumentViewer, { useDocumentViewOpen } from '../viewer/document-viewer';
-import { strNormalize } from '@root/utils/functions';
+import { simpleRegExp, strNormalize } from '@root/utils/functions';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   appDatasLoadedStore,
@@ -148,7 +148,7 @@ const DocumentSearch = () => {
     if (documents.length) {
       setDatas(
         documents.filter((d) =>
-          strNormalize(d.getTitle()).includes(strNormalize(value))
+          simpleRegExp(value).test(strNormalize(d.getTitle()))
         )
       );
     }

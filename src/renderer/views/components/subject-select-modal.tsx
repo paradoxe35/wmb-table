@@ -10,7 +10,7 @@ import {
   SubjectDocumentItem,
   SubjectRefTree,
 } from '@localtypes/index';
-import { strNormalize } from '@root/utils/functions';
+import { simpleRegExp, strNormalize } from '@root/utils/functions';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
@@ -64,9 +64,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
     (value: string) => {
       if (odatas.length) {
         setDatas(
-          odatas.filter((d) =>
-            strNormalize(d.name).includes(strNormalize(value))
-          )
+          odatas.filter((d) => simpleRegExp(value).test(strNormalize(d.name)))
         );
       }
     },
