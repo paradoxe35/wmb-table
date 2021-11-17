@@ -1,4 +1,4 @@
-import { CHILD_WINDOW_EVENT } from '../shared/shared';
+import { CHILD_WINDOW_EVENT } from '../shared/shared.js';
 
 /**
  * @type { import('@localtypes/index').DocumentViewQuery | null }
