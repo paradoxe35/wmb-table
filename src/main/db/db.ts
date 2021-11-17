@@ -16,7 +16,6 @@ interface Db {
   configurations?: Datastore;
   history?: Datastore;
   historyItem?: Datastore;
-  documents?: Datastore;
   documentsTitle?: Datastore;
   subjects?: Datastore;
   sidebarStatus?: Datastore;
@@ -64,11 +63,6 @@ const dbStore = (name: string) =>
     autoload: false,
     timestampData: true,
   });
-
-db.documents = new Datastore({
-  filename: getAssetDocumentsDbPath(`documents${DB_EXTENSION}`),
-  autoload: false,
-});
 
 db.documentsTitle = new Datastore({
   filename: getAssetDocumentsDbPath(`documents-title${DB_EXTENSION}`),
