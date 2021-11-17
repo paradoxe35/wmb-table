@@ -38,9 +38,9 @@ export function performSearch(query) {
     let terms = strNormalizeNoLower(escapeRegExp(term.trim()))
       .split(' ')
       .filter(Boolean)
-      .join(`[a-z]*([^\s+]*)?`);
+      .join(`[a-zA-Z]*([^\s+]*)?`);
 
-    matches = regexpMatcher(`${terms}[a-z]*`, textContent);
+    matches = regexpMatcher(`${terms}[a-zA-Z]*`, textContent);
 
     textContentLength = textContent.length;
   }
