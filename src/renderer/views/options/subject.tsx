@@ -22,7 +22,7 @@ import {
 import { SubjectDocument, SubjectDocumentItem } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { getDateTime, strNormalize } from '@root/utils/functions';
+import { getDateTime, simpleRegExp, strNormalize } from '@root/utils/functions';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
@@ -107,7 +107,7 @@ export function useSubjectsDatas() {
     if (odatas.current.length) {
       setDatas(
         odatas.current.filter((d) =>
-          strNormalize(d.name).includes(strNormalize(value))
+          simpleRegExp(value).test(strNormalize(d.name))
         )
       );
     }
