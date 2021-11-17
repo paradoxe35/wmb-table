@@ -29,6 +29,7 @@ import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { LoadingOutlined } from '@ant-design/icons';
 import { debounce } from '@root/utils/functions';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
+import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
 
 export default function Bible() {
   const [menu, setMenu] = useState('bible');
@@ -65,11 +66,14 @@ export default function Bible() {
 function AddToSubject({ verse }: { verse: BibleBook }) {
   const handler = useCallback(() => {
     window.dispatchEvent(
-      new CustomEvent<Partial<SubjectRefTree>>('add-document-ref-subject', {
-        detail: {
-          bible: verse,
-        },
-      })
+      new CustomEvent<Partial<SubjectRefTree>>(
+        CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
+        {
+          detail: {
+            bible: verse,
+          },
+        }
+      )
     );
   }, []);
   return (

@@ -49,6 +49,7 @@ import { UploadFile } from 'antd/lib/upload/interface';
 
 import { Spin } from 'antd';
 import { useIpcRequestWithLoader, useModalVisible } from '@renderer/hooks';
+import { CUSTOM_DOCUMENT_EVENT } from '@modules/shared/shared';
 
 const { Dragger } = Upload;
 
@@ -212,9 +213,12 @@ function CustomDocumentItem({
 
       setTitles((ts) => [...titles, ...ts]);
     };
-    window.addEventListener('custom-document-added', addDoc);
+    window.addEventListener(CUSTOM_DOCUMENT_EVENT.customDocumentAdded, addDoc);
     return () => {
-      window.removeEventListener('custom-document-added', addDoc);
+      window.removeEventListener(
+        CUSTOM_DOCUMENT_EVENT.customDocumentAdded,
+        addDoc
+      );
     };
   }, []);
 
@@ -236,9 +240,12 @@ function CustomDocumentItem({
         setCustomDocuments((ds) => ds.filter((d) => d.title != document.title));
         setTitles((ts) => ts.filter((t) => t.title != document.title));
         window.dispatchEvent(
-          new CustomEvent<CustomDocument>('custom-document-removed', {
-            detail: document,
-          })
+          new CustomEvent<CustomDocument>(
+            CUSTOM_DOCUMENT_EVENT.customDocumentRemoved,
+            {
+              detail: document,
+            }
+          )
         );
       }
     );
@@ -368,9 +375,12 @@ function Uploader() {
     sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents_store, paths)
       .then((docs) => {
         window.dispatchEvent(
-          new CustomEvent<CustomDocument[]>('custom-document-added', {
-            detail: docs,
-          })
+          new CustomEvent<CustomDocument[]>(
+            CUSTOM_DOCUMENT_EVENT.customDocumentAdded,
+            {
+              detail: docs,
+            }
+          )
         );
         message.success(`Documents ajoutés avec succès`);
         setFileList([]);

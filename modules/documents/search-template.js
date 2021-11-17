@@ -8,6 +8,10 @@ import {
 
 import { SEARCH_RESULT, SEARCH_QUERY, WINDOW_ZOOM } from './seach-query.js';
 import { performSearch } from './peform-search.js';
+import {
+  CHILD_PARENT_WINDOW_EVENT,
+  CHILD_WINDOW_EVENT,
+} from '../shared/shared.js';
 
 /**
  * @param {Element | null} el
@@ -86,11 +90,11 @@ const searchOpenPopup = () => {
   showZoomDetail();
 };
 
-window.addEventListener('search-open-popup', () => {
+window.addEventListener(CHILD_WINDOW_EVENT.searchOpenPopup, () => {
   searchOpenPopup();
 });
 
-window.addEventListener('search-open', () => {
+window.addEventListener(CHILD_WINDOW_EVENT.searchOpen, () => {
   searchOpenPopup();
   openSearchModal();
 });
@@ -100,7 +104,9 @@ document.addEventListener('keydown', (e) => {
     const searchContainer = document.querySelector('.search--template');
     if (searchContainer && searchContainer.classList.contains('active')) {
       searchContainer.classList.remove('active');
-      window.parent.dispatchEvent(new Event('close-document-query'));
+      window.parent.dispatchEvent(
+        new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
+      );
     }
   }
 });
@@ -119,7 +125,7 @@ export function handleSearch() {
     }`;
   };
 
-  window.addEventListener('search-result', (_e) => {
+  window.addEventListener(CHILD_WINDOW_EVENT.searchResult, (_e) => {
     if (!SEARCH_RESULT || SEARCH_RESULT.matches.length < 1) {
       indexSearch = 0;
     } else {
@@ -144,7 +150,7 @@ export function handleSearch() {
     }
   });
 
-  window.addEventListener('result-constructed', () => {
+  window.addEventListener(CHILD_WINDOW_EVENT.resultConstructed, () => {
     navigateOnResult(indexSearch);
   });
 
@@ -204,7 +210,9 @@ export default function initTemplate() {
     searchClose.addEventListener('click', () => {
       if (searchContainer && searchContainer.classList.contains('active')) {
         searchContainer.classList.remove('active');
-        window.parent.dispatchEvent(new Event('close-document-query'));
+        window.parent.dispatchEvent(
+          new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
+        );
       }
     });
 
@@ -228,6 +236,6 @@ export function openSearchModal() {
     text = selection;
   }
   window.parent.dispatchEvent(
-    new CustomEvent('open-search-modal', { detail: text })
+    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openSearchModal, { detail: text })
   );
 }

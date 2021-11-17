@@ -9,8 +9,14 @@ import {
   setWindowPostion,
   WINDOW_POSITION,
   setWindowZoom,
+  setDocumentTitleData,
 } from './documents/seach-query.js';
 import searchTemplate from './documents/search-template.js';
+import {
+  CHILD_PARENT_WINDOW_EVENT,
+  CHILD_WINDOW_EVENT,
+  POST_MESSAGE_EVENT,
+} from './shared/shared.js';
 
 const container = pageContainer();
 
@@ -19,18 +25,21 @@ window.addEventListener(
   'message',
   (e) => {
     switch (e.data.type) {
-      case 'document-query':
+      case POST_MESSAGE_EVENT.documentQuery:
         setSearchQuery(e.data.detail);
         searchTemplate();
         break;
-      case 'subject-item':
+      case POST_MESSAGE_EVENT.subjectItem:
         scrollToViewTree(e.data.detail);
         break;
-      case 'window-position':
+      case POST_MESSAGE_EVENT.windowPosition:
         setWindowPostion(e.data.detail);
         break;
-      case 'document-zoom':
+      case POST_MESSAGE_EVENT.documentZoom:
         setWindowZoom(e.data.detail);
+        break;
+      case POST_MESSAGE_EVENT.documentTitleData:
+        setDocumentTitleData(e.data.detail);
         break;
     }
   },
@@ -38,7 +47,9 @@ window.addEventListener(
 );
 // call this when event post message has initialized
 window.setTimeout(() => {
-  window.parent.dispatchEvent(new Event('document-view-loaded'));
+  window.parent.dispatchEvent(
+    new Event(CHILD_PARENT_WINDOW_EVENT.documentViewLoaded)
+  );
 }, 100);
 
 // center page to center
@@ -74,7 +85,7 @@ container.addEventListener('click', (event) => {
   hasLink && event.preventDefault();
 });
 
-window.addEventListener('result-constructed', () => {
+window.addEventListener(CHILD_WINDOW_EVENT.resultConstructed, () => {
   if (!SEARCH_RESULT || SEARCH_RESULT.matches.length <= 0) {
     defaultPosition();
   }

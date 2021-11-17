@@ -1,3 +1,7 @@
+import {
+  CHILD_PARENT_WINDOW_EVENT,
+  CHILD_WINDOW_EVENT,
+} from '../shared/shared.js';
 import { ContextMenu } from '../context-menu/context.js';
 import {
   closestChildParent,
@@ -16,11 +20,11 @@ function copyTextSelection() {
 }
 
 function searchOpen() {
-  window.dispatchEvent(new Event('search-open'));
+  window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.searchOpen));
 }
 
 function searchOpenPopup() {
-  window.dispatchEvent(new Event('search-open-popup'));
+  window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.searchOpenPopup));
 }
 
 /**
@@ -66,7 +70,7 @@ const handleZoomIn = () => {
   setWindowZoom(zoom);
   searchOpenPopup();
   window.parent.dispatchEvent(
-    new CustomEvent('document-current-zoom', {
+    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.documentCurrentZoom, {
       detail: { zoom },
     })
   );
@@ -78,7 +82,7 @@ const handleZoomOut = () => {
   setWindowZoom(zoom);
   searchOpenPopup();
   window.parent.dispatchEvent(
-    new CustomEvent('document-current-zoom', {
+    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.documentCurrentZoom, {
       detail: { zoom },
     })
   );
@@ -110,7 +114,8 @@ export default () => {
     null,
     {
       text: 'Ajouter à un sujet',
-      onclick: () => addDocumentNodeToItem('add-document-ref-subject'),
+      onclick: () =>
+        addDocumentNodeToItem(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject),
     },
     {
       text: 'Ajouter comme référence note',

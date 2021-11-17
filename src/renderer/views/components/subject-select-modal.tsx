@@ -1,7 +1,10 @@
 import { Divider, Input, Modal, Space } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
-import { subjectDocumentStore, subjectDocumentItemStore } from '@renderer/store';
+import {
+  subjectDocumentStore,
+  subjectDocumentItemStore,
+} from '@renderer/store';
 import {
   SubjectDocument,
   SubjectDocumentItem,
@@ -12,6 +15,10 @@ import { useModalVisible, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
+import {
+  CHILD_PARENT_WINDOW_EVENT,
+  SUBJECT_EVENT,
+} from '@modules/shared/shared';
 
 export function SubjectSelectModal({ title }: { title: string }) {
   const titleRef = useValueStateRef(title);
@@ -47,7 +54,7 @@ export function SubjectSelectModal({ title }: { title: string }) {
     ).then((item) => {
       setSubjectItems(item);
       window.dispatchEvent(
-        new CustomEvent('focus-subject', { detail: { name } })
+        new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } })
       );
     });
     setIsModalVisible(false);
@@ -76,9 +83,15 @@ export function SubjectSelectModal({ title }: { title: string }) {
       setIsModalVisible(true);
     };
 
-    window.addEventListener('add-document-ref-subject', showModal);
+    window.addEventListener(
+      CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
+      showModal
+    );
     return () => {
-      window.removeEventListener('add-document-ref-subject', showModal);
+      window.removeEventListener(
+        CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
+        showModal
+      );
     };
   }, []);
   return (
