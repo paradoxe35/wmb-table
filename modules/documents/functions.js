@@ -1,4 +1,4 @@
-import { DOCUMENT_CONTAINER_ID } from '../shared/shared';
+import { DOCUMENT_CONTAINER_ID } from '../shared/shared.js';
 
 /**
  * @param { HTMLElement | Element } element
