@@ -11,6 +11,7 @@ export default function showAboutDialog(mainWindow: BrowserWindow) {
         Language: Français
         Version: ${autoUpdater.currentVersion.version}
         Website: ${process.env.WEBSITE_LINK}
+        Source des documents: https://branham.fr/sermons
         ----- ------ -----
         Auteur: Paradoxe Ngwasi
         Email: paradoxngwasi@gmail.com
