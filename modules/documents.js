@@ -1,4 +1,5 @@
 //@ts-check
+import './documents/html.js';
 import './context-menu/kali_dark.css.js';
 import contextMenuHandler from './documents/context-menu.js';
 import { scrollToViewTree } from './documents/document-tree.js';

@@ -42,3 +42,4 @@ export const CHILD_PARENT_WINDOW_EVENT = {
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';
+export const DOCUMENT_CONTENT_ID = 'content';

@@ -19,6 +19,8 @@ function copyTextSelection() {
   }
 }
 
+const container = pageContainer();
+
 function searchOpen() {
   window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.searchOpen));
 }
@@ -47,8 +49,6 @@ function addDocumentNodeToItem(event) {
   );
   // @ts-ignore
   const textContent = lastNodeTargetFromContent.textContent;
-
-  const container = pageContainer();
 
   window.parent.dispatchEvent(
     new CustomEvent(event, {
@@ -89,7 +89,7 @@ const handleZoomOut = () => {
 };
 
 export default () => {
-  const chromeContextMenu = new ContextMenu(document.body, [
+  const chromeContextMenu = new ContextMenu(container, [
     {
       text: 'Agrandir',
       hotkey: 'Ctrl+Shift+',

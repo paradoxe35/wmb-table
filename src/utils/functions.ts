@@ -94,8 +94,9 @@ export function regexpMatcher(pattern: string | RegExp, headstack: string) {
   );
   const matches = [...headstack.matchAll(regexp)];
 
-  return matches.map((match) => ({
+  return matches.map((match, i) => ({
     term: match[0],
+    index: i + 1,
     start: match.index,
     end: match.index ? match.index + match[0].length : undefined,
   }));

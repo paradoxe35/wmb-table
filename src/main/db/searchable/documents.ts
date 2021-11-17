@@ -5,6 +5,10 @@ import { getFilename, performSearch } from '@root/utils/functions';
 import fs from 'fs';
 import { promisify } from 'util';
 import { parse } from 'node-html-parser';
+import {
+  DOCUMENT_CONTAINER_ID,
+  DOCUMENT_CONTENT_ID,
+} from '@modules/shared/shared';
 
 const docsPath = getAssetDocumentsPath();
 const files = fs.existsSync(docsPath) ? fs.readdirSync(docsPath) : [];
@@ -35,7 +39,9 @@ export const searchHandler = (term: string) => {
       let bodyTextContent: string;
       if (!DOC_MEMO[file]) {
         const root = parse(documentBuffer);
-        const body = root.querySelector('body');
+        const body =
+          root.querySelector(`.${DOCUMENT_CONTENT_ID}`) ||
+          root.querySelector(`#${DOCUMENT_CONTAINER_ID}`);
 
         bodyTextContent = body?.textContent || '';
         DOC_MEMO[file] = { textContent: bodyTextContent };

@@ -35,6 +35,7 @@ export interface DataDocument extends Readonly<TimeStampData> {
 export type DocumentViewQuery = {
   term: string;
   documentTitle: string;
+  textContentLength: number;
   matches: SearchMatchersValue[];
 };
 
@@ -87,6 +88,7 @@ declare global {
 
 export type SearchMatchersValue = {
   term: string;
+  index?: number;
   start: number | undefined;
   end: number | undefined;
 };
