@@ -64,7 +64,7 @@ export const zoomOutTemplate = /* html */ `
 </svg>
 `;
 
-export const searchTemplateCss = `
+export const searchTemplateCss = /* css */ `
 .search--template {
   height: 33px;
   position: absolute;
