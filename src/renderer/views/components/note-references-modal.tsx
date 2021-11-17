@@ -11,6 +11,7 @@ import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { useRecoilValue } from 'recoil';
 import { titlesDocumentSelector, workingNoteAppStore } from '@renderer/store';
+import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
 
 export function NoteReferencesModal({ title }: { title: string }) {
   const titleRef = useValueStateRef(title);
@@ -72,9 +73,15 @@ export function NoteReferencesModal({ title }: { title: string }) {
       setIsModalVisible(true);
     };
 
-    window.addEventListener('add-document-ref-note', showModal);
+    window.addEventListener(
+      CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote,
+      showModal
+    );
     return () => {
-      window.removeEventListener('add-document-ref-note', showModal);
+      window.removeEventListener(
+        CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote,
+        showModal
+      );
     };
   }, []);
 
