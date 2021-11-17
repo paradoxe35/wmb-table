@@ -38,6 +38,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
   openSearchModal: 'open-search-modal',
   documentViewLoaded: 'document-view-loaded',
   addDocumentRefSubject: 'add-document-ref-subject',
+  addDocumentRefNote: 'add-document-ref-note',
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';

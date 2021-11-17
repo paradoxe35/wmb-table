@@ -119,7 +119,8 @@ export default () => {
     },
     {
       text: 'Ajouter comme référence note',
-      onclick: () => addDocumentNodeToItem('add-document-ref-note'),
+      onclick: () =>
+        addDocumentNodeToItem(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote),
     },
   ]);
 
