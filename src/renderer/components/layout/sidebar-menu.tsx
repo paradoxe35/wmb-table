@@ -22,7 +22,13 @@ type Options = {
   icon: JSX.Element;
 };
 
-export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
+export default function SidebarMenu({
+  collapsed,
+  onCollapse,
+}: {
+  collapsed: boolean;
+  onCollapse?: (collapsed: boolean) => void;
+}) {
   const optionViewer = useRecoilValue(optionViewStore);
   const optionViewerRef = useValueStateRef(optionViewer);
   const setOption = useOptionsMenu();
@@ -71,11 +77,11 @@ export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
 
   return (
     <Sider
-      trigger={null}
       className="layout__sidebar"
       theme="light"
       collapsible
       collapsed={collapsed}
+      onCollapse={onCollapse}
     >
       <Menu mode="inline" selectedKeys={[optionViewer]}>
         {options.map((op, i) => {
