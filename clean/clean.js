@@ -7,11 +7,14 @@ const chalk = require('chalk');
 /**
  * @param {string} directory
  * @param {string[]} excepts
+ * @param {boolean} removeDir
+ * @param {string[]} extensions
  */
 function cleanAllFileDir(
   directory,
   excepts = ['.gitignore'],
-  removeDir = false
+  removeDir = false,
+  extensions = []
 ) {
   if (!excepts.includes('.gitignore')) {
     excepts.push('.gitignore');
@@ -25,7 +28,12 @@ function cleanAllFileDir(
       }
       const files = fs.readdirSync(directory);
       for (const file of files) {
-        if (!excepts.includes(file)) {
+        if (
+          !excepts.includes(file) &&
+          (extensions.length === 0 ||
+            // @ts-ignore
+            extensions.includes('.' + file.split('.').pop()))
+        ) {
           fs.unlinkSync(path.join(directory, file));
         }
       }
@@ -38,13 +46,14 @@ function cleanAllFileDir(
 //copy and overwrite original document db
 const odatasDir = path.resolve(__dirname, '../datas/');
 const datasDir = path.resolve(__dirname, '../assets/datas/');
+const docHtml = path.resolve(datasDir, 'documents/');
+
 if (fs.existsSync(odatasDir) && fs.existsSync(datasDir)) {
   fs.copySync(odatasDir, datasDir, { overwrite: true });
 }
 
 async function removeHtmlFiles() {
   const docTitles = path.resolve(odatasDir, 'documents-db/documents-title.db');
-  const docHtml = path.resolve(datasDir, 'documents/');
 
   if (!fs.existsSync(docTitles) || !fs.existsSync(docHtml)) {
     return;
@@ -131,4 +140,6 @@ cleanAllFileDir(path.resolve(datasDir, 'backup/'), ['pending']);
 if (process.argv.includes('--force')) {
   console.log('remove document html: --force');
   removeHtmlFiles();
+  // js file document html file
+  cleanAllFileDir(docHtml, [], false, ['.js']);
 }
