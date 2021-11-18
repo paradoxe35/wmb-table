@@ -79,11 +79,15 @@ function ContentModal({
           return (
             <List.Item
               actions={[
-                <DocumentViewer name={traduction.title}>
+                <DocumentViewer
+                  key={traduction.title + 'documentViewer'}
+                  name={traduction.title}
+                >
                   <Tooltip
                     title={'Ouvrir le document'}
                     children={[
                       <Button
+                        key={traduction.title + 'button'}
                         onClick={handleCancel}
                         shape="circle"
                         icon={<EyeOutlined />}
