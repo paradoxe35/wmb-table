@@ -1,11 +1,3 @@
-import {
-  searchTemplateHtml,
-  searchTemplateCss,
-  injectStyleText,
-  zoomInTemplate,
-  zoomOutTemplate,
-} from './html.js';
-
 import { SEARCH_RESULT, SEARCH_QUERY, WINDOW_ZOOM } from './seach-query.js';
 import { performSearch } from './peform-search.js';
 import {
@@ -13,6 +5,7 @@ import {
   CHILD_WINDOW_EVENT,
 } from '../shared/shared.js';
 import { pageContainer } from './functions.js';
+import { handleZoomIn, handleZoomOut } from './context-menu.js';
 
 /**
  * @param {Element | null} el
@@ -30,7 +23,7 @@ function removeClass(el, className) {
   el && el.classList.contains(className) && el.classList.remove(className);
 }
 
-let hasOpened = false;
+const container = pageContainer();
 
 /**
  * @type {null | number}
@@ -68,49 +61,6 @@ function navigateOnResult(index) {
     lastIndex = index;
   }
 }
-
-const showZoomDetail = () => {
-  const el = document.querySelector('.search--zoom--js');
-  const iconEl = el?.querySelector('.icon-data');
-  const detailEl = el?.querySelector('.zoom-data');
-  if (WINDOW_ZOOM >= 100) {
-    iconEl && (iconEl.innerHTML = zoomInTemplate);
-  } else {
-    iconEl && (iconEl.innerHTML = zoomOutTemplate);
-  }
-  detailEl && (detailEl.textContent = WINDOW_ZOOM.toString());
-};
-
-const searchOpenPopup = () => {
-  if (hasOpened) {
-    const searchContainer = document.querySelector('.search--template');
-    addClass(searchContainer, 'active');
-  } else {
-    initTemplate();
-  }
-  showZoomDetail();
-};
-
-window.addEventListener(CHILD_WINDOW_EVENT.searchOpenPopup, () => {
-  searchOpenPopup();
-});
-
-window.addEventListener(CHILD_WINDOW_EVENT.searchOpen, () => {
-  searchOpenPopup();
-  openSearchModal();
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    const searchContainer = document.querySelector('.search--template');
-    if (searchContainer && searchContainer.classList.contains('active')) {
-      searchContainer.classList.remove('active');
-      window.parent.dispatchEvent(
-        new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
-      );
-    }
-  }
-});
 
 export function handleSearch() {
   const searchPrev = document.querySelector('.search--prev--js');
@@ -194,18 +144,8 @@ export function handleSearch() {
     });
 }
 
-export default function initTemplate() {
-  const container = pageContainer();
-  hasOpened = true;
-
-  injectStyleText(searchTemplateCss);
-
-  document.body.appendChild(
-    document.createRange().createContextualFragment(searchTemplateHtml)
-  );
-
-  const searchContainer = document.querySelector('.search--template');
-  const searchOpen = document.querySelector('.search--open--js');
+export default function initSearchableTemplate() {
+  const searchField = Array.from(document.querySelectorAll('.search--field'));
   const searchClose = document.querySelector('.search--close--js');
 
   searchClose &&
@@ -217,23 +157,47 @@ export default function initTemplate() {
         );
         el.parentNode?.removeChild(el);
       });
-
-      if (searchContainer && searchContainer.classList.contains('active')) {
-        searchContainer.classList.remove('active');
-        window.parent.dispatchEvent(
-          new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
-        );
-      }
+      searchField.forEach((el) => el.classList.add('display-none'));
+      window.parent.dispatchEvent(
+        new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
+      );
     });
+
+  // show seach fields
+  searchField.forEach((el) => el.classList.remove('display-none'));
 
   handleSearch();
 
   performSearch(SEARCH_QUERY ? SEARCH_QUERY : undefined);
-
-  searchOpen && searchOpen.addEventListener('click', () => openSearchModal());
-
-  showZoomDetail();
 }
+
+// update zoom status
+const zoomValueEl = document.querySelector('.search--zoom-data--js');
+const uzoom = (/** @type {number} */ value) => {
+  zoomValueEl && (zoomValueEl.textContent = value.toString());
+};
+WINDOW_ZOOM.registerNewListener(uzoom);
+
+// zoom controllers
+// zoom in
+document
+  .querySelector('.search--zoom-in--js')
+  ?.addEventListener('click', handleZoomIn);
+
+// zoom out
+document
+  .querySelector('.search--zoom-out--js')
+  ?.addEventListener('click', handleZoomOut);
+
+// open search modal
+document
+  ?.querySelector('.search--open--js')
+  ?.addEventListener('click', () => openSearchModal());
+
+// open search from event listener
+window.addEventListener(CHILD_WINDOW_EVENT.searchOpen, () => {
+  openSearchModal();
+});
 
 export function openSearchModal() {
   let text = null;

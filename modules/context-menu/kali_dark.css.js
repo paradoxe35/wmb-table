@@ -1,9 +1,10 @@
-const style = `
+const style = /* css */ `
 .context {
   display: inline-block;
   position: fixed;
   top: 0px;
   left: 0px;
+  z-index: 100;
   min-width: 200px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #fff;
