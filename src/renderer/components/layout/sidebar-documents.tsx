@@ -9,6 +9,7 @@ import { simpleRegExp, strNormalize } from '@root/utils/functions';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   appDatasLoadedStore,
+  currentDocumentTabsSelector,
   customDocumentsStore,
   documentTitlesStore,
   sidebarStatusHiddenStore,
@@ -126,6 +127,7 @@ const DocumentByYears = () => {
 
 const DocumentSearch = () => {
   const [datas, setDatas] = useState<DocumentTitle[]>([]);
+  const title = useRecoilValue(currentDocumentTabsSelector);
 
   const documents = useRecoilValue(documentTitlesStore);
   const setDocuments = useSetRecoilState(titlesStore);
@@ -172,7 +174,8 @@ const DocumentSearch = () => {
           .map((d, i) => (
             <ItemOutline
               key={d.getId() || i}
-              id={d.getTitle()}
+              id={d.getId()}
+              active={title === d.getTitle()}
               name={d.getTitle()}
               title={d.getTitle()}
             />
@@ -182,14 +185,18 @@ const DocumentSearch = () => {
   );
 };
 
-const ItemOutline: React.FC<{ name: string; id: string; title: string }> = ({
-  name,
-  id,
-  title,
-}) => {
+const ItemOutline: React.FC<{
+  name: string;
+  id: string;
+  title: string;
+  active?: boolean;
+}> = ({ name, id, title, active }) => {
   return (
     <DocumentViewer name={name} id={id}>
-      <span className="smart-editable" title={title}>
+      <span
+        className={`smart-editable ${active ? 'active' : ''}`}
+        title={title}
+      >
         <u>
           <span></span>
         </u>
