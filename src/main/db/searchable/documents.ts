@@ -11,12 +11,24 @@ import {
 } from '@modules/shared/shared';
 
 const docsPath = getAssetDocumentsPath();
-const files = fs.existsSync(docsPath) ? fs.readdirSync(docsPath) : [];
+const getFiles = () =>
+  fs.existsSync(docsPath) ? fs.readdirSync(docsPath) : [];
+
+let files = getFiles();
 const readFile = promisify(fs.readFile);
+
+export const fileListHasChanged = {
+  value: false,
+};
 
 const DOC_MEMO: { [file: string]: { textContent: string } } = {};
 
 export const searchHandler = (term: string) => {
+  if (fileListHasChanged.value) {
+    files = getFiles();
+  }
+  fileListHasChanged.value = false;
+
   return new Promise<SearchItem[]>((resolve, reject) => {
     const documents_files = [...files];
     const results: SearchItem[] = [];
