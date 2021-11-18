@@ -122,12 +122,12 @@ function ContentModal({
       <List
         itemLayout="horizontal"
         dataSource={datas}
-        renderItem={(item) => {
+        renderItem={(item, i) => {
           const assigned = (item.documentHtmlTree?.tree || []).length > 0;
           return (
             <List.Item
               actions={[
-                <Tooltip title="Ajouter à cette référence">
+                <Tooltip key={item._id || i} title="Ajouter à cette référence">
                   <Button
                     onClick={() => onSelectItem(item)}
                     shape="circle"
