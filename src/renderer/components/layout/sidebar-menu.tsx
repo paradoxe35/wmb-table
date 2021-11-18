@@ -64,7 +64,7 @@ export default function SidebarMenu({ collapsed }: { collapsed: boolean }) {
     const switch_on_options = () => {
       let index = nOptions.findIndex((v) => optionViewerRef.current == v?.key);
       index = index >= 0 && nOptions[index + 1] ? index + 1 : 0;
-      setOption(nOptions[index]?.key as string);
+      setOption(nOptions[index]?.key!);
     };
     ipcRenderer.on(IPC_EVENTS.switch_on_options, switch_on_options);
   }, []);

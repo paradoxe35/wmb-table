@@ -21,7 +21,7 @@ export class PrepareRestore {
       const newFiles = files.slice();
 
       const proceed = async () => {
-        const filename = getFilename(newFiles.shift() as string);
+        const filename = getFilename(newFiles.shift()!);
         if (
           EXCLUDE_DB_FILES_REGEX.test(filename) ||
           !filename.endsWith(DB_EXTENSION)
@@ -79,7 +79,7 @@ export class PrepareRestore {
 
   static async pendingDocumentsTitle(docs: CustomDocument[]) {
     const documentsTitleDb = this.pendingDatastore(
-      getDatastoreFileName(db.documentsTitle) as string
+      getDatastoreFileName(db.documentsTitle)!
     );
 
     for (const doc of docs) {

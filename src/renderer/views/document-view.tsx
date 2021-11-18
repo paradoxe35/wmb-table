@@ -56,7 +56,7 @@ const usePostMessage = () => {
       path: string
     ) => {
       await waitForDocumentViewStarted();
-      iframeEl.contentWindow?.postMessage({ type, detail }, path as string);
+      iframeEl.contentWindow?.postMessage({ type, detail }, path);
     },
     []
   );

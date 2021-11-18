@@ -80,12 +80,12 @@ export class PendingDatasUnloadDb {
   ) {
     if (
       !DATA_RESTORED.value ||
-      EXCLUDE_DB_FILES_REGEX.test(database.filename as string) ||
+      EXCLUDE_DB_FILES_REGEX.test(database.filename!) ||
       !data
     )
       return;
 
-    const filename = getDatastoreFileName(database) as string;
+    const filename = getDatastoreFileName(database)!;
 
     if (!this.datas[filename]) {
       this.datas[filename] = {};
@@ -98,9 +98,7 @@ export class PendingDatasUnloadDb {
 
   static hasBeenSyncedDb(database: Datastore): boolean {
     const filename = getDatastoreFileName(database);
-    return (
-      loadedDb.syncedRefsDb.includes(filename as string) && DATA_RESTORED.value
-    );
+    return loadedDb.syncedRefsDb.includes(filename!) && DATA_RESTORED.value;
   }
 }
 
@@ -110,14 +108,14 @@ export const loadedDb = {
   dbFilenames: {} as { [x: string]: string },
   syncedRefsDb: [] as string[],
   loadDb(database: Datastore<any> & { filename?: string }) {
-    const filename = getFilename(database.filename as string);
+    const filename = getFilename(database.filename!);
     if (
-      EXCLUDE_DB_FILES_REGEX.test(database.filename as string) ||
+      EXCLUDE_DB_FILES_REGEX.test(database.filename!) ||
       this.dbs.includes(filename)
     )
       return;
     this.dbs.push(filename);
-    this.dbFilenames[filename] = database.filename as string;
+    this.dbFilenames[filename] = database.filename!;
     eventEmiter.emit(LOADED_DB_EVENT_NAME, filename);
   },
 };
@@ -187,14 +185,14 @@ const groupChangedLinesByAction = (range: string[], filename: string) => {
   type DbColumn = { [n: string]: any; _id: string };
 
   if (pendingDatas) {
-    const rangeIds = range
+    const rangeIds: string[] = range
       .map((dataStr) => {
         try {
           return JSON.parse(dataStr)._id;
         } catch (_) {}
         return null;
       })
-      .filter(Boolean) as string[];
+      .filter(Boolean);
 
     for (const _id in pendingDatas) {
       if (_id && !rangeIds.includes(_id)) {
