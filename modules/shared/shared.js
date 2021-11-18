@@ -40,6 +40,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
   addDocumentRefSubject: 'add-document-ref-subject',
   addDocumentRefNote: 'add-document-ref-note',
   openDocumentExternalLink: 'open-document-external-link',
+  openOtherTraductionsModal: 'open-other-traductions-modal',
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';
