@@ -41,6 +41,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
   addDocumentRefNote: 'add-document-ref-note',
   openDocumentExternalLink: 'open-document-external-link',
   openOtherTraductionsModal: 'open-other-traductions-modal',
+  downloadDocumentPdf: 'download-document-pdf',
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';
