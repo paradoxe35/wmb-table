@@ -311,3 +311,14 @@ export type UpdaterNotification = {
     status?: Partial<UpdaterInfoStatus>;
     message?: string;
 }
+
+export type ProxyObjectFunctionValue<T> = {
+  $value: T;
+  get value(): T;
+  set value(value: T);
+  valueListener(_val: T): void;
+  registerNewListener(fn: (_val: T) => void): void;
+}
+
+
+export type ProxyObjectFunction = <T>(value: T) => ProxyObjectFunctionValue<T>
