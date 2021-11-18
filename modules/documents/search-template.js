@@ -253,17 +253,56 @@ function handleOtherTraductions() {
  * @param {import("@localtypes/index").Title<string | null, string> | null} data
  */
 function documentTitleDataHandler(data) {
-  if (!data) return;
+  if (!data || !DOCUMENT_TITLE_DATAS.value) return;
+
+  // -------------- section external -----
+  const seperatorExternal = document.querySelector(
+    '.document-external-field-separator'
+  );
+
+  if (
+    DOCUMENT_TITLE_DATAS.value.web_link ||
+    DOCUMENT_TITLE_DATAS.value.pdf_link
+  ) {
+    seperatorExternal?.classList.remove('display-none');
+  }
 
   // handle document external links when clicked
-  document
-    .querySelector('.search--web-link--js')
-    ?.addEventListener('click', handleDocumentExternalWebLink);
+  if (DOCUMENT_TITLE_DATAS.value.web_link) {
+    const web_link = document.querySelector('.search--web-link--js');
+    web_link?.classList.remove('display-none');
+    web_link?.addEventListener('click', handleDocumentExternalWebLink);
+  }
 
+  if (DOCUMENT_TITLE_DATAS.value.pdf_link) {
+    const pdf_link = document.querySelector('.search--pdf-download--js');
+    pdf_link?.classList.remove('display-none');
+  }
+
+  // -------------- section external -----
+
+  // -------------- section audio and traductions handler -----
+  const seperatorDrive = document.querySelector(
+    '.document-drive-field-separator'
+  );
+  if (
+    DOCUMENT_TITLE_DATAS.value.other_traductions.length > 0 ||
+    DOCUMENT_TITLE_DATAS.value.audio_link
+  ) {
+    seperatorDrive?.classList.remove('display-none');
+  }
   // handle other traductions
-  document
-    .querySelector('.search--other-traduction--js')
-    ?.addEventListener('click', handleOtherTraductions);
+  if (DOCUMENT_TITLE_DATAS.value.other_traductions.length > 0) {
+    const transEl = document.querySelector('.search--other-traduction--js');
+    transEl?.classList.remove('display-none');
+    transEl?.addEventListener('click', handleOtherTraductions);
+  }
+  // handle audio document
+  if (DOCUMENT_TITLE_DATAS.value.audio_link) {
+    const audioEl = document.querySelector('.search--audio-document--js');
+    audioEl?.classList.remove('display-none');
+  }
+  // -------------- section audio and traductions handler -----
 }
 
 DOCUMENT_TITLE_DATAS.registerNewListener(documentTitleDataHandler);
