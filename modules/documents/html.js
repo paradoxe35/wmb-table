@@ -161,8 +161,9 @@ const controllerBarCss = /* css */ `
     max-width: 759px;
     height: 100%;
     box-shadow: 0 7px 14px rgba(50, 50, 93, .01), 0 3px 6px rgba(0, 0, 0, 0.041);
-    background-color: #e4e3e3;
+    background-color: #ebe9e9;
     border-radius: 2px;
+    border: 1px solid #b6b6b6;
     line-height: 19px;
     transition: all .2s linear;
     padding-top: 5px;

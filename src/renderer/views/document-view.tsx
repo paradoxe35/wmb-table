@@ -332,11 +332,13 @@ export default function DocumentView() {
       }
 
       const load = {
-        count: 0,
+        count: !hasOwnPosition ? 1 : 0,
       };
 
       // update document scroll state
       const onScroll = (): number | void => {
+        console.log('resoad', hasOwnPosition);
+
         if (load.count === 0) {
           return (load.count = 1);
         }
