@@ -1,4 +1,9 @@
-import { SEARCH_RESULT, SEARCH_QUERY, WINDOW_ZOOM } from './seach-query.js';
+import {
+  SEARCH_RESULT,
+  SEARCH_QUERY,
+  WINDOW_ZOOM,
+  DOCUMENT_TITLE_DATAS,
+} from './seach-query.js';
 import { performSearch } from './peform-search.js';
 import {
   CHILD_PARENT_WINDOW_EVENT,
@@ -171,35 +176,31 @@ export default function initSearchableTemplate() {
   performSearch(SEARCH_QUERY ? SEARCH_QUERY : undefined);
 }
 
-// update zoom status
-const zoomValueEl = document.querySelector('.search--zoom-data--js');
-const uzoom = (/** @type {number} */ value) => {
-  zoomValueEl && (zoomValueEl.textContent = value.toString());
-};
-WINDOW_ZOOM.registerNewListener(uzoom);
+/**
+ * Zoom handler
+ */
+function zoomHandler() {
+  // update zoom status
+  const zoomValueEl = document.querySelector('.search--zoom-data--js');
+  const uzoom = (/** @type {number} */ value) => {
+    zoomValueEl && (zoomValueEl.textContent = value.toString());
+  };
+  WINDOW_ZOOM.registerNewListener(uzoom);
 
-// zoom controllers
-// zoom in
-document
-  .querySelector('.search--zoom-in--js')
-  ?.addEventListener('click', handleZoomIn);
+  // zoom controllers
+  // zoom in
+  document
+    .querySelector('.search--zoom-in--js')
+    ?.addEventListener('click', handleZoomIn);
 
-// zoom out
-document
-  .querySelector('.search--zoom-out--js')
-  ?.addEventListener('click', handleZoomOut);
+  // zoom out
+  document
+    .querySelector('.search--zoom-out--js')
+    ?.addEventListener('click', handleZoomOut);
+}
+zoomHandler();
 
-// open search modal
-document
-  ?.querySelector('.search--open--js')
-  ?.addEventListener('click', () => openSearchModal());
-
-// open search from event listener
-window.addEventListener(CHILD_WINDOW_EVENT.searchOpen, () => {
-  openSearchModal();
-});
-
-export function openSearchModal() {
+function openSearchModal() {
   let text = null;
 
   const selection = window.getSelection()
@@ -213,3 +214,40 @@ export function openSearchModal() {
     new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openSearchModal, { detail: text })
   );
 }
+
+/**
+ * search modal handler
+ */
+function searchModalHandler() {
+  // open search modal
+  document
+    ?.querySelector('.search--open--js')
+    ?.addEventListener('click', openSearchModal);
+
+  // open search from event listener
+  window.addEventListener(CHILD_WINDOW_EVENT.searchOpen, openSearchModal);
+}
+searchModalHandler();
+
+function handleDocumentExternalWebLink() {
+  window.parent.dispatchEvent(
+    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openDocumentExternalLink, {
+      detail: DOCUMENT_TITLE_DATAS.value?.web_link,
+    })
+  );
+}
+
+/**
+ * @param {import("@localtypes/index").Title<string | null, string> | null} data
+ */
+function documentTitleDataHandler(data) {
+  if (!data) return;
+
+  document
+    .querySelector('.search--web-link--js')
+    ?.addEventListener('click', handleDocumentExternalWebLink);
+
+  console.log(data);
+}
+
+DOCUMENT_TITLE_DATAS.registerNewListener(documentTitleDataHandler);
