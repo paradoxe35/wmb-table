@@ -375,7 +375,7 @@ function ShowActiveDocuments({
         </>
       ) : (
         <Empty
-          description={`Aucun document touvé dans le suject: ${subject.name}`}
+          description={`Aucune référence touvée dans le suject: ${subject.name}`}
         />
       )}
     </>
