@@ -60,6 +60,7 @@ export function ModalSearchDocument({
         {
           documentTitle: titleRef.current,
           matches: [],
+          textContentLength: 0,
           term: searchValue.current.trim(),
         },
       ];
