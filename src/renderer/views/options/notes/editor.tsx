@@ -304,14 +304,14 @@ export default function EditorContent({
         target.tagName === 'A' &&
         target.getAttribute('href')?.startsWith(referenceDocumentBrandLink)
       ) {
-        const str = target.getAttribute('href') as string;
+        const str = target.getAttribute('href')!;
         const substr = referenceDocumentBrandLink;
         handleEditorLinksClick(substrAfter(str, substr));
       } else if (
         target.tagName === 'A' &&
         target.getAttribute('href')?.startsWith(referenceBibleBrandLink)
       ) {
-        const str = target.getAttribute('href') as string;
+        const str = target.getAttribute('href')!;
         const substr = referenceBibleBrandLink;
         handleEditorLinksBibleClick(substrAfter(str, substr));
       }
@@ -375,7 +375,7 @@ export default function EditorContent({
     return Array.from(fragment.querySelectorAll('a[href]'))
       .filter((link) => link.getAttribute('href')?.startsWith(type))
       .map((link) => {
-        const str = link.getAttribute('href') as string;
+        const str = link.getAttribute('href')!;
         const substr = type;
         return substrAfter(str, substr);
       });

@@ -31,7 +31,7 @@ export class BackupHandler extends DriveHandler {
       const newFiles = files.slice();
 
       const proceed = async () => {
-        const filename = getFilename(newFiles.shift() as string);
+        const filename = getFilename(newFiles.shift()!);
 
         const fileDb = camelCase(filename.split(DB_EXTENSION)[0]);
         const datastore = db[fileDb];
@@ -100,7 +100,7 @@ export class BackupHandler extends DriveHandler {
       pageSize: 1,
     });
     if (!data.files || data.files.length === 0) return undefined;
-    const id = data.files[0].id as string;
+    const id = data.files[0].id!;
     this.setFileId(fieldName, id);
     return id;
   }
@@ -137,10 +137,10 @@ export class BackupHandler extends DriveHandler {
       },
     });
 
-    id = data.id as string;
+    id = data.id!;
     this.setFileId(name, id);
 
-    return data.id as string;
+    return data.id!;
   }
 
   static async handleUpload(
@@ -196,7 +196,7 @@ export class BackupHandler extends DriveHandler {
         },
       });
 
-      this.setFileId(fieldName, res.data.id as string);
+      this.setFileId(fieldName, res.data.id!);
 
       if (getDatastoreFileName(db.customDocuments) === filename) {
         await this.storeCustomDocument(dataJson);
@@ -225,7 +225,7 @@ export class BackupHandler extends DriveHandler {
       },
     });
 
-    this.setFileId(filename, res.data.id as string);
+    this.setFileId(filename, res.data.id!);
   }
 
   static async deleteCustomDocument(id: string) {

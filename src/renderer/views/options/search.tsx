@@ -243,7 +243,7 @@ const SearchResultComponent = React.memo(
             pagination={false}
             dataSource={results?.data || []}
             renderItem={(result) => (
-              <ListView result={result} query={results?.query as string} />
+              <ListView result={result} query={results?.query!} />
             )}
           />
         </div>

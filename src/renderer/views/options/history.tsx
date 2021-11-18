@@ -75,7 +75,7 @@ export default function History() {
 
   useEffect(() => {
     if (histories.length > 0) {
-      setKey(histories[0]._id as string);
+      setKey(histories[0]._id);
       setReloadKey((d) => d + 1);
     }
   }, [histories]);
@@ -92,7 +92,7 @@ export default function History() {
       >
         {histories.map((h) => {
           return (
-            <Panel header={h.date} key={h._id as string}>
+            <Panel header={h.date} key={h._id}>
               {key === h._id && (
                 <>
                   <List
