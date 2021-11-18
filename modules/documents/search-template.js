@@ -250,6 +250,17 @@ function handleOtherTraductions() {
 }
 
 /**
+ * document pdf donwload
+ */
+function handlePdfDownload() {
+  window.parent.dispatchEvent(
+    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.downloadDocumentPdf, {
+      detail: DOCUMENT_TITLE_DATAS.value?.pdf_link,
+    })
+  );
+}
+
+/**
  * @param {import("@localtypes/index").Title<string | null, string> | null} data
  */
 function documentTitleDataHandler(data) {
@@ -259,7 +270,6 @@ function documentTitleDataHandler(data) {
   const seperatorExternal = document.querySelector(
     '.document-external-field-separator'
   );
-
   if (
     DOCUMENT_TITLE_DATAS.value.web_link ||
     DOCUMENT_TITLE_DATAS.value.pdf_link
@@ -274,11 +284,12 @@ function documentTitleDataHandler(data) {
     web_link?.addEventListener('click', handleDocumentExternalWebLink);
   }
 
+  // handle pdf download
   if (DOCUMENT_TITLE_DATAS.value.pdf_link) {
     const pdf_link = document.querySelector('.search--pdf-download--js');
     pdf_link?.classList.remove('display-none');
+    pdf_link?.addEventListener('click', handlePdfDownload);
   }
-
   // -------------- section external -----
 
   // -------------- section audio and traductions handler -----
