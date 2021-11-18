@@ -39,6 +39,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
   documentViewLoaded: 'document-view-loaded',
   addDocumentRefSubject: 'add-document-ref-subject',
   addDocumentRefNote: 'add-document-ref-note',
+  openDocumentExternalLink: 'open-document-external-link',
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';

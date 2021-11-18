@@ -256,6 +256,26 @@ const useDocumentsState = (titleRef: React.MutableRefObject<string>) => {
   };
 };
 
+const useOpenDocumentExternalLink = () => {
+  useEffect(() => {
+    const openLink = (event: CustomEventInit<string>) => {
+      shell.openExternal(event.detail!);
+    };
+
+    window.addEventListener(
+      CHILD_PARENT_WINDOW_EVENT.openDocumentExternalLink,
+      openLink
+    );
+
+    return () => {
+      window.removeEventListener(
+        CHILD_PARENT_WINDOW_EVENT.openDocumentExternalLink,
+        openLink
+      );
+    };
+  }, []);
+};
+
 export default function DocumentView() {
   const { iframeRef, path, titleRef, title, $titles } = useDocument();
 
@@ -276,6 +296,8 @@ export default function DocumentView() {
     documentQuery,
     postMessage
   );
+
+  useOpenDocumentExternalLink();
 
   const onIframeLoad = () => {
     if (iframeRef.current) {
