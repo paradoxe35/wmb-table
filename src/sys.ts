@@ -11,7 +11,7 @@ export const setMainWindow = (mWindow: BrowserWindow) => (mainWindow = mWindow);
 
 // app paths
 export function childsProcessesPath(file: string): string {
-  return __dirname + '/childs_processes/' + file;
+  return __dirname + '/main/childs_processes/' + file;
 }
 
 export const getAssetPath = (...paths: string[]): string => {
