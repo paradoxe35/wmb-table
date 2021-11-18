@@ -25,10 +25,6 @@ function searchOpen() {
   window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.searchOpen));
 }
 
-function searchOpenPopup() {
-  window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.searchOpenPopup));
-}
-
 /**
  * @type {Element | null}
  */
@@ -64,11 +60,10 @@ function addDocumentNodeToItem(event) {
   );
 }
 
-const handleZoomIn = () => {
+export const handleZoomIn = () => {
   const zoom = zoomIn();
   if (zoom === false) return;
   setWindowZoom(zoom);
-  searchOpenPopup();
   window.parent.dispatchEvent(
     new CustomEvent(CHILD_PARENT_WINDOW_EVENT.documentCurrentZoom, {
       detail: { zoom },
@@ -76,11 +71,10 @@ const handleZoomIn = () => {
   );
 };
 
-const handleZoomOut = () => {
+export const handleZoomOut = () => {
   const zoom = zoomOut();
   if (zoom === false) return;
   setWindowZoom(zoom);
-  searchOpenPopup();
   window.parent.dispatchEvent(
     new CustomEvent(CHILD_PARENT_WINDOW_EVENT.documentCurrentZoom, {
       detail: { zoom },

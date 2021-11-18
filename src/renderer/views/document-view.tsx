@@ -297,8 +297,6 @@ export default function DocumentView() {
       const tab = tabs.find((t) => t.title === title);
 
       // handle zoom
-      //@ts-ignore
-      page && (page.style.zoom = (tab?.zoom || 100) + '%');
       if (tab?.zoom) {
         postMessage(
           iframeRef.current,
@@ -307,6 +305,8 @@ export default function DocumentView() {
           path!
         );
       }
+      //@ts-ignore
+      page && (page.style.zoom = (tab?.zoom || 100) + '%');
 
       let hasOwnPosition = false;
       if ((tab?.scrollY || tab?.scrollX) && page) {

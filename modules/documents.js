@@ -12,7 +12,7 @@ import {
   setWindowZoom,
   setDocumentTitleData,
 } from './documents/seach-query.js';
-import searchTemplate from './documents/search-template.js';
+import initSearchableTemplate from './documents/search-template.js';
 import {
   CHILD_PARENT_WINDOW_EVENT,
   CHILD_WINDOW_EVENT,
@@ -28,7 +28,7 @@ window.addEventListener(
     switch (e.data.type) {
       case POST_MESSAGE_EVENT.documentQuery:
         setSearchQuery(e.data.detail);
-        searchTemplate();
+        initSearchableTemplate();
         break;
       case POST_MESSAGE_EVENT.subjectItem:
         scrollToViewTree(e.data.detail);

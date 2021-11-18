@@ -48,13 +48,29 @@ export function setWindowPostion(data) {
   WINDOW_POSITION = data;
 }
 
-export let WINDOW_ZOOM = 100;
+export let WINDOW_ZOOM = {
+  $value: 100,
+  get value() {
+    return this.$value;
+  },
+  set value(val) {
+    this.$value = val;
+    this.valueListener(val);
+  },
+  valueListener(/** @type {any} */ _val) {},
+  /**
+   * @param {(_val: any) => void} fn
+   */
+  registerNewListener(fn) {
+    this.valueListener = fn;
+  },
+};
 
 /**
  * @param {number} data
  */
 export function setWindowZoom(data) {
-  WINDOW_ZOOM = data;
+  WINDOW_ZOOM.value = data;
 }
 
 /**
