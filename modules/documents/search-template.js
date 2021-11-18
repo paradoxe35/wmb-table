@@ -229,6 +229,9 @@ function searchModalHandler() {
 }
 searchModalHandler();
 
+/**
+ * document external links handler
+ */
 function handleDocumentExternalWebLink() {
   window.parent.dispatchEvent(
     new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openDocumentExternalLink, {
@@ -243,11 +246,10 @@ function handleDocumentExternalWebLink() {
 function documentTitleDataHandler(data) {
   if (!data) return;
 
+  // handle document external links when clicked
   document
     .querySelector('.search--web-link--js')
     ?.addEventListener('click', handleDocumentExternalWebLink);
-
-  console.log(data);
 }
 
 DOCUMENT_TITLE_DATAS.registerNewListener(documentTitleDataHandler);
