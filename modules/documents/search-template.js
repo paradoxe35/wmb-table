@@ -241,6 +241,15 @@ function handleDocumentExternalWebLink() {
 }
 
 /**
+ * document other traductions handler
+ */
+function handleOtherTraductions() {
+  window.parent.dispatchEvent(
+    new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal)
+  );
+}
+
+/**
  * @param {import("@localtypes/index").Title<string | null, string> | null} data
  */
 function documentTitleDataHandler(data) {
@@ -250,6 +259,11 @@ function documentTitleDataHandler(data) {
   document
     .querySelector('.search--web-link--js')
     ?.addEventListener('click', handleDocumentExternalWebLink);
+
+  // handle other traductions
+  document
+    .querySelector('.search--other-traduction--js')
+    ?.addEventListener('click', handleOtherTraductions);
 }
 
 DOCUMENT_TITLE_DATAS.registerNewListener(documentTitleDataHandler);

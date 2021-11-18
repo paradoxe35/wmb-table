@@ -22,6 +22,7 @@ import ContainerScrollY from './renderer/components/container-scroll-y';
 import BackupProfile from './renderer/views/components/backup-profile-modal';
 import Welcome from './renderer/views/components/welcome-modal';
 import Updater from './renderer/views/components/updater-modal';
+import { OtherTraductionsModal } from '@renderer/views/components/other-traductions-modal';
 
 const Notes = lazy(() => import('./renderer/views/options/notes'));
 
@@ -91,10 +92,12 @@ function ContentHandler() {
       >
         <DocumentView />
       </div>
+      {/* independent components */}
       <CustomDocuments />
       <BackupProfile />
       <Welcome />
       <Updater />
+      <OtherTraductionsModal />
     </>
   );
 }
