@@ -69,6 +69,8 @@ export default function SidebarDocuments() {
 
 const DocumentsAdded = () => {
   const customDocuments = useRecoilValue(customDocumentsStore);
+  const title = useRecoilValue(currentDocumentTabsSelector);
+
   return (
     <ContainerScrollY style={{ paddingLeft: '10px' }}>
       {customDocuments.map((d, i) => (
@@ -76,6 +78,7 @@ const DocumentsAdded = () => {
           key={d._id || i}
           id={d._id}
           name={d.title}
+          active={title === d.title}
           title={d.title}
         />
       ))}
