@@ -17,6 +17,7 @@ import { asyncify, doWhilst, whilst } from '@main/functions/async';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import childProcess from 'child_process';
 import { ConvertMessage } from '../../childs_processes/types';
+import { fileListHasChanged } from '@main/db/searchable/documents';
 
 export default async () => {
   return await queryDb.find<CustomDocument>(
@@ -134,6 +135,7 @@ export async function custom_documents_store(
           reject(_err);
         } else {
           resolve(docs.sort((a, b) => b.createdAt - a.createdAt));
+          fileListHasChanged.value = true;
         }
         child.kill('SIGINT');
         commitUploadProgress('finish', 0, 0);
