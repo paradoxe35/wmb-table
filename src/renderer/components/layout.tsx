@@ -73,7 +73,10 @@ const SidebarStatusHanlder = () => {
 const AppLayout: React.FC = ({ children }) => {
   const [collapsed, setCollapsed] = useState(true);
 
-  const toggle = () => setCollapsed((c) => !c);
+  const toggle = (collapsed: any | boolean) =>
+    typeof collapsed === 'boolean'
+      ? setCollapsed(collapsed)
+      : setCollapsed((c) => !c);
 
   const containerScroll = useContainerScrollY<HTMLDivElement>();
 
@@ -91,7 +94,7 @@ const AppLayout: React.FC = ({ children }) => {
         </div>
       </Header>
       <Layout>
-        <SidebarMenu collapsed={collapsed} />
+        <SidebarMenu onCollapse={toggle} collapsed={collapsed} />
         <Layout>
           <div ref={containerScroll} className="site-layout-content">
             <Content style={{ padding: 24, paddingBottom: 0 }}>
