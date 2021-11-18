@@ -1,7 +1,7 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab filetype=css: */
-/*! 
+/*!
  * Fancy styles for pdf2htmlEX
- * Copyright 2012,2013 Lu Wang <coolwanglu@gmail.com> 
+ * Copyright 2012,2013 Lu Wang <coolwanglu@gmail.com>
  * https://github.com/coolwanglu/pdf2htmlEX/blob/master/share/LICENSE
  */
 @keyframes fadein { from { opacity:0;} to { opacity:1;} }
@@ -18,9 +18,10 @@
   90% { -webkit-transform: rotate(720deg); }
   100%{ -webkit-transform: rotate(720deg); }
 }
-@media screen { 
+@media screen {
   #sidebar {
     background-color:#2f3236;
+    display: none;
     /* modified from http://philbit.com/svgpatterns/#crossstripes */
     background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjNDAzYzNmIj48L3JlY3Q+CjxwYXRoIGQ9Ik0wIDBMNCA0Wk00IDBMMCA0WiIgc3Ryb2tlLXdpZHRoPSIxIiBzdHJva2U9IiMxZTI5MmQiPjwvcGF0aD4KPC9zdmc+");
   }
@@ -70,10 +71,10 @@
   }
   .pc.opened { /* used by pdf2htmlEX.js, to show/hide pages */
     -webkit-animation: fadein 100ms;
-    animation: fadein 100ms; 
+    animation: fadein 100ms;
   }
   .loading-indicator.active {
-    /* 
+    /*
      * use 0.01s instead of 0s,
      * since YUI Compressor will change 0s to 0,
      * which is not recognized by Firefox
