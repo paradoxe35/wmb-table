@@ -64,9 +64,9 @@ function defaultPosition() {
     });
   } else {
     // @ts-ignore
-    container?.firstElementChild?.firstElementChild
-      ?.querySelector('div')
-      ?.scrollIntoView({ inline: 'center' });
+    container?.firstElementChild?.firstElementChild?.scrollIntoView({
+      inline: 'center',
+    });
   }
 }
 
