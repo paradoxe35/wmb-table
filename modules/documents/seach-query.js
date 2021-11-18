@@ -1,6 +1,24 @@
 import { CHILD_WINDOW_EVENT } from '../shared/shared.js';
 
 /**
+ * @type {import('@localtypes/index').ProxyObjectFunction}
+ */
+const proxyObject = (value) => ({
+  $value: value,
+  get value() {
+    return this.$value;
+  },
+  set value(val) {
+    this.$value = val;
+    this.valueListener(val);
+  },
+  valueListener(_val) {},
+  registerNewListener(fn) {
+    this.valueListener = fn;
+  },
+});
+
+/**
  * @type { import('@localtypes/index').DocumentViewQuery | null }
  */
 export let SEARCH_QUERY = null;
@@ -48,23 +66,7 @@ export function setWindowPostion(data) {
   WINDOW_POSITION = data;
 }
 
-export let WINDOW_ZOOM = {
-  $value: 100,
-  get value() {
-    return this.$value;
-  },
-  set value(val) {
-    this.$value = val;
-    this.valueListener(val);
-  },
-  valueListener(/** @type {any} */ _val) {},
-  /**
-   * @param {(_val: any) => void} fn
-   */
-  registerNewListener(fn) {
-    this.valueListener = fn;
-  },
-};
+export let WINDOW_ZOOM = proxyObject(100);
 
 /**
  * @param {number} data
@@ -74,13 +76,13 @@ export function setWindowZoom(data) {
 }
 
 /**
- * @type {import("@localtypes/index").Title | null}
+ * @type { import('@localtypes/index').ProxyObjectFunctionValue<import("@localtypes/index").Title | null>}
  */
-export let DOCUMENT_TITLE_DATAS = null;
+export let DOCUMENT_TITLE_DATAS = proxyObject(null);
 
 /**
  * @param {import("@localtypes/index").Title<string | null, string> | null} data
  */
 export function setDocumentTitleData(data) {
-  DOCUMENT_TITLE_DATAS = data;
+  DOCUMENT_TITLE_DATAS.value = data;
 }
