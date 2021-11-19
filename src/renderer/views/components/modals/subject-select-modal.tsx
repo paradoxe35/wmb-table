@@ -4,6 +4,7 @@ import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   subjectDocumentStore,
   subjectDocumentItemStore,
+  currentDocumentTabsSelector,
 } from '@renderer/store';
 import {
   SubjectDocument,
@@ -20,7 +21,8 @@ import {
   SUBJECT_EVENT,
 } from '@modules/shared/shared';
 
-export function SubjectSelectModal({ title }: { title: string }) {
+export function SubjectSelectModal() {
+  const title = useRecoilValue(currentDocumentTabsSelector);
   const titleRef = useValueStateRef(title);
 
   const setSubjectItems = useSetRecoilState(subjectDocumentItemStore);

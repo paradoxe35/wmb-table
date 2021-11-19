@@ -20,10 +20,7 @@ import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { useContainerScrollY, useValueStateRef } from '@renderer/hooks';
 import { debounce } from '@root/utils/functions';
 import { DocumentViewQuery, SubjectDocumentItem } from '@localtypes/index';
-
-import { SubjectSelectModal } from './components/subject-select-modal';
-import { ModalSearchDocument } from './components/modal-search-document';
-import { NoteReferencesModal } from './components/note-references-modal';
+import { ModalSearchDocument } from './components/modals/modal-search-document';
 import { shell } from 'electron';
 import {
   CHILD_PARENT_WINDOW_EVENT,
@@ -413,8 +410,6 @@ export default function DocumentView() {
         documentQuery={documentQuery.current}
         title={title}
       />
-      <SubjectSelectModal title={title} />
-      <NoteReferencesModal title={title} />
     </>
   );
 }
