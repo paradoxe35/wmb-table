@@ -33,8 +33,9 @@ import fs from 'fs';
 import { setUserAuthAccessStatus } from '@main/message-control/handlers/backup';
 import { UPDATER_RESTORING_DATA } from '../app-updater/constants';
 
-const isOnline = require('is-online');
-const watch = require('node-watch');
+import isOnline from 'is-online';
+import watch from 'node-watch';
+
 const IsOnlineEmitter = require('is-online-emitter');
 
 // emitter is online instance
