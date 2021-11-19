@@ -22,6 +22,7 @@ const Icon = () => (
     <span />
   </Space>
 );
+
 const ShowProgress = ({
   title,
   progress,
