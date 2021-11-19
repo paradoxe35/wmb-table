@@ -14,15 +14,17 @@ import Subject from './renderer/views/options/subject';
 import { OptionView } from '@localtypes/index';
 
 import '@modules/context-menu/kali_dark.css';
-import CustomDocuments from './renderer/views/components/custom-documents';
+import CustomDocumentsModal from './renderer/views/components/modals/custom-documents';
 import { LoadingOutlined } from '@ant-design/icons';
 import LoadByVisibility from './renderer/components/load-by-visibility';
 import Bible from './renderer/views/options/bible';
 import ContainerScrollY from './renderer/components/container-scroll-y';
-import BackupProfile from './renderer/views/components/backup-profile-modal';
-import Welcome from './renderer/views/components/welcome-modal';
-import Updater from './renderer/views/components/updater-modal';
-import { OtherTraductionsModal } from '@renderer/views/components/other-traductions-modal';
+import BackupProfileModal from './renderer/views/components/modals/backup-profile-modal';
+import WelcomeModal from './renderer/views/components/modals/welcome-modal';
+import UpdaterModal from './renderer/views/components/modals/updater-modal';
+import { OtherTraductionsModal } from '@renderer/views/components/modals/other-traductions-modal';
+import { SubjectSelectModal } from '@renderer/views/components/modals/subject-select-modal';
+import { NoteReferencesModal } from '@renderer/views/components/modals/note-references-modal';
 
 const Notes = lazy(() => import('./renderer/views/options/notes'));
 
@@ -93,11 +95,13 @@ function ContentHandler() {
         <DocumentView />
       </div>
       {/* independent components */}
-      <CustomDocuments />
-      <BackupProfile />
-      <Welcome />
-      <Updater />
+      <CustomDocumentsModal />
+      <BackupProfileModal />
+      <WelcomeModal />
+      <UpdaterModal />
       <OtherTraductionsModal />
+      <SubjectSelectModal />
+      <NoteReferencesModal />
     </>
   );
 }

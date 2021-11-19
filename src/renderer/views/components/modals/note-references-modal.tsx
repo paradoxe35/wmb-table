@@ -10,11 +10,17 @@ import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { useRecoilValue } from 'recoil';
-import { titlesDocumentSelector, workingNoteAppStore } from '@renderer/store';
+import {
+  currentDocumentTabsSelector,
+  titlesDocumentSelector,
+  workingNoteAppStore,
+} from '@renderer/store';
 import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
 
-export function NoteReferencesModal({ title }: { title: string }) {
+export function NoteReferencesModal() {
+  const title = useRecoilValue(currentDocumentTabsSelector);
   const titleRef = useValueStateRef(title);
+
   const documentRefTree = useRef<{
     textContent: string;
     documentHtmlTree: DocumentHtmlTree;
