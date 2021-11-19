@@ -51,6 +51,7 @@ export const IPC_EVENTS = {
   quit_and_install_update: 'quit_and_install_update',
   has_change_viewer_menu: 'has_change_viewer_menu',
   active_document_view: 'active_document_view',
+  download_document_pdf: 'download_document_pdf',
   // events from main process
   custom_document_upload_progress: 'custom_document_upload_progress',
   open_modal_document_from_main: 'open_modal_document_from_main',
@@ -63,4 +64,5 @@ export const IPC_EVENTS = {
   notify_for_new_update: 'notify_for_new_update',
   switch_on_options: 'switch_on_options',
   change_menu_viewer: 'change_menu_viewer',
+  download_document_pdf_progress: 'download_document_pdf_progress',
 };
