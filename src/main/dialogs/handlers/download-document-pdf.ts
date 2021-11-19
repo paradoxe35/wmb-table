@@ -95,7 +95,7 @@ export async function downloadDocumentPdf(
       null
     );
 
-  const request = new DownloadableRequest(docTitle.audio_link!, path);
+  const request = new DownloadableRequest(docTitle.pdf_link!, path);
 
   request
     .onEnd(doneProgress)
