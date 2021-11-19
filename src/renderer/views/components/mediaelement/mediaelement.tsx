@@ -103,6 +103,8 @@ export default function MediaElement({
 
     const palyer = new MediaElementPlayer(audioElRef.current, options);
 
+    audioSrc && palyer.play();
+
     palyerRef.current = palyer;
 
     onGetPlayerRefRef(palyer);
