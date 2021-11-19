@@ -255,7 +255,7 @@ function handleOtherTraductions() {
 function handlePdfDownload() {
   window.parent.dispatchEvent(
     new CustomEvent(CHILD_PARENT_WINDOW_EVENT.downloadDocumentPdf, {
-      detail: DOCUMENT_TITLE_DATAS.value?.pdf_link,
+      detail: DOCUMENT_TITLE_DATAS.value,
     })
   );
 }

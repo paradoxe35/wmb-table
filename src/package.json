@@ -29,6 +29,7 @@
     "node-html-parser": "^5.1.0",
     "node-watch": "^0.7.1",
     "pdf-parse": "^1.1.1",
+    "request": "^2.88.2",
     "underscore": "^1.13.1"
   },
   "devDependencies": {
@@ -36,6 +37,7 @@
     "@types/express": "^4.17.13",
     "@types/get-folder-size": "2.0.0",
     "@types/html-pdf": "^2.2.1",
-    "@types/nedb": "^1.8.11"
+    "@types/nedb": "^1.8.11",
+    "@types/request": "^2.48.7"
   }
 }

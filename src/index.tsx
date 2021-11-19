@@ -25,6 +25,7 @@ import UpdaterModal from './renderer/views/components/modals/updater-modal';
 import { OtherTraductionsModal } from '@renderer/views/components/modals/other-traductions-modal';
 import { SubjectSelectModal } from '@renderer/views/components/modals/subject-select-modal';
 import { NoteReferencesModal } from '@renderer/views/components/modals/note-references-modal';
+import PdfDocumentDownloader from '@renderer/views/components/pdf-document-downloader';
 
 const Notes = lazy(() => import('./renderer/views/options/notes'));
 
@@ -102,6 +103,7 @@ function ContentHandler() {
       <OtherTraductionsModal />
       <SubjectSelectModal />
       <NoteReferencesModal />
+      <PdfDocumentDownloader />
     </>
   );
 }
