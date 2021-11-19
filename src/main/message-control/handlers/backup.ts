@@ -13,7 +13,7 @@ import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { cleanAllFileDir } from '@main/functions/count-file-lines';
 import db, { queryDb } from '@main/db/db';
 import { app_settings } from './app_settings';
-const isOnline = require('is-online');
+import isOnline from 'is-online';
 
 let ACCESS_STATUS: { value: boolean } = { value: true };
 
