@@ -4,7 +4,7 @@ import { ipcRenderer } from 'electron';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { message, notification, Progress, Space } from 'antd';
+import { message, notification, Progress } from 'antd';
 
 const DownloadProgressStatus = () => {
   const [progress, setProgress] = useState(0);
@@ -22,16 +22,14 @@ const DownloadProgressStatus = () => {
   }, []);
 
   return (
-    <Space align="center">
-      <Progress
-        strokeColor={{
-          '0%': '#108ee9',
-          '100%': '#87d068',
-        }}
-        status="active"
-        percent={progress}
-      />
-    </Space>
+    <Progress
+      strokeColor={{
+        '0%': '#108ee9',
+        '100%': '#87d068',
+      }}
+      status="active"
+      percent={progress}
+    />
   );
 };
 
