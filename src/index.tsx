@@ -26,6 +26,7 @@ import { OtherTraductionsModal } from '@renderer/views/components/modals/other-t
 import { SubjectSelectModal } from '@renderer/views/components/modals/subject-select-modal';
 import { NoteReferencesModal } from '@renderer/views/components/modals/note-references-modal';
 import PdfDocumentDownloader from '@renderer/views/components/pdf-document-downloader';
+import DocumentAudioPlayer from '@renderer/views/components/modals/document-audio-player';
 
 const Notes = lazy(() => import('./renderer/views/options/notes'));
 
@@ -104,6 +105,7 @@ function ContentHandler() {
       <SubjectSelectModal />
       <NoteReferencesModal />
       <PdfDocumentDownloader />
+      <DocumentAudioPlayer />
     </>
   );
 }

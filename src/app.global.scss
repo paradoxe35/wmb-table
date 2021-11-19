@@ -1,4 +1,11 @@
 @import '~antd/dist/antd.css';
+// audio player
+@import './renderer/views/components/mediaelement/lib/mediaelementplayer.css';
+@import './renderer/views/components/mediaelement/lib/plugins/css/speed.min.css';
+@import './renderer/views/components/mediaelement/lib/plugins/css/skip-back.min.css';
+@import './renderer/views/components/mediaelement/lib/plugins/css/jump-forward.min.css';
+@import './renderer/views/components/mediaelement/style.css';
+// audio player
 
 body {
   height: 100%;

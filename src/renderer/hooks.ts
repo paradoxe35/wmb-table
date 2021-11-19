@@ -141,3 +141,15 @@ export const useModalVisible = () => {
     setIsModalVisible,
   };
 };
+
+export const useCallbackUpdater = (callback?: Function) => {
+  const callbackRef = useRef(callback);
+
+  callbackRef.current = callback;
+
+  const handleCallback = useCallback((...args: any[]) => {
+    return callbackRef.current!(...args);
+  }, []);
+
+  return handleCallback;
+};
