@@ -5,7 +5,11 @@ import { useSetRecoilState } from 'recoil';
 import { documentViewQueryStore } from '@renderer/store';
 import { DocumentSearchEvent, DocumentViewQuery } from '@localtypes/index';
 import { useValueStateRef } from '@renderer/hooks';
-import { SearchOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  FileSearchOutlined,
+  SortAscendingOutlined,
+} from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
 
 const ModalController = ({
@@ -103,9 +107,18 @@ export function ModalSearchDocument({
       icon: null,
       onOk: onSearch,
       okText: <SearchOutlined />,
-      title: event.detail?.searchForParagraph
-        ? 'Recherche paragraphe'
-        : 'Recherche text',
+      title: (
+        <span>
+          {event.detail?.searchForParagraph
+            ? 'Recherche paragraphe'
+            : 'Recherche text'}{' '}
+          {event.detail?.searchForParagraph ? (
+            <SortAscendingOutlined />
+          ) : (
+            <FileSearchOutlined />
+          )}
+        </span>
+      ),
       content: (
         <form
           onSubmit={(e) => {
