@@ -192,9 +192,12 @@ mainMessageTransport(IPC_EVENTS.restart_app, restart_app);
 mainMessageTransport(IPC_EVENTS.started_to_update, started_to_update);
 
 // audio document time handler
-mainMessageTransport(IPC_EVENTS.audio_document_time, audio_document_time);
+mainMessageTransport(
+  IPC_EVENTS.audio_document_time_and_local_file,
+  audio_document_time
+);
 
 mainMessageTransport(
-  IPC_EVENTS.audio_document_time_set,
+  IPC_EVENTS.audio_document_time_and_local_file_set,
   audio_document_time_set
 );
