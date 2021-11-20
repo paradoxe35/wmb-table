@@ -36,8 +36,14 @@ export type DocumentViewQuery = {
   term: string;
   documentTitle: string;
   textContentLength: number;
+  searchForParagraph?: boolean;
   matches: SearchMatchersValue[];
 };
+
+export type DocumentSearchEvent = {
+  text?: string | null;
+  searchForParagraph: boolean;
+}
 
 export type DocumentTab = {
   title: string;

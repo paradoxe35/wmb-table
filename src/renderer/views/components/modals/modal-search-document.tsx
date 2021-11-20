@@ -1,9 +1,9 @@
-import { Input, Modal } from 'antd';
+import { Input, message, Modal } from 'antd';
 import React, { useEffect } from 'react';
 import { useCallback, useRef } from 'react';
 import { useSetRecoilState } from 'recoil';
 import { documentViewQueryStore } from '@renderer/store';
-import { DocumentViewQuery } from '@localtypes/index';
+import { DocumentSearchEvent, DocumentViewQuery } from '@localtypes/index';
 import { useValueStateRef } from '@renderer/hooks';
 import { SearchOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
@@ -45,14 +45,30 @@ export function ModalSearchDocument({
   const setDocumentViewQuery = useSetRecoilState(documentViewQueryStore);
 
   const isOpened = useRef(false);
+  const searchForParagraph = useRef<boolean>();
 
   const onSearch = () => {
+    const value = searchValue.current;
     if (
-      searchValue.current.trim().length < 3 ||
-      documentQueryRef.current?.term == searchValue.current
+      !searchForParagraph.current &&
+      (value.trim().length < 3 || documentQueryRef.current?.term == value)
     ) {
+      if (value.trim().length < 3) {
+        message.warn(
+          'Votre recherche doit comporter au moins trois caractères'
+        );
+      }
       return;
     }
+
+    if (
+      searchForParagraph.current &&
+      (value.trim().length === 0 || isNaN(+value.trim()))
+    ) {
+      message.warn('La valeur saisie est invalide');
+      return;
+    }
+
     setDocumentViewQuery((docs) => {
       const datas = docs.filter((d) => d.documentTitle != titleRef.current);
       return [
@@ -61,23 +77,35 @@ export function ModalSearchDocument({
           documentTitle: titleRef.current,
           matches: [],
           textContentLength: 0,
-          term: searchValue.current.trim(),
+          searchForParagraph: searchForParagraph.current,
+          term: value.trim(),
         },
       ];
     });
+
+    if (searchForParagraph.current) {
+      searchValue.current = '';
+    }
   };
 
-  const modal = useCallback((event: CustomEventInit<string | null>) => {
+  const modal = useCallback((event: CustomEventInit<DocumentSearchEvent>) => {
     if (isOpened.current) return;
 
-    searchValue.current = event?.detail || searchValue.current;
+    if (event.detail?.searchForParagraph) {
+      searchValue.current = '';
+    }
+
+    searchValue.current = event.detail?.text || searchValue.current;
+    searchForParagraph.current = event.detail?.searchForParagraph;
 
     const modalInstance = Modal.info({
       closable: true,
       icon: null,
       onOk: onSearch,
       okText: <SearchOutlined />,
-      title: 'Recherche',
+      title: event.detail?.searchForParagraph
+        ? 'Recherche paragraphe'
+        : 'Recherche text',
       content: (
         <form
           onSubmit={(e) => {
@@ -87,13 +115,18 @@ export function ModalSearchDocument({
           }}
         >
           <Input
+            type={event.detail?.searchForParagraph ? 'number' : 'texte'}
             autoFocus={true}
             size="large"
             minLength={3}
             allowClear
             onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
             defaultValue={searchValue.current}
-            placeholder="Entrez votre texte"
+            placeholder={
+              event.detail?.searchForParagraph
+                ? 'Entrez le paragraphe'
+                : 'Entrez votre texte'
+            }
           />
           <ModalController iframeRef={iframeRef} isOpened={isOpened} />
         </form>
