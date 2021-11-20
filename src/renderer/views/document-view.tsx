@@ -281,6 +281,7 @@ const useOpenDocumentExternalLink = () => {
 
 const useToPostMessageCurrentAudioDocumentPlay = (
   iframeRef: React.MutableRefObject<HTMLIFrameElement | null>,
+  title: string,
   path: string | null
 ) => {
   const postMessage = usePostMessage();
@@ -290,7 +291,12 @@ const useToPostMessageCurrentAudioDocumentPlay = (
   );
 
   useEffect(() => {
-    if (currentAudioDocumentPlay && iframeRef.current && path) {
+    if (
+      currentAudioDocumentPlay &&
+      iframeRef.current &&
+      path &&
+      title === currentAudioDocumentPlay.documentTitle
+    ) {
       postMessage(
         iframeRef.current,
         POST_MESSAGE_EVENT.currentAudioDocumentPlay,
@@ -420,7 +426,7 @@ export default function DocumentView() {
     }
   };
 
-  useToPostMessageCurrentAudioDocumentPlay(iframeRef, path);
+  useToPostMessageCurrentAudioDocumentPlay(iframeRef, title, path);
 
   return (
     <>

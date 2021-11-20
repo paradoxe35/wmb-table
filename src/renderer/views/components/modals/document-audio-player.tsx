@@ -38,10 +38,7 @@ export default function DocumentAudioPlayer() {
         // pause if is playing or play if pause
         if (audioPlayerRef.current?.paused === true) {
           audioPlayerRef.current?.play();
-        }
-
-        // play if is pause
-        if (audioPlayerRef.current?.paused === false) {
+        } else {
           audioPlayerRef.current?.pause();
         }
         return;
@@ -52,6 +49,7 @@ export default function DocumentAudioPlayer() {
         event.detail?.title
       ).then((time) => {
         const ctime = typeof time === 'number' ? time : undefined;
+
         // update audio document state
         setDocTitle({
           audioTime: ctime,
