@@ -26,6 +26,7 @@ export default async (_: Electron.IpcMainEvent, tabs: DataDocument[]) => {
     if (!numAffected && !documents) {
       queryDb.insert(db.tabs, { ...query, datas: tabs });
     }
+    db.tabs?.persistence.compactDatafile();
   }
   return documents?.datas || tabs;
 };
