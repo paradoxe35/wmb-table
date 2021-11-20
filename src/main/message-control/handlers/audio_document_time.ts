@@ -6,6 +6,10 @@ import { getFilename } from '@root/utils/functions';
 import fs from 'fs';
 import path from 'path';
 
+const pending: { links: string[] } = {
+  links: [],
+};
+
 export default async (_: any, doc: Title) => {
   const audioTime = await queryDb.findOne<AudioDocumentTime>(
     db.configurationsAudioDocumentTimes,
@@ -13,13 +17,28 @@ export default async (_: any, doc: Title) => {
   );
 
   // download audio localy
-  if (!audioTime?.local_file && doc.audio_link) {
+  if (
+    !audioTime?.local_file &&
+    doc.audio_link &&
+    !pending.links.includes(doc.audio_link)
+  ) {
     const homeAudioPath = getAppHomePath('audios');
     const local_file = path.join(homeAudioPath, getFilename(doc.audio_link));
 
+    pending.links.push(doc.audio_link);
+
     const downloadable = new DownloadableRequest(doc.audio_link, local_file);
 
+    // if get error in pending download
+    downloadable.onError(() => {
+      pending.links = pending.links.filter((link) => link !== doc.audio_link);
+    });
+
+    // doc.audio_link
     downloadable.onEnd(() => {
+      //  remove pending if download succeed
+      pending.links = pending.links.filter((link) => link !== doc.audio_link);
+
       queryDb.update(
         db.configurationsAudioDocumentTimes,
         { audio_link: doc.audio_link },
