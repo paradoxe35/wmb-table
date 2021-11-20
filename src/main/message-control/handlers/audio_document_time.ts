@@ -8,7 +8,7 @@ import path from 'path';
 
 export default async (_: any, doc: Title) => {
   const audioTime = await queryDb.findOne<AudioDocumentTime>(
-    db.audioDocumentTimes,
+    db.configurationsAudioDocumentTimes,
     { documentTitle: doc.title }
   );
 
@@ -21,7 +21,7 @@ export default async (_: any, doc: Title) => {
 
     downloadable.onEnd(() => {
       queryDb.update(
-        db.audioDocumentTimes,
+        db.configurationsAudioDocumentTimes,
         { documentTitle: doc.title },
         { $set: { local_file } },
         { upsert: true }
@@ -45,13 +45,13 @@ export async function audio_document_time_set(
   time: number
 ) {
   await queryDb.update(
-    db.audioDocumentTimes,
+    db.configurationsAudioDocumentTimes,
     { documentTitle: docTitle },
     { $set: { time } },
     { upsert: true }
   );
 
-  db.audioDocumentTimes?.persistence.compactDatafile();
+  db.configurationsAudioDocumentTimes?.persistence.compactDatafile();
 
   return true;
 }
