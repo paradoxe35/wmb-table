@@ -58,7 +58,8 @@ export default function DocumentAudioPlayer() {
         setDocTitle({
           audioTime: ctime,
           ...event.detail!,
-          audio_link: local_file || event.detail?.audio_link,
+          audio_link:
+            local_file?.replaceAll('#', '%23') || event.detail?.audio_link,
         });
 
         // open modal if not yet

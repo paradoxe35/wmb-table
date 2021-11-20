@@ -204,7 +204,7 @@ const useDocument = () => {
   useEffect(() => {
     if (title) {
       sendIpcRequest<string>(IPC_EVENTS.document_content_path, title).then(
-        (p) => p && setPath(p)
+        (p) => p && setPath(p.replaceAll('#', '%23'))
       );
     }
   }, [title]);
