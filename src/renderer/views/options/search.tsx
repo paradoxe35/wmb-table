@@ -6,6 +6,7 @@ import {
   List,
   Divider,
   Pagination,
+  message,
 } from 'antd';
 import { SelectProps } from 'antd/es/select';
 import {
@@ -94,6 +95,11 @@ const useSearch = (): SearchFn => {
 
   const onSearch = (value: string) => {
     if (value.trim().length < 3 || lastSearch.current == value) {
+      if (value.trim().length < 3) {
+        message.warn(
+          'Votre recherche doit comporter au moins trois caractères'
+        );
+      }
       return;
     }
     lastSearch.current = value;
