@@ -305,6 +305,19 @@ const useToPostMessageCurrentAudioDocumentPlay = (
       );
     }
   }, [currentAudioDocumentPlay, path]);
+
+  const currentAudioPlayOnLoadDocument = useCallback(() => {
+    if (title === currentAudioDocumentPlay?.documentTitle) {
+      postMessage(
+        iframeRef.current!,
+        POST_MESSAGE_EVENT.currentAudioDocumentPlay,
+        currentAudioDocumentPlay,
+        path!
+      );
+    }
+  }, [path, currentAudioDocumentPlay]);
+
+  return currentAudioPlayOnLoadDocument;
 };
 
 export default function DocumentView() {
@@ -329,6 +342,12 @@ export default function DocumentView() {
   );
 
   useOpenDocumentExternalLink();
+
+  const currentAudioPlayOnLoadDocument = useToPostMessageCurrentAudioDocumentPlay(
+    iframeRef,
+    title,
+    path
+  );
 
   const onIframeLoad = () => {
     if (iframeRef.current) {
@@ -423,10 +442,9 @@ export default function DocumentView() {
       page?.addEventListener('click', externalizeLinkTag);
       page?.addEventListener('scroll', debounce(onScroll, 300));
       handleSearchQuery(iframeRef.current, hasOwnPosition);
+      currentAudioPlayOnLoadDocument();
     }
   };
-
-  useToPostMessageCurrentAudioDocumentPlay(iframeRef, title, path);
 
   return (
     <>
