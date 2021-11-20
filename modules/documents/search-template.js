@@ -202,7 +202,7 @@ function zoomHandler() {
 }
 zoomHandler();
 
-function openSearchModal() {
+function openSearchModal(searchForParagraph = false) {
   let text = null;
 
   const selection = window.getSelection()
@@ -212,8 +212,15 @@ function openSearchModal() {
   if (selection && selection.length > 1 && selection.length <= 80) {
     text = selection;
   }
+
+  /** @type { import('@localtypes/index').DocumentSearchEvent } */
+  const detail = {
+    searchForParagraph,
+    text,
+  };
+
   window.parent.dispatchEvent(
-    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openSearchModal, { detail: text })
+    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openSearchModal, { detail })
   );
 }
 
@@ -224,10 +231,12 @@ function searchModalHandler() {
   // open search modal
   document
     ?.querySelector('.search--open--js')
-    ?.addEventListener('click', openSearchModal);
+    ?.addEventListener('click', () => openSearchModal());
 
   // open search from event listener
-  window.addEventListener(CHILD_WINDOW_EVENT.searchOpen, openSearchModal);
+  window.addEventListener(CHILD_WINDOW_EVENT.searchOpen, () =>
+    openSearchModal()
+  );
 }
 searchModalHandler();
 
@@ -343,3 +352,8 @@ CURRENT_AUDIO_DOCUMENT_PLAY.registerNewListener((value) => {
     audioEl.innerHTML = playIcon;
   }
 });
+
+// handle search for paragraph
+document
+  .querySelector('.search--paragraph--js')
+  ?.addEventListener('click', () => openSearchModal(true));

@@ -1,4 +1,5 @@
 import {
+  CHILD_PARENT_WINDOW_EVENT,
   CHILD_WINDOW_EVENT,
   DOCUMENT_CONTENT_ID,
   PARENT_WINDOW_EVENT,
@@ -35,12 +36,23 @@ export function performSearch(query) {
 
   if (query.matches.length === 0) {
     let textContent = strNormalizeNoLower(container.textContent);
-    let terms = strNormalizeNoLower(escapeRegExp(term.trim()))
-      .split(' ')
-      .filter(Boolean)
-      .join(`[a-zA-Z]*([^\s+]*)?`);
+    let terms;
 
-    matches = regexpMatcher(`${terms}[a-zA-Z]*`, textContent);
+    if (query.searchForParagraph) {
+      terms = `\\n${escapeRegExp(term.trim())}(\\.?)\\s`;
+    } else {
+      terms = strNormalizeNoLower(escapeRegExp(term.trim()))
+        .split(' ')
+        .filter(Boolean)
+        .join(`[a-zA-Z]*([^\s+]*)?`);
+      terms = `${terms}[a-zA-Z]*`;
+    }
+
+    matches = regexpMatcher(terms, textContent);
+
+    // only first match for paragraph search
+    matches =
+      query.searchForParagraph && matches.length > 0 ? [matches[0]] : matches;
 
     textContentLength = textContent.length;
   }
@@ -48,6 +60,13 @@ export function performSearch(query) {
   setSearchResult({ term, matches, textContentLength });
 
   markMaches(container, matches, textContentLength);
+
+  // close query search searched paragraph
+  if (query.searchForParagraph) {
+    window.parent.dispatchEvent(
+      new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
+    );
+  }
 
   window.parent.dispatchEvent(
     new Event(PARENT_WINDOW_EVENT.frameDocumentSearchEnd)
