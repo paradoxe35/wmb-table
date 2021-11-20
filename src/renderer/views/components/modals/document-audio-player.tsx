@@ -47,17 +47,19 @@ export default function DocumentAudioPlayer() {
         return;
       }
 
-      sendIpcRequest<number | undefined>(
+      sendIpcRequest<{ time: number | undefined; local_file?: string }>(
         IPC_EVENTS.audio_document_time,
         event.detail
-      ).then((time) => {
+      ).then(({ time, local_file }) => {
         const ctime = typeof time === 'number' ? time : undefined;
 
         // update audio document state
         setDocTitle({
           audioTime: ctime,
           ...event.detail!,
+          audio_link: local_file || event.detail?.audio_link,
         });
+
         // open modal if not yet
         setIsModalVisible(true);
 
