@@ -23,7 +23,7 @@ export default function DocumentAudioPlayer() {
   } = useModalVisible();
 
   const [docTitle, setDocTitle] = useState<
-    (Title & { audioTime?: number }) | null
+    (Title & { audioTime?: number; origin_audio_link: string }) | null
   >(null);
 
   const docTitleRef = useValueStateRef(docTitle);
@@ -56,8 +56,9 @@ export default function DocumentAudioPlayer() {
 
         // update audio document state
         setDocTitle({
-          audioTime: ctime,
           ...event.detail!,
+          audioTime: ctime,
+          origin_audio_link: event.detail?.audio_link!,
           audio_link:
             local_file?.replaceAll('#', '%23') || event.detail?.audio_link,
         });
@@ -108,7 +109,7 @@ export default function DocumentAudioPlayer() {
   const onAudioTimeUpdate = useCallback((time: number) => {
     sendIpcRequest<number | undefined>(
       IPC_EVENTS.audio_document_time_and_local_file_set,
-      docTitleRef.current?.title,
+      docTitleRef.current?.origin_audio_link,
       time
     );
   }, []);
