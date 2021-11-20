@@ -1,5 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { Input, Card, Layout, Tree, Divider } from 'antd';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Input, Card, Layout, Tree, Divider, Select, Space } from 'antd';
 import ContainerScrollY from '../container-scroll-y';
 import { Title } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
@@ -19,12 +25,15 @@ import {
 import PanelGroup from './components/documents-menu';
 import { DataNode } from 'antd/lib/tree';
 import DocumentTitle from '@renderer/store/models/document_title';
+import { TRADUCTIONS } from '@root/utils/constants';
 
 const { DirectoryTree } = Tree;
 
 const { Search } = Input;
 
 const { Sider } = Layout;
+
+const { Option } = Select;
 
 export default function SidebarDocuments() {
   const status = useRecoilValue(sidebarStatusHiddenStore);
@@ -137,6 +146,17 @@ const DocumentSearch = () => {
 
   const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
 
+  const exceptMessageFrenchKey = 'BBV';
+
+  const traductions = useMemo(
+    () =>
+      Object.keys(TRADUCTIONS).filter((key) => key !== exceptMessageFrenchKey),
+    []
+  );
+
+  const traductionFilter = useRef<string>();
+  const searchValue = useRef<string>('');
+
   useEffect(() => {
     setDatas(documents);
   }, [documents]);
@@ -149,25 +169,56 @@ const DocumentSearch = () => {
       .finally(() => setAppDataLoaded(true));
   }, []);
 
-  const onSearch = (value: string) => {
+  const onSearch = useCallback((value: string) => {
+    searchValue.current = value;
+    const trans = traductionFilter.current;
+
     if (documents.length) {
-      setDatas(
-        documents.filter((d) =>
-          simpleRegExp(value).test(strNormalize(d.getTitle()))
-        )
-      );
+      const newDocuments = documents.filter((d) => {
+        const matchTitle = simpleRegExp(value).test(strNormalize(d.getTitle()));
+        if (trans) {
+          return (
+            matchTitle &&
+            (trans === d.getTraduction() ||
+              (d.getTraduction() === exceptMessageFrenchKey && trans === 'MS'))
+          );
+        }
+        return matchTitle;
+      });
+      setDatas(newDocuments);
     }
-  };
+  }, []);
+
+  const onTraductionChange = useCallback((value: string | undefined) => {
+    traductionFilter.current = value;
+    onSearch(searchValue.current);
+  }, []);
 
   return (
     <>
       <Card bordered={false}>
-        <Search
-          key={documents.length}
-          placeholder="Recherche"
-          allowClear
-          onSearch={onSearch}
-        />
+        <Space direction="vertical">
+          <Search
+            key={documents.length}
+            placeholder="Recherche"
+            allowClear
+            onSearch={onSearch}
+          />
+          <Select
+            className="w-100 max-w-100"
+            placeholder="Traductions"
+            onChange={onTraductionChange}
+            allowClear
+          >
+            {traductions.map((key) => {
+              return (
+                <Option key={key} value={key}>
+                  {TRADUCTIONS[key]}
+                </Option>
+              );
+            })}
+          </Select>
+        </Space>
       </Card>
       <Divider style={{ padding: '0', margin: '0' }} />
       <ContainerScrollY style={{ paddingLeft: '22px' }}>

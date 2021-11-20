@@ -16,6 +16,10 @@ export default class DocumentTitle {
     return this.doc._id;
   }
 
+  getTraduction() {
+    return this.doc.traduction;
+  }
+
   getTraductions() {
     return this.doc.other_traductions;
   }

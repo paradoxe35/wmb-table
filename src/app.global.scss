@@ -259,6 +259,10 @@ main .ck-editor[role='application'] .ck.ck-content,
   width: 100%;
 }
 
+.max-w-100 {
+  max-width: 100%;
+}
+
 .flex-column {
   flex-direction: column;
 }
