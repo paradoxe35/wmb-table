@@ -1,5 +1,8 @@
 import { mainWindow } from '@root/sys';
-import { RestoreProgressEvent, RestoreProgressEventType } from '@localtypes/index';
+import {
+  RestoreProgressEvent,
+  RestoreProgressEventType,
+} from '@localtypes/index';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { OAuth2Client } from 'google-auth-library';
 import { DB_EXTENSION } from '@root/utils/constants';
@@ -42,7 +45,7 @@ export const setOAuth2Client = (client: OAuth2Client | null) =>
   (OAUTH2_CLIENT.value = client);
 
 export const EXCLUDE_DB_FILES_REGEX = new RegExp(
-  `(configurations|sidebar\\-status|tabs|backup.*)\\${DB_EXTENSION}$`
+  `(configurations.*|sidebar\\-status|tabs|backup.*)\\${DB_EXTENSION}$`
 );
 
 /**
