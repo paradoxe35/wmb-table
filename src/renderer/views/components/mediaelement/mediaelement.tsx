@@ -82,7 +82,7 @@ export default function MediaElement({
       defaultSpeed: '1.00',
       speeds: ['1.25', '1.50', '2.00', '0.75'],
       loop: false,
-      startVolume: 0.2,
+      startVolume: 0.5,
       skipBackInterval: 15,
       jumpForwardInterval: 15,
       features: [
