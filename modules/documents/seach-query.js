@@ -19,36 +19,36 @@ const proxyObject = (value) => ({
 });
 
 /**
- * @type { import('@localtypes/index').DocumentViewQuery | null }
+ * @type { import('@localtypes/index').ProxyObjectFunctionValue<import('@localtypes/index').DocumentViewQuery | null> }
  */
-export let SEARCH_QUERY = null;
+export let SEARCH_QUERY = proxyObject(null);
 
 /**
  * @param {import("@localtypes/index").DocumentViewQuery | null} data
  */
 export function setSearchQuery(data) {
-  SEARCH_QUERY = data;
+  SEARCH_QUERY.value = data;
 }
 
 /**
  * @param {string} term
  */
 export function setSearchQueryTerm(term) {
-  if (SEARCH_QUERY) {
-    SEARCH_QUERY.term = term;
+  if (SEARCH_QUERY.value) {
+    SEARCH_QUERY.value.term = term;
   }
 }
 
 /**
- * @type { { term: string; matches: import('@localtypes/index').SearchMatchersValue[]} | null }
+ * @type { import('@localtypes/index').ProxyObjectFunctionValue<{ term: string; matches: import('@localtypes/index').SearchMatchersValue[]} | null> }
  */
-export let SEARCH_RESULT = null;
+export let SEARCH_RESULT = proxyObject(null);
 
 /**
  * @param { { term: string; textContentLength: number; matches: import('@localtypes/index').SearchMatchersValue[]} | null } data
  */
 export function setSearchResult(data) {
-  SEARCH_RESULT = data;
+  SEARCH_RESULT.value = data;
   window.dispatchEvent(
     new CustomEvent(CHILD_WINDOW_EVENT.searchResult, { detail: data })
   );

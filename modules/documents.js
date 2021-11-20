@@ -87,6 +87,7 @@ contextMenuHandler();
 
 container.focus();
 
+// prevent link to open
 container.addEventListener('click', (event) => {
   /** @type { HTMLLinkElement} */
   // @ts-ignore
@@ -100,12 +101,7 @@ container.addEventListener('click', (event) => {
 });
 
 window.addEventListener(CHILD_WINDOW_EVENT.resultConstructed, () => {
-  if (!SEARCH_RESULT || SEARCH_RESULT.matches.length <= 0) {
+  if (!SEARCH_RESULT.value || SEARCH_RESULT.value.matches.length <= 0) {
     defaultPosition();
   }
 });
-
-// const refocus = () => container.focus();
-// refocus();
-
-// container.addEventListener('scroll', debounce(refocus, 1000));

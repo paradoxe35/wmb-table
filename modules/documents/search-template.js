@@ -33,21 +33,23 @@ function removeClass(el, className) {
 const container = pageContainer();
 
 /**
- * @type {null | number}
+ * @type {{  value: null | number }}
  */
-let lastIndex = null;
+let lastIndex = {
+  value: null,
+};
 
 /**
  * @param {number | null} index
  */
 function navigateOnResult(index) {
-  if (index == lastIndex) return;
+  if (index == lastIndex.value) return;
 
-  if (lastIndex) {
+  if (lastIndex.value) {
     /** @type { HTMLElement[] } */
     // @ts-ignore
     const pMarks = document.querySelectorAll(
-      `mark[data-mark-id="${lastIndex}"]`
+      `mark[data-mark-id="${lastIndex.value}"]`
     );
     pMarks.forEach((el) => (el.style.backgroundColor = 'yellow'));
   }
@@ -65,7 +67,7 @@ function navigateOnResult(index) {
       inline: 'center',
       block: 'center',
     });
-    lastIndex = index;
+    lastIndex.value = index;
   }
 }
 
@@ -74,78 +76,85 @@ export function handleSearch() {
   const searchNext = document.querySelector('.search--next--js');
   const searchResult = document.querySelector('.search--result--js');
 
-  let indexSearch = 1;
+  let indexSearch = {
+    value: 1,
+  };
 
   const updateResult = () => {
     if (!searchResult) return;
-    searchResult.textContent = `${indexSearch}/${
-      SEARCH_RESULT ? SEARCH_RESULT.matches.length : 0
+    searchResult.textContent = `${indexSearch.value}/${
+      SEARCH_RESULT.value ? SEARCH_RESULT.value.matches.length : 0
     }`;
   };
 
+  // listen for search result
   window.addEventListener(CHILD_WINDOW_EVENT.searchResult, (_e) => {
-    if (!SEARCH_RESULT || SEARCH_RESULT.matches.length < 1) {
-      indexSearch = 0;
+    if (!SEARCH_RESULT.value || SEARCH_RESULT.value.matches.length < 1) {
+      indexSearch.value = 0;
     } else {
-      indexSearch = 1;
+      indexSearch.value = 1;
     }
-    if (!SEARCH_RESULT) {
+    if (!SEARCH_RESULT.value) {
       addClass(searchPrev, 'disabled');
       addClass(searchNext, 'disabled');
       // @ts-ignore
       searchResult.textContent = `0/0`;
     } else {
       addClass(searchPrev, 'disabled');
-      if (indexSearch == SEARCH_RESULT.matches.length) {
+      if (indexSearch.value == SEARCH_RESULT.value.matches.length) {
         addClass(searchNext, 'disabled');
       } else {
         removeClass(searchNext, 'disabled');
       }
-      lastIndex = null;
-      navigateOnResult(indexSearch);
+      lastIndex.value = null;
 
       updateResult();
     }
   });
 
+  // listen for result has been construct in dom
   window.addEventListener(CHILD_WINDOW_EVENT.resultConstructed, () => {
-    navigateOnResult(indexSearch);
+    navigateOnResult(indexSearch.value);
   });
 
+  // listen on previous result
   searchPrev &&
     searchPrev.addEventListener('click', () => {
-      if (searchPrev.classList.contains('disabled') || !SEARCH_RESULT) return;
+      if (searchPrev.classList.contains('disabled') || !SEARCH_RESULT.value)
+        return;
 
-      indexSearch -= 1;
+      indexSearch.value -= 1;
 
-      if (indexSearch <= 1) {
+      if (indexSearch.value <= 1) {
         addClass(searchPrev, 'disabled');
       }
 
-      if (indexSearch < SEARCH_RESULT.matches.length) {
+      if (indexSearch.value < SEARCH_RESULT.value.matches.length) {
         removeClass(searchNext, 'disabled');
       }
 
-      navigateOnResult(indexSearch);
+      navigateOnResult(indexSearch.value);
 
       updateResult();
     });
 
+  //  listen for next result
   searchNext &&
     searchNext.addEventListener('click', () => {
-      if (searchNext.classList.contains('disabled') || !SEARCH_RESULT) return;
+      if (searchNext.classList.contains('disabled') || !SEARCH_RESULT.value)
+        return;
 
-      indexSearch += 1;
+      indexSearch.value += 1;
 
-      if (indexSearch == SEARCH_RESULT.matches.length) {
+      if (indexSearch.value == SEARCH_RESULT.value.matches.length) {
         addClass(searchNext, 'disabled');
       }
 
-      if (indexSearch > 1) {
+      if (indexSearch.value > 1) {
         removeClass(searchPrev, 'disabled');
       }
 
-      navigateOnResult(indexSearch);
+      navigateOnResult(indexSearch.value);
 
       updateResult();
     });
@@ -175,7 +184,7 @@ export default function initSearchableTemplate() {
 
   handleSearch();
 
-  performSearch(SEARCH_QUERY ? SEARCH_QUERY : undefined);
+  performSearch(SEARCH_QUERY.value ? SEARCH_QUERY.value : undefined);
 }
 
 /**
