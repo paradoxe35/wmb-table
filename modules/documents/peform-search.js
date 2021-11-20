@@ -61,7 +61,7 @@ export function performSearch(query) {
 
   markMaches(container, matches, textContentLength);
 
-  // close query search searched paragraph
+  // close query search for paragraph search
   if (query.searchForParagraph) {
     window.parent.dispatchEvent(
       new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
@@ -70,6 +70,12 @@ export function performSearch(query) {
 
   window.parent.dispatchEvent(
     new Event(PARENT_WINDOW_EVENT.frameDocumentSearchEnd)
+  );
+
+  // resultConstructed event
+  window.setTimeout(
+    () => window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.resultConstructed)),
+    100
   );
 }
 
@@ -275,5 +281,4 @@ function markMaches(element, matches, textContentLength) {
     // @ts-ignore
     index += node.length;
   }
-  window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.resultConstructed));
 }
