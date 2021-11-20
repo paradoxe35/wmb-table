@@ -13,6 +13,7 @@ import { useRecoilValue } from 'recoil';
 import { ipcRenderer } from 'electron';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { useOptionsMenu, useValueStateRef } from '@renderer/hooks';
+import AudioDocumentPlayerIndicator from '../audio-document-player-indicator';
 
 const { Sider } = Layout;
 
@@ -83,17 +84,21 @@ export default function SidebarMenu({
       collapsed={collapsed}
       onCollapse={onCollapse}
     >
-      <Menu mode="inline" selectedKeys={[optionViewer]}>
-        {options.map((op, i) => {
-          return op === null ? (
-            <Menu.Divider key={i} />
-          ) : (
-            <Menu.Item key={op.key} icon={op.icon}>
-              <OptionViewer component={op.key}>{op.name}</OptionViewer>
-            </Menu.Item>
-          );
-        })}
-      </Menu>
+      <div className="full-item-separated">
+        <Menu mode="inline" selectedKeys={[optionViewer]}>
+          {options.map((op, i) => {
+            return op === null ? (
+              <Menu.Divider key={i} />
+            ) : (
+              <Menu.Item key={op.key} icon={op.icon}>
+                <OptionViewer component={op.key}>{op.name}</OptionViewer>
+              </Menu.Item>
+            );
+          })}
+        </Menu>
+
+        <AudioDocumentPlayerIndicator />
+      </div>
     </Sider>
   );
 }
