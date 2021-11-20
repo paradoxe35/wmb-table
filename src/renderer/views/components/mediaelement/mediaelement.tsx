@@ -79,6 +79,7 @@ export default function MediaElement({
   const loadPlay = useCallback(() => {
     if (palyerRef.current && audioSrc) {
       (async () => {
+        await palyerRef.current.setSrc(audioSrc);
         await palyerRef.current.load();
         await palyerRef.current.setCurrentTime(defaultTimeRef.current || 0);
         await palyerRef.current.play();

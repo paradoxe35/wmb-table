@@ -198,6 +198,10 @@ export const kebabize = (str: string) => {
     .join('');
 };
 
+export const toFilename = (name: string, ext: string) => {
+  return `${name.split(' ').join('-').toLocaleLowerCase()}.${ext}`;
+};
+
 export const camelCase = (str: string) => {
   return str
     .split(/[-_]/)
