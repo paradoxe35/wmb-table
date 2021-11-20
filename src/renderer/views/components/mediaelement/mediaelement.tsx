@@ -1,4 +1,4 @@
-import { useCallbackUpdater } from '@renderer/hooks';
+import { useCallbackUpdater, useValueStateRef } from '@renderer/hooks';
 import React, { useCallback, useEffect, useRef } from 'react';
 import './lib/index';
 import svg from './lib/svg/vocal_103008.svg';
@@ -70,6 +70,8 @@ export default function MediaElement({
   const onPauseRef = useCallbackUpdater(onPause);
   const onGetPlayerRefRef = useCallbackUpdater(getPlayerRef);
 
+  const defaultTimeRef = useValueStateRef(defaultTime);
+
   const audioElRef = useRef<HTMLAudioElement | null>(null);
 
   const palyerRef = useRef<any>(undefined);
@@ -78,7 +80,7 @@ export default function MediaElement({
     if (palyerRef.current && audioSrc) {
       (async () => {
         await palyerRef.current.load();
-        await palyerRef.current.setCurrentTime(defaultTime || 0);
+        await palyerRef.current.setCurrentTime(defaultTimeRef.current || 0);
         await palyerRef.current.play();
       })();
     }
