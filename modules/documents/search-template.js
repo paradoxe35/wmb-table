@@ -3,6 +3,7 @@ import {
   SEARCH_QUERY,
   WINDOW_ZOOM,
   DOCUMENT_TITLE_DATAS,
+  CURRENT_AUDIO_DOCUMENT_PLAY,
 } from './seach-query.js';
 import { performSearch } from './peform-search.js';
 import {
@@ -11,6 +12,7 @@ import {
 } from '../shared/shared.js';
 import { pageContainer } from './functions.js';
 import { handleZoomIn, handleZoomOut } from './context-menu.js';
+import { pauseIcon, playIcon } from './html.js';
 
 /**
  * @param {Element | null} el
@@ -261,6 +263,17 @@ function handlePdfDownload() {
 }
 
 /**
+ * audio document play
+ */
+function handleAudioDocumentPlay() {
+  window.parent.dispatchEvent(
+    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
+      detail: DOCUMENT_TITLE_DATAS.value,
+    })
+  );
+}
+
+/**
  * @param {import("@localtypes/index").Title<string | null, string> | null} data
  */
 function documentTitleDataHandler(data) {
@@ -312,8 +325,21 @@ function documentTitleDataHandler(data) {
   if (DOCUMENT_TITLE_DATAS.value.audio_link) {
     const audioEl = document.querySelector('.search--audio-document--js');
     audioEl?.classList.remove('display-none');
+    audioEl?.addEventListener('click', handleAudioDocumentPlay);
   }
   // -------------- section audio and traductions handler -----
 }
 
 DOCUMENT_TITLE_DATAS.registerNewListener(documentTitleDataHandler);
+
+// handle audio play status
+CURRENT_AUDIO_DOCUMENT_PLAY.registerNewListener((value) => {
+  const audioEl = document.querySelector('.search--audio-document--js');
+  if (!value || !audioEl) return;
+
+  if (value.status === 'play') {
+    audioEl.innerHTML = pauseIcon;
+  } else {
+    audioEl.innerHTML = playIcon;
+  }
+});

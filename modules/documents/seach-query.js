@@ -86,3 +86,15 @@ export let DOCUMENT_TITLE_DATAS = proxyObject(null);
 export function setDocumentTitleData(data) {
   DOCUMENT_TITLE_DATAS.value = data;
 }
+
+/**
+ * @type { import('@localtypes/index').ProxyObjectFunctionValue<import("@localtypes/index").CurrentAudioDocumentPlay | null>}
+ */
+export let CURRENT_AUDIO_DOCUMENT_PLAY = proxyObject(null);
+
+/**
+ * @param {import("@localtypes/index").CurrentAudioDocumentPlay | null} data
+ */
+export function setCurrentAudioDocumentPlayData(data) {
+  CURRENT_AUDIO_DOCUMENT_PLAY.value = data;
+}

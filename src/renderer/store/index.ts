@@ -1,5 +1,6 @@
 import { atom, selector } from 'recoil';
 import {
+  CurrentAudioDocumentPlay,
   CustomDocument,
   DocumentTab,
   DocumentViewQuery,
@@ -151,3 +152,10 @@ export const workingNoteAppStore = atom<string | null>({
   key: 'workingNoteAppStore',
   default: null,
 });
+
+export const currentAudioDocumentPlayStore = atom<CurrentAudioDocumentPlay | null>(
+  {
+    key: 'currentAudioDocumentPlay',
+    default: null,
+  }
+);

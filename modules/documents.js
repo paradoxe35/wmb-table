@@ -11,6 +11,7 @@ import {
   WINDOW_POSITION,
   setWindowZoom,
   setDocumentTitleData,
+  setCurrentAudioDocumentPlayData,
 } from './documents/seach-query.js';
 import initSearchableTemplate from './documents/search-template.js';
 import {
@@ -42,16 +43,28 @@ window.addEventListener(
       case POST_MESSAGE_EVENT.documentTitleData:
         setDocumentTitleData(e.data.detail);
         break;
+      case POST_MESSAGE_EVENT.currentAudioDocumentPlay:
+        setCurrentAudioDocumentPlayData(e.data.detail);
+        break;
     }
   },
   false
 );
+
 // call this when event post message has initialized
-window.setTimeout(() => {
+const readyDocumentNotify = () => {
   window.parent.dispatchEvent(
     new Event(CHILD_PARENT_WINDOW_EVENT.documentViewLoaded)
   );
-}, 100);
+};
+
+// wait until full docuement is loaded
+window.setTimeout(readyDocumentNotify, 100);
+// request for post message
+window.addEventListener(
+  POST_MESSAGE_EVENT.requestForPostMessage,
+  readyDocumentNotify
+);
 
 // center page to center
 function defaultPosition() {

@@ -23,6 +23,7 @@ interface Db {
   tabs?: Datastore;
   suggestions?: Datastore;
   customDocuments?: Datastore;
+  audioDocumentTimes?: Datastore;
 
   notes?: Datastore;
   notesReference?: Datastore;
@@ -96,6 +97,7 @@ db.customDocuments = dbStore('custom-documents');
 db.notes = dbStore('notes');
 db.notesReference = dbStore('notes-reference');
 db.notesBibleReference = dbStore('notes-bible-reference');
+db.audioDocumentTimes = dbStore('audio-document-times');
 
 type Sort = Partial<TimeStampData<1 | -1>> & { [field: string]: 1 | -1 };
 

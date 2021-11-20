@@ -290,6 +290,12 @@ export interface UpdaterInfoStatus extends TimeStampData<Date> {
 }
 
 
+export interface AudioDocumentTime extends TimeStampData<Date> {
+  documentTitle: string;
+  time: number;
+}
+
+
 export type UpdaterCopyProgress = {
   elapsedBytes?: number;
   totalBytes?: number;
@@ -322,3 +328,9 @@ export type ProxyObjectFunctionValue<T> = {
 
 
 export type ProxyObjectFunction = <T>(value: T) => ProxyObjectFunctionValue<T>
+
+
+export type CurrentAudioDocumentPlay = {
+  documentTitle: string;
+  status: 'play' | 'pause'
+}
