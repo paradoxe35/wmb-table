@@ -22,6 +22,10 @@ export const SUBJECT_EVENT = {
   focusSubject: 'focus-subject',
 };
 
+export const AUDIO_PLAYER = {
+  openModalPlayer: 'open-modal-player',
+};
+
 export const PARENT_WINDOW_EVENT = {
   frameDocumentSearchStart: 'frame-document-search-start',
   frameDocumentSearchEnd: 'frame-document-search-end',

@@ -1,5 +1,8 @@
 import { Title } from '@localtypes/index';
-import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
+import {
+  AUDIO_PLAYER,
+  CHILD_PARENT_WINDOW_EVENT,
+} from '@modules/shared/shared';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
 import { currentAudioDocumentPlayStore } from '@renderer/store';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
@@ -46,7 +49,7 @@ export default function DocumentAudioPlayer() {
 
       sendIpcRequest<number | undefined>(
         IPC_EVENTS.audio_document_time,
-        event.detail?.title
+        event.detail
       ).then((time) => {
         const ctime = typeof time === 'number' ? time : undefined;
 
@@ -76,6 +79,12 @@ export default function DocumentAudioPlayer() {
         handleAudioPlay
       );
     };
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener(AUDIO_PLAYER.openModalPlayer, () => {
+      setIsModalVisible(true);
+    });
   }, []);
 
   const onAudioPlay = useCallback(() => {

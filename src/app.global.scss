@@ -45,6 +45,13 @@ body {
   }
 }
 
+.full-item-separated {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100%;
+}
+
 .cke5-decoupled-custom-document-editable {
   font-size: 1.09rem;
   line-height: 1.6rem;

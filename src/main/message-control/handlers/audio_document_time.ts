@@ -1,10 +1,10 @@
-import { AudioDocumentTime } from '@localtypes/index';
+import { AudioDocumentTime, Title } from '@localtypes/index';
 import db, { queryDb } from '@main/db/db';
 
-export default async (_: any, docTitle: string) => {
+export default async (_: any, doc: Title) => {
   const audioTime = await queryDb.findOne<AudioDocumentTime>(
     db.audioDocumentTimes,
-    { documentTitle: docTitle }
+    { documentTitle: doc.title }
   );
 
   if (audioTime) return audioTime.time;
