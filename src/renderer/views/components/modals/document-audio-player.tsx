@@ -36,6 +36,7 @@ export default function DocumentAudioPlayer() {
 
   useEffect(() => {
     const handleAudioPlay = async (event: CustomEventInit<Title>) => {
+      if (!event.detail?.audio_link) return;
       // first check if the request is not the current player session
       if (docTitleRef.current?.title === event.detail?.title) {
         // pause if is playing or play if pause
@@ -48,7 +49,7 @@ export default function DocumentAudioPlayer() {
       }
 
       sendIpcRequest<{ time: number | undefined; local_file?: string }>(
-        IPC_EVENTS.audio_document_time,
+        IPC_EVENTS.audio_document_time_and_local_file,
         event.detail
       ).then(({ time, local_file }) => {
         const ctime = typeof time === 'number' ? time : undefined;
@@ -105,7 +106,7 @@ export default function DocumentAudioPlayer() {
 
   const onAudioTimeUpdate = useCallback((time: number) => {
     sendIpcRequest<number | undefined>(
-      IPC_EVENTS.audio_document_time_set,
+      IPC_EVENTS.audio_document_time_and_local_file_set,
       docTitleRef.current?.title,
       time
     );
@@ -127,6 +128,7 @@ export default function DocumentAudioPlayer() {
       >
         {docTitle && (
           <MediaElement
+            key={docTitle.audio_link!}
             title={docTitle.title}
             getPlayerRef={setAudioPlayRef}
             audioSrc={docTitle.audio_link!}
