@@ -1,5 +1,7 @@
 import path from 'path';
+import fs from 'fs';
 import { app, BrowserWindow } from 'electron';
+import { APP_NAME } from './utils/constants';
 
 export const RESOURCES_PATH = app.isPackaged
   ? path.join(process.resourcesPath, 'assets')
@@ -62,4 +64,14 @@ export function getImagesPath(relativePath: string) {
     );
     return path.join(asarUnpackedPath, relativePath);
   }
+}
+
+export function getAppHomePath(...paths: string[]) {
+  const appName = APP_NAME.toLowerCase().split(' ').join('-');
+  const homePath = path.join(app.getPath('home'), `.${appName}`, ...paths);
+  if (!fs.existsSync(homePath)) {
+    fs.mkdirSync(homePath, { recursive: true });
+  }
+
+  return homePath;
 }
