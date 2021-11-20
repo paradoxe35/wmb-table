@@ -8,6 +8,7 @@ import React, {
 import DocumentTabs from '../components/document-tabs';
 import { Layout } from 'antd';
 import {
+  currentAudioDocumentPlayStore,
   currentDocumentTabsSelector,
   documentTabsStore,
   documentViewQueryStore,
@@ -33,7 +34,7 @@ const { Content } = Layout;
 
 const usePostMessage = () => {
   // handle post message request to child only when child content has been fully loaded
-  const waitForDocumentViewStarted = useCallback(() => {
+  const waitForDocumentViewStarted = useCallback((callback: Function) => {
     return new Promise<any>((resolve) => {
       window.addEventListener(
         CHILD_PARENT_WINDOW_EVENT.documentViewLoaded,
@@ -42,6 +43,7 @@ const usePostMessage = () => {
           once: true,
         }
       );
+      callback();
     });
   }, []);
 
@@ -52,7 +54,11 @@ const usePostMessage = () => {
       detail: any,
       path: string
     ) => {
-      await waitForDocumentViewStarted();
+      await waitForDocumentViewStarted(() => {
+        iframeEl.contentWindow?.dispatchEvent(
+          new Event(POST_MESSAGE_EVENT.requestForPostMessage)
+        );
+      });
       iframeEl.contentWindow?.postMessage({ type, detail }, path);
     },
     []
@@ -273,6 +279,28 @@ const useOpenDocumentExternalLink = () => {
   }, []);
 };
 
+const useToPostMessageCurrentAudioDocumentPlay = (
+  iframeRef: React.MutableRefObject<HTMLIFrameElement | null>,
+  path: string | null
+) => {
+  const postMessage = usePostMessage();
+
+  const currentAudioDocumentPlay = useRecoilValue(
+    currentAudioDocumentPlayStore
+  );
+
+  useEffect(() => {
+    if (currentAudioDocumentPlay && iframeRef.current && path) {
+      postMessage(
+        iframeRef.current,
+        POST_MESSAGE_EVENT.currentAudioDocumentPlay,
+        currentAudioDocumentPlay,
+        path
+      );
+    }
+  }, [currentAudioDocumentPlay, path]);
+};
+
 export default function DocumentView() {
   const { iframeRef, path, titleRef, title, $titles } = useDocument();
 
@@ -391,6 +419,8 @@ export default function DocumentView() {
       handleSearchQuery(iframeRef.current, hasOwnPosition);
     }
   };
+
+  useToPostMessageCurrentAudioDocumentPlay(iframeRef, path);
 
   return (
     <>

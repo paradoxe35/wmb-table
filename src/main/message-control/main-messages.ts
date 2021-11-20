@@ -53,6 +53,9 @@ import {
   handle_backup_login,
   handle_backup_status,
 } from './handlers/backup';
+import audio_document_time, {
+  audio_document_time_set,
+} from './handlers/audio_document_time';
 
 mainMessageTransport(IPC_EVENTS.title_documents, title_documents);
 
@@ -187,3 +190,11 @@ mainMessageTransport(IPC_EVENTS.restart_app, restart_app);
 
 // app started to update
 mainMessageTransport(IPC_EVENTS.started_to_update, started_to_update);
+
+// audio document time handler
+mainMessageTransport(IPC_EVENTS.audio_document_time, audio_document_time);
+
+mainMessageTransport(
+  IPC_EVENTS.audio_document_time_set,
+  audio_document_time_set
+);

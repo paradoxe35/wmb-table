@@ -1,5 +1,5 @@
 import { useCallbackUpdater } from '@renderer/hooks';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import './lib/index';
 import svg from './lib/svg/vocal_103008.svg';
 
@@ -44,6 +44,7 @@ const controllersSeparator = () => {
 type MediaElementProps = {
   title: string;
   audioSrc: string;
+  defaultTime?: number;
   onTimeUpdate?: (time: number) => void;
   onPlay?: () => void;
   onPause?: () => void;
@@ -57,6 +58,7 @@ type MediaElementProps = {
 export default function MediaElement({
   title,
   audioSrc,
+  defaultTime,
   subtitle: { text, head },
   onTimeUpdate,
   onPause,
@@ -72,11 +74,18 @@ export default function MediaElement({
 
   const palyerRef = useRef<any>(undefined);
 
-  useEffect(() => {
-    if (palyerRef.current) {
-      palyerRef.current.load();
-      palyerRef.current.play();
+  const loadPlay = useCallback(() => {
+    if (palyerRef.current && audioSrc) {
+      (async () => {
+        await palyerRef.current.load();
+        await palyerRef.current.setCurrentTime(defaultTime || 0);
+        await palyerRef.current.play();
+      })();
     }
+  }, []);
+
+  useEffect(() => {
+    window.setTimeout(loadPlay, 300);
   }, [audioSrc]);
 
   useEffect(() => {
@@ -102,8 +111,6 @@ export default function MediaElement({
     };
 
     const palyer = new MediaElementPlayer(audioElRef.current, options);
-
-    audioSrc && palyer.play();
 
     palyerRef.current = palyer;
 

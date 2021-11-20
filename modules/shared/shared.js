@@ -4,6 +4,8 @@ export const POST_MESSAGE_EVENT = {
   windowPosition: 'window-position',
   documentZoom: 'document-zoom',
   documentTitleData: 'document-title-data',
+  currentAudioDocumentPlay: 'current-audio-document-play',
+  requestForPostMessage: 'request-for-post-message',
 };
 
 export const EDITOR_EVENT = {
@@ -42,6 +44,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
   openDocumentExternalLink: 'open-document-external-link',
   openOtherTraductionsModal: 'open-other-traductions-modal',
   downloadDocumentPdf: 'download-document-pdf',
+  audioDocumentPlay: 'audio-document-play',
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';

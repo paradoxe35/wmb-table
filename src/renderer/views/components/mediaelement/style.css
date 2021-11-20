@@ -50,13 +50,13 @@
 }
 .podcast__meta .artwork {
   margin-right: 0;
-  transform: translateY(-70px);
+  transform: translateY(-50px);
 }
 .podcast__meta .artwork > img {
   border-radius: 3px;
-  width: 150px;
-  height: 150px;
-  margin-bottom: -80px;
+  width: 100px;
+  height: 100px;
+  margin-bottom: -30px;
 }
 
 .mejs-prepended-buttons {
