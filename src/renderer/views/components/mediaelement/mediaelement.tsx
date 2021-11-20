@@ -1,5 +1,5 @@
 import { useCallbackUpdater, useValueStateRef } from '@renderer/hooks';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import './lib/index';
 import svg from './lib/svg/vocal_103008.svg';
 
@@ -43,6 +43,7 @@ const controllersSeparator = () => {
 
 type MediaElementProps = {
   title: string;
+  key: React.Key | null | undefined;
   audioSrc: string;
   defaultTime?: number;
   onTimeUpdate?: (time: number) => void;
@@ -74,23 +75,6 @@ export default function MediaElement({
 
   const audioElRef = useRef<HTMLAudioElement | null>(null);
 
-  const palyerRef = useRef<any>(undefined);
-
-  const loadPlay = useCallback(() => {
-    if (palyerRef.current && audioSrc) {
-      (async () => {
-        await palyerRef.current.setSrc(audioSrc);
-        await palyerRef.current.load();
-        await palyerRef.current.setCurrentTime(defaultTimeRef.current || 0);
-        await palyerRef.current.play();
-      })();
-    }
-  }, []);
-
-  useEffect(() => {
-    window.setTimeout(loadPlay, 300);
-  }, [audioSrc]);
-
   useEffect(() => {
     if (!audioElRef.current) return;
 
@@ -113,22 +97,28 @@ export default function MediaElement({
       ],
     };
 
-    const palyer = new MediaElementPlayer(audioElRef.current, options);
+    const player = new MediaElementPlayer(audioElRef.current, options);
 
-    palyerRef.current = palyer;
+    player.load();
+    player.setCurrentTime(defaultTimeRef.current || 0);
+    player.play();
 
-    onGetPlayerRefRef(palyer);
+    onGetPlayerRefRef(player);
 
-    palyer.node.addEventListener('timeupdate', () =>
-      onTimeUpdateRef(palyer.getCurrentTime())
+    player.node?.addEventListener('timeupdate', () =>
+      onTimeUpdateRef(player.getCurrentTime())
     );
 
-    palyer.node.addEventListener('play', onPlayRef);
+    player.node?.addEventListener('play', onPlayRef);
 
-    palyer.node.addEventListener('pause', onPauseRef);
+    player.node?.addEventListener('pause', onPauseRef);
 
     // Separate the audio controls so I can style them better.
     controllersSeparator();
+
+    return () => {
+      player.remove();
+    };
   }, []);
 
   return (
