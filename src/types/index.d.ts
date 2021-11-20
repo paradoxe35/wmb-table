@@ -291,8 +291,8 @@ export interface UpdaterInfoStatus extends TimeStampData<Date> {
 
 
 export interface AudioDocumentTime extends TimeStampData<Date> {
-  documentTitle: string;
   local_file?:string;
+  audio_link:string;
   time: number;
 }
 
