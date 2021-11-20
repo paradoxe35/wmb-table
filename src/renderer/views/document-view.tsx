@@ -59,7 +59,7 @@ const usePostMessage = () => {
           new Event(POST_MESSAGE_EVENT.requestForPostMessage)
         );
       });
-      iframeEl.contentWindow?.postMessage({ type, detail }, path);
+      iframeEl.contentWindow?.postMessage({ type, detail }, 'file:///' + path);
     },
     []
   );
