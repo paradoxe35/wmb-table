@@ -50,6 +50,12 @@ export function performSearch(query) {
 
     matches = regexpMatcher(terms, textContent);
 
+    if (matches.length === 0) {
+      window.parent.dispatchEvent(
+        new Event(CHILD_PARENT_WINDOW_EVENT.emptySearchquery)
+      );
+    }
+
     // only first match for paragraph search
     matches =
       query.searchForParagraph && matches.length > 0 ? [matches[0]] : matches;

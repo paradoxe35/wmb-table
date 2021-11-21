@@ -6,7 +6,7 @@ import React, {
   useState,
 } from 'react';
 import DocumentTabs from '../components/document-tabs';
-import { Layout } from 'antd';
+import { Layout, message } from 'antd';
 import {
   currentAudioDocumentPlayStore,
   currentDocumentTabsSelector,
@@ -179,6 +179,12 @@ const useSearchQuery = (
     },
     []
   );
+
+  useEffect(() => {
+    window.addEventListener(CHILD_PARENT_WINDOW_EVENT.emptySearchquery, () =>
+      message.warn('Aucun résultat trouvé')
+    );
+  }, []);
 
   return handleSearchQuery;
 };
