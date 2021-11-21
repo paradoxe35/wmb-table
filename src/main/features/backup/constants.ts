@@ -45,7 +45,7 @@ export const setOAuth2Client = (client: OAuth2Client | null) =>
   (OAUTH2_CLIENT.value = client);
 
 export const EXCLUDE_DB_FILES_REGEX = new RegExp(
-  `(configurations.*|sidebar\\-status|tabs|backup.*)\\${DB_EXTENSION}$`
+  `(configurations|sidebar\\-status|tabs|backup.*|audio.*)\\${DB_EXTENSION}$`
 );
 
 /**
