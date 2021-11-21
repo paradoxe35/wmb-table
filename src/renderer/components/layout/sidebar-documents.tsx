@@ -35,12 +35,28 @@ const { Sider } = Layout;
 
 const { Option } = Select;
 
+const useDocumentData = () => {
+  const [datas, setDatas] = useState<DocumentTitle[]>([]);
+  const title = useRecoilValue(currentDocumentTabsSelector);
+
+  const documents = useRecoilValue(documentTitlesStore);
+  const setDocuments = useSetRecoilState(titlesStore);
+
+  return {
+    datas,
+    setDatas,
+    documents,
+    setDocuments,
+    title,
+  };
+};
+
 export default function SidebarDocuments() {
   const status = useRecoilValue(sidebarStatusHiddenStore);
   return (
     <Sider
       hidden={status}
-      width="263px"
+      width="265px"
       trigger={null}
       className="layout__sidebar"
       theme="light"
@@ -50,6 +66,7 @@ export default function SidebarDocuments() {
           { name: 'Tous', active: true },
           { name: 'Années', active: false },
           { name: 'Ajoutés', active: false },
+          { name: 'alphabet', active: false },
         ]}
       >
         {(index: number) => {
@@ -67,6 +84,9 @@ export default function SidebarDocuments() {
               <div hidden={index !== 2}>
                 <div className="mt-2" />
                 <DocumentsAdded />
+              </div>
+              <div hidden={index !== 3}>
+                <DocumentByAlphabetic />
               </div>
             </>
           );
@@ -92,6 +112,58 @@ const DocumentsAdded = () => {
         />
       ))}
     </ContainerScrollY>
+  );
+};
+
+const alpha = Array.from(Array(26)).map((_e, i) => i + 65);
+const alphabets = alpha.map((x) => String.fromCharCode(x));
+
+const DocumentByAlphabetic = () => {
+  const { datas, setDatas, documents, title } = useDocumentData();
+
+  const alphabet = useRef(alphabets[0]);
+
+  const onSearch = useCallback(() => {
+    const newDocuments = documents.filter((d) => {
+      return (
+        strNormalize(d.getTitle()).charAt(0).toUpperCase() === alphabet.current
+      );
+    });
+    setDatas(newDocuments);
+  }, [setDatas, documents]);
+
+  const onChangeAlphabetic = useCallback(
+    (value: string) => {
+      alphabet.current = value;
+      onSearch();
+    },
+    [onSearch]
+  );
+
+  useEffect(() => {
+    onSearch();
+  }, [documents]);
+
+  return (
+    <>
+      <Card bordered={false}>
+        <Select
+          className="w-100 max-w-100"
+          placeholder="Alphabet"
+          defaultValue={alphabets[0]}
+          onChange={onChangeAlphabetic}
+        >
+          {alphabets.map((al) => {
+            return (
+              <Option key={al} value={al}>
+                {al}
+              </Option>
+            );
+          })}
+        </Select>
+      </Card>
+      <DocumentList datas={datas} title={title} />
+    </>
   );
 };
 
@@ -138,12 +210,7 @@ const DocumentByYears = () => {
 };
 
 const DocumentSearch = () => {
-  const [datas, setDatas] = useState<DocumentTitle[]>([]);
-  const title = useRecoilValue(currentDocumentTabsSelector);
-
-  const documents = useRecoilValue(documentTitlesStore);
-  const setDocuments = useSetRecoilState(titlesStore);
-
+  const { datas, setDatas, documents, setDocuments, title } = useDocumentData();
   const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
 
   const exceptMessageFrenchKey = 'BBV';
@@ -169,30 +236,39 @@ const DocumentSearch = () => {
       .finally(() => setAppDataLoaded(true));
   }, []);
 
-  const onSearch = useCallback((value: string) => {
-    searchValue.current = value;
-    const trans = traductionFilter.current;
+  const onSearch = useCallback(
+    (value: string) => {
+      searchValue.current = value;
+      const trans = traductionFilter.current;
 
-    if (documents.length) {
-      const newDocuments = documents.filter((d) => {
-        const matchTitle = simpleRegExp(value).test(strNormalize(d.getTitle()));
-        if (trans) {
-          return (
-            matchTitle &&
-            (trans === d.getTraduction() ||
-              (d.getTraduction() === exceptMessageFrenchKey && trans === 'MS'))
+      if (documents.length) {
+        const newDocuments = documents.filter((d) => {
+          const matchTitle = simpleRegExp(value).test(
+            strNormalize(d.getTitle())
           );
-        }
-        return matchTitle;
-      });
-      setDatas(newDocuments);
-    }
-  }, []);
+          if (trans) {
+            return (
+              matchTitle &&
+              (trans === d.getTraduction() ||
+                (d.getTraduction() === exceptMessageFrenchKey &&
+                  trans === 'MS'))
+            );
+          }
+          return matchTitle;
+        });
+        setDatas(newDocuments);
+      }
+    },
+    [setDatas, documents]
+  );
 
-  const onTraductionChange = useCallback((value: string | undefined) => {
-    traductionFilter.current = value;
-    onSearch(searchValue.current);
-  }, []);
+  const onTraductionChange = useCallback(
+    (value: string | undefined) => {
+      traductionFilter.current = value;
+      onSearch(searchValue.current);
+    },
+    [onSearch]
+  );
 
   return (
     <>
@@ -220,6 +296,20 @@ const DocumentSearch = () => {
           </Select>
         </Space>
       </Card>
+      <DocumentList datas={datas} title={title} />
+    </>
+  );
+};
+
+const DocumentList = ({
+  datas,
+  title,
+}: {
+  datas: DocumentTitle[];
+  title: string;
+}) => {
+  return (
+    <>
       <Divider style={{ padding: '0', margin: '0' }} />
       <ContainerScrollY style={{ paddingLeft: '22px' }}>
         {datas
