@@ -68,6 +68,7 @@ export function performSearch(query) {
     );
   }
 
+  // inform parent that search ends
   window.parent.dispatchEvent(
     new Event(PARENT_WINDOW_EVENT.frameDocumentSearchEnd)
   );
@@ -75,7 +76,7 @@ export function performSearch(query) {
   // resultConstructed event
   window.setTimeout(
     () => window.dispatchEvent(new Event(CHILD_WINDOW_EVENT.resultConstructed)),
-    100
+    500
   );
 }
 
