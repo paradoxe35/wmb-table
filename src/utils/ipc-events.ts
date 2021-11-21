@@ -53,7 +53,9 @@ export const IPC_EVENTS = {
   active_document_view: 'active_document_view',
   download_document_pdf: 'download_document_pdf',
   audio_document_time_and_local_file: 'audio_document_time_and_local_file',
-  audio_document_time_and_local_file_set: 'audio_document_time_and_local_file_set',
+  audio_document_time_and_local_file_set:
+    'audio_document_time_and_local_file_set',
+  audio_document_last_play: 'audio_document_last_play',
   // events from main process
   custom_document_upload_progress: 'custom_document_upload_progress',
   open_modal_document_from_main: 'open_modal_document_from_main',
