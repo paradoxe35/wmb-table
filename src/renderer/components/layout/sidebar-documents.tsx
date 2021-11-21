@@ -65,8 +65,8 @@ export default function SidebarDocuments() {
         tabs={[
           { name: 'Tous', active: true },
           { name: 'Années', active: false },
-          { name: 'Ajoutés', active: false },
           { name: 'alphabet', active: false },
+          { name: 'Ajoutés', active: false },
         ]}
       >
         {(index: number) => {
@@ -82,11 +82,11 @@ export default function SidebarDocuments() {
                 </ContainerScrollY>
               </div>
               <div hidden={index !== 2}>
-                <div className="mt-2" />
-                <DocumentsAdded />
+                <DocumentByAlphabetic />
               </div>
               <div hidden={index !== 3}>
-                <DocumentByAlphabetic />
+                <div className="mt-2" />
+                <DocumentsAdded />
               </div>
             </>
           );
