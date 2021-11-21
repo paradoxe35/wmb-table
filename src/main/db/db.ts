@@ -24,6 +24,7 @@ interface Db {
   suggestions?: Datastore;
   customDocuments?: Datastore;
   audioDocumentTimes?: Datastore;
+  audioDocumentLastPlay?: Datastore;
 
   notes?: Datastore;
   notesReference?: Datastore;
@@ -97,9 +98,8 @@ db.customDocuments = dbStore('custom-documents');
 db.notes = dbStore('notes');
 db.notesReference = dbStore('notes-reference');
 db.notesBibleReference = dbStore('notes-bible-reference');
-db.configurationsAudioDocumentTimes = dbStore(
-  'configurations-audio-document-times'
-);
+db.audioDocumentTimes = dbStore('audio-document-times');
+db.audioDocumentLastPlay = dbStore('audio-document-last-play');
 
 type Sort = Partial<TimeStampData<1 | -1>> & { [field: string]: 1 | -1 };
 

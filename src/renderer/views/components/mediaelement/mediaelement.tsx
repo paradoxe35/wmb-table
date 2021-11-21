@@ -43,6 +43,7 @@ const controllersSeparator = () => {
 
 type MediaElementProps = {
   title: string;
+  autoPlay: boolean;
   key: React.Key | null | undefined;
   audioSrc: string;
   defaultTime?: number;
@@ -63,6 +64,7 @@ export default function MediaElement({
   subtitle: { text, head },
   onTimeUpdate,
   onPause,
+  autoPlay = true,
   onPlay,
   getPlayerRef,
 }: MediaElementProps) {
@@ -101,7 +103,9 @@ export default function MediaElement({
 
     player.load();
     player.setCurrentTime(defaultTimeRef.current || 0);
-    player.play();
+    if (autoPlay) {
+      player.play();
+    }
 
     onGetPlayerRefRef(player);
 

@@ -34,11 +34,18 @@ export default function DocumentAudioPlayer() {
 
   const audioPlayerRef = useRef<any>(null);
 
+  const autoplay = useRef(true);
+
   useEffect(() => {
     const handleAudioPlay = async (event: CustomEventInit<Title>) => {
       if (!event.detail?.audio_link) return;
       // first check if the request is not the current player session
       if (docTitleRef.current?.title === event.detail?.title) {
+        // for last audio player was found, then open modal first only first time on play
+        if (!autoplay.current) {
+          setIsModalVisible(true);
+          autoplay.current = true;
+        }
         // pause if is playing or play if pause
         if (audioPlayerRef.current?.paused === true) {
           audioPlayerRef.current?.play();
@@ -48,6 +55,18 @@ export default function DocumentAudioPlayer() {
         return;
       }
 
+      // if different from the last audio player the reset autplay variable to true
+      if (
+        docTitleRef.current?.title &&
+        docTitleRef.current?.title !== event.detail?.title
+      ) {
+        autoplay.current = true;
+      }
+
+      // register last player
+      sendIpcRequest(IPC_EVENTS.audio_document_last_play, event.detail);
+
+      // request for last played time and local file path if available
       sendIpcRequest<{ time: number | undefined; local_file?: string }>(
         IPC_EVENTS.audio_document_time_and_local_file,
         event.detail
@@ -63,13 +82,15 @@ export default function DocumentAudioPlayer() {
             local_file?.replaceAll('#', '%23') || event.detail?.audio_link,
         });
 
-        // open modal if not yet
-        setIsModalVisible(true);
+        // open modal if not yet and auto is set to true
+        if (autoplay.current) {
+          setIsModalVisible(true);
+        }
 
         // set as current audio play
         setCurrentAudioDocumentPlay({
           documentTitle: event.detail?.title!,
-          status: 'play',
+          status: autoplay.current ? 'play' : 'pause',
         });
       });
     };
@@ -86,10 +107,28 @@ export default function DocumentAudioPlayer() {
     };
   }, []);
 
+  // initialase default data
   useEffect(() => {
+    // list to event from player icon
     window.addEventListener(AUDIO_PLAYER.openModalPlayer, () => {
       setIsModalVisible(true);
     });
+
+    // get the last played audio document
+    sendIpcRequest<Title | null>(IPC_EVENTS.audio_document_last_play).then(
+      (data) => {
+        if (data) {
+          // prevent audio to play is available at mount of component
+          autoplay.current = false;
+          // dispach audio event
+          window.dispatchEvent(
+            new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
+              detail: data,
+            })
+          );
+        }
+      }
+    );
   }, []);
 
   const onAudioPlay = useCallback(() => {
@@ -124,6 +163,7 @@ export default function DocumentAudioPlayer() {
         title={null}
         footer={[]}
         width={600}
+        forceRender
         visible={isModalVisible}
         onOk={handleOk}
         onCancel={handleCancel}
@@ -131,6 +171,7 @@ export default function DocumentAudioPlayer() {
         {docTitle && (
           <MediaElement
             key={docTitle.audio_link!}
+            autoPlay={autoplay.current}
             title={docTitle.title}
             getPlayerRef={setAudioPlayRef}
             audioSrc={docTitle.audio_link!}

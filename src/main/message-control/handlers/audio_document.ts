@@ -9,10 +9,10 @@ import path from 'path';
 const pending: { links: string[] } = {
   links: [],
 };
-
+// get audio time and download if not yet downloaded
 export default async (_: any, doc: Title) => {
   const audioTime = await queryDb.findOne<AudioDocumentTime>(
-    db.configurationsAudioDocumentTimes,
+    db.audioDocumentTimes,
     { audio_link: doc.audio_link }
   );
 
@@ -40,7 +40,7 @@ export default async (_: any, doc: Title) => {
       pending.links = pending.links.filter((link) => link !== doc.audio_link);
 
       queryDb.update(
-        db.configurationsAudioDocumentTimes,
+        db.audioDocumentTimes,
         { audio_link: doc.audio_link },
         { $set: { local_file } },
         { upsert: true }
@@ -57,20 +57,35 @@ export default async (_: any, doc: Title) => {
 
   return {};
 };
-
+// update audio time
 export async function audio_document_time_set(
   _: any,
   audio_link: string,
   time: number
 ) {
   await queryDb.update(
-    db.configurationsAudioDocumentTimes,
+    db.audioDocumentTimes,
     { audio_link },
     { $set: { time } },
     { upsert: true }
   );
 
-  db.configurationsAudioDocumentTimes?.persistence.compactDatafile();
+  db.audioDocumentTimes?.persistence.compactDatafile();
 
   return true;
+}
+
+export async function audio_document_last_play(_: any, doc: Title | undefined) {
+  const query = { reference: 'audio-play' };
+  if (doc) {
+    await queryDb.update(
+      db.audioDocumentLastPlay,
+      query,
+      { $set: { doc } },
+      { upsert: true }
+    );
+    db.audioDocumentLastPlay?.persistence.compactDatafile();
+  } else {
+    return (await queryDb.findOne<any>(db.audioDocumentLastPlay, query))?.doc;
+  }
 }
