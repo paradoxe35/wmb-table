@@ -49,6 +49,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
   openOtherTraductionsModal: 'open-other-traductions-modal',
   downloadDocumentPdf: 'download-document-pdf',
   audioDocumentPlay: 'audio-document-play',
+  emptySearchquery: 'empty-search-query',
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';
