@@ -65,7 +65,7 @@ export default function SidebarDocuments() {
         tabs={[
           { name: 'Tous', active: true },
           { name: 'Années', active: false },
-          { name: 'alphabet', active: false },
+          { name: 'Alphabet', active: false },
           { name: 'Ajoutés', active: false },
         ]}
       >
