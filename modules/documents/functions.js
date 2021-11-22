@@ -1,8 +1,8 @@
 import { DOCUMENT_CONTAINER_ID } from '../shared/shared.js';
 
 /**
- * @param { HTMLElement | Element } element
- * @param { HTMLElement | Element } parent
+ * @param { HTMLElement | Element | Node } element
+ * @param { HTMLElement | Element | Node } parent
  */
 export function closestChildParent(element, parent) {
   if (!parent || !element) return null;

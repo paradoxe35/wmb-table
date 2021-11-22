@@ -2,7 +2,10 @@
 import './documents/html.js';
 import './context-menu/kali_dark.css.js';
 import contextMenuHandler from './documents/context-menu.js';
-import { scrollToViewTree } from './documents/document-tree.js';
+import {
+  scrollToViewTree,
+  scrollToRangesTreeView,
+} from './documents/document-tree.js';
 import { pageContainer } from './documents/functions.js';
 import {
   setSearchQuery,
@@ -32,7 +35,7 @@ window.addEventListener(
         initSearchableTemplate();
         break;
       case POST_MESSAGE_EVENT.subjectItem:
-        scrollToViewTree(e.data.detail);
+        scrollToRangesTreeView(e.data.detail);
         break;
       case POST_MESSAGE_EVENT.windowPosition:
         setWindowPostion(e.data.detail);

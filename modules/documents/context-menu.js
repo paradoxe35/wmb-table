@@ -3,13 +3,9 @@ import {
   CHILD_WINDOW_EVENT,
 } from '../shared/shared.js';
 import { ContextMenu } from '../context-menu/context.js';
-import {
-  closestChildParent,
-  pageContainer,
-  zoomIn,
-  zoomOut,
-} from './functions.js';
+import { pageContainer, zoomIn, zoomOut } from './functions.js';
 import { setWindowZoom } from './seach-query.js';
+import { selectedTextAsReference } from './document-tree.js';
 
 function copyTextSelection() {
   let selObj = window.getSelection();
@@ -26,34 +22,22 @@ function searchOpen() {
 }
 
 /**
- * @type {Element | null}
- */
-let lastNodeTargetFromContent = null;
-
-/**
  * @param {string} event
  */
 function addDocumentNodeToItem(event) {
-  if (!lastNodeTargetFromContent) return;
-  if (lastNodeTargetFromContent.tagName === 'MARK') {
-    lastNodeTargetFromContent = lastNodeTargetFromContent.parentElement;
-  }
-  const documentHtmlTree = closestChildParent(
-    // @ts-ignore
-    lastNodeTargetFromContent,
-    document.body
-  );
-  // @ts-ignore
-  const textContent = lastNodeTargetFromContent.textContent;
+  const range = selectedTextAsReference();
+
+  if (!range) return;
 
   window.parent.dispatchEvent(
     new CustomEvent(event, {
       detail: {
-        textContent,
+        textContent: range.contextualText,
         documentHtmlTree: {
-          tree: documentHtmlTree,
+          tree: range.startContainer,
           scrollY: container.scrollTop,
           scrollX: container.scrollLeft,
+          ranges: { ...range, contextualText: null },
         },
       },
     })
@@ -134,12 +118,6 @@ export default () => {
           break;
       }
     }
-  });
-
-  // @ts-ignore
-  chromeContextMenu.container.addEventListener('contextmenu', (e) => {
-    // @ts-ignore
-    lastNodeTargetFromContent = e.target;
   });
 
   chromeContextMenu.install();

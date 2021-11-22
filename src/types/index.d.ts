@@ -124,10 +124,20 @@ export interface SearchResult extends SearchResultStructure {
   data: SearchItem[];
 }
 
+
+export type DocumentTreeRanges = {
+  contextualText: string | null;
+  startContainer: number[];
+  endContainer: number[];
+  startOffset: number;
+  endOffset: number;
+}
+
 export type DocumentHtmlTree = {
   tree: number[];
   scrollY?: number;
   scrollX?: number;
+  ranges?: DocumentTreeRanges;
 };
 
 export interface SubjectDocumentItem extends Readonly<TimeStampData> {

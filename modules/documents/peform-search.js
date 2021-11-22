@@ -4,6 +4,7 @@ import {
   DOCUMENT_CONTENT_ID,
   PARENT_WINDOW_EVENT,
 } from '../shared/shared.js';
+import { createTreeTextWalker } from './document-tree.js';
 import { pageContainer } from './functions.js';
 import { setSearchResult } from './seach-query.js';
 
@@ -147,22 +148,7 @@ function surroundContentsTag(node, index, start, end) {
  * @param { number } textContentLength
  */
 function markMaches(element, matches, textContentLength) {
-  var nodeFilter = {
-    acceptNode: function (/** @type {Node} */ node) {
-      if (!node.nodeValue || !node.nodeValue.length) {
-        return NodeFilter.FILTER_SKIP;
-      }
-      return NodeFilter.FILTER_ACCEPT;
-    },
-  };
-
-  let walker = document.createTreeWalker(
-    element,
-    NodeFilter.SHOW_TEXT,
-    nodeFilter,
-    // @ts-ignore
-    false
-  );
+  const walker = createTreeTextWalker(element);
 
   let index = 0;
   let node = null;
