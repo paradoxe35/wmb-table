@@ -124,7 +124,7 @@ export function scrollToRangesTreeView(item) {
       } else if (!firstCheck && textLength >= endOffset) {
         range.setStart(node, 0);
         // @ts-ignore
-        range.setEnd(node, restLength);
+        range.setEnd(node, restLength > node.length ? node.length : restLength);
       }
 
       if (range.endOffset > 0) {
