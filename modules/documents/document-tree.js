@@ -268,6 +268,9 @@ export function selectedTextAsReference() {
     return null;
   }
 
+  let startOffset = range.startOffset;
+  let endOffset = range.endOffset;
+
   if (endContainer.nodeName !== '#text') {
     endContainer = startContainer;
   } else if (startContainer.nodeName !== '#text') {
@@ -313,12 +316,8 @@ export function selectedTextAsReference() {
   return {
     startContainer: startContainerTree,
     endContainer: endContainerTree,
-    startOffset: range.startOffset,
-    // @ts-ignore
-    startContainerTextLength: startContainer?.length || 0,
-    // @ts-ignore
-    endContainerTextLenth: endContainer?.length || 0,
-    endOffset: range.endOffset,
+    startOffset: startOffset,
+    endOffset: endOffset,
     contextualText: textStartContainer,
   };
 }
