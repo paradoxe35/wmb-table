@@ -94,13 +94,13 @@ export function NoteReferencesModal() {
   return (
     <Modal
       title={
-        <span>
+        <div className="mr-2">
           {workingNote.current ? (
             <span>Références(note: {workingNote.current.name})</span>
           ) : (
             <span>Aucune note est actuellement sélectionnée</span>
           )}
-        </span>
+        </div>
       }
       footer={[]}
       visible={isModalVisible}
