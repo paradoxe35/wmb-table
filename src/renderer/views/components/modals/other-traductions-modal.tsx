@@ -47,9 +47,9 @@ export function OtherTraductionsModal() {
   return (
     <Modal
       title={
-        <span>
+        <div className="mr-2">
           Autres Traductions du document: <em>{title}</em>
-        </span>
+        </div>
       }
       footer={[]}
       visible={isModalVisible}
