@@ -70,7 +70,7 @@ const controllerBarHtml = /* html */ `
           </svg>
       </div>
 
-      <div tabindex="-1" class="separator display-none search--field"></div>
+      <div tabindex="-1" class="separator search--separator display-none search--field"></div>
 
       <div tooltip="Dézoomer" tabindex="0" class="button search--zoom-out--js" role="button">
         <svg viewBox="64 64 896 896" focusable="false" data-icon="zoom-out" width="1em" height="1em" fill="currentColor" aria-hidden="true">
