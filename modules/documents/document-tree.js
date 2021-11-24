@@ -237,10 +237,14 @@ export function selectedTextAsReference() {
   // get text selection
   let selection = window.getSelection();
 
+  // get the range before mark tags clean
+  const range1 = selection?.getRangeAt(0).cloneRange();
+  const startOffset1 = range1?.startOffset;
+
   // first clean mark elements on the dom
   cleanMarkTags();
 
-  // get the first default range in selection
+  // get range after and this will the default tag
   const range = selection?.getRangeAt(0).cloneRange();
 
   if (!selection || !range || selection.toString().trim().length < 1)
@@ -250,9 +254,11 @@ export function selectedTextAsReference() {
   let startContainer = range.startContainer;
   let endContainer = range.endContainer;
 
-  // reset range position in selection
-  selection.removeAllRanges();
-  selection.addRange(range);
+  // if the first range doent match the cancel the selection
+  if (startOffset1 !== range.startOffset) {
+    selection.removeAllRanges();
+    return null;
+  }
 
   // allow text note only
   if (
