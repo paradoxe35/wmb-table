@@ -10,6 +10,7 @@ import {
   Space,
   Spin,
   Typography,
+  Select,
 } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import LoadByVisibility from '@renderer/components/load-by-visibility';
@@ -30,6 +31,21 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { debounce } from '@root/utils/functions';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
+
+const { Option } = Select;
+
+const TESTAMENTS = [
+  {
+    name: 'Nouveau Testament',
+    value: 'N',
+  },
+  {
+    name: 'Ancien Testament',
+    value: 'O',
+  },
+];
+
+type Testament = typeof TESTAMENTS[0];
 
 export default function Bible() {
   const [menu, setMenu] = useState('bible');
@@ -276,11 +292,14 @@ function SearchContent() {
   const [results, setResults] = useState<BibleSearchResult | null>(null);
   const lastSearch = useRef<string>('');
 
+  const testament = useRef<Testament>();
+
   const onPageChange = useCallback((page: number) => {
     sendIpcRequest<BibleSearchResult>(
       IPC_EVENTS.bible_search,
       lastSearch.current.trim(),
-      page
+      page,
+      testament.current?.value
     ).then((datas) => {
       const lc = document.querySelector('.bible-search-content');
       lc && lc.scrollTo({ top: 0, behavior: 'smooth' });
@@ -291,7 +310,11 @@ function SearchContent() {
   return (
     <>
       <div className="flex flex-center">
-        <InputSearch setResults={setResults} lastSearch={lastSearch} />
+        <InputSearch
+          testament={testament}
+          setResults={setResults}
+          lastSearch={lastSearch}
+        />
       </div>
       <SearchResult onPageChange={onPageChange} results={results} />
     </>
@@ -389,9 +412,11 @@ const ContentItem = ({ item }: { item: BibleSearchItem }) => {
 function InputSearch({
   setResults,
   lastSearch,
+  testament,
 }: {
   setResults: React.Dispatch<React.SetStateAction<BibleSearchResult | null>>;
   lastSearch: React.MutableRefObject<string>;
+  testament: React.MutableRefObject<Testament | undefined>;
 }) {
   const [loading, setLoading] = useState(false);
 
@@ -399,21 +424,48 @@ function InputSearch({
     if (!value || value.length < 3) return;
     lastSearch.current = value;
     setLoading(true);
-    sendIpcRequest<BibleSearchResult>(IPC_EVENTS.bible_search, value)
+    sendIpcRequest<BibleSearchResult>(
+      IPC_EVENTS.bible_search,
+      value,
+      undefined,
+      testament.current?.value
+    )
       .then((data) => setResults(data))
       .finally(() => setLoading(false));
   }, []);
 
+  const onTestamentChange = (value: string | undefined) => {
+    testament.current = TESTAMENTS.find((t) => t.value === value);
+  };
   return (
-    <Input.Search
-      style={{ width: 400 }}
-      size="large"
-      minLength={3}
-      allowClear
-      loading={loading}
-      placeholder="Faites vos recherches biblique ici"
-      enterButton
-      onSearch={debounce(handleSearch, 100)}
-    />
+    <Space>
+      <Input.Search
+        style={{ width: 300 }}
+        size="large"
+        minLength={3}
+        allowClear
+        loading={loading}
+        placeholder="Faites vos recherches biblique ici"
+        enterButton
+        onSearch={debounce(handleSearch, 100)}
+      />
+
+      <Select
+        style={{ minWidth: 170 }}
+        size="large"
+        placeholder="Testaments"
+        className="w-100 max-w-100"
+        onChange={onTestamentChange}
+        allowClear
+      >
+        {TESTAMENTS.map((testament) => {
+          return (
+            <Option key={testament.value} value={testament.value}>
+              {testament.name}
+            </Option>
+          );
+        })}
+      </Select>
+    </Space>
   );
 }
