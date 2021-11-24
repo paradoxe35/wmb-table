@@ -27,7 +27,12 @@ function searchOpen() {
 function addDocumentNodeToItem(event) {
   const range = selectedTextAsReference();
 
-  if (!range) return;
+  if (!range) {
+    window.parent.dispatchEvent(
+      new Event(CHILD_PARENT_WINDOW_EVENT.noSelectableDocumentText)
+    );
+    return;
+  }
 
   window.parent.dispatchEvent(
     new CustomEvent(event, {
