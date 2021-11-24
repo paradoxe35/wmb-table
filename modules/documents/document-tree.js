@@ -277,6 +277,10 @@ export function selectedTextAsReference() {
     startContainer = endContainer;
   }
 
+  if ((endContainer.textContent?.length || 0) === startOffset) {
+    startOffset = startOffset - 1;
+  }
+
   // get containers in tree from body element
   const startContainerTree = closestChildParent(startContainer);
   const endContainerTree = closestChildParent(endContainer);
@@ -289,15 +293,26 @@ export function selectedTextAsReference() {
 
   // get the startContainer text start from selected text position
   textStartContainer = textStartContainer.slice(
-    range.startOffset,
+    startOffset,
     textStartContainer.length
   );
 
-  if (textStartContainer.length < 400 && startContainer.nextSibling) {
+  /**
+   * if next sibling doent not exist then go back up to parent and see if he has a sibling
+   *
+   * @type {Node | HTMLElement | null}
+   */
+  let containerForText = startContainer;
+
+  if (!containerForText.nextSibling) {
+    containerForText = startContainer.parentElement;
+  }
+
+  if (textStartContainer.length < 400 && containerForText?.nextSibling) {
     /**
      * @type { Node | null}
      */
-    let cloneStartContainer = startContainer;
+    let cloneStartContainer = containerForText;
 
     while (
       textStartContainer.length < 400 &&
