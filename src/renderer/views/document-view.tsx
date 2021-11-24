@@ -326,6 +326,19 @@ const useToPostMessageCurrentAudioDocumentPlay = (
   return currentAudioPlayOnLoadDocument;
 };
 
+function useAlertFromIframe() {
+  useEffect(() => {
+    const noSelectableDocumentText = () => {
+      message.warn("Aucun texte n'a été sélectionné pour référence");
+    };
+
+    window.addEventListener(
+      CHILD_PARENT_WINDOW_EVENT.noSelectableDocumentText,
+      noSelectableDocumentText
+    );
+  }, []);
+}
+
 export default function DocumentView() {
   const { iframeRef, path, titleRef, title, $titles } = useDocument();
 
@@ -348,6 +361,8 @@ export default function DocumentView() {
   );
 
   useOpenDocumentExternalLink();
+
+  useAlertFromIframe();
 
   const currentAudioPlayOnLoadDocument = useToPostMessageCurrentAudioDocumentPlay(
     iframeRef,
