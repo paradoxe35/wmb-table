@@ -12,6 +12,7 @@ import {
   setWindowZoom,
   setDocumentTitleData,
   setCurrentAudioDocumentPlayData,
+  setSubjectNoteReferencePosition,
 } from './documents/seach-query.js';
 import initSearchableTemplate from './documents/search-template.js';
 import {
@@ -32,6 +33,7 @@ window.addEventListener(
         initSearchableTemplate();
         break;
       case POST_MESSAGE_EVENT.subjectItem:
+        setSubjectNoteReferencePosition(e.data.detail)
         scrollToRangesTreeView(e.data.detail);
         break;
       case POST_MESSAGE_EVENT.windowPosition:
