@@ -1,10 +1,10 @@
 import { DOCUMENT_CONTAINER_ID } from '../shared/shared.js';
 
 /**
- * @param { HTMLElement | Element | Node } element
- * @param { HTMLElement | Element | Node } parent
+ * @param { Node } element
+ * @param { Node } parent
  */
-export function closestChildParent(element, parent) {
+export function closestChildParent(element, parent = document.body) {
   if (!parent || !element) return null;
 
   let child = element;
@@ -12,25 +12,25 @@ export function closestChildParent(element, parent) {
 
   while (child && child !== parent && child !== document.body) {
     // @ts-ignore
-    arr.push(Array.prototype.indexOf.call(child.parentElement.children, child));
+    arr.push(Array.prototype.indexOf.call(child.parentNode?.childNodes, child));
     // @ts-ignore
-    child = child.parentElement;
+    child = child.parentNode;
   }
 
   return [...arr.reverse()];
 }
 
 /**
- * @param { HTMLElement | Element } parent
  * @param { Array<number> } arr
+ * @param { Node} parent
  */
-export function getChildByTreeArr(parent, arr) {
+export function getChildByTreeArr(arr, parent = document.body) {
   // @ts-ignore
   let element = null;
   let lastEl = parent;
   arr.forEach((index) => {
     if (lastEl) {
-      lastEl = lastEl.children[index];
+      lastEl = lastEl.childNodes[index];
     }
   });
   return lastEl;
