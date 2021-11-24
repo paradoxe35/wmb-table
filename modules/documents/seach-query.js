@@ -98,3 +98,15 @@ export let CURRENT_AUDIO_DOCUMENT_PLAY = proxyObject(null);
 export function setCurrentAudioDocumentPlayData(data) {
   CURRENT_AUDIO_DOCUMENT_PLAY.value = data;
 }
+
+/**
+ * @type { import('@localtypes/index').ProxyObjectFunctionValue<import("@localtypes/index").SubjectDocumentItem | null>}
+ */
+export let SUBJECT_NOTE_REFERENCE_POSISION = proxyObject(null);
+
+/**
+ * @param {import("@localtypes/index").SubjectDocumentItem | null} data
+ */
+export function setSubjectNoteReferencePosition(data) {
+  SUBJECT_NOTE_REFERENCE_POSISION.value = data;
+}
