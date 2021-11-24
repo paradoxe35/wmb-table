@@ -50,6 +50,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
   downloadDocumentPdf: 'download-document-pdf',
   audioDocumentPlay: 'audio-document-play',
   emptySearchquery: 'empty-search-query',
+  noSelectableDocumentText: 'no-selectable-document-text',
 };
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';
