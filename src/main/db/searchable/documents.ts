@@ -37,15 +37,20 @@ export const searchHandler = (term: string) => {
       const index = files.length - documents_files.length;
 
       const file = documents_files.shift();
+
       if (!file) return;
+
+      const fullFilePath = getAssetDocumentsPath(file);
+
+      if (!fs.existsSync(fullFilePath)) return;
 
       // remove .html extension on file
       let fileName = getFilename(file).split('.html')[0];
 
       // get file content and convert to string
-      const documentBuffer = await (
-        await readFile(getAssetDocumentsPath(file))
-      ).toString('utf-8');
+      const documentBuffer = await (await readFile(fullFilePath)).toString(
+        'utf-8'
+      );
 
       // parse body and get textContent
       let bodyTextContent: string;
