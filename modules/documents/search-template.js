@@ -4,6 +4,7 @@ import {
   WINDOW_ZOOM,
   DOCUMENT_TITLE_DATAS,
   CURRENT_AUDIO_DOCUMENT_PLAY,
+  SUBJECT_NOTE_REFERENCE_POSISION,
 } from './seach-query.js';
 import { performSearch } from './peform-search.js';
 import {
@@ -161,19 +162,64 @@ export function handleSearch() {
     });
 }
 
-export default function initSearchableTemplate() {
-  const searchField = Array.from(document.querySelectorAll('.search--field'));
+/**
+ * the previous event callback of searchClose element
+ *
+ * @type { {value: null | ((e: Event) => void)} }
+ */
+let cancelableDocumentSeachable = {
+  value: null,
+};
+
+/**
+ *
+ * @param {Function | undefined} callback
+ */
+function cancelDocumentSeachableResults(callback = undefined) {
+  const seperator = document.querySelector('.search--separator');
   const searchClose = document.querySelector('.search--close--js');
 
-  searchClose &&
-    searchClose.addEventListener('click', () => {
-      cleanMarkTags(container);
+  seperator?.classList.remove('display-none');
+  searchClose?.classList.remove('display-none');
 
-      searchField.forEach((el) => el.classList.add('display-none'));
-      window.parent.dispatchEvent(
-        new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
-      );
+  // clean up the previous listener to avoid multiple event emission
+  if (cancelableDocumentSeachable.value) {
+    searchClose?.removeEventListener(
+      'click',
+      cancelableDocumentSeachable.value
+    );
+  }
+
+  // callback function
+  cancelableDocumentSeachable.value = () => {
+    cleanMarkTags(container);
+
+    seperator?.classList.add('display-none');
+    searchClose?.classList.add('display-none');
+
+    callback && callback();
+
+    window.parent.dispatchEvent(
+      new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
+    );
+  };
+
+  searchClose?.addEventListener('click', cancelableDocumentSeachable.value);
+
+  return searchClose;
+}
+
+/**
+ * init search template
+ */
+export default function initSearchableTemplate() {
+  const searchField = Array.from(document.querySelectorAll('.search--field'));
+  cancelDocumentSeachableResults(() => {
+    searchField.forEach((el) => {
+      !el.classList.contains('display-none') &&
+        el.classList.add('display-none');
     });
+  });
 
   // show seach fields
   searchField.forEach((el) => el.classList.remove('display-none'));
@@ -362,3 +408,9 @@ CURRENT_AUDIO_DOCUMENT_PLAY.registerNewListener((value) => {
 document
   .querySelector('.search--paragraph--js')
   ?.addEventListener('click', () => openSearchModal(true));
+
+// hanle subject note refence position
+// by show searchClose element to cancel reference result
+SUBJECT_NOTE_REFERENCE_POSISION.registerNewListener(() => {
+  cancelDocumentSeachableResults();
+});
