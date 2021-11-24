@@ -1,33 +1,34 @@
-import {
-  getChildByTreeArr,
-  pageContainer,
-  closestChildParent,
-} from './functions.js';
+import { getChildByTreeArr, closestChildParent } from './functions.js';
 
 /**
- * @param { import('@localtypes/index').SubjectDocumentItem } item
+ *
+ * @param {HTMLElement} container
  */
-export function scrollToViewTree(item) {
-  const element = getChildByTreeArr(document.body, item.documentHtmlTree.tree);
-  const container = pageContainer();
+export function cleanMarkTags(container = document.body) {
+  Array.from(container.querySelectorAll('[data-mark-id]')).forEach((el) => {
+    let textContent = el.textContent;
 
-  container.scrollTo({
-    top: item.documentHtmlTree.scrollY,
-    left: item.documentHtmlTree.scrollX,
-    behavior: 'smooth',
+    let sibling = null;
+    // always merge next sibling element with the current node
+    while (el.nextSibling && el.nextSibling.nodeName === '#text') {
+      sibling = el.nextSibling;
+      textContent += sibling.textContent || '';
+      sibling.parentNode?.removeChild(sibling);
+    }
+    // always merge previous sibling element with the current node
+    while (el.previousSibling && el.previousSibling.nodeName === '#text') {
+      sibling = el.previousSibling;
+      textContent = (sibling.textContent || '') + textContent;
+      sibling.parentNode?.removeChild(sibling);
+    }
+
+    const fragment = document
+      .createRange()
+      .createContextualFragment(textContent || '');
+
+    el.parentNode?.replaceChild(fragment, el);
   });
-
-  if (element) {
-    // @ts-ignore
-    element.style.backgroundColor = '#57aeff';
-    element.scrollIntoView({
-      behavior: 'smooth',
-      inline: 'center',
-      block: 'center',
-    });
-  }
 }
-
 /**
  * @param {Node} element
  * @returns
@@ -59,10 +60,8 @@ export function scrollToRangesTreeView(item) {
   const ranges = item.documentHtmlTree.ranges;
   if (!ranges) return;
 
-  const bodyElement = document.body;
-
-  const startContainer = getChildByTreeArr(bodyElement, ranges.startContainer);
-  const endContainer = getChildByTreeArr(bodyElement, ranges.endContainer);
+  const startContainer = getChildByTreeArr(ranges.startContainer);
+  const endContainer = getChildByTreeArr(ranges.endContainer);
 
   let markElement = () => {
     const el = document.createElement('mark');
@@ -81,22 +80,33 @@ export function scrollToRangesTreeView(item) {
 
   /**
    *
-   * @param {HTMLElement | Element} element
+   * @param { Node | null } element
    * @param {number} startOffset
    * @param {number} endOffset
    */
   const surroundChildContents = (element, startOffset, endOffset) => {
+    if (!element) return;
+
     const walker = createTreeTextWalker(element);
-    let node = null;
+    /**
+     * @type { Node | null}
+     */
+    let node = element;
+    if (!node) return;
 
     let textLength = 0;
     let restLength = endOffset;
     let firstCheck = true;
 
-    while ((node = walker.nextNode())) {
-      console.log(node);
+    do {
+      // @ts-ignore
+      if (node.nodeName !== '#text' && firstCheck) {
+        continue;
+      }
+
       // @ts-ignore
       textLength += node.length;
+
       const range = document.createRange();
 
       if (textLength >= startOffset && firstCheck) {
@@ -104,7 +114,6 @@ export function scrollToRangesTreeView(item) {
         // @ts-ignore
         range.setEnd(node, textLength >= endOffset ? endOffset : node.length);
         firstCheck = false;
-        console.log('firstCheck');
       } else if (
         (!firstCheck && textLength < endOffset) ||
         textLength < startOffset
@@ -112,12 +121,10 @@ export function scrollToRangesTreeView(item) {
         range.setStart(node, 0);
         // @ts-ignore
         range.setEnd(node, node.length);
-        console.log('middle');
       } else if (!firstCheck && textLength >= endOffset) {
         range.setStart(node, 0);
         // @ts-ignore
         range.setEnd(node, restLength);
-        console.log('end', restLength);
       }
 
       if (range.endOffset > 0) {
@@ -129,13 +136,8 @@ export function scrollToRangesTreeView(item) {
       if (textLength >= endOffset) {
         break;
       }
-    }
+    } while ((node = walker.nextNode()));
   };
-
-  console.log(startContainer);
-  console.log(endContainer);
-
-  console.log(ranges.startOffset, ranges.endOffset);
 
   if (startContainer === endContainer) {
     surroundChildContents(startContainer, ranges.startOffset, ranges.endOffset);
@@ -145,43 +147,85 @@ export function scrollToRangesTreeView(item) {
 
   const exists =
     Array.prototype.indexOf.call(
-      startContainer.parentElement?.children,
+      startContainer.parentNode?.childNodes,
       endContainer
     ) > -1;
 
+  // simple
   if (!exists) {
-    surroundChildContents(
-      startContainer,
-      ranges.startOffset,
-      startContainer.textContent?.length || 0
-    );
-    scrollIntoView();
-    return;
+    const exists =
+      Array.prototype.indexOf.call(
+        startContainer.parentElement?.parentElement?.children,
+        endContainer.parentElement
+      ) > -1;
+    if (!exists) {
+      surroundChildContents(
+        startContainer,
+        ranges.startOffset,
+        // @ts-ignore
+        startContainer?.length || 0
+      );
+      scrollIntoView();
+      return;
+    }
   }
 
-  let nextElementSibling = startContainer;
+  // if endContainer is doent exist in parent element of startContainer the
+  // go back up to parentElememt x2 and work with elements
+  if (!exists) {
+    /** @type {Element | HTMLElement | null} */
+    let nextElementSibling = startContainer.parentElement;
 
-  surroundChildContents(
-    nextElementSibling,
-    ranges.startOffset,
-    nextElementSibling.textContent?.length || 0
-  );
-
-  while (
-    nextElementSibling.nextElementSibling &&
-    nextElementSibling.nextElementSibling !== endContainer
-  ) {
-    nextElementSibling = nextElementSibling.nextElementSibling;
     surroundChildContents(
       nextElementSibling,
-      0,
-      nextElementSibling.textContent?.length || 0
+      ranges.startOffset,
+      nextElementSibling?.textContent?.length || 0
     );
+
+    while (
+      nextElementSibling?.nextElementSibling &&
+      nextElementSibling.nextElementSibling !== endContainer.parentElement
+    ) {
+      nextElementSibling = nextElementSibling.nextElementSibling;
+      surroundChildContents(
+        nextElementSibling,
+        0,
+        nextElementSibling.textContent?.length || 0
+      );
+    }
+
+    if (nextElementSibling?.nextElementSibling === endContainer.parentElement) {
+      surroundChildContents(endContainer.parentElement, 0, ranges.endOffset);
+    }
+  } else {
+    // if exist just continious working textNodes
+    let nextElementSibling = startContainer;
+
+    surroundChildContents(
+      nextElementSibling,
+      ranges.startOffset,
+      // @ts-ignore
+      nextElementSibling?.length || 0
+    );
+
+    while (
+      nextElementSibling.nextSibling &&
+      nextElementSibling.nextSibling !== endContainer
+    ) {
+      nextElementSibling = nextElementSibling.nextSibling;
+      surroundChildContents(
+        nextElementSibling,
+        0,
+        // @ts-ignore
+        nextElementSibling?.length || 0
+      );
+    }
+
+    if (nextElementSibling.nextSibling === endContainer) {
+      surroundChildContents(endContainer, 0, ranges.endOffset);
+    }
   }
 
-  if (nextElementSibling.nextElementSibling === endContainer) {
-    surroundChildContents(endContainer, 0, ranges.endOffset);
-  }
   scrollIntoView();
 }
 
@@ -190,37 +234,43 @@ export function scrollToRangesTreeView(item) {
  * @returns {import('@localtypes/index').DocumentTreeRanges | null }
  */
 export function selectedTextAsReference() {
-  const selection = window.getSelection();
-  if (!selection || selection.toString().trim().length < 1) return null;
+  // get text selection
+  let selection = window.getSelection();
 
-  const range = selection.getRangeAt(0).cloneRange();
+  // first clean mark elements on the dom
+  cleanMarkTags();
 
-  /**
-   * @returns {HTMLElement | null}
-   */
-  const tagContainer = (/** @type {Node} */ node) => {
-    /**
-     * @type {Node | HTMLElement | null}
-     */
-    let container = node;
+  // get the first default range in selection
+  const range = selection?.getRangeAt(0).cloneRange();
 
-    if (container.nodeName === '#text') {
-      container = container.parentElement;
-    }
-    // @ts-ignore
-    return container;
-  };
+  if (!selection || !range || selection.toString().trim().length < 1)
+    return null;
 
-  let startContainer = tagContainer(range.startContainer);
-  let endContainer = tagContainer(range.endContainer);
+  // get range containers
+  let startContainer = range.startContainer;
+  let endContainer = range.endContainer;
 
-  if (!startContainer || !endContainer) return null;
+  // reset range position in selection
+  selection.removeAllRanges();
+  selection.addRange(range);
 
-  const bodyElement = document.body;
+  // allow text note only
+  if (
+    startContainer.nodeName !== '#text' &&
+    endContainer.nodeName !== '#text'
+  ) {
+    return null;
+  }
+
+  if (endContainer.nodeName !== '#text') {
+    endContainer = startContainer;
+  } else if (startContainer.nodeName !== '#text') {
+    startContainer = endContainer;
+  }
 
   // get containers in tree from body element
-  const startContainerTree = closestChildParent(startContainer, bodyElement);
-  const endContainerTree = closestChildParent(endContainer, bodyElement);
+  const startContainerTree = closestChildParent(startContainer);
+  const endContainerTree = closestChildParent(endContainer);
 
   if (!startContainerTree || !endContainerTree) return null;
 
@@ -236,7 +286,7 @@ export function selectedTextAsReference() {
 
   if (textStartContainer.length < 400 && startContainer.nextSibling) {
     /**
-     * @type {HTMLElement | Element | null}
+     * @type { Node | null}
      */
     let cloneStartContainer = startContainer;
 
@@ -245,9 +295,8 @@ export function selectedTextAsReference() {
       cloneStartContainer &&
       cloneStartContainer.nextSibling
     ) {
-      textStartContainer +=
-        cloneStartContainer.nextElementSibling?.textContent || '';
-      cloneStartContainer = cloneStartContainer.nextElementSibling;
+      textStartContainer += cloneStartContainer.nextSibling?.textContent || '';
+      cloneStartContainer = cloneStartContainer.nextSibling;
     }
   }
 
@@ -259,6 +308,10 @@ export function selectedTextAsReference() {
     startContainer: startContainerTree,
     endContainer: endContainerTree,
     startOffset: range.startOffset,
+    // @ts-ignore
+    startContainerTextLength: startContainer?.length || 0,
+    // @ts-ignore
+    endContainerTextLenth: endContainer?.length || 0,
     endOffset: range.endOffset,
     contextualText: textStartContainer,
   };
