@@ -13,6 +13,7 @@ import {
 import { pageContainer } from './functions.js';
 import { handleZoomIn, handleZoomOut } from './context-menu.js';
 import { pauseIcon, playIcon } from './html.js';
+import { cleanMarkTags } from './document-tree.js';
 
 /**
  * @param {Element | null} el
@@ -166,13 +167,8 @@ export default function initSearchableTemplate() {
 
   searchClose &&
     searchClose.addEventListener('click', () => {
-      Array.from(container.querySelectorAll('[data-mark-id]')).forEach((el) => {
-        el.parentElement?.insertBefore(
-          document.createTextNode(el.textContent || ''),
-          el
-        );
-        el.parentNode?.removeChild(el);
-      });
+      cleanMarkTags(container);
+
       searchField.forEach((el) => el.classList.add('display-none'));
       window.parent.dispatchEvent(
         new Event(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery)
