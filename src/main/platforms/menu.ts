@@ -1,4 +1,4 @@
-import { Menu, BrowserWindow, shell } from 'electron';
+import { Menu, BrowserWindow, shell, app } from 'electron';
 import showAboutDialog from '@main/dialogs/handlers/about';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 
@@ -66,7 +66,7 @@ export default class MenuBuilder {
             label: '&Fermer',
             accelerator: process.platform === 'darwin' ? 'Command+Q' : 'Ctrl+W',
             click: () => {
-              this.mainWindow.close();
+              app.quit();
             },
           },
         ],
