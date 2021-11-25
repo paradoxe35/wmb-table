@@ -3,6 +3,7 @@ import {
   AUDIO_PLAYER,
   CHILD_PARENT_WINDOW_EVENT,
 } from '@modules/shared/shared';
+import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
 import { currentAudioDocumentPlayStore } from '@renderer/store';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
@@ -35,6 +36,8 @@ export default function DocumentAudioPlayer() {
   const audioPlayerRef = useRef<any>(null);
 
   const autoplay = useRef(true);
+
+  const viewDocument = useDocumentViewOpen();
 
   useEffect(() => {
     const handleAudioPlay = async (event: CustomEventInit<Title>) => {
@@ -157,6 +160,13 @@ export default function DocumentAudioPlayer() {
     audioPlayerRef.current = player;
   }, []);
 
+  const handleOnTitleClick = useCallback(() => {
+    if (docTitleRef.current?.title) {
+      viewDocument(docTitleRef.current?.title);
+      setIsModalVisible(false);
+    }
+  }, [docTitle, viewDocument]);
+
   return (
     <>
       <Modal
@@ -172,6 +182,7 @@ export default function DocumentAudioPlayer() {
           <MediaElement
             key={docTitle.audio_link!}
             autoPlay={autoplay.current}
+            onTitleClick={handleOnTitleClick}
             title={docTitle.title}
             getPlayerRef={setAudioPlayRef}
             audioSrc={docTitle.audio_link!}

@@ -1,5 +1,5 @@
 import { useCallbackUpdater, useValueStateRef } from '@renderer/hooks';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import './lib/index';
 import svg from './lib/svg/vocal_103008.svg';
 
@@ -48,6 +48,7 @@ type MediaElementProps = {
   audioSrc: string;
   defaultTime?: number;
   onTimeUpdate?: (time: number) => void;
+  onTitleClick?: (title: string) => void;
   onPlay?: () => void;
   onPause?: () => void;
   getPlayerRef?: (player: any) => void;
@@ -67,6 +68,7 @@ export default function MediaElement({
   autoPlay = true,
   onPlay,
   getPlayerRef,
+  onTitleClick,
 }: MediaElementProps) {
   const onTimeUpdateRef = useCallbackUpdater(onTimeUpdate);
   const onPlayRef = useCallbackUpdater(onPlay);
@@ -125,10 +127,21 @@ export default function MediaElement({
     };
   }, []);
 
+  const handelTitleClick = useCallback(() => {
+    onTitleClick && onTitleClick(title);
+  }, [title]);
+
   return (
     <>
       <div className="podcast">
-        <h3 className="podcast__episode_title">{title}</h3>
+        <h3
+          className={`podcast__episode_title ${
+            onTitleClick ? 'clickable hover-underline' : ''
+          }`}
+          onClick={handelTitleClick}
+        >
+          {title}
+        </h3>
         <h5 className="podcast__title">
           {head}
           <i>{text}</i>

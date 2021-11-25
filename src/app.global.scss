@@ -38,6 +38,10 @@ body {
   cursor: pointer;
 }
 
+.clickable {
+  cursor: pointer;
+}
+
 .list__clickable {
   cursor: pointer;
   &:hover {
@@ -402,6 +406,10 @@ main .ck-editor[role='application'] .ck.ck-content,
 }
 
 .underline {
+  text-decoration: underline;
+}
+
+.hover-underline:hover {
   text-decoration: underline;
 }
 
