@@ -83,8 +83,14 @@ export function scrollToRangesTreeView(item) {
    * @param { Node | null } element
    * @param {number} startOffset
    * @param {number} endOffset
+   * @param {boolean} force
    */
-  const surroundChildContents = (element, startOffset, endOffset) => {
+  const surroundChildContents = (
+    element,
+    startOffset,
+    endOffset,
+    force = false
+  ) => {
     if (!element) return;
 
     const walker = createTreeTextWalker(element);
@@ -111,8 +117,11 @@ export function scrollToRangesTreeView(item) {
 
       if (textLength >= startOffset && firstCheck) {
         range.setStart(node, startOffset);
-        // @ts-ignore
-        range.setEnd(node, textLength >= endOffset ? endOffset : node.length);
+        range.setEnd(
+          node,
+          // @ts-ignore
+          textLength >= endOffset && !force ? endOffset : node.length
+        );
         firstCheck = false;
       } else if (
         (!firstCheck && textLength < endOffset) ||
@@ -140,7 +149,12 @@ export function scrollToRangesTreeView(item) {
   };
 
   if (startContainer === endContainer) {
-    surroundChildContents(startContainer, ranges.startOffset, ranges.endOffset);
+    surroundChildContents(
+      startContainer,
+      ranges.startOffset,
+      ranges.endOffset,
+      ranges.endOffset === 0
+    );
     scrollIntoView();
     return;
   }
