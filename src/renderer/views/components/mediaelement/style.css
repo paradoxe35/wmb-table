@@ -72,6 +72,11 @@
   background: transparent url('./lib/svg/mediaplayer-sprite-gray.svg') no-repeat;
 }
 
+.mejs__replay > button {
+  background: transparent url('./lib/svg/mediaplayer-sprite-gray.svg') no-repeat;
+}
+
+
 .mejs__pause > button {
   background: transparent url('./lib/svg/mediaplayer-sprite-gray.svg') no-repeat;
   background-position: -20px 0;
