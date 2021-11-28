@@ -67,8 +67,16 @@ class Updater {
     // track download progress
     this.autoUpdater.on('download-progress', this.downloadProgress);
     // track a available update
-    autoUpdater.on('update-available', this.notifyHasUpdate);
+    this.autoUpdater.on('update-available', this.notifyHasUpdate);
+    // catch error
+    this.autoUpdater.on('error', this.onError);
   }
+
+  private onError = () => {
+    this.notifyRenderer({
+      type: 'error',
+    });
+  };
 
   private checkWithInterval() {
     setInterval(this.checkForUpdates, this.CHECK_INTERVAL);
