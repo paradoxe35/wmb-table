@@ -1,5 +1,6 @@
 import { getChildByTreeArr, closestChildParent } from './functions.js';
 
+const TEXT_NODE_NAME = '#text';
 /**
  *
  * @param {HTMLElement} container
@@ -10,13 +11,16 @@ export function cleanMarkTags(container = document.body) {
 
     let sibling = null;
     // always merge next sibling element with the current node
-    while (el.nextSibling && el.nextSibling.nodeName === '#text') {
+    while (el.nextSibling && el.nextSibling.nodeName === TEXT_NODE_NAME) {
       sibling = el.nextSibling;
       textContent += sibling.textContent || '';
       sibling.parentNode?.removeChild(sibling);
     }
     // always merge previous sibling element with the current node
-    while (el.previousSibling && el.previousSibling.nodeName === '#text') {
+    while (
+      el.previousSibling &&
+      el.previousSibling.nodeName === TEXT_NODE_NAME
+    ) {
       sibling = el.previousSibling;
       textContent = (sibling.textContent || '') + textContent;
       sibling.parentNode?.removeChild(sibling);
@@ -106,7 +110,7 @@ export function scrollToRangesTreeView(item) {
 
     do {
       // @ts-ignore
-      if (node.nodeName !== '#text' && firstCheck) {
+      if (node.nodeName !== TEXT_NODE_NAME && firstCheck) {
         continue;
       }
 
@@ -159,86 +163,37 @@ export function scrollToRangesTreeView(item) {
     return;
   }
 
-  const exists =
-    Array.prototype.indexOf.call(
-      startContainer.parentNode?.childNodes,
-      endContainer
-    ) > -1;
+  if (!ranges.startToEndPath) return;
 
-  // simple
-  if (!exists) {
-    const exists =
-      Array.prototype.indexOf.call(
-        startContainer.parentElement?.parentElement?.children,
-        endContainer.parentElement
-      ) > -1;
-    if (!exists) {
-      surroundChildContents(
-        startContainer,
-        ranges.startOffset,
-        // @ts-ignore
-        startContainer?.length || 0
-      );
-      scrollIntoView();
-      return;
-    }
-  }
+  const path = ranges.startToEndPath;
 
-  // if endContainer is doent exist in parent element of startContainer the
-  // go back up to parentElememt x2 and work with elements
-  if (!exists) {
-    /** @type {Element | HTMLElement | null} */
-    let nextElementSibling = startContainer.parentElement;
+  /**
+   *
+   * @param {Node} node
+   * @returns {number}
+   */
+  const getTextContentLength = (node) => {
+    return node.nodeName === TEXT_NODE_NAME
+      ? // @ts-ignore
+        node?.length || 0
+      : node.textContent?.length || 0;
+  };
 
-    surroundChildContents(
-      nextElementSibling,
-      ranges.startOffset,
-      nextElementSibling?.textContent?.length || 0
-    );
-
-    while (
-      nextElementSibling?.nextElementSibling &&
-      nextElementSibling.nextElementSibling !== endContainer.parentElement
-    ) {
-      nextElementSibling = nextElementSibling.nextElementSibling;
-      surroundChildContents(
-        nextElementSibling,
-        0,
-        nextElementSibling.textContent?.length || 0
-      );
-    }
-
-    if (nextElementSibling?.nextElementSibling === endContainer.parentElement) {
-      surroundChildContents(endContainer.parentElement, 0, ranges.endOffset);
-    }
-  } else {
-    // if exist just continious working textNodes
-    let nextElementSibling = startContainer;
-
-    surroundChildContents(
-      nextElementSibling,
-      ranges.startOffset,
-      // @ts-ignore
-      nextElementSibling?.length || 0
-    );
-
-    while (
-      nextElementSibling.nextSibling &&
-      nextElementSibling.nextSibling !== endContainer
-    ) {
-      nextElementSibling = nextElementSibling.nextSibling;
-      surroundChildContents(
-        nextElementSibling,
-        0,
-        // @ts-ignore
-        nextElementSibling?.length || 0
-      );
-    }
-
-    if (nextElementSibling.nextSibling === endContainer) {
-      surroundChildContents(endContainer, 0, ranges.endOffset);
-    }
-  }
+  path
+    .map((tree) => getChildByTreeArr(tree))
+    .forEach((treeEl) => {
+      if (treeEl === startContainer) {
+        surroundChildContents(
+          treeEl,
+          ranges.startOffset,
+          getTextContentLength(treeEl)
+        );
+      } else if (treeEl === endContainer) {
+        surroundChildContents(treeEl, 0, ranges.endOffset);
+      } else {
+        surroundChildContents(treeEl, 0, getTextContentLength(treeEl));
+      }
+    });
 
   scrollIntoView();
 }
@@ -271,7 +226,7 @@ function startContainerToEndContainerPath(startCTree, endCTree) {
     return null;
   }
 
-  const distance = (endCTree[lastIndex] - startCTree[lastIndex]) - 1;
+  const distance = endCTree[lastIndex] - startCTree[lastIndex] - 1;
 
   if (distance > 0) {
     new Array(distance).fill(null).forEach((_, i) => {
@@ -281,9 +236,9 @@ function startContainerToEndContainerPath(startCTree, endCTree) {
     });
   }
 
-  path.push(endCTree)
+  path.push(endCTree);
 
-  return path;
+  return [...path];
 }
 
 /**
@@ -319,8 +274,8 @@ export function selectedTextAsReference() {
 
   // allow text note only
   if (
-    startContainer.nodeName !== '#text' &&
-    endContainer.nodeName !== '#text'
+    startContainer.nodeName !== TEXT_NODE_NAME &&
+    endContainer.nodeName !== TEXT_NODE_NAME
   ) {
     return null;
   }
@@ -328,9 +283,9 @@ export function selectedTextAsReference() {
   let startOffset = range.startOffset;
   let endOffset = range.endOffset;
 
-  if (endContainer.nodeName !== '#text') {
+  if (endContainer.nodeName !== TEXT_NODE_NAME) {
     endContainer = startContainer;
-  } else if (startContainer.nodeName !== '#text') {
+  } else if (startContainer.nodeName !== TEXT_NODE_NAME) {
     startContainer = endContainer;
   }
 
@@ -342,10 +297,12 @@ export function selectedTextAsReference() {
   const startContainerTree = closestChildParent(startContainer);
   const endContainerTree = closestChildParent(endContainer);
 
-
   if (!startContainerTree || !endContainerTree) return null;
 
-  const startToEndPath = startContainerToEndContainerPath(startContainerTree, endContainerTree)
+  const startToEndPath = startContainerToEndContainerPath(
+    startContainerTree,
+    endContainerTree
+  );
 
   // get contextuel text here
   let textStartContainer = startContainer.textContent;
