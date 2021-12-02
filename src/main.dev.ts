@@ -76,7 +76,7 @@ const createWindow = async () => {
   });
 
   if (process.platform === 'darwin') {
-    mainWindow.setTouchBar(touchBar);
+    mainWindow.setTouchBar(touchBar());
   }
 
   setMainWindow(mainWindow);
@@ -101,18 +101,15 @@ const createWindow = async () => {
     }
   });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-    watcher.close();
-  });
-
   const menuBuilder = new MenuBuilder(mainWindow);
   menuBuilder.buildMenu();
 
   // Open urls in the user's browser
-  mainWindow.webContents.on('new-window', (event, url) => {
-    event.preventDefault();
-    shell.openExternal(url);
+  mainWindow.webContents.setWindowOpenHandler((event) => {
+    shell.openExternal(event.url);
+    return {
+      action: 'deny',
+    };
   });
 
   mainWindow.webContents.once('did-finish-load', () => {
