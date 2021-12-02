@@ -40,6 +40,7 @@ export const IPC_EVENTS = {
   sidebar_status: 'sidebar_status',
   sidebar_status_set: 'sidebar_status_set',
   initialized_app: 'initialized_app',
+  app_has_started: 'app_has_started',
   get_asset: 'get_asset',
   backup_status: 'backup_status',
   backup_status_put: 'backup_status_put',
