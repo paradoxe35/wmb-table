@@ -1,10 +1,10 @@
 import { ipcMain } from 'electron';
 
-export async function mainMessageTransport(
+export function mainMessageTransport(
   eventName: string,
   callback: (event: Electron.IpcMainEvent, ...args: any[]) => any
 ) {
-  ipcMain.on(eventName, (event, ...arg) => {
+  const callable = (event: Electron.IpcMainEvent, ...arg: any[]) => {
     const cb = callback(event, ...arg);
     if (cb instanceof Promise) {
       cb.then((data) => event.reply(`${eventName}-reply`, null, data)).catch(
@@ -16,5 +16,11 @@ export async function mainMessageTransport(
     } else {
       event.reply(`${eventName}-reply`, null, cb);
     }
-  });
+  };
+
+  ipcMain.on(eventName, callable);
+
+  return () => {
+    ipcMain.off(eventName, callable);
+  };
 }
