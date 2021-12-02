@@ -244,6 +244,49 @@ export function scrollToRangesTreeView(item) {
 }
 
 /**
+ * get path from start container element to end container element
+ *
+ * @param {number[]} startCTree
+ * @param {number[]} endCTree
+ */
+function startContainerToEndContainerPath(startCTree, endCTree) {
+  const parentTree = [];
+  let lastIndex = 0;
+
+  for (let index = 0; index < startCTree.length; index++) {
+    const sv = startCTree[index];
+    lastIndex = index;
+
+    if (endCTree[index] !== sv) break;
+    parentTree.push(sv);
+  }
+
+  const path = [startCTree];
+
+  if (
+    startCTree[lastIndex] === undefined ||
+    !endCTree[lastIndex] === undefined ||
+    startCTree[lastIndex] > endCTree[lastIndex]
+  ) {
+    return null;
+  }
+
+  const distance = (endCTree[lastIndex] - startCTree[lastIndex]) - 1;
+
+  if (distance > 0) {
+    new Array(distance).fill(null).forEach((_, i) => {
+      const newArr = startCTree.slice(0, lastIndex);
+      newArr.push(startCTree[lastIndex] + (i + 1));
+      path.push(newArr);
+    });
+  }
+
+  path.push(endCTree)
+
+  return path;
+}
+
+/**
  * Get selected text as reference
  * @returns {import('@localtypes/index').DocumentTreeRanges | null }
  */
@@ -299,7 +342,10 @@ export function selectedTextAsReference() {
   const startContainerTree = closestChildParent(startContainer);
   const endContainerTree = closestChildParent(endContainer);
 
+
   if (!startContainerTree || !endContainerTree) return null;
+
+  const startToEndPath = startContainerToEndContainerPath(startContainerTree, endContainerTree)
 
   // get contextuel text here
   let textStartContainer = startContainer.textContent;
@@ -347,6 +393,7 @@ export function selectedTextAsReference() {
     endContainer: endContainerTree,
     startOffset: startOffset,
     endOffset: endOffset,
+    startToEndPath: startToEndPath,
     contextualText: textStartContainer,
   };
 }

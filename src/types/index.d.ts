@@ -128,6 +128,7 @@ export interface SearchResult extends SearchResultStructure {
 export type DocumentTreeRanges = {
   contextualText: string | null;
   startContainer: number[];
+  startToEndPath: number[][] | null;
   endContainer: number[];
   startOffset: number;
   endOffset: number;
