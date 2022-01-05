@@ -34,6 +34,8 @@ if (process.env.NODE_ENV === 'production') {
   sourceMapSupport.install();
 }
 
+process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
+
 if (
   process.env.NODE_ENV === 'development' ||
   process.env.DEBUG_PROD === 'true'
