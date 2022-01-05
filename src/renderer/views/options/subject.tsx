@@ -272,7 +272,7 @@ export default function Subject() {
         </div>
       </Col>
       <Col span={12}>
-        <ContainerScrollY style={{ padding: '0 10px' }}>
+        <ContainerScrollY susDiff={10} style={{ padding: '0 10px' }}>
           {activeDocument && (
             <ShowActiveDocuments
               subject={activeDocument}
