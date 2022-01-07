@@ -9,14 +9,7 @@ import {
   message,
 } from 'antd';
 import { SelectProps } from 'antd/es/select';
-import {
-  debounce,
-  escapeRegExp,
-  regexpMatcher,
-  simpleRegExp,
-  strNormalize,
-  trimBeforeDotAndComma,
-} from '@root/utils/functions';
+import { debounce, trimBeforeDotAndComma } from '@root/utils/functions';
 import { SearchItem, SearchResult, Suggestions } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
@@ -26,6 +19,13 @@ import {
   documentViewQueryStore,
   titlesDocumentSelector,
 } from '@renderer/store';
+import {
+  escapeRegExp,
+  regexpMatcher,
+  simpleRegExp,
+  strNormalize,
+  surroundContentsTag,
+} from '@modules/shared/searchable';
 
 const { Text } = Typography;
 
@@ -281,7 +281,9 @@ function MatcherFn(
   start = start < 0 ? 0 : start;
 
   let content =
-    (start > 0 ? textContent.substr(0, textContent.indexOf(' ')) + '...' : '') +
+    (start > 0
+      ? textContent.substring(0, textContent.indexOf(' ')) + '...'
+      : '') +
     textContent.slice(
       start,
       match[1] + (term.length > 300 ? term.length + 150 : 300)
@@ -296,14 +298,7 @@ function MatcherFn(
   element.appendChild(node);
 
   if (matcher && matcher.start && matcher.end) {
-    const range = document.createRange();
-    const tag = document.createElement('mark');
-    const rangeStart = matcher.start;
-    const rangeEnd = matcher.end;
-
-    range.setStart(node, rangeStart);
-    range.setEnd(node, rangeEnd);
-    range.surroundContents(tag);
+    surroundContentsTag(node, undefined, matcher.start, matcher.end);
   }
 }
 

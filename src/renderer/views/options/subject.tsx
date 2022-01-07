@@ -22,7 +22,7 @@ import {
 import { SubjectDocument, SubjectDocumentItem } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { getDateTime, simpleRegExp, strNormalize } from '@root/utils/functions';
+import { getDateTime } from '@root/utils/functions';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
@@ -35,6 +35,7 @@ import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { SUBJECT_EVENT } from '@modules/shared/shared';
+import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
 
 const { Text } = Typography;
 

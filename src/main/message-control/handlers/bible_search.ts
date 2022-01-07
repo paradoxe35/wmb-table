@@ -1,11 +1,7 @@
 import { strNormalizeNoLower } from '@modules/documents/peform-search';
-import {
-  BibleBook,
-  BibleSearchResult,
-  SearchMatchersValue,
-} from '@localtypes/index';
-import { performSearch } from '@root/utils/functions';
+import { BibleBook, BibleSearchResult } from '@localtypes/index';
 import db, { queryDb } from '@main/db/db';
+import { performSearch } from '@modules/shared/searchable';
 
 let searchResults: BibleBook[] = [];
 let lastSearch: string;
@@ -38,10 +34,7 @@ export default async (
     searchResults = (verses
       .filter((t) => (testament ? t.testament === testament : true))
       .map((doc: BibleBook, i) => {
-        const datas = performSearch<SearchMatchersValue>(
-          text,
-          strNormalizeNoLower(doc.content)
-        );
+        const datas = performSearch(text, strNormalizeNoLower(doc.content));
 
         return !!datas.length
           ? {

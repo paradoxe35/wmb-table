@@ -52,17 +52,6 @@ export function throttle(callback: Function, delay: number) {
   };
 }
 
-export function strNormalize(str: string) {
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase();
-}
-
-export function strNormalizeNoLower(str: string) {
-  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-}
-
 export function eventListenOne(
   parent: null | Window | HTMLElement | Element,
   eventName: string,
@@ -79,36 +68,6 @@ export function eventListenOne(
 
 export function capitalizeFirstLetter(string: string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-export function escapeRegExp(text: string) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-export const simpleRegExp = (term: string) => {
-  return new RegExp(
-    strNormalize(escapeRegExp(term))
-      .replace(/[\'|\’]/g, "['’]")
-      .replace(/(œ|oe)/g, '(œ|oe)'),
-    'gi'
-  );
-};
-
-export function regexpMatcher(pattern: string | RegExp, headstack: string) {
-  const regexp = new RegExp(
-    typeof pattern === 'string'
-      ? pattern.replace(/[\'|\’]/g, "['’]").replace(/(œ|oe)/g, '(œ|oe)')
-      : pattern,
-    'gi'
-  );
-  const matches = [...headstack.matchAll(regexp)];
-
-  return matches.map((match, i) => ({
-    term: match[0],
-    index: i + 1,
-    start: match.index,
-    end: match.index ? match.index + match[0].length : undefined,
-  }));
 }
 
 export function injectStyleText(content: string) {
@@ -151,15 +110,6 @@ export const respondToVisibility = (
 export const substrAfter = (str: string, substr: string) => {
   return str.slice(str.indexOf(substr) + substr.length, str.length);
 };
-
-export function performSearch<T>(needle: string, headstack: string): T[] {
-  const terms = strNormalizeNoLower(escapeRegExp(needle.trim()))
-    .split(' ')
-    .filter(Boolean)
-    .join(`[a-zA-Z]*([^\s+]*)?`);
-
-  return (regexpMatcher(`${terms}[a-zA-Z]*`, headstack) as unknown) as T[];
-}
 
 export const rafThrottle = (callback: Function) => {
   let requestId: number | null = null;

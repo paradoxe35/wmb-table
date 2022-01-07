@@ -11,7 +11,6 @@ import {
   SubjectDocumentItem,
   SubjectRefTree,
 } from '@localtypes/index';
-import { simpleRegExp, strNormalize } from '@root/utils/functions';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
@@ -20,6 +19,7 @@ import {
   CHILD_PARENT_WINDOW_EVENT,
   SUBJECT_EVENT,
 } from '@modules/shared/shared';
+import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
 
 export function SubjectSelectModal() {
   const title = useRecoilValue(currentDocumentTabsSelector);

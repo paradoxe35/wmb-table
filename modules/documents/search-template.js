@@ -6,7 +6,7 @@ import {
   CURRENT_AUDIO_DOCUMENT_PLAY,
   SUBJECT_NOTE_REFERENCE_POSISION,
 } from './seach-query.js';
-import { performSearch } from './peform-search.js';
+import { performDocumentSearch } from './peform-search.js';
 import {
   CHILD_PARENT_WINDOW_EVENT,
   CHILD_WINDOW_EVENT,
@@ -226,7 +226,7 @@ export default function initSearchableTemplate() {
 
   handleSearch();
 
-  performSearch(SEARCH_QUERY.value ? SEARCH_QUERY.value : undefined);
+  performDocumentSearch(SEARCH_QUERY.value ? SEARCH_QUERY.value : undefined);
 }
 
 /**
