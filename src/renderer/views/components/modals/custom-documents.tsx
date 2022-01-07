@@ -40,7 +40,6 @@ import {
   LoadingOutlined,
 } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { simpleRegExp, strNormalize } from '@root/utils/functions';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 
 import { InboxOutlined, RedoOutlined } from '@ant-design/icons';
@@ -50,6 +49,7 @@ import { UploadFile } from 'antd/lib/upload/interface';
 import { Spin } from 'antd';
 import { useIpcRequestWithLoader, useModalVisible } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@modules/shared/shared';
+import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
 
 const { Dragger } = Upload;
 

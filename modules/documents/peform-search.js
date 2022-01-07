@@ -1,4 +1,11 @@
 import {
+  escapeRegExp,
+  regexpMatcher,
+  strNormalizeNoLower,
+  surroundContentsTag,
+  toSearchableTerms,
+} from '../shared/searchable.js';
+import {
   CHILD_PARENT_WINDOW_EVENT,
   CHILD_WINDOW_EVENT,
   DOCUMENT_CONTENT_ID,
@@ -15,7 +22,7 @@ import { setSearchResult } from './seach-query.js';
 /**
  * @param {import("@localtypes/index").DocumentViewQuery | null | undefined} query
  */
-export function performSearch(query) {
+export function performDocumentSearch(query) {
   /** @type {HTMLElement} */
   const container =
     document.querySelector(`.${DOCUMENT_CONTENT_ID}`) || pageContainer();
@@ -42,11 +49,7 @@ export function performSearch(query) {
     if (query.searchForParagraph) {
       terms = `\\n${escapeRegExp(term.trim())}(\\.?)\\s`;
     } else {
-      terms = strNormalizeNoLower(escapeRegExp(term.trim()))
-        .split(' ')
-        .filter(Boolean)
-        .join(`[a-zA-Z]*([^\s+]*)?`);
-      terms = `${terms}[a-zA-Z]*`;
+      terms = toSearchableTerms(term);
     }
 
     matches = regexpMatcher(terms, textContent);
@@ -88,63 +91,8 @@ export function performSearch(query) {
 }
 
 /**
- * @param {string} text
- */
-function escapeRegExp(text) {
-  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-/**
- * @param {string | RegExp} pattern
- * @param {string} headstack
- * @returns {import('../../src/types/index').SearchMatchersValue[]}
- */
-function regexpMatcher(pattern, headstack) {
-  const regexp = new RegExp(
-    typeof pattern === 'string'
-      ? pattern.replace(/[\'|\’]/g, "['’]").replace(/(œ|oe)/g, '(œ|oe)')
-      : pattern,
-    'gi'
-  );
-  const matches = [...headstack.matchAll(regexp)];
-
-  return matches.map((match, i) => ({
-    term: match[0],
-    index: i + 1,
-    start: match.index,
-    end: match.index ? match.index + match[0].length : undefined,
-  }));
-}
-
-/**
- * @param {string | null} str
- * @returns { string }
- */
-export function strNormalizeNoLower(str) {
-  return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
-}
-
-/**
- * @param {Node} node
- * @param {string | undefined} index
- * @param {number} start
- * @param {number} end
- */
-function surroundContentsTag(node, index, start, end) {
-  let range = document.createRange();
-  let tag = document.createElement('mark');
-
-  tag.dataset.markId = index;
-  range.setStart(node, start);
-  range.setEnd(node, end);
-  range.surroundContents(tag);
-
-  return range;
-}
-
-/**
  * @param {HTMLElement} element
- * @param {import('../../src/types/index').SearchMatchersValue[]} matches
+ * @param {import('@localtypes/index').SearchMatchersValue[]} matches
  * @param { number } textContentLength
  */
 function markMaches(element, matches, textContentLength) {

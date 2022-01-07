@@ -25,7 +25,7 @@ export async function search(
     searchable.pageNumber = 1;
     searchable.lastSearch = text;
 
-    searchable.searchResults = await searchHandler(text);
+    searchable.searchResults = await searchHandler(text.trim());
   }
 
   return {

@@ -11,7 +11,6 @@ import { Title } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import DocumentViewer, { useDocumentViewOpen } from '../viewer/document-viewer';
-import { simpleRegExp, strNormalize } from '@root/utils/functions';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   appDatasLoadedStore,
@@ -26,6 +25,7 @@ import PanelGroup from './components/documents-menu';
 import { DataNode } from 'antd/lib/tree';
 import DocumentTitle from '@renderer/store/models/document_title';
 import { TRADUCTIONS } from '@root/utils/constants';
+import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
 
 const { DirectoryTree } = Tree;
 
