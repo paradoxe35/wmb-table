@@ -1,4 +1,4 @@
-import { UpdateInfo } from "electron-updater";
+import { ProgressInfo, UpdateInfo } from "electron-updater";
 
 export interface TimeStampData<T = any> {
   _id: string;
@@ -322,7 +322,7 @@ export type UpdaterCopyProgress = {
   remainingSecs?: number;
  }
 
-export type UpdaterDownloadProgress = import('electron-updater/node_modules/builder-util-runtime').ProgressInfo
+export type UpdaterDownloadProgress = ProgressInfo
 
 export type UpdaterProgress = {
   copyProgress?: UpdaterCopyProgress,
