@@ -16,7 +16,7 @@ import {
   UpdaterNotification,
 } from '@localtypes/index';
 import { setUpdaterRestoringData } from './constants';
-import { ProgressInfo } from 'electron-updater/node_modules/builder-util-runtime';
+import { ProgressInfo } from 'electron-updater';
 import { DATA_RESTORING } from '../backup/constants';
 
 class Updater {
