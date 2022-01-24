@@ -9,7 +9,7 @@ import {
   DOCUMENT_CONTAINER_ID,
   DOCUMENT_CONTENT_ID,
 } from '@modules/shared/shared';
-import { performSearch } from '@modules/shared/searchable';
+import { performSearch, strNormalizeNoLower } from '@modules/shared/searchable';
 
 const docsPath = getAssetDocumentsPath();
 const getFiles = () =>
@@ -61,7 +61,7 @@ export const searchHandler = (term: string) => {
           root.querySelector(`.${DOCUMENT_CONTENT_ID}`) ||
           root.querySelector(`#${DOCUMENT_CONTAINER_ID}`);
 
-        bodyTextContent = body?.textContent || '';
+        bodyTextContent = strNormalizeNoLower(body?.textContent || '');
         DOC_MEMO[file] = { textContent: bodyTextContent };
       } else {
         bodyTextContent = DOC_MEMO[file].textContent;
