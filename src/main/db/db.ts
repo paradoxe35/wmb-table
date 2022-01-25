@@ -173,7 +173,7 @@ export const queryDb = {
     if (!database) return Promise.reject(null);
 
     await loadDatabase(database);
-    //
+    // only for modifier function
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
     const promise = new Promise<T>((resolve, reject) => {
@@ -202,6 +202,7 @@ export const queryDb = {
 
     await loadDatabase(database);
 
+    // only for modifier function
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
     if (canPending) {
@@ -226,6 +227,7 @@ export const queryDb = {
 
     await loadDatabase(database);
 
+    // only for modifier function
     let canPending = !PendingDatasUnloadDb.hasBeenSyncedDb(database);
 
     const updated = new Promise<{ numAffected: number }>((resolve, reject) => {
