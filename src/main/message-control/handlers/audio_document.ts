@@ -1,8 +1,14 @@
-import { AudioDocumentTime, Title } from '@localtypes/index';
+import {
+  AudioDocumentTime,
+  AudioDownloadProgress,
+  Title,
+} from '@localtypes/index';
 import db, { queryDb } from '@main/db/db';
 import DownloadableRequest from '@main/features/downloadable-request';
+import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 import { getAppHomePath } from '@root/sys';
 import { getFilename } from '@root/utils/functions';
+import { IPC_EVENTS } from '@root/utils/ipc-events';
 import fs from 'fs';
 import path from 'path';
 
@@ -32,6 +38,14 @@ export default async (_: any, doc: Title) => {
     // if get error in pending download
     downloadable.onError(() => {
       pending.links = pending.links.filter((link) => link !== doc.audio_link);
+    });
+
+    // inform client of download progress
+    downloadable.onProgress((percentage) => {
+      sendIpcToRenderer(IPC_EVENTS.download_audio_progress, {
+        document_title: doc.title,
+        percentage: percentage,
+      } as AudioDownloadProgress);
     });
 
     // doc.audio_link

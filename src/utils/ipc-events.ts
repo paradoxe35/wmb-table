@@ -70,4 +70,5 @@ export const IPC_EVENTS = {
   switch_on_options: 'switch_on_options',
   change_menu_viewer: 'change_menu_viewer',
   download_document_pdf_progress: 'download_document_pdf_progress',
+  download_audio_progress: 'download_audio_progress',
 };
