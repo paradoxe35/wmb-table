@@ -180,6 +180,7 @@
     "@testing-library/react": "^11.2.2",
     "@types/enzyme": "^3.10.5",
     "@types/enzyme-adapter-react-16": "^1.0.6",
+    "@types/express": "^4.17.13",
     "@types/history": "4.7.6",
     "@types/jest": "^26.0.15",
     "@types/nedb": "^1.8.11",
