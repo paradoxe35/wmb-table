@@ -1,3 +1,4 @@
+import { mainWindow } from '@root/sys';
 import { ipcMain } from 'electron';
 
 export function mainMessageTransport(
@@ -23,4 +24,8 @@ export function mainMessageTransport(
   return () => {
     ipcMain.off(eventName, callable);
   };
+}
+
+export function sendIpcToRenderer(channel: string, ...args: any[]) {
+  mainWindow?.webContents.send(channel, ...args);
 }

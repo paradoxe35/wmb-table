@@ -1,4 +1,4 @@
-import { getAssetBackupPendingPath, mainWindow } from '@root/sys';
+import { getAssetBackupPendingPath } from '@root/sys';
 import { BackupStatus } from '@localtypes/index';
 import {
   backupEventEmiter,
@@ -14,6 +14,7 @@ import { cleanAllFileDir } from '@main/functions/count-file-lines';
 import db, { queryDb } from '@main/db/db';
 import { app_settings } from './app_settings';
 import isOnline from 'is-online';
+import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 
 let ACCESS_STATUS: { value: boolean } = { value: true };
 
@@ -139,7 +140,7 @@ export async function setUserAuthAccessStatus(access: boolean) {
     { $set: { access } }
   );
 
-  mainWindow?.webContents.send(IPC_EVENTS.backup_status, status);
+  sendIpcToRenderer(IPC_EVENTS.backup_status, status);
 
   return status;
 }

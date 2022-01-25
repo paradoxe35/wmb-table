@@ -1,4 +1,3 @@
-import { mainWindow } from '@root/sys';
 import {
   RestoreProgressEvent,
   RestoreProgressEventType,
@@ -6,6 +5,7 @@ import {
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { OAuth2Client } from 'google-auth-library';
 import { DB_EXTENSION } from '@root/utils/constants';
+import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 
 type Value<T = boolean | null> = { value: T };
 
@@ -58,13 +58,11 @@ export function commitRestoreProgress(
   proceed: number,
   total: number
 ) {
-  if (mainWindow) {
-    mainWindow.webContents.send(IPC_EVENTS.backup_progression, {
-      type,
-      progression: {
-        proceed,
-        total,
-      },
-    } as RestoreProgressEvent);
-  }
+  sendIpcToRenderer(IPC_EVENTS.backup_progression, <RestoreProgressEvent>{
+    type,
+    progression: {
+      proceed,
+      total,
+    },
+  });
 }

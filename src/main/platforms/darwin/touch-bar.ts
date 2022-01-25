@@ -1,11 +1,10 @@
-import { mainMessageTransport } from '@root/ipc/ipc-main';
-import { getAssetPath, mainWindow } from '@root/sys';
+import { mainMessageTransport, sendIpcToRenderer } from '@root/ipc/ipc-main';
+import { getAssetPath } from '@root/sys';
 import { ViewMenuValue } from '@localtypes/index';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 
 const { TouchBar, nativeImage } = require('electron');
 const { TouchBarButton, TouchBarSpacer, TouchBarLabel } = TouchBar;
-
 
 const BG_COLOR = '#1a9aef';
 const menuView = (v: ViewMenuValue) => v;
@@ -21,10 +20,7 @@ const optionViewerMenu = new TouchBarButton({
       height: 16,
     }),
   click() {
-    mainWindow?.webContents.send(
-      IPC_EVENTS.change_menu_viewer,
-      menuView('options')
-    );
+    sendIpcToRenderer(IPC_EVENTS.change_menu_viewer, menuView('options'));
   },
 });
 
@@ -37,10 +33,7 @@ const documentViewerMenu = new TouchBarButton({
       height: 16,
     }),
   click() {
-    mainWindow?.webContents.send(
-      IPC_EVENTS.change_menu_viewer,
-      menuView('document')
-    );
+    sendIpcToRenderer(IPC_EVENTS.change_menu_viewer, menuView('document'));
   },
 });
 
