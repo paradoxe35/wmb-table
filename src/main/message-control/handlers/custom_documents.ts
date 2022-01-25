@@ -11,13 +11,13 @@ import {
   childsProcessesPath,
   getAssetDocumentsPath,
   getAssetPath,
-  mainWindow,
 } from '@root/sys';
 import { asyncify, doWhilst, whilst } from '@main/functions/async';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import childProcess from 'child_process';
 import { ConvertMessage } from '../../childs_processes/types';
 import { fileListHasChanged } from '@main/db/searchable/documents';
+import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 
 export default async () => {
   return await queryDb.find<CustomDocument>(
@@ -51,7 +51,7 @@ function commitUploadProgress(
   progress: number,
   total: number
 ) {
-  mainWindow?.webContents.send(IPC_EVENTS.custom_document_upload_progress, {
+  sendIpcToRenderer(IPC_EVENTS.custom_document_upload_progress, {
     type,
     progress,
     total,
