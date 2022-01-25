@@ -27,8 +27,8 @@ const DOC_MEMO: { [file: string]: { textContent: string } } = {};
 export const searchHandler = (term: string) => {
   if (fileListHasChanged.value) {
     files = getFiles();
+    fileListHasChanged.value = false;
   }
-  fileListHasChanged.value = false;
 
   return new Promise<SearchItem[]>((resolve, reject) => {
     const documents_files = [...files];
