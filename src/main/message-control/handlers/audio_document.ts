@@ -1,4 +1,5 @@
 import {
+  AudioDocumentDownload,
   AudioDocumentTime,
   AudioDownloadProgress,
   Title,
@@ -22,9 +23,13 @@ export default async (_: any, doc: Title) => {
     { audio_link: doc.audio_link }
   );
 
+  const audioDownload = await queryDb.findOne<AudioDocumentDownload>(
+    db.audioDocumentDownloaded,
+    { audio_link: doc.audio_link }
+  );
   // download audio localy
   if (
-    !audioTime?.local_file &&
+    !audioDownload?.local_file &&
     doc.audio_link &&
     !pending.links.includes(doc.audio_link)
   ) {
@@ -54,7 +59,7 @@ export default async (_: any, doc: Title) => {
       pending.links = pending.links.filter((link) => link !== doc.audio_link);
 
       queryDb.update(
-        db.audioDocumentTimes,
+        db.audioDocumentDownloaded,
         { audio_link: doc.audio_link },
         { $set: { local_file } },
         { upsert: true }
@@ -62,12 +67,15 @@ export default async (_: any, doc: Title) => {
     });
   }
 
-  if (audioTime?.local_file && !fs.existsSync(audioTime?.local_file)) {
-    audioTime.local_file = undefined;
+  if (audioDownload?.local_file && !fs.existsSync(audioDownload?.local_file)) {
+    audioDownload.local_file = undefined;
   }
 
-  if (audioTime)
-    return { time: audioTime.time, local_file: audioTime.local_file };
+  if (audioTime || audioDownload)
+    return {
+      time: audioTime?.time ?? 0,
+      local_file: audioDownload?.local_file,
+    };
 
   return {};
 };
