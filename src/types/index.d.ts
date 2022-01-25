@@ -308,11 +308,14 @@ export interface UpdaterInfoStatus extends TimeStampData<Date> {
 
 
 export interface AudioDocumentTime extends TimeStampData<Date> {
-  local_file?:string;
   audio_link:string;
   time: number;
 }
 
+export interface AudioDocumentDownload extends TimeStampData<Date> {
+  local_file?:string;
+  audio_link:string;
+}
 
 export type UpdaterCopyProgress = {
   elapsedBytes?: number;

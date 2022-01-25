@@ -3,6 +3,7 @@ import { UpdaterInfoStatus } from '@localtypes/index';
 import { autoUpdater } from 'electron-updater';
 import path from 'path';
 import { getAppHomePath } from '@root/sys';
+import { DB_EXTENSION } from '@root/utils/constants';
 
 export default class UpdaterInMemoryDatastore {
   private datastore: Nedb<UpdaterInfoStatus>;
@@ -10,7 +11,7 @@ export default class UpdaterInMemoryDatastore {
   constructor() {
     const homePath = getAppHomePath();
     this.datastore = new Nedb<UpdaterInfoStatus>({
-      filename: path.join(homePath, `updater.db`),
+      filename: path.join(homePath, `updater${DB_EXTENSION}`),
       timestampData: true,
     });
 

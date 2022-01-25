@@ -1,5 +1,6 @@
 import Datastore from '@seald-io/nedb';
 import {
+  getAppHomePath,
   getAssetBackupPath,
   getAssetBiblePath,
   getAssetDbPath,
@@ -9,6 +10,7 @@ import { TimeStampData } from '@localtypes/index';
 import { loadedDb, PendingDatasUnloadDb } from '../features/backup/backup';
 import { DB_EXTENSION } from '@root/utils/constants';
 import { getFilename } from '@root/utils/functions';
+import path from 'path';
 
 interface Db {
   [name: string]: Datastore | undefined;
@@ -24,6 +26,7 @@ interface Db {
   suggestions?: Datastore;
   customDocuments?: Datastore;
   audioDocumentTimes?: Datastore;
+  audioDocumentDownloaded?: Datastore;
   audioDocumentLastPlay?: Datastore;
 
   notes?: Datastore;
@@ -83,6 +86,11 @@ db.backupDbReferences = new Datastore({
 
 db.backupStatus = new Datastore({
   filename: getAssetBackupPath(`backup-status${DB_EXTENSION}`),
+  autoload: false,
+});
+
+db.audioDocumentDownloaded = new Datastore({
+  filename: path.join(getAppHomePath(), `audios-downloads${DB_EXTENSION}`),
   autoload: false,
 });
 
