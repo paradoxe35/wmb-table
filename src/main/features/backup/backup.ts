@@ -54,7 +54,7 @@ const LOADED_DB_EVENT_NAME = 'loadedDb';
 export const CAN_WATCH_IS_ONLINE_EVENT = 'is-online-event-start';
 
 // timeout to performUniqueBackup
-const TIMEOUT = 3000;
+const PERFOM_BACKUP_TIMEOUT = 3000;
 
 // used as the actual network status
 let IS_ONLINE: { value: boolean } = { value: true };
@@ -124,7 +124,10 @@ export const loadedDb = {
 
 // after load database start event corresponding to database filename
 eventEmiter.on(LOADED_DB_EVENT_NAME, (filenameEvent) => {
-  eventEmiter.on(filenameEvent, debounce(performUniqueBackup, TIMEOUT));
+  eventEmiter.on(
+    filenameEvent,
+    debounce(performUniqueBackup, PERFOM_BACKUP_TIMEOUT)
+  );
 });
 
 // Listening to `connectivity.change` events.
