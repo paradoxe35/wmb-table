@@ -104,6 +104,7 @@ export class PendingDatasUnloadDb {
 }
 
 // used to collect all loaded databases that will be backuped
+// commit dbname as event, so to catch all changes that was made in dbfile and process them to backup
 export const loadedDb = {
   dbs: [] as string[],
   dbFilenames: {} as { [x: string]: string },
