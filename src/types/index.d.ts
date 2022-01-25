@@ -352,3 +352,9 @@ export type CurrentAudioDocumentPlay = {
   documentTitle: string;
   status: 'play' | 'pause'
 }
+
+
+export type AudioDownloadProgress = {
+  document_title: string;
+  percentage: number;
+}
