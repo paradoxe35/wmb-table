@@ -24,7 +24,7 @@ import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { getDateTime } from '@root/utils/functions';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { SetterOrUpdater, useRecoilValue, useSetRecoilState } from 'recoil';
 import {
   selectedSubjectDocumentItemStore,
   subjectDocumentStore,
@@ -36,6 +36,7 @@ import { BookOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { SUBJECT_EVENT } from '@modules/shared/shared';
 import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
+import DocumentTitle from '@renderer/store/models/document_title';
 
 const { Text } = Typography;
 
@@ -287,6 +288,60 @@ export default function Subject() {
   );
 }
 
+type ItemFromSelectedSubjectType = {
+  item: SubjectDocumentItem;
+  setSubjectItemSelected: SetterOrUpdater<SubjectDocumentItem | null>;
+  $titles: {
+    [fileName: string]: DocumentTitle;
+  };
+  confirm(item: SubjectDocumentItem): void;
+};
+
+function ItemFromSelectedSubject({
+  item,
+  setSubjectItemSelected,
+  confirm,
+  $titles,
+}: ItemFromSelectedSubjectType) {
+  return (
+    <>
+      <List.Item actions={[<DeleteBtn confirm={() => confirm(item)} />]}>
+        {item.bible ? (
+          <>
+            <List.Item.Meta
+              title={
+                <span>
+                  {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
+                </span>
+              }
+              description={<span>Référence: Biblique</span>}
+            />
+            <span className="content-description-2">{item.bible.content}</span>
+          </>
+        ) : (
+          <>
+            <List.Item.Meta
+              title={
+                <a className="underline">
+                  <DocumentViewer
+                    onItemClick={() => setSubjectItemSelected(item)}
+                    name={item.documentTitle}
+                  >
+                    {$titles[item.documentTitle]?.getTitle()}
+                  </DocumentViewer>
+                </a>
+              }
+              description={<span>Référence: Document</span>}
+            />
+            <span className="content-description-2">{item.textContent}...</span>
+          </>
+        )}
+      </List.Item>
+      <Divider />
+    </>
+  );
+}
+
 function ShowActiveDocuments({
   subject,
   documents,
@@ -328,48 +383,12 @@ function ShowActiveDocuments({
               style={{ width: '100%' }}
               dataSource={documents}
               renderItem={(item) => (
-                <>
-                  <List.Item
-                    actions={[<DeleteBtn confirm={() => confirm(item)} />]}
-                  >
-                    {item.bible ? (
-                      <>
-                        <List.Item.Meta
-                          title={
-                            <span>
-                              {item.bible.bookName} {item.bible.chapter}:
-                              {item.bible.verse}
-                            </span>
-                          }
-                          description={<span>Référence: Biblique</span>}
-                        />
-                        <span className="content-description-2">
-                          {item.bible.content}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <List.Item.Meta
-                          title={
-                            <a className="underline">
-                              <DocumentViewer
-                                onItemClick={() => setSubjectItemSelected(item)}
-                                name={item.documentTitle}
-                              >
-                                {$titles[item.documentTitle]?.getTitle()}
-                              </DocumentViewer>
-                            </a>
-                          }
-                          description={<span>Référence: Document</span>}
-                        />
-                        <span className="content-description-2">
-                          {item.textContent}...
-                        </span>
-                      </>
-                    )}
-                  </List.Item>
-                  <Divider />
-                </>
+                <ItemFromSelectedSubject
+                  item={item}
+                  confirm={confirm}
+                  $titles={$titles}
+                  setSubjectItemSelected={setSubjectItemSelected}
+                />
               )}
             />
           </div>
