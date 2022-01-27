@@ -11,6 +11,7 @@ import {
   childsProcessesPath,
   getAssetDocumentsPath,
   getAssetPath,
+  getPdf2HtmlPath,
 } from '@root/sys';
 import { asyncify, doWhilst, whilst } from '@main/functions/async';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
@@ -18,6 +19,9 @@ import childProcess from 'child_process';
 import { ConvertMessage } from '../../childs_processes/types';
 import { fileListHasChanged } from '@main/db/searchable/documents';
 import { sendIpcToRenderer } from '@root/ipc/ipc-main';
+import isOnline from 'is-online';
+import request from 'request';
+import { getFilename } from '@root/utils/functions';
 
 export default async () => {
   return await queryDb.find<CustomDocument>(
@@ -46,6 +50,7 @@ export function custom_documents_delete(_: any, document: CustomDocument) {
   });
 }
 
+// send upload progress to renderer process
 function commitUploadProgress(
   type: CustomDocumentUploadProgressType,
   progress: number,
@@ -58,6 +63,25 @@ function commitUploadProgress(
   } as CustomDocumentUploadProgress);
 }
 
+// commit this file is  uploaded
+function commit_uploaded_document(doc: CustomDocument) {
+  sendIpcToRenderer(IPC_EVENTS.custom_document_uploaded_file, doc);
+}
+
+// copy all custom  document assets
+function copy_document_assets() {
+  const assets = ['compatibility.min.js', 'pdf2htmlEX.min.js'];
+
+  assets
+    .filter((asset) => !fs.existsSync(getAssetDocumentsPath(asset)))
+    .forEach((asset) => {
+      const source = getPdf2HtmlPath('data', asset);
+      const des = getAssetDocumentsPath(asset);
+      fs.copyFileSync(source, des);
+    });
+}
+
+// entry for documents uploading
 export async function custom_documents_store(
   _: any,
   documents: UploadDocument[]
@@ -65,19 +89,29 @@ export async function custom_documents_store(
   process.env.ASSETS_PATH = getAssetPath();
   process.env.ASSETS_DOCUMENTS_PATH = getAssetDocumentsPath();
 
-  if (process.platform === 'win32') {
-    return local_convertion(documents);
-  }
-  return online_version(documents);
+  const pdf2html_link = process.env.PDF2HTML_LINK;
+  process.env.PDF2HTML_LINK =
+    pdf2html_link || 'https://pdf2html-wmb-table.herokuapp.com/convert';
+
+  return convertion(documents);
 }
 
-function online_version(documents: UploadDocument[]) {}
-
 // only on windows
-function local_convertion(documents: UploadDocument[]) {
-  const child = childProcess.fork(childsProcessesPath('pdf2html.js'), {
-    env: process.env,
-  });
+async function convertion(documents: UploadDocument[]) {
+  let child: childProcess.ChildProcess | undefined;
+  // support local conversion only on windows
+  if (process.platform === 'win32') {
+    child = childProcess.fork(childsProcessesPath('pdf2html.js'), {
+      env: process.env,
+    });
+  } else {
+    // check if user has connection
+    const online = await isOnline();
+    if (!online) {
+      sendIpcToRenderer(IPC_EVENTS.custom_document_connection_required);
+      return [];
+    }
+  }
 
   return new Promise<CustomDocument[]>((resolve, reject) => {
     const newDocuments = documents.slice();
@@ -85,11 +119,11 @@ function local_convertion(documents: UploadDocument[]) {
 
     commitUploadProgress('progress', 0, documents.length);
 
-    const convert = <T>(file: UploadDocument) => {
-      child.send({ ...file, childForked: true });
+    const local_convert = <T>(file: UploadDocument) => {
+      child?.send({ ...file, childForked: true });
 
       return new Promise<T | null>((resolve) => {
-        child.once('message', (message: ConvertMessage) => {
+        child?.once('message', (message: ConvertMessage) => {
           if (message) {
             resolve(({
               title: message.title,
@@ -101,13 +135,43 @@ function local_convertion(documents: UploadDocument[]) {
       });
     };
 
+    const online_conversion = <T>(file: UploadDocument) => {
+      const filename = getFilename(file.name);
+
+      return new Promise<T | null>((resolve) => {
+        const req = request.post(
+          process.env.PDF2HTML_LINK!,
+          (_err, _res, body) => {
+            if (_err) return resolve(null);
+
+            const html_file = filename.replace('.pdf', '.html');
+
+            fs.writeFile(getAssetDocumentsPath(html_file), body, (err) => {
+              if (err) return resolve(null);
+              copy_document_assets();
+              resolve(({ title: filename.split('.pdf')[0] } as unknown) as T);
+            });
+          }
+        );
+
+        const form = req.form();
+        form.append('pdf_file', fs.createReadStream(file.path));
+      });
+    };
+
     const proceed = async () => {
       const file = newDocuments.shift();
       if (!file) return;
 
-      const getContent = await convert<{
-        title: string;
-      }>(file);
+      type R = { title: string } | null;
+
+      let getContent: R = null;
+
+      if (process.platform === 'win32') {
+        getContent = await local_convert<R>(file);
+      } else {
+        getContent = await online_conversion<R>(file);
+      }
 
       if (getContent) {
         await queryDb.insert<Title>(db.documentsTitle, {
@@ -129,6 +193,9 @@ function local_convertion(documents: UploadDocument[]) {
         } as CustomDocument);
 
         docs.push(doc);
+
+        // commit event to renderer process about uploaded file
+        commit_uploaded_document(doc);
       }
 
       commitUploadProgress(
@@ -148,7 +215,7 @@ function local_convertion(documents: UploadDocument[]) {
           resolve(docs.sort((a, b) => b.createdAt - a.createdAt));
           fileListHasChanged.value = true;
         }
-        child.kill('SIGINT');
+        child?.kill('SIGINT');
         commitUploadProgress('finish', 0, 0);
       }
     );

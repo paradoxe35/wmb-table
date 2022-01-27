@@ -59,6 +59,8 @@ export const IPC_EVENTS = {
   audio_document_last_play: 'audio_document_last_play',
   // events from main process
   custom_document_upload_progress: 'custom_document_upload_progress',
+  custom_document_connection_required: 'custom_document_connection_required',
+  custom_document_uploaded_file: 'custom_document_uploaded_file',
   open_modal_document_from_main: 'open_modal_document_from_main',
   backup_progression: 'backup_progression',
   backup_access_status: 'backup_access_status',
