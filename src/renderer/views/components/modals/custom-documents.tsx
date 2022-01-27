@@ -156,7 +156,7 @@ const DisabledArea = ({
 };
 
 const UploaderWrapper = () => {
-  const [canUpload] = useState<boolean>(process.platform === 'win32');
+  const [canUpload] = useState<boolean>(true);
 
   return <DisabledArea component={<Uploader />} active={canUpload} />;
 };
