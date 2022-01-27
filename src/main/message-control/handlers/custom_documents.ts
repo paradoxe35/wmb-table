@@ -64,6 +64,17 @@ export async function custom_documents_store(
 ) {
   process.env.ASSETS_PATH = getAssetPath();
   process.env.ASSETS_DOCUMENTS_PATH = getAssetDocumentsPath();
+
+  if (process.platform === 'win32') {
+    return local_convertion(documents);
+  }
+  return online_version(documents);
+}
+
+function online_version(documents: UploadDocument[]) {}
+
+// only on windows
+function local_convertion(documents: UploadDocument[]) {
   const child = childProcess.fork(childsProcessesPath('pdf2html.js'), {
     env: process.env,
   });

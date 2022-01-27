@@ -1,5 +1,4 @@
 import { createWriteStream } from 'fs';
-//@ts-ignore
 import request from 'request';
 
 export default class DownloadableRequest {

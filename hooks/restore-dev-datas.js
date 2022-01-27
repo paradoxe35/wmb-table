@@ -1,4 +1,3 @@
-// @ts-ignore
 const request = require('request');
 // @ts-ignore
 const progress = require('request-progress');
