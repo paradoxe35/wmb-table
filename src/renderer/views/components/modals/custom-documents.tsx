@@ -373,37 +373,56 @@ function Uploader() {
       .filter((d) => d.path);
 
     sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents_store, paths)
-      .then((docs) => {
-        window.dispatchEvent(
-          new CustomEvent<CustomDocument[]>(
-            CUSTOM_DOCUMENT_EVENT.customDocumentAdded,
-            {
-              detail: docs,
-            }
-          )
-        );
-        message.success(`Documents ajoutés avec succès`);
+      .then((_docs) => {
+        message.success(`Téléchargement terminé`);
         setFileList([]);
       })
       .finally(() => setUploading(false));
     return;
   }
 
+  // handle all commit uploaded document and error
   useEffect(() => {
+    const handle_uploaded_file = (_e: any, doc: CustomDocument) => {
+      window.dispatchEvent(
+        new CustomEvent<CustomDocument[]>(
+          CUSTOM_DOCUMENT_EVENT.customDocumentAdded,
+          {
+            detail: [doc],
+          }
+        )
+      );
+    };
+    // every time when a file is uploaded successfully
     ipcRenderer.on(
-      IPC_EVENTS.custom_document_upload_progress,
-      (_: any, data: CustomDocumentUploadProgress) => {
-        if (data.type === 'progress') {
-          setUploadProgress(data);
-        } else {
-          window.setTimeout(() => {
-            setUploadProgress(undefined);
-          }, 2000);
-        }
-      }
+      IPC_EVENTS.custom_document_uploaded_file,
+      handle_uploaded_file
     );
   }, []);
 
+  useEffect(() => {
+    // upload progress handler
+    const upload_progress = (_: any, data: CustomDocumentUploadProgress) => {
+      if (data.type === 'progress') {
+        setUploadProgress(data);
+      } else {
+        window.setTimeout(() => {
+          setUploadProgress(undefined);
+        }, 2000);
+      }
+    };
+    // upload progress event listeners
+    ipcRenderer.on(IPC_EVENTS.custom_document_upload_progress, upload_progress);
+  }, []);
+
+  // catch error on uploading document progress, specially when there's no connectin
+  useEffect(() => {
+    const handler = () =>
+      message.warn('Vous devez être connecté à Internet pour télécharger');
+    ipcRenderer.on(IPC_EVENTS.custom_document_connection_required, handler);
+  }, []);
+
+  // scroll to bo ttom container when new file added
   useEffect(() => {
     if (fileList.length > 0) {
       window.setTimeout(() => {

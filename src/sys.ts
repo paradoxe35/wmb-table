@@ -24,6 +24,10 @@ export const getAssetDatasPath = (...paths: string[]): string => {
   return getAssetPath('datas', ...paths);
 };
 
+export const getPdf2HtmlPath = (...paths: string[]): string => {
+  return getAssetPath('pdf2html-ex', ...paths);
+};
+
 export const getAssetDocumentsDbPath = (...paths: string[]): string => {
   return getAssetPath('datas/documents-db', ...paths);
 };
