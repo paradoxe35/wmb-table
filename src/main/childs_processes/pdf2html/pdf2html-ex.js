@@ -1,8 +1,6 @@
 //@ts-check
 const pdftohtml = require('./pdf2html-ex/pdftohtml');
 const fs = require('fs');
-//@ts-ignore
-const pdf = require('pdf-parse');
 
 module.exports = async (
   /** @type {number | fs.PathLike} */ srcFilePdf,
