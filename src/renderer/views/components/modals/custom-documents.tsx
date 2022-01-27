@@ -374,8 +374,10 @@ function Uploader() {
 
     sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents_store, paths)
       .then((_docs) => {
-        message.success(`Téléchargement terminé`);
-        setFileList([]);
+        if (_docs.length > 0) {
+          message.success(`Téléchargement terminé`);
+          setFileList([]);
+        }
       })
       .finally(() => setUploading(false));
     return;
@@ -418,7 +420,9 @@ function Uploader() {
   // catch error on uploading document progress, specially when there's no connectin
   useEffect(() => {
     const handler = () =>
-      message.warn('Vous devez être connecté à Internet pour télécharger');
+      message.warn(
+        'Vous devez être connecté à Internet pour télécharger le document'
+      );
     ipcRenderer.on(IPC_EVENTS.custom_document_connection_required, handler);
   }, []);
 
