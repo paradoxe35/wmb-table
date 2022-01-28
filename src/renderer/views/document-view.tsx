@@ -433,14 +433,16 @@ export default function DocumentView() {
         if (load.count === 0) {
           return (load.count = 1);
         }
-        setTabs((ts) => {
-          return ts.map((t) => {
-            const nt = { ...t };
-            if (nt.title === title) {
-              nt.scrollY = page?.scrollTop;
-              nt.scrollX = page?.scrollLeft;
-            }
-            return nt;
+        setImmediate(() => {
+          setTabs((ts) => {
+            return ts.map((t) => {
+              const nt = { ...t };
+              if (nt.title === title) {
+                nt.scrollY = page?.scrollTop;
+                nt.scrollX = page?.scrollLeft;
+              }
+              return nt;
+            });
           });
         });
       };
@@ -461,7 +463,7 @@ export default function DocumentView() {
       };
 
       page?.addEventListener('click', externalizeLinkTag);
-      page?.addEventListener('scroll', debounce(onScroll, 300));
+      page?.addEventListener('scroll', debounce(onScroll, 500));
       handleSearchQuery(iframeRef.current, hasOwnPosition);
       currentAudioPlayOnLoadDocument();
     }
