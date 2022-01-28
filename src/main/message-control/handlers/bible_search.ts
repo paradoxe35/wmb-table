@@ -1,7 +1,6 @@
-import { strNormalizeNoLower } from '@modules/documents/peform-search';
 import { BibleBook, BibleSearchResult } from '@localtypes/index';
 import db, { queryDb } from '@main/db/db';
-import { performSearch } from '@modules/shared/searchable';
+import { performSearch, strNormalizeNoLower } from '@modules/shared/searchable';
 
 let searchResults: BibleBook[] = [];
 let lastSearch: string;
