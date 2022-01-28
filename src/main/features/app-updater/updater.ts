@@ -140,7 +140,9 @@ class Updater {
       });
 
       // now quit and install the update
-      this.autoUpdater.quitAndInstall();
+      setImmediate(() => {
+        this.autoUpdater.quitAndInstall(false);
+      });
     }
   };
 
