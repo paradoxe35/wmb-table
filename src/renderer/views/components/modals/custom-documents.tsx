@@ -305,8 +305,10 @@ function validateFile(file: File, showMessage: boolean = true) {
   return isJpgOrPng && isLt8k;
 }
 
+type UploadFilePath = UploadFile & { path?: string };
+
 function Uploader() {
-  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [fileList, setFileList] = useState<UploadFilePath[]>([]);
   const [uploading, setUploading] = useState<boolean>(false);
 
   const uploadElRef = useRef<HTMLDivElement | null>(null);
@@ -367,8 +369,7 @@ function Uploader() {
     const paths: UploadDocument[] = fileList
       .map((d) => ({
         name: d.name,
-        //@ts-ignore
-        path: d.path,
+        path: d.path!,
       }))
       .filter((d) => d.path);
 
@@ -376,7 +377,11 @@ function Uploader() {
       .then((_docs) => {
         if (_docs.length > 0) {
           message.success(`Téléchargement terminé`);
-          setFileList([]);
+          setFileList((files) => {
+            return files.filter(
+              (f) => !_docs.some((b) => f.name.includes(b.title))
+            );
+          });
         }
       })
       .finally(() => setUploading(false));
