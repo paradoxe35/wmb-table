@@ -57,13 +57,17 @@ export default class IsOnlineEmitter {
     this.network.emit(this._connectivity_event, CONNECTIVITY_STATUS);
 
     // create spawn process
-    this.ping_process = spawn('ping', [
-      '-v',
-      '-n',
-      '-i',
-      this.INTERVAL,
-      this.IP,
-    ]);
+    if (process.platform === 'win32') {
+      this.ping_process = spawn('ping', ['-t', this.IP]);
+    } else {
+      this.ping_process = spawn('ping', [
+        '-v',
+        '-n',
+        '-i',
+        this.INTERVAL,
+        this.IP,
+      ]);
+    }
 
     // readline interface to get terminal std
     this.readline_i = readline.createInterface(
