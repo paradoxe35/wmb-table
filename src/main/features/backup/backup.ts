@@ -36,10 +36,10 @@ import { UPDATER_RESTORING_DATA } from '../app-updater/constants';
 import isOnline from 'is-online';
 import watch from 'node-watch';
 
-const IsOnlineEmitter = require('is-online-emitter');
+import IsOnlineEmitter from './tools/is-online-emitter';
 
 // emitter is online instance
-const emitterIsOnline = new IsOnlineEmitter({});
+const emitterIsOnline = new IsOnlineEmitter();
 
 // backup event emitter
 const eventEmiter = new EventEmitter({ captureRejections: true });
@@ -131,7 +131,7 @@ eventEmiter.on(LOADED_DB_EVENT_NAME, (filenameEvent) => {
 });
 
 // Listening to `connectivity.change` events.
-emitterIsOnline.on('connectivity.change', connectivityChangedHandler);
+emitterIsOnline.connectivity_change(connectivityChangedHandler);
 
 /**
  * get saved file meta references
@@ -304,13 +304,14 @@ async function uploadModifications(
  *
  * @param onlineStatus
  */
-function connectivityChangedHandler(onlineStatus?: {
-  status: boolean;
-  updatedAt: string;
-}) {
+function connectivityChangedHandler(onlineStatus: { online: boolean }): void {
+  if (process.env.NODE_ENV === 'development') {
+    console.log(onlineStatus);
+  }
+
   if (
     !IS_ONLINE.value &&
-    onlineStatus?.status &&
+    onlineStatus.online &&
     !DATA_BACKINGUP_PENDING.value
   ) {
     IS_ONLINE.value = true;
