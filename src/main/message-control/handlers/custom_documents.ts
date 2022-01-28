@@ -86,9 +86,6 @@ export async function custom_documents_store(
   _: any,
   documents: UploadDocument[]
 ) {
-  process.env.ASSETS_PATH = getAssetPath();
-  process.env.ASSETS_DOCUMENTS_PATH = getAssetDocumentsPath();
-
   const pdf2html_link = process.env.PDF2HTML_LINK;
   process.env.PDF2HTML_LINK =
     pdf2html_link || 'https://pdf2html-wmb-table.herokuapp.com/convert';
@@ -98,6 +95,9 @@ export async function custom_documents_store(
 
 // only on windows
 async function convertion(documents: UploadDocument[]) {
+  process.env.ASSETS_PATH = getAssetPath();
+  process.env.ASSETS_DOCUMENTS_PATH = getAssetDocumentsPath();
+
   let child: childProcess.ChildProcess | undefined;
   // support local conversion only on windows
   if (process.platform === 'win32') {
