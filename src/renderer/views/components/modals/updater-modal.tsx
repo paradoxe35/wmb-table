@@ -266,7 +266,7 @@ export default function Updater() {
         visible={isModalVisible}
         footer={[
           <Button onClick={handleCancel} disabled={preventActions} key={0}>
-            Fermer
+            {updaterInfo?.type === 'hasUpdate' ? 'Plus tard' : 'Fermer'}
           </Button>,
           <Button
             key={1}
