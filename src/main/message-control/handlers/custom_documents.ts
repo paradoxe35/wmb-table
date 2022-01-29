@@ -80,6 +80,8 @@ function copy_document_assets() {
       fs.copyFileSync(source, des);
     });
 }
+// copy all files at app startup
+copy_document_assets();
 
 // entry for documents uploading
 export async function custom_documents_store(
