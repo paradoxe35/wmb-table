@@ -18,6 +18,7 @@ import {
 import { setUpdaterRestoringData } from './constants';
 import { ProgressInfo } from 'electron-updater';
 import { DATA_RESTORING } from '../backup/constants';
+import isOnline from 'is-online';
 
 class Updater {
   private autoUpdater: AppUpdater;
@@ -85,6 +86,7 @@ class Updater {
   private checkForUpdates = async () => {
     if (this.updateInfo || this.restartedToUpdate || DATA_RESTORING.value)
       return;
+    if (!(await isOnline())) return;
     this.autoUpdater.checkForUpdates();
   };
 
