@@ -127,10 +127,16 @@ export class CustomIsOnlineEmitter {
     }
   }
 
-  private async check_connectivity() {
-    if (this.requesting && this.timer) {
+  private clearInterval() {
+    if (this.timer) {
       clearInterval(this.timer);
       this.timer = undefined;
+    }
+  }
+
+  private async check_connectivity() {
+    if (this.requesting) {
+      this.clearInterval();
       return;
     }
     this.requesting = true;
@@ -155,10 +161,6 @@ export class CustomIsOnlineEmitter {
 
   public stop() {
     this.closed = true;
-
-    if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = undefined;
-    }
+    this.clearInterval();
   }
 }
