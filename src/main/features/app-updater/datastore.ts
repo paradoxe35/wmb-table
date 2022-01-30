@@ -8,8 +8,11 @@ import { DB_EXTENSION } from '@root/utils/constants';
 export default class UpdaterInMemoryDatastore {
   private datastore: Nedb<UpdaterInfoStatus>;
 
+  private refreshed: boolean = false;
+
   constructor() {
     const homePath = getAppHomePath();
+
     this.datastore = new Nedb<UpdaterInfoStatus>({
       filename: path.join(homePath, `updater${DB_EXTENSION}`),
       timestampData: true,
@@ -22,6 +25,11 @@ export default class UpdaterInMemoryDatastore {
     let data = await this.data();
     if (!data) {
       data = await this.create();
+    } else if (!data.restartedToUpdate && !this.refreshed) {
+      // alway recreate db datastore instance to awlay get the good update information
+      await this.clear_datastore();
+      data = await this.create();
+      this.refreshed = true;
     }
     return data;
   }
@@ -52,6 +60,14 @@ export default class UpdaterInMemoryDatastore {
         }
       );
     });
+  }
+
+  private clear_datastore() {
+    return new Promise<number>((resolve) =>
+      this.datastore.remove({}, { multi: true }, (_, n) => {
+        resolve(n);
+      })
+    );
   }
 
   private create() {
