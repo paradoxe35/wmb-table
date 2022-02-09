@@ -361,3 +361,6 @@ export type AudioDownloadProgress = {
   document_title: string;
   percentage: number;
 }
+
+
+export type BackupActions = 'delete' | 'update' | 'create'
