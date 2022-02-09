@@ -61,6 +61,7 @@ export class DriveHandler {
     if (!this.driveInstance) {
       this.driveInstance = google.drive({
         version: 'v3',
+        // @ts-ignore
         auth: this.oAuth2Client,
         timeout: 1000 * 30,
         retry: true,
