@@ -1,9 +1,10 @@
+import { BackupActions } from '@localtypes/index';
 import type { EventEmitter } from 'events';
 
 interface Backuped {
   file_drive_id: string;
   dataJson: any;
-  action: 'delete' | 'update' | 'create';
+  action: BackupActions;
 }
 
 export interface Events {
