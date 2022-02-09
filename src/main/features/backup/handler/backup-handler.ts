@@ -14,6 +14,12 @@ import { promisify } from 'util';
 import { deletePending } from '../backup';
 
 export class BackupHandler extends DriveHandler {
+  /**
+   * Top level method to start backup of pending datas
+   *
+   * @param options
+   * @returns
+   */
   static async handlePending(options: { notify: boolean } = { notify: true }) {
     const dir = getAssetBackupPendingPath();
     if (!fs.existsSync(dir)) return;
@@ -80,7 +86,13 @@ export class BackupHandler extends DriveHandler {
     });
   }
 
-  static pendingDatastore(filename: string) {
+  /**
+   * Get Pending Datastore db instance by passing db filename
+   *
+   * @param filename
+   * @returns
+   */
+  private static pendingDatastore(filename: string) {
     const db = new Datastore<PendingDatastore>({
       filename: getAssetBackupPendingPath(filename),
     });
@@ -88,7 +100,14 @@ export class BackupHandler extends DriveHandler {
     return db;
   }
 
-  static async getFromDriveId(
+  /**
+   * Get file id from drive which is represented as folder inside drive, by passing field and query drive expression
+   *
+   * @param fieldName
+   * @param q
+   * @returns
+   */
+  private static async getFromDriveId(
     fieldName: string,
     q: string
   ): Promise<string | undefined> {
@@ -105,7 +124,15 @@ export class BackupHandler extends DriveHandler {
     return id;
   }
 
-  static async getDriveFileId(
+  /**
+   * Compose query expression of file id from drive
+   *
+   * @param name
+   * @param fieldName
+   * @param parentId
+   * @returns
+   */
+  private static async getDriveFileId(
     name: string,
     fieldName: string,
     parentId: string
@@ -116,11 +143,20 @@ export class BackupHandler extends DriveHandler {
     );
   }
 
-  static get spacesToParent() {
+  /**
+   * get the working drive space
+   */
+  private static get spacesToParent() {
     return this.STORAGE_SPACE !== 'drive' ? [this.STORAGE_SPACE] : undefined;
   }
 
-  static async getDriveFolderId(name: string): Promise<string> {
+  /**
+   * Compose query expression of folder id from drive, if doent exist then create a new one
+   *
+   * @param name
+   * @returns
+   */
+  private static async getDriveFolderId(name: string): Promise<string> {
     let id = await this.getFromDriveId(
       name,
       `name = '${name}' and mimeType = '${this.FOLDER_MIME_TYPE}'`
@@ -143,6 +179,15 @@ export class BackupHandler extends DriveHandler {
     return data.id!;
   }
 
+  /**
+   * Top level method to perfom upload of update data
+   *
+   * @param dataId
+   * @param deleted
+   * @param dataJson
+   * @param filename
+   * @returns
+   */
   static async handleUpload(
     dataId: string,
     deleted: boolean,
@@ -204,7 +249,13 @@ export class BackupHandler extends DriveHandler {
     }
   }
 
-  static async storeCustomDocument(data: CustomDocument) {
+  /**
+   * perform update or backup of custom document datas
+   *
+   * @param data
+   * @returns
+   */
+  private static async storeCustomDocument(data: CustomDocument) {
     const filepath = getAssetDocumentsPath(`${data.title}.html`);
     if (!fs.existsSync(filepath)) return;
 
@@ -228,7 +279,12 @@ export class BackupHandler extends DriveHandler {
     this.setFileId(filename, res.data.id!);
   }
 
-  static async deleteCustomDocument(id: string) {
+  /**
+   * Perdorm deletion of custom document datas if the action has deletion value
+   *
+   * @param id
+   */
+  private static async deleteCustomDocument(id: string) {
     const filename = `${id}.html`;
     const fileId = await this.getFromDriveId(filename, `name = '${filename}'`);
     if (fileId) {
