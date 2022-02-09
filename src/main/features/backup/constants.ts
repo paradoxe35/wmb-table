@@ -9,23 +9,23 @@ import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 
 type Value<T = boolean | null> = { value: T };
 
-export let DATA_RESTORED: Value<boolean> = {
+export const DATA_RESTORED: Value<boolean> = {
   value: false,
 };
 
-export let DATA_RESTORING: Value<boolean> = {
+export const DATA_RESTORING: Value<boolean> = {
   value: false,
 };
 
-export let DATA_BACKINGUP_PENDING: Value = {
+export const DATA_BACKINGUP_PENDING: Value = {
   value: false,
 };
 
-export let PERFORM_BACKINGUP_PENDING_DATA: Value = {
+export const PERFORM_BACKINGUP_PENDING_DATA: Value = {
   value: false,
 };
 
-export let OAUTH2_CLIENT: { value: OAuth2Client | null } = {
+export const OAUTH2_CLIENT: { value: OAuth2Client | null } = {
   value: null,
 };
 
