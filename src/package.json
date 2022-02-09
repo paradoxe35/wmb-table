@@ -18,6 +18,8 @@
     "@seald-io/nedb": "^2.0.4",
     "async": "^3.2.1",
     "express": "^4.17.1",
+    "firebase-admin": "^10.0.2",
+    "fireorm": "^0.23.3",
     "fs-extra": "^10.0.0",
     "get-folder-size": "^2.0.1",
     "googleapis": "39",
@@ -27,6 +29,7 @@
     "nedb": "^1.8.0",
     "node-html-parser": "^5.1.0",
     "node-watch": "^0.7.1",
+    "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
     "underscore": "^1.13.1"
   },
