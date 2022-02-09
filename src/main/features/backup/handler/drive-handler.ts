@@ -34,26 +34,60 @@ export class DriveHandler {
     [id: string]: ParentFolder | undefined;
   };
 
+  /**
+   * set parent folder of file id in memory
+   *
+   * @param id
+   * @param value
+   */
   public static setParentFolder(id: string, value: ParentFolder) {
     this.parentFolders[id] = value;
   }
 
+  /**
+   * get parent folder of file id from memory
+   *
+   * @param id
+   * @returns
+   */
   public static getParentFolder(id: string) {
     return this.parentFolders[id];
   }
 
+  /**
+   * set filename with drive id in memory
+   *
+   * @param name
+   * @param id
+   */
   public static setFileId(name: string, id: string) {
     this.filesIds[name] = id;
   }
 
+  /**
+   * get file id from memory
+   *
+   * @param name
+   * @returns
+   */
   public static getFileId(name: string) {
     return this.filesIds[name];
   }
 
+  /**
+   * set auth client instance
+   *
+   * @param oAuth2Client
+   */
   public static setOAuth2Client(oAuth2Client: OAuth2Client) {
     this.oAuth2Client = oAuth2Client;
   }
 
+  /**
+   * drive method, used to perform query actions
+   *
+   * @returns
+   */
   public static drive() {
     if (!this.oAuth2Client) {
       throw new Error('oAuth2Client property cannot be null');
@@ -70,6 +104,13 @@ export class DriveHandler {
     return this.driveInstance;
   }
 
+  /**
+   * custom Query method by fetch all file even trashed files
+   *
+   * @param params
+   * @param withTrashed
+   * @returns
+   */
   public static async files(
     params: drive_v3.Params$Resource$Files$List = {},
     withTrashed: boolean = false
@@ -85,6 +126,12 @@ export class DriveHandler {
     return files;
   }
 
+  /**
+   * return parent folder of file
+   *
+   * @param file
+   * @returns
+   */
   public static async parentFolder(file: drive_v3.Schema$File) {
     const drive = this.drive();
 
