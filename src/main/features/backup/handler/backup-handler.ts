@@ -280,7 +280,7 @@ export class BackupHandler extends DriveHandler {
   }
 
   /**
-   * Perdorm deletion of custom document datas if the action has deletion value
+   * Perform deletion of custom document datas if the action has deletion value
    *
    * @param id
    */
