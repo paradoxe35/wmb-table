@@ -12,6 +12,15 @@ import { Readable } from 'stream';
 import { drive_v3 } from 'googleapis';
 import { promisify } from 'util';
 import { deletePending } from '../backup';
+import { EventEmitter } from 'events';
+import type { BackupEventEmitter, Events } from './backup-handler.d';
+
+// emitter of new event on every backup
+export const BACKUP_EVENT_EMITER: BackupEventEmitter<Events> = new EventEmitter(
+  {
+    captureRejections: true,
+  }
+);
 
 export class BackupHandler extends DriveHandler {
   /**
@@ -209,6 +218,13 @@ export class BackupHandler extends DriveHandler {
       if (getDatastoreFileName(db.customDocuments) === filename) {
         await this.deleteCustomDocument(dataId);
       }
+
+      // emit backup event with delete action
+      BACKUP_EVENT_EMITER.emit('backup', {
+        action: 'delete',
+        dataJson,
+        file_drive_id: fileId,
+      });
       return;
     }
 
@@ -232,6 +248,12 @@ export class BackupHandler extends DriveHandler {
         fileId: fileId,
         ...body,
       });
+      // emit backup event with update action
+      BACKUP_EVENT_EMITER.emit('backup', {
+        action: 'update',
+        dataJson,
+        file_drive_id: fileId,
+      });
     } else {
       const res = await drive.files.create({
         ...body,
@@ -246,6 +268,13 @@ export class BackupHandler extends DriveHandler {
       if (getDatastoreFileName(db.customDocuments) === filename) {
         await this.storeCustomDocument(dataJson);
       }
+
+      // emit backup event with create action
+      BACKUP_EVENT_EMITER.emit('backup', {
+        action: 'create',
+        dataJson,
+        file_drive_id: res.data.id!,
+      });
     }
   }
 
