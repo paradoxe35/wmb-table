@@ -1,26 +1,22 @@
-import Nedb from '@seald-io/nedb';
 import { UpdaterInfoStatus } from '@localtypes/index';
 import { autoUpdater } from 'electron-updater';
-import path from 'path';
 import { getAppHomePath } from '@root/sys';
-import { DB_EXTENSION } from '@root/utils/constants';
+import CustomDatastore from '../custom-datastore';
 
-export default class UpdaterInMemoryDatastore {
-  private datastore: Nedb<UpdaterInfoStatus>;
-
+export default class UpdaterInMemoryDatastore extends CustomDatastore<
+  UpdaterInfoStatus
+> {
   private refreshed: boolean = false;
 
   constructor() {
-    const homePath = getAppHomePath();
-
-    this.datastore = new Nedb<UpdaterInfoStatus>({
-      filename: path.join(homePath, `updater${DB_EXTENSION}`),
-      timestampData: true,
-    });
-
-    this.datastore.loadDatabase();
+    super(getAppHomePath(), 'updater');
   }
 
+  /**
+   * Get only one instance from datastore
+   *
+   * @returns
+   */
   public async instance() {
     let data = await this.data();
     if (!data) {
@@ -32,17 +28,6 @@ export default class UpdaterInMemoryDatastore {
       this.refreshed = true;
     }
     return data;
-  }
-
-  private data(): Promise<UpdaterInfoStatus | undefined> {
-    return new Promise<UpdaterInfoStatus | undefined>((resolve) => {
-      this.datastore.findOne({}, {}, (err, document) => {
-        if (err) {
-          return resolve(undefined);
-        }
-        resolve(document);
-      });
-    });
   }
 
   public async update(data: Partial<UpdaterInfoStatus>) {
@@ -62,27 +47,11 @@ export default class UpdaterInMemoryDatastore {
     });
   }
 
-  private clear_datastore() {
-    return new Promise<number>((resolve) =>
-      this.datastore.remove({}, { multi: true }, (_, n) => {
-        resolve(n);
-      })
-    );
-  }
-
-  private create() {
-    return new Promise<UpdaterInfoStatus>((resolve) => {
-      const fresh = {
-        restartedToUpdate: false,
-        lastUpdateCheck: new Date(),
-        version: autoUpdater.currentVersion.version,
-      } as UpdaterInfoStatus;
-      this.datastore.insert(fresh, (err, created) => {
-        if (err) {
-          return resolve({} as UpdaterInfoStatus);
-        }
-        return resolve(created);
-      });
+  public create() {
+    return super.create(<UpdaterInfoStatus>{
+      restartedToUpdate: false,
+      lastUpdateCheck: new Date(),
+      version: autoUpdater.currentVersion.version,
     });
   }
 }
