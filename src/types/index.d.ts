@@ -165,6 +165,7 @@ export interface BackupDbReference {
 
 export interface AppSettingsStatus {
   _id: string;
+  app_id: string;
   initialized: boolean;
   lastCheckBackupStatus: Date;
 }
