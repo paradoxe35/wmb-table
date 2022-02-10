@@ -54,6 +54,7 @@ async function authorize(
     });
   });
 
+  // @ts-ignore
   let oAuth2Client: OAuth2Client | null = new google.auth.OAuth2(
     client_id,
     client_secret,
@@ -68,7 +69,7 @@ async function authorize(
   try {
     if (!overwriteClientToken) {
       const token = await readFile(TOKEN_PATH);
-      oAuth2Client.setCredentials(JSON.parse(token.toString('utf-8')));
+      oAuth2Client?.setCredentials(JSON.parse(token.toString('utf-8')));
     } else {
       oneAccess = true;
       oAuth2Client = await access(oAuth2Client);
@@ -209,6 +210,7 @@ export default async function googleOAuth2(
 
 export async function getUserInfo(oAuth2Client: OAuth2Client) {
   const auth = google.oauth2({
+    // @ts-ignore
     auth: oAuth2Client,
     version: 'v2',
   });
