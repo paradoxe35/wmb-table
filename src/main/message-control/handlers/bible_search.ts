@@ -14,8 +14,6 @@ export default async (
   ipageNumber?: number,
   testament?: string
 ) => {
-  console.log(text, ipageNumber, testament);
-
   if (
     searchResults.length &&
     lastSearch === text &&
