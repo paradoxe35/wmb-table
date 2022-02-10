@@ -94,7 +94,11 @@ db.audioDocumentDownloaded = new Datastore({
   autoload: false,
 });
 
-db.configurations = dbStore('configurations');
+db.configurations = new Datastore({
+  filename: path.join(getAppHomePath(), `configurations${DB_EXTENSION}`),
+  autoload: false,
+});
+
 db.history = dbStore('history');
 db.historyItem = dbStore('history-item');
 db.subjects = dbStore('subjects');
