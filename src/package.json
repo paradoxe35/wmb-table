@@ -31,7 +31,8 @@
     "node-watch": "^0.7.1",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",
-    "underscore": "^1.13.1"
+    "underscore": "^1.13.1",
+    "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@types/async": "^3.2.8",

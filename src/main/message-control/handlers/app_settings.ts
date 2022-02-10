@@ -3,6 +3,8 @@ import db, { queryDb } from '@main/db/db';
 import { app } from 'electron';
 import UpdaterInMemoryDatastore from '@main/features/app-updater/datastore';
 
+const uuidv4: () => string = require('uuid/v4');
+
 export async function app_settings() {
   return await queryDb.findOne<AppSettingsStatus | null>(db.configurations);
 }
@@ -20,6 +22,7 @@ export async function initialized_app() {
     } else {
       await queryDb.insert(db.configurations, {
         initialized: true,
+        app_id: uuidv4(),
         lastCheckBackupStatus: new Date(),
       });
     }
