@@ -16,6 +16,7 @@ import {
 } from '../constants';
 import { asyncify, doWhilst, whilst } from '@main/functions/async';
 import { promisify } from 'util';
+import log from 'electron-log';
 
 export class RestoreHandler extends DriveHandler {
   /**
@@ -80,11 +81,7 @@ export class RestoreHandler extends DriveHandler {
         (err: any) => {
           if (err) {
             commitRestoreProgress('error', 0, 0);
-            console.log(
-              'Error on fetched files restore',
-              err.name,
-              err.message
-            );
+            log.error('Error on fetched files restore', err.name, err.message);
             reject(err);
           } else {
             this.makeProceedFile(this.COMPLETE);
@@ -125,7 +122,7 @@ export class RestoreHandler extends DriveHandler {
       const json = JSON.parse(data.toString()) as { proceedFile: string };
       return json.proceedFile;
     } catch (error) {
-      console.error('getLastProceedFile error: ', error?.message);
+      log.error('getLastProceedFile error: ', error?.message);
     }
     return null;
   }
@@ -209,7 +206,7 @@ export class RestoreHandler extends DriveHandler {
     try {
       $datas = DBSerializer.deserialize(data as string);
     } catch (error) {
-      console.log('deserialize error', error?.message || error);
+      log.warn('deserialize error', error?.message || error);
     }
 
     if (!data || !$datas || !$datas._id) return;
@@ -247,7 +244,7 @@ export class RestoreHandler extends DriveHandler {
         await this.saveDocumentHtml(fileData as Stream, `${data.title}.html`);
       }
     } catch (error) {
-      console.error(
+      log.error(
         'Error fetching html file from on custom document restoration: ',
         error?.message || error
       );

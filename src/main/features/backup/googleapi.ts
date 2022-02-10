@@ -10,6 +10,7 @@ import { APP_NAME } from '@root/utils/constants';
 import { ChildProcessMessage } from '@main/childs_processes/types';
 import { cancellablePromise } from '@root/utils/functions';
 import { setUserAuthAccessStatus } from '@main/message-control/handlers/backup';
+import log from 'electron-log';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/userinfo.profile',
@@ -125,7 +126,7 @@ async function getAccessToken(oAuth2Client: OAuth2Client, child: ChildProcess) {
 
     return code ? await storeClientToken(oAuth2Client, code) : null;
   } catch (error) {
-    console.log('signin error: ', error?.message || error);
+    log.error('signin error: ', error?.message || error);
     timer && clearTimeout(timer);
     return null;
   }
@@ -170,7 +171,7 @@ function storeClientToken(
     oAuth2Client.getToken(code, (err, token) => {
       if (err || !token) {
         resolve(null);
-        return console.error('Error retrieving access token', err);
+        return log.error('Error retrieving access token', err);
       }
 
       checkHasAllPermission({ ...token });
@@ -181,7 +182,7 @@ function storeClientToken(
         .then(() => resolve(oAuth2Client))
         .catch((err) => {
           resolve(null);
-          console.error(err);
+          log.error(err);
         });
     });
   });
@@ -203,7 +204,7 @@ export default async function googleOAuth2(
     setOAuth2Client(client);
     return client;
   } catch (error) {
-    console.log('Error loading client secret file:', error?.message || error);
+    log.log('Error loading client secret file:', error?.message || error);
   }
   return null;
 }

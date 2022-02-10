@@ -3,6 +3,7 @@ import {
   getAssetDbPath,
   getAssetDocumentsDbPath,
 } from '@root/sys';
+import log from 'electron-log';
 import { debounce, getFilename } from '@root/utils/functions';
 import {
   countFileLines,
@@ -287,7 +288,7 @@ async function uploadModifications(
 
       await deletePending(pDb, data.dbId, false);
     } catch (error) {
-      console.error(
+      log.error(
         'Error occured while backup data from top file changed: ',
         error?.message || error
       );
@@ -470,7 +471,7 @@ async function restoreHandler(_exception: boolean = false) {
     if (error?.code && (error.code === 403 || error.code === 401)) {
       setUserAuthAccessStatus(false);
     }
-    console.error(
+    log.error(
       'Error occured while restore data from top level function: ',
       error?.message || error
     );
@@ -485,7 +486,7 @@ export async function initBackupAndRestoration(
     await PrepareRestore.handle();
     await restoreHandler(true);
   } catch (error) {
-    console.error(
+    log.error(
       'Error occured while preapre and restore data from top level function: ',
       error?.message
     );
@@ -512,10 +513,7 @@ export function backupPenging(_status: BackupStatus) {
         if (oAuth2Client) {
           BackupHandler.setOAuth2Client(oAuth2Client);
           BackupHandler.handlePending({ notify: false }).catch((error) =>
-            console.error(
-              'Error occured while backup pending: ',
-              error?.message
-            )
+            log.error('Error occured while backup pending: ', error?.message)
           );
         }
       });

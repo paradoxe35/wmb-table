@@ -1,5 +1,6 @@
 import { mainWindow } from '@root/sys';
 import { ipcMain } from 'electron';
+import log from 'electron-log';
 
 export function mainMessageTransport(
   eventName: string,
@@ -10,7 +11,7 @@ export function mainMessageTransport(
     if (cb instanceof Promise) {
       cb.then((data) => event.reply(`${eventName}-reply`, null, data)).catch(
         (err) => {
-          console.log('error ----------------', err);
+          log.error('error ----------------', err);
           event.reply(`${eventName}-reply`, err, null);
         }
       );
