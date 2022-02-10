@@ -89,7 +89,10 @@ cleanAllFileDir(path.resolve(datasDir, 'db/'));
 
 const credentialsPath = path.resolve(datasDir, 'credentials/');
 // clean db backup files for production
-cleanAllFileDir(credentialsPath, ['google-drive-credentials.json']);
+cleanAllFileDir(credentialsPath, [
+  'google-drive-credentials.json',
+  'wmb-table-service_account-credentials.json',
+]);
 
 // warn if google-drive-credentials.json doent exist
 if (
