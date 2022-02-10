@@ -169,7 +169,7 @@ class Updater {
       this.notifyRenderer({
         type: 'error',
       });
-      console.error(error?.message || error);
+      log.error(error?.message || error);
     }
   };
 
