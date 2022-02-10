@@ -1,14 +1,14 @@
 import { BackupActions } from '@localtypes/index';
 import type { EventEmitter } from 'events';
 
-interface Backuped {
+export interface BackedUp {
   file_drive_id: string;
   dataJson: any;
   action: BackupActions;
 }
 
 export interface Events {
-  backup: Backuped;
+  backup: BackedUp;
 }
 
 //@ts-ignore
