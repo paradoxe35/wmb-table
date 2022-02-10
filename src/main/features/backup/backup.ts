@@ -36,7 +36,7 @@ import { UPDATER_RESTORING_DATA } from '../app-updater/constants';
 import isOnline from 'is-online';
 import watch from 'node-watch';
 
-import { CustomIsOnlineEmitter } from './tools/is-online-emitter';
+import { CustomIsOnlineEmitter } from '../is-online-emitter';
 
 // emitter is online instance
 const emitterIsOnline = new CustomIsOnlineEmitter();
