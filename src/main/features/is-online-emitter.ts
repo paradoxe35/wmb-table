@@ -123,6 +123,10 @@ export class CustomIsOnlineEmitter {
     return CONNECTIVITY_STATUS_2.online;
   }
 
+  public get isOnlineFetch() {
+    return isOnline;
+  }
+
   private async connectivity() {
     const is_online = await isOnline();
     if (CONNECTIVITY_STATUS_2.online != is_online) {
