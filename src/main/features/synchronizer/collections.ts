@@ -64,7 +64,17 @@ export class DataRepository {
       .doc(appInstanceId);
   }
 
-  getUnsynchronizedData(app_instance: AppInstance) {}
+  /**
+   * Get all unsynchronized datas
+   * @param app_instance
+   */
+  getUnsynchronizedData(appInstance: AppInstance) {
+    return this.dataRepository
+      .whereEqualTo('drive_account_email', appInstance.drive_account_email)
+      .whereGreaterThan('cursor_counter', appInstance.data_cursor_count)
+      .orderByAscending('cursor_counter')
+      .find();
+  }
 
   /**
    * Create new data and increment cursor counter peer drive account
@@ -83,12 +93,24 @@ export class DataRepository {
     // increment data cursor from the laster entry
     const ldata = await this.getLatestByAccountEmail(data.drive_account_email);
 
-    // increment data cursor
+    /**
+     * Get the last cursor counter from Data collection, if there no data yet then set default 1
+     * The default must starts from 1, because the app instance should starts from 0
+     * so then the verification should use whereGreaterThan instead of whereGreaterOrEqualThan
+     */
     data.cursor_counter = !ldata ? 1 : ldata.cursor_counter + 1;
 
     return this.dataRepository.create(data);
   }
 
+  /**
+   * Use to observe any change event on the current drive account email context
+   *
+   * @param account_email
+   * @param onNext
+   * @param onError
+   * @returns
+   */
   onSnapshot(
     account_email: string,
     onNext: SnapshotOnNext,
@@ -167,7 +189,11 @@ export class AppInstanceRepository {
     const ldata = await dataRepository.getLatestByAccountEmail(
       fresh.drive_account_email
     );
-    instance.data_cursor_count = !ldata ? 1 : ldata.cursor_counter;
+
+    /**
+     * Get the last cursor counter from Data collection, if there no data yet then set default 0
+     */
+    instance.data_cursor_count = !ldata ? 0 : ldata.cursor_counter;
 
     return await this.appInstanceRepository.create(instance);
   }
