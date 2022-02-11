@@ -1,6 +1,9 @@
 import path from 'path';
 import Nedb from '@seald-io/nedb';
 import { DB_EXTENSION } from '@root/utils/constants';
+import { TimeStampData } from '@localtypes/index';
+
+type Type<T> = T & TimeStampData<Date>;
 
 export default class CustomDatastore<T> {
   protected datastore: Nedb<T>;
@@ -14,24 +17,24 @@ export default class CustomDatastore<T> {
     this.datastore.loadDatabase();
   }
 
-  public data(): Promise<T | undefined> {
-    return new Promise<T | undefined>((resolve) => {
+  public data(): Promise<Type<T> | undefined> {
+    return new Promise<Type<T> | undefined>((resolve) => {
       this.datastore.findOne({}, {}, (err, document) => {
         if (err) {
           return resolve(undefined);
         }
-        resolve(document);
+        resolve(document as Type<T>);
       });
     });
   }
 
-  public datas(): Promise<T[]> {
-    return new Promise<T[]>((resolve) => {
+  public datas(): Promise<Type<T>[]> {
+    return new Promise<Type<T>[]>((resolve) => {
       this.datastore.find({}, {}, (err, documents) => {
         if (err) {
           return resolve([]);
         }
-        resolve(documents);
+        resolve(documents as Type<T>[]);
       });
     });
   }
@@ -53,12 +56,12 @@ export default class CustomDatastore<T> {
   }
 
   public create(fresh: T) {
-    return new Promise<T>((resolve) => {
+    return new Promise<Type<T>>((resolve) => {
       this.datastore.insert(fresh, (err, created) => {
         if (err) {
-          return resolve({} as T);
+          return resolve({} as Type<T>);
         }
-        return resolve(created);
+        return resolve(created as Type<T>);
       });
     });
   }
