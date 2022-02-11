@@ -2,7 +2,10 @@ import type { BackedUp } from '../backup/handler/backup-handler.d';
 import { BACKUP_EVENT_EMITER } from '../backup/handler/backup-handler';
 import { app_settings } from '@main/message-control/handlers/app_settings';
 import { backup_status } from '@main/message-control/handlers/backup';
-import { SynchronizerAppInstanceDatastore } from './datastores';
+import {
+  PendingDatasDatastore,
+  SynchronizerAppInstanceDatastore,
+} from './datastores';
 import { BackupStatus, AppSettingsStatus } from '@localtypes/index';
 import { initializeFireorm } from './utils';
 import { setFirestoreInstance } from './constants';
@@ -12,7 +15,6 @@ import {
   DataRepository,
 } from './collections';
 import { CustomIsOnlineEmitter } from '../is-online-emitter';
-import isOnline from 'is-online';
 import log from 'electron-log';
 
 const isOnlineEmitter = new CustomIsOnlineEmitter();
@@ -48,7 +50,12 @@ isOnlineEmitter.connectivity_change((status) => {
  *
  * @param data
  */
-function backedup_handler(data: BackedUp) {}
+async function backedup_handler(data: BackedUp) {
+  const pendingDatasDatastore = new PendingDatasDatastore();
+  if (!CAN_SYNC.value || !(await isOnlineEmitter.isOnlineFetch())) {
+    return;
+  }
+}
 
 /**
  * Capture uploaded data from another app instance firestore and process download of document
@@ -82,7 +89,7 @@ async function init_app_instance(
 ) {
   // check if whether user has interent connection, if has not internet
   // then push then the actual function in pending callback
-  if (!(await isOnline())) {
+  if (!(await isOnlineEmitter.isOnlineFetch())) {
     CAN_SYNC.pending_process.push(() =>
       init_app_instance(backupStatus, appSetting)
     );
@@ -99,10 +106,12 @@ async function init_app_instance(
     });
 
     APP_INSTANCE.value = appInstance;
-
     CAN_SYNC.value = true;
 
     appInstanceDatastore.create(appInstance);
+  } else {
+    APP_INSTANCE.value = appInstance;
+    CAN_SYNC.value = true;
   }
 
   return appInstance;
