@@ -1,10 +1,5 @@
 import { BackupActions } from '@localtypes/index';
-import {
-  BaseFirestoreRepository,
-  Collection,
-  getRepository,
-  Type,
-} from 'fireorm';
+import { BaseFirestoreRepository, Collection, getRepository } from 'fireorm';
 import log from 'electron-log';
 import { FIRESTORE_INSTANCE } from './constants';
 import { AppInstanceParams, SnapshotOnError, SnapshotOnNext } from './type';
@@ -13,12 +8,6 @@ import { AppInstanceParams, SnapshotOnError, SnapshotOnNext } from './type';
 class HasCollection {
   id!: string;
   created_at!: Date;
-}
-
-// fixtures
-class FirestoreDocumentReference {
-  id!: string;
-  path!: string;
 }
 
 @Collection()
@@ -34,10 +23,8 @@ export class Data extends HasCollection {
   cursor_counter!: number;
   action!: BackupActions;
   file_drive_id!: string;
-  app_instance_email!: string;
-  app_instance_appid!: string;
-  @Type(() => FirestoreDocumentReference)
-  app_instance_ref?: FirestoreDocumentReference;
+  drive_account_email!: string;
+  app_instance_id!: string;
 }
 
 // --------------- collection repositories --------------
@@ -60,7 +47,7 @@ export class DataRepository {
    */
   getLatestByAccountEmail(email: string) {
     return this.dataRepository
-      .whereEqualTo('app_instance_email', email)
+      .whereEqualTo('drive_account_email', email)
       .orderByDescending('cursor_counter')
       .findOne();
   }
@@ -77,6 +64,8 @@ export class DataRepository {
       .doc(appInstanceId);
   }
 
+  getUnsynchronizedData(app_instance: AppInstance) {}
+
   /**
    * Create new data and increment cursor counter peer drive account
    *
@@ -88,16 +77,14 @@ export class DataRepository {
 
     data.action = fresh.action;
     data.file_drive_id = fresh.file_drive_id;
-    data.app_instance_email = fresh.app_instance_email;
-    data.app_instance_appid = fresh.app_instance_appid;
+    data.drive_account_email = fresh.drive_account_email;
+    data.app_instance_id = appInstanceId;
 
     // increment data cursor from the laster entry
-    const ldata = await this.getLatestByAccountEmail(data.app_instance_email);
+    const ldata = await this.getLatestByAccountEmail(data.drive_account_email);
 
     // increment data cursor
     data.cursor_counter = !ldata ? 1 : ldata.cursor_counter + 1;
-
-    data.app_instance_ref = this.getAppInstanceRef(appInstanceId);
 
     return this.dataRepository.create(data);
   }
