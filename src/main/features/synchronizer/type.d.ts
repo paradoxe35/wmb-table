@@ -1,3 +1,5 @@
+import { TimeStampData } from '@localtypes/index';
+
 export type SynchronizerAppInstance = {};
 
 export type AppInstanceParams = {
@@ -10,3 +12,5 @@ export type SnapshotOnNext = (
 ) => void;
 
 export type SnapshotOnError = ((error: Error) => void) | undefined;
+
+export type TimeStampType<T> = T & TimeStampData<Date>;
