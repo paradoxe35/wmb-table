@@ -11,6 +11,7 @@
 import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import './utils/polyfill';
+import 'reflect-metadata';
 import { app, BrowserWindow, shell } from 'electron';
 import MenuBuilder from './main/platforms/menu';
 import { getAssetPath, setMainWindow } from './sys';
