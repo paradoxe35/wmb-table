@@ -119,6 +119,10 @@ export class CustomIsOnlineEmitter {
     this._callback = callback;
   }
 
+  public get isOnline(): boolean {
+    return CONNECTIVITY_STATUS_2.online;
+  }
+
   private async connectivity() {
     const is_online = await isOnline();
     if (CONNECTIVITY_STATUS_2.online != is_online) {
