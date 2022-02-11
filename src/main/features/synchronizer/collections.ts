@@ -107,7 +107,7 @@ export class DataRepository {
     onNext: SnapshotOnNext,
     onError: SnapshotOnError
   ) {
-    FIRESTORE_INSTANCE.value
+    return FIRESTORE_INSTANCE.value
       ?.collection(Data.name + 's')
       .where('drive_account_email', '==', account_email)
       .onSnapshot(onNext, onError);
