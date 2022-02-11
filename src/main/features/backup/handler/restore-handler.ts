@@ -55,7 +55,7 @@ export class RestoreHandler extends DriveHandler {
     if (this.lastProceedFile === this.COMPLETE) return;
 
     return new Promise<void>((resolve, reject) => {
-      let nextToken: undefined | string = undefined;
+      const nextToken: { value: undefined | string } = { value: undefined };
       setDataRestoring(true);
 
       // callback function to doWhilst for handling files
@@ -64,10 +64,10 @@ export class RestoreHandler extends DriveHandler {
           q: `mimeType='${this.MAIN_FILE_MIME_TYPE}'`,
           fields: 'nextPageToken, files(id, name, parents)',
           pageSize: 100,
-          pageToken: nextToken,
+          pageToken: nextToken.value,
           orderBy: 'modifiedTime',
         });
-        nextToken = res.data.nextPageToken;
+        nextToken.value = res.data.nextPageToken;
         const files = res.data.files;
         this.progress++;
 
@@ -77,7 +77,7 @@ export class RestoreHandler extends DriveHandler {
       // async function to run all required files for restoration
       doWhilst<any>(
         asyncify(fetchFiles),
-        asyncify(() => !!nextToken),
+        asyncify(() => !!nextToken.value),
         (err: any) => {
           if (err) {
             commitRestoreProgress('error', 0, 0);
