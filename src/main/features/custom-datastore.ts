@@ -44,6 +44,14 @@ export default class CustomDatastore<T> {
     );
   }
 
+  public delete(_id: string) {
+    return new Promise<number>((resolve) =>
+      this.datastore.remove({ _id }, (_, n) => {
+        resolve(n);
+      })
+    );
+  }
+
   public create(fresh: T) {
     return new Promise<T>((resolve) => {
       this.datastore.insert(fresh, (err, created) => {
