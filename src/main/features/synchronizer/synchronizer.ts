@@ -13,6 +13,7 @@ import {
 } from './collections';
 import { CustomIsOnlineEmitter } from '../is-online-emitter';
 import isOnline from 'is-online';
+import log from 'electron-log';
 
 const isOnlineEmitter = new CustomIsOnlineEmitter();
 
@@ -50,7 +51,7 @@ isOnlineEmitter.connectivity_change((status) => {
 function backedup_handler(data: BackedUp) {}
 
 /**
- * Capture uploaded data from another app instance firestore
+ * Capture uploaded data from another app instance firestore and process download of document
  *
  * @param snapshot
  */
@@ -63,7 +64,10 @@ function snapshoted_data_handler(
  *
  * @param error
  */
-function snapshoted_data_error(error: Error) {}
+function snapshoted_data_error(error: Error) {
+  log.error('snapshoted_data_error: ', error.message);
+  log.error('snapshoted_data_error error instance: ', error);
+}
 
 /**
  * Initiliaze app instance if not yet, and if user has no internet connection then save the process as pending
@@ -133,11 +137,14 @@ async function start() {
 
   // listener to data snapshot, then perform the download process
   const dataRepository = new DataRepository();
-  dataRepository.onSnapshot(
+  const unsubscription = dataRepository.onSnapshot(
     backupStatus.email,
     snapshoted_data_handler,
     snapshoted_data_error
   );
+
+  // push unsubscription function in unsubscribes for a late clean up
+  unsubscription && unsubscribes.push(unsubscription);
 }
 
 /**
