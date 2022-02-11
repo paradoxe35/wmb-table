@@ -174,7 +174,13 @@ export class AppInstanceRepository {
     const instance = new AppInstance();
     instance.app_id = fresh.app_id;
     instance.drive_account_email = fresh.drive_account_email;
-    instance.data_cursor_count = 1;
+    // here get the latest cursor count from data collection
+    //
+    const dataRepository = new DataRepository();
+    const ldata = await dataRepository.getLatestByAccountEmail(
+      fresh.drive_account_email
+    );
+    instance.data_cursor_count = !ldata ? 1 : ldata.cursor_counter;
 
     return await this.appInstanceRepository.create(instance);
   }
