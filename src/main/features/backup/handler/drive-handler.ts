@@ -85,6 +85,7 @@ export class DriveHandler {
 
   /**
    * drive method, used to perform query actions
+   * it use singleton pattern
    *
    * @returns
    */
