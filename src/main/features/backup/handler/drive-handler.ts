@@ -127,6 +127,23 @@ export class DriveHandler {
   }
 
   /**
+   * Get drive file by file id
+   *
+   * @param fileId
+   * @returns
+   */
+  public static async getFileById(fileId: string) {
+    const drive = this.drive();
+
+    const { data } = await drive.files.get({
+      fileId,
+      fields: 'id, name, parents',
+    });
+
+    return data || null;
+  }
+
+  /**
    * return parent folder of file
    *
    * @param file
