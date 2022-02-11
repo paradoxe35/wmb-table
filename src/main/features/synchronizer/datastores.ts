@@ -1,7 +1,8 @@
 import { getAppHomePath } from '@root/sys';
-import { AppInstance, Data } from './collections';
+import { AppInstance } from './collections';
 import CustomDatastore from '../custom-datastore';
-import { TimeStampData } from '@localtypes/index';
+// import { TimeStampData } from '@localtypes/index';
+import type { BackedUp } from '../backup/handler/backup-handler.d';
 
 // get home path with synchronizer as subdirectory name
 const home_dir = () => getAppHomePath('synchronizer');
@@ -15,9 +16,7 @@ export class SynchronizerAppInstanceDatastore extends CustomDatastore<
   }
 }
 
-export class PendingDatasDatastore extends CustomDatastore<
-  Data & TimeStampData<Date>
-> {
+export class PendingBackedUpDatastore extends CustomDatastore<BackedUp> {
   constructor() {
     // init datastore and load ite
     super(home_dir(), 'pendings');
