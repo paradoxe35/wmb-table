@@ -88,21 +88,23 @@ async function removeHtmlFiles() {
 cleanAllFileDir(path.resolve(datasDir, 'db/'));
 
 const credentialsPath = path.resolve(datasDir, 'credentials/');
-// clean db backup files for production
-cleanAllFileDir(credentialsPath, [
+const credentialsFiles = [
   'google-drive-credentials.json',
   'wmb-table-service_account-credentials.json',
-]);
+];
+// clean db backup files for production
+cleanAllFileDir(credentialsPath, credentialsFiles);
 
 // warn if google-drive-credentials.json doent exist
-if (
-  !fs.existsSync(path.resolve(credentialsPath, 'google-drive-credentials.json'))
-) {
-  console.log(`\n
-    -------------------- ${chalk.redBright.bold(
-      'Cannot find file: google-drive-credentials.json'
-    )} -----------------------
-  `);
+for (const credentialsFile of credentialsFiles) {
+  if (!fs.existsSync(path.resolve(credentialsPath, credentialsFile))) {
+    console.log(`\n
+      -------------------- ${chalk.redBright.bold(
+        'Cannot find file: ' + credentialsFile
+      )} -----------------------
+    `);
+    process.exit(1);
+  }
 }
 
 // warn if documents dir doent exist
