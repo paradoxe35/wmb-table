@@ -148,6 +148,14 @@ async function process_unsynchronized_datas(): Promise<void> {
       return;
     }
 
+    // log unsynchronized_datas variable when in dev mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log(
+        '--------- unsynchronized_datas -------',
+        unsynchronized_datas
+      );
+    }
+
     // go througth all on unsynchronized_datas
     for (const data of unsynchronized_datas) {
       await download_unsynchronized_data(data);
