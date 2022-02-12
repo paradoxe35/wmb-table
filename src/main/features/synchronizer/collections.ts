@@ -7,6 +7,9 @@ import { AppInstanceParams, SnapshotOnError, SnapshotOnNext } from './type';
 class HasCollection {
   id!: string;
   created_at!: Date;
+  constructor() {
+    this.created_at = new Date();
+  }
 }
 
 @Collection()
@@ -15,6 +18,9 @@ export class AppInstance extends HasCollection {
   drive_account_email!: string;
   // this is primary useful to track the last cursor data upte
   data_cursor_count!: number;
+  constructor() {
+    super();
+  }
 }
 
 @Collection()
@@ -24,6 +30,9 @@ export class DataSync extends HasCollection {
   file_drive_id!: string;
   drive_account_email!: string;
   app_instance_id!: string;
+  constructor() {
+    super();
+  }
 }
 
 // --------------- collection repositories --------------
