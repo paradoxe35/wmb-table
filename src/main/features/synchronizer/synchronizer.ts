@@ -209,19 +209,19 @@ async function backedup_handler(data: BackedUp) {
  *
  * @param snapshot
  */
-function snapshoted_data_handler(
-  snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>
-) {}
+// function snapshoted_data_handler(
+//   snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>
+// ) {}
 
 /**
  * Capture all error form firestore snapshot events
  *
  * @param error
  */
-function snapshoted_data_error(error: Error) {
-  log.error('snapshoted_data_error: ', error.message);
-  log.error('snapshoted_data_error error instance: ', error);
-}
+// function snapshoted_data_error(error: Error) {
+//   log.error('snapshoted_data_error: ', error.message);
+//   log.error('snapshoted_data_error error instance: ', error);
+// }
 
 /**
  * Initiliaze app instance if not yet, and if user has no internet connection then save the process as pending
@@ -291,16 +291,20 @@ async function start() {
   // start listening of backup event, then process the synchronization updaload process
   BACKUP_EVENT_EMITER.on('backup', backedup_handler);
 
+  // ---------------------- in case we listen for data firestore snapshot ------------------
+
   // listener to data snapshot, then perform the download process
-  const dataRepository = new DataRepository();
-  const unsubscription = dataRepository.onSnapshot(
-    backupStatus.email,
-    snapshoted_data_handler,
-    snapshoted_data_error
-  );
+  // const dataRepository = new DataRepository();
+  // const unsubscription = dataRepository.onSnapshot(
+  //   backupStatus.email,
+  //   snapshoted_data_handler,
+  //   snapshoted_data_error
+  // );
 
   // push unsubscription function in unsubscribes for a late clean up
-  unsubscription && unsubscribes.push(unsubscription);
+  // unsubscription && unsubscribes.push(unsubscription);
+
+  // ---------------------- in case we listen for data firestore snapshot ------------------
 }
 
 /**
