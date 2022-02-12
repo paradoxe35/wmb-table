@@ -33,6 +33,10 @@ const APP_INSTANCE: { value: AppInstance | undefined } = {
   value: undefined,
 };
 
+const PROCESSING_BACKEDUP_DATA = {
+  value: false,
+};
+
 /**
  * use to clear all unsubscription functions
  */
@@ -210,6 +214,8 @@ async function backedup_handler(data: BackedUp) {
     return;
   }
 
+  PROCESSING_BACKEDUP_DATA.value = true;
+
   try {
     /**
      * Before saving the backedup data to firestore,
@@ -217,11 +223,13 @@ async function backedup_handler(data: BackedUp) {
      */
     await process_unsynchronized_datas();
     // After finish processing unsynchronized_datas then start upload the pendings datas
-    process_uploading_pendings_datas();
+    await process_uploading_pendings_datas();
   } catch (error) {
     log.error(error);
     log.error('fail to process backedup data: ', error.message);
   }
+
+  PROCESSING_BACKEDUP_DATA.value = false;
 }
 
 /**
