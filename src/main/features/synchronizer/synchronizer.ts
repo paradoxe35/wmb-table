@@ -144,7 +144,7 @@ async function process_unsynchronized_datas(): Promise<void> {
     );
 
     // If unsynchronized_datas var is empty then stop the recursive process
-    if (unsynchronized_datas.length === 0) {
+    if (!unsynchronized_datas || unsynchronized_datas.length === 0) {
       return;
     }
 
