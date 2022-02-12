@@ -1,6 +1,5 @@
 import { BackupActions } from '@localtypes/index';
 import { BaseFirestoreRepository, Collection, getRepository } from 'fireorm';
-import log from 'electron-log';
 import { FIRESTORE_INSTANCE } from './constants';
 import { AppInstanceParams, SnapshotOnError, SnapshotOnNext } from './type';
 
@@ -172,9 +171,6 @@ export class AppInstanceRepository {
       fresh.app_id
     );
     if (emailExists) {
-      log.warn(
-        'Try to create an app instance on existing drive account email and app id'
-      );
       throw new Error(
         'Try to create an app instance on existing drive account email and app id'
       );
