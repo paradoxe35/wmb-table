@@ -21,6 +21,7 @@ import { DriveHandler } from '../backup/handler/drive-handler';
 import { RestoreHandler } from '../backup/handler/restore-handler';
 import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
+import { TimeStampType } from './type';
 
 const isOnlineEmitter = new CustomIsOnlineEmitter();
 
@@ -181,7 +182,9 @@ async function process_uploading_pendings_datas() {
 
   // get all pending backedup datas and upload them
   const pendingDatastore = new PendingBackedUpDatastore();
-  const pending_datas = await pendingDatastore.datas();
+  const pending_datas = ((await pendingDatastore.datas()) as unknown) as TimeStampType<
+    BackedUp
+  >[];
 
   // data repository
   const dataRepository = new DataRepository();
@@ -189,11 +192,11 @@ async function process_uploading_pendings_datas() {
   // connectivity checking
   await require_connectivity();
 
-  for (const data of pending_datas) {
+  for (const pdata of pending_datas) {
     // create data repository of new changes app processs
     const ndata = await dataRepository.create({
-      action: data.action,
-      file_drive_id: data.file_drive_id,
+      action: pdata.action,
+      file_drive_id: pdata.file_drive_id,
       drive_account_email: appInstance.drive_account_email,
       app_instance_id: appInstance.id,
     });
@@ -206,6 +209,8 @@ async function process_uploading_pendings_datas() {
     new_cursor = new_cursor < 0 ? 0 : new_cursor;
     // update app instance data cursor
     await update_appinstance_data_cursor(new_cursor);
+    // delete the pending data from datastore
+    await pendingDatastore.delete(pdata._id);
   }
 }
 
@@ -245,7 +250,15 @@ async function backedup_handler(data: BackedUp) {
   PROCESSING_BACKEDUP_DATA.value = false;
 }
 
-async function loop_on_unsynchronized_datas() {}
+/**
+ * Perform a unique loop on unsynchronized datas
+ */
+async function loop_on_unsynchronized_datas() {
+  // if no internet or can sync has false value then store backedup data as pending
+  if (!CAN_SYNC.value || !(await isOnlineEmitter.isOnlineFetch())) {
+    return;
+  }
+}
 
 /**
  * Initiliaze app instance if not yet, and if user has no internet connection then save the process as pending
