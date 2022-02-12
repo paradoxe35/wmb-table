@@ -38,6 +38,7 @@ import isOnline from 'is-online';
 import watch from 'node-watch';
 
 import { CustomIsOnlineEmitter } from '../is-online-emitter';
+import { SYNCHRONIZER_DOWNLOADING } from '../synchronizer/constants';
 
 // emitter is online instance
 const emitterIsOnline = new CustomIsOnlineEmitter();
@@ -401,7 +402,11 @@ const syncedFirstDbReferences = async (filename: string) => {
  * @returns
  */
 const performBackup = async (evt: string, name: string) => {
-  if (!DATA_RESTORED.value || UPDATER_RESTORING_DATA.value) {
+  if (
+    !DATA_RESTORED.value ||
+    UPDATER_RESTORING_DATA.value ||
+    SYNCHRONIZER_DOWNLOADING.value
+  ) {
     return;
   }
 
