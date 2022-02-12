@@ -254,10 +254,17 @@ async function backedup_handler(data: BackedUp) {
  * Perform a unique loop on unsynchronized datas
  */
 async function loop_on_unsynchronized_datas() {
-  // if no internet or can sync has false value then store backedup data as pending
-  if (!CAN_SYNC.value || !(await isOnlineEmitter.isOnlineFetch())) {
+  // if no internet or can sync has false value or PROCESSING_BACKEDUP_DATA is true then cancel the next iteration
+  if (
+    !CAN_SYNC.value ||
+    !(await isOnlineEmitter.isOnlineFetch()) ||
+    PROCESSING_BACKEDUP_DATA.value
+  ) {
     return;
   }
+
+  // process process_unsynchronized_datas
+  await process_unsynchronized_datas();
 }
 
 /**
