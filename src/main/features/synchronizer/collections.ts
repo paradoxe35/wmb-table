@@ -82,13 +82,13 @@ export class DataRepository {
    * @param fresh
    * @returns
    */
-  async create(fresh: Omit<Data, keyof HasCollection>, appInstanceId: string) {
+  async create(fresh: Omit<Data, keyof HasCollection>) {
     const data = new Data();
 
     data.action = fresh.action;
     data.file_drive_id = fresh.file_drive_id;
     data.drive_account_email = fresh.drive_account_email;
-    data.app_instance_id = appInstanceId;
+    data.app_instance_id = fresh.app_instance_id;
 
     // increment data cursor from the laster entry
     const ldata = await this.getLatestByAccountEmail(data.drive_account_email);
