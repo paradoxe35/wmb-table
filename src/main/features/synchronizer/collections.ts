@@ -82,7 +82,7 @@ export class DataRepository {
    * @param fresh
    * @returns
    */
-  async create(fresh: Omit<Data, keyof HasCollection>) {
+  async create(fresh: Omit<Data, 'cursor_counter' | keyof HasCollection>) {
     const data = new Data();
 
     data.action = fresh.action;
