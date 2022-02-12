@@ -25,7 +25,9 @@ import { TimeStampType } from './type';
 import {
   decrementBackupNextIteration,
   incrementBackupNextIteration,
+  OAUTH2_CLIENT,
 } from '../backup/constants';
+import googleOAuth2 from '../backup/googleapi';
 
 const isOnlineEmitter = new CustomIsOnlineEmitter();
 
@@ -112,6 +114,14 @@ async function download_unsynchronized_data(data: DataSync) {
 
   // connectivity checking
   await require_connectivity();
+
+  // init googleOAuth2 if hasnt been yet
+  if (!OAUTH2_CLIENT.value) {
+    const oAuth2Client = await googleOAuth2();
+    RestoreHandler.setOAuth2Client(oAuth2Client!);
+  } else {
+    RestoreHandler.setOAuth2Client(OAUTH2_CLIENT.value);
+  }
 
   // first get file shema from drive
   const driveFile = await DriveHandler.getFileById(data.file_drive_id);
