@@ -8,7 +8,7 @@ import {
 } from './datastores';
 import { BackupStatus, AppSettingsStatus } from '@localtypes/index';
 import { initializeFireorm, UniqueLoopProcess } from './utils';
-import { setFirestoreInstance } from './constants';
+import { setFirestoreInstance, SYNCHRONIZER_DOWNLOADING } from './constants';
 import {
   AppInstance,
   AppInstanceRepository,
@@ -118,11 +118,14 @@ async function download_unsynchronized_data(data: DataSync) {
     return;
   }
 
+  SYNCHRONIZER_DOWNLOADING.value = false;
   /**
    * restore File and update the appinstance cursor data
    */
   await RestoreHandler.restoreFile(driveFile);
   await update_appinstance_data_cursor(new_cursor);
+
+  SYNCHRONIZER_DOWNLOADING.value = false;
 
   /**
    * Notify the view or renderer electron process about the new synchronization
