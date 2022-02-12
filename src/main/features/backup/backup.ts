@@ -22,8 +22,10 @@ import { RestoreHandler } from './handler/restore-handler';
 import googleOAuth2 from './googleapi';
 import { DriveHandler } from './handler/drive-handler';
 import {
+  BACKUP_IGNORE_NEXT_ITERATION,
   DATA_BACKINGUP_PENDING,
   DATA_RESTORED,
+  decrementBackupNextIteration,
   EXCLUDE_DB_FILES_REGEX,
   OAUTH2_CLIENT,
 } from './constants';
@@ -38,7 +40,6 @@ import isOnline from 'is-online';
 import watch from 'node-watch';
 
 import { CustomIsOnlineEmitter } from '../is-online-emitter';
-import { SYNCHRONIZER_DOWNLOADING } from '../synchronizer/constants';
 
 // emitter is online instance
 const emitterIsOnline = new CustomIsOnlineEmitter();
@@ -402,11 +403,13 @@ const syncedFirstDbReferences = async (filename: string) => {
  * @returns
  */
 const performBackup = async (evt: string, name: string) => {
-  if (
-    !DATA_RESTORED.value ||
-    UPDATER_RESTORING_DATA.value ||
-    SYNCHRONIZER_DOWNLOADING.value
-  ) {
+  // if BACKUP_IGNORE_NEXT_ITERATION has value greater than 0 then ignore the actuel backup iteratio
+  if (BACKUP_IGNORE_NEXT_ITERATION.value > 0) {
+    decrementBackupNextIteration();
+  }
+
+  // if data not yet restored or there's process updater's restore data then cancel the suite
+  if (!DATA_RESTORED.value || UPDATER_RESTORING_DATA.value) {
     return;
   }
 
