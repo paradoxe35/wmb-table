@@ -43,6 +43,10 @@ const PROCESSING_BACKEDUP_DATA = {
   value: false,
 };
 
+const SYNCHRONIZATION_HAS_STATED = {
+  value: false,
+};
+
 /**
  * use to clear all unsubscription functions
  */
@@ -313,6 +317,12 @@ async function init_app_instance(
  * This function must be perfom only when user use drive backup feature
  */
 async function start() {
+  /**
+   * If the function was called and executed successfuly from another time then cancel a new call
+   */
+  if (SYNCHRONIZATION_HAS_STATED.value) {
+    return;
+  }
   // firstly check synchronizer can start process, by check app status exists and backup status exists too
   // get app status exists
   const appSetting = await app_settings();
@@ -330,6 +340,8 @@ async function start() {
 
   // init app instance if not exist
   await init_app_instance(backupStatus, appSetting);
+
+  SYNCHRONIZATION_HAS_STATED.value = true;
 
   // ---------- Upload and download performer -------------
 
