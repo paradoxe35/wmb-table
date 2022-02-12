@@ -160,7 +160,7 @@ async function process_unsynchronized_datas(): Promise<void> {
  * @param ldata the keep increment from last data cursor count
  */
 async function process_uploading_pendings_datas() {
-  const appInstance = APP_INSTANCE.value!;
+  let appInstance = APP_INSTANCE.value!;
 
   // get all pending backedup datas and upload them
   const pendingDatastore = new PendingBackedUpDatastore();
@@ -169,7 +169,26 @@ async function process_uploading_pendings_datas() {
   // data repository
   const dataRepository = new DataRepository();
 
+  // connectivity checking
+  await require_connectivity();
+
   for (const data of pending_datas) {
+    // create data repository of new changes app processs
+    const ndata = await dataRepository.create({
+      action: data.action,
+      file_drive_id: data.file_drive_id,
+      drive_account_email: appInstance.drive_account_email,
+      app_instance_id: appInstance.id,
+    });
+
+    // get the fresh update of app instance
+    appInstance = APP_INSTANCE.value!;
+
+    // here to determine how incrementation the app instance should increment the its data cursor
+    let new_cursor = ndata.cursor_counter - appInstance.data_cursor_count;
+    new_cursor = new_cursor < 0 ? 0 : new_cursor;
+    // update app instance data cursor
+    await update_appinstance_data_cursor(new_cursor);
   }
 }
 
