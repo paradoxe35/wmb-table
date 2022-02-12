@@ -2,6 +2,7 @@ import { UpdaterInfoStatus } from '@localtypes/index';
 import { autoUpdater } from 'electron-updater';
 import { getAppHomePath } from '@root/sys';
 import CustomDatastore from '../custom-datastore';
+import { getAppUuid } from '../app-uuid';
 
 export default class UpdaterInMemoryDatastore extends CustomDatastore<
   UpdaterInfoStatus
@@ -9,7 +10,7 @@ export default class UpdaterInMemoryDatastore extends CustomDatastore<
   private refreshed: boolean = false;
 
   constructor() {
-    super(getAppHomePath(), 'updater');
+    super(getAppHomePath(getAppUuid().app_id), 'updater');
   }
 
   /**
