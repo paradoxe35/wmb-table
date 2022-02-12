@@ -3,7 +3,7 @@ import { BACKUP_EVENT_EMITER } from '../backup/handler/backup-handler';
 import { app_settings } from '@main/message-control/handlers/app_settings';
 import { backup_status } from '@main/message-control/handlers/backup';
 import {
-  PendingDatasDatastore,
+  PendingBackedUpDatastore,
   SynchronizerAppInstanceDatastore,
 } from './datastores';
 import { BackupStatus, AppSettingsStatus } from '@localtypes/index';
@@ -12,10 +12,15 @@ import { setFirestoreInstance } from './constants';
 import {
   AppInstance,
   AppInstanceRepository,
+  Data,
   DataRepository,
 } from './collections';
 import { CustomIsOnlineEmitter } from '../is-online-emitter';
 import log from 'electron-log';
+import { DriveHandler } from '../backup/handler/drive-handler';
+import { RestoreHandler } from '../backup/handler/restore-handler';
+import { sendIpcToRenderer } from '@root/ipc/ipc-main';
+import { IPC_EVENTS } from '@root/utils/ipc-events';
 
 const isOnlineEmitter = new CustomIsOnlineEmitter();
 
@@ -46,14 +51,156 @@ isOnlineEmitter.connectivity_change((status) => {
 });
 
 /**
+ * throw error if user hasnt internet connection
+ */
+async function require_connectivity() {
+  if (!(await isOnlineEmitter.isOnlineFetch())) {
+    throw new Error('connectivity is required to process the suite');
+  }
+}
+
+/**
+ * Update the actuel app instance data cursor
+ *
+ * @param add
+ */
+async function update_appinstance_data_cursor(add: number = 1) {
+  const appInstance = APP_INSTANCE.value!;
+  const appInstanceRep = new AppInstanceRepository();
+
+  // commit the update data cursor
+  const nappInstance = await appInstanceRep.update_data_cursor(
+    appInstance.id,
+    add
+  );
+
+  // set the fresh updated app instance
+  APP_INSTANCE.value = nappInstance;
+
+  return nappInstance;
+}
+
+/**
+ * Download the data
+ *
+ * @param data
+ */
+async function download_unsynchronized_data(data: Data) {
+  const appInstance = APP_INSTANCE.value!;
+
+  // here to determine how incrementation the app instance should increment the its data cursor
+  let new_cursor = data.cursor_counter - appInstance.data_cursor_count;
+  new_cursor = new_cursor < 1 ? 1 : new_cursor;
+
+  // connectivity checking
+  await require_connectivity();
+
+  // first get file shema from drive
+  const driveFile = await DriveHandler.getFileById(data.file_drive_id);
+
+  // if file hasnt been found then update the appinstance cursor data and cancel the process
+  if (!driveFile) {
+    await update_appinstance_data_cursor(new_cursor);
+    return;
+  }
+
+  /**
+   * restore File and update the appinstance cursor data
+   */
+  await RestoreHandler.restoreFile(driveFile);
+  await update_appinstance_data_cursor(new_cursor);
+
+  /**
+   * Notify the view or renderer electron process about the new synchronization
+   */
+  sendIpcToRenderer(IPC_EVENTS.new_synchronized_datas);
+}
+
+/**
+ * Process all datas which are not yet synchronized
+ * And Return the latest data synchronized
+ */
+async function process_unsynchronized_datas(): Promise<Data | undefined> {
+  const dataRepository = new DataRepository();
+
+  /**
+   * Perform recursivily the process of download the unsynchronized datas
+   */
+  const perform_process = async (ldata?: Data): Promise<Data | undefined> => {
+    const appInstance = APP_INSTANCE.value!;
+
+    // connectivity checking
+    await require_connectivity();
+
+    /**
+     * Get unsynchronized data from data repository
+     */
+    const unsynchronized_datas = await dataRepository.getUnsynchronizedData(
+      appInstance
+    );
+
+    // If unsynchronized_datas var is empty then stop the recursive process
+    if (unsynchronized_datas.length === 0) {
+      if (!ldata) {
+        // if ldata is undefined, then get the last data from data repository and return it
+        ldata =
+          (await dataRepository.getLatestByAccountEmail(
+            appInstance.drive_account_email
+          )) || undefined;
+      }
+      return ldata;
+    }
+
+    // go througth all on unsynchronized_datas
+    for (const data of unsynchronized_datas) {
+      await download_unsynchronized_data(data);
+    }
+
+    return await perform_process(
+      unsynchronized_datas[unsynchronized_datas.length - 1]
+    );
+  };
+
+  return await perform_process();
+}
+
+/**
+ *
+ * @param ldata the keep increment from last data cursor count
+ */
+async function process_uploading_pendings_datas(ldata: Data | undefined) {
+  const cursor_counter = ldata?.cursor_counter || 1;
+}
+
+/**
  * Process the upload synchronization
  *
  * @param data
  */
 async function backedup_handler(data: BackedUp) {
-  const pendingDatasDatastore = new PendingDatasDatastore();
+  const pendingDatasDatastore = new PendingBackedUpDatastore();
+
+  /**
+   * Always store the backedup app in pendings, to be process later
+   */
+  pendingDatasDatastore.create(data);
+
+  // if no internet or can sync has false value then store backedup data as pending
   if (!CAN_SYNC.value || !(await isOnlineEmitter.isOnlineFetch())) {
     return;
+  }
+
+  try {
+    /**
+     * Before saving the backedup data to firestore,
+     * firstly check and process if there are some datas which are not yet synchronized
+     */
+    const ldata = await process_unsynchronized_datas();
+    // After finish processing unsynchronized_datas then start upload the pendings datas
+    process_uploading_pendings_datas(ldata);
+  } catch (error) {
+    log.error(error);
+    log.error('fail to process backedup data: ', error.message);
   }
 }
 
