@@ -114,16 +114,16 @@ export async function confirmRestoration(restored: boolean = true) {
   setDataRestored(restored);
   status.restored = restored;
 
-  if (restored) {
-    backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
-    backupEventEmiter.emit(RESTORE_COMPLETED_EVENT);
-  }
-
   await queryDb.update(
     db.backupStatus,
     { _id: status._id },
     { $set: { restored } }
   );
+
+  if (restored) {
+    backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
+    backupEventEmiter.emit(RESTORE_COMPLETED_EVENT);
+  }
 
   return status;
 }
