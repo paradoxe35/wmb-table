@@ -338,8 +338,14 @@ async function start() {
 
   setFirestoreInstance(firestore);
 
-  // init app instance if not exist
-  await init_app_instance(backupStatus, appSetting);
+  try {
+    // init app instance if not exist
+    await init_app_instance(backupStatus, appSetting);
+  } catch (error) {
+    log.warn('init_app_instance: ', error);
+    log.warn('init_app_instance message: ', error.message);
+    return;
+  }
 
   SYNCHRONIZATION_HAS_STATED.value = true;
 
