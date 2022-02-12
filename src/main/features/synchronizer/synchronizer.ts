@@ -7,7 +7,7 @@ import {
   SynchronizerAppInstanceDatastore,
 } from './datastores';
 import { BackupStatus, AppSettingsStatus } from '@localtypes/index';
-import { initializeFireorm } from './utils';
+import { initializeFireorm, UniqueLoopProcess } from './utils';
 import { setFirestoreInstance } from './constants';
 import {
   AppInstance,
@@ -23,6 +23,11 @@ import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 
 const isOnlineEmitter = new CustomIsOnlineEmitter();
+
+/**
+ * Use to run unique process loop every 3 seconds
+ */
+const loopProcess = new UniqueLoopProcess(3000);
 
 const CAN_SYNC = {
   value: false,
@@ -240,6 +245,8 @@ async function backedup_handler(data: BackedUp) {
   PROCESSING_BACKEDUP_DATA.value = false;
 }
 
+async function loop_on_unsynchronized_datas() {}
+
 /**
  * Capture uploaded data from another app instance firestore and process download of document
  *
@@ -328,6 +335,11 @@ async function start() {
   // start listening of backup event, then process the synchronization updaload process
   BACKUP_EVENT_EMITER.on('backup', backedup_handler);
 
+  /**
+   * Run a loop to check out every defined time if there are unsynchronized datas
+   */
+  loopProcess.loop(loop_on_unsynchronized_datas);
+
   // ---------------------- in case we listen for data firestore snapshot ------------------
 
   // listener to data snapshot, then perform the download process
@@ -358,6 +370,9 @@ function close() {
     const unsubscribe = unsubscribes.shift();
     unsubscribe && unsubscribe();
   });
+
+  // close the unique loop process
+  loopProcess.stop();
 }
 
 export default {
