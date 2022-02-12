@@ -16,14 +16,13 @@ import { app, BrowserWindow, shell } from 'electron';
 import MenuBuilder from './main/platforms/menu';
 import { getAssetPath, setMainWindow } from './sys';
 import Dialogs from '@main/dialogs/dialogs';
-import backupHandler, {
-  backupEventEmiter,
-} from './main/features/backup/backup';
 import { APP_NAME } from './utils/constants';
 import Updater from './main/features/app-updater/updater';
 import { touchBar } from './main/platforms/darwin/touch-bar';
-import synchronizer from '@main/features/synchronizer/synchronizer';
-import { RESTORE_COMPLETED_EVENT } from '@main/features/backup/constants';
+import backupHandler from // backupEventEmiter,
+'./main/features/backup/backup';
+// import synchronizer from '@main/features/synchronizer/synchronizer';
+// import { RESTORE_COMPLETED_EVENT } from '@main/features/backup/constants';
 
 // import all ipc message request handler
 require('@main/message-control/main-messages');
@@ -34,7 +33,7 @@ const watcher = backupHandler();
 /**
  * Call the synchronizer start function after the backup restoration has been completed
  */
-backupEventEmiter.once(RESTORE_COMPLETED_EVENT, synchronizer.start);
+// backupEventEmiter.once(RESTORE_COMPLETED_EVENT, synchronizer.start);
 
 /**
  * declare mainWindow at top level to reuse on multiple scope
@@ -148,7 +147,7 @@ const createWindow = async () => {
     }
 
     // start the synchronization process here
-    synchronizer.start();
+    // synchronizer.start();
   });
 };
 
@@ -172,7 +171,7 @@ app.on('will-quit', () => {
   // close watcher file updater only on app will quit event
   watcher.close();
   // close and cancel all synchronization process
-  synchronizer.close();
+  // synchronizer.close();
 });
 
 app.whenReady().then(createWindow).catch(console.log);
