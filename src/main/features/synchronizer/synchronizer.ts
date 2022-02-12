@@ -118,12 +118,16 @@ async function download_unsynchronized_data(data: DataSync) {
     return;
   }
 
-  SYNCHRONIZER_DOWNLOADING.value = false;
+  SYNCHRONIZER_DOWNLOADING.value = true;
   /**
    * restore File and update the appinstance cursor data
    */
-  await RestoreHandler.restoreFile(driveFile);
-  await update_appinstance_data_cursor(new_cursor);
+  await RestoreHandler.restoreFile(driveFile).catch(() => {
+    SYNCHRONIZER_DOWNLOADING.value = false;
+  });
+  await update_appinstance_data_cursor(new_cursor).catch(() => {
+    SYNCHRONIZER_DOWNLOADING.value = false;
+  });
 
   SYNCHRONIZER_DOWNLOADING.value = false;
 
