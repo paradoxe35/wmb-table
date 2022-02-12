@@ -35,7 +35,7 @@ export class UniqueLoopProcess {
   private closed: boolean = false;
 
   constructor(private INTERVAL: number = 2000) {
-    this.loop = this.loop.bind(this);
+    this.unique_loop = this.unique_loop.bind(this);
   }
 
   // callback function in params
