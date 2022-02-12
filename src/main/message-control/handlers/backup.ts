@@ -7,7 +7,10 @@ import {
   initBackupAndRestoration,
   resumeRestoration,
 } from '@main/features/backup/backup';
-import { setDataRestored } from '@main/features/backup/constants';
+import {
+  RESTORE_COMPLETED_EVENT,
+  setDataRestored,
+} from '@main/features/backup/constants';
 import googleOAuth2, { getUserInfo } from '@main/features/backup/googleapi';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { cleanAllFileDir } from '@main/functions/count-file-lines';
@@ -113,6 +116,7 @@ export async function confirmRestoration(restored: boolean = true) {
 
   if (restored) {
     backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
+    backupEventEmiter.emit(RESTORE_COMPLETED_EVENT);
   }
 
   await queryDb.update(
