@@ -16,13 +16,13 @@ export class SynchronizerAppInstanceDatastore extends CustomDatastore<
     super(home_dir(), 'status');
   }
 
-  async updateDataCursor(cursor: number) {
+  async updateDataCursor(appInstance: AppInstance) {
     const instance = (await this.data()) as TimeStampType<AppInstance>;
     if (!instance) return;
     return new Promise<number>((resolve) => {
       return this.datastore.update(
         { _id: instance._id },
-        { data_cursor_count: cursor },
+        { $set: appInstance },
         { multi: true },
         (_err, numberOfUpdated) => {
           resolve(numberOfUpdated);

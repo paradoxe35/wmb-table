@@ -96,7 +96,7 @@ async function update_appinstance_data_cursor(add: number = 1) {
 
   // update data cursor on datastore
   const appInstanceDatastore = new SynchronizerAppInstanceDatastore();
-  await appInstanceDatastore.updateDataCursor(nappInstance.data_cursor_count);
+  await appInstanceDatastore.updateDataCursor(nappInstance);
 
   // set the fresh updated app instance
   APP_INSTANCE.value = nappInstance;
