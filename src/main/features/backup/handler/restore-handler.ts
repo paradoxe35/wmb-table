@@ -173,7 +173,7 @@ export class RestoreHandler extends DriveHandler {
    * proceed individual file for restortion
    * @param file proceed file
    */
-  private static async restoreFile(file: drive_v3.Schema$File) {
+  public static async restoreFile(file: drive_v3.Schema$File) {
     const parentFile = await this.parentFolder(file);
     if (!parentFile || EXCLUDE_DB_FILES_REGEX.test(parentFile.name)) return;
 
