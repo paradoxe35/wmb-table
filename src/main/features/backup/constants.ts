@@ -29,7 +29,21 @@ export const OAUTH2_CLIENT: { value: OAuth2Client | null } = {
   value: null,
 };
 
+export const BACKUP_IGNORE_NEXT_ITERATION: Value<number> = {
+  value: 0,
+};
+
 export const RESTORE_COMPLETED_EVENT = 'restore-completed';
+
+export const incrementBackupNextIteration = () => {
+  BACKUP_IGNORE_NEXT_ITERATION.value += 1;
+};
+
+export const decrementBackupNextIteration = () => {
+  if (BACKUP_IGNORE_NEXT_ITERATION.value > 0) {
+    BACKUP_IGNORE_NEXT_ITERATION.value -= 1;
+  }
+};
 
 export const setDataRestored = (value: boolean) =>
   (DATA_RESTORED.value = value);

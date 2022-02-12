@@ -8,7 +8,7 @@ import {
 } from './datastores';
 import { BackupStatus, AppSettingsStatus } from '@localtypes/index';
 import { initializeFireorm, UniqueLoopProcess } from './utils';
-import { setFirestoreInstance, SYNCHRONIZER_DOWNLOADING } from './constants';
+import { setFirestoreInstance } from './constants';
 import {
   AppInstance,
   AppInstanceRepository,
@@ -22,6 +22,10 @@ import { RestoreHandler } from '../backup/handler/restore-handler';
 import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { TimeStampType } from './type';
+import {
+  decrementBackupNextIteration,
+  incrementBackupNextIteration,
+} from '../backup/constants';
 
 const isOnlineEmitter = new CustomIsOnlineEmitter();
 
@@ -118,18 +122,20 @@ async function download_unsynchronized_data(data: DataSync) {
     return;
   }
 
-  SYNCHRONIZER_DOWNLOADING.value = true;
+  /**
+   * Increment BackupNextIteration value to that next iteration of backup will ignore
+   */
+  incrementBackupNextIteration();
+
   /**
    * restore File and update the appinstance cursor data
    */
   await RestoreHandler.restoreFile(driveFile).catch(() => {
-    SYNCHRONIZER_DOWNLOADING.value = false;
-  });
-  await update_appinstance_data_cursor(new_cursor).catch(() => {
-    SYNCHRONIZER_DOWNLOADING.value = false;
+    // if the restoration of file has failed then decrement the backup iteration
+    decrementBackupNextIteration();
   });
 
-  SYNCHRONIZER_DOWNLOADING.value = false;
+  await update_appinstance_data_cursor(new_cursor);
 
   /**
    * Notify the view or renderer electron process about the new synchronization
