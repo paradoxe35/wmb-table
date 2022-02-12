@@ -133,7 +133,9 @@ export class DriveHandler {
    * @param fileId
    * @returns
    */
-  public static async getFileById(fileId: string) {
+  public static async getFileById(
+    fileId: string
+  ): Promise<drive_v3.Schema$File | null> {
     const drive = this.drive();
 
     const { data } = await drive.files.get({
