@@ -120,13 +120,13 @@ async function download_unsynchronized_data(data: Data) {
  * Process all datas which are not yet synchronized
  * And Return the latest data synchronized
  */
-async function process_unsynchronized_datas(): Promise<Data | undefined> {
+async function process_unsynchronized_datas(): Promise<void> {
   const dataRepository = new DataRepository();
 
   /**
    * Perform recursivily the process of download the unsynchronized datas
    */
-  const perform_process = async (ldata?: Data): Promise<Data | undefined> => {
+  const perform_process = async (): Promise<void> => {
     const appInstance = APP_INSTANCE.value!;
 
     // connectivity checking
@@ -141,14 +141,7 @@ async function process_unsynchronized_datas(): Promise<Data | undefined> {
 
     // If unsynchronized_datas var is empty then stop the recursive process
     if (unsynchronized_datas.length === 0) {
-      if (!ldata) {
-        // if ldata is undefined, then get the last data from data repository and return it
-        ldata =
-          (await dataRepository.getLatestByAccountEmail(
-            appInstance.drive_account_email
-          )) || undefined;
-      }
-      return ldata;
+      return;
     }
 
     // go througth all on unsynchronized_datas
@@ -156,9 +149,7 @@ async function process_unsynchronized_datas(): Promise<Data | undefined> {
       await download_unsynchronized_data(data);
     }
 
-    return await perform_process(
-      unsynchronized_datas[unsynchronized_datas.length - 1]
-    );
+    return await perform_process();
   };
 
   return await perform_process();
@@ -168,8 +159,18 @@ async function process_unsynchronized_datas(): Promise<Data | undefined> {
  *
  * @param ldata the keep increment from last data cursor count
  */
-async function process_uploading_pendings_datas(ldata: Data | undefined) {
-  const cursor_counter = ldata?.cursor_counter || 1;
+async function process_uploading_pendings_datas() {
+  const appInstance = APP_INSTANCE.value!;
+
+  // get all pending backedup datas and upload them
+  const pendingDatastore = new PendingBackedUpDatastore();
+  const pending_datas = await pendingDatastore.datas();
+
+  // data repository
+  const dataRepository = new DataRepository();
+
+  for (const data of pending_datas) {
+  }
 }
 
 /**
@@ -195,9 +196,9 @@ async function backedup_handler(data: BackedUp) {
      * Before saving the backedup data to firestore,
      * firstly check and process if there are some datas which are not yet synchronized
      */
-    const ldata = await process_unsynchronized_datas();
+    await process_unsynchronized_datas();
     // After finish processing unsynchronized_datas then start upload the pendings datas
-    process_uploading_pendings_datas(ldata);
+    process_uploading_pendings_datas();
   } catch (error) {
     log.error(error);
     log.error('fail to process backedup data: ', error.message);
