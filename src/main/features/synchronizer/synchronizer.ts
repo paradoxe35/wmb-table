@@ -286,6 +286,7 @@ async function init_app_instance(
 
 /**
  * Top level function to start synchronizer process
+ * This function must be perfom only when user use drive backup feature
  */
 async function start() {
   // firstly check synchronizer can start process, by check app status exists and backup status exists too
