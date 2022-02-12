@@ -1,11 +1,11 @@
 import { getAppHomePath } from '@root/sys';
 import { AppInstance } from './collections';
 import CustomDatastore from '../custom-datastore';
-// import { TimeStampData } from '@localtypes/index';
 import type { BackedUp } from '../backup/handler/backup-handler.d';
+import { getAppUuid } from '../app-uuid';
 
 // get home path with synchronizer as subdirectory name
-const home_dir = () => getAppHomePath('synchronizer');
+const home_dir = () => getAppHomePath(getAppUuid().app_id, 'synchronizer');
 
 export class SynchronizerAppInstanceDatastore extends CustomDatastore<
   AppInstance
