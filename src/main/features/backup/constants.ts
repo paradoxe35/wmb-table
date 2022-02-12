@@ -29,6 +29,8 @@ export const OAUTH2_CLIENT: { value: OAuth2Client | null } = {
   value: null,
 };
 
+export const RESTORE_COMPLETED_EVENT = 'restore-completed';
+
 export const setDataRestored = (value: boolean) =>
   (DATA_RESTORED.value = value);
 
