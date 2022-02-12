@@ -248,25 +248,6 @@ async function backedup_handler(data: BackedUp) {
 async function loop_on_unsynchronized_datas() {}
 
 /**
- * Capture uploaded data from another app instance firestore and process download of document
- *
- * @param snapshot
- */
-// function snapshoted_data_handler(
-//   snapshot: FirebaseFirestore.QuerySnapshot<FirebaseFirestore.DocumentData>
-// ) {}
-
-/**
- * Capture all error form firestore snapshot events
- *
- * @param error
- */
-// function snapshoted_data_error(error: Error) {
-//   log.error('snapshoted_data_error: ', error.message);
-//   log.error('snapshoted_data_error error instance: ', error);
-// }
-
-/**
  * Initiliaze app instance if not yet, and if user has no internet connection then save the process as pending
  *
  * @param backupStatus
@@ -339,21 +320,6 @@ async function start() {
    * Run a loop to check out every defined time if there are unsynchronized datas
    */
   loopProcess.loop(loop_on_unsynchronized_datas);
-
-  // ---------------------- in case we listen for data firestore snapshot ------------------
-
-  // listener to data snapshot, then perform the download process
-  // const dataRepository = new DataRepository();
-  // const unsubscription = dataRepository.onSnapshot(
-  //   backupStatus.email,
-  //   snapshoted_data_handler,
-  //   snapshoted_data_error
-  // );
-
-  // push unsubscription function in unsubscribes for a late clean up
-  // unsubscription && unsubscribes.push(unsubscription);
-
-  // ---------------------- in case we listen for data firestore snapshot ------------------
 }
 
 /**
