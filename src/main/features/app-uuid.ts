@@ -1,7 +1,12 @@
 import { getAssetCredentialsPath } from '@root/sys';
 import fs from 'fs';
 
-const uuidv4: () => string = require('uuid/v4');
+const uuidv4: () => string = () => {
+  const { v4: uuidv4 } = require('uuid');
+
+  return uuidv4();
+};
+
 const APP_ID_FILE = 'app-id.json';
 
 export function getAppUuid(): { app_id: string } {
