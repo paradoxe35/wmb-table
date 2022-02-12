@@ -155,7 +155,7 @@ export class AppInstanceRepository {
    * @returns
    */
   async email_appid_exists(email: string, app_id: string) {
-    return !(await this.getByEmailAppId({
+    return !!(await this.getByEmailAppId({
       drive_account_email: email,
       app_id,
     }));
