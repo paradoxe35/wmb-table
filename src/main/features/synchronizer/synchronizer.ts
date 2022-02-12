@@ -12,7 +12,7 @@ import { setFirestoreInstance } from './constants';
 import {
   AppInstance,
   AppInstanceRepository,
-  Data,
+  DataSync,
   DataRepository,
 } from './collections';
 import { CustomIsOnlineEmitter } from '../is-online-emitter';
@@ -99,7 +99,7 @@ async function update_appinstance_data_cursor(add: number = 1) {
  *
  * @param data
  */
-async function download_unsynchronized_data(data: Data) {
+async function download_unsynchronized_data(data: DataSync) {
   const appInstance = APP_INSTANCE.value!;
 
   // here to determine how incrementation the app instance should increment the its data cursor

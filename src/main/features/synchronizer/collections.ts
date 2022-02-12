@@ -18,7 +18,7 @@ export class AppInstance extends HasCollection {
 }
 
 @Collection()
-export class Data extends HasCollection {
+export class DataSync extends HasCollection {
   cursor_counter!: number;
   action!: BackupActions;
   file_drive_id!: string;
@@ -28,10 +28,10 @@ export class Data extends HasCollection {
 
 // --------------- collection repositories --------------
 export class DataRepository {
-  dataRepository: BaseFirestoreRepository<Data>;
+  dataRepository: BaseFirestoreRepository<DataSync>;
 
   constructor() {
-    this.dataRepository = getRepository(Data);
+    this.dataRepository = getRepository(DataSync);
   }
 
   get(id: string) {
@@ -81,8 +81,8 @@ export class DataRepository {
    * @param fresh
    * @returns
    */
-  async create(fresh: Omit<Data, 'cursor_counter' | keyof HasCollection>) {
-    const data = new Data();
+  async create(fresh: Omit<DataSync, 'cursor_counter' | keyof HasCollection>) {
+    const data = new DataSync();
 
     data.action = fresh.action;
     data.file_drive_id = fresh.file_drive_id;
@@ -116,7 +116,7 @@ export class DataRepository {
     onError: SnapshotOnError
   ) {
     return FIRESTORE_INSTANCE.value
-      ?.collection(Data.name + 's')
+      ?.collection(DataSync.name + 's')
       .where('drive_account_email', '==', account_email)
       .onSnapshot(onNext, onError);
   }
