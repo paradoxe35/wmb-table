@@ -403,11 +403,6 @@ const syncedFirstDbReferences = async (filename: string) => {
  * @returns
  */
 const performBackup = async (evt: string, name: string) => {
-  // if BACKUP_IGNORE_NEXT_ITERATION has value greater than 0 then ignore the actuel backup iteratio
-  if (BACKUP_IGNORE_NEXT_ITERATION.value > 0) {
-    decrementBackupNextIteration();
-  }
-
   // if data not yet restored or there's process updater's restore data then cancel the suite
   if (!DATA_RESTORED.value || UPDATER_RESTORING_DATA.value) {
     return;
@@ -419,6 +414,12 @@ const performBackup = async (evt: string, name: string) => {
     !loadedDb.dbs.includes(filename) ||
     !(await syncedFirstDbReferences(filename))
   ) {
+    return;
+  }
+
+  // if BACKUP_IGNORE_NEXT_ITERATION has value greater than 0 then ignore the actuel backup iteratio
+  if (BACKUP_IGNORE_NEXT_ITERATION.value > 0) {
+    decrementBackupNextIteration();
     return;
   }
 
