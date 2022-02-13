@@ -120,12 +120,8 @@ async function download_unsynchronized_data(data: DataSync) {
   await require_connectivity();
 
   // init googleOAuth2 if hasnt been yet
-  if (!OAUTH2_CLIENT.value) {
-    const oAuth2Client = await googleOAuth2();
-    DriveHandler.setOAuth2Client(oAuth2Client!);
-  } else {
-    DriveHandler.setOAuth2Client(OAUTH2_CLIENT.value);
-  }
+  const oAuth2Client = OAUTH2_CLIENT.value || (await googleOAuth2());
+  DriveHandler.setOAuth2Client(oAuth2Client!);
 
   // first get file shema from drive
   const driveFile = await DriveHandler.getFileById(data.file_drive_id);
