@@ -89,19 +89,18 @@ async function update_appinstance_data_cursor(add: number = 1) {
   const appInstanceRep = new AppInstanceRepository();
 
   // commit the update data cursor
-  const nappInstance = await appInstanceRep.update_data_cursor(
-    appInstance.id,
-    add
-  );
+  await appInstanceRep.update_data_cursor(appInstance.id, add);
+
+  appInstance.data_cursor_count += add;
 
   // update data cursor on datastore
-  const appInstanceDatastore = new SynchronizerAppInstanceDatastore();
-  await appInstanceDatastore.updateDataCursor(nappInstance);
+  const appInstanceDatastore = SynchronizerAppInstanceDatastore.instance();
+  await appInstanceDatastore.updateDataCursor(appInstance);
 
   // set the fresh updated app instance
-  APP_INSTANCE.value = nappInstance;
+  APP_INSTANCE.value = appInstance;
 
-  return nappInstance;
+  return appInstance;
 }
 
 /**
@@ -208,7 +207,7 @@ async function process_uploading_pendings_datas() {
   let appInstance = APP_INSTANCE.value!;
 
   // get all pending backedup datas and upload them
-  const pendingDatastore = new PendingBackedUpDatastore();
+  const pendingDatastore = PendingBackedUpDatastore.instance();
   const pending_datas = ((await pendingDatastore.datas()) as unknown) as TimeStampType<
     BackedUp
   >[];
@@ -231,13 +230,14 @@ async function process_uploading_pendings_datas() {
     // get the fresh update of app instance
     appInstance = APP_INSTANCE.value!;
 
+    // delete the pending data from datastore
+    await pendingDatastore.delete(pdata._id, { multi: true });
+
     // here to determine how incrementation the app instance should increment the its data cursor
     let new_cursor = ndata.cursor_counter - appInstance.data_cursor_count;
     new_cursor = new_cursor < 0 ? 0 : new_cursor;
     // update app instance data cursor
     await update_appinstance_data_cursor(new_cursor);
-    // delete the pending data from datastore
-    await pendingDatastore.delete(pdata._id);
   }
 }
 
@@ -247,7 +247,7 @@ async function process_uploading_pendings_datas() {
  * @param data
  */
 async function backedup_handler(data: BackedUp) {
-  const pendingDatasDatastore = new PendingBackedUpDatastore();
+  const pendingDatasDatastore = PendingBackedUpDatastore.instance();
 
   /**
    * Always store the backedup app in pendings, to be process later
@@ -313,7 +313,7 @@ async function init_app_instance(
     );
   }
   // App instance datastore
-  const appInstanceDatastore = new SynchronizerAppInstanceDatastore();
+  const appInstanceDatastore = SynchronizerAppInstanceDatastore.instance();
   let appInstance = await appInstanceDatastore.data();
   if (!appInstance) {
     const appInstanceRep = new AppInstanceRepository();
