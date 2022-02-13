@@ -7,10 +7,18 @@ import { getAppUuid } from '../app-uuid';
 export default class UpdaterInMemoryDatastore extends CustomDatastore<
   UpdaterInfoStatus
 > {
+  private static _instance: UpdaterInMemoryDatastore;
   private refreshed: boolean = false;
 
   constructor() {
     super(getAppHomePath(getAppUuid().app_id), 'updater');
+  }
+
+  public static instance() {
+    if (!this._instance) {
+      this._instance = new this();
+    }
+    return this._instance;
   }
 
   /**

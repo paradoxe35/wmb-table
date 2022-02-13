@@ -2,7 +2,7 @@ import path from 'path';
 import Nedb from '@seald-io/nedb';
 import { DB_EXTENSION } from '@root/utils/constants';
 
-export default class CustomDatastore<T> {
+export default abstract class CustomDatastore<T> {
   protected datastore: Nedb<T>;
 
   constructor(dbpath: string, dbname: string) {
@@ -44,9 +44,9 @@ export default class CustomDatastore<T> {
     );
   }
 
-  public delete(_id: string) {
+  public delete(_id: string, options: Nedb.RemoveOptions = {}) {
     return new Promise<number>((resolve) =>
-      this.datastore.remove({ _id }, (_, n) => {
+      this.datastore.remove({ _id }, options, (_, n) => {
         resolve(n);
       })
     );
