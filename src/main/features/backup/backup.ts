@@ -106,8 +106,10 @@ export class PendingDatasUnloadDb {
   }
 }
 
-// used to collect all loaded databases that will be backuped
-// commit dbname as event, so to catch all changes that was made in dbfile and process them to backup
+/**
+ * Used to collect all loaded databases that will be backuped
+ * commit dbname as event, so to catch all changes that was made in dbfile and process them to backup
+ */
 export const loadedDb = {
   dbs: [] as string[],
   dbFilenames: {} as { [x: string]: string },
@@ -125,7 +127,7 @@ export const loadedDb = {
   },
 };
 
-// after load database start event corresponding to database filename
+// After load database start event corresponding to database filename
 eventEmiter.on(LOADED_DB_EVENT_NAME, (filenameEvent) => {
   eventEmiter.on(
     filenameEvent,
@@ -137,7 +139,7 @@ eventEmiter.on(LOADED_DB_EVENT_NAME, (filenameEvent) => {
 emitterIsOnline.connectivity_change(connectivityChangedHandler);
 
 /**
- * get saved file meta references
+ * Get saved file meta references
  *
  * @param filename
  * @returns
@@ -152,7 +154,7 @@ const getDbReference = async (filename: string) => {
 };
 
 /**
- * save file meta when line change
+ * Save file meta when line change
  *
  * @param filename
  * @param lines
@@ -177,11 +179,8 @@ const syncDbLinesAsBackupRef = async (
   return fileLines;
 };
 
-type RangedLines = {
-  [id: string]: { deleted: boolean; _id: string; data?: any };
-};
 /**
- * range to grounped data with action and merge pending data unload db
+ * Range to grounped data with action and merge pending data unload db
  *
  * @param range
  * @param filename
@@ -193,6 +192,9 @@ const groupChangedLinesByAction = (range: string[], filename: string) => {
   type DbColumn = { [n: string]: any; _id: string };
 
   if (pendingDatas) {
+    /**
+     * Get column id of ranges from range param, used to check if the pending doent have the same value
+     */
     const rangeIds: string[] = range
       .map((dataStr) => {
         try {
@@ -203,6 +205,9 @@ const groupChangedLinesByAction = (range: string[], filename: string) => {
       .filter(Boolean);
 
     for (const _id in pendingDatas) {
+      /**
+       * Push to existing range, if the actuel pending doent exist in latter range state
+       */
       if (_id && !rangeIds.includes(_id)) {
         const pending = pendingDatas[_id];
         range.push(
@@ -227,11 +232,18 @@ const groupChangedLinesByAction = (range: string[], filename: string) => {
       };
     } catch (_) {}
     return acc;
-  }, {} as RangedLines);
+  }, <RangedLines>{});
+};
+/**
+ * Ranged lines type
+ */
+type RangedLines = {
+  [id: string]: { deleted: boolean; _id: string; data?: any };
 };
 
 /**
- * handle to put in pending data if there is other pending process or no connection network found
+ * Handle to put in pending data if there is other pending process or no connection network found
+ *
  * @param grouped
  * @param filename
  */
@@ -248,7 +260,7 @@ async function putInPending(grouped: RangedLines, filename: string) {
 }
 
 /**
- * delete pending data from pending datastore
+ * Delete pending data from pending datastore
  *
  * @param pendingDb
  * @param dbId
@@ -262,7 +274,7 @@ export const deletePending = (
 ) => queryDb.remove(pendingDb, { dbId }, { multi });
 
 /**
- * upload modirectly to cloud
+ * Upload modirectly to cloud
  *
  * @param oAuth2Client
  * @param grouped
@@ -303,7 +315,7 @@ async function uploadModifications(
 }
 
 /**
- * callback function to handle changes network status and upload pending datas if necessary
+ * Callback function to handle changes network status and upload pending datas if necessary
  *
  * @param onlineStatus
  */
@@ -323,21 +335,38 @@ function connectivityChangedHandler(onlineStatus: { online: boolean }): void {
 }
 
 /**
- * form update just specifique changed file db
+ * Form update just specifique changed file db
  *
  * @param filename
  * @returns
  */
 const performUniqueBackup = async (filename: string) => {
+  /**
+   * Get the last cursor db reference
+   */
   const ref = await getDbReference(filename);
   if (!ref) return;
+  /**
+   * Get unproceed ranges line
+   */
   const rangeLines = await readRangeLinesInFile(
     loadedDb.dbFilenames[filename],
     +ref.lines
   );
 
+  /**
+   * This should range line to RangedLines type and merge pending datas if exists
+   */
   const grouped = groupChangedLinesByAction(rangeLines, filename);
   if (Object.keys(grouped).length === 0) return;
+
+  /**
+   * If BACKUP_IGNORE_NEXT_ITERATION has value greater than 0 then ignore the actuel backup iteratio
+   */
+  if (BACKUP_IGNORE_NEXT_ITERATION.value > 0) {
+    decrementBackupNextIteration();
+    return;
+  }
 
   const oAuth2Client = OAUTH2_CLIENT.value || (await googleOAuth2());
 
@@ -368,7 +397,7 @@ const performUniqueBackup = async (filename: string) => {
 };
 
 /**
- * saved files state when file db loaded
+ * Saved files state when file db loaded
  *
  * @param filename
  * @returns
@@ -396,7 +425,7 @@ const syncedFirstDbReferences = async (filename: string) => {
 };
 
 /**
- * the top level function to perform wached changed files
+ * The top level function to perform wached changed files
  *
  * @param evt
  * @param name
@@ -417,17 +446,11 @@ const performBackup = async (evt: string, name: string) => {
     return;
   }
 
-  // if BACKUP_IGNORE_NEXT_ITERATION has value greater than 0 then ignore the actuel backup iteratio
-  if (BACKUP_IGNORE_NEXT_ITERATION.value > 0) {
-    decrementBackupNextIteration();
-    return;
-  }
-
   eventEmiter.emit(filename, filename);
 };
 
 /**
- * filter function on watch changed files
+ * Filter function on watch changed files
  *
  * @param file
  * @param skip
@@ -468,13 +491,13 @@ export default () => {
   };
 };
 
-// functions used as top level funcs to initialize or resume backup and restoration
+// Functions used as top level funcs to initialize or resume backup and restoration
 //--------------------------------------------------------------
 async function restoreHandler(_exception: boolean = false) {
   try {
     await RestoreHandler.handle();
     await BackupHandler.handlePending();
-    // if restore was succesfuly handled, then consider user have full access
+    // If restore was succesfuly handled, then consider user have full access
     setUserAuthAccessStatus(true);
   } catch (error) {
     if (error?.code && (error.code === 403 || error.code === 401)) {
