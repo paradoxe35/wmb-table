@@ -48,7 +48,7 @@ class Updater {
 
     this.autoUpdater = autoUpdater;
     // used to save progress state of updater
-    this.datastore = new UpdaterInMemoryDatastore();
+    this.datastore = UpdaterInMemoryDatastore.instance();
 
     // listen for download confirmation from rendere process
     mainMessageTransport(IPC_EVENTS.start_download_update, this.startDownload);

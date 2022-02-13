@@ -11,9 +11,18 @@ const home_dir = () => getAppHomePath(getAppUuid().app_id, 'synchronizer');
 export class SynchronizerAppInstanceDatastore extends CustomDatastore<
   AppInstance
 > {
+  private static _instance: SynchronizerAppInstanceDatastore;
+
   constructor() {
     // init datastore and load ite
     super(home_dir(), 'status');
+  }
+
+  public static instance() {
+    if (!this._instance) {
+      this._instance = new this();
+    }
+    return this._instance;
   }
 
   async updateDataCursor(appInstance: AppInstance) {
@@ -33,8 +42,17 @@ export class SynchronizerAppInstanceDatastore extends CustomDatastore<
 }
 
 export class PendingBackedUpDatastore extends CustomDatastore<BackedUp> {
+  private static _instance: PendingBackedUpDatastore;
+
   constructor() {
     // init datastore and load ite
     super(home_dir(), 'pendings');
+  }
+
+  public static instance() {
+    if (!this._instance) {
+      this._instance = new this();
+    }
+    return this._instance;
   }
 }

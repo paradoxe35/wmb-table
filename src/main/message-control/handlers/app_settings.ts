@@ -37,7 +37,7 @@ export async function restart_app() {
 }
 
 export async function started_to_update() {
-  const datastore = new UpdaterInMemoryDatastore();
+  const datastore = UpdaterInMemoryDatastore.instance();
   const info = await datastore.instance();
   return {
     started_to_update: !!info.restartedToUpdate,
