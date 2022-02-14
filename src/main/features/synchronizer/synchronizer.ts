@@ -89,18 +89,19 @@ async function update_appinstance_data_cursor(add: number = 1) {
   const appInstanceRep = new AppInstanceRepository();
 
   // commit the update data cursor
-  await appInstanceRep.update_data_cursor(appInstance.id, add);
-
-  appInstance.data_cursor_count += add;
+  const nappInstance = await appInstanceRep.update_data_cursor(
+    appInstance.id,
+    add
+  );
 
   // update data cursor on datastore
   const appInstanceDatastore = SynchronizerAppInstanceDatastore.instance();
-  await appInstanceDatastore.updateDataCursor(appInstance);
+  await appInstanceDatastore.updateDataCursor(nappInstance);
 
   // set the fresh updated app instance
-  APP_INSTANCE.value = appInstance;
+  APP_INSTANCE.value = nappInstance;
 
-  return appInstance;
+  return nappInstance;
 }
 
 /**

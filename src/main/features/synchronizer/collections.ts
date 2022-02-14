@@ -213,6 +213,7 @@ export class AppInstanceRepository {
   async update_data_cursor(id: string, add: number = 1) {
     const appInstance = await this.get(id);
     appInstance.data_cursor_count += add;
-    return await this.appInstanceRepository.update(appInstance);
+    await this.appInstanceRepository.update(appInstance);
+    return appInstance;
   }
 }
