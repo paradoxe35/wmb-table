@@ -3,7 +3,7 @@ import { getAssetBackupPath, getAssetDocumentsPath } from '@root/sys';
 import { camelCase } from '@root/utils/functions';
 import db, { DBSerializer, getDatastoreFileName, queryDb } from '@main/db/db';
 import Datastore from '@seald-io/nedb';
-import { CustomDocument } from '@localtypes/index';
+import { BackupActions, CustomDocument } from '@localtypes/index';
 import { Stream } from 'stream';
 import { checkForFile } from '@main/functions/count-file-lines';
 import fs from 'fs';
@@ -173,12 +173,15 @@ export class RestoreHandler extends DriveHandler {
    * proceed individual file for restortion
    * @param file proceed file
    */
-  public static async restoreFile(file: drive_v3.Schema$File) {
+  public static async restoreFile(
+    file: drive_v3.Schema$File,
+    action: BackupActions = 'create'
+  ) {
     const parentFile = await this.parentFolder(file);
     if (!parentFile || EXCLUDE_DB_FILES_REGEX.test(parentFile.name)) return;
 
     const datastore = db[camelCase(parentFile.name)];
-    if (datastore) await this.storeContent(datastore, file, parentFile);
+    if (datastore) await this.storeContent(datastore, file, parentFile, action);
   }
 
   /**
@@ -190,7 +193,8 @@ export class RestoreHandler extends DriveHandler {
   private static async storeContent(
     database: Datastore,
     file: drive_v3.Schema$File,
-    parentFile: ParentFolder
+    parentFile: ParentFolder,
+    action: BackupActions
   ) {
     const drive = this.drive();
     const { data } = await drive.files.get(
@@ -211,10 +215,22 @@ export class RestoreHandler extends DriveHandler {
 
     if (!data || !$datas || !$datas._id) return;
 
-    await queryDb.insert(database, { ...$datas });
+    switch (action) {
+      case 'create':
+        await queryDb.insert(database, { ...$datas });
+        break;
+      case 'update':
+        const ndatas = { ...$datas };
+        delete ndatas._id;
+        await queryDb.update(database, { _id: $datas._id }, { $set: ndatas });
+        break;
+      default:
+        break;
+    }
+
     // handle custom document restaure
     if (getDatastoreFileName(db.customDocuments, false) === parentFile.name) {
-      await this.handleCustomDocument($datas);
+      await this.handleCustomDocument($datas, action);
     }
   }
 
@@ -222,8 +238,10 @@ export class RestoreHandler extends DriveHandler {
    * handle save related datas on custom document datastore
    * @param data
    */
-  private static async handleCustomDocument(data: CustomDocument) {
-    const drive = this.drive();
+  private static async handleCustomDocument(
+    data: CustomDocument,
+    action: BackupActions
+  ) {
     try {
       const {
         data: { files },
@@ -234,14 +252,14 @@ export class RestoreHandler extends DriveHandler {
 
       if (files && files.length > 0) {
         const file = files[0];
-        const { data: fileData } = await drive.files.get(
-          {
-            fileId: file.id,
-            alt: 'media',
-          },
-          { responseType: 'stream' }
-        );
-        await this.saveDocumentHtml(fileData as Stream, `${data.title}.html`);
+        switch (action) {
+          case 'create':
+            await this.createDocumentHtml(file, data);
+            break;
+
+          default:
+            break;
+        }
       }
     } catch (error) {
       log.error(
@@ -249,6 +267,27 @@ export class RestoreHandler extends DriveHandler {
         error?.message || error
       );
     }
+  }
+
+  /**
+   * Get the writable stream from google drive and process save of file
+   *
+   * @param file
+   * @param data
+   */
+  private static async createDocumentHtml(
+    file: drive_v3.Schema$File,
+    data: CustomDocument
+  ) {
+    const drive = this.drive();
+    const { data: fileData } = await drive.files.get(
+      {
+        fileId: file.id,
+        alt: 'media',
+      },
+      { responseType: 'stream' }
+    );
+    await this.saveDocumentHtml(fileData as Stream, `${data.title}.html`);
   }
 
   /**
