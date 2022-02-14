@@ -105,7 +105,7 @@ async function update_appinstance_data_cursor(add: number = 1) {
 }
 
 /**
- * Download the data
+ * Download the unsynchronized datas and save information on the local disk
  *
  * @param data
  */
@@ -140,7 +140,7 @@ async function download_unsynchronized_data(data: DataSync) {
   /**
    * restore File and update the appinstance cursor data
    */
-  await RestoreHandler.restoreFile(driveFile).catch(() => {
+  await RestoreHandler.restoreFile(driveFile, data.action).catch(() => {
     // if the restoration of file has failed then decrement the backup iteration
     decrementBackupNextIteration();
   });
