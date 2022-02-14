@@ -162,7 +162,8 @@ const getDbReference = async (filename: string) => {
  */
 const syncDbLinesAsBackupRef = async (
   filename: string,
-  lines?: number
+  lines?: number,
+  linesToSub?: number
 ): Promise<number> => {
   const ref = await getDbReference(filename);
   const fileLines =
@@ -171,7 +172,7 @@ const syncDbLinesAsBackupRef = async (
     await queryDb.update(
       db.backupDbReferences,
       { _id: ref._id },
-      { $set: { lines: fileLines } }
+      { $set: { lines: fileLines - (linesToSub || 0) } }
     );
   } else {
     await queryDb.insert(db.backupDbReferences, { filename, lines: fileLines });
@@ -364,6 +365,7 @@ const performUniqueBackup = async (filename: string) => {
    * If BACKUP_IGNORE_NEXT_ITERATION has value greater than 0 then ignore the actuel backup iteratio
    */
   if (BACKUP_IGNORE_NEXT_ITERATION.value > 0) {
+    syncDbLinesAsBackupRef(filename);
     decrementBackupNextIteration();
     return;
   }
