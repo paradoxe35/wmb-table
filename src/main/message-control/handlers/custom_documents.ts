@@ -90,19 +90,33 @@ export async function custom_documents_store(
 ) {
   const pdf2html_link = process.env.PDF2HTML_LINK;
   process.env.PDF2HTML_LINK =
-    pdf2html_link || 'https://pdf2html-wmb-table.herokuapp.com/convert';
+    pdf2html_link || 'https://wmb-table-pdf2html.herokuapp.com/convert';
 
-  return convertion(documents);
+  let platform = process.platform;
+
+  let datas = await convertion(documents, platform);
+  /**
+   * if conversion has failed on win35 by local conversion then try again from online conversion
+   */
+  if (datas.length === 0 && platform === 'win32') {
+    platform = 'darwin';
+    datas = await convertion(documents, platform);
+  }
+
+  return datas;
 }
 
 // only on windows
-async function convertion(documents: UploadDocument[]) {
+async function convertion(
+  documents: UploadDocument[],
+  platform: NodeJS.Platform
+) {
   process.env.ASSETS_PATH = getAssetPath();
   process.env.ASSETS_DOCUMENTS_PATH = getAssetDocumentsPath();
 
   let child: childProcess.ChildProcess | undefined;
   // support local conversion only on windows
-  if (process.platform === 'win32') {
+  if (platform === 'win32') {
     child = childProcess.fork(childsProcessesPath('pdf2html.js'), {
       env: process.env,
     });
@@ -169,7 +183,7 @@ async function convertion(documents: UploadDocument[]) {
 
       let getContent: R = null;
 
-      if (process.platform === 'win32') {
+      if (platform === 'win32') {
         getContent = await local_convert<R>(file);
       } else {
         getContent = await online_conversion<R>(file);
