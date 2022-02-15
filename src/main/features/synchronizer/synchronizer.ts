@@ -119,6 +119,14 @@ async function download_unsynchronized_data(data: DataSync) {
   // connectivity checking
   await require_connectivity();
 
+  /**
+   * If data file has delete as action then no need to continue
+   */
+  if (data.action === 'delete') {
+    await update_appinstance_data_cursor(new_cursor);
+    return;
+  }
+
   // init googleOAuth2 if hasnt been yet
   const oAuth2Client = OAUTH2_CLIENT.value || (await googleOAuth2());
   DriveHandler.setOAuth2Client(oAuth2Client!);
