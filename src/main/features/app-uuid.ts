@@ -13,7 +13,7 @@ export function getAppUuid(): { app_id: string } {
   const crendentialPath = getAssetCredentialsPath(APP_ID_FILE);
 
   if (fs.existsSync(crendentialPath)) {
-    return require(crendentialPath);
+    return JSON.parse(fs.readFileSync(crendentialPath).toString('utf-8'));
   }
 
   let cAd = getAppPath()
