@@ -1,7 +1,7 @@
-import { getAssetCredentialsPath } from '@root/sys';
+import { getAppPath, getAssetCredentialsPath } from '@root/sys';
 import fs from 'fs';
 
-const uuidv4: () => string = () => {
+export const uuidv4: () => string = () => {
   const { v4: uuidv4 } = require('uuid');
 
   return uuidv4();
@@ -16,7 +16,15 @@ export function getAppUuid(): { app_id: string } {
     return require(crendentialPath);
   }
 
-  const data = { app_id: uuidv4() };
+  let cAd = getAppPath()
+    .replaceAll('/', '-')
+    .replaceAll('\\', '-')
+    .replaceAll(' ', '-')
+    .trim();
+
+  cAd = cAd.at(0) === '-' ? cAd.slice(1, cAd.length) : cAd;
+
+  const data = { app_id: cAd };
 
   fs.writeFileSync(crendentialPath, JSON.stringify(data));
 
