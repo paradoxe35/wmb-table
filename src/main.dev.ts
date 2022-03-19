@@ -12,6 +12,7 @@ import 'core-js/stable';
 import 'regenerator-runtime/runtime';
 import './utils/polyfill';
 import 'reflect-metadata';
+import { getAppUuid } from '@main/features/app-uuid';
 import { app, BrowserWindow, shell } from 'electron';
 import MenuBuilder from './main/platforms/menu';
 import { getAssetPath, setMainWindow } from './sys';
@@ -20,8 +21,12 @@ import { APP_NAME } from './utils/constants';
 import Updater from './main/features/app-updater/updater';
 import { touchBar } from './main/platforms/darwin/touch-bar';
 import backupHandler from './main/features/backup/backup';
+
 // import synchronizer from '@main/features/synchronizer/synchronizer';
 // import { RESTORE_COMPLETED_EVENT } from '@main/features/backup/constants';
+
+// create app id if not yet
+getAppUuid();
 
 // import all ipc message request handler
 require('@main/message-control/main-messages');
