@@ -70,6 +70,10 @@ export function getImagesPath(relativePath: string) {
   }
 }
 
+export function getAppPath() {
+  return app.getAppPath();
+}
+
 export function getAppHomePath(...paths: string[]) {
   const appName = APP_NAME.toLowerCase().split(' ').join('-');
   const homePath = path.join(app.getPath('home'), `.${appName}`, ...paths);
