@@ -22,7 +22,7 @@ export function getAppUuid(): { app_id: string } {
     .replaceAll(' ', '-')
     .trim();
 
-  cAd = cAd.at(0) === '-' ? cAd.slice(1, cAd.length) : cAd;
+  cAd = cAd.slice(cAd.indexOf('-') + 1, cAd.length);
 
   const data = { app_id: cAd };
 
