@@ -5,14 +5,17 @@ import {
   NoteItem,
   NoteItemReference,
 } from '@localtypes/index';
-import { useModalVisible, useValueStateRef } from '@renderer/hooks';
+import {
+  useDocumentTitle,
+  useModalVisible,
+  useValueStateRef,
+} from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { useRecoilValue } from 'recoil';
 import {
   currentDocumentTabsSelector,
-  titlesDocumentSelector,
   workingNoteAppStore,
 } from '@renderer/store';
 import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
@@ -121,7 +124,7 @@ function ContentModal({
   onSelectItem: (item: NoteItemReference) => void;
   datas: NoteItemReference[];
 }) {
-  const $titles = useRecoilValue(titlesDocumentSelector);
+  const { getTitle } = useDocumentTitle();
 
   return (
     <>
@@ -146,7 +149,7 @@ function ContentModal({
                 avatar={<BookOutlined />}
                 description={
                   assigned
-                    ? `Référencé à: ${$titles[item.documentTitle]?.getTitle()}`
+                    ? `Référencé à: ${getTitle(item.documentTitle)}`
                     : 'Aucun document attribué à cette référence'
                 }
                 title={

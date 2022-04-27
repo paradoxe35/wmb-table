@@ -14,11 +14,8 @@ import { SearchItem, SearchResult, Suggestions } from '@localtypes/index';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
-import {
-  documentViewQueryStore,
-  titlesDocumentSelector,
-} from '@renderer/store';
+import { useSetRecoilState } from 'recoil';
+import { documentViewQueryStore } from '@renderer/store';
 import {
   escapeRegExp,
   regexpMatcher,
@@ -26,6 +23,7 @@ import {
   strNormalize,
   surroundContentsTag,
 } from '@modules/shared/searchable';
+import { useDocumentTitle } from '@renderer/hooks';
 
 const { Text } = Typography;
 
@@ -170,8 +168,7 @@ export default function Search() {
 
 const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
   const setDocumentViewQuery = useSetRecoilState(documentViewQueryStore);
-
-  const $titles = useRecoilValue(titlesDocumentSelector);
+  const { getTitle } = useDocumentTitle();
 
   const handleDocumentClick = useCallback(() => {
     setDocumentViewQuery((docs) => {
@@ -200,7 +197,7 @@ const ListView = ({ result, query }: { result: SearchItem; query: string }) => {
                   name={result.item.title}
                   id={result.item._id}
                 >
-                  {$titles[result.item.title]?.getTitle()}
+                  {getTitle(result.item.title)}
                 </DocumentViewer>
               </a>
             </Text>

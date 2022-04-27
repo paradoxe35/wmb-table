@@ -29,14 +29,13 @@ import {
   selectedSubjectDocumentItemStore,
   subjectDocumentStore,
   subjectDocumentItemStore,
-  titlesDocumentSelector,
 } from '@renderer/store';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { SUBJECT_EVENT } from '@modules/shared/shared';
 import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
-import DocumentTitle from '@renderer/store/models/document_title';
+import { useDocumentTitle } from '@renderer/hooks';
 
 const { Text } = Typography;
 
@@ -291,17 +290,15 @@ export default function Subject() {
 type ItemFromSelectedSubjectType = {
   item: SubjectDocumentItem;
   setSubjectItemSelected: SetterOrUpdater<SubjectDocumentItem | null>;
-  $titles: {
-    [fileName: string]: DocumentTitle;
-  };
   confirm(item: SubjectDocumentItem): void;
+  getTitle: (id: string) => string;
 };
 
 function ItemFromSelectedSubject({
   item,
   setSubjectItemSelected,
   confirm,
-  $titles,
+  getTitle,
 }: ItemFromSelectedSubjectType) {
   return (
     <>
@@ -327,7 +324,7 @@ function ItemFromSelectedSubject({
                     onItemClick={() => setSubjectItemSelected(item)}
                     name={item.documentTitle}
                   >
-                    {$titles[item.documentTitle]?.getTitle()}
+                    {getTitle(item.documentTitle)}
                   </DocumentViewer>
                 </a>
               }
@@ -355,7 +352,7 @@ function ShowActiveDocuments({
     selectedSubjectDocumentItemStore
   );
 
-  const $titles = useRecoilValue(titlesDocumentSelector);
+  const { getTitle } = useDocumentTitle();
 
   function confirm(item: SubjectDocumentItem) {
     sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(
@@ -386,7 +383,7 @@ function ShowActiveDocuments({
                 <ItemFromSelectedSubject
                   item={item}
                   confirm={confirm}
-                  $titles={$titles}
+                  getTitle={getTitle}
                   setSubjectItemSelected={setSubjectItemSelected}
                 />
               )}

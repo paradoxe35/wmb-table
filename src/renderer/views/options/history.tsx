@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useRecoilValue } from 'recoil';
-import {
-  currentDocumentTabsSelector,
-  defaultTitle,
-  titlesDocumentSelector,
-} from '@renderer/store';
+import { currentDocumentTabsSelector, defaultTitle } from '@renderer/store';
 import { Empty, List } from 'antd';
 import {
   HistoryData,
@@ -17,6 +13,7 @@ import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { getDateTime } from '@root/utils/functions';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
+import { useDocumentTitle } from '@renderer/hooks';
 
 const { Panel } = Collapse;
 
@@ -30,7 +27,7 @@ export default function History() {
 
   const [reloadKey, setReloadKey] = useState(0);
 
-  const $titles = useRecoilValue(titlesDocumentSelector);
+  const { getTitle, getDocument } = useDocumentTitle();
 
   const onChange = (key: string | string[]) => {
     if (typeof key === 'string') setKey(key);
@@ -97,8 +94,8 @@ export default function History() {
                 <>
                   <List
                     itemLayout="horizontal"
-                    dataSource={historyItems.filter(
-                      (i) => $titles[i.documentTitle]
+                    dataSource={historyItems.filter((i) =>
+                      getDocument(i.documentTitle)
                     )}
                     renderItem={(item) => (
                       <List.Item>
@@ -107,8 +104,7 @@ export default function History() {
                           title={
                             <a>
                               <DocumentViewer name={item.documentTitle}>
-                                {$titles[item.documentTitle]?.getTitle() ||
-                                  item.documentTitle}
+                                {getTitle(item.documentTitle)}
                               </DocumentViewer>
                             </a>
                           }
