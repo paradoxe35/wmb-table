@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSetRecoilState } from 'recoil';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import {
   appDatasLoadedStore,
   appViewStore,
   MAIN_VIEWS,
   optionViewStore,
+  titlesDocumentSelector,
 } from './store';
 import { rafThrottle, respondToVisibility } from '../utils/functions';
 
@@ -153,3 +154,23 @@ export const useCallbackUpdater = (callback?: Function) => {
 
   return handleCallback;
 };
+
+export function useDocumentTitle() {
+  const $titles = useRecoilValue(titlesDocumentSelector);
+
+  const getTitle = useCallback(
+    (id: string) => {
+      return $titles[id]?.getTitle() || id;
+    },
+    [$titles]
+  );
+
+  const getDocument = useCallback(
+    (id: string) => {
+      return $titles[id];
+    },
+    [$titles]
+  );
+
+  return { getTitle, getDocument, $titles };
+}

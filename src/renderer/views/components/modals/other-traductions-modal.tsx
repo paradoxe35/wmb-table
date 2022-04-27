@@ -1,13 +1,10 @@
 import { Button, List, Modal, Tooltip } from 'antd';
 import React, { useEffect, useMemo } from 'react';
 import { OtherTraduction } from '@localtypes/index';
-import { useModalVisible } from '@renderer/hooks';
+import { useDocumentTitle, useModalVisible } from '@renderer/hooks';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import { useRecoilValue } from 'recoil';
-import {
-  currentDocumentTabsSelector,
-  titlesDocumentSelector,
-} from '@renderer/store';
+import { currentDocumentTabsSelector } from '@renderer/store';
 import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
 import { TRADUCTIONS } from '@root/utils/constants';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
@@ -20,7 +17,7 @@ export function OtherTraductionsModal() {
     setIsModalVisible,
   } = useModalVisible();
 
-  const $titles = useRecoilValue(titlesDocumentSelector);
+  const { $titles } = useDocumentTitle();
   const title = useRecoilValue(currentDocumentTabsSelector);
 
   const traductions = useMemo(() => {

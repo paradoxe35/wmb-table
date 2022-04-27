@@ -10,13 +10,10 @@ import {
 } from 'antd';
 import React, { useRef, useState } from 'react';
 import { useCallback } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
+import { useSetRecoilState } from 'recoil';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
-import {
-  selectedSubjectDocumentItemStore,
-  titlesDocumentSelector,
-} from '@renderer/store';
+import { selectedSubjectDocumentItemStore } from '@renderer/store';
 import { FileOutlined } from '@ant-design/icons';
 import {
   BibleBook,
@@ -27,7 +24,7 @@ import {
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useValueStateRef } from '@renderer/hooks';
+import { useDocumentTitle, useValueStateRef } from '@renderer/hooks';
 
 export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
@@ -37,7 +34,8 @@ export const useShowReferenceDetail = () => {
   const setSubjectItemSelected = useSetRecoilState(
     selectedSubjectDocumentItemStore
   );
-  const $titles = useRecoilValue(titlesDocumentSelector);
+
+  const { getTitle } = useDocumentTitle();
 
   const modal = useCallback(
     (reference: NoteItemReference, workingNote: NoteItem) => {
@@ -70,7 +68,7 @@ export const useShowReferenceDetail = () => {
               <Typography.Text type="secondary">
                 <FileOutlined /> Document:
               </Typography.Text>{' '}
-              {$titles[reference.documentTitle]?.getTitle()}
+              {getTitle(reference.documentTitle)}
             </p>
             <p>
               <Typography.Text type="secondary">- </Typography.Text>

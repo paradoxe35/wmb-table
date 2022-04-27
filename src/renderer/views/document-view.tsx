@@ -13,12 +13,15 @@ import {
   documentTabsStore,
   documentViewQueryStore,
   selectedSubjectDocumentItemStore,
-  titlesDocumentSelector,
 } from '@renderer/store';
 import { SetterOrUpdater, useRecoilState, useRecoilValue } from 'recoil';
 import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { useContainerScrollY, useValueStateRef } from '@renderer/hooks';
+import {
+  useContainerScrollY,
+  useDocumentTitle,
+  useValueStateRef,
+} from '@renderer/hooks';
 import { debounce } from '@root/utils/functions';
 import { DocumentViewQuery, SubjectDocumentItem } from '@localtypes/index';
 import { ModalSearchDocument } from './components/modals/modal-search-document';
@@ -198,7 +201,7 @@ const useDocument = () => {
   const [path, setPath] = useState<string | null>(null);
 
   // notify main process about the active document on view
-  const $titles = useRecoilValue(titlesDocumentSelector);
+  const { $titles } = useDocumentTitle();
 
   useEffect(() => {
     if (!title) return;

@@ -4,7 +4,6 @@ import ChromeTabs from '@renderer/plugins/chrome-tabs/chrome-tabs';
 import {
   currentDocumentTabsSelector,
   documentTabsStore,
-  titlesDocumentSelector,
 } from '@renderer/store';
 import { CustomDocument, DocumentTab } from '@localtypes/index';
 import { FileFilled, LoadingOutlined } from '@ant-design/icons';
@@ -15,6 +14,7 @@ import {
   CUSTOM_DOCUMENT_EVENT,
   PARENT_WINDOW_EVENT,
 } from '@modules/shared/shared';
+import { useDocumentTitle } from '@renderer/hooks';
 
 function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
   const tabRef = useRef<HTMLDivElement | null>(null);
@@ -114,18 +114,14 @@ function Tab({ tab, title }: { tab: DocumentTab; title: string }) {
 
 const Tabs = React.forwardRef<HTMLDivElement, { tabs: DocumentTab[] }>(
   (props, ref: React.LegacyRef<HTMLDivElement>) => {
-    const $titles = useRecoilValue(titlesDocumentSelector);
+    const { getTitle } = useDocumentTitle();
 
     return (
       <>
         <div className="chrome-tabs" ref={ref}>
           <div className="chrome-tabs-content">
             {props.tabs.map((tab) => (
-              <Tab
-                key={tab.title}
-                tab={tab}
-                title={$titles[tab.title]?.getTitle()}
-              />
+              <Tab key={tab.title} tab={tab} title={getTitle(tab.title)} />
             ))}
           </div>
           <div className="chrome-tabs-bottom-bar"></div>
