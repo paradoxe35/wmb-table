@@ -43,5 +43,9 @@ yarn start
 To package apps for the local platform:
 
 ```bash
-npm run package
+yarn package
 ```
+
+## Licence
+
+This Repo is based on [electron-react-boilerplate](https://electron-react-boilerplate.js.org/docs/installation)
