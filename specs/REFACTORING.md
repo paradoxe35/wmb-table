@@ -395,22 +395,42 @@ app.getPath('userData') resolves to:
   - Linux:   ~/.config/wmb-table/
 ```
 
-**Read-only bundled assets** (stay in app resources):
+**Read-only bundled assets** (stay in app resources — no data bundled):
 
 ```
 resources/
-  ├── data/
-  │   ├── documents-db/               → Default documents title database
-  │   └── bible/                      → Bible database seed
-  └── icons/                          → App icons
+  ├── icons/                          → App icons
+  └── entitlements.mac.plist          → macOS entitlements
 ```
+
+> **Architecture decision: User-driven data acquisition.** Documents, Bible data, and other content are **not bundled** with the app installer. Instead, data is downloaded by the user on first launch. This eliminates:
+>
+> - The complex updater backup/restore cycle (legacy `data-prepared.ts` etc.)
+> - Large installer sizes (data can be hundreds of MB)
+> - Data loss on app update (user data in `userData` is untouched by `electron-updater`)
 
 **First-launch flow:**
 
 1. Check if `app.getPath('userData')/databases/wmb-table.sqlite` exists
 2. If not, check for legacy NeDB files at old location
-3. If legacy data found: run migration script
-4. If no data found: seed from bundled resources
+3. If legacy data found: run migration script (Phase 3)
+4. If no data found: show setup UI and **download data from remote source** (API/CDN)
+   - Download document titles database
+   - Download Bible database
+   - Download document content files
+   - Report progress to renderer (percentage, current file, ETA)
+   - Mark setup as complete in config database once finished
+
+**Auto-updater (simplified):**
+
+The legacy updater (`src/main/features/app-updater/`) had a complex flow: backup data → download update → install → restore data. Since data now lives in `userData` and is never inside the app bundle, the updater is simplified to:
+
+1. Check for update → notify renderer (`hasUpdate`)
+2. User confirms → download update (`downloading` with progress)
+3. Download complete → notify renderer (`downloaded`)
+4. User confirms → quit and install
+
+No backup/restore states needed. The `UpdaterNotification.type` values `preparing`, `prepared`, `restoring`, `restored`, and `restartedToUpdate` are removed.
 
 ### 4.6 CSS Migration: node-sass to dart-sass
 

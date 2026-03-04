@@ -23,7 +23,7 @@
       "@shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["src/renderer/**/*", "src/shared/**/*"],
+  "include": ["src/renderer/**/*", "src/shared/**/*", "src/preload/index.d.ts"],
   "exclude": [
     "src/renderer/app.tsx",
     "src/renderer/hooks.ts",

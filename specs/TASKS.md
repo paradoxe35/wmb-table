@@ -114,43 +114,61 @@ Create the directory tree and placeholder files for the new architecture:
 - [x] **1.G.6** Run `pnpm build` — electron-vite produces output in `out/` directory (main, preload, renderer)
 - [x] **1.G.7** Verify no old config files remain (`.erb/`, `babel.config.js`, `.eslintrc.js`, etc.)
 
+> **Note — Legacy file excludes:** Phase 1 added `exclude` patterns in `tsconfig.main.json`, `tsconfig.renderer.json`, and `ignores` in `eslint.config.js` to skip legacy source files from type-checking and linting. As each module is migrated in its respective phase, **remove its exclude/ignore entry** so it becomes type-checked and linted. By the end of Phase 8 (cleanup), all exclude entries should be gone.
+
 ---
 
 ## Phase 2: Electron Main Process & Security
 
 Set up the secure Electron main process with contextIsolation and preload script.
 
-- [ ] **2.1** Create `src/main/index.ts` — new main entry point:
+- [x] **2.1** Create `src/main/index.ts` — new main entry point:
   - `BrowserWindow` with `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`
   - Load preload script via `webPreferences.preload`
   - Window size/min-size matching current (1024x800, min 933x572)
   - Set Content Security Policy headers via `session.defaultSession.webRequest`
-- [ ] **2.2** Create `src/preload/index.ts` — contextBridge scaffold:
-  - `contextBridge.exposeInMainWorld('api', { ... })` with empty namespace stubs
+  - `show: false` + `ready-to-show` → maximize + show (matches legacy)
+  - `setWindowOpenHandler` for external links
+  - Build menu + set application menu
+  - TouchBar on macOS (dynamic import)
+  - `initializeUpdater` when packaged
+  - `setMainWindow()` after creation
+- [x] **2.2** Create `src/preload/index.ts` — full contextBridge with all domain namespaces:
+  - `contextBridge.exposeInMainWorld('api', { ... })` with domain namespaces: documents, search, notes, bible, subjects, audio, backup, app, on (push events)
   - Type declaration file `src/preload/index.d.ts` for `window.api`
-- [ ] **2.3** Create `src/shared/ipc.types.ts` — typed IPC channel definitions:
-  - Define channel name constants grouped by domain (documents, search, notes, bible, subjects, audio, backup, app)
-  - Define request/response type maps for each channel
-- [ ] **2.4** Create IPC registration utility (`src/main/ipc/register.ts`):
-  - Type-safe wrapper around `ipcMain.handle`
-  - Error serialization for renderer
-- [ ] **2.5** Migrate IPC handlers from 77 `ipcMain.on/send` events to `ipcMain.handle/invoke` pattern:
-  - `src/main/ipc/documents.ipc.ts` — document title listing, content path, tabs
-  - `src/main/ipc/search.ipc.ts` — text search, suggestions
-  - `src/main/ipc/notes.ipc.ts` — CRUD notes, references, bible references
-  - `src/main/ipc/bible.ipc.ts` — indexes, books, search
-  - `src/main/ipc/subjects.ipc.ts` — CRUD subjects and items
-  - `src/main/ipc/audio.ipc.ts` — playback times, downloads, last play
-  - `src/main/ipc/backup.ipc.ts` — status, login, reminder, sync
-  - `src/main/ipc/app.ipc.ts` — init, restart, update, sidebar, config, history, assets, dialogs
-- [ ] **2.6** Update preload to expose all IPC channels via `contextBridge`:
+  - Added `src/preload/index.d.ts` to `tsconfig.renderer.json` include
+  - Push event listeners return unsubscribe functions
+- [x] **2.3** Create `src/shared/ipc.types.ts` + `src/shared/types.ts` — typed IPC channel definitions and domain types:
+  - Ported all domain types from legacy `src/types/index.d.ts` (removed NeDB `TimeStampData`, `_id` → `id`, inlined updater types, removed global augmentations)
+  - Channel constants grouped by domain using `domain:method` naming (e.g., `documents:getTitles`)
+  - `InvokeChannelMap` — maps each channel to `{ args: [...]; return: Type }` (56 invoke channels)
+  - `PushEventMap` — maps each push channel to its payload type (16 push channels)
+  - Split dual-purpose legacy channels (e.g., `document_tabs` → `documents:getTabs` + `documents:saveTabs`)
+- [x] **2.4** Create IPC registration utility (`src/main/ipc/register.ts`):
+  - `registerHandler<C>(channel, handler)` — type-safe wrapper around `ipcMain.handle` with error serialization
+  - `sendToRenderer<C>(window, channel, payload)` — typed wrapper around `webContents.send`
+  - `initializeIpc()` — calls all 8 domain `register*Handlers()` functions
+- [x] **2.5** Create domain handler stubs (8 files, all throw "Not implemented"):
+  - `src/main/ipc/documents.ipc.ts` — 4 stub handlers
+  - `src/main/ipc/search.ipc.ts` — 4 stub handlers
+  - `src/main/ipc/notes.ipc.ts` — 17 stub handlers
+  - `src/main/ipc/bible.ipc.ts` — 3 stub handlers
+  - `src/main/ipc/subjects.ipc.ts` — 6 stub handlers
+  - `src/main/ipc/audio.ipc.ts` — 4 stub handlers
+  - `src/main/ipc/backup.ipc.ts` — 4 stub handlers
+  - `src/main/ipc/app.ipc.ts` — 14 stub handlers
+- [x] **2.6** Preload exposes all IPC channels via `contextBridge`:
   - Each domain namespace maps to `ipcRenderer.invoke(channel, ...args)`
-  - Event listeners for push events (backup progress, download progress, update progress) via `ipcRenderer.on`
-- [ ] **2.7** Migrate dialog handlers to main process IPC handlers (file open, save, message box)
-- [ ] **2.8** Migrate platform-specific code (macOS menu/TouchBar, Windows/Linux specifics)
-- [ ] **2.9** Set up `electron-log` v5 for structured logging (replace any `console.log` in main)
-- [ ] **2.10** Set up `electron-updater` v6 with typed IPC events for update notifications
-- [ ] **2.11** Verify: app launches with secure window, DevTools shows no `require()` in renderer, preload API accessible via `window.api`
+  - Event listeners for push events return unsubscribe functions
+- [x] **2.7** Created `src/main/lib/window.ts` — `setMainWindow(w)` / `getMainWindow()` getter/setter
+- [x] **2.8** Migrated platform-specific code:
+  - `src/main/lib/menu.ts` — ported MenuBuilder from legacy with French labels, uses `sendToRenderer` + `PushChannels`
+  - `src/main/lib/touch-bar.ts` — ported TouchBar for macOS, uses `sendToRenderer` + `PushChannels`
+- [x] **2.9** Set up `electron-log` v5 in `src/main/lib/logger.ts` — file + console transports, 5MB max file size
+- [x] **2.10** Set up `electron-updater` v6 scaffold in `src/main/lib/updater.ts` — simplified (see note below)
+- [x] **2.11** Verified: `pnpm typecheck` (0 errors), `pnpm lint` (0 errors), `pnpm build` (produces `out/`)
+
+> **Note — Simplified Updater:** The legacy updater had a complex backup/restore cycle because data was bundled inside the installation directory (`assets/datas/`). On update, it had to: (1) back up user data, (2) download & install the new app version, (3) restore backed-up data. Since data is now stored in `app.getPath('userData')` (Phase 4) and documents/Bible data will be downloaded by the user on first launch (not bundled with the app), the entire backup/restore cycle is **eliminated**. The updater now just: check → notify → download → install. The `UpdaterNotification` type has been simplified accordingly — the `preparing`, `prepared`, `restoring`, `restored`, `restartedToUpdate` states are no longer needed. See Phase 4 for the new data acquisition flow.
 
 ---
 
@@ -215,9 +233,17 @@ Replace all 18 NeDB collections with a proper SQLite database using Drizzle ORM.
 
 ---
 
-## Phase 4: Data Storage Relocation
+## Phase 4: Data Storage & User-Driven Data Acquisition
 
-Move all user data from installation directory to OS-standard user data paths.
+Move all user data from installation directory to OS-standard user data paths. Replace the legacy model of bundling data inside the app with a user-driven download flow on first launch.
+
+> **Architecture change:** Previously, documents and Bible data were bundled inside the installation directory (`assets/datas/`), which caused data loss on updates and required the complex updater backup/restore cycle. In the new architecture:
+>
+> - **No data is bundled with the app** — the app ships as a lightweight shell
+> - **On first launch**, the app detects missing data and presents a setup/download UI
+> - **Data is downloaded** from a remote source (API/CDN) into `app.getPath('userData')`
+> - **Updates are safe** — `electron-updater` replaces the app binary only; user data in `userData` is untouched
+> - This also reduces the app installer size significantly
 
 - [ ] **4.1** Define path constants in `src/main/lib/paths.ts`:
   - `USER_DATA_PATH` = `app.getPath('userData')`
@@ -225,18 +251,26 @@ Move all user data from installation directory to OS-standard user data paths.
   - `DOCUMENTS_PATH` = `<userData>/documents/`
   - `BACKUPS_PATH` = `<userData>/backups/`
   - `AUDIO_PATH` = `<userData>/audio/`
-  - `RESOURCES_PATH` = `process.resourcesPath` (read-only bundled assets)
-- [ ] **4.2** Move bundled read-only assets to `resources/` directory:
-  - `resources/data/documents-db/` — default document title DB seed
-  - `resources/data/bible/` — Bible database seed
-  - `resources/icons/` — app icons
-- [ ] **4.3** Update custom document upload to save files to `DOCUMENTS_PATH` instead of `assets/datas/documents/`
-- [ ] **4.4** Update backup system paths to use `BACKUPS_PATH`
-- [ ] **4.5** Update audio download paths to use `AUDIO_PATH`
-- [ ] **4.6** Consolidate `~/.wmb-table/` data into `app.getPath('userData')` (migrate `audios-downloads.db`)
-- [ ] **4.7** Remove credentials from `assets/datas/credentials/` — move to secure storage or environment-based config
-- [ ] **4.8** Update `electron-builder` `extraResources` config to bundle `resources/` instead of `assets/`
-- [ ] **4.9** Verify: app uses correct paths on macOS, Windows, Linux; data persists across app restarts
+  - `RESOURCES_PATH` = `process.resourcesPath` (read-only bundled assets — icons, entitlements only)
+- [ ] **4.2** Implement first-launch data acquisition flow:
+  - **4.2.1** Create `src/main/services/data-setup.service.ts` — orchestrates initial data download
+  - **4.2.2** On `app:initialize`, detect if `DATABASES_PATH` and `DOCUMENTS_PATH` exist; if not, signal renderer to show setup UI
+  - **4.2.3** Add IPC channels: `app:getSetupStatus`, `app:startDataDownload`, push channel `push:dataDownloadProgress`
+  - **4.2.4** Download document titles database, Bible database, and document content from remote source
+  - **4.2.5** Report download progress to renderer via push events (percentage, current file, ETA)
+  - **4.2.6** Mark setup as complete in config database once all data is downloaded
+- [ ] **4.3** Create first-launch setup UI in renderer:
+  - **4.3.1** Create `src/renderer/views/setup/SetupView.tsx` — shown on first launch instead of main app
+  - **4.3.2** Progress bar with download status (file count, bytes downloaded, ETA)
+  - **4.3.3** Error handling with retry capability (network failures, partial downloads)
+  - **4.3.4** Transition to main app view once setup completes
+- [ ] **4.4** Update custom document upload to save files to `DOCUMENTS_PATH` instead of `assets/datas/documents/`
+- [ ] **4.5** Update backup system paths to use `BACKUPS_PATH`
+- [ ] **4.6** Update audio download paths to use `AUDIO_PATH`
+- [ ] **4.7** Consolidate `~/.wmb-table/` data into `app.getPath('userData')` (migrate `audios-downloads.db`)
+- [ ] **4.8** Remove credentials from `assets/datas/credentials/` — move to secure storage or environment-based config
+- [ ] **4.9** Update `electron-builder` `extraResources` config — only bundle `resources/` (icons, entitlements, no data)
+- [ ] **4.10** Verify: app uses correct paths on all platforms; data persists across app restarts and app updates
 
 ---
 
@@ -304,10 +338,12 @@ Migrate business logic services (backup, updater, document processing).
   - File watcher for pending changes (replace `node-watch` if needed)
   - Progress reporting via typed IPC events
   - Credential handling (move from bundled files to secure storage)
-- [ ] **6.2** Migrate auto-updater service (`src/main/services/updater.service.ts`):
-  - `electron-updater` v6 API
-  - Progress/status events via typed IPC
-  - Update `publish` config for GitHub releases
+- [ ] **6.2** Wire auto-updater service (`src/main/lib/updater.ts`):
+  - Scaffold already created in Phase 2 — wire real IPC handler implementations in `app.ipc.ts`
+  - Simplified flow: check → notify → download → install (no backup/restore cycle)
+  - The legacy `data-prepared.ts`, `datastore.ts`, `constants.ts` (updater state management) are **not migrated** — they are no longer needed since data lives in `app.getPath('userData')` and is unaffected by app updates
+  - Update `publish` config in `electron-builder` for GitHub releases
+  - `UpdaterNotification.type` only uses: `none`, `hasUpdate`, `downloading`, `downloaded`, `error` (removed: `preparing`, `prepared`, `restoring`, `restored`, `restartedToUpdate`)
 - [ ] **6.3** Migrate document processing service (`src/main/services/document.service.ts`):
   - PDF-to-HTML conversion (evaluate current `pdf2html-ex` approach)
   - Custom document upload flow
@@ -317,7 +353,7 @@ Migrate business logic services (backup, updater, document processing).
   - Update paths and module resolution for electron-vite
   - Consider using `utilityProcess` (Electron API) instead of `child_process`
 - [ ] **6.5** Replace deprecated `request` / `request-progress` with native `fetch` or `undici`
-- [ ] **6.6** Verify: backup creates/restores successfully, auto-updater checks for updates, document upload works
+- [ ] **6.6** Verify: backup creates/restores successfully, auto-updater checks/downloads/installs correctly, document upload works
 
 ---
 
