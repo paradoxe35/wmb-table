@@ -97,6 +97,19 @@ export type DocumentHtmlTree = {
     ranges?: DocumentTreeRanges;
 };
 
+export type ParagraphReference = {
+    paragraphIndex: number;
+    translationId: number;
+    languageCode: string;
+    textSnippet?: string;
+};
+
+export function isParagraphReference(
+    ref: DocumentHtmlTree | ParagraphReference,
+): ref is ParagraphReference {
+    return 'paragraphIndex' in ref && 'translationId' in ref;
+}
+
 // ---------------------------------------------------------------------------
 // Search
 // ---------------------------------------------------------------------------
@@ -141,7 +154,7 @@ export interface NoteItemReference extends Readonly<BaseEntity> {
     label: string;
     noteId: string;
     documentTitle: string;
-    documentHtmlTree: DocumentHtmlTree;
+    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     textContent: string;
 }
 
@@ -204,14 +217,14 @@ export interface BibleSearchResult {
 export interface SubjectDocumentItem extends Readonly<BaseEntity> {
     subject: string;
     documentTitle: string;
-    documentHtmlTree: DocumentHtmlTree;
+    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     textContent: string;
     bible?: BibleBook;
 }
 
 export type SubjectRefTree = {
     textContent: string;
-    documentHtmlTree: DocumentHtmlTree;
+    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     bible?: BibleBook;
 };
 

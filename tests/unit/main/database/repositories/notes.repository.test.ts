@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createTestDb } from '../test-helpers';
+import { createTestDb, createTestBibleDb } from '../test-helpers';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 
 describe('notes.repository', () => {
@@ -60,25 +60,23 @@ describe('notes.repository', () => {
     });
 
     it('addBibleVerse and removeBibleVerse', () => {
+        const { sqlite: bibleSqlite } = createTestBibleDb();
+        // Insert a test verse into the Bible DB
+        bibleSqlite.exec(`
+            INSERT INTO bible_verses (id, book_name, book, testament, chapter, verse, content)
+            VALUES ('v1', 'Genesis', 'gen', 'OT', '1', '1', 'In the beginning...')
+        `);
+
         const note = notesRepo.create('Test');
         const bibleRef = notesRepo.createBibleReference(note.id, 'Bible Ref');
 
-        const verse = {
-            id: 'v1',
-            bookName: 'Genesis',
-            book: 'gen',
-            testament: 'OT',
-            chapter: '1',
-            verse: '1',
-            content: 'In the beginning...',
-        };
-        notesRepo.addBibleVerse(bibleRef.id, verse);
+        notesRepo.addBibleVerse(bibleRef.id, 'v1');
 
         let refs = notesRepo.getBibleReferences(note.id);
         expect(refs[0].references).toHaveLength(1);
 
         // Adding same verse again should not duplicate
-        notesRepo.addBibleVerse(bibleRef.id, verse);
+        notesRepo.addBibleVerse(bibleRef.id, 'v1');
         refs = notesRepo.getBibleReferences(note.id);
         expect(refs[0].references).toHaveLength(1);
 

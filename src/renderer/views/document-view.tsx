@@ -18,11 +18,13 @@ import {
 } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 import { simpleRegExp } from '@renderer/utils/searchable';
-import type {
-    SermonContent as SermonContentType,
-    SermonMeta,
-    SermonMetaWithTraductions,
-    SermonParagraph as SermonParagraphType,
+import {
+    type SermonContent as SermonContentType,
+    type SermonMeta,
+    type SermonMetaWithTraductions,
+    type SermonParagraph as SermonParagraphType,
+    type ParagraphReference,
+    isParagraphReference,
 } from '@shared/types';
 import { ModalSearchDocument } from './components/modals/modal-search-document';
 import { CHILD_PARENT_WINDOW_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
@@ -122,7 +124,12 @@ function useSubjectNavigation(containerRef: React.RefObject<HTMLDivElement | nul
         if (!selectedSubjectItem || !containerRef.current) return;
         if (selectedSubjectItem.documentTitle !== activeTitle) return;
 
-        const paragraphIndex = selectedSubjectItem.documentHtmlTree?.tree?.[0];
+        const ref = selectedSubjectItem.documentHtmlTree;
+        const paragraphIndex = ref
+            ? isParagraphReference(ref)
+                ? ref.paragraphIndex
+                : ref.tree?.[0]
+            : undefined;
         if (paragraphIndex == null) return;
 
         const el = containerRef.current.querySelector(`[data-paragraph-index="${paragraphIndex}"]`);
@@ -150,13 +157,16 @@ function useContextMenu(
                     }
                     const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
                     const idx = anchor ? parseInt(anchor.getAttribute('data-paragraph-index')!) : 0;
+                    const paragraphRef: ParagraphReference = {
+                        paragraphIndex: idx,
+                        translationId: content.meta.translationId,
+                        languageCode: content.meta.languageCode,
+                        textSnippet: sel.toString().slice(0, 200),
+                    };
                     window.dispatchEvent(
                         new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, {
                             detail: {
-                                documentHtmlTree: {
-                                    tree: [idx],
-                                    scrollY: containerRef.current?.scrollTop,
-                                },
+                                documentHtmlTree: paragraphRef,
                                 textContent: sel.toString(),
                             },
                         }),
@@ -173,13 +183,16 @@ function useContextMenu(
                     }
                     const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
                     const idx = anchor ? parseInt(anchor.getAttribute('data-paragraph-index')!) : 0;
+                    const paragraphRef: ParagraphReference = {
+                        paragraphIndex: idx,
+                        translationId: content.meta.translationId,
+                        languageCode: content.meta.languageCode,
+                        textSnippet: sel.toString().slice(0, 200),
+                    };
                     window.dispatchEvent(
                         new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, {
                             detail: {
-                                documentHtmlTree: {
-                                    tree: [idx],
-                                    scrollY: containerRef.current?.scrollTop,
-                                },
+                                documentHtmlTree: paragraphRef,
                                 textContent: sel.toString(),
                             },
                         }),

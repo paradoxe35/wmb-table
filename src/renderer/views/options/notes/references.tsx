@@ -3,7 +3,13 @@ import { type Dispatch, type SetStateAction, useRef, useState, useCallback } fro
 import { useSubjectsStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import { FileOutlined } from '@ant-design/icons';
-import { BibleBook, NoteItem, NoteItemReference, NoteItemReferenceBible } from '@shared/types';
+import {
+    BibleBook,
+    NoteItem,
+    NoteItemReference,
+    NoteItemReferenceBible,
+    isParagraphReference,
+} from '@shared/types';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonLookup, useValueStateRef } from '@renderer/hooks';
@@ -18,7 +24,8 @@ export const useShowReferenceDetail = () => {
     const { getSermon } = useSermonLookup();
 
     const modal = useCallback((reference: NoteItemReference, workingNote: NoteItem) => {
-        const assigned = (reference.documentHtmlTree?.tree || []).length > 0;
+        const ref = reference.documentHtmlTree;
+        const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
 
         const openDocument = () => {
             viewDocument(reference.documentTitle, () => {

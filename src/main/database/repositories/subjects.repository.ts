@@ -6,6 +6,7 @@ import type {
     SubjectDocument,
     SubjectDocumentItem,
     DocumentHtmlTree,
+    ParagraphReference,
     BibleBook,
 } from '@shared/types';
 
@@ -85,7 +86,7 @@ export function deleteItem(id: string): void {
 export function createItem(
     subjectName: string,
     documentTitle: string,
-    documentHtmlTree: DocumentHtmlTree,
+    documentHtmlTree: DocumentHtmlTree | ParagraphReference,
     textContent: string,
     bible?: BibleBook,
 ): SubjectDocumentItem {

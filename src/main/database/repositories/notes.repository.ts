@@ -10,6 +10,7 @@ import type {
     NoteItemReference,
     NoteItemReferenceBible,
     DocumentHtmlTree,
+    ParagraphReference,
     BibleBook,
     SubjectRefTree,
 } from '@shared/types';
@@ -103,7 +104,7 @@ export function getReferences(noteId: string): NoteItemReference[] {
 export function createReference(
     noteId: string,
     documentTitle: string,
-    documentHtmlTree: DocumentHtmlTree,
+    documentHtmlTree: DocumentHtmlTree | ParagraphReference,
     textContent: string,
 ): NoteItemReference {
     const id = randomUUID();
@@ -130,26 +131,20 @@ export function getReference(id: string): NoteItemReference | null {
     return row ? toNoteRef(row) : null;
 }
 
-export function syncReferences(noteId: string, refs: SubjectRefTree[]): void {
+export function syncReferences(noteId: string, refIds: string[]): void {
     const db = getDb();
-    // Delete existing references for this note
-    db.delete(notesReferences).where(eq(notesReferences.noteId, noteId)).run();
-    // Re-insert from the provided refs
-    for (const ref of refs) {
-        const id = randomUUID();
-        const now = new Date().toISOString();
-        db.insert(notesReferences)
-            .values({
-                id,
-                noteId,
-                label: '',
-                documentTitle: '',
-                documentHtmlTree: JSON.stringify(ref.documentHtmlTree),
-                textContent: ref.textContent,
-                createdAt: now,
-                updatedAt: now,
-            })
-            .run();
+    // Get existing references for this note
+    const existing = db
+        .select()
+        .from(notesReferences)
+        .where(eq(notesReferences.noteId, noteId))
+        .all();
+    // Delete references whose IDs are not in the provided list
+    const keepSet = new Set(refIds);
+    for (const row of existing) {
+        if (!keepSet.has(row.id)) {
+            db.delete(notesReferences).where(eq(notesReferences.id, row.id)).run();
+        }
     }
 }
 

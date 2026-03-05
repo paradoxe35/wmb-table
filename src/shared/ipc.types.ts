@@ -12,7 +12,6 @@ import type {
     BibleVersionInfo,
     SubjectDocument,
     SubjectDocumentItem,
-    SubjectRefTree,
     CustomDocument,
     UploadDocument,
     HistoryData,
@@ -26,6 +25,7 @@ import type {
     UpdaterNotification,
     ViewMenuValue,
     DocumentHtmlTree,
+    ParagraphReference,
     SermonMeta,
     SermonMetaWithTraductions,
     SermonContent,
@@ -215,12 +215,12 @@ export interface InvokeChannelMap {
     [NotesChannels.updateContent]: { args: [string, string]; return: void };
     [NotesChannels.getReferences]: { args: [string]; return: NoteItemReference[] };
     [NotesChannels.createReference]: {
-        args: [string, string, DocumentHtmlTree, string];
+        args: [string, string, DocumentHtmlTree | ParagraphReference, string];
         return: NoteItemReference;
     };
     [NotesChannels.getReference]: { args: [string]; return: NoteItemReference | null };
     [NotesChannels.syncReferences]: {
-        args: [string, SubjectRefTree[]];
+        args: [string, string[]];
         return: void;
     };
     [NotesChannels.updateReference]: {
@@ -271,7 +271,7 @@ export interface InvokeChannelMap {
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
     [SubjectChannels.createItem]: {
-        args: [string, string, DocumentHtmlTree, string, BibleBook?];
+        args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?];
         return: SubjectDocumentItem;
     };
 

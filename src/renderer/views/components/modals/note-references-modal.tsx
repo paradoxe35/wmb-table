@@ -1,6 +1,12 @@
 import { Button, List, Modal, Tooltip } from 'antd';
 import { useEffect, useRef, useState } from 'react';
-import { DocumentHtmlTree, NoteItem, NoteItemReference } from '@shared/types';
+import {
+    type DocumentHtmlTree,
+    type ParagraphReference,
+    type NoteItem,
+    type NoteItemReference,
+    isParagraphReference,
+} from '@shared/types';
 import {
     useSermonLookup,
     useModalVisible,
@@ -18,7 +24,7 @@ export function NoteReferencesModal() {
     const documentRefTree = useRef<
         | {
               textContent: string;
-              documentHtmlTree: DocumentHtmlTree;
+              documentHtmlTree: DocumentHtmlTree | ParagraphReference;
           }
         | undefined
     >(undefined);
@@ -109,7 +115,10 @@ function ContentModal({
                 itemLayout="horizontal"
                 dataSource={datas}
                 renderItem={(item, i) => {
-                    const assigned = (item.documentHtmlTree?.tree || []).length > 0;
+                    const ref = item.documentHtmlTree;
+                    const assigned = ref
+                        ? isParagraphReference(ref) || (ref.tree || []).length > 0
+                        : false;
                     return (
                         <List.Item
                             actions={[
