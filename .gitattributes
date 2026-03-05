@@ -1,4 +1,4 @@
-*       text    eol=lf
+*       text=auto eol=lf
 *.exe   binary
 *.png   binary
 *.jpg   binary
@@ -10,3 +10,5 @@
 *.ttf   binary
 *.woff  binary
 *.woff2 binary
+*.sqlite binary
+*.db     binary
