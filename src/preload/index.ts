@@ -102,6 +102,7 @@ const api = {
         switchVersion: (abbreviation: string) => invoke(BibleChannels.switchVersion, abbreviation),
         downloadVersion: (abbreviation: string) =>
             invoke(BibleChannels.downloadVersion, abbreviation),
+        refreshIndex: () => invoke(BibleChannels.refreshIndex),
     },
 
     subjects: {

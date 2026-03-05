@@ -94,6 +94,7 @@ export const BibleChannels = {
     getActiveVersion: 'bible:getActiveVersion',
     switchVersion: 'bible:switchVersion',
     downloadVersion: 'bible:downloadVersion',
+    refreshIndex: 'bible:refreshIndex',
 } as const;
 
 export const SubjectChannels = {
@@ -261,6 +262,7 @@ export interface InvokeChannelMap {
     [BibleChannels.getActiveVersion]: { args: []; return: BibleVersionInfo | null };
     [BibleChannels.switchVersion]: { args: [string]; return: void };
     [BibleChannels.downloadVersion]: { args: [string]; return: void };
+    [BibleChannels.refreshIndex]: { args: []; return: BibleVersionInfo[] };
 
     // Subjects
     [SubjectChannels.getAll]: { args: []; return: SubjectDocument[] };

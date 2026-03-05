@@ -50,6 +50,11 @@ export function registerBibleHandlers(): void {
         refreshBibleDrizzle();
     });
 
+    registerHandler(BibleChannels.refreshIndex, async () => {
+        const versions = await bibleService.refreshRemoteIndex();
+        return versions.map(toBibleVersionInfo);
+    });
+
     registerHandler(BibleChannels.downloadVersion, async (_event, abbreviation) => {
         const win = BrowserWindow.getFocusedWindow();
         await bibleService.downloadBibleVersion(abbreviation, (percentage) => {

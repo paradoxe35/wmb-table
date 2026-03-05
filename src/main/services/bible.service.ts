@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import { join } from 'node:path';
-import { readFileSync, existsSync, createWriteStream, mkdirSync } from 'node:fs';
+import { readFileSync, existsSync, createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import log from 'electron-log';
 
@@ -13,6 +13,7 @@ export interface BibleVersion {
 }
 
 const GITHUB_RELEASE_BASE = 'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0';
+const REMOTE_INDEX_URL = `${GITHUB_RELEASE_BASE}/bible-index.json`;
 
 let bibleIndex: BibleVersion[] | null = null;
 let activeBibleDb: Database.Database | null = null;
@@ -29,19 +30,91 @@ function getBibleDataDir(): string {
     return join(app.getPath('userData'), 'databases', 'bibles');
 }
 
-export function loadBibleIndex(): BibleVersion[] {
-    if (bibleIndex) return bibleIndex;
+function getCachedRemoteIndexPath(): string {
+    return join(getBibleDataDir(), 'bible-index.remote.json');
+}
 
+/**
+ * Load the local (bundled) bible-index.json.
+ */
+function loadLocalIndex(): BibleVersion[] {
     const indexPath = join(getResourceDir(), 'bible-index.json');
     if (!existsSync(indexPath)) {
         log.warn('bible-index.json not found at', indexPath);
-        bibleIndex = [];
-        return bibleIndex;
+        return [];
     }
+    return JSON.parse(readFileSync(indexPath, 'utf-8')) as BibleVersion[];
+}
 
-    const raw = readFileSync(indexPath, 'utf-8');
-    bibleIndex = JSON.parse(raw) as BibleVersion[];
+/**
+ * Load the cached remote index from userData (if available).
+ */
+function loadCachedRemoteIndex(): BibleVersion[] {
+    const cachePath = getCachedRemoteIndexPath();
+    if (!existsSync(cachePath)) return [];
+    try {
+        return JSON.parse(readFileSync(cachePath, 'utf-8')) as BibleVersion[];
+    } catch {
+        log.warn('Failed to parse cached remote bible-index.json');
+        return [];
+    }
+}
+
+/**
+ * Merge local and remote indexes.
+ * Local entries are authoritative — remote entries only add new versions (by abbreviation).
+ */
+function mergeIndexes(local: BibleVersion[], remote: BibleVersion[]): BibleVersion[] {
+    const seen = new Set(local.map((v) => v.abbreviation));
+    const merged = [...local];
+    for (const rv of remote) {
+        if (!seen.has(rv.abbreviation)) {
+            // Remote entries are always type: 'remote'
+            merged.push({ ...rv, type: 'remote' });
+            seen.add(rv.abbreviation);
+        }
+    }
+    return merged;
+}
+
+export function loadBibleIndex(): BibleVersion[] {
+    if (bibleIndex) return bibleIndex;
+
+    const local = loadLocalIndex();
+    const cached = loadCachedRemoteIndex();
+    bibleIndex = mergeIndexes(local, cached);
     return bibleIndex;
+}
+
+/**
+ * Fetch the remote bible-index.json from GitHub release, cache it, and merge into the index.
+ * Returns the updated merged index. Non-blocking — call and forget on startup if desired.
+ */
+export async function refreshRemoteIndex(): Promise<BibleVersion[]> {
+    try {
+        log.info(`Fetching remote bible index: ${REMOTE_INDEX_URL}`);
+        const response = await fetch(REMOTE_INDEX_URL);
+        if (!response.ok) {
+            log.warn(`Failed to fetch remote bible index: ${response.status}`);
+            return loadBibleIndex();
+        }
+
+        const remoteVersions = (await response.json()) as BibleVersion[];
+
+        // Cache to disk
+        const cacheDir = getBibleDataDir();
+        mkdirSync(cacheDir, { recursive: true });
+        writeFileSync(getCachedRemoteIndexPath(), JSON.stringify(remoteVersions, null, 2));
+        log.info(`Cached remote bible index (${remoteVersions.length} versions)`);
+
+        // Re-merge
+        const local = loadLocalIndex();
+        bibleIndex = mergeIndexes(local, remoteVersions);
+        return bibleIndex;
+    } catch (err) {
+        log.warn('Failed to refresh remote bible index:', err);
+        return loadBibleIndex();
+    }
 }
 
 export function getAllBibleVersions(): BibleVersion[] {
