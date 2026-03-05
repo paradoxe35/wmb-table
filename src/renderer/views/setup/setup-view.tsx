@@ -1,14 +1,10 @@
 import { useCallback, useEffect } from 'react';
-import { Button, Card, Checkbox, Progress, Typography, Space, Empty, Spin } from 'antd';
+import { Button, Card, Checkbox, Progress, Typography, Space, Spin } from 'antd';
 import { DownloadOutlined, CheckCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useSetupStore } from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
 import { APP_NAME } from '@renderer/utils/constants';
-import type {
-    DownloadableLanguage,
-    LanguageDownloadProgress,
-    InstalledLanguage,
-} from '@shared/types';
+import type { DownloadableLanguage, LanguageDownloadProgress } from '@shared/types';
 
 const { Title, Text, Paragraph } = Typography;
 

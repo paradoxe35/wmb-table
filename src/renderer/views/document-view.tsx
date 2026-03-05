@@ -419,7 +419,6 @@ function SermonDocumentView() {
 // ---------------------------------------------------------------------------
 
 function CustomDocumentView() {
-    const activeTab = useSermonStore(selectActiveTab);
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);

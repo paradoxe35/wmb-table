@@ -42,9 +42,6 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
     // Translated language: from translation table with translator info
     const translations = refRepo.getTranslationsForLanguage(langCode);
     // Also get English sermons for enTitle lookup
-    const enSermonMap = new Map<number, string>();
-    // We'll look up English titles lazily from the sermon table (sermon.title IS the English title)
-
     return translations.map((t) => {
         const audioLink = refRepo.getAudioForSermonByIds(t.sermon_id, langCode);
         return {

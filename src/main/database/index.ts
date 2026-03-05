@@ -7,7 +7,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './schema';
 import * as syncSchema from './sync-schema';
 import * as bibleSchema from './bible-schema';
-import { initializeReferenceDb, closeReferenceDb, getRefDb } from './reference-db';
+import { initializeReferenceDb, closeReferenceDb } from './reference-db';
 import * as bibleService from '@main/services/bible.service';
 import * as configRepo from './repositories/config.repository';
 

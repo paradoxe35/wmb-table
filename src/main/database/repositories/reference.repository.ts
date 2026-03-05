@@ -276,7 +276,6 @@ export function getTranslatorsForLanguage(langCode: string): RefTranslator[] {
 // ---------------------------------------------------------------------------
 
 export function getAudioForSermon(sermonIsarId: number, langIsarId: number): AudioRow[] {
-    const lang = getLanguageByIsarId(langIsarId);
     const stmt = getRefDb().prepare(`
         SELECT a.path, lang.audio_path, lang.storage_bucket
         FROM audio a
