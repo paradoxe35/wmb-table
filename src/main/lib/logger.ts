@@ -1,4 +1,4 @@
-import log from 'electron-log/main';
+import log from 'electron-log/main.js';
 
 export function initializeLogger(): void {
     log.transports.file.level = 'info';
