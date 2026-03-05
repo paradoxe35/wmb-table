@@ -29,7 +29,7 @@ import {
     type CustomDocumentContent,
     isParagraphReference,
 } from '@shared/types';
-import { ModalSearchDocument } from './components/modals/modal-search-document';
+import InlineSearchBar from './components/inline-search-bar';
 import { CHILD_PARENT_WINDOW_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { ContextMenu } from '@renderer/utils/context-menu';
 
@@ -204,6 +204,44 @@ function useContextMenu(
 }
 
 // ---------------------------------------------------------------------------
+// Match counting & navigation
+// ---------------------------------------------------------------------------
+
+function useMatchNavigation(searchTerm: string | null, paragraphs: string[]) {
+    const setTotalMatches = useSearchStore((s) => s.setTotalMatches);
+    const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
+    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
+
+    // Compute cumulative match offsets per paragraph
+    const { matchOffsets, total } = useMemo(() => {
+        if (!searchTerm) return { matchOffsets: [] as number[], total: 0 };
+        const regex = simpleRegExp(searchTerm);
+        let cumulative = 0;
+        const offsets: number[] = [];
+        for (const text of paragraphs) {
+            offsets.push(cumulative);
+            const matches = text.match(regex);
+            cumulative += matches?.length ?? 0;
+        }
+        return { matchOffsets: offsets, total: cumulative };
+    }, [searchTerm, paragraphs]);
+
+    useEffect(() => {
+        setTotalMatches(total);
+        if (total === 0) setCurrentMatchIndex(0);
+    }, [total, setTotalMatches, setCurrentMatchIndex]);
+
+    // Scroll to current match
+    useEffect(() => {
+        if (total === 0) return;
+        const el = document.querySelector(`[data-match-index="${currentMatchIndex}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, [currentMatchIndex, total]);
+
+    return { matchOffsets, total };
+}
+
+// ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
@@ -218,6 +256,7 @@ function SermonHeader({
 }) {
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
+    const openSearchBar = useSearchStore((s) => s.openSearchBar);
 
     const availableTraductions = sermonInfo?.availableTraductions ?? [];
     const hasMultipleTraductions = availableTraductions.length > 1;
@@ -241,14 +280,6 @@ function SermonHeader({
 
     const handleOtherTraductions = useCallback(() => {
         window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
-    }, []);
-
-    const handleSearch = useCallback(() => {
-        window.dispatchEvent(
-            new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openSearchModal, {
-                detail: { searchForParagraph: false },
-            }),
-        );
     }, []);
 
     const handleZoomIn = useCallback(() => {
@@ -317,7 +348,12 @@ function SermonHeader({
                     {zoom}%
                 </span>
                 <Button type="text" size="small" icon={<ZoomInOutlined />} onClick={handleZoomIn} />
-                <Button type="text" size="small" icon={<SearchOutlined />} onClick={handleSearch} />
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<SearchOutlined />}
+                    onClick={openSearchBar}
+                />
             </Space>
         </div>
     );
@@ -326,9 +362,13 @@ function SermonHeader({
 const SermonParagraphView = memo(function SermonParagraphView({
     paragraph,
     searchTerm,
+    currentMatchIndex,
+    matchOffset,
 }: {
     paragraph: SermonParagraphType;
     searchTerm: string | null;
+    currentMatchIndex: number;
+    matchOffset: number;
 }) {
     const renderContent = () => {
         if (!searchTerm) return paragraph.content;
@@ -342,7 +382,17 @@ const SermonParagraphView = memo(function SermonParagraphView({
         parts.forEach((part, i) => {
             result.push(part);
             if (i < matches.length) {
-                result.push(<mark key={i}>{matches[i]}</mark>);
+                const globalIdx = matchOffset + i;
+                const isCurrent = globalIdx === currentMatchIndex;
+                result.push(
+                    <mark
+                        key={i}
+                        data-match-index={globalIdx}
+                        className={isCurrent ? 'mark-current' : undefined}
+                    >
+                        {matches[i]}
+                    </mark>,
+                );
             }
         });
         return result;
@@ -365,42 +415,51 @@ function SermonDocumentView() {
     const containerRef = useRef<HTMLDivElement>(null);
     const { zoom } = useScrollAndZoom(containerRef);
     const searchTerm = useSearchHighlight();
+    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
+    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
     useSubjectNavigation(containerRef);
     useContextMenu(containerRef, content);
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
     const sermonInfo = activeTitle ? sermonsByTitle[activeTitle] : undefined;
 
+    const paragraphTexts = useMemo(
+        () => (content?.paragraphs ?? []).map((p) => p.content),
+        [content?.paragraphs],
+    );
+
+    const { matchOffsets } = useMatchNavigation(searchTerm, paragraphTexts);
+
     return (
-        <>
-            <Content className="mock-browser-content">
-                {loading && (
-                    <div className="flex flex-center" style={{ marginTop: '2rem' }}>
-                        <Spin />
+        <Content className="mock-browser-content">
+            {loading && (
+                <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                    <Spin />
+                </div>
+            )}
+            {!loading && content && (
+                <>
+                    <SermonHeader meta={content.meta} zoom={zoom} sermonInfo={sermonInfo} />
+                    {searchBarOpen && <InlineSearchBar />}
+                    <div
+                        ref={containerRef}
+                        id={DOCUMENT_CONTAINER_ID}
+                        className="sermon-body"
+                        style={{ zoom: `${zoom}%` }}
+                    >
+                        {content.paragraphs.map((p, i) => (
+                            <SermonParagraphView
+                                key={p.paragraphIndex}
+                                paragraph={p}
+                                searchTerm={searchTerm}
+                                currentMatchIndex={currentMatchIndex}
+                                matchOffset={matchOffsets[i] ?? 0}
+                            />
+                        ))}
                     </div>
-                )}
-                {!loading && content && (
-                    <>
-                        <SermonHeader meta={content.meta} zoom={zoom} sermonInfo={sermonInfo} />
-                        <div
-                            ref={containerRef}
-                            id={DOCUMENT_CONTAINER_ID}
-                            className="sermon-body"
-                            style={{ zoom: `${zoom}%` }}
-                        >
-                            {content.paragraphs.map((p) => (
-                                <SermonParagraphView
-                                    key={p.paragraphIndex}
-                                    paragraph={p}
-                                    searchTerm={searchTerm}
-                                />
-                            ))}
-                        </div>
-                    </>
-                )}
-            </Content>
-            <ModalSearchDocument title={activeTitle ?? ''} />
-        </>
+                </>
+            )}
+        </Content>
     );
 }
 
@@ -416,6 +475,10 @@ function CustomDocumentView() {
     const { zoom } = useScrollAndZoom(containerRef);
     const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
     const [loading, setLoading] = useState(false);
+    const searchTerm = useSearchHighlight();
+    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
+    const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
 
     const customDoc = useMemo(
         () => customDocuments.find((d) => d.title === activeTitle),
@@ -448,6 +511,57 @@ function CustomDocumentView() {
         [docContent?.content],
     );
 
+    const { matchOffsets } = useMatchNavigation(searchTerm, paragraphs);
+
+    const renderParagraph = useCallback(
+        (text: string, i: number) => {
+            if (!searchTerm) {
+                return (
+                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
+                        {text}
+                    </p>
+                );
+            }
+
+            const regex = simpleRegExp(searchTerm);
+            const parts = text.split(regex);
+            if (parts.length <= 1) {
+                return (
+                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
+                        {text}
+                    </p>
+                );
+            }
+
+            const matches = text.match(regex) || [];
+            const result: (string | React.ReactElement)[] = [];
+            const offset = matchOffsets[i] ?? 0;
+            parts.forEach((part, j) => {
+                result.push(part);
+                if (j < matches.length) {
+                    const globalIdx = offset + j;
+                    const isCurrent = globalIdx === currentMatchIndex;
+                    result.push(
+                        <mark
+                            key={j}
+                            data-match-index={globalIdx}
+                            className={isCurrent ? 'mark-current' : undefined}
+                        >
+                            {matches[j]}
+                        </mark>,
+                    );
+                }
+            });
+
+            return (
+                <p key={i} data-paragraph-index={i} className="sermon-paragraph">
+                    {result}
+                </p>
+            );
+        },
+        [searchTerm, matchOffsets, currentMatchIndex],
+    );
+
     return (
         <Content className="mock-browser-content">
             {loading && (
@@ -477,19 +591,22 @@ function CustomDocumentView() {
                                 icon={<ZoomInOutlined />}
                                 onClick={handleZoomIn}
                             />
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<SearchOutlined />}
+                                onClick={openSearchBar}
+                            />
                         </Space>
                     </div>
+                    {searchBarOpen && <InlineSearchBar />}
                     <div
                         ref={containerRef}
                         id={DOCUMENT_CONTAINER_ID}
                         className="sermon-body"
                         style={{ zoom: `${zoom}%` }}
                     >
-                        {paragraphs.map((text, i) => (
-                            <p key={i} className="sermon-paragraph">
-                                {text}
-                            </p>
-                        ))}
+                        {paragraphs.map(renderParagraph)}
                     </div>
                 </>
             )}
@@ -503,6 +620,26 @@ function CustomDocumentView() {
 
 export default function DocumentView() {
     const tabType = useSermonStore(selectActiveTabType);
+    const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
+    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const clearSearch = useSearchStore((s) => s.clearSearch);
+
+    // Ctrl+F / Cmd+F to open, Escape to close
+    useEffect(() => {
+        const handler = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                openSearchBar();
+            } else if (e.key === 'Escape' && searchBarOpen) {
+                if (activeTitle) clearSearch(activeTitle);
+                closeSearchBar();
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTitle, clearSearch]);
 
     return (
         <>

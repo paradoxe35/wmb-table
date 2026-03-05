@@ -23,7 +23,7 @@ import {
     Typography,
 } from 'antd';
 import type { SubjectDocument, SubjectDocumentItem } from '@shared/types';
-import { getDateTime } from '@renderer/utils/functions';
+
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSubjectsStore } from '@renderer/stores';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
@@ -115,7 +115,7 @@ export default function Subject() {
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
 
     useEffect(() => {
-        (window.api.subjects.getAll() as Promise<SubjectDocument[]>).then((subjects) => {
+        window.api.subjects.getAll().then((subjects) => {
             odatas.current = subjects;
             setDatas(subjects);
             setSubjects(subjects);
@@ -143,9 +143,7 @@ export default function Subject() {
     useEffect(() => {
         const subject = datas.find((d) => d.active);
         if (subject) {
-            (window.api.subjects.getItems(subject.id) as Promise<SubjectDocumentItem[]>).then(
-                setSubjectItemData,
-            );
+            window.api.subjects.getItems(subject.id).then(setSubjectItemData);
         }
     }, [datas, activeSubject]);
 
@@ -158,24 +156,17 @@ export default function Subject() {
     const saveNewSubject = (searchValue: string) => {
         const value = searchValue.trim();
         if (value.length < 2 || odatas.current.some((d) => d.name === value)) return;
-        const dateTime = getDateTime();
 
-        window.api.subjects.create(value);
-
-        const subject: SubjectDocument = {
-            name: value,
-            date: dateTime.date,
-            active: true,
-            documents: [],
-        } as unknown as SubjectDocument;
-
-        odatas.current = [subject, ...odatas.current.map((d) => ({ ...d, active: false }))];
-        setDatas(odatas.current);
-        setSubjects(odatas.current);
+        window.api.subjects.create(value).then((subject) => {
+            const active = { ...subject, active: true };
+            odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
+            setDatas(odatas.current);
+            setSubjects(odatas.current);
+        });
     };
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
-        (window.api.subjects.delete(item.id) as Promise<void>).then(() => {
+        window.api.subjects.delete(item.id).then(() => {
             odatas.current = odatas.current.filter((d) => d.name !== item.name);
             setDatas(odatas.current);
             setSubjects(odatas.current);
@@ -287,7 +278,7 @@ function ShowActiveDocuments({
     const setSubjectItemSelected = useSubjectsStore((s) => s.setSelectedSubjectItem);
 
     function confirm(item: SubjectDocumentItem) {
-        (window.api.subjects.deleteItem(item.id) as Promise<void>).then(() => {
+        window.api.subjects.deleteItem(item.id).then(() => {
             setDocuments((ds) => ds.filter((d) => d.id !== item.id));
             message.success('Supprimé');
         });

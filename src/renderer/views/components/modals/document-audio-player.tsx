@@ -1,178 +1,201 @@
-import { AUDIO_PLAYER, CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
-import { useModalVisible, useValueStateRef } from '@renderer/hooks';
-import { throttle } from '@renderer/utils/functions';
-import { Modal } from 'antd';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import MediaElement from '../mediaelement/mediaelement';
+import { useCallback } from 'react';
+import { Button, Modal, Slider, Space } from 'antd';
+import {
+    PlayCircleOutlined,
+    PauseCircleOutlined,
+    StepBackwardOutlined,
+    StepForwardOutlined,
+    SoundOutlined,
+} from '@ant-design/icons';
 import { useAudioStore } from '@renderer/stores';
+import { useAudioRef } from '@renderer/components/audio-context';
+import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 
-interface AudioTitle {
-    title: string;
-    audio_link?: string;
-    traduction?: string;
+const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
+
+function formatTime(seconds: number): string {
+    if (!isFinite(seconds) || seconds < 0) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export default function DocumentAudioPlayer() {
-    const { visible, hide, setVisible } = useModalVisible();
-
-    const [docTitle, setDocTitle] = useState<
-        (AudioTitle & { audioTime?: number; origin_audio_link: string }) | null
-    >(null);
-
-    const docTitleRef = useValueStateRef(docTitle);
-
-    const setCurrentPlay = useAudioStore((s) => s.setCurrentPlay);
-
-    const audioPlayerRef = useRef<any>(null);
-
-    const autoplay = useRef(true);
+    const audioRef = useAudioRef();
+    const modalOpen = useAudioStore((s) => s.modalOpen);
+    const closeModal = useAudioStore((s) => s.closeModal);
+    const title = useAudioStore((s) => s.title);
+    const traduction = useAudioStore((s) => s.traduction);
+    const currentTime = useAudioStore((s) => s.currentTime);
+    const duration = useAudioStore((s) => s.duration);
+    const playbackRate = useAudioStore((s) => s.playbackRate);
+    const volume = useAudioStore((s) => s.volume);
+    const currentPlay = useAudioStore((s) => s.currentPlay);
+    const setPlaybackRate = useAudioStore((s) => s.setPlaybackRate);
+    const setVolume = useAudioStore((s) => s.setVolume);
+    const setCurrentTime = useAudioStore((s) => s.setCurrentTime);
 
     const viewDocument = useDocumentViewOpen();
 
-    useEffect(() => {
-        const handleAudioPlay = async (event: CustomEventInit<AudioTitle>) => {
-            if (!event.detail?.audio_link) return;
-            // first check if the request is not the current player session
-            if (docTitleRef.current?.title === event.detail?.title) {
-                // for last audio player was found, then open modal first only first time on play
-                if (!autoplay.current) {
-                    setVisible(true);
-                    autoplay.current = true;
-                }
-                // pause if is playing or play if pause
-                if (audioPlayerRef.current?.paused === true) {
-                    audioPlayerRef.current?.play();
-                } else {
-                    audioPlayerRef.current?.pause();
-                }
-                return;
-            }
+    const isPlaying = currentPlay?.status === 'play';
 
-            // if different from the last audio player the reset autoplay variable to true
-            if (docTitleRef.current?.title && docTitleRef.current?.title !== event.detail?.title) {
-                autoplay.current = true;
-            }
-
-            // register last player
-            window.api.audio.setLastPlay(event.detail.title);
-
-            // request for last played time and local file path if available
-            const { time, local_file } = await window.api.audio.getTimeAndLocalFile(
-                event.detail.audio_link!,
-            );
-            const ctime = typeof time === 'number' ? time : undefined;
-
-            // update audio document state
-            setDocTitle({
-                ...event.detail!,
-                audioTime: ctime,
-                origin_audio_link: event.detail?.audio_link ?? '',
-                audio_link: local_file?.replaceAll('#', '%23') || event.detail?.audio_link,
-            });
-
-            // open modal if not yet and auto is set to true
-            if (autoplay.current) {
-                setVisible(true);
-            }
-
-            // set as current audio play
-            setCurrentPlay({
-                documentTitle: event.detail?.title ?? '',
-                status: autoplay.current ? 'play' : 'pause',
-            });
-        };
-
-        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, handleAudioPlay);
-        return () => {
-            window.removeEventListener(
-                CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay,
-                handleAudioPlay,
-            );
-        };
-    }, []);
-
-    // initialize default data
-    useEffect(() => {
-        // listen to event from player icon
-        window.addEventListener(AUDIO_PLAYER.openModalPlayer, () => {
-            setVisible(true);
-        });
-
-        // get the last played audio document
-        window.api.audio.getLastPlay().then((data) => {
-            if (data) {
-                // prevent audio to play is available at mount of component
-                autoplay.current = false;
-                // dispatch audio event
-                window.dispatchEvent(
-                    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
-                        detail: data,
-                    }),
-                );
-            }
-        });
-    }, []);
-
-    const onAudioPlay = useCallback(() => {
-        setCurrentPlay({
-            documentTitle: docTitleRef.current?.title ?? '',
-            status: 'play',
-        });
-    }, []);
-
-    const onAudioPause = useCallback(() => {
-        setCurrentPlay({
-            documentTitle: docTitleRef.current?.title ?? '',
-            status: 'pause',
-        });
-    }, []);
-
-    const onAudioTimeUpdate = useCallback((time: number) => {
-        window.api.audio.setTime(docTitleRef.current?.origin_audio_link || '', time);
-    }, []);
-
-    const setAudioPlayRef = useCallback((player: any) => {
-        audioPlayerRef.current = player;
-    }, []);
-
-    const handleOnTitleClick = useCallback(() => {
-        if (docTitleRef.current?.title) {
-            viewDocument(docTitleRef.current?.title);
-            setVisible(false);
+    const handlePlayPause = useCallback(() => {
+        const el = audioRef.current;
+        if (!el) return;
+        if (el.paused) {
+            el.play().catch(() => {});
+        } else {
+            el.pause();
         }
-    }, [docTitle, viewDocument]);
+    }, [audioRef]);
+
+    const handleSeek = useCallback(
+        (value: number) => {
+            const el = audioRef.current;
+            if (!el) return;
+            el.currentTime = value;
+            setCurrentTime(value);
+        },
+        [audioRef, setCurrentTime],
+    );
+
+    const handleSkipBack = useCallback(() => {
+        const el = audioRef.current;
+        if (!el) return;
+        el.currentTime = Math.max(0, el.currentTime - 15);
+    }, [audioRef]);
+
+    const handleJumpForward = useCallback(() => {
+        const el = audioRef.current;
+        if (!el) return;
+        el.currentTime = Math.min(el.duration || 0, el.currentTime + 15);
+    }, [audioRef]);
+
+    const handleSpeedChange = useCallback(
+        (rate: number) => {
+            const el = audioRef.current;
+            if (!el) return;
+            el.playbackRate = rate;
+            setPlaybackRate(rate);
+        },
+        [audioRef, setPlaybackRate],
+    );
+
+    const handleVolumeChange = useCallback(
+        (value: number) => {
+            const el = audioRef.current;
+            if (!el) return;
+            el.volume = value;
+            setVolume(value);
+        },
+        [audioRef, setVolume],
+    );
+
+    const handleTitleClick = useCallback(() => {
+        if (title) {
+            viewDocument(title);
+            closeModal();
+        }
+    }, [title, viewDocument, closeModal]);
 
     return (
-        <>
-            <Modal
-                title={null}
-                footer={[]}
-                width={600}
-                forceRender
-                open={visible}
-                onOk={hide}
-                onCancel={hide}
-            >
-                {docTitle && (
-                    <MediaElement
-                        key={docTitle.audio_link!}
-                        autoPlay={autoplay.current}
-                        onTitleClick={handleOnTitleClick}
-                        title={docTitle.title}
-                        getPlayerRef={setAudioPlayRef}
-                        audioSrc={docTitle.audio_link!}
-                        defaultTime={docTitle.audioTime}
-                        onPlay={onAudioPlay}
-                        onTimeUpdate={throttle(onAudioTimeUpdate, 5000)}
-                        onPause={onAudioPause}
-                        subtitle={{
-                            head: 'Langue',
-                            text: docTitle.traduction ?? '',
-                        }}
+        <Modal title={null} footer={null} width={500} open={modalOpen} onCancel={closeModal}>
+            {title && (
+                <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                    <h3
+                        style={{ cursor: 'pointer', marginBottom: 4 }}
+                        className="hover-underline"
+                        onClick={handleTitleClick}
+                    >
+                        {title}
+                    </h3>
+                    {traduction && (
+                        <div style={{ color: '#888', fontSize: '0.9em', marginBottom: 16 }}>
+                            Langue: <i>{traduction}</i>
+                        </div>
+                    )}
+
+                    <Slider
+                        min={0}
+                        max={duration || 1}
+                        step={1}
+                        value={currentTime}
+                        onChange={handleSeek}
+                        tooltip={{ formatter: (v) => formatTime(v ?? 0) }}
+                        style={{ margin: '0 0 8px' }}
                     />
-                )}
-            </Modal>
-        </>
+                    <div
+                        style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            fontSize: '0.8em',
+                            color: '#888',
+                        }}
+                    >
+                        <span>{formatTime(currentTime)}</span>
+                        <span>{formatTime(duration)}</span>
+                    </div>
+
+                    <Space size="large" style={{ marginTop: 16 }}>
+                        <Button
+                            type="text"
+                            icon={<StepBackwardOutlined />}
+                            onClick={handleSkipBack}
+                            title="-15s"
+                        />
+                        <Button
+                            type="primary"
+                            shape="circle"
+                            size="large"
+                            icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                            onClick={handlePlayPause}
+                        />
+                        <Button
+                            type="text"
+                            icon={<StepForwardOutlined />}
+                            onClick={handleJumpForward}
+                            title="+15s"
+                        />
+                    </Space>
+
+                    <div
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 16,
+                            marginTop: 16,
+                        }}
+                    >
+                        <Space>
+                            {SPEEDS.map((s) => (
+                                <Button
+                                    key={s}
+                                    type={playbackRate === s ? 'primary' : 'default'}
+                                    size="small"
+                                    onClick={() => handleSpeedChange(s)}
+                                >
+                                    {s}x
+                                </Button>
+                            ))}
+                        </Space>
+                        <Space>
+                            <SoundOutlined />
+                            <Slider
+                                min={0}
+                                max={1}
+                                step={0.05}
+                                value={volume}
+                                onChange={handleVolumeChange}
+                                style={{ width: 80 }}
+                                tooltip={{
+                                    formatter: (v) => `${Math.round((v ?? 0) * 100)}%`,
+                                }}
+                            />
+                        </Space>
+                    </div>
+                </div>
+            )}
+        </Modal>
     );
 }

@@ -66,7 +66,11 @@ export default function BackupProfile() {
 
     const handleBackupStatus = useCallback(() => {
         const newActive = activeBackup ? !activeBackup.active : true;
-        updateStatus(window.api.backup.toggleStatus(newActive));
+        window.api.backup.toggleStatus(newActive).then(() => {
+            window.api.backup.getStatus().then((status) => {
+                if (status) setActiveBackup(status);
+            });
+        });
     }, [activeBackup]);
 
     return (

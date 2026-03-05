@@ -1,6 +1,6 @@
 import { Divider, Input, Modal, Space } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { SubjectDocument, SubjectDocumentItem, SubjectRefTree } from '@shared/types';
+import { SubjectDocument, SubjectRefTree } from '@shared/types';
 import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';

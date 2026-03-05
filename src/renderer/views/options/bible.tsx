@@ -32,7 +32,6 @@ import type {
     BibleSearchItem,
     BibleSearchResult,
     BibleVersionInfo,
-    BookRequest,
     SubjectRefTree,
 } from '@shared/types';
 import { debounce } from '@renderer/utils/functions';
@@ -350,9 +349,20 @@ export function BibleContent({
     const loadIndex = useCallback(() => {
         window.api.bible
             .getIndexes()
-            .then((indexs) => {
-                setBibleIndex(indexs || {});
-                setNoBible(!indexs || Object.keys(indexs).length === 0);
+            .then((flat) => {
+                if (!flat || Object.keys(flat).length === 0) {
+                    setNoBible(true);
+                    return;
+                }
+                // Group by testament (e.g. "A" = Ancien, "N" = Nouveau)
+                const grouped: Record<string, BibleIndex> = {};
+                for (const [bookName, val] of Object.entries(flat)) {
+                    const t = val.testament;
+                    if (!grouped[t]) grouped[t] = {};
+                    grouped[t][bookName] = val;
+                }
+                setBibleIndex(grouped);
+                setNoBible(false);
             })
             .catch(() => {
                 setNoBible(true);

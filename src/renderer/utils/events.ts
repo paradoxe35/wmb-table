@@ -12,12 +12,7 @@ export const SUBJECT_EVENT = {
     focusSubject: 'focus-subject',
 } as const;
 
-export const AUDIO_PLAYER = {
-    openModalPlayer: 'open-modal-player',
-} as const;
-
 export const CHILD_PARENT_WINDOW_EVENT = {
-    openSearchModal: 'open-search-modal',
     addDocumentRefSubject: 'add-document-ref-subject',
     addDocumentRefNote: 'add-document-ref-note',
     openOtherTraductionsModal: 'open-other-traductions-modal',

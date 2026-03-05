@@ -15,6 +15,9 @@ interface SermonState {
     addTab(title: string, type?: 'sermon' | 'custom'): void;
     removeTab(title: string): void;
     activateTab(title: string): void;
+    removeOtherTabs(title: string): void;
+    removeTabsToRight(title: string): void;
+    removeAllTabs(): void;
     reorderTabs(tabs: DocumentTab[]): void;
     updateTabScroll(title: string, scrollY?: number, scrollX?: number): void;
     updateTabZoom(title: string, zoom: number): void;
@@ -61,19 +64,39 @@ export const useSermonStore = create<SermonState>((set) => ({
             }
             const deactivated = s.tabs.map((t) => ({ ...t, active: false }));
             const newTabs = [...deactivated, { title, active: true, type: tabType }];
-            if (newTabs.length > 6) newTabs.shift();
             return { tabs: newTabs };
         }),
 
     removeTab: (title) =>
         set((s) => {
+            const idx = s.tabs.findIndex((t) => t.title === title);
+            const wasActive = idx >= 0 && s.tabs[idx].active;
             const filtered = s.tabs.filter((t) => t.title !== title);
-            const hasActive = filtered.some((t) => t.active);
-            if (!hasActive && filtered.length > 0) {
-                filtered[0].active = true;
+            if (wasActive && filtered.length > 0) {
+                const nextIdx = Math.min(idx, filtered.length - 1);
+                filtered[nextIdx] = { ...filtered[nextIdx], active: true };
             }
             return { tabs: filtered };
         }),
+
+    removeOtherTabs: (title) =>
+        set((s) => {
+            const tab = s.tabs.find((t) => t.title === title);
+            return tab ? { tabs: [{ ...tab, active: true }] } : {};
+        }),
+
+    removeTabsToRight: (title) =>
+        set((s) => {
+            const idx = s.tabs.findIndex((t) => t.title === title);
+            if (idx < 0) return {};
+            const kept = s.tabs.slice(0, idx + 1);
+            if (!kept.some((t) => t.active)) {
+                kept[kept.length - 1] = { ...kept[kept.length - 1], active: true };
+            }
+            return { tabs: kept };
+        }),
+
+    removeAllTabs: () => set({ tabs: [] }),
 
     activateTab: (title) =>
         set((s) => ({

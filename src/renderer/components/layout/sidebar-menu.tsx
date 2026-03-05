@@ -3,7 +3,6 @@ import { HistoryOutlined, GroupOutlined, SearchOutlined, EditOutlined } from '@a
 import { Menu, Layout } from 'antd';
 import { useAppStore } from '@renderer/stores';
 import { BibleIcons } from '../icons';
-import AudioDocumentPlayerIndicator from '../audio-document-player-indicator';
 
 const { Sider } = Layout;
 
@@ -50,24 +49,21 @@ export default function SidebarMenu({
             collapsed={collapsed}
             onCollapse={onCollapse}
         >
-            <div className="full-item-separated">
-                <Menu mode="inline" selectedKeys={[optionView]}>
-                    {options.map((op, i) =>
-                        op === null ? (
-                            <Menu.Divider key={i} />
-                        ) : (
-                            <Menu.Item
-                                key={op.key}
-                                icon={op.icon}
-                                onClick={() => showOptions(op.key as 'search')}
-                            >
-                                {op.name}
-                            </Menu.Item>
-                        ),
-                    )}
-                </Menu>
-                <AudioDocumentPlayerIndicator />
-            </div>
+            <Menu mode="inline" selectedKeys={[optionView]}>
+                {options.map((op, i) =>
+                    op === null ? (
+                        <Menu.Divider key={i} />
+                    ) : (
+                        <Menu.Item
+                            key={op.key}
+                            icon={op.icon}
+                            onClick={() => showOptions(op.key as 'search')}
+                        >
+                            {op.name}
+                        </Menu.Item>
+                    ),
+                )}
+            </Menu>
         </Sider>
     );
 }

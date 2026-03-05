@@ -31,5 +31,18 @@ $color-text-secondary: #6b7280;
         background-color: #ffe58f;
         padding: 0 1px;
         border-radius: 2px;
+
+        &.mark-current {
+            background-color: #fa8c16;
+        }
     }
+}
+
+.inline-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-bottom: 1px solid $color-border;
+    background: #fafafa;
 }

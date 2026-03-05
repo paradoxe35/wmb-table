@@ -47,7 +47,7 @@ export default function Updater() {
 
     useEffect(() => {
         const cleanupNotify = window.api.on.notifyForNewUpdate((info) => {
-            setUpdaterInfo(info as UpdaterNotification);
+            setUpdaterInfo(info);
         });
 
         const cleanupMenu = window.api.on.appUpdateMenu(show);

@@ -34,7 +34,7 @@ export default function CustomDocuments() {
 
     useEffect(() => {
         window.api.app.getCustomDocuments().then((datas) => {
-            setCustomDocuments(datas as CustomDocument[]);
+            setCustomDocuments(datas);
         });
     }, []);
 
@@ -222,10 +222,7 @@ function UploadForm({
         try {
             const buffer = await selectedFile.arrayBuffer();
             const pdfBytes = new Uint8Array(buffer);
-            const doc = (await window.api.app.createCustomDocument(
-                trimmedName,
-                pdfBytes,
-            )) as CustomDocument;
+            const doc = await window.api.app.createCustomDocument(trimmedName, pdfBytes);
             addCustomDocument(doc);
             message.success('Document ajouté');
             setName('');

@@ -5,22 +5,15 @@ import {
     type ParagraphReference,
     type NoteItem,
     type NoteItemReference,
+    type SubjectRefTree,
     isParagraphReference,
 } from '@shared/types';
-import {
-    useSermonLookup,
-    useModalVisible,
-    useActiveTabTitle,
-    useValueStateRef,
-} from '@renderer/hooks';
+import { useSermonLookup, useModalVisible } from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useNotesStore } from '@renderer/stores';
 
 export function NoteReferencesModal() {
-    const title = useActiveTabTitle();
-    const titleRef = useValueStateRef(title);
-
     const documentRefTree = useRef<
         | {
               textContent: string;
@@ -54,10 +47,9 @@ export function NoteReferencesModal() {
     const onSelectItem = (item: NoteItemReference) => {
         if (!documentRefTree.current) return;
 
-        const referenceItem: Partial<NoteItemReference> = {
+        const referenceItem: SubjectRefTree = {
             documentHtmlTree: documentRefTree.current.documentHtmlTree,
-            documentTitle: titleRef.current || '',
-            textContent: documentRefTree.current.textContent,
+            textContent: documentRefTree.current.textContent ?? '',
         };
 
         window.api.notes.updateReference(item.id, referenceItem);

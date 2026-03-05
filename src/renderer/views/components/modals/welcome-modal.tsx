@@ -15,8 +15,8 @@ export default function Welcome() {
 
     useEffect(() => {
         window.api.app.getUpdateStatus().then((status) => {
-            if (!status.started_to_update) {
-                window.api.app.initialize().then((initialized) => !initialized && show());
+            if (status.type === 'none') {
+                show();
             }
         });
         window.api.app.getAsset('icon.png').then((path) => setImage(path));

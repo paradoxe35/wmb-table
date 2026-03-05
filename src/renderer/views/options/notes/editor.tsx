@@ -152,7 +152,7 @@ function ButtonsControllers({
 
     const onBackToNotes = useCallback(() => {
         const editor = editorRef.current;
-        if (editor && ((editor.getData() || '').trim() as string).length < 1) {
+        if (editor && (editor.getData() || '').trim().length < 1) {
             return confirm();
         }
         backToNotes();

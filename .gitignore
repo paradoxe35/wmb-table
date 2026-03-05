@@ -36,9 +36,6 @@ coverage
 *.sqlite-wal
 !resources/database/*.sqlite
 
-# Lock file (regenerated on install)
-pnpm-lock.yaml
-
 # Google credentials (not versioned)
 resources/credentials/google/
 

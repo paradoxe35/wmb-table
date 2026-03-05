@@ -244,11 +244,47 @@ $radius: 6px;
 // ---------------------------------------------------------------------------
 .chrome-tabs-wrapper {
     border-bottom: 1px solid $color-border;
+    display: flex;
+    align-items: stretch;
+    position: relative;
 }
 
 .chrome-tabs {
     display: flex;
-    overflow: hidden;
+    overflow-x: auto;
+    flex: 1;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+.tab-scroll-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    flex-shrink: 0;
+    border: none;
+    background: $color-bg-white;
+    cursor: pointer;
+    color: $color-text-secondary;
+    font-size: 10px;
+    z-index: 1;
+
+    &:hover {
+        background: rgba($color-primary, 0.06);
+        color: $color-text;
+    }
+
+    &--left {
+        border-right: 1px solid $color-border;
+    }
+
+    &--right {
+        border-left: 1px solid $color-border;
+    }
 }
 
 .chrome-tab {
@@ -262,9 +298,11 @@ $radius: 6px;
     background: transparent;
     border-radius: 4px 4px 0 0;
     white-space: nowrap;
-    max-width: 180px;
     min-width: 0;
-    transition: all 0.15s ease;
+    flex-shrink: 0;
+    transition:
+        background 0.15s ease,
+        border-color 0.15s ease;
 
     &:hover {
         background: rgba($color-primary, 0.04);
@@ -272,7 +310,8 @@ $radius: 6px;
 
     &--active {
         border-bottom-color: $color-primary;
-        background: $color-primary-light;
+        background: $color-bg-white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
 
     &__icon {
@@ -482,4 +521,32 @@ $radius: 6px;
 .container-y {
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+// ---------------------------------------------------------------------------
+// Mini player bar
+// ---------------------------------------------------------------------------
+.mini-player-bar {
+    display: flex;
+    align-items: center;
+    height: 56px;
+    padding: 0 16px;
+    border-top: 1px solid $color-border;
+    background: $color-bg-white;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.mini-player-title {
+    font-size: 0.85em;
+    font-weight: 500;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 200px;
+
+    &:hover {
+        text-decoration: underline;
+    }
 }

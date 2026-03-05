@@ -3,7 +3,7 @@ import { Button, Select } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useAppStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
-import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types';
+import type { InstalledLanguage } from '@shared/types';
 
 export default function LanguageSelector() {
     const activeLanguage = useAppStore((s) => s.activeLanguage);

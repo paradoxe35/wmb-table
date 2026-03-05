@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
 import SidebarDocuments from './layout/sidebar-documents';
+import MiniPlayerBar from './mini-player-bar';
+import { AudioProvider } from './audio-context';
 import { useContainerHeight } from '@renderer/hooks';
 import { useAppStore } from '@renderer/stores';
 import { APP_NAME } from '@renderer/utils/constants';
@@ -65,28 +67,31 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const containerScroll = useContainerHeight<HTMLDivElement>();
 
     return (
-        <Layout>
-            <Header className="app-header">
-                <div className="logo" onClick={() => toggle()}>
-                    <Title />
-                </div>
-                <div className="header-center">
-                    <ViewerMenu />
-                </div>
-                <div className="logo">
-                    <SidebarStatusHandler />
-                </div>
-            </Header>
-            <Layout>
-                <SidebarMenu onCollapse={toggle} collapsed={collapsed} />
-                <Layout>
-                    <div ref={containerScroll} className="site-layout-content">
-                        <Content className="main-content">{children}</Content>
+        <AudioProvider>
+            <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <Header className="app-header">
+                    <div className="logo" onClick={() => toggle()}>
+                        <Title />
                     </div>
+                    <div className="header-center">
+                        <ViewerMenu />
+                    </div>
+                    <div className="logo">
+                        <SidebarStatusHandler />
+                    </div>
+                </Header>
+                <Layout style={{ flex: 1, minHeight: 0 }}>
+                    <SidebarMenu onCollapse={toggle} collapsed={collapsed} />
+                    <Layout>
+                        <div ref={containerScroll} className="site-layout-content">
+                            <Content className="main-content">{children}</Content>
+                        </div>
+                    </Layout>
+                    <SidebarDocuments />
                 </Layout>
-                <SidebarDocuments />
+                <MiniPlayerBar />
             </Layout>
-        </Layout>
+        </AudioProvider>
     );
 };
 
