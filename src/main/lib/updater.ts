@@ -1,10 +1,11 @@
-import { autoUpdater } from 'electron-updater';
+import updater from 'electron-updater';
 import type { BrowserWindow } from 'electron';
 import { PushChannels } from '@shared/ipc.types';
 import { sendToRenderer } from '@main/ipc/register';
 import type { UpdaterNotification } from '@shared/types';
 import log from './logger';
 
+const { autoUpdater } = updater;
 let lastNotification: UpdaterNotification = { type: 'none' };
 let mainWindowRef: BrowserWindow | null = null;
 
