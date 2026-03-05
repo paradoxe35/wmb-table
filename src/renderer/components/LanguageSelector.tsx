@@ -12,13 +12,13 @@ export default function LanguageSelector() {
     const [languages, setLanguages] = useState<InstalledLanguage[]>([]);
 
     useEffect(() => {
-        (window.api.languages.getInstalled() as Promise<InstalledLanguage[]>).then(setLanguages);
+        window.api.languages.getInstalled().then(setLanguages);
     }, []);
 
     const handleChange = async (code: string) => {
         setActiveLanguage(code);
         await window.api.app.setActiveLanguage(code);
-        const sermons = (await window.api.documents.getTitles(code)) as SermonMetaWithTraductions[];
+        const sermons = await window.api.documents.getTitles(code);
         setSermons(sermons);
     };
 

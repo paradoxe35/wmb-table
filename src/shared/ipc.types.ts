@@ -12,6 +12,7 @@ import type {
     BibleVersionInfo,
     SubjectDocument,
     SubjectDocumentItem,
+    SubjectRefTree,
     CustomDocument,
     CustomDocumentContent,
     HistoryData,

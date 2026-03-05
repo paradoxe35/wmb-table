@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
-import type {
-    DocumentTab,
-    InstalledLanguage,
-    SermonMetaWithTraductions,
-    SidebarStatus,
-} from '@shared/types';
+import type { SermonMetaWithTraductions } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -45,8 +40,7 @@ export function useInitApp() {
         (async () => {
             try {
                 // Check if any languages are installed
-                const installed =
-                    (await window.api.languages.getInstalled()) as InstalledLanguage[];
+                const installed = await window.api.languages.getInstalled();
                 if (installed.length === 0) {
                     setNeedsSetup(true);
                     setLoaded(true);
@@ -54,18 +48,16 @@ export function useInitApp() {
                 }
 
                 const [langCode, sidebarStatus, tabs] = await Promise.all([
-                    window.api.app.getActiveLanguage() as Promise<string>,
-                    window.api.app.getSidebarStatus() as Promise<SidebarStatus | null>,
-                    window.api.documents.getTabs() as Promise<DocumentTab[]>,
+                    window.api.app.getActiveLanguage(),
+                    window.api.app.getSidebarStatus(),
+                    window.api.documents.getTabs(),
                 ]);
 
                 setActiveLanguage(langCode);
                 if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
                 if (tabs?.length) setTabs(tabs);
 
-                const sermons = (await window.api.documents.getTitles(
-                    langCode,
-                )) as SermonMetaWithTraductions[];
+                const sermons = await window.api.documents.getTitles(langCode);
                 setSermons(sermons);
             } finally {
                 setLoaded(true);

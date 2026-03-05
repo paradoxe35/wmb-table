@@ -21,36 +21,15 @@ function TabItem({
         <Reorder.Item
             value={tab}
             as="div"
-            className={`chrome-tab-item ${isActive ? 'active' : ''}`}
+            className={`chrome-tab ${isActive ? 'chrome-tab--active' : ''}`}
             onClick={onActivate}
-            style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '4px 12px',
-                cursor: 'pointer',
-                userSelect: 'none',
-                borderBottom: isActive ? '2px solid #1890ff' : '2px solid transparent',
-                background: isActive ? '#f0f5ff' : 'transparent',
-                borderRadius: '4px 4px 0 0',
-                whiteSpace: 'nowrap',
-                maxWidth: 180,
-                minWidth: 0,
-            }}
         >
-            <FileFilled style={{ fontSize: 12, flexShrink: 0 }} />
-            <span
-                style={{
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontSize: 12,
-                }}
-                title={tab.title}
-            >
+            <FileFilled className="chrome-tab__icon" />
+            <span className="chrome-tab__title" title={tab.title}>
                 {tab.title}
             </span>
             <CloseOutlined
-                style={{ fontSize: 10, flexShrink: 0, marginLeft: 'auto' }}
+                className="chrome-tab__close"
                 onClick={(e) => {
                     e.stopPropagation();
                     onRemove();
@@ -98,7 +77,6 @@ export default function DocumentTabs() {
                 onReorder={reorderTabs}
                 as="div"
                 className="chrome-tabs"
-                style={{ display: 'flex', overflow: 'hidden' }}
             >
                 {tabs.map((tab) => (
                     <TabItem

@@ -5,8 +5,8 @@ import {
     Dropdown,
     Input,
     List,
-    Menu,
     Pagination,
+    Segmented,
     Space,
     Spin,
     Typography,
@@ -40,22 +40,21 @@ import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
 export default function Bible() {
-    const [menu, setMenu] = useState('bible');
-
-    const handleClick = (e: { key: string }) => setMenu(e.key);
+    const [menu, setMenu] = useState<string | number>('bible');
 
     return (
         <LoadByVisibility>
             <BibleVersionSelector />
-            <Menu onClick={handleClick} selectedKeys={[menu]} mode="horizontal">
-                <Menu.Item key="bible" icon={<BibleIcons />}>
-                    Bible
-                </Menu.Item>
-                <Menu.Item key="search" icon={<SearchOutlined />}>
-                    Recherche
-                </Menu.Item>
-            </Menu>
-            <div className="mt-2 mb-3" />
+            <Segmented
+                value={menu}
+                onChange={setMenu}
+                options={[
+                    { label: 'Bible', value: 'bible', icon: <BibleIcons /> },
+                    { label: 'Recherche', value: 'search', icon: <SearchOutlined /> },
+                ]}
+                block
+                style={{ marginBottom: 12 }}
+            />
             <div hidden={menu !== 'bible'}>
                 <ContainerScrollY>
                     <BibleContent verseMetaContent={true} />
@@ -76,13 +75,12 @@ function BibleVersionSelector() {
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
 
     const refresh = useCallback(() => {
-        Promise.all([
-            window.api.bible.getAllVersions() as Promise<BibleVersionInfo[]>,
-            window.api.bible.getActiveVersion() as Promise<BibleVersionInfo | null>,
-        ]).then(([all, active]) => {
-            setVersions(all);
-            setActiveVersion(active);
-        });
+        Promise.all([window.api.bible.getAllVersions(), window.api.bible.getActiveVersion()]).then(
+            ([all, active]) => {
+                setVersions(all);
+                setActiveVersion(active);
+            },
+        );
     }, []);
 
     useEffect(() => {
@@ -130,7 +128,7 @@ function BibleVersionSelector() {
     if (versions.length === 0) return null;
 
     return (
-        <div style={{ padding: '8px 0', marginBottom: 4 }}>
+        <div className="bible-version-bar">
             <Space wrap size="small">
                 <Typography.Text type="secondary" style={{ fontSize: '0.85em' }}>
                     Version:
@@ -222,32 +220,34 @@ function BookContent({
     const [verses, setVerses] = useState<BibleBook[]>();
 
     useEffect(() => {
-        (
-            window.api.bible.getBooks({
+        window.api.bible
+            .getBooks({
                 book: bookDetail.book,
                 chapter: chaptersKey.toString(),
-            } as BookRequest) as Promise<BibleBook[]>
-        ).then(setVerses);
+            })
+            .then(setVerses);
     }, [chaptersKey, bookDetail.book]);
 
     return (
         <Collapse activeKey="1" accordion>
             <Collapse.Panel
                 header={
-                    <Space wrap={true} direction="horizontal">
+                    <div className="chapter-grid">
                         {new Array(+bookDetail.chapters).fill(null).map((_, i) => {
                             const key = i + 1;
                             return (
                                 <Button
                                     onClick={() => setChaptersKey(key)}
                                     key={key}
+                                    className="chapter-btn"
                                     type={key === chaptersKey ? 'primary' : 'dashed'}
+                                    size="small"
                                 >
                                     {i + 1}
                                 </Button>
                             );
                         })}
-                    </Space>
+                    </div>
                 }
                 key="1"
             >
@@ -348,7 +348,8 @@ export function BibleContent({
     const [noBible, setNoBible] = useState(false);
 
     const loadIndex = useCallback(() => {
-        (window.api.bible.getIndexes() as Promise<Record<string, BibleIndex>>)
+        window.api.bible
+            .getIndexes()
             .then((indexs) => {
                 setBibleIndex(indexs || {});
                 setNoBible(!indexs || Object.keys(indexs).length === 0);
@@ -402,9 +403,7 @@ function SearchContent() {
     const testament = useRef<Testament | undefined>(undefined);
 
     const onPageChange = useCallback((page: number) => {
-        (
-            window.api.bible.search(lastSearch.current.trim(), page) as Promise<BibleSearchResult>
-        ).then((datas) => {
+        window.api.bible.search(lastSearch.current.trim(), page).then((datas) => {
             document
                 .querySelector('.bible-search-content')
                 ?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -529,7 +528,8 @@ function InputSearchBible({
             if (!value || value.length < 3) return;
             lastSearch.current = value;
             setLoading(true);
-            (window.api.bible.search(value, 1) as Promise<BibleSearchResult>)
+            window.api.bible
+                .search(value, 1)
                 .then(setResults)
                 .finally(() => setLoading(false));
         },

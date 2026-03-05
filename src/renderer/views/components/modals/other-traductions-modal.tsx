@@ -30,7 +30,8 @@ export function OtherTraductionsModal() {
         if (!visible || !title || !meta) return;
 
         setLoading(true);
-        (window.api.documents.getTranslations(meta.sermonDate) as Promise<Translation[]>)
+        window.api.documents
+            .getTranslations(meta.sermonDate)
             .then(setTranslations)
             .catch(() => setTranslations([]))
             .finally(() => setLoading(false));
@@ -74,7 +75,7 @@ export function OtherTraductionsModal() {
             <div style={{ overflow: 'auto', maxHeight: '400px' }}>
                 {hasWithinLanguage && (
                     <>
-                        <Divider orientation="left" plain style={{ margin: '8px 0' }}>
+                        <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>
                             Sources de traduction
                         </Divider>
                         <List
@@ -115,7 +116,7 @@ export function OtherTraductionsModal() {
                     </>
                 )}
 
-                <Divider orientation="left" plain style={{ margin: '8px 0' }}>
+                <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>
                     Autres langues
                 </Divider>
                 {loading ? (

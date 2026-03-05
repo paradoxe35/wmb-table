@@ -32,9 +32,7 @@ export default function SetupView() {
 
     // Load available languages
     useEffect(() => {
-        (window.api.languages.getAvailable() as Promise<DownloadableLanguage[]>).then(
-            setAvailableLanguages,
-        );
+        window.api.languages.getAvailable().then(setAvailableLanguages);
     }, []);
 
     // Listen for download progress and completion

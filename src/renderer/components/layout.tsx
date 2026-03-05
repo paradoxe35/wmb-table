@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Layout, Space, Spin } from 'antd';
-import { LeftCircleOutlined, LoadingOutlined, RightCircleOutlined } from '@ant-design/icons';
+import { LeftCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { motion } from 'framer-motion';
 
 import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
@@ -27,11 +28,9 @@ const SidebarStatusHandler = () => {
     const toggleSidebar = useAppStore((s) => s.toggleSidebar);
 
     useEffect(() => {
-        (window.api.app.getSidebarStatus() as Promise<{ hidden: boolean } | null>).then(
-            (status) => {
-                if (status) setSidebarHidden(status.hidden);
-            },
-        );
+        window.api.app.getSidebarStatus().then((status) => {
+            if (status) setSidebarHidden(status.hidden);
+        });
     }, [setSidebarHidden]);
 
     const handleToggle = useCallback(() => {
@@ -46,11 +45,13 @@ const SidebarStatusHandler = () => {
 
     return (
         <Button type="link" onClick={handleToggle}>
-            {sidebarHidden ? (
+            <motion.div
+                animate={{ rotate: sidebarHidden ? 0 : 180 }}
+                transition={{ duration: 0.25 }}
+                style={{ display: 'flex', alignItems: 'center' }}
+            >
                 <LeftCircleOutlined style={{ fontSize: '1.2em' }} />
-            ) : (
-                <RightCircleOutlined style={{ fontSize: '1.2em' }} />
-            )}
+            </motion.div>
         </Button>
     );
 };
@@ -69,7 +70,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 <div className="logo" onClick={() => toggle()}>
                     <Title />
                 </div>
-                <div style={{ flexGrow: 1 }}>
+                <div className="header-center">
                     <ViewerMenu />
                 </div>
                 <div className="logo">
@@ -80,7 +81,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 <SidebarMenu onCollapse={toggle} collapsed={collapsed} />
                 <Layout>
                     <div ref={containerScroll} className="site-layout-content">
-                        <Content style={{ padding: 24, paddingBottom: 0 }}>{children}</Content>
+                        <Content className="main-content">{children}</Content>
                     </div>
                 </Layout>
                 <SidebarDocuments />

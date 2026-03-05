@@ -26,10 +26,7 @@ export default function LanguageManagerModal() {
 
     const refresh = () => {
         setLoading(true);
-        Promise.all([
-            window.api.languages.getInstalled() as Promise<InstalledLanguage[]>,
-            window.api.languages.getAvailable() as Promise<DownloadableLanguage[]>,
-        ])
+        Promise.all([window.api.languages.getInstalled(), window.api.languages.getAvailable()])
             .then(([inst, avail]) => {
                 setInstalled(inst);
                 setAvailable(avail.filter((a) => !a.installed));

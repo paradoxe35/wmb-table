@@ -24,8 +24,6 @@ import {
 } from './references';
 import { EDITOR_EVENT } from '@renderer/utils/events';
 
-// @ts-expect-error — CKEditor build has no type declarations
-
 let DecoupledDocumentEditor: any;
 
 if (process.env.NODE_ENV === 'development') {
@@ -51,22 +49,20 @@ const useRenameNote = (note: NoteItem | null) => {
 
     const onSave = () => {
         if (!workingNote.current) return;
-        (
-            window.api.notes.rename(workingNote.current.id, searchValue.current.trim()) as Promise<
-                string | boolean
-            >
-        ).then((saved) => {
-            if (typeof saved === 'boolean') {
-                message.error('Le nom entré est invalid');
-            } else {
-                window.dispatchEvent(
-                    new CustomEvent<{ name: string }>(EDITOR_EVENT.renameNote, {
-                        detail: { name: searchValue.current.trim() },
-                    }),
-                );
-                message.success('Modifié');
-            }
-        });
+        window.api.notes
+            .rename(workingNote.current.id, searchValue.current.trim())
+            .then((saved) => {
+                if (typeof saved === 'boolean') {
+                    message.error('Le nom entré est invalid');
+                } else {
+                    window.dispatchEvent(
+                        new CustomEvent<{ name: string }>(EDITOR_EVENT.renameNote, {
+                            detail: { name: searchValue.current.trim() },
+                        }),
+                    );
+                    message.success('Modifié');
+                }
+            });
     };
 
     const openModal = useCallback(() => {
@@ -163,13 +159,7 @@ function ButtonsControllers({
     }, [confirm, backToNotes]);
 
     return (
-        <div
-            style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                margin: '12px 0',
-            }}
-        >
+        <div className="editor-toolbar">
             <Space direction="horizontal">
                 <Button type="dashed" onClick={onBackToNotes} icon={<LeftOutlined />}>
                     Notes
@@ -234,7 +224,7 @@ export default function EditorContent({
     const ipcRequestWithLoader = useIpcRequestWithLoader();
 
     useEffect(() => {
-        (window.api.notes.getById(workingNoteId) as Promise<NoteItem>).then((note) => {
+        window.api.notes.getById(workingNoteId).then((note) => {
             setWorkingNote(note);
             if (note?.created && note.defaultName) {
                 window.setTimeout(() => {
@@ -262,7 +252,7 @@ export default function EditorContent({
 
     const handleEditorLinksClick = useCallback((idRef: string) => {
         ipcRequestWithLoader<NoteItemReference | null>(async () => {
-            return (await window.api.notes.getReference(idRef)) as NoteItemReference | null;
+            return await window.api.notes.getReference(idRef);
         }).then((data) => {
             if (data) {
                 modalRefence(data, workingNoteRef.current as NoteItem);
@@ -274,9 +264,7 @@ export default function EditorContent({
 
     const handleEditorLinksBibleClick = useCallback((idRef: string) => {
         ipcRequestWithLoader<NoteItemReferenceBible | null>(async () => {
-            return (await window.api.notes.getBibleReference(
-                idRef,
-            )) as NoteItemReferenceBible | null;
+            return await window.api.notes.getBibleReference(idRef);
         }).then((data) => {
             if (data) {
                 bibleReferenceModal.showModal(data);
@@ -335,12 +323,12 @@ export default function EditorContent({
                 switch (type) {
                     case 'document':
                         ipcRequestWithLoader<NoteItemReference>(async () => {
-                            return (await window.api.notes.createReference(
+                            return await window.api.notes.createReference(
                                 workingNoteIdRef.current,
                                 '',
                                 { tree: [] },
                                 '',
-                            )) as NoteItemReference;
+                            );
                         }).then((ref) => {
                             editor.execute('link', referenceDocumentBrandLink + ref.id);
                             message.success(`Référence document: ${ref.label}`);
@@ -349,10 +337,10 @@ export default function EditorContent({
 
                     case 'bible':
                         ipcRequestWithLoader<NoteItemReferenceBible>(async () => {
-                            return (await window.api.notes.createBibleReference(
+                            return await window.api.notes.createBibleReference(
                                 workingNoteIdRef.current,
                                 selected,
-                            )) as NoteItemReferenceBible;
+                            );
                         }).then((ref) => {
                             editor.execute('link', referenceBibleBrandLink + ref.id);
                             message.success(`Référence biblique: ${ref.label}`);
@@ -487,13 +475,7 @@ function Editor({
     }, [ready]);
     return (
         <div>
-            <ContainerScrollY
-                susDiff={40}
-                style={{
-                    padding: '20px',
-                    borderRadius: '2px',
-                }}
-            >
+            <ContainerScrollY susDiff={40} className="editor-container">
                 <div
                     className="cke5-decoupled-custom-document-editable"
                     style={{ ...styleProperty(), borderRadius: '5px' }}

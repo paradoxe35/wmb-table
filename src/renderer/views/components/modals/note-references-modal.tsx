@@ -44,9 +44,9 @@ export function NoteReferencesModal() {
         (async () => {
             const note = await window.api.notes.getById(workingNoteId);
             if (note) {
-                workingNote.current = note as NoteItem;
+                workingNote.current = note;
                 const references = await window.api.notes.getReferences(workingNoteId);
-                setDatas(references as NoteItemReference[]);
+                setDatas(references);
             }
         })();
     }, [workingNoteId, visible]);
@@ -89,7 +89,7 @@ export function NoteReferencesModal() {
                 </div>
             }
             footer={[]}
-            visible={visible}
+            open={visible}
             onOk={hide}
             onCancel={hide}
         >

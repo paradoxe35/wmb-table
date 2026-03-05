@@ -1,4 +1,3 @@
-import { Title } from '@shared/types';
 import { AUDIO_PLAYER, CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
@@ -8,11 +7,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import MediaElement from '../mediaelement/mediaelement';
 import { useAudioStore } from '@renderer/stores';
 
+interface AudioTitle {
+    title: string;
+    audio_link?: string;
+    traduction?: string;
+}
+
 export default function DocumentAudioPlayer() {
     const { visible, hide, setVisible } = useModalVisible();
 
     const [docTitle, setDocTitle] = useState<
-        (Title & { audioTime?: number; origin_audio_link: string }) | null
+        (AudioTitle & { audioTime?: number; origin_audio_link: string }) | null
     >(null);
 
     const docTitleRef = useValueStateRef(docTitle);
@@ -26,7 +31,7 @@ export default function DocumentAudioPlayer() {
     const viewDocument = useDocumentViewOpen();
 
     useEffect(() => {
-        const handleAudioPlay = async (event: CustomEventInit<Title>) => {
+        const handleAudioPlay = async (event: CustomEventInit<AudioTitle>) => {
             if (!event.detail?.audio_link) return;
             // first check if the request is not the current player session
             if (docTitleRef.current?.title === event.detail?.title) {
@@ -53,11 +58,9 @@ export default function DocumentAudioPlayer() {
             window.api.audio.setLastPlay(event.detail.title);
 
             // request for last played time and local file path if available
-            const result = await window.api.audio.getTimeAndLocalFile(event.detail.audio_link!);
-            const { time, local_file } = result as {
-                time: number | undefined;
-                local_file?: string;
-            };
+            const { time, local_file } = await window.api.audio.getTimeAndLocalFile(
+                event.detail.audio_link!,
+            );
             const ctime = typeof time === 'number' ? time : undefined;
 
             // update audio document state
@@ -147,7 +150,7 @@ export default function DocumentAudioPlayer() {
                 footer={[]}
                 width={600}
                 forceRender
-                visible={visible}
+                open={visible}
                 onOk={hide}
                 onCancel={hide}
             >

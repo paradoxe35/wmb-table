@@ -23,15 +23,13 @@ export default function History() {
         if (key) {
             const history = histories.find((k) => k.id === key);
             if (history) {
-                (window.api.app.getHistoryItems(history.id) as Promise<HistoryDataItem[]>).then(
-                    setHistoryItems,
-                );
+                window.api.app.getHistoryItems(history.id).then(setHistoryItems);
             }
         }
     }, [key, histories]);
 
     useEffect(() => {
-        (window.api.app.getHistory() as Promise<HistoryData[]>).then(setHistories);
+        window.api.app.getHistory().then(setHistories);
     }, [title]);
 
     useEffect(() => {

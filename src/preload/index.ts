@@ -11,11 +11,29 @@ import {
     AppChannels,
     LanguageChannels,
     PushChannels,
+    type InvokeChannel,
+    type InvokeChannelMap,
     type PushChannel,
     type PushEventMap,
 } from '@shared/ipc.types';
+import type {
+    AudioDownloadProgress,
+    BibleBook,
+    BookRequest,
+    DocumentHtmlTree,
+    DocumentTab,
+    LanguageDownloadProgress,
+    ParagraphReference,
+    RestoreProgressEvent,
+    SubjectRefTree,
+    UpdaterNotification,
+    ViewMenuValue,
+} from '@shared/types';
 
-function invoke<T>(channel: string, ...args: unknown[]): Promise<T> {
+function invoke<C extends InvokeChannel>(
+    channel: C,
+    ...args: InvokeChannelMap[C]['args']
+): Promise<InvokeChannelMap[C]['return']> {
     return ipcRenderer.invoke(channel, ...args);
 }
 
@@ -44,7 +62,7 @@ const api = {
         getTraductionsForSermon: (sermonDate: string, langCode: string) =>
             invoke(DocumentChannels.getTraductionsForSermon, sermonDate, langCode),
         getTabs: () => invoke(DocumentChannels.getTabs),
-        saveTabs: (tabs: unknown[]) => invoke(DocumentChannels.saveTabs, tabs),
+        saveTabs: (tabs: DocumentTab[]) => invoke(DocumentChannels.saveTabs, tabs),
     },
 
     languages: {
@@ -73,18 +91,22 @@ const api = {
         updateContent: (id: string, content: string) =>
             invoke(NotesChannels.updateContent, id, content),
         getReferences: (noteId: string) => invoke(NotesChannels.getReferences, noteId),
-        createReference: (noteId: string, docTitle: string, htmlTree: unknown, text: string) =>
-            invoke(NotesChannels.createReference, noteId, docTitle, htmlTree, text),
+        createReference: (
+            noteId: string,
+            docTitle: string,
+            htmlTree: DocumentHtmlTree | ParagraphReference,
+            text: string,
+        ) => invoke(NotesChannels.createReference, noteId, docTitle, htmlTree, text),
         getReference: (id: string) => invoke(NotesChannels.getReference, id),
-        syncReferences: (noteId: string, refs: unknown[]) =>
+        syncReferences: (noteId: string, refs: string[]) =>
             invoke(NotesChannels.syncReferences, noteId, refs),
-        updateReference: (id: string, ref: unknown) =>
+        updateReference: (id: string, ref: SubjectRefTree) =>
             invoke(NotesChannels.updateReference, id, ref),
         getBibleReference: (id: string) => invoke(NotesChannels.getBibleReference, id),
         getBibleReferences: (noteId: string) => invoke(NotesChannels.getBibleReferences, noteId),
         createBibleReference: (noteId: string, label: string) =>
             invoke(NotesChannels.createBibleReference, noteId, label),
-        syncBibleReferences: (id: string, refs: unknown) =>
+        syncBibleReferences: (id: string, refs: BibleBook[] | string[]) =>
             invoke(NotesChannels.syncBibleReferences, id, refs),
         addBibleVerse: (id: string, verseId: string) =>
             invoke(NotesChannels.addBibleVerse, id, verseId),
@@ -95,7 +117,7 @@ const api = {
 
     bible: {
         getIndexes: () => invoke(BibleChannels.getIndexes),
-        getBooks: (request: unknown) => invoke(BibleChannels.getBooks, request),
+        getBooks: (request: BookRequest) => invoke(BibleChannels.getBooks, request),
         search: (query: string, page: number) => invoke(BibleChannels.search, query, page),
         getVersions: () => invoke(BibleChannels.getVersions),
         getAllVersions: () => invoke(BibleChannels.getAllVersions),
@@ -115,9 +137,9 @@ const api = {
         createItem: (
             subjectId: string,
             docTitle: string,
-            htmlTree: unknown,
+            htmlTree: DocumentHtmlTree | ParagraphReference,
             text: string,
-            bible?: unknown,
+            bible?: BibleBook,
         ) => invoke(SubjectChannels.createItem, subjectId, docTitle, htmlTree, text, bible),
     },
 
@@ -143,7 +165,7 @@ const api = {
 
     app: {
         initialize: () => invoke(AppChannels.initialize),
-        getActiveLanguage: () => invoke<string>(AppChannels.getActiveLanguage),
+        getActiveLanguage: () => invoke(AppChannels.getActiveLanguage),
         setActiveLanguage: (langCode: string) => invoke(AppChannels.setActiveLanguage, langCode),
         restart: () => invoke(AppChannels.restart),
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
@@ -165,7 +187,7 @@ const api = {
     on: {
         openModalDocumentFromMain: (cb: () => void) =>
             onPush(PushChannels.openModalDocumentFromMain, cb as () => void),
-        backupProgression: (cb: (event: unknown) => void) =>
+        backupProgression: (cb: (event: RestoreProgressEvent) => void) =>
             onPush(PushChannels.backupProgression, cb),
         backupAccessStatus: (cb: (status: boolean) => void) =>
             onPush(PushChannels.backupAccessStatus, cb),
@@ -174,16 +196,16 @@ const api = {
         appUpdateMenu: (cb: () => void) => onPush(PushChannels.appUpdateMenu, cb as () => void),
         toggleSidebar: (cb: () => void) => onPush(PushChannels.toggleSidebar, cb as () => void),
         switchOnMenu: (cb: () => void) => onPush(PushChannels.switchOnMenu, cb as () => void),
-        notifyForNewUpdate: (cb: (notification: unknown) => void) =>
+        notifyForNewUpdate: (cb: (notification: UpdaterNotification) => void) =>
             onPush(PushChannels.notifyForNewUpdate, cb),
         switchOnOptions: (cb: () => void) => onPush(PushChannels.switchOnOptions, cb as () => void),
-        changeMenuViewer: (cb: (value: string) => void) =>
+        changeMenuViewer: (cb: (value: ViewMenuValue) => void) =>
             onPush(PushChannels.changeMenuViewer, cb),
-        downloadAudioProgress: (cb: (progress: unknown) => void) =>
+        downloadAudioProgress: (cb: (progress: AudioDownloadProgress) => void) =>
             onPush(PushChannels.downloadAudioProgress, cb),
         newSynchronizedDatas: (cb: (tables: string[]) => void) =>
             onPush(PushChannels.newSynchronizedDatas, cb),
-        languageDownloadProgress: (cb: (p: { langCode: string; percentage: number }) => void) =>
+        languageDownloadProgress: (cb: (p: LanguageDownloadProgress) => void) =>
             onPush(PushChannels.languageDownloadProgress, cb),
         languageInstalled: (cb: (p: { langCode: string }) => void) =>
             onPush(PushChannels.languageInstalled, cb),

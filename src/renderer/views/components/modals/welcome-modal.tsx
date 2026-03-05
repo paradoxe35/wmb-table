@@ -14,15 +14,12 @@ export default function Welcome() {
     const [image, setImage] = useState<undefined | string>(undefined);
 
     useEffect(() => {
-        window.api.app.getUpdateStatus().then((status: unknown) => {
-            const s = status as { started_to_update: boolean };
-            if (!s.started_to_update) {
-                window.api.app
-                    .initialize()
-                    .then((initialized) => !(initialized as boolean) && show());
+        window.api.app.getUpdateStatus().then((status) => {
+            if (!status.started_to_update) {
+                window.api.app.initialize().then((initialized) => !initialized && show());
             }
         });
-        window.api.app.getAsset('icon.png').then((path) => setImage(path as string));
+        window.api.app.getAsset('icon.png').then((path) => setImage(path));
     }, []);
 
     const goToBackupModal = useCallback(() => {
@@ -43,7 +40,7 @@ export default function Welcome() {
                         </Space>
                     </>
                 }
-                visible={visible}
+                open={visible}
                 footer={[
                     <Button key={0} onClick={hide}>
                         Commencer

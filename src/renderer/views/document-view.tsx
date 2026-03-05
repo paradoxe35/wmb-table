@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DocumentTabs from '../components/document-tabs';
 import { Button, Layout, message, Segmented, Space, Spin } from 'antd';
 import {
@@ -63,13 +63,8 @@ function useSermonContent() {
         }
         const translationId = tabTranslationId ?? meta.translationId;
         setLoading(true);
-        (
-            window.api.documents.getSermonContent(
-                activeLanguage,
-                translationId,
-                meta.sermonDate,
-            ) as Promise<SermonContentType>
-        )
+        window.api.documents
+            .getSermonContent(activeLanguage, translationId, meta.sermonDate)
             .then((content) => setActiveContent(content))
             .catch(() => setActiveContent(null))
             .finally(() => setLoading(false));
@@ -284,15 +279,9 @@ function SermonHeader({
         <div className="sermon-header">
             <div style={{ flex: 1, minWidth: 0 }}>
                 <strong>{meta.title}</strong>
-                {meta.location && (
-                    <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
-                        {meta.location}
-                    </span>
-                )}
+                {meta.location && <span className="sermon-meta-detail">{meta.location}</span>}
                 {meta.minutes > 0 && (
-                    <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
-                        ({meta.minutes} min)
-                    </span>
+                    <span className="sermon-meta-detail">({meta.minutes} min)</span>
                 )}
             </div>
             <Space size="small">
@@ -349,7 +338,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
         if (parts.length <= 1) return paragraph.content;
 
         const matches = paragraph.content.match(regex) || [];
-        const result: (string | JSX.Element)[] = [];
+        const result: (string | React.ReactElement)[] = [];
         parts.forEach((part, i) => {
             result.push(part);
             if (i < matches.length) {
@@ -396,7 +385,8 @@ function SermonDocumentView() {
                         <div
                             ref={containerRef}
                             id={DOCUMENT_CONTAINER_ID}
-                            style={{ overflow: 'auto', zoom: `${zoom}%`, flex: 1 }}
+                            className="sermon-body"
+                            style={{ zoom: `${zoom}%` }}
                         >
                             {content.paragraphs.map((p) => (
                                 <SermonParagraphView
@@ -438,11 +428,8 @@ function CustomDocumentView() {
             return;
         }
         setLoading(true);
-        (
-            window.api.app.getCustomDocumentContent(
-                customDoc.id,
-            ) as Promise<CustomDocumentContent | null>
-        )
+        window.api.app
+            .getCustomDocumentContent(customDoc.id)
             .then((content) => setDocContent(content))
             .catch(() => setDocContent(null))
             .finally(() => setLoading(false));
@@ -495,7 +482,8 @@ function CustomDocumentView() {
                     <div
                         ref={containerRef}
                         id={DOCUMENT_CONTAINER_ID}
-                        style={{ overflow: 'auto', zoom: `${zoom}%`, flex: 1 }}
+                        className="sermon-body"
+                        style={{ zoom: `${zoom}%` }}
                     >
                         {paragraphs.map((text, i) => (
                             <p key={i} className="sermon-paragraph">

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Input, Card, Layout, Tree, Divider, Select, Tag } from 'antd';
+import { Input, Card, Tree, Divider, Select, Tag } from 'antd';
 import { SoundOutlined } from '@ant-design/icons';
+import { AnimatePresence, motion } from 'framer-motion';
 import type { SermonMetaWithTraductions } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
 import { useSermonStore, useCustomDocumentsStore, selectActiveTabTitle } from '@renderer/stores';
@@ -13,50 +14,56 @@ import LanguageSelector from '../LanguageSelector';
 
 const { DirectoryTree } = Tree;
 const { Search } = Input;
-const { Sider } = Layout;
 
 export default function SidebarDocuments() {
     const sidebarHidden = useAppStore((s) => s.sidebarHidden);
 
     return (
-        <Sider
-            hidden={sidebarHidden}
-            width="265px"
-            trigger={null}
-            className="layout__sidebar"
-            theme="light"
-        >
-            <LanguageSelector />
-            <PanelGroup
-                tabs={[
-                    { name: 'Tous', active: true },
-                    { name: 'Années', active: false },
-                    { name: 'Alphabet', active: false },
-                    { name: 'Ajoutés', active: false },
-                ]}
-            >
-                {(index: number) => (
-                    <>
-                        <div hidden={index !== 0}>
-                            <DocumentSearch />
-                        </div>
-                        <div hidden={index !== 1}>
-                            <ContainerScrollY>
-                                <div className="mt-2" />
-                                <DocumentByYears />
-                            </ContainerScrollY>
-                        </div>
-                        <div hidden={index !== 2}>
-                            <DocumentByAlphabetic />
-                        </div>
-                        <div hidden={index !== 3}>
-                            <div className="mt-2" />
-                            <DocumentsAdded />
-                        </div>
-                    </>
-                )}
-            </PanelGroup>
-        </Sider>
+        <AnimatePresence initial={false}>
+            {!sidebarHidden && (
+                <motion.div
+                    key="sidebar-documents"
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 265, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                    style={{ overflow: 'hidden', flexShrink: 0 }}
+                >
+                    <div style={{ width: 265 }} className="layout__sidebar">
+                        <LanguageSelector />
+                        <PanelGroup
+                            tabs={[
+                                { name: 'Tous', active: true },
+                                { name: 'Années', active: false },
+                                { name: 'Alphabet', active: false },
+                                { name: 'Ajoutés', active: false },
+                            ]}
+                        >
+                            {(index: number) => (
+                                <>
+                                    <div hidden={index !== 0}>
+                                        <DocumentSearch />
+                                    </div>
+                                    <div hidden={index !== 1}>
+                                        <ContainerScrollY>
+                                            <div className="mt-2" />
+                                            <DocumentByYears />
+                                        </ContainerScrollY>
+                                    </div>
+                                    <div hidden={index !== 2}>
+                                        <DocumentByAlphabetic />
+                                    </div>
+                                    <div hidden={index !== 3}>
+                                        <div className="mt-2" />
+                                        <DocumentsAdded />
+                                    </div>
+                                </>
+                            )}
+                        </PanelGroup>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }
 
@@ -178,7 +185,8 @@ const DocumentSearch = () => {
     }, [sermons]);
 
     useEffect(() => {
-        (window.api.documents.getTitles(activeLanguage) as Promise<SermonMetaWithTraductions[]>)
+        window.api.documents
+            .getTitles(activeLanguage)
             .then((titles) => setSermons(titles))
             .finally(() => setLoaded(true));
     }, [activeLanguage, setSermons, setLoaded]);
@@ -222,8 +230,8 @@ const DocumentList = ({
 
     return (
         <>
-            <Divider style={{ padding: '0', margin: '0' }} />
-            <ContainerScrollY style={{ paddingLeft: '10px', paddingRight: '4px' }}>
+            <Divider style={{ padding: 0, margin: 0 }} />
+            <ContainerScrollY className="document-list">
                 {datas
                     .slice()
                     .sort((a, b) => a.title.localeCompare(b.title))
@@ -265,16 +273,7 @@ const ItemOutline: React.FC<{
                 {hasMultipleTraductions && (
                     <div className="sidebar-item__tags">
                         {sermon.availableTraductions.map((t) => (
-                            <Tag
-                                key={t.translationId}
-                                color="blue"
-                                style={{
-                                    fontSize: '0.65em',
-                                    lineHeight: '14px',
-                                    padding: '0 3px',
-                                    marginRight: 2,
-                                }}
-                            >
+                            <Tag key={t.translationId} color="blue" className="translation-tag">
                                 {t.traductionName ?? `T${t.translationId}`}
                             </Tag>
                         ))}

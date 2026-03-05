@@ -183,12 +183,9 @@ export default function Subject() {
     };
 
     return (
-        <Row>
+        <Row gutter={16}>
             <Col span={12}>
-                <div
-                    style={{ width: '95%', minHeight: '300px', backgroundColor: '#fff' }}
-                    className="layout__sidebar"
-                >
+                <div className="subject-panel">
                     <Card style={{ width: '100%' }}>
                         <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
                     </Card>
@@ -338,29 +335,18 @@ const ItemSubject: FC<{
     }, [item, onSelectItem]);
 
     return (
-        <>
-            <span
-                className={`smart-editable big ${item.active ? 'active' : ''}`}
-                onClick={onSelect}
-                title={item.name}
-            >
-                <div className="o-icon">
-                    <BookOutlined />
-                </div>
-                <div
-                    style={{
-                        width: '100%',
-                        display: 'inline-flex',
-                        justifyContent: 'space-between',
-                    }}
-                >
-                    <b>{item.name}</b>
-                    <b style={{ paddingRight: '20px' }}>
-                        <DeleteBtn confirm={() => onDeleteSubject(item)} />
-                    </b>
-                </div>
-            </span>
-            <Divider style={{ margin: '7px 0' }} />
-        </>
+        <div
+            className={`subject-item ${item.active ? 'active' : ''}`}
+            onClick={onSelect}
+            title={item.name}
+        >
+            <div className="o-icon">
+                <BookOutlined />
+            </div>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between' }}>
+                <b>{item.name}</b>
+                <DeleteBtn confirm={() => onDeleteSubject(item)} />
+            </div>
+        </div>
     );
 };

@@ -19,7 +19,7 @@ export default function BackupProfile() {
     useEffect(() => {
         const cleanup = window.api.on.openBackupModalFromMain(show);
         window.addEventListener('open-backup-modal-from-main', show);
-        window.api.backup.getReminder().then((canOpen) => (canOpen as boolean) && show());
+        window.api.backup.getReminder().then((canOpen) => canOpen && show());
         return () => {
             cleanup();
             window.removeEventListener('open-backup-modal-from-main', show);
@@ -27,15 +27,13 @@ export default function BackupProfile() {
     }, []);
 
     useEffect(() => {
-        updateStatus(window.api.backup.getStatus() as Promise<BackupStatus>).finally(() =>
-            setFetchStatus(true),
-        );
+        updateStatus(window.api.backup.getStatus()).finally(() => setFetchStatus(true));
 
         const cleanup = window.api.on.backupAccessStatus((status) => {
             // backupAccessStatus provides a boolean, but we need to refetch full status
             if (status) {
                 window.api.backup.getStatus().then((s) => {
-                    if (s) setActiveBackup(s as BackupStatus);
+                    if (s) setActiveBackup(s);
                 });
             }
         });
@@ -52,8 +50,8 @@ export default function BackupProfile() {
         setLoading(true);
         const pending = window.api.backup
             .login()
-            .then((result: unknown) => {
-                return (result as BackupStatus) ?? null;
+            .then((result) => {
+                return result ?? null;
             })
             .catch(() => {
                 message.error(
@@ -63,12 +61,12 @@ export default function BackupProfile() {
                 return null;
             })
             .finally(() => setLoading(false));
-        updateStatus(pending as Promise<BackupStatus | null>);
+        updateStatus(pending);
     }, []);
 
     const handleBackupStatus = useCallback(() => {
         const newActive = activeBackup ? !activeBackup.active : true;
-        updateStatus(window.api.backup.toggleStatus(newActive) as Promise<BackupStatus>);
+        updateStatus(window.api.backup.toggleStatus(newActive));
     }, [activeBackup]);
 
     return (
@@ -118,9 +116,7 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
     const [restoreProgress, setRestoreProgress] = useState<RestoreProgressEvent>();
 
     useEffect(() => {
-        const cleanup = window.api.on.backupProgression((data) =>
-            setRestoreProgress(data as RestoreProgressEvent),
-        );
+        const cleanup = window.api.on.backupProgression((data) => setRestoreProgress(data));
         return cleanup;
     }, []);
 

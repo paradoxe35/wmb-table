@@ -23,7 +23,8 @@ export function Notes({
     const odatas = useRef<NoteItem[]>([]);
 
     useEffect(() => {
-        (window.api.notes.getAll() as Promise<NoteItem[]>)
+        window.api.notes
+            .getAll()
             .then((notes) => {
                 odatas.current = notes;
                 setNotes(notes);
@@ -39,7 +40,7 @@ export function Notes({
     };
 
     const newNote = () => {
-        (window.api.notes.create('Nouvelle note') as Promise<NoteItem>).then((note) => {
+        window.api.notes.create('Nouvelle note').then((note) => {
             setWorkingNote(note.id);
         });
     };
@@ -66,11 +67,11 @@ export function Notes({
                 </Space>
 
                 {notes.length > 0 && (
-                    <Space direction="horizontal" wrap={true}>
+                    <div className="notes-grid">
                         {notes.map((note) => (
                             <Card
                                 key={note.id}
-                                style={{ width: 210 }}
+                                hoverable
                                 actions={[
                                     <EditOutlined key="edit" onClick={() => editDocument(note)} />,
                                     <DeleteBtn key="delete" confirm={() => handleDeletion(note)} />,
@@ -85,7 +86,7 @@ export function Notes({
                                 />
                             </Card>
                         ))}
-                    </Space>
+                    </div>
                 )}
             </Space>
 

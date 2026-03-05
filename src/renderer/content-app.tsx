@@ -61,7 +61,10 @@ const AppOptions = memo(function AppOptions(): ReactElement {
     return (
         <>
             {Object.keys(views).map((k: string) => (
-                <ContainerScrollY className={`${k}__option__content`} key={k} hidden={k !== view}>
+                <ContainerScrollY
+                    className={`${k}__option__content view-panel ${k !== view ? 'view-panel--hidden' : ''}`}
+                    key={k}
+                >
                     {views[k]}
                 </ContainerScrollY>
             ))}
@@ -77,10 +80,16 @@ export function ContentApp() {
 
     return (
         <>
-            <div id="app-view-options" hidden={mainView !== 'options'}>
+            <div
+                id="app-view-options"
+                className={`view-panel ${mainView !== 'options' ? 'view-panel--hidden' : ''}`}
+            >
                 <AppOptions />
             </div>
-            <div id="app-view-document" hidden={mainView !== 'document'}>
+            <div
+                id="app-view-document"
+                className={`view-panel ${mainView !== 'document' ? 'view-panel--hidden' : ''}`}
+            >
                 <DocumentView />
             </div>
             {/* independent components */}

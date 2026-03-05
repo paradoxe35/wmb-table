@@ -86,13 +86,8 @@ const useSearch = (): SearchFn => {
         }
         lastSearch.current = value;
         setLoading(true);
-        (
-            window.api.search.searchText(
-                activeLanguage,
-                value.trim(),
-                1,
-            ) as Promise<TantivySearchResult>
-        )
+        window.api.search
+            .searchText(activeLanguage, value.trim(), 1)
             .then((datas) => {
                 hasNewResult.current += 1;
                 setResults(datas);
@@ -102,17 +97,13 @@ const useSearch = (): SearchFn => {
 
     const onPageChange = useCallback(
         (page: number) => {
-            (
-                window.api.search.searchText(
-                    activeLanguage,
-                    lastSearch.current.trim(),
-                    page,
-                ) as Promise<TantivySearchResult>
-            ).then((datas) => {
-                const lc = document.querySelector('.search__option__content');
-                lc?.scrollTo({ top: 0, behavior: 'smooth' });
-                setResults(datas);
-            });
+            window.api.search
+                .searchText(activeLanguage, lastSearch.current.trim(), page)
+                .then((datas) => {
+                    const lc = document.querySelector('.search__option__content');
+                    lc?.scrollTo({ top: 0, behavior: 'smooth' });
+                    setResults(datas);
+                });
         },
         [activeLanguage],
     );
@@ -131,9 +122,7 @@ export default function Search() {
         if (can) {
             window.api.search.addSuggestion(lastSearch.current.trim(), results!.total);
         }
-        (window.api.search.getSuggestions() as Promise<Suggestions[]>).then(
-            (s) => (suggestions.current = s),
-        );
+        window.api.search.getSuggestions().then((s) => (suggestions.current = s));
     }, [hasNewResult.current]);
 
     return (

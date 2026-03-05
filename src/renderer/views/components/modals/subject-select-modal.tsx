@@ -35,7 +35,7 @@ export function SubjectSelectModal() {
                 documentRefTree.current.bible,
             )
             .then((item) => {
-                setSelectedSubjectItem(item as SubjectDocumentItem);
+                setSelectedSubjectItem(item);
                 window.dispatchEvent(
                     new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
                 );
@@ -76,7 +76,7 @@ export function SubjectSelectModal() {
                 </Space>
             }
             footer={[]}
-            visible={visible}
+            open={visible}
             onOk={hide}
             onCancel={hide}
         >
