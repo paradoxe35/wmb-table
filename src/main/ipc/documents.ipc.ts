@@ -1,9 +1,11 @@
 import { DocumentChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
+import * as documentsRepo from '@main/database/repositories/documents.repository';
+import * as tabsRepo from '@main/database/repositories/tabs.repository';
 
 export function registerDocumentsHandlers(): void {
   registerHandler(DocumentChannels.getTitles, async () => {
-    throw new Error('Not implemented: documents:getTitles');
+    return documentsRepo.getAllTitles();
   });
 
   registerHandler(DocumentChannels.getContentPath, async () => {
@@ -11,10 +13,10 @@ export function registerDocumentsHandlers(): void {
   });
 
   registerHandler(DocumentChannels.getTabs, async () => {
-    throw new Error('Not implemented: documents:getTabs');
+    return tabsRepo.getTabs();
   });
 
-  registerHandler(DocumentChannels.saveTabs, async () => {
-    throw new Error('Not implemented: documents:saveTabs');
+  registerHandler(DocumentChannels.saveTabs, async (_event, datas) => {
+    tabsRepo.saveTabs(datas);
   });
 }

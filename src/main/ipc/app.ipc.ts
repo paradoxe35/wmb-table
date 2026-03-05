@@ -1,9 +1,13 @@
 import { AppChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
+import * as configRepo from '@main/database/repositories/config.repository';
+import * as sidebarRepo from '@main/database/repositories/sidebar.repository';
+import * as documentsRepo from '@main/database/repositories/documents.repository';
+import * as historyRepo from '@main/database/repositories/history.repository';
 
 export function registerAppHandlers(): void {
   registerHandler(AppChannels.initialize, async () => {
-    throw new Error('Not implemented: app:initialize');
+    configRepo.markInitialized();
   });
 
   registerHandler(AppChannels.restart, async () => {
@@ -27,19 +31,19 @@ export function registerAppHandlers(): void {
   });
 
   registerHandler(AppChannels.getSidebarStatus, async () => {
-    throw new Error('Not implemented: app:getSidebarStatus');
+    return sidebarRepo.getSidebarStatus();
   });
 
-  registerHandler(AppChannels.setSidebarStatus, async () => {
-    throw new Error('Not implemented: app:setSidebarStatus');
+  registerHandler(AppChannels.setSidebarStatus, async (_event, hidden) => {
+    sidebarRepo.setSidebarStatus(hidden);
   });
 
   registerHandler(AppChannels.getCustomDocuments, async () => {
-    throw new Error('Not implemented: app:getCustomDocuments');
+    return documentsRepo.getCustomDocuments();
   });
 
-  registerHandler(AppChannels.deleteCustomDocument, async () => {
-    throw new Error('Not implemented: app:deleteCustomDocument');
+  registerHandler(AppChannels.deleteCustomDocument, async (_event, id) => {
+    documentsRepo.deleteCustomDocument(id);
   });
 
   registerHandler(AppChannels.uploadCustomDocuments, async () => {
@@ -47,11 +51,11 @@ export function registerAppHandlers(): void {
   });
 
   registerHandler(AppChannels.getHistory, async () => {
-    throw new Error('Not implemented: app:getHistory');
+    return historyRepo.getHistory();
   });
 
-  registerHandler(AppChannels.getHistoryItems, async () => {
-    throw new Error('Not implemented: app:getHistoryItems');
+  registerHandler(AppChannels.getHistoryItems, async (_event, historyId) => {
+    return historyRepo.getHistoryItems(historyId);
   });
 
   registerHandler(AppChannels.downloadDocumentPdf, async () => {

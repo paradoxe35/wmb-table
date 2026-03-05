@@ -1,28 +1,38 @@
 import { SubjectChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
+import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 
 export function registerSubjectsHandlers(): void {
   registerHandler(SubjectChannels.getAll, async () => {
-    throw new Error('Not implemented: subjects:getAll');
+    return subjectsRepo.getAll();
   });
 
-  registerHandler(SubjectChannels.create, async () => {
-    throw new Error('Not implemented: subjects:create');
+  registerHandler(SubjectChannels.create, async (_event, name) => {
+    return subjectsRepo.create(name);
   });
 
-  registerHandler(SubjectChannels.delete, async () => {
-    throw new Error('Not implemented: subjects:delete');
+  registerHandler(SubjectChannels.delete, async (_event, name) => {
+    subjectsRepo.deleteSubject(name);
   });
 
-  registerHandler(SubjectChannels.getItems, async () => {
-    throw new Error('Not implemented: subjects:getItems');
+  registerHandler(SubjectChannels.getItems, async (_event, subjectName) => {
+    return subjectsRepo.getItems(subjectName);
   });
 
-  registerHandler(SubjectChannels.deleteItem, async () => {
-    throw new Error('Not implemented: subjects:deleteItem');
+  registerHandler(SubjectChannels.deleteItem, async (_event, id) => {
+    subjectsRepo.deleteItem(id);
   });
 
-  registerHandler(SubjectChannels.createItem, async () => {
-    throw new Error('Not implemented: subjects:createItem');
-  });
+  registerHandler(
+    SubjectChannels.createItem,
+    async (_event, subjectName, documentTitle, documentHtmlTree, textContent, bible) => {
+      return subjectsRepo.createItem(
+        subjectName,
+        documentTitle,
+        documentHtmlTree,
+        textContent,
+        bible,
+      );
+    },
+  );
 }

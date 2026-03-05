@@ -1,20 +1,23 @@
 import { AudioChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
+import * as audioRepo from '@main/database/repositories/audio.repository';
 
 export function registerAudioHandlers(): void {
-  registerHandler(AudioChannels.getTimeAndLocalFile, async () => {
-    throw new Error('Not implemented: audio:getTimeAndLocalFile');
+  registerHandler(AudioChannels.getTimeAndLocalFile, async (_event, audioLink) => {
+    const time = audioRepo.getTimeByAudioLink(audioLink);
+    const download = audioRepo.getDownloadByAudioLink(audioLink);
+    return { time, download };
   });
 
-  registerHandler(AudioChannels.setTime, async () => {
-    throw new Error('Not implemented: audio:setTime');
+  registerHandler(AudioChannels.setTime, async (_event, audioLink, time) => {
+    audioRepo.setTime(audioLink, time);
   });
 
   registerHandler(AudioChannels.getLastPlay, async () => {
-    throw new Error('Not implemented: audio:getLastPlay');
+    return audioRepo.getLastPlay();
   });
 
-  registerHandler(AudioChannels.setLastPlay, async () => {
-    throw new Error('Not implemented: audio:setLastPlay');
+  registerHandler(AudioChannels.setLastPlay, async (_event, docJson) => {
+    audioRepo.setLastPlay(docJson);
   });
 }

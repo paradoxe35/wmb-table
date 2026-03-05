@@ -6,9 +6,13 @@ import { setMainWindow } from '@main/lib/window';
 import MenuBuilder from '@main/lib/menu';
 import { initializeLogger } from '@main/lib/logger';
 import { initializeUpdater } from '@main/lib/updater';
+import { initializeDatabase, closeDatabase } from '@main/database';
 
 // Initialize logger first
 initializeLogger();
+
+// Initialize database before IPC handlers
+initializeDatabase();
 
 // Register all IPC handlers before window creation
 initializeIpc();
@@ -97,6 +101,10 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+});
+
+app.on('will-quit', () => {
+  closeDatabase();
 });
 
 app.on('window-all-closed', () => {

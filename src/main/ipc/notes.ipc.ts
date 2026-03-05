@@ -1,69 +1,73 @@
 import { NotesChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
+import * as notesRepo from '@main/database/repositories/notes.repository';
 
 export function registerNotesHandlers(): void {
   registerHandler(NotesChannels.getAll, async () => {
-    throw new Error('Not implemented: notes:getAll');
+    return notesRepo.getAll();
   });
 
-  registerHandler(NotesChannels.getById, async () => {
-    throw new Error('Not implemented: notes:getById');
+  registerHandler(NotesChannels.getById, async (_event, id) => {
+    return notesRepo.getById(id);
   });
 
-  registerHandler(NotesChannels.create, async () => {
-    throw new Error('Not implemented: notes:create');
+  registerHandler(NotesChannels.create, async (_event, name) => {
+    return notesRepo.create(name);
   });
 
-  registerHandler(NotesChannels.delete, async () => {
-    throw new Error('Not implemented: notes:delete');
+  registerHandler(NotesChannels.delete, async (_event, id) => {
+    notesRepo.deleteNote(id);
   });
 
-  registerHandler(NotesChannels.rename, async () => {
-    throw new Error('Not implemented: notes:rename');
+  registerHandler(NotesChannels.rename, async (_event, id, newName) => {
+    return notesRepo.rename(id, newName);
   });
 
-  registerHandler(NotesChannels.updateContent, async () => {
-    throw new Error('Not implemented: notes:updateContent');
+  registerHandler(NotesChannels.updateContent, async (_event, id, content) => {
+    notesRepo.updateContent(id, content);
   });
 
-  registerHandler(NotesChannels.getReferences, async () => {
-    throw new Error('Not implemented: notes:getReferences');
+  registerHandler(NotesChannels.getReferences, async (_event, noteId) => {
+    return notesRepo.getReferences(noteId);
   });
 
-  registerHandler(NotesChannels.createReference, async () => {
-    throw new Error('Not implemented: notes:createReference');
+  registerHandler(
+    NotesChannels.createReference,
+    async (_event, noteId, documentTitle, documentHtmlTree, textContent) => {
+      return notesRepo.createReference(noteId, documentTitle, documentHtmlTree, textContent);
+    },
+  );
+
+  registerHandler(NotesChannels.getReference, async (_event, id) => {
+    return notesRepo.getReference(id);
   });
 
-  registerHandler(NotesChannels.getReference, async () => {
-    throw new Error('Not implemented: notes:getReference');
+  registerHandler(NotesChannels.syncReferences, async (_event, noteId, refs) => {
+    notesRepo.syncReferences(noteId, refs);
   });
 
-  registerHandler(NotesChannels.syncReferences, async () => {
-    throw new Error('Not implemented: notes:syncReferences');
+  registerHandler(NotesChannels.updateReference, async (_event, id, ref) => {
+    notesRepo.updateReference(id, ref);
   });
 
-  registerHandler(NotesChannels.updateReference, async () => {
-    throw new Error('Not implemented: notes:updateReference');
+  registerHandler(NotesChannels.getBibleReferences, async (_event, noteId) => {
+    return notesRepo.getBibleReferences(noteId);
   });
 
-  registerHandler(NotesChannels.getBibleReferences, async () => {
-    throw new Error('Not implemented: notes:getBibleReferences');
+  registerHandler(NotesChannels.createBibleReference, async (_event, noteId, label) => {
+    return notesRepo.createBibleReference(noteId, label);
   });
 
-  registerHandler(NotesChannels.createBibleReference, async () => {
-    throw new Error('Not implemented: notes:createBibleReference');
+  registerHandler(NotesChannels.syncBibleReferences, async (_event, noteId, refs) => {
+    notesRepo.syncBibleReferences(noteId, refs);
   });
 
-  registerHandler(NotesChannels.syncBibleReferences, async () => {
-    throw new Error('Not implemented: notes:syncBibleReferences');
+  registerHandler(NotesChannels.addBibleVerse, async (_event, refId, verse) => {
+    notesRepo.addBibleVerse(refId, verse);
   });
 
-  registerHandler(NotesChannels.addBibleVerse, async () => {
-    throw new Error('Not implemented: notes:addBibleVerse');
-  });
-
-  registerHandler(NotesChannels.removeBibleVerse, async () => {
-    throw new Error('Not implemented: notes:removeBibleVerse');
+  registerHandler(NotesChannels.removeBibleVerse, async (_event, refId, verseId) => {
+    notesRepo.removeBibleVerse(refId, verseId);
   });
 
   registerHandler(NotesChannels.exportPdf, async () => {
