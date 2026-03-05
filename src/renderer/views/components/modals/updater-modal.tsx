@@ -165,7 +165,7 @@ export default function Updater() {
                         </Space>
                     </>
                 }
-                visible={visible}
+                open={visible}
                 footer={[
                     <Button onClick={hide} disabled={preventActions} key={0}>
                         {updaterInfo?.type === 'hasUpdate' ? 'Plus tard' : 'Fermer'}
@@ -183,17 +183,13 @@ export default function Updater() {
             >
                 {updaterInfo && (
                     <Space direction="vertical">
-                        <Typography>
-                            <Typography.Paragraph>
-                                Version:{' '}
-                                {updaterInfo.status?.updateInfo?.version ||
-                                    updaterInfo.status?.version}
-                            </Typography.Paragraph>
-                            <Typography.Paragraph>
-                                Derni\u00e8re v\u00e9rification:{' '}
-                                {updaterInfo.status?.lastUpdateCheck?.toLocaleString()}
-                            </Typography.Paragraph>
-                        </Typography>
+                        {updaterInfo.updateInfo?.version && (
+                            <Typography>
+                                <Typography.Paragraph>
+                                    Version: {updaterInfo.updateInfo.version}
+                                </Typography.Paragraph>
+                            </Typography>
+                        )}
                         {content}
                     </Space>
                 )}

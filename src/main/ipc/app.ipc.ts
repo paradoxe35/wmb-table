@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as configRepo from '@main/database/repositories/config.repository';
@@ -6,6 +7,7 @@ import * as customDocsRepo from '@main/database/repositories/custom-documents.re
 import * as historyRepo from '@main/database/repositories/history.repository';
 import { switchBibleLanguage } from '@main/database/index';
 import { extractTextFromPdf } from '@main/services/pdf-extract.service';
+import { getUpdateStatus, startDownload, quitAndInstall } from '@main/lib/updater';
 
 export function registerAppHandlers(): void {
     registerHandler(AppChannels.initialize, async () => {
@@ -22,19 +24,20 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.restart, async () => {
-        throw new Error('Not implemented: app:restart');
+        app.relaunch();
+        app.exit(0);
     });
 
     registerHandler(AppChannels.getUpdateStatus, async () => {
-        throw new Error('Not implemented: app:getUpdateStatus');
+        return getUpdateStatus();
     });
 
     registerHandler(AppChannels.startDownloadUpdate, async () => {
-        throw new Error('Not implemented: app:startDownloadUpdate');
+        startDownload();
     });
 
     registerHandler(AppChannels.quitAndInstallUpdate, async () => {
-        throw new Error('Not implemented: app:quitAndInstallUpdate');
+        quitAndInstall();
     });
 
     registerHandler(AppChannels.getAsset, async () => {

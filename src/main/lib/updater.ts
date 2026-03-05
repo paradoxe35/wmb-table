@@ -5,27 +5,36 @@ import { sendToRenderer } from '@main/ipc/register';
 import type { UpdaterNotification } from '@shared/types';
 import log from './logger';
 
+let lastNotification: UpdaterNotification = { type: 'none' };
+let mainWindowRef: BrowserWindow | null = null;
+
+function notify(notification: UpdaterNotification): void {
+    lastNotification = notification;
+    if (mainWindowRef) {
+        sendToRenderer(mainWindowRef, PushChannels.notifyForNewUpdate, notification);
+    }
+}
+
 export function initializeUpdater(mainWindow: BrowserWindow): void {
+    mainWindowRef = mainWindow;
     autoUpdater.logger = log;
     autoUpdater.autoDownload = false;
+    autoUpdater.autoInstallOnAppQuit = true;
 
     autoUpdater.on('checking-for-update', () => {
         log.info('Updater: checking for update...');
     });
 
     autoUpdater.on('update-available', (info) => {
-        const notification: UpdaterNotification = {
+        notify({
             type: 'hasUpdate',
-            status: {
-                updateInfo: {
-                    version: info.version,
-                    releaseDate: info.releaseDate,
-                    releaseName: info.releaseName ?? null,
-                    releaseNotes: typeof info.releaseNotes === 'string' ? info.releaseNotes : null,
-                },
+            updateInfo: {
+                version: info.version,
+                releaseDate: info.releaseDate,
+                releaseName: info.releaseName ?? null,
+                releaseNotes: typeof info.releaseNotes === 'string' ? info.releaseNotes : null,
             },
-        };
-        sendToRenderer(mainWindow, PushChannels.notifyForNewUpdate, notification);
+        });
     });
 
     autoUpdater.on('update-not-available', () => {
@@ -33,7 +42,7 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     });
 
     autoUpdater.on('download-progress', (progress) => {
-        const notification: UpdaterNotification = {
+        notify({
             type: 'downloading',
             progress: {
                 downloadProgress: {
@@ -44,21 +53,15 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
                     bytesPerSecond: progress.bytesPerSecond,
                 },
             },
-        };
-        sendToRenderer(mainWindow, PushChannels.notifyForNewUpdate, notification);
+        });
     });
 
     autoUpdater.on('update-downloaded', () => {
-        const notification: UpdaterNotification = { type: 'downloaded' };
-        sendToRenderer(mainWindow, PushChannels.notifyForNewUpdate, notification);
+        notify({ type: 'downloaded' });
     });
 
     autoUpdater.on('error', (err) => {
-        const notification: UpdaterNotification = {
-            type: 'error',
-            message: err.message,
-        };
-        sendToRenderer(mainWindow, PushChannels.notifyForNewUpdate, notification);
+        notify({ type: 'error', message: err.message });
     });
 
     // Check for updates after a short delay
@@ -67,4 +70,18 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
             log.error('Updater: failed to check for updates', err);
         });
     }, 3000);
+}
+
+export function getUpdateStatus(): UpdaterNotification {
+    return lastNotification;
+}
+
+export function startDownload(): void {
+    autoUpdater.downloadUpdate().catch((err) => {
+        log.error('Updater: failed to start download', err);
+    });
+}
+
+export function quitAndInstall(): void {
+    autoUpdater.quitAndInstall(false, true);
 }

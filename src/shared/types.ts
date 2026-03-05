@@ -449,16 +449,9 @@ export type UpdateInfo = {
     releaseNotes?: string | null;
 };
 
-export interface UpdaterInfoStatus extends BaseEntity {
-    restartedToUpdate: boolean;
-    lastUpdateCheck?: Date;
-    updateInfo?: UpdateInfo;
-    version?: string;
-}
-
 export type UpdaterNotification = {
     type: 'none' | 'hasUpdate' | 'downloading' | 'downloaded' | 'error';
+    updateInfo?: UpdateInfo;
     progress?: UpdaterProgress;
-    status?: Partial<UpdaterInfoStatus>;
     message?: string;
 };
