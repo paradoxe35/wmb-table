@@ -167,7 +167,7 @@ export function ReferenceBibleModal({
                 width="80%"
                 title={
                     <>
-                        <Space direction="horizontal">
+                        <Space orientation="horizontal">
                             <span>Références biblique</span>
                             <span>-</span>
                             <div className="flex flex-center">

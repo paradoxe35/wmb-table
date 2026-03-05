@@ -28,7 +28,7 @@ const ShowProgress = ({ title, progress, onlyPercent = false }: ProgressType) =>
         rPercent = ((proceed * 100) / total).toFixed(0);
     }
     return (
-        <Space direction="vertical">
+        <Space orientation="vertical">
             <Space>
                 <Typography.Text strong>{title}</Typography.Text>
                 <Icon />
@@ -160,7 +160,7 @@ export default function Updater() {
                 maskClosable={!preventActions}
                 title={
                     <>
-                        <Space direction="horizontal">
+                        <Space orientation="horizontal">
                             <span>Mise \u00e0 jour</span>
                         </Space>
                     </>
@@ -182,7 +182,7 @@ export default function Updater() {
                 onCancel={hide}
             >
                 {updaterInfo && (
-                    <Space direction="vertical">
+                    <Space orientation="vertical">
                         {updaterInfo.updateInfo?.version && (
                             <Typography>
                                 <Typography.Paragraph>

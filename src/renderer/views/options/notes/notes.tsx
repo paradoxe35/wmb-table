@@ -57,8 +57,8 @@ export function Notes({
 
     return (
         <>
-            <Space direction="vertical">
-                <Space direction="horizontal">
+            <Space orientation="vertical">
+                <Space orientation="horizontal">
                     <Button onClick={newNote} icon={<PlusOutlined />}>
                         Nouvelle note
                     </Button>

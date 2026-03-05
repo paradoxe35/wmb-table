@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { HistoryOutlined, GroupOutlined, SearchOutlined, EditOutlined } from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
+import type { MenuProps } from 'antd';
 import { useAppStore } from '@renderer/stores';
 import { BibleIcons } from '../icons';
 
 const { Sider } = Layout;
 
-type OptionItem = { key: string; name: string; icon: React.ReactNode } | null;
+type OptionDef = { key: string; name: string; icon: React.ReactNode };
 
 export default function SidebarMenu({
     collapsed,
@@ -20,26 +21,43 @@ export default function SidebarMenu({
     const optionViewRef = useRef(optionView);
     optionViewRef.current = optionView;
 
-    const options: OptionItem[] = useMemo(
+    const optionDefs: OptionDef[] = useMemo(
         () => [
             { key: 'history', name: 'Historique', icon: <HistoryOutlined /> },
             { key: 'search', name: 'Recherche', icon: <SearchOutlined /> },
             { key: 'subject', name: 'Sujets', icon: <GroupOutlined /> },
             { key: 'editor', name: 'Notes', icon: <EditOutlined /> },
-            null,
             { key: 'bible', name: 'Bible', icon: <BibleIcons /> },
         ],
         [],
     );
 
+    const menuItems: MenuProps['items'] = useMemo(
+        () => [
+            ...optionDefs.slice(0, 4).map((op) => ({
+                key: op.key,
+                icon: op.icon,
+                label: op.name,
+                onClick: () => showOptions(op.key as 'search'),
+            })),
+            { type: 'divider' as const },
+            ...optionDefs.slice(4).map((op) => ({
+                key: op.key,
+                icon: op.icon,
+                label: op.name,
+                onClick: () => showOptions(op.key as 'search'),
+            })),
+        ],
+        [optionDefs, showOptions],
+    );
+
     useEffect(() => {
-        const nonNull = options.filter((r): r is NonNullable<OptionItem> => r != null);
         return window.api.on.switchOnOptions(() => {
-            let index = nonNull.findIndex((v) => optionViewRef.current === v.key);
-            index = index >= 0 && nonNull[index + 1] ? index + 1 : 0;
-            showOptions(nonNull[index].key as 'search');
+            let index = optionDefs.findIndex((v) => optionViewRef.current === v.key);
+            index = index >= 0 && optionDefs[index + 1] ? index + 1 : 0;
+            showOptions(optionDefs[index].key as 'search');
         });
-    }, [options, showOptions]);
+    }, [optionDefs, showOptions]);
 
     return (
         <Sider
@@ -49,21 +67,7 @@ export default function SidebarMenu({
             collapsed={collapsed}
             onCollapse={onCollapse}
         >
-            <Menu mode="inline" selectedKeys={[optionView]}>
-                {options.map((op, i) =>
-                    op === null ? (
-                        <Menu.Divider key={i} />
-                    ) : (
-                        <Menu.Item
-                            key={op.key}
-                            icon={op.icon}
-                            onClick={() => showOptions(op.key as 'search')}
-                        >
-                            {op.name}
-                        </Menu.Item>
-                    ),
-                )}
-            </Menu>
+            <Menu mode="inline" selectedKeys={[optionView]} items={menuItems} />
         </Sider>
     );
 }

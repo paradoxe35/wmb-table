@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { FundViewOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
 import { useAppStore } from '@renderer/stores';
@@ -24,14 +24,31 @@ export default function ViewerMenu() {
         });
     }, [setMainView]);
 
+    const items = useMemo(
+        () => [
+            {
+                key: 'options',
+                icon: <ProfileOutlined style={{ fontSize: '20px' }} />,
+                label: '',
+                onClick: showOptions,
+            },
+            {
+                key: 'document',
+                icon: <FundViewOutlined style={{ fontSize: '20px' }} />,
+                label: '',
+                onClick: showDocument,
+            },
+        ],
+        [showOptions, showDocument],
+    );
+
     return (
-        <Menu theme="dark" mode="horizontal" className="row__center" selectedKeys={[mainView]}>
-            <Menu.Item key="options" onClick={showOptions}>
-                <ProfileOutlined style={{ fontSize: '20px' }} />
-            </Menu.Item>
-            <Menu.Item key="document" onClick={showDocument}>
-                <FundViewOutlined style={{ fontSize: '20px' }} />
-            </Menu.Item>
-        </Menu>
+        <Menu
+            theme="dark"
+            mode="horizontal"
+            className="row__center"
+            selectedKeys={[mainView]}
+            items={items}
+        />
     );
 }

@@ -78,7 +78,7 @@ export default function BackupProfile() {
             <Modal
                 title={
                     <>
-                        <Space direction="horizontal">
+                        <Space orientation="horizontal">
                             <span>Sauvegarde</span>
                         </Space>
                     </>
@@ -149,7 +149,7 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
         return {
             start: <Text>D\u00e9but de la r\u00e9cup\u00e9ration des donn\u00e9es</Text>,
             complete: (
-                <Space direction="vertical">
+                <Space orientation="vertical">
                     <Text type="success">
                         Vos donn\u00e9es ont \u00e9t\u00e9 restaur\u00e9es et sauvegard\u00e9es avec
                         succ\u00e8s. <br />
@@ -192,8 +192,8 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
             </Paragraph>
             {restoreContent && restoreProgress && (
                 <Paragraph>
-                    <Space direction="vertical">
-                        <Space direction="horizontal">
+                    <Space orientation="vertical">
+                        <Space orientation="horizontal">
                             <Text strong>
                                 {restoreProgress.type === 'sauvegarde'
                                     ? 'Sauvegarde'

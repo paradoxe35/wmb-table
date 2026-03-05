@@ -5,8 +5,6 @@ import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
 
-const { Panel } = Collapse;
-
 export default function History() {
     const title = useActiveTabTitle();
     const [histories, setHistories] = useState<HistoryData[]>([]);
@@ -48,10 +46,11 @@ export default function History() {
                 accordion
                 onChange={onChange}
                 style={{ margin: '20px 0' }}
-            >
-                {histories.map((h) => (
-                    <Panel header={h.date} key={h.id}>
-                        {key === h.id && (
+                items={histories.map((h) => ({
+                    key: h.id,
+                    label: h.date,
+                    children:
+                        key === h.id ? (
                             <List
                                 itemLayout="horizontal"
                                 dataSource={historyItems.filter((i) => getSermon(i.documentTitle))}
@@ -72,10 +71,9 @@ export default function History() {
                                     </List.Item>
                                 )}
                             />
-                        )}
-                    </Panel>
-                ))}
-            </Collapse>
+                        ) : null,
+                }))}
+            />
         </>
     );
 }

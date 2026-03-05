@@ -85,7 +85,7 @@ export default function SetupView() {
         >
             <div style={{ maxWidth: 700, width: '100%' }}>
                 <Space
-                    direction="vertical"
+                    orientation="vertical"
                     size="large"
                     style={{ width: '100%', textAlign: 'center' }}
                 >

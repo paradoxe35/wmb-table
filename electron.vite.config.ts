@@ -12,6 +12,14 @@ export default defineConfig({
         },
     },
     preload: {
+        build: {
+            rollupOptions: {
+                output: {
+                    format: 'cjs',
+                    entryFileNames: '[name].js',
+                },
+            },
+        },
         resolve: {
             alias: {
                 '@shared': resolve('src/shared'),

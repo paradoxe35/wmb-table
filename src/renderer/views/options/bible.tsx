@@ -227,69 +227,75 @@ function BookContent({
             .then(setVerses);
     }, [chaptersKey, bookDetail.book]);
 
-    return (
-        <Collapse activeKey="1" accordion>
-            <Collapse.Panel
-                header={
-                    <div className="chapter-grid">
-                        {new Array(+bookDetail.chapters).fill(null).map((_, i) => {
-                            const key = i + 1;
-                            return (
-                                <Button
-                                    onClick={() => setChaptersKey(key)}
-                                    key={key}
-                                    className="chapter-btn"
-                                    type={key === chaptersKey ? 'primary' : 'dashed'}
-                                    size="small"
-                                >
-                                    {i + 1}
-                                </Button>
-                            );
-                        })}
-                    </div>
-                }
-                key="1"
-            >
-                {(!verses || verses.length === 0) && (
-                    <div className="flex flex-center">
-                        <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-                    </div>
-                )}
-                {verses && verses.length > 0 && (
-                    <List
-                        itemLayout="horizontal"
-                        dataSource={verses.sort((a, b) => +a.verse - +b.verse)}
-                        renderItem={(item) => {
-                            const onClickItem = () => onClick?.(item.id);
-                            return (
-                                <List.Item
-                                    className={`verse-item ${onClick ? 'list__clickable' : ''}`}
-                                    actions={[
-                                        verseMetaContent && (
-                                            <span className="verse-action" key="0">
-                                                <AddToSubject verse={item} />
-                                            </span>
-                                        ),
-                                    ]}
-                                    onClick={onClickItem}
-                                    key={item.id}
-                                >
-                                    <List.Item.Meta
-                                        avatar={<span>{item.verse}.</span>}
-                                        description={
-                                            <Typography.Text className="content-description">
-                                                {item.content}
-                                            </Typography.Text>
-                                        }
-                                    />
-                                </List.Item>
-                            );
-                        }}
-                    />
-                )}
-            </Collapse.Panel>
-        </Collapse>
-    );
+    const collapseItems = [
+        {
+            key: '1',
+            label: (
+                <div className="chapter-grid">
+                    {new Array(+bookDetail.chapters).fill(null).map((_, i) => {
+                        const key = i + 1;
+                        return (
+                            <Button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setChaptersKey(key);
+                                }}
+                                key={key}
+                                className="chapter-btn"
+                                type={key === chaptersKey ? 'primary' : 'dashed'}
+                                size="small"
+                            >
+                                {i + 1}
+                            </Button>
+                        );
+                    })}
+                </div>
+            ),
+            children: (
+                <>
+                    {(!verses || verses.length === 0) && (
+                        <div className="flex flex-center">
+                            <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                        </div>
+                    )}
+                    {verses && verses.length > 0 && (
+                        <List
+                            itemLayout="horizontal"
+                            dataSource={verses.sort((a, b) => +a.verse - +b.verse)}
+                            renderItem={(item) => {
+                                const onClickItem = () => onClick?.(item.id);
+                                return (
+                                    <List.Item
+                                        className={`verse-item ${onClick ? 'list__clickable' : ''}`}
+                                        actions={[
+                                            verseMetaContent && (
+                                                <span className="verse-action" key="0">
+                                                    <AddToSubject verse={item} />
+                                                </span>
+                                            ),
+                                        ]}
+                                        onClick={onClickItem}
+                                        key={item.id}
+                                    >
+                                        <List.Item.Meta
+                                            avatar={<span>{item.verse}.</span>}
+                                            description={
+                                                <Typography.Text className="content-description">
+                                                    {item.content}
+                                                </Typography.Text>
+                                            }
+                                        />
+                                    </List.Item>
+                                );
+                            }}
+                        />
+                    )}
+                </>
+            ),
+        },
+    ];
+
+    return <Collapse activeKey="1" accordion items={collapseItems} />;
 }
 
 function BibleTestamentContent({
@@ -315,25 +321,26 @@ function BibleTestamentContent({
         }
     }, [currentKey]);
 
-    return (
-        <Collapse onChange={onChangeKey} accordion>
-            {bibleIndex &&
-                Object.keys(bibleIndex).map((key) => {
-                    const book = bibleIndex[key];
-                    return (
-                        <Collapse.Panel id={`book-${book.book}`} header={key} key={book.book}>
-                            {currentKey === book.book && (
-                                <BookContent
-                                    verseMetaContent={verseMetaContent}
-                                    onClick={onClick}
-                                    bookDetail={book}
-                                />
-                            )}
-                        </Collapse.Panel>
-                    );
-                })}
-        </Collapse>
-    );
+    const collapseItems = bibleIndex
+        ? Object.keys(bibleIndex).map((key) => {
+              const book = bibleIndex[key];
+              return {
+                  key: book.book,
+                  id: `book-${book.book}`,
+                  label: key,
+                  children:
+                      currentKey === book.book ? (
+                          <BookContent
+                              verseMetaContent={verseMetaContent}
+                              onClick={onClick}
+                              bookDetail={book}
+                          />
+                      ) : null,
+              };
+          })
+        : [];
+
+    return <Collapse onChange={onChangeKey} accordion items={collapseItems} />;
 }
 
 export function BibleContent({
@@ -387,9 +394,9 @@ export function BibleContent({
 
     return (
         <>
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space orientation="vertical" style={{ width: '100%' }}>
                 {Object.keys(bibleIndex).map((key) => (
-                    <Space direction="vertical" style={{ width: '100%' }} key={key}>
+                    <Space orientation="vertical" style={{ width: '100%' }} key={key}>
                         <Typography.Title type="secondary" level={5}>
                             {key === 'N' ? 'Nouveau' : 'Ancien'} Testament
                         </Typography.Title>

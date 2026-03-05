@@ -51,7 +51,7 @@ function InputSearch({ onSearch, loading, suggestions }: InputSearchType) {
 
     return (
         <AutoComplete
-            dropdownMatchSelectWidth={252}
+            popupMatchSelectWidth={252}
             style={{ width: 300 }}
             options={options}
             onSelect={onSelect}

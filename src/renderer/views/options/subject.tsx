@@ -87,7 +87,7 @@ function Title({
     onSaveNewSubject: (searchValue: string) => void;
 }) {
     return (
-        <Space direction="horizontal">
+        <Space orientation="horizontal">
             <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
             <div />
             <ModalNewSubject onSaveNewSubject={onSaveNewSubject} />

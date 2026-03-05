@@ -17,7 +17,7 @@ const { Header, Content } = Layout;
 function Title() {
     const appLoaded = useAppStore((s) => s.loaded);
     return (
-        <Space direction="horizontal">
+        <Space orientation="horizontal">
             <span>{APP_NAME}</span>
             {!appLoaded && <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />}
         </Space>

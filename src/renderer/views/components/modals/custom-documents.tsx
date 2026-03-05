@@ -49,7 +49,7 @@ export default function CustomDocuments() {
                 width="80%"
                 title={
                     <>
-                        <Space direction="horizontal">
+                        <Space orientation="horizontal">
                             <span>Documents</span>
                             <span>-</span>
                             <div className="flex flex-center">
@@ -92,7 +92,7 @@ const DocumentTitle = ({ length }: { length: number }) => {
     const appLoaded = useAppStore((s) => s.loaded);
 
     return (
-        <Space direction="horizontal">
+        <Space orientation="horizontal">
             <Typography.Text type="secondary">Documents ajoutés ({length})</Typography.Text>
             {!appLoaded && <Spin indicator={<LoadingOutlined spin />} />}
         </Space>
@@ -143,7 +143,7 @@ function CustomDocumentItem({
             </div>
 
             <div className="flex flex-center mt-2 mb-2">
-                <Space direction="horizontal">
+                <Space orientation="horizontal">
                     <Input.Search onSearch={onSearch} />
                 </Space>
             </div>

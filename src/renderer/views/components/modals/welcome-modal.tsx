@@ -2,7 +2,7 @@ import { Button, Modal, Space } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
 import { useModalVisible } from '@renderer/hooks';
 import { Avatar } from 'antd';
-import { APP_NAME } from '@renderer/utils/constants';
+import { APP_NAME, DOCS_LINK, DOCS_SUBJECT_LINK, DOCS_NOTE_LINK } from '@renderer/utils/constants';
 import { Typography } from 'antd';
 import { useSermonStore } from '@renderer/stores';
 
@@ -34,7 +34,7 @@ export default function Welcome() {
                 width="60%"
                 title={
                     <>
-                        <Space direction="horizontal">
+                        <Space orientation="horizontal">
                             <Avatar size="large" src={image} />
                             <span>{APP_NAME}</span>
                         </Space>
@@ -52,7 +52,7 @@ export default function Welcome() {
                         <Link
                             style={{ color: '#fff', textDecoration: 'none' }}
                             target="_blank"
-                            href={process.env.DOCS_LINK}
+                            href={DOCS_LINK}
                         >
                             Documentation
                         </Link>
@@ -88,7 +88,7 @@ const WelcomeContent = () => {
                     <li>
                         Regroupez vos r\u00e9f\u00e9rences de documents par sujet(pour plus
                         d&apos;infos, allez dans la{' '}
-                        <Link target="_blank" href={process.env.DOCS_SUBJECT_LINK}>
+                        <Link target="_blank" href={DOCS_SUBJECT_LINK}>
                             documentation
                         </Link>
                         ).
@@ -96,7 +96,7 @@ const WelcomeContent = () => {
                     <li>Cr\u00e9er des notes et les modifier.</li>
                     <li>
                         Ajoutez des r\u00e9f\u00e9rences de documents ou de la Bible dans vos notes(
-                        <Link target="_blank" href={process.env.DOCS_NOTE_LINK}>
+                        <Link target="_blank" href={DOCS_NOTE_LINK}>
                             documentation
                         </Link>
                         ).

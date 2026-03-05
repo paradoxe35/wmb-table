@@ -160,13 +160,13 @@ function ButtonsControllers({
 
     return (
         <div className="editor-toolbar">
-            <Space direction="horizontal">
+            <Space orientation="horizontal">
                 <Button type="dashed" onClick={onBackToNotes} icon={<LeftOutlined />}>
                     Notes
                 </Button>
             </Space>
 
-            <Space direction="horizontal">
+            <Space orientation="horizontal">
                 <span>{workingNote?.name}</span>
                 {workingNote && (
                     <a onClick={openModal}>
@@ -177,7 +177,7 @@ function ButtonsControllers({
                 )}
             </Space>
 
-            <Space direction="horizontal">
+            <Space orientation="horizontal">
                 <Tooltip title={`${!readOnly ? 'Activer' : 'Désactiver'} mode lecture`}>
                     <Button
                         onClick={readOnlyMode}

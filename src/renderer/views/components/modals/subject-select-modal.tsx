@@ -70,7 +70,7 @@ export function SubjectSelectModal() {
     return (
         <Modal
             title={
-                <Space direction="horizontal">
+                <Space orientation="horizontal">
                     <span>Choiser un sujet</span>
                     <Search onSearch={onSearch} />
                 </Space>
@@ -127,7 +127,7 @@ const ItemSubject: React.FC<{
 
 function Search({ onSearch }: { onSearch: (value: string) => void }) {
     return (
-        <Space direction="horizontal">
+        <Space orientation="horizontal">
             <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
         </Space>
     );

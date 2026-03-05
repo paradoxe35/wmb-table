@@ -52,7 +52,7 @@ function createWindow(): void {
         minHeight: 572,
         title: 'Wmb Table',
         webPreferences: {
-            preload: join(__dirname, '../preload/index.mjs'),
+            preload: join(__dirname, '../preload/index.js'),
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: true,
