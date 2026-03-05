@@ -44,21 +44,7 @@ export interface Manifest {
     bible: ManifestBible[];
 }
 
-export interface InstalledLanguage {
-    code: string;
-    language: string;
-    sermonsCount: number;
-    sizeOnDisk: number;
-}
-
-export interface DownloadableLanguage {
-    code: string;
-    language: string;
-    sermonsAvailable: number;
-    sermonsWithAudio: number;
-    filesize: number;
-    installed: boolean;
-}
+export type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -2,6 +2,7 @@ import { app } from 'electron';
 import { join } from 'node:path';
 import { readdirSync, readFileSync, existsSync } from 'node:fs';
 import log from 'electron-log';
+import type { SermonParagraph } from '@shared/types';
 import {
     Index,
     Query,
@@ -18,14 +19,7 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
-export interface SermonParagraph {
-    lineIndex: number;
-    paragraphIndex: number;
-    translationId: number;
-    sermonDate: number;
-    content: string;
-    stemmedContent?: string;
-}
+export type { SermonParagraph } from '@shared/types';
 
 export interface SermonDateEntry {
     translationId: number;

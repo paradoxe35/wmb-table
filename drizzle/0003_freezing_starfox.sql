@@ -1,0 +1,1 @@
+ALTER TABLE `configurations` ADD `active_language` text DEFAULT 'en';

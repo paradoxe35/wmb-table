@@ -8,6 +8,7 @@ import {
     AudioChannels,
     BackupChannels,
     AppChannels,
+    LanguageChannels,
     PushChannels,
     type PushChannel,
     type PushEventMap,
@@ -32,19 +33,33 @@ function onPush<C extends PushChannel>(
 
 const api = {
     documents: {
-        getTitles: () => invoke(DocumentChannels.getTitles),
-        getContentPath: (title: string) => invoke(DocumentChannels.getContentPath, title),
+        getTitles: (langCode: string) => invoke(DocumentChannels.getTitles, langCode),
+        getSermonContent: (langCode: string, translationId: number) =>
+            invoke(DocumentChannels.getSermonContent, langCode, translationId),
+        getSermonList: (langCode: string, options?: { year?: string }) =>
+            invoke(DocumentChannels.getSermonList, langCode, options),
+        getSermonsByYear: (langCode: string) => invoke(DocumentChannels.getSermonsByYear, langCode),
+        getTranslations: (translationId: number) =>
+            invoke(DocumentChannels.getTranslations, translationId),
         getTabs: () => invoke(DocumentChannels.getTabs),
         saveTabs: (tabs: unknown[]) => invoke(DocumentChannels.saveTabs, tabs),
+    },
+
+    languages: {
+        getInstalled: () => invoke(LanguageChannels.getInstalled),
+        getAvailable: () => invoke(LanguageChannels.getAvailable),
+        install: (langCode: string) => invoke(LanguageChannels.install, langCode),
+        delete: (langCode: string) => invoke(LanguageChannels.delete, langCode),
     },
 
     search: {
         getSuggestions: () => invoke(SearchChannels.getSuggestions),
         addSuggestion: (text: string, found: number) =>
             invoke(SearchChannels.addSuggestion, text, found),
-        searchText: (query: string, page: number) => invoke(SearchChannels.searchText, query, page),
-        searchContent: (title: string, matches: unknown[]) =>
-            invoke(SearchChannels.searchContent, title, matches),
+        searchText: (langCode: string, query: string, page: number) =>
+            invoke(SearchChannels.searchText, langCode, query, page),
+        searchContent: (langCode: string, query: string, translationId: number) =>
+            invoke(SearchChannels.searchContent, langCode, query, translationId),
     },
 
     notes: {
@@ -113,6 +128,8 @@ const api = {
 
     app: {
         initialize: () => invoke(AppChannels.initialize),
+        getActiveLanguage: () => invoke<string>(AppChannels.getActiveLanguage),
+        setActiveLanguage: (langCode: string) => invoke(AppChannels.setActiveLanguage, langCode),
         restart: () => invoke(AppChannels.restart),
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
         startDownloadUpdate: () => invoke(AppChannels.startDownloadUpdate),
@@ -157,6 +174,10 @@ const api = {
             onPush(PushChannels.downloadAudioProgress, cb),
         newSynchronizedDatas: (cb: () => void) =>
             onPush(PushChannels.newSynchronizedDatas, cb as () => void),
+        languageDownloadProgress: (cb: (p: { langCode: string; percentage: number }) => void) =>
+            onPush(PushChannels.languageDownloadProgress, cb),
+        languageInstalled: (cb: (p: { langCode: string }) => void) =>
+            onPush(PushChannels.languageInstalled, cb),
     },
 } as const;
 

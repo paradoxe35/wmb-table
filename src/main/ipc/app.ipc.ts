@@ -10,6 +10,14 @@ export function registerAppHandlers(): void {
         configRepo.markInitialized();
     });
 
+    registerHandler(AppChannels.getActiveLanguage, async () => {
+        return configRepo.getActiveLanguage();
+    });
+
+    registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
+        configRepo.setActiveLanguage(langCode);
+    });
+
     registerHandler(AppChannels.restart, async () => {
         throw new Error('Not implemented: app:restart');
     });

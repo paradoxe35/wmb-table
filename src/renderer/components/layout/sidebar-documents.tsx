@@ -204,7 +204,7 @@ const DocumentSearch = () => {
 
     useEffect(() => {
         (window as any).api.documents
-            .getTitles()
+            .getTitles('en') // TODO: use active language from store (Phase D)
             .then((titles: SermonMeta[]) => {
                 setDocuments(titles);
             })

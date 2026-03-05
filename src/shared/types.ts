@@ -326,6 +326,67 @@ export interface RestoreProgressEvent {
 }
 
 // ---------------------------------------------------------------------------
+// Sermon Content
+// ---------------------------------------------------------------------------
+
+export interface SermonParagraph {
+    lineIndex: number;
+    paragraphIndex: number;
+    translationId: number;
+    sermonDate: number;
+    content: string;
+    stemmedContent?: string;
+}
+
+export interface SermonContent {
+    meta: SermonMeta;
+    paragraphs: SermonParagraph[];
+}
+
+// ---------------------------------------------------------------------------
+// Languages
+// ---------------------------------------------------------------------------
+
+export interface InstalledLanguage {
+    code: string;
+    language: string;
+    sermonsCount: number;
+    sizeOnDisk: number;
+}
+
+export interface DownloadableLanguage {
+    code: string;
+    language: string;
+    sermonsAvailable: number;
+    sermonsWithAudio: number;
+    filesize: number;
+    installed: boolean;
+}
+
+export interface LanguageDownloadProgress {
+    langCode: string;
+    percentage: number;
+}
+
+// ---------------------------------------------------------------------------
+// Tantivy Search
+// ---------------------------------------------------------------------------
+
+export interface TantivySearchHit {
+    translationId: number;
+    sermonDate: number;
+    title: string;
+    snippet: string;
+    score: number;
+}
+
+export interface TantivySearchResult {
+    hits: TantivySearchHit[];
+    total: number;
+    query: string;
+}
+
+// ---------------------------------------------------------------------------
 // App / Settings
 // ---------------------------------------------------------------------------
 
@@ -334,6 +395,7 @@ export interface AppSettingsStatus {
     app_id: string;
     initialized: boolean;
     lastCheckBackupStatus: Date;
+    activeLanguage: string;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {

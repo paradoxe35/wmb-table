@@ -8,6 +8,7 @@ import { registerSubjectsHandlers } from './subjects.ipc';
 import { registerAudioHandlers } from './audio.ipc';
 import { registerBackupHandlers } from './backup.ipc';
 import { registerAppHandlers } from './app.ipc';
+import { registerLanguageHandlers } from './languages.ipc';
 
 /**
  * Type-safe wrapper around `ipcMain.handle`.
@@ -60,4 +61,5 @@ export function initializeIpc(): void {
     registerAudioHandlers();
     registerBackupHandlers();
     registerAppHandlers();
+    registerLanguageHandlers();
 }

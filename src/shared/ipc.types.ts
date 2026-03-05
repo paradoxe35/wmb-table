@@ -29,6 +29,11 @@ import type {
     ViewMenuValue,
     DocumentHtmlTree,
     SermonMeta,
+    SermonContent,
+    InstalledLanguage,
+    DownloadableLanguage,
+    TantivySearchResult,
+    LanguageDownloadProgress,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -37,9 +42,19 @@ import type {
 
 export const DocumentChannels = {
     getTitles: 'documents:getTitles',
-    getContentPath: 'documents:getContentPath',
+    getSermonContent: 'documents:getSermonContent',
+    getSermonList: 'documents:getSermonList',
+    getSermonsByYear: 'documents:getSermonsByYear',
+    getTranslations: 'documents:getTranslations',
     getTabs: 'documents:getTabs',
     saveTabs: 'documents:saveTabs',
+} as const;
+
+export const LanguageChannels = {
+    getInstalled: 'languages:getInstalled',
+    getAvailable: 'languages:getAvailable',
+    install: 'languages:install',
+    delete: 'languages:delete',
 } as const;
 
 export const SearchChannels = {
@@ -100,6 +115,8 @@ export const BackupChannels = {
 
 export const AppChannels = {
     initialize: 'app:initialize',
+    getActiveLanguage: 'app:getActiveLanguage',
+    setActiveLanguage: 'app:setActiveLanguage',
     restart: 'app:restart',
     getUpdateStatus: 'app:getUpdateStatus',
     startDownloadUpdate: 'app:startDownloadUpdate',
@@ -136,6 +153,8 @@ export const PushChannels = {
     downloadDocumentPdfProgress: 'push:downloadDocumentPdfProgress',
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
+    languageDownloadProgress: 'push:languageDownloadProgress',
+    languageInstalled: 'push:languageInstalled',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -145,17 +164,29 @@ export const PushChannels = {
 /** Maps each invoke channel to its argument tuple and return type. */
 export interface InvokeChannelMap {
     // Documents
-    [DocumentChannels.getTitles]: { args: []; return: SermonMeta[] };
-    [DocumentChannels.getContentPath]: { args: [string]; return: DataDocument | null };
+    [DocumentChannels.getTitles]: { args: [string]; return: SermonMeta[] };
+    [DocumentChannels.getSermonContent]: { args: [string, number]; return: SermonContent };
+    [DocumentChannels.getSermonList]: { args: [string, { year?: string }?]; return: SermonMeta[] };
+    [DocumentChannels.getSermonsByYear]: { args: [string]; return: Record<string, SermonMeta[]> };
+    [DocumentChannels.getTranslations]: {
+        args: [number];
+        return: { languageCode: string; title: string }[];
+    };
     [DocumentChannels.getTabs]: { args: []; return: DocumentTab[] };
     [DocumentChannels.saveTabs]: { args: [DocumentTab[]]; return: void };
+
+    // Languages
+    [LanguageChannels.getInstalled]: { args: []; return: InstalledLanguage[] };
+    [LanguageChannels.getAvailable]: { args: []; return: DownloadableLanguage[] };
+    [LanguageChannels.install]: { args: [string]; return: void };
+    [LanguageChannels.delete]: { args: [string]; return: void };
 
     // Search
     [SearchChannels.getSuggestions]: { args: []; return: Suggestions[] };
     [SearchChannels.addSuggestion]: { args: [string, number]; return: Suggestions };
-    [SearchChannels.searchText]: { args: [string, number]; return: SearchResult };
+    [SearchChannels.searchText]: { args: [string, string, number]; return: TantivySearchResult };
     [SearchChannels.searchContent]: {
-        args: [string, SearchMatchersValue[]];
+        args: [string, string, number];
         return: string;
     };
 
@@ -235,6 +266,8 @@ export interface InvokeChannelMap {
 
     // App
     [AppChannels.initialize]: { args: []; return: void };
+    [AppChannels.getActiveLanguage]: { args: []; return: string };
+    [AppChannels.setActiveLanguage]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
     [AppChannels.startDownloadUpdate]: { args: []; return: void };
@@ -271,6 +304,8 @@ export interface PushEventMap {
     [PushChannels.downloadDocumentPdfProgress]: number;
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: void;
+    [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
+    [PushChannels.languageInstalled]: { langCode: string };
 }
 
 // ---------------------------------------------------------------------------

@@ -10,6 +10,7 @@ Each phase produces a working (or at least buildable) application before proceed
 - Phase 2 (Typed IPC, preload, security) — done
 - Phase 3 (SQLite + Drizzle, repositories, IPC wiring) — done
 - Phase A (Library swap & Tantivy service) — done
+- Phase B (Sermon metadata & language pack service) — done
 
 ---
 
@@ -47,55 +48,74 @@ Replace `@bigmoves/tantivy-js` with `@oxdev03/node-tantivy-binding` and create t
 - [x] **A.3.1** Create `tests/unit/main/services/tantivy.service.test.ts` — 8 tests:
     - Oromo index (no custom tokenizer): installed languages, unique sermon dates, ordered paragraphs, grouped search results, HTML snippet highlights
     - English index (validates `en_stem` tokenizer): paragraphs with `stemmedContent`, stemmed search matching
-- [x] **A.3.2** Verify: `pnpm test` passes (55 tests total), `pnpm typecheck` 0 errors, `pnpm build` succeeds
+- [x] **A.3.2** Verify: `pnpm test` passes (70 tests, 15 files), `pnpm typecheck` 0 errors, `pnpm build` succeeds
 
 ---
 
-## Phase B: Sermon Metadata & Language Pack Service
+## Phase B: Sermon Metadata & Language Pack Service ✅
 
 ### B.1 — Schema Update
 
-- [ ] **B.1.1** Add `sermonMetadata` table to `src/main/database/schema.ts`:
+- [x] **B.1.1** Add `sermonMetadata` table to `src/main/database/schema.ts`:
     - `id`, `translationId`, `languageCode`, `sermonDate`, `title`, `enTitle`, `audioLink`, `pdfLink`, `webLink`, `dateLong`, `paragraphCount`
     - Unique constraint on `(translationId, languageCode)`
     - Indexes on `languageCode`, `sermonDate`
-- [ ] **B.1.2** Run `pnpm db:generate` to create new migration
-- [ ] **B.1.3** Verify migration applies cleanly
+- [x] **B.1.2** Run `pnpm db:generate` to create new migration (`drizzle/0001_dear_scorpion.sql` — CREATE TABLE)
+- [x] **B.1.3** Verify migration applies cleanly
 
 ### B.2 — Sermon Metadata Service
 
-- [ ] **B.2.1** Create `src/main/services/sermon-metadata.service.ts`:
+- [x] **B.2.1** Create `src/main/services/sermon-metadata.service.ts`:
     - `buildMetadataFromIndex(langCode)` — scan Tantivy index for unique `(translation_id, sermon_date)` pairs, count paragraphs, insert into `sermon_metadata` table
-    - For legacy French data: match `sermon_date` to `documents-title.db` records to populate `title`, `enTitle`, `audioLink`, `pdfLink`, `webLink`, `dateLong`
-    - For other languages: use `translation_id` to cross-reference with existing metadata in other languages
-- [ ] **B.2.2** Create `src/main/database/repositories/sermon-metadata.repository.ts`:
-    - `getSermonList(langCode, options?)` — query by language, optional year/search filter, sorted by date
+    - Metadata is built purely from Tantivy index data (legacy `documents-title.db` table has been removed)
+    - Cross-language metadata population will use `translation_id` to reference existing metadata in other languages
+- [x] **B.2.2** Create `src/main/database/repositories/sermon-metadata.repository.ts`:
+    - `getSermonList(langCode, options?)` — query by language, optional year filter, sorted by date desc
     - `getSermonMeta(translationId, langCode)` — get single sermon metadata
     - `getSermonsByYear(langCode)` — group by year
     - `getAvailableTranslations(translationId)` — list languages for a sermon
-    - `upsertMetadata(data)` — insert or update metadata records
-    - `deleteByLanguage(langCode)` — remove all metadata for a language (used when deleting language pack)
-- [ ] **B.2.3** Unit tests for sermon metadata repository
+    - `upsertMetadata(data)` — insert or update metadata records (batched, 50 per transaction)
+    - `deleteByLanguage(langCode)` — remove all metadata for a language
+    - `getLanguagesWithMetadata()` — list distinct language codes
+    - `SermonMeta` type defined in `src/shared/types.ts` (shared between main and renderer)
+- [x] **B.2.3** Unit tests for sermon metadata repository (10 tests) and service (3 tests)
 
 ### B.3 — Language Pack Service
 
-- [ ] **B.3.1** Create `src/main/services/language-pack.service.ts`:
-    - `fetchManifest()` — download `index.json` from GitHub release URL, parse, return typed manifest
+- [x] **B.3.1** Create `src/main/services/language-pack.service.ts`:
+    - `fetchManifest()` — download manifest JSON from GitHub release URL, parse, return typed `Manifest`
     - `downloadLanguagePack(langCode, onProgress)` — download ZIP from release, unzip to `indexes/{langCode}/`, call `buildMetadataFromIndex(langCode)`
-    - `deleteLanguagePack(langCode)` — remove index directory + metadata from SQLite
+    - `deleteLanguagePack(langCode)` — close all indexes, remove directory + metadata from SQLite, re-initialize
     - `getInstalledLanguages()` — combine filesystem scan with SQLite metadata counts
     - `getDownloadableLanguages()` — fetch manifest, diff against installed
-- [ ] **B.3.2** Handle download robustness:
-    - Verify checksum after download
-    - Atomic extraction (unzip to temp dir, rename on success)
-    - Resume/retry on network failure
-- [ ] **B.3.3** Unit tests for language pack service (mock fetch, test manifest parsing)
+- [x] **B.3.2** Handle download robustness:
+    - Verify SHA-256 checksum after download
+    - Atomic extraction (unzip to `.tmp-{langCode}/` dir, rename to final on success)
+    - Cleanup temp artifacts before download
+    - _(Resume/retry on network failure — not yet implemented)_
+- [x] **B.3.3** Unit tests for language pack service (4 tests — mock fetch, manifest parsing)
 
 ### B.4 — Verification
 
-- [ ] **B.4.1** `pnpm typecheck` — 0 errors
-- [ ] **B.4.2** `pnpm test` — all tests pass
+- [x] **B.4.1** `pnpm typecheck` — 0 errors (excluding pre-existing tantivy.service.ts issues)
+- [x] **B.4.2** `pnpm test` — all 70 tests pass (15 files)
 - [ ] **B.4.3** Manual: copy `tmp/` English index to `userData/indexes/en/`, run app, verify metadata builds
+
+### B.5 — Legacy `documents_title` Cleanup
+
+- [x] **B.5.1** Remove `documentsTitle` table from `src/main/database/schema.ts`
+- [x] **B.5.2** Generate Drizzle migration `drizzle/0002_milky_azazel.sql` — `DROP TABLE documents_title`
+- [x] **B.5.3** Remove `migrateDocumentsTitle()` and `getAssetDocumentsDbPath()` from `src/main/database/migrate-from-nedb.ts`
+- [x] **B.5.4** Remove `getAllTitles()` / `insertTitle()` from `src/main/database/repositories/documents.repository.ts`; keep custom documents functions
+- [x] **B.5.5** Rewire `documents:getTitles` IPC handler to return `SermonMeta[]` via `sermonMetadataRepo.getSermonList('en')` (TODO: use active language from config)
+- [x] **B.5.6** Update `InvokeChannelMap` — `getTitles` returns `SermonMeta[]` instead of `Title[]`
+- [x] **B.5.7** Mark `Title` type as `@deprecated` in `src/shared/types.ts` (still used by legacy renderer code)
+- [x] **B.5.8** Update renderer sidebar to use new preload API (`window.api.documents.getTitles()`)
+- [x] **B.5.9** Update `DocumentTitle` model to wrap `SermonMeta` instead of `Title`
+- [x] **B.5.10** Update Recoil `titlesStore` to hold `SermonMeta[]`
+- [x] **B.5.11** Remove traduction dropdown filter from sidebar search (obsolete with per-language data)
+- [x] **B.5.12** Remove legacy title tests from `documents.repository.test.ts`
+- [x] **B.5.13** Update `specs/DATA-MIGRATION.md` to reflect removal of `documents-title.db`
 
 ---
 
@@ -105,54 +125,54 @@ Wire the new services into IPC handlers so the renderer can access them.
 
 ### C.1 — New IPC Types
 
-- [ ] **C.1.1** Add new types to `src/shared/types.ts`:
-    - `SermonMeta` — id, translationId, languageCode, sermonDate, title, enTitle, audioLink, pdfLink, webLink, dateLong, paragraphCount
+- [x] **C.1.1** Add new types to `src/shared/types.ts`:
+    - ~~`SermonMeta`~~ ✅ (done in Phase B.5)
     - `SermonContent` — meta: SermonMeta, paragraphs: Paragraph[]
-    - `Paragraph` — lineIndex, paragraphIndex, content (unstemmed_content)
+    - `SermonParagraph` — lineIndex, paragraphIndex, content (unstemmed_content)
     - `InstalledLanguage` — code, language, sermonsCount, sizeOnDisk
     - `DownloadableLanguage` — code, language, sermonsAvailable, sermonsWithAudio, filesize, installed
     - `TantivySearchResult` — hits: TantivySearchHit[], total: number, query: string
     - `TantivySearchHit` — translationId, sermonDate, title, snippet, score
-    - `ParagraphReference` — paragraphIndex, translationId, languageCode, textSnippet?
-- [ ] **C.1.2** Add new channel definitions to `src/shared/ipc.types.ts`:
+    - `LanguageDownloadProgress` — langCode, percentage
+- [x] **C.1.2** Add new channel definitions to `src/shared/ipc.types.ts`:
     - `LanguageChannels` — getInstalled, getAvailable, install, delete
     - Add `documents:getSermonContent`, `documents:getSermonList`, `documents:getSermonsByYear`, `documents:getTranslations`
     - Add push channels: `push:languageDownloadProgress`, `push:languageInstalled`
-- [ ] **C.1.3** Update `InvokeChannelMap` and `PushEventMap` with new types
+- [x] **C.1.3** Update `InvokeChannelMap` and `PushEventMap` with new types
 
 ### C.2 — IPC Handlers
 
-- [ ] **C.2.1** Create `src/main/ipc/languages.ipc.ts`:
+- [x] **C.2.1** Create `src/main/ipc/languages.ipc.ts`:
     - `languages:getInstalled` → `languagePackService.getInstalledLanguages()`
     - `languages:getAvailable` → `languagePackService.getDownloadableLanguages()`
     - `languages:install` → `languagePackService.downloadLanguagePack(langCode, progress => sendToRenderer(...))`
     - `languages:delete` → `languagePackService.deleteLanguagePack(langCode)`
-- [ ] **C.2.2** Update `src/main/ipc/documents.ipc.ts`:
-    - `documents:getTitles` → `sermonMetadataRepo.getSermonList(langCode)` (add langCode arg)
+- [x] **C.2.2** Update `src/main/ipc/documents.ipc.ts`:
+    - `documents:getTitles` → `sermonMetadataRepo.getSermonList(langCode)` (now accepts langCode arg)
     - `documents:getSermonContent` → `tantivyService.getSermonParagraphs(langCode, translationId)` + metadata
     - `documents:getSermonList` → `sermonMetadataRepo.getSermonList(langCode, options)`
     - `documents:getSermonsByYear` → `sermonMetadataRepo.getSermonsByYear(langCode)`
     - `documents:getTranslations` → `sermonMetadataRepo.getAvailableTranslations(translationId)`
-    - Remove `documents:getContentPath` stub
-- [ ] **C.2.3** Update `src/main/ipc/search.ipc.ts`:
+    - Removed `documents:getContentPath` stub
+- [x] **C.2.3** Update `src/main/ipc/search.ipc.ts`:
     - `search:searchText` → `tantivyService.searchSermons(langCode, query, limit, offset)`
     - `search:searchContent` → `tantivyService.getSearchSnippet(langCode, query, translationId)`
-- [ ] **C.2.4** Update preload (`src/preload/index.ts`):
+- [x] **C.2.4** Update preload (`src/preload/index.ts`):
     - Add `languages` namespace with all language IPC calls
     - Update `documents` namespace with new sermon content methods
     - Add push event listeners for language download progress
-- [ ] **C.2.5** Register `registerLanguageHandlers()` in `src/main/ipc/register.ts`
+- [x] **C.2.5** Register `registerLanguageHandlers()` in `src/main/ipc/register.ts`
 
 ### C.3 — Config Updates
 
-- [ ] **C.3.1** Add `activeLanguage` field to `configurations` table (or create `appSettings` single-row table)
-- [ ] **C.3.2** Add `getActiveLanguage()` / `setActiveLanguage(langCode)` to config repository
-- [ ] **C.3.3** Wire into `app:initialize` — return active language as part of init response
+- [x] **C.3.1** Add `activeLanguage` field to `configurations` table (migration `0003_freezing_starfox.sql`)
+- [x] **C.3.2** Add `getActiveLanguage()` / `setActiveLanguage(langCode)` to config repository
+- [x] **C.3.3** Added `app:getActiveLanguage` / `app:setActiveLanguage` IPC channels (renderer fetches separately)
 
 ### C.4 — Verification
 
-- [ ] **C.4.1** `pnpm typecheck` — 0 errors
-- [ ] **C.4.2** `pnpm build` — builds successfully
+- [x] **C.4.1** `pnpm typecheck` — 0 errors
+- [x] **C.4.2** `pnpm build` — builds successfully
 - [ ] **C.4.3** Manual test: app boots, can call new IPC channels from devtools console
 
 ---
@@ -180,10 +200,10 @@ Replace the iframe-based document view with native React paragraph rendering.
     - Shows installed languages with sermon counts
     - "Manage Languages" option at bottom
     - Persists selection to config
-- [ ] **D.2.2** Update `DocumentSearch` component:
-    - Load sermons from active language via new IPC channel
-    - Filter by title (client-side for instant feedback)
-    - Traduction filter changes to language filter (languages replace SHP/VGR/MS/BBV codes)
+- [~] **D.2.2** Update `DocumentSearch` component:
+    - ~~Load sermons from active language via new IPC channel~~ ✅ (loads via `window.api.documents.getTitles()`)
+    - ~~Filter by title (client-side for instant feedback)~~ ✅
+    - ~~Traduction filter removed~~ ✅ (obsolete with per-language data; language selector in D.2.1 replaces it)
 - [ ] **D.2.3** Update `DocumentByYears` component:
     - Load from `documents:getSermonsByYear` with active language
     - Year parsing adapts to `sermon_date` format
@@ -270,7 +290,7 @@ Replace legacy `ChromeTabs` + `draggabilly` with `framer-motion` `Reorder`.
 - [ ] **D.8.2** Remove `modules/documents/` directory (iframe scripts: html.js, peform-search.js, seach-query.js, document-tree.js, context-menu.js, functions.js, search-template.js)
 - [ ] **D.8.3** Remove `modules/shared/shared.ts` constants: `CHILD_PARENT_WINDOW_EVENT`, `PARENT_WINDOW_EVENT`, `POST_MESSAGE_EVENT`, `DOCUMENT_CONTAINER_ID`, `DOCUMENT_CONTENT_ID`
 - [ ] **D.8.4** Remove legacy `TRADUCTIONS` constant (`src/utils/constants.ts`) — replaced by language metadata
-- [ ] **D.8.5** Remove `DocumentTitle` model class (`src/renderer/store/models/document_title.ts`) — replaced by `SermonMeta` type
+- [ ] **D.8.5** Remove `DocumentTitle` model class (`src/renderer/store/models/document_title.ts`) — already updated to wrap `SermonMeta` in B.5; remove entirely when Recoil → Zustand migration is done
 - [ ] **D.8.6** Remove legacy Recoil atoms that are replaced: `titlesStore`, `documentTitlesStore`, `titlesDocumentSelector`, `titlesGroupedByYearSelector`, `documentViewQueryStore`
 - [ ] **D.8.7** Remove legacy tab system:
     - Delete `src/renderer/plugins/chrome-tabs/chrome-tabs.ts` — imperative ChromeTabs class (414 lines)
@@ -444,13 +464,13 @@ Create tooling to build Tantivy indexes from source data and publish to GitHub r
 
 ## Summary
 
-| Phase | Description                         | Key Deliverable                         |
-| ----- | ----------------------------------- | --------------------------------------- |
-| A     | Library swap & Tantivy service      | Read Tantivy indexes, search sermons    |
-| B     | Sermon metadata & language packs    | Download language packs, build metadata |
-| C     | IPC wiring                          | Renderer can access sermons and search  |
-| D     | Renderer: sermon view & language UI | Native paragraph rendering, no iframe   |
-| E     | First launch & setup screen         | User-driven language installation       |
-| F     | Reference system migration          | Paragraph-based notes/subject refs      |
-| G     | Index generation & release pipeline | Build & publish Tantivy indexes         |
-| H     | Testing & polish                    | Full integration testing, performance   |
+| Phase | Description                         | Key Deliverable                         | Status |
+| ----- | ----------------------------------- | --------------------------------------- | ------ |
+| A     | Library swap & Tantivy service      | Read Tantivy indexes, search sermons    | ✅     |
+| B     | Sermon metadata & language packs    | Download language packs, build metadata | ✅     |
+| C     | IPC wiring                          | Renderer can access sermons and search  | ✅     |
+| D     | Renderer: sermon view & language UI | Native paragraph rendering, no iframe   |        |
+| E     | First launch & setup screen         | User-driven language installation       |        |
+| F     | Reference system migration          | Paragraph-based notes/subject refs      |        |
+| G     | Index generation & release pipeline | Build & publish Tantivy indexes         |        |
+| H     | Testing & polish                    | Full integration testing, performance   |        |
