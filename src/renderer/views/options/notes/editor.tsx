@@ -25,7 +25,7 @@ import {
 import { EDITOR_EVENT } from '@renderer/utils/events';
 
 // @ts-expect-error — CKEditor build has no type declarations
- 
+
 let DecoupledDocumentEditor: any;
 
 if (process.env.NODE_ENV === 'development') {

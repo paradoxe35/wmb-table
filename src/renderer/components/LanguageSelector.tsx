@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Select } from 'antd';
+import { Button, Select } from 'antd';
+import { SettingOutlined } from '@ant-design/icons';
 import { useAppStore, useSermonStore } from '@renderer/stores';
+import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { InstalledLanguage, SermonMeta } from '@shared/types';
 
 export default function LanguageSelector() {
@@ -20,20 +22,33 @@ export default function LanguageSelector() {
         setSermons(sermons);
     };
 
-    if (languages.length <= 1) return null;
+    const handleManageLanguages = () => {
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
+    };
 
     return (
-        <Select
-            value={activeLanguage}
-            onChange={handleChange}
-            style={{ width: '100%', marginBottom: 8 }}
-            size="small"
-        >
-            {languages.map((lang) => (
-                <Select.Option key={lang.code} value={lang.code}>
-                    {lang.language} ({lang.sermonsCount})
-                </Select.Option>
-            ))}
-        </Select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+            {languages.length > 1 && (
+                <Select
+                    value={activeLanguage}
+                    onChange={handleChange}
+                    style={{ flex: 1 }}
+                    size="small"
+                >
+                    {languages.map((lang) => (
+                        <Select.Option key={lang.code} value={lang.code}>
+                            {lang.language} ({lang.sermonsCount})
+                        </Select.Option>
+                    ))}
+                </Select>
+            )}
+            <Button
+                type="text"
+                size="small"
+                icon={<SettingOutlined />}
+                onClick={handleManageLanguages}
+                title="Gérer les langues"
+            />
+        </div>
     );
 }

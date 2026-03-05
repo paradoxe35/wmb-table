@@ -43,6 +43,7 @@
     },
     "dependencies": {
         "@ant-design/icons": "^6.1.0",
+        "@ckeditor/ckeditor5-react": "5.0.2",
         "@oxdev03/node-tantivy-binding": "^0.2.0",
         "antd": "^6.3.1",
         "better-sqlite3": "^12.6.2",

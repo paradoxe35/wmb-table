@@ -6,39 +6,16 @@ import { SearchOutlined, FileSearchOutlined, SortAscendingOutlined } from '@ant-
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useSearchStore } from '@renderer/stores';
 
-const ModalController = ({
-    isOpened,
-    iframeRef,
-}: {
-    isOpened: React.MutableRefObject<boolean>;
-    iframeRef: React.MutableRefObject<HTMLIFrameElement | null>;
-}) => {
-    useEffect(() => {
-        isOpened.current = true;
-        return () => {
-            iframeRef.current?.contentWindow?.focus();
-            isOpened.current = false;
-        };
-    });
-    return <> </>;
-};
-
-export function ModalSearchDocument({
-    documentQuery,
-    title,
-    iframeRef,
-}: {
-    documentQuery: DocumentViewQuery | null;
-    title: string;
-    iframeRef: React.MutableRefObject<HTMLIFrameElement | null>;
-}) {
+export function ModalSearchDocument({ title }: { title: string }) {
     const titleRef = useValueStateRef<string>(title);
 
+    const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
+    const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
+
+    const documentQuery = documentViewQueries.find((q) => q.documentTitle === title) ?? null;
     const documentQueryRef = useValueStateRef<DocumentViewQuery | null>(documentQuery);
 
     const searchValue = useValueStateRef<string>(documentQuery?.term || '');
-
-    const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
 
     const isOpened = useRef(false);
     const searchForParagraph = useRef<boolean | undefined>(undefined);
@@ -89,11 +66,16 @@ export function ModalSearchDocument({
         searchValue.current = event.detail?.text || searchValue.current;
         searchForParagraph.current = event.detail?.searchForParagraph;
 
+        isOpened.current = true;
+
         const modalInstance = Modal.info({
             closable: true,
             icon: null,
             onOk: onSearch,
             okText: <SearchOutlined />,
+            afterClose: () => {
+                isOpened.current = false;
+            },
             title: (
                 <span>
                     {event.detail?.searchForParagraph ? 'Recherche paragraphe' : 'Recherche text'}{' '}
@@ -126,7 +108,6 @@ export function ModalSearchDocument({
                                 : 'Entrez votre texte'
                         }
                     />
-                    <ModalController iframeRef={iframeRef} isOpened={isOpened} />
                 </form>
             ),
         });

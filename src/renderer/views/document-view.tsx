@@ -1,411 +1,354 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DocumentTabs from '../components/document-tabs';
-import { Layout, message } from 'antd';
+import { Button, Layout, message, Space, Spin } from 'antd';
+import {
+    PlayCircleOutlined,
+    ZoomInOutlined,
+    ZoomOutOutlined,
+    SearchOutlined,
+    TranslationOutlined,
+} from '@ant-design/icons';
 import {
     useSermonStore,
     useSearchStore,
     useSubjectsStore,
-    useAudioStore,
+    useAppStore,
     selectActiveTabTitle,
+    selectActiveTab,
 } from '@renderer/stores';
-import { useContainerHeight } from '@renderer/hooks';
 import { debounce } from '@renderer/utils/functions';
-import type { DocumentViewQuery, SubjectDocumentItem } from '@shared/types';
+import { simpleRegExp } from '@renderer/utils/searchable';
+import type {
+    SermonContent as SermonContentType,
+    SermonMeta,
+    SermonParagraph as SermonParagraphType,
+} from '@shared/types';
 import { ModalSearchDocument } from './components/modals/modal-search-document';
-import {
-    CHILD_PARENT_WINDOW_EVENT,
-    DOCUMENT_CONTAINER_ID,
-    PARENT_WINDOW_EVENT,
-    POST_MESSAGE_EVENT,
-} from '@renderer/utils/events';
+import { CHILD_PARENT_WINDOW_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
+import { ContextMenu } from '@renderer/utils/context-menu';
 
 const { Content } = Layout;
 
-const usePostMessage = () => {
-    const waitForDocumentViewStarted = useCallback((callback: () => void) => {
-        return new Promise<Event>((resolve) => {
-            window.addEventListener(CHILD_PARENT_WINDOW_EVENT.documentViewLoaded, resolve, {
-                once: true,
-            });
-            callback();
-        });
-    }, []);
+// ---------------------------------------------------------------------------
+// Hooks
+// ---------------------------------------------------------------------------
 
-    const postMessage = useCallback(
-        async (iframeEl: HTMLIFrameElement, type: string, detail: unknown, path: string) => {
-            await waitForDocumentViewStarted(() => {
-                iframeEl.contentWindow?.dispatchEvent(
-                    new Event(POST_MESSAGE_EVENT.requestForPostMessage),
-                );
-            });
-            iframeEl.contentWindow?.postMessage({ type, detail }, 'file:///' + path);
-        },
-        [waitForDocumentViewStarted],
-    );
-
-    return postMessage;
-};
-
-const useDocumentQuery = (
-    titleRef: React.MutableRefObject<string | null>,
-    iframeRef: React.MutableRefObject<HTMLIFrameElement | null>,
-) => {
-    const viewQuery = useSearchStore((s) => s.documentViewQueries);
-    const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQueries);
-
-    const documentQuery = useRef<DocumentViewQuery | null>(null);
-
-    useEffect(() => {
-        const closeDocumentQuery = () => {
-            setDocumentViewQuery((qs) => qs.filter((q) => q.documentTitle !== titleRef.current));
-        };
-        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery, closeDocumentQuery);
-        return () => {
-            window.removeEventListener(
-                CHILD_PARENT_WINDOW_EVENT.closeDocumentQuery,
-                closeDocumentQuery,
-            );
-        };
-    }, [setDocumentViewQuery, titleRef]);
-
-    documentQuery.current = useMemo(() => {
-        return viewQuery.find((v) => v.documentTitle === titleRef.current) || null;
-    }, [titleRef.current, viewQuery]);
-
-    useEffect(() => {
-        if (documentQuery.current) {
-            window.dispatchEvent(new Event(PARENT_WINDOW_EVENT.frameDocumentSearchStart));
-            iframeRef.current?.contentWindow?.location.reload();
-        }
-    }, [viewQuery, iframeRef]);
-
-    return {
-        viewQuery,
-        documentQuery,
-    };
-};
-
-const useSubjectQuery = (iframeRef: React.MutableRefObject<HTMLIFrameElement | null>) => {
-    const subjectItemSelected = useSubjectsStore((s) => s.selectedSubjectItem);
-    const setSubjectItemSelected = useSubjectsStore((s) => s.setSelectedSubjectItem);
-
-    const subjectItemSelectedRef = useRef(subjectItemSelected);
-    subjectItemSelectedRef.current = subjectItemSelected;
-
-    useEffect(() => {
-        if (subjectItemSelectedRef.current) {
-            iframeRef.current?.contentWindow?.location.reload();
-        }
-    }, [subjectItemSelected, iframeRef]);
-
-    return {
-        subjectItemSelectedRef,
-        setSubjectItemSelected,
-    };
-};
-
-const useSearchQuery = (
-    subjectItemSelectedRef: React.MutableRefObject<SubjectDocumentItem | null>,
-    setSubjectItemSelected: (s: SubjectDocumentItem | null) => void,
-    path: string | null,
-    documentQuery: React.MutableRefObject<DocumentViewQuery | null>,
-    postMessage: (
-        iframeEl: HTMLIFrameElement,
-        type: string,
-        detail: unknown,
-        path: string,
-    ) => Promise<void>,
-) => {
-    const handleSearchQuery = useCallback(
-        (iframeEl: HTMLIFrameElement, hasOwnPosition: boolean) => {
-            if (subjectItemSelectedRef.current) {
-                postMessage(
-                    iframeEl,
-                    POST_MESSAGE_EVENT.subjectItem,
-                    subjectItemSelectedRef.current,
-                    path!,
-                );
-                setSubjectItemSelected(null);
-            } else if (documentQuery.current) {
-                window.dispatchEvent(new Event(PARENT_WINDOW_EVENT.frameDocumentSearchStart));
-                postMessage(
-                    iframeEl,
-                    POST_MESSAGE_EVENT.documentQuery,
-                    documentQuery.current,
-                    path!,
-                );
-            } else if (!hasOwnPosition) {
-                const container =
-                    iframeEl.contentDocument?.getElementById(DOCUMENT_CONTAINER_ID)
-                        ?.firstElementChild?.firstElementChild;
-                container
-                    ?.querySelector('div')
-                    ?.scrollIntoView({ inline: 'center', behavior: 'smooth' });
-            }
-        },
-        [subjectItemSelectedRef, setSubjectItemSelected, path, documentQuery, postMessage],
-    );
-
-    useEffect(() => {
-        const handler = () => message.warning('Aucun résultat trouvé');
-        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.emptySearchquery, handler);
-        return () =>
-            window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.emptySearchquery, handler);
-    }, []);
-
-    return handleSearchQuery;
-};
-
-const useDocument = () => {
-    const title = useSermonStore(selectActiveTabTitle);
-    const titleRef = useRef(title);
-    titleRef.current = title;
-
-    const iframeRef = useContainerHeight<HTMLIFrameElement>(40);
-
-    const [path, setPath] = useState<string | null>(null);
-
+function useSermonContent() {
+    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
+    const setActiveContent = useSermonStore((s) => s.setActiveContent);
+    const activeContent = useSermonStore((s) => s.activeContent);
+    const [loading, setLoading] = useState(false);
 
-    // get document content path
     useEffect(() => {
-        if (title) {
-            // TODO: replace with window.api.documents.getContentPath when implemented
-            // For now, use getSermonContent approach
-            setPath(null);
+        if (!activeTitle) {
+            setActiveContent(null);
+            return;
         }
-    }, [title]);
-
-    return {
-        title,
-        titleRef,
-        iframeRef,
-        path,
-        sermonsByTitle,
-    };
-};
-
-const useDocumentsState = (titleRef: React.MutableRefObject<string | null>) => {
-    const pageRef = useRef<HTMLElement | null>(null);
-    const tabs = useSermonStore((s) => s.tabs);
-    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
-    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
-
-    useEffect(() => {
-        const documentZoom = (e: Event) => {
-            const zoom = (e as CustomEvent).detail?.zoom;
-            if (titleRef.current && zoom != null) {
-                updateTabZoom(titleRef.current, zoom);
-            }
-            if (pageRef.current) {
-                pageRef.current.dispatchEvent(new Event('scroll'));
-            }
-        };
-
-        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.documentCurrentZoom, documentZoom);
-        return () => {
-            window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.documentCurrentZoom, documentZoom);
-        };
-    }, [titleRef, updateTabZoom]);
-
-    return {
-        tabs,
-        pageRef,
-        updateTabScroll,
-    };
-};
-
-const useOpenDocumentExternalLink = () => {
-    useEffect(() => {
-        const openLink = (event: Event) => {
-            const url = (event as CustomEvent<string>).detail;
-            if (url) window.api.app.openExternal(url);
-        };
-
-        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.openDocumentExternalLink, openLink);
-        return () => {
-            window.removeEventListener(
-                CHILD_PARENT_WINDOW_EVENT.openDocumentExternalLink,
-                openLink,
-            );
-        };
-    }, []);
-};
-
-const useToPostMessageCurrentAudioDocumentPlay = (
-    iframeRef: React.MutableRefObject<HTMLIFrameElement | null>,
-    title: string | null,
-    path: string | null,
-) => {
-    const postMessage = usePostMessage();
-    const currentAudioDocumentPlay = useAudioStore((s) => s.currentPlay);
-
-    useEffect(() => {
-        if (
-            currentAudioDocumentPlay &&
-            iframeRef.current &&
-            path &&
-            title === currentAudioDocumentPlay.documentTitle
-        ) {
-            postMessage(
-                iframeRef.current,
-                POST_MESSAGE_EVENT.currentAudioDocumentPlay,
-                currentAudioDocumentPlay,
-                path,
-            );
+        const meta = sermonsByTitle[activeTitle];
+        if (!meta) {
+            setActiveContent(null);
+            return;
         }
-    }, [currentAudioDocumentPlay, path, iframeRef, title, postMessage]);
+        setLoading(true);
+        (
+            window.api.documents.getSermonContent(
+                activeLanguage,
+                meta.translationId,
+            ) as Promise<SermonContentType>
+        )
+            .then((content) => setActiveContent(content))
+            .catch(() => setActiveContent(null))
+            .finally(() => setLoading(false));
+    }, [activeTitle, activeLanguage, sermonsByTitle, setActiveContent]);
 
-    const currentAudioPlayOnLoadDocument = useCallback(() => {
-        if (title === currentAudioDocumentPlay?.documentTitle && iframeRef.current && path) {
-            postMessage(
-                iframeRef.current,
-                POST_MESSAGE_EVENT.currentAudioDocumentPlay,
-                currentAudioDocumentPlay,
-                path,
-            );
-        }
-    }, [path, currentAudioDocumentPlay, title, iframeRef, postMessage]);
-
-    return currentAudioPlayOnLoadDocument;
-};
-
-function useAlertFromIframe() {
-    useEffect(() => {
-        const handler = () => message.warning("Aucun texte n'a été sélectionné pour référence");
-        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.noSelectableDocumentText, handler);
-        return () =>
-            window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.noSelectableDocumentText, handler);
-    }, []);
+    return { content: activeContent, loading };
 }
 
-export default function DocumentView() {
-    const { iframeRef, path, titleRef, title, sermonsByTitle } = useDocument();
+function useScrollAndZoom(containerRef: React.RefObject<HTMLDivElement | null>) {
+    const activeTab = useSermonStore(selectActiveTab);
+    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
 
-    const { documentQuery } = useDocumentQuery(titleRef, iframeRef);
+    const zoom = activeTab?.zoom ?? 100;
 
-    const postMessage = usePostMessage();
+    // Restore scroll position on tab change
+    useEffect(() => {
+        if (!containerRef.current || !activeTab) return;
+        containerRef.current.scrollTop = activeTab.scrollY ?? 0;
+    }, [activeTitle]);
 
-    const { subjectItemSelectedRef, setSubjectItemSelected } = useSubjectQuery(iframeRef);
-
-    const { tabs, pageRef, updateTabScroll } = useDocumentsState(titleRef);
-
-    const handleSearchQuery = useSearchQuery(
-        subjectItemSelectedRef,
-        setSubjectItemSelected,
-        path,
-        documentQuery,
-        postMessage,
-    );
-
-    useOpenDocumentExternalLink();
-
-    useAlertFromIframe();
-
-    const currentAudioPlayOnLoadDocument = useToPostMessageCurrentAudioDocumentPlay(
-        iframeRef,
-        title,
-        path,
-    );
-
-    const onIframeLoad = () => {
-        if (iframeRef.current && title) {
-            const page = iframeRef.current.contentDocument?.querySelector(
-                `#${DOCUMENT_CONTAINER_ID}`,
-            ) as HTMLElement | null | undefined;
-
-            pageRef.current = page!;
-
-            // post message title datastore
-            const sermon = sermonsByTitle[title];
-            if (sermon) {
-                postMessage(iframeRef.current, POST_MESSAGE_EVENT.documentTitleData, sermon, path!);
+    // Persist scroll position on scroll
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const handler = debounce(() => {
+            if (activeTitle) {
+                updateTabScroll(activeTitle, el.scrollTop);
             }
+        }, 500);
+        el.addEventListener('scroll', handler as EventListener);
+        return () => el.removeEventListener('scroll', handler as EventListener);
+    }, [activeTitle, updateTabScroll]);
 
-            // get active tab
-            const tab = tabs.find((t) => t.title === title);
+    return { zoom };
+}
 
-            // handle zoom
-            if (tab?.zoom) {
-                postMessage(iframeRef.current, POST_MESSAGE_EVENT.documentZoom, tab.zoom, path!);
-            }
-            if (page) {
-                (page.style as unknown as Record<string, unknown>).zoom = (tab?.zoom || 100) + '%';
-            }
+function useSearchHighlight(): string | null {
+    const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
 
-            let hasOwnPosition = false;
-            if ((tab?.scrollY || tab?.scrollX) && page) {
-                hasOwnPosition = true;
+    return useMemo(() => {
+        if (!activeTitle) return null;
+        const query = documentViewQueries.find((q) => q.documentTitle === activeTitle);
+        return query?.term ?? null;
+    }, [documentViewQueries, activeTitle]);
+}
 
-                if (!(subjectItemSelectedRef.current || documentQuery.current)) {
-                    postMessage(
-                        iframeRef.current,
-                        POST_MESSAGE_EVENT.windowPosition,
-                        {
-                            top: tab.scrollY || undefined,
-                            left: tab.scrollX || undefined,
-                        },
-                        path!,
-                    );
+function useSubjectNavigation(containerRef: React.RefObject<HTMLDivElement | null>) {
+    const selectedSubjectItem = useSubjectsStore((s) => s.selectedSubjectItem);
+    const setSelectedSubjectItem = useSubjectsStore((s) => s.setSelectedSubjectItem);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
 
-                    page.scrollTo({
-                        top: tab.scrollY || undefined,
-                        left: tab.scrollX || undefined,
-                        behavior: 'smooth',
-                    });
-                }
-            }
+    useEffect(() => {
+        if (!selectedSubjectItem || !containerRef.current) return;
+        if (selectedSubjectItem.documentTitle !== activeTitle) return;
 
-            const load = { count: !hasOwnPosition ? 1 : 0 };
+        const paragraphIndex = selectedSubjectItem.documentHtmlTree?.tree?.[0];
+        if (paragraphIndex == null) return;
 
-            const onScroll = (): number | void => {
-                if (load.count === 0) return (load.count = 1);
-                setTimeout(() => {
-                    if (title) {
-                        updateTabScroll(title, page?.scrollTop, page?.scrollLeft);
-                    }
-                }, 0);
-            };
-
-            const externalizeLinkTag = (event: MouseEvent) => {
-                const target = event.target as HTMLElement;
-                const hasLink = [
-                    target,
-                    target.parentElement,
-                    target.parentElement?.parentElement,
-                ].find((el) => el && el.tagName === 'A');
-                if (hasLink) {
-                    event.preventDefault();
-                    const href = hasLink.getAttribute('href');
-                    if (href) window.api.app.openExternal(href);
-                }
-            };
-
-            page?.addEventListener('click', externalizeLinkTag);
-            page?.addEventListener('scroll', debounce(onScroll, 500) as EventListener);
-            handleSearchQuery(iframeRef.current, hasOwnPosition);
-            currentAudioPlayOnLoadDocument();
+        const el = containerRef.current.querySelector(`[data-paragraph-index="${paragraphIndex}"]`);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
+        setSelectedSubjectItem(null);
+    }, [selectedSubjectItem, activeTitle, setSelectedSubjectItem]);
+}
+
+function useContextMenu(
+    containerRef: React.RefObject<HTMLDivElement | null>,
+    content: SermonContentType | null,
+) {
+    useEffect(() => {
+        if (!containerRef.current || !content) return;
+        const menu = new ContextMenu(containerRef.current, [
+            {
+                text: 'Ajouter au sujet',
+                onclick: () => {
+                    const sel = window.getSelection();
+                    if (!sel || sel.isCollapsed) {
+                        message.warning('Aucun texte sélectionné');
+                        return;
+                    }
+                    const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
+                    const idx = anchor ? parseInt(anchor.getAttribute('data-paragraph-index')!) : 0;
+                    window.dispatchEvent(
+                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, {
+                            detail: {
+                                documentHtmlTree: {
+                                    tree: [idx],
+                                    scrollY: containerRef.current?.scrollTop,
+                                },
+                                textContent: sel.toString(),
+                            },
+                        }),
+                    );
+                },
+            },
+            {
+                text: 'Ajouter à la note',
+                onclick: () => {
+                    const sel = window.getSelection();
+                    if (!sel || sel.isCollapsed) {
+                        message.warning('Aucun texte sélectionné');
+                        return;
+                    }
+                    const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
+                    const idx = anchor ? parseInt(anchor.getAttribute('data-paragraph-index')!) : 0;
+                    window.dispatchEvent(
+                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, {
+                            detail: {
+                                documentHtmlTree: {
+                                    tree: [idx],
+                                    scrollY: containerRef.current?.scrollTop,
+                                },
+                                textContent: sel.toString(),
+                            },
+                        }),
+                    );
+                },
+            },
+        ]);
+        menu.install();
+        return () => menu.uninstall();
+    }, [content]);
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
+// ---------------------------------------------------------------------------
+
+function SermonHeader({ meta, zoom }: { meta: SermonMeta; zoom: number }) {
+    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
+
+    const handleAudioPlay = useCallback(() => {
+        if (!meta.audioLink) return;
+        window.dispatchEvent(
+            new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
+                detail: {
+                    id: meta.id,
+                    title: meta.title,
+                    frTitle: meta.title,
+                    enTitle: meta.enTitle ?? '',
+                    traduction: meta.languageCode,
+                    web_link: meta.webLink,
+                    pdf_link: meta.pdfLink,
+                    audio_link: meta.audioLink,
+                    date: meta.sermonDate,
+                    date_long: meta.dateLong,
+                    other_traductions: [],
+                },
+            }),
+        );
+    }, [meta]);
+
+    const handleOtherTraductions = useCallback(() => {
+        window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
+    }, []);
+
+    const handleSearch = useCallback(() => {
+        window.dispatchEvent(
+            new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openSearchModal, {
+                detail: { searchForParagraph: false },
+            }),
+        );
+    }, []);
+
+    const handleZoomIn = useCallback(() => {
+        updateTabZoom(meta.title, Math.min(zoom + 10, 200));
+    }, [meta.title, zoom, updateTabZoom]);
+
+    const handleZoomOut = useCallback(() => {
+        updateTabZoom(meta.title, Math.max(zoom - 10, 50));
+    }, [meta.title, zoom, updateTabZoom]);
+
+    return (
+        <div className="sermon-header">
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <strong>{meta.title}</strong>
+                {meta.dateLong && (
+                    <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
+                        {meta.dateLong}
+                    </span>
+                )}
+            </div>
+            <Space size="small">
+                {meta.audioLink && (
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<PlayCircleOutlined />}
+                        onClick={handleAudioPlay}
+                    />
+                )}
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<TranslationOutlined />}
+                    onClick={handleOtherTraductions}
+                />
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<ZoomOutOutlined />}
+                    onClick={handleZoomOut}
+                />
+                <span style={{ fontSize: '0.8em', minWidth: 35, textAlign: 'center' }}>
+                    {zoom}%
+                </span>
+                <Button type="text" size="small" icon={<ZoomInOutlined />} onClick={handleZoomIn} />
+                <Button type="text" size="small" icon={<SearchOutlined />} onClick={handleSearch} />
+            </Space>
+        </div>
+    );
+}
+
+const SermonParagraphView = memo(function SermonParagraphView({
+    paragraph,
+    searchTerm,
+}: {
+    paragraph: SermonParagraphType;
+    searchTerm: string | null;
+}) {
+    const renderContent = () => {
+        if (!searchTerm) return paragraph.content;
+
+        const regex = simpleRegExp(searchTerm);
+        const parts = paragraph.content.split(regex);
+        if (parts.length <= 1) return paragraph.content;
+
+        const matches = paragraph.content.match(regex) || [];
+        const result: (string | JSX.Element)[] = [];
+        parts.forEach((part, i) => {
+            result.push(part);
+            if (i < matches.length) {
+                result.push(<mark key={i}>{matches[i]}</mark>);
+            }
+        });
+        return result;
     };
+
+    return (
+        <p data-paragraph-index={paragraph.paragraphIndex} className="sermon-paragraph">
+            <span className="line-number">{paragraph.lineIndex}</span>
+            {renderContent()}
+        </p>
+    );
+});
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export default function DocumentView() {
+    const { content, loading } = useSermonContent();
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { zoom } = useScrollAndZoom(containerRef);
+    const searchTerm = useSearchHighlight();
+    useSubjectNavigation(containerRef);
+    useContextMenu(containerRef, content);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
 
     return (
         <>
             <DocumentTabs />
             <Content className="mock-browser-content">
-                <iframe
-                    ref={iframeRef}
-                    hidden={!path}
-                    width="100%"
-                    onLoad={onIframeLoad}
-                    src={path || undefined}
-                    frameBorder="0"
-                />
+                {loading && (
+                    <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                        <Spin />
+                    </div>
+                )}
+                {!loading && content && (
+                    <>
+                        <SermonHeader meta={content.meta} zoom={zoom} />
+                        <div
+                            ref={containerRef}
+                            id={DOCUMENT_CONTAINER_ID}
+                            style={{ overflow: 'auto', zoom: `${zoom}%`, flex: 1 }}
+                        >
+                            {content.paragraphs.map((p) => (
+                                <SermonParagraphView
+                                    key={p.paragraphIndex}
+                                    paragraph={p}
+                                    searchTerm={searchTerm}
+                                />
+                            ))}
+                        </div>
+                    </>
+                )}
             </Content>
-            <ModalSearchDocument
-                iframeRef={iframeRef}
-                documentQuery={documentQuery.current}
-                title={title ?? ''}
-            />
+            <ModalSearchDocument title={activeTitle ?? ''} />
         </>
     );
 }

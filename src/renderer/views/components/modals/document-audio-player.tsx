@@ -2,7 +2,6 @@ import { Title } from '@shared/types';
 import { AUDIO_PLAYER, CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
-import { TRADUCTIONS } from '@renderer/utils/constants';
 import { throttle } from '@renderer/utils/functions';
 import { Modal } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -165,8 +164,8 @@ export default function DocumentAudioPlayer() {
                         onTimeUpdate={throttle(onAudioTimeUpdate, 5000)}
                         onPause={onAudioPause}
                         subtitle={{
-                            head: 'Traduction',
-                            text: TRADUCTIONS[docTitle.traduction!],
+                            head: 'Langue',
+                            text: docTitle.traduction ?? '',
                         }}
                     />
                 )}

@@ -21,6 +21,7 @@ import { SubjectSelectModal } from './views/components/modals/subject-select-mod
 import { NoteReferencesModal } from './views/components/modals/note-references-modal';
 import PdfDocumentDownloader from './views/components/pdf-document-downloader';
 import DocumentAudioPlayer from './views/components/modals/document-audio-player';
+import LanguageManagerModal from './views/components/modals/language-manager-modal';
 
 const Notes = lazy(() => import('./views/options/notes'));
 
@@ -89,6 +90,7 @@ export function ContentApp() {
             <NoteReferencesModal />
             <PdfDocumentDownloader />
             <DocumentAudioPlayer />
+            <LanguageManagerModal />
         </>
     );
 }
