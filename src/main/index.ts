@@ -23,6 +23,7 @@ initializeTantivy();
 initializeIpc();
 
 function setupCSP(): void {
+    if (is.dev) return;
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
         callback({
             responseHeaders: {
@@ -51,7 +52,7 @@ function createWindow(): void {
         minHeight: 572,
         title: 'Wmb Table',
         webPreferences: {
-            preload: join(__dirname, '../preload/index.js'),
+            preload: join(__dirname, '../preload/index.mjs'),
             nodeIntegration: false,
             contextIsolation: true,
             sandbox: true,
