@@ -176,9 +176,9 @@ Set up the secure Electron main process with contextIsolation and preload script
 
 Replace all 18 NeDB collections with a proper SQLite database using Drizzle ORM.
 
-- [ ] **3.1** Install and configure `better-sqlite3` + `drizzle-orm` + `drizzle-kit`
-- [ ] **3.2** Create `drizzle.config.ts` for migration generation
-- [ ] **3.3** Create Drizzle schema (`src/main/database/schema.ts`) mapping all 18 NeDB collections:
+- [x] **3.1** Install and configure `better-sqlite3` + `drizzle-orm` + `drizzle-kit`
+- [x] **3.2** Create `drizzle.config.ts` for migration generation
+- [x] **3.3** Create Drizzle schema (`src/main/database/schema.ts`) mapping all 18 NeDB collections:
     - `documentsTitle` — id, title, year, date, path, language, and metadata fields
     - `bibleVerses` — id, book, chapter, verse, content (with FTS5 virtual table for search)
     - `configurations` — key-value store for app settings
@@ -198,13 +198,19 @@ Replace all 18 NeDB collections with a proper SQLite database using Drizzle ORM.
     - `audioLastPlay` — documentId, position, timestamps
     - `backupReferences` — sync metadata
     - `backupStatus` — sync state tracking
-- [ ] **3.4** Generate initial SQL migration with `drizzle-kit generate`
-- [ ] **3.5** Create database connection module (`src/main/database/index.ts`):
+
+> **Implementation note — 3.3 Schema divergence:** The final architecture uses a **three-database design** instead of one. Sermon/document metadata lives in a read-only bundled `data.sqlite` (68K+ rows, 14 tables) — not in the user DB. Bible verses live in per-language Bible SQLite files (e.g., `bible.fr-lsg.sqlite`) with their own schema in `src/main/database/bible-schema.ts` — not in the user DB. The user DB (`wmb-table.sqlite`) has **17 Drizzle tables** for personalized data only. A `sermon_metadata` table was initially added but later dropped (migration `0005`). The `documentsTitle` and `bibleVerses` tables listed above are handled by the reference DB and Bible DBs respectively.
+
+- [x] **3.4** Generate initial SQL migration with `drizzle-kit generate`
+- [x] **3.5** Create database connection module (`src/main/database/index.ts`):
     - Initialize better-sqlite3 with WAL mode
     - Database path: `app.getPath('userData')/databases/wmb-table.sqlite`
     - Separate Bible database: `app.getPath('userData')/databases/bible.sqlite`
     - Run Drizzle migrations on startup
-- [ ] **3.6** Create repository layer (`src/main/database/repositories/`):
+
+> **Implementation note — 3.5 Bible DB divergence:** Bible DBs are **read-only bundled files** in `resources/database/` with language-specific naming (e.g., `bible.fr-lsg.sqlite`), managed by `src/main/services/bible.service.ts`. Remote Bible versions download to `userData/databases/bibles/`. The reference database (`data.sqlite`) is opened read-only with mmap via `src/main/database/reference-db.ts`.
+
+- [x] **3.6** Create repository layer (`src/main/database/repositories/`):
     - `documents.repository.ts` — findAll, findById, search, getContent
     - `notes.repository.ts` — CRUD notes, addReference, removeReference, addBibleRef
     - `bible.repository.ts` — getBooks, getChapter, searchVerses (FTS5)
@@ -217,19 +223,22 @@ Replace all 18 NeDB collections with a proper SQLite database using Drizzle ORM.
     - `suggestions.repository.ts` — getSuggestions, addSuggestion
     - `sidebar.repository.ts` — getStatus, setStatus
     - `custom-documents.repository.ts` — CRUD custom documents
-- [ ] **3.7** Write NeDB → SQLite migration script (`src/main/database/migrate-from-nedb.ts`):
+
+> **Implementation note — 3.6 Repository divergence:** `custom-documents.repository.ts` was merged into `documents.repository.ts`. An additional `reference.repository.ts` was added (Phase D) for raw `better-sqlite3` queries against the read-only `data.sqlite`. Total: 12 repository files in `src/main/database/repositories/`.
+
+- [x] **3.7** Write NeDB → SQLite migration script (`src/main/database/migrate-from-nedb.ts`):
     - Read each `.db` file line by line (NeDB stores one JSON doc per line)
     - Parse and insert into corresponding SQLite tables
     - Preserve `_id` as primary key, `createdAt`/`updatedAt` timestamps
     - Handle data type conversions (NeDB dates → SQLite integers/ISO strings)
     - Make migration idempotent (skip if already migrated)
-- [ ] **3.8** Add first-launch detection:
+- [x] **3.8** Add first-launch detection:
     - Check for existing SQLite database
     - If missing, check for legacy NeDB files at old install-dir location
     - If legacy found, run migration; if not, seed from bundled resources
-- [ ] **3.9** Wire repositories into IPC handlers (replace `queryDb` calls with repository methods)
-- [ ] **3.10** Write unit tests for all repositories (Vitest, using in-memory SQLite)
-- [ ] **3.11** Verify: all data operations work via new database layer, no NeDB references remain
+- [x] **3.9** Wire repositories into IPC handlers (replace `queryDb` calls with repository methods)
+- [x] **3.10** Write unit tests for all repositories (Vitest, using in-memory SQLite)
+- [x] **3.11** Verify: all data operations work via new database layer, no NeDB references remain
 
 ---
 
