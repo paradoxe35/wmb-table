@@ -1,9 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Input, Card, Layout, Tree, Divider, Select, Space } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Input, Card, Layout, Tree, Divider, Select } from 'antd';
 import ContainerScrollY from '../container-scroll-y';
-import { Title } from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
+import type { SermonMeta } from '@localtypes/index';
 import DocumentViewer, { useDocumentViewOpen } from '../viewer/document-viewer';
 import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
@@ -18,7 +16,6 @@ import {
 import PanelGroup from './components/documents-menu';
 import { DataNode } from 'antd/lib/tree';
 import DocumentTitle from '@renderer/store/models/document_title';
-import { TRADUCTIONS } from '@root/utils/constants';
 import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
 
 const { DirectoryTree } = Tree;
@@ -201,23 +198,14 @@ const DocumentSearch = () => {
     const { datas, setDatas, documents, setDocuments, title } = useDocumentData();
     const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
 
-    const exceptMessageFrenchKey = 'BBV';
-
-    const traductions = useMemo(
-        () => Object.keys(TRADUCTIONS).filter((key) => key !== exceptMessageFrenchKey),
-        [],
-    );
-
-    const traductionFilter = useRef<string>();
-    const searchValue = useRef<string>('');
-
     useEffect(() => {
         setDatas(documents);
     }, [documents]);
 
     useEffect(() => {
-        sendIpcRequest<Title[]>(IPC_EVENTS.title_documents)
-            .then((titles) => {
+        (window as any).api.documents
+            .getTitles()
+            .then((titles: SermonMeta[]) => {
                 setDocuments(titles);
             })
             .finally(() => setAppDataLoaded(true));
@@ -225,20 +213,9 @@ const DocumentSearch = () => {
 
     const onSearch = useCallback(
         (value: string) => {
-            searchValue.current = value;
-            const trans = traductionFilter.current;
-
             if (documents.length) {
                 const newDocuments = documents.filter((d) => {
-                    const matchTitle = simpleRegExp(value).test(strNormalize(d.getTitle()));
-                    if (trans) {
-                        return (
-                            matchTitle &&
-                            (trans === d.getTraduction() ||
-                                (d.getTraduction() === exceptMessageFrenchKey && trans === 'MS'))
-                        );
-                    }
-                    return matchTitle;
+                    return simpleRegExp(value).test(strNormalize(d.getTitle()));
                 });
                 setDatas(newDocuments);
             }
@@ -246,39 +223,15 @@ const DocumentSearch = () => {
         [setDatas, documents],
     );
 
-    const onTraductionChange = useCallback(
-        (value: string | undefined) => {
-            traductionFilter.current = value;
-            onSearch(searchValue.current);
-        },
-        [onSearch],
-    );
-
     return (
         <>
             <Card bordered={false}>
-                <Space direction="vertical">
-                    <Search
-                        key={documents.length}
-                        placeholder="Recherche"
-                        allowClear
-                        onSearch={onSearch}
-                    />
-                    <Select
-                        className="w-100 max-w-100"
-                        placeholder="Traductions"
-                        onChange={onTraductionChange}
-                        allowClear
-                    >
-                        {traductions.map((key) => {
-                            return (
-                                <Option key={key} value={key}>
-                                    {TRADUCTIONS[key]}
-                                </Option>
-                            );
-                        })}
-                    </Select>
-                </Space>
+                <Search
+                    key={documents.length}
+                    placeholder="Recherche"
+                    allowClear
+                    onSearch={onSearch}
+                />
             </Card>
             <DocumentList datas={datas} title={title} />
         </>

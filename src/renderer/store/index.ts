@@ -5,9 +5,9 @@ import {
     DocumentTab,
     DocumentViewQuery,
     OptionView,
+    SermonMeta,
     SubjectDocument,
     SubjectDocumentItem,
-    Title,
     ViewMenu,
     ViewMenuValue,
 } from '@localtypes/index';
@@ -41,7 +41,7 @@ export const optionViewStore = atom({
     default: OPTIONS_VIEWS.search as string,
 });
 
-export const titlesStore = atom<Title[]>({
+export const titlesStore = atom<SermonMeta[]>({
     key: 'titlesStore',
     default: [],
 });

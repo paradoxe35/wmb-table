@@ -1,5 +1,4 @@
 import type {
-    Title,
     DataDocument,
     DocumentTab,
     Suggestions,
@@ -29,6 +28,7 @@ import type {
     UpdaterNotification,
     ViewMenuValue,
     DocumentHtmlTree,
+    SermonMeta,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -145,7 +145,7 @@ export const PushChannels = {
 /** Maps each invoke channel to its argument tuple and return type. */
 export interface InvokeChannelMap {
     // Documents
-    [DocumentChannels.getTitles]: { args: []; return: Title[] };
+    [DocumentChannels.getTitles]: { args: []; return: SermonMeta[] };
     [DocumentChannels.getContentPath]: { args: [string]; return: DataDocument | null };
     [DocumentChannels.getTabs]: { args: []; return: DocumentTab[] };
     [DocumentChannels.saveTabs]: { args: [DocumentTab[]]; return: void };

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, uniqueIndex, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -169,22 +169,30 @@ export const audioDownloads = sqliteTable('audio_downloads', {
 });
 
 // ---------------------------------------------------------------------------
-// Documents Title
+// Sermon Metadata
 // ---------------------------------------------------------------------------
 
-export const documentsTitle = sqliteTable('documents_title', {
-    id: text('id').primaryKey(),
-    title: text('title').notNull(),
-    frTitle: text('fr_title').notNull(),
-    enTitle: text('en_title').notNull(),
-    traduction: text('traduction'),
-    webLink: text('web_link'),
-    pdfLink: text('pdf_link'),
-    audioLink: text('audio_link'),
-    date: text('date'),
-    dateLong: text('date_long'),
-    otherTraductions: text('other_traductions'), // JSON OtherTraduction[]
-});
+export const sermonMetadata = sqliteTable(
+    'sermon_metadata',
+    {
+        id: text('id').primaryKey(),
+        translationId: integer('translation_id').notNull(),
+        languageCode: text('language_code').notNull(),
+        sermonDate: text('sermon_date').notNull(),
+        title: text('title').notNull(),
+        enTitle: text('en_title'),
+        audioLink: text('audio_link'),
+        pdfLink: text('pdf_link'),
+        webLink: text('web_link'),
+        dateLong: text('date_long'),
+        paragraphCount: integer('paragraph_count').notNull().default(0),
+    },
+    (table) => [
+        uniqueIndex('idx_sermon_meta_translation_lang').on(table.translationId, table.languageCode),
+        index('idx_sermon_meta_lang').on(table.languageCode),
+        index('idx_sermon_meta_date').on(table.sermonDate),
+    ],
+);
 
 // ---------------------------------------------------------------------------
 // Backup

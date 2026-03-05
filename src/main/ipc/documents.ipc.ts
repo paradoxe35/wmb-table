@@ -1,11 +1,11 @@
 import { DocumentChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
-import * as documentsRepo from '@main/database/repositories/documents.repository';
+import * as sermonMetadataRepo from '@main/database/repositories/sermon-metadata.repository';
 import * as tabsRepo from '@main/database/repositories/tabs.repository';
 
 export function registerDocumentsHandlers(): void {
     registerHandler(DocumentChannels.getTitles, async () => {
-        return documentsRepo.getAllTitles();
+        return sermonMetadataRepo.getSermonList('en'); // TODO: use active language from config
     });
 
     registerHandler(DocumentChannels.getContentPath, async () => {

@@ -11,10 +11,6 @@ function getAssetDbPath(): string {
     return join(process.resourcesPath, 'assets', 'datas', 'db');
 }
 
-function getAssetDocumentsDbPath(): string {
-    return join(process.resourcesPath, 'assets', 'datas', 'documents-db');
-}
-
 function getAssetBiblePath(): string {
     return join(process.resourcesPath, 'assets', 'datas', 'bible');
 }
@@ -100,7 +96,6 @@ export function migrateFromNedb(): void {
         migrateCustomDocuments(mainSqlite, dbPath);
         migrateNotes(mainSqlite, dbPath);
         migrateAudio(mainSqlite, dbPath);
-        migrateDocumentsTitle(mainSqlite);
         migrateBackup(mainSqlite);
         migrateAudioDownloads(mainSqlite);
 
@@ -332,29 +327,6 @@ function migrateAudio(sqlite: import('better-sqlite3').Database, dbPath: string)
                 (doc.reference as string) || '',
                 doc.doc ? JSON.stringify(doc.doc) : null,
             );
-    }
-}
-
-function migrateDocumentsTitle(sqlite: import('better-sqlite3').Database): void {
-    const docsDbPath = getAssetDocumentsDbPath();
-    const docs = parseNedbFile(join(docsDbPath, `documents-title${DB_EXTENSION}`));
-    const stmt = sqlite.prepare(
-        `INSERT OR IGNORE INTO documents_title (id, title, fr_title, en_title, traduction, web_link, pdf_link, audio_link, date, date_long, other_traductions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    );
-    for (const doc of docs) {
-        stmt.run(
-            (doc._id as string) || randomUUID(),
-            doc.title as string,
-            (doc.frTitle as string) || (doc.fr_title as string) || '',
-            (doc.enTitle as string) || (doc.en_title as string) || '',
-            (doc.traduction as string) || null,
-            (doc.web_link as string) || null,
-            (doc.pdf_link as string) || null,
-            (doc.audio_link as string) || null,
-            (doc.date as string) || null,
-            (doc.date_long as string) || null,
-            doc.other_traductions ? JSON.stringify(doc.other_traductions) : null,
-        );
     }
 }
 

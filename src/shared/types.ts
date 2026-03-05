@@ -22,6 +22,21 @@ export type OtherTraduction = {
     web_link: string;
 };
 
+export interface SermonMeta {
+    id: string;
+    translationId: number;
+    languageCode: string;
+    sermonDate: string;
+    title: string;
+    enTitle: string | null;
+    audioLink: string | null;
+    pdfLink: string | null;
+    webLink: string | null;
+    dateLong: string | null;
+    paragraphCount: number;
+}
+
+/** @deprecated Use SermonMeta instead */
 export type Title<T = string | null> = {
     id: string;
     title: string;

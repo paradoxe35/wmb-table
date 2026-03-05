@@ -318,6 +318,15 @@ export function searchSermons(
     return { hits, total };
 }
 
+export function getSermonParagraphCount(langCode: string, translationId: number): number {
+    const index = getIndex(langCode);
+    const schema = index.schema;
+    const query = Query.termQuery(schema, 'translation_id', translationId);
+    const searcher = index.searcher();
+    const result = searcher.search(query, 1, true);
+    return result.count ?? 0;
+}
+
 export function getSearchSnippet(
     langCode: string,
     queryText: string,

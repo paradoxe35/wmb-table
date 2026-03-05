@@ -1,31 +1,47 @@
-import { Title } from '@localtypes/index';
+import { SermonMeta } from '@localtypes/index';
 
 export default class DocumentTitle {
-    constructor(private doc: Title) {}
+    constructor(private doc: SermonMeta) {}
 
     getName() {
-        return this.doc.frTitle;
+        return this.doc.title;
     }
 
     getYear<T = string | null>(): T {
-        const value = this.doc.date ? '19' + this.doc.date.split('-')[0] : null;
+        const value = this.doc.sermonDate ? '19' + this.doc.sermonDate.split('-')[0] : null;
         return value as unknown as T;
     }
 
     getId() {
-        return this.doc._id;
+        return this.doc.id;
     }
 
-    getTraduction() {
-        return this.doc.traduction;
-    }
-
-    getTraductions() {
-        return this.doc.other_traductions;
+    getTranslationId() {
+        return this.doc.translationId;
     }
 
     getTitle() {
         return this.doc.title;
+    }
+
+    getEnTitle() {
+        return this.doc.enTitle;
+    }
+
+    getAudioLink() {
+        return this.doc.audioLink;
+    }
+
+    getPdfLink() {
+        return this.doc.pdfLink;
+    }
+
+    getWebLink() {
+        return this.doc.webLink;
+    }
+
+    getDateLong() {
+        return this.doc.dateLong;
     }
 
     toObject() {

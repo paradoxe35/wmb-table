@@ -14,7 +14,7 @@ The legacy v1.0.0 system has critical data architecture flaws:
 
 2. **Database is NeDB** (JSON file-per-line) — no indexing, no full-text search, no relational integrity
 
-3. **Document metadata** (`documents-title.db`) stores sermon titles with French/English names, traduction codes (SHP/VGR/MS/BBV), dates, audio/PDF/web links — but the content itself lives in HTML files
+3. **Document metadata** was stored in `documents-title.db` (now removed) — sermon titles, dates, audio/PDF/web links are now in the `sermon_metadata` SQLite table built from Tantivy indexes
 
 ### Solution
 
@@ -147,7 +147,7 @@ unstemmed_content: text (stored, default)        — raw paragraph text
 
 - `translation_id` groups all paragraphs belonging to the same sermon
 - `line_index` orders paragraphs within a sermon (0, 1, 2, ...)
-- `sermon_date` is the date code (e.g. `470412` = April 12, 1947) — maps to `documents-title.db` date field
+- `sermon_date` is the date code (e.g. `470412` = April 12, 1947)
 - English index has `stemmed_content` (en_stem tokenizer) for better search; other languages only have `unstemmed_content`
 
 ### Sermon Metadata in SQLite
@@ -602,9 +602,10 @@ Already implemented in Phase 3 (`src/main/database/migrate-from-nedb.ts`). Migra
 
 **What is NOT migrated:**
 
-- `documents-title.db` — replaced by `sermon_metadata` table built from Tantivy indexes
+- `documents-title.db` — fully removed; sermon metadata is now built from Tantivy indexes into the `sermon_metadata` SQLite table
 - HTML document files — replaced by Tantivy paragraph data
 - `bible.db` → migrated to SQLite in Phase 3 (already done)
+- Legacy NeDB code (`src/main/db/`, `src/main/message-control/`, `src/main/features/backup/`, `src/main/features/synchronizer/`) — deleted
 
 ## 12. Audio Integration
 
@@ -615,4 +616,4 @@ Audio links are stored in `sermon_metadata`. When a sermon has an `audio_link`:
 - `audioDocumentTimes` table tracks playback position (keyed by audio_link, unchanged)
 - `audioDocumentLastPlay` tracks the last played sermon
 
-The audio system is unchanged from Phase 3 — it just reads `audio_link` from `sermon_metadata` instead of `documentsTitle`.
+The audio system is unchanged from Phase 3 — it reads `audio_link` from `sermon_metadata`.

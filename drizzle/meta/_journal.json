@@ -8,6 +8,20 @@
             "when": 1772691070844,
             "tag": "0000_mysterious_nightmare",
             "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1772699777576,
+            "tag": "0001_dear_scorpion",
+            "breakpoints": true
+        },
+        {
+            "idx": 2,
+            "version": "6",
+            "when": 1772701431928,
+            "tag": "0002_milky_azazel",
+            "breakpoints": true
         }
     ]
 }
