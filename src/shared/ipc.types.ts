@@ -9,6 +9,7 @@ import type {
     BibleBook,
     BookRequest,
     BibleSearchResult,
+    BibleVersionInfo,
     SubjectDocument,
     SubjectDocumentItem,
     SubjectRefTree,
@@ -88,6 +89,11 @@ export const BibleChannels = {
     getIndexes: 'bible:getIndexes',
     getBooks: 'bible:getBooks',
     search: 'bible:search',
+    getVersions: 'bible:getVersions',
+    getAllVersions: 'bible:getAllVersions',
+    getActiveVersion: 'bible:getActiveVersion',
+    switchVersion: 'bible:switchVersion',
+    downloadVersion: 'bible:downloadVersion',
 } as const;
 
 export const SubjectChannels = {
@@ -155,6 +161,8 @@ export const PushChannels = {
     newSynchronizedDatas: 'push:newSynchronizedDatas',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
+    bibleDownloadProgress: 'push:bibleDownloadProgress',
+    bibleDownloaded: 'push:bibleDownloaded',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -248,6 +256,11 @@ export interface InvokeChannelMap {
     [BibleChannels.getIndexes]: { args: []; return: BibleIndex };
     [BibleChannels.getBooks]: { args: [BookRequest]; return: BibleBook[] };
     [BibleChannels.search]: { args: [string, number]; return: BibleSearchResult };
+    [BibleChannels.getVersions]: { args: []; return: BibleVersionInfo[] };
+    [BibleChannels.getAllVersions]: { args: []; return: BibleVersionInfo[] };
+    [BibleChannels.getActiveVersion]: { args: []; return: BibleVersionInfo | null };
+    [BibleChannels.switchVersion]: { args: [string]; return: void };
+    [BibleChannels.downloadVersion]: { args: [string]; return: void };
 
     // Subjects
     [SubjectChannels.getAll]: { args: []; return: SubjectDocument[] };
@@ -317,6 +330,8 @@ export interface PushEventMap {
     [PushChannels.newSynchronizedDatas]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: { langCode: string };
+    [PushChannels.bibleDownloadProgress]: { abbreviation: string; percentage: number };
+    [PushChannels.bibleDownloaded]: { abbreviation: string };
 }
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
-import type { DocumentTab, SermonMetaWithTraductions, SidebarStatus } from '@shared/types';
+import type {
+    DocumentTab,
+    InstalledLanguage,
+    SermonMetaWithTraductions,
+    SidebarStatus,
+} from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -29,14 +34,25 @@ export const useIpcRequestWithLoader = () => {
 
 export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
+    const setNeedsSetup = useAppStore((s) => s.setNeedsSetup);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
     const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
+    const needsSetup = useAppStore((s) => s.needsSetup);
 
     useEffect(() => {
         (async () => {
             try {
+                // Check if any languages are installed
+                const installed =
+                    (await window.api.languages.getInstalled()) as InstalledLanguage[];
+                if (installed.length === 0) {
+                    setNeedsSetup(true);
+                    setLoaded(true);
+                    return;
+                }
+
                 const [langCode, sidebarStatus, tabs] = await Promise.all([
                     window.api.app.getActiveLanguage() as Promise<string>,
                     window.api.app.getSidebarStatus() as Promise<SidebarStatus | null>,
@@ -55,7 +71,15 @@ export function useInitApp() {
                 setLoaded(true);
             }
         })();
-    }, [setLoaded, setSidebarHidden, setActiveLanguage, setSermons, setTabs]);
+    }, [
+        needsSetup,
+        setLoaded,
+        setNeedsSetup,
+        setSidebarHidden,
+        setActiveLanguage,
+        setSermons,
+        setTabs,
+    ]);
 }
 
 export function useOpenDocument() {

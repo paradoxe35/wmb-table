@@ -1,7 +1,9 @@
 import { eq, and } from 'drizzle-orm';
-import { getBibleDb, getBibleSqlite } from '../index';
 import { bibleVerses } from '../bible-schema';
 import type { BibleBook, BibleIndex, BibleSearchResult, BookRequest } from '@shared/types';
+import * as bibleService from '@main/services/bible.service';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import * as bibleSchema from '../bible-schema';
 
 function toBook(row: typeof bibleVerses.$inferSelect): BibleBook {
     return {
@@ -15,9 +17,21 @@ function toBook(row: typeof bibleVerses.$inferSelect): BibleBook {
     };
 }
 
+function getSqlite() {
+    return bibleService.getActiveBibleDb();
+}
+
+function getDrizzle() {
+    const sqlite = getSqlite();
+    if (!sqlite) return null;
+    return drizzle(sqlite, { schema: bibleSchema });
+}
+
 export function getIndexes(): BibleIndex {
-    const db = getBibleSqlite();
-    const rows = db
+    const sqlite = getSqlite();
+    if (!sqlite) return {};
+
+    const rows = sqlite
         .prepare(
             `SELECT book_name, book, testament,
               GROUP_CONCAT(DISTINCT chapter) as chapters,
@@ -46,8 +60,13 @@ export function getIndexes(): BibleIndex {
 }
 
 export function getBooks(request: BookRequest): BibleBook[] {
-    const db = getBibleDb();
-    let conditions = [eq(bibleVerses.book, request.book), eq(bibleVerses.chapter, request.chapter)];
+    const db = getDrizzle();
+    if (!db) return [];
+
+    const conditions = [
+        eq(bibleVerses.book, request.book),
+        eq(bibleVerses.chapter, request.chapter),
+    ];
     if (request.verse) {
         conditions.push(eq(bibleVerses.verse, request.verse));
     }
@@ -62,7 +81,18 @@ export function getBooks(request: BookRequest): BibleBook[] {
 export function search(query: string, pageNumber: number): BibleSearchResult {
     const itemsPerPage = 20;
     const offset = (pageNumber - 1) * itemsPerPage;
-    const sqlite = getBibleSqlite();
+    const sqlite = getSqlite();
+
+    const emptyResult: BibleSearchResult = {
+        end: true,
+        itemsPerPage,
+        query,
+        pageNumber,
+        total: 0,
+        data: [],
+    };
+
+    if (!sqlite) return emptyResult;
 
     // Count total matches
     const countResult = sqlite

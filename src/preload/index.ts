@@ -96,6 +96,12 @@ const api = {
         getIndexes: () => invoke(BibleChannels.getIndexes),
         getBooks: (request: unknown) => invoke(BibleChannels.getBooks, request),
         search: (query: string, page: number) => invoke(BibleChannels.search, query, page),
+        getVersions: () => invoke(BibleChannels.getVersions),
+        getAllVersions: () => invoke(BibleChannels.getAllVersions),
+        getActiveVersion: () => invoke(BibleChannels.getActiveVersion),
+        switchVersion: (abbreviation: string) => invoke(BibleChannels.switchVersion, abbreviation),
+        downloadVersion: (abbreviation: string) =>
+            invoke(BibleChannels.downloadVersion, abbreviation),
     },
 
     subjects: {
@@ -182,6 +188,10 @@ const api = {
             onPush(PushChannels.languageDownloadProgress, cb),
         languageInstalled: (cb: (p: { langCode: string }) => void) =>
             onPush(PushChannels.languageInstalled, cb),
+        bibleDownloadProgress: (cb: (p: { abbreviation: string; percentage: number }) => void) =>
+            onPush(PushChannels.bibleDownloadProgress, cb),
+        bibleDownloaded: (cb: (p: { abbreviation: string }) => void) =>
+            onPush(PushChannels.bibleDownloaded, cb),
     },
 } as const;
 

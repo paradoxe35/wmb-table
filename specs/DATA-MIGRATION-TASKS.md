@@ -420,44 +420,69 @@ Redesign the sidebar document list with a rich two-column layout and city/state 
 
 ---
 
-## Phase E: First Launch & Setup Screen
+## Phase E: First Launch, Setup Screen & Bible Architecture ✅
 
-### E.1 — Setup Flow
+### E.1 — Bible Architecture
 
-- [ ] **E.1.1** Create `src/renderer/views/setup/setup-view.tsx`:
-    - Fetch available languages from `data.sqlite` via `window.api.languages.getAvailable()` (uses `refRepo.getAllLanguages()`)
-    - Language cards with: name, native name, sermon count, audio count, download size
-    - Checkbox selection + "Install Selected" button
-    - Download progress per language
+- [x] **E.1.1** Create `resources/database/bible-index.json` — Bible version index
+- [x] **E.1.2** Build `resources/database/bible.fr-lsg.sqlite` — Louis Segond (31,102 verses + FTS5, from legacy NeDB data)
+- [x] **E.1.3** Create `src/main/services/bible.service.ts`:
+    - `loadBibleIndex()`, `getBibleVersionsForLanguage()`, `getAllBibleVersions()`
+    - `switchBibleForLanguage()` — close current, open new (fallback: lang → en → first available)
+    - `switchBibleVersion(abbreviation)` — switch to specific version
+    - `downloadBibleVersion(abbreviation, onProgress)` — download remote Bible from GitHub
+    - `isBibleAvailable(version)` — check if local/remote file exists
+    - `getActiveBibleDb()`, `getActiveVersion()`, `closeBibleDb()`
+    - `_setBibleDbForTesting()` for tests
+    - `type: 'local' | 'remote'` — local bundled in resources, remote downloaded to userData
+- [x] **E.1.4** Update `src/main/database/index.ts`:
+    - Remove user-dir `bible.sqlite` creation + FTS5 setup
+    - Delegate to `bibleService.switchBibleForLanguage()` during init
+    - `getBibleDb()` / `getBibleSqlite()` delegate to bible.service
+    - `switchBibleLanguage()` exported for IPC handler use
+- [x] **E.1.5** Switch Bible DB when language changes:
+    - `app:setActiveLanguage` IPC handler calls `switchBibleLanguage(langCode)`
+- [x] **E.1.6** Add `BibleVersionInfo` type to `src/shared/types.ts`
+- [x] **E.1.7** Add IPC channels to `ipc.types.ts`:
+    - `bible:getVersions`, `bible:getAllVersions`, `bible:getActiveVersion`
+    - `bible:switchVersion`, `bible:downloadVersion`
+    - `push:bibleDownloadProgress`, `push:bibleDownloaded`
+- [x] **E.1.8** Update `src/main/ipc/bible.ipc.ts` — version, switch, download handlers
+- [x] **E.1.9** Update `src/preload/index.ts` — full Bible version API + push listeners
+- [x] **E.1.10** Update `bible.repository.ts` — graceful empty returns when no Bible is loaded
+- [x] **E.1.11** Update `notes.repository.ts` — graceful null when no Bible for `addBibleVerse`
+- [x] **E.1.12** Update `bible.tsx` — version selector bar, graceful "no Bible" empty state, version switching + remote download UI
+
+### E.2 — Setup Screen
+
+- [x] **E.2.1** Add `needsSetup` state to `app.store.ts`
+- [x] **E.2.2** Create `src/renderer/stores/setup.store.ts`:
+    - `availableLanguages`, `selectedLanguages`, `downloadingLanguage`, `downloadProgress`, `installedLanguages`
+- [x] **E.2.3** Create `src/renderer/views/setup/setup-view.tsx`:
+    - Language grid with checkbox cards (name, native name, sermon count, download size)
+    - "Install" button, per-language download progress
     - "Continue to App" button when at least 1 language installed
-- [ ] **E.1.2** Create `src/renderer/views/setup/setup-store.ts`:
-    - `availableLanguages`, `selectedLanguages`, `downloadingLanguage`, `progress`
-- [ ] **E.1.3** Update `App.tsx` / root component:
-    - On startup, check if any languages installed
-    - If none: show `SetupView` instead of main layout
-    - After setup: transition to main app
+- [x] **E.2.4** Update `content-app.tsx` — setup gate (`if (needsSetup) return <SetupView />`)
+- [x] **E.2.5** Update `useInitApp()` in `src/renderer/hooks/index.ts`:
+    - Check installed languages first
+    - If none → `setNeedsSetup(true)`, skip loading sermons
+    - Re-runs when `needsSetup` changes to false (after setup completion)
+- [x] **E.2.6** Post-setup flow: set active language, initialize, `setNeedsSetup(false)` triggers re-init
 
-### E.2 — Bible Download
+### E.3 — NeDB Migration Update
 
-- [ ] **E.2.1** Add Bible download URL as a config constant or derive from `data.sqlite` `language` table fields (`storage_bucket`, `audio_path`)
-- [ ] **E.2.2** Bible download included in setup flow (auto-selected based on language)
-- [ ] **E.2.3** Unzip Bible SQLite to `databases/bible.sqlite`
-
-### E.3 — NeDB Migration Integration
-
-- [ ] **E.3.1** On upgrade detection (legacy NeDB files exist):
-    - Run existing `migrate-from-nedb.ts` for app data (notes, subjects, etc.)
-    - Show message: "Your data has been migrated. Please install language packs."
-    - Direct to setup screen for language installation
-- [ ] **E.3.2** Handle `DocumentHtmlTree` references in migrated data:
-    - Mark migrated references with `legacyTree: true` flag
-    - In sermon view, show "Legacy reference" indicator for these
+- [x] **E.3.1** Remove `migrateBible()` from `migrate-from-nedb.ts` — Bible data now comes from bundled files
+- [x] **E.3.2** Remove `getAssetBiblePath()` helper
+- [x] **E.3.3** Remove `getBibleSqlite` import (no longer needed)
+- [x] **E.3.4** Keep all other migrations (notes, subjects, history, tabs, etc.)
 
 ### E.4 — Verification
 
-- [ ] **E.4.1** Fresh install: app shows setup screen, can install languages, transitions to main app
-- [ ] **E.4.2** Upgrade from v1.0.0: NeDB data migrated, prompted to install languages
-- [ ] **E.4.3** `pnpm typecheck` — 0 errors
+- [x] **E.4.1** `pnpm typecheck` — 0 errors
+- [x] **E.4.2** `pnpm build` — succeeds
+- [x] **E.4.3** `pnpm test` — 60 passed, 7 skipped, 1 pre-existing failure (same as before)
+- [ ] **E.4.4** Fresh install → setup screen, install language, Bible auto-available, transition to app
+- [ ] **E.4.5** Language switch → Bible DB switches to matching version (or fallback)
 
 ---
 
@@ -574,7 +599,7 @@ Create tooling to build Tantivy indexes from source data and publish to GitHub r
 | D     | Renderer: sermon view & language UI | Native paragraph rendering, no iframe              | ✅     |
 | D.10  | Reference DB integration            | data.sqlite replaces sermon_metadata + JSON index  | ✅     |
 | D.11  | Sidebar document list redesign      | Rich two-column layout with city/state pipeline    | ✅     |
-| E     | First launch & setup screen         | User-driven language installation                  |        |
+| E     | First launch, setup & Bible arch.   | Bundled Bible, setup screen, no NeDB bible         | ✅     |
 | F     | Reference system migration          | Paragraph-based notes/subject refs                 |        |
 | G     | Index generation & release pipeline | Build & publish Tantivy indexes                    |        |
 | H     | Testing & polish                    | Full integration testing, performance              |        |

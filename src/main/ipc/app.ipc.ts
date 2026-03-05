@@ -4,6 +4,7 @@ import * as configRepo from '@main/database/repositories/config.repository';
 import * as sidebarRepo from '@main/database/repositories/sidebar.repository';
 import * as documentsRepo from '@main/database/repositories/documents.repository';
 import * as historyRepo from '@main/database/repositories/history.repository';
+import { switchBibleLanguage } from '@main/database/index';
 
 export function registerAppHandlers(): void {
     registerHandler(AppChannels.initialize, async () => {
@@ -16,6 +17,7 @@ export function registerAppHandlers(): void {
 
     registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
         configRepo.setActiveLanguage(langCode);
+        switchBibleLanguage(langCode);
     });
 
     registerHandler(AppChannels.restart, async () => {

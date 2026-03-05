@@ -391,6 +391,18 @@ export interface TantivySearchResult {
 }
 
 // ---------------------------------------------------------------------------
+// Bible Versions
+// ---------------------------------------------------------------------------
+
+export interface BibleVersionInfo {
+    langCode: string;
+    abbreviation: string;
+    name: string;
+    type: 'local' | 'remote';
+    available: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // App / Settings
 // ---------------------------------------------------------------------------
 

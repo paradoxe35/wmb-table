@@ -11,10 +11,19 @@ import {
     Spin,
     Typography,
     Select,
+    Tag,
+    Progress,
+    Empty,
 } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import LoadByVisibility from '@renderer/components/load-by-visibility';
-import { SearchOutlined, DownOutlined, LoadingOutlined } from '@ant-design/icons';
+import {
+    SearchOutlined,
+    DownOutlined,
+    LoadingOutlined,
+    DownloadOutlined,
+    CheckCircleOutlined,
+} from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
 import type {
     BibleBook,
@@ -22,19 +31,13 @@ import type {
     BibleIndexValue,
     BibleSearchItem,
     BibleSearchResult,
+    BibleVersionInfo,
     BookRequest,
     SubjectRefTree,
 } from '@shared/types';
 import { debounce } from '@renderer/utils/functions';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-
-const TESTAMENTS = [
-    { name: 'Nouveau Testament', value: 'N' },
-    { name: 'Ancien Testament', value: 'O' },
-];
-
-type Testament = (typeof TESTAMENTS)[0];
 
 export default function Bible() {
     const [menu, setMenu] = useState('bible');
@@ -43,6 +46,7 @@ export default function Bible() {
 
     return (
         <LoadByVisibility>
+            <BibleVersionSelector />
             <Menu onClick={handleClick} selectedKeys={[menu]} mode="horizontal">
                 <Menu.Item key="bible" icon={<BibleIcons />}>
                     Bible
@@ -63,6 +67,119 @@ export default function Bible() {
                 </ContainerScrollY>
             </div>
         </LoadByVisibility>
+    );
+}
+
+function BibleVersionSelector() {
+    const [versions, setVersions] = useState<BibleVersionInfo[]>([]);
+    const [activeVersion, setActiveVersion] = useState<BibleVersionInfo | null>(null);
+    const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+
+    const refresh = useCallback(() => {
+        Promise.all([
+            window.api.bible.getAllVersions() as Promise<BibleVersionInfo[]>,
+            window.api.bible.getActiveVersion() as Promise<BibleVersionInfo | null>,
+        ]).then(([all, active]) => {
+            setVersions(all);
+            setActiveVersion(active);
+        });
+    }, []);
+
+    useEffect(() => {
+        refresh();
+    }, [refresh]);
+
+    useEffect(() => {
+        const unsub1 = window.api.on.bibleDownloadProgress(
+            (p: { abbreviation: string; percentage: number }) => {
+                setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
+            },
+        );
+        const unsub2 = window.api.on.bibleDownloaded(
+            ({ abbreviation }: { abbreviation: string }) => {
+                setDownloadProgress((prev) => {
+                    const next = { ...prev };
+                    delete next[abbreviation];
+                    return next;
+                });
+                refresh();
+            },
+        );
+        return () => {
+            unsub1();
+            unsub2();
+        };
+    }, [refresh]);
+
+    const handleSwitch = useCallback(
+        async (abbreviation: string) => {
+            await window.api.bible.switchVersion(abbreviation);
+            refresh();
+            // Force re-render of Bible content by dispatching a custom event
+            window.dispatchEvent(new Event('bible-version-changed'));
+        },
+        [refresh],
+    );
+
+    const handleDownload = useCallback((abbreviation: string) => {
+        setDownloadProgress((prev) => ({ ...prev, [abbreviation]: 0 }));
+        window.api.bible.downloadVersion(abbreviation);
+    }, []);
+
+    if (versions.length <= 1 && activeVersion) return null;
+    if (versions.length === 0) return null;
+
+    return (
+        <div style={{ padding: '8px 0', marginBottom: 4 }}>
+            <Space wrap size="small">
+                <Typography.Text type="secondary" style={{ fontSize: '0.85em' }}>
+                    Version:
+                </Typography.Text>
+                {versions.map((v) => {
+                    const isActive = activeVersion?.abbreviation === v.abbreviation;
+                    const isDownloading = downloadProgress[v.abbreviation] != null;
+
+                    if (!v.available && !isDownloading) {
+                        return (
+                            <Button
+                                key={v.abbreviation}
+                                size="small"
+                                icon={<DownloadOutlined />}
+                                onClick={() => handleDownload(v.abbreviation)}
+                            >
+                                {v.name}
+                            </Button>
+                        );
+                    }
+
+                    if (isDownloading) {
+                        return (
+                            <Space key={v.abbreviation} size="small">
+                                <Typography.Text style={{ fontSize: '0.85em' }}>
+                                    {v.name}
+                                </Typography.Text>
+                                <Progress
+                                    type="circle"
+                                    size={24}
+                                    percent={downloadProgress[v.abbreviation]}
+                                />
+                            </Space>
+                        );
+                    }
+
+                    return (
+                        <Tag
+                            key={v.abbreviation}
+                            color={isActive ? 'blue' : 'default'}
+                            style={{ cursor: isActive ? 'default' : 'pointer' }}
+                            onClick={isActive ? undefined : () => handleSwitch(v.abbreviation)}
+                        >
+                            {isActive && <CheckCircleOutlined />} {v.name}
+                        </Tag>
+                    );
+                })}
+            </Space>
+        </div>
     );
 }
 
@@ -228,12 +345,34 @@ export function BibleContent({
     verseMetaContent?: boolean;
 }) {
     const [bibleIndex, setBibleIndex] = useState<Record<string, BibleIndex>>({});
+    const [noBible, setNoBible] = useState(false);
+
+    const loadIndex = useCallback(() => {
+        (window.api.bible.getIndexes() as Promise<Record<string, BibleIndex>>)
+            .then((indexs) => {
+                setBibleIndex(indexs || {});
+                setNoBible(!indexs || Object.keys(indexs).length === 0);
+            })
+            .catch(() => {
+                setNoBible(true);
+            });
+    }, []);
 
     useEffect(() => {
-        (window.api.bible.getIndexes() as Promise<Record<string, BibleIndex>>).then((indexs) => {
-            setBibleIndex(indexs || {});
-        });
-    }, []);
+        loadIndex();
+        const handler = () => loadIndex();
+        window.addEventListener('bible-version-changed', handler);
+        return () => window.removeEventListener('bible-version-changed', handler);
+    }, [loadIndex]);
+
+    if (noBible) {
+        return (
+            <Empty
+                description="Aucune Bible disponible pour cette langue"
+                style={{ marginTop: '2rem' }}
+            />
+        );
+    }
 
     return (
         <>
@@ -286,6 +425,13 @@ function SearchContent() {
         </>
     );
 }
+
+const TESTAMENTS = [
+    { name: 'Nouveau Testament', value: 'N' },
+    { name: 'Ancien Testament', value: 'O' },
+];
+
+type Testament = (typeof TESTAMENTS)[0];
 
 function SearchResult({
     results,

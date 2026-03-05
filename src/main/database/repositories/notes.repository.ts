@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { getDb, getBibleDb } from '../index';
+import { getDb } from '../index';
+import * as bibleService from '@main/services/bible.service';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { notes, notesReferences, notesBibleReferences } from '../schema';
 import { bibleVerses } from '../bible-schema';
 import type {
@@ -226,7 +228,10 @@ export function syncBibleReferences(noteId: string, refs: BibleBook[] | string[]
 }
 
 export function addBibleVerse(refId: string, verseId: string): BibleBook | null {
-    const verse = getBibleDb().select().from(bibleVerses).where(eq(bibleVerses.id, verseId)).get();
+    const sqlite = bibleService.getActiveBibleDb();
+    if (!sqlite) return null;
+    const bibleDb = drizzle(sqlite, { schema: { bibleVerses } });
+    const verse = bibleDb.select().from(bibleVerses).where(eq(bibleVerses.id, verseId)).get();
     if (!verse) return null;
 
     const bibleBook: BibleBook = {

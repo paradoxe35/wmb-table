@@ -6,14 +6,16 @@ import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './schema';
 import * as bibleSchema from './bible-schema';
-import { BIBLE_FTS_SETUP_SQL } from './bible-schema';
 import { initializeReferenceDb, closeReferenceDb, getRefDb } from './reference-db';
+import * as bibleService from '@main/services/bible.service';
+import * as configRepo from './repositories/config.repository';
 
 export { getRefDb } from './reference-db';
 
 let mainSqlite: Database.Database | null = null;
-let bibleSqlite: Database.Database | null = null;
 let mainDb: BetterSQLite3Database<typeof schema> | null = null;
+
+// Drizzle wrapper over the active Bible DB (from bible.service)
 let bibleDb: BetterSQLite3Database<typeof bibleSchema> | null = null;
 
 function setPragmas(db: Database.Database): void {
@@ -51,31 +53,28 @@ export function initializeDatabase(): void {
         migrate(mainDb, { migrationsFolder });
     }
 
-    // Bible database
-    const biblePath = join(dbDir, 'bible.sqlite');
-    bibleSqlite = new Database(biblePath);
-    setPragmas(bibleSqlite);
-
-    // Create bible tables via raw SQL (Drizzle can't handle FTS5 virtual tables)
-    bibleSqlite.exec(`
-    CREATE TABLE IF NOT EXISTS bible_verses (
-      id TEXT PRIMARY KEY NOT NULL,
-      book_name TEXT NOT NULL,
-      book TEXT NOT NULL,
-      testament TEXT NOT NULL,
-      chapter TEXT NOT NULL,
-      verse TEXT NOT NULL,
-      content TEXT NOT NULL
-    );
-  `);
-
-    // FTS5 + triggers (exec handles multiple statements)
-    bibleSqlite.exec(BIBLE_FTS_SETUP_SQL);
-
-    bibleDb = drizzle(bibleSqlite, { schema: bibleSchema });
-
     // Reference database (read-only, bundled)
     initializeReferenceDb();
+
+    // Bible database (read-only, bundled per language)
+    const activeLanguage = configRepo.getActiveLanguage();
+    switchBibleLanguage(activeLanguage);
+}
+
+/**
+ * Switch the Bible DB to match the given language. Updates the Drizzle wrapper.
+ */
+export function switchBibleLanguage(langCode: string): void {
+    bibleService.switchBibleForLanguage(langCode);
+    refreshBibleDrizzle();
+}
+
+/**
+ * Re-sync the Drizzle wrapper after bible.service state changes (e.g., version switch).
+ */
+export function refreshBibleDrizzle(): void {
+    const sqlite = bibleService.getActiveBibleDb();
+    bibleDb = sqlite ? drizzle(sqlite, { schema: bibleSchema }) : null;
 }
 
 export function getDb(): BetterSQLite3Database<typeof schema> {
@@ -85,14 +84,19 @@ export function getDb(): BetterSQLite3Database<typeof schema> {
 
 export function getBibleDb(): BetterSQLite3Database<typeof bibleSchema> {
     if (!bibleDb)
-        throw new Error('Bible database not initialized. Call initializeDatabase() first.');
+        throw new Error(
+            'Bible database not initialized. No Bible version available for current language.',
+        );
     return bibleDb;
 }
 
 export function getBibleSqlite(): Database.Database {
-    if (!bibleSqlite)
-        throw new Error('Bible database not initialized. Call initializeDatabase() first.');
-    return bibleSqlite;
+    const sqlite = bibleService.getActiveBibleDb();
+    if (!sqlite)
+        throw new Error(
+            'Bible database not initialized. No Bible version available for current language.',
+        );
+    return sqlite;
 }
 
 export function getMainSqlite(): Database.Database {
@@ -102,15 +106,12 @@ export function getMainSqlite(): Database.Database {
 
 export function closeDatabase(): void {
     closeReferenceDb();
+    bibleService.closeBibleDb();
+    bibleDb = null;
     if (mainSqlite) {
         mainSqlite.close();
         mainSqlite = null;
         mainDb = null;
-    }
-    if (bibleSqlite) {
-        bibleSqlite.close();
-        bibleSqlite = null;
-        bibleDb = null;
     }
 }
 
@@ -128,5 +129,5 @@ export function _setBibleDbForTesting(
     sqlite: Database.Database,
 ): void {
     bibleDb = db;
-    bibleSqlite = sqlite;
+    bibleService._setBibleDbForTesting(sqlite);
 }

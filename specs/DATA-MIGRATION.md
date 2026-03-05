@@ -522,7 +522,7 @@ This affects:
 App starts
   │
   ├─ Has indexes/ directory with at least 1 language?
-  │   ├─ YES → Normal startup, load active language
+  │   ├─ YES → Normal startup, load active language, open matching Bible version
   │   └─ NO  → Show Setup Screen
   │             │
   │             ├─ Query available languages from data.sqlite (refRepo.getAllLanguages())
@@ -530,13 +530,8 @@ App starts
   │             ├─ User selects languages to install
   │             ├─ Download & unzip selected language packs (URLs from data.sqlite language table)
   │             ├─ Set first installed language as active
+  │             ├─ Bible auto-switches to matching version (or fallback)
   │             └─ Transition to main app
-  │
-  ├─ Has legacy NeDB files? (upgrade from v1.0.0)
-  │   ├─ YES → Run NeDB → SQLite migration (notes, subjects, etc.)
-  │   │        Show prompt: "Your sermon data format has changed.
-  │   │        Please install language packs to continue."
-  │   └─ NO  → Fresh install, no migration needed
   │
   └─ Continue to main app
 ```
@@ -555,12 +550,73 @@ Already implemented in Phase 3 (`src/main/database/migrate-from-nedb.ts`). Migra
 
 **What is NOT migrated:**
 
-- `documents-title.db` — fully removed; sermon metadata is now built from Tantivy indexes into the `sermon_metadata` SQLite table
+- `documents-title.db` — fully removed; sermon metadata comes from `data.sqlite`
 - HTML document files — replaced by Tantivy paragraph data
-- `bible.db` → migrated to SQLite in Phase 3 (already done)
+- `bible.db` — Bible data now comes from pre-built bundled SQLite files (see Section 12)
 - Legacy NeDB code (`src/main/db/`, `src/main/message-control/`, `src/main/features/backup/`, `src/main/features/synchronizer/`) — deleted
 
-## 12. Audio Integration
+## 12. Bible Architecture
+
+Bible data is bundled as pre-built read-only SQLite files in `resources/database/`. Each file contains the `bible_verses` table + FTS5 index for one Bible version.
+
+### Bible Index
+
+`resources/database/bible-index.json` lists all available Bible versions:
+
+```json
+[
+    {
+        "langCode": "fr",
+        "abbreviation": "lsg",
+        "name": "Louis Segond",
+        "fileName": "bible.fr-lsg.sqlite",
+        "type": "local"
+    }
+]
+```
+
+### Naming Convention
+
+`bible.{langCode}-{abbreviation}.sqlite` — e.g., `bible.fr-lsg.sqlite`
+
+### Version Types
+
+- **`local`** — bundled in `resources/database/`, shipped with the app
+- **`remote`** — downloaded on demand from GitHub release (`v1.0.0/{fileName}`), saved to `userData/databases/bibles/`
+
+### Schema (per file)
+
+```sql
+bible_verses (id, book_name, book, testament, chapter, verse, content) + FTS5
+```
+
+### Bible Service (`src/main/services/bible.service.ts`)
+
+- `loadBibleIndex()` — reads `bible-index.json`
+- `getBibleVersionsForLanguage(langCode)` — filter by language
+- `switchBibleForLanguage(langCode)` — close current, open matching version (fallback chain: lang → en → first available)
+- `switchBibleVersion(abbreviation)` — switch to a specific version
+- `downloadBibleVersion(abbreviation, onProgress)` — download remote Bible from GitHub release
+- `isBibleAvailable(version)` — check if file exists (local in resources or remote in userData)
+- Bible DB is opened read-only with mmap, same pattern as `data.sqlite`
+- Switches automatically when active language changes via `app:setActiveLanguage` IPC
+
+### IPC Channels
+
+- `bible:getVersions` → `BibleVersionInfo[]` — versions for current language
+- `bible:getAllVersions` → `BibleVersionInfo[]` — all versions across all languages
+- `bible:getActiveVersion` → `BibleVersionInfo | null` — current active version
+- `bible:switchVersion` → void — switch to a specific version by abbreviation
+- `bible:downloadVersion` → void — download a remote Bible version
+- `push:bibleDownloadProgress` → `{ abbreviation, percentage }` — download progress
+- `push:bibleDownloaded` → `{ abbreviation }` — download completed
+
+### Current Data
+
+- `bible.fr-lsg.sqlite` (local) — Louis Segond (31,102 verses, 10.2 MB)
+- Built from legacy NeDB `bible.db` data, pre-populated with FTS5 index
+
+## 13. Audio Integration
 
 Audio URLs are constructed from `data.sqlite` (`audio.path` + `language.audio_path` + `language.storage_bucket`). When a sermon has audio:
 

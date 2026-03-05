@@ -2,17 +2,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { app } from 'electron';
-import { getMainSqlite, getBibleSqlite } from './index';
+import { getMainSqlite } from './index';
 import log from 'electron-log';
 
 const DB_EXTENSION = '.db';
 
 function getAssetDbPath(): string {
     return join(process.resourcesPath, 'assets', 'datas', 'db');
-}
-
-function getAssetBiblePath(): string {
-    return join(process.resourcesPath, 'assets', 'datas', 'bible');
 }
 
 function getAssetBackupPath(): string {
@@ -107,8 +103,7 @@ export function migrateFromNedb(): void {
         throw err;
     }
 
-    // Bible migration (separate DB)
-    migrateBible();
+    // Bible migration removed — Bible data now comes from bundled per-language files
 }
 
 function migrateConfigurations(sqlite: import('better-sqlite3').Database, dbPath: string): void {
@@ -378,39 +373,5 @@ function migrateAudioDownloads(sqlite: import('better-sqlite3').Database): void 
             deserializeNedbDate(doc.createdAt),
             deserializeNedbDate(doc.updatedAt),
         );
-    }
-}
-
-function migrateBible(): void {
-    const biblePath = getAssetBiblePath();
-    const docs = parseNedbFile(join(biblePath, `bible${DB_EXTENSION}`));
-    if (docs.length === 0) return;
-
-    const bibleSqlite = getBibleSqlite();
-    if (hasExistingData(bibleSqlite, 'bible_verses')) return;
-
-    log.info(`Migrating ${docs.length} Bible verses...`);
-    bibleSqlite.exec('BEGIN TRANSACTION');
-    try {
-        const stmt = bibleSqlite.prepare(
-            `INSERT OR IGNORE INTO bible_verses (id, book_name, book, testament, chapter, verse, content) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        );
-        for (const doc of docs) {
-            stmt.run(
-                (doc._id as string) || randomUUID(),
-                (doc.bookName as string) || (doc.book_name as string),
-                doc.book as string,
-                doc.testament as string,
-                doc.chapter as string,
-                doc.verse as string,
-                doc.content as string,
-            );
-        }
-        bibleSqlite.exec('COMMIT');
-        log.info('Bible migration complete');
-    } catch (err) {
-        bibleSqlite.exec('ROLLBACK');
-        log.error('Bible migration failed:', err);
-        throw err;
     }
 }
