@@ -181,8 +181,8 @@ const api = {
             onPush(PushChannels.changeMenuViewer, cb),
         downloadAudioProgress: (cb: (progress: unknown) => void) =>
             onPush(PushChannels.downloadAudioProgress, cb),
-        newSynchronizedDatas: (cb: () => void) =>
-            onPush(PushChannels.newSynchronizedDatas, cb as () => void),
+        newSynchronizedDatas: (cb: (tables: string[]) => void) =>
+            onPush(PushChannels.newSynchronizedDatas, cb),
         languageDownloadProgress: (cb: (p: { langCode: string; percentage: number }) => void) =>
             onPush(PushChannels.languageDownloadProgress, cb),
         languageInstalled: (cb: (p: { langCode: string }) => void) =>

@@ -331,7 +331,7 @@ export interface PushEventMap {
     [PushChannels.switchOnOptions]: void;
     [PushChannels.changeMenuViewer]: ViewMenuValue;
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
-    [PushChannels.newSynchronizedDatas]: void;
+    [PushChannels.newSynchronizedDatas]: string[];
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: { langCode: string };
     [PushChannels.bibleDownloadProgress]: { abbreviation: string; percentage: number };

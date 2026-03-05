@@ -15,10 +15,9 @@ const controllersSeparator = () => {
     controls?.prepend(elementTop);
     controls?.append(elementBottom);
 
-    const controlsChildren = Array.from(
-        controls?.childNodes || [],
-        //@ts-ignore
-    ).filter((v) => v.className.startsWith('mejs_'));
+    const controlsChildren = Array.from(controls?.childNodes || []).filter(
+        (v) => v instanceof HTMLElement && v.className.startsWith('mejs_'),
+    );
 
     controlsChildren.slice(0, 3).forEach((elem) => {
         elementTop.append(elem);
@@ -124,7 +123,7 @@ export default function MediaElement({
     }, []);
 
     const handelTitleClick = useCallback(() => {
-        onTitleClick && onTitleClick(title);
+        if (onTitleClick) onTitleClick(title);
     }, [title]);
 
     return (

@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { gzipSync, gunzipSync } from 'node:zlib';
-import { app } from 'electron';
-import { eq } from 'drizzle-orm';
+import { app, net } from 'electron';
+import { eq, lt } from 'drizzle-orm';
 import type { OAuth2Client } from 'google-auth-library';
 import log from 'electron-log';
 
@@ -94,14 +94,19 @@ export function initializeSynchronizer(authClient: OAuth2Client): void {
 
 async function schedulerWorker(): Promise<void> {
     if (isSyncRunning || !driveService) return;
+    if (!net.isOnline()) return;
+
     isSyncRunning = true;
     lastError = null;
 
     try {
-        await applyRemoteChanges();
+        const affectedTables = await applyRemoteChanges();
         await createDbSnapshotIfNeeded();
         await syncChangesToDrive();
         lastSyncTime = new Date().toISOString();
+        if (affectedTables.length > 0) {
+            notifyRenderer(affectedTables);
+        }
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         lastError = msg;
@@ -115,11 +120,12 @@ async function schedulerWorker(): Promise<void> {
 // Pull: apply remote changes
 // -----------------------------------------------------------------------
 
-async function applyRemoteChanges(): Promise<void> {
-    if (!driveService) return;
+async function applyRemoteChanges(): Promise<string[]> {
+    if (!driveService) return [];
 
     const db = getSyncDb();
     const timeOffset = getLastSyncTimeOffset();
+    const affectedTables = new Set<string>();
 
     // Check for snapshot first
     const snapshot = await driveService.getLatestSnapshot();
@@ -130,16 +136,17 @@ async function applyRemoteChanges(): Promise<void> {
             .where(eq(processedChanges.fileId, snapshot.id))
             .get();
 
-        if (!alreadyProcessed) {
+        if (alreadyProcessed) {
+            updateSyncTimeOffset(snapshot.createdTime);
+        } else {
             const failures = getFailureCount(snapshot.id);
             if (failures < MAX_SNAPSHOT_RETRIES) {
                 try {
-                    await applyRemoteSnapshot(snapshot);
-                    db.insert(processedChanges)
-                        .values({ fileId: snapshot.id })
-                        .onConflictDoNothing()
-                        .run();
-                    notifyRenderer();
+                    const tables = await applyRemoteSnapshot(snapshot);
+                    for (const t of tables) affectedTables.add(t);
+                    resetFailureCount(snapshot.id);
+                    updateSyncTimeOffset(snapshot.createdTime);
+                    saveProcessedChange(snapshot.id);
                 } catch (err) {
                     incrementFailure(snapshot.id);
                     log.error('Failed to apply snapshot:', err);
@@ -152,13 +159,18 @@ async function applyRemoteChanges(): Promise<void> {
     const remoteFiles = await driveService.getChangesAfterTimeOffset(timeOffset);
 
     for (const file of remoteFiles) {
+        if (file.createdTime <= timeOffset) continue;
+
         const alreadyProcessed = db
             .select()
             .from(processedChanges)
             .where(eq(processedChanges.fileId, file.id))
             .get();
 
-        if (alreadyProcessed) continue;
+        if (alreadyProcessed) {
+            updateSyncTimeOffset(file.createdTime);
+            continue;
+        }
 
         const failures = getFailureCount(file.id);
         if (failures >= MAX_CHANGE_RETRIES) continue;
@@ -167,24 +179,22 @@ async function applyRemoteChanges(): Promise<void> {
             const content = await driveService.getFileContent(file.id);
             const change = JSON.parse(content.toString('utf-8'));
             applyChangeLog(change);
+            affectedTables.add(change.tableName);
 
-            db.insert(processedChanges).values({ fileId: file.id }).onConflictDoNothing().run();
+            resetFailureCount(file.id);
+            updateSyncTimeOffset(file.createdTime);
+            saveProcessedChange(file.id);
         } catch (err) {
             incrementFailure(file.id);
             log.warn(`Failed to apply change file ${file.id}:`, err);
         }
     }
 
-    // Update time offset
-    if (remoteFiles.length > 0) {
-        const latest = remoteFiles[remoteFiles.length - 1];
-        updateSyncTimeOffset(latest.createdTime);
-        notifyRenderer();
-    }
+    return [...affectedTables];
 }
 
-async function applyRemoteSnapshot(snapshot: DriveFile): Promise<void> {
-    if (!driveService) return;
+async function applyRemoteSnapshot(snapshot: DriveFile): Promise<string[]> {
+    if (!driveService) return [];
 
     const content = await driveService.getFileContent(snapshot.id);
     const decompressed = gunzipSync(content);
@@ -193,7 +203,7 @@ async function applyRemoteSnapshot(snapshot: DriveFile): Promise<void> {
     writeFileSync(tmpPath, decompressed);
 
     try {
-        applySnapshot(tmpPath);
+        return applySnapshot(tmpPath);
     } finally {
         try {
             unlinkSync(tmpPath);
@@ -213,7 +223,15 @@ async function syncChangesToDrive(): Promise<void> {
     const unsynced = getUnsyncedChanges();
     for (const change of unsynced) {
         try {
-            await driveService.uploadChangeLog(change);
+            // Delete old version of this change from Drive
+            const deletedFiles = await driveService.deleteChangeLog(change.changeId);
+            for (const file of deletedFiles) {
+                deleteProcessedChange(file.id);
+            }
+
+            // Upload new version
+            const uploaded = await driveService.uploadChangeLog(change);
+            saveProcessedChange(uploaded.id);
             markSynced(change.id);
         } catch (err) {
             log.warn(`Failed to upload change ${change.changeId}:`, err);
@@ -232,25 +250,47 @@ async function createDbSnapshotIfNeeded(): Promise<void> {
     const now = Date.now();
     if (now - lastSnapshotTime < SNAPSHOT_INTERVAL_MS) return;
 
-    // Only snapshot if no pending unsynced changes
-    const unsynced = getUnsyncedChanges();
-    if (unsynced.length > 0) return;
+    // Check the latest remote snapshot age
+    const latestSnapshot = await driveService.getLatestSnapshot();
+    if (latestSnapshot) {
+        const snapshotAge = now - new Date(latestSnapshot.createdTime).getTime();
+        if (snapshotAge < SNAPSHOT_INTERVAL_MS) {
+            lastSnapshotTime = new Date(latestSnapshot.createdTime).getTime();
+            return;
+        }
+    }
+
+    // Don't snapshot if there are pending remote changes
+    const timeOffset = getLastSyncTimeOffset();
+    const pendingRemote = await driveService.getChangesAfterTimeOffset(timeOffset);
+    if (pendingRemote.length > 0) return;
 
     try {
-        const mainDbPath = getMainSqlite().name;
-        const dbContent = readFileSync(mainDbPath);
+        const mainDb = getMainSqlite();
+
+        // Checkpoint WAL to ensure all data is in the main file
+        mainDb.pragma('wal_checkpoint(TRUNCATE)');
+
+        const dbContent = readFileSync(mainDb.name);
         const compressed = gzipSync(dbContent);
 
-        await driveService.saveSnapshot(compressed);
+        const newSnapshot = await driveService.saveSnapshot(compressed);
         lastSnapshotTime = now;
 
-        // Prune old change logs and snapshots
-        const oneWeekAgo = new Date(now - SNAPSHOT_INTERVAL_MS).toISOString();
-        deleteOldChangeLogs(oneWeekAgo);
-        await driveService.pruneOldChanges(oneWeekAgo);
-        await driveService.pruneOldSnapshots(2);
+        // Record snapshot in sync state
+        updateSyncTimeOffset(newSnapshot.createdTime);
+        saveProcessedChange(newSnapshot.id);
 
-        log.info('Database snapshot created and old changes pruned');
+        // Cleanup old data
+        const pruneTime = new Date(
+            new Date(newSnapshot.createdTime).getTime() - 1000,
+        ).toISOString();
+        deleteOldChangeLogs(pruneTime);
+        await driveService.pruneOldChanges(pruneTime);
+        await driveService.pruneOldSnapshots(2);
+        cleanupOldSyncRecords(pruneTime);
+
+        log.info('Database snapshot created and old data pruned');
     } catch (err) {
         log.warn('Failed to create snapshot:', err);
     }
@@ -298,13 +338,35 @@ function incrementFailure(fileId: string): void {
     }
 }
 
-function notifyRenderer(): void {
+function notifyRenderer(affectedTables: string[]): void {
     try {
         const win = getMainWindow();
         if (win && !win.isDestroyed()) {
-            win.webContents.send(PushChannels.newSynchronizedDatas);
+            win.webContents.send(PushChannels.newSynchronizedDatas, affectedTables);
         }
     } catch {
         // Window may not exist yet
     }
+}
+
+// -----------------------------------------------------------------------
+// Processed changes & failure helpers
+// -----------------------------------------------------------------------
+
+function saveProcessedChange(fileId: string): void {
+    getSyncDb().insert(processedChanges).values({ fileId }).onConflictDoNothing().run();
+}
+
+function deleteProcessedChange(fileId: string): void {
+    getSyncDb().delete(processedChanges).where(eq(processedChanges.fileId, fileId)).run();
+}
+
+function resetFailureCount(fileId: string): void {
+    getSyncDb().delete(applyFailures).where(eq(applyFailures.fileId, fileId)).run();
+}
+
+function cleanupOldSyncRecords(before: string): void {
+    const db = getSyncDb();
+    db.delete(processedChanges).where(lt(processedChanges.createdAt, before)).run();
+    db.delete(applyFailures).where(lt(applyFailures.createdAt, before)).run();
 }
