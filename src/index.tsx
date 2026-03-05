@@ -11,12 +11,12 @@ import './app.global.scss';
 import '@modules/context-menu/kali_dark.css';
 
 render(
-  <RecoilRoot>
-    <ConfigProvider locale={frFR}>
-      <AppLayout>
-        <ContentApp />
-      </AppLayout>
-    </ConfigProvider>
-  </RecoilRoot>,
-  document.getElementById('root')
+    <RecoilRoot>
+        <ConfigProvider locale={frFR}>
+            <AppLayout>
+                <ContentApp />
+            </AppLayout>
+        </ConfigProvider>
+    </RecoilRoot>,
+    document.getElementById('root'),
 );

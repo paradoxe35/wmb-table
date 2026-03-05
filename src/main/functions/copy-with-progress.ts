@@ -3,14 +3,14 @@ import fs from 'fs-extra';
 import getSizeCallback from 'get-folder-size';
 
 async function getSize(dir: string) {
-  return new Promise<number>((resolve, reject) => {
-    getSizeCallback(dir, (err: any, size: number | PromiseLike<number>) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve(size);
+    return new Promise<number>((resolve, reject) => {
+        getSizeCallback(dir, (err: any, size: number | PromiseLike<number>) => {
+            if (err) {
+                return reject(err);
+            }
+            resolve(size);
+        });
     });
-  });
 }
 
 const bToMB = (val: number) => val / 1024 / 1024;
@@ -33,124 +33,124 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const defaultProgressCallback = (_data: any) => {};
 
 const timeInterval = ({
-  dest,
-  initialSizeDest,
-  smoothing,
-  sizeSrc,
-  onProgress,
-  interval,
-  move = false,
+    dest,
+    initialSizeDest,
+    smoothing,
+    sizeSrc,
+    onProgress,
+    interval,
+    move = false,
 }: {
-  dest: any;
-  initialSizeDest: any;
-  smoothing: any;
-  sizeSrc: any;
-  onProgress: any;
-  interval: any;
-  move?: boolean;
+    dest: any;
+    initialSizeDest: any;
+    smoothing: any;
+    sizeSrc: any;
+    onProgress: any;
+    interval: any;
+    move?: boolean;
 }) => {
-  const startTime = Date.now();
-  let lastSize = 0;
-  let lastTime = startTime;
-  let speed = 0;
+    const startTime = Date.now();
+    let lastSize = 0;
+    let lastTime = startTime;
+    let speed = 0;
 
-  const intervalId = setInterval(async () => {
-    let sizeDest = (await getSize(dest)) - initialSizeDest;
-    if (move) {
-      sizeDest = sizeSrc - sizeDest;
-    }
-    const deltaBytes = sizeDest - lastSize;
-    if (deltaBytes == 0) return;
-    const now = Date.now();
-    const deltaTime = now - lastTime;
+    const intervalId = setInterval(async () => {
+        let sizeDest = (await getSize(dest)) - initialSizeDest;
+        if (move) {
+            sizeDest = sizeSrc - sizeDest;
+        }
+        const deltaBytes = sizeDest - lastSize;
+        if (deltaBytes == 0) return;
+        const now = Date.now();
+        const deltaTime = now - lastTime;
 
-    const newSpeed = bToMB(deltaBytes) / millisToSecs(deltaTime); //MB/s
-    speed = lerp(speed, newSpeed, smoothing);
-    const secsPerMB = 1 / speed;
-    const remainingMB = bToMB(sizeSrc - sizeDest);
-    const remainingSecs = secsPerMB * remainingMB;
+        const newSpeed = bToMB(deltaBytes) / millisToSecs(deltaTime); //MB/s
+        speed = lerp(speed, newSpeed, smoothing);
+        const secsPerMB = 1 / speed;
+        const remainingMB = bToMB(sizeSrc - sizeDest);
+        const remainingSecs = secsPerMB * remainingMB;
 
-    const progress = sizeDest / sizeSrc;
+        const progress = sizeDest / sizeSrc;
 
-    lastSize = sizeDest;
-    lastTime = now;
+        lastSize = sizeDest;
+        lastTime = now;
 
-    onProgress({
-      elapsedBytes: sizeDest,
-      totalBytes: sizeSrc,
-      progress,
-      speed,
-      remainingSecs,
-    });
-  }, interval);
+        onProgress({
+            elapsedBytes: sizeDest,
+            totalBytes: sizeSrc,
+            progress,
+            speed,
+            remainingSecs,
+        });
+    }, interval);
 
-  return {
-    intervalId,
-    startTime,
-  };
+    return {
+        intervalId,
+        startTime,
+    };
 };
 
 type CypParams = {
-  onProgress?: Function;
-  interval?: number;
-  smoothing?: number;
-  overwrite?: boolean;
-  filter?: fs.CopyFilterSync | fs.CopyFilterAsync;
+    onProgress?: Function;
+    interval?: number;
+    smoothing?: number;
+    overwrite?: boolean;
+    filter?: fs.CopyFilterSync | fs.CopyFilterAsync;
 };
 
 export default async function copyWithProgress(
-  src: string,
-  dest: string,
-  {
-    onProgress = defaultProgressCallback,
-    interval = 1000,
-    smoothing = 0.1,
-    overwrite = false,
-    filter = undefined,
-  }: CypParams = {}
+    src: string,
+    dest: string,
+    {
+        onProgress = defaultProgressCallback,
+        interval = 1000,
+        smoothing = 0.1,
+        overwrite = false,
+        filter = undefined,
+    }: CypParams = {},
 ) {
-  const sizeSrc = await getSize(src);
-  const initialSizeDest = await getSize(dest);
+    const sizeSrc = await getSize(src);
+    const initialSizeDest = await getSize(dest);
 
-  const { intervalId, startTime } = timeInterval({
-    onProgress,
-    sizeSrc,
-    initialSizeDest,
-    smoothing,
-    interval,
-    dest,
-  });
+    const { intervalId, startTime } = timeInterval({
+        onProgress,
+        sizeSrc,
+        initialSizeDest,
+        smoothing,
+        interval,
+        dest,
+    });
 
-  await fs.copy(src, dest, { overwrite, filter });
-  clearInterval(intervalId);
+    await fs.copy(src, dest, { overwrite, filter });
+    clearInterval(intervalId);
 
-  return millisToSecs(Date.now() - startTime).toFixed(0);
+    return millisToSecs(Date.now() - startTime).toFixed(0);
 }
 
 export async function moveWithProgress(
-  src: string,
-  dest: string,
-  {
-    onProgress = defaultProgressCallback,
-    interval = 1000,
-    smoothing = 0.1,
-    overwrite = false,
-  } = {}
+    src: string,
+    dest: string,
+    {
+        onProgress = defaultProgressCallback,
+        interval = 1000,
+        smoothing = 0.1,
+        overwrite = false,
+    } = {},
 ) {
-  const sizeSrc = await getSize(src);
+    const sizeSrc = await getSize(src);
 
-  const { intervalId, startTime } = timeInterval({
-    onProgress,
-    sizeSrc,
-    initialSizeDest: 0,
-    smoothing,
-    interval,
-    dest: src,
-    move: true,
-  });
+    const { intervalId, startTime } = timeInterval({
+        onProgress,
+        sizeSrc,
+        initialSizeDest: 0,
+        smoothing,
+        interval,
+        dest: src,
+        move: true,
+    });
 
-  await fs.copy(src, dest, { overwrite });
-  clearInterval(intervalId);
+    await fs.copy(src, dest, { overwrite });
+    clearInterval(intervalId);
 
-  return millisToSecs(Date.now() - startTime).toFixed(0);
+    return millisToSecs(Date.now() - startTime).toFixed(0);
 }

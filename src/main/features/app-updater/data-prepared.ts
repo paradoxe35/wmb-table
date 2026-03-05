@@ -10,72 +10,66 @@ import custom_documents from '@main/message-control/handlers/custom_documents';
 import { getFilename } from '@root/utils/functions';
 
 export default class UpdaterDataPrepared {
-  private tempPath: string;
-  private dataPath: string;
-  private customDocuments: string[] | undefined;
+    private tempPath: string;
+    private dataPath: string;
+    private customDocuments: string[] | undefined;
 
-  constructor(private updateInfo: UpdateInfo) {
-    this.tempPath = this.tempDir();
-    this.dataPath = getAssetDatasPath();
-  }
-
-  private tempDir() {
-    const appName = APP_NAME.toLowerCase().split(' ').join('-');
-
-    const newDir = path.join(
-      app.getPath('temp'),
-      appName,
-      this.updateInfo.version
-    );
-
-    if (!fs.existsSync(newDir)) {
-      fs.mkdirSync(newDir, {
-        recursive: true,
-      });
+    constructor(private updateInfo: UpdateInfo) {
+        this.tempPath = this.tempDir();
+        this.dataPath = getAssetDatasPath();
     }
 
-    return newDir;
-  }
+    private tempDir() {
+        const appName = APP_NAME.toLowerCase().split(' ').join('-');
 
-  public backup(onProgress: (progress: UpdaterCopyProgress) => void) {
-    this.customDocuments = undefined;
-    return copyWithProgress(this.dataPath, this.tempPath, {
-      onProgress,
-      overwrite: true,
-      filter: this.filterCopy,
-    });
-  }
+        const newDir = path.join(app.getPath('temp'), appName, this.updateInfo.version);
 
-  private filterCopy = async (src: string) => {
-    if (src.endsWith('.html')) {
-      const docs = await this.getCustomDocumentsHtml();
-      const filename = getFilename(src);
-      if (!docs.includes(filename)) {
-        return false;
-      }
+        if (!fs.existsSync(newDir)) {
+            fs.mkdirSync(newDir, {
+                recursive: true,
+            });
+        }
+
+        return newDir;
     }
-    return true;
-  };
 
-  private async getCustomDocumentsHtml(): Promise<string[]> {
-    if (!this.customDocuments) {
-      this.customDocuments = (await custom_documents()).map(
-        (doc) => `${doc.title}.html`
-      );
+    public backup(onProgress: (progress: UpdaterCopyProgress) => void) {
+        this.customDocuments = undefined;
+        return copyWithProgress(this.dataPath, this.tempPath, {
+            onProgress,
+            overwrite: true,
+            filter: this.filterCopy,
+        });
     }
-    return this.customDocuments;
-  }
 
-  public restore(onProgress: (progress: UpdaterCopyProgress) => void) {
-    return copyWithProgress(this.tempPath, this.dataPath, {
-      onProgress,
-      overwrite: true,
-    });
-  }
+    private filterCopy = async (src: string) => {
+        if (src.endsWith('.html')) {
+            const docs = await this.getCustomDocumentsHtml();
+            const filename = getFilename(src);
+            if (!docs.includes(filename)) {
+                return false;
+            }
+        }
+        return true;
+    };
 
-  public async clear() {
-    if (fs.existsSync(this.tempPath)) {
-      await fs.rm(this.tempPath, { recursive: true, force: true });
+    private async getCustomDocumentsHtml(): Promise<string[]> {
+        if (!this.customDocuments) {
+            this.customDocuments = (await custom_documents()).map((doc) => `${doc.title}.html`);
+        }
+        return this.customDocuments;
     }
-  }
+
+    public restore(onProgress: (progress: UpdaterCopyProgress) => void) {
+        return copyWithProgress(this.tempPath, this.dataPath, {
+            onProgress,
+            overwrite: true,
+        });
+    }
+
+    public async clear() {
+        if (fs.existsSync(this.tempPath)) {
+            await fs.rm(this.tempPath, { recursive: true, force: true });
+        }
+    }
 }

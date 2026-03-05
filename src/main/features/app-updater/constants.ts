@@ -1,8 +1,7 @@
 type Value<T = boolean | null> = { value: T };
 
 export let UPDATER_RESTORING_DATA: Value<boolean> = {
-  value: false,
+    value: false,
 };
 
-export const setUpdaterRestoringData = (value: boolean) =>
-  (UPDATER_RESTORING_DATA.value = value);
+export const setUpdaterRestoringData = (value: boolean) => (UPDATER_RESTORING_DATA.value = value);

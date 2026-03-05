@@ -48,8 +48,8 @@ let mainWindow: BrowserWindow | null = null;
  * Install sourceMapSupport when in production
  */
 if (process.env.NODE_ENV === 'production') {
-  const sourceMapSupport = require('source-map-support');
-  sourceMapSupport.install();
+    const sourceMapSupport = require('source-map-support');
+    sourceMapSupport.install();
 }
 
 /**
@@ -57,11 +57,8 @@ if (process.env.NODE_ENV === 'production') {
  */
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';
 
-if (
-  process.env.NODE_ENV === 'development' ||
-  process.env.DEBUG_PROD === 'true'
-) {
-  require('electron-debug')();
+if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true') {
+    require('electron-debug')();
 }
 
 /**
@@ -70,89 +67,86 @@ if (
  * @returns
  */
 const installExtensions = async () => {
-  const installer = require('electron-devtools-installer');
-  const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-  const extensions = ['REACT_DEVELOPER_TOOLS'];
+    const installer = require('electron-devtools-installer');
+    const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
+    const extensions = ['REACT_DEVELOPER_TOOLS'];
 
-  return installer
-    .default(
-      extensions.map((name) => installer[name]),
-      forceDownload
-    )
-    .catch(console.log);
+    return installer
+        .default(
+            extensions.map((name) => installer[name]),
+            forceDownload,
+        )
+        .catch(console.log);
 };
 
 const createWindow = async () => {
-  if (
-    process.env.NODE_ENV === 'development' ||
-    process.env.DEBUG_PROD === 'true'
-  ) {
-    await installExtensions();
-  }
-
-  mainWindow = new BrowserWindow({
-    show: false,
-    width: 1024,
-    height: 800,
-    title: APP_NAME,
-    minHeight: 572,
-    minWidth: 933,
-    icon: getAssetPath('icon.png'),
-    webPreferences: {
-      nodeIntegration: true,
-      spellcheck: false,
-      contextIsolation: false,
-    },
-  });
-
-  if (process.platform === 'darwin') {
-    mainWindow.setTouchBar(touchBar());
-  }
-
-  setMainWindow(mainWindow);
-
-  Dialogs(mainWindow);
-
-  mainWindow.maximize();
-
-  mainWindow.loadURL(`file://${__dirname}/index.html`);
-
-  //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
-  mainWindow.webContents.on('did-finish-load', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    if (process.env.START_MINIMIZED) {
-      mainWindow.minimize();
-    } else {
-      mainWindow.show();
-      mainWindow.focus();
-    }
-  });
-
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
-
-  // Open urls in the user's browser
-  mainWindow.webContents.setWindowOpenHandler((event) => {
-    shell.openExternal(event.url);
-    return {
-      action: 'deny',
-    };
-  });
-
-  mainWindow.webContents.once('did-finish-load', () => {
-    if (!mainWindow) {
-      throw new Error('"mainWindow" is not defined');
-    }
-    // call auto update
-    if (app.isPackaged) {
-      new Updater(mainWindow);
+    if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true') {
+        await installExtensions();
     }
 
-    // start the synchronization process here
-    // synchronizer.start();
-  });
+    mainWindow = new BrowserWindow({
+        show: false,
+        width: 1024,
+        height: 800,
+        title: APP_NAME,
+        minHeight: 572,
+        minWidth: 933,
+        icon: getAssetPath('icon.png'),
+        webPreferences: {
+            nodeIntegration: true,
+            spellcheck: false,
+            contextIsolation: false,
+        },
+    });
+
+    if (process.platform === 'darwin') {
+        mainWindow.setTouchBar(touchBar());
+    }
+
+    setMainWindow(mainWindow);
+
+    Dialogs(mainWindow);
+
+    mainWindow.maximize();
+
+    mainWindow.loadURL(`file://${__dirname}/index.html`);
+
+    //        https://github.com/electron/electron/blob/master/docs/api/browser-window.md#using-ready-to-show-event
+    mainWindow.webContents.on('did-finish-load', () => {
+        if (!mainWindow) {
+            throw new Error('"mainWindow" is not defined');
+        }
+        if (process.env.START_MINIMIZED) {
+            mainWindow.minimize();
+        } else {
+            mainWindow.show();
+            mainWindow.focus();
+        }
+    });
+
+    const menuBuilder = new MenuBuilder(mainWindow);
+    menuBuilder.buildMenu();
+
+    // Open urls in the user's browser
+    mainWindow.webContents.setWindowOpenHandler((event) => {
+        shell.openExternal(event.url);
+        return {
+            action: 'deny',
+        };
+    });
+
+    mainWindow.webContents.once('did-finish-load', () => {
+        if (!mainWindow) {
+            throw new Error('"mainWindow" is not defined');
+        }
+        // call auto update
+        if (app.isPackaged) {
+            new Updater(mainWindow);
+        }
+
+        // start the synchronization process here
+        // synchronizer.start();
+    });
 };
 
 /**
@@ -160,28 +154,28 @@ const createWindow = async () => {
  */
 
 app.on('window-all-closed', () => {
-  // set mainWindow to null to recreate a new window, in case of macOs which keep app in memory
-  mainWindow = null;
+    // set mainWindow to null to recreate a new window, in case of macOs which keep app in memory
+    mainWindow = null;
 
-  // Respect the OSX convention of having the application in memory even
-  // after all windows have been closed
+    // Respect the OSX convention of having the application in memory even
+    // after all windows have been closed
 
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });
 
 app.on('will-quit', () => {
-  // close watcher file updater only on app will quit event
-  watcher.close();
-  // close and cancel all synchronization process
-  // synchronizer.close();
+    // close watcher file updater only on app will quit event
+    watcher.close();
+    // close and cancel all synchronization process
+    // synchronizer.close();
 });
 
 app.whenReady().then(createWindow).catch(console.log);
 
 app.on('activate', () => {
-  // On macOS it's common to re-create a window in the app when the
-  // dock icon is clicked and there are no other windows open.
-  if (mainWindow === null) createWindow();
+    // On macOS it's common to re-create a window in the app when the
+    // dock icon is clicked and there are no other windows open.
+    if (mainWindow === null) createWindow();
 });

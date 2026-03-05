@@ -7,9 +7,9 @@
 // ---------------------------------------------------------------------------
 
 export interface BaseEntity {
-  id: string;
-  createdAt: Date;
-  updatedAt: Date;
+    id: string;
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 // ---------------------------------------------------------------------------
@@ -17,52 +17,52 @@ export interface BaseEntity {
 // ---------------------------------------------------------------------------
 
 export type OtherTraduction = {
-  title: string;
-  traduction: string;
-  web_link: string;
+    title: string;
+    traduction: string;
+    web_link: string;
 };
 
 export type Title<T = string | null> = {
-  id: string;
-  title: string;
-  frTitle: string;
-  enTitle: string;
-  traduction: T;
-  web_link: T;
-  pdf_link: T;
-  audio_link?: T;
-  date: T;
-  date_long: T | null;
-  other_traductions: OtherTraduction[];
+    id: string;
+    title: string;
+    frTitle: string;
+    enTitle: string;
+    traduction: T;
+    web_link: T;
+    pdf_link: T;
+    audio_link?: T;
+    date: T;
+    date_long: T | null;
+    other_traductions: OtherTraduction[];
 };
 
 export interface DataDocument extends Readonly<BaseEntity> {
-  title: string;
-  textContent: string;
+    title: string;
+    textContent: string;
 }
 
 export type DocumentTab = {
-  title: string;
-  scrollY?: number;
-  scrollX?: number;
-  active: boolean;
-  zoom?: number;
+    title: string;
+    scrollY?: number;
+    scrollX?: number;
+    active: boolean;
+    zoom?: number;
 };
 
 export type DocumentTreeRanges = {
-  contextualText: string | null;
-  startContainer: number[];
-  startToEndPath: number[][] | null;
-  endContainer: number[];
-  startOffset: number;
-  endOffset: number;
+    contextualText: string | null;
+    startContainer: number[];
+    startToEndPath: number[][] | null;
+    endContainer: number[];
+    startOffset: number;
+    endOffset: number;
 };
 
 export type DocumentHtmlTree = {
-  tree: number[];
-  scrollY?: number;
-  scrollX?: number;
-  ranges?: DocumentTreeRanges;
+    tree: number[];
+    scrollY?: number;
+    scrollX?: number;
+    ranges?: DocumentTreeRanges;
 };
 
 // ---------------------------------------------------------------------------
@@ -70,43 +70,43 @@ export type DocumentHtmlTree = {
 // ---------------------------------------------------------------------------
 
 export type SearchMatchersValue = {
-  term: string;
-  index?: number;
-  start: number | undefined;
-  end: number | undefined;
+    term: string;
+    index?: number;
+    start: number | undefined;
+    end: number | undefined;
 };
 
 export interface SearchItem {
-  item: DataDocument;
-  matches: SearchMatchersValue[];
-  refIndex: number;
+    item: DataDocument;
+    matches: SearchMatchersValue[];
+    refIndex: number;
 }
 
 export interface SearchResult {
-  end: boolean;
-  itemsPerPage: number;
-  query: string;
-  pageNumber: number;
-  total: number;
-  data: SearchItem[];
+    end: boolean;
+    itemsPerPage: number;
+    query: string;
+    pageNumber: number;
+    total: number;
+    data: SearchItem[];
 }
 
 export interface Suggestions extends Readonly<BaseEntity> {
-  searchText: string;
-  found: number;
+    searchText: string;
+    found: number;
 }
 
 export type DocumentViewQuery = {
-  term: string;
-  documentTitle: string;
-  textContentLength: number;
-  searchForParagraph?: boolean;
-  matches: SearchMatchersValue[];
+    term: string;
+    documentTitle: string;
+    textContentLength: number;
+    searchForParagraph?: boolean;
+    matches: SearchMatchersValue[];
 };
 
 export type DocumentSearchEvent = {
-  text?: string | null;
-  searchForParagraph: boolean;
+    text?: string | null;
+    searchForParagraph: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -114,24 +114,24 @@ export type DocumentSearchEvent = {
 // ---------------------------------------------------------------------------
 
 export interface NoteItem extends Readonly<BaseEntity> {
-  name: string;
-  content?: string;
-  defaultName: boolean;
-  created: boolean;
+    name: string;
+    content?: string;
+    defaultName: boolean;
+    created: boolean;
 }
 
 export interface NoteItemReference extends Readonly<BaseEntity> {
-  label: string;
-  noteId: string;
-  documentTitle: string;
-  documentHtmlTree: DocumentHtmlTree;
-  textContent: string;
+    label: string;
+    noteId: string;
+    documentTitle: string;
+    documentHtmlTree: DocumentHtmlTree;
+    textContent: string;
 }
 
 export interface NoteItemReferenceBible extends Readonly<BaseEntity> {
-  label: string;
-  noteId: string;
-  references: BibleBook[] | string[];
+    label: string;
+    noteId: string;
+    references: BibleBook[] | string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -139,45 +139,45 @@ export interface NoteItemReferenceBible extends Readonly<BaseEntity> {
 // ---------------------------------------------------------------------------
 
 export type BibleIndexValue = {
-  book: string;
-  chapters: string;
-  verses: string;
-  testament: string;
+    book: string;
+    chapters: string;
+    verses: string;
+    testament: string;
 };
 
 export interface BibleIndex {
-  [x: string]: BibleIndexValue;
+    [x: string]: BibleIndexValue;
 }
 
 export interface BibleBook {
-  id: string;
-  bookName: string;
-  book: string;
-  testament: string;
-  chapter: string;
-  verse: string;
-  content: string;
+    id: string;
+    bookName: string;
+    book: string;
+    testament: string;
+    chapter: string;
+    verse: string;
+    content: string;
 }
 
 export type BookRequest = {
-  book: string;
-  chapter: string;
-  verse?: string;
+    book: string;
+    chapter: string;
+    verse?: string;
 };
 
 export interface BibleSearchItem {
-  item: BibleBook;
-  matches: SearchMatchersValue[];
-  refIndex: number;
+    item: BibleBook;
+    matches: SearchMatchersValue[];
+    refIndex: number;
 }
 
 export interface BibleSearchResult {
-  end: boolean;
-  itemsPerPage: number;
-  query: string;
-  pageNumber: number;
-  total: number;
-  data: BibleSearchItem[];
+    end: boolean;
+    itemsPerPage: number;
+    query: string;
+    pageNumber: number;
+    total: number;
+    data: BibleSearchItem[];
 }
 
 // ---------------------------------------------------------------------------
@@ -185,24 +185,24 @@ export interface BibleSearchResult {
 // ---------------------------------------------------------------------------
 
 export interface SubjectDocumentItem extends Readonly<BaseEntity> {
-  subject: string;
-  documentTitle: string;
-  documentHtmlTree: DocumentHtmlTree;
-  textContent: string;
-  bible?: BibleBook;
+    subject: string;
+    documentTitle: string;
+    documentHtmlTree: DocumentHtmlTree;
+    textContent: string;
+    bible?: BibleBook;
 }
 
 export type SubjectRefTree = {
-  textContent: string;
-  documentHtmlTree: DocumentHtmlTree;
-  bible?: BibleBook;
+    textContent: string;
+    documentHtmlTree: DocumentHtmlTree;
+    bible?: BibleBook;
 };
 
 export interface SubjectDocument extends Readonly<BaseEntity> {
-  name: string;
-  date: string;
-  documents: SubjectDocumentItem[];
-  active?: boolean;
+    name: string;
+    date: string;
+    documents: SubjectDocumentItem[];
+    active?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -210,23 +210,23 @@ export interface SubjectDocument extends Readonly<BaseEntity> {
 // ---------------------------------------------------------------------------
 
 export interface AudioDocumentTime extends BaseEntity {
-  audio_link: string;
-  time: number;
+    audio_link: string;
+    time: number;
 }
 
 export interface AudioDocumentDownload extends BaseEntity {
-  local_file?: string;
-  audio_link: string;
+    local_file?: string;
+    audio_link: string;
 }
 
 export type AudioDownloadProgress = {
-  document_title: string;
-  percentage: number;
+    document_title: string;
+    percentage: number;
 };
 
 export type CurrentAudioDocumentPlay = {
-  documentTitle: string;
-  status: 'play' | 'pause';
+    documentTitle: string;
+    status: 'play' | 'pause';
 };
 
 // ---------------------------------------------------------------------------
@@ -234,21 +234,21 @@ export type CurrentAudioDocumentPlay = {
 // ---------------------------------------------------------------------------
 
 export interface CustomDocument extends Readonly<BaseEntity> {
-  documentId: string;
-  title: string;
+    documentId: string;
+    title: string;
 }
 
 export type UploadDocument = {
-  name: string;
-  path: string;
+    name: string;
+    path: string;
 };
 
 export type CustomDocumentUploadProgressType = 'progress' | 'finish';
 
 export type CustomDocumentUploadProgress = {
-  type: CustomDocumentUploadProgressType;
-  progress: number;
-  total: number;
+    type: CustomDocumentUploadProgressType;
+    progress: number;
+    total: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -256,22 +256,22 @@ export type CustomDocumentUploadProgress = {
 // ---------------------------------------------------------------------------
 
 export interface HistoryData extends Readonly<BaseEntity> {
-  date: string;
-  milliseconds: number;
+    date: string;
+    milliseconds: number;
 }
 
 export interface HistoryDataItem extends Readonly<BaseEntity> {
-  historyId: string;
-  date: string;
-  time: string;
-  documentTitle: string;
+    historyId: string;
+    date: string;
+    time: string;
+    documentTitle: string;
 }
 
 export type HistoryDateUpload = {
-  milliseconds: number;
-  date: string;
-  time: string;
-  documentTitle: string;
+    milliseconds: number;
+    date: string;
+    time: string;
+    documentTitle: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -279,35 +279,35 @@ export type HistoryDateUpload = {
 // ---------------------------------------------------------------------------
 
 export interface BackupDbReference {
-  id: string;
-  filename: string;
-  lines: string;
+    id: string;
+    filename: string;
+    lines: string;
 }
 
 export interface BackupStatus {
-  id: string;
-  email: string;
-  name: string;
-  active: boolean;
-  access: boolean;
-  restored: boolean;
-  lastUpdate: Date;
+    id: string;
+    email: string;
+    name: string;
+    active: boolean;
+    access: boolean;
+    restored: boolean;
+    lastUpdate: Date;
 }
 
 export type RestoreProgressEventType =
-  | 'start'
-  | 'complete'
-  | 'error'
-  | 'prepare'
-  | 'sauvegarde'
-  | `progress-${number}`;
+    | 'start'
+    | 'complete'
+    | 'error'
+    | 'prepare'
+    | 'sauvegarde'
+    | `progress-${number}`;
 
 export interface RestoreProgressEvent {
-  type: RestoreProgressEventType;
-  progression: {
-    proceed: number;
-    total: number;
-  };
+    type: RestoreProgressEventType;
+    progression: {
+        proceed: number;
+        total: number;
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -315,14 +315,14 @@ export interface RestoreProgressEvent {
 // ---------------------------------------------------------------------------
 
 export interface AppSettingsStatus {
-  id: string;
-  app_id: string;
-  initialized: boolean;
-  lastCheckBackupStatus: Date;
+    id: string;
+    app_id: string;
+    initialized: boolean;
+    lastCheckBackupStatus: Date;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {
-  hidden: boolean;
+    hidden: boolean;
 }
 
 export type ViewMenuValue = 'options' | 'document';
@@ -332,34 +332,34 @@ export type ViewMenuValue = 'options' | 'document';
 // ---------------------------------------------------------------------------
 
 export type UpdaterDownloadProgress = {
-  total: number;
-  delta: number;
-  transferred: number;
-  percent: number;
-  bytesPerSecond: number;
+    total: number;
+    delta: number;
+    transferred: number;
+    percent: number;
+    bytesPerSecond: number;
 };
 
 export type UpdaterProgress = {
-  downloadProgress?: UpdaterDownloadProgress;
+    downloadProgress?: UpdaterDownloadProgress;
 };
 
 export type UpdateInfo = {
-  version: string;
-  releaseDate: string;
-  releaseName?: string | null;
-  releaseNotes?: string | null;
+    version: string;
+    releaseDate: string;
+    releaseName?: string | null;
+    releaseNotes?: string | null;
 };
 
 export interface UpdaterInfoStatus extends BaseEntity {
-  restartedToUpdate: boolean;
-  lastUpdateCheck?: Date;
-  updateInfo?: UpdateInfo;
-  version?: string;
+    restartedToUpdate: boolean;
+    lastUpdateCheck?: Date;
+    updateInfo?: UpdateInfo;
+    version?: string;
 }
 
 export type UpdaterNotification = {
-  type: 'none' | 'hasUpdate' | 'downloading' | 'downloaded' | 'error';
-  progress?: UpdaterProgress;
-  status?: Partial<UpdaterInfoStatus>;
-  message?: string;
+    type: 'none' | 'hasUpdate' | 'downloading' | 'downloaded' | 'error';
+    progress?: UpdaterProgress;
+    status?: Partial<UpdaterInfoStatus>;
+    message?: string;
 };

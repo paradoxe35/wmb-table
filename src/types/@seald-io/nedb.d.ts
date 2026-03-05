@@ -1,3 +1,3 @@
-declare module "@seald-io/nedb" {
-  export default Nedb
+declare module '@seald-io/nedb' {
+    export default Nedb;
 }

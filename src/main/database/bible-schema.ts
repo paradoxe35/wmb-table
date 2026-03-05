@@ -1,13 +1,13 @@
 import { sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const bibleVerses = sqliteTable('bible_verses', {
-  id: text('id').primaryKey(),
-  bookName: text('book_name').notNull(),
-  book: text('book').notNull(),
-  testament: text('testament').notNull(),
-  chapter: text('chapter').notNull(),
-  verse: text('verse').notNull(),
-  content: text('content').notNull(),
+    id: text('id').primaryKey(),
+    bookName: text('book_name').notNull(),
+    book: text('book').notNull(),
+    testament: text('testament').notNull(),
+    chapter: text('chapter').notNull(),
+    verse: text('verse').notNull(),
+    content: text('content').notNull(),
 });
 
 /** Raw SQL for FTS5 virtual table — Drizzle does not support virtual tables */

@@ -123,47 +123,47 @@ Create the directory tree and placeholder files for the new architecture:
 Set up the secure Electron main process with contextIsolation and preload script.
 
 - [x] **2.1** Create `src/main/index.ts` — new main entry point:
-  - `BrowserWindow` with `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`
-  - Load preload script via `webPreferences.preload`
-  - Window size/min-size matching current (1024x800, min 933x572)
-  - Set Content Security Policy headers via `session.defaultSession.webRequest`
-  - `show: false` + `ready-to-show` → maximize + show (matches legacy)
-  - `setWindowOpenHandler` for external links
-  - Build menu + set application menu
-  - TouchBar on macOS (dynamic import)
-  - `initializeUpdater` when packaged
-  - `setMainWindow()` after creation
+    - `BrowserWindow` with `nodeIntegration: false`, `contextIsolation: true`, `sandbox: true`
+    - Load preload script via `webPreferences.preload`
+    - Window size/min-size matching current (1024x800, min 933x572)
+    - Set Content Security Policy headers via `session.defaultSession.webRequest`
+    - `show: false` + `ready-to-show` → maximize + show (matches legacy)
+    - `setWindowOpenHandler` for external links
+    - Build menu + set application menu
+    - TouchBar on macOS (dynamic import)
+    - `initializeUpdater` when packaged
+    - `setMainWindow()` after creation
 - [x] **2.2** Create `src/preload/index.ts` — full contextBridge with all domain namespaces:
-  - `contextBridge.exposeInMainWorld('api', { ... })` with domain namespaces: documents, search, notes, bible, subjects, audio, backup, app, on (push events)
-  - Type declaration file `src/preload/index.d.ts` for `window.api`
-  - Added `src/preload/index.d.ts` to `tsconfig.renderer.json` include
-  - Push event listeners return unsubscribe functions
+    - `contextBridge.exposeInMainWorld('api', { ... })` with domain namespaces: documents, search, notes, bible, subjects, audio, backup, app, on (push events)
+    - Type declaration file `src/preload/index.d.ts` for `window.api`
+    - Added `src/preload/index.d.ts` to `tsconfig.renderer.json` include
+    - Push event listeners return unsubscribe functions
 - [x] **2.3** Create `src/shared/ipc.types.ts` + `src/shared/types.ts` — typed IPC channel definitions and domain types:
-  - Ported all domain types from legacy `src/types/index.d.ts` (removed NeDB `TimeStampData`, `_id` → `id`, inlined updater types, removed global augmentations)
-  - Channel constants grouped by domain using `domain:method` naming (e.g., `documents:getTitles`)
-  - `InvokeChannelMap` — maps each channel to `{ args: [...]; return: Type }` (56 invoke channels)
-  - `PushEventMap` — maps each push channel to its payload type (16 push channels)
-  - Split dual-purpose legacy channels (e.g., `document_tabs` → `documents:getTabs` + `documents:saveTabs`)
+    - Ported all domain types from legacy `src/types/index.d.ts` (removed NeDB `TimeStampData`, `_id` → `id`, inlined updater types, removed global augmentations)
+    - Channel constants grouped by domain using `domain:method` naming (e.g., `documents:getTitles`)
+    - `InvokeChannelMap` — maps each channel to `{ args: [...]; return: Type }` (56 invoke channels)
+    - `PushEventMap` — maps each push channel to its payload type (16 push channels)
+    - Split dual-purpose legacy channels (e.g., `document_tabs` → `documents:getTabs` + `documents:saveTabs`)
 - [x] **2.4** Create IPC registration utility (`src/main/ipc/register.ts`):
-  - `registerHandler<C>(channel, handler)` — type-safe wrapper around `ipcMain.handle` with error serialization
-  - `sendToRenderer<C>(window, channel, payload)` — typed wrapper around `webContents.send`
-  - `initializeIpc()` — calls all 8 domain `register*Handlers()` functions
+    - `registerHandler<C>(channel, handler)` — type-safe wrapper around `ipcMain.handle` with error serialization
+    - `sendToRenderer<C>(window, channel, payload)` — typed wrapper around `webContents.send`
+    - `initializeIpc()` — calls all 8 domain `register*Handlers()` functions
 - [x] **2.5** Create domain handler stubs (8 files, all throw "Not implemented"):
-  - `src/main/ipc/documents.ipc.ts` — 4 stub handlers
-  - `src/main/ipc/search.ipc.ts` — 4 stub handlers
-  - `src/main/ipc/notes.ipc.ts` — 17 stub handlers
-  - `src/main/ipc/bible.ipc.ts` — 3 stub handlers
-  - `src/main/ipc/subjects.ipc.ts` — 6 stub handlers
-  - `src/main/ipc/audio.ipc.ts` — 4 stub handlers
-  - `src/main/ipc/backup.ipc.ts` — 4 stub handlers
-  - `src/main/ipc/app.ipc.ts` — 14 stub handlers
+    - `src/main/ipc/documents.ipc.ts` — 4 stub handlers
+    - `src/main/ipc/search.ipc.ts` — 4 stub handlers
+    - `src/main/ipc/notes.ipc.ts` — 17 stub handlers
+    - `src/main/ipc/bible.ipc.ts` — 3 stub handlers
+    - `src/main/ipc/subjects.ipc.ts` — 6 stub handlers
+    - `src/main/ipc/audio.ipc.ts` — 4 stub handlers
+    - `src/main/ipc/backup.ipc.ts` — 4 stub handlers
+    - `src/main/ipc/app.ipc.ts` — 14 stub handlers
 - [x] **2.6** Preload exposes all IPC channels via `contextBridge`:
-  - Each domain namespace maps to `ipcRenderer.invoke(channel, ...args)`
-  - Event listeners for push events return unsubscribe functions
+    - Each domain namespace maps to `ipcRenderer.invoke(channel, ...args)`
+    - Event listeners for push events return unsubscribe functions
 - [x] **2.7** Created `src/main/lib/window.ts` — `setMainWindow(w)` / `getMainWindow()` getter/setter
 - [x] **2.8** Migrated platform-specific code:
-  - `src/main/lib/menu.ts` — ported MenuBuilder from legacy with French labels, uses `sendToRenderer` + `PushChannels`
-  - `src/main/lib/touch-bar.ts` — ported TouchBar for macOS, uses `sendToRenderer` + `PushChannels`
+    - `src/main/lib/menu.ts` — ported MenuBuilder from legacy with French labels, uses `sendToRenderer` + `PushChannels`
+    - `src/main/lib/touch-bar.ts` — ported TouchBar for macOS, uses `sendToRenderer` + `PushChannels`
 - [x] **2.9** Set up `electron-log` v5 in `src/main/lib/logger.ts` — file + console transports, 5MB max file size
 - [x] **2.10** Set up `electron-updater` v6 scaffold in `src/main/lib/updater.ts` — simplified (see note below)
 - [x] **2.11** Verified: `pnpm typecheck` (0 errors), `pnpm lint` (0 errors), `pnpm build` (produces `out/`)
@@ -179,54 +179,54 @@ Replace all 18 NeDB collections with a proper SQLite database using Drizzle ORM.
 - [ ] **3.1** Install and configure `better-sqlite3` + `drizzle-orm` + `drizzle-kit`
 - [ ] **3.2** Create `drizzle.config.ts` for migration generation
 - [ ] **3.3** Create Drizzle schema (`src/main/database/schema.ts`) mapping all 18 NeDB collections:
-  - `documentsTitle` — id, title, year, date, path, language, and metadata fields
-  - `bibleVerses` — id, book, chapter, verse, content (with FTS5 virtual table for search)
-  - `configurations` — key-value store for app settings
-  - `tabs` — document tab state (order, active, document reference)
-  - `suggestions` — search suggestion cache
-  - `sidebarStatus` — UI sidebar visibility state
-  - `notes` — id, title, content, timestamps
-  - `notesReferences` — noteId FK, documentId, metadata
-  - `notesBibleReferences` — noteId FK, book, chapter, verse
-  - `subjects` — id, name, timestamps
-  - `subjectItems` — subjectId FK, documentId, metadata
-  - `history` — id, timestamps, metadata
-  - `historyItems` — historyId FK, documentId, action, timestamps
-  - `customDocuments` — id, filename, path, metadata
-  - `audioTimes` — documentId, timestamps mapping
-  - `audioDownloads` — documentId, localPath, metadata
-  - `audioLastPlay` — documentId, position, timestamps
-  - `backupReferences` — sync metadata
-  - `backupStatus` — sync state tracking
+    - `documentsTitle` — id, title, year, date, path, language, and metadata fields
+    - `bibleVerses` — id, book, chapter, verse, content (with FTS5 virtual table for search)
+    - `configurations` — key-value store for app settings
+    - `tabs` — document tab state (order, active, document reference)
+    - `suggestions` — search suggestion cache
+    - `sidebarStatus` — UI sidebar visibility state
+    - `notes` — id, title, content, timestamps
+    - `notesReferences` — noteId FK, documentId, metadata
+    - `notesBibleReferences` — noteId FK, book, chapter, verse
+    - `subjects` — id, name, timestamps
+    - `subjectItems` — subjectId FK, documentId, metadata
+    - `history` — id, timestamps, metadata
+    - `historyItems` — historyId FK, documentId, action, timestamps
+    - `customDocuments` — id, filename, path, metadata
+    - `audioTimes` — documentId, timestamps mapping
+    - `audioDownloads` — documentId, localPath, metadata
+    - `audioLastPlay` — documentId, position, timestamps
+    - `backupReferences` — sync metadata
+    - `backupStatus` — sync state tracking
 - [ ] **3.4** Generate initial SQL migration with `drizzle-kit generate`
 - [ ] **3.5** Create database connection module (`src/main/database/index.ts`):
-  - Initialize better-sqlite3 with WAL mode
-  - Database path: `app.getPath('userData')/databases/wmb-table.sqlite`
-  - Separate Bible database: `app.getPath('userData')/databases/bible.sqlite`
-  - Run Drizzle migrations on startup
+    - Initialize better-sqlite3 with WAL mode
+    - Database path: `app.getPath('userData')/databases/wmb-table.sqlite`
+    - Separate Bible database: `app.getPath('userData')/databases/bible.sqlite`
+    - Run Drizzle migrations on startup
 - [ ] **3.6** Create repository layer (`src/main/database/repositories/`):
-  - `documents.repository.ts` — findAll, findById, search, getContent
-  - `notes.repository.ts` — CRUD notes, addReference, removeReference, addBibleRef
-  - `bible.repository.ts` — getBooks, getChapter, searchVerses (FTS5)
-  - `subjects.repository.ts` — CRUD subjects and items
-  - `audio.repository.ts` — getTimes, setTimes, getDownloads, setLastPlay
-  - `history.repository.ts` — addEntry, getHistory, clearHistory
-  - `backup.repository.ts` — getStatus, setStatus, getReferences, setPending
-  - `config.repository.ts` — get, set, getAll
-  - `tabs.repository.ts` — getOpenTabs, saveTabs
-  - `suggestions.repository.ts` — getSuggestions, addSuggestion
-  - `sidebar.repository.ts` — getStatus, setStatus
-  - `custom-documents.repository.ts` — CRUD custom documents
+    - `documents.repository.ts` — findAll, findById, search, getContent
+    - `notes.repository.ts` — CRUD notes, addReference, removeReference, addBibleRef
+    - `bible.repository.ts` — getBooks, getChapter, searchVerses (FTS5)
+    - `subjects.repository.ts` — CRUD subjects and items
+    - `audio.repository.ts` — getTimes, setTimes, getDownloads, setLastPlay
+    - `history.repository.ts` — addEntry, getHistory, clearHistory
+    - `backup.repository.ts` — getStatus, setStatus, getReferences, setPending
+    - `config.repository.ts` — get, set, getAll
+    - `tabs.repository.ts` — getOpenTabs, saveTabs
+    - `suggestions.repository.ts` — getSuggestions, addSuggestion
+    - `sidebar.repository.ts` — getStatus, setStatus
+    - `custom-documents.repository.ts` — CRUD custom documents
 - [ ] **3.7** Write NeDB → SQLite migration script (`src/main/database/migrate-from-nedb.ts`):
-  - Read each `.db` file line by line (NeDB stores one JSON doc per line)
-  - Parse and insert into corresponding SQLite tables
-  - Preserve `_id` as primary key, `createdAt`/`updatedAt` timestamps
-  - Handle data type conversions (NeDB dates → SQLite integers/ISO strings)
-  - Make migration idempotent (skip if already migrated)
+    - Read each `.db` file line by line (NeDB stores one JSON doc per line)
+    - Parse and insert into corresponding SQLite tables
+    - Preserve `_id` as primary key, `createdAt`/`updatedAt` timestamps
+    - Handle data type conversions (NeDB dates → SQLite integers/ISO strings)
+    - Make migration idempotent (skip if already migrated)
 - [ ] **3.8** Add first-launch detection:
-  - Check for existing SQLite database
-  - If missing, check for legacy NeDB files at old install-dir location
-  - If legacy found, run migration; if not, seed from bundled resources
+    - Check for existing SQLite database
+    - If missing, check for legacy NeDB files at old install-dir location
+    - If legacy found, run migration; if not, seed from bundled resources
 - [ ] **3.9** Wire repositories into IPC handlers (replace `queryDb` calls with repository methods)
 - [ ] **3.10** Write unit tests for all repositories (Vitest, using in-memory SQLite)
 - [ ] **3.11** Verify: all data operations work via new database layer, no NeDB references remain
@@ -246,24 +246,24 @@ Move all user data from installation directory to OS-standard user data paths. R
 > - This also reduces the app installer size significantly
 
 - [ ] **4.1** Define path constants in `src/main/lib/paths.ts`:
-  - `USER_DATA_PATH` = `app.getPath('userData')`
-  - `DATABASES_PATH` = `<userData>/databases/`
-  - `DOCUMENTS_PATH` = `<userData>/documents/`
-  - `BACKUPS_PATH` = `<userData>/backups/`
-  - `AUDIO_PATH` = `<userData>/audio/`
-  - `RESOURCES_PATH` = `process.resourcesPath` (read-only bundled assets — icons, entitlements only)
+    - `USER_DATA_PATH` = `app.getPath('userData')`
+    - `DATABASES_PATH` = `<userData>/databases/`
+    - `DOCUMENTS_PATH` = `<userData>/documents/`
+    - `BACKUPS_PATH` = `<userData>/backups/`
+    - `AUDIO_PATH` = `<userData>/audio/`
+    - `RESOURCES_PATH` = `process.resourcesPath` (read-only bundled assets — icons, entitlements only)
 - [ ] **4.2** Implement first-launch data acquisition flow:
-  - **4.2.1** Create `src/main/services/data-setup.service.ts` — orchestrates initial data download
-  - **4.2.2** On `app:initialize`, detect if `DATABASES_PATH` and `DOCUMENTS_PATH` exist; if not, signal renderer to show setup UI
-  - **4.2.3** Add IPC channels: `app:getSetupStatus`, `app:startDataDownload`, push channel `push:dataDownloadProgress`
-  - **4.2.4** Download document titles database, Bible database, and document content from remote source
-  - **4.2.5** Report download progress to renderer via push events (percentage, current file, ETA)
-  - **4.2.6** Mark setup as complete in config database once all data is downloaded
+    - **4.2.1** Create `src/main/services/data-setup.service.ts` — orchestrates initial data download
+    - **4.2.2** On `app:initialize`, detect if `DATABASES_PATH` and `DOCUMENTS_PATH` exist; if not, signal renderer to show setup UI
+    - **4.2.3** Add IPC channels: `app:getSetupStatus`, `app:startDataDownload`, push channel `push:dataDownloadProgress`
+    - **4.2.4** Download document titles database, Bible database, and document content from remote source
+    - **4.2.5** Report download progress to renderer via push events (percentage, current file, ETA)
+    - **4.2.6** Mark setup as complete in config database once all data is downloaded
 - [ ] **4.3** Create first-launch setup UI in renderer:
-  - **4.3.1** Create `src/renderer/views/setup/SetupView.tsx` — shown on first launch instead of main app
-  - **4.3.2** Progress bar with download status (file count, bytes downloaded, ETA)
-  - **4.3.3** Error handling with retry capability (network failures, partial downloads)
-  - **4.3.4** Transition to main app view once setup completes
+    - **4.3.1** Create `src/renderer/views/setup/SetupView.tsx` — shown on first launch instead of main app
+    - **4.3.2** Progress bar with download status (file count, bytes downloaded, ETA)
+    - **4.3.3** Error handling with retry capability (network failures, partial downloads)
+    - **4.3.4** Transition to main app view once setup completes
 - [ ] **4.4** Update custom document upload to save files to `DOCUMENTS_PATH` instead of `assets/datas/documents/`
 - [ ] **4.5** Update backup system paths to use `BACKUPS_PATH`
 - [ ] **4.6** Update audio download paths to use `AUDIO_PATH`
@@ -281,49 +281,49 @@ Migrate the entire frontend from React 17/Recoil/Antd 4 to React 19/Zustand/Antd
 - [ ] **5.1** Create renderer entry point `src/renderer/main.tsx` with `createRoot` (React 19 API)
 - [ ] **5.2** Create root `App.tsx` with Ant Design 6 `ConfigProvider` (locale, theme)
 - [ ] **5.3** Create Zustand stores (replacing Recoil atoms/selectors):
-  - `src/renderer/stores/app.store.ts` — appView, optionView, loading, sidebarStatus
-  - `src/renderer/stores/document.store.ts` — titles, tabs, currentTab, titlesGroupedByYear
-  - `src/renderer/stores/search.store.ts` — query, results, suggestions
-  - `src/renderer/stores/notes.store.ts` — notes list, activeNote, references
-  - `src/renderer/stores/bible.store.ts` — books, currentBook/chapter, searchResults
-  - `src/renderer/stores/subjects.store.ts` — subjects list, items
-  - `src/renderer/stores/audio.store.ts` — currentAudio, playbackState, downloads
+    - `src/renderer/stores/app.store.ts` — appView, optionView, loading, sidebarStatus
+    - `src/renderer/stores/document.store.ts` — titles, tabs, currentTab, titlesGroupedByYear
+    - `src/renderer/stores/search.store.ts` — query, results, suggestions
+    - `src/renderer/stores/notes.store.ts` — notes list, activeNote, references
+    - `src/renderer/stores/bible.store.ts` — books, currentBook/chapter, searchResults
+    - `src/renderer/stores/subjects.store.ts` — subjects list, items
+    - `src/renderer/stores/audio.store.ts` — currentAudio, playbackState, downloads
 - [ ] **5.4** Create typed IPC hooks (`src/renderer/hooks/useIpc.ts`):
-  - `useIpcQuery(channel, args)` — fetch data via `window.api`, return loading/error/data
-  - `useIpcMutation(channel)` — mutate via `window.api`, return execute/loading/error
-  - Replace all `useIpcRequestWithLoader` usages
+    - `useIpcQuery(channel, args)` — fetch data via `window.api`, return loading/error/data
+    - `useIpcMutation(channel)` — mutate via `window.api`, return execute/loading/error
+    - Replace all `useIpcRequestWithLoader` usages
 - [ ] **5.5** Migrate layout components:
-  - `src/renderer/components/Layout.tsx` — main Ant Design layout (Header, Sider, Content)
-  - `src/renderer/components/SidebarMenu.tsx` — navigation menu
-  - `src/renderer/components/ViewerMenu.tsx` — top menu bar
-  - `src/renderer/components/SidebarDocuments.tsx` — right sidebar document list
+    - `src/renderer/components/Layout.tsx` — main Ant Design layout (Header, Sider, Content)
+    - `src/renderer/components/SidebarMenu.tsx` — navigation menu
+    - `src/renderer/components/ViewerMenu.tsx` — top menu bar
+    - `src/renderer/components/SidebarDocuments.tsx` — right sidebar document list
 - [ ] **5.6** Migrate view components:
-  - `src/renderer/views/document/` — document viewer, tab management
-  - `src/renderer/views/search/` — full-text search interface
-  - `src/renderer/views/notes/` — notes editor (evaluate CKEditor 5 vs lighter alternative)
-  - `src/renderer/views/bible/` — Bible reader and search
-  - `src/renderer/views/subjects/` — topic/subject management
-  - `src/renderer/views/history/` — browsing history
+    - `src/renderer/views/document/` — document viewer, tab management
+    - `src/renderer/views/search/` — full-text search interface
+    - `src/renderer/views/notes/` — notes editor (evaluate CKEditor 5 vs lighter alternative)
+    - `src/renderer/views/bible/` — Bible reader and search
+    - `src/renderer/views/subjects/` — topic/subject management
+    - `src/renderer/views/history/` — browsing history
 - [ ] **5.7** Migrate Ant Design v4 → v6 API changes:
-  - Update import paths (some components moved)
-  - Replace deprecated component props
-  - Update theme customization to use `ConfigProvider` token system
-  - Fix any breaking changes in Form, Table, Modal, Menu, etc.
+    - Update import paths (some components moved)
+    - Replace deprecated component props
+    - Update theme customization to use `ConfigProvider` token system
+    - Fix any breaking changes in Form, Table, Modal, Menu, etc.
 - [ ] **5.8** Migrate custom hooks from `src/renderer/hooks.ts`:
-  - `useContainerScrollY` → keep/modernize
-  - `useOptionsMenu` → adapt to Zustand
-  - `useModalVisible` → keep/modernize
-  - `useDocumentTitle` → adapt to Zustand store
-  - Remove hooks that duplicate Zustand functionality
+    - `useContainerScrollY` → keep/modernize
+    - `useOptionsMenu` → adapt to Zustand
+    - `useModalVisible` → keep/modernize
+    - `useDocumentTitle` → adapt to Zustand store
+    - Remove hooks that duplicate Zustand functionality
 - [ ] **5.9** Migrate SCSS styles:
-  - Update deprecated Sass syntax (`/` division → `math.div()`, `@import` → `@use`)
-  - Remove Webpack-specific CSS module patterns
-  - Ensure Vite handles SCSS imports correctly
+    - Update deprecated Sass syntax (`/` division → `math.div()`, `@import` → `@use`)
+    - Remove Webpack-specific CSS module patterns
+    - Ensure Vite handles SCSS imports correctly
 - [ ] **5.10** Handle `draggabilly` tab dragging — evaluate if needed or replace with HTML5 Drag & Drop / `@dnd-kit`
 - [ ] **5.11** Inline or replace `modules/` custom modules:
-  - `modules/context-menu/` — inline into renderer or use Electron's built-in context menu
-  - `modules/documents/` — inline into main process services
-  - `modules/shared/` — inline into `src/shared/`
+    - `modules/context-menu/` — inline into renderer or use Electron's built-in context menu
+    - `modules/documents/` — inline into main process services
+    - `modules/shared/` — inline into `src/shared/`
 - [ ] **5.12** Remove `RecoilRoot` and all Recoil imports
 - [ ] **5.13** Verify: all views render correctly, navigation works, data loads from SQLite via IPC
 
@@ -334,24 +334,24 @@ Migrate the entire frontend from React 17/Recoil/Antd 4 to React 19/Zustand/Antd
 Migrate business logic services (backup, updater, document processing).
 
 - [ ] **6.1** Migrate backup service (`src/main/services/backup.service.ts`):
-  - Google Drive API integration (modernize from `request` to `fetch`)
-  - File watcher for pending changes (replace `node-watch` if needed)
-  - Progress reporting via typed IPC events
-  - Credential handling (move from bundled files to secure storage)
+    - Google Drive API integration (modernize from `request` to `fetch`)
+    - File watcher for pending changes (replace `node-watch` if needed)
+    - Progress reporting via typed IPC events
+    - Credential handling (move from bundled files to secure storage)
 - [ ] **6.2** Wire auto-updater service (`src/main/lib/updater.ts`):
-  - Scaffold already created in Phase 2 — wire real IPC handler implementations in `app.ipc.ts`
-  - Simplified flow: check → notify → download → install (no backup/restore cycle)
-  - The legacy `data-prepared.ts`, `datastore.ts`, `constants.ts` (updater state management) are **not migrated** — they are no longer needed since data lives in `app.getPath('userData')` and is unaffected by app updates
-  - Update `publish` config in `electron-builder` for GitHub releases
-  - `UpdaterNotification.type` only uses: `none`, `hasUpdate`, `downloading`, `downloaded`, `error` (removed: `preparing`, `prepared`, `restoring`, `restored`, `restartedToUpdate`)
+    - Scaffold already created in Phase 2 — wire real IPC handler implementations in `app.ipc.ts`
+    - Simplified flow: check → notify → download → install (no backup/restore cycle)
+    - The legacy `data-prepared.ts`, `datastore.ts`, `constants.ts` (updater state management) are **not migrated** — they are no longer needed since data lives in `app.getPath('userData')` and is unaffected by app updates
+    - Update `publish` config in `electron-builder` for GitHub releases
+    - `UpdaterNotification.type` only uses: `none`, `hasUpdate`, `downloading`, `downloaded`, `error` (removed: `preparing`, `prepared`, `restoring`, `restored`, `restartedToUpdate`)
 - [ ] **6.3** Migrate document processing service (`src/main/services/document.service.ts`):
-  - PDF-to-HTML conversion (evaluate current `pdf2html-ex` approach)
-  - Custom document upload flow
-  - File path resolution using new `DOCUMENTS_PATH`
+    - PDF-to-HTML conversion (evaluate current `pdf2html-ex` approach)
+    - Custom document upload flow
+    - File path resolution using new `DOCUMENTS_PATH`
 - [ ] **6.4** Migrate child processes (`src/main/childs_processes/`):
-  - Review document conversion workers
-  - Update paths and module resolution for electron-vite
-  - Consider using `utilityProcess` (Electron API) instead of `child_process`
+    - Review document conversion workers
+    - Update paths and module resolution for electron-vite
+    - Consider using `utilityProcess` (Electron API) instead of `child_process`
 - [ ] **6.5** Replace deprecated `request` / `request-progress` with native `fetch` or `undici`
 - [ ] **6.6** Verify: backup creates/restores successfully, auto-updater checks/downloads/installs correctly, document upload works
 
@@ -364,24 +364,24 @@ Establish test coverage for critical paths.
 - [ ] **7.1** Configure Vitest for main process tests (Node environment)
 - [ ] **7.2** Configure Vitest for renderer tests (jsdom environment, React Testing Library)
 - [ ] **7.3** Write repository unit tests:
-  - Documents repository (find, search, content retrieval)
-  - Notes repository (CRUD, references)
-  - Bible repository (search with FTS5)
-  - Config repository (get/set)
+    - Documents repository (find, search, content retrieval)
+    - Notes repository (CRUD, references)
+    - Bible repository (search with FTS5)
+    - Config repository (get/set)
 - [ ] **7.4** Write service unit tests:
-  - Backup service (mock Google Drive API)
-  - Document service (file operations)
+    - Backup service (mock Google Drive API)
+    - Document service (file operations)
 - [ ] **7.5** Write IPC handler integration tests:
-  - Mock database, verify handler responses
+    - Mock database, verify handler responses
 - [ ] **7.6** Write React component tests:
-  - Layout renders correctly
-  - Document list loads and displays titles
-  - Search returns results
-  - Notes CRUD operations
+    - Layout renders correctly
+    - Document list loads and displays titles
+    - Search returns results
+    - Notes CRUD operations
 - [ ] **7.7** Write Zustand store tests:
-  - Store initialization
-  - Action dispatching
-  - Derived state computation
+    - Store initialization
+    - Action dispatching
+    - Derived state computation
 - [ ] **7.8** Verify: `pnpm test` passes, coverage report generates
 
 ---
@@ -391,30 +391,30 @@ Establish test coverage for critical paths.
 Remove all legacy code, fix remaining issues, finalize the refactoring.
 
 - [ ] **8.1** Remove all old source files:
-  - `src/main.dev.ts` (old entry point)
-  - `src/main.prod.js*` (old build output)
-  - `src/index.tsx` (old renderer entry)
-  - `src/ipc/` (old IPC layer — `ipc-main.ts`, `ipc-renderer.ts`)
-  - `src/renderer/store/` (Recoil store)
-  - `src/main/db/` (NeDB database layer)
-  - `src/main/message-control/` (old IPC handlers)
-  - `src/main/platforms/` (if migrated to new location)
-  - `src/utils/ipc-events.ts` (old untyped event constants)
+    - `src/main.dev.ts` (old entry point)
+    - `src/main.prod.js*` (old build output)
+    - `src/index.tsx` (old renderer entry)
+    - `src/ipc/` (old IPC layer — `ipc-main.ts`, `ipc-renderer.ts`)
+    - `src/renderer/store/` (Recoil store)
+    - `src/main/db/` (NeDB database layer)
+    - `src/main/message-control/` (old IPC handlers)
+    - `src/main/platforms/` (if migrated to new location)
+    - `src/utils/ipc-events.ts` (old untyped event constants)
 - [ ] **8.2** Remove old config files:
-  - `.erb/` directory entirely
-  - `babel.config.js`
-  - Old ESLint config files
-  - `hooks/restore-dev-datas.js`
-  - `clean/clean.js`
+    - `.erb/` directory entirely
+    - `babel.config.js`
+    - Old ESLint config files
+    - `hooks/restore-dev-datas.js`
+    - `clean/clean.js`
 - [ ] **8.3** Remove deprecated dependencies from `package.json`:
-  - All 17 `@babel/*` packages
-  - All Webpack packages and loaders
-  - `node-sass`, `recoil`, `enzyme*`, `jest*`
-  - `request`, `request-progress`, `regenerator-runtime`, `source-map-support`
-  - `electron-debug`, `electron-rebuild`, `opencollective-postinstall`, `yarn-deduplicate`
-  - `core-js`, `chalk`, `detect-port`, `rimraf`, `identity-obj-proxy`
-  - `history`, `@types/history`
-  - See full list in REFACTORING.md "Packages to Remove" section
+    - All 17 `@babel/*` packages
+    - All Webpack packages and loaders
+    - `node-sass`, `recoil`, `enzyme*`, `jest*`
+    - `request`, `request-progress`, `regenerator-runtime`, `source-map-support`
+    - `electron-debug`, `electron-rebuild`, `opencollective-postinstall`, `yarn-deduplicate`
+    - `core-js`, `chalk`, `detect-port`, `rimraf`, `identity-obj-proxy`
+    - `history`, `@types/history`
+    - See full list in REFACTORING.md "Packages to Remove" section
 - [ ] **8.4** Remove `assets/datas/` directory (data now lives in `app.getPath('userData')`)
 - [ ] **8.5** Remove `modules/` directory and `modules-output/` (inlined into src)
 - [ ] **8.6** Update `package.json` scripts — remove old `build:main`, `build:renderer`, `build:modules`, `postinstall`, `rebuild`, `assets-datas`, `clean`
@@ -424,9 +424,9 @@ Remove all legacy code, fix remaining issues, finalize the refactoring.
 - [ ] **8.10** Run TypeScript strict check: `pnpm typecheck` — fix all type errors
 - [ ] **8.11** Run full test suite: `pnpm test` — all tests pass
 - [ ] **8.12** Test packaging on all platforms:
-  - `pnpm package` produces working macOS DMG
-  - `pnpm package` produces working Windows NSIS installer
-  - `pnpm package` produces working Linux AppImage
+    - `pnpm package` produces working macOS DMG
+    - `pnpm package` produces working Windows NSIS installer
+    - `pnpm package` produces working Linux AppImage
 - [ ] **8.13** Test data migration path: install old version → upgrade to new version → verify all data migrated correctly
 - [ ] **8.14** Verify no references to old architecture remain (`grep` for `require(`, `ipcRenderer.send`, `ipcMain.on`, `nedb`, `recoil`, `webpack`, `babel`)
 

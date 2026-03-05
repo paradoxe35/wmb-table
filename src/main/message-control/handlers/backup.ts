@@ -1,16 +1,13 @@
 import { getAssetBackupPendingPath } from '@root/sys';
 import { BackupStatus } from '@localtypes/index';
 import {
-  backupEventEmiter,
-  backupPenging,
-  CAN_WATCH_IS_ONLINE_EVENT,
-  initBackupAndRestoration,
-  resumeRestoration,
+    backupEventEmiter,
+    backupPenging,
+    CAN_WATCH_IS_ONLINE_EVENT,
+    initBackupAndRestoration,
+    resumeRestoration,
 } from '@main/features/backup/backup';
-import {
-  RESTORE_COMPLETED_EVENT,
-  setDataRestored,
-} from '@main/features/backup/constants';
+import { RESTORE_COMPLETED_EVENT, setDataRestored } from '@main/features/backup/constants';
 import googleOAuth2, { getUserInfo } from '@main/features/backup/googleapi';
 import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { cleanAllFileDir } from '@main/functions/count-file-lines';
@@ -21,130 +18,112 @@ import { sendIpcToRenderer } from '@root/ipc/ipc-main';
 
 let ACCESS_STATUS: { value: boolean } = { value: true };
 
-export async function backup_status(
-  onlyStatus: boolean | Object
-): Promise<BackupStatus | null> {
-  const status = await queryDb.findOne<BackupStatus | null>(db.backupStatus);
+export async function backup_status(onlyStatus: boolean | Object): Promise<BackupStatus | null> {
+    const status = await queryDb.findOne<BackupStatus | null>(db.backupStatus);
 
-  if (status && status.access && typeof onlyStatus !== 'boolean') {
-    setDataRestored(status.restored);
-    // resume restoration or backup pending data
-    !status.restored && resumeRestoration(status);
-    if (status.restored) {
-      backupPenging(status);
-      backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
+    if (status && status.access && typeof onlyStatus !== 'boolean') {
+        setDataRestored(status.restored);
+        // resume restoration or backup pending data
+        !status.restored && resumeRestoration(status);
+        if (status.restored) {
+            backupPenging(status);
+            backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
+        }
     }
-  }
-  return status;
+    return status;
 }
 
 export async function backup_reminder(): Promise<boolean> {
-  let appSetting = await app_settings();
-  const status = await backup_status(true);
+    let appSetting = await app_settings();
+    const status = await backup_status(true);
 
-  if (!appSetting || status) return false;
+    if (!appSetting || status) return false;
 
-  const lastUpdate = appSetting.lastCheckBackupStatus.addDays(2);
-  const now = new Date();
-  if (lastUpdate >= now) return false;
-  await queryDb.update(
-    db.configurations,
-    { _id: appSetting._id },
-    { $set: { lastCheckBackupStatus: now } }
-  );
-  return true;
+    const lastUpdate = appSetting.lastCheckBackupStatus.addDays(2);
+    const now = new Date();
+    if (lastUpdate >= now) return false;
+    await queryDb.update(
+        db.configurations,
+        { _id: appSetting._id },
+        { $set: { lastCheckBackupStatus: now } },
+    );
+    return true;
 }
 
 export async function handle_backup_login() {
-  if (!(await isOnline())) {
-    return { error: 'network' };
-  }
-  // delete all pending files backup status exists
-  const status = await backup_status(true);
-  if (status) {
-    cleanAllFileDir(getAssetBackupPendingPath());
-  }
+    if (!(await isOnline())) {
+        return { error: 'network' };
+    }
+    // delete all pending files backup status exists
+    const status = await backup_status(true);
+    if (status) {
+        cleanAllFileDir(getAssetBackupPendingPath());
+    }
 
-  const googleAuth = await googleOAuth2(true, !!status);
-  if (!googleAuth) {
-    return { error: 'auth' };
-  }
-  const payload = await getUserInfo(googleAuth);
+    const googleAuth = await googleOAuth2(true, !!status);
+    if (!googleAuth) {
+        return { error: 'auth' };
+    }
+    const payload = await getUserInfo(googleAuth);
 
-  const statusBackup: Partial<BackupStatus> = {
-    email: payload.email,
-    name: payload.name,
-    active: true,
-    access: ACCESS_STATUS.value,
-    restored: false,
-    lastUpdate: new Date(),
-  };
+    const statusBackup: Partial<BackupStatus> = {
+        email: payload.email,
+        name: payload.name,
+        active: true,
+        access: ACCESS_STATUS.value,
+        restored: false,
+        lastUpdate: new Date(),
+    };
 
-  if (status) {
-    await queryDb.update(
-      db.backupStatus,
-      { _id: status._id },
-      { $set: statusBackup }
-    );
-  } else {
-    await queryDb.insert(db.backupStatus, statusBackup);
-  }
+    if (status) {
+        await queryDb.update(db.backupStatus, { _id: status._id }, { $set: statusBackup });
+    } else {
+        await queryDb.insert(db.backupStatus, statusBackup);
+    }
 
-  ACCESS_STATUS.value && initBackupAndRestoration(googleAuth);
+    ACCESS_STATUS.value && initBackupAndRestoration(googleAuth);
 
-  return statusBackup;
+    return statusBackup;
 }
 
 export async function handle_backup_status() {
-  const status = await backup_status(true);
-  if (!status) return null;
-  status.active = !status.active;
-  await queryDb.update(
-    db.backupStatus,
-    { _id: status._id },
-    { $set: { active: status.active } }
-  );
-  return status;
+    const status = await backup_status(true);
+    if (!status) return null;
+    status.active = !status.active;
+    await queryDb.update(db.backupStatus, { _id: status._id }, { $set: { active: status.active } });
+    return status;
 }
 
 export async function confirmRestoration(restored: boolean = true) {
-  const status = await backup_status(true);
-  if (!status) return null;
+    const status = await backup_status(true);
+    if (!status) return null;
 
-  setDataRestored(restored);
-  status.restored = restored;
+    setDataRestored(restored);
+    status.restored = restored;
 
-  await queryDb.update(
-    db.backupStatus,
-    { _id: status._id },
-    { $set: { restored } }
-  );
+    await queryDb.update(db.backupStatus, { _id: status._id }, { $set: { restored } });
 
-  if (restored) {
-    backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
-    backupEventEmiter.emit(RESTORE_COMPLETED_EVENT);
-  }
+    if (restored) {
+        backupEventEmiter.emit(CAN_WATCH_IS_ONLINE_EVENT);
+        backupEventEmiter.emit(RESTORE_COMPLETED_EVENT);
+    }
 
-  return status;
+    return status;
 }
 
 export async function setUserAuthAccessStatus(access: boolean) {
-  const status = await backup_status(true);
+    const status = await backup_status(true);
 
-  ACCESS_STATUS.value = access;
+    ACCESS_STATUS.value = access;
 
-  if (!status) {
-    return null;
-  }
+    if (!status) {
+        return null;
+    }
 
-  status.access = access;
-  await queryDb.update(
-    db.backupStatus,
-    { _id: status._id },
-    { $set: { access } }
-  );
+    status.access = access;
+    await queryDb.update(db.backupStatus, { _id: status._id }, { $set: { access } });
 
-  sendIpcToRenderer(IPC_EVENTS.backup_status, status);
+    sendIpcToRenderer(IPC_EVENTS.backup_status, status);
 
-  return status;
+    return status;
 }

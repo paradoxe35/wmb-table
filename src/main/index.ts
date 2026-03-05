@@ -7,6 +7,7 @@ import MenuBuilder from '@main/lib/menu';
 import { initializeLogger } from '@main/lib/logger';
 import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
+import { initializeTantivy, closeAllIndexes } from '@main/services/tantivy.service';
 
 // Initialize logger first
 initializeLogger();
@@ -14,101 +15,105 @@ initializeLogger();
 // Initialize database before IPC handlers
 initializeDatabase();
 
+// Initialize Tantivy search indexes
+initializeTantivy();
+
 // Register all IPC handlers before window creation
 initializeIpc();
 
 function setupCSP(): void {
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': [
-          [
-            "default-src 'self'",
-            "script-src 'self'",
-            "style-src 'self' 'unsafe-inline'",
-            "img-src 'self' data: https:",
-            "font-src 'self' data:",
-            "connect-src 'self' https:",
-          ].join('; '),
-        ],
-      },
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+        callback({
+            responseHeaders: {
+                ...details.responseHeaders,
+                'Content-Security-Policy': [
+                    [
+                        "default-src 'self'",
+                        "script-src 'self'",
+                        "style-src 'self' 'unsafe-inline'",
+                        "img-src 'self' data: https:",
+                        "font-src 'self' data:",
+                        "connect-src 'self' https:",
+                    ].join('; '),
+                ],
+            },
+        });
     });
-  });
 }
 
 function createWindow(): void {
-  const mainWindow = new BrowserWindow({
-    show: false,
-    width: 1024,
-    height: 800,
-    minWidth: 933,
-    minHeight: 572,
-    title: 'Wmb Table',
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      nodeIntegration: false,
-      contextIsolation: true,
-      sandbox: true,
-      spellcheck: false,
-    },
-  });
-
-  setMainWindow(mainWindow);
-
-  // Show window when ready, maximized (matches legacy behavior)
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.maximize();
-    mainWindow.show();
-  });
-
-  // Open external links in the user's browser
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
-  });
-
-  // Build application menu
-  const menuBuilder = new MenuBuilder(mainWindow);
-  menuBuilder.buildMenu();
-
-  // TouchBar on macOS
-  if (process.platform === 'darwin') {
-    import('@main/lib/touch-bar').then(({ createTouchBar }) => {
-      mainWindow.setTouchBar(createTouchBar(mainWindow));
+    const mainWindow = new BrowserWindow({
+        show: false,
+        width: 1024,
+        height: 800,
+        minWidth: 933,
+        minHeight: 572,
+        title: 'Wmb Table',
+        webPreferences: {
+            preload: join(__dirname, '../preload/index.js'),
+            nodeIntegration: false,
+            contextIsolation: true,
+            sandbox: true,
+            spellcheck: false,
+        },
     });
-  }
 
-  // Auto-updater when packaged
-  if (app.isPackaged) {
-    initializeUpdater(mainWindow);
-  }
+    setMainWindow(mainWindow);
 
-  // Load the app
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
-  }
+    // Show window when ready, maximized (matches legacy behavior)
+    mainWindow.on('ready-to-show', () => {
+        mainWindow.maximize();
+        mainWindow.show();
+    });
+
+    // Open external links in the user's browser
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        shell.openExternal(url);
+        return { action: 'deny' };
+    });
+
+    // Build application menu
+    const menuBuilder = new MenuBuilder(mainWindow);
+    menuBuilder.buildMenu();
+
+    // TouchBar on macOS
+    if (process.platform === 'darwin') {
+        import('@main/lib/touch-bar').then(({ createTouchBar }) => {
+            mainWindow.setTouchBar(createTouchBar(mainWindow));
+        });
+    }
+
+    // Auto-updater when packaged
+    if (app.isPackaged) {
+        initializeUpdater(mainWindow);
+    }
+
+    // Load the app
+    if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+        mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
+    } else {
+        mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    }
 }
 
 app.whenReady().then(() => {
-  setupCSP();
-  createWindow();
+    setupCSP();
+    createWindow();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
+    app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+            createWindow();
+        }
+    });
 });
 
 app.on('will-quit', () => {
-  closeDatabase();
+    closeAllIndexes();
+    closeDatabase();
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+    if (process.platform !== 'darwin') {
+        app.quit();
+    }
 });

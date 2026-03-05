@@ -10,57 +10,52 @@ import sendIpcRequest from '@root/ipc/ipc-renderer';
 import { ViewMenuValue } from '@localtypes/index';
 
 export default function ViewerMenu() {
-  const [view, setView] = useRecoilState(appViewStore);
-  const viewRef = useValueStateRef(view);
+    const [view, setView] = useRecoilState(appViewStore);
+    const viewRef = useValueStateRef(view);
 
-  const m1 = useCallback(() => {
-    setView(MAIN_VIEWS.options);
-  }, []);
+    const m1 = useCallback(() => {
+        setView(MAIN_VIEWS.options);
+    }, []);
 
-  const m2 = useCallback(() => {
-    setView(MAIN_VIEWS.document);
-  }, []);
+    const m2 = useCallback(() => {
+        setView(MAIN_VIEWS.document);
+    }, []);
 
-  useEffect(() => {
-    const switch_on_menu = () => {
-      switch (viewRef.current) {
-        case MAIN_VIEWS.options:
-          setView(MAIN_VIEWS.document);
-          break;
-        case MAIN_VIEWS.document:
-          setView(MAIN_VIEWS.options);
-          break;
-        default:
-          break;
-      }
-    };
-    ipcRenderer.on(IPC_EVENTS.switch_on_menu, switch_on_menu);
-  }, []);
+    useEffect(() => {
+        const switch_on_menu = () => {
+            switch (viewRef.current) {
+                case MAIN_VIEWS.options:
+                    setView(MAIN_VIEWS.document);
+                    break;
+                case MAIN_VIEWS.document:
+                    setView(MAIN_VIEWS.options);
+                    break;
+                default:
+                    break;
+            }
+        };
+        ipcRenderer.on(IPC_EVENTS.switch_on_menu, switch_on_menu);
+    }, []);
 
-  useEffect(() => {
-    sendIpcRequest(IPC_EVENTS.has_change_viewer_menu, view);
-  }, [view]);
+    useEffect(() => {
+        sendIpcRequest(IPC_EVENTS.has_change_viewer_menu, view);
+    }, [view]);
 
-  useEffect(() => {
-    const change_menu_viewer = (_: any, view: ViewMenuValue) => {
-      setView(view);
-    };
-    ipcRenderer.on(IPC_EVENTS.change_menu_viewer, change_menu_viewer);
-  }, []);
+    useEffect(() => {
+        const change_menu_viewer = (_: any, view: ViewMenuValue) => {
+            setView(view);
+        };
+        ipcRenderer.on(IPC_EVENTS.change_menu_viewer, change_menu_viewer);
+    }, []);
 
-  return (
-    <Menu
-      theme="dark"
-      mode="horizontal"
-      className="row__center"
-      selectedKeys={[view]}
-    >
-      <Menu.Item key={MAIN_VIEWS.options} onClick={m1}>
-        <ProfileOutlined style={{ fontSize: '20px' }} />
-      </Menu.Item>
-      <Menu.Item key={MAIN_VIEWS.document} onClick={m2}>
-        <FundViewOutlined style={{ fontSize: '20px' }} />
-      </Menu.Item>
-    </Menu>
-  );
+    return (
+        <Menu theme="dark" mode="horizontal" className="row__center" selectedKeys={[view]}>
+            <Menu.Item key={MAIN_VIEWS.options} onClick={m1}>
+                <ProfileOutlined style={{ fontSize: '20px' }} />
+            </Menu.Item>
+            <Menu.Item key={MAIN_VIEWS.document} onClick={m2}>
+                <FundViewOutlined style={{ fontSize: '20px' }} />
+            </Menu.Item>
+        </Menu>
+    );
 }

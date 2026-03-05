@@ -28,85 +28,71 @@ import { IPC_EVENTS } from '@root/utils/ipc-events';
 const Notes = lazy(() => import('./views/options/notes'));
 
 const Loader: React.FC = ({ children }) => {
-  return (
-    <LoadByVisibility>
-      <Suspense
-        fallback={
-          <div className="flex flex-center" style={{ marginTop: '2rem' }}>
-            <Spin
-              indicator={<LoadingOutlined style={{ fontSize: 30 }} spin />}
-            />
-          </div>
-        }
-      >
-        {children}
-      </Suspense>
-    </LoadByVisibility>
-  );
+    return (
+        <LoadByVisibility>
+            <Suspense
+                fallback={
+                    <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                        <Spin indicator={<LoadingOutlined style={{ fontSize: 30 }} spin />} />
+                    </div>
+                }
+            >
+                {children}
+            </Suspense>
+        </LoadByVisibility>
+    );
 };
 
-const AppOptions = React.memo(
-  (): JSX.Element => {
+const AppOptions = React.memo((): JSX.Element => {
     const view = useRecoilValue<string>(optionViewStore);
     const views: OptionView = useMemo(
-      () => ({
-        search: (<Search />) as JSX.Element,
-        history: (<History />) as JSX.Element,
-        subject: (<Subject />) as JSX.Element,
-        editor: (
-          <Loader>
-            <Notes />
-          </Loader>
-        ) as JSX.Element,
-        bible: (<Bible />) as JSX.Element,
-      }),
-      []
+        () => ({
+            search: (<Search />) as JSX.Element,
+            history: (<History />) as JSX.Element,
+            subject: (<Subject />) as JSX.Element,
+            editor: (
+                <Loader>
+                    <Notes />
+                </Loader>
+            ) as JSX.Element,
+            bible: (<Bible />) as JSX.Element,
+        }),
+        [],
     );
     //@ts-ignore
     return Object.keys(views).map((k: string) => (
-      <ContainerScrollY
-        className={`${k}__option__content`}
-        key={k}
-        hidden={k !== view}
-      >
-        {/* @ts-ignore */}
-        {views[k] as JSX.Element}
-      </ContainerScrollY>
+        <ContainerScrollY className={`${k}__option__content`} key={k} hidden={k !== view}>
+            {/* @ts-ignore */}
+            {views[k] as JSX.Element}
+        </ContainerScrollY>
     ));
-  }
-);
+});
 
 export function ContentApp() {
-  const view = useRecoilValue(appViewStore);
+    const view = useRecoilValue(appViewStore);
 
-  useEffect(() => {
-    sendIpcRequest(IPC_EVENTS.app_has_started);
-  }, []);
+    useEffect(() => {
+        sendIpcRequest(IPC_EVENTS.app_has_started);
+    }, []);
 
-  return (
-    <>
-      <div
-        id={`app-view-${MAIN_VIEWS.options}`}
-        hidden={view !== MAIN_VIEWS.options}
-      >
-        <AppOptions />
-      </div>
-      <div
-        id={`app-view-${MAIN_VIEWS.document}`}
-        hidden={view !== MAIN_VIEWS.document}
-      >
-        <DocumentView />
-      </div>
-      {/* independent components */}
-      <CustomDocumentsModal />
-      <BackupProfileModal />
-      <WelcomeModal />
-      <UpdaterModal />
-      <OtherTraductionsModal />
-      <SubjectSelectModal />
-      <NoteReferencesModal />
-      <PdfDocumentDownloader />
-      <DocumentAudioPlayer />
-    </>
-  );
+    return (
+        <>
+            <div id={`app-view-${MAIN_VIEWS.options}`} hidden={view !== MAIN_VIEWS.options}>
+                <AppOptions />
+            </div>
+            <div id={`app-view-${MAIN_VIEWS.document}`} hidden={view !== MAIN_VIEWS.document}>
+                <DocumentView />
+            </div>
+            {/* independent components */}
+            <CustomDocumentsModal />
+            <BackupProfileModal />
+            <WelcomeModal />
+            <UpdaterModal />
+            <OtherTraductionsModal />
+            <SubjectSelectModal />
+            <NoteReferencesModal />
+            <PdfDocumentDownloader />
+            <DocumentAudioPlayer />
+        </>
+    );
 }

@@ -3,21 +3,21 @@ import { registerHandler } from './register';
 import * as audioRepo from '@main/database/repositories/audio.repository';
 
 export function registerAudioHandlers(): void {
-  registerHandler(AudioChannels.getTimeAndLocalFile, async (_event, audioLink) => {
-    const time = audioRepo.getTimeByAudioLink(audioLink);
-    const download = audioRepo.getDownloadByAudioLink(audioLink);
-    return { time, download };
-  });
+    registerHandler(AudioChannels.getTimeAndLocalFile, async (_event, audioLink) => {
+        const time = audioRepo.getTimeByAudioLink(audioLink);
+        const download = audioRepo.getDownloadByAudioLink(audioLink);
+        return { time, download };
+    });
 
-  registerHandler(AudioChannels.setTime, async (_event, audioLink, time) => {
-    audioRepo.setTime(audioLink, time);
-  });
+    registerHandler(AudioChannels.setTime, async (_event, audioLink, time) => {
+        audioRepo.setTime(audioLink, time);
+    });
 
-  registerHandler(AudioChannels.getLastPlay, async () => {
-    return audioRepo.getLastPlay();
-  });
+    registerHandler(AudioChannels.getLastPlay, async () => {
+        return audioRepo.getLastPlay();
+    });
 
-  registerHandler(AudioChannels.setLastPlay, async (_event, docJson) => {
-    audioRepo.setLastPlay(docJson);
-  });
+    registerHandler(AudioChannels.setLastPlay, async (_event, docJson) => {
+        audioRepo.setLastPlay(docJson);
+    });
 }

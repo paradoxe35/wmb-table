@@ -36,10 +36,10 @@ The application is 4+ years outdated, running on deprecated/EOL technologies wit
 #### Data Storage
 
 - All user data (databases, documents, backups) stored **inside the installation directory** (`assets/datas/`). This means:
-  - Data is lost on app update/reinstall
-  - No standard OS data location
-  - Write permissions issues on some platforms
-  - Only `audios-downloads.db` is correctly stored in `~/.wmb-table/`
+    - Data is lost on app update/reinstall
+    - No standard OS data location
+    - Write permissions issues on some platforms
+    - Only `audios-downloads.db` is correctly stored in `~/.wmb-table/`
 
 #### Architecture
 
@@ -415,11 +415,11 @@ resources/
 2. If not, check for legacy NeDB files at old location
 3. If legacy data found: run migration script (Phase 3)
 4. If no data found: show setup UI and **download data from remote source** (API/CDN)
-   - Download document titles database
-   - Download Bible database
-   - Download document content files
-   - Report progress to renderer (percentage, current file, ETA)
-   - Mark setup as complete in config database once finished
+    - Download document titles database
+    - Download Bible database
+    - Download document content files
+    - Report progress to renderer (percentage, current file, ETA)
+    - Mark setup as complete in config database once finished
 
 **Auto-updater (simplified):**
 
@@ -651,142 +651,142 @@ This is the complete `package.json` that replaces both the root and `src/package
 
 ```json
 {
-  "name": "wmb-table",
-  "version": "2.0.0",
-  "productName": "Wmb Table",
-  "description": "Gestion livres et prédications",
-  "main": "./out/main/index.js",
-  "author": {
-    "name": "Paradoxe Ngwasi",
-    "email": "paradoxngwasi@gmail.com",
-    "url": "https://png-me.web.app"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/paradoxe35/wmb-table.git"
-  },
-  "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
-  },
-  "scripts": {
-    "dev": "electron-vite dev",
-    "build": "electron-vite build",
-    "preview": "electron-vite preview",
-    "package": "electron-vite build && electron-builder --publish never",
-    "package:publish": "electron-vite build && electron-builder --publish onTagOrDraft",
-    "lint": "eslint . --cache",
-    "lint:fix": "eslint . --cache --fix",
-    "format": "prettier --write .",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
-    "typecheck": "tsc --noEmit",
-    "typecheck:main": "tsc --noEmit -p tsconfig.main.json",
-    "typecheck:preload": "tsc --noEmit -p tsconfig.preload.json",
-    "typecheck:renderer": "tsc --noEmit -p tsconfig.renderer.json",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio",
-    "postinstall": "electron-vite build -b native"
-  },
-  "dependencies": {
-    "antd": "^6.3.1",
-    "better-sqlite3": "^12.6.2",
-    "chokidar": "^4.0.3",
-    "drizzle-orm": "^0.45.1",
-    "electron-log": "^5.4.3",
-    "electron-updater": "^6.8.3",
-    "googleapis": "^144.0.0",
-    "node-html-parser": "^7.1.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
-    "zustand": "^5.0.5"
-  },
-  "devDependencies": {
-    "@electron/notarize": "^3.0.0",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/react": "^16.3.0",
-    "@types/better-sqlite3": "^7.6.14",
-    "@types/node": "^22.15.0",
-    "@types/react": "^19.1.2",
-    "@types/react-dom": "^19.1.2",
-    "@typescript-eslint/eslint-plugin": "^8.30.1",
-    "@typescript-eslint/parser": "^8.30.1",
-    "@vitejs/plugin-react": "^4.4.1",
-    "drizzle-kit": "^0.31.0",
-    "electron": "^35.2.1",
-    "electron-builder": "^26.0.12",
-    "electron-vite": "^3.1.0",
-    "eslint": "^9.25.1",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "globals": "^16.0.0",
-    "jsdom": "^26.1.0",
-    "lint-staged": "^15.5.1",
-    "prettier": "^3.5.3",
-    "sass": "^1.87.0",
-    "simple-git-hooks": "^2.12.1",
-    "typescript": "^5.8.3",
-    "vite": "^6.3.4",
-    "vitest": "^3.1.2"
-  },
-  "build": {
+    "name": "wmb-table",
+    "version": "2.0.0",
     "productName": "Wmb Table",
-    "appId": "org.erb.wmbTable",
-    "directories": {
-      "buildResources": "resources",
-      "output": "release"
+    "description": "Gestion livres et prédications",
+    "main": "./out/main/index.js",
+    "author": {
+        "name": "Paradoxe Ngwasi",
+        "email": "paradoxngwasi@gmail.com",
+        "url": "https://png-me.web.app"
     },
-    "files": ["out/**/*"],
-    "extraResources": [
-      {
-        "from": "resources/data",
-        "to": "data"
-      }
-    ],
-    "mac": {
-      "type": "distribution",
-      "hardenedRuntime": true,
-      "entitlements": "resources/entitlements.mac.plist",
-      "entitlementsInherit": "resources/entitlements.mac.plist",
-      "gatekeeperAssess": false
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/paradoxe35/wmb-table.git"
     },
-    "dmg": {
-      "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
-      ]
+    "engines": {
+        "node": ">=20.0.0",
+        "pnpm": ">=9.0.0"
     },
-    "win": {
-      "target": ["nsis", "zip"]
+    "scripts": {
+        "dev": "electron-vite dev",
+        "build": "electron-vite build",
+        "preview": "electron-vite preview",
+        "package": "electron-vite build && electron-builder --publish never",
+        "package:publish": "electron-vite build && electron-builder --publish onTagOrDraft",
+        "lint": "eslint . --cache",
+        "lint:fix": "eslint . --cache --fix",
+        "format": "prettier --write .",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "vitest run --coverage",
+        "typecheck": "tsc --noEmit",
+        "typecheck:main": "tsc --noEmit -p tsconfig.main.json",
+        "typecheck:preload": "tsc --noEmit -p tsconfig.preload.json",
+        "typecheck:renderer": "tsc --noEmit -p tsconfig.renderer.json",
+        "db:generate": "drizzle-kit generate",
+        "db:migrate": "drizzle-kit migrate",
+        "db:studio": "drizzle-kit studio",
+        "postinstall": "electron-vite build -b native"
     },
-    "nsis": {
-      "oneClick": false,
-      "perMachine": false,
-      "allowToChangeInstallationDirectory": false,
-      "installerIcon": "resources/icon.ico",
-      "uninstallerIcon": "resources/icon.ico",
-      "deleteAppDataOnUninstall": false
+    "dependencies": {
+        "antd": "^6.3.1",
+        "better-sqlite3": "^12.6.2",
+        "chokidar": "^4.0.3",
+        "drizzle-orm": "^0.45.1",
+        "electron-log": "^5.4.3",
+        "electron-updater": "^6.8.3",
+        "googleapis": "^144.0.0",
+        "node-html-parser": "^7.1.0",
+        "react": "^19.1.0",
+        "react-dom": "^19.1.0",
+        "zustand": "^5.0.5"
     },
-    "linux": {
-      "target": ["AppImage"],
-      "category": "Education"
+    "devDependencies": {
+        "@electron/notarize": "^3.0.0",
+        "@testing-library/jest-dom": "^6.6.3",
+        "@testing-library/react": "^16.3.0",
+        "@types/better-sqlite3": "^7.6.14",
+        "@types/node": "^22.15.0",
+        "@types/react": "^19.1.2",
+        "@types/react-dom": "^19.1.2",
+        "@typescript-eslint/eslint-plugin": "^8.30.1",
+        "@typescript-eslint/parser": "^8.30.1",
+        "@vitejs/plugin-react": "^4.4.1",
+        "drizzle-kit": "^0.31.0",
+        "electron": "^35.2.1",
+        "electron-builder": "^26.0.12",
+        "electron-vite": "^3.1.0",
+        "eslint": "^9.25.1",
+        "eslint-plugin-react": "^7.37.5",
+        "eslint-plugin-react-hooks": "^5.2.0",
+        "globals": "^16.0.0",
+        "jsdom": "^26.1.0",
+        "lint-staged": "^15.5.1",
+        "prettier": "^3.5.3",
+        "sass": "^1.87.0",
+        "simple-git-hooks": "^2.12.1",
+        "typescript": "^5.8.3",
+        "vite": "^6.3.4",
+        "vitest": "^3.1.2"
     },
-    "publish": {
-      "provider": "github",
-      "owner": "paradoxe35",
-      "repo": "wmb-table"
+    "build": {
+        "productName": "Wmb Table",
+        "appId": "org.erb.wmbTable",
+        "directories": {
+            "buildResources": "resources",
+            "output": "release"
+        },
+        "files": ["out/**/*"],
+        "extraResources": [
+            {
+                "from": "resources/data",
+                "to": "data"
+            }
+        ],
+        "mac": {
+            "type": "distribution",
+            "hardenedRuntime": true,
+            "entitlements": "resources/entitlements.mac.plist",
+            "entitlementsInherit": "resources/entitlements.mac.plist",
+            "gatekeeperAssess": false
+        },
+        "dmg": {
+            "contents": [
+                { "x": 130, "y": 220 },
+                { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+            ]
+        },
+        "win": {
+            "target": ["nsis", "zip"]
+        },
+        "nsis": {
+            "oneClick": false,
+            "perMachine": false,
+            "allowToChangeInstallationDirectory": false,
+            "installerIcon": "resources/icon.ico",
+            "uninstallerIcon": "resources/icon.ico",
+            "deleteAppDataOnUninstall": false
+        },
+        "linux": {
+            "target": ["AppImage"],
+            "category": "Education"
+        },
+        "publish": {
+            "provider": "github",
+            "owner": "paradoxe35",
+            "repo": "wmb-table"
+        }
+    },
+    "simple-git-hooks": {
+        "pre-commit": "pnpm lint-staged"
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx}": ["eslint --cache --fix"],
+        "*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}": ["prettier --write"]
     }
-  },
-  "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged"
-  },
-  "lint-staged": {
-    "*.{js,jsx,ts,tsx}": ["eslint --cache --fix"],
-    "*.{js,jsx,ts,tsx,json,css,scss,md,yml,yaml}": ["prettier --write"]
-  }
 }
 ```
 
@@ -804,39 +804,39 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 
 export default defineConfig({
-  main: {
-    plugins: [externalizeDepsPlugin()],
-    resolve: {
-      alias: {
-        '@main': resolve('src/main'),
-        '@shared': resolve('src/shared'),
-      },
-    },
-  },
-  preload: {
-    plugins: [externalizeDepsPlugin()],
-    resolve: {
-      alias: {
-        '@shared': resolve('src/shared'),
-      },
-    },
-  },
-  renderer: {
-    plugins: [react()],
-    resolve: {
-      alias: {
-        '@renderer': resolve('src/renderer'),
-        '@shared': resolve('src/shared'),
-      },
-    },
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler',
+    main: {
+        plugins: [externalizeDepsPlugin()],
+        resolve: {
+            alias: {
+                '@main': resolve('src/main'),
+                '@shared': resolve('src/shared'),
+            },
         },
-      },
     },
-  },
+    preload: {
+        plugins: [externalizeDepsPlugin()],
+        resolve: {
+            alias: {
+                '@shared': resolve('src/shared'),
+            },
+        },
+    },
+    renderer: {
+        plugins: [react()],
+        resolve: {
+            alias: {
+                '@renderer': resolve('src/renderer'),
+                '@shared': resolve('src/shared'),
+            },
+        },
+        css: {
+            preprocessorOptions: {
+                scss: {
+                    api: 'modern-compiler',
+                },
+            },
+        },
+    },
 });
 ```
 
@@ -844,12 +844,12 @@ export default defineConfig({
 
 ```json
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.main.json" },
-    { "path": "./tsconfig.preload.json" },
-    { "path": "./tsconfig.renderer.json" }
-  ]
+    "files": [],
+    "references": [
+        { "path": "./tsconfig.main.json" },
+        { "path": "./tsconfig.preload.json" },
+        { "path": "./tsconfig.renderer.json" }
+    ]
 }
 ```
 
@@ -857,31 +857,31 @@ export default defineConfig({
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022"],
-    "outDir": "./out/main",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "paths": {
-      "@main/*": ["./src/main/*"],
-      "@shared/*": ["./src/shared/*"]
-    }
-  },
-  "include": ["src/main/**/*", "src/shared/**/*"]
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ES2022",
+        "moduleResolution": "bundler",
+        "lib": ["ES2022"],
+        "outDir": "./out/main",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "paths": {
+            "@main/*": ["./src/main/*"],
+            "@shared/*": ["./src/shared/*"]
+        }
+    },
+    "include": ["src/main/**/*", "src/shared/**/*"]
 }
 ```
 
@@ -889,26 +889,26 @@ export default defineConfig({
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022"],
-    "outDir": "./out/preload",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "declaration": true,
-    "sourceMap": true,
-    "paths": {
-      "@shared/*": ["./src/shared/*"]
-    }
-  },
-  "include": ["src/preload/**/*", "src/shared/**/*"]
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ES2022",
+        "moduleResolution": "bundler",
+        "lib": ["ES2022"],
+        "outDir": "./out/preload",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "declaration": true,
+        "sourceMap": true,
+        "paths": {
+            "@shared/*": ["./src/shared/*"]
+        }
+    },
+    "include": ["src/preload/**/*", "src/shared/**/*"]
 }
 ```
 
@@ -916,31 +916,31 @@ export default defineConfig({
 
 ```json
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "outDir": "./out/renderer",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "jsx": "react-jsx",
-    "declaration": true,
-    "sourceMap": true,
-    "paths": {
-      "@renderer/*": ["./src/renderer/*"],
-      "@shared/*": ["./src/shared/*"]
-    }
-  },
-  "include": ["src/renderer/**/*", "src/shared/**/*"]
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ES2022",
+        "moduleResolution": "bundler",
+        "lib": ["ES2022", "DOM", "DOM.Iterable"],
+        "outDir": "./out/renderer",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "jsx": "react-jsx",
+        "declaration": true,
+        "sourceMap": true,
+        "paths": {
+            "@renderer/*": ["./src/renderer/*"],
+            "@shared/*": ["./src/shared/*"]
+        }
+    },
+    "include": ["src/renderer/**/*", "src/shared/**/*"]
 }
 ```
 
@@ -954,41 +954,41 @@ import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 
 export default [
-  {
-    ignores: ['out/**', 'release/**', 'node_modules/**', 'resources/**'],
-  },
-  {
-    files: ['**/*.{ts,tsx}'],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-        ecmaFeatures: { jsx: true },
-      },
-      globals: {
-        ...globals.node,
-        ...globals.browser,
-      },
+    {
+        ignores: ['out/**', 'release/**', 'node_modules/**', 'resources/**'],
     },
-    plugins: {
-      '@typescript-eslint': tsPlugin,
-      react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
+    {
+        files: ['**/*.{ts,tsx}'],
+        languageOptions: {
+            parser: tsParser,
+            parserOptions: {
+                ecmaVersion: 'latest',
+                sourceType: 'module',
+                ecmaFeatures: { jsx: true },
+            },
+            globals: {
+                ...globals.node,
+                ...globals.browser,
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tsPlugin,
+            react: reactPlugin,
+            'react-hooks': reactHooksPlugin,
+        },
+        rules: {
+            ...tsPlugin.configs.recommended.rules,
+            ...reactPlugin.configs.recommended.rules,
+            ...reactHooksPlugin.configs.recommended.rules,
+            'react/react-in-jsx-scope': 'off',
+            'react/prop-types': 'off',
+            '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+            '@typescript-eslint/no-explicit-any': 'warn',
+        },
+        settings: {
+            react: { version: 'detect' },
+        },
     },
-    rules: {
-      ...tsPlugin.configs.recommended.rules,
-      ...reactPlugin.configs.recommended.rules,
-      ...reactHooksPlugin.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
-    },
-    settings: {
-      react: { version: 'detect' },
-    },
-  },
 ];
 ```
 
@@ -996,12 +996,12 @@ export default [
 
 ```json
 {
-  "singleQuote": true,
-  "trailingComma": "all",
-  "tabWidth": 2,
-  "semi": true,
-  "printWidth": 100,
-  "endOfLine": "lf"
+    "singleQuote": true,
+    "trailingComma": "all",
+    "tabWidth": 2,
+    "semi": true,
+    "printWidth": 100,
+    "endOfLine": "lf"
 }
 ```
 
@@ -1012,25 +1012,25 @@ import { defineConfig } from 'vitest/config';
 import { resolve } from 'node:path';
 
 export default defineConfig({
-  test: {
-    globals: true,
-    environment: 'node',
-    include: ['tests/**/*.test.{ts,tsx}'],
-    exclude: ['node_modules', 'out', 'release'],
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html', 'lcov'],
-      include: ['src/**/*.{ts,tsx}'],
-      exclude: ['src/**/*.d.ts'],
+    test: {
+        globals: true,
+        environment: 'node',
+        include: ['tests/**/*.test.{ts,tsx}'],
+        exclude: ['node_modules', 'out', 'release'],
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'html', 'lcov'],
+            include: ['src/**/*.{ts,tsx}'],
+            exclude: ['src/**/*.d.ts'],
+        },
     },
-  },
-  resolve: {
-    alias: {
-      '@main': resolve(__dirname, 'src/main'),
-      '@renderer': resolve(__dirname, 'src/renderer'),
-      '@shared': resolve(__dirname, 'src/shared'),
+    resolve: {
+        alias: {
+            '@main': resolve(__dirname, 'src/main'),
+            '@renderer': resolve(__dirname, 'src/renderer'),
+            '@shared': resolve(__dirname, 'src/shared'),
+        },
     },
-  },
 });
 ```
 
@@ -1040,12 +1040,12 @@ export default defineConfig({
 import { defineConfig } from 'drizzle-kit';
 
 export default defineConfig({
-  schema: './src/main/database/schema.ts',
-  out: './drizzle',
-  dialect: 'sqlite',
-  dbCredentials: {
-    url: './wmb-table.sqlite',
-  },
+    schema: './src/main/database/schema.ts',
+    out: './drizzle',
+    dialect: 'sqlite',
+    dbCredentials: {
+        url: './wmb-table.sqlite',
+    },
 });
 ```
 

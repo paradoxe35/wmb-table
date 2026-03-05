@@ -1,36 +1,36 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ES2022",
-    "moduleResolution": "bundler",
-    "lib": ["ES2022"],
-    "outDir": "./out/main",
-    "rootDir": "./src",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "paths": {
-      "@main/*": ["./src/main/*"],
-      "@shared/*": ["./src/shared/*"]
-    }
-  },
-  "include": ["src/main/**/*", "src/shared/**/*"],
-  "exclude": [
-    "src/main/childs_processes/**/*",
-    "src/main/db/**/*",
-    "src/main/dialogs/**/*",
-    "src/main/features/**/*",
-    "src/main/functions/**/*",
-    "src/main/message-control/**/*",
-    "src/main/platforms/**/*"
-  ]
+    "compilerOptions": {
+        "target": "ES2022",
+        "module": "ES2022",
+        "moduleResolution": "bundler",
+        "lib": ["ES2022"],
+        "outDir": "./out/main",
+        "rootDir": "./src",
+        "strict": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "noFallthroughCasesInSwitch": true,
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true,
+        "paths": {
+            "@main/*": ["./src/main/*"],
+            "@shared/*": ["./src/shared/*"]
+        }
+    },
+    "include": ["src/main/**/*", "src/shared/**/*"],
+    "exclude": [
+        "src/main/childs_processes/**/*",
+        "src/main/db/**/*",
+        "src/main/dialogs/**/*",
+        "src/main/features/**/*",
+        "src/main/functions/**/*",
+        "src/main/message-control/**/*",
+        "src/main/platforms/**/*"
+    ]
 }

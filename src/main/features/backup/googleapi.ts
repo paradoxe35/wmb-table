@@ -13,10 +13,10 @@ import { setUserAuthAccessStatus } from '@main/message-control/handlers/backup';
 import log from 'electron-log';
 
 const SCOPES = [
-  'https://www.googleapis.com/auth/userinfo.profile',
-  'https://www.googleapis.com/auth/userinfo.email',
-  'https://www.googleapis.com/auth/drive.appdata',
-  'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/drive.appdata',
+    'https://www.googleapis.com/auth/drive.file',
 ];
 
 const TOKEN_PATH = getAssetCredentialsPath('google-client-token.json');
@@ -29,61 +29,61 @@ const writeFile = promisify(fs.writeFile);
  * @param {Object} credentials The authorization client credentials.
  */
 async function authorize(
-  credentials: any,
-  login: boolean = false,
-  overwriteClientToken: boolean = false
+    credentials: any,
+    login: boolean = false,
+    overwriteClientToken: boolean = false,
 ): Promise<OAuth2Client | null> {
-  const { client_secret, client_id, redirect_uris } = credentials.installed;
+    const { client_secret, client_id, redirect_uris } = credentials.installed;
 
-  // start webserver from child process
+    // start webserver from child process
 
-  process.env.CHLD_APP_NAME = APP_NAME;
-  process.env.CHLD_WEBSITE_LINK = process.env.WEBSITE_LINK;
+    process.env.CHLD_APP_NAME = APP_NAME;
+    process.env.CHLD_WEBSITE_LINK = process.env.WEBSITE_LINK;
 
-  const child = childProcess.fork(childsProcessesPath('loggedin.js'), {
-    env: process.env,
-  });
-
-  // wait port information from child process server
-  const port = await new Promise<number>((resolve) => {
-    child.once('message', (message: ChildProcessMessage<number>) => {
-      if (message.type === 'port') {
-        resolve(message.data);
-      } else {
-        resolve(0);
-      }
+    const child = childProcess.fork(childsProcessesPath('loggedin.js'), {
+        env: process.env,
     });
-  });
 
-  // @ts-ignore
-  let oAuth2Client: OAuth2Client | null = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    `${redirect_uris[1]}:${port}`
-  );
+    // wait port information from child process server
+    const port = await new Promise<number>((resolve) => {
+        child.once('message', (message: ChildProcessMessage<number>) => {
+            if (message.type === 'port') {
+                resolve(message.data);
+            } else {
+                resolve(0);
+            }
+        });
+    });
 
-  const access = async (oAuth2Client: OAuth2Client | null) =>
-    login && oAuth2Client ? await getAccessToken(oAuth2Client, child) : null;
+    // @ts-ignore
+    let oAuth2Client: OAuth2Client | null = new google.auth.OAuth2(
+        client_id,
+        client_secret,
+        `${redirect_uris[1]}:${port}`,
+    );
 
-  let oneAccess: boolean = false;
+    const access = async (oAuth2Client: OAuth2Client | null) =>
+        login && oAuth2Client ? await getAccessToken(oAuth2Client, child) : null;
 
-  try {
-    if (!overwriteClientToken) {
-      const token = await readFile(TOKEN_PATH);
-      oAuth2Client?.setCredentials(JSON.parse(token.toString('utf-8')));
-    } else {
-      oneAccess = true;
-      oAuth2Client = await access(oAuth2Client);
+    let oneAccess: boolean = false;
+
+    try {
+        if (!overwriteClientToken) {
+            const token = await readFile(TOKEN_PATH);
+            oAuth2Client?.setCredentials(JSON.parse(token.toString('utf-8')));
+        } else {
+            oneAccess = true;
+            oAuth2Client = await access(oAuth2Client);
+        }
+    } catch (error) {
+        if (!oneAccess && !overwriteClientToken) {
+            oAuth2Client = await access(oAuth2Client);
+        }
     }
-  } catch (error) {
-    if (!oneAccess && !overwriteClientToken) {
-      oAuth2Client = await access(oAuth2Client);
-    }
-  }
 
-  child.kill('SIGINT');
+    child.kill('SIGINT');
 
-  return oAuth2Client;
+    return oAuth2Client;
 }
 
 /**
@@ -93,68 +93,68 @@ async function authorize(
  * @param {getEventsCallback} callback The callback for the authorized client.
  */
 async function getAccessToken(oAuth2Client: OAuth2Client, child: ChildProcess) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: 'offline',
-    scope: SCOPES,
-  });
-
-  shell.openExternal(authUrl);
-  let timer: NodeJS.Timeout | null = null;
-
-  try {
-    const requestForCodePromise = new Promise<string | null>((resolve) => {
-      child.once('message', (message: ChildProcessMessage<string | null>) => {
-        message.type === 'code' && resolve(message.data);
-        message.type !== 'code' && resolve(null);
-      });
+    const authUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: SCOPES,
     });
 
-    // make the promise cancellable
-    const requestForCode = cancellablePromise(requestForCodePromise);
+    shell.openExternal(authUrl);
+    let timer: NodeJS.Timeout | null = null;
 
-    timer = setTimeout(() => {
-      if (requestForCode.reject) {
-        requestForCode.reject('TIMEOUT');
-      }
-    }, 3 * 60000);
+    try {
+        const requestForCodePromise = new Promise<string | null>((resolve) => {
+            child.once('message', (message: ChildProcessMessage<string | null>) => {
+                message.type === 'code' && resolve(message.data);
+                message.type !== 'code' && resolve(null);
+            });
+        });
 
-    // now wait for response
-    const code = await requestForCode;
+        // make the promise cancellable
+        const requestForCode = cancellablePromise(requestForCodePromise);
 
-    // remove timeout timer
-    timer && clearTimeout(timer);
+        timer = setTimeout(() => {
+            if (requestForCode.reject) {
+                requestForCode.reject('TIMEOUT');
+            }
+        }, 3 * 60000);
 
-    return code ? await storeClientToken(oAuth2Client, code) : null;
-  } catch (error) {
-    log.error('signin error: ', error?.message || error);
-    timer && clearTimeout(timer);
-    return null;
-  }
+        // now wait for response
+        const code = await requestForCode;
+
+        // remove timeout timer
+        timer && clearTimeout(timer);
+
+        return code ? await storeClientToken(oAuth2Client, code) : null;
+    } catch (error) {
+        log.error('signin error: ', error?.message || error);
+        timer && clearTimeout(timer);
+        return null;
+    }
 }
 
 function checkHasAllPermission(token: any): boolean {
-  if (!token.scope) return true;
-  const ntoken: { scope: string | string[] } = token;
-  let scopes: string[] = [];
+    if (!token.scope) return true;
+    const ntoken: { scope: string | string[] } = token;
+    let scopes: string[] = [];
 
-  if (typeof ntoken.scope === 'string') {
-    scopes = ntoken.scope.split(' ').map((d: string) => d.trim());
-  } else if (Array.isArray(ntoken.scope)) {
-    scopes = ntoken.scope.map((d: string) => d.trim());
-  } else {
-    return true;
-  }
-
-  let has = true;
-  SCOPES.forEach((permission) => {
-    if (!scopes.includes(permission)) {
-      has = false;
+    if (typeof ntoken.scope === 'string') {
+        scopes = ntoken.scope.split(' ').map((d: string) => d.trim());
+    } else if (Array.isArray(ntoken.scope)) {
+        scopes = ntoken.scope.map((d: string) => d.trim());
+    } else {
+        return true;
     }
-  });
 
-  setUserAuthAccessStatus(has);
+    let has = true;
+    SCOPES.forEach((permission) => {
+        if (!scopes.includes(permission)) {
+            has = false;
+        }
+    });
 
-  return has;
+    setUserAuthAccessStatus(has);
+
+    return has;
 }
 
 /**
@@ -163,58 +163,53 @@ function checkHasAllPermission(token: any): boolean {
  * @param oAuth2Client
  * @param code
  */
-function storeClientToken(
-  oAuth2Client: OAuth2Client,
-  code: string
-): Promise<OAuth2Client | null> {
-  return new Promise((resolve) => {
-    oAuth2Client.getToken(code, (err, token) => {
-      if (err || !token) {
-        resolve(null);
-        return log.error('Error retrieving access token', err);
-      }
+function storeClientToken(oAuth2Client: OAuth2Client, code: string): Promise<OAuth2Client | null> {
+    return new Promise((resolve) => {
+        oAuth2Client.getToken(code, (err, token) => {
+            if (err || !token) {
+                resolve(null);
+                return log.error('Error retrieving access token', err);
+            }
 
-      checkHasAllPermission({ ...token });
+            checkHasAllPermission({ ...token });
 
-      oAuth2Client.setCredentials(token as any);
-      // Store the token to disk for later program executions
-      writeFile(TOKEN_PATH, JSON.stringify(token))
-        .then(() => resolve(oAuth2Client))
-        .catch((err) => {
-          resolve(null);
-          log.error(err);
+            oAuth2Client.setCredentials(token as any);
+            // Store the token to disk for later program executions
+            writeFile(TOKEN_PATH, JSON.stringify(token))
+                .then(() => resolve(oAuth2Client))
+                .catch((err) => {
+                    resolve(null);
+                    log.error(err);
+                });
         });
     });
-  });
 }
 
 export default async function googleOAuth2(
-  login: boolean = false,
-  overwriteClientToken: boolean = false
+    login: boolean = false,
+    overwriteClientToken: boolean = false,
 ): Promise<OAuth2Client | null> {
-  try {
-    const content = await readFile(
-      getAssetCredentialsPath('google-drive-credentials.json')
-    );
-    const client = await authorize(
-      JSON.parse(content.toString('utf-8')),
-      login,
-      overwriteClientToken
-    );
-    setOAuth2Client(client);
-    return client;
-  } catch (error) {
-    log.log('Error loading client secret file:', error?.message || error);
-  }
-  return null;
+    try {
+        const content = await readFile(getAssetCredentialsPath('google-drive-credentials.json'));
+        const client = await authorize(
+            JSON.parse(content.toString('utf-8')),
+            login,
+            overwriteClientToken,
+        );
+        setOAuth2Client(client);
+        return client;
+    } catch (error) {
+        log.log('Error loading client secret file:', error?.message || error);
+    }
+    return null;
 }
 
 export async function getUserInfo(oAuth2Client: OAuth2Client) {
-  const auth = google.oauth2({
-    // @ts-ignore
-    auth: oAuth2Client,
-    version: 'v2',
-  });
-  const userInfo = await auth.userinfo.get();
-  return userInfo.data;
+    const auth = google.oauth2({
+        // @ts-ignore
+        auth: oAuth2Client,
+        version: 'v2',
+    });
+    const userInfo = await auth.userinfo.get();
+    return userInfo.data;
 }
