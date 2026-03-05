@@ -116,7 +116,7 @@ function ContentModal({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             padding: '8px 0',
-                            borderBottom: '1px solid #f0f0f0',
+                            borderBottom: '1px solid var(--ant-color-border)',
                         }}
                     >
                         <div
@@ -134,7 +134,12 @@ function ContentModal({
                                 <div>
                                     <a>{item.label}</a>
                                 </div>
-                                <div style={{ fontSize: '0.85em', color: '#888' }}>
+                                <div
+                                    style={{
+                                        fontSize: '0.85em',
+                                        color: 'var(--ant-color-text-secondary)',
+                                    }}
+                                >
                                     {assigned
                                         ? `Référencé à: ${getSermon(item.documentTitle)?.title || item.documentTitle}`
                                         : 'Aucun document attribué à cette référence'}

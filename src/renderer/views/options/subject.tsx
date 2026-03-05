@@ -236,7 +236,12 @@ function ItemFromSelectedSubject({
                             <div style={{ fontWeight: 500 }}>
                                 {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
                             </div>
-                            <div style={{ fontSize: '0.85em', color: '#888' }}>
+                            <div
+                                style={{
+                                    fontSize: '0.85em',
+                                    color: 'var(--ant-color-text-secondary)',
+                                }}
+                            >
                                 Référence: Biblique
                             </div>
                             <span className="content-description-2">{item.bible.content}</span>
@@ -253,7 +258,12 @@ function ItemFromSelectedSubject({
                                     </DocumentViewer>
                                 </a>
                             </div>
-                            <div style={{ fontSize: '0.85em', color: '#888' }}>
+                            <div
+                                style={{
+                                    fontSize: '0.85em',
+                                    color: 'var(--ant-color-text-secondary)',
+                                }}
+                            >
                                 Référence: Document
                             </div>
                             <span className="content-description-2">{item.textContent}...</span>

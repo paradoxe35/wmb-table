@@ -62,10 +62,12 @@ export default function History() {
                                                 alignItems: 'center',
                                                 gap: 8,
                                                 padding: '8px 0',
-                                                borderBottom: '1px solid #f0f0f0',
+                                                borderBottom: '1px solid var(--ant-color-border)',
                                             }}
                                         >
-                                            <HistoryOutlined style={{ color: '#999' }} />
+                                            <HistoryOutlined
+                                                style={{ color: 'var(--ant-color-text-secondary)' }}
+                                            />
                                             <div>
                                                 <div>
                                                     <a>
@@ -75,7 +77,12 @@ export default function History() {
                                                         </DocumentViewer>
                                                     </a>
                                                 </div>
-                                                <div style={{ fontSize: '0.85em', color: '#888' }}>
+                                                <div
+                                                    style={{
+                                                        fontSize: '0.85em',
+                                                        color: 'var(--ant-color-text-secondary)',
+                                                    }}
+                                                >
                                                     {item.date} - {item.time}
                                                 </div>
                                             </div>

@@ -110,7 +110,13 @@ export default function DocumentAudioPlayer() {
                         {title}
                     </h3>
                     {traduction && (
-                        <div style={{ color: '#888', fontSize: '0.9em', marginBottom: 16 }}>
+                        <div
+                            style={{
+                                color: 'var(--ant-color-text-secondary)',
+                                fontSize: '0.9em',
+                                marginBottom: 16,
+                            }}
+                        >
                             Langue: <i>{traduction}</i>
                         </div>
                     )}
@@ -129,7 +135,7 @@ export default function DocumentAudioPlayer() {
                             display: 'flex',
                             justifyContent: 'space-between',
                             fontSize: '0.8em',
-                            color: '#888',
+                            color: 'var(--ant-color-text-secondary)',
                         }}
                     >
                         <span>{formatTime(currentTime)}</span>

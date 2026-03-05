@@ -272,7 +272,7 @@ function BookContent({
                                         alignItems: 'flex-start',
                                         justifyContent: 'space-between',
                                         padding: '8px 0',
-                                        borderBottom: '1px solid #f0f0f0',
+                                        borderBottom: '1px solid var(--ant-color-border)',
                                     }}
                                 >
                                     <div style={{ display: 'flex', gap: 8, flex: 1 }}>

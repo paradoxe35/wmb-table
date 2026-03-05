@@ -6,7 +6,7 @@ import { ContentApp } from './content-app';
 
 const appTheme = {
     token: {
-        colorPrimary: '#4a6fa5',
+        colorPrimary: '#1990ff',
         colorBgContainer: '#ffffff',
         colorBgLayout: '#f5f6f8',
         borderRadius: 6,
@@ -22,13 +22,10 @@ const appTheme = {
             headerHeight: 48,
             headerPadding: '0',
             siderBg: '#ffffff',
-            bodyBg: '#f5f6f8',
         },
         Menu: {
             darkItemBg: '#001528',
             darkItemSelectedBg: '#002040',
-            itemSelectedBg: '#e8f0fe',
-            itemSelectedColor: '#4a6fa5',
         },
         Card: { borderRadiusLG: 8 },
         Collapse: { headerBg: '#fafbfc', contentBg: '#ffffff' },

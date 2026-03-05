@@ -36,7 +36,7 @@ if (process.env.NODE_ENV === 'development') {
     DecoupledDocumentEditor = require('./ckeditor/ckeditor');
 }
 
-function styleProperty(color = '#fff') {
+function styleProperty(color = 'var(--ant-color-bg-container)') {
     return {
         backgroundColor: color,
     };

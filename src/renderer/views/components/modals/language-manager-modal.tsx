@@ -52,9 +52,13 @@ function LanguageRow({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '10px 12px',
-                borderBottom: '1px solid #f0f0f0',
+                borderBottom: '1px solid var(--ant-color-border)',
                 cursor: lang.installed && !isActive ? 'pointer' : 'default',
-                background: isActive ? '#e8f0fe' : lang.installed ? undefined : '#fafafa',
+                background: isActive
+                    ? 'var(--ant-color-primary-bg)'
+                    : lang.installed
+                      ? undefined
+                      : 'var(--ant-color-bg-layout)',
                 borderRadius: 4,
                 transition: 'background 0.15s',
             }}
@@ -265,7 +269,12 @@ export default function LanguageManagerModal() {
             ) : (
                 <>
                     {!hasInstalledLanguages && (
-                        <div style={{ padding: '4px 0 12px', color: '#666' }}>
+                        <div
+                            style={{
+                                padding: '4px 0 12px',
+                                color: 'var(--ant-color-text-secondary)',
+                            }}
+                        >
                             Téléchargez une langue pour commencer
                         </div>
                     )}
@@ -278,7 +287,13 @@ export default function LanguageManagerModal() {
                     />
                     <div style={{ maxHeight: 400, overflow: 'auto' }}>
                         {filteredLanguages.length === 0 ? (
-                            <div style={{ padding: '16px 0', textAlign: 'center', color: '#999' }}>
+                            <div
+                                style={{
+                                    padding: '16px 0',
+                                    textAlign: 'center',
+                                    color: 'var(--ant-color-text-secondary)',
+                                }}
+                            >
                                 Aucune langue trouvée
                             </div>
                         ) : (

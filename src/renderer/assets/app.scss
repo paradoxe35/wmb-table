@@ -1,20 +1,9 @@
 // ============================================================================
 // WMB Table — Global Stylesheet
+//
+// All colors come from antd's ConfigProvider theme tokens, exposed as CSS
+// variables (--ant-*). Do NOT duplicate color values here — edit App.tsx.
 // ============================================================================
-
-// ---------------------------------------------------------------------------
-// Variables
-// ---------------------------------------------------------------------------
-$color-primary: #4a6fa5;
-$color-primary-light: #e8f0fe;
-$color-bg-base: #f5f6f8;
-$color-bg-white: #ffffff;
-$color-border: #e8eaed;
-$color-text: #1f2937;
-$color-text-secondary: #6b7280;
-$color-header-bg: #001528;
-$color-header-active: #002040;
-$radius: 6px;
 
 // ---------------------------------------------------------------------------
 // Reset
@@ -24,7 +13,6 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
-    font-size: 14px;
     height: 100%;
 }
 
@@ -76,7 +64,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: $color-header-bg;
+    background: var(--ant-layout-header-bg);
     height: 48px;
     padding: 0;
     -webkit-app-region: drag;
@@ -105,7 +93,7 @@ body {
 .site-layout-content {
     overflow: auto;
     flex: 1;
-    background: $color-bg-base;
+    background: var(--ant-color-bg-layout);
 }
 
 .main-content {
@@ -114,8 +102,8 @@ body {
 }
 
 .layout__sidebar {
-    background: $color-bg-white;
-    border-inline-end: 1px solid $color-border;
+    background: var(--ant-color-bg-container);
+    border-inline-end: 1px solid var(--ant-color-border);
     overflow: hidden;
 }
 
@@ -136,16 +124,16 @@ body {
     padding: 8px 10px;
     cursor: pointer;
     border-left: 3px solid transparent;
-    border-radius: 0 $radius $radius 0;
+    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
     transition: all 0.15s ease;
 
     &:hover {
-        background: rgba($color-primary, 0.04);
+        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
     }
 
     &--active {
-        border-left-color: $color-primary;
-        background: $color-primary-light;
+        border-left-color: var(--ant-color-primary);
+        background: var(--ant-color-primary-bg);
     }
 
     &__left {
@@ -168,12 +156,12 @@ body {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: $color-text;
+        color: var(--ant-color-text);
     }
 
     &__en-title {
         font-size: 0.8em;
-        color: $color-text-secondary;
+        color: var(--ant-color-text-secondary);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -181,7 +169,7 @@ body {
 
     &__date {
         font-size: 0.78em;
-        color: $color-text-secondary;
+        color: var(--ant-color-text-secondary);
         margin-top: 2px;
     }
 
@@ -194,12 +182,12 @@ body {
 
     &__city {
         font-size: 0.7em;
-        color: $color-text-secondary;
+        color: var(--ant-color-text-secondary);
     }
 
     &__audio {
         font-size: 0.75em;
-        color: $color-primary;
+        color: var(--ant-color-primary);
     }
 }
 
@@ -220,7 +208,7 @@ body {
 // ---------------------------------------------------------------------------
 .panel-tabs {
     display: flex;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid var(--ant-color-border);
     position: relative;
 }
 
@@ -232,16 +220,16 @@ body {
     border: none;
     cursor: pointer;
     font-size: 0.8em;
-    color: $color-text-secondary;
+    color: var(--ant-color-text-secondary);
     position: relative;
     transition: color 0.15s ease;
 
     &:hover {
-        color: $color-text;
+        color: var(--ant-color-text);
     }
 
     &--active {
-        color: $color-primary;
+        color: var(--ant-color-primary);
         font-weight: 500;
     }
 
@@ -251,7 +239,7 @@ body {
         left: 0;
         right: 0;
         height: 2px;
-        background: $color-primary;
+        background: var(--ant-color-primary);
         border-radius: 1px;
     }
 }
@@ -260,7 +248,7 @@ body {
 // Chrome tabs (document tabs)
 // ---------------------------------------------------------------------------
 .chrome-tabs-wrapper {
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid var(--ant-color-border);
     display: flex;
     align-items: stretch;
     position: relative;
@@ -284,23 +272,23 @@ body {
     width: 24px;
     flex-shrink: 0;
     border: none;
-    background: $color-bg-white;
+    background: var(--ant-color-bg-container);
     cursor: pointer;
-    color: $color-text-secondary;
+    color: var(--ant-color-text-secondary);
     font-size: 10px;
     z-index: 1;
 
     &:hover {
-        background: rgba($color-primary, 0.06);
-        color: $color-text;
+        background: color-mix(in srgb, var(--ant-color-primary) 6%, transparent);
+        color: var(--ant-color-text);
     }
 
     &--left {
-        border-right: 1px solid $color-border;
+        border-right: 1px solid var(--ant-color-border);
     }
 
     &--right {
-        border-left: 1px solid $color-border;
+        border-left: 1px solid var(--ant-color-border);
     }
 }
 
@@ -322,12 +310,12 @@ body {
         border-color 0.15s ease;
 
     &:hover {
-        background: rgba($color-primary, 0.04);
+        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
     }
 
     &--active {
-        border-bottom-color: $color-primary;
-        background: $color-bg-white;
+        border-bottom-color: var(--ant-color-primary);
+        background: var(--ant-color-bg-container);
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
     }
 
@@ -361,9 +349,9 @@ body {
 .subject-panel {
     width: 95%;
     min-height: 300px;
-    background: $color-bg-white;
-    border-radius: $radius;
-    border: 1px solid $color-border;
+    background: var(--ant-color-bg-container);
+    border-radius: var(--ant-border-radius);
+    border: 1px solid var(--ant-color-border);
 }
 
 .subject-item {
@@ -372,22 +360,22 @@ body {
     padding: 10px 12px;
     cursor: pointer;
     border-left: 3px solid transparent;
-    border-radius: 0 $radius $radius 0;
+    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
     transition: all 0.15s ease;
     margin-bottom: 2px;
 
     &:hover {
-        background: rgba($color-primary, 0.04);
+        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
     }
 
     &.active {
-        border-left-color: $color-primary;
-        background: $color-primary-light;
+        border-left-color: var(--ant-color-primary);
+        background: var(--ant-color-primary-bg);
     }
 
     .o-icon {
         margin-right: 10px;
-        color: $color-text-secondary;
+        color: var(--ant-color-text-secondary);
     }
 }
 
@@ -400,21 +388,21 @@ body {
     padding: 8px 10px;
     cursor: pointer;
     border-left: 3px solid transparent;
-    border-radius: 0 $radius $radius 0;
+    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
     transition: all 0.15s ease;
 
     &:hover {
-        background: rgba($color-primary, 0.04);
+        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
     }
 
     &.active {
-        border-left-color: $color-primary;
-        background: $color-primary-light;
+        border-left-color: var(--ant-color-primary);
+        background: var(--ant-color-primary-bg);
     }
 
     .o-icon {
         margin-right: 10px;
-        color: $color-text-secondary;
+        color: var(--ant-color-text-secondary);
     }
 }
 
@@ -422,12 +410,12 @@ body {
 // Content descriptions
 // ---------------------------------------------------------------------------
 .content-description {
-    color: $color-text;
+    color: var(--ant-color-text);
     font-size: 1.1em;
 }
 
 .content-description-2 {
-    color: $color-text-secondary;
+    color: var(--ant-color-text-secondary);
     font-size: 1em;
 }
 
@@ -458,7 +446,7 @@ body {
     transition: background 0.15s ease;
 
     &:hover {
-        background: rgba($color-primary, 0.02);
+        background: color-mix(in srgb, var(--ant-color-primary) 2%, transparent);
     }
 }
 
@@ -482,12 +470,12 @@ body {
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: $color-bg-white;
+    background: var(--ant-color-bg-container);
 }
 
 .sermon-meta-detail {
     margin-left: 8px;
-    color: #888;
+    color: var(--ant-color-text-secondary);
     font-size: 0.9em;
 }
 
@@ -510,12 +498,12 @@ body {
     justify-content: space-between;
     margin: 12px 0;
     padding-bottom: 12px;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid var(--ant-color-border);
 }
 
 .editor-container {
     padding: 20px;
-    border-radius: $radius;
+    border-radius: var(--ant-border-radius);
 }
 
 // ---------------------------------------------------------------------------
@@ -549,8 +537,8 @@ body {
     align-items: center;
     height: 56px;
     padding: 0 16px;
-    border-top: 1px solid $color-border;
-    background: $color-bg-white;
+    border-top: 1px solid var(--ant-color-border);
+    background: var(--ant-color-bg-container);
     gap: 12px;
     flex-shrink: 0;
 }

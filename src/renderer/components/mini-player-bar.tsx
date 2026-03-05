@@ -231,7 +231,14 @@ export default function MiniPlayerBar() {
                 tooltip={{ formatter: (v) => formatTime(v ?? 0) }}
                 style={{ flex: 1, margin: '0 8px' }}
             />
-            <span style={{ fontSize: '0.8em', color: '#888', minWidth: 80, textAlign: 'center' }}>
+            <span
+                style={{
+                    fontSize: '0.8em',
+                    color: 'var(--ant-color-text-secondary)',
+                    minWidth: 80,
+                    textAlign: 'center',
+                }}
+            >
                 {formatTime(currentTime)} / {formatTime(duration)}
             </span>
             <Dropdown menu={{ items: speedMenuItems }} trigger={['click']}>
@@ -245,7 +252,7 @@ export default function MiniPlayerBar() {
                     <div
                         style={{
                             padding: '8px 12px',
-                            background: '#fff',
+                            background: 'var(--ant-color-bg-container)',
                             borderRadius: 6,
                             boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                         }}

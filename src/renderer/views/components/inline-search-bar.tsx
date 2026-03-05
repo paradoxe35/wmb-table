@@ -94,7 +94,14 @@ export default function InlineSearchBar() {
                 style={{ width: 220 }}
                 allowClear
             />
-            <span style={{ fontSize: '0.8em', color: '#888', minWidth: 50, textAlign: 'center' }}>
+            <span
+                style={{
+                    fontSize: '0.8em',
+                    color: 'var(--ant-color-text-secondary)',
+                    minWidth: 50,
+                    textAlign: 'center',
+                }}
+            >
                 {totalMatches > 0 ? `${currentMatchIndex + 1} / ${totalMatches}` : '0 / 0'}
             </span>
             <Button
