@@ -5,7 +5,7 @@ import type { SermonMetaWithTraductions } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
 import { useSermonStore, useCustomDocumentsStore, selectActiveTabTitle } from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
-import { useOpenDocument } from '@renderer/hooks';
+import { useOpenDocument, useOpenCustomDocument } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
@@ -63,7 +63,7 @@ export default function SidebarDocuments() {
 const DocumentsAdded = () => {
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const activeTitle = useSermonStore(selectActiveTabTitle);
-    const openDocument = useOpenDocument();
+    const openCustomDocument = useOpenCustomDocument();
 
     return (
         <ContainerScrollY style={{ paddingLeft: '10px' }}>
@@ -71,7 +71,7 @@ const DocumentsAdded = () => {
                 <div
                     key={d.id || i}
                     className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                    onClick={() => openDocument(d.title)}
+                    onClick={() => openCustomDocument(d.title)}
                 >
                     <div className="sidebar-item__left">
                         <div className="sidebar-item__title">{d.title}</div>

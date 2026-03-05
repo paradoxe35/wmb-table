@@ -149,20 +149,15 @@ const api = {
         setSidebarStatus: (hidden: boolean) => invoke(AppChannels.setSidebarStatus, hidden),
         getCustomDocuments: () => invoke(AppChannels.getCustomDocuments),
         deleteCustomDocument: (id: string) => invoke(AppChannels.deleteCustomDocument, id),
-        uploadCustomDocuments: (docs: unknown[]) => invoke(AppChannels.uploadCustomDocuments, docs),
+        createCustomDocument: (title: string, pdfBytes: Uint8Array) =>
+            invoke(AppChannels.createCustomDocument, title, pdfBytes),
+        getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
         getHistory: () => invoke(AppChannels.getHistory),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
-        downloadDocumentPdf: (title: string) => invoke(AppChannels.downloadDocumentPdf, title),
         openExternal: (url: string) => shell.openExternal(url),
     },
 
     on: {
-        customDocumentUploadProgress: (cb: (p: unknown) => void) =>
-            onPush(PushChannels.customDocumentUploadProgress, cb),
-        customDocumentConnectionRequired: (cb: () => void) =>
-            onPush(PushChannels.customDocumentConnectionRequired, cb as () => void),
-        customDocumentUploadedFile: (cb: (doc: unknown) => void) =>
-            onPush(PushChannels.customDocumentUploadedFile, cb),
         openModalDocumentFromMain: (cb: () => void) =>
             onPush(PushChannels.openModalDocumentFromMain, cb as () => void),
         backupProgression: (cb: (event: unknown) => void) =>
@@ -179,8 +174,6 @@ const api = {
         switchOnOptions: (cb: () => void) => onPush(PushChannels.switchOnOptions, cb as () => void),
         changeMenuViewer: (cb: (value: string) => void) =>
             onPush(PushChannels.changeMenuViewer, cb),
-        downloadDocumentPdfProgress: (cb: (progress: number) => void) =>
-            onPush(PushChannels.downloadDocumentPdfProgress, cb),
         downloadAudioProgress: (cb: (progress: unknown) => void) =>
             onPush(PushChannels.downloadAudioProgress, cb),
         newSynchronizedDatas: (cb: () => void) =>

@@ -21,7 +21,6 @@ export const CHILD_PARENT_WINDOW_EVENT = {
     addDocumentRefSubject: 'add-document-ref-subject',
     addDocumentRefNote: 'add-document-ref-note',
     openOtherTraductionsModal: 'open-other-traductions-modal',
-    downloadDocumentPdf: 'download-document-pdf',
     audioDocumentPlay: 'audio-document-play',
     noSelectableDocumentText: 'no-selectable-document-text',
 } as const;

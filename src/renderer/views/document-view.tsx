@@ -13,8 +13,10 @@ import {
     useSearchStore,
     useSubjectsStore,
     useAppStore,
+    useCustomDocumentsStore,
     selectActiveTabTitle,
     selectActiveTab,
+    selectActiveTabType,
 } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 import { simpleRegExp } from '@renderer/utils/searchable';
@@ -24,6 +26,7 @@ import {
     type SermonMetaWithTraductions,
     type SermonParagraph as SermonParagraphType,
     type ParagraphReference,
+    type CustomDocumentContent,
     isParagraphReference,
 } from '@shared/types';
 import { ModalSearchDocument } from './components/modals/modal-search-document';
@@ -365,10 +368,10 @@ const SermonParagraphView = memo(function SermonParagraphView({
 });
 
 // ---------------------------------------------------------------------------
-// Main component
+// Sermon document view
 // ---------------------------------------------------------------------------
 
-export default function DocumentView() {
+function SermonDocumentView() {
     const { content, loading } = useSermonContent();
     const containerRef = useRef<HTMLDivElement>(null);
     const { zoom } = useScrollAndZoom(containerRef);
@@ -381,7 +384,6 @@ export default function DocumentView() {
 
     return (
         <>
-            <DocumentTabs />
             <Content className="mock-browser-content">
                 {loading && (
                     <div className="flex flex-center" style={{ marginTop: '2rem' }}>
@@ -408,6 +410,117 @@ export default function DocumentView() {
                 )}
             </Content>
             <ModalSearchDocument title={activeTitle ?? ''} />
+        </>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Custom document view
+// ---------------------------------------------------------------------------
+
+function CustomDocumentView() {
+    const activeTab = useSermonStore(selectActiveTab);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
+    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { zoom } = useScrollAndZoom(containerRef);
+    const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    const customDoc = useMemo(
+        () => customDocuments.find((d) => d.title === activeTitle),
+        [customDocuments, activeTitle],
+    );
+
+    useEffect(() => {
+        if (!customDoc) {
+            setDocContent(null);
+            return;
+        }
+        setLoading(true);
+        (
+            window.api.app.getCustomDocumentContent(
+                customDoc.id,
+            ) as Promise<CustomDocumentContent | null>
+        )
+            .then((content) => setDocContent(content))
+            .catch(() => setDocContent(null))
+            .finally(() => setLoading(false));
+    }, [customDoc?.id]);
+
+    const handleZoomIn = useCallback(() => {
+        if (activeTitle) updateTabZoom(activeTitle, Math.min(zoom + 10, 200));
+    }, [activeTitle, zoom, updateTabZoom]);
+
+    const handleZoomOut = useCallback(() => {
+        if (activeTitle) updateTabZoom(activeTitle, Math.max(zoom - 10, 50));
+    }, [activeTitle, zoom, updateTabZoom]);
+
+    const paragraphs = useMemo(
+        () => (docContent?.content ?? '').split('\n').filter((line) => line.trim() !== ''),
+        [docContent?.content],
+    );
+
+    return (
+        <Content className="mock-browser-content">
+            {loading && (
+                <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                    <Spin />
+                </div>
+            )}
+            {!loading && docContent && (
+                <>
+                    <div className="sermon-header">
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                            <strong>{docContent.title}</strong>
+                        </div>
+                        <Space size="small">
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<ZoomOutOutlined />}
+                                onClick={handleZoomOut}
+                            />
+                            <span style={{ fontSize: '0.8em', minWidth: 35, textAlign: 'center' }}>
+                                {zoom}%
+                            </span>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<ZoomInOutlined />}
+                                onClick={handleZoomIn}
+                            />
+                        </Space>
+                    </div>
+                    <div
+                        ref={containerRef}
+                        id={DOCUMENT_CONTAINER_ID}
+                        style={{ overflow: 'auto', zoom: `${zoom}%`, flex: 1 }}
+                    >
+                        {paragraphs.map((text, i) => (
+                            <p key={i} className="sermon-paragraph">
+                                {text}
+                            </p>
+                        ))}
+                    </div>
+                </>
+            )}
+        </Content>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export default function DocumentView() {
+    const tabType = useSermonStore(selectActiveTabType);
+
+    return (
+        <>
+            <DocumentTabs />
+            {tabType === 'custom' ? <CustomDocumentView /> : <SermonDocumentView />}
         </>
     );
 }

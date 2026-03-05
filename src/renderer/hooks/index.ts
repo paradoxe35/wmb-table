@@ -95,6 +95,19 @@ export function useOpenDocument() {
     );
 }
 
+export function useOpenCustomDocument() {
+    const addTab = useSermonStore((s) => s.addTab);
+    const setMainView = useAppStore((s) => s.setMainView);
+
+    return useCallback(
+        (title: string) => {
+            addTab(title, 'custom');
+            setMainView('document');
+        },
+        [addTab, setMainView],
+    );
+}
+
 export function useShowOptions() {
     const showOptions = useAppStore((s) => s.showOptions);
     return showOptions;

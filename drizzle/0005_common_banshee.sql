@@ -1,1 +1,0 @@
-DROP TABLE `sermon_metadata`;

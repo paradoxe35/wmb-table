@@ -13,7 +13,7 @@ import type {
     SubjectDocument,
     SubjectDocumentItem,
     CustomDocument,
-    UploadDocument,
+    CustomDocumentContent,
     HistoryData,
     HistoryDataItem,
     AudioDocumentTime,
@@ -21,7 +21,6 @@ import type {
     AudioDownloadProgress,
     BackupStatus,
     RestoreProgressEvent,
-    CustomDocumentUploadProgress,
     UpdaterNotification,
     ViewMenuValue,
     DocumentHtmlTree,
@@ -133,10 +132,10 @@ export const AppChannels = {
     setSidebarStatus: 'app:setSidebarStatus',
     getCustomDocuments: 'app:getCustomDocuments',
     deleteCustomDocument: 'app:deleteCustomDocument',
-    uploadCustomDocuments: 'app:uploadCustomDocuments',
+    createCustomDocument: 'app:createCustomDocument',
+    getCustomDocumentContent: 'app:getCustomDocumentContent',
     getHistory: 'app:getHistory',
     getHistoryItems: 'app:getHistoryItems',
-    downloadDocumentPdf: 'app:downloadDocumentPdf',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -144,9 +143,6 @@ export const AppChannels = {
 // ---------------------------------------------------------------------------
 
 export const PushChannels = {
-    customDocumentUploadProgress: 'push:customDocumentUploadProgress',
-    customDocumentConnectionRequired: 'push:customDocumentConnectionRequired',
-    customDocumentUploadedFile: 'push:customDocumentUploadedFile',
     openModalDocumentFromMain: 'push:openModalDocumentFromMain',
     backupProgression: 'push:backupProgression',
     backupAccessStatus: 'push:backupAccessStatus',
@@ -157,7 +153,6 @@ export const PushChannels = {
     notifyForNewUpdate: 'push:notifyForNewUpdate',
     switchOnOptions: 'push:switchOnOptions',
     changeMenuViewer: 'push:changeMenuViewer',
-    downloadDocumentPdfProgress: 'push:downloadDocumentPdfProgress',
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
     languageDownloadProgress: 'push:languageDownloadProgress',
@@ -303,20 +298,20 @@ export interface InvokeChannelMap {
     [AppChannels.setSidebarStatus]: { args: [boolean]; return: void };
     [AppChannels.getCustomDocuments]: { args: []; return: CustomDocument[] };
     [AppChannels.deleteCustomDocument]: { args: [string]; return: void };
-    [AppChannels.uploadCustomDocuments]: { args: [UploadDocument[]]; return: void };
+    [AppChannels.createCustomDocument]: { args: [string, Uint8Array]; return: CustomDocument };
+    [AppChannels.getCustomDocumentContent]: {
+        args: [string];
+        return: CustomDocumentContent | null;
+    };
     [AppChannels.getHistory]: { args: []; return: HistoryData[] };
     [AppChannels.getHistoryItems]: {
         args: [string];
         return: HistoryDataItem[];
     };
-    [AppChannels.downloadDocumentPdf]: { args: [string]; return: void };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */
 export interface PushEventMap {
-    [PushChannels.customDocumentUploadProgress]: CustomDocumentUploadProgress;
-    [PushChannels.customDocumentConnectionRequired]: void;
-    [PushChannels.customDocumentUploadedFile]: CustomDocument;
     [PushChannels.openModalDocumentFromMain]: void;
     [PushChannels.backupProgression]: RestoreProgressEvent;
     [PushChannels.backupAccessStatus]: boolean;
@@ -327,7 +322,6 @@ export interface PushEventMap {
     [PushChannels.notifyForNewUpdate]: UpdaterNotification;
     [PushChannels.switchOnOptions]: void;
     [PushChannels.changeMenuViewer]: ViewMenuValue;
-    [PushChannels.downloadDocumentPdfProgress]: number;
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;

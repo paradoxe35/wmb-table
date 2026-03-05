@@ -20,7 +20,6 @@ import UpdaterModal from './views/components/modals/updater-modal';
 import { OtherTraductionsModal } from './views/components/modals/other-traductions-modal';
 import { SubjectSelectModal } from './views/components/modals/subject-select-modal';
 import { NoteReferencesModal } from './views/components/modals/note-references-modal';
-import PdfDocumentDownloader from './views/components/pdf-document-downloader';
 import DocumentAudioPlayer from './views/components/modals/document-audio-player';
 import LanguageManagerModal from './views/components/modals/language-manager-modal';
 
@@ -92,7 +91,6 @@ export function ContentApp() {
             <OtherTraductionsModal />
             <SubjectSelectModal />
             <NoteReferencesModal />
-            <PdfDocumentDownloader />
             <DocumentAudioPlayer />
             <LanguageManagerModal />
         </>

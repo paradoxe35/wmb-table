@@ -5,6 +5,7 @@ export {
     useContainerHeight as useContainerScrollY,
     useContainerHeight,
     useOpenDocument,
+    useOpenCustomDocument,
     useModalVisible,
     useSermonLookup as useDocumentTitle,
     useSermonLookup,

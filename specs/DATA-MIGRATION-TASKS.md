@@ -562,8 +562,11 @@ Create tooling to build Tantivy indexes from source data and publish to GitHub r
 
 ### G.3 — Release Publishing
 
-- [ ] **G.3.1** Upload all `index-*.zip` + `bible-*.zip` to GitHub release (no `index.json` manifest — download URLs derived from `data.sqlite` `language` table fields)
-- [ ] **G.3.2** Verify: app can download and install language packs from release
+- [x] **G.3.1** Create `scripts/extract-language-files.ts` — reads `data.sqlite`, outputs JSON list of 81 languages (code, fileName, url)
+- [x] **G.3.2** Create `scripts/mirror-to-github-release.sh` — downloads all `index-*.zip` from Wasabi S3, uploads to GitHub release `v1.0.0` via GitHub API (`GITHUB_TOKEN`); idempotent, sequential, prompts for token if not set
+- [x] **G.3.3** Add `pnpm mirror:release` script to `package.json`
+- [ ] **G.3.4** Run `pnpm mirror:release` — upload all 81 index files to release
+- [ ] **G.3.5** Verify: app can download and install language packs from GitHub release fallback
 
 ---
 

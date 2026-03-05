@@ -79,6 +79,7 @@ export type DocumentTab = {
     active: boolean;
     zoom?: number;
     translationId?: number;
+    type?: 'sermon' | 'custom';
 };
 
 export type DocumentTreeRanges = {
@@ -264,22 +265,14 @@ export type CurrentAudioDocumentPlay = {
 // ---------------------------------------------------------------------------
 
 export interface CustomDocument extends Readonly<BaseEntity> {
-    documentId: string;
     title: string;
 }
 
-export type UploadDocument = {
-    name: string;
-    path: string;
-};
-
-export type CustomDocumentUploadProgressType = 'progress' | 'finish';
-
-export type CustomDocumentUploadProgress = {
-    type: CustomDocumentUploadProgressType;
-    progress: number;
-    total: number;
-};
+export interface CustomDocumentContent {
+    id: string;
+    title: string;
+    content: string;
+}
 
 // ---------------------------------------------------------------------------
 // History

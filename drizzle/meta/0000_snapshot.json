@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "e82a745c-d313-4aa0-b05e-c64f67f96261",
+    "id": "989f033a-057f-44d7-8df4-ed9a62dd0b22",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "audio_document_last_play": {
@@ -268,6 +268,14 @@
                     "notNull": false,
                     "autoincrement": false,
                     "default": "(datetime('now'))"
+                },
+                "active_language": {
+                    "name": "active_language",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "'en'"
                 }
             },
             "indexes": {},
@@ -300,6 +308,14 @@
                     "notNull": true,
                     "autoincrement": false
                 },
+                "content": {
+                    "name": "content",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "''"
+                },
                 "created_at": {
                     "name": "created_at",
                     "type": "text",
@@ -324,93 +340,6 @@
                     "isUnique": true
                 }
             },
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
-        },
-        "documents_title": {
-            "name": "documents_title",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "text",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "title": {
-                    "name": "title",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "fr_title": {
-                    "name": "fr_title",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "en_title": {
-                    "name": "en_title",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "traduction": {
-                    "name": "traduction",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "web_link": {
-                    "name": "web_link",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "pdf_link": {
-                    "name": "pdf_link",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "audio_link": {
-                    "name": "audio_link",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "date": {
-                    "name": "date",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "date_long": {
-                    "name": "date_long",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
-                "other_traductions": {
-                    "name": "other_traductions",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                }
-            },
-            "indexes": {},
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},

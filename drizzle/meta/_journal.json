@@ -5,43 +5,8 @@
         {
             "idx": 0,
             "version": "6",
-            "when": 1772691070844,
-            "tag": "0000_mysterious_nightmare",
-            "breakpoints": true
-        },
-        {
-            "idx": 1,
-            "version": "6",
-            "when": 1772699777576,
-            "tag": "0001_dear_scorpion",
-            "breakpoints": true
-        },
-        {
-            "idx": 2,
-            "version": "6",
-            "when": 1772701431928,
-            "tag": "0002_milky_azazel",
-            "breakpoints": true
-        },
-        {
-            "idx": 3,
-            "version": "6",
-            "when": 1772702891855,
-            "tag": "0003_freezing_starfox",
-            "breakpoints": true
-        },
-        {
-            "idx": 4,
-            "version": "6",
-            "when": 1772717686837,
-            "tag": "0004_conscious_puff_adder",
-            "breakpoints": true
-        },
-        {
-            "idx": 5,
-            "version": "6",
-            "when": 1772721525204,
-            "tag": "0005_common_banshee",
+            "when": 1772729111920,
+            "tag": "0000_light_may_parker",
             "breakpoints": true
         }
     ]

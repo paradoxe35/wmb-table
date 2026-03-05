@@ -42,32 +42,20 @@ CREATE TABLE `configurations` (
 	`id` text PRIMARY KEY NOT NULL,
 	`app_id` text NOT NULL,
 	`initialized` integer DEFAULT false NOT NULL,
-	`last_check_backup_status` text DEFAULT (datetime('now'))
+	`last_check_backup_status` text DEFAULT (datetime('now')),
+	`active_language` text DEFAULT 'en'
 );
 --> statement-breakpoint
 CREATE TABLE `custom_documents` (
 	`id` text PRIMARY KEY NOT NULL,
 	`document_id` text NOT NULL,
 	`title` text NOT NULL,
+	`content` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `custom_documents_title_unique` ON `custom_documents` (`title`);--> statement-breakpoint
-CREATE TABLE `documents_title` (
-	`id` text PRIMARY KEY NOT NULL,
-	`title` text NOT NULL,
-	`fr_title` text NOT NULL,
-	`en_title` text NOT NULL,
-	`traduction` text,
-	`web_link` text,
-	`pdf_link` text,
-	`audio_link` text,
-	`date` text,
-	`date_long` text,
-	`other_traductions` text
-);
---> statement-breakpoint
 CREATE TABLE `history` (
 	`id` text PRIMARY KEY NOT NULL,
 	`date` text NOT NULL,

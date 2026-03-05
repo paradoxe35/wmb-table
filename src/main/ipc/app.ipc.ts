@@ -2,9 +2,10 @@ import { AppChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as configRepo from '@main/database/repositories/config.repository';
 import * as sidebarRepo from '@main/database/repositories/sidebar.repository';
-import * as documentsRepo from '@main/database/repositories/documents.repository';
+import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import * as historyRepo from '@main/database/repositories/history.repository';
 import { switchBibleLanguage } from '@main/database/index';
+import { extractTextFromPdf } from '@main/services/pdf-extract.service';
 
 export function registerAppHandlers(): void {
     registerHandler(AppChannels.initialize, async () => {
@@ -49,15 +50,20 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.getCustomDocuments, async () => {
-        return documentsRepo.getCustomDocuments();
+        return customDocsRepo.getCustomDocuments();
     });
 
     registerHandler(AppChannels.deleteCustomDocument, async (_event, id) => {
-        documentsRepo.deleteCustomDocument(id);
+        customDocsRepo.deleteCustomDocument(id);
     });
 
-    registerHandler(AppChannels.uploadCustomDocuments, async () => {
-        throw new Error('Not implemented: app:uploadCustomDocuments');
+    registerHandler(AppChannels.createCustomDocument, async (_event, title, pdfBytes) => {
+        const content = await extractTextFromPdf(pdfBytes);
+        return customDocsRepo.createCustomDocument(title, content);
+    });
+
+    registerHandler(AppChannels.getCustomDocumentContent, async (_event, id) => {
+        return customDocsRepo.getCustomDocumentContent(id);
     });
 
     registerHandler(AppChannels.getHistory, async () => {
@@ -66,9 +72,5 @@ export function registerAppHandlers(): void {
 
     registerHandler(AppChannels.getHistoryItems, async (_event, historyId) => {
         return historyRepo.getHistoryItems(historyId);
-    });
-
-    registerHandler(AppChannels.downloadDocumentPdf, async () => {
-        throw new Error('Not implemented: app:downloadDocumentPdf');
     });
 }

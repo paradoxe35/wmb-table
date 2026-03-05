@@ -12,7 +12,7 @@ interface SermonState {
     setSermons(s: SermonMetaWithTraductions[]): void;
     setActiveContent(c: SermonContent | null): void;
     setTabs(tabs: DocumentTab[]): void;
-    addTab(title: string): void;
+    addTab(title: string, type?: 'sermon' | 'custom'): void;
     removeTab(title: string): void;
     activateTab(title: string): void;
     reorderTabs(tabs: DocumentTab[]): void;
@@ -45,16 +45,22 @@ export const useSermonStore = create<SermonState>((set) => ({
     setActiveContent: (c) => set({ activeContent: c }),
     setTabs: (tabs) => set({ tabs }),
 
-    addTab: (title) =>
+    addTab: (title, type) =>
         set((s) => {
-            const exists = s.tabs.some((t) => t.title === title);
+            const tabType = type ?? 'sermon';
+            const exists = s.tabs.some(
+                (t) => t.title === title && (t.type ?? 'sermon') === tabType,
+            );
             if (exists) {
                 return {
-                    tabs: s.tabs.map((t) => ({ ...t, active: t.title === title })),
+                    tabs: s.tabs.map((t) => ({
+                        ...t,
+                        active: t.title === title && (t.type ?? 'sermon') === tabType,
+                    })),
                 };
             }
             const deactivated = s.tabs.map((t) => ({ ...t, active: false }));
-            const newTabs = [...deactivated, { title, active: true }];
+            const newTabs = [...deactivated, { title, active: true, type: tabType }];
             if (newTabs.length > 6) newTabs.shift();
             return { tabs: newTabs };
         }),
@@ -99,4 +105,9 @@ export function selectActiveTabTitle(state: SermonState): string | null {
 
 export function selectActiveTab(state: SermonState): DocumentTab | null {
     return state.tabs.find((t) => t.active) ?? null;
+}
+
+export function selectActiveTabType(state: SermonState): 'sermon' | 'custom' {
+    const active = state.tabs.find((t) => t.active);
+    return active?.type ?? 'sermon';
 }

@@ -1,11 +1,11 @@
 import React from 'react';
-import { useOpenDocument } from '@renderer/hooks';
+import { useOpenCustomDocument } from '@renderer/hooks';
 
 export const useDocumentViewOpen = () => {
-    const openDocument = useOpenDocument();
+    const openCustomDocument = useOpenCustomDocument();
 
     const onClick = (name: string, onItemClick?: () => void) => {
-        openDocument(name);
+        openCustomDocument(name);
         onItemClick?.();
     };
 
