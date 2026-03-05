@@ -10,7 +10,6 @@ import { useOpenDocument, useOpenCustomDocument } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
-import LanguageSelector from '../LanguageSelector';
 
 const { DirectoryTree } = Tree;
 const { Search } = Input;
@@ -30,7 +29,6 @@ export default function SidebarDocuments() {
                     style={{ overflow: 'hidden', flexShrink: 0 }}
                 >
                     <div style={{ width: 265 }} className="layout__sidebar">
-                        <LanguageSelector />
                         <PanelGroup
                             tabs={[
                                 { name: 'Tous', active: true },
@@ -119,19 +117,14 @@ const DocumentByAlphabetic = () => {
 
     return (
         <>
-            <Card bordered={false}>
+            <Card variant="borderless">
                 <Select
                     className="w-100 max-w-100"
                     placeholder="Alphabet"
                     defaultValue={alphabets[0]}
                     onChange={onChangeAlphabetic}
-                >
-                    {alphabets.map((al) => (
-                        <Select.Option key={al} value={al}>
-                            {al}
-                        </Select.Option>
-                    ))}
-                </Select>
+                    options={alphabets.map((al) => ({ value: al, label: al }))}
+                />
             </Card>
             <DocumentList datas={datas} activeTitle={activeTitle} />
         </>
@@ -205,7 +198,7 @@ const DocumentSearch = () => {
 
     return (
         <>
-            <Card bordered={false}>
+            <Card variant="borderless">
                 <Search
                     key={sermons.length}
                     placeholder="Recherche"

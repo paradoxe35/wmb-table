@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
+import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { SermonMetaWithTraductions } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
@@ -52,6 +53,23 @@ export function useInitApp() {
                     window.api.app.getSidebarStatus(),
                     window.api.documents.getTabs(),
                 ]);
+
+                // Validate active language is still installed
+                const validLang = installed.some((l) => l.code === langCode);
+                if (!validLang) {
+                    // Active language no longer exists — prompt user to manage languages
+                    const fallback = installed[0].code;
+                    await window.api.app.setActiveLanguage(fallback);
+                    setActiveLanguage(fallback);
+                    if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
+                    if (tabs?.length) setTabs(tabs);
+                    const sermons = await window.api.documents.getTitles(fallback);
+                    setSermons(sermons);
+                    setTimeout(() => {
+                        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
+                    }, 500);
+                    return;
+                }
 
                 setActiveLanguage(langCode);
                 if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);

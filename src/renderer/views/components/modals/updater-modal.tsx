@@ -157,7 +157,7 @@ export default function Updater() {
                 centered
                 closable={!preventActions}
                 keyboard={!preventActions}
-                maskClosable={!preventActions}
+                mask={{ closable: !preventActions }}
                 title={
                     <>
                         <Space orientation="horizontal">

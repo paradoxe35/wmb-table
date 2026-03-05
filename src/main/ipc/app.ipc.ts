@@ -40,10 +40,6 @@ export function registerAppHandlers(): void {
         quitAndInstall();
     });
 
-    registerHandler(AppChannels.getAsset, async () => {
-        throw new Error('Not implemented: app:getAsset');
-    });
-
     registerHandler(AppChannels.getSidebarStatus, async () => {
         return sidebarRepo.getSidebarStatus();
     });

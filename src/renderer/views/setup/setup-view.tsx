@@ -144,7 +144,7 @@ export default function SetupView() {
                         disabled={!canInstall}
                         loading={!!downloadingLanguage}
                     >
-                        {downloadingLanguage ? 'Installation en cours...' : 'Installer'}
+                        {downloadingLanguage ? 'Téléchargement en cours...' : 'Télécharger'}
                     </Button>
                     <Button
                         type="default"
@@ -161,8 +161,8 @@ export default function SetupView() {
                         <Text type="success">
                             <CheckCircleOutlined />{' '}
                             {installedLanguages.length === 1
-                                ? '1 langue installée'
-                                : `${installedLanguages.length} langues installées`}
+                                ? '1 langue téléchargée'
+                                : `${installedLanguages.length} langues téléchargées`}
                         </Text>
                     </div>
                 )}

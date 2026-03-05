@@ -133,7 +133,6 @@ export const AppChannels = {
     getUpdateStatus: 'app:getUpdateStatus',
     startDownloadUpdate: 'app:startDownloadUpdate',
     quitAndInstallUpdate: 'app:quitAndInstallUpdate',
-    getAsset: 'app:getAsset',
     getSidebarStatus: 'app:getSidebarStatus',
     setSidebarStatus: 'app:setSidebarStatus',
     getCustomDocuments: 'app:getCustomDocuments',
@@ -161,6 +160,7 @@ export const PushChannels = {
     changeMenuViewer: 'push:changeMenuViewer',
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
+    openLanguageManager: 'push:openLanguageManager',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
     bibleDownloadProgress: 'push:bibleDownloadProgress',
@@ -302,7 +302,6 @@ export interface InvokeChannelMap {
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
     [AppChannels.startDownloadUpdate]: { args: []; return: void };
     [AppChannels.quitAndInstallUpdate]: { args: []; return: void };
-    [AppChannels.getAsset]: { args: [string]; return: string };
     [AppChannels.getSidebarStatus]: { args: []; return: SidebarStatus | null };
     [AppChannels.setSidebarStatus]: { args: [boolean]; return: void };
     [AppChannels.getCustomDocuments]: { args: []; return: CustomDocument[] };
@@ -333,6 +332,7 @@ export interface PushEventMap {
     [PushChannels.changeMenuViewer]: ViewMenuValue;
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: string[];
+    [PushChannels.openLanguageManager]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: { langCode: string };
     [PushChannels.bibleDownloadProgress]: { abbreviation: string; percentage: number };

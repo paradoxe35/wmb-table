@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Button, List, Modal, Progress, Spin, message, Typography } from 'antd';
-import { DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import { useEffect, useRef, useState } from 'react';
+import { Button, List, Modal, Progress, Spin, Tag, message, Typography } from 'antd';
+import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useModalVisible } from '@renderer/hooks';
+import { useAppStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type {
     InstalledLanguage,
@@ -23,6 +24,11 @@ export default function LanguageManagerModal() {
     const [available, setAvailable] = useState<DownloadableLanguage[]>([]);
     const [loading, setLoading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+    const wasEmptyRef = useRef(false);
+
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
+    const setSermons = useSermonStore((s) => s.setSermons);
 
     const refresh = () => {
         setLoading(true);
@@ -35,10 +41,25 @@ export default function LanguageManagerModal() {
             .finally(() => setLoading(false));
     };
 
+    // Listen for open events (DOM event + IPC push from menu)
     useEffect(() => {
         const show = () => setVisible(true);
         window.addEventListener(LANGUAGE_EVENT.openLanguageManager, show);
-        return () => window.removeEventListener(LANGUAGE_EVENT.openLanguageManager, show);
+        const unsubPush = window.api.on.openLanguageManager(show);
+        return () => {
+            window.removeEventListener(LANGUAGE_EVENT.openLanguageManager, show);
+            unsubPush();
+        };
+    }, []);
+
+    // Auto-open when no languages installed
+    useEffect(() => {
+        window.api.languages.getInstalled().then((inst) => {
+            if (inst.length === 0) {
+                wasEmptyRef.current = true;
+                setVisible(true);
+            }
+        });
     }, []);
 
     useEffect(() => {
@@ -56,13 +77,26 @@ export default function LanguageManagerModal() {
                 return next;
             });
             refresh();
-            message.success(`Langue installée avec succès`);
+            message.success('Langue t\u00e9l\u00e9charg\u00e9e avec succ\u00e8s');
+
+            // If no active language yet, auto-select this one
+            if (wasEmptyRef.current) {
+                wasEmptyRef.current = false;
+                handleSelectLanguage(langCode);
+            }
         });
         return () => {
             unsub1();
             unsub2();
         };
     }, []);
+
+    const handleSelectLanguage = async (langCode: string) => {
+        setActiveLanguage(langCode);
+        await window.api.app.setActiveLanguage(langCode);
+        const sermons = await window.api.documents.getTitles(langCode);
+        setSermons(sermons);
+    };
 
     const handleInstall = (langCode: string) => {
         setDownloadProgress((prev) => ({ ...prev, [langCode]: 0 }));
@@ -72,45 +106,86 @@ export default function LanguageManagerModal() {
     const handleDelete = async (langCode: string) => {
         await window.api.languages.delete(langCode);
         refresh();
-        message.success('Langue supprimée');
+        message.success('Langue supprim\u00e9e');
     };
 
+    const noLanguages = installed.length === 0 && !loading;
+
     return (
-        <Modal title="Gérer les langues" open={visible} onCancel={hide} footer={null} width={500}>
+        <Modal
+            title="G\u00e9rer les langues"
+            open={visible}
+            onCancel={noLanguages ? undefined : hide}
+            closable={!noLanguages}
+            maskClosable={!noLanguages}
+            footer={null}
+            width={500}
+        >
             {loading ? (
                 <div className="flex flex-center" style={{ padding: '2rem' }}>
                     <Spin />
                 </div>
             ) : (
                 <>
-                    <Text strong>Langues installées</Text>
+                    <Text strong>Langues install\u00e9es</Text>
                     <List
                         size="small"
                         dataSource={installed}
-                        locale={{ emptyText: 'Aucune langue installée' }}
-                        renderItem={(lang) => (
-                            <List.Item
-                                actions={[
-                                    <Button
-                                        key="del"
-                                        danger
-                                        size="small"
-                                        icon={<DeleteOutlined />}
-                                        onClick={() => handleDelete(lang.code)}
-                                        disabled={installed.length <= 1}
-                                    />,
-                                ]}
-                            >
-                                <List.Item.Meta
-                                    title={
-                                        lang.language !== lang.enLanguage
-                                            ? `${lang.language} (${lang.enLanguage})`
-                                            : lang.language
+                        locale={{ emptyText: 'Aucune langue install\u00e9e' }}
+                        renderItem={(lang) => {
+                            const isActive = lang.code === activeLanguage;
+                            return (
+                                <List.Item
+                                    style={{ cursor: isActive ? 'default' : 'pointer' }}
+                                    onClick={
+                                        isActive ? undefined : () => handleSelectLanguage(lang.code)
                                     }
-                                    description={`${lang.sermonsCount} sermons — ${formatSize(lang.sizeOnDisk)}`}
-                                />
-                            </List.Item>
-                        )}
+                                    actions={[
+                                        isActive ? (
+                                            <Tag
+                                                key="active"
+                                                color="green"
+                                                icon={<CheckCircleOutlined />}
+                                            >
+                                                Actif
+                                            </Tag>
+                                        ) : (
+                                            <Button
+                                                key="select"
+                                                size="small"
+                                                type="link"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSelectLanguage(lang.code);
+                                                }}
+                                            >
+                                                S\u00e9lectionner
+                                            </Button>
+                                        ),
+                                        <Button
+                                            key="del"
+                                            danger
+                                            size="small"
+                                            icon={<DeleteOutlined />}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(lang.code);
+                                            }}
+                                            disabled={installed.length <= 1}
+                                        />,
+                                    ]}
+                                >
+                                    <List.Item.Meta
+                                        title={
+                                            lang.language !== lang.enLanguage
+                                                ? `${lang.language} (${lang.enLanguage})`
+                                                : lang.language
+                                        }
+                                        description={`${lang.sermonsCount} sermons \u2014 ${formatSize(lang.sizeOnDisk)}`}
+                                    />
+                                </List.Item>
+                            );
+                        }}
                     />
 
                     {available.length > 0 && (
@@ -138,7 +213,7 @@ export default function LanguageManagerModal() {
                                                     icon={<DownloadOutlined />}
                                                     onClick={() => handleInstall(lang.code)}
                                                 >
-                                                    Installer
+                                                    T\u00e9l\u00e9charger
                                                 </Button>
                                             ),
                                         ]}
@@ -149,7 +224,7 @@ export default function LanguageManagerModal() {
                                                     ? `${lang.language} (${lang.enLanguage})`
                                                     : lang.language
                                             }
-                                            description={`${lang.sermonsAvailable} sermons — ${formatSize(lang.filesize)}`}
+                                            description={`${lang.sermonsAvailable} sermons \u2014 ${formatSize(lang.filesize)}`}
                                         />
                                     </List.Item>
                                 )}

@@ -74,7 +74,7 @@ export default function CustomDocuments() {
                         />
                     </Col>
                     <Col span={2}>
-                        <Divider style={{ minHeight: '250px' }} type="vertical" />
+                        <Divider style={{ minHeight: '250px' }} orientation="vertical" />
                     </Col>
                     <Col span={11}>
                         <UploadForm

@@ -182,7 +182,7 @@ export function ReferenceBibleModal({
                         </Space>
                     </>
                 }
-                visible={isModalVisible}
+                open={isModalVisible}
                 footer={[]}
                 onOk={handleOk}
                 onCancel={handleCancel}
@@ -228,7 +228,7 @@ export function ReferenceBibleModal({
                         </div>
                     </Col>
                     <Col span={1}>
-                        <Divider style={{ minHeight: '250px' }} type="vertical" />
+                        <Divider style={{ minHeight: '250px' }} orientation="vertical" />
                     </Col>
                     <Col span={12}>
                         <div

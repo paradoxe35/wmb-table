@@ -171,7 +171,6 @@ const api = {
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
         startDownloadUpdate: () => invoke(AppChannels.startDownloadUpdate),
         quitAndInstallUpdate: () => invoke(AppChannels.quitAndInstallUpdate),
-        getAsset: (name: string) => invoke(AppChannels.getAsset, name),
         getSidebarStatus: () => invoke(AppChannels.getSidebarStatus),
         setSidebarStatus: (hidden: boolean) => invoke(AppChannels.setSidebarStatus, hidden),
         getCustomDocuments: () => invoke(AppChannels.getCustomDocuments),
@@ -205,6 +204,8 @@ const api = {
             onPush(PushChannels.downloadAudioProgress, cb),
         newSynchronizedDatas: (cb: (tables: string[]) => void) =>
             onPush(PushChannels.newSynchronizedDatas, cb),
+        openLanguageManager: (cb: () => void) =>
+            onPush(PushChannels.openLanguageManager, cb as () => void),
         languageDownloadProgress: (cb: (p: LanguageDownloadProgress) => void) =>
             onPush(PushChannels.languageDownloadProgress, cb),
         languageInstalled: (cb: (p: { langCode: string }) => void) =>

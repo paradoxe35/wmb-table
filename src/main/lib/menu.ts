@@ -168,6 +168,14 @@ export default class MenuBuilder {
                 label: 'Outils',
                 submenu: [
                     {
+                        label: 'Langues',
+                        accelerator: this.isD('Ctrl+L'),
+                        click: () => {
+                            sendToRenderer(this.mainWindow, PushChannels.openLanguageManager);
+                        },
+                    },
+                    { type: 'separator' },
+                    {
                         label: 'Sauvegarde',
                         accelerator: this.isD('Ctrl+Shift+R'),
                         click: () => {
@@ -175,7 +183,7 @@ export default class MenuBuilder {
                         },
                     },
                     {
-                        label: 'Mis à jour',
+                        label: 'Mis \u00e0 jour',
                         accelerator: this.isD('Ctrl+U'),
                         click: () => {
                             sendToRenderer(this.mainWindow, PushChannels.appUpdateMenu);

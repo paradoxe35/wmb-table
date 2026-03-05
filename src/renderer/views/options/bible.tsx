@@ -576,13 +576,8 @@ function InputSearchBible({
                 className="w-100 max-w-100"
                 onChange={onTestamentChange}
                 allowClear
-            >
-                {TESTAMENTS.map((t) => (
-                    <Select.Option key={t.value} value={t.value}>
-                        {t.name}
-                    </Select.Option>
-                ))}
-            </Select>
+                options={TESTAMENTS.map((t) => ({ value: t.value, label: t.name }))}
+            />
         </Space>
     );
 }

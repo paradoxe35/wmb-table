@@ -15,7 +15,6 @@ import LoadByVisibility from './components/load-by-visibility';
 
 import CustomDocumentsModal from './views/components/modals/custom-documents';
 import BackupProfileModal from './views/components/modals/backup-profile-modal';
-import WelcomeModal from './views/components/modals/welcome-modal';
 import UpdaterModal from './views/components/modals/updater-modal';
 import { OtherTraductionsModal } from './views/components/modals/other-traductions-modal';
 import { SubjectSelectModal } from './views/components/modals/subject-select-modal';
@@ -95,7 +94,6 @@ export function ContentApp() {
             {/* independent components */}
             <CustomDocumentsModal />
             <BackupProfileModal />
-            <WelcomeModal />
             <UpdaterModal />
             <OtherTraductionsModal />
             <SubjectSelectModal />
