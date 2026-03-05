@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
-import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { SermonMetaWithTraductions } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
@@ -30,20 +29,18 @@ export const useIpcRequestWithLoader = () => {
 
 export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
-    const setNeedsSetup = useAppStore((s) => s.setNeedsSetup);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
     const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
-    const needsSetup = useAppStore((s) => s.needsSetup);
 
     useEffect(() => {
         (async () => {
             try {
-                // Check if any languages are installed
                 const installed = await window.api.languages.getInstalled();
+
+                // No languages installed — language modal auto-opens itself
                 if (installed.length === 0) {
-                    setNeedsSetup(true);
                     setLoaded(true);
                     return;
                 }
@@ -54,42 +51,25 @@ export function useInitApp() {
                     window.api.documents.getTabs(),
                 ]);
 
-                // Validate active language is still installed
-                const validLang = installed.some((l) => l.code === langCode);
-                if (!validLang) {
-                    // Active language no longer exists — prompt user to manage languages
-                    const fallback = installed[0].code;
-                    await window.api.app.setActiveLanguage(fallback);
-                    setActiveLanguage(fallback);
-                    if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
-                    if (tabs?.length) setTabs(tabs);
-                    const sermons = await window.api.documents.getTitles(fallback);
-                    setSermons(sermons);
-                    setTimeout(() => {
-                        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
-                    }, 500);
-                    return;
-                }
-
-                setActiveLanguage(langCode);
                 if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
                 if (tabs?.length) setTabs(tabs);
 
-                const sermons = await window.api.documents.getTitles(langCode);
+                // Validate active language is still installed
+                const validLang = installed.some((l) => l.code === langCode);
+                const effectiveLang = validLang ? langCode : installed[0].code;
+
+                if (!validLang) {
+                    await window.api.app.setActiveLanguage(effectiveLang);
+                }
+
+                setActiveLanguage(effectiveLang);
+                const sermons = await window.api.documents.getTitles(effectiveLang);
                 setSermons(sermons);
             } finally {
                 setLoaded(true);
             }
         })();
-    }, [
-        needsSetup,
-        setLoaded,
-        setNeedsSetup,
-        setSidebarHidden,
-        setActiveLanguage,
-        setSermons,
-        setTabs,
-    ]);
+    }, [setLoaded, setSidebarHidden, setActiveLanguage, setSermons, setTabs]);
 }
 
 export function useOpenDocument() {

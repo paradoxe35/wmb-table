@@ -1,4 +1,4 @@
-import { Button, Divider, List, Modal, Spin, Tag, Tooltip } from 'antd';
+import { Button, Divider, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import {
     useSermonLookup,
@@ -78,41 +78,35 @@ export function OtherTraductionsModal() {
                         <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>
                             Sources de traduction
                         </Divider>
-                        <List
-                            itemLayout="horizontal"
-                            dataSource={availableTraductions}
-                            renderItem={(t) => (
-                                <List.Item
-                                    actions={[
-                                        <Tooltip
-                                            key="switch"
-                                            title="Basculer vers cette traduction"
-                                        >
-                                            <Button
-                                                onClick={() =>
-                                                    handleSwitchTraduction(t.translationId)
-                                                }
-                                                shape="circle"
-                                                icon={<EyeOutlined />}
-                                            />
-                                        </Tooltip>,
-                                    ]}
-                                >
-                                    <List.Item.Meta
-                                        avatar={<BookOutlined />}
-                                        title={
-                                            <span>
-                                                {t.traductionName ??
-                                                    `Traduction ${t.translationId}`}
-                                                <Tag color="blue" style={{ marginLeft: 8 }}>
-                                                    ID: {t.translationId}
-                                                </Tag>
-                                            </span>
-                                        }
+                        {availableTraductions.map((t) => (
+                            <div
+                                key={t.translationId}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '8px 0',
+                                    borderBottom: '1px solid #f0f0f0',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <BookOutlined />
+                                    <span>
+                                        {t.traductionName ?? `Traduction ${t.translationId}`}
+                                        <Tag color="blue" style={{ marginLeft: 8 }}>
+                                            ID: {t.translationId}
+                                        </Tag>
+                                    </span>
+                                </div>
+                                <Tooltip title="Basculer vers cette traduction">
+                                    <Button
+                                        onClick={() => handleSwitchTraduction(t.translationId)}
+                                        shape="circle"
+                                        icon={<EyeOutlined />}
                                     />
-                                </List.Item>
-                            )}
-                        />
+                                </Tooltip>
+                            </div>
+                        ))}
                     </>
                 )}
 
@@ -124,29 +118,37 @@ export function OtherTraductionsModal() {
                         <Spin />
                     </div>
                 ) : (
-                    <List
-                        itemLayout="horizontal"
-                        dataSource={translations}
-                        renderItem={(t, i) => (
-                            <List.Item
-                                actions={[
-                                    <Tooltip key="open" title="Ouvrir le document">
-                                        <Button
-                                            onClick={() => handleOpen(t.title)}
-                                            shape="circle"
-                                            icon={<EyeOutlined />}
-                                        />
-                                    </Tooltip>,
-                                ]}
-                            >
-                                <List.Item.Meta
-                                    avatar={<BookOutlined />}
-                                    description={`Langue: ${t.languageCode}`}
-                                    title={i + 1 + '. ' + t.title}
+                    translations.map((t, i) => (
+                        <div
+                            key={`${t.languageCode}-${t.title}`}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '8px 0',
+                                borderBottom: '1px solid #f0f0f0',
+                            }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <BookOutlined />
+                                <div>
+                                    <div>
+                                        {i + 1}. {t.title}
+                                    </div>
+                                    <div style={{ fontSize: '0.85em', color: '#888' }}>
+                                        Langue: {t.languageCode}
+                                    </div>
+                                </div>
+                            </div>
+                            <Tooltip title="Ouvrir le document">
+                                <Button
+                                    onClick={() => handleOpen(t.title)}
+                                    shape="circle"
+                                    icon={<EyeOutlined />}
                                 />
-                            </List.Item>
-                        )}
-                    />
+                            </Tooltip>
+                        </div>
+                    ))
                 )}
             </div>
         </Modal>

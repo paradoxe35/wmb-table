@@ -1,4 +1,4 @@
-import { Col, Divider, List, message, Modal, Row, Space, Typography } from 'antd';
+import { Col, Divider, message, Modal, Row, Space, Typography } from 'antd';
 import { type Dispatch, type SetStateAction, useRef, useState, useCallback } from 'react';
 import { useSubjectsStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
@@ -196,35 +196,27 @@ export function ReferenceBibleModal({
                                 maxHeight: '400px',
                             }}
                         >
-                            {reference && (
-                                <List
-                                    itemLayout="horizontal"
-                                    dataSource={reference.references as BibleBook[]}
-                                    renderItem={(ref) => (
-                                        <List.Item
-                                            actions={[
-                                                <DeleteBtn
-                                                    key="delete"
-                                                    confirm={() => handleDeletionRef(ref)}
-                                                />,
-                                            ]}
-                                        >
-                                            <List.Item.Meta
-                                                title={
-                                                    <span>
-                                                        {ref.bookName} {ref.chapter}:{ref.verse}
-                                                    </span>
-                                                }
-                                                description={
-                                                    <span className="content-description">
-                                                        {ref.content}
-                                                    </span>
-                                                }
-                                            />
-                                        </List.Item>
-                                    )}
-                                />
-                            )}
+                            {reference &&
+                                (reference.references as BibleBook[]).map((ref) => (
+                                    <div
+                                        key={ref.id}
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            justifyContent: 'space-between',
+                                            padding: '8px 0',
+                                            borderBottom: '1px solid #f0f0f0',
+                                        }}
+                                    >
+                                        <div>
+                                            <div style={{ fontWeight: 500 }}>
+                                                {ref.bookName} {ref.chapter}:{ref.verse}
+                                            </div>
+                                            <div className="content-description">{ref.content}</div>
+                                        </div>
+                                        <DeleteBtn confirm={() => handleDeletionRef(ref)} />
+                                    </div>
+                                ))}
                         </div>
                     </Col>
                     <Col span={1}>

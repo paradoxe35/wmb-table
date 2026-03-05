@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Empty, List, Collapse } from 'antd';
+import { Empty, Collapse } from 'antd';
 import type { HistoryData, HistoryDataItem } from '@shared/types';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
@@ -51,26 +51,37 @@ export default function History() {
                     label: h.date,
                     children:
                         key === h.id ? (
-                            <List
-                                itemLayout="horizontal"
-                                dataSource={historyItems.filter((i) => getSermon(i.documentTitle))}
-                                renderItem={(item) => (
-                                    <List.Item>
-                                        <List.Item.Meta
-                                            avatar={<HistoryOutlined />}
-                                            title={
-                                                <a>
-                                                    <DocumentViewer name={item.documentTitle}>
-                                                        {getSermon(item.documentTitle)?.title ??
-                                                            item.documentTitle}
-                                                    </DocumentViewer>
-                                                </a>
-                                            }
-                                            description={`${item.date} - ${item.time}`}
-                                        />
-                                    </List.Item>
-                                )}
-                            />
+                            <div>
+                                {historyItems
+                                    .filter((i) => getSermon(i.documentTitle))
+                                    .map((item) => (
+                                        <div
+                                            key={item.id}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                padding: '8px 0',
+                                                borderBottom: '1px solid #f0f0f0',
+                                            }}
+                                        >
+                                            <HistoryOutlined style={{ color: '#999' }} />
+                                            <div>
+                                                <div>
+                                                    <a>
+                                                        <DocumentViewer name={item.documentTitle}>
+                                                            {getSermon(item.documentTitle)?.title ??
+                                                                item.documentTitle}
+                                                        </DocumentViewer>
+                                                    </a>
+                                                </div>
+                                                <div style={{ fontSize: '0.85em', color: '#888' }}>
+                                                    {item.date} - {item.time}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                            </div>
                         ) : null,
                 }))}
             />

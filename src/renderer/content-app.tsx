@@ -7,7 +7,6 @@ import Search from './views/options/search';
 import History from './views/options/history';
 import Subject from './views/options/subject';
 import Bible from './views/options/bible';
-import SetupView from './views/setup/setup-view';
 
 import DocumentView from './views/document-view';
 import ContainerScrollY from './components/container-scroll-y';
@@ -72,10 +71,7 @@ const AppOptions = memo(function AppOptions(): ReactElement {
 });
 
 export function ContentApp() {
-    const needsSetup = useAppStore((s) => s.needsSetup);
     const mainView = useAppStore((s) => s.mainView);
-
-    if (needsSetup) return <SetupView />;
 
     return (
         <>

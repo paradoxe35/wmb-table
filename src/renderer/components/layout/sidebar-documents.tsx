@@ -142,7 +142,7 @@ const DocumentByYears = () => {
                 .slice()
                 .sort((a, b) => a.title.localeCompare(b.title))
                 .map((sermon) => ({
-                    key: sermon.title + year,
+                    key: `${sermon.id}-${year}`,
                     title: (
                         <span title={sermon.title} onClick={() => openDocument(sermon.title)}>
                             {sermon.title}
@@ -178,6 +178,7 @@ const DocumentSearch = () => {
     }, [sermons]);
 
     useEffect(() => {
+        if (!activeLanguage) return;
         window.api.documents
             .getTitles(activeLanguage)
             .then((titles) => setSermons(titles))

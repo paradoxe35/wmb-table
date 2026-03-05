@@ -12,18 +12,24 @@ $color-bg-white: #ffffff;
 $color-border: #e8eaed;
 $color-text: #1f2937;
 $color-text-secondary: #6b7280;
-$color-header-bg: #1e293b;
-$color-header-active: #334155;
+$color-header-bg: #001528;
+$color-header-active: #002040;
 $radius: 6px;
 
 // ---------------------------------------------------------------------------
 // Reset
 // ---------------------------------------------------------------------------
+html,
 body {
     margin: 0;
     padding: 0;
     overflow: hidden;
     font-size: 14px;
+    height: 100%;
+}
+
+#root {
+    height: 100%;
 }
 
 // ---------------------------------------------------------------------------
@@ -69,9 +75,10 @@ body {
 .app-header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     background: $color-header-bg;
     height: 48px;
-    padding: 0 16px;
+    padding: 0;
     -webkit-app-region: drag;
 
     * {
@@ -79,14 +86,13 @@ body {
     }
 }
 
-.header-center {
-    flex-grow: 1;
-}
-
 .logo {
     display: flex;
     align-items: center;
-    color: #fff;
+    padding: 0 20px;
+    color: rgb(218, 218, 218);
+    font-size: large;
+    font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
 }

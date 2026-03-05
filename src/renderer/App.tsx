@@ -18,15 +18,15 @@ const appTheme = {
     },
     components: {
         Layout: {
-            headerBg: '#1e293b',
+            headerBg: '#001528',
             headerHeight: 48,
-            headerPadding: '0 16px',
+            headerPadding: '0',
             siderBg: '#ffffff',
             bodyBg: '#f5f6f8',
         },
         Menu: {
-            darkItemBg: '#1e293b',
-            darkItemSelectedBg: '#334155',
+            darkItemBg: '#001528',
+            darkItemSelectedBg: '#002040',
             itemSelectedBg: '#e8f0fe',
             itemSelectedColor: '#4a6fa5',
         },

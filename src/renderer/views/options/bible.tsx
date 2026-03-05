@@ -4,7 +4,6 @@ import {
     Divider,
     Dropdown,
     Input,
-    List,
     Pagination,
     Segmented,
     Space,
@@ -258,38 +257,37 @@ function BookContent({
                             <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
                         </div>
                     )}
-                    {verses && verses.length > 0 && (
-                        <List
-                            itemLayout="horizontal"
-                            dataSource={verses.sort((a, b) => +a.verse - +b.verse)}
-                            renderItem={(item) => {
-                                const onClickItem = () => onClick?.(item.id);
-                                return (
-                                    <List.Item
-                                        className={`verse-item ${onClick ? 'list__clickable' : ''}`}
-                                        actions={[
-                                            verseMetaContent && (
-                                                <span className="verse-action" key="0">
-                                                    <AddToSubject verse={item} />
-                                                </span>
-                                            ),
-                                        ]}
-                                        onClick={onClickItem}
-                                        key={item.id}
-                                    >
-                                        <List.Item.Meta
-                                            avatar={<span>{item.verse}.</span>}
-                                            description={
-                                                <Typography.Text className="content-description">
-                                                    {item.content}
-                                                </Typography.Text>
-                                            }
-                                        />
-                                    </List.Item>
-                                );
-                            }}
-                        />
-                    )}
+                    {verses &&
+                        verses.length > 0 &&
+                        verses
+                            .slice()
+                            .sort((a, b) => +a.verse - +b.verse)
+                            .map((item) => (
+                                <div
+                                    key={item.id}
+                                    className={`verse-item ${onClick ? 'list__clickable' : ''}`}
+                                    onClick={() => onClick?.(item.id)}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        justifyContent: 'space-between',
+                                        padding: '8px 0',
+                                        borderBottom: '1px solid #f0f0f0',
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', gap: 8, flex: 1 }}>
+                                        <span>{item.verse}.</span>
+                                        <Typography.Text className="content-description">
+                                            {item.content}
+                                        </Typography.Text>
+                                    </div>
+                                    {verseMetaContent && (
+                                        <span className="verse-action">
+                                            <AddToSubject verse={item} />
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
                 </>
             ),
         },
@@ -466,30 +464,16 @@ function SearchResult({
                     </Typography.Text>
                 </div>
             )}
-            <div className="mt-2 flex flex-center">
-                <List
-                    itemLayout="vertical"
-                    size="large"
-                    style={{ width: '100%' }}
-                    pagination={false}
-                    dataSource={results?.data || []}
-                    renderItem={(result) => (
-                        <>
-                            <List.Item key={result.item.id}>
-                                <List.Item.Meta
-                                    title={
-                                        <span>
-                                            {result.item.bookName} {result.item.chapter}:
-                                            {result.item.verse}
-                                        </span>
-                                    }
-                                />
-                                <ContentItem item={result} />
-                            </List.Item>
-                            <Divider />
-                        </>
-                    )}
-                />
+            <div className="mt-2" style={{ width: '100%' }}>
+                {(results?.data || []).map((result) => (
+                    <div key={result.item.id} style={{ padding: '8px 0' }}>
+                        <div style={{ fontWeight: 500 }}>
+                            {result.item.bookName} {result.item.chapter}:{result.item.verse}
+                        </div>
+                        <ContentItem item={result} />
+                        <Divider style={{ margin: '8px 0' }} />
+                    </div>
+                ))}
             </div>
             {results && (
                 <div className="mt-2 flex flex-center mb-2">

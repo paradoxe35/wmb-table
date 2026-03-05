@@ -1,16 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button, List, Modal, Progress, Spin, Tag, message, Typography } from 'antd';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Input, Modal, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useModalVisible } from '@renderer/hooks';
 import { useAppStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
-import type {
-    InstalledLanguage,
-    DownloadableLanguage,
-    LanguageDownloadProgress,
-} from '@shared/types';
+import type { LanguageDownloadProgress } from '@shared/types';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 
 const { Text } = Typography;
+
+type LanguageItem = {
+    code: string;
+    language: string;
+    enLanguage: string;
+    installed: boolean;
+    sermonsCount: number;
+    sizeOnDisk: number;
+    filesize: number;
+};
 
 function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -18,28 +25,141 @@ function formatSize(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+function LanguageRow({
+    lang,
+    isActive,
+    isDownloading,
+    downloadPercent,
+    onSelect,
+    onInstall,
+    onDelete,
+}: {
+    lang: LanguageItem;
+    isActive: boolean;
+    isDownloading: boolean;
+    downloadPercent: number;
+    onSelect: () => void;
+    onInstall: () => void;
+    onDelete: () => void;
+}) {
+    const displayName =
+        lang.language !== lang.enLanguage ? `${lang.language} (${lang.enLanguage})` : lang.language;
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                borderBottom: '1px solid #f0f0f0',
+                cursor: lang.installed && !isActive ? 'pointer' : 'default',
+                background: isActive ? '#e8f0fe' : lang.installed ? undefined : '#fafafa',
+                borderRadius: 4,
+                transition: 'background 0.15s',
+            }}
+            onClick={lang.installed && !isActive ? onSelect : undefined}
+        >
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{displayName}</span>
+                    {isActive && (
+                        <Tag color="blue" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
+                            Actif
+                        </Tag>
+                    )}
+                    {lang.installed && !isActive && (
+                        <Tag color="green" style={{ margin: 0 }}>
+                            Téléchargé
+                        </Tag>
+                    )}
+                </div>
+                <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                    {lang.sermonsCount} sermons
+                    {lang.installed
+                        ? ` — ${formatSize(lang.sizeOnDisk)}`
+                        : ` — ${formatSize(lang.filesize)}`}
+                </Text>
+            </div>
+            <div
+                style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
+                onClick={(e) => e.stopPropagation()}
+            >
+                {lang.installed ? (
+                    <Button danger size="small" icon={<DeleteOutlined />} onClick={onDelete} />
+                ) : isDownloading ? (
+                    <Progress type="circle" size={28} percent={downloadPercent} />
+                ) : (
+                    <Button size="small" icon={<DownloadOutlined />} onClick={onInstall}>
+                        Télécharger
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function LanguageManagerModal() {
     const { visible, hide, setVisible } = useModalVisible();
-    const [installed, setInstalled] = useState<InstalledLanguage[]>([]);
-    const [available, setAvailable] = useState<DownloadableLanguage[]>([]);
+    const [languages, setLanguages] = useState<LanguageItem[]>([]);
     const [loading, setLoading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+    const [searchQuery, setSearchQuery] = useState('');
     const wasEmptyRef = useRef(false);
 
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
     const setSermons = useSermonStore((s) => s.setSermons);
 
-    const refresh = () => {
+    const refresh = useCallback(() => {
         setLoading(true);
         Promise.all([window.api.languages.getInstalled(), window.api.languages.getAvailable()])
             .then(([inst, avail]) => {
-                setInstalled(inst);
-                setAvailable(avail.filter((a) => !a.installed));
+                const installedCodes = new Set(inst.map((i) => i.code));
+                const merged: LanguageItem[] = [];
+
+                for (const lang of inst) {
+                    merged.push({
+                        code: lang.code,
+                        language: lang.language,
+                        enLanguage: lang.enLanguage,
+                        installed: true,
+                        sermonsCount: lang.sermonsCount,
+                        sizeOnDisk: lang.sizeOnDisk,
+                        filesize: 0,
+                    });
+                }
+
+                for (const lang of avail) {
+                    if (!installedCodes.has(lang.code)) {
+                        merged.push({
+                            code: lang.code,
+                            language: lang.language,
+                            enLanguage: lang.enLanguage,
+                            installed: false,
+                            sermonsCount: lang.sermonsAvailable,
+                            sizeOnDisk: 0,
+                            filesize: lang.filesize,
+                        });
+                    }
+                }
+
+                setLanguages(merged);
             })
             .catch(() => {})
             .finally(() => setLoading(false));
-    };
+    }, []);
+
+    const filteredLanguages = useMemo(() => {
+        if (!searchQuery.trim()) return languages;
+        const re = simpleRegExp(searchQuery);
+        return languages.filter(
+            (l) =>
+                re.test(strNormalize(l.language)) ||
+                re.test(strNormalize(l.enLanguage)) ||
+                re.test(strNormalize(l.code)),
+        );
+    }, [languages, searchQuery]);
 
     // Listen for open events (DOM event + IPC push from menu)
     useEffect(() => {
@@ -62,9 +182,17 @@ export default function LanguageManagerModal() {
         });
     }, []);
 
+    // Keep modal open when activeLanguage is null
     useEffect(() => {
-        if (visible) refresh();
-    }, [visible]);
+        if (!activeLanguage) setVisible(true);
+    }, [activeLanguage]);
+
+    useEffect(() => {
+        if (visible) {
+            refresh();
+            setSearchQuery('');
+        }
+    }, [visible, refresh]);
 
     useEffect(() => {
         const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
@@ -77,10 +205,9 @@ export default function LanguageManagerModal() {
                 return next;
             });
             refresh();
-            message.success('Langue t\u00e9l\u00e9charg\u00e9e avec succ\u00e8s');
+            message.success('Langue téléchargée avec succès');
 
-            // If no active language yet, auto-select this one
-            if (wasEmptyRef.current) {
+            if (wasEmptyRef.current || !useAppStore.getState().activeLanguage) {
                 wasEmptyRef.current = false;
                 handleSelectLanguage(langCode);
             }
@@ -89,7 +216,7 @@ export default function LanguageManagerModal() {
             unsub1();
             unsub2();
         };
-    }, []);
+    }, [refresh]);
 
     const handleSelectLanguage = async (langCode: string) => {
         setActiveLanguage(langCode);
@@ -105,21 +232,31 @@ export default function LanguageManagerModal() {
 
     const handleDelete = async (langCode: string) => {
         await window.api.languages.delete(langCode);
+        if (activeLanguage === langCode) {
+            const remaining = await window.api.languages.getInstalled();
+            if (remaining.length > 0) {
+                await handleSelectLanguage(remaining[0].code);
+            } else {
+                setActiveLanguage(null);
+                setSermons([]);
+            }
+        }
         refresh();
-        message.success('Langue supprim\u00e9e');
+        message.success('Langue supprimée');
     };
 
-    const noLanguages = installed.length === 0 && !loading;
+    const hasInstalledLanguages = languages.some((l) => l.installed);
+    const canClose = hasInstalledLanguages && !!activeLanguage;
 
     return (
         <Modal
-            title="G\u00e9rer les langues"
+            title="Langues"
             open={visible}
-            onCancel={noLanguages ? undefined : hide}
-            closable={!noLanguages}
-            maskClosable={!noLanguages}
+            onCancel={canClose ? hide : undefined}
+            closable={canClose}
+            mask={canClose ? undefined : { closable: false }}
             footer={null}
-            width={500}
+            width={480}
         >
             {loading ? (
                 <div className="flex flex-center" style={{ padding: '2rem' }}>
@@ -127,110 +264,38 @@ export default function LanguageManagerModal() {
                 </div>
             ) : (
                 <>
-                    <Text strong>Langues install\u00e9es</Text>
-                    <List
-                        size="small"
-                        dataSource={installed}
-                        locale={{ emptyText: 'Aucune langue install\u00e9e' }}
-                        renderItem={(lang) => {
-                            const isActive = lang.code === activeLanguage;
-                            return (
-                                <List.Item
-                                    style={{ cursor: isActive ? 'default' : 'pointer' }}
-                                    onClick={
-                                        isActive ? undefined : () => handleSelectLanguage(lang.code)
-                                    }
-                                    actions={[
-                                        isActive ? (
-                                            <Tag
-                                                key="active"
-                                                color="green"
-                                                icon={<CheckCircleOutlined />}
-                                            >
-                                                Actif
-                                            </Tag>
-                                        ) : (
-                                            <Button
-                                                key="select"
-                                                size="small"
-                                                type="link"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleSelectLanguage(lang.code);
-                                                }}
-                                            >
-                                                S\u00e9lectionner
-                                            </Button>
-                                        ),
-                                        <Button
-                                            key="del"
-                                            danger
-                                            size="small"
-                                            icon={<DeleteOutlined />}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDelete(lang.code);
-                                            }}
-                                            disabled={installed.length <= 1}
-                                        />,
-                                    ]}
-                                >
-                                    <List.Item.Meta
-                                        title={
-                                            lang.language !== lang.enLanguage
-                                                ? `${lang.language} (${lang.enLanguage})`
-                                                : lang.language
-                                        }
-                                        description={`${lang.sermonsCount} sermons \u2014 ${formatSize(lang.sizeOnDisk)}`}
-                                    />
-                                </List.Item>
-                            );
-                        }}
-                    />
-
-                    {available.length > 0 && (
-                        <>
-                            <Text strong style={{ marginTop: 16, display: 'block' }}>
-                                Langues disponibles
-                            </Text>
-                            <List
-                                size="small"
-                                dataSource={available}
-                                renderItem={(lang) => (
-                                    <List.Item
-                                        actions={[
-                                            downloadProgress[lang.code] != null ? (
-                                                <Progress
-                                                    key="progress"
-                                                    type="circle"
-                                                    size={30}
-                                                    percent={downloadProgress[lang.code]}
-                                                />
-                                            ) : (
-                                                <Button
-                                                    key="install"
-                                                    size="small"
-                                                    icon={<DownloadOutlined />}
-                                                    onClick={() => handleInstall(lang.code)}
-                                                >
-                                                    T\u00e9l\u00e9charger
-                                                </Button>
-                                            ),
-                                        ]}
-                                    >
-                                        <List.Item.Meta
-                                            title={
-                                                lang.language !== lang.enLanguage
-                                                    ? `${lang.language} (${lang.enLanguage})`
-                                                    : lang.language
-                                            }
-                                            description={`${lang.sermonsAvailable} sermons \u2014 ${formatSize(lang.filesize)}`}
-                                        />
-                                    </List.Item>
-                                )}
-                            />
-                        </>
+                    {!hasInstalledLanguages && (
+                        <div style={{ padding: '4px 0 12px', color: '#666' }}>
+                            Téléchargez une langue pour commencer
+                        </div>
                     )}
+                    <Input.Search
+                        placeholder="Rechercher une langue..."
+                        allowClear
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        value={searchQuery}
+                        style={{ marginBottom: 12 }}
+                    />
+                    <div style={{ maxHeight: 400, overflow: 'auto' }}>
+                        {filteredLanguages.length === 0 ? (
+                            <div style={{ padding: '16px 0', textAlign: 'center', color: '#999' }}>
+                                Aucune langue trouvée
+                            </div>
+                        ) : (
+                            filteredLanguages.map((lang) => (
+                                <LanguageRow
+                                    key={lang.code}
+                                    lang={lang}
+                                    isActive={lang.code === activeLanguage}
+                                    isDownloading={downloadProgress[lang.code] != null}
+                                    downloadPercent={downloadProgress[lang.code] ?? 0}
+                                    onSelect={() => handleSelectLanguage(lang.code)}
+                                    onInstall={() => handleInstall(lang.code)}
+                                    onDelete={() => handleDelete(lang.code)}
+                                />
+                            ))
+                        )}
+                    </div>
                 </>
             )}
         </Modal>

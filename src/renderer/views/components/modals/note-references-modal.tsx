@@ -1,4 +1,4 @@
-import { Button, List, Modal, Tooltip } from 'antd';
+import { Button, Modal, Tooltip } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import {
     type DocumentHtmlTree,
@@ -74,9 +74,9 @@ export function NoteReferencesModal() {
             title={
                 <div className="mr-2">
                     {workingNote.current ? (
-                        <span>R\u00e9f\u00e9rences(note: {workingNote.current.name})</span>
+                        <span>Références(note: {workingNote.current.name})</span>
                     ) : (
-                        <span>Aucune note est actuellement s\u00e9lectionn\u00e9e</span>
+                        <span>Aucune note est actuellement sélectionnée</span>
                     )}
                 </div>
             }
@@ -103,46 +103,54 @@ function ContentModal({
 
     return (
         <>
-            <List
-                itemLayout="horizontal"
-                dataSource={datas}
-                renderItem={(item, i) => {
-                    const ref = item.documentHtmlTree;
-                    const assigned = ref
-                        ? isParagraphReference(ref) || (ref.tree || []).length > 0
-                        : false;
-                    return (
-                        <List.Item
-                            actions={[
-                                <Tooltip
-                                    key={item.id || i}
-                                    title="Ajouter \u00e0 cette r\u00e9f\u00e9rence"
-                                >
-                                    <Button
-                                        onClick={() => onSelectItem(item)}
-                                        shape="circle"
-                                        icon={<SelectOutlined />}
-                                    />
-                                </Tooltip>,
-                            ]}
+            {datas.map((item, i) => {
+                const ref = item.documentHtmlTree;
+                const assigned = ref
+                    ? isParagraphReference(ref) || (ref.tree || []).length > 0
+                    : false;
+                return (
+                    <div
+                        key={item.id || i}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 0',
+                            borderBottom: '1px solid #f0f0f0',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                cursor: 'pointer',
+                                flex: 1,
+                            }}
+                            onClick={() => onSelectItem(item)}
                         >
-                            <List.Item.Meta
-                                avatar={<BookOutlined />}
-                                description={
-                                    assigned
-                                        ? `R\u00e9f\u00e9renc\u00e9 \u00e0: ${getSermon(item.documentTitle)?.title || item.documentTitle}`
-                                        : 'Aucun document attribu\u00e9 \u00e0 cette r\u00e9f\u00e9rence'
-                                }
-                                title={
-                                    <a onClick={() => onSelectItem(item)}>
-                                        <span>{item.label}</span>
-                                    </a>
-                                }
+                            <BookOutlined />
+                            <div>
+                                <div>
+                                    <a>{item.label}</a>
+                                </div>
+                                <div style={{ fontSize: '0.85em', color: '#888' }}>
+                                    {assigned
+                                        ? `Référencé à: ${getSermon(item.documentTitle)?.title || item.documentTitle}`
+                                        : 'Aucun document attribué à cette référence'}
+                                </div>
+                            </div>
+                        </div>
+                        <Tooltip title="Ajouter à cette référence">
+                            <Button
+                                onClick={() => onSelectItem(item)}
+                                shape="circle"
+                                icon={<SelectOutlined />}
                             />
-                        </List.Item>
-                    );
-                }}
-            />
+                        </Tooltip>
+                    </div>
+                );
+            })}
         </>
     );
 }

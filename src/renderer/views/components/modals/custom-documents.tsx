@@ -1,17 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-    Button,
-    Col,
-    Divider,
-    Input,
-    List,
-    Modal,
-    Row,
-    Space,
-    Typography,
-    message,
-    Spin,
-} from 'antd';
+import { Button, Col, Divider, Input, Modal, Row, Space, Typography, message, Spin } from 'antd';
 import type { CustomDocument } from '@shared/types';
 import { FileAddOutlined, EyeOutlined, LoadingOutlined, UploadOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
@@ -149,29 +137,48 @@ function CustomDocumentItem({
             </div>
 
             <div style={{ overflow: 'auto', maxHeight: '300px' }}>
-                <List
-                    itemLayout="horizontal"
-                    dataSource={documents}
-                    renderItem={(document) => (
-                        <List.Item
-                            actions={[
-                                <DocumentViewer
-                                    key="view"
-                                    onItemClick={() => handleCancel()}
-                                    name={document.title}
-                                >
-                                    <Button shape="circle" icon={<EyeOutlined />} />
-                                </DocumentViewer>,
-                                <DeleteBtn key="delete" confirm={() => handleDeletion(document)} />,
-                            ]}
+                {documents.map((document) => (
+                    <div
+                        key={document.id}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '8px 0',
+                            borderBottom: '1px solid #f0f0f0',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                flex: 1,
+                                minWidth: 0,
+                            }}
                         >
-                            <List.Item.Meta
-                                avatar={<FileAddOutlined />}
-                                title={<span>{document.title}</span>}
-                            />
-                        </List.Item>
-                    )}
-                />
+                            <FileAddOutlined />
+                            <span
+                                style={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                }}
+                            >
+                                {document.title}
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                            <DocumentViewer
+                                onItemClick={() => handleCancel()}
+                                name={document.title}
+                            >
+                                <Button shape="circle" icon={<EyeOutlined />} />
+                            </DocumentViewer>
+                            <DeleteBtn confirm={() => handleDeletion(document)} />
+                        </div>
+                    </div>
+                ))}
             </div>
         </>
     );

@@ -52,7 +52,7 @@ function useSermonContent() {
     const tabTranslationId = activeTab?.translationId;
 
     useEffect(() => {
-        if (!activeTitle) {
+        if (!activeTitle || !activeLanguage) {
             setActiveContent(null);
             return;
         }

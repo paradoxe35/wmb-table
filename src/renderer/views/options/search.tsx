@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
-import { Input, AutoComplete, Typography, List, Divider, Pagination, message } from 'antd';
+import { Input, AutoComplete, Typography, Divider, Pagination, message } from 'antd';
 import { SelectProps } from 'antd/es/select';
 import { debounce } from '@renderer/utils/functions';
 import type { TantivySearchResult, TantivySearchHit, Suggestions } from '@shared/types';
@@ -78,6 +78,7 @@ const useSearch = (): SearchFn => {
     const activeLanguage = useAppStore((s) => s.activeLanguage);
 
     const onSearch = (value: string) => {
+        if (!activeLanguage) return;
         if (value.trim().length < 3 || lastSearch.current === value) {
             if (value.trim().length < 3) {
                 message.warning('Votre recherche doit comporter au moins trois caractères');
@@ -97,6 +98,7 @@ const useSearch = (): SearchFn => {
 
     const onPageChange = useCallback(
         (page: number) => {
+            if (!activeLanguage) return;
             window.api.search
                 .searchText(activeLanguage, lastSearch.current.trim(), page)
                 .then((datas) => {
@@ -157,28 +159,24 @@ const ListView = ({ hit, query }: { hit: TantivySearchHit; query: string }) => {
     const displayTitle = getSermon(hit.title)?.title ?? hit.title;
 
     return (
-        <>
-            <List.Item key={`${hit.title}-${query}`}>
-                <List.Item.Meta
-                    title={
-                        <Text underline>
-                            <a>
-                                <DocumentViewer onItemClick={handleDocumentClick} name={hit.title}>
-                                    {displayTitle}
-                                </DocumentViewer>
-                            </a>
-                        </Text>
-                    }
-                    description={
-                        <span
-                            className="content-description-2"
-                            dangerouslySetInnerHTML={{ __html: hit.snippet }}
-                        />
-                    }
+        <div style={{ padding: '8px 0' }}>
+            <div>
+                <Text underline>
+                    <a>
+                        <DocumentViewer onItemClick={handleDocumentClick} name={hit.title}>
+                            {displayTitle}
+                        </DocumentViewer>
+                    </a>
+                </Text>
+            </div>
+            <div>
+                <span
+                    className="content-description-2"
+                    dangerouslySetInnerHTML={{ __html: hit.snippet }}
                 />
-            </List.Item>
-            <Divider />
-        </>
+            </div>
+            <Divider style={{ margin: '8px 0' }} />
+        </div>
     );
 };
 
@@ -201,15 +199,14 @@ const SearchResultComponent = memo(function SearchResultComponent({
                     </Text>
                 </div>
             )}
-            <div className="mt-2 flex flex-center">
-                <List
-                    itemLayout="vertical"
-                    size="large"
-                    style={{ width: '100%' }}
-                    pagination={false}
-                    dataSource={results?.hits || []}
-                    renderItem={(hit) => <ListView hit={hit} query={results?.query ?? ''} />}
-                />
+            <div className="mt-2" style={{ width: '100%' }}>
+                {(results?.hits || []).map((hit) => (
+                    <ListView
+                        key={`${hit.title}-${results?.query}`}
+                        hit={hit}
+                        query={results?.query ?? ''}
+                    />
+                ))}
             </div>
             {results && totalPages > 1 && (
                 <div className="mt-2 flex flex-center mb-2">

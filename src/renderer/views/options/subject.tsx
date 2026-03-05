@@ -19,7 +19,6 @@ import {
     Divider,
     Empty,
     message,
-    List,
     Typography,
 } from 'antd';
 import type { SubjectDocument, SubjectDocumentItem } from '@shared/types';
@@ -184,19 +183,14 @@ export default function Subject() {
                         className="mt-2"
                         style={{ padding: '22px', overflowX: 'hidden' }}
                     >
-                        <List
-                            itemLayout="vertical"
-                            style={{ width: '100%' }}
-                            dataSource={datas}
-                            renderItem={(item) => (
-                                <ItemSubject
-                                    key={item.name}
-                                    item={item}
-                                    onSelectItem={onSelectItem}
-                                    onDeleteSubject={handleSubjectDeletion}
-                                />
-                            )}
-                        />
+                        {datas.map((item) => (
+                            <ItemSubject
+                                key={item.name}
+                                item={item}
+                                onSelectItem={onSelectItem}
+                                onDeleteSubject={handleSubjectDeletion}
+                            />
+                        ))}
                     </ContainerScrollY>
                 </div>
             </Col>
@@ -228,24 +222,28 @@ function ItemFromSelectedSubject({
     const displayTitle = getSermon(item.documentTitle)?.title ?? item.documentTitle;
 
     return (
-        <>
-            <List.Item actions={[<DeleteBtn key="delete" confirm={() => confirm(item)} />]}>
-                {item.bible ? (
-                    <>
-                        <List.Item.Meta
-                            title={
-                                <span>
-                                    {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
-                                </span>
-                            }
-                            description={<span>Référence: Biblique</span>}
-                        />
-                        <span className="content-description-2">{item.bible.content}</span>
-                    </>
-                ) : (
-                    <>
-                        <List.Item.Meta
-                            title={
+        <div style={{ padding: '8px 0' }}>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                }}
+            >
+                <div style={{ flex: 1 }}>
+                    {item.bible ? (
+                        <>
+                            <div style={{ fontWeight: 500 }}>
+                                {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
+                            </div>
+                            <div style={{ fontSize: '0.85em', color: '#888' }}>
+                                Référence: Biblique
+                            </div>
+                            <span className="content-description-2">{item.bible.content}</span>
+                        </>
+                    ) : (
+                        <>
+                            <div>
                                 <a className="underline">
                                     <DocumentViewer
                                         onItemClick={() => setSubjectItemSelected(item)}
@@ -254,15 +252,18 @@ function ItemFromSelectedSubject({
                                         {displayTitle}
                                     </DocumentViewer>
                                 </a>
-                            }
-                            description={<span>Référence: Document</span>}
-                        />
-                        <span className="content-description-2">{item.textContent}...</span>
-                    </>
-                )}
-            </List.Item>
-            <Divider />
-        </>
+                            </div>
+                            <div style={{ fontSize: '0.85em', color: '#888' }}>
+                                Référence: Document
+                            </div>
+                            <span className="content-description-2">{item.textContent}...</span>
+                        </>
+                    )}
+                </div>
+                <DeleteBtn confirm={() => confirm(item)} />
+            </div>
+            <Divider style={{ margin: '8px 0' }} />
+        </div>
     );
 }
 
@@ -293,20 +294,15 @@ function ShowActiveDocuments({
                             {subject.name} ({documents.length})
                         </Text>
                     </div>
-                    <div className="mt-2 flex flex-center">
-                        <List
-                            itemLayout="vertical"
-                            size="small"
-                            style={{ width: '100%' }}
-                            dataSource={documents}
-                            renderItem={(item) => (
-                                <ItemFromSelectedSubject
-                                    item={item}
-                                    confirm={confirm}
-                                    setSubjectItemSelected={setSubjectItemSelected}
-                                />
-                            )}
-                        />
+                    <div className="mt-2" style={{ width: '100%' }}>
+                        {documents.map((item) => (
+                            <ItemFromSelectedSubject
+                                key={item.id}
+                                item={item}
+                                confirm={confirm}
+                                setSubjectItemSelected={setSubjectItemSelected}
+                            />
+                        ))}
                     </div>
                 </>
             ) : (

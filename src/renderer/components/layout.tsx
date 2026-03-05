@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Button, Layout, Space, Spin } from 'antd';
-import { LeftCircleOutlined, LoadingOutlined } from '@ant-design/icons';
-import { motion } from 'framer-motion';
+import { LeftCircleOutlined, RightCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 
 import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
@@ -47,13 +46,11 @@ const SidebarStatusHandler = () => {
 
     return (
         <Button type="link" onClick={handleToggle}>
-            <motion.div
-                animate={{ rotate: sidebarHidden ? 0 : 180 }}
-                transition={{ duration: 0.25 }}
-                style={{ display: 'flex', alignItems: 'center' }}
-            >
+            {sidebarHidden ? (
                 <LeftCircleOutlined style={{ fontSize: '1.2em' }} />
-            </motion.div>
+            ) : (
+                <RightCircleOutlined style={{ fontSize: '1.2em' }} />
+            )}
         </Button>
     );
 };
@@ -73,7 +70,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                     <div className="logo" onClick={() => toggle()}>
                         <Title />
                     </div>
-                    <div className="header-center">
+                    <div style={{ flexGrow: 1 }}>
                         <ViewerMenu />
                     </div>
                     <div className="logo">
