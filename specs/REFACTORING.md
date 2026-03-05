@@ -489,6 +489,32 @@ The current codebase has a `modules/` directory with custom modules (context-men
 - **Replaced** with maintained packages where alternatives exist
 - The separate Webpack build for modules is eliminated
 
+### 4.10 Sidebar Document Item Redesign
+
+The sidebar document list (`sidebar-documents.tsx`) uses a rich two-column `ItemOutline` layout for each sermon entry:
+
+**Left column:**
+
+- **Title** (bold) — sermon title from `SermonMeta`
+- **English subtitle** — shown for non-English languages (gray, smaller)
+- **Date** — formatted as "Sunday, June 28, 1959" via `formatSermonDate()` in `src/renderer/utils/sermon-utils.ts`
+- **Traduction badges** — translator name badges when multiple traductions exist
+
+**Right column:**
+
+- **City/State** — e.g. "Jeffersonville, IN" from `SermonMeta.cityState`
+- **Audio icon** — shown when audio is available
+
+**Data pipeline for city/state:**
+
+- `cityState: string | null` added to `SermonMeta` and `RefSermon` types in `src/shared/types.ts`
+- `reference.repository.ts` JOINs `sermon → location → city → state` in all sermon queries to populate `cityState`
+- `reference-data.service.ts` passes `cityState` through to the renderer
+
+**Styling:**
+
+- `.sidebar-item` CSS in `app.global.scss` provides the two-column flex layout
+
 ## 5. Migration Considerations
 
 ### 5.1 Data Integrity

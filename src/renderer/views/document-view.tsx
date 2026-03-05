@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DocumentTabs from '../components/document-tabs';
-import { Button, Layout, message, Space, Spin } from 'antd';
+import { Button, Layout, message, Segmented, Space, Spin } from 'antd';
 import {
     PlayCircleOutlined,
     ZoomInOutlined,
@@ -21,6 +21,7 @@ import { simpleRegExp } from '@renderer/utils/searchable';
 import type {
     SermonContent as SermonContentType,
     SermonMeta,
+    SermonMetaWithTraductions,
     SermonParagraph as SermonParagraphType,
 } from '@shared/types';
 import { ModalSearchDocument } from './components/modals/modal-search-document';
@@ -35,11 +36,15 @@ const { Content } = Layout;
 
 function useSermonContent() {
     const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTab = useSermonStore(selectActiveTab);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
     const setActiveContent = useSermonStore((s) => s.setActiveContent);
     const activeContent = useSermonStore((s) => s.activeContent);
     const [loading, setLoading] = useState(false);
+
+    // Use tab's translationId if set, otherwise fall back to sermon's default
+    const tabTranslationId = activeTab?.translationId;
 
     useEffect(() => {
         if (!activeTitle) {
@@ -51,17 +56,19 @@ function useSermonContent() {
             setActiveContent(null);
             return;
         }
+        const translationId = tabTranslationId ?? meta.translationId;
         setLoading(true);
         (
             window.api.documents.getSermonContent(
                 activeLanguage,
-                meta.translationId,
+                translationId,
+                meta.sermonDate,
             ) as Promise<SermonContentType>
         )
             .then((content) => setActiveContent(content))
             .catch(() => setActiveContent(null))
             .finally(() => setLoading(false));
-    }, [activeTitle, activeLanguage, sermonsByTitle, setActiveContent]);
+    }, [activeTitle, activeLanguage, sermonsByTitle, setActiveContent, tabTranslationId]);
 
     return { content: activeContent, loading };
 }
@@ -189,8 +196,20 @@ function useContextMenu(
 // Sub-components
 // ---------------------------------------------------------------------------
 
-function SermonHeader({ meta, zoom }: { meta: SermonMeta; zoom: number }) {
+function SermonHeader({
+    meta,
+    zoom,
+    sermonInfo,
+}: {
+    meta: SermonMeta;
+    zoom: number;
+    sermonInfo: SermonMetaWithTraductions | undefined;
+}) {
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
+    const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
+
+    const availableTraductions = sermonInfo?.availableTraductions ?? [];
+    const hasMultipleTraductions = availableTraductions.length > 1;
 
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
@@ -202,12 +221,8 @@ function SermonHeader({ meta, zoom }: { meta: SermonMeta; zoom: number }) {
                     frTitle: meta.title,
                     enTitle: meta.enTitle ?? '',
                     traduction: meta.languageCode,
-                    web_link: meta.webLink,
-                    pdf_link: meta.pdfLink,
                     audio_link: meta.audioLink,
                     date: meta.sermonDate,
-                    date_long: meta.dateLong,
-                    other_traductions: [],
                 },
             }),
         );
@@ -233,17 +248,46 @@ function SermonHeader({ meta, zoom }: { meta: SermonMeta; zoom: number }) {
         updateTabZoom(meta.title, Math.max(zoom - 10, 50));
     }, [meta.title, zoom, updateTabZoom]);
 
+    const handleTraductionChange = useCallback(
+        (value: string | number) => {
+            updateTabTranslationId(meta.title, Number(value));
+        },
+        [meta.title, updateTabTranslationId],
+    );
+
+    const traductionOptions = useMemo(
+        () =>
+            availableTraductions.map((t) => ({
+                label: t.traductionName ?? `T${t.translationId}`,
+                value: t.translationId,
+            })),
+        [availableTraductions],
+    );
+
     return (
         <div className="sermon-header">
             <div style={{ flex: 1, minWidth: 0 }}>
                 <strong>{meta.title}</strong>
-                {meta.dateLong && (
+                {meta.location && (
                     <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
-                        {meta.dateLong}
+                        {meta.location}
+                    </span>
+                )}
+                {meta.minutes > 0 && (
+                    <span style={{ marginLeft: 8, color: '#888', fontSize: '0.9em' }}>
+                        ({meta.minutes} min)
                     </span>
                 )}
             </div>
             <Space size="small">
+                {hasMultipleTraductions && (
+                    <Segmented
+                        size="small"
+                        options={traductionOptions}
+                        value={meta.translationId}
+                        onChange={handleTraductionChange}
+                    />
+                )}
                 {meta.audioLink && (
                     <Button
                         type="text"
@@ -319,6 +363,8 @@ export default function DocumentView() {
     useSubjectNavigation(containerRef);
     useContextMenu(containerRef, content);
     const activeTitle = useSermonStore(selectActiveTabTitle);
+    const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
+    const sermonInfo = activeTitle ? sermonsByTitle[activeTitle] : undefined;
 
     return (
         <>
@@ -331,7 +377,7 @@ export default function DocumentView() {
                 )}
                 {!loading && content && (
                     <>
-                        <SermonHeader meta={content.meta} zoom={zoom} />
+                        <SermonHeader meta={content.meta} zoom={zoom} sermonInfo={sermonInfo} />
                         <div
                             ref={containerRef}
                             id={DOCUMENT_CONTAINER_ID}

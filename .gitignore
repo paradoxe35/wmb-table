@@ -32,7 +32,9 @@ coverage
 # SQLite databases
 *.sqlite
 *.sqlite-journal
+*.sqlite-shm
 *.sqlite-wal
+!resources/database/data.sqlite
 
 # Lock file (regenerated on install)
 pnpm-lock.yaml

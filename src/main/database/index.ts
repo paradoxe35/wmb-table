@@ -7,6 +7,9 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './schema';
 import * as bibleSchema from './bible-schema';
 import { BIBLE_FTS_SETUP_SQL } from './bible-schema';
+import { initializeReferenceDb, closeReferenceDb, getRefDb } from './reference-db';
+
+export { getRefDb } from './reference-db';
 
 let mainSqlite: Database.Database | null = null;
 let bibleSqlite: Database.Database | null = null;
@@ -70,6 +73,9 @@ export function initializeDatabase(): void {
     bibleSqlite.exec(BIBLE_FTS_SETUP_SQL);
 
     bibleDb = drizzle(bibleSqlite, { schema: bibleSchema });
+
+    // Reference database (read-only, bundled)
+    initializeReferenceDb();
 }
 
 export function getDb(): BetterSQLite3Database<typeof schema> {
@@ -95,6 +101,7 @@ export function getMainSqlite(): Database.Database {
 }
 
 export function closeDatabase(): void {
+    closeReferenceDb();
     if (mainSqlite) {
         mainSqlite.close();
         mainSqlite = null;

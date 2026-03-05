@@ -3,7 +3,7 @@ import { Button, Select } from 'antd';
 import { SettingOutlined } from '@ant-design/icons';
 import { useAppStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
-import type { InstalledLanguage, SermonMeta } from '@shared/types';
+import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types';
 
 export default function LanguageSelector() {
     const activeLanguage = useAppStore((s) => s.activeLanguage);
@@ -18,7 +18,7 @@ export default function LanguageSelector() {
     const handleChange = async (code: string) => {
         setActiveLanguage(code);
         await window.api.app.setActiveLanguage(code);
-        const sermons = (await window.api.documents.getTitles(code)) as SermonMeta[];
+        const sermons = (await window.api.documents.getTitles(code)) as SermonMetaWithTraductions[];
         setSermons(sermons);
     };
 

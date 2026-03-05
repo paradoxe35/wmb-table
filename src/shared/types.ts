@@ -13,14 +13,45 @@ export interface BaseEntity {
 }
 
 // ---------------------------------------------------------------------------
-// Documents
+// Reference data types (from data.sqlite)
 // ---------------------------------------------------------------------------
 
-export type OtherTraduction = {
+export interface RefLanguage {
+    isarId: number;
+    code: string;
     title: string;
-    traduction: string;
-    web_link: string;
-};
+    nativeTitle: string;
+    audioPath: string;
+    fileName: string;
+    fileSize: string;
+    isRtl: boolean;
+    url: string;
+    storageBucket: string;
+    translationsSupport: boolean;
+    stemmersSupported: boolean;
+}
+
+export interface RefSermon {
+    isarId: number;
+    id: string;
+    title: string;
+    titleFormatted: string;
+    dateMs: number;
+    minutes: number;
+    location: string | null;
+    cityState: string | null;
+}
+
+export interface RefTranslator {
+    isarId: number;
+    translatorId: number;
+    name: string;
+    longName: string;
+}
+
+// ---------------------------------------------------------------------------
+// Documents
+// ---------------------------------------------------------------------------
 
 export interface SermonMeta {
     id: string;
@@ -28,32 +59,17 @@ export interface SermonMeta {
     languageCode: string;
     sermonDate: string;
     title: string;
-    enTitle: string | null;
+    enTitle: string;
     audioLink: string | null;
-    pdfLink: string | null;
-    webLink: string | null;
-    dateLong: string | null;
-    paragraphCount: number;
+    traductionName: string | null;
+    dateMs: number;
+    minutes: number;
+    location: string | null;
+    cityState: string | null;
 }
 
-/** @deprecated Use SermonMeta instead */
-export type Title<T = string | null> = {
-    id: string;
-    title: string;
-    frTitle: string;
-    enTitle: string;
-    traduction: T;
-    web_link: T;
-    pdf_link: T;
-    audio_link?: T;
-    date: T;
-    date_long: T | null;
-    other_traductions: OtherTraduction[];
-};
-
-export interface DataDocument extends Readonly<BaseEntity> {
-    title: string;
-    textContent: string;
+export interface SermonMetaWithTraductions extends SermonMeta {
+    availableTraductions: { translationId: number; traductionName: string | null }[];
 }
 
 export type DocumentTab = {
@@ -62,6 +78,7 @@ export type DocumentTab = {
     scrollX?: number;
     active: boolean;
     zoom?: number;
+    translationId?: number;
 };
 
 export type DocumentTreeRanges = {
@@ -90,21 +107,6 @@ export type SearchMatchersValue = {
     start: number | undefined;
     end: number | undefined;
 };
-
-export interface SearchItem {
-    item: DataDocument;
-    matches: SearchMatchersValue[];
-    refIndex: number;
-}
-
-export interface SearchResult {
-    end: boolean;
-    itemsPerPage: number;
-    query: string;
-    pageNumber: number;
-    total: number;
-    data: SearchItem[];
-}
 
 export interface Suggestions extends Readonly<BaseEntity> {
     searchText: string;
@@ -350,6 +352,7 @@ export interface SermonContent {
 export interface InstalledLanguage {
     code: string;
     language: string;
+    enLanguage: string;
     sermonsCount: number;
     sizeOnDisk: number;
 }
@@ -357,6 +360,7 @@ export interface InstalledLanguage {
 export interface DownloadableLanguage {
     code: string;
     language: string;
+    enLanguage: string;
     sermonsAvailable: number;
     sermonsWithAudio: number;
     filesize: number;

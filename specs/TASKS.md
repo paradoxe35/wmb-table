@@ -326,6 +326,7 @@ Migrate the entire frontend from React 17/Recoil/Antd 4 to React 19/Zustand/Antd
     - `modules/shared/` — inline into `src/shared/`
 - [ ] **5.12** Remove `RecoilRoot` and all Recoil imports
 - [ ] **5.13** Verify: all views render correctly, navigation works, data loads from SQLite via IPC
+- [x] **5.14** Redesign sidebar document list (`ItemOutline` in `sidebar-documents.tsx`) — rich two-column layout with title, English subtitle, formatted date, traduction badges, city/state, and audio icon; add `cityState` field to `SermonMeta`/`RefSermon`, JOIN city/state in reference repository, add `formatSermonDate()` utility, add `.sidebar-item` CSS
 
 ---
 

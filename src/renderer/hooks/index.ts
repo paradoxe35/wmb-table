@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
-import type { DocumentTab, SermonMeta, SidebarStatus } from '@shared/types';
+import type { DocumentTab, SermonMetaWithTraductions, SidebarStatus } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -47,7 +47,9 @@ export function useInitApp() {
                 if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
                 if (tabs?.length) setTabs(tabs);
 
-                const sermons = (await window.api.documents.getTitles(langCode)) as SermonMeta[];
+                const sermons = (await window.api.documents.getTitles(
+                    langCode,
+                )) as SermonMetaWithTraductions[];
                 setSermons(sermons);
             } finally {
                 setLoaded(true);
@@ -82,7 +84,7 @@ export function useSermonLookup() {
     const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
 
     const getSermon = useCallback(
-        (title: string): SermonMeta | undefined => sermonsByTitle[title],
+        (title: string): SermonMetaWithTraductions | undefined => sermonsByTitle[title],
         [sermonsByTitle],
     );
 

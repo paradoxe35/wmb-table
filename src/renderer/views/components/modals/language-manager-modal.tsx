@@ -105,7 +105,11 @@ export default function LanguageManagerModal() {
                                 ]}
                             >
                                 <List.Item.Meta
-                                    title={lang.language}
+                                    title={
+                                        lang.language !== lang.enLanguage
+                                            ? `${lang.language} (${lang.enLanguage})`
+                                            : lang.language
+                                    }
                                     description={`${lang.sermonsCount} sermons — ${formatSize(lang.sizeOnDisk)}`}
                                 />
                             </List.Item>
@@ -143,7 +147,11 @@ export default function LanguageManagerModal() {
                                         ]}
                                     >
                                         <List.Item.Meta
-                                            title={lang.language}
+                                            title={
+                                                lang.language !== lang.enLanguage
+                                                    ? `${lang.language} (${lang.enLanguage})`
+                                                    : lang.language
+                                            }
                                             description={`${lang.sermonsAvailable} sermons — ${formatSize(lang.filesize)}`}
                                         />
                                     </List.Item>

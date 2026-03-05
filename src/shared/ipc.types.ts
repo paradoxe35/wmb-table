@@ -26,6 +26,7 @@ import type {
     ViewMenuValue,
     DocumentHtmlTree,
     SermonMeta,
+    SermonMetaWithTraductions,
     SermonContent,
     InstalledLanguage,
     DownloadableLanguage,
@@ -43,6 +44,7 @@ export const DocumentChannels = {
     getSermonList: 'documents:getSermonList',
     getSermonsByYear: 'documents:getSermonsByYear',
     getTranslations: 'documents:getTranslations',
+    getTraductionsForSermon: 'documents:getTraductionsForSermon',
     getTabs: 'documents:getTabs',
     saveTabs: 'documents:saveTabs',
 } as const;
@@ -162,13 +164,20 @@ export const PushChannels = {
 /** Maps each invoke channel to its argument tuple and return type. */
 export interface InvokeChannelMap {
     // Documents
-    [DocumentChannels.getTitles]: { args: [string]; return: SermonMeta[] };
-    [DocumentChannels.getSermonContent]: { args: [string, number]; return: SermonContent };
+    [DocumentChannels.getTitles]: { args: [string]; return: SermonMetaWithTraductions[] };
+    [DocumentChannels.getSermonContent]: {
+        args: [string, number, string];
+        return: SermonContent;
+    };
     [DocumentChannels.getSermonList]: { args: [string, { year?: string }?]; return: SermonMeta[] };
     [DocumentChannels.getSermonsByYear]: { args: [string]; return: Record<string, SermonMeta[]> };
     [DocumentChannels.getTranslations]: {
-        args: [number];
-        return: { languageCode: string; title: string }[];
+        args: [string];
+        return: { languageCode: string; title: string; translatorName: string | null }[];
+    };
+    [DocumentChannels.getTraductionsForSermon]: {
+        args: [string, string];
+        return: SermonMeta[];
     };
     [DocumentChannels.getTabs]: { args: []; return: DocumentTab[] };
     [DocumentChannels.saveTabs]: { args: [DocumentTab[]]; return: void };

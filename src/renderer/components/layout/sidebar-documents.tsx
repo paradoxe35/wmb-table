@@ -1,12 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Input, Card, Layout, Tree, Divider, Select } from 'antd';
-import type { SermonMeta } from '@shared/types';
+import { Input, Card, Layout, Tree, Divider, Select, Tag } from 'antd';
+import { SoundOutlined } from '@ant-design/icons';
+import type { SermonMetaWithTraductions } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
 import { useSermonStore, useCustomDocumentsStore, selectActiveTabTitle } from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
 import { useOpenDocument } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import LanguageSelector from '../LanguageSelector';
 
 const { DirectoryTree } = Tree;
@@ -66,14 +68,15 @@ const DocumentsAdded = () => {
     return (
         <ContainerScrollY style={{ paddingLeft: '10px' }}>
             {customDocuments.map((d, i) => (
-                <ItemOutline
+                <div
                     key={d.id || i}
-                    id={d.id}
-                    name={d.title}
-                    active={activeTitle === d.title}
-                    title={d.title}
+                    className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
                     onClick={() => openDocument(d.title)}
-                />
+                >
+                    <div className="sidebar-item__left">
+                        <div className="sidebar-item__title">{d.title}</div>
+                    </div>
+                </div>
             ))}
         </ContainerScrollY>
     );
@@ -85,7 +88,7 @@ const alphabets = alpha.map((x) => String.fromCharCode(x));
 const DocumentByAlphabetic = () => {
     const sermons = useSermonStore((s) => s.sermons);
     const activeTitle = useSermonStore(selectActiveTabTitle);
-    const [datas, setDatas] = useState<SermonMeta[]>([]);
+    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
     const alphabet = useRef(alphabets[0]);
 
     const onSearch = useCallback(() => {
@@ -168,14 +171,14 @@ const DocumentSearch = () => {
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const setLoaded = useAppStore((s) => s.setLoaded);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
-    const [datas, setDatas] = useState<SermonMeta[]>([]);
+    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
 
     useEffect(() => {
         setDatas(sermons);
     }, [sermons]);
 
     useEffect(() => {
-        (window.api.documents.getTitles(activeLanguage) as Promise<SermonMeta[]>)
+        (window.api.documents.getTitles(activeLanguage) as Promise<SermonMetaWithTraductions[]>)
             .then((titles) => setSermons(titles))
             .finally(() => setLoaded(true));
     }, [activeLanguage, setSermons, setLoaded]);
@@ -211,25 +214,25 @@ const DocumentList = ({
     datas,
     activeTitle,
 }: {
-    datas: SermonMeta[];
+    datas: SermonMetaWithTraductions[];
     activeTitle: string | null;
 }) => {
     const openDocument = useOpenDocument();
+    const isEnglish = useAppStore((s) => s.activeLanguage) === 'en';
 
     return (
         <>
             <Divider style={{ padding: '0', margin: '0' }} />
-            <ContainerScrollY style={{ paddingLeft: '22px' }}>
+            <ContainerScrollY style={{ paddingLeft: '10px', paddingRight: '4px' }}>
                 {datas
                     .slice()
                     .sort((a, b) => a.title.localeCompare(b.title))
                     .map((d, i) => (
                         <ItemOutline
                             key={d.id || i}
-                            id={d.id}
+                            sermon={d}
                             active={activeTitle === d.title}
-                            name={d.title}
-                            title={d.title}
+                            isEnglish={isEnglish}
                             onClick={() => openDocument(d.title)}
                         />
                     ))}
@@ -239,22 +242,53 @@ const DocumentList = ({
 };
 
 const ItemOutline: React.FC<{
-    name: string;
-    id: string;
-    title: string;
+    sermon: SermonMetaWithTraductions;
     active?: boolean;
+    isEnglish: boolean;
     onClick: () => void;
-}> = ({ title, active, onClick }) => {
+}> = ({ sermon, active, isEnglish, onClick }) => {
+    const hasMultipleTraductions =
+        sermon.availableTraductions && sermon.availableTraductions.length > 1;
+
     return (
-        <span
-            className={`smart-editable ${active ? 'active' : ''}`}
-            title={title}
+        <div
+            className={`sidebar-item ${active ? 'sidebar-item--active' : ''}`}
+            title={sermon.title}
             onClick={onClick}
         >
-            <u>
-                <span></span>
-            </u>
-            <b className="name">{title} </b>
-        </span>
+            <div className="sidebar-item__left">
+                <div className="sidebar-item__title">{sermon.title}</div>
+                {!isEnglish && sermon.enTitle && sermon.enTitle !== sermon.title && (
+                    <div className="sidebar-item__en-title">{sermon.enTitle}</div>
+                )}
+                <div className="sidebar-item__date">{formatSermonDate(sermon.dateMs)}</div>
+                {hasMultipleTraductions && (
+                    <div className="sidebar-item__tags">
+                        {sermon.availableTraductions.map((t) => (
+                            <Tag
+                                key={t.translationId}
+                                color="blue"
+                                style={{
+                                    fontSize: '0.65em',
+                                    lineHeight: '14px',
+                                    padding: '0 3px',
+                                    marginRight: 2,
+                                }}
+                            >
+                                {t.traductionName ?? `T${t.translationId}`}
+                            </Tag>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <div className="sidebar-item__right">
+                {sermon.cityState && <div className="sidebar-item__city">{sermon.cityState}</div>}
+                {sermon.audioLink && (
+                    <div className="sidebar-item__audio">
+                        <SoundOutlined />
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };

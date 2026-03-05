@@ -1,15 +1,15 @@
 import { create } from 'zustand';
-import type { DocumentTab, SermonContent, SermonMeta } from '@shared/types';
+import type { DocumentTab, SermonContent, SermonMetaWithTraductions } from '@shared/types';
 import { getSermonYear } from '@renderer/utils/sermon-utils';
 
 interface SermonState {
-    sermons: SermonMeta[];
-    sermonsByTitle: Record<string, SermonMeta>;
-    sermonsByYear: Record<string, SermonMeta[]>;
+    sermons: SermonMetaWithTraductions[];
+    sermonsByTitle: Record<string, SermonMetaWithTraductions>;
+    sermonsByYear: Record<string, SermonMetaWithTraductions[]>;
     activeContent: SermonContent | null;
     tabs: DocumentTab[];
 
-    setSermons(s: SermonMeta[]): void;
+    setSermons(s: SermonMetaWithTraductions[]): void;
     setActiveContent(c: SermonContent | null): void;
     setTabs(tabs: DocumentTab[]): void;
     addTab(title: string): void;
@@ -18,6 +18,7 @@ interface SermonState {
     reorderTabs(tabs: DocumentTab[]): void;
     updateTabScroll(title: string, scrollY?: number, scrollX?: number): void;
     updateTabZoom(title: string, zoom: number): void;
+    updateTabTranslationId(title: string, translationId: number): void;
 }
 
 export const useSermonStore = create<SermonState>((set) => ({
@@ -28,8 +29,8 @@ export const useSermonStore = create<SermonState>((set) => ({
     tabs: [],
 
     setSermons: (s) => {
-        const sermonsByTitle: Record<string, SermonMeta> = {};
-        const sermonsByYear: Record<string, SermonMeta[]> = {};
+        const sermonsByTitle: Record<string, SermonMetaWithTraductions> = {};
+        const sermonsByYear: Record<string, SermonMetaWithTraductions[]> = {};
         for (const sermon of s) {
             sermonsByTitle[sermon.title] = sermon;
             const year = getSermonYear(sermon);
@@ -83,6 +84,11 @@ export const useSermonStore = create<SermonState>((set) => ({
     updateTabZoom: (title, zoom) =>
         set((s) => ({
             tabs: s.tabs.map((t) => (t.title === title ? { ...t, zoom } : t)),
+        })),
+
+    updateTabTranslationId: (title, translationId) =>
+        set((s) => ({
+            tabs: s.tabs.map((t) => (t.title === title ? { ...t, translationId } : t)),
         })),
 }));
 

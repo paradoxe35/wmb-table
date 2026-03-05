@@ -119,6 +119,45 @@ Replace `@bigmoves/tantivy-js` with `@oxdev03/node-tantivy-binding` and create t
 
 ---
 
+## Phase B.6: Language Index Architecture Redesign ✅
+
+Redesign language index resolution with offline fallback, caching, and dual download sources.
+
+### B.6.1 — Bundled Language Index
+
+- [x] **B.6.1.1** Add `langCode` field to all 68 entries in `resources/languages-index.json`
+- [x] **B.6.1.2** Add `resources/languages-index.json` to `extraResources` in `package.json` build config
+
+### B.6.2 — Shared Types
+
+- [x] **B.6.2.1** Add `enLanguage: string` to `InstalledLanguage` interface in `src/shared/types.ts`
+- [x] **B.6.2.2** Add `enLanguage: string` to `DownloadableLanguage` interface in `src/shared/types.ts`
+
+### B.6.3 — Language Pack Service Rewrite
+
+- [x] **B.6.3.1** Replace `Manifest`/`ManifestLanguage`/`ManifestBible` types with `LanguageIndexEntry`
+- [x] **B.6.3.2** Implement three-tier `getLanguageIndex()`: cache → bundled → remote
+- [x] **B.6.3.3** Implement dual-source download in `downloadLanguagePack()`: primary (57.129.42.228) → fallback (GitHub)
+- [x] **B.6.3.4** Update `getInstalledLanguages()` to resolve `language`/`enLanguage` from index
+- [x] **B.6.3.5** Update `getDownloadableLanguages()` to use `getLanguageIndex()` with `enLanguage`
+- [x] **B.6.3.6** Remove old types (`ManifestLanguage`, `ManifestBible`, `Manifest`), `MANIFEST_URL`, `fetchManifest()`, `verifyChecksum()`
+
+### B.6.4 — Renderer Updates
+
+- [x] **B.6.4.1** Show `enLanguage` in language manager modal list items (e.g., "Français (French)")
+
+### B.6.5 — Specs & Documentation
+
+- [x] **B.6.5.1** Update `specs/DATA-MIGRATION.md` Section 3: manifest → language index format, three-tier resolution, dual download
+- [x] **B.6.5.2** Add Phase B.6 tasks to `specs/DATA-MIGRATION-TASKS.md`
+
+### B.6.6 — Dataset Analysis
+
+- [x] **B.6.6.1** Download French language pack to `tmp/tantivy/index-fr.zip`
+- [x] **B.6.6.2** Create `tmp/tantivy/analyze-index.js` — Node.js script to analyze Tantivy index structure
+
+---
+
 ## Phase C: IPC Wiring
 
 Wire the new services into IPC handlers so the renderer can access them.
@@ -272,13 +311,122 @@ Replace the iframe-based document view with native React paragraph rendering.
 
 ---
 
+## Phase D.10: Reference Database Integration (data.sqlite) ✅
+
+Replace `sermon_metadata` user DB table with bundled `data.sqlite` as single source of truth for all reference data.
+
+### D.10.1 — Reference DB Infrastructure
+
+- [x] **D.10.1.1** Create `src/main/database/reference-db.ts` — open `resources/database/data.sqlite` read-only with mmap
+- [x] **D.10.1.2** Wire into `src/main/database/index.ts` — init/close lifecycle
+- [x] **D.10.1.3** Update `package.json` extraResources — add `resources/database` dir, remove `languages-index.json`
+
+### D.10.2 — Reference Repository
+
+- [x] **D.10.2.1** Create `src/main/database/repositories/reference.repository.ts`:
+    - Language queries: `getAllLanguages`, `getLanguageByCode`, `getLanguageByIsarId`
+    - Sermon queries: `getAllSermons`, `getSermonById`, `getSermonByIsarId`
+    - Translation queries: `getTranslationsForLanguage`, `getTranslationsForSermon`, `getTranslationCountForLanguage`
+    - Translator queries: `getTranslatorsForLanguage`
+    - Audio queries: `getAudioForSermonByIds`, `getAudioCountForLanguage`
+    - Mapping helpers: `sermonIdToTantivyDate`, `tantivyDateToSermonIds`
+
+### D.10.3 — Reference Data Service
+
+- [x] **D.10.3.1** Create `src/main/services/reference-data.service.ts`:
+    - `getSermonListForLanguage(langCode)` — English: sermon table, others: translation JOIN
+    - `getSermonListDeduplicated(langCode)` — group by sermon, attach `availableTraductions`
+    - `getSermonMeta(translatorId, langCode, sermonDate?)` — single lookup
+    - `getTraductionsForSermon(sermonDate, langCode)` — within-language translations
+    - `getTranslationsForSermon(sermonId)` — cross-language translations
+    - `getSermonsByYear(langCode)` — grouped by year
+- [x] **D.10.3.2** Delete `src/main/services/sermon-metadata.service.ts`
+
+### D.10.4 — Simplify Tantivy Service
+
+- [x] **D.10.4.1** Remove `getUniqueSermonDates()`, `getTraductions()`, `getTraductionsForDate()`, `sermonDatesCache`
+- [x] **D.10.4.2** Keep: content retrieval, search, paragraph count, installed languages
+
+### D.10.5 — Rewrite Language Pack Service
+
+- [x] **D.10.5.1** Use `refRepo.getLanguageByCode()` for download URLs (no more JSON index)
+- [x] **D.10.5.2** Use `refRepo.getAllLanguages()` for downloadable list
+- [x] **D.10.5.3** Remove metadata build from download flow
+- [x] **D.10.5.4** Delete `resources/languages-index.json`
+
+### D.10.6 — Update IPC & Preload
+
+- [x] **D.10.6.1** `documents.ipc.ts` → reference-data.service + reference.repository
+- [x] **D.10.6.2** `search.ipc.ts` → reference-data.service for meta lookups
+- [x] **D.10.6.3** `getSermonContent` now takes `(langCode, translationId, sermonDate)` — 3 args
+- [x] **D.10.6.4** `getTranslations` now takes `sermonId: string` (not translationId)
+- [x] **D.10.6.5** Updated `src/preload/index.ts` and `src/shared/ipc.types.ts`
+
+### D.10.7 — Drop sermon_metadata from User DB
+
+- [x] **D.10.7.1** Remove `sermonMetadata` from `src/main/database/schema.ts`
+- [x] **D.10.7.2** Generated migration `drizzle/0005_common_banshee.sql` — DROP TABLE
+- [x] **D.10.7.3** Delete `src/main/database/repositories/sermon-metadata.repository.ts`
+
+### D.10.8 — Update Shared Types
+
+- [x] **D.10.8.1** Added `RefLanguage`, `RefSermon`, `RefTranslator` types
+- [x] **D.10.8.2** Rewrote `SermonMeta`: replaced `pdfLink`/`webLink`/`dateLong`/`paragraphCount` with `dateMs`/`minutes`/`location`
+- [x] **D.10.8.3** Removed obsolete types: `OtherTraduction`, `TraductionInfo`, `Title`, `DataDocument`, `SearchItem`, `SearchResult`
+
+### D.10.9 — Update Renderer
+
+- [x] **D.10.9.1** `document-view.tsx`: pass `sermonDate` to `getSermonContent`, show location/minutes
+- [x] **D.10.9.2** `other-traductions-modal.tsx`: `getTranslations(sermonDate)` instead of `getTranslations(translationId)`
+- [x] **D.10.9.3** No changes needed: `sermon.store.ts`, `sidebar-documents.tsx`, `LanguageSelector.tsx`, `hooks/index.ts`
+
+### D.10.10 — Tests
+
+- [x] **D.10.10.1** Created `reference.repository.test.ts` — 13 tests against real data.sqlite
+- [x] **D.10.10.2** Rewrote `language-pack.service.test.ts` — 2 tests with real data.sqlite
+- [x] **D.10.10.3** Updated `tantivy.service.test.ts` — removed `getUniqueSermonDates` references
+- [x] **D.10.10.4** Deleted `sermon-metadata.repository.test.ts` and `sermon-metadata.service.test.ts`
+
+### D.10.11 — Verification
+
+- [x] **D.10.11.1** `pnpm typecheck` — 0 errors
+- [x] **D.10.11.2** `pnpm build` — succeeds
+- [x] **D.10.11.3** `pnpm test` — 59 passed, 7 skipped, 1 pre-existing failure (same as before)
+
+---
+
+## Phase D.11: Sidebar Document List Redesign ✅
+
+Redesign the sidebar document list with a rich two-column layout and city/state data pipeline.
+
+### D.11.1 — Types & Data Pipeline
+
+- [x] **D.11.1.1** Add `cityState: string | null` to `SermonMeta` in `src/shared/types.ts`
+- [x] **D.11.1.2** Add `cityState: string | null` to `RefSermon` in `src/shared/types.ts`
+- [x] **D.11.1.3** Add city/state JOINs (`sermon → location → city → state`) to all sermon queries in `reference.repository.ts`
+- [x] **D.11.1.4** Update `reference-data.service.ts` to pass `cityState` through to `SermonMeta`
+
+### D.11.2 — Sidebar Component Redesign
+
+- [x] **D.11.2.1** Redesign `ItemOutline` component in `sidebar-documents.tsx` with two-column layout:
+    - Left: title (bold), English subtitle (for non-English), formatted date, traduction badges
+    - Right: city/state (e.g. "Jeffersonville, IN"), audio icon
+- [x] **D.11.2.2** Create `formatSermonDate()` utility in `src/renderer/utils/sermon-utils.ts`
+- [x] **D.11.2.3** Add `.sidebar-item` CSS layout in `app.global.scss`
+
+### D.11.3 — Tests
+
+- [x] **D.11.3.1** Add cityState assertions to `reference.repository.test.ts`
+
+---
+
 ## Phase E: First Launch & Setup Screen
 
 ### E.1 — Setup Flow
 
 - [ ] **E.1.1** Create `src/renderer/views/setup/setup-view.tsx`:
-    - Fetch and display available languages from `index.json`
-    - Language cards with: name, sermon count, audio count, download size
+    - Fetch available languages from `data.sqlite` via `window.api.languages.getAvailable()` (uses `refRepo.getAllLanguages()`)
+    - Language cards with: name, native name, sermon count, audio count, download size
     - Checkbox selection + "Install Selected" button
     - Download progress per language
     - "Continue to App" button when at least 1 language installed
@@ -291,7 +439,7 @@ Replace the iframe-based document view with native React paragraph rendering.
 
 ### E.2 — Bible Download
 
-- [ ] **E.2.1** Add Bible data to `index.json` manifest (already spec'd)
+- [ ] **E.2.1** Add Bible download URL as a config constant or derive from `data.sqlite` `language` table fields (`storage_bucket`, `audio_path`)
 - [ ] **E.2.2** Bible download included in setup flow (auto-selected based on language)
 - [ ] **E.2.3** Unzip Bible SQLite to `databases/bible.sqlite`
 
@@ -364,24 +512,21 @@ Create tooling to build Tantivy indexes from source data and publish to GitHub r
 ### G.1 — Index Builder Script
 
 - [ ] **G.1.1** Create `scripts/build-index.ts` (run outside Electron, Node.js CLI):
-    - Input: directory of HTML sermon files + `documents-title.db`
+    - Input: directory of HTML sermon files; sermon metadata from `data.sqlite` (sermon IDs, dates, translation IDs via `refRepo`)
     - Parse each HTML file into paragraphs (strip tags, preserve paragraph numbers)
     - Create Tantivy index with schema: `sermon_date(i64)`, `line_index(u64)`, `paragraph_index(u64)`, `translation_id(u64)`, `unstemmed_content(text)`, optional `stemmed_content(text)`
-    - Assign `translation_id` by matching sermon date across languages
+    - Assign `translation_id` from `data.sqlite` `translator.translator_id` (matches Tantivy `translation_id`)
     - Output: Tantivy index directory ready to ZIP
-- [ ] **G.1.2** Generate `index.json` manifest from built indexes (file sizes, checksums, sermon counts)
-- [ ] **G.1.3** Add `pnpm build:index -- --lang=fr --input=./data/fr/` script
+- [ ] **G.1.2** Add `pnpm build:index -- --lang=fr --input=./data/fr/` script
 
 ### G.2 — French Index
 
-- [ ] **G.2.1** Build French Tantivy index from `tmp/old-data/datas/documents/` (1,769 HTML files)
-- [ ] **G.2.2** Map `documents-title.db` dates to `sermon_date` integers
-- [ ] **G.2.3** Assign `translation_id` matching English index (by `sermon_date` + `enTitle`)
-- [ ] **G.2.4** Verify: French index opens, search works, paragraphs match original HTML content
+- [x] **G.2.1** French Tantivy index already exists as downloadable language pack — `data.sqlite` has all French metadata (translations, translators SHP/VGR)
+- [ ] **G.2.2** Verify: French index opens, search works, paragraphs match sermon content
 
 ### G.3 — Release Publishing
 
-- [ ] **G.3.1** Upload `index.json` + all `index-*.zip` + `bible-*.zip` to GitHub release v1.0.0
+- [ ] **G.3.1** Upload all `index-*.zip` + `bible-*.zip` to GitHub release (no `index.json` manifest — download URLs derived from `data.sqlite` `language` table fields)
 - [ ] **G.3.2** Verify: app can download and install language packs from release
 
 ---
@@ -406,27 +551,30 @@ Create tooling to build Tantivy indexes from source data and publish to GitHub r
 
 - [ ] **H.3.1** Verify Tantivy search latency < 50ms for typical queries
 - [ ] **H.3.2** Verify sermon paragraph loading < 100ms (even for 400+ paragraph sermons)
-- [ ] **H.3.3** Verify sidebar sermon list renders smoothly with 1,700+ items (virtualized list if needed)
+- [ ] **H.3.3** Verify sidebar sermon list renders smoothly with 1,700+ items (rich two-column layout may need virtualization)
 
 ### H.4 — Final Cleanup
 
 - [ ] **H.4.1** Remove `tmp/old-data/` directory from repo
 - [ ] **H.4.2** Remove legacy HTML document references from codebase
 - [ ] **H.4.3** Update `.gitignore` for `indexes/` and `databases/` in dev
-- [ ] **H.4.4** Update `specs/TASKS.md` Phase 3/4/5 to reference new data architecture
+- [ ] **H.4.4** Final review of specs to ensure all references to `index.json`, `documents-title.db`, and `sermon_metadata` table point to `data.sqlite`
 - [ ] **H.4.5** `pnpm typecheck && pnpm lint && pnpm test && pnpm build` — all pass
 
 ---
 
 ## Summary
 
-| Phase | Description                         | Key Deliverable                         | Status |
-| ----- | ----------------------------------- | --------------------------------------- | ------ |
-| A     | Library swap & Tantivy service      | Read Tantivy indexes, search sermons    | ✅     |
-| B     | Sermon metadata & language packs    | Download language packs, build metadata | ✅     |
-| C     | IPC wiring                          | Renderer can access sermons and search  | ✅     |
-| D     | Renderer: sermon view & language UI | Native paragraph rendering, no iframe   | ✅     |
-| E     | First launch & setup screen         | User-driven language installation       |        |
-| F     | Reference system migration          | Paragraph-based notes/subject refs      |        |
-| G     | Index generation & release pipeline | Build & publish Tantivy indexes         |        |
-| H     | Testing & polish                    | Full integration testing, performance   |        |
+| Phase | Description                         | Key Deliverable                                    | Status |
+| ----- | ----------------------------------- | -------------------------------------------------- | ------ |
+| A     | Library swap & Tantivy service      | Read Tantivy indexes, search sermons               | ✅     |
+| B     | Sermon metadata & language packs    | Download language packs, build metadata            | ✅     |
+| B.6   | Language index redesign             | 3-tier resolution, dual download, offline fallback | ✅     |
+| C     | IPC wiring                          | Renderer can access sermons and search             | ✅     |
+| D     | Renderer: sermon view & language UI | Native paragraph rendering, no iframe              | ✅     |
+| D.10  | Reference DB integration            | data.sqlite replaces sermon_metadata + JSON index  | ✅     |
+| D.11  | Sidebar document list redesign      | Rich two-column layout with city/state pipeline    | ✅     |
+| E     | First launch & setup screen         | User-driven language installation                  |        |
+| F     | Reference system migration          | Paragraph-based notes/subject refs                 |        |
+| G     | Index generation & release pipeline | Build & publish Tantivy indexes                    |        |
+| H     | Testing & polish                    | Full integration testing, performance              |        |

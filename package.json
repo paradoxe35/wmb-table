@@ -107,6 +107,10 @@
             {
                 "from": "drizzle",
                 "to": "drizzle"
+            },
+            {
+                "from": "resources/database",
+                "to": "database"
             }
         ],
         "mac": {

@@ -2,50 +2,22 @@ import { app } from 'electron';
 import { join } from 'node:path';
 import { createWriteStream, existsSync, statSync, readdirSync } from 'node:fs';
 import { mkdir, rm, rename } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import log from 'electron-log';
 import type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 import * as tantivyService from './tantivy.service';
-import * as sermonMetadataService from './sermon-metadata.service';
-import * as sermonMetadataRepo from '../database/repositories/sermon-metadata.repository';
+import * as refRepo from '../database/repositories/reference.repository';
 
 const execFileAsync = promisify(execFile);
 
-const MANIFEST_URL =
-    'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0/manifest.json';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface ManifestLanguage {
-    code: string;
-    language: string;
-    sermons_available: number;
-    sermons_with_audio: number;
-    filename: string;
-    filesize: number;
-    checksum: string;
-}
-
-export interface ManifestBible {
-    code: string;
-    language: string;
-    filename: string;
-    filesize: number;
-    checksum: string;
-}
-
-export interface Manifest {
-    version: number;
-    languages: ManifestLanguage[];
-    bible: ManifestBible[];
-}
-
 export type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const FALLBACK_DOWNLOAD_BASE = 'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -73,12 +45,6 @@ function getDirectorySize(dirPath: string): number {
     return total;
 }
 
-async function verifyChecksum(filePath: string, expected: string): Promise<boolean> {
-    const data = await readFile(filePath);
-    const actual = createHash('sha256').update(data).digest('hex');
-    return actual === expected;
-}
-
 async function extractZip(zipPath: string, destDir: string): Promise<void> {
     if (process.platform === 'win32') {
         await execFileAsync('powershell', [
@@ -95,22 +61,13 @@ async function extractZip(zipPath: string, destDir: string): Promise<void> {
 // Public API
 // ---------------------------------------------------------------------------
 
-export async function fetchManifest(): Promise<Manifest> {
-    const response = await fetch(MANIFEST_URL);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch manifest: ${response.status} ${response.statusText}`);
-    }
-    return (await response.json()) as Manifest;
-}
-
 export async function downloadLanguagePack(
     langCode: string,
     onProgress: (pct: number) => void,
 ): Promise<void> {
-    const manifest = await fetchManifest();
-    const langInfo = manifest.languages.find((l) => l.code === langCode);
-    if (!langInfo) {
-        throw new Error(`Language "${langCode}" not found in manifest`);
+    const lang = refRepo.getLanguageByCode(langCode);
+    if (!lang) {
+        throw new Error(`Language "${langCode}" not found in reference database`);
     }
 
     const indexesDir = getIndexesDir();
@@ -124,11 +81,30 @@ export async function downloadLanguagePack(
     if (existsSync(tmpDir)) await rm(tmpDir, { recursive: true });
     if (existsSync(zipPath)) await rm(zipPath);
 
-    // Download ZIP with progress
-    const downloadUrl = `https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0/${langInfo.filename}`;
-    const response = await fetch(downloadUrl);
-    if (!response.ok) {
-        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+    // Primary: data.sqlite language.url, Fallback: GitHub releases
+    const primaryUrl = lang.url;
+    const fallbackUrl = `${FALLBACK_DOWNLOAD_BASE}/${lang.fileName}`;
+
+    let response: Response | null = null;
+    try {
+        response = await fetch(primaryUrl);
+        if (!response.ok) {
+            log.warn(
+                `[language-pack] Primary download failed (${response.status}), trying fallback`,
+            );
+            response = null;
+        }
+    } catch (err) {
+        log.warn('[language-pack] Primary download error, trying fallback:', err);
+    }
+
+    if (!response) {
+        response = await fetch(fallbackUrl);
+        if (!response.ok) {
+            throw new Error(
+                `Download failed from both sources: ${response.status} ${response.statusText}`,
+            );
+        }
     }
 
     const contentLength = Number(response.headers.get('content-length') || 0);
@@ -156,13 +132,6 @@ export async function downloadLanguagePack(
         });
     }
 
-    // Verify checksum
-    const checksumOk = await verifyChecksum(zipPath, langInfo.checksum);
-    if (!checksumOk) {
-        await rm(zipPath);
-        throw new Error(`Checksum verification failed for "${langCode}"`);
-    }
-
     // Extract
     await mkdir(tmpDir, { recursive: true });
     await extractZip(zipPath, tmpDir);
@@ -172,9 +141,8 @@ export async function downloadLanguagePack(
     if (existsSync(finalDir)) await rm(finalDir, { recursive: true });
     await rename(tmpDir, finalDir);
 
-    // Open index and build metadata
+    // Open index (no metadata build needed — data.sqlite is the source of truth)
     tantivyService.openIndex(langCode);
-    sermonMetadataService.buildMetadataFromIndex(langCode);
 
     log.info(`[language-pack] Installed language pack "${langCode}"`);
 }
@@ -188,40 +156,62 @@ export async function deleteLanguagePack(langCode: string): Promise<void> {
         await rm(indexDir, { recursive: true });
     }
 
-    sermonMetadataRepo.deleteByLanguage(langCode);
-
     // Re-initialize remaining indexes
     tantivyService.initializeTantivy();
 
     log.info(`[language-pack] Deleted language pack "${langCode}"`);
 }
 
-export function getInstalledLanguages(): InstalledLanguage[] {
+export async function getInstalledLanguages(): Promise<InstalledLanguage[]> {
     const codes = tantivyService.getInstalledLanguages();
     const indexesDir = getIndexesDir();
 
     return codes.map((code) => {
-        const sermons = sermonMetadataRepo.getSermonList(code);
+        const lang = refRepo.getLanguageByCode(code);
         const dirPath = join(indexesDir, code);
+        const translationCount = lang?.translationsSupport
+            ? refRepo.getTranslationCountForLanguage(code)
+            : refRepo.getAllSermons().length;
         return {
             code,
-            language: code,
-            sermonsCount: sermons.length,
+            language: lang?.nativeTitle ?? code,
+            enLanguage: lang?.title ?? code,
+            sermonsCount: translationCount,
             sizeOnDisk: getDirectorySize(dirPath),
         };
     });
 }
 
 export async function getDownloadableLanguages(): Promise<DownloadableLanguage[]> {
-    const manifest = await fetchManifest();
+    const allLanguages = refRepo.getAllLanguages();
     const installed = new Set(tantivyService.getInstalledLanguages());
 
-    return manifest.languages.map((lang) => ({
-        code: lang.code,
-        language: lang.language,
-        sermonsAvailable: lang.sermons_available,
-        sermonsWithAudio: lang.sermons_with_audio,
-        filesize: lang.filesize,
-        installed: installed.has(lang.code),
-    }));
+    return allLanguages.map((lang) => {
+        const sermonsAvailable = lang.translationsSupport
+            ? refRepo.getTranslationCountForLanguage(lang.code)
+            : refRepo.getAllSermons().length;
+        const audioCount = refRepo.getAudioCountForLanguage(lang.code);
+
+        // Parse fileSize string like "31.17 MB" to bytes
+        let filesize = 0;
+        const match = lang.fileSize.match(/([\d.]+)\s*(\w+)/);
+        if (match) {
+            const num = parseFloat(match[1]);
+            const unit = match[2].toUpperCase();
+            if (unit === 'MB') filesize = Math.round(num * 1024 * 1024);
+            else if (unit === 'KB') filesize = Math.round(num * 1024);
+            else if (unit === 'GB') filesize = Math.round(num * 1024 * 1024 * 1024);
+            else filesize = Math.round(num);
+        }
+
+        return {
+            code: lang.code,
+            language: lang.nativeTitle,
+            enLanguage: lang.title,
+            sermonsAvailable,
+            sermonsWithAudio: audioCount,
+            filesize,
+            installed: installed.has(lang.code),
+        };
+    });
 }

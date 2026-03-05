@@ -33,12 +33,12 @@ Replace the entire document storage with **Tantivy full-text search indexes** as
 ┌──────────────────────────────────────────────────────────────┐
 │                    GitHub Release v1.0.0                      │
 │                                                              │
-│  index.json ← manifest listing available language packs      │
 │  index-en.zip ← English Tantivy index (341K paragraphs)     │
 │  index-orm.zip ← Oromo Tantivy index (25K paragraphs)       │
-│  index-fr.zip ← French Tantivy index (future)               │
+│  index-fr.zip ← French Tantivy index                        │
 │  bible-fr.zip ← French Bible SQLite                         │
 │  ...                                                         │
+│  (download URLs derived from data.sqlite language table)     │
 └──────────────────────────┬───────────────────────────────────┘
                            │ User downloads on first launch
                            ▼
@@ -60,73 +60,52 @@ Replace the entire document storage with **Tantivy full-text search indexes** as
 └──────────────────────────────────────────────────────────────┘
 ```
 
-### Data Layer Split
+### Data Layer Split — Two-Database Architecture
 
-| Data                                                              | Storage                        | Why                                                                     |
-| ----------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------- |
-| Sermon content (paragraphs)                                       | Tantivy indexes                | Full-text search, paragraph-level access, LZ4 compression, per-language |
-| Sermon metadata (titles, dates, links)                            | SQLite `sermon_metadata` table | Relational queries, joins with app data, small dataset                  |
-| Bible verses                                                      | SQLite + FTS5                  | Structured (book/chapter/verse), FTS5 for search, already implemented   |
-| App state (notes, subjects, history, tabs, audio, backup, config) | SQLite (Drizzle ORM)           | Already implemented in Phase 3                                          |
-| Full-text search                                                  | Tantivy                        | Native ranking, stemming, snippet generation                            |
+| Data                                                              | Storage                                     | Why                                                                     |
+| ----------------------------------------------------------------- | ------------------------------------------- | ----------------------------------------------------------------------- |
+| Sermon/language/translator/audio reference data                   | `data.sqlite` (read-only, bundled)          | Single source of truth, 14 tables, 68K+ rows, no user writes needed     |
+| Sermon content (paragraphs)                                       | Tantivy indexes                             | Full-text search, paragraph-level access, LZ4 compression, per-language |
+| Bible verses                                                      | SQLite + FTS5                               | Structured (book/chapter/verse), FTS5 for search                        |
+| App state (notes, subjects, history, tabs, audio, backup, config) | `wmb-table.sqlite` (Drizzle ORM, user data) | Personalized data, user writes                                          |
+| Full-text search                                                  | Tantivy                                     | Native ranking, stemming, snippet generation                            |
 
-## 3. index.json Manifest Format
+## 3. Reference Database (`data.sqlite`)
 
-Hosted at `https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0/index.json`
+All sermon metadata, language info, translator data, and audio paths are stored in a bundled read-only SQLite database at `resources/database/data.sqlite` (10 MB, 14 tables, 68,808 rows). This replaces:
 
-```jsonc
-{
-    "version": 1,
-    "languages": [
-        {
-            "code": "en",
-            "language": "English",
-            "sermons_available": 887,
-            "sermons_with_audio": 593,
-            "filename": "index-en.zip",
-            "filesize": 45000000,
-            "checksum": "sha256:abc123...",
-        },
-        {
-            "code": "orm",
-            "language": "Afaan Oromoo",
-            "sermons_available": 120,
-            "sermons_with_audio": 0,
-            "filename": "index-orm.zip",
-            "filesize": 3500000,
-            "checksum": "sha256:def456...",
-        },
-        {
-            "code": "fr",
-            "language": "Francais",
-            "sermons_available": 1769,
-            "sermons_with_audio": 593,
-            "filename": "index-fr.zip",
-            "filesize": 52000000,
-            "checksum": "sha256:789abc...",
-        },
-    ],
-    "bible": [
-        {
-            "code": "fr",
-            "language": "Francais",
-            "filename": "bible-fr.zip",
-            "filesize": 5200000,
-            "checksum": "sha256:...",
-        },
-    ],
-}
+- The `sermon_metadata` Drizzle table (previously built dynamically from Tantivy scans)
+- The `languages-index.json` file (previously used for language discovery)
+- The `buildMetadataFromIndex()` + `assignTraductionNames()` service functions
+
+### Schema (14 tables)
+
+```
+language         — 81 languages (code, title, nativeTitle, url, storageBucket, etc.)
+sermon           — 1,207 sermons (id like "53-0403", title, dateMs, minutes)
+translation      — 30,066 translations (title per language/translator/sermon)
+translator       — 152 translators (translatorId = Tantivy translation_id)
+audio            — 18,096 audio file paths
+location         — sermon venues (joined via sermon.location_id)
+country, state, city — geography hierarchy
+series, series_translation, sermon_series — sermon series data
+audio_title      — audio title values
+revision         — schema version tracking
 ```
 
-**Fields:**
+### Key Data Relationships
 
-- `code` — ISO 639 language code (used as directory name under `indexes/`)
-- `language` — Human-readable language name for UI display
-- `sermons_available` — Total unique sermons in the index
-- `sermons_with_audio` — How many have audio links
-- `filename` — ZIP file name in the GitHub release
-- `filesize` — Uncompressed size in bytes (for download progress)
-- `checksum` — SHA-256 hash for integrity verification
+- `translator.translator_id` (numeric: 0,1,2,3...) = Tantivy `translation_id` field
+- `sermon.id` ("53-0403") → strip dash + suffix → Tantivy `sermon_date` (530403)
+- English: `translations_support=0`, no translator rows, Tantivy `translation_id=0`
+- French: SHP(tid=2, 1206 sermons), VGR(tid=3, 364 sermons)
+- Audio URL = `https://s3.eu-central-1.wasabisys.com/{storage_bucket}/{audio_path}{audio.path}`
+- Language download URL: `language.url` (full Wasabi S3 URL)
+
+### Download sources (dual, with automatic fallback):
+
+1. **Primary:** `language.url` from data.sqlite (Wasabi S3)
+2. **Fallback:** `https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0/{language.file_name}`
 
 ## 4. Tantivy Index Schema
 
@@ -150,35 +129,15 @@ unstemmed_content: text (stored, default)        — raw paragraph text
 - `sermon_date` is the date code (e.g. `470412` = April 12, 1947)
 - English index has `stemmed_content` (en_stem tokenizer) for better search; other languages only have `unstemmed_content`
 
-### Sermon Metadata in SQLite
+### Sermon Metadata from data.sqlite
 
-The Tantivy index doesn't store sermon-level metadata (title, audio link, PDF link, etc.). This goes in SQLite:
+The Tantivy index stores only paragraph content. All sermon-level metadata (title, audio, location, duration, translators) comes from `data.sqlite` via `reference.repository.ts` and `reference-data.service.ts`.
 
-```sql
-CREATE TABLE sermon_metadata (
-  id            TEXT PRIMARY KEY,
-  translation_id INTEGER NOT NULL,    -- matches Tantivy translation_id
-  language_code TEXT NOT NULL,         -- 'en', 'fr', 'orm'
-  sermon_date   TEXT NOT NULL,         -- '47-0412', '65-1128M'
-  title         TEXT NOT NULL,         -- display title in this language
-  en_title      TEXT,                  -- English title (for cross-reference)
-  audio_link    TEXT,
-  pdf_link      TEXT,
-  web_link      TEXT,
-  date_long     TEXT,                  -- human-readable date string
-  paragraph_count INTEGER DEFAULT 0,  -- cached count for UI
-  UNIQUE(translation_id, language_code)
-);
-
-CREATE INDEX idx_sermon_meta_lang ON sermon_metadata(language_code);
-CREATE INDEX idx_sermon_meta_date ON sermon_metadata(sermon_date);
-```
-
-**Why separate from Tantivy?** Metadata is queried relationally (filter by language, sort by date, group by year). Tantivy is optimized for full-text search, not SQL-style filtering.
+The `sermon_metadata` user DB table has been **dropped** (migration `0005_common_banshee.sql`). All metadata queries now go to the bundled read-only `data.sqlite`.
 
 ### Translation Cross-Reference
 
-Sermons in different languages share the same `translation_id`. This enables:
+Sermons across languages are linked via `sermon.isar_id` in the `translation` table. This enables:
 
 - "View this sermon in English" button
 - Cross-language search results grouping
@@ -228,35 +187,30 @@ getSnippet(langCode: string, query: string, translationId: number): string
 getUniqueSermons(langCode: string): SermonSummary[]  // distinct translation_ids with dates
 ```
 
-### 6.2 Sermon Metadata Service (`src/main/services/sermon-metadata.service.ts`)
+### 6.2 Reference Data Service (`src/main/services/reference-data.service.ts`)
 
-Bridges Tantivy indexes with SQLite metadata. Builds the `sermon_metadata` table from Tantivy data + legacy title data.
+Combines data.sqlite queries with Tantivy. Replaces the old `sermon-metadata.service.ts`.
 
 ```typescript
-// Build metadata from Tantivy index on first install of a language
-buildMetadataFromIndex(langCode: string): void
-
-// Queries
-getSermonList(langCode: string, options?: { year?: string, search?: string }): SermonMeta[]
-getSermonMeta(translationId: number, langCode: string): SermonMeta | null
-getAvailableTranslations(translationId: number): { langCode: string, title: string }[]
+getSermonListForLanguage(langCode: string): SermonMeta[]
+getSermonListDeduplicated(langCode: string): SermonMetaWithTraductions[]
+getSermonMeta(translatorId: number, langCode: string, sermonDate?: string): SermonMeta | null
+getTraductionsForSermon(sermonDate: string, langCode: string): SermonMeta[]
+getTranslationsForSermon(sermonId: string): { languageCode, title, translatorName }[]
 getSermonsByYear(langCode: string): Record<string, SermonMeta[]>
 ```
 
 ### 6.3 Language Pack Service (`src/main/services/language-pack.service.ts`)
 
-Downloads and manages language packs from GitHub releases.
+Downloads and manages language packs using `data.sqlite` for language metadata.
 
 ```typescript
-// Fetch manifest
-fetchManifest(): Promise<Manifest>
-
-// Download
+// Download (dual-source: data.sqlite URL → GitHub fallback)
 downloadLanguagePack(langCode: string, onProgress: (pct: number) => void): Promise<void>
 deleteLanguagePack(langCode: string): Promise<void>
 
-// Status
-getInstalledLanguages(): InstalledLanguage[]
+// Status (uses reference.repository for language info)
+getInstalledLanguages(): Promise<InstalledLanguage[]>
 getDownloadableLanguages(): Promise<DownloadableLanguage[]>
 ```
 
@@ -276,10 +230,10 @@ getDownloadableLanguages(): Promise<DownloadableLanguage[]>
 'push:languageInstalled'        → { langCode: string }
 
 // Sermon content (replaces documents:getContentPath)
-'documents:getSermonContent' → SermonContent  (args: [string langCode, number translationId])
+'documents:getSermonContent' → SermonContent  (args: [string langCode, number translationId, string sermonDate])
 'documents:getSermonList'    → SermonMeta[]   (args: [string langCode, options?])
 'documents:getSermonsByYear' → Record<string, SermonMeta[]>  (args: [string langCode])
-'documents:getTranslations'  → TranslationInfo[]  (args: [number translationId])
+'documents:getTranslations'  → { languageCode, title, translatorName }[]  (args: [string sermonId])
 ```
 
 ### Modified Channels
@@ -571,11 +525,10 @@ App starts
   │   ├─ YES → Normal startup, load active language
   │   └─ NO  → Show Setup Screen
   │             │
-  │             ├─ Fetch index.json from GitHub releases
+  │             ├─ Query available languages from data.sqlite (refRepo.getAllLanguages())
   │             ├─ Display available languages with sizes
   │             ├─ User selects languages to install
-  │             ├─ Download & unzip selected language packs
-  │             ├─ Build sermon_metadata from Tantivy index
+  │             ├─ Download & unzip selected language packs (URLs from data.sqlite language table)
   │             ├─ Set first installed language as active
   │             └─ Transition to main app
   │
@@ -609,11 +562,11 @@ Already implemented in Phase 3 (`src/main/database/migrate-from-nedb.ts`). Migra
 
 ## 12. Audio Integration
 
-Audio links are stored in `sermon_metadata`. When a sermon has an `audio_link`:
+Audio URLs are constructed from `data.sqlite` (`audio.path` + `language.audio_path` + `language.storage_bucket`). When a sermon has audio:
 
 - Audio player appears in the sermon view header
 - Audio download saves to `userData/audio/`
 - `audioDocumentTimes` table tracks playback position (keyed by audio_link, unchanged)
 - `audioDocumentLastPlay` tracks the last played sermon
 
-The audio system is unchanged from Phase 3 — it reads `audio_link` from `sermon_metadata`.
+Audio URL format: `https://s3.eu-central-1.wasabisys.com/{storage_bucket}/{audio_path}{audio.path}`

@@ -34,13 +34,14 @@ function onPush<C extends PushChannel>(
 const api = {
     documents: {
         getTitles: (langCode: string) => invoke(DocumentChannels.getTitles, langCode),
-        getSermonContent: (langCode: string, translationId: number) =>
-            invoke(DocumentChannels.getSermonContent, langCode, translationId),
+        getSermonContent: (langCode: string, translationId: number, sermonDate: string) =>
+            invoke(DocumentChannels.getSermonContent, langCode, translationId, sermonDate),
         getSermonList: (langCode: string, options?: { year?: string }) =>
             invoke(DocumentChannels.getSermonList, langCode, options),
         getSermonsByYear: (langCode: string) => invoke(DocumentChannels.getSermonsByYear, langCode),
-        getTranslations: (translationId: number) =>
-            invoke(DocumentChannels.getTranslations, translationId),
+        getTranslations: (sermonId: string) => invoke(DocumentChannels.getTranslations, sermonId),
+        getTraductionsForSermon: (sermonDate: string, langCode: string) =>
+            invoke(DocumentChannels.getTraductionsForSermon, sermonDate, langCode),
         getTabs: () => invoke(DocumentChannels.getTabs),
         saveTabs: (tabs: unknown[]) => invoke(DocumentChannels.saveTabs, tabs),
     },

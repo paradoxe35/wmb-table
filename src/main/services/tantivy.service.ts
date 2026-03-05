@@ -23,11 +23,6 @@ const ORDER_ASC = 0 as const;
 
 export type { SermonParagraph } from '@shared/types';
 
-export interface SermonDateEntry {
-    translationId: number;
-    sermonDate: number;
-}
-
 export interface GroupedSearchHit {
     translationId: number;
     sermonDate: number;
@@ -48,7 +43,6 @@ export type { DocAddress };
 // ---------------------------------------------------------------------------
 
 const indexCache = new Map<string, Index>();
-const sermonDatesCache = new Map<string, SermonDateEntry[]>();
 let indexesDir = '';
 
 // ---------------------------------------------------------------------------
@@ -182,14 +176,17 @@ export function openIndex(langCode: string): void {
 
 export function closeAllIndexes(): void {
     indexCache.clear();
-    sermonDatesCache.clear();
 }
 
 export function getInstalledLanguages(): string[] {
     return Array.from(indexCache.keys());
 }
 
-export function getSermonParagraphs(langCode: string, translationId: number): SermonParagraph[] {
+export function getSermonParagraphs(
+    langCode: string,
+    translationId: number,
+    sermonDate?: number,
+): SermonParagraph[] {
     const index = getIndex(langCode);
     const schema = index.schema;
     const hasStemmed = schema.hasField('stemmed_content');
@@ -203,11 +200,15 @@ export function getSermonParagraphs(langCode: string, translationId: number): Se
         const doc = searcher.doc(hit.docAddress);
         const dict = doc.toDict() as Record<string, unknown[]>;
 
+        const docSermonDate = extractNumeric(dict, 'sermon_date');
+        // Filter by sermonDate if provided
+        if (sermonDate !== undefined && docSermonDate !== sermonDate) continue;
+
         const paragraph: SermonParagraph = {
             lineIndex: extractNumeric(dict, 'line_index'),
             paragraphIndex: extractNumeric(dict, 'paragraph_index'),
             translationId: extractNumeric(dict, 'translation_id'),
-            sermonDate: extractNumeric(dict, 'sermon_date'),
+            sermonDate: docSermonDate,
             content: extractString(dict, 'unstemmed_content'),
         };
 
@@ -220,38 +221,6 @@ export function getSermonParagraphs(langCode: string, translationId: number): Se
     }
 
     return paragraphs;
-}
-
-export function getUniqueSermonDates(langCode: string): SermonDateEntry[] {
-    const cached = sermonDatesCache.get(langCode);
-    if (cached) return cached;
-
-    const index = getIndex(langCode);
-    const query = Query.allQuery();
-    const searcher = index.searcher();
-
-    // Order by translation_id to group docs by sermon
-    const result = searcher.search(query, searcher.numDocs, false, 'translation_id', 0, ORDER_ASC);
-
-    const entries: SermonDateEntry[] = [];
-    let lastTranslationId = -1;
-
-    for (const hit of result.hits) {
-        const currentOrder = hit.order ?? -1;
-        if (currentOrder === lastTranslationId) continue;
-        lastTranslationId = currentOrder;
-
-        const doc = searcher.doc(hit.docAddress);
-        const dict = doc.toDict() as Record<string, unknown[]>;
-
-        entries.push({
-            translationId: extractNumeric(dict, 'translation_id'),
-            sermonDate: extractNumeric(dict, 'sermon_date'),
-        });
-    }
-
-    sermonDatesCache.set(langCode, entries);
-    return entries;
 }
 
 export function searchSermons(
@@ -314,7 +283,15 @@ export function searchSermons(
     return { hits, total };
 }
 
-export function getSermonParagraphCount(langCode: string, translationId: number): number {
+export function getSermonParagraphCount(
+    langCode: string,
+    translationId: number,
+    sermonDate?: number,
+): number {
+    if (sermonDate !== undefined) {
+        // Count paragraphs matching both translationId and sermonDate
+        return getSermonParagraphs(langCode, translationId, sermonDate).length;
+    }
     const index = getIndex(langCode);
     const schema = index.schema;
     const query = Query.termQuery(schema, 'translation_id', translationId);
@@ -353,5 +330,4 @@ export function _openIndexFromPathForTesting(langCode: string, path: string): vo
 
 export function _clearCacheForTesting(): void {
     indexCache.clear();
-    sermonDatesCache.clear();
 }

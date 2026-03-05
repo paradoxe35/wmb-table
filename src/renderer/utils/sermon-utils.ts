@@ -18,3 +18,14 @@ export function simpleMatch(query: string, text: string): boolean {
     const q = normalizeStr(query);
     return normalized.includes(q);
 }
+
+export function formatSermonDate(dateMs: number): string {
+    const d = new Date(dateMs);
+    return d.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC',
+    });
+}

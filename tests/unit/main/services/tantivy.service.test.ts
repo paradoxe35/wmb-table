@@ -4,7 +4,6 @@ import {
     _openIndexFromPathForTesting,
     _clearCacheForTesting,
     getInstalledLanguages,
-    getUniqueSermonDates,
     getSermonParagraphs,
     searchSermons,
     getSearchSnippet,
@@ -28,29 +27,14 @@ describe('tantivy.service — Oromo index', () => {
         expect(langs).toContain('orm');
     });
 
-    it('getUniqueSermonDates() returns distinct entries', () => {
-        const entries = getUniqueSermonDates('orm');
-        expect(entries.length).toBeGreaterThan(0);
-
-        const ids = entries.map((e) => e.translationId);
-        const uniqueIds = new Set(ids);
-        expect(uniqueIds.size).toBe(ids.length);
-
-        for (const entry of entries) {
-            expect(entry.translationId).toBeGreaterThan(0);
-            expect(entry.sermonDate).toBeTruthy();
-        }
-    });
-
     it('getSermonParagraphs() returns ordered paragraphs', () => {
-        const entries = getUniqueSermonDates('orm');
-        const tid = entries[0].translationId;
-        const paragraphs = getSermonParagraphs('orm', tid);
+        // Use a known translationId — in test indexes, typically 1 or 2
+        const paragraphs = getSermonParagraphs('orm', 1);
 
         expect(paragraphs.length).toBeGreaterThan(0);
 
         for (const p of paragraphs) {
-            expect(p.translationId).toBe(tid);
+            expect(p.translationId).toBe(1);
             expect(p.content).toBeTruthy();
         }
 
@@ -91,9 +75,7 @@ describe('tantivy.service — English index', () => {
     });
 
     it('getSermonParagraphs() includes stemmedContent', () => {
-        const entries = getUniqueSermonDates('en');
-        const tid = entries[0].translationId;
-        const paragraphs = getSermonParagraphs('en', tid);
+        const paragraphs = getSermonParagraphs('en', 0);
 
         expect(paragraphs.length).toBeGreaterThan(0);
 
