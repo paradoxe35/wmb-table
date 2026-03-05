@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { customDocuments } from '../schema';
+import { logChange } from '@main/services/sync/change-log.service';
 import type { CustomDocument, CustomDocumentContent } from '@shared/types';
 
 export function getCustomDocuments(): CustomDocument[] {
@@ -30,6 +31,14 @@ export function createCustomDocument(title: string, content: string): CustomDocu
         .insert(customDocuments)
         .values({ id, documentId, title, content, createdAt: now, updatedAt: now })
         .run();
+    logChange('custom_documents', id, 'SAVE', {
+        id,
+        documentId,
+        title,
+        content,
+        createdAt: now,
+        updatedAt: now,
+    });
     return {
         id,
         title,
@@ -54,4 +63,5 @@ export function getCustomDocumentContent(id: string): CustomDocumentContent | nu
 
 export function deleteCustomDocument(id: string): void {
     getDb().delete(customDocuments).where(eq(customDocuments.id, id)).run();
+    logChange('custom_documents', id, 'DELETE', { id });
 }

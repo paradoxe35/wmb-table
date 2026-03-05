@@ -426,6 +426,13 @@ export interface SidebarStatus extends Readonly<BaseEntity> {
 
 export type ViewMenuValue = 'options' | 'document';
 
+export interface SyncStatus {
+    enabled: boolean;
+    syncing: boolean;
+    lastSync: string | null;
+    error: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Updater (inlined — no electron-updater import)
 // ---------------------------------------------------------------------------

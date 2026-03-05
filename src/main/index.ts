@@ -8,6 +8,7 @@ import { initializeLogger } from '@main/lib/logger';
 import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, closeAllIndexes } from '@main/services/tantivy.service';
+import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 
 // Initialize logger first
 initializeLogger();
@@ -99,6 +100,7 @@ function createWindow(): void {
 app.whenReady().then(() => {
     setupCSP();
     createWindow();
+    tryStartSynchronizer();
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -108,6 +110,7 @@ app.whenReady().then(() => {
 });
 
 app.on('will-quit', () => {
+    stopSynchronizer();
     closeAllIndexes();
     closeDatabase();
 });

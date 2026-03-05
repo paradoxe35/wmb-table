@@ -1,6 +1,8 @@
 import { BackupChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as backupRepo from '@main/database/repositories/backup.repository';
+import { authenticateWithGoogle } from '@main/services/sync/google-auth.service';
+import { initializeSynchronizer } from '@main/services/sync/synchronizer';
 
 export function registerBackupHandlers(): void {
     registerHandler(BackupChannels.getStatus, async () => {
@@ -16,6 +18,19 @@ export function registerBackupHandlers(): void {
     });
 
     registerHandler(BackupChannels.login, async () => {
-        throw new Error('Not implemented: backup:login');
+        const result = await authenticateWithGoogle();
+
+        backupRepo.upsertStatus({
+            email: result.userInfo.email,
+            name: result.userInfo.name,
+            active: true,
+            access: true,
+            restored: true,
+            lastUpdate: new Date(),
+        });
+
+        initializeSynchronizer(result.client);
+
+        return backupRepo.getStatus();
     });
 }

@@ -32,6 +32,7 @@ import type {
     DownloadableLanguage,
     TantivySearchResult,
     LanguageDownloadProgress,
+    SyncStatus,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -117,6 +118,10 @@ export const BackupChannels = {
     toggleStatus: 'backup:toggleStatus',
     getReminder: 'backup:getReminder',
     login: 'backup:login',
+} as const;
+
+export const SyncChannels = {
+    getStatus: 'sync:getStatus',
 } as const;
 
 export const AppChannels = {
@@ -283,7 +288,10 @@ export interface InvokeChannelMap {
     [BackupChannels.getStatus]: { args: []; return: BackupStatus | null };
     [BackupChannels.toggleStatus]: { args: [boolean]; return: void };
     [BackupChannels.getReminder]: { args: []; return: boolean };
-    [BackupChannels.login]: { args: []; return: void };
+    [BackupChannels.login]: { args: []; return: BackupStatus | null };
+
+    // Sync
+    [SyncChannels.getStatus]: { args: []; return: SyncStatus };
 
     // App
     [AppChannels.initialize]: { args: []; return: void };

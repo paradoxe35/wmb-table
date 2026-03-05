@@ -23,14 +23,5 @@
             "@shared/*": ["./src/shared/*"]
         }
     },
-    "include": ["src/main/**/*", "src/shared/**/*"],
-    "exclude": [
-        "src/main/childs_processes/**/*",
-        "src/main/db/**/*",
-        "src/main/dialogs/**/*",
-        "src/main/features/**/*",
-        "src/main/functions/**/*",
-        "src/main/message-control/**/*",
-        "src/main/platforms/**/*"
-    ]
+    "include": ["src/main/**/*", "src/shared/**/*"]
 }

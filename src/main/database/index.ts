@@ -5,6 +5,7 @@ import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './schema';
+import * as syncSchema from './sync-schema';
 import * as bibleSchema from './bible-schema';
 import { initializeReferenceDb, closeReferenceDb, getRefDb } from './reference-db';
 import * as bibleService from '@main/services/bible.service';
@@ -17,6 +18,10 @@ let mainDb: BetterSQLite3Database<typeof schema> | null = null;
 
 // Drizzle wrapper over the active Bible DB (from bible.service)
 let bibleDb: BetterSQLite3Database<typeof bibleSchema> | null = null;
+
+// Sync database (change tracking, separate from user data)
+let syncSqlite: Database.Database | null = null;
+let syncDb: BetterSQLite3Database<typeof syncSchema> | null = null;
 
 function setPragmas(db: Database.Database): void {
     db.pragma('journal_mode = WAL');
@@ -52,6 +57,13 @@ export function initializeDatabase(): void {
     if (existsSync(migrationsFolder)) {
         migrate(mainDb, { migrationsFolder });
     }
+
+    // Sync database (change tracking)
+    const syncPath = join(dbDir, 'sync.sqlite');
+    syncSqlite = new Database(syncPath);
+    setPragmas(syncSqlite);
+    syncDb = drizzle(syncSqlite, { schema: syncSchema });
+    initializeSyncSchema(syncSqlite);
 
     // Reference database (read-only, bundled)
     initializeReferenceDb();
@@ -104,10 +116,57 @@ export function getMainSqlite(): Database.Database {
     return mainSqlite;
 }
 
+export function getSyncDb(): BetterSQLite3Database<typeof syncSchema> {
+    if (!syncDb) throw new Error('Sync database not initialized. Call initializeDatabase() first.');
+    return syncDb;
+}
+
+export function getSyncSqlite(): Database.Database {
+    if (!syncSqlite)
+        throw new Error('Sync database not initialized. Call initializeDatabase() first.');
+    return syncSqlite;
+}
+
+function initializeSyncSchema(db: Database.Database): void {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS change_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            change_id TEXT NOT NULL UNIQUE,
+            table_name TEXT NOT NULL,
+            row_id TEXT NOT NULL,
+            operation TEXT NOT NULL,
+            new_data TEXT NOT NULL,
+            synced INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS sync_state (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sync_time_offset TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS processed_changes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_id TEXT NOT NULL UNIQUE,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS apply_failures (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            file_id TEXT NOT NULL UNIQUE,
+            count INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+    `);
+}
+
 export function closeDatabase(): void {
     closeReferenceDb();
     bibleService.closeBibleDb();
     bibleDb = null;
+    if (syncSqlite) {
+        syncSqlite.close();
+        syncSqlite = null;
+        syncDb = null;
+    }
     if (mainSqlite) {
         mainSqlite.close();
         mainSqlite = null;
@@ -130,4 +189,12 @@ export function _setBibleDbForTesting(
 ): void {
     bibleDb = db;
     bibleService._setBibleDbForTesting(sqlite);
+}
+
+export function _setSyncDbForTesting(
+    db: BetterSQLite3Database<typeof syncSchema>,
+    sqlite?: Database.Database,
+): void {
+    syncDb = db;
+    if (sqlite) syncSqlite = sqlite;
 }

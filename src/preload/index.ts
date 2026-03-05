@@ -7,6 +7,7 @@ import {
     SubjectChannels,
     AudioChannels,
     BackupChannels,
+    SyncChannels,
     AppChannels,
     LanguageChannels,
     PushChannels,
@@ -134,6 +135,10 @@ const api = {
         toggleStatus: (active: boolean) => invoke(BackupChannels.toggleStatus, active),
         getReminder: () => invoke(BackupChannels.getReminder),
         login: () => invoke(BackupChannels.login),
+    },
+
+    sync: {
+        getStatus: () => invoke(SyncChannels.getStatus),
     },
 
     app: {

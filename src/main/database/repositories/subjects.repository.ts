@@ -2,6 +2,7 @@ import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { subjects, subjectItems } from '../schema';
+import { logChange } from '@main/services/sync/change-log.service';
 import type {
     SubjectDocument,
     SubjectDocumentItem,
@@ -52,6 +53,14 @@ export function create(name: string): SubjectDocument {
         .insert(subjects)
         .values({ id, name, date, active: true, createdAt: now, updatedAt: now })
         .run();
+    logChange('subjects', id, 'SAVE', {
+        id,
+        name,
+        date,
+        active: true,
+        createdAt: now,
+        updatedAt: now,
+    });
     return {
         id,
         name,
@@ -65,8 +74,14 @@ export function create(name: string): SubjectDocument {
 
 export function deleteSubject(name: string): void {
     const db = getDb();
-    // Delete items by subject name
+    // Log item deletes before removing
+    const items = db.select().from(subjectItems).where(eq(subjectItems.subjectName, name)).all();
+    for (const item of items) {
+        logChange('subject_items', item.id, 'DELETE', { id: item.id });
+    }
     db.delete(subjectItems).where(eq(subjectItems.subjectName, name)).run();
+    const subject = db.select().from(subjects).where(eq(subjects.name, name)).get();
+    if (subject) logChange('subjects', subject.id, 'DELETE', { id: subject.id });
     db.delete(subjects).where(eq(subjects.name, name)).run();
 }
 
@@ -81,6 +96,7 @@ export function getItems(subjectName: string): SubjectDocumentItem[] {
 
 export function deleteItem(id: string): void {
     getDb().delete(subjectItems).where(eq(subjectItems.id, id)).run();
+    logChange('subject_items', id, 'DELETE', { id });
 }
 
 export function createItem(
@@ -105,6 +121,16 @@ export function createItem(
             updatedAt: now,
         })
         .run();
+    logChange('subject_items', id, 'SAVE', {
+        id,
+        subjectName,
+        documentTitle,
+        documentHtmlTree: JSON.stringify(documentHtmlTree),
+        textContent,
+        bible: bible ? JSON.stringify(bible) : null,
+        createdAt: now,
+        updatedAt: now,
+    });
     return {
         id,
         subject: subjectName,

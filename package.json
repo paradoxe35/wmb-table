@@ -113,6 +113,10 @@
             {
                 "from": "resources/database",
                 "to": "database"
+            },
+            {
+                "from": "resources/credentials/google",
+                "to": "credentials/google"
             }
         ],
         "mac": {

@@ -2,6 +2,7 @@ import { eq, asc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { suggestions } from '../schema';
+import { logChange } from '@main/services/sync/change-log.service';
 import type { Suggestions } from '@shared/types';
 
 const MAX_SUGGESTIONS = 20;
@@ -43,5 +44,6 @@ export function addSuggestion(searchText: string, found: number): Suggestions {
     }
 
     const row = db.select().from(suggestions).where(eq(suggestions.searchText, searchText)).get();
+    if (row) logChange('suggestions', row.id, 'SAVE', row);
     return toSuggestion(row!);
 }

@@ -5,6 +5,7 @@ import * as bibleService from '@main/services/bible.service';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { notes, notesReferences, notesBibleReferences } from '../schema';
 import { bibleVerses } from '../bible-schema';
+import { logChange } from '@main/services/sync/change-log.service';
 import type {
     NoteItem,
     NoteItemReference,
@@ -68,11 +69,21 @@ export function create(name: string): NoteItem {
         .insert(notes)
         .values({ id, name, defaultName: true, created: true, createdAt: now, updatedAt: now })
         .run();
-    return getById(id)!;
+    const result = getById(id)!;
+    logChange('notes', id, 'SAVE', {
+        id,
+        name,
+        defaultName: true,
+        created: true,
+        createdAt: now,
+        updatedAt: now,
+    });
+    return result;
 }
 
 export function deleteNote(id: string): void {
     getDb().delete(notes).where(eq(notes.id, id)).run();
+    logChange('notes', id, 'DELETE', { id });
 }
 
 export function rename(id: string, newName: string): NoteItem {
@@ -82,12 +93,16 @@ export function rename(id: string, newName: string): NoteItem {
         .set({ name: newName, defaultName: false, updatedAt: now })
         .where(eq(notes.id, id))
         .run();
-    return getById(id)!;
+    const row = getDb().select().from(notes).where(eq(notes.id, id)).get();
+    if (row) logChange('notes', id, 'SAVE', row);
+    return row ? toNoteItem(row) : getById(id)!;
 }
 
 export function updateContent(id: string, content: string): void {
     const now = new Date().toISOString();
     getDb().update(notes).set({ content, updatedAt: now }).where(eq(notes.id, id)).run();
+    const row = getDb().select().from(notes).where(eq(notes.id, id)).get();
+    if (row) logChange('notes', id, 'SAVE', row);
 }
 
 // --- References ---
@@ -123,7 +138,9 @@ export function createReference(
             updatedAt: now,
         })
         .run();
-    return getReference(id)!;
+    const refRow = getDb().select().from(notesReferences).where(eq(notesReferences.id, id)).get();
+    if (refRow) logChange('notes_references', id, 'SAVE', refRow);
+    return refRow ? toNoteRef(refRow) : getReference(id)!;
 }
 
 export function getReference(id: string): NoteItemReference | null {
@@ -144,6 +161,7 @@ export function syncReferences(noteId: string, refIds: string[]): void {
     for (const row of existing) {
         if (!keepSet.has(row.id)) {
             db.delete(notesReferences).where(eq(notesReferences.id, row.id)).run();
+            logChange('notes_references', row.id, 'DELETE', { id: row.id });
         }
     }
 }
@@ -159,6 +177,8 @@ export function updateReference(id: string, ref: SubjectRefTree): void {
         })
         .where(eq(notesReferences.id, id))
         .run();
+    const row = getDb().select().from(notesReferences).where(eq(notesReferences.id, id)).get();
+    if (row) logChange('notes_references', id, 'SAVE', row);
 }
 
 // --- Bible References ---
@@ -200,12 +220,22 @@ export function createBibleReference(noteId: string, label: string): NoteItemRef
         .from(notesBibleReferences)
         .where(eq(notesBibleReferences.id, id))
         .get();
+    if (row) logChange('notes_bible_references', id, 'SAVE', row);
     return toBibleRef(row!);
 }
 
 export function syncBibleReferences(noteId: string, refs: BibleBook[] | string[]): void {
     const db = getDb();
+    // Log deletes for existing rows
+    const existing = db
+        .select()
+        .from(notesBibleReferences)
+        .where(eq(notesBibleReferences.noteId, noteId))
+        .all();
     db.delete(notesBibleReferences).where(eq(notesBibleReferences.noteId, noteId)).run();
+    for (const row of existing) {
+        logChange('notes_bible_references', row.id, 'DELETE', { id: row.id });
+    }
     if (refs.length > 0) {
         const id = randomUUID();
         const now = new Date().toISOString();
@@ -219,6 +249,14 @@ export function syncBibleReferences(noteId: string, refs: BibleBook[] | string[]
                 updatedAt: now,
             })
             .run();
+        logChange('notes_bible_references', id, 'SAVE', {
+            id,
+            noteId,
+            label: '',
+            references: JSON.stringify(refs),
+            createdAt: now,
+            updatedAt: now,
+        });
     }
 }
 
@@ -256,6 +294,12 @@ export function addBibleVerse(refId: string, verseId: string): BibleBook | null 
         .set({ references: JSON.stringify(refs), updatedAt: now })
         .where(eq(notesBibleReferences.id, refId))
         .run();
+    const updatedRow = getDb()
+        .select()
+        .from(notesBibleReferences)
+        .where(eq(notesBibleReferences.id, refId))
+        .get();
+    if (updatedRow) logChange('notes_bible_references', refId, 'SAVE', updatedRow);
 
     return bibleBook;
 }
@@ -275,4 +319,10 @@ export function removeBibleVerse(refId: string, verseId: string): void {
         .set({ references: JSON.stringify(filtered), updatedAt: now })
         .where(eq(notesBibleReferences.id, refId))
         .run();
+    const updatedRow = getDb()
+        .select()
+        .from(notesBibleReferences)
+        .where(eq(notesBibleReferences.id, refId))
+        .get();
+    if (updatedRow) logChange('notes_bible_references', refId, 'SAVE', updatedRow);
 }

@@ -42,39 +42,28 @@ export default function BackupProfile() {
         return cleanup;
     }, []);
 
-    const updateStatus = useCallback((pendingRequest: Promise<BackupStatus | null>) => {
+    const updateStatus = useCallback((pendingRequest: Promise<BackupStatus | null | false>) => {
         return pendingRequest.then((status) => {
-            if (status) setActiveBackup(status);
+            if (status && typeof status === 'object') setActiveBackup(status);
         });
     }, []);
 
     const handleLogin = useCallback(() => {
         setLoading(true);
-        const showError = (error: string) => {
-            switch (error) {
-                case 'network':
-                    message.warning('Vous êtes hors ligne');
-                    break;
-                default:
-                    message.error(
-                        "Une erreur s'est produite lors de la connexion, r\u00e9essayez plus tard",
-                        7,
-                    );
-                    break;
-            }
-        };
         const pending = window.api.backup
             .login()
-            .then((res: unknown) => {
-                const result = res as BackupStatus & { error: string };
-                if (result.error) {
-                    showError(result.error);
-                    return false;
-                }
-                return result;
+            .then((result: unknown) => {
+                return (result as BackupStatus) ?? null;
+            })
+            .catch(() => {
+                message.error(
+                    "Une erreur s'est produite lors de la connexion, r\u00e9essayez plus tard",
+                    7,
+                );
+                return null;
             })
             .finally(() => setLoading(false));
-        updateStatus(pending as Promise<BackupStatus>);
+        updateStatus(pending as Promise<BackupStatus | null>);
     }, []);
 
     const handleBackupStatus = useCallback(() => {
@@ -92,7 +81,7 @@ export default function BackupProfile() {
                         </Space>
                     </>
                 }
-                visible={visible}
+                open={visible}
                 footer={[
                     <Button key={0} onClick={hide}>
                         {activeBackup ? 'Fermer' : 'Plus tard'}
