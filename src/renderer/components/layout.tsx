@@ -1,27 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Layout, Space } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Button, Layout, Space, Spin } from 'antd';
+import { LeftCircleOutlined, LoadingOutlined, RightCircleOutlined } from '@ant-design/icons';
 
 import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
 import SidebarDocuments from './layout/sidebar-documents';
-import { useContainerScrollY } from '@renderer/hooks';
-import { Spin } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
-import { useRecoilState, useRecoilValue } from 'recoil';
-import { appDatasLoadedStore, sidebarStatusHiddenStore } from '@renderer/store';
-
-import { LeftCircleOutlined, RightCircleOutlined } from '@ant-design/icons';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { SidebarStatus } from '@localtypes/index';
-import { ipcRenderer } from 'electron';
-import { APP_NAME } from '@root/utils/constants';
+import { useContainerHeight } from '@renderer/hooks';
+import { useAppStore } from '@renderer/stores';
+import { APP_NAME } from '@renderer/utils/constants';
 
 const { Header, Content } = Layout;
 
 function Title() {
-    const appLoaded = useRecoilValue(appDatasLoadedStore);
-
+    const appLoaded = useAppStore((s) => s.loaded);
     return (
         <Space direction="horizontal">
             <span>{APP_NAME}</span>
@@ -30,36 +21,32 @@ function Title() {
     );
 }
 
-const SidebarStatusHanlder = () => {
-    const [hidden, setHidden] = useRecoilState(sidebarStatusHiddenStore);
-    const statusRef = useRef<SidebarStatus | null>(null);
+const SidebarStatusHandler = () => {
+    const sidebarHidden = useAppStore((s) => s.sidebarHidden);
+    const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
+    const toggleSidebar = useAppStore((s) => s.toggleSidebar);
 
     useEffect(() => {
-        sendIpcRequest<SidebarStatus>(IPC_EVENTS.sidebar_status).then((status) => {
-            statusRef.current = status;
-            setHidden(status.hidden);
-        });
-    }, []);
+        (window.api.app.getSidebarStatus() as Promise<{ hidden: boolean } | null>).then(
+            (status) => {
+                if (status) setSidebarHidden(status.hidden);
+            },
+        );
+    }, [setSidebarHidden]);
 
-    const toggleCollapsed = useCallback(() => {
-        if (statusRef.current) {
-            statusRef.current.hidden = !statusRef.current.hidden;
-            setHidden(statusRef.current.hidden);
-            sendIpcRequest<boolean>(
-                IPC_EVENTS.sidebar_status_set,
-                statusRef.current._id,
-                statusRef.current.hidden,
-            );
-        }
-    }, []);
+    const handleToggle = useCallback(() => {
+        toggleSidebar();
+        const next = useAppStore.getState().sidebarHidden;
+        window.api.app.setSidebarStatus(next);
+    }, [toggleSidebar]);
 
     useEffect(() => {
-        ipcRenderer.on(IPC_EVENTS.toggle_sidebar, toggleCollapsed);
-    }, []);
+        return window.api.on.toggleSidebar(handleToggle);
+    }, [handleToggle]);
 
     return (
-        <Button type="link" onClick={toggleCollapsed}>
-            {hidden ? (
+        <Button type="link" onClick={handleToggle}>
+            {sidebarHidden ? (
                 <LeftCircleOutlined style={{ fontSize: '1.2em' }} />
             ) : (
                 <RightCircleOutlined style={{ fontSize: '1.2em' }} />
@@ -68,25 +55,25 @@ const SidebarStatusHanlder = () => {
     );
 };
 
-const AppLayout: React.FC = ({ children }) => {
+const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const [collapsed, setCollapsed] = useState(true);
 
-    const toggle = (collapsed: any | boolean) =>
+    const toggle = (collapsed?: boolean | unknown) =>
         typeof collapsed === 'boolean' ? setCollapsed(collapsed) : setCollapsed((c) => !c);
 
-    const containerScroll = useContainerScrollY<HTMLDivElement>();
+    const containerScroll = useContainerHeight<HTMLDivElement>();
 
     return (
         <Layout>
             <Header className="app-header">
-                <div className="logo" onClick={toggle}>
+                <div className="logo" onClick={() => toggle()}>
                     <Title />
                 </div>
                 <div style={{ flexGrow: 1 }}>
                     <ViewerMenu />
                 </div>
                 <div className="logo">
-                    <SidebarStatusHanlder />
+                    <SidebarStatusHandler />
                 </div>
             </Header>
             <Layout>

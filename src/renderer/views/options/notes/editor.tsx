@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
-//@ts-ignore
+// @ts-expect-error — no type declarations for CKEditor 5 React
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 
-import { ContextMenu } from '@modules/context-menu/context';
+import { ContextMenu } from '@renderer/utils/context-menu';
 import { Button, Input, Modal, Space, Tooltip, message } from 'antd';
 import {
     LeftOutlined,
@@ -12,10 +12,8 @@ import {
     ReadOutlined,
     ExclamationCircleOutlined,
 } from '@ant-design/icons';
-import { debounce, substrAfter } from '@root/utils/functions';
-import { NoteItem, NoteItemReference, NoteItemReferenceBible } from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
+import { debounce, substrAfter } from '@renderer/utils/functions';
+import { NoteItem, NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { useIpcRequestWithLoader, useValueStateRef } from '@renderer/hooks';
 import {
     referenceBibleBrandLink,
@@ -24,16 +22,19 @@ import {
     useBibleReferenceModal,
     useShowReferenceDetail,
 } from './references';
-import { EDITOR_EVENT } from '@modules/shared/shared';
+import { EDITOR_EVENT } from '@renderer/utils/events';
 
-//@ts-ignore
+// @ts-expect-error — CKEditor build has no type declarations
+ 
 let DecoupledDocumentEditor: any;
 
 if (process.env.NODE_ENV === 'development') {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     require('./ckeditor/ckeditor');
-    //@ts-ignore
+    // @ts-expect-error — CKEditor attaches to window in dev mode
     DecoupledDocumentEditor = window.DecoupledDocumentEditor;
 } else {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     DecoupledDocumentEditor = require('./ckeditor/ckeditor');
 }
 
@@ -50,10 +51,10 @@ const useRenameNote = (note: NoteItem | null) => {
 
     const onSave = () => {
         if (!workingNote.current) return;
-        sendIpcRequest<string | boolean>(
-            IPC_EVENTS.notes_items_rename,
-            workingNote.current._id,
-            searchValue.current.trim(),
+        (
+            window.api.notes.rename(workingNote.current.id, searchValue.current.trim()) as Promise<
+                string | boolean
+            >
         ).then((saved) => {
             if (typeof saved === 'boolean') {
                 message.error('Le nom entré est invalid');
@@ -124,11 +125,9 @@ function ButtonsControllers({
         }
         setLoadingPdf(true);
 
-        sendIpcRequest(
-            IPC_EVENTS.notes_export_pdf,
-            editor.getData(),
-            workingNoteRef.current?.name,
-        ).finally(() => setLoadingPdf(false));
+        window.api.notes
+            .exportPdf(workingNoteRef.current?.id ?? '')
+            .finally(() => setLoadingPdf(false));
     };
 
     useEffect(() => {
@@ -235,13 +234,13 @@ export default function EditorContent({
     const ipcRequestWithLoader = useIpcRequestWithLoader();
 
     useEffect(() => {
-        sendIpcRequest<NoteItem>(IPC_EVENTS.notes_items_get, workingNoteId).then((note) => {
+        (window.api.notes.getById(workingNoteId) as Promise<NoteItem>).then((note) => {
             setWorkingNote(note);
-            note?.created &&
-                note.defaultName &&
+            if (note?.created && note.defaultName) {
                 window.setTimeout(() => {
                     window.dispatchEvent(new Event(EDITOR_EVENT.renameNoteModal));
                 }, 1000);
+            }
         });
     }, [workingNoteId]);
 
@@ -262,22 +261,23 @@ export default function EditorContent({
     }, []);
 
     const handleEditorLinksClick = useCallback((idRef: string) => {
-        ipcRequestWithLoader<NoteItemReference | null>(IPC_EVENTS.notes_references_get, idRef).then(
-            (data) => {
-                if (data) {
-                    modalRefence(data, workingNoteRef.current as NoteItem);
-                } else {
-                    message.error('La référence est invalide');
-                }
-            },
-        );
+        ipcRequestWithLoader<NoteItemReference | null>(async () => {
+            return (await window.api.notes.getReference(idRef)) as NoteItemReference | null;
+        }).then((data) => {
+            if (data) {
+                modalRefence(data, workingNoteRef.current as NoteItem);
+            } else {
+                message.error('La référence est invalide');
+            }
+        });
     }, []);
 
     const handleEditorLinksBibleClick = useCallback((idRef: string) => {
-        ipcRequestWithLoader<NoteItemReferenceBible | null>(
-            IPC_EVENTS.notes_references_bible_get,
-            idRef,
-        ).then((data) => {
+        ipcRequestWithLoader<NoteItemReferenceBible | null>(async () => {
+            return (await window.api.notes.getBibleReference(
+                idRef,
+            )) as NoteItemReferenceBible | null;
+        }).then((data) => {
             if (data) {
                 bibleReferenceModal.showModal(data);
             } else {
@@ -334,21 +334,27 @@ export default function EditorContent({
             if (selected && selected.length > 1) {
                 switch (type) {
                     case 'document':
-                        ipcRequestWithLoader<NoteItemReference>(
-                            IPC_EVENTS.notes_references_store,
-                            workingNoteIdRef.current,
-                        ).then((ref) => {
-                            editor.execute('link', referenceDocumentBrandLink + ref._id);
+                        ipcRequestWithLoader<NoteItemReference>(async () => {
+                            return (await window.api.notes.createReference(
+                                workingNoteIdRef.current,
+                                '',
+                                { tree: [] },
+                                '',
+                            )) as NoteItemReference;
+                        }).then((ref) => {
+                            editor.execute('link', referenceDocumentBrandLink + ref.id);
                             message.success(`Référence document: ${ref.label}`);
                         });
                         break;
 
                     case 'bible':
-                        ipcRequestWithLoader<NoteItemReferenceBible>(
-                            IPC_EVENTS.notes_references_bible_store,
-                            workingNoteIdRef.current,
-                        ).then((ref) => {
-                            editor.execute('link', referenceBibleBrandLink + ref._id);
+                        ipcRequestWithLoader<NoteItemReferenceBible>(async () => {
+                            return (await window.api.notes.createBibleReference(
+                                workingNoteIdRef.current,
+                                selected,
+                            )) as NoteItemReferenceBible;
+                        }).then((ref) => {
+                            editor.execute('link', referenceBibleBrandLink + ref.id);
                             message.success(`Référence biblique: ${ref.label}`);
                             bibleReferenceModal.showModal(ref);
                         });
@@ -374,13 +380,11 @@ export default function EditorContent({
     };
 
     const syncAvalaibleReferences = async (fragment: DocumentFragment) => {
-        await sendIpcRequest(
-            IPC_EVENTS.notes_references_sync,
+        await window.api.notes.syncReferences(
             workingNoteIdRef.current,
             referencesIds(fragment, referenceDocumentBrandLink),
         );
-        await sendIpcRequest(
-            IPC_EVENTS.notes_references_bible_sync,
+        await window.api.notes.syncBibleReferences(
             workingNoteIdRef.current,
             referencesIds(fragment, referenceBibleBrandLink),
         );
@@ -397,11 +401,7 @@ export default function EditorContent({
     }, [workingNote]);
 
     const onChangeData = async () => {
-        sendIpcRequest(
-            IPC_EVENTS.notes_items_update_content,
-            workingNoteId,
-            editorRef.current.getData(),
-        );
+        window.api.notes.updateContent(workingNoteId, editorRef.current.getData());
     };
 
     return (
@@ -479,9 +479,10 @@ function Editor({
             chromeContextMenu.install();
         }
         return () => {
-            chromeContextMenu && chromeContextMenu.uninstall();
-            chromeContextMenu &&
+            if (chromeContextMenu) {
+                chromeContextMenu.uninstall();
                 chromeContextMenu.container.removeEventListener('contextmenu', contextHandler);
+            }
         };
     }, [ready]);
     return (

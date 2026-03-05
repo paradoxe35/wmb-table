@@ -1,19 +1,15 @@
 import { Button, Modal, Space, message, Progress, Alert } from 'antd';
-import { ipcRenderer } from 'electron';
-import React, { useCallback, useMemo, useState } from 'react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import { useModalVisible } from '@renderer/hooks';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { Typography } from 'antd';
-import { BackupStatus, RestoreProgressEvent } from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
+import { BackupStatus, RestoreProgressEvent } from '@shared/types';
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 
 const { Paragraph, Text } = Typography;
 
 export default function BackupProfile() {
-    const { showModal, isModalVisible, handleOk, handleCancel } = useModalVisible();
+    const { visible, show, hide } = useModalVisible();
 
     const [activeBackup, setActiveBackup] = useState<BackupStatus | undefined>(undefined);
 
@@ -21,21 +17,29 @@ export default function BackupProfile() {
     const [fetchedStatus, setFetchStatus] = useState(false);
 
     useEffect(() => {
-        ipcRenderer.on(IPC_EVENTS.open_backup_modal_from_main, showModal);
-        window.addEventListener(IPC_EVENTS.open_backup_modal_from_main, showModal);
-        sendIpcRequest<boolean>(IPC_EVENTS.backup_reminder).then(
-            (canOpen) => canOpen && showModal(),
-        );
+        const cleanup = window.api.on.openBackupModalFromMain(show);
+        window.addEventListener('open-backup-modal-from-main', show);
+        window.api.backup.getReminder().then((canOpen) => (canOpen as boolean) && show());
+        return () => {
+            cleanup();
+            window.removeEventListener('open-backup-modal-from-main', show);
+        };
     }, []);
 
     useEffect(() => {
-        updateStatus(sendIpcRequest<BackupStatus>(IPC_EVENTS.backup_status)).finally(() =>
+        updateStatus(window.api.backup.getStatus() as Promise<BackupStatus>).finally(() =>
             setFetchStatus(true),
         );
 
-        ipcRenderer.on(IPC_EVENTS.backup_status, (_: any, status: BackupStatus) => {
-            if (status) setActiveBackup(status);
+        const cleanup = window.api.on.backupAccessStatus((status) => {
+            // backupAccessStatus provides a boolean, but we need to refetch full status
+            if (status) {
+                window.api.backup.getStatus().then((s) => {
+                    if (s) setActiveBackup(s as BackupStatus);
+                });
+            }
         });
+        return cleanup;
     }, []);
 
     const updateStatus = useCallback((pendingRequest: Promise<BackupStatus | null>) => {
@@ -49,31 +53,34 @@ export default function BackupProfile() {
         const showError = (error: string) => {
             switch (error) {
                 case 'network':
-                    message.warn('Vous êtes hors ligne');
+                    message.warning('Vous êtes hors ligne');
                     break;
                 default:
                     message.error(
-                        "Une erreur s'est produite lors de la connexion, réessayez plus tard",
+                        "Une erreur s'est produite lors de la connexion, r\u00e9essayez plus tard",
                         7,
                     );
                     break;
             }
         };
-        const pending = sendIpcRequest<any>(IPC_EVENTS.backup_login)
-            .then((res: BackupStatus & { error: string }) => {
-                if (res.error) {
-                    showError(res.error);
+        const pending = window.api.backup
+            .login()
+            .then((res: unknown) => {
+                const result = res as BackupStatus & { error: string };
+                if (result.error) {
+                    showError(result.error);
                     return false;
                 }
-                return res;
+                return result;
             })
             .finally(() => setLoading(false));
         updateStatus(pending as Promise<BackupStatus>);
     }, []);
 
     const handleBackupStatus = useCallback(() => {
-        updateStatus(sendIpcRequest<BackupStatus>(IPC_EVENTS.backup_status_put));
-    }, []);
+        const newActive = activeBackup ? !activeBackup.active : true;
+        updateStatus(window.api.backup.toggleStatus(newActive) as Promise<BackupStatus>);
+    }, [activeBackup]);
 
     return (
         <>
@@ -85,9 +92,9 @@ export default function BackupProfile() {
                         </Space>
                     </>
                 }
-                visible={isModalVisible}
+                visible={visible}
                 footer={[
-                    <Button key={0} onClick={handleCancel}>
+                    <Button key={0} onClick={hide}>
                         {activeBackup ? 'Fermer' : 'Plus tard'}
                     </Button>,
                     <Button
@@ -109,8 +116,8 @@ export default function BackupProfile() {
                             : 'Connexion'}
                     </Button>,
                 ]}
-                onOk={handleOk}
-                onCancel={handleCancel}
+                onOk={hide}
+                onCancel={hide}
             >
                 {activeBackup ? <ActiveBackup activeBackup={activeBackup} /> : <BackupContent />}
             </Modal>
@@ -122,13 +129,14 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
     const [restoreProgress, setRestoreProgress] = useState<RestoreProgressEvent>();
 
     useEffect(() => {
-        ipcRenderer.on(IPC_EVENTS.backup_progression, (_: any, data: RestoreProgressEvent) =>
-            setRestoreProgress(data),
+        const cleanup = window.api.on.backupProgression((data) =>
+            setRestoreProgress(data as RestoreProgressEvent),
         );
+        return cleanup;
     }, []);
 
     const restartAppNow = useCallback(() => {
-        sendIpcRequest<boolean>(IPC_EVENTS.restart_app);
+        window.api.app.restart();
     }, []);
 
     const restoreContentType = useMemo(() => {
@@ -150,26 +158,30 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
             </Text>
         );
         return {
-            start: <Text>Début de la récupération des données</Text>,
+            start: <Text>D\u00e9but de la r\u00e9cup\u00e9ration des donn\u00e9es</Text>,
             complete: (
                 <Space direction="vertical">
                     <Text type="success">
-                        Vos données ont été restaurées et sauvegardées avec succès. <br />
-                        Veuillez fermer et rouvrir l'application ou cliquer sur le bouton ci-dessous
-                        pour afficher les modifications apportées.
+                        Vos donn\u00e9es ont \u00e9t\u00e9 restaur\u00e9es et sauvegard\u00e9es avec
+                        succ\u00e8s. <br />
+                        Veuillez fermer et rouvrir l&apos;application ou cliquer sur le bouton
+                        ci-dessous pour afficher les modifications apport\u00e9es.
                     </Text>
-                    <Button onClick={restartAppNow}>Redémarrer l'application maintenant</Button>
+                    <Button onClick={restartAppNow}>
+                        Redémarrer l&apos;application maintenant
+                    </Button>
                 </Space>
             ),
             error: (
                 <Text type="danger">
-                    Une erreur s'est produite lors de la restauration, veuillez réessayer plus tard
+                    Une erreur s&apos;est produite lors de la restauration, veuillez réessayer plus
+                    tard
                 </Text>
             ),
-            prepare: <Text>Préparation de la restauration des données</Text>,
+            prepare: <Text>Pr\u00e9paration de la restauration des donn\u00e9es</Text>,
             progress: progress,
             sauvegarde: progress,
-        } as { [x: string]: JSX.Element };
+        } as { [x: string]: ReactElement };
     }, [restoreProgress]);
 
     const restoreContent = useMemo(() => {
@@ -187,7 +199,7 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
             <Paragraph>Email: {status.email}</Paragraph>
             <Paragraph>Stockage: {'Google Drive'}</Paragraph>
             <Paragraph>
-                Dernière mise à jour: {status.lastUpdate.toLocaleTimeString('fr')}
+                Derni\u00e8re mise \u00e0 jour: {status.lastUpdate.toLocaleTimeString('fr')}
             </Paragraph>
             {restoreContent && restoreProgress && (
                 <Paragraph>
@@ -197,7 +209,7 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
                                 {restoreProgress.type === 'sauvegarde'
                                     ? 'Sauvegarde'
                                     : 'Restauration'}{' '}
-                                de données
+                                de donn\u00e9es
                             </Text>
                             {['start', 'prepare', 'progress', 'sauvegarde'].some((type) =>
                                 restoreProgress.type.includes(type),
@@ -215,7 +227,7 @@ const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) 
             {!status.access && (
                 <Paragraph>
                     <Alert
-                        message="l'accès à votre stockage internet est limité, reconnectez-vous et assurez-vous d'avoir autorisé l'accès demandé en cochant les cases qui s'afficheront."
+                        message="l'acc\u00e8s \u00e0 votre stockage internet est limit\u00e9, reconnectez-vous et assurez-vous d'avoir autoris\u00e9 l'acc\u00e8s demand\u00e9 en cochant les cases qui s'afficheront."
                         type="error"
                     />
                 </Paragraph>
@@ -228,12 +240,13 @@ const BackupContent = () => {
     return (
         <Typography>
             <Paragraph>
-                Pour activer le système de sauvegarde, vous devez vous connecter à votre compte
-                Google.
+                Pour activer le syst\u00e8me de sauvegarde, vous devez vous connecter \u00e0 votre
+                compte Google.
             </Paragraph>
             <Paragraph strong>
-                Après la connexion, vos dernières données sauvegardées seront restaurées
-                automatiquement et vos prochaines sauvegardes se feront automatiquement.
+                Apr\u00e8s la connexion, vos derni\u00e8res donn\u00e9es sauvegard\u00e9es seront
+                restaur\u00e9es automatiquement et vos prochaines sauvegardes se feront
+                automatiquement.
             </Paragraph>
         </Typography>
     );

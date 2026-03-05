@@ -1,0 +1,21 @@
+import { useEffect, useRef } from 'react';
+import type { DocumentTab } from '@shared/types';
+
+export function useTabPersistence(tabs: DocumentTab[]) {
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const prevRef = useRef<DocumentTab[]>(tabs);
+
+    useEffect(() => {
+        if (tabs === prevRef.current) return;
+        prevRef.current = tabs;
+
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+            window.api.documents.saveTabs(tabs);
+        }, 500);
+
+        return () => {
+            if (timerRef.current) clearTimeout(timerRef.current);
+        };
+    }, [tabs]);
+}

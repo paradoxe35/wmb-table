@@ -1,9 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { debounce, respondToVisibility } from '@root/utils/functions';
+import { debounce, respondToVisibility } from '@renderer/utils/functions';
 
-const ScrollContainerMemo: React.FC = function ({ children }) {
+const ScrollContainerMemo: React.FC<{
+    children?:
+        | React.ReactNode
+        | ((ref: React.MutableRefObject<HTMLElement | undefined>) => React.ReactNode);
+}> = function ({ children }) {
     const lastScroll = useRef(0);
-    const targetElement = useRef<HTMLElement | undefined>();
+    const targetElement = useRef<HTMLElement | undefined>(undefined);
     const visibility = useRef(false);
 
     useEffect(() => {
@@ -11,32 +15,32 @@ const ScrollContainerMemo: React.FC = function ({ children }) {
             '.site-layout-content',
         ) as HTMLElement | null;
 
-        let unobserve: { (): any; (): void } | null = null;
+        let unobserve: (() => void) | null = null;
 
         const saveComponentScroll = () => {
-            if (visibility.current) {
-                lastScroll.current = (contentLayoutEl as HTMLElement).scrollTop;
+            if (visibility.current && contentLayoutEl) {
+                lastScroll.current = contentLayoutEl.scrollTop;
             }
         };
 
         if (contentLayoutEl && targetElement.current) {
             unobserve = respondToVisibility(targetElement.current, (isVisible) => {
                 visibility.current = isVisible;
-
-                isVisible &&
-                    contentLayoutEl.scrollTo({
-                        behavior: 'smooth',
-                        top: lastScroll.current,
-                    });
+                if (isVisible) {
+                    contentLayoutEl.scrollTo({ behavior: 'smooth', top: lastScroll.current });
+                }
             });
 
             saveComponentScroll();
-            contentLayoutEl.addEventListener('scroll', debounce(saveComponentScroll, 500));
+            contentLayoutEl.addEventListener(
+                'scroll',
+                debounce(saveComponentScroll, 500) as EventListener,
+            );
         }
 
         return () => {
-            contentLayoutEl && contentLayoutEl.removeEventListener('scroll', saveComponentScroll);
-            unobserve && unobserve();
+            contentLayoutEl?.removeEventListener('scroll', saveComponentScroll);
+            unobserve?.();
         };
     }, []);
 

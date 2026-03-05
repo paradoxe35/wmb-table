@@ -1,16 +1,21 @@
 import { Button, Card, Empty, Input, Space, Typography } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { NoteItem } from '@localtypes/index';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type Dispatch,
+    type SetStateAction,
+} from 'react';
+import { NoteItem } from '@shared/types';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 
 export function Notes({
     setWorkingNote,
 }: {
-    setWorkingNote: React.Dispatch<React.SetStateAction<string | null>>;
+    setWorkingNote: Dispatch<SetStateAction<string | null>>;
 }) {
     const [loaded, setLoaded] = useState<boolean>(false);
 
@@ -18,7 +23,7 @@ export function Notes({
     const odatas = useRef<NoteItem[]>([]);
 
     useEffect(() => {
-        sendIpcRequest<NoteItem[]>(IPC_EVENTS.notes_items)
+        (window.api.notes.getAll() as Promise<NoteItem[]>)
             .then((notes) => {
                 odatas.current = notes;
                 setNotes(notes);
@@ -27,20 +32,20 @@ export function Notes({
     }, []);
 
     const handleDeletion = (note: NoteItem) => {
-        sendIpcRequest(IPC_EVENTS.notes_items_delete, note._id).then(() => {
-            odatas.current = odatas.current.filter((d) => d._id !== note._id);
+        window.api.notes.delete(note.id).then(() => {
+            odatas.current = odatas.current.filter((d) => d.id !== note.id);
             setNotes(odatas.current);
         });
     };
 
     const newNote = () => {
-        sendIpcRequest<NoteItem>(IPC_EVENTS.notes_items_store).then((note) => {
-            setWorkingNote(note._id);
+        (window.api.notes.create('Nouvelle note') as Promise<NoteItem>).then((note) => {
+            setWorkingNote(note.id);
         });
     };
 
     const editDocument = (note: NoteItem) => {
-        setWorkingNote(note._id);
+        setWorkingNote(note.id);
     };
 
     const onSearch = useCallback((value: string) => {
@@ -64,11 +69,11 @@ export function Notes({
                     <Space direction="horizontal" wrap={true}>
                         {notes.map((note) => (
                             <Card
-                                key={note._id}
+                                key={note.id}
                                 style={{ width: 210 }}
                                 actions={[
                                     <EditOutlined key="edit" onClick={() => editDocument(note)} />,
-                                    <DeleteBtn confirm={() => handleDeletion(note)} />,
+                                    <DeleteBtn key="delete" confirm={() => handleDeletion(note)} />,
                                 ]}
                             >
                                 <Card.Meta

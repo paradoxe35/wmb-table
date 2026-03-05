@@ -1,8 +1,13 @@
+import { useInitApp } from './hooks/index';
+import AppLayout from './components/layout';
+import { ContentApp } from './content-app';
+
 export default function App() {
+    useInitApp();
+
     return (
-        <div>
-            <h1>WMB Table</h1>
-            <p>Application is loading...</p>
-        </div>
+        <AppLayout>
+            <ContentApp />
+        </AppLayout>
     );
 }

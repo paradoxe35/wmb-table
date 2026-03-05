@@ -1,4 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    type Dispatch,
+    type FC,
+    type SetStateAction,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {
     Row,
     Col,
@@ -13,23 +22,16 @@ import {
     List,
     Typography,
 } from 'antd';
-import { SubjectDocument, SubjectDocumentItem } from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { getDateTime } from '@root/utils/functions';
+import type { SubjectDocument, SubjectDocumentItem } from '@shared/types';
+import { getDateTime } from '@renderer/utils/functions';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { SetterOrUpdater, useRecoilValue, useSetRecoilState } from 'recoil';
-import {
-    selectedSubjectDocumentItemStore,
-    subjectDocumentStore,
-    subjectDocumentItemStore,
-} from '@renderer/store';
+import { useSubjectsStore } from '@renderer/stores';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { SUBJECT_EVENT } from '@modules/shared/shared';
-import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
-import { useDocumentTitle } from '@renderer/hooks';
+import { SUBJECT_EVENT } from '@renderer/utils/events';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useSermonLookup } from '@renderer/hooks';
 
 const { Text } = Typography;
 
@@ -68,7 +70,7 @@ function ModalNewSubject({
                 </form>
             ),
         });
-    }, []);
+    }, [onSave]);
 
     return (
         <Button type="primary" onClick={modal}>
@@ -96,7 +98,7 @@ function Title({
 export function useSubjectsDatas() {
     const odatas = useRef<SubjectDocument[]>([]);
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
-    const setSubjectDocument = useSetRecoilState(subjectDocumentStore);
+    const setSubjects = useSubjectsStore((s) => s.setSubjects);
 
     const onSearch = useCallback((value: string) => {
         if (odatas.current.length) {
@@ -104,115 +106,79 @@ export function useSubjectsDatas() {
         }
     }, []);
 
-    return { odatas, datas, setDatas, setSubjectDocument, onSearch };
+    return { odatas, datas, setDatas, setSubjects, onSearch };
 }
 
 export default function Subject() {
-    const { odatas, datas, setDatas, setSubjectDocument, onSearch } = useSubjectsDatas();
-
-    const subjectItems = useRecoilValue(subjectDocumentItemStore);
-
+    const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
+    const activeSubject = useSubjectsStore((s) => s.activeSubject);
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
 
     useEffect(() => {
-        sendIpcRequest<SubjectDocument[]>(IPC_EVENTS.subject_document).then((subjects) => {
+        (window.api.subjects.getAll() as Promise<SubjectDocument[]>).then((subjects) => {
             odatas.current = subjects;
             setDatas(subjects);
-            setSubjectDocument(subjects);
+            setSubjects(subjects);
         });
-    }, []);
+    }, [setSubjects]);
 
     useEffect(() => {
         if (datas.length > 0) {
             const hasActive = datas.some((d) => d.active);
             if (!hasActive) {
-                setDatas((ds) => {
-                    return ds.map((nd, i) => {
-                        const d = { ...nd };
-                        d.active = i == 0;
-                        return d;
-                    });
-                });
+                setDatas((ds) => ds.map((nd, i) => ({ ...nd, active: i === 0 })));
             }
         }
     }, [datas]);
 
     useEffect(() => {
-        const focusSubject = (event: CustomEventInit<{ name: string }>) => {
-            setDatas((ds) => {
-                return ds.map((nd) => {
-                    const d = { ...nd };
-                    d.active = d.name == event.detail?.name;
-                    return d;
-                });
-            });
+        const focusSubject = (event: Event) => {
+            const name = (event as CustomEvent<{ name: string }>).detail?.name;
+            setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-        return () => {
-            window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-        };
+        return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
     }, []);
 
     useEffect(() => {
         const subject = datas.find((d) => d.active);
         if (subject) {
-            sendIpcRequest<SubjectDocumentItem[]>(IPC_EVENTS.subject_items, subject.name).then(
-                (items) => {
-                    setSubjectItemData(items);
-                },
+            (window.api.subjects.getItems(subject.id) as Promise<SubjectDocumentItem[]>).then(
+                setSubjectItemData,
             );
         }
-    }, [datas, subjectItems]);
+    }, [datas, activeSubject]);
 
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
 
     const onSelectItem = useCallback((name: string) => {
-        setDatas((ds) => {
-            return ds.map((nd) => {
-                const d = { ...nd };
-                d.active = nd.name === name;
-                return d;
-            });
-        });
+        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
     }, []);
 
     const saveNewSubject = (searchValue: string) => {
         const value = searchValue.trim();
-        if (value.length < 2 || odatas.current.some((d) => d.name === value)) {
-            return;
-        }
+        if (value.length < 2 || odatas.current.some((d) => d.name === value)) return;
         const dateTime = getDateTime();
-        //@ts-ignore
+
+        window.api.subjects.create(value);
+
         const subject: SubjectDocument = {
             name: value,
             date: dateTime.date,
             active: true,
             documents: [],
-        };
+        } as unknown as SubjectDocument;
 
-        sendIpcRequest<SubjectDocument[]>(IPC_EVENTS.subject_document, {
-            name: value,
-            date: dateTime.date,
-        });
-
-        odatas.current = [
-            subject,
-            ...odatas.current.map((d) => {
-                const nd = { ...d };
-                nd.active = false;
-                return nd;
-            }),
-        ];
+        odatas.current = [subject, ...odatas.current.map((d) => ({ ...d, active: false }))];
         setDatas(odatas.current);
-        setSubjectDocument(odatas.current);
+        setSubjects(odatas.current);
     };
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
-        sendIpcRequest<boolean>(IPC_EVENTS.subject_document_delete, item.name).then((deleted) => {
-            if (!deleted) return;
-            odatas.current = odatas.current.filter((d) => d.name != item.name);
+        (window.api.subjects.delete(item.id) as Promise<void>).then(() => {
+            odatas.current = odatas.current.filter((d) => d.name !== item.name);
             setDatas(odatas.current);
-            setSubjectDocument(odatas.current);
+            setSubjects(odatas.current);
         });
     };
 
@@ -228,10 +194,7 @@ export default function Subject() {
                     </Card>
                     <ContainerScrollY
                         className="mt-2"
-                        style={{
-                            padding: '22px',
-                            overflowX: 'hidden',
-                        }}
+                        style={{ padding: '22px', overflowX: 'hidden' }}
                     >
                         <List
                             itemLayout="vertical"
@@ -264,22 +227,21 @@ export default function Subject() {
     );
 }
 
-type ItemFromSelectedSubjectType = {
-    item: SubjectDocumentItem;
-    setSubjectItemSelected: SetterOrUpdater<SubjectDocumentItem | null>;
-    confirm(item: SubjectDocumentItem): void;
-    getTitle: (id: string) => string;
-};
-
 function ItemFromSelectedSubject({
     item,
     setSubjectItemSelected,
     confirm,
-    getTitle,
-}: ItemFromSelectedSubjectType) {
+}: {
+    item: SubjectDocumentItem;
+    setSubjectItemSelected: (s: SubjectDocumentItem | null) => void;
+    confirm: (item: SubjectDocumentItem) => void;
+}) {
+    const { getSermon } = useSermonLookup();
+    const displayTitle = getSermon(item.documentTitle)?.title ?? item.documentTitle;
+
     return (
         <>
-            <List.Item actions={[<DeleteBtn confirm={() => confirm(item)} />]}>
+            <List.Item actions={[<DeleteBtn key="delete" confirm={() => confirm(item)} />]}>
                 {item.bible ? (
                     <>
                         <List.Item.Meta
@@ -301,7 +263,7 @@ function ItemFromSelectedSubject({
                                         onItemClick={() => setSubjectItemSelected(item)}
                                         name={item.documentTitle}
                                     >
-                                        {getTitle(item.documentTitle)}
+                                        {displayTitle}
                                     </DocumentViewer>
                                 </a>
                             }
@@ -323,16 +285,13 @@ function ShowActiveDocuments({
 }: {
     subject: SubjectDocument;
     documents: SubjectDocumentItem[];
-    setDocuments: React.Dispatch<React.SetStateAction<SubjectDocumentItem[]>>;
+    setDocuments: Dispatch<SetStateAction<SubjectDocumentItem[]>>;
 }) {
-    const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItemStore);
-
-    const { getTitle } = useDocumentTitle();
+    const setSubjectItemSelected = useSubjectsStore((s) => s.setSelectedSubjectItem);
 
     function confirm(item: SubjectDocumentItem) {
-        sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then((deleted) => {
-            if (!deleted) return;
-            setDocuments((ds) => ds.filter((d) => d._id !== item._id));
+        (window.api.subjects.deleteItem(item.id) as Promise<void>).then(() => {
+            setDocuments((ds) => ds.filter((d) => d.id !== item.id));
             message.success('Supprimé');
         });
     }
@@ -356,7 +315,6 @@ function ShowActiveDocuments({
                                 <ItemFromSelectedSubject
                                     item={item}
                                     confirm={confirm}
-                                    getTitle={getTitle}
                                     setSubjectItemSelected={setSubjectItemSelected}
                                 />
                             )}
@@ -370,14 +328,13 @@ function ShowActiveDocuments({
     );
 }
 
-const ItemSubject: React.FC<{
+const ItemSubject: FC<{
     item: SubjectDocument;
     onSelectItem: (name: string) => void;
     onDeleteSubject: (item: SubjectDocument) => void;
 }> = ({ item, onSelectItem, onDeleteSubject }) => {
-    //
     const onSelect = useCallback(() => {
-        !item.active && onSelectItem(item.name);
+        if (!item.active) onSelectItem(item.name);
     }, [item, onSelectItem]);
 
     return (

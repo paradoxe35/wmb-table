@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, shell } from 'electron';
 import {
     DocumentChannels,
     SearchChannels,
@@ -78,12 +78,14 @@ const api = {
             invoke(NotesChannels.syncReferences, noteId, refs),
         updateReference: (id: string, ref: unknown) =>
             invoke(NotesChannels.updateReference, id, ref),
+        getBibleReference: (id: string) => invoke(NotesChannels.getBibleReference, id),
         getBibleReferences: (noteId: string) => invoke(NotesChannels.getBibleReferences, noteId),
         createBibleReference: (noteId: string, label: string) =>
             invoke(NotesChannels.createBibleReference, noteId, label),
         syncBibleReferences: (id: string, refs: unknown) =>
             invoke(NotesChannels.syncBibleReferences, id, refs),
-        addBibleVerse: (id: string, book: unknown) => invoke(NotesChannels.addBibleVerse, id, book),
+        addBibleVerse: (id: string, verseId: string) =>
+            invoke(NotesChannels.addBibleVerse, id, verseId),
         removeBibleVerse: (id: string, verseId: string) =>
             invoke(NotesChannels.removeBibleVerse, id, verseId),
         exportPdf: (noteId: string) => invoke(NotesChannels.exportPdf, noteId),
@@ -143,6 +145,7 @@ const api = {
         getHistory: () => invoke(AppChannels.getHistory),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         downloadDocumentPdf: (title: string) => invoke(AppChannels.downloadDocumentPdf, title),
+        openExternal: (url: string) => shell.openExternal(url),
     },
 
     on: {

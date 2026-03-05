@@ -7,6 +7,7 @@ import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import log from 'electron-log';
+import type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 import * as tantivyService from './tantivy.service';
 import * as sermonMetadataService from './sermon-metadata.service';
 import * as sermonMetadataRepo from '../database/repositories/sermon-metadata.repository';

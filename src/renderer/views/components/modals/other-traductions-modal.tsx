@@ -1,27 +1,28 @@
 import { Button, List, Modal, Tooltip } from 'antd';
-import React, { useEffect, useMemo } from 'react';
-import { OtherTraduction } from '@localtypes/index';
-import { useDocumentTitle, useModalVisible } from '@renderer/hooks';
+import { useEffect, useMemo } from 'react';
+import { OtherTraduction } from '@shared/types';
+import { useSermonLookup, useModalVisible, useActiveTabTitle } from '@renderer/hooks';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
-import { useRecoilValue } from 'recoil';
-import { currentDocumentTabsSelector } from '@renderer/store';
-import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
-import { TRADUCTIONS } from '@root/utils/constants';
+import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { TRADUCTIONS } from '@renderer/utils/constants';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 
 export function OtherTraductionsModal() {
-    const { isModalVisible, handleOk, handleCancel, setIsModalVisible } = useModalVisible();
+    const { visible, hide, setVisible } = useModalVisible();
 
-    const { $titles } = useDocumentTitle();
-    const title = useRecoilValue(currentDocumentTabsSelector);
+    const { sermonsByTitle } = useSermonLookup();
+    const title = useActiveTabTitle();
 
     const traductions = useMemo(() => {
-        return $titles[title]?.getTraductions() || [];
-    }, [title, $titles]);
+        if (!title || !sermonsByTitle[title]) return [];
+        // SermonMeta doesn't have other_traductions directly;
+        // For now return empty — translations are fetched via API if needed
+        return [] as OtherTraduction[];
+    }, [title, sermonsByTitle]);
 
     useEffect(() => {
         const showModal = () => {
-            setIsModalVisible(true);
+            setVisible(true);
         };
 
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal, showModal);
@@ -41,12 +42,12 @@ export function OtherTraductionsModal() {
                 </div>
             }
             footer={[]}
-            visible={isModalVisible}
-            onOk={handleOk}
-            onCancel={handleCancel}
+            visible={visible}
+            onOk={hide}
+            onCancel={hide}
         >
             <div style={{ overflow: 'auto', height: '300px' }}>
-                <ContentModal handleCancel={handleCancel} traductions={traductions} />
+                <ContentModal handleCancel={hide} traductions={traductions} />
             </div>
         </Modal>
     );
@@ -72,17 +73,14 @@ function ContentModal({
                                     key={traduction.title + 'documentViewer'}
                                     name={traduction.title}
                                 >
-                                    <Tooltip
-                                        title={'Ouvrir le document'}
-                                        children={[
-                                            <Button
-                                                key={traduction.title + 'button'}
-                                                onClick={handleCancel}
-                                                shape="circle"
-                                                icon={<EyeOutlined />}
-                                            />,
-                                        ]}
-                                    />
+                                    <Tooltip title={'Ouvrir le document'}>
+                                        <Button
+                                            key={traduction.title + 'button'}
+                                            onClick={handleCancel}
+                                            shape="circle"
+                                            icon={<EyeOutlined />}
+                                        />
+                                    </Tooltip>
                                 </DocumentViewer>,
                             ]}
                         >

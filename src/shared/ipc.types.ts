@@ -1,10 +1,7 @@
 import type {
-    DataDocument,
     DocumentTab,
     Suggestions,
     SidebarStatus,
-    SearchResult,
-    SearchMatchersValue,
     NoteItem,
     NoteItemReference,
     NoteItemReferenceBible,
@@ -76,6 +73,7 @@ export const NotesChannels = {
     getReference: 'notes:getReference',
     syncReferences: 'notes:syncReferences',
     updateReference: 'notes:updateReference',
+    getBibleReference: 'notes:getBibleReference',
     getBibleReferences: 'notes:getBibleReferences',
     createBibleReference: 'notes:createBibleReference',
     syncBibleReferences: 'notes:syncBibleReferences',
@@ -211,6 +209,10 @@ export interface InvokeChannelMap {
         args: [string, SubjectRefTree];
         return: void;
     };
+    [NotesChannels.getBibleReference]: {
+        args: [string];
+        return: NoteItemReferenceBible | null;
+    };
     [NotesChannels.getBibleReferences]: {
         args: [string];
         return: NoteItemReferenceBible[];
@@ -224,8 +226,8 @@ export interface InvokeChannelMap {
         return: void;
     };
     [NotesChannels.addBibleVerse]: {
-        args: [string, BibleBook];
-        return: void;
+        args: [string, string];
+        return: BibleBook | null;
     };
     [NotesChannels.removeBibleVerse]: {
         args: [string, string];

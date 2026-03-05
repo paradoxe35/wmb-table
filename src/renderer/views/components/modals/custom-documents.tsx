@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import {
     Button,
     Col,
@@ -13,22 +13,7 @@ import {
     message,
     Progress,
 } from 'antd';
-import electron from 'electron';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { SetterOrUpdater, useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
-import {
-    appDatasLoadedStore,
-    customDocumentsStore,
-    documentTitlesStore,
-    titlesStore,
-} from '@renderer/store';
-import {
-    CustomDocument,
-    CustomDocumentUploadProgress,
-    Title,
-    UploadDocument,
-} from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
+import { CustomDocument, CustomDocumentUploadProgress, UploadDocument } from '@shared/types';
 import { FileAddOutlined, EyeOutlined, LoadingOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
@@ -38,30 +23,32 @@ import { DraggerProps } from 'antd/lib/upload';
 import { UploadFile } from 'antd/lib/upload/interface';
 
 import { Spin } from 'antd';
-import { useIpcRequestWithLoader, useModalVisible } from '@renderer/hooks';
-import { CUSTOM_DOCUMENT_EVENT } from '@modules/shared/shared';
-import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
+import { useModalVisible, useIpcRequestWithLoader } from '@renderer/hooks';
+import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useAppStore, useCustomDocumentsStore, useSermonStore } from '@renderer/stores';
 
 const { Dragger } = Upload;
 
-const { ipcRenderer } = electron;
-
 export default function CustomDocuments() {
-    const { showModal, isModalVisible, handleOk, handleCancel } = useModalVisible();
+    const { visible, show, hide } = useModalVisible();
 
-    const titles = useRecoilValue(documentTitlesStore);
+    const sermons = useSermonStore((s) => s.sermons);
 
-    const [customDocuments, setCustomDocuments] =
-        useRecoilState<CustomDocument[]>(customDocumentsStore);
+    const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
+    const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
+    const addCustomDocument = useCustomDocumentsStore((s) => s.addCustomDocument);
+    const removeCustomDocument = useCustomDocumentsStore((s) => s.removeCustomDocument);
 
     useEffect(() => {
-        sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents).then((datas) => {
-            setCustomDocuments(datas);
+        window.api.app.getCustomDocuments().then((datas) => {
+            setCustomDocuments(datas as CustomDocument[]);
         });
     }, []);
 
     useEffect(() => {
-        ipcRenderer.on(IPC_EVENTS.open_modal_document_from_main, showModal);
+        const cleanup = window.api.on.openModalDocumentFromMain(show);
+        return cleanup;
     }, []);
 
     return (
@@ -75,23 +62,24 @@ export default function CustomDocuments() {
                             <span>-</span>
                             <div className="flex flex-center">
                                 <Typography.Text type="secondary">
-                                    Total({titles.length})
+                                    Total({sermons.length})
                                 </Typography.Text>
                             </div>
                         </Space>
                     </>
                 }
-                visible={isModalVisible}
+                visible={visible}
                 footer={[]}
-                onOk={handleOk}
-                onCancel={handleCancel}
+                onOk={hide}
+                onCancel={hide}
             >
                 <Row>
                     <Col span={11}>
                         <CustomDocumentItem
                             customDocuments={customDocuments}
-                            setCustomDocuments={setCustomDocuments}
-                            handleCancel={handleCancel}
+                            addCustomDocument={addCustomDocument}
+                            removeCustomDocument={removeCustomDocument}
+                            handleCancel={hide}
                         />
                     </Col>
                     <Col span={2}>
@@ -106,7 +94,7 @@ export default function CustomDocuments() {
     );
 }
 
-const DisabledArea = ({ component, active }: { component: JSX.Element; active: boolean }) => {
+const DisabledArea = ({ component, active }: { component: ReactElement; active: boolean }) => {
     return active ? (
         component
     ) : (
@@ -115,7 +103,7 @@ const DisabledArea = ({ component, active }: { component: JSX.Element; active: b
                 <Button type="primary" shape="circle" icon={<RedoOutlined />} />
                 <br />
                 <Button type="dashed" disabled>
-                    Desactivé
+                    Desactive
                 </Button>
                 <br />
                 <Button type="dashed">
@@ -136,11 +124,11 @@ const UploaderWrapper = () => {
 };
 
 const DocumentTitle = ({ length }: { length: number }) => {
-    const appLoaded = useRecoilValue(appDatasLoadedStore);
+    const appLoaded = useAppStore((s) => s.loaded);
 
     return (
         <Space direction="horizontal">
-            <Typography.Text type="secondary">Documents ajoutés ({length})</Typography.Text>
+            <Typography.Text type="secondary">Documents ajout\u00e9s ({length})</Typography.Text>
             {!appLoaded && <Spin indicator={<LoadingOutlined spin />} />}
         </Space>
     );
@@ -149,14 +137,15 @@ const DocumentTitle = ({ length }: { length: number }) => {
 function CustomDocumentItem({
     handleCancel,
     customDocuments,
-    setCustomDocuments,
+    addCustomDocument,
+    removeCustomDocument,
 }: {
-    handleCancel: Function;
+    handleCancel: () => void;
     customDocuments: CustomDocument[];
-    setCustomDocuments: SetterOrUpdater<CustomDocument[]>;
+    addCustomDocument: (doc: CustomDocument) => void;
+    removeCustomDocument: (id: string) => void;
 }) {
     const [documents, setDocuments] = useState<CustomDocument[]>([]);
-    const setTitles = useSetRecoilState(titlesStore);
 
     useEffect(() => {
         setDocuments(customDocuments);
@@ -164,26 +153,7 @@ function CustomDocumentItem({
 
     useEffect(() => {
         const addDoc = (e: CustomEventInit<CustomDocument[]>) => {
-            setCustomDocuments((ds) => [...(e.detail || []), ...ds]);
-
-            const titles = (e.detail || []).map(
-                (f) =>
-                    ({
-                        _id: f.documentId,
-                        title: f.title,
-                        frTitle: f.title,
-                        enTitle: f.title,
-                        date: null,
-                        date_long: null,
-                        web_link: null,
-                        pdf_link: null,
-                        audio_link: null,
-                        traduction: null,
-                        other_traductions: [],
-                    }) as Title<string | null>,
-            );
-
-            setTitles((ts) => [...titles, ...ts]);
+            (e.detail || []).forEach((doc) => addCustomDocument(doc));
         };
         window.addEventListener(CUSTOM_DOCUMENT_EVENT.customDocumentAdded, addDoc);
         return () => {
@@ -202,9 +172,9 @@ function CustomDocumentItem({
     const ipcRequestWithLoader = useIpcRequestWithLoader();
 
     const handleDeletion = (document: CustomDocument) => {
-        ipcRequestWithLoader(IPC_EVENTS.custom_documents_delete, document).then(() => {
-            setCustomDocuments((ds) => ds.filter((d) => d.title != document.title));
-            setTitles((ts) => ts.filter((t) => t.title != document.title));
+        ipcRequestWithLoader(async () => {
+            await window.api.app.deleteCustomDocument(document.id);
+            removeCustomDocument(document.id);
             window.dispatchEvent(
                 new CustomEvent<CustomDocument>(CUSTOM_DOCUMENT_EVENT.customDocumentRemoved, {
                     detail: document,
@@ -233,13 +203,14 @@ function CustomDocumentItem({
                         <List.Item
                             actions={[
                                 <DocumentViewer
+                                    key="view"
                                     onItemClick={() => handleCancel()}
                                     name={document.title}
                                     id={document.documentId}
                                 >
                                     <Button shape="circle" icon={<EyeOutlined />} />
                                 </DocumentViewer>,
-                                <DeleteBtn confirm={() => handleDeletion(document)} />,
+                                <DeleteBtn key="delete" confirm={() => handleDeletion(document)} />,
                             ]}
                         >
                             <List.Item.Meta
@@ -257,11 +228,11 @@ function CustomDocumentItem({
 function validateFile(file: File, showMessage: boolean = true) {
     const isJpgOrPng = file.type === 'application/pdf';
     if (!isJpgOrPng) {
-        showMessage && message.error(`seul le format pdf est pris en charge.`);
+        if (showMessage) message.error(`seul le format pdf est pris en charge.`);
     }
     const isLt8k = file.size / 1024 / 1024 <= 0.8;
     if (!isLt8k) {
-        showMessage && message.error('Le fichier doit être inférieur ou égal à 2Mo !');
+        if (showMessage) message.error('Le fichier doit être inférieur ou égal à 2Mo !');
     }
     return isJpgOrPng && isLt8k;
 }
@@ -278,7 +249,7 @@ function Uploader() {
         CustomDocumentUploadProgress | undefined
     >();
 
-    const titles = useRecoilValue(documentTitlesStore);
+    const sermons = useSermonStore((s) => s.sermons);
 
     const props: DraggerProps = {
         name: 'file',
@@ -312,11 +283,11 @@ function Uploader() {
     async function handleUpload() {
         if (fileList.length === 0) return;
 
-        const titlesList = titles.map((d) => `${d.getTitle()}.pdf`);
+        const titlesList = sermons.map((d) => `${d.title}.pdf`);
 
         for (const file of fileList) {
             if (titlesList.includes(file.name)) {
-                message.error(`Le document avec nom '${file.name}' existe déjà`);
+                message.error(`Le document avec nom '${file.name}' existe d\u00e9j\u00e0`);
                 return false;
             }
         }
@@ -330,12 +301,14 @@ function Uploader() {
             }))
             .filter((d) => d.path);
 
-        sendIpcRequest<CustomDocument[]>(IPC_EVENTS.custom_documents_store, paths)
+        window.api.app
+            .uploadCustomDocuments(paths)
             .then((_docs) => {
-                if (_docs.length > 0) {
-                    message.success(`Téléchargement terminé`);
+                const docs = _docs as CustomDocument[];
+                if (docs.length > 0) {
+                    message.success(`T\u00e9l\u00e9chargement termin\u00e9`);
                     setFileList((files) => {
-                        return files.filter((f) => !_docs.some((b) => f.name.includes(b.title)));
+                        return files.filter((f) => !docs.some((b) => f.name.includes(b.title)));
                     });
                 }
             })
@@ -345,40 +318,40 @@ function Uploader() {
 
     // handle all commit uploaded document and error
     useEffect(() => {
-        const handle_uploaded_file = (_e: any, doc: CustomDocument) => {
+        const cleanup = window.api.on.customDocumentUploadedFile((doc) => {
             window.dispatchEvent(
                 new CustomEvent<CustomDocument[]>(CUSTOM_DOCUMENT_EVENT.customDocumentAdded, {
-                    detail: [doc],
+                    detail: [doc as CustomDocument],
                 }),
             );
-        };
-        // every time when a file is uploaded successfully
-        ipcRenderer.on(IPC_EVENTS.custom_document_uploaded_file, handle_uploaded_file);
+        });
+        return cleanup;
     }, []);
 
     useEffect(() => {
         // upload progress handler
-        const upload_progress = (_: any, data: CustomDocumentUploadProgress) => {
-            if (data.type === 'progress') {
-                setUploadProgress(data);
+        const cleanup = window.api.on.customDocumentUploadProgress((data) => {
+            const progressData = data as CustomDocumentUploadProgress;
+            if (progressData.type === 'progress') {
+                setUploadProgress(progressData);
             } else {
                 window.setTimeout(() => {
                     setUploadProgress(undefined);
                 }, 2000);
             }
-        };
-        // upload progress event listeners
-        ipcRenderer.on(IPC_EVENTS.custom_document_upload_progress, upload_progress);
+        });
+        return cleanup;
     }, []);
 
-    // catch error on uploading document progress, specially when there's no connectin
+    // catch error on uploading document progress, specially when there's no connection
     useEffect(() => {
-        const handler = () =>
-            message.warn('Vous devez être connecté à Internet pour télécharger le document');
-        ipcRenderer.on(IPC_EVENTS.custom_document_connection_required, handler);
+        const cleanup = window.api.on.customDocumentConnectionRequired(() =>
+            message.warning('Vous devez être connecté à Internet pour télécharger le document'),
+        );
+        return cleanup;
     }, []);
 
-    // scroll to bo ttom container when new file added
+    // scroll to bottom container when new file added
     useEffect(() => {
         if (fileList.length > 0) {
             window.setTimeout(() => {
@@ -414,12 +387,13 @@ function Uploader() {
                         </p>
                         <div style={{ padding: '0 9px' }}>
                             <p className="ant-upload-text">
-                                Cliquez et déposer les fichiers dans cette zone pour Télécharger
+                                Cliquez et d\u00e9poser les fichiers dans cette zone pour
+                                T\u00e9l\u00e9charger
                             </p>
                             <p className="ant-upload-hint">
                                 Seuls les fichiers PDF sont pris en charge (taille maximale 800KB)
                                 <br />
-                                Vous ne pouvez envoyer que 10 fichiers par téléchargement
+                                Vous ne pouvez envoyer que 10 fichiers par t\u00e9l\u00e9chargement
                             </p>
                         </div>
                     </Dragger>
@@ -429,7 +403,7 @@ function Uploader() {
                 {uploading && uploadProgress?.type === 'progress' ? (
                     <Space direction="vertical">
                         <Space direction="horizontal">
-                            <span>Téléchargement</span>
+                            <span>T\u00e9l\u00e9chargement</span>
                             <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />
                         </Space>
                         <div style={{ width: 170 }}>
@@ -453,7 +427,7 @@ function Uploader() {
                         loading={uploading}
                         style={{ margin: '0 10px' }}
                     >
-                        {uploading ? 'Téléchargement' : 'Télécharger'}
+                        {uploading ? 'T\u00e9l\u00e9chargement' : 'T\u00e9l\u00e9charger'}
                     </Button>
                 )}
             </div>

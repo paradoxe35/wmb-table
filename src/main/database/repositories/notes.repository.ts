@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { getDb } from '../index';
+import { getDb, getBibleDb } from '../index';
 import { notes, notesReferences, notesBibleReferences } from '../schema';
+import { bibleVerses } from '../bible-schema';
 import type {
     NoteItem,
     NoteItemReference,
@@ -165,6 +166,15 @@ export function updateReference(id: string, ref: SubjectRefTree): void {
 
 // --- Bible References ---
 
+export function getBibleReference(id: string): NoteItemReferenceBible | null {
+    const row = getDb()
+        .select()
+        .from(notesBibleReferences)
+        .where(eq(notesBibleReferences.id, id))
+        .get();
+    return row ? toBibleRef(row) : null;
+}
+
 export function getBibleReferences(noteId: string): NoteItemReferenceBible[] {
     const rows = getDb()
         .select()
@@ -215,17 +225,30 @@ export function syncBibleReferences(noteId: string, refs: BibleBook[] | string[]
     }
 }
 
-export function addBibleVerse(refId: string, verse: BibleBook): void {
+export function addBibleVerse(refId: string, verseId: string): BibleBook | null {
+    const verse = getBibleDb().select().from(bibleVerses).where(eq(bibleVerses.id, verseId)).get();
+    if (!verse) return null;
+
+    const bibleBook: BibleBook = {
+        id: verse.id,
+        bookName: verse.bookName,
+        book: verse.book,
+        testament: verse.testament,
+        chapter: verse.chapter,
+        verse: verse.verse,
+        content: verse.content,
+    };
+
     const row = getDb()
         .select()
         .from(notesBibleReferences)
         .where(eq(notesBibleReferences.id, refId))
         .get();
-    if (!row) return;
+    if (!row) return null;
     const refs: BibleBook[] = JSON.parse(row.references);
     // $addToSet equivalent — only add if not already present
-    if (!refs.some((r) => r.id === verse.id)) {
-        refs.push(verse);
+    if (!refs.some((r) => r.id === bibleBook.id)) {
+        refs.push(bibleBook);
     }
     const now = new Date().toISOString();
     getDb()
@@ -233,6 +256,8 @@ export function addBibleVerse(refId: string, verse: BibleBook): void {
         .set({ references: JSON.stringify(refs), updatedAt: now })
         .where(eq(notesBibleReferences.id, refId))
         .run();
+
+    return bibleBook;
 }
 
 export function removeBibleVerse(refId: string, verseId: string): void {

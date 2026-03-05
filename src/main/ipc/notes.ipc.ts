@@ -50,6 +50,10 @@ export function registerNotesHandlers(): void {
         notesRepo.updateReference(id, ref);
     });
 
+    registerHandler(NotesChannels.getBibleReference, async (_event, id) => {
+        return notesRepo.getBibleReference(id);
+    });
+
     registerHandler(NotesChannels.getBibleReferences, async (_event, noteId) => {
         return notesRepo.getBibleReferences(noteId);
     });
@@ -62,8 +66,8 @@ export function registerNotesHandlers(): void {
         notesRepo.syncBibleReferences(noteId, refs);
     });
 
-    registerHandler(NotesChannels.addBibleVerse, async (_event, refId, verse) => {
-        notesRepo.addBibleVerse(refId, verse);
+    registerHandler(NotesChannels.addBibleVerse, async (_event, refId, verseId) => {
+        return notesRepo.addBibleVerse(refId, verseId);
     });
 
     registerHandler(NotesChannels.removeBibleVerse, async (_event, refId, verseId) => {

@@ -10,10 +10,12 @@ import {
     TextAnalyzerBuilder,
     TokenizerStatic,
     FilterStatic,
-    Order,
     type DocAddress,
-    type SearchHit,
 } from '@oxdev03/node-tantivy-binding';
+
+// Order is a const enum in the binding, which can't be accessed with isolatedModules.
+// Inline the values instead.
+const ORDER_ASC = 0 as const;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -194,7 +196,7 @@ export function getSermonParagraphs(langCode: string, translationId: number): Se
 
     const query = Query.termQuery(schema, 'translation_id', translationId);
     const searcher = index.searcher();
-    const result = searcher.search(query, 10000, false, 'line_index', 0, Order.Asc);
+    const result = searcher.search(query, 10000, false, 'line_index', 0, ORDER_ASC);
 
     const paragraphs: SermonParagraph[] = [];
     for (const hit of result.hits) {
@@ -229,7 +231,7 @@ export function getUniqueSermonDates(langCode: string): SermonDateEntry[] {
     const searcher = index.searcher();
 
     // Order by translation_id to group docs by sermon
-    const result = searcher.search(query, searcher.numDocs, false, 'translation_id', 0, Order.Asc);
+    const result = searcher.search(query, searcher.numDocs, false, 'translation_id', 0, ORDER_ASC);
 
     const entries: SermonDateEntry[] = [];
     let lastTranslationId = -1;

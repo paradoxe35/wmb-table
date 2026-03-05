@@ -1,24 +1,18 @@
-import { Title } from '@localtypes/index';
-import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
-import { ipcRenderer } from 'electron';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Title } from '@shared/types';
+import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { message, notification, Progress } from 'antd';
 
 const DownloadProgressStatus = () => {
     const [progress, setProgress] = useState(0);
 
     useEffect(() => {
-        const handler = (_: any, progres: number | null) => {
+        const cleanup = window.api.on.downloadDocumentPdfProgress((progres) => {
             if (typeof progres === 'number') {
                 setProgress(+progres.toFixed(0));
             }
-        };
-        ipcRenderer.on(IPC_EVENTS.download_document_pdf_progress, handler);
-        return () => {
-            ipcRenderer.off(IPC_EVENTS.download_document_pdf_progress, handler);
-        };
+        });
+        return cleanup;
     }, []);
 
     return (
@@ -34,14 +28,14 @@ const DownloadProgressStatus = () => {
 };
 
 export default function PdfDocumentDownloader() {
-    const documentRef = useRef<Title>();
+    const documentRef = useRef<Title | undefined>(undefined);
     const downloading = useRef<boolean>(false);
 
-    // open  notification about download progress
+    // open notification about download progress
     const openNotification = useCallback(() => {
         notification.open({
             key: documentRef.current?.title,
-            message: 'Téléchargement en cours',
+            message: 'T\u00e9l\u00e9chargement en cours',
             description: <DownloadProgressStatus />,
             duration: 0,
         });
@@ -49,23 +43,21 @@ export default function PdfDocumentDownloader() {
 
     // download handler after event has been emitted
     const downloadHandler = useCallback((event: CustomEventInit<Title>) => {
-        // prevent start twoo download process
+        // prevent start two download process
         if (downloading.current) return;
 
         // send download event to main thread
         documentRef.current = event.detail;
-        sendIpcRequest<boolean | null>(IPC_EVENTS.download_document_pdf, event.detail).then(
-            (res) => {
-                if (res === false) {
-                    message.warn('La connexion Internet est requise');
-                } else if (res === true) {
-                    openNotification();
-                }
-            },
-        );
+        window.api.app.downloadDocumentPdf(event.detail!.title).then((res) => {
+            if (res === false) {
+                message.warning('La connexion Internet est requise');
+            } else if (res === true) {
+                openNotification();
+            }
+        });
     }, []);
 
-    // listener when click on pdf donwload button from document child view
+    // listener when click on pdf download button from document child view
     useEffect(() => {
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.downloadDocumentPdf, downloadHandler);
         return () => {
@@ -76,22 +68,20 @@ export default function PdfDocumentDownloader() {
         };
     }, []);
 
-    // listener donwload progress
+    // listener download progress
     useEffect(() => {
-        ipcRenderer.on(
-            IPC_EVENTS.download_document_pdf_progress,
-            (_: any, progress: number | null) => {
-                if (progress === null) {
-                    window.setTimeout(() => {
-                        notification.destroy();
-                        message.success('Enregistré');
-                    }, 1000);
-                    downloading.current = false;
-                } else {
-                    downloading.current = true;
-                }
-            },
-        );
+        const cleanup = window.api.on.downloadDocumentPdfProgress((progress) => {
+            if (progress === null) {
+                window.setTimeout(() => {
+                    notification.destroy();
+                    message.success('Enregistr\u00e9');
+                }, 1000);
+                downloading.current = false;
+            } else {
+                downloading.current = true;
+            }
+        });
+        return cleanup;
     }, []);
 
     return <></>;

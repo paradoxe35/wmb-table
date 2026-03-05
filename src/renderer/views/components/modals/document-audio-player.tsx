@@ -1,19 +1,16 @@
-import { Title } from '@localtypes/index';
-import { AUDIO_PLAYER, CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
+import { Title } from '@shared/types';
+import { AUDIO_PLAYER, CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import { useModalVisible, useValueStateRef } from '@renderer/hooks';
-import { currentAudioDocumentPlayStore } from '@renderer/store';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { TRADUCTIONS } from '@root/utils/constants';
-import { throttle } from '@root/utils/functions';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
+import { TRADUCTIONS } from '@renderer/utils/constants';
+import { throttle } from '@renderer/utils/functions';
 import { Modal } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useSetRecoilState } from 'recoil';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import MediaElement from '../mediaelement/mediaelement';
+import { useAudioStore } from '@renderer/stores';
 
 export default function DocumentAudioPlayer() {
-    const { isModalVisible, handleOk, handleCancel, setIsModalVisible } = useModalVisible();
+    const { visible, hide, setVisible } = useModalVisible();
 
     const [docTitle, setDocTitle] = useState<
         (Title & { audioTime?: number; origin_audio_link: string }) | null
@@ -21,7 +18,7 @@ export default function DocumentAudioPlayer() {
 
     const docTitleRef = useValueStateRef(docTitle);
 
-    const setCurrentAudioDocumentPlay = useSetRecoilState(currentAudioDocumentPlayStore);
+    const setCurrentPlay = useAudioStore((s) => s.setCurrentPlay);
 
     const audioPlayerRef = useRef<any>(null);
 
@@ -36,7 +33,7 @@ export default function DocumentAudioPlayer() {
             if (docTitleRef.current?.title === event.detail?.title) {
                 // for last audio player was found, then open modal first only first time on play
                 if (!autoplay.current) {
-                    setIsModalVisible(true);
+                    setVisible(true);
                     autoplay.current = true;
                 }
                 // pause if is playing or play if pause
@@ -48,39 +45,39 @@ export default function DocumentAudioPlayer() {
                 return;
             }
 
-            // if different from the last audio player the reset autplay variable to true
+            // if different from the last audio player the reset autoplay variable to true
             if (docTitleRef.current?.title && docTitleRef.current?.title !== event.detail?.title) {
                 autoplay.current = true;
             }
 
             // register last player
-            sendIpcRequest(IPC_EVENTS.audio_document_last_play, event.detail);
+            window.api.audio.setLastPlay(event.detail.title);
 
             // request for last played time and local file path if available
-            sendIpcRequest<{ time: number | undefined; local_file?: string }>(
-                IPC_EVENTS.audio_document_time_and_local_file,
-                event.detail,
-            ).then(({ time, local_file }) => {
-                const ctime = typeof time === 'number' ? time : undefined;
+            const result = await window.api.audio.getTimeAndLocalFile(event.detail.audio_link!);
+            const { time, local_file } = result as {
+                time: number | undefined;
+                local_file?: string;
+            };
+            const ctime = typeof time === 'number' ? time : undefined;
 
-                // update audio document state
-                setDocTitle({
-                    ...event.detail!,
-                    audioTime: ctime,
-                    origin_audio_link: event.detail?.audio_link!,
-                    audio_link: local_file?.replaceAll('#', '%23') || event.detail?.audio_link,
-                });
+            // update audio document state
+            setDocTitle({
+                ...event.detail!,
+                audioTime: ctime,
+                origin_audio_link: event.detail?.audio_link ?? '',
+                audio_link: local_file?.replaceAll('#', '%23') || event.detail?.audio_link,
+            });
 
-                // open modal if not yet and auto is set to true
-                if (autoplay.current) {
-                    setIsModalVisible(true);
-                }
+            // open modal if not yet and auto is set to true
+            if (autoplay.current) {
+                setVisible(true);
+            }
 
-                // set as current audio play
-                setCurrentAudioDocumentPlay({
-                    documentTitle: event.detail?.title!,
-                    status: autoplay.current ? 'play' : 'pause',
-                });
+            // set as current audio play
+            setCurrentPlay({
+                documentTitle: event.detail?.title ?? '',
+                status: autoplay.current ? 'play' : 'pause',
             });
         };
 
@@ -93,19 +90,19 @@ export default function DocumentAudioPlayer() {
         };
     }, []);
 
-    // initialase default data
+    // initialize default data
     useEffect(() => {
-        // list to event from player icon
+        // listen to event from player icon
         window.addEventListener(AUDIO_PLAYER.openModalPlayer, () => {
-            setIsModalVisible(true);
+            setVisible(true);
         });
 
         // get the last played audio document
-        sendIpcRequest<Title | null>(IPC_EVENTS.audio_document_last_play).then((data) => {
+        window.api.audio.getLastPlay().then((data) => {
             if (data) {
                 // prevent audio to play is available at mount of component
                 autoplay.current = false;
-                // dispach audio event
+                // dispatch audio event
                 window.dispatchEvent(
                     new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
                         detail: data,
@@ -116,35 +113,31 @@ export default function DocumentAudioPlayer() {
     }, []);
 
     const onAudioPlay = useCallback(() => {
-        setCurrentAudioDocumentPlay({
-            documentTitle: docTitleRef.current?.title!,
+        setCurrentPlay({
+            documentTitle: docTitleRef.current?.title ?? '',
             status: 'play',
         });
     }, []);
 
     const onAudioPause = useCallback(() => {
-        setCurrentAudioDocumentPlay({
-            documentTitle: docTitleRef.current?.title!,
+        setCurrentPlay({
+            documentTitle: docTitleRef.current?.title ?? '',
             status: 'pause',
         });
     }, []);
 
     const onAudioTimeUpdate = useCallback((time: number) => {
-        sendIpcRequest<number | undefined>(
-            IPC_EVENTS.audio_document_time_and_local_file_set,
-            docTitleRef.current?.origin_audio_link,
-            time,
-        );
+        window.api.audio.setTime(docTitleRef.current?.origin_audio_link || '', time);
     }, []);
 
-    const setAudioPlayRef = useCallback((player) => {
+    const setAudioPlayRef = useCallback((player: any) => {
         audioPlayerRef.current = player;
     }, []);
 
     const handleOnTitleClick = useCallback(() => {
         if (docTitleRef.current?.title) {
             viewDocument(docTitleRef.current?.title);
-            setIsModalVisible(false);
+            setVisible(false);
         }
     }, [docTitle, viewDocument]);
 
@@ -155,9 +148,9 @@ export default function DocumentAudioPlayer() {
                 footer={[]}
                 width={600}
                 forceRender
-                visible={isModalVisible}
-                onOk={handleOk}
-                onCancel={handleCancel}
+                visible={visible}
+                onOk={hide}
+                onCancel={hide}
             >
                 {docTitle && (
                     <MediaElement

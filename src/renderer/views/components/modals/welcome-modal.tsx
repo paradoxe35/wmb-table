@@ -1,38 +1,33 @@
 import { Button, Modal, Space } from 'antd';
-import React, { useCallback, useState } from 'react';
-import { useEffect } from 'react';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
+import { useCallback, useEffect, useState } from 'react';
 import { useModalVisible } from '@renderer/hooks';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
 import { Avatar } from 'antd';
-import { APP_NAME } from '@root/utils/constants';
+import { APP_NAME } from '@renderer/utils/constants';
 import { Typography } from 'antd';
-import { useRecoilValue } from 'recoil';
-import { documentTitlesStore } from '@renderer/store';
+import { useSermonStore } from '@renderer/stores';
 
 const { Title, Paragraph, Link } = Typography;
 
 export default function Welcome() {
-    const { showModal, isModalVisible, handleOk, handleCancel } = useModalVisible();
+    const { visible, show, hide } = useModalVisible();
 
     const [image, setImage] = useState<undefined | string>(undefined);
 
     useEffect(() => {
-        sendIpcRequest<{ started_to_update: boolean }>(IPC_EVENTS.started_to_update).then(
-            (status) => {
-                if (!status.started_to_update) {
-                    sendIpcRequest<boolean>(IPC_EVENTS.initialized_app).then(
-                        (initialized) => !initialized && showModal(),
-                    );
-                }
-            },
-        );
-        sendIpcRequest<string>(IPC_EVENTS.get_asset, 'icon.png').then((path) => setImage(path));
+        window.api.app.getUpdateStatus().then((status: unknown) => {
+            const s = status as { started_to_update: boolean };
+            if (!s.started_to_update) {
+                window.api.app
+                    .initialize()
+                    .then((initialized) => !(initialized as boolean) && show());
+            }
+        });
+        window.api.app.getAsset('icon.png').then((path) => setImage(path as string));
     }, []);
 
     const goToBackupModal = useCallback(() => {
-        handleCancel();
-        window.dispatchEvent(new Event(IPC_EVENTS.open_backup_modal_from_main));
+        hide();
+        window.dispatchEvent(new Event('open-backup-modal-from-main'));
     }, []);
 
     return (
@@ -48,13 +43,13 @@ export default function Welcome() {
                         </Space>
                     </>
                 }
-                visible={isModalVisible}
+                visible={visible}
                 footer={[
-                    <Button key={0} onClick={handleCancel}>
+                    <Button key={0} onClick={hide}>
                         Commencer
                     </Button>,
                     <Button key={1} type="dashed" onClick={goToBackupModal}>
-                        Restaurer vos données
+                        Restaurer vos donn\u00e9es
                     </Button>,
                     <Button key={2} type="primary">
                         <Link
@@ -66,8 +61,8 @@ export default function Welcome() {
                         </Link>
                     </Button>,
                 ]}
-                onOk={handleOk}
-                onCancel={handleCancel}
+                onOk={hide}
+                onCancel={hide}
             >
                 <WelcomeContent />
             </Modal>
@@ -76,31 +71,34 @@ export default function Welcome() {
 }
 
 const WelcomeContent = () => {
-    const titles = useRecoilValue(documentTitlesStore);
+    const sermons = useSermonStore((s) => s.sermons);
 
     return (
         <Typography>
-            <Title>Bienvenue à {APP_NAME}</Title>
-            <Paragraph>Voici quelques fonctionnalités prises en charge: </Paragraph>
+            <Title>Bienvenue \u00e0 {APP_NAME}</Title>
+            <Paragraph>Voici quelques fonctionnalit\u00e9s prises en charge: </Paragraph>
             <Paragraph>
                 <ul>
-                    <li>{titles.length} sermons déjà enregistrés et regroupés par an.</li>
+                    <li>
+                        {sermons.length} sermons d\u00e9j\u00e0 enregistr\u00e9s et regroup\u00e9s
+                        par an.
+                    </li>
                     <li>
                         Recherchez des mots ou des phrases dans tous les documents avec des
-                        résultats pertinents.
+                        r\u00e9sultats pertinents.
                     </li>
                     <li>Ajouter de nouveaux documents.</li>
                     <li>
-                        Regroupez vos références de documents par sujet(pour plus d'infos, allez
-                        dans la{' '}
+                        Regroupez vos r\u00e9f\u00e9rences de documents par sujet(pour plus
+                        d&apos;infos, allez dans la{' '}
                         <Link target="_blank" href={process.env.DOCS_SUBJECT_LINK}>
                             documentation
                         </Link>
                         ).
                     </li>
-                    <li>Créer des notes et les modifier.</li>
+                    <li>Cr\u00e9er des notes et les modifier.</li>
                     <li>
-                        Ajoutez des références de documents ou de la Bible dans vos notes(
+                        Ajoutez des r\u00e9f\u00e9rences de documents ou de la Bible dans vos notes(
                         <Link target="_blank" href={process.env.DOCS_NOTE_LINK}>
                             documentation
                         </Link>
@@ -108,8 +106,8 @@ const WelcomeContent = () => {
                     </li>
                     <li>Bible (Louis Segond)</li>
                     <li>
-                        Sauvegarde automatique de vos paramètres et données sur Internet pour les
-                        restaurer ultérieurement.
+                        Sauvegarde automatique de vos param\u00e8tres et donn\u00e9es sur Internet
+                        pour les restaurer ult\u00e9rieurement.
                     </li>
                     <li>Etc.</li>
                 </ul>

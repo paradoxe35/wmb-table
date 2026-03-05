@@ -1,12 +1,10 @@
 import { Input, message, Modal } from 'antd';
-import React, { useEffect } from 'react';
-import { useCallback, useRef } from 'react';
-import { useSetRecoilState } from 'recoil';
-import { documentViewQueryStore } from '@renderer/store';
-import { DocumentSearchEvent, DocumentViewQuery } from '@localtypes/index';
+import { useCallback, useEffect, useRef } from 'react';
+import { DocumentSearchEvent, DocumentViewQuery } from '@shared/types';
 import { useValueStateRef } from '@renderer/hooks';
 import { SearchOutlined, FileSearchOutlined, SortAscendingOutlined } from '@ant-design/icons';
-import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
+import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { useSearchStore } from '@renderer/stores';
 
 const ModalController = ({
     isOpened,
@@ -40,10 +38,10 @@ export function ModalSearchDocument({
 
     const searchValue = useValueStateRef<string>(documentQuery?.term || '');
 
-    const setDocumentViewQuery = useSetRecoilState(documentViewQueryStore);
+    const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
 
     const isOpened = useRef(false);
-    const searchForParagraph = useRef<boolean>();
+    const searchForParagraph = useRef<boolean | undefined>(undefined);
 
     const onSearch = () => {
         const value = searchValue.current;
@@ -52,17 +50,17 @@ export function ModalSearchDocument({
             (value.trim().length < 3 || documentQueryRef.current?.term == value)
         ) {
             if (value.trim().length < 3) {
-                message.warn('Votre recherche doit comporter au moins trois caractères');
+                message.warning('Votre recherche doit comporter au moins trois caractères');
             }
             return;
         }
 
         if (searchForParagraph.current && (value.trim().length === 0 || isNaN(+value.trim()))) {
-            message.warn('La valeur saisie est invalide');
+            message.warning('La valeur saisie est invalide');
             return;
         }
 
-        setDocumentViewQuery((docs) => {
+        setDocumentViewQueries((docs) => {
             const datas = docs.filter((d) => d.documentTitle != titleRef.current);
             return [
                 ...datas,
@@ -70,7 +68,7 @@ export function ModalSearchDocument({
                     documentTitle: titleRef.current,
                     matches: [],
                     textContentLength: 0,
-                    searchForParagraph: searchForParagraph.current,
+                    searchForParagraph: searchForParagraph.current ?? false,
                     term: value.trim(),
                 },
             ];

@@ -1,14 +1,10 @@
 import { Alert, Button, Modal, Progress, Space } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useModalVisible } from '@renderer/hooks';
 import { Typography } from 'antd';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { UpdaterNotification } from '@localtypes/index';
-import { ipcRenderer } from 'electron';
+import { UpdaterNotification } from '@shared/types';
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { secondsforHumans } from '@root/utils/functions';
 
 type ProgressType = {
     title: string;
@@ -45,28 +41,29 @@ const ShowProgress = ({ title, progress, onlyPercent = false }: ProgressType) =>
 };
 
 export default function Updater() {
-    const { showModal, isModalVisible, handleCancel } = useModalVisible();
+    const { visible, show, hide } = useModalVisible();
 
     const [updaterInfo, setUpdaterInfo] = useState<UpdaterNotification | undefined>(undefined);
 
     useEffect(() => {
-        ipcRenderer.on(IPC_EVENTS.notify_for_new_update, (_: any, info: UpdaterNotification) => {
-            setUpdaterInfo(info);
+        const cleanupNotify = window.api.on.notifyForNewUpdate((info) => {
+            setUpdaterInfo(info as UpdaterNotification);
         });
 
-        ipcRenderer.on(IPC_EVENTS.app_update_menu, showModal);
+        const cleanupMenu = window.api.on.appUpdateMenu(show);
+
+        return () => {
+            cleanupNotify();
+            cleanupMenu();
+        };
     }, []);
 
     const start_download_update = useCallback(() => {
-        sendIpcRequest(IPC_EVENTS.start_download_update);
+        window.api.app.startDownloadUpdate();
     }, []);
 
     const quit_and_install_update = useCallback(() => {
-        sendIpcRequest(IPC_EVENTS.quit_and_install_update);
-    }, []);
-
-    const restartAppNow = useCallback(() => {
-        sendIpcRequest<boolean>(IPC_EVENTS.restart_app);
+        window.api.app.quitAndInstallUpdate();
     }, []);
 
     const lastType = useRef<string | undefined>(undefined);
@@ -77,7 +74,6 @@ export default function Updater() {
 
     let preventActions = false;
     let content = <></>;
-    let copyProgress = undefined;
     let nextStepAction:
         | undefined
         | {
@@ -88,59 +84,20 @@ export default function Updater() {
     switch (updaterInfo?.type) {
         case 'hasUpdate':
             if (lastType.current != 'hasUpdate') {
-                !isModalVisible && showModal();
+                if (!visible) show();
             }
             preventActions = false;
             nextStepAction = {
-                type: 'Mettre à jour',
+                type: 'Mettre \u00e0 jour',
                 action: start_download_update,
             };
             content = (
                 <Alert
-                    message="Mise à jour de l'application"
-                    description="Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour."
+                    message="Mise \u00e0 jour de l'application"
+                    description="Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour d\u00e9marrer le processus de mise \u00e0 jour."
                     type="info"
                     showIcon
                 />
-            );
-            break;
-        case 'preparing':
-            preventActions = true;
-            copyProgress = updaterInfo.progress?.copyProgress;
-            nextStepAction = undefined;
-            content = (
-                <>
-                    <Space direction="vertical">
-                        <ShowProgress
-                            title="Préparation de la mise à jour"
-                            progress={{
-                                proceed: copyProgress?.elapsedBytes,
-                                total: copyProgress?.totalBytes,
-                                percent: undefined,
-                            }}
-                            onlyPercent={false}
-                        />
-                        <Typography.Text type="secondary">
-                            Le processus sera terminé dans{' '}
-                            {secondsforHumans(copyProgress?.remainingSecs)}
-                        </Typography.Text>
-                    </Space>
-                </>
-            );
-            break;
-        case 'prepared':
-            preventActions = true;
-            nextStepAction = undefined;
-            content = (
-                <>
-                    <Alert
-                        message="Préparation de la mise à jour terminée"
-                        description="Début du téléchargement..."
-                        type="info"
-                        showIcon
-                        icon={<Icon />}
-                    />
-                </>
             );
             break;
         case 'downloading':
@@ -150,7 +107,7 @@ export default function Updater() {
                 <>
                     <ShowProgress
                         onlyPercent={true}
-                        title="Téléchargement du mise à jour"
+                        title="T\u00e9l\u00e9chargement du mise \u00e0 jour"
                         progress={{
                             percent: updaterInfo.progress?.downloadProgress?.percent,
                         }}
@@ -161,62 +118,16 @@ export default function Updater() {
         case 'downloaded':
             preventActions = true;
             nextStepAction = {
-                type: 'Installer la mise à jour',
+                type: 'Installer la mise \u00e0 jour',
                 action: quit_and_install_update,
             };
             content = (
                 <Alert
-                    message="Téléchargement terminé"
-                    description="Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise à jour."
+                    message="T\u00e9l\u00e9chargement termin\u00e9"
+                    description="Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise \u00e0 jour."
                     type="success"
                     showIcon
                 />
-            );
-            break;
-        case 'restartedToUpdate':
-            if (lastType.current != 'restartedToUpdate') {
-                !isModalVisible && showModal();
-            }
-            preventActions = true;
-            nextStepAction = undefined;
-            content = (
-                <Alert
-                    message="L'installation mise à jour a été traitée avec succès"
-                    description="Veuillez patienter pendant que nous traitons la dernière étape."
-                    type="success"
-                    showIcon
-                    icon={<Icon />}
-                />
-            );
-            break;
-        case 'restoring':
-            preventActions = true;
-            nextStepAction = undefined;
-            content = (
-                <Alert
-                    message="L'installation mise à jour a été traitée avec succès"
-                    description="Veuillez patienter pendant que nous traitons la dernière étape."
-                    type="success"
-                    showIcon
-                    icon={<Icon />}
-                />
-            );
-            break;
-        case 'restored':
-            preventActions = true;
-            nextStepAction = {
-                type: "Redémarrer l'application maintenant",
-                action: restartAppNow,
-            };
-            content = (
-                <>
-                    <Alert
-                        message="Mise à jour terminée"
-                        description="Veuillez fermer et rouvrir l'application ou cliquer sur le bouton Redémarrer ci-dessous pour afficher les modifications apportées."
-                        type="success"
-                        showIcon
-                    />
-                </>
             );
             break;
         case 'error':
@@ -226,7 +137,7 @@ export default function Updater() {
                 <>
                     <Alert
                         message="Erreur !"
-                        description="Une erreur s'est produite lors de la mise à jour, veuillez réessayer plus tard."
+                        description="Une erreur s'est produite lors de la mise \u00e0 jour, veuillez r\u00e9essayer plus tard."
                         type="error"
                         showIcon
                     />
@@ -250,13 +161,13 @@ export default function Updater() {
                 title={
                     <>
                         <Space direction="horizontal">
-                            <span>Mise à jour</span>
+                            <span>Mise \u00e0 jour</span>
                         </Space>
                     </>
                 }
-                visible={isModalVisible}
+                visible={visible}
                 footer={[
-                    <Button onClick={handleCancel} disabled={preventActions} key={0}>
+                    <Button onClick={hide} disabled={preventActions} key={0}>
                         {updaterInfo?.type === 'hasUpdate' ? 'Plus tard' : 'Fermer'}
                     </Button>,
                     <Button
@@ -268,7 +179,7 @@ export default function Updater() {
                         {!nextStepAction ? '---' : nextStepAction.type}
                     </Button>,
                 ]}
-                onCancel={handleCancel}
+                onCancel={hide}
             >
                 {updaterInfo && (
                     <Space direction="vertical">
@@ -279,7 +190,7 @@ export default function Updater() {
                                     updaterInfo.status?.version}
                             </Typography.Paragraph>
                             <Typography.Paragraph>
-                                Dernière vérification:{' '}
+                                Derni\u00e8re v\u00e9rification:{' '}
                                 {updaterInfo.status?.lastUpdateCheck?.toLocaleString()}
                             </Typography.Paragraph>
                         </Typography>

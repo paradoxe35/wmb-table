@@ -1,71 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import { useRecoilValue } from 'recoil';
-import { currentDocumentTabsSelector, defaultTitle } from '@renderer/store';
-import { Empty, List } from 'antd';
-import { HistoryData, HistoryDataItem, HistoryDateUpload } from '@localtypes/index';
-import { Collapse } from 'antd';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { getDateTime } from '@root/utils/functions';
+import { useEffect, useState } from 'react';
+import { Empty, List, Collapse } from 'antd';
+import type { HistoryData, HistoryDataItem } from '@shared/types';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { useDocumentTitle } from '@renderer/hooks';
+import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
 
 const { Panel } = Collapse;
 
 export default function History() {
-    const title = useRecoilValue(currentDocumentTabsSelector);
+    const title = useActiveTabTitle();
     const [histories, setHistories] = useState<HistoryData[]>([]);
-
     const [key, setKey] = useState<string | null>(null);
-
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
-
     const [reloadKey, setReloadKey] = useState(0);
-
-    const { getTitle, getDocument } = useDocumentTitle();
+    const { getSermon } = useSermonLookup();
 
     const onChange = (key: string | string[]) => {
         if (typeof key === 'string') setKey(key);
     };
 
     useEffect(() => {
-        if (key && title && !defaultTitle.isDefault) {
-            const history = histories.find((k) => k._id == key);
+        if (key) {
+            const history = histories.find((k) => k.id === key);
             if (history) {
-                sendIpcRequest<HistoryDataItem[]>(IPC_EVENTS.history_data_item, history).then(
-                    (items) => {
-                        setHistoryItems(items);
-                    },
+                (window.api.app.getHistoryItems(history.id) as Promise<HistoryDataItem[]>).then(
+                    setHistoryItems,
                 );
             }
         }
-    }, [key, title]);
+    }, [key, histories]);
 
     useEffect(() => {
-        let history = null;
-        if (title) {
-            if (!defaultTitle.isDefault) {
-                const dateTime = getDateTime();
-                history = {
-                    ...dateTime,
-                    documentTitle: title,
-                } as HistoryDateUpload;
-            }
-
-            sendIpcRequest<HistoryData[]>(IPC_EVENTS.history_data, history).then((items) => {
-                setHistories(items);
-            });
-        }
+        (window.api.app.getHistory() as Promise<HistoryData[]>).then(setHistories);
     }, [title]);
-
-    if (process.env.NODE_ENV === 'development') {
-        console.log('new history data');
-    }
 
     useEffect(() => {
         if (histories.length > 0) {
-            setKey(histories[0]._id);
+            setKey(histories[0].id);
             setReloadKey((d) => d + 1);
         }
     }, [histories]);
@@ -80,39 +51,32 @@ export default function History() {
                 onChange={onChange}
                 style={{ margin: '20px 0' }}
             >
-                {histories.map((h) => {
-                    return (
-                        <Panel header={h.date} key={h._id}>
-                            {key === h._id && (
-                                <>
-                                    <List
-                                        itemLayout="horizontal"
-                                        dataSource={historyItems.filter((i) =>
-                                            getDocument(i.documentTitle),
-                                        )}
-                                        renderItem={(item) => (
-                                            <List.Item>
-                                                <List.Item.Meta
-                                                    avatar={<HistoryOutlined />}
-                                                    title={
-                                                        <a>
-                                                            <DocumentViewer
-                                                                name={item.documentTitle}
-                                                            >
-                                                                {getTitle(item.documentTitle)}
-                                                            </DocumentViewer>
-                                                        </a>
-                                                    }
-                                                    description={`${item.date} - ${item.time}`}
-                                                />
-                                            </List.Item>
-                                        )}
-                                    />
-                                </>
-                            )}
-                        </Panel>
-                    );
-                })}
+                {histories.map((h) => (
+                    <Panel header={h.date} key={h.id}>
+                        {key === h.id && (
+                            <List
+                                itemLayout="horizontal"
+                                dataSource={historyItems.filter((i) => getSermon(i.documentTitle))}
+                                renderItem={(item) => (
+                                    <List.Item>
+                                        <List.Item.Meta
+                                            avatar={<HistoryOutlined />}
+                                            title={
+                                                <a>
+                                                    <DocumentViewer name={item.documentTitle}>
+                                                        {getSermon(item.documentTitle)?.title ??
+                                                            item.documentTitle}
+                                                    </DocumentViewer>
+                                                </a>
+                                            }
+                                            description={`${item.date} - ${item.time}`}
+                                        />
+                                    </List.Item>
+                                )}
+                            />
+                        )}
+                    </Panel>
+                ))}
             </Collapse>
         </>
     );

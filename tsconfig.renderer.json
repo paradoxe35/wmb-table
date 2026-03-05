@@ -24,12 +24,5 @@
         }
     },
     "include": ["src/renderer/**/*", "src/shared/**/*", "src/preload/index.d.ts"],
-    "exclude": [
-        "src/renderer/app.tsx",
-        "src/renderer/hooks.ts",
-        "src/renderer/plugins/**/*",
-        "src/renderer/store/**/*",
-        "src/renderer/components/**/*",
-        "src/renderer/views/**/*"
-    ]
+    "exclude": ["src/renderer/hooks.ts"]
 }

@@ -1,8 +1,7 @@
 import { Button, Popconfirm } from 'antd';
-import React from 'react';
 import { DeleteOutlined } from '@ant-design/icons';
 
-export function DeleteBtn({ confirm }: { confirm: Function }) {
+export function DeleteBtn({ confirm }: { confirm: () => void }) {
     return (
         <Popconfirm
             title="Confirmer la suppression?"

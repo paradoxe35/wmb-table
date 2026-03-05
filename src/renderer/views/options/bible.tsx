@@ -12,11 +12,11 @@ import {
     Typography,
     Select,
 } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import LoadByVisibility from '@renderer/components/load-by-visibility';
-import { SearchOutlined, DownOutlined } from '@ant-design/icons';
+import { SearchOutlined, DownOutlined, LoadingOutlined } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
-import {
+import type {
     BibleBook,
     BibleIndex,
     BibleIndexValue,
@@ -24,25 +24,14 @@ import {
     BibleSearchResult,
     BookRequest,
     SubjectRefTree,
-} from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { LoadingOutlined } from '@ant-design/icons';
-import { debounce } from '@root/utils/functions';
+} from '@shared/types';
+import { debounce } from '@renderer/utils/functions';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
-import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
-
-const { Option } = Select;
+import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
 const TESTAMENTS = [
-    {
-        name: 'Nouveau Testament',
-        value: 'N',
-    },
-    {
-        name: 'Ancien Testament',
-        value: 'O',
-    },
+    { name: 'Nouveau Testament', value: 'N' },
+    { name: 'Ancien Testament', value: 'O' },
 ];
 
 type Testament = (typeof TESTAMENTS)[0];
@@ -50,9 +39,7 @@ type Testament = (typeof TESTAMENTS)[0];
 export default function Bible() {
     const [menu, setMenu] = useState('bible');
 
-    const handleClick = (e: any) => {
-        setMenu(e.key);
-    };
+    const handleClick = (e: { key: string }) => setMenu(e.key);
 
     return (
         <LoadByVisibility>
@@ -84,21 +71,16 @@ function AddToSubject({ verse }: { verse: BibleBook }) {
         window.dispatchEvent(
             new CustomEvent<Partial<SubjectRefTree>>(
                 CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
-                {
-                    detail: {
-                        bible: verse,
-                    },
-                },
+                { detail: { bible: verse } },
             ),
         );
-    }, []);
+    }, [verse]);
+
     return (
         <Dropdown
-            overlay={
-                <Menu>
-                    <Menu.Item onClick={handler}>Ajouter à un sujet</Menu.Item>
-                </Menu>
-            }
+            menu={{
+                items: [{ key: 'add', label: 'Ajouter à un sujet', onClick: handler }],
+            }}
             placement="bottomRight"
             arrow
             trigger={['click']}
@@ -123,11 +105,13 @@ function BookContent({
     const [verses, setVerses] = useState<BibleBook[]>();
 
     useEffect(() => {
-        sendIpcRequest<BibleBook[]>(IPC_EVENTS.bible_books, {
-            book: bookDetail.book,
-            chapter: chaptersKey.toString(),
-        } as BookRequest).then((books) => setVerses(books));
-    }, [chaptersKey]);
+        (
+            window.api.bible.getBooks({
+                book: bookDetail.book,
+                chapter: chaptersKey.toString(),
+            } as BookRequest) as Promise<BibleBook[]>
+        ).then(setVerses);
+    }, [chaptersKey, bookDetail.book]);
 
     return (
         <Collapse activeKey="1" accordion>
@@ -140,7 +124,7 @@ function BookContent({
                                 <Button
                                     onClick={() => setChaptersKey(key)}
                                     key={key}
-                                    type={key == chaptersKey ? 'primary' : 'dashed'}
+                                    type={key === chaptersKey ? 'primary' : 'dashed'}
                                 >
                                     {i + 1}
                                 </Button>
@@ -160,19 +144,19 @@ function BookContent({
                         itemLayout="horizontal"
                         dataSource={verses.sort((a, b) => +a.verse - +b.verse)}
                         renderItem={(item) => {
-                            const onClickItem = () => onClick && onClick(item._id);
+                            const onClickItem = () => onClick?.(item.id);
                             return (
                                 <List.Item
                                     className={`verse-item ${onClick ? 'list__clickable' : ''}`}
                                     actions={[
                                         verseMetaContent && (
                                             <span className="verse-action" key="0">
-                                                {<AddToSubject verse={item} />}
+                                                <AddToSubject verse={item} />
                                             </span>
                                         ),
                                     ]}
                                     onClick={onClickItem}
-                                    key={item._id}
+                                    key={item.id}
                                 >
                                     <List.Item.Meta
                                         avatar={<span>{item.verse}.</span>}
@@ -204,9 +188,7 @@ function BibleTestamentContent({
     const [currentKey, setCurrentKey] = useState<string>();
 
     function onChangeKey(key: string | string[]) {
-        if (typeof key === 'string') {
-            setCurrentKey(key);
-        }
+        if (typeof key === 'string') setCurrentKey(key);
     }
 
     useEffect(() => {
@@ -245,10 +227,10 @@ export function BibleContent({
     onClick?: (id: string) => void;
     verseMetaContent?: boolean;
 }) {
-    const [bibleIndex, setBibleIndex] = useState<{ [name: string]: BibleIndex }>({});
+    const [bibleIndex, setBibleIndex] = useState<Record<string, BibleIndex>>({});
 
     useEffect(() => {
-        sendIpcRequest<{ [name: string]: BibleIndex }>(IPC_EVENTS.bible_indexes).then((indexs) => {
+        (window.api.bible.getIndexes() as Promise<Record<string, BibleIndex>>).then((indexs) => {
             setBibleIndex(indexs || {});
         });
     }, []);
@@ -256,22 +238,19 @@ export function BibleContent({
     return (
         <>
             <Space direction="vertical" style={{ width: '100%' }}>
-                {bibleIndex &&
-                    Object.keys(bibleIndex).map((key) => {
-                        return (
-                            <Space direction="vertical" style={{ width: '100%' }} key={key}>
-                                <Typography.Title type="secondary" level={5}>
-                                    {key === 'N' ? 'Nouveau' : 'Ancien'} Testament
-                                </Typography.Title>
-                                <BibleTestamentContent
-                                    key={key}
-                                    verseMetaContent={verseMetaContent}
-                                    onClick={onClick}
-                                    bibleIndex={bibleIndex[key]}
-                                />
-                            </Space>
-                        );
-                    })}
+                {Object.keys(bibleIndex).map((key) => (
+                    <Space direction="vertical" style={{ width: '100%' }} key={key}>
+                        <Typography.Title type="secondary" level={5}>
+                            {key === 'N' ? 'Nouveau' : 'Ancien'} Testament
+                        </Typography.Title>
+                        <BibleTestamentContent
+                            key={key}
+                            verseMetaContent={verseMetaContent}
+                            onClick={onClick}
+                            bibleIndex={bibleIndex[key]}
+                        />
+                    </Space>
+                ))}
             </Space>
             <div className="mt-2 mb-2" />
         </>
@@ -281,18 +260,15 @@ export function BibleContent({
 function SearchContent() {
     const [results, setResults] = useState<BibleSearchResult | null>(null);
     const lastSearch = useRef<string>('');
-
-    const testament = useRef<Testament>();
+    const testament = useRef<Testament | undefined>(undefined);
 
     const onPageChange = useCallback((page: number) => {
-        sendIpcRequest<BibleSearchResult>(
-            IPC_EVENTS.bible_search,
-            lastSearch.current.trim(),
-            page,
-            testament.current?.value,
+        (
+            window.api.bible.search(lastSearch.current.trim(), page) as Promise<BibleSearchResult>
         ).then((datas) => {
-            const lc = document.querySelector('.bible-search-content');
-            lc && lc.scrollTo({ top: 0, behavior: 'smooth' });
+            document
+                .querySelector('.bible-search-content')
+                ?.scrollTo({ top: 0, behavior: 'smooth' });
             setResults(datas);
         });
     }, []);
@@ -300,7 +276,7 @@ function SearchContent() {
     return (
         <>
             <div className="flex flex-center">
-                <InputSearch
+                <InputSearchBible
                     testament={testament}
                     setResults={setResults}
                     lastSearch={lastSearch}
@@ -316,16 +292,15 @@ function SearchResult({
     onPageChange,
 }: {
     results: BibleSearchResult | null;
-    onPageChange?: ((page: number, pageSize?: number | undefined) => void) | undefined;
+    onPageChange?: (page: number) => void;
 }) {
     return (
         <>
             {results && (
                 <div className="mt-2 flex flex-center">
                     <Typography.Text type="secondary">
-                        Trouvé dans {results?.total} verset
-                        {results?.total > 1 ? 's' : ''}, page({results.pageNumber}/
-                        {Math.ceil(results.total / results.itemsPerPage)})
+                        Trouvé dans {results.total} verset{results.total > 1 ? 's' : ''}, page(
+                        {results.pageNumber}/{Math.ceil(results.total / results.itemsPerPage)})
                     </Typography.Text>
                 </div>
             )}
@@ -338,7 +313,7 @@ function SearchResult({
                     dataSource={results?.data || []}
                     renderItem={(result) => (
                         <>
-                            <List.Item key={result.item._id}>
+                            <List.Item key={result.item.id}>
                                 <List.Item.Meta
                                     title={
                                         <span>
@@ -375,29 +350,24 @@ const ContentItem = ({ item }: { item: BibleSearchItem }) => {
     useEffect(() => {
         if (parentRef.current) {
             const element = parentRef.current;
-
             const node = document.createTextNode(item.item.content);
             element.appendChild(node);
 
             const matcher = item.matches[0];
-
-            if (matcher && matcher.start && matcher.end) {
+            if (matcher?.start != null && matcher?.end != null) {
                 const range = document.createRange();
                 const tag = document.createElement('mark');
-                const rangeStart = matcher.start;
-                const rangeEnd = matcher.end;
-
-                range.setStart(node, rangeStart);
-                range.setEnd(node, rangeEnd);
+                range.setStart(node, matcher.start);
+                range.setEnd(node, matcher.end);
                 range.surroundContents(tag);
             }
         }
-    }, []);
+    }, [item]);
 
     return <span className="content-description-2" ref={parentRef}></span>;
 };
 
-function InputSearch({
+function InputSearchBible({
     setResults,
     lastSearch,
     testament,
@@ -408,23 +378,22 @@ function InputSearch({
 }) {
     const [loading, setLoading] = useState(false);
 
-    const handleSearch = useCallback((value: string) => {
-        if (!value || value.length < 3) return;
-        lastSearch.current = value;
-        setLoading(true);
-        sendIpcRequest<BibleSearchResult>(
-            IPC_EVENTS.bible_search,
-            value,
-            undefined,
-            testament.current?.value,
-        )
-            .then((data) => setResults(data))
-            .finally(() => setLoading(false));
-    }, []);
+    const handleSearch = useCallback(
+        (value: string) => {
+            if (!value || value.length < 3) return;
+            lastSearch.current = value;
+            setLoading(true);
+            (window.api.bible.search(value, 1) as Promise<BibleSearchResult>)
+                .then(setResults)
+                .finally(() => setLoading(false));
+        },
+        [lastSearch, setResults],
+    );
 
     const onTestamentChange = (value: string | undefined) => {
         testament.current = TESTAMENTS.find((t) => t.value === value);
     };
+
     return (
         <Space>
             <Input.Search
@@ -437,7 +406,6 @@ function InputSearch({
                 enterButton
                 onSearch={debounce(handleSearch, 100)}
             />
-
             <Select
                 style={{ minWidth: 170 }}
                 size="large"
@@ -446,13 +414,11 @@ function InputSearch({
                 onChange={onTestamentChange}
                 allowClear
             >
-                {TESTAMENTS.map((testament) => {
-                    return (
-                        <Option key={testament.value} value={testament.value}>
-                            {testament.name}
-                        </Option>
-                    );
-                })}
+                {TESTAMENTS.map((t) => (
+                    <Select.Option key={t.value} value={t.value}>
+                        {t.name}
+                    </Select.Option>
+                ))}
             </Select>
         </Space>
     );

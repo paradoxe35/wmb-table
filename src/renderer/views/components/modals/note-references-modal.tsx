@@ -1,28 +1,33 @@
 import { Button, List, Modal, Tooltip } from 'antd';
-import React, { useEffect, useRef, useState } from 'react';
-import { DocumentHtmlTree, NoteItem, NoteItemReference } from '@localtypes/index';
-import { useDocumentTitle, useModalVisible, useValueStateRef } from '@renderer/hooks';
+import { useEffect, useRef, useState } from 'react';
+import { DocumentHtmlTree, NoteItem, NoteItemReference } from '@shared/types';
+import {
+    useSermonLookup,
+    useModalVisible,
+    useActiveTabTitle,
+    useValueStateRef,
+} from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { useRecoilValue } from 'recoil';
-import { currentDocumentTabsSelector, workingNoteAppStore } from '@renderer/store';
-import { CHILD_PARENT_WINDOW_EVENT } from '@modules/shared/shared';
+import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { useNotesStore } from '@renderer/stores';
 
 export function NoteReferencesModal() {
-    const title = useRecoilValue(currentDocumentTabsSelector);
+    const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
 
-    const documentRefTree = useRef<{
-        textContent: string;
-        documentHtmlTree: DocumentHtmlTree;
-    }>();
+    const documentRefTree = useRef<
+        | {
+              textContent: string;
+              documentHtmlTree: DocumentHtmlTree;
+          }
+        | undefined
+    >(undefined);
 
-    const { isModalVisible, handleOk, handleCancel, setIsModalVisible } = useModalVisible();
+    const { visible, hide, setVisible } = useModalVisible();
 
     const [datas, setDatas] = useState<NoteItemReference[]>([]);
     const workingNote = useRef<NoteItem | null>(null);
-    const workingNoteId = useRecoilValue(workingNoteAppStore);
+    const workingNoteId = useNotesStore((s) => s.workingNoteId);
 
     useEffect(() => {
         if (!workingNoteId) {
@@ -31,36 +36,33 @@ export function NoteReferencesModal() {
             return;
         }
         (async () => {
-            const note = await sendIpcRequest<NoteItem>(IPC_EVENTS.notes_items_get, workingNoteId);
+            const note = await window.api.notes.getById(workingNoteId);
             if (note) {
-                workingNote.current = note;
-                const references = await sendIpcRequest<NoteItemReference[]>(
-                    IPC_EVENTS.notes_references,
-                    workingNoteId,
-                );
-                setDatas(references);
+                workingNote.current = note as NoteItem;
+                const references = await window.api.notes.getReferences(workingNoteId);
+                setDatas(references as NoteItemReference[]);
             }
         })();
-    }, [workingNoteId, isModalVisible]);
+    }, [workingNoteId, visible]);
 
     const onSelectItem = (item: NoteItemReference) => {
         if (!documentRefTree.current) return;
 
         const referenceItem: Partial<NoteItemReference> = {
             documentHtmlTree: documentRefTree.current.documentHtmlTree,
-            documentTitle: titleRef.current,
+            documentTitle: titleRef.current || '',
             textContent: documentRefTree.current.textContent,
         };
 
-        sendIpcRequest(IPC_EVENTS.notes_references_put, item._id, referenceItem);
+        window.api.notes.updateReference(item.id, referenceItem);
 
-        setIsModalVisible(false);
+        setVisible(false);
     };
 
     useEffect(() => {
         const showModal = (e: CustomEventInit) => {
             documentRefTree.current = e.detail;
-            setIsModalVisible(true);
+            setVisible(true);
         };
 
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, showModal);
@@ -74,16 +76,16 @@ export function NoteReferencesModal() {
             title={
                 <div className="mr-2">
                     {workingNote.current ? (
-                        <span>Références(note: {workingNote.current.name})</span>
+                        <span>R\u00e9f\u00e9rences(note: {workingNote.current.name})</span>
                     ) : (
-                        <span>Aucune note est actuellement sélectionnée</span>
+                        <span>Aucune note est actuellement s\u00e9lectionn\u00e9e</span>
                     )}
                 </div>
             }
             footer={[]}
-            visible={isModalVisible}
-            onOk={handleOk}
-            onCancel={handleCancel}
+            visible={visible}
+            onOk={hide}
+            onCancel={hide}
         >
             <div style={{ overflow: 'auto', height: '300px' }}>
                 <ContentModal onSelectItem={onSelectItem} datas={datas} />
@@ -99,7 +101,7 @@ function ContentModal({
     onSelectItem: (item: NoteItemReference) => void;
     datas: NoteItemReference[];
 }) {
-    const { getTitle } = useDocumentTitle();
+    const { getSermon } = useSermonLookup();
 
     return (
         <>
@@ -111,7 +113,10 @@ function ContentModal({
                     return (
                         <List.Item
                             actions={[
-                                <Tooltip key={item._id || i} title="Ajouter à cette référence">
+                                <Tooltip
+                                    key={item.id || i}
+                                    title="Ajouter \u00e0 cette r\u00e9f\u00e9rence"
+                                >
                                     <Button
                                         onClick={() => onSelectItem(item)}
                                         shape="circle"
@@ -124,8 +129,8 @@ function ContentModal({
                                 avatar={<BookOutlined />}
                                 description={
                                     assigned
-                                        ? `Référencé à: ${getTitle(item.documentTitle)}`
-                                        : 'Aucun document attribué à cette référence'
+                                        ? `R\u00e9f\u00e9renc\u00e9 \u00e0: ${getSermon(item.documentTitle)?.title || item.documentTitle}`
+                                        : 'Aucun document attribu\u00e9 \u00e0 cette r\u00e9f\u00e9rence'
                                 }
                                 title={
                                     <a onClick={() => onSelectItem(item)}>

@@ -1,40 +1,38 @@
 import { Col, Divider, List, message, Modal, Row, Space, Typography } from 'antd';
-import React, { useRef, useState } from 'react';
-import { useCallback } from 'react';
-import { useSetRecoilState } from 'recoil';
+import { type Dispatch, type SetStateAction, useRef, useState, useCallback } from 'react';
+import { useSubjectsStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { selectedSubjectDocumentItemStore } from '@renderer/store';
 import { FileOutlined } from '@ant-design/icons';
-import { BibleBook, NoteItem, NoteItemReference, NoteItemReferenceBible } from '@localtypes/index';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
+import { BibleBook, NoteItem, NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useDocumentTitle, useValueStateRef } from '@renderer/hooks';
+import { useSermonLookup, useValueStateRef } from '@renderer/hooks';
 
 export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 
 export const useShowReferenceDetail = () => {
     const viewDocument = useDocumentViewOpen();
-    const setSubjectItemSelected = useSetRecoilState(selectedSubjectDocumentItemStore);
+    const setSelectedSubjectItem = useSubjectsStore((s) => s.setSelectedSubjectItem);
 
-    const { getTitle } = useDocumentTitle();
+    const { getSermon } = useSermonLookup();
 
     const modal = useCallback((reference: NoteItemReference, workingNote: NoteItem) => {
         const assigned = (reference.documentHtmlTree?.tree || []).length > 0;
 
         const openDocument = () => {
             viewDocument(reference.documentTitle, () => {
-                //@ts-ignore
-                setSubjectItemSelected({
+                setSelectedSubjectItem({
                     subject: '',
                     documentHtmlTree: reference.documentHtmlTree,
                     documentTitle: reference.documentTitle,
                     textContent: reference.textContent,
-                });
+                } as any);
             });
         };
+
+        const sermon = getSermon(reference.documentTitle);
+        const displayTitle = sermon?.title ?? reference.documentTitle;
 
         Modal[assigned ? 'info' : 'warning']({
             closable: true,
@@ -51,7 +49,7 @@ export const useShowReferenceDetail = () => {
                         <Typography.Text type="secondary">
                             <FileOutlined /> Document:
                         </Typography.Text>{' '}
-                        {getTitle(reference.documentTitle)}
+                        {displayTitle}
                     </p>
                     <p>
                         <Typography.Text type="secondary">- </Typography.Text>
@@ -60,7 +58,7 @@ export const useShowReferenceDetail = () => {
                 </div>
             ) : (
                 <div>
-                    <p>Aucun document n'a été attribué pour cette référence</p>
+                    <p>Aucun document n&apos;a été attribué pour cette référence</p>
                 </div>
             ),
         });
@@ -107,37 +105,34 @@ export function ReferenceBibleModal({
     handleCancel: () => void;
     isModalVisible: boolean;
     reference: NoteItemReferenceBible | undefined;
-    setReference: React.Dispatch<React.SetStateAction<NoteItemReferenceBible | undefined>>;
+    setReference: Dispatch<SetStateAction<NoteItemReferenceBible | undefined>>;
 }) {
     const referenceRef = useValueStateRef(reference);
     const versesRef = useRef<HTMLDivElement | null>(null);
 
     const handleDeletionRef = (ref: BibleBook) => {
-        sendIpcRequest(
-            IPC_EVENTS.notes_references_bible_remove,
-            referenceRef.current?._id,
-            ref._id,
-        ).then(() => {
+        window.api.notes.removeBibleVerse(referenceRef.current?.id ?? '', ref.id).then(() => {
             setReference((r) => {
                 const nr = { ...r } as NoteItemReferenceBible;
                 nr.references = (nr.references as BibleBook[])
                     .slice()
-                    .filter((f) => f._id !== ref._id);
+                    .filter((f) => f.id !== ref.id);
                 return nr;
             });
         });
     };
 
     const onClickVerse = useCallback((refId: string) => {
-        const exists = referenceRef.current?.references.some((d) => (d as BibleBook)._id == refId);
+        const exists = referenceRef.current?.references.some((d) => (d as BibleBook).id == refId);
         if (exists) {
             message.warning('Le verset cliqué existe déjà dans la références !');
             return;
         }
-        sendIpcRequest<BibleBook>(
-            IPC_EVENTS.notes_references_bible_add,
-            referenceRef.current?._id,
-            refId,
+        (
+            window.api.notes.addBibleVerse(
+                referenceRef.current?.id ?? '',
+                refId,
+            ) as Promise<BibleBook>
         )
             .then((item) => {
                 setReference((r) => {
@@ -202,6 +197,7 @@ export function ReferenceBibleModal({
                                         <List.Item
                                             actions={[
                                                 <DeleteBtn
+                                                    key="delete"
                                                     confirm={() => handleDeletionRef(ref)}
                                                 />,
                                             ]}

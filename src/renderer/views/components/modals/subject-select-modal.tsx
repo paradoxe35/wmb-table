@@ -1,71 +1,65 @@
 import { Divider, Input, Modal, Space } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
-import {
-    subjectDocumentStore,
-    subjectDocumentItemStore,
-    currentDocumentTabsSelector,
-} from '@renderer/store';
-import { SubjectDocument, SubjectDocumentItem, SubjectRefTree } from '@localtypes/index';
-import { useModalVisible, useValueStateRef } from '@renderer/hooks';
+import { SubjectDocument, SubjectDocumentItem, SubjectRefTree } from '@shared/types';
+import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@modules/shared/shared';
-import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
+import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useSubjectsStore } from '@renderer/stores';
 
 export function SubjectSelectModal() {
-    const title = useRecoilValue(currentDocumentTabsSelector);
+    const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
 
-    const setSubjectItems = useSetRecoilState(subjectDocumentItemStore);
+    const setSelectedSubjectItem = useSubjectsStore((s) => s.setSelectedSubjectItem);
 
-    const documentRefTree = useRef<SubjectRefTree>();
+    const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
 
-    const { isModalVisible, handleOk, handleCancel, setIsModalVisible } = useModalVisible();
+    const { visible, hide, setVisible } = useModalVisible();
 
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
-    const odatas = useRecoilValue<SubjectDocument[]>(subjectDocumentStore);
+    const subjects = useSubjectsStore((s) => s.subjects);
 
     const onSelectItem = (name: string) => {
         if (!documentRefTree.current) return;
 
-        const subjectItem: Partial<SubjectDocumentItem> = {
-            documentHtmlTree: documentRefTree.current?.documentHtmlTree,
-            documentTitle: titleRef.current,
-            textContent: documentRefTree.current?.textContent,
-            subject: name,
-            bible: documentRefTree.current?.bible,
-        };
+        const subject = subjects.find((s) => s.name === name);
+        if (!subject) return;
 
-        sendIpcRequest<SubjectDocumentItem>(IPC_EVENTS.subject_items_store, subjectItem).then(
-            (item) => {
-                setSubjectItems(item);
+        window.api.subjects
+            .createItem(
+                subject.id,
+                titleRef.current || '',
+                documentRefTree.current.documentHtmlTree,
+                documentRefTree.current.textContent,
+                documentRefTree.current.bible,
+            )
+            .then((item) => {
+                setSelectedSubjectItem(item as SubjectDocumentItem);
                 window.dispatchEvent(
                     new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
                 );
-            },
-        );
-        setIsModalVisible(false);
+            });
+        setVisible(false);
     };
 
     const onSearch = useCallback(
         (value: string) => {
-            if (odatas.length) {
-                setDatas(odatas.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
+            if (subjects.length) {
+                setDatas(subjects.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
             }
         },
-        [odatas],
+        [subjects],
     );
 
     useEffect(() => {
-        setDatas(odatas);
-    }, [odatas]);
+        setDatas(subjects);
+    }, [subjects]);
 
     useEffect(() => {
         const showModal = (e: CustomEventInit<SubjectRefTree>) => {
-            documentRefTree.current = e.detail;
-            setIsModalVisible(true);
+            documentRefTree.current = e.detail ?? undefined;
+            setVisible(true);
         };
 
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);
@@ -82,9 +76,9 @@ export function SubjectSelectModal() {
                 </Space>
             }
             footer={[]}
-            visible={isModalVisible}
-            onOk={handleOk}
-            onCancel={handleCancel}
+            visible={visible}
+            onOk={hide}
+            onCancel={hide}
         >
             <div style={{ overflow: 'auto', height: '300px' }}>
                 <ContentModal onSelectItem={onSelectItem} datas={datas} />
@@ -112,6 +106,7 @@ function ContentModal({
 const ItemSubject: React.FC<{
     item: SubjectDocument;
     onSelectItem: (name: string) => void;
+    children?: React.ReactNode;
 }> = ({ item, onSelectItem }) => {
     return (
         <>

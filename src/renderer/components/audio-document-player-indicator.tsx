@@ -1,20 +1,17 @@
 import { Button } from 'antd';
-import React, { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
-import { useRecoilValue } from 'recoil';
-import { currentAudioDocumentPlayStore } from '@renderer/store';
-import { AUDIO_PLAYER } from '@modules/shared/shared';
+import { useAudioStore } from '@renderer/stores';
+import { AUDIO_PLAYER } from '@renderer/utils/events';
 
 export default function AudioDocumentPlayerIndicator() {
-    const currentAudioDocumentPlay = useRecoilValue(currentAudioDocumentPlayStore);
+    const currentAudioDocumentPlay = useAudioStore((s) => s.currentPlay);
 
     const buttonRef = useRef<HTMLButtonElement | null>(null);
+    const timeInterval = useRef<number | null>(null);
 
-    const timeInterval = useRef<null | number>(null);
-
-    const toogleWaveEffectButton = useCallback(() => {
+    const toggleWaveEffectButton = useCallback(() => {
         buttonRef.current?.setAttribute('ant-click-animating-without-extra-node', 'true');
-
         const timeout = window.setTimeout(() => {
             buttonRef.current?.setAttribute('ant-click-animating-without-extra-node', 'false');
             clearTimeout(timeout);
@@ -22,12 +19,11 @@ export default function AudioDocumentPlayerIndicator() {
     }, []);
 
     useEffect(() => {
-        timeInterval.current && clearInterval(timeInterval.current);
-
+        if (timeInterval.current) clearInterval(timeInterval.current);
         if (currentAudioDocumentPlay?.status === 'play') {
-            timeInterval.current = window.setInterval(toogleWaveEffectButton, 3000);
+            timeInterval.current = window.setInterval(toggleWaveEffectButton, 3000);
         }
-    }, [currentAudioDocumentPlay]);
+    }, [currentAudioDocumentPlay, toggleWaveEffectButton]);
 
     const openPlayer = useCallback(() => {
         window.dispatchEvent(new Event(AUDIO_PLAYER.openModalPlayer));
