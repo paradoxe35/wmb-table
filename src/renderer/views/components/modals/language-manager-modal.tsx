@@ -187,20 +187,18 @@ export default function LanguageManagerModal() {
             window.removeEventListener(LANGUAGE_EVENT.openLanguageManager, show);
             unsubPush();
         };
-    }, []);
+    }, [setVisible]);
 
     // Auto-open only when no languages installed or no active language persisted
     useEffect(() => {
         Promise.all([window.api.languages.getInstalled(), window.api.app.getActiveLanguage()]).then(
             ([inst, activeLang]) => {
-                if (inst.length === 0) {
-                    setVisible(true);
-                } else if (!activeLang) {
+                if (inst.length === 0 || !activeLang) {
                     setVisible(true);
                 }
             },
         );
-    }, []);
+    }, [setVisible]);
 
     useEffect(() => {
         if (visible) {
@@ -228,12 +226,30 @@ export default function LanguageManagerModal() {
         };
     }, [refresh]);
 
+    const setTabs = useSermonStore((s) => s.setTabs);
+
     const handleSelectLanguage = async (langCode: string) => {
-        setActiveLanguage(langCode);
-        await window.api.app.setActiveLanguage(langCode);
-        const sermons = await window.api.documents.getTitles(langCode);
-        setSermons(sermons);
-        hide();
+        try {
+            // Save current tabs for the old language before switching
+            const previousLang = activeLanguage;
+            if (previousLang) {
+                const currentTabs = useSermonStore.getState().tabs;
+                await window.api.documents.saveTabs(previousLang, currentTabs);
+            }
+
+            setActiveLanguage(langCode);
+            await window.api.app.setActiveLanguage(langCode);
+            const [sermons, tabs] = await Promise.all([
+                window.api.documents.getTitles(langCode),
+                window.api.documents.getTabs(langCode),
+            ]);
+            setSermons(sermons);
+            setTabs(tabs?.length ? tabs : []);
+            hide();
+        } catch (err) {
+            console.error('[LanguageManager] Failed to select language:', err);
+            message.error('Échec de la sélection de la langue');
+        }
     };
 
     const handleInstall = (langCode: string) => {
@@ -269,6 +285,7 @@ export default function LanguageManagerModal() {
             keyboard={canClose}
             footer={null}
             width={480}
+            styles={{ body: { border: 'none', outline: 'none' } }}
         >
             {loading ? (
                 <div className="flex flex-center" style={{ padding: '2rem' }}>

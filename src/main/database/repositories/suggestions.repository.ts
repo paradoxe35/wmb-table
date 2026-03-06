@@ -1,4 +1,4 @@
-import { eq, asc } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { suggestions } from '../schema';
@@ -17,25 +17,51 @@ function toSuggestion(row: typeof suggestions.$inferSelect): Suggestions {
     };
 }
 
-export function getSuggestions(): Suggestions[] {
-    return getDb().select().from(suggestions).all().map(toSuggestion);
+export function getSuggestions(languageCode: string): Suggestions[] {
+    return getDb()
+        .select()
+        .from(suggestions)
+        .where(eq(suggestions.languageCode, languageCode))
+        .all()
+        .map(toSuggestion);
 }
 
-export function addSuggestion(searchText: string, found: number): Suggestions {
+export function addSuggestion(
+    searchText: string,
+    found: number,
+    languageCode: string,
+): Suggestions {
     const db = getDb();
     const now = new Date().toISOString();
-    const id = randomUUID();
 
-    db.insert(suggestions)
-        .values({ id, searchText, found, createdAt: now, updatedAt: now })
-        .onConflictDoUpdate({
-            target: suggestions.searchText,
-            set: { found, updatedAt: now },
-        })
-        .run();
+    // Check if this searchText already exists for this language
+    const existing = db
+        .select()
+        .from(suggestions)
+        .where(
+            and(eq(suggestions.searchText, searchText), eq(suggestions.languageCode, languageCode)),
+        )
+        .get();
 
-    // Enforce cap
-    const all = db.select().from(suggestions).orderBy(asc(suggestions.createdAt)).all();
+    if (existing) {
+        db.update(suggestions)
+            .set({ found, updatedAt: now })
+            .where(eq(suggestions.id, existing.id))
+            .run();
+    } else {
+        const id = randomUUID();
+        db.insert(suggestions)
+            .values({ id, searchText, found, languageCode, createdAt: now, updatedAt: now })
+            .run();
+    }
+
+    // Enforce cap per language
+    const all = db
+        .select()
+        .from(suggestions)
+        .where(eq(suggestions.languageCode, languageCode))
+        .orderBy(asc(suggestions.createdAt))
+        .all();
     if (all.length > MAX_SUGGESTIONS) {
         const toDelete = all.slice(0, all.length - MAX_SUGGESTIONS);
         for (const old of toDelete) {
@@ -43,7 +69,13 @@ export function addSuggestion(searchText: string, found: number): Suggestions {
         }
     }
 
-    const row = db.select().from(suggestions).where(eq(suggestions.searchText, searchText)).get();
+    const row = db
+        .select()
+        .from(suggestions)
+        .where(
+            and(eq(suggestions.searchText, searchText), eq(suggestions.languageCode, languageCode)),
+        )
+        .get();
     if (row) logChange('suggestions', row.id, 'SAVE', row);
     return toSuggestion(row!);
 }

@@ -47,11 +47,11 @@ export function registerDocumentsHandlers(): void {
         },
     );
 
-    registerHandler(DocumentChannels.getTabs, async () => {
-        return tabsRepo.getTabs();
+    registerHandler(DocumentChannels.getTabs, async (_event, langCode) => {
+        return tabsRepo.getTabs(langCode);
     });
 
-    registerHandler(DocumentChannels.saveTabs, async (_event, datas) => {
-        tabsRepo.saveTabs(datas);
+    registerHandler(DocumentChannels.saveTabs, async (_event, langCode, datas) => {
+        tabsRepo.saveTabs(langCode, datas);
     });
 }

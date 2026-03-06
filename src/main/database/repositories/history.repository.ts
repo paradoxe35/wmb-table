@@ -1,4 +1,4 @@
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, and, desc, asc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { history, historyItems } from '../schema';
@@ -29,10 +29,11 @@ function toHistoryItem(row: typeof historyItems.$inferSelect): HistoryDataItem {
     };
 }
 
-export function getHistory(): HistoryData[] {
+export function getHistory(languageCode: string): HistoryData[] {
     return getDb()
         .select()
         .from(history)
+        .where(eq(history.languageCode, languageCode))
         .orderBy(desc(history.milliseconds))
         .all()
         .map(toHistoryData);
@@ -53,17 +54,26 @@ export function addHistoryEntry(
     milliseconds: number,
     time: string,
     documentTitle: string,
+    languageCode: string,
 ): void {
     const db = getDb();
 
-    // Find or create history row for this date
-    let historyRow = db.select().from(history).where(eq(history.milliseconds, milliseconds)).get();
+    // Find or create history row for this date + language
+    let historyRow = db
+        .select()
+        .from(history)
+        .where(and(eq(history.milliseconds, milliseconds), eq(history.languageCode, languageCode)))
+        .get();
 
     if (!historyRow) {
-        // Enforce 30-entry cap
-        const all = db.select().from(history).orderBy(asc(history.milliseconds)).all();
+        // Enforce 30-entry cap per language
+        const all = db
+            .select()
+            .from(history)
+            .where(eq(history.languageCode, languageCode))
+            .orderBy(asc(history.milliseconds))
+            .all();
         if (all.length >= MAX_HISTORY) {
-            // Delete oldest entries (cascade deletes items)
             const toDelete = all.slice(0, all.length - MAX_HISTORY + 1);
             for (const old of toDelete) {
                 db.delete(history).where(eq(history.id, old.id)).run();
@@ -72,7 +82,9 @@ export function addHistoryEntry(
 
         const id = randomUUID();
         const now = new Date().toISOString();
-        db.insert(history).values({ id, date, milliseconds, createdAt: now, updatedAt: now }).run();
+        db.insert(history)
+            .values({ id, date, milliseconds, languageCode, createdAt: now, updatedAt: now })
+            .run();
         historyRow = db.select().from(history).where(eq(history.id, id)).get()!;
     }
 

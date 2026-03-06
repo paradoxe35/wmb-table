@@ -61,8 +61,9 @@ const api = {
         getTranslations: (sermonId: string) => invoke(DocumentChannels.getTranslations, sermonId),
         getTraductionsForSermon: (sermonDate: string, langCode: string) =>
             invoke(DocumentChannels.getTraductionsForSermon, sermonDate, langCode),
-        getTabs: () => invoke(DocumentChannels.getTabs),
-        saveTabs: (tabs: DocumentTab[]) => invoke(DocumentChannels.saveTabs, tabs),
+        getTabs: (langCode: string) => invoke(DocumentChannels.getTabs, langCode),
+        saveTabs: (langCode: string, tabs: DocumentTab[]) =>
+            invoke(DocumentChannels.saveTabs, langCode, tabs),
     },
 
     languages: {
@@ -73,9 +74,9 @@ const api = {
     },
 
     search: {
-        getSuggestions: () => invoke(SearchChannels.getSuggestions),
-        addSuggestion: (text: string, found: number) =>
-            invoke(SearchChannels.addSuggestion, text, found),
+        getSuggestions: (langCode: string) => invoke(SearchChannels.getSuggestions, langCode),
+        addSuggestion: (text: string, found: number, langCode: string) =>
+            invoke(SearchChannels.addSuggestion, text, found, langCode),
         searchText: (langCode: string, query: string, page: number) =>
             invoke(SearchChannels.searchText, langCode, query, page),
         searchContent: (langCode: string, query: string, translationId: number) =>
@@ -178,7 +179,9 @@ const api = {
         createCustomDocument: (title: string, pdfBytes: Uint8Array) =>
             invoke(AppChannels.createCustomDocument, title, pdfBytes),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
-        getHistory: () => invoke(AppChannels.getHistory),
+        getHistory: (langCode: string) => invoke(AppChannels.getHistory, langCode),
+        addHistoryEntry: (langCode: string, documentTitle: string) =>
+            invoke(AppChannels.addHistoryEntry, langCode, documentTitle),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         openExternal: (url: string) => shell.openExternal(url),
     },

@@ -45,14 +45,12 @@ export function useInitApp() {
                     return;
                 }
 
-                const [langCode, sidebarStatus, tabs] = await Promise.all([
+                const [langCode, sidebarStatus] = await Promise.all([
                     window.api.app.getActiveLanguage(),
                     window.api.app.getSidebarStatus(),
-                    window.api.documents.getTabs(),
                 ]);
 
                 if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
-                if (tabs?.length) setTabs(tabs);
 
                 // Validate active language is still installed
                 const validLang = langCode && installed.some((l) => l.code === langCode);
@@ -64,8 +62,12 @@ export function useInitApp() {
                 }
 
                 setActiveLanguage(langCode);
-                const sermons = await window.api.documents.getTitles(langCode);
+                const [sermons, savedTabs] = await Promise.all([
+                    window.api.documents.getTitles(langCode),
+                    window.api.documents.getTabs(langCode),
+                ]);
                 setSermons(sermons);
+                if (savedTabs?.length) setTabs(savedTabs);
             } finally {
                 setLoaded(true);
             }

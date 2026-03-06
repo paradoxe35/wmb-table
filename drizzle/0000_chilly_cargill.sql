@@ -60,6 +60,7 @@ CREATE TABLE `history` (
 	`id` text PRIMARY KEY NOT NULL,
 	`date` text NOT NULL,
 	`milliseconds` integer NOT NULL,
+	`language_code` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
@@ -139,12 +140,13 @@ CREATE TABLE `suggestions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`search_text` text NOT NULL,
 	`found` integer DEFAULT 0 NOT NULL,
+	`language_code` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `suggestions_search_text_unique` ON `suggestions` (`search_text`);--> statement-breakpoint
 CREATE TABLE `tabs` (
 	`id` text PRIMARY KEY NOT NULL,
+	`language_code` text NOT NULL,
 	`datas` text NOT NULL
 );

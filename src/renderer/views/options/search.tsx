@@ -118,14 +118,22 @@ export default function Search() {
 
     const { loading, onSearch, results, lastSearch, hasNewResult, onPageChange } = useSearch();
 
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+
     useEffect(() => {
         const can = lastSearch.current.trim().length > 0 && !!results && results.total > 0;
 
-        if (can) {
-            window.api.search.addSuggestion(lastSearch.current.trim(), results!.total);
+        if (can && activeLanguage) {
+            window.api.search.addSuggestion(
+                lastSearch.current.trim(),
+                results!.total,
+                activeLanguage,
+            );
         }
-        window.api.search.getSuggestions().then((s) => (suggestions.current = s));
-    }, [hasNewResult.current]);
+        if (activeLanguage) {
+            window.api.search.getSuggestions(activeLanguage).then((s) => (suggestions.current = s));
+        }
+    }, [hasNewResult.current, activeLanguage]);
 
     return (
         <>

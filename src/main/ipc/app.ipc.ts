@@ -15,10 +15,13 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.getActiveLanguage, async () => {
-        return configRepo.getActiveLanguage();
+        const lang = configRepo.getActiveLanguage();
+        console.log('[app.ipc] getActiveLanguage →', lang);
+        return lang;
     });
 
     registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
+        console.log('[app.ipc] setActiveLanguage →', langCode);
         configRepo.setActiveLanguage(langCode);
         switchBibleLanguage(langCode);
     });
@@ -65,8 +68,24 @@ export function registerAppHandlers(): void {
         return customDocsRepo.getCustomDocumentContent(id);
     });
 
-    registerHandler(AppChannels.getHistory, async () => {
-        return historyRepo.getHistory();
+    registerHandler(AppChannels.getHistory, async (_event, langCode) => {
+        return historyRepo.getHistory(langCode);
+    });
+
+    registerHandler(AppChannels.addHistoryEntry, async (_event, langCode, documentTitle) => {
+        const now = new Date();
+        const date = now.toLocaleDateString('fr-FR', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+        const milliseconds = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const time = now.toLocaleTimeString('fr-FR', {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+        historyRepo.addHistoryEntry(date, milliseconds, time, documentTitle, langCode);
     });
 
     registerHandler(AppChannels.getHistoryItems, async (_event, historyId) => {

@@ -140,6 +140,7 @@ export const AppChannels = {
     createCustomDocument: 'app:createCustomDocument',
     getCustomDocumentContent: 'app:getCustomDocumentContent',
     getHistory: 'app:getHistory',
+    addHistoryEntry: 'app:addHistoryEntry',
     getHistoryItems: 'app:getHistoryItems',
 } as const;
 
@@ -189,8 +190,8 @@ export interface InvokeChannelMap {
         args: [string, string];
         return: SermonMeta[];
     };
-    [DocumentChannels.getTabs]: { args: []; return: DocumentTab[] };
-    [DocumentChannels.saveTabs]: { args: [DocumentTab[]]; return: void };
+    [DocumentChannels.getTabs]: { args: [string]; return: DocumentTab[] };
+    [DocumentChannels.saveTabs]: { args: [string, DocumentTab[]]; return: void };
 
     // Languages
     [LanguageChannels.getInstalled]: { args: []; return: InstalledLanguage[] };
@@ -199,8 +200,8 @@ export interface InvokeChannelMap {
     [LanguageChannels.delete]: { args: [string]; return: void };
 
     // Search
-    [SearchChannels.getSuggestions]: { args: []; return: Suggestions[] };
-    [SearchChannels.addSuggestion]: { args: [string, number]; return: Suggestions };
+    [SearchChannels.getSuggestions]: { args: [string]; return: Suggestions[] };
+    [SearchChannels.addSuggestion]: { args: [string, number, string]; return: Suggestions };
     [SearchChannels.searchText]: { args: [string, string, number]; return: TantivySearchResult };
     [SearchChannels.searchContent]: {
         args: [string, string, number];
@@ -296,7 +297,7 @@ export interface InvokeChannelMap {
 
     // App
     [AppChannels.initialize]: { args: []; return: void };
-    [AppChannels.getActiveLanguage]: { args: []; return: string };
+    [AppChannels.getActiveLanguage]: { args: []; return: string | null };
     [AppChannels.setActiveLanguage]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
@@ -311,7 +312,8 @@ export interface InvokeChannelMap {
         args: [string];
         return: CustomDocumentContent | null;
     };
-    [AppChannels.getHistory]: { args: []; return: HistoryData[] };
+    [AppChannels.getHistory]: { args: [string]; return: HistoryData[] };
+    [AppChannels.addHistoryEntry]: { args: [string, string]; return: void };
     [AppChannels.getHistoryItems]: {
         args: [string];
         return: HistoryDataItem[];

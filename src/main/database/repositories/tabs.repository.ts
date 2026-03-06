@@ -3,17 +3,15 @@ import { getDb } from '../index';
 import { tabs } from '../schema';
 import type { DocumentTab } from '@shared/types';
 
-const SINGLE_ROW_ID = 'tabs-singleton';
-
-export function getTabs(): DocumentTab[] {
-    const row = getDb().select().from(tabs).get();
+export function getTabs(languageCode: string): DocumentTab[] {
+    const row = getDb().select().from(tabs).where(eq(tabs.languageCode, languageCode)).get();
     if (!row) return [];
     return JSON.parse(row.datas);
 }
 
-export function saveTabs(datas: DocumentTab[]): void {
+export function saveTabs(languageCode: string, datas: DocumentTab[]): void {
     const db = getDb();
-    const existing = db.select().from(tabs).get();
+    const existing = db.select().from(tabs).where(eq(tabs.languageCode, languageCode)).get();
     if (existing) {
         db.update(tabs)
             .set({ datas: JSON.stringify(datas) })
@@ -21,7 +19,11 @@ export function saveTabs(datas: DocumentTab[]): void {
             .run();
     } else {
         db.insert(tabs)
-            .values({ id: SINGLE_ROW_ID, datas: JSON.stringify(datas) })
+            .values({
+                id: `tabs-${languageCode}`,
+                languageCode,
+                datas: JSON.stringify(datas),
+            })
             .run();
     }
 }

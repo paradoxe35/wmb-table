@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "1d3020a8-5340-4b99-91cc-bee786db57f8",
+    "id": "3da37575-f7bc-4b9a-8b5b-b428f5c96a3a",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "audio_document_last_play": {
@@ -367,6 +367,14 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
+                },
+                "language_code": {
+                    "name": "language_code",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "''"
                 },
                 "created_at": {
                     "name": "created_at",
@@ -862,6 +870,14 @@
                     "autoincrement": false,
                     "default": 0
                 },
+                "language_code": {
+                    "name": "language_code",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "''"
+                },
                 "created_at": {
                     "name": "created_at",
                     "type": "text",
@@ -879,13 +895,7 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {
-                "suggestions_search_text_unique": {
-                    "name": "suggestions_search_text_unique",
-                    "columns": ["search_text"],
-                    "isUnique": true
-                }
-            },
+            "indexes": {},
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
@@ -898,6 +908,13 @@
                     "name": "id",
                     "type": "text",
                     "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "language_code": {
+                    "name": "language_code",
+                    "type": "text",
+                    "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
                 },

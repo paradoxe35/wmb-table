@@ -1,21 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Empty, Collapse, List } from 'antd';
 import type { HistoryData, HistoryDataItem } from '@shared/types';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
+import { useAppStore } from '@renderer/stores';
 
 export default function History() {
     const title = useActiveTabTitle();
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [key, setKey] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
     const [reloadKey, setReloadKey] = useState(0);
     const { getSermon } = useSermonLookup();
+    const prevTitle = useRef<string | null>(null);
 
     const onChange = (key: string | string[]) => {
         if (typeof key === 'string') setKey(key);
     };
+
+    // Record history when active tab changes
+    useEffect(() => {
+        if (activeLanguage && title && title !== prevTitle.current) {
+            window.api.app.addHistoryEntry(activeLanguage, title);
+        }
+        prevTitle.current = title;
+    }, [title, activeLanguage]);
 
     useEffect(() => {
         if (key) {
@@ -27,8 +38,10 @@ export default function History() {
     }, [key, histories]);
 
     useEffect(() => {
-        window.api.app.getHistory().then(setHistories);
-    }, [title]);
+        if (activeLanguage) {
+            window.api.app.getHistory(activeLanguage).then(setHistories);
+        }
+    }, [title, activeLanguage]);
 
     useEffect(() => {
         if (histories.length > 0) {

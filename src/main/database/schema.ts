@@ -21,6 +21,7 @@ export const history = sqliteTable('history', {
     id: text('id').primaryKey(),
     date: text('date').notNull(),
     milliseconds: integer('milliseconds').notNull(),
+    languageCode: text('language_code').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -67,6 +68,7 @@ export const subjectItems = sqliteTable('subject_items', {
 
 export const tabs = sqliteTable('tabs', {
     id: text('id').primaryKey(),
+    languageCode: text('language_code').notNull(),
     datas: text('datas').notNull(), // JSON DocumentTab[]
 });
 
@@ -76,8 +78,9 @@ export const tabs = sqliteTable('tabs', {
 
 export const suggestions = sqliteTable('suggestions', {
     id: text('id').primaryKey(),
-    searchText: text('search_text').notNull().unique(),
+    searchText: text('search_text').notNull(),
     found: integer('found').notNull().default(0),
+    languageCode: text('language_code').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Reorder } from 'framer-motion';
 import type { MenuProps } from 'antd';
-import { useSermonStore, selectActiveTabTitle } from '@renderer/stores';
+import { useSermonStore, useAppStore, selectActiveTabTitle } from '@renderer/stores';
 import { useTabPersistence } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import TabItem from './tab-item';
@@ -15,8 +15,9 @@ export default function DocumentTabs() {
     const removeTabsToRight = useSermonStore((s) => s.removeTabsToRight);
     const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
     const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
 
-    useTabPersistence(tabs);
+    useTabPersistence(tabs, activeLanguage);
 
     const getContextMenuItems = useCallback(
         (title: string): MenuProps['items'] => [

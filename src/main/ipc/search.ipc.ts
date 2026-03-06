@@ -9,12 +9,12 @@ import type { TantivySearchHit } from '@shared/types';
 const ITEMS_PER_PAGE = 20;
 
 export function registerSearchHandlers(): void {
-    registerHandler(SearchChannels.getSuggestions, async () => {
-        return suggestionsRepo.getSuggestions();
+    registerHandler(SearchChannels.getSuggestions, async (_event, langCode) => {
+        return suggestionsRepo.getSuggestions(langCode);
     });
 
-    registerHandler(SearchChannels.addSuggestion, async (_event, searchText, found) => {
-        return suggestionsRepo.addSuggestion(searchText, found);
+    registerHandler(SearchChannels.addSuggestion, async (_event, searchText, found, langCode) => {
+        return suggestionsRepo.addSuggestion(searchText, found, langCode);
     });
 
     registerHandler(SearchChannels.searchText, async (_event, langCode, query, page) => {
