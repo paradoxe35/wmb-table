@@ -107,7 +107,7 @@ const api = {
         getBibleReferences: (noteId: string) => invoke(NotesChannels.getBibleReferences, noteId),
         createBibleReference: (noteId: string, label: string) =>
             invoke(NotesChannels.createBibleReference, noteId, label),
-        syncBibleReferences: (id: string, refs: BibleBook[] | string[]) =>
+        syncBibleReferences: (id: string, refs: string[]) =>
             invoke(NotesChannels.syncBibleReferences, id, refs),
         addBibleVerse: (id: string, verseId: string) =>
             invoke(NotesChannels.addBibleVerse, id, verseId),

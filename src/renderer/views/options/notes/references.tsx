@@ -1,4 +1,4 @@
-import { Button, Col, message, Modal, Row, Space, Typography } from 'antd';
+import { Button, Col, message, Modal, Row, Typography } from 'antd';
 import {
     type Dispatch,
     type SetStateAction,
@@ -242,13 +242,11 @@ export function ReferenceBibleModal({
                             >
                                 <DeleteBtn confirm={() => handleDeletionRef(ref)} />
                                 <div>
-                                    <span style={{ fontWeight: 500 }}>
+                                    <span style={{ color: 'var(--ant-color-text-secondary)' }}>
                                         {ref.bookName} {ref.chapter}:{ref.verse}
                                     </span>
                                     {' — '}
-                                    <span style={{ color: 'var(--ant-color-text-secondary)' }}>
-                                        {ref.content}
-                                    </span>
+                                    <span>{ref.content}</span>
                                 </div>
                             </div>
                         ))}

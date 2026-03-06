@@ -243,7 +243,7 @@ export interface InvokeChannelMap {
         return: NoteItemReferenceBible;
     };
     [NotesChannels.syncBibleReferences]: {
-        args: [string, BibleBook[] | string[]];
+        args: [string, string[]];
         return: void;
     };
     [NotesChannels.addBibleVerse]: {

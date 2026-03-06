@@ -230,39 +230,20 @@ export function createBibleReference(noteId: string, label: string): NoteItemRef
     return toBibleRef(row!);
 }
 
-export function syncBibleReferences(noteId: string, refs: BibleBook[] | string[]): void {
+export function syncBibleReferences(noteId: string, refIds: string[]): void {
     const db = getDb();
-    // Log deletes for existing rows
     const existing = db
         .select()
         .from(notesBibleReferences)
         .where(eq(notesBibleReferences.noteId, noteId))
         .all();
-    db.delete(notesBibleReferences).where(eq(notesBibleReferences.noteId, noteId)).run();
+    // Only delete rows whose IDs are no longer present in the editor
+    const keepSet = new Set(refIds);
     for (const row of existing) {
-        logChange('notes_bible_references', row.id, 'DELETE', { id: row.id });
-    }
-    if (refs.length > 0) {
-        const id = randomUUID();
-        const now = new Date().toISOString();
-        db.insert(notesBibleReferences)
-            .values({
-                id,
-                noteId,
-                label: '',
-                references: JSON.stringify(refs),
-                createdAt: now,
-                updatedAt: now,
-            })
-            .run();
-        logChange('notes_bible_references', id, 'SAVE', {
-            id,
-            noteId,
-            label: '',
-            references: JSON.stringify(refs),
-            createdAt: now,
-            updatedAt: now,
-        });
+        if (!keepSet.has(row.id)) {
+            db.delete(notesBibleReferences).where(eq(notesBibleReferences.id, row.id)).run();
+            logChange('notes_bible_references', row.id, 'DELETE', { id: row.id });
+        }
     }
 }
 
