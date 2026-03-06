@@ -74,6 +74,7 @@ export interface SermonMetaWithTraductions extends SermonMeta {
 
 export type DocumentTab = {
     title: string;
+    sermonDate: string;
     scrollY?: number;
     scrollX?: number;
     active: boolean;
@@ -81,6 +82,14 @@ export type DocumentTab = {
     translationId?: number;
     type?: 'sermon' | 'custom';
 };
+
+export function getTabKey(tab: { title: string; sermonDate: string }): string {
+    return `${tab.title}::${tab.sermonDate}`;
+}
+
+export function tabMatches(tab: DocumentTab, title: string, sermonDate: string): boolean {
+    return tab.title === title && tab.sermonDate === sermonDate;
+}
 
 export type DocumentTreeRanges = {
     contextualText: string | null;
@@ -266,6 +275,7 @@ export type CurrentAudioDocumentPlay = {
 
 export interface CustomDocument extends Readonly<BaseEntity> {
     title: string;
+    sermonDate: string;
 }
 
 export interface CustomDocumentContent {

@@ -1,9 +1,10 @@
 import { useCallback, useEffect } from 'react';
 import { Reorder } from 'framer-motion';
 import type { MenuProps } from 'antd';
-import { useSermonStore, useAppStore, selectActiveTabTitle } from '@renderer/stores';
+import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
 import { useTabPersistence } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
+import { getTabKey } from '@shared/types';
 import TabItem from './tab-item';
 
 export default function DocumentTabs() {
@@ -14,23 +15,23 @@ export default function DocumentTabs() {
     const removeOtherTabs = useSermonStore((s) => s.removeOtherTabs);
     const removeTabsToRight = useSermonStore((s) => s.removeTabsToRight);
     const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
 
     useTabPersistence(tabs, activeLanguage);
 
     const getContextMenuItems = useCallback(
-        (title: string): MenuProps['items'] => [
-            { key: 'close', label: 'Fermer', onClick: () => removeTab(title) },
+        (key: string): MenuProps['items'] => [
+            { key: 'close', label: 'Fermer', onClick: () => removeTab(key) },
             {
                 key: 'close-others',
                 label: 'Fermer les autres',
-                onClick: () => removeOtherTabs(title),
+                onClick: () => removeOtherTabs(key),
             },
             {
                 key: 'close-right',
                 label: 'Fermer à droite',
-                onClick: () => removeTabsToRight(title),
+                onClick: () => removeTabsToRight(key),
             },
             { type: 'divider' },
             { key: 'close-all', label: 'Tout fermer', onClick: () => removeAllTabs() },
@@ -43,7 +44,7 @@ export default function DocumentTabs() {
         const handleCustomDocRemoved = (e: Event) => {
             const detail = (e as CustomEvent)?.detail;
             if (detail?.title) {
-                removeTab(detail.title);
+                removeTab(getTabKey({ title: detail.title, sermonDate: detail.sermonDate ?? '' }));
             }
         };
 
@@ -68,16 +69,19 @@ export default function DocumentTabs() {
                 as="div"
                 className="chrome-tabs"
             >
-                {tabs.map((tab) => (
-                    <TabItem
-                        key={tab.title}
-                        tab={tab}
-                        isActive={tab.title === activeTitle}
-                        onActivate={() => activateTab(tab.title)}
-                        onRemove={() => removeTab(tab.title)}
-                        contextMenuItems={getContextMenuItems(tab.title)}
-                    />
-                ))}
+                {tabs.map((tab) => {
+                    const key = getTabKey(tab);
+                    return (
+                        <TabItem
+                            key={key}
+                            tab={tab}
+                            isActive={key === activeTabKey}
+                            onActivate={() => activateTab(key)}
+                            onRemove={() => removeTab(key)}
+                            contextMenuItems={getContextMenuItems(key)}
+                        />
+                    );
+                })}
                 <div className="chrome-tabs-bottom-bar" />
             </Reorder.Group>
             <div className="chrome-tabs-optional-shadow-below-bottom-bar" />

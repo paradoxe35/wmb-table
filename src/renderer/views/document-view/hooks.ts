@@ -5,6 +5,7 @@ import {
     useSearchStore,
     useAppStore,
     selectActiveTabTitle,
+    selectActiveTabKey,
     selectActiveTab,
 } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
@@ -69,26 +70,26 @@ export function useSermonContent() {
 export function useScrollAndZoom(containerRef: React.RefObject<HTMLDivElement | null>) {
     const activeTab = useSermonStore(selectActiveTab);
     const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
 
     const zoom = activeTab?.zoom ?? 100;
 
     useEffect(() => {
         if (!containerRef.current || !activeTab) return;
         containerRef.current.scrollTop = activeTab.scrollY ?? 0;
-    }, [activeTitle]);
+    }, [activeTabKey]);
 
     useEffect(() => {
         const el = containerRef.current;
         if (!el) return;
         const handler = debounce(() => {
-            if (activeTitle) {
-                updateTabScroll(activeTitle, el.scrollTop);
+            if (activeTabKey) {
+                updateTabScroll(activeTabKey, el.scrollTop);
             }
         }, 500);
         el.addEventListener('scroll', handler as EventListener);
         return () => el.removeEventListener('scroll', handler as EventListener);
-    }, [activeTitle, updateTabScroll]);
+    }, [activeTabKey, updateTabScroll]);
 
     return { zoom };
 }

@@ -6,6 +6,7 @@ import {
     useSearchStore,
     useCustomDocumentsStore,
     selectActiveTabTitle,
+    selectActiveTabKey,
 } from '@renderer/stores';
 import { simpleRegExp } from '@renderer/utils/searchable';
 import type { CustomDocumentContent } from '@shared/types';
@@ -15,6 +16,7 @@ import { useScrollAndZoom, useSearchHighlight, useMatchNavigation } from './hook
 
 export default function CustomDocumentView() {
     const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -45,12 +47,12 @@ export default function CustomDocumentView() {
     }, [customDoc?.id]);
 
     const handleZoomIn = useCallback(() => {
-        if (activeTitle) updateTabZoom(activeTitle, Math.min(zoom + 10, 200));
-    }, [activeTitle, zoom, updateTabZoom]);
+        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
+    }, [activeTabKey, zoom, updateTabZoom]);
 
     const handleZoomOut = useCallback(() => {
-        if (activeTitle) updateTabZoom(activeTitle, Math.max(zoom - 10, 50));
-    }, [activeTitle, zoom, updateTabZoom]);
+        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
+    }, [activeTabKey, zoom, updateTabZoom]);
 
     const paragraphs = useMemo(
         () => (docContent?.content ?? '').split('\n').filter((line) => line.trim() !== ''),

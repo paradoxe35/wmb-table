@@ -19,9 +19,9 @@ export function simpleMatch(query: string, text: string): boolean {
     return normalized.includes(q);
 }
 
-export function formatSermonDate(dateMs: number): string {
+export function formatSermonDate(dateMs: number, locale: string = 'en'): string {
     const d = new Date(dateMs);
-    return d.toLocaleDateString('en-US', {
+    return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
         weekday: 'long',
         year: 'numeric',
         month: 'long',

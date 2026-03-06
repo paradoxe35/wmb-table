@@ -1,14 +1,20 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Input, Card, Tree, Divider, Select, Tag } from 'antd';
 import { SoundOutlined } from '@ant-design/icons';
+import { Virtuoso } from 'react-virtuoso';
 import type { SermonMetaWithTraductions } from '@shared/types';
+import { getTabKey } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
-import { useSermonStore, useCustomDocumentsStore, selectActiveTabTitle } from '@renderer/stores';
+import {
+    useSermonStore,
+    useCustomDocumentsStore,
+    selectActiveTab,
+    selectActiveTabTitle,
+} from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
-import { useOpenDocument, useOpenCustomDocument } from '@renderer/hooks';
+import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { formatSermonDate } from '@renderer/utils/sermon-utils';
 
 const { DirectoryTree } = Tree;
 const { Search } = Input;
@@ -39,72 +45,29 @@ export default function SidebarDocuments() {
                 ]}
             >
                 {(index: number) => (
-                    <>
-                        <div
-                            hidden={index !== 0}
-                            style={
-                                index === 0
-                                    ? {
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          flex: 1,
-                                          overflow: 'hidden',
-                                      }
-                                    : undefined
-                            }
-                        >
-                            <DocumentSearch />
-                        </div>
-                        <div
-                            hidden={index !== 1}
-                            style={
-                                index === 1
-                                    ? {
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          flex: 1,
-                                          overflow: 'hidden',
-                                      }
-                                    : undefined
-                            }
-                        >
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            flex: 1,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        {index === 0 && <DocumentSearch />}
+                        {index === 1 && (
                             <ContainerScrollY>
                                 <div className="mt-2" />
                                 <DocumentByYears />
                             </ContainerScrollY>
-                        </div>
-                        <div
-                            hidden={index !== 2}
-                            style={
-                                index === 2
-                                    ? {
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          flex: 1,
-                                          overflow: 'hidden',
-                                      }
-                                    : undefined
-                            }
-                        >
-                            <DocumentByAlphabetic />
-                        </div>
-                        <div
-                            hidden={index !== 3}
-                            style={
-                                index === 3
-                                    ? {
-                                          display: 'flex',
-                                          flexDirection: 'column',
-                                          flex: 1,
-                                          overflow: 'hidden',
-                                      }
-                                    : undefined
-                            }
-                        >
-                            <div className="mt-2" />
-                            <DocumentsAdded />
-                        </div>
-                    </>
+                        )}
+                        {index === 2 && <DocumentByAlphabetic />}
+                        {index === 3 && (
+                            <>
+                                <div className="mt-2" />
+                                <DocumentsAdded />
+                            </>
+                        )}
+                    </div>
                 )}
             </PanelGroup>
         </div>
@@ -122,7 +85,7 @@ const DocumentsAdded = () => {
                 <div
                     key={d.id || i}
                     className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                    onClick={() => openCustomDocument(d.title)}
+                    onClick={() => openCustomDocument(d.title, d.sermonDate)}
                 >
                     <div className="sidebar-item__left">
                         <div className="sidebar-item__title">{d.title}</div>
@@ -138,7 +101,6 @@ const alphabets = alpha.map((x) => String.fromCharCode(x));
 
 const DocumentByAlphabetic = () => {
     const sermons = useSermonStore((s) => s.sermons);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
     const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
     const alphabet = useRef(alphabets[0]);
 
@@ -172,7 +134,7 @@ const DocumentByAlphabetic = () => {
                     options={alphabets.map((al) => ({ value: al, label: al }))}
                 />
             </Card>
-            <DocumentList datas={datas} activeTitle={activeTitle} />
+            <DocumentList datas={datas} />
         </>
     );
 };
@@ -181,55 +143,50 @@ const DocumentByYears = () => {
     const sermonsByYear = useSermonStore((s) => s.sermonsByYear);
     const openDocument = useOpenDocument();
 
-    const dataTree = Object.keys(sermonsByYear)
-        .sort()
-        .map((year) => {
-            const docs = sermonsByYear[year]
-                .slice()
-                .sort((a, b) => a.title.localeCompare(b.title))
-                .map((sermon) => ({
-                    key: `${sermon.id}-${year}`,
-                    title: (
-                        <span title={sermon.title} onClick={() => openDocument(sermon.title)}>
-                            {sermon.title}
-                        </span>
-                    ),
-                    className: 'document_grouped',
-                    isLeaf: true,
-                }));
-            return {
-                title: (
-                    <span>
-                        {year} - ({docs.length})
-                    </span>
-                ),
-                key: year,
-                children: docs,
-            };
-        });
+    const dataTree = useMemo(
+        () =>
+            Object.keys(sermonsByYear)
+                .sort()
+                .map((year) => {
+                    const docs = sermonsByYear[year]
+                        .slice()
+                        .sort((a, b) => a.title.localeCompare(b.title))
+                        .map((sermon) => ({
+                            key: `${sermon.id}-${year}`,
+                            title: (
+                                <span
+                                    title={sermon.title}
+                                    onClick={() => openDocument(sermon.title, sermon.sermonDate)}
+                                >
+                                    {sermon.title}
+                                </span>
+                            ),
+                            className: 'document_grouped',
+                            isLeaf: true,
+                        }));
+                    return {
+                        title: (
+                            <span>
+                                {year} - ({docs.length})
+                            </span>
+                        ),
+                        key: year,
+                        children: docs,
+                    };
+                }),
+        [sermonsByYear, openDocument],
+    );
 
     return <DirectoryTree treeData={dataTree} />;
 };
 
 const DocumentSearch = () => {
     const sermons = useSermonStore((s) => s.sermons);
-    const setSermons = useSermonStore((s) => s.setSermons);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
-    const setLoaded = useAppStore((s) => s.setLoaded);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
 
     useEffect(() => {
         setDatas(sermons);
     }, [sermons]);
-
-    useEffect(() => {
-        if (!activeLanguage) return;
-        window.api.documents
-            .getTitles(activeLanguage)
-            .then((titles) => setSermons(titles))
-            .finally(() => setLoaded(true));
-    }, [activeLanguage, setSermons, setLoaded]);
 
     const onSearch = useCallback(
         (value: string) => {
@@ -253,20 +210,17 @@ const DocumentSearch = () => {
                     onSearch={onSearch}
                 />
             </Card>
-            <DocumentList datas={datas} activeTitle={activeTitle} />
+            <DocumentList datas={datas} />
         </>
     );
 };
 
-const DocumentList = ({
-    datas,
-    activeTitle,
-}: {
-    datas: SermonMetaWithTraductions[];
-    activeTitle: string | null;
-}) => {
+const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
     const openDocument = useOpenDocument();
+    const activeTab = useSermonStore(selectActiveTab);
+    const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
     const isEnglish = useAppStore((s) => s.activeLanguage) === 'en';
+    const formatDate = useFormatSermonDate();
 
     const sorted = useMemo(
         () => datas.slice().sort((a, b) => a.title.localeCompare(b.title)),
@@ -276,17 +230,23 @@ const DocumentList = ({
     return (
         <>
             <Divider style={{ padding: 0, margin: 0 }} />
-            <ContainerScrollY className="document-list">
-                {sorted.map((d, i) => (
-                    <ItemOutline
-                        key={d.id || i}
-                        sermon={d}
-                        active={activeTitle === d.title}
-                        isEnglish={isEnglish}
-                        onClick={() => openDocument(d.title)}
-                    />
-                ))}
-            </ContainerScrollY>
+            <div className="document-list" style={{ flex: 1 }}>
+                <Virtuoso
+                    data={sorted}
+                    itemContent={(_index, d) => {
+                        const sermonKey = getTabKey({ title: d.title, sermonDate: d.sermonDate });
+                        return (
+                            <ItemOutline
+                                sermon={d}
+                                active={activeTabKeyStr === sermonKey}
+                                isEnglish={isEnglish}
+                                formatDate={formatDate}
+                                onClick={() => openDocument(d.title, d.sermonDate)}
+                            />
+                        );
+                    }}
+                />
+            </div>
         </>
     );
 };
@@ -295,8 +255,9 @@ const ItemOutline = React.memo<{
     sermon: SermonMetaWithTraductions;
     active?: boolean;
     isEnglish: boolean;
+    formatDate: (dateMs: number) => string;
     onClick: () => void;
-}>(({ sermon, active, isEnglish, onClick }) => {
+}>(({ sermon, active, isEnglish, formatDate, onClick }) => {
     const hasMultipleTraductions =
         sermon.availableTraductions && sermon.availableTraductions.length > 1;
 
@@ -311,7 +272,7 @@ const ItemOutline = React.memo<{
                 {!isEnglish && sermon.enTitle && sermon.enTitle !== sermon.title && (
                     <div className="sidebar-item__en-title">{sermon.enTitle}</div>
                 )}
-                <div className="sidebar-item__date">{formatSermonDate(sermon.dateMs)}</div>
+                <div className="sidebar-item__date">{formatDate(sermon.dateMs)}</div>
                 {hasMultipleTraductions && (
                     <div className="sidebar-item__tags">
                         {sermon.availableTraductions.map((t) => (

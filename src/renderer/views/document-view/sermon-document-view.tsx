@@ -74,7 +74,7 @@ export default function SermonDocumentView() {
                             <SermonContentHeader meta={content.meta} />
                             {content.paragraphs.map((p, i) => (
                                 <SermonParagraphView
-                                    key={p.paragraphIndex}
+                                    key={`${p.paragraphIndex}-${i}`}
                                     paragraph={p}
                                     searchTerm={searchTerm}
                                     currentMatchIndex={currentMatchIndex}

@@ -7,7 +7,7 @@ import {
     SearchOutlined,
     TranslationOutlined,
 } from '@ant-design/icons';
-import { useSermonStore, useSearchStore, selectActiveTabTitle } from '@renderer/stores';
+import { useSermonStore, useSearchStore, selectActiveTabKey } from '@renderer/stores';
 import type { SermonMeta, SermonMetaWithTraductions } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
@@ -25,7 +25,7 @@ export default function SermonHeader({
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
 
     const availableTraductions = useMemo(
         () => sermonInfo?.availableTraductions ?? [],
@@ -55,18 +55,18 @@ export default function SermonHeader({
     }, []);
 
     const handleZoomIn = useCallback(() => {
-        if (activeTitle) updateTabZoom(activeTitle, Math.min(zoom + 10, 200));
-    }, [activeTitle, zoom, updateTabZoom]);
+        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
+    }, [activeTabKey, zoom, updateTabZoom]);
 
     const handleZoomOut = useCallback(() => {
-        if (activeTitle) updateTabZoom(activeTitle, Math.max(zoom - 10, 50));
-    }, [activeTitle, zoom, updateTabZoom]);
+        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
+    }, [activeTabKey, zoom, updateTabZoom]);
 
     const handleTraductionChange = useCallback(
         (value: string | number) => {
-            if (activeTitle) updateTabTranslationId(activeTitle, Number(value));
+            if (activeTabKey) updateTabTranslationId(activeTabKey, Number(value));
         },
-        [activeTitle, updateTabTranslationId],
+        [activeTabKey, updateTabTranslationId],
     );
 
     const traductionOptions = useMemo(

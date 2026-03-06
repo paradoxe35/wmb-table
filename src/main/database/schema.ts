@@ -105,6 +105,7 @@ export const customDocuments = sqliteTable('custom_documents', {
     documentId: text('document_id').notNull(),
     title: text('title').notNull().unique(),
     content: text('content').notNull().default(''),
+    sermonDate: text('sermon_date').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

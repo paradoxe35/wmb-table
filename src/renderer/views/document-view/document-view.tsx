@@ -23,7 +23,7 @@ export default function DocumentView() {
 
     useEffect(() => {
         if (tabs.length === 0 && sermons.length > 0) {
-            addTab(sermons[0].title);
+            addTab(sermons[0].title, sermons[0].sermonDate);
         }
     }, [tabs.length, sermons, addTab]);
 

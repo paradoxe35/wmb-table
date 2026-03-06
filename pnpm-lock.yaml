@@ -55,6 +55,9 @@ importers:
             react-dom:
                 specifier: ^19.2.4
                 version: 19.2.4(react@19.2.4)
+            react-virtuoso:
+                specifier: ^4.18.3
+                version: 4.18.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
             unpdf:
                 specifier: ^1.4.0
                 version: 1.4.0
@@ -5790,6 +5793,15 @@ packages:
             }
         engines: { node: '>=0.10.0' }
 
+    react-virtuoso@4.18.3:
+        resolution:
+            {
+                integrity: sha512-fLz/peHAx4Eu0DLHurFEEI7Y6n5CqEoxBh04rgJM9yMuOJah2a9zWg/MUOmZLcp7zuWYorXq5+5bf3IRgkNvWg==,
+            }
+        peerDependencies:
+            react: '>=16 || >=17 || >= 18 || >= 19'
+            react-dom: '>=16 || >=17 || >= 18 || >=19'
+
     react@19.2.4:
         resolution:
             {
@@ -10705,6 +10717,11 @@ snapshots:
     react-is@18.3.1: {}
 
     react-refresh@0.18.0: {}
+
+    react-virtuoso@4.18.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
+        dependencies:
+            react: 19.2.4
+            react-dom: 19.2.4(react@19.2.4)
 
     react@19.2.4: {}
 

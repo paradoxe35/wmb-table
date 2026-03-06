@@ -1,11 +1,14 @@
 import React from 'react';
 import { useOpenDocument } from '@renderer/hooks';
+import { useSermonStore } from '@renderer/stores';
 
 export const useDocumentViewOpen = () => {
     const openDocument = useOpenDocument();
+    const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
 
     const onClick = (name: string, onItemClick?: () => void) => {
-        openDocument(name);
+        const sermonDate = sermonsByTitle[name]?.sermonDate ?? '';
+        openDocument(name, sermonDate);
         onItemClick?.();
     };
 
@@ -14,7 +17,6 @@ export const useDocumentViewOpen = () => {
 
 const DocumentViewer: React.FC<{
     name: string;
-    id?: string;
     onItemClick?: () => void;
     children?: React.ReactNode;
 }> = ({ children, name, onItemClick }) => {

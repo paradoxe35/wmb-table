@@ -1,13 +1,15 @@
 import type { SermonMeta } from '@shared/types';
-import { formatSermonDate } from '@renderer/utils/sermon-utils';
+import { useFormatSermonDate } from '@renderer/hooks';
 
 export default function SermonContentHeader({ meta }: { meta: SermonMeta }) {
+    const formatDate = useFormatSermonDate();
+
     return (
         <div className="sermon-content-header">
             <h2 className="sermon-content-header__title">{meta.title}</h2>
             {meta.dateMs !== 0 && (
                 <div className="sermon-content-header__date">
-                    Date: {formatSermonDate(meta.dateMs)}
+                    Date: {formatDate(meta.dateMs)}
                     {meta.location ? ` ${meta.location}` : ''}
                 </div>
             )}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { Button, Input, Modal, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useModalVisible } from '@renderer/hooks';
@@ -121,6 +121,7 @@ export default function LanguageManagerModal() {
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
     const setSermons = useSermonStore((s) => s.setSermons);
+    const [, startTransition] = useTransition();
 
     const refresh = useCallback(() => {
         setLoading(true);
@@ -227,6 +228,7 @@ export default function LanguageManagerModal() {
     }, [refresh]);
 
     const setTabs = useSermonStore((s) => s.setTabs);
+    const setLoaded = useAppStore((s) => s.setLoaded);
 
     const handleSelectLanguage = async (langCode: string) => {
         try {
@@ -243,8 +245,11 @@ export default function LanguageManagerModal() {
                 window.api.documents.getTitles(langCode),
                 window.api.documents.getTabs(langCode),
             ]);
-            setSermons(sermons);
-            setTabs(tabs?.length ? tabs : []);
+            startTransition(() => {
+                setSermons(sermons);
+                setTabs(tabs?.length ? tabs : []);
+                setLoaded(true);
+            });
             hide();
         } catch (err) {
             console.error('[LanguageManager] Failed to select language:', err);
@@ -281,11 +286,11 @@ export default function LanguageManagerModal() {
             open={visible}
             onCancel={canClose ? hide : undefined}
             closable={canClose}
-            maskClosable={canClose}
+            mask={{ closable: canClose }}
             keyboard={canClose}
             footer={null}
             width={480}
-            styles={{ body: { border: 'none', outline: 'none' } }}
+            style={{ border: 'none', outline: 'none' }}
         >
             {loading ? (
                 <div className="flex flex-center" style={{ padding: '2rem' }}>

@@ -6,7 +6,7 @@ import {
     useActiveTabTitle,
     useOpenDocument,
 } from '@renderer/hooks';
-import { useSermonStore } from '@renderer/stores';
+import { useSermonStore, selectActiveTabKey } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
@@ -18,6 +18,7 @@ export function OtherTraductionsModal() {
     const title = useActiveTabTitle();
     const viewDocument = useOpenDocument();
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
 
     const [translations, setTranslations] = useState<Translation[]>([]);
     const [loading, setLoading] = useState(false);
@@ -49,13 +50,15 @@ export function OtherTraductionsModal() {
     }, []);
 
     const handleOpen = (translationTitle: string) => {
-        viewDocument(translationTitle);
+        if (meta) {
+            viewDocument(translationTitle, meta.sermonDate);
+        }
         hide();
     };
 
     const handleSwitchTraduction = (translationId: number) => {
-        if (title) {
-            updateTabTranslationId(title, translationId);
+        if (activeTabKey) {
+            updateTabTranslationId(activeTabKey, translationId);
         }
         hide();
     };

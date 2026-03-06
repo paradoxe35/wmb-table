@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
 import type { SermonMetaWithTraductions } from '@shared/types';
+import { formatSermonDate } from '@renderer/utils/sermon-utils';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -80,8 +81,8 @@ export function useOpenDocument() {
     const setMainView = useAppStore((s) => s.setMainView);
 
     return useCallback(
-        (title: string) => {
-            addTab(title);
+        (title: string, sermonDate: string) => {
+            addTab(title, sermonDate);
             setMainView('document');
         },
         [addTab, setMainView],
@@ -93,8 +94,8 @@ export function useOpenCustomDocument() {
     const setMainView = useAppStore((s) => s.setMainView);
 
     return useCallback(
-        (title: string) => {
-            addTab(title, 'custom');
+        (title: string, sermonDate: string) => {
+            addTab(title, sermonDate, 'custom');
             setMainView('document');
         },
         [addTab, setMainView],
@@ -119,6 +120,14 @@ export function useSermonLookup() {
     );
 
     return { sermonsByTitle, getSermon };
+}
+
+export function useFormatSermonDate() {
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    return useCallback(
+        (dateMs: number) => formatSermonDate(dateMs, activeLanguage ?? 'en'),
+        [activeLanguage],
+    );
 }
 
 export function useModalVisible() {

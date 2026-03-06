@@ -3,9 +3,8 @@ import { Button, Col, Divider, Input, Modal, Row, Space, Typography, message, Sp
 import type { CustomDocument } from '@shared/types';
 import { FileAddOutlined, EyeOutlined, LoadingOutlined, UploadOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import DocumentViewer from '@renderer/components/viewer/document-viewer';
 
-import { useModalVisible, useIpcRequestWithLoader } from '@renderer/hooks';
+import { useModalVisible, useIpcRequestWithLoader, useOpenCustomDocument } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useAppStore, useCustomDocumentsStore, useSermonStore } from '@renderer/stores';
@@ -96,6 +95,7 @@ function CustomDocumentItem({
     customDocuments: CustomDocument[];
     removeCustomDocument: (id: string) => void;
 }) {
+    const openCustomDocument = useOpenCustomDocument();
     const [documents, setDocuments] = useState<CustomDocument[]>([]);
 
     useEffect(() => {
@@ -169,12 +169,14 @@ function CustomDocumentItem({
                             </span>
                         </div>
                         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                            <DocumentViewer
-                                onItemClick={() => handleCancel()}
-                                name={document.title}
-                            >
-                                <Button shape="circle" icon={<EyeOutlined />} />
-                            </DocumentViewer>
+                            <Button
+                                shape="circle"
+                                icon={<EyeOutlined />}
+                                onClick={() => {
+                                    openCustomDocument(document.title, document.sermonDate);
+                                    handleCancel();
+                                }}
+                            />
                             <DeleteBtn confirm={() => handleDeletion(document)} />
                         </div>
                     </div>

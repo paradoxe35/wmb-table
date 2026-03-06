@@ -2,6 +2,7 @@ export { useAppStore } from './app.store';
 export {
     useSermonStore,
     selectActiveTabTitle,
+    selectActiveTabKey,
     selectActiveTab,
     selectActiveTabType,
 } from './sermon.store';

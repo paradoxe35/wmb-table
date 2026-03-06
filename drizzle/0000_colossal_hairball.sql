@@ -51,6 +51,7 @@ CREATE TABLE `custom_documents` (
 	`document_id` text NOT NULL,
 	`title` text NOT NULL,
 	`content` text DEFAULT '' NOT NULL,
+	`sermon_date` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
