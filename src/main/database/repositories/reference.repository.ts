@@ -380,13 +380,11 @@ export function sermonIdToTantivyDate(sermonId: string): number {
 }
 
 /**
- * Reverse lookup: Tantivy date → sermon IDs (handles E/M/S/X suffixes).
- * 530403 → ["53-0403"], 651128 → ["65-1128M", "65-1128E"] etc.
+ * Reverse lookup: Tantivy sermon_date (epoch ms) → sermon IDs.
+ * The Tantivy index stores sermon_date as epoch milliseconds (same as sermon.date_ms).
  */
-export function tantivyDateToSermonIds(date: number): string[] {
-    const dateStr = String(date).padStart(6, '0');
-    const pattern = `${dateStr.substring(0, 2)}-${dateStr.substring(2)}%`;
-    const stmt = getRefDb().prepare(`SELECT id FROM sermon WHERE id LIKE ?`);
-    const rows = stmt.all(pattern) as { id: string }[];
+export function tantivyDateToSermonIds(dateMs: number): string[] {
+    const stmt = getRefDb().prepare(`SELECT id FROM sermon WHERE date_ms = ?`);
+    const rows = stmt.all(dateMs) as { id: string }[];
     return rows.map((r) => r.id);
 }

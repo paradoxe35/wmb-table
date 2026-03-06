@@ -23,9 +23,10 @@ export function registerSearchHandlers(): void {
 
         const hits: TantivySearchHit[] = [];
         for (const hit of result.hits) {
-            // Reverse-lookup: Tantivy sermon_date (number) → sermon IDs
             const sermonIds = refRepo.tantivyDateToSermonIds(hit.tantivySermonDate);
-            const sermonId = sermonIds[0] ?? String(hit.tantivySermonDate);
+            const sermonId = sermonIds[0];
+            if (!sermonId) continue;
+
             const meta = referenceDataService.getSermonMeta(hit.translationId, langCode, sermonId);
             const snippet = await tantivyService.getSearchSnippet(
                 langCode,
@@ -34,8 +35,8 @@ export function registerSearchHandlers(): void {
             );
             hits.push({
                 translationId: hit.translationId,
-                sermonId: sermonId,
-                title: meta?.title ?? sermonId,
+                sermonId,
+                title: meta?.title ?? meta?.enTitle ?? sermonId,
                 snippet,
                 score: hit.score,
                 hitCount: hit.hitCount,
@@ -46,13 +47,10 @@ export function registerSearchHandlers(): void {
         return { hits, total: result.total, query };
     });
 
-    registerHandler(
-        SearchChannels.searchContent,
-        async (_event, langCode, query, translationId) => {
-            const result = await tantivyService.searchSermons(langCode, query, 1, 0);
-            const hit = result.hits.find((h) => h.translationId === translationId);
-            if (!hit) return '';
-            return await tantivyService.getSearchSnippet(langCode, query, hit.bestDocAddress);
-        },
-    );
+    registerHandler(SearchChannels.searchContent, async (_event, langCode, query, sermonDateMs) => {
+        const result = await tantivyService.searchSermons(langCode, query, 1, 0);
+        const hit = result.hits.find((h) => h.tantivySermonDate === sermonDateMs);
+        if (!hit) return '';
+        return await tantivyService.getSearchSnippet(langCode, query, hit.bestDocAddress);
+    });
 }

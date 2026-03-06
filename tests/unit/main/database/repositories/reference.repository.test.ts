@@ -104,7 +104,8 @@ describe('reference.repository', () => {
     });
 
     it('tantivyDateToSermonIds reverse looks up', () => {
-        const ids = refRepo.tantivyDateToSermonIds(530403);
+        // sermon_date in Tantivy index = sermon.date_ms (epoch milliseconds)
+        const ids = refRepo.tantivyDateToSermonIds(-528508800000);
         expect(ids).toContain('53-0403');
     });
 

@@ -284,26 +284,28 @@ function searchSermons(
     const fetchLimit = Math.min((offset + limit) * 20, 10000);
     const result = searcher.search(query, fetchLimit, true);
 
+    // Group by sermon_date (per sermon), not by translationId (per translator)
     const groups = new Map<
         number,
         {
+            translationId: number;
             score: number;
             bestDocAddress: { segmentOrd: number; doc: number };
             bestParagraphIndex: number;
             hitCount: number;
-            tantivySermonDate: number;
         }
     >();
 
     for (const hit of result.hits) {
         const doc = searcher.doc(hit.docAddress);
         const dict = doc.toDict() as Record<string, unknown[]>;
-        const translationId = extractNumeric(dict, 'translation_id');
+        const sermonDate = extractNumeric(dict, 'sermon_date');
         const score = hit.score ?? 0;
 
-        const existing = groups.get(translationId);
+        const existing = groups.get(sermonDate);
         if (!existing) {
-            groups.set(translationId, {
+            groups.set(sermonDate, {
+                translationId: extractNumeric(dict, 'translation_id'),
                 score,
                 bestDocAddress: {
                     segmentOrd: hit.docAddress.segmentOrd,
@@ -311,12 +313,12 @@ function searchSermons(
                 },
                 bestParagraphIndex: extractNumeric(dict, 'paragraph_index'),
                 hitCount: 1,
-                tantivySermonDate: extractNumeric(dict, 'sermon_date'),
             });
         } else {
             existing.hitCount++;
             if (score > existing.score) {
                 existing.score = score;
+                existing.translationId = extractNumeric(dict, 'translation_id');
                 existing.bestDocAddress = {
                     segmentOrd: hit.docAddress.segmentOrd,
                     doc: hit.docAddress.doc,
@@ -327,9 +329,9 @@ function searchSermons(
     }
 
     const sorted = Array.from(groups.entries())
-        .map(([translationId, g]) => ({
-            translationId,
-            tantivySermonDate: g.tantivySermonDate,
+        .map(([sermonDate, g]) => ({
+            translationId: g.translationId,
+            tantivySermonDate: sermonDate,
             score: g.score,
             bestDocAddress: g.bestDocAddress,
             bestParagraphIndex: g.bestParagraphIndex,
