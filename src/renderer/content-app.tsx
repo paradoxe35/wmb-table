@@ -9,7 +9,6 @@ import Subject from './views/options/subject';
 import Bible from './views/options/bible';
 
 import DocumentView from './views/document-view';
-import ContainerScrollY from './components/container-scroll-y';
 import LoadByVisibility from './components/load-by-visibility';
 
 import CustomDocumentsModal from './views/components/modals/custom-documents';
@@ -59,12 +58,12 @@ const AppOptions = memo(function AppOptions(): ReactElement {
     return (
         <>
             {Object.keys(views).map((k: string) => (
-                <ContainerScrollY
-                    className={`${k}__option__content view-panel ${k !== view ? 'view-panel--hidden' : ''}`}
+                <div
+                    className={`${k}__option__content view-panel view-panel--scrollable ${k !== view ? 'view-panel--hidden' : ''}`}
                     key={k}
                 >
                     {views[k]}
-                </ContainerScrollY>
+                </div>
             ))}
         </>
     );

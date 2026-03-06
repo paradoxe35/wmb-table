@@ -8,24 +8,11 @@ import {
     useRef,
     useState,
 } from 'react';
-import {
-    Row,
-    Col,
-    Card,
-    Input,
-    Space,
-    App as AntApp,
-    Button,
-    Empty,
-    List,
-    message,
-    Typography,
-} from 'antd';
+import { Card, Input, Space, App as AntApp, Button, Empty, List, message, Typography } from 'antd';
 import type { SubjectDocument, SubjectDocumentItem } from '@shared/types';
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
-import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { SUBJECT_EVENT } from '@renderer/utils/events';
@@ -174,46 +161,44 @@ export default function Subject() {
     };
 
     return (
-        <Row>
-            <Col span={12}>
+        <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 4 }}>
+            <div
+                style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 0,
+                    backgroundColor: 'var(--ant-color-bg-container)',
+                }}
+                className="layout__sidebar"
+            >
+                <Card style={{ width: '100%', flexShrink: 0 }}>
+                    <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
+                </Card>
                 <div
-                    style={{
-                        width: '95%',
-                        minHeight: '300px',
-                        backgroundColor: 'var(--ant-color-bg-container)',
-                    }}
-                    className="layout__sidebar"
+                    className="mt-2 container-y"
+                    style={{ flex: 1, padding: '22px', overflowX: 'hidden', minHeight: 0 }}
                 >
-                    <Card style={{ width: '100%' }}>
-                        <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
-                    </Card>
-                    <ContainerScrollY
-                        className="mt-2"
-                        style={{ padding: '22px', overflowX: 'hidden' }}
-                    >
-                        {datas.map((item) => (
-                            <ItemSubject
-                                key={item.name}
-                                item={item}
-                                onSelectItem={onSelectItem}
-                                onDeleteSubject={handleSubjectDeletion}
-                            />
-                        ))}
-                    </ContainerScrollY>
-                </div>
-            </Col>
-            <Col span={12}>
-                <ContainerScrollY susDiff={10} style={{ padding: '0 10px' }}>
-                    {activeDocument && (
-                        <ShowActiveDocuments
-                            subject={activeDocument}
-                            documents={subjectItemsData}
-                            setDocuments={setSubjectItemData}
+                    {datas.map((item) => (
+                        <ItemSubject
+                            key={item.name}
+                            item={item}
+                            onSelectItem={onSelectItem}
+                            onDeleteSubject={handleSubjectDeletion}
                         />
-                    )}
-                </ContainerScrollY>
-            </Col>
-        </Row>
+                    ))}
+                </div>
+            </div>
+            <div className="container-y" style={{ flex: 1, padding: '0 10px', minHeight: 0 }}>
+                {activeDocument && (
+                    <ShowActiveDocuments
+                        subject={activeDocument}
+                        documents={subjectItemsData}
+                        setDocuments={setSubjectItemData}
+                    />
+                )}
+            </div>
+        </div>
     );
 }
 

@@ -36,7 +36,6 @@ import type {
     SubjectRefTree,
 } from '@shared/types';
 import { debounce } from '@renderer/utils/functions';
-import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
 export default function Bible() {
@@ -57,15 +56,11 @@ export default function Bible() {
                 style={{ marginBottom: 12 }}
             />
             <BibleVersionSelector />
-            {menu === 'bible' && (
-                <ContainerScrollY>
-                    <BibleContent verseMetaContent={true} />
-                </ContainerScrollY>
-            )}
+            {menu === 'bible' && <BibleContent verseMetaContent={true} />}
             {menu === 'search' && (
-                <ContainerScrollY className="bible-search-content">
+                <div className="bible-search-content">
                     <SearchContent />
-                </ContainerScrollY>
+                </div>
             )}
         </LoadByVisibility>
     );
@@ -312,7 +307,8 @@ function BibleTestamentContent({
     const [currentKey, setCurrentKey] = useState<string>();
 
     function onChangeKey(key: string | string[]) {
-        if (typeof key === 'string') setCurrentKey(key);
+        const k = Array.isArray(key) ? key[0] : key;
+        setCurrentKey(k);
     }
 
     useEffect(() => {

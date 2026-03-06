@@ -38,7 +38,7 @@ export function getAll(): SubjectDocument[] {
             id: row.id,
             name: row.name,
             date: row.date,
-            active: row.active ?? false,
+            active: false,
             documents: items.map(toSubjectItem),
             createdAt: new Date(row.createdAt ?? Date.now()),
             updatedAt: new Date(row.updatedAt ?? Date.now()),

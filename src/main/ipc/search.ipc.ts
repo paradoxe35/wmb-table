@@ -18,7 +18,7 @@ export function registerSearchHandlers(): void {
     });
 
     registerHandler(SearchChannels.searchText, async (_event, langCode, query, page) => {
-        const offset = page * ITEMS_PER_PAGE;
+        const offset = (page - 1) * ITEMS_PER_PAGE;
         const result = await tantivyService.searchSermons(langCode, query, ITEMS_PER_PAGE, offset);
 
         const hits: TantivySearchHit[] = [];
