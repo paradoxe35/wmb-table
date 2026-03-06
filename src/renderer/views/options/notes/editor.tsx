@@ -308,6 +308,48 @@ export default function EditorContent({
         return;
     }, [ready]);
 
+    const deleteReference = useCallback(() => {
+        const editor = editorRef.current;
+        if (!editor || !contextEvent.current?.target) return;
+
+        let target = contextEvent.current.target as HTMLElement;
+        if (target.tagName !== 'A') target = target.parentElement as HTMLElement;
+
+        if (
+            target?.tagName === 'A' &&
+            target.getAttribute('href')?.startsWith(referenceDocumentBrandLink)
+        ) {
+            const href = target.getAttribute('href')!;
+            const refId = substrAfter(href, referenceDocumentBrandLink);
+
+            window.api.notes.deleteReference(refId).then(() => {
+                // Map the DOM <a> to a CKEditor view element, then select it and unlink
+                const viewElement = editor.editing.view.domConverter.mapDomToView(target);
+                if (viewElement) {
+                    // Find the attributeElement wrapping (the <a> in view)
+                    const linkView = viewElement.is('attributeElement')
+                        ? viewElement
+                        : viewElement.parent?.is('attributeElement')
+                          ? viewElement.parent
+                          : null;
+
+                    if (linkView) {
+                        const modelRange = editor.editing.mapper.toModelRange(
+                            editor.editing.view.createRangeOn(linkView),
+                        );
+                        editor.model.change((writer: any) => {
+                            writer.setSelection(modelRange);
+                        });
+                        editor.execute('unlink');
+                    }
+                }
+                message.success('Référence supprimée');
+            });
+        } else {
+            message.warning('Cliquez droit sur une référence pour la supprimer');
+        }
+    }, []);
+
     const refereToDocument = useCallback(async (type: string) => {
         const editor = editorRef.current;
         if (contextEvent.current && contextEvent.current.target) {
@@ -406,6 +448,7 @@ export default function EditorContent({
                 data={workingNote?.content || null}
                 onChange={onChangeData}
                 refereToDocument={refereToDocument}
+                deleteReference={deleteReference}
                 contextEvent={contextEvent}
                 editorRef={editorRef}
             />
@@ -421,6 +464,7 @@ function Editor({
     ready,
     setReady,
     refereToDocument,
+    deleteReference,
     contextEvent,
     editorRef,
     onChange,
@@ -429,6 +473,7 @@ function Editor({
     workingNoteId: string;
     ready: boolean;
     refereToDocument: (type: string) => void;
+    deleteReference: () => void;
     setReady: React.Dispatch<React.SetStateAction<boolean>>;
     onChange: () => void;
     contextEvent: React.MutableRefObject<MouseEvent | null>;
@@ -458,6 +503,12 @@ function Editor({
                     {
                         text: 'Référence biblique',
                         onclick: () => refereToDocument('bible'),
+                    },
+                    null,
+                    {
+                        text: 'Supprimer la référence',
+                        onclick: () => deleteReference(),
+                        color: '#ff4d4f',
                     },
                 ],
             );

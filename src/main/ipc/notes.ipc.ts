@@ -74,6 +74,10 @@ export function registerNotesHandlers(): void {
         notesRepo.removeBibleVerse(refId, verseId);
     });
 
+    registerHandler(NotesChannels.deleteReference, async (_event, id) => {
+        notesRepo.deleteReference(id);
+    });
+
     registerHandler(NotesChannels.exportPdf, async () => {
         throw new Error('Not implemented: notes:exportPdf');
     });

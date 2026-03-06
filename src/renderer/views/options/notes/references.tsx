@@ -64,7 +64,7 @@ export const useShowReferenceDetail = () => {
                     </p>
                     <p>
                         <Typography.Text type="secondary">- </Typography.Text>
-                        {(reference.textContent || '').slice(0, 80)}...
+                        {reference.textContent || ''}
                     </p>
                 </div>
             ) : (

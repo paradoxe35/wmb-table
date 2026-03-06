@@ -83,6 +83,7 @@ export const NotesChannels = {
     syncBibleReferences: 'notes:syncBibleReferences',
     addBibleVerse: 'notes:addBibleVerse',
     removeBibleVerse: 'notes:removeBibleVerse',
+    deleteReference: 'notes:deleteReference',
     exportPdf: 'notes:exportPdf',
 } as const;
 
@@ -253,6 +254,7 @@ export interface InvokeChannelMap {
         args: [string, string];
         return: void;
     };
+    [NotesChannels.deleteReference]: { args: [string]; return: void };
     [NotesChannels.exportPdf]: { args: [string]; return: string };
 
     // Bible

@@ -310,6 +310,11 @@ export function addBibleVerse(refId: string, verseId: string): BibleBook | null 
     return bibleBook;
 }
 
+export function deleteReference(id: string): void {
+    getDb().delete(notesReferences).where(eq(notesReferences.id, id)).run();
+    logChange('notes_references', id, 'DELETE', { id });
+}
+
 export function removeBibleVerse(refId: string, verseId: string): void {
     const row = getDb()
         .select()
