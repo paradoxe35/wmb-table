@@ -181,11 +181,12 @@
     "pnpm": {
         "onlyBuiltDependencies": [
             "@oxdev03/node-tantivy-binding",
+            "@parcel/watcher",
             "better-sqlite3",
             "electron",
+            "electron-winstaller",
             "esbuild",
-            "simple-git-hooks",
-            "@parcel/watcher"
+            "simple-git-hooks"
         ]
     }
 }
