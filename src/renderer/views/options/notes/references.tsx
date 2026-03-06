@@ -2,7 +2,6 @@ import { Col, Divider, message, Modal, Row, Space, Typography } from 'antd';
 import { type Dispatch, type SetStateAction, useRef, useState, useCallback } from 'react';
 import { useSermonStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
-import { FileOutlined } from '@ant-design/icons';
 import {
     BibleBook,
     NoteItem,
@@ -12,7 +11,7 @@ import {
 } from '@shared/types';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useSermonLookup, useValueStateRef } from '@renderer/hooks';
+import { useSermonLookup, useFormatSermonDate, useValueStateRef } from '@renderer/hooks';
 
 export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
@@ -22,6 +21,7 @@ export const useShowReferenceDetail = () => {
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
     const { getSermonById } = useSermonLookup();
+    const formatDate = useFormatSermonDate();
 
     const modal = useCallback((reference: NoteItemReference, workingNote: NoteItem) => {
         const ref = reference.documentHtmlTree;
@@ -44,28 +44,39 @@ export const useShowReferenceDetail = () => {
 
         const sermon = getSermonById(reference.sermonId);
         const displayTitle = sermon?.title ?? reference.documentTitle;
+        const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
+        const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
 
         Modal[assigned ? 'info' : 'warning']({
             closable: true,
             onOk: assigned ? openDocument : undefined,
-            okText: assigned ? 'Ouvrir' : 'Fermer',
+            okText: assigned ? 'Ouvrir le document' : 'Fermer',
             title: (
-                <span>
-                    {workingNote.name} - {reference.label}
-                </span>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>Référence: {reference.label}</span>
             ),
             content: assigned ? (
                 <div>
-                    <p>
-                        <Typography.Text type="secondary">
-                            <FileOutlined /> Document:
-                        </Typography.Text>{' '}
-                        {displayTitle}
-                    </p>
-                    <p>
-                        <Typography.Text type="secondary">- </Typography.Text>
-                        {reference.textContent || ''}
-                    </p>
+                    <span style={{ fontWeight: 600, fontSize: 17 }}>{displayTitle}</span>
+                    {sermon && (
+                        <p
+                            style={{
+                                fontSize: '0.85em',
+                                color: 'var(--ant-color-text-secondary)',
+                                marginTop: 5,
+                            }}
+                        >
+                            {formatDate(sermon.dateMs)}
+                            {sermon.location ? ` — ${sermon.location}` : ''}
+                        </p>
+                    )}
+                    {reference.textContent && (
+                        <p>
+                            {paragraphNum != null && (
+                                <Typography.Text strong>{paragraphNum}.</Typography.Text>
+                            )}{' '}
+                            {reference.textContent}
+                        </p>
+                    )}
                 </div>
             ) : (
                 <div>

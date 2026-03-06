@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
 import type { SermonMetaWithTraductions } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
+import { capitalize } from 'lodash';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -124,8 +125,9 @@ export function useSermonLookup() {
 
 export function useFormatSermonDate() {
     const activeLanguage = useAppStore((s) => s.activeLanguage);
+
     return useCallback(
-        (dateMs: number) => formatSermonDate(dateMs, activeLanguage ?? 'en'),
+        (dateMs: number) => capitalize(formatSermonDate(dateMs, activeLanguage ?? 'en')),
         [activeLanguage],
     );
 }
