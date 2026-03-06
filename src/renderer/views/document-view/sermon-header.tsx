@@ -3,12 +3,18 @@ import { Button, Segmented, Space, Tooltip } from 'antd';
 import {
     NumberOutlined,
     PlayCircleOutlined,
+    PauseCircleOutlined,
     ZoomInOutlined,
     ZoomOutOutlined,
     SearchOutlined,
     TranslationOutlined,
 } from '@ant-design/icons';
-import { useSermonStore, useSearchStore, selectActiveTabKey } from '@renderer/stores';
+import {
+    useSermonStore,
+    useSearchStore,
+    useAudioStore,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
@@ -31,6 +37,11 @@ export default function SermonHeader({
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const activeTabKey = useSermonStore(selectActiveTabKey);
+
+    const currentPlay = useAudioStore((s) => s.currentPlay);
+    const audioTitle = useAudioStore((s) => s.title);
+    const isCurrentDocument = audioTitle === meta.title;
+    const isPlaying = isCurrentDocument && currentPlay?.status === 'play';
 
     const availableTraductions = useMemo(
         () => sermonInfo?.availableTraductions ?? [],
@@ -99,8 +110,16 @@ export default function SermonHeader({
                     <Button
                         type="text"
                         size="small"
-                        icon={<PlayCircleOutlined />}
+                        icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
                         onClick={handleAudioPlay}
+                        style={
+                            isCurrentDocument
+                                ? {
+                                      color: 'var(--ant-color-primary)',
+                                      backgroundColor: 'var(--ant-color-primary-bg)',
+                                  }
+                                : undefined
+                        }
                     />
                 )}
                 <Button

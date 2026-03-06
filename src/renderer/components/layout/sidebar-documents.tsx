@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Input, Card, Tree, Divider, Select, Tag } from 'antd';
-import { SoundOutlined } from '@ant-design/icons';
+import { Input, Button, Card, Tree, Divider, Select, Tag, Typography } from 'antd';
+import { SoundOutlined, GlobalOutlined } from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
-import type { SermonMetaWithTraductions } from '@shared/types';
+import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types';
 import { getTabKey } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
 import {
@@ -15,6 +15,7 @@ import { useAppStore } from '@renderer/stores';
 import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { LANGUAGE_EVENT } from '@renderer/utils/events';
 
 const { DirectoryTree } = Tree;
 const { Search } = Input;
@@ -180,6 +181,48 @@ const DocumentByYears = () => {
     return <DirectoryTree treeData={dataTree} />;
 };
 
+const ActiveLanguageBar = () => {
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const [langName, setLangName] = useState<string>('');
+
+    useEffect(() => {
+        if (!activeLanguage) return;
+        window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
+            const lang = langs.find((l) => l.code === activeLanguage);
+            if (lang) setLangName(lang.language);
+        });
+    }, [activeLanguage]);
+
+    const openManager = () => {
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
+    };
+
+    if (!langName) return null;
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 2px',
+                marginTop: 6,
+            }}
+        >
+            <Typography.Text type="secondary" style={{ fontSize: '0.8em' }}>
+                {langName}
+            </Typography.Text>
+            <Button
+                type="text"
+                size="small"
+                icon={<GlobalOutlined />}
+                onClick={openManager}
+                style={{ fontSize: '0.8em' }}
+            />
+        </div>
+    );
+};
+
 const DocumentSearch = () => {
     const sermons = useSermonStore((s) => s.sermons);
     const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
@@ -202,13 +245,14 @@ const DocumentSearch = () => {
 
     return (
         <>
-            <Card variant="borderless">
+            <Card variant="borderless" styles={{ body: { paddingBottom: 8 } }}>
                 <Search
                     key={sermons.length}
                     placeholder="Recherche"
                     allowClear
                     onSearch={onSearch}
                 />
+                <ActiveLanguageBar />
             </Card>
             <DocumentList datas={datas} />
         </>
