@@ -176,6 +176,16 @@ export function useContextMenuItems(
 
         return [
             {
+                key: 'copy-text',
+                label: 'Copier',
+                onClick: () => {
+                    const result = getRef();
+                    if (!result) return;
+                    navigator.clipboard.writeText(result.text);
+                },
+            },
+            { type: 'divider' as const, key: 'divider-1' },
+            {
                 key: 'add-to-subject',
                 label: 'Ajouter au sujet',
                 onClick: () => {
