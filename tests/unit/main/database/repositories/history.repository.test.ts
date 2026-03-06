@@ -7,13 +7,22 @@ describe('history.repository', () => {
         createTestDb();
     });
 
+    const LANG = 'en';
+
     it('getHistory returns empty initially', () => {
-        expect(historyRepo.getHistory()).toEqual([]);
+        expect(historyRepo.getHistory(LANG)).toEqual([]);
     });
 
     it('addHistoryEntry creates history and item', () => {
-        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:00', 'Doc Title');
-        const all = historyRepo.getHistory();
+        historyRepo.addHistoryEntry(
+            '2024-01-01',
+            1704067200000,
+            '10:00',
+            'Doc Title',
+            LANG,
+            '53-0403',
+        );
+        const all = historyRepo.getHistory(LANG);
         expect(all).toHaveLength(1);
         expect(all[0].date).toBe('2024-01-01');
 
@@ -23,10 +32,10 @@ describe('history.repository', () => {
     });
 
     it('addHistoryEntry reuses existing history for same milliseconds', () => {
-        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:00', 'Doc 1');
-        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:05', 'Doc 2');
+        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:00', 'Doc 1', LANG, '53-0403');
+        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:05', 'Doc 2', LANG, '53-0404');
 
-        const all = historyRepo.getHistory();
+        const all = historyRepo.getHistory(LANG);
         expect(all).toHaveLength(1);
 
         const items = historyRepo.getHistoryItems(all[0].id);
@@ -35,9 +44,9 @@ describe('history.repository', () => {
 
     it('enforces 30-entry cap', () => {
         for (let i = 0; i < 32; i++) {
-            historyRepo.addHistoryEntry(`date-${i}`, i, '10:00', `Doc ${i}`);
+            historyRepo.addHistoryEntry(`date-${i}`, i, '10:00', `Doc ${i}`, LANG, `sermon-${i}`);
         }
-        const all = historyRepo.getHistory();
+        const all = historyRepo.getHistory(LANG);
         expect(all.length).toBeLessThanOrEqual(30);
     });
 });

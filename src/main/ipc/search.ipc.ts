@@ -39,6 +39,7 @@ export function registerSearchHandlers(): void {
                 snippet,
                 score: hit.score,
                 hitCount: hit.hitCount,
+                paragraphIndex: hit.bestParagraphIndex,
             });
         }
 

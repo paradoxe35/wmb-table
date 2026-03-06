@@ -149,7 +149,7 @@ describe('repository change tracking', () => {
 
     describe('suggestions', () => {
         it('addSuggestion logs a SAVE change', () => {
-            suggestionsRepo.addSuggestion('test query', 5);
+            suggestionsRepo.addSuggestion('test query', 5, 'en');
             const changes = getAllChangeLogs();
             const suggestionChange = changes.find(
                 (c) => c.tableName === 'suggestions' && c.operation === 'SAVE',

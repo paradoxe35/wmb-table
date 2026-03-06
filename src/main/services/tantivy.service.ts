@@ -16,6 +16,7 @@ export interface GroupedSearchHit {
     tantivySermonDate: number;
     score: number;
     bestDocAddress: { segmentOrd: number; doc: number };
+    bestParagraphIndex: number;
     hitCount: number;
 }
 

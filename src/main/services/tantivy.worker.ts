@@ -272,6 +272,7 @@ interface GroupedSearchHitResult {
     tantivySermonDate: number;
     score: number;
     bestDocAddress: { segmentOrd: number; doc: number };
+    bestParagraphIndex: number;
     hitCount: number;
 }
 
@@ -293,6 +294,7 @@ function searchSermons(
         {
             score: number;
             bestDocAddress: { segmentOrd: number; doc: number };
+            bestParagraphIndex: number;
             hitCount: number;
             tantivySermonDate: number;
         }
@@ -312,6 +314,7 @@ function searchSermons(
                     segmentOrd: hit.docAddress.segmentOrd,
                     doc: hit.docAddress.doc,
                 },
+                bestParagraphIndex: extractNumeric(dict, 'paragraph_index'),
                 hitCount: 1,
                 tantivySermonDate: extractNumeric(dict, 'sermon_date'),
             });
@@ -323,6 +326,7 @@ function searchSermons(
                     segmentOrd: hit.docAddress.segmentOrd,
                     doc: hit.docAddress.doc,
                 };
+                existing.bestParagraphIndex = extractNumeric(dict, 'paragraph_index');
             }
         }
     }
@@ -333,6 +337,7 @@ function searchSermons(
             tantivySermonDate: g.tantivySermonDate,
             score: g.score,
             bestDocAddress: g.bestDocAddress,
+            bestParagraphIndex: g.bestParagraphIndex,
             hitCount: g.hitCount,
         }))
         .sort((a, b) => b.score - a.score);
@@ -391,7 +396,7 @@ const methods: Record<string, (...args: never[]) => unknown> = {
     getSermonParagraphCount,
 };
 
-parentPort!.on('message', (msg: WorkerRequest) => {
+parentPort?.on('message', (msg: WorkerRequest) => {
     const { id, method, args } = msg;
     try {
         const fn = methods[method];

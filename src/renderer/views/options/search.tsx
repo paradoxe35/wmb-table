@@ -4,7 +4,7 @@ import { SelectProps } from 'antd/es/select';
 import { debounce } from '@renderer/utils/functions';
 import type { TantivySearchResult, TantivySearchHit, Suggestions } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { useSearchStore, useAppStore } from '@renderer/stores';
+import { useSearchStore, useAppStore, useSermonStore } from '@renderer/stores';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useSermonLookup } from '@renderer/hooks';
 
@@ -147,6 +147,7 @@ export default function Search() {
 
 const ListView = ({ hit, query }: { hit: TantivySearchHit; query: string }) => {
     const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
 
     const handleDocumentClick = useCallback(() => {
@@ -162,7 +163,17 @@ const ListView = ({ hit, query }: { hit: TantivySearchHit; query: string }) => {
                 },
             ];
         });
-    }, [hit, setDocumentViewQueries, query]);
+        if (hit.paragraphIndex > 0) {
+            setPendingNavigation({
+                documentTitle: hit.title,
+                documentHtmlTree: {
+                    paragraphIndex: hit.paragraphIndex,
+                    translationId: hit.translationId,
+                    languageCode: '',
+                },
+            });
+        }
+    }, [hit, setDocumentViewQueries, setPendingNavigation, query]);
 
     const displayTitle = getSermonById(hit.sermonId)?.title ?? hit.title;
 

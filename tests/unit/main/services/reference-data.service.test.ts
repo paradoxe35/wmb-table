@@ -23,7 +23,7 @@ describe('reference-data.service', () => {
         it('returns meta for English sermon by date (direct lookup)', () => {
             const meta = refDataService.getSermonMeta(0, 'en', '53-0403');
             expect(meta).not.toBeNull();
-            expect(meta!.sermonDate).toBe('53-0403');
+            expect(meta!.sermonId).toBe('53-0403');
             expect(meta!.translationId).toBe(0);
             expect(meta!.languageCode).toBe('en');
             expect(meta!.title).toBeTruthy();
@@ -47,7 +47,7 @@ describe('reference-data.service', () => {
 
             const meta = refDataService.getSermonMeta(sample.translator_id, 'fr', sample.sermon_id);
             expect(meta).not.toBeNull();
-            expect(meta!.sermonDate).toBe(sample.sermon_id);
+            expect(meta!.sermonId).toBe(sample.sermon_id);
             expect(meta!.translationId).toBe(sample.translator_id);
             expect(meta!.languageCode).toBe('fr');
             expect(meta!.title).toBe(sample.title);
