@@ -15,10 +15,17 @@ export default function InlineSearchBar() {
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
     const totalMatches = useSearchStore((s) => s.totalMatches);
 
+    const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
+
     const inputRef = useRef<any>(null);
     const searchTermRef = useRef('');
 
     useEffect(() => {
+        const existing = documentViewQueries.find((q) => q.documentTitle === activeTitle);
+        if (existing?.term && inputRef.current) {
+            inputRef.current.input.value = existing.term;
+            searchTermRef.current = existing.term;
+        }
         inputRef.current?.focus();
     }, []);
 

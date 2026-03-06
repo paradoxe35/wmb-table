@@ -28,16 +28,18 @@ export function registerSearchHandlers(): void {
             if (!sermonId) continue;
 
             const meta = referenceDataService.getSermonMeta(hit.translationId, langCode, sermonId);
-            const snippet = await tantivyService.getSearchSnippet(
+            const snippets = await tantivyService.getMatchingParagraphs(
                 langCode,
                 query,
-                hit.bestDocAddress,
+                hit.translationId,
+                hit.tantivySermonDate,
+                5,
             );
             hits.push({
                 translationId: hit.translationId,
                 sermonId,
                 title: meta?.title ?? meta?.enTitle ?? sermonId,
-                snippet,
+                snippets,
                 score: hit.score,
                 hitCount: hit.hitCount,
                 paragraphIndex: hit.bestParagraphIndex,

@@ -362,6 +362,66 @@ function getSearchSnippet(
     return snippet.toHtml();
 }
 
+interface MatchingParagraphSnippet {
+    paragraphIndex: number;
+    snippet: string;
+}
+
+function getMatchingParagraphs(
+    langCode: string,
+    queryText: string,
+    translationId: number,
+    sermonDate: number,
+    maxSnippets: number = 5,
+): MatchingParagraphSnippet[] {
+    const index = getIndex(langCode);
+    const schema = index.schema;
+    const textQuery = buildQuery(index, queryText);
+
+    const boolQuery = Query.booleanQuery([
+        { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
+        { occur: 'must', query: Query.termQuery(schema, 'sermon_date', sermonDate) },
+        { occur: 'must', query: textQuery },
+    ]);
+
+    const searcher = index.searcher();
+    const result = searcher.search(boolQuery, 10000, true);
+
+    // Group by paragraph_index, keep best docAddress per paragraph
+    const paragraphMap = new Map<number, { docAddress: DocAddress; score: number }>();
+    for (const hit of result.hits) {
+        const doc = searcher.doc(hit.docAddress);
+        const dict = doc.toDict() as Record<string, unknown[]>;
+        const pIdx = extractNumeric(dict, 'paragraph_index');
+        const score = hit.score ?? 0;
+
+        const existing = paragraphMap.get(pIdx);
+        if (!existing || score > existing.score) {
+            paragraphMap.set(pIdx, { docAddress: hit.docAddress, score });
+        }
+    }
+
+    // Sort by paragraphIndex
+    const sorted = Array.from(paragraphMap.entries()).sort((a, b) => a[0] - b[0]);
+
+    // Build snippets
+    const generator = SnippetGenerator.create(searcher, textQuery, schema, 'unstemmed_content');
+    generator.setMaxNumChars(400);
+
+    const snippets: MatchingParagraphSnippet[] = [];
+    for (const [paragraphIndex, { docAddress }] of sorted) {
+        if (snippets.length >= maxSnippets) break;
+        const doc = searcher.doc(docAddress);
+        const snippet = generator.snippetFromDoc(doc);
+        const html = snippet.toHtml();
+        if (html) {
+            snippets.push({ paragraphIndex, snippet: html });
+        }
+    }
+
+    return snippets;
+}
+
 function getSermonParagraphCount(
     langCode: string,
     translationId: number,
@@ -390,6 +450,7 @@ const methods: Record<string, (...args: never[]) => unknown> = {
     getSermonParagraphs,
     searchSermons,
     getSearchSnippet,
+    getMatchingParagraphs,
     getSermonParagraphCount,
 };
 

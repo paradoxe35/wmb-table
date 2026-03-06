@@ -395,11 +395,16 @@ export interface LanguageDownloadProgress {
 // Tantivy Search
 // ---------------------------------------------------------------------------
 
+export interface SearchSnippet {
+    paragraphIndex: number;
+    snippet: string;
+}
+
 export interface TantivySearchHit {
     translationId: number;
     sermonId: string;
     title: string;
-    snippet: string;
+    snippets: SearchSnippet[];
     score: number;
     hitCount: number;
     paragraphIndex: number;

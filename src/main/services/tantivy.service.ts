@@ -133,6 +133,23 @@ export async function getSearchSnippet(
     return call<string>('getSearchSnippet', langCode, queryText, docAddress);
 }
 
+export async function getMatchingParagraphs(
+    langCode: string,
+    queryText: string,
+    translationId: number,
+    sermonDate: number,
+    maxSnippets: number = 5,
+): Promise<{ paragraphIndex: number; snippet: string }[]> {
+    return call<{ paragraphIndex: number; snippet: string }[]>(
+        'getMatchingParagraphs',
+        langCode,
+        queryText,
+        translationId,
+        sermonDate,
+        maxSnippets,
+    );
+}
+
 export async function getSermonParagraphCount(
     langCode: string,
     translationId: number,
