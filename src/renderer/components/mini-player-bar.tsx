@@ -116,7 +116,7 @@ export default function MiniPlayerBar() {
                 return;
             }
 
-            if (titleRef.current && titleRef.current !== detail.title) {
+            if (detail.autoplay || (titleRef.current && titleRef.current !== detail.title)) {
                 autoplayRef.current = true;
             }
 

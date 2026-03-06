@@ -49,8 +49,16 @@ export default function SermonHeader({
     );
     const hasMultipleTraductions = availableTraductions.length > 1;
 
+    const openAudioModal = useAudioStore((s) => s.openModal);
+
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
+
+        // If this is not the current player document, open modal and force autoplay
+        if (!isCurrentDocument) {
+            openAudioModal();
+        }
+
         window.dispatchEvent(
             new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
                 detail: {
@@ -61,10 +69,11 @@ export default function SermonHeader({
                     traduction: meta.languageCode,
                     audio_link: meta.audioLink,
                     sermonId: meta.sermonId,
+                    autoplay: true,
                 },
             }),
         );
-    }, [meta]);
+    }, [meta, isCurrentDocument, openAudioModal]);
 
     const handleOtherTraductions = useCallback(() => {
         window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
