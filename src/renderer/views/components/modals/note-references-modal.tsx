@@ -81,9 +81,20 @@ export function NoteReferencesModal() {
             title={
                 <div className="mr-2">
                     {workingNote.current ? (
-                        <span>Références(note: {workingNote.current.name})</span>
+                        <div>
+                            <div
+                                style={{
+                                    fontSize: 12,
+                                    fontWeight: 400,
+                                    color: 'var(--ant-color-text-secondary)',
+                                }}
+                            >
+                                Lier ce paragraphe à une référence de la note :
+                            </div>
+                            <div>{workingNote.current.name}</div>
+                        </div>
                     ) : (
-                        <span>Aucune note est actuellement sélectionnée</span>
+                        <span>Aucune note n&apos;est actuellement sélectionnée</span>
                     )}
                 </div>
             }
@@ -148,8 +159,8 @@ function ContentModal({
                                     }}
                                 >
                                     {assigned
-                                        ? `Référencé à: ${getSermonById(item.sermonId)?.title || item.documentTitle}`
-                                        : 'Aucun document attribué à cette référence'}
+                                        ? `Lié à : ${getSermonById(item.sermonId)?.title || item.documentTitle}`
+                                        : 'Aucun document attribué'}
                                 </div>
                             </div>
                         </div>

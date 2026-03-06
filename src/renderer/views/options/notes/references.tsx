@@ -1,5 +1,13 @@
-import { Col, Divider, message, Modal, Row, Space, Typography } from 'antd';
-import { type Dispatch, type SetStateAction, useRef, useState, useCallback } from 'react';
+import { Button, Col, message, Modal, Row, Space, Typography } from 'antd';
+import {
+    type Dispatch,
+    type SetStateAction,
+    useEffect,
+    useRef,
+    useState,
+    useCallback,
+} from 'react';
+import { PlusOutlined } from '@ant-design/icons';
 import { useSermonStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import {
@@ -178,80 +186,93 @@ export function ReferenceBibleModal({
             });
     }, []);
 
+    const verses = reference ? (reference.references as BibleBook[]) : [];
+    const hasVerses = verses.length > 0;
+    const [showBible, setShowBible] = useState(false);
+
+    // Reset bible picker visibility when modal opens/closes or reference changes
+    useEffect(() => {
+        setShowBible(!hasVerses);
+    }, [isModalVisible, reference?.id]);
+
     return (
-        <>
-            <Modal
-                width="80%"
-                title={
-                    <>
-                        <Space orientation="horizontal">
-                            <span>Références biblique</span>
-                            <span>-</span>
-                            <div className="flex flex-center">
-                                <Typography.Text type="secondary">
-                                    {reference && (
-                                        <span>
-                                            {reference.label} ({reference.references.length})
-                                        </span>
-                                    )}
-                                </Typography.Text>
+        <Modal
+            width={showBible ? '80%' : undefined}
+            title={
+                <div>
+                    <div
+                        style={{
+                            fontSize: 12,
+                            fontWeight: 400,
+                            color: 'var(--ant-color-text-secondary)',
+                        }}
+                    >
+                        Référence biblique
+                    </div>
+                    {reference && (
+                        <div>
+                            {reference.label} ({verses.length})
+                        </div>
+                    )}
+                </div>
+            }
+            open={isModalVisible}
+            footer={[]}
+            onOk={handleOk}
+            onCancel={handleCancel}
+        >
+            <Row gutter={showBible ? 16 : 0}>
+                <Col span={showBible ? 11 : 24}>
+                    <div ref={versesRef} style={{ overflow: 'auto', maxHeight: 400 }}>
+                        {verses.length === 0 && !showBible && (
+                            <Typography.Text type="secondary">
+                                Aucun verset sélectionné
+                            </Typography.Text>
+                        )}
+                        {verses.map((ref) => (
+                            <div
+                                key={ref.id}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 8,
+                                    padding: '10px 0',
+                                    borderBottom: '1px solid var(--ant-color-border)',
+                                }}
+                            >
+                                <DeleteBtn confirm={() => handleDeletionRef(ref)} />
+                                <div>
+                                    <span style={{ fontWeight: 500 }}>
+                                        {ref.bookName} {ref.chapter}:{ref.verse}
+                                    </span>
+                                    {' — '}
+                                    <span style={{ color: 'var(--ant-color-text-secondary)' }}>
+                                        {ref.content}
+                                    </span>
+                                </div>
                             </div>
-                        </Space>
-                    </>
-                }
-                open={isModalVisible}
-                footer={[]}
-                onOk={handleOk}
-                onCancel={handleCancel}
-            >
-                <Row>
-                    <Col span={11}>
-                        <div
-                            ref={versesRef}
-                            style={{
-                                overflow: 'auto',
-                                maxHeight: '400px',
-                            }}
+                        ))}
+                    </div>
+                    {!showBible && (
+                        <Button
+                            type="dashed"
+                            icon={<PlusOutlined />}
+                            onClick={() => setShowBible(true)}
+                            style={{ marginTop: 12 }}
+                            block
                         >
-                            {reference &&
-                                (reference.references as BibleBook[]).map((ref) => (
-                                    <div
-                                        key={ref.id}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            justifyContent: 'space-between',
-                                            padding: '8px 0',
-                                            borderBottom: '1px solid var(--ant-color-border)',
-                                        }}
-                                    >
-                                        <div>
-                                            <div style={{ fontWeight: 500 }}>
-                                                {ref.bookName} {ref.chapter}:{ref.verse}
-                                            </div>
-                                            <div className="content-description">{ref.content}</div>
-                                        </div>
-                                        <DeleteBtn confirm={() => handleDeletionRef(ref)} />
-                                    </div>
-                                ))}
+                            Ajouter des versets
+                        </Button>
+                    )}
+                </Col>
+                {showBible && (
+                    <Col span={13}>
+                        <div style={{ overflow: 'auto', maxHeight: 400 }}>
+                            <BibleContent onClick={onClickVerse} compact />
                         </div>
                     </Col>
-                    <Col span={1}>
-                        <Divider style={{ minHeight: '250px' }} orientation="vertical" />
-                    </Col>
-                    <Col span={12}>
-                        <div
-                            style={{
-                                overflow: 'auto',
-                                maxHeight: '400px',
-                                paddingRight: '9px',
-                            }}
-                        >
-                            <BibleContent onClick={onClickVerse} />
-                        </div>
-                    </Col>
-                </Row>
-            </Modal>
-        </>
+                )}
+            </Row>
+        </Modal>
     );
 }

@@ -202,9 +202,11 @@ function BibleVersionSelector() {
 export function BibleContent({
     onClick,
     verseMetaContent,
+    compact,
 }: {
     onClick?: (id: string) => void;
     verseMetaContent?: boolean;
+    compact?: boolean;
 }) {
     const [bibleIndex, setBibleIndex] = useState<Record<string, BibleIndex>>({});
     const [noBible, setNoBible] = useState(false);
@@ -250,9 +252,13 @@ export function BibleContent({
     return (
         <>
             <Space orientation="vertical" style={{ width: '100%' }}>
-                {Object.keys(bibleIndex).map((key) => (
+                {Object.keys(bibleIndex).map((key, i) => (
                     <Space orientation="vertical" style={{ width: '100%' }} key={key}>
-                        <Typography.Title type="secondary" level={5}>
+                        <Typography.Title
+                            type="secondary"
+                            level={5}
+                            style={compact && i === 0 ? { marginTop: 0 } : undefined}
+                        >
                             {key === 'N' ? 'Nouveau' : 'Ancien'} Testament
                         </Typography.Title>
                         <BibleTestamentContent
