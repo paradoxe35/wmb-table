@@ -1,9 +1,8 @@
-import { app } from 'electron';
-import { join } from 'node:path';
 import { Worker } from 'node:worker_threads';
 import log from 'electron-log';
 import type { SermonParagraph } from '@shared/types';
 import * as refRepo from '@main/database/repositories/reference.repository';
+import { getIndexesDir } from '@main/lib/app-paths';
 import workerPath from './tantivy.worker?modulePath';
 
 // ---------------------------------------------------------------------------
@@ -55,10 +54,6 @@ function call<T>(method: string, ...args: unknown[]): Promise<T> {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function getIndexesDir(): string {
-    return join(app.getPath('userData'), 'indexes');
-}
 
 /** Build a map of langCode → English title for all languages in the reference DB */
 function getLangTitlesMap(): Record<string, string> {

@@ -26,7 +26,12 @@ interface SermonState {
     setActiveContent(c: SermonContent | null): void;
     setPendingNavigation(nav: PendingNavigation): void;
     setTabs(tabs: DocumentTab[]): void;
-    addTab(title: string, sermonId: string, type?: 'sermon' | 'custom'): void;
+    addTab(
+        title: string,
+        sermonId: string,
+        type?: 'sermon' | 'custom',
+        languageCode?: string,
+    ): void;
     removeTab(key: string): void;
     activateTab(key: string): void;
     removeOtherTabs(key: string): void;
@@ -66,7 +71,7 @@ export const useSermonStore = create<SermonState>((set) => ({
     setPendingNavigation: (nav) => set({ pendingNavigation: nav }),
     setTabs: (tabs) => set({ tabs }),
 
-    addTab: (title, sermonId, type) =>
+    addTab: (title, sermonId, type, languageCode) =>
         set((s) => {
             const tabType = type ?? 'sermon';
             const exists = s.tabs.some(
@@ -80,8 +85,16 @@ export const useSermonStore = create<SermonState>((set) => ({
                     })),
                 };
             }
+
             const deactivated = s.tabs.map((t) => ({ ...t, active: false }));
-            const newTabs = [...deactivated, { title, active: true, type: tabType, sermonId }];
+
+            const newTab: DocumentTab = { title, active: true, type: tabType, sermonId };
+            if (languageCode) {
+                newTab.languageCode = languageCode;
+            }
+
+            const newTabs = [...deactivated, newTab];
+
             return { tabs: newTabs };
         }),
 

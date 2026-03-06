@@ -1,7 +1,7 @@
 import { Button, Divider, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
-import { useModalVisible, useActiveTabTitle, useOpenDocument } from '@renderer/hooks';
-import { useSermonStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
+import { useModalVisible, useActiveTabTitle } from '@renderer/hooks';
+import { useSermonStore, useAppStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
@@ -12,7 +12,8 @@ export function OtherTraductionsModal() {
     const activeTab = useSermonStore(selectActiveTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const title = useActiveTabTitle();
-    const viewDocument = useOpenDocument();
+    const addTab = useSermonStore((s) => s.addTab);
+    const setMainView = useAppStore((s) => s.setMainView);
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
     const activeTabKey = useSermonStore(selectActiveTabKey);
 
@@ -45,9 +46,10 @@ export function OtherTraductionsModal() {
         };
     }, []);
 
-    const handleOpen = (translationTitle: string) => {
+    const handleOpen = (translationTitle: string, languageCode: string) => {
         if (meta) {
-            viewDocument(translationTitle, meta.sermonId);
+            addTab(translationTitle, meta.sermonId, 'sermon', languageCode);
+            setMainView('document');
         }
         hide();
     };
@@ -146,7 +148,7 @@ export function OtherTraductionsModal() {
                             </div>
                             <Tooltip title="Ouvrir le document">
                                 <Button
-                                    onClick={() => handleOpen(t.title)}
+                                    onClick={() => handleOpen(t.title, t.languageCode)}
                                     shape="circle"
                                     icon={<EyeOutlined />}
                                 />

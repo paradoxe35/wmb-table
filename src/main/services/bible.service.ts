@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { readFileSync, existsSync, createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import log from 'electron-log';
+import { getDatabaseDir } from '@main/lib/app-paths';
 
 export interface BibleVersion {
     langCode: string;
@@ -27,7 +28,7 @@ function getResourceDir(): string {
 }
 
 function getBibleDataDir(): string {
-    return join(app.getPath('userData'), 'databases', 'bibles');
+    return join(getDatabaseDir(), 'bibles');
 }
 
 function getCachedRemoteIndexPath(): string {

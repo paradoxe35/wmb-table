@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer, type Server } from 'node:http';
 import { app, shell } from 'electron';
+import { getAppDataDir } from '@main/lib/app-paths';
 import { google } from 'googleapis';
 import type { OAuth2Client } from 'google-auth-library';
 import log from 'electron-log';
@@ -28,7 +29,7 @@ function getCredentialsPath(): string {
 }
 
 function getTokenPath(): string {
-    return join(app.getPath('userData'), 'google-client-token.json');
+    return join(getAppDataDir(), 'google-client-token.json');
 }
 
 function loadCredentials(): { client_id: string; client_secret: string; redirect_uris: string[] } {

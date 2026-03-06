@@ -1,6 +1,6 @@
 import { app } from 'electron';
 import { join } from 'node:path';
-import { mkdirSync, existsSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import Database from 'better-sqlite3';
 import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
@@ -10,6 +10,7 @@ import * as bibleSchema from './bible-schema';
 import { initializeReferenceDb, closeReferenceDb } from './reference-db';
 import * as bibleService from '@main/services/bible.service';
 import * as configRepo from './repositories/config.repository';
+import { getDatabaseDir } from '@main/lib/app-paths';
 
 export { getRefDb } from './reference-db';
 
@@ -38,13 +39,8 @@ function getMigrationsFolder(): string {
     return join(__dirname, '../../drizzle');
 }
 
-function getDatabaseDir(): string {
-    return join(app.getPath('userData'), 'databases');
-}
-
 export function initializeDatabase(): void {
     const dbDir = getDatabaseDir();
-    mkdirSync(dbDir, { recursive: true });
 
     // Main database
     const mainPath = join(dbDir, 'wmb-table.sqlite');

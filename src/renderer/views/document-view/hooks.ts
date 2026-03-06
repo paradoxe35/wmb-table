@@ -30,21 +30,21 @@ export function useSermonContent() {
     const activeContent = useSermonStore((s) => s.activeContent);
     const [loading, setLoading] = useState(false);
 
-    const tabSermonDate = activeTab?.sermonId;
+    const tabSermonId = activeTab?.sermonId;
     const tabTranslationId = activeTab?.translationId;
+    const tabLanguage = activeTab?.languageCode ?? activeLanguage;
 
     useEffect(() => {
-        if (!tabSermonDate || !activeLanguage) {
+        if (!tabSermonId || !tabLanguage) {
             setActiveContent(null);
             return;
         }
-        const meta = sermonsById[tabSermonDate];
-        if (!meta) {
-            setActiveContent(null);
-            return;
-        }
-        const translationId = tabTranslationId ?? meta.translationId;
-        const cacheKey = `${activeLanguage}:${translationId}:${meta.sermonId}`;
+
+        // For tabs in the current language, use sermonsById for metadata.
+        // For foreign-language tabs, fetch content directly with translationId 0.
+        const meta = sermonsById[tabSermonId];
+        const translationId = tabTranslationId ?? meta?.translationId ?? 0;
+        const cacheKey = `${tabLanguage}:${translationId}:${tabSermonId}`;
         const cached = contentCache.get(cacheKey);
         if (cached) {
             setActiveContent(cached);
@@ -52,7 +52,7 @@ export function useSermonContent() {
         }
         setLoading(true);
         window.api.documents
-            .getSermonContent(activeLanguage, translationId, meta.sermonId)
+            .getSermonContent(tabLanguage, translationId, tabSermonId)
             .then((content) => {
                 contentCache.set(cacheKey, content);
                 setActiveContent(content);
@@ -62,7 +62,7 @@ export function useSermonContent() {
                 setActiveContent(null);
             })
             .finally(() => setLoading(false));
-    }, [tabSermonDate, activeLanguage, sermonsById, setActiveContent, tabTranslationId]);
+    }, [tabSermonId, tabLanguage, sermonsById, setActiveContent, tabTranslationId]);
 
     return { content: activeContent, loading };
 }

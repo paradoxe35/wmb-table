@@ -73,9 +73,14 @@ export default function TabItem({
                     </div>
                     <div
                         className="chrome-tab-title"
-                        title={`${tab.title} - ${formatShortDate(tab.sermonId)}`}
+                        title={`${tab.title} - ${formatShortDate(tab.sermonId)}${tab.languageCode ? ` (${tab.languageCode})` : ''}`}
                     >
                         {tab.title} - {formatShortDate(tab.sermonId)}
+                        {tab.languageCode && (
+                            <span style={{ opacity: 0.6, marginLeft: 4 }}>
+                                ({tab.languageCode})
+                            </span>
+                        )}
                     </div>
                     <div className="chrome-tab-drag-handle" />
                     <div

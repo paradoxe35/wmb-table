@@ -1,4 +1,3 @@
-import { app } from 'electron';
 import { join } from 'node:path';
 import { createWriteStream, existsSync, statSync, readdirSync } from 'node:fs';
 import { mkdir, rm, rename } from 'node:fs/promises';
@@ -8,6 +7,7 @@ import log from 'electron-log';
 import type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 import * as tantivyService from './tantivy.service';
 import * as refRepo from '../database/repositories/reference.repository';
+import { getIndexesDir } from '@main/lib/app-paths';
 
 const execFileAsync = promisify(execFile);
 
@@ -22,10 +22,6 @@ const FALLBACK_DOWNLOAD_BASE = 'https://github.com/paradoxe35/wmb-table/releases
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function getIndexesDir(): string {
-    return join(app.getPath('userData'), 'indexes');
-}
 
 function getDirectorySize(dirPath: string): number {
     let total = 0;

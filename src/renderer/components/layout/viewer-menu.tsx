@@ -3,6 +3,7 @@ import { FundViewOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
 import { useAppStore } from '@renderer/stores';
 import type { ViewMenuValue } from '@shared/types';
+import { ItemType, MenuItemType } from 'antd/es/menu/interface';
 
 export default function ViewerMenu() {
     const mainView = useAppStore((s) => s.mainView);
@@ -24,23 +25,29 @@ export default function ViewerMenu() {
         });
     }, [setMainView]);
 
-    const items = useMemo(
-        () => [
+    const items = useMemo(() => {
+        return [
             {
                 key: 'options',
-                icon: <ProfileOutlined style={{ fontSize: '20px' }} />,
+                icon: (
+                    <ProfileOutlined
+                        style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
+                    />
+                ),
                 label: '',
                 onClick: showOptions,
             },
             {
                 key: 'document',
-                icon: <FundViewOutlined style={{ fontSize: '20px' }} />,
-                label: '',
+                icon: (
+                    <FundViewOutlined
+                        style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
+                    />
+                ),
                 onClick: showDocument,
             },
-        ],
-        [showOptions, showDocument],
-    );
+        ] satisfies ItemType<MenuItemType>[];
+    }, [showOptions, showDocument]);
 
     return (
         <Menu

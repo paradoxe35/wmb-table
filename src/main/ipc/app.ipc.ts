@@ -15,13 +15,10 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.getActiveLanguage, async () => {
-        const lang = configRepo.getActiveLanguage();
-        console.log('[app.ipc] getActiveLanguage →', lang);
-        return lang;
+        return configRepo.getActiveLanguage();
     });
 
     registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
-        console.log('[app.ipc] setActiveLanguage →', langCode);
         configRepo.setActiveLanguage(langCode);
         switchBibleLanguage(langCode);
     });

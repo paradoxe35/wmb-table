@@ -80,6 +80,7 @@ export type DocumentTab = {
     active: boolean;
     zoom?: number;
     translationId?: number;
+    languageCode?: string;
     type?: 'sermon' | 'custom';
 };
 
