@@ -4,7 +4,7 @@ import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 
 import { ContextMenu } from '@renderer/utils/context-menu';
-import { Button, Input, Modal, Space, Tooltip, message } from 'antd';
+import { App as AntApp, Button, Input, Space, Tooltip, message } from 'antd';
 import {
     LeftOutlined,
     FilePdfOutlined,
@@ -38,8 +38,8 @@ function styleProperty(color = 'var(--ant-color-bg-container)') {
 
 const useRenameNote = (note: NoteItem | null) => {
     const searchValue = useValueStateRef<string>(note?.name || '');
-
     const workingNote = useValueStateRef<NoteItem | null>(note);
+    const { modal } = AntApp.useApp();
 
     const onSave = () => {
         if (!workingNote.current) return;
@@ -60,7 +60,7 @@ const useRenameNote = (note: NoteItem | null) => {
     };
 
     const openModal = useCallback(() => {
-        const modalInstance = Modal.info({
+        const modalInstance = modal.info({
             closable: true,
             icon: null,
             onOk: onSave,
@@ -86,7 +86,7 @@ const useRenameNote = (note: NoteItem | null) => {
                 </form>
             ),
         });
-    }, []);
+    }, [modal]);
 
     return openModal;
 };
@@ -133,8 +133,10 @@ function ButtonsControllers({
         editorRef.current.isReadOnly = !editorRef.current.isReadOnly;
     };
 
+    const { modal: antModal } = AntApp.useApp();
+
     const confirm = useCallback(() => {
-        Modal.confirm({
+        antModal.confirm({
             title: 'Alert',
             icon: <ExclamationCircleOutlined />,
             content: `Semble que votre note n'a pas de contenu, si vous continuez cette note sera inconsidérée et elle sera supprimée`,
@@ -142,7 +144,7 @@ function ButtonsControllers({
             cancelText: 'Annuler',
             onOk: backToNotes,
         });
-    }, [backToNotes]);
+    }, [backToNotes, antModal]);
 
     const onBackToNotes = useCallback(() => {
         const editor = editorRef.current;

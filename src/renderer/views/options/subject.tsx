@@ -14,9 +14,8 @@ import {
     Card,
     Input,
     Space,
+    App as AntApp,
     Button,
-    Modal,
-    Divider,
     Empty,
     List,
     message,
@@ -41,11 +40,12 @@ function ModalNewSubject({
     onSaveNewSubject: (searchValue: string) => void;
 }) {
     const searchValue = useRef<string>('');
+    const { modal } = AntApp.useApp();
 
     const onSave = () => onSaveNewSubject(searchValue.current);
 
-    const modal = useCallback(() => {
-        const modalInstance = Modal.info({
+    const openModal = useCallback(() => {
+        const modalInstance = modal.info({
             closable: true,
             icon: null,
             onOk: onSave,
@@ -70,10 +70,10 @@ function ModalNewSubject({
                 </form>
             ),
         });
-    }, [onSave]);
+    }, [onSave, modal]);
 
     return (
-        <Button type="primary" onClick={modal}>
+        <Button type="primary" onClick={openModal}>
             Créer un sujet
         </Button>
     );
@@ -321,19 +321,16 @@ const ItemSubject: FC<{
     }, [item, onSelectItem]);
 
     return (
-        <>
-            <span
-                className={`smart-editable big ${item.active ? 'active' : ''}`}
-                onClick={onSelect}
-                title={item.name}
-            >
-                <div className="o-icon">
-                    <BookOutlined />
-                </div>
-                <b>{item.name}</b>
-                <DeleteBtn confirm={() => onDeleteSubject(item)} />
-            </span>
-            <Divider style={{ margin: '4px 0' }} />
-        </>
+        <div
+            className={`subject-item ${item.active ? 'subject-item--active' : ''}`}
+            onClick={onSelect}
+            title={item.name}
+        >
+            <div className="subject-item__left">
+                <BookOutlined style={{ fontSize: 14, flexShrink: 0 }} />
+                <span className="subject-item__name">{item.name}</span>
+            </div>
+            <DeleteBtn confirm={() => onDeleteSubject(item)} />
+        </div>
     );
 };

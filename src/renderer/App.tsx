@@ -1,4 +1,4 @@
-import { ConfigProvider } from 'antd';
+import { App as AntApp, ConfigProvider } from 'antd';
 import frFR from 'antd/locale/fr_FR';
 import { useInitApp } from './hooks/index';
 import AppLayout from './components/layout';
@@ -26,9 +26,11 @@ export default function App() {
 
     return (
         <ConfigProvider locale={frFR} theme={appTheme}>
-            <AppLayout>
-                <ContentApp />
-            </AppLayout>
+            <AntApp>
+                <AppLayout>
+                    <ContentApp />
+                </AppLayout>
+            </AntApp>
         </ConfigProvider>
     );
 }
