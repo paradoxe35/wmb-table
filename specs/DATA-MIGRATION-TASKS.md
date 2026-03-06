@@ -167,7 +167,7 @@ Wire the new services into IPC handlers so the renderer can access them.
 - [x] **C.1.1** Add new types to `src/shared/types.ts`:
     - ~~`SermonMeta`~~ ✅ (done in Phase B.5)
     - `SermonContent` — meta: SermonMeta, paragraphs: Paragraph[]
-    - `SermonParagraph` — lineIndex, paragraphIndex, content (unstemmed_content)
+    - `SermonParagraph` — paragraphIndex, content (unstemmed_content)
     - `InstalledLanguage` — code, language, sermonsCount, sizeOnDisk
     - `DownloadableLanguage` — code, language, sermonsAvailable, sermonsWithAudio, filesize, installed
     - `TantivySearchResult` — hits: TantivySearchHit[], total: number, query: string

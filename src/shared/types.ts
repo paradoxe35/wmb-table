@@ -352,7 +352,6 @@ export interface RestoreProgressEvent {
 // ---------------------------------------------------------------------------
 
 export interface SermonParagraph {
-    lineIndex: number;
     paragraphIndex: number;
     translationId: number;
     sermonId: number;

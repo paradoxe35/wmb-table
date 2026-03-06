@@ -177,7 +177,6 @@ function getInstalledLanguages(): string[] {
 }
 
 interface SermonParagraphResult {
-    lineIndex: number;
     paragraphIndex: number;
     translationId: number;
     sermonId: number;
@@ -211,7 +210,6 @@ function getSermonParagraphs(
     const grouped = new Map<
         number,
         {
-            lineIndex: number;
             translationId: number;
             sermonId: number;
             contents: string[];
@@ -224,13 +222,11 @@ function getSermonParagraphs(
         const dict = doc.toDict() as Record<string, unknown[]>;
 
         const paragraphIndex = extractNumeric(dict, 'paragraph_index');
-        const lineIndex = extractNumeric(dict, 'line_index');
         const content = extractString(dict, 'unstemmed_content');
 
         let group = grouped.get(paragraphIndex);
         if (!group) {
             group = {
-                lineIndex,
                 translationId: extractNumeric(dict, 'translation_id'),
                 sermonId: extractNumeric(dict, 'sermon_date'),
                 contents: [],
@@ -252,7 +248,6 @@ function getSermonParagraphs(
     for (const key of sortedKeys) {
         const group = grouped.get(key)!;
         const paragraph: SermonParagraphResult = {
-            lineIndex: group.lineIndex,
             paragraphIndex: key,
             translationId: group.translationId,
             sermonId: group.sermonId,

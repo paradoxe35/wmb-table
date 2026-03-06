@@ -74,7 +74,7 @@ export default function ParagraphNavigatorModal({
                         style={{ minWidth: 36 }}
                         onClick={() => scrollTo(p.paragraphIndex)}
                     >
-                        {p.lineIndex}
+                        {p.paragraphIndex}
                     </Button>
                 ))}
             </div>
