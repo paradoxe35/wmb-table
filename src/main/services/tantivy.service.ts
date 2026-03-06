@@ -14,7 +14,7 @@ export type { SermonParagraph } from '@shared/types';
 
 export interface GroupedSearchHit {
     translationId: number;
-    sermonDate: number;
+    tantivySermonDate: number;
     score: number;
     bestDocAddress: { segmentOrd: number; doc: number };
     hitCount: number;
@@ -115,9 +115,9 @@ export function getInstalledLanguages(): string[] {
 export async function getSermonParagraphs(
     langCode: string,
     translationId: number,
-    sermonDate?: number,
+    sermonId?: number,
 ): Promise<SermonParagraph[]> {
-    return call<SermonParagraph[]>('getSermonParagraphs', langCode, translationId, sermonDate);
+    return call<SermonParagraph[]>('getSermonParagraphs', langCode, translationId, sermonId);
 }
 
 export async function searchSermons(
@@ -140,9 +140,9 @@ export async function getSearchSnippet(
 export async function getSermonParagraphCount(
     langCode: string,
     translationId: number,
-    sermonDate?: number,
+    sermonId?: number,
 ): Promise<number> {
-    return call<number>('getSermonParagraphCount', langCode, translationId, sermonDate);
+    return call<number>('getSermonParagraphCount', langCode, translationId, sermonId);
 }
 
 export async function terminateWorker(): Promise<void> {

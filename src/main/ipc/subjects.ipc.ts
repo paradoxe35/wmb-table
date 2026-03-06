@@ -25,13 +25,22 @@ export function registerSubjectsHandlers(): void {
 
     registerHandler(
         SubjectChannels.createItem,
-        async (_event, subjectName, documentTitle, documentHtmlTree, textContent, bible) => {
+        async (
+            _event,
+            subjectName,
+            documentTitle,
+            documentHtmlTree,
+            textContent,
+            bible,
+            sermonId,
+        ) => {
             return subjectsRepo.createItem(
                 subjectName,
                 documentTitle,
                 documentHtmlTree,
                 textContent,
                 bible,
+                sermonId,
             );
         },
     );

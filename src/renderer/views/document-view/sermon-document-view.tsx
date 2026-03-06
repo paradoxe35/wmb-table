@@ -1,11 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { Dropdown, Spin } from 'antd';
-import {
-    useSermonStore,
-    useSearchStore,
-    selectActiveTabTitle,
-    selectActiveTab,
-} from '@renderer/stores';
+import { useSermonStore, useSearchStore, selectActiveTab } from '@renderer/stores';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 import SermonHeader from './sermon-header';
@@ -35,9 +30,8 @@ export default function SermonDocumentView() {
         contextTargetRef.current = e.target as Element;
     }, []);
     const activeTab = useSermonStore(selectActiveTab);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
-    const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
-    const sermonInfo = activeTitle ? sermonsByTitle[activeTitle] : undefined;
+    const sermonsById = useSermonStore((s) => s.sermonsById);
+    const sermonInfo = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
     const tabTranslationId = activeTab?.translationId;
 
     const paragraphTexts = useMemo(

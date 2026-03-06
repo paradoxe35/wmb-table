@@ -57,7 +57,7 @@ export interface SermonMeta {
     id: string;
     translationId: number;
     languageCode: string;
-    sermonDate: string;
+    sermonId: string;
     title: string;
     enTitle: string;
     audioLink: string | null;
@@ -74,7 +74,7 @@ export interface SermonMetaWithTraductions extends SermonMeta {
 
 export type DocumentTab = {
     title: string;
-    sermonDate: string;
+    sermonId: string;
     scrollY?: number;
     scrollX?: number;
     active: boolean;
@@ -83,12 +83,12 @@ export type DocumentTab = {
     type?: 'sermon' | 'custom';
 };
 
-export function getTabKey(tab: { title: string; sermonDate: string }): string {
-    return `${tab.title}::${tab.sermonDate}`;
+export function getTabKey(tab: { title: string; sermonId: string }): string {
+    return `${tab.title}::${tab.sermonId}`;
 }
 
-export function tabMatches(tab: DocumentTab, title: string, sermonDate: string): boolean {
-    return tab.title === title && tab.sermonDate === sermonDate;
+export function tabMatches(tab: DocumentTab, title: string, sermonId: string): boolean {
+    return tab.title === title && tab.sermonId === sermonId;
 }
 
 export type DocumentTreeRanges = {
@@ -166,6 +166,7 @@ export interface NoteItemReference extends Readonly<BaseEntity> {
     documentTitle: string;
     documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     textContent: string;
+    sermonId: string;
 }
 
 export interface NoteItemReferenceBible extends Readonly<BaseEntity> {
@@ -230,6 +231,7 @@ export interface SubjectDocumentItem extends Readonly<BaseEntity> {
     documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     textContent: string;
     bible?: BibleBook;
+    sermonId: string;
 }
 
 export type SubjectRefTree = {
@@ -275,7 +277,7 @@ export type CurrentAudioDocumentPlay = {
 
 export interface CustomDocument extends Readonly<BaseEntity> {
     title: string;
-    sermonDate: string;
+    sermonId: string;
 }
 
 export interface CustomDocumentContent {
@@ -298,6 +300,7 @@ export interface HistoryDataItem extends Readonly<BaseEntity> {
     date: string;
     time: string;
     documentTitle: string;
+    sermonId: string;
 }
 
 export type HistoryDateUpload = {
@@ -351,7 +354,7 @@ export interface SermonParagraph {
     lineIndex: number;
     paragraphIndex: number;
     translationId: number;
-    sermonDate: number;
+    sermonId: number;
     content: string;
     stemmedContent?: string;
 }
@@ -394,7 +397,7 @@ export interface LanguageDownloadProgress {
 
 export interface TantivySearchHit {
     translationId: number;
-    sermonDate: number;
+    sermonId: string;
     title: string;
     snippet: string;
     score: number;

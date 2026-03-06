@@ -23,14 +23,10 @@ export function registerSearchHandlers(): void {
 
         const hits: TantivySearchHit[] = [];
         for (const hit of result.hits) {
-            // Reverse-lookup: Tantivy sermonDate (number) → sermon IDs
-            const sermonIds = refRepo.tantivyDateToSermonIds(hit.sermonDate);
-            const sermonDate = sermonIds[0] ?? String(hit.sermonDate);
-            const meta = referenceDataService.getSermonMeta(
-                hit.translationId,
-                langCode,
-                sermonDate,
-            );
+            // Reverse-lookup: Tantivy sermon_date (number) → sermon IDs
+            const sermonIds = refRepo.tantivyDateToSermonIds(hit.tantivySermonDate);
+            const sermonId = sermonIds[0] ?? String(hit.tantivySermonDate);
+            const meta = referenceDataService.getSermonMeta(hit.translationId, langCode, sermonId);
             const snippet = await tantivyService.getSearchSnippet(
                 langCode,
                 query,
@@ -38,8 +34,8 @@ export function registerSearchHandlers(): void {
             );
             hits.push({
                 translationId: hit.translationId,
-                sermonDate: hit.sermonDate,
-                title: meta?.title ?? sermonDate,
+                sermonId: sermonId,
+                title: meta?.title ?? sermonId,
                 snippet,
                 score: hit.score,
             });

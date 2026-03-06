@@ -1,8 +1,8 @@
 import type { SermonMeta } from '@shared/types';
 
 export function getSermonYear(sermon: SermonMeta): string | null {
-    if (!sermon.sermonDate) return null;
-    return '19' + sermon.sermonDate.split('-')[0];
+    if (!sermon.sermonId) return null;
+    return '19' + sermon.sermonId.split('-')[0];
 }
 
 export function normalizeStr(str: string): string {
@@ -28,4 +28,13 @@ export function formatSermonDate(dateMs: number, locale: string = 'en'): string 
         day: 'numeric',
         timeZone: 'UTC',
     });
+}
+
+export function formatShortDate(sermonId: string): string {
+    if (!sermonId || !sermonId.includes('-')) return sermonId;
+    const [yy, mmdd] = sermonId.split('-');
+    if (!mmdd || mmdd.length < 4) return sermonId;
+    const mm = mmdd.slice(0, 2);
+    const dd = mmdd.slice(2, 4);
+    return `${mm}/${dd}/${yy}`;
 }

@@ -23,28 +23,28 @@ import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 const contentCache = new Map<string, SermonContentType>();
 
 export function useSermonContent() {
-    const activeTitle = useSermonStore(selectActiveTabTitle);
     const activeTab = useSermonStore(selectActiveTab);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
-    const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
+    const sermonsById = useSermonStore((s) => s.sermonsById);
     const setActiveContent = useSermonStore((s) => s.setActiveContent);
     const activeContent = useSermonStore((s) => s.activeContent);
     const [loading, setLoading] = useState(false);
 
+    const tabSermonDate = activeTab?.sermonId;
     const tabTranslationId = activeTab?.translationId;
 
     useEffect(() => {
-        if (!activeTitle || !activeLanguage) {
+        if (!tabSermonDate || !activeLanguage) {
             setActiveContent(null);
             return;
         }
-        const meta = sermonsByTitle[activeTitle];
+        const meta = sermonsById[tabSermonDate];
         if (!meta) {
             setActiveContent(null);
             return;
         }
         const translationId = tabTranslationId ?? meta.translationId;
-        const cacheKey = `${activeLanguage}:${translationId}:${meta.sermonDate}`;
+        const cacheKey = `${activeLanguage}:${translationId}:${meta.sermonId}`;
         const cached = contentCache.get(cacheKey);
         if (cached) {
             setActiveContent(cached);
@@ -52,7 +52,7 @@ export function useSermonContent() {
         }
         setLoading(true);
         window.api.documents
-            .getSermonContent(activeLanguage, translationId, meta.sermonDate)
+            .getSermonContent(activeLanguage, translationId, meta.sermonId)
             .then((content) => {
                 contentCache.set(cacheKey, content);
                 setActiveContent(content);
@@ -62,7 +62,7 @@ export function useSermonContent() {
                 setActiveContent(null);
             })
             .finally(() => setLoading(false));
-    }, [activeTitle, activeLanguage, sermonsByTitle, setActiveContent, tabTranslationId]);
+    }, [tabSermonDate, activeLanguage, sermonsById, setActiveContent, tabTranslationId]);
 
     return { content: activeContent, loading };
 }

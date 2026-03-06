@@ -161,7 +161,7 @@ interface SermonParagraphResult {
     lineIndex: number;
     paragraphIndex: number;
     translationId: number;
-    sermonDate: number;
+    sermonId: number;
     content: string;
     stemmedContent?: string;
 }
@@ -169,7 +169,7 @@ interface SermonParagraphResult {
 function getSermonParagraphs(
     langCode: string,
     translationId: number,
-    sermonDate?: number,
+    sermonId?: number,
 ): SermonParagraphResult[] {
     const index = getIndex(langCode);
     const schema = index.schema;
@@ -185,13 +185,13 @@ function getSermonParagraphs(
         const dict = doc.toDict() as Record<string, unknown[]>;
 
         const docSermonDate = extractNumeric(dict, 'sermon_date');
-        if (sermonDate !== undefined && docSermonDate !== sermonDate) continue;
+        if (sermonId !== undefined && docSermonDate !== sermonId) continue;
 
         const paragraph: SermonParagraphResult = {
             lineIndex: extractNumeric(dict, 'line_index'),
             paragraphIndex: extractNumeric(dict, 'paragraph_index'),
             translationId: extractNumeric(dict, 'translation_id'),
-            sermonDate: docSermonDate,
+            sermonId: docSermonDate,
             content: extractString(dict, 'unstemmed_content'),
         };
 
@@ -208,7 +208,7 @@ function getSermonParagraphs(
 
 interface GroupedSearchHitResult {
     translationId: number;
-    sermonDate: number;
+    tantivySermonDate: number;
     score: number;
     bestDocAddress: { segmentOrd: number; doc: number };
     hitCount: number;
@@ -234,7 +234,7 @@ function searchSermons(
             score: number;
             bestDocAddress: { segmentOrd: number; doc: number };
             hitCount: number;
-            sermonDate: number;
+            tantivySermonDate: number;
         }
     >();
 
@@ -253,7 +253,7 @@ function searchSermons(
                     doc: hit.docAddress.doc,
                 },
                 hitCount: 1,
-                sermonDate: extractNumeric(dict, 'sermon_date'),
+                tantivySermonDate: extractNumeric(dict, 'sermon_date'),
             });
         } else {
             existing.hitCount++;
@@ -270,7 +270,7 @@ function searchSermons(
     const sorted = Array.from(groups.entries())
         .map(([translationId, g]) => ({
             translationId,
-            sermonDate: g.sermonDate,
+            tantivySermonDate: g.tantivySermonDate,
             score: g.score,
             bestDocAddress: g.bestDocAddress,
             hitCount: g.hitCount,
@@ -303,10 +303,10 @@ function getSearchSnippet(
 function getSermonParagraphCount(
     langCode: string,
     translationId: number,
-    sermonDate?: number,
+    sermonId?: number,
 ): number {
-    if (sermonDate !== undefined) {
-        return getSermonParagraphs(langCode, translationId, sermonDate).length;
+    if (sermonId !== undefined) {
+        return getSermonParagraphs(langCode, translationId, sermonId).length;
     }
     const index = getIndex(langCode);
     const schema = index.schema;

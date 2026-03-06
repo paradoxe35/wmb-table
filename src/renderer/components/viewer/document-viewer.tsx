@@ -4,11 +4,11 @@ import { useSermonStore } from '@renderer/stores';
 
 export const useDocumentViewOpen = () => {
     const openDocument = useOpenDocument();
-    const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
+    const sermonsById = useSermonStore((s) => s.sermonsById);
 
-    const onClick = (name: string, onItemClick?: () => void) => {
-        const sermonDate = sermonsByTitle[name]?.sermonDate ?? '';
-        openDocument(name, sermonDate);
+    const onClick = (name: string, onItemClick?: () => void, sermonId?: string) => {
+        const id = sermonId ?? sermonsById[name]?.sermonId ?? '';
+        openDocument(name, id);
         onItemClick?.();
     };
 
@@ -17,12 +17,13 @@ export const useDocumentViewOpen = () => {
 
 const DocumentViewer: React.FC<{
     name: string;
+    sermonId?: string;
     onItemClick?: () => void;
     children?: React.ReactNode;
-}> = ({ children, name, onItemClick }) => {
+}> = ({ children, name, sermonId, onItemClick }) => {
     const viewDocument = useDocumentViewOpen();
 
-    return <span onClick={() => viewDocument(name, onItemClick)}>{children}</span>;
+    return <span onClick={() => viewDocument(name, onItemClick, sermonId)}>{children}</span>;
 };
 
 export default DocumentViewer;

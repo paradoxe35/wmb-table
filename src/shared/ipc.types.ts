@@ -273,7 +273,7 @@ export interface InvokeChannelMap {
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
     [SubjectChannels.createItem]: {
-        args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?];
+        args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?, string?];
         return: SubjectDocumentItem;
     };
 
@@ -313,7 +313,7 @@ export interface InvokeChannelMap {
         return: CustomDocumentContent | null;
     };
     [AppChannels.getHistory]: { args: [string]; return: HistoryData[] };
-    [AppChannels.addHistoryEntry]: { args: [string, string]; return: void };
+    [AppChannels.addHistoryEntry]: { args: [string, string, string]; return: void };
     [AppChannels.getHistoryItems]: {
         args: [string];
         return: HistoryDataItem[];

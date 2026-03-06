@@ -1,12 +1,7 @@
 import { Button, Divider, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
-import {
-    useSermonLookup,
-    useModalVisible,
-    useActiveTabTitle,
-    useOpenDocument,
-} from '@renderer/hooks';
-import { useSermonStore, selectActiveTabKey } from '@renderer/stores';
+import { useModalVisible, useActiveTabTitle, useOpenDocument } from '@renderer/hooks';
+import { useSermonStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
@@ -14,7 +9,8 @@ type Translation = { languageCode: string; title: string; translatorName: string
 
 export function OtherTraductionsModal() {
     const { visible, hide, setVisible } = useModalVisible();
-    const { sermonsByTitle } = useSermonLookup();
+    const activeTab = useSermonStore(selectActiveTab);
+    const sermonsById = useSermonStore((s) => s.sermonsById);
     const title = useActiveTabTitle();
     const viewDocument = useOpenDocument();
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
@@ -23,7 +19,7 @@ export function OtherTraductionsModal() {
     const [translations, setTranslations] = useState<Translation[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const meta = title ? sermonsByTitle[title] : undefined;
+    const meta = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
     const availableTraductions = meta?.availableTraductions ?? [];
     const hasWithinLanguage = availableTraductions.length > 1;
 
@@ -32,11 +28,11 @@ export function OtherTraductionsModal() {
 
         setLoading(true);
         window.api.documents
-            .getTranslations(meta.sermonDate)
+            .getTranslations(meta.sermonId)
             .then(setTranslations)
             .catch(() => setTranslations([]))
             .finally(() => setLoading(false));
-    }, [visible, title, sermonsByTitle]);
+    }, [visible, activeTab?.sermonId, sermonsById]);
 
     useEffect(() => {
         const showModal = () => setVisible(true);
@@ -51,7 +47,7 @@ export function OtherTraductionsModal() {
 
     const handleOpen = (translationTitle: string) => {
         if (meta) {
-            viewDocument(translationTitle, meta.sermonDate);
+            viewDocument(translationTitle, meta.sermonId);
         }
         hide();
     };

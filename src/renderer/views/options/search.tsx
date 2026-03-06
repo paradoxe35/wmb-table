@@ -147,7 +147,7 @@ export default function Search() {
 
 const ListView = ({ hit, query }: { hit: TantivySearchHit; query: string }) => {
     const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
-    const { getSermon } = useSermonLookup();
+    const { getSermonById } = useSermonLookup();
 
     const handleDocumentClick = useCallback(() => {
         setDocumentViewQueries((docs) => {
@@ -164,14 +164,18 @@ const ListView = ({ hit, query }: { hit: TantivySearchHit; query: string }) => {
         });
     }, [hit, setDocumentViewQueries, query]);
 
-    const displayTitle = getSermon(hit.title)?.title ?? hit.title;
+    const displayTitle = getSermonById(hit.sermonId)?.title ?? hit.title;
 
     return (
         <List.Item>
             <List.Item.Meta
                 title={
                     <a className="underline">
-                        <DocumentViewer onItemClick={handleDocumentClick} name={hit.title}>
+                        <DocumentViewer
+                            onItemClick={handleDocumentClick}
+                            name={hit.title}
+                            sermonId={hit.sermonId}
+                        >
                             {displayTitle}
                         </DocumentViewer>
                     </a>

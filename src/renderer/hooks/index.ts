@@ -81,8 +81,8 @@ export function useOpenDocument() {
     const setMainView = useAppStore((s) => s.setMainView);
 
     return useCallback(
-        (title: string, sermonDate: string) => {
-            addTab(title, sermonDate);
+        (title: string, sermonId: string) => {
+            addTab(title, sermonId);
             setMainView('document');
         },
         [addTab, setMainView],
@@ -94,8 +94,8 @@ export function useOpenCustomDocument() {
     const setMainView = useAppStore((s) => s.setMainView);
 
     return useCallback(
-        (title: string, sermonDate: string) => {
-            addTab(title, sermonDate, 'custom');
+        (title: string, sermonId: string) => {
+            addTab(title, sermonId, 'custom');
             setMainView('document');
         },
         [addTab, setMainView],
@@ -112,14 +112,14 @@ export function useActiveTabTitle(): string | null {
 }
 
 export function useSermonLookup() {
-    const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
+    const sermonsById = useSermonStore((s) => s.sermonsById);
 
-    const getSermon = useCallback(
-        (title: string): SermonMetaWithTraductions | undefined => sermonsByTitle[title],
-        [sermonsByTitle],
+    const getSermonById = useCallback(
+        (sermonId: string): SermonMetaWithTraductions | undefined => sermonsById[sermonId],
+        [sermonsById],
     );
 
-    return { sermonsByTitle, getSermon };
+    return { sermonsById, getSermonById };
 }
 
 export function useFormatSermonDate() {

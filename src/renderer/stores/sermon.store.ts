@@ -16,7 +16,7 @@ export type PendingNavigation = {
 
 interface SermonState {
     sermons: SermonMetaWithTraductions[];
-    sermonsByTitle: Record<string, SermonMetaWithTraductions>;
+    sermonsById: Record<string, SermonMetaWithTraductions>;
     sermonsByYear: Record<string, SermonMetaWithTraductions[]>;
     activeContent: SermonContent | null;
     tabs: DocumentTab[];
@@ -26,7 +26,7 @@ interface SermonState {
     setActiveContent(c: SermonContent | null): void;
     setPendingNavigation(nav: PendingNavigation): void;
     setTabs(tabs: DocumentTab[]): void;
-    addTab(title: string, sermonDate: string, type?: 'sermon' | 'custom'): void;
+    addTab(title: string, sermonId: string, type?: 'sermon' | 'custom'): void;
     removeTab(key: string): void;
     activateTab(key: string): void;
     removeOtherTabs(key: string): void;
@@ -42,47 +42,46 @@ const matchKey = (t: DocumentTab, key: string) => getTabKey(t) === key;
 
 export const useSermonStore = create<SermonState>((set) => ({
     sermons: [],
-    sermonsByTitle: {},
+    sermonsById: {},
     sermonsByYear: {},
     activeContent: null,
     tabs: [],
     pendingNavigation: null,
 
     setSermons: (s) => {
-        const sermonsByTitle: Record<string, SermonMetaWithTraductions> = {};
+        const sermonsById: Record<string, SermonMetaWithTraductions> = {};
         const sermonsByYear: Record<string, SermonMetaWithTraductions[]> = {};
         for (const sermon of s) {
-            sermonsByTitle[sermon.title] = sermon;
+            sermonsById[sermon.sermonId] = sermon;
             const year = getSermonYear(sermon);
             if (year) {
                 if (!sermonsByYear[year]) sermonsByYear[year] = [];
                 sermonsByYear[year].push(sermon);
             }
         }
-        set({ sermons: s, sermonsByTitle, sermonsByYear });
+        set({ sermons: s, sermonsById, sermonsByYear });
     },
 
     setActiveContent: (c) => set({ activeContent: c }),
     setPendingNavigation: (nav) => set({ pendingNavigation: nav }),
     setTabs: (tabs) => set({ tabs }),
 
-    addTab: (title, sermonDate, type) =>
+    addTab: (title, sermonId, type) =>
         set((s) => {
             const tabType = type ?? 'sermon';
             const exists = s.tabs.some(
-                (t) => tabMatches(t, title, sermonDate) && (t.type ?? 'sermon') === tabType,
+                (t) => tabMatches(t, title, sermonId) && (t.type ?? 'sermon') === tabType,
             );
             if (exists) {
                 return {
                     tabs: s.tabs.map((t) => ({
                         ...t,
-                        active:
-                            tabMatches(t, title, sermonDate) && (t.type ?? 'sermon') === tabType,
+                        active: tabMatches(t, title, sermonId) && (t.type ?? 'sermon') === tabType,
                     })),
                 };
             }
             const deactivated = s.tabs.map((t) => ({ ...t, active: false }));
-            const newTabs = [...deactivated, { title, active: true, type: tabType, sermonDate }];
+            const newTabs = [...deactivated, { title, active: true, type: tabType, sermonId }];
             return { tabs: newTabs };
         }),
 

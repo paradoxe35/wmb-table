@@ -26,7 +26,7 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
                 id: makeId(langCode, 0, s.id),
                 translationId: 0,
                 languageCode: langCode,
-                sermonDate: s.id,
+                sermonId: s.id,
                 title: s.title,
                 enTitle: s.title,
                 audioLink,
@@ -48,7 +48,7 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
             id: makeId(langCode, t.translator_id, t.sermon_id),
             translationId: t.translator_id,
             languageCode: langCode,
-            sermonDate: t.sermon_id,
+            sermonId: t.sermon_id,
             title: t.title,
             enTitle: t.sermon_title, // sermon.title is always English
             audioLink,
@@ -71,14 +71,14 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
 export function getSermonListDeduplicated(langCode: string): SermonMetaWithTraductions[] {
     const allMeta = getSermonListForLanguage(langCode);
 
-    // Group by sermonDate (= sermon.id like "53-0403")
+    // Group by sermonId (= sermon.id like "53-0403")
     const groups = new Map<string, SermonMeta[]>();
     for (const meta of allMeta) {
-        const existing = groups.get(meta.sermonDate);
+        const existing = groups.get(meta.sermonId);
         if (existing) {
             existing.push(meta);
         } else {
-            groups.set(meta.sermonDate, [meta]);
+            groups.set(meta.sermonId, [meta]);
         }
     }
 
@@ -101,27 +101,27 @@ export function getSermonListDeduplicated(langCode: string): SermonMetaWithTradu
 
 /**
  * Get a specific sermon meta by translator ID and language.
- * If sermonDate is provided, match exactly; otherwise return first match.
+ * If sermonId is provided, match exactly; otherwise return first match.
  */
 export function getSermonMeta(
     translatorId: number,
     langCode: string,
-    sermonDate?: string,
+    sermonId?: string,
 ): SermonMeta | null {
     const lang = refRepo.getLanguageByCode(langCode);
     if (!lang) return null;
 
     if (!lang.translationsSupport) {
         // English: tid=0
-        if (sermonDate) {
-            const sermon = refRepo.getSermonById(sermonDate);
+        if (sermonId) {
+            const sermon = refRepo.getSermonById(sermonId);
             if (!sermon) return null;
             const audioLink = refRepo.getAudioForSermonByIds(sermon.id, langCode);
             return {
                 id: makeId(langCode, 0, sermon.id),
                 translationId: 0,
                 languageCode: langCode,
-                sermonDate: sermon.id,
+                sermonId: sermon.id,
                 title: sermon.title,
                 enTitle: sermon.title,
                 audioLink,
@@ -136,15 +136,15 @@ export function getSermonMeta(
     }
 
     // Direct single-sermon lookup for translated languages
-    if (sermonDate) {
-        const row = refRepo.getTranslationByIds(translatorId, sermonDate, langCode);
+    if (sermonId) {
+        const row = refRepo.getTranslationByIds(translatorId, sermonId, langCode);
         if (!row) return null;
-        const audioLink = refRepo.getAudioForSermonByIds(sermonDate, langCode);
+        const audioLink = refRepo.getAudioForSermonByIds(sermonId, langCode);
         return {
             id: makeId(langCode, row.translator_id, row.sermon_id),
             translationId: row.translator_id,
             languageCode: langCode,
-            sermonDate: row.sermon_id,
+            sermonId: row.sermon_id,
             title: row.title,
             enTitle: row.sermon_title,
             audioLink,
@@ -165,10 +165,10 @@ export function getSermonMeta(
 /**
  * Get all sermon list entries for a specific sermon date and language.
  */
-export function getTraductionsForSermon(sermonDate: string, langCode: string): SermonMeta[] {
+export function getTraductionsForSermon(sermonId: string, langCode: string): SermonMeta[] {
     const allForLang = getSermonListForLanguage(langCode);
     return allForLang
-        .filter((m) => m.sermonDate === sermonDate)
+        .filter((m) => m.sermonId === sermonId)
         .sort((a, b) => a.translationId - b.translationId);
 }
 
@@ -197,8 +197,8 @@ export function getSermonsByYear(langCode: string): Record<string, SermonMeta[]>
     const all = getSermonListForLanguage(langCode);
     const grouped: Record<string, SermonMeta[]> = {};
     for (const sermon of all) {
-        // sermon.sermonDate is like "53-0403" — extract 2-digit year prefix
-        const year = sermon.sermonDate.split('-')[0];
+        // sermon.sermonId is like "53-0403" — extract 2-digit year prefix
+        const year = sermon.sermonId.split('-')[0];
         if (!grouped[year]) grouped[year] = [];
         grouped[year].push(sermon);
     }

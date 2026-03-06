@@ -53,14 +53,14 @@ function onPush<C extends PushChannel>(
 const api = {
     documents: {
         getTitles: (langCode: string) => invoke(DocumentChannels.getTitles, langCode),
-        getSermonContent: (langCode: string, translationId: number, sermonDate: string) =>
-            invoke(DocumentChannels.getSermonContent, langCode, translationId, sermonDate),
+        getSermonContent: (langCode: string, translationId: number, sermonId: string) =>
+            invoke(DocumentChannels.getSermonContent, langCode, translationId, sermonId),
         getSermonList: (langCode: string, options?: { year?: string }) =>
             invoke(DocumentChannels.getSermonList, langCode, options),
         getSermonsByYear: (langCode: string) => invoke(DocumentChannels.getSermonsByYear, langCode),
         getTranslations: (sermonId: string) => invoke(DocumentChannels.getTranslations, sermonId),
-        getTraductionsForSermon: (sermonDate: string, langCode: string) =>
-            invoke(DocumentChannels.getTraductionsForSermon, sermonDate, langCode),
+        getTraductionsForSermon: (sermonId: string, langCode: string) =>
+            invoke(DocumentChannels.getTraductionsForSermon, sermonId, langCode),
         getTabs: (langCode: string) => invoke(DocumentChannels.getTabs, langCode),
         saveTabs: (langCode: string, tabs: DocumentTab[]) =>
             invoke(DocumentChannels.saveTabs, langCode, tabs),
@@ -141,7 +141,17 @@ const api = {
             htmlTree: DocumentHtmlTree | ParagraphReference,
             text: string,
             bible?: BibleBook,
-        ) => invoke(SubjectChannels.createItem, subjectId, docTitle, htmlTree, text, bible),
+            sermonId?: string,
+        ) =>
+            invoke(
+                SubjectChannels.createItem,
+                subjectId,
+                docTitle,
+                htmlTree,
+                text,
+                bible,
+                sermonId,
+            ),
     },
 
     audio: {
@@ -180,8 +190,8 @@ const api = {
             invoke(AppChannels.createCustomDocument, title, pdfBytes),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
         getHistory: (langCode: string) => invoke(AppChannels.getHistory, langCode),
-        addHistoryEntry: (langCode: string, documentTitle: string) =>
-            invoke(AppChannels.addHistoryEntry, langCode, documentTitle),
+        addHistoryEntry: (langCode: string, documentTitle: string, sermonId: string) =>
+            invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         openExternal: (url: string) => shell.openExternal(url),
     },

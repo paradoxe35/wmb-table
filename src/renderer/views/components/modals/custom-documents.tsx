@@ -173,7 +173,7 @@ function CustomDocumentItem({
                                 shape="circle"
                                 icon={<EyeOutlined />}
                                 onClick={() => {
-                                    openCustomDocument(document.title, document.sermonDate);
+                                    openCustomDocument(document.title, document.sermonId);
                                     handleCancel();
                                 }}
                             />

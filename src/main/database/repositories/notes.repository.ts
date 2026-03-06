@@ -36,6 +36,7 @@ function toNoteRef(row: typeof notesReferences.$inferSelect): NoteItemReference 
         documentTitle: row.documentTitle,
         documentHtmlTree: JSON.parse(row.documentHtmlTree),
         textContent: row.textContent,
+        sermonId: row.sermonId,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -121,6 +122,7 @@ export function createReference(
     documentTitle: string,
     documentHtmlTree: DocumentHtmlTree | ParagraphReference,
     textContent: string,
+    sermonId: string = '',
 ): NoteItemReference {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -134,6 +136,7 @@ export function createReference(
             documentTitle,
             documentHtmlTree: JSON.stringify(documentHtmlTree),
             textContent,
+            sermonId,
             createdAt: now,
             updatedAt: now,
         })

@@ -4,7 +4,7 @@ import type { HistoryData, HistoryDataItem } from '@shared/types';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
 
 export default function History() {
     const title = useActiveTabTitle();
@@ -13,7 +13,8 @@ export default function History() {
     const [key, setKey] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
     const [reloadKey, setReloadKey] = useState(0);
-    const { getSermon } = useSermonLookup();
+    const { getSermonById } = useSermonLookup();
+    const activeTab = useSermonStore(selectActiveTab);
     const prevTitle = useRef<string | null>(null);
 
     const onChange = (key: string | string[]) => {
@@ -22,11 +23,11 @@ export default function History() {
 
     // Record history when active tab changes
     useEffect(() => {
-        if (activeLanguage && title && title !== prevTitle.current) {
-            window.api.app.addHistoryEntry(activeLanguage, title);
+        if (activeLanguage && title && title !== prevTitle.current && activeTab?.sermonId) {
+            window.api.app.addHistoryEntry(activeLanguage, title, activeTab.sermonId);
         }
         prevTitle.current = title;
-    }, [title, activeLanguage]);
+    }, [title, activeLanguage, activeTab?.sermonId]);
 
     useEffect(() => {
         if (key) {
@@ -66,15 +67,18 @@ export default function History() {
                         key === h.id ? (
                             <List
                                 itemLayout="horizontal"
-                                dataSource={historyItems.filter((i) => getSermon(i.documentTitle))}
+                                dataSource={historyItems.filter((i) => getSermonById(i.sermonId))}
                                 renderItem={(item) => (
                                     <List.Item key={item.id}>
                                         <List.Item.Meta
                                             avatar={<HistoryOutlined />}
                                             title={
                                                 <a>
-                                                    <DocumentViewer name={item.documentTitle}>
-                                                        {getSermon(item.documentTitle)?.title ??
+                                                    <DocumentViewer
+                                                        name={item.documentTitle}
+                                                        sermonId={item.sermonId}
+                                                    >
+                                                        {getSermonById(item.sermonId)?.title ??
                                                             item.documentTitle}
                                                     </DocumentViewer>
                                                 </a>

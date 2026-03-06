@@ -35,6 +35,7 @@ export default function DocumentAudioPlayer() {
     const setVolume = useAudioStore((s) => s.setVolume);
     const setCurrentTime = useAudioStore((s) => s.setCurrentTime);
 
+    const sermonId = useAudioStore((s) => s.sermonId);
     const viewDocument = useDocumentViewOpen();
 
     const isPlaying = currentPlay?.status === 'play';
@@ -93,10 +94,10 @@ export default function DocumentAudioPlayer() {
 
     const handleTitleClick = useCallback(() => {
         if (title) {
-            viewDocument(title);
+            viewDocument(title, undefined, sermonId ?? undefined);
             closeModal();
         }
-    }, [title, viewDocument, closeModal]);
+    }, [title, sermonId, viewDocument, closeModal]);
 
     return (
         <Modal title={null} footer={null} width={500} open={modalOpen} onCancel={closeModal}>

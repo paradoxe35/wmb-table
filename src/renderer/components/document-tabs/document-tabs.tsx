@@ -44,7 +44,7 @@ export default function DocumentTabs() {
         const handleCustomDocRemoved = (e: Event) => {
             const detail = (e as CustomEvent)?.detail;
             if (detail?.title) {
-                removeTab(getTabKey({ title: detail.title, sermonDate: detail.sermonDate ?? '' }));
+                removeTab(getTabKey({ title: detail.title, sermonId: detail.sermonId ?? '' }));
             }
         };
 

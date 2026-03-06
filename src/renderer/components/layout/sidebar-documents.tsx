@@ -85,7 +85,7 @@ const DocumentsAdded = () => {
                 <div
                     key={d.id || i}
                     className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                    onClick={() => openCustomDocument(d.title, d.sermonDate)}
+                    onClick={() => openCustomDocument(d.title, d.sermonId)}
                 >
                     <div className="sidebar-item__left">
                         <div className="sidebar-item__title">{d.title}</div>
@@ -156,7 +156,7 @@ const DocumentByYears = () => {
                             title: (
                                 <span
                                     title={sermon.title}
-                                    onClick={() => openDocument(sermon.title, sermon.sermonDate)}
+                                    onClick={() => openDocument(sermon.title, sermon.sermonId)}
                                 >
                                     {sermon.title}
                                 </span>
@@ -234,14 +234,14 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                 <Virtuoso
                     data={sorted}
                     itemContent={(_index, d) => {
-                        const sermonKey = getTabKey({ title: d.title, sermonDate: d.sermonDate });
+                        const sermonKey = getTabKey({ title: d.title, sermonId: d.sermonId });
                         return (
                             <ItemOutline
                                 sermon={d}
                                 active={activeTabKeyStr === sermonKey}
                                 isEnglish={isEnglish}
                                 formatDate={formatDate}
-                                onClick={() => openDocument(d.title, d.sermonDate)}
+                                onClick={() => openDocument(d.title, d.sermonId)}
                             />
                         );
                     }}

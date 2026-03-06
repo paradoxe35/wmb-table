@@ -19,6 +19,7 @@ function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentIt
         documentHtmlTree: JSON.parse(row.documentHtmlTree),
         textContent: row.textContent,
         bible: row.bible ? JSON.parse(row.bible) : undefined,
+        sermonId: row.sermonId,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -105,6 +106,7 @@ export function createItem(
     documentHtmlTree: DocumentHtmlTree | ParagraphReference,
     textContent: string,
     bible?: BibleBook,
+    sermonId: string = '',
 ): SubjectDocumentItem {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -117,6 +119,7 @@ export function createItem(
             documentHtmlTree: JSON.stringify(documentHtmlTree),
             textContent,
             bible: bible ? JSON.stringify(bible) : null,
+            sermonId,
             createdAt: now,
             updatedAt: now,
         })
@@ -128,6 +131,7 @@ export function createItem(
         documentHtmlTree: JSON.stringify(documentHtmlTree),
         textContent,
         bible: bible ? JSON.stringify(bible) : null,
+        sermonId,
         createdAt: now,
         updatedAt: now,
     });
@@ -138,6 +142,7 @@ export function createItem(
         documentHtmlTree,
         textContent,
         bible,
+        sermonId,
         createdAt: new Date(now),
         updatedAt: new Date(now),
     };

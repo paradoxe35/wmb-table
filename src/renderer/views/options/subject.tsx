@@ -224,9 +224,9 @@ function ItemFromSelectedSubject({
     item: SubjectDocumentItem;
     confirm: (item: SubjectDocumentItem) => void;
 }) {
-    const { getSermon } = useSermonLookup();
+    const { getSermonById } = useSermonLookup();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
-    const displayTitle = getSermon(item.documentTitle)?.title ?? item.documentTitle;
+    const displayTitle = getSermonById(item.sermonId)?.title ?? item.documentTitle;
 
     const onNavigate = () => {
         setPendingNavigation({
@@ -241,7 +241,11 @@ function ItemFromSelectedSubject({
         </span>
     ) : (
         <a className="underline">
-            <DocumentViewer onItemClick={onNavigate} name={item.documentTitle}>
+            <DocumentViewer
+                onItemClick={onNavigate}
+                name={item.documentTitle}
+                sermonId={item.sermonId}
+            >
                 {displayTitle}
             </DocumentViewer>
         </a>

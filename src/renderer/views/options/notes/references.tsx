@@ -21,24 +21,28 @@ export const useShowReferenceDetail = () => {
     const viewDocument = useDocumentViewOpen();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
-    const { getSermon } = useSermonLookup();
+    const { getSermonById } = useSermonLookup();
 
     const modal = useCallback((reference: NoteItemReference, workingNote: NoteItem) => {
         const ref = reference.documentHtmlTree;
         const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
 
         const openDocument = () => {
-            viewDocument(reference.documentTitle, () => {
-                if (reference.documentHtmlTree) {
-                    setPendingNavigation({
-                        documentTitle: reference.documentTitle,
-                        documentHtmlTree: reference.documentHtmlTree,
-                    });
-                }
-            });
+            viewDocument(
+                reference.documentTitle,
+                () => {
+                    if (reference.documentHtmlTree) {
+                        setPendingNavigation({
+                            documentTitle: reference.documentTitle,
+                            documentHtmlTree: reference.documentHtmlTree,
+                        });
+                    }
+                },
+                reference.sermonId,
+            );
         };
 
-        const sermon = getSermon(reference.documentTitle);
+        const sermon = getSermonById(reference.sermonId);
         const displayTitle = sermon?.title ?? reference.documentTitle;
 
         Modal[assigned ? 'info' : 'warning']({

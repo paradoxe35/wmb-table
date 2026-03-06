@@ -34,6 +34,7 @@ export const historyItems = sqliteTable('history_items', {
     date: text('date').notNull(),
     time: text('time').notNull(),
     documentTitle: text('document_title').notNull(),
+    sermonId: text('sermon_id').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -58,6 +59,7 @@ export const subjectItems = sqliteTable('subject_items', {
     documentHtmlTree: text('document_html_tree').notNull(), // JSON
     textContent: text('text_content').notNull(),
     bible: text('bible'), // JSON (nullable)
+    sermonId: text('sermon_id').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -105,7 +107,7 @@ export const customDocuments = sqliteTable('custom_documents', {
     documentId: text('document_id').notNull(),
     title: text('title').notNull().unique(),
     content: text('content').notNull().default(''),
-    sermonDate: text('sermon_date').notNull().default(''),
+    sermonId: text('sermon_id').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -133,6 +135,7 @@ export const notesReferences = sqliteTable('notes_references', {
     documentTitle: text('document_title').notNull(),
     documentHtmlTree: text('document_html_tree').notNull(), // JSON
     textContent: text('text_content').notNull(),
+    sermonId: text('sermon_id').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

@@ -99,7 +99,7 @@ function ContentModal({
     onSelectItem: (item: NoteItemReference) => void;
     datas: NoteItemReference[];
 }) {
-    const { getSermon } = useSermonLookup();
+    const { getSermonById } = useSermonLookup();
 
     return (
         <>
@@ -141,7 +141,7 @@ function ContentModal({
                                     }}
                                 >
                                     {assigned
-                                        ? `Référencé à: ${getSermon(item.documentTitle)?.title || item.documentTitle}`
+                                        ? `Référencé à: ${getSermonById(item.sermonId)?.title || item.documentTitle}`
                                         : 'Aucun document attribué à cette référence'}
                                 </div>
                             </div>

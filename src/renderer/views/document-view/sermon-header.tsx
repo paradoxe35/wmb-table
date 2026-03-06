@@ -44,7 +44,7 @@ export default function SermonHeader({
                     enTitle: meta.enTitle ?? '',
                     traduction: meta.languageCode,
                     audio_link: meta.audioLink,
-                    date: meta.sermonDate,
+                    sermonId: meta.sermonId,
                 },
             }),
         );

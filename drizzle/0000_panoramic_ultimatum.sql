@@ -51,7 +51,7 @@ CREATE TABLE `custom_documents` (
 	`document_id` text NOT NULL,
 	`title` text NOT NULL,
 	`content` text DEFAULT '' NOT NULL,
-	`sermon_date` text DEFAULT '' NOT NULL,
+	`sermon_id` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
@@ -72,6 +72,7 @@ CREATE TABLE `history_items` (
 	`date` text NOT NULL,
 	`time` text NOT NULL,
 	`document_title` text NOT NULL,
+	`sermon_id` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`history_id`) REFERENCES `history`(`id`) ON UPDATE no action ON DELETE cascade
@@ -104,6 +105,7 @@ CREATE TABLE `notes_references` (
 	`document_title` text NOT NULL,
 	`document_html_tree` text NOT NULL,
 	`text_content` text NOT NULL,
+	`sermon_id` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`note_id`) REFERENCES `notes`(`id`) ON UPDATE no action ON DELETE cascade
@@ -123,6 +125,7 @@ CREATE TABLE `subject_items` (
 	`document_html_tree` text NOT NULL,
 	`text_content` text NOT NULL,
 	`bible` text,
+	`sermon_id` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );

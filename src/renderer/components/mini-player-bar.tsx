@@ -127,7 +127,14 @@ export default function MiniPlayerBar() {
             const localFile = result.download?.local_file;
             const src = localFile?.replaceAll('#', '%23') || detail.audio_link;
 
-            loadAudio(src, detail.audio_link, detail.title, detail.traduction ?? '', ctime);
+            loadAudio(
+                src,
+                detail.audio_link,
+                detail.title,
+                detail.traduction ?? '',
+                ctime,
+                detail.sermonId ?? '',
+            );
 
             el.src = src;
             el.load();

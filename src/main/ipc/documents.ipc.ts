@@ -12,11 +12,11 @@ export function registerDocumentsHandlers(): void {
 
     registerHandler(
         DocumentChannels.getSermonContent,
-        async (_event, langCode, translationId, sermonDate) => {
-            const meta = referenceDataService.getSermonMeta(translationId, langCode, sermonDate);
+        async (_event, langCode, translationId, sermonId) => {
+            const meta = referenceDataService.getSermonMeta(translationId, langCode, sermonId);
             if (!meta)
                 throw new Error(
-                    `Sermon not found: tid=${translationId} date=${sermonDate} (${langCode})`,
+                    `Sermon not found: tid=${translationId} sermonId=${sermonId} (${langCode})`,
                 );
             const paragraphs = await tantivyService.getSermonParagraphs(
                 langCode,
@@ -42,8 +42,8 @@ export function registerDocumentsHandlers(): void {
 
     registerHandler(
         DocumentChannels.getTraductionsForSermon,
-        async (_event, sermonDate, langCode) => {
-            return referenceDataService.getTraductionsForSermon(sermonDate, langCode);
+        async (_event, sermonId, langCode) => {
+            return referenceDataService.getTraductionsForSermon(sermonId, langCode);
         },
     );
 

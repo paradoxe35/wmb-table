@@ -3,6 +3,7 @@ import { FileFilled } from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import type { DocumentTab } from '@shared/types';
+import { formatShortDate } from '@renderer/utils/sermon-utils';
 
 export default function TabItem({
     tab,
@@ -70,8 +71,11 @@ export default function TabItem({
                     <div className="chrome-tab-favicon">
                         <FileFilled style={{ fontSize: 12 }} />
                     </div>
-                    <div className="chrome-tab-title" title={tab.title}>
-                        {tab.title}
+                    <div
+                        className="chrome-tab-title"
+                        title={`${tab.title} - ${formatShortDate(tab.sermonId)}`}
+                    >
+                        {tab.title} - {formatShortDate(tab.sermonId)}
                     </div>
                     <div className="chrome-tab-drag-handle" />
                     <div

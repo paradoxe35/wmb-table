@@ -24,6 +24,7 @@ function toHistoryItem(row: typeof historyItems.$inferSelect): HistoryDataItem {
         date: row.date,
         time: row.time,
         documentTitle: row.documentTitle,
+        sermonId: row.sermonId,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -55,6 +56,7 @@ export function addHistoryEntry(
     time: string,
     documentTitle: string,
     languageCode: string,
+    sermonId: string,
 ): void {
     const db = getDb();
 
@@ -112,6 +114,7 @@ export function addHistoryEntry(
             date,
             time,
             documentTitle,
+            sermonId,
             createdAt: now,
             updatedAt: now,
         })

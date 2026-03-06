@@ -5,11 +5,12 @@ import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/
 import { BookOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useSermonStore, useSubjectsStore } from '@renderer/stores';
+import { useSermonStore, useSubjectsStore, selectActiveTab } from '@renderer/stores';
 
 export function SubjectSelectModal() {
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
+    const activeTab = useSermonStore(selectActiveTab);
 
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
@@ -33,6 +34,7 @@ export function SubjectSelectModal() {
                 documentRefTree.current.documentHtmlTree,
                 documentRefTree.current.textContent,
                 documentRefTree.current.bible,
+                activeTab?.sermonId,
             )
             .then((item) => {
                 setPendingNavigation({
