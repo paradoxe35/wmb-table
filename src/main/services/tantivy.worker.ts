@@ -207,24 +207,60 @@ function getSermonParagraphs(
     const searcher = index.searcher();
     const result = searcher.search(query, 10000, false, 'line_index', 0, ORDER_ASC);
 
-    const paragraphs: SermonParagraphResult[] = [];
+    // Group lines by paragraph_index — multiple lines can share the same paragraph
+    const grouped = new Map<
+        number,
+        {
+            lineIndex: number;
+            translationId: number;
+            sermonId: number;
+            contents: string[];
+            stemmedContents: string[];
+        }
+    >();
+
     for (const hit of result.hits) {
         const doc = searcher.doc(hit.docAddress);
         const dict = doc.toDict() as Record<string, unknown[]>;
 
-        const paragraph: SermonParagraphResult = {
-            lineIndex: extractNumeric(dict, 'line_index'),
-            paragraphIndex: extractNumeric(dict, 'paragraph_index'),
-            translationId: extractNumeric(dict, 'translation_id'),
-            sermonId: extractNumeric(dict, 'sermon_date'),
-            content: extractString(dict, 'unstemmed_content'),
-        };
+        const paragraphIndex = extractNumeric(dict, 'paragraph_index');
+        const lineIndex = extractNumeric(dict, 'line_index');
+        const content = extractString(dict, 'unstemmed_content');
 
-        if (hasStemmed) {
-            const stemmed = extractString(dict, 'stemmed_content');
-            if (stemmed) paragraph.stemmedContent = stemmed;
+        let group = grouped.get(paragraphIndex);
+        if (!group) {
+            group = {
+                lineIndex,
+                translationId: extractNumeric(dict, 'translation_id'),
+                sermonId: extractNumeric(dict, 'sermon_date'),
+                contents: [],
+                stemmedContents: [],
+            };
+            grouped.set(paragraphIndex, group);
         }
 
+        group.contents.push(content);
+        if (hasStemmed) {
+            const stemmed = extractString(dict, 'stemmed_content');
+            if (stemmed) group.stemmedContents.push(stemmed);
+        }
+    }
+
+    // Build merged paragraphs sorted by paragraph_index
+    const paragraphs: SermonParagraphResult[] = [];
+    const sortedKeys = Array.from(grouped.keys()).sort((a, b) => a - b);
+    for (const key of sortedKeys) {
+        const group = grouped.get(key)!;
+        const paragraph: SermonParagraphResult = {
+            lineIndex: group.lineIndex,
+            paragraphIndex: key,
+            translationId: group.translationId,
+            sermonId: group.sermonId,
+            content: group.contents.join('\n'),
+        };
+        if (hasStemmed && group.stemmedContents.length > 0) {
+            paragraph.stemmedContent = group.stemmedContents.join('\n');
+        }
         paragraphs.push(paragraph);
     }
 
