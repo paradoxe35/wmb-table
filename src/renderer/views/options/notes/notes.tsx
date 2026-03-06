@@ -71,15 +71,18 @@ export function Notes({
                         {notes.map((note) => (
                             <Card
                                 key={note.id}
-                                hoverable
+                                className="note-card"
+                                onClick={() => editDocument(note)}
                                 actions={[
-                                    <EditOutlined key="edit" onClick={() => editDocument(note)} />,
-                                    <DeleteBtn key="delete" confirm={() => handleDeletion(note)} />,
+                                    <EditOutlined key="edit" />,
+                                    <span key="delete" onClick={(e) => e.stopPropagation()}>
+                                        <DeleteBtn confirm={() => handleDeletion(note)} />
+                                    </span>,
                                 ]}
                             >
                                 <Card.Meta
                                     title={
-                                        <Typography.Text title={note.name} type="secondary">
+                                        <Typography.Text title={note.name}>
                                             {note.name}
                                         </Typography.Text>
                                     }

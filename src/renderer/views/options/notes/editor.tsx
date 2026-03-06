@@ -142,7 +142,12 @@ function ButtonsControllers({
             content: `Semble que votre note n'a pas de contenu, si vous continuez cette note sera inconsidérée et elle sera supprimée`,
             okText: 'Continuer',
             cancelText: 'Annuler',
-            onOk: backToNotes,
+            onOk: async () => {
+                if (workingNoteRef.current?.id) {
+                    await window.api.notes.delete(workingNoteRef.current.id);
+                }
+                backToNotes();
+            },
         });
     }, [backToNotes, antModal]);
 
@@ -562,7 +567,14 @@ function Editor({
                                     },
                                 ],
                             },
-                            language: 'fr',
+                            language: {
+                                ui: 'fr',
+                                content: 'fr',
+                                textPartLanguage: [
+                                    { title: 'Français', languageCode: 'fr' },
+                                    { title: 'English', languageCode: 'en' },
+                                ],
+                            },
                         }}
                     />
                 </div>

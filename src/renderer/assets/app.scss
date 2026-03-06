@@ -621,16 +621,40 @@ body {
 // Notes grid (used in notes.tsx)
 // ---------------------------------------------------------------------------
 .notes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     margin-top: 12px;
+
+    > * {
+        width: 250px;
+    }
+}
+
+.note-card {
+    cursor: pointer;
+    transition: border-color 0.2s;
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--ant-color-primary, #1677ff) 40%, transparent);
+    }
+
+    .ant-card-meta-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
 }
 
 // ---------------------------------------------------------------------------
 // Editor styles (used in editor.tsx)
 // ---------------------------------------------------------------------------
 .editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
     background: var(--ant-color-bg-container, #fff);
 }
