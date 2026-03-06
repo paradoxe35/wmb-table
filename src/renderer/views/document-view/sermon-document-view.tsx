@@ -55,6 +55,7 @@ export default function SermonDocumentView() {
                         zoom={zoom}
                         sermonInfo={sermonInfo}
                         currentTranslationId={tabTranslationId ?? content.meta.translationId}
+                        paragraphs={content.paragraphs}
                     />
                     {searchBarOpen && <InlineSearchBar />}
                     <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>

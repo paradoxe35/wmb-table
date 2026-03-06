@@ -110,6 +110,7 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
     const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeContent = useSermonStore((s) => s.activeContent);
 
     useEffect(() => {
         if (!pendingNavigation || !containerRef.current) return;
@@ -124,11 +125,17 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
         if (paragraphIndex == null) return;
 
         const el = containerRef.current.querySelector(`[data-paragraph-index="${paragraphIndex}"]`);
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
+        if (!el) return; // content not loaded yet — wait for next render
+
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('paragraph-highlight-blink');
+        const cleanup = () => el.classList.remove('paragraph-highlight-blink');
+        el.addEventListener('animationend', cleanup, { once: true });
+        // Fallback removal in case animation doesn't fire
+        setTimeout(cleanup, 2500);
+
         setPendingNavigation(null);
-    }, [pendingNavigation, activeTitle, setPendingNavigation]);
+    }, [pendingNavigation, activeTitle, activeContent, setPendingNavigation]);
 }
 
 export function useContextMenuItems(

@@ -366,6 +366,22 @@ body {
     padding: 0.5em;
 }
 
+// Blink highlight for navigated-to paragraphs
+@keyframes paragraph-blink {
+    0%,
+    100% {
+        background-color: transparent;
+    }
+    25%,
+    75% {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.15));
+    }
+}
+
+.paragraph-highlight-blink {
+    animation: paragraph-blink 2s ease-in-out;
+}
+
 // ---------------------------------------------------------------------------
 // Content descriptions
 // ---------------------------------------------------------------------------

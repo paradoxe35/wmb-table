@@ -194,7 +194,16 @@ function getSermonParagraphs(
     const schema = index.schema;
     const hasStemmed = schema.hasField('stemmed_content');
 
-    const query = Query.termQuery(schema, 'translation_id', translationId);
+    const clauses: { occur: string; query: Query }[] = [
+        { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
+    ];
+    if (sermonId !== undefined) {
+        clauses.push({
+            occur: 'must',
+            query: Query.termQuery(schema, 'sermon_date', sermonId),
+        });
+    }
+    const query = Query.booleanQuery(clauses);
     const searcher = index.searcher();
     const result = searcher.search(query, 10000, false, 'line_index', 0, ORDER_ASC);
 
@@ -203,14 +212,11 @@ function getSermonParagraphs(
         const doc = searcher.doc(hit.docAddress);
         const dict = doc.toDict() as Record<string, unknown[]>;
 
-        const docSermonDate = extractNumeric(dict, 'sermon_date');
-        if (sermonId !== undefined && docSermonDate !== sermonId) continue;
-
         const paragraph: SermonParagraphResult = {
             lineIndex: extractNumeric(dict, 'line_index'),
             paragraphIndex: extractNumeric(dict, 'paragraph_index'),
             translationId: extractNumeric(dict, 'translation_id'),
-            sermonId: docSermonDate,
+            sermonId: extractNumeric(dict, 'sermon_date'),
             content: extractString(dict, 'unstemmed_content'),
         };
 

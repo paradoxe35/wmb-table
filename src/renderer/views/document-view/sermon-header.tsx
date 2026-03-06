@@ -1,6 +1,7 @@
-import { useCallback, useMemo } from 'react';
-import { Button, Segmented, Space } from 'antd';
+import { useCallback, useMemo, useState } from 'react';
+import { Button, Segmented, Space, Tooltip } from 'antd';
 import {
+    NumberOutlined,
     PlayCircleOutlined,
     ZoomInOutlined,
     ZoomOutOutlined,
@@ -8,20 +9,24 @@ import {
     TranslationOutlined,
 } from '@ant-design/icons';
 import { useSermonStore, useSearchStore, selectActiveTabKey } from '@renderer/stores';
-import type { SermonMeta, SermonMetaWithTraductions } from '@shared/types';
+import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import ParagraphNavigatorModal from './paragraph-navigator-modal';
 
 export default function SermonHeader({
     meta,
     zoom,
     sermonInfo,
     currentTranslationId,
+    paragraphs,
 }: {
     meta: SermonMeta;
     zoom: number;
     sermonInfo: SermonMetaWithTraductions | undefined;
     currentTranslationId: number;
+    paragraphs: SermonParagraph[];
 }) {
+    const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
@@ -114,6 +119,14 @@ export default function SermonHeader({
                     {zoom}%
                 </span>
                 <Button type="text" size="small" icon={<ZoomInOutlined />} onClick={handleZoomIn} />
+                <Tooltip title="Sélectionnez un paragraphe">
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<NumberOutlined />}
+                        onClick={() => setParagraphModalOpen(true)}
+                    />
+                </Tooltip>
                 <Button
                     type="text"
                     size="small"
@@ -121,6 +134,11 @@ export default function SermonHeader({
                     onClick={openSearchBar}
                 />
             </Space>
+            <ParagraphNavigatorModal
+                open={paragraphModalOpen}
+                onClose={() => setParagraphModalOpen(false)}
+                paragraphs={paragraphs}
+            />
         </div>
     );
 }
