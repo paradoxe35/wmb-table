@@ -1,4 +1,4 @@
-import { Divider, Input, Modal, Space } from 'antd';
+import { Divider, Input, Modal, Space, message } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SubjectDocument, SubjectRefTree } from '@shared/types';
 import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
@@ -27,13 +27,17 @@ export function SubjectSelectModal() {
         const subject = subjects.find((s) => s.name === name);
         if (!subject) return;
 
+        const ref = documentRefTree.current;
+        const documentHtmlTree = ref.documentHtmlTree ?? { tree: [] };
+        const textContent = ref.textContent ?? '';
+
         window.api.subjects
             .createItem(
                 subject.id,
                 titleRef.current || '',
-                documentRefTree.current.documentHtmlTree,
-                documentRefTree.current.textContent,
-                documentRefTree.current.bible,
+                documentHtmlTree,
+                textContent,
+                ref.bible,
                 activeTab?.sermonId,
             )
             .then((item) => {
@@ -44,6 +48,10 @@ export function SubjectSelectModal() {
                 window.dispatchEvent(
                     new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
                 );
+                message.success('Ajouté au sujet');
+            })
+            .catch(() => {
+                message.error("Erreur lors de l'ajout au sujet");
             });
         setVisible(false);
     };

@@ -1,4 +1,4 @@
-import { Button, Card, Empty, Input, Space, Typography } from 'antd';
+import { Button, Card, Empty, Input, Space, Typography, message } from 'antd';
 import {
     useCallback,
     useEffect,
@@ -36,6 +36,7 @@ export function Notes({
         window.api.notes.delete(note.id).then(() => {
             odatas.current = odatas.current.filter((d) => d.id !== note.id);
             setNotes(odatas.current);
+            message.success('Note supprimée');
         });
     };
 

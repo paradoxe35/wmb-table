@@ -130,6 +130,7 @@ export function ReferenceBibleModal({
                     .filter((f) => f.id !== ref.id);
                 return nr;
             });
+            message.success('Verset supprimé');
         });
     };
 
@@ -152,6 +153,7 @@ export function ReferenceBibleModal({
                     nr.references.push(item);
                     return nr;
                 });
+                message.success('Verset ajouté');
             })
             .finally(() => {
                 window.setTimeout(() => {

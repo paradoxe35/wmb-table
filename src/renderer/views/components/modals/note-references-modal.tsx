@@ -1,4 +1,4 @@
-import { Button, Modal, Tooltip } from 'antd';
+import { Button, Modal, Tooltip, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import {
     type DocumentHtmlTree,
@@ -53,6 +53,7 @@ export function NoteReferencesModal() {
         };
 
         window.api.notes.updateReference(item.id, referenceItem);
+        message.success('Ajouté à la note');
 
         setVisible(false);
     };

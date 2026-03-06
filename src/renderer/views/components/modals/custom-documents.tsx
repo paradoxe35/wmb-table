@@ -121,6 +121,7 @@ function CustomDocumentItem({
                     detail: document,
                 }),
             );
+            message.success('Document supprimé');
         });
     };
 

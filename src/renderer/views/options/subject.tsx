@@ -149,6 +149,7 @@ export default function Subject() {
             odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
             setDatas(odatas.current);
             setSubjects(odatas.current);
+            message.success('Sujet créé');
         });
     };
 
@@ -157,6 +158,7 @@ export default function Subject() {
             odatas.current = odatas.current.filter((d) => d.name !== item.name);
             setDatas(odatas.current);
             setSubjects(odatas.current);
+            message.success('Supprimé');
         });
     };
 

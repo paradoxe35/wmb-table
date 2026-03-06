@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
     useSermonStore,
@@ -182,6 +183,7 @@ export function useContextMenuItems(
                     const result = getRef();
                     if (!result) return;
                     navigator.clipboard.writeText(result.text);
+                    message.success('Texte copié');
                 },
             },
             { type: 'divider' as const, key: 'divider-1' },
