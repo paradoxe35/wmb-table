@@ -92,17 +92,17 @@ const api = {
         updateContent: (id: string, content: string) =>
             invoke(NotesChannels.updateContent, id, content),
         getReferences: (noteId: string) => invoke(NotesChannels.getReferences, noteId),
-        createReference: (
-            noteId: string,
-            docTitle: string,
-            htmlTree: DocumentHtmlTree | ParagraphReference,
-            text: string,
-        ) => invoke(NotesChannels.createReference, noteId, docTitle, htmlTree, text),
+        createReference: (noteId: string, label: string) =>
+            invoke(NotesChannels.createReference, noteId, label),
         getReference: (id: string) => invoke(NotesChannels.getReference, id),
         syncReferences: (noteId: string, refs: string[]) =>
             invoke(NotesChannels.syncReferences, noteId, refs),
-        updateReference: (id: string, ref: SubjectRefTree) =>
-            invoke(NotesChannels.updateReference, id, ref),
+        updateReference: (
+            id: string,
+            ref: SubjectRefTree,
+            documentTitle: string,
+            sermonId: string,
+        ) => invoke(NotesChannels.updateReference, id, ref, documentTitle, sermonId),
         getBibleReference: (id: string) => invoke(NotesChannels.getBibleReference, id),
         getBibleReferences: (noteId: string) => invoke(NotesChannels.getBibleReferences, noteId),
         createBibleReference: (noteId: string, label: string) =>

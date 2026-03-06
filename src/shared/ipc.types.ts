@@ -217,7 +217,7 @@ export interface InvokeChannelMap {
     [NotesChannels.updateContent]: { args: [string, string]; return: void };
     [NotesChannels.getReferences]: { args: [string]; return: NoteItemReference[] };
     [NotesChannels.createReference]: {
-        args: [string, string, DocumentHtmlTree | ParagraphReference, string];
+        args: [string, string];
         return: NoteItemReference;
     };
     [NotesChannels.getReference]: { args: [string]; return: NoteItemReference | null };
@@ -226,7 +226,7 @@ export interface InvokeChannelMap {
         return: void;
     };
     [NotesChannels.updateReference]: {
-        args: [string, SubjectRefTree];
+        args: [string, SubjectRefTree, string, string];
         return: void;
     };
     [NotesChannels.getBibleReference]: {

@@ -327,9 +327,7 @@ export default function EditorContent({
                         ipcRequestWithLoader<NoteItemReference>(async () => {
                             return await window.api.notes.createReference(
                                 workingNoteIdRef.current,
-                                '',
-                                { tree: [] },
-                                '',
+                                selected,
                             );
                         }).then((ref) => {
                             editor.execute('link', referenceDocumentBrandLink + ref.id);

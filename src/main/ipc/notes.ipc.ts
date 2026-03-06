@@ -31,12 +31,9 @@ export function registerNotesHandlers(): void {
         return notesRepo.getReferences(noteId);
     });
 
-    registerHandler(
-        NotesChannels.createReference,
-        async (_event, noteId, documentTitle, documentHtmlTree, textContent) => {
-            return notesRepo.createReference(noteId, documentTitle, documentHtmlTree, textContent);
-        },
-    );
+    registerHandler(NotesChannels.createReference, async (_event, noteId, label) => {
+        return notesRepo.createReference(noteId, label);
+    });
 
     registerHandler(NotesChannels.getReference, async (_event, id) => {
         return notesRepo.getReference(id);
@@ -46,9 +43,12 @@ export function registerNotesHandlers(): void {
         notesRepo.syncReferences(noteId, refs);
     });
 
-    registerHandler(NotesChannels.updateReference, async (_event, id, ref) => {
-        notesRepo.updateReference(id, ref);
-    });
+    registerHandler(
+        NotesChannels.updateReference,
+        async (_event, id, ref, documentTitle, sermonId) => {
+            notesRepo.updateReference(id, ref, documentTitle, sermonId);
+        },
+    );
 
     registerHandler(NotesChannels.getBibleReference, async (_event, id) => {
         return notesRepo.getBibleReference(id);

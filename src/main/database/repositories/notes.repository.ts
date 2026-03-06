@@ -10,8 +10,6 @@ import type {
     NoteItem,
     NoteItemReference,
     NoteItemReferenceBible,
-    DocumentHtmlTree,
-    ParagraphReference,
     BibleBook,
     SubjectRefTree,
 } from '@shared/types';
@@ -119,14 +117,12 @@ export function getReferences(noteId: string): NoteItemReference[] {
 
 export function createReference(
     noteId: string,
-    documentTitle: string,
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference,
-    textContent: string,
+    label: string,
     sermonId: string = '',
 ): NoteItemReference {
     const id = randomUUID();
     const now = new Date().toISOString();
-    const label = documentTitle;
+    const documentTitle = '';
     getDb()
         .insert(notesReferences)
         .values({
@@ -134,8 +130,8 @@ export function createReference(
             noteId,
             label,
             documentTitle,
-            documentHtmlTree: JSON.stringify(documentHtmlTree),
-            textContent,
+            documentHtmlTree: JSON.stringify({ tree: [] }),
+            textContent: '',
             sermonId,
             createdAt: now,
             updatedAt: now,
@@ -169,13 +165,20 @@ export function syncReferences(noteId: string, refIds: string[]): void {
     }
 }
 
-export function updateReference(id: string, ref: SubjectRefTree): void {
+export function updateReference(
+    id: string,
+    ref: SubjectRefTree,
+    documentTitle: string,
+    sermonId: string,
+): void {
     const now = new Date().toISOString();
     getDb()
         .update(notesReferences)
         .set({
             documentHtmlTree: JSON.stringify(ref.documentHtmlTree),
             textContent: ref.textContent,
+            documentTitle,
+            sermonId,
             updatedAt: now,
         })
         .where(eq(notesReferences.id, id))

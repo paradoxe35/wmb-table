@@ -1,26 +1,27 @@
 import { Button, Modal, Tooltip, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import {
-    type DocumentHtmlTree,
-    type ParagraphReference,
     type NoteItem,
     type NoteItemReference,
     type SubjectRefTree,
     isParagraphReference,
 } from '@shared/types';
-import { useSermonLookup, useModalVisible } from '@renderer/hooks';
+import {
+    useSermonLookup,
+    useModalVisible,
+    useActiveTabTitle,
+    useValueStateRef,
+} from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-import { useNotesStore } from '@renderer/stores';
+import { useNotesStore, useSermonStore, selectActiveTab } from '@renderer/stores';
 
 export function NoteReferencesModal() {
-    const documentRefTree = useRef<
-        | {
-              textContent: string;
-              documentHtmlTree: DocumentHtmlTree | ParagraphReference;
-          }
-        | undefined
-    >(undefined);
+    const title = useActiveTabTitle();
+    const titleRef = useValueStateRef(title);
+    const activeTab = useSermonStore(selectActiveTab);
+
+    const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
 
     const { visible, hide, setVisible } = useModalVisible();
 
@@ -52,15 +53,20 @@ export function NoteReferencesModal() {
             textContent: documentRefTree.current.textContent ?? '',
         };
 
-        window.api.notes.updateReference(item.id, referenceItem);
+        window.api.notes.updateReference(
+            item.id,
+            referenceItem,
+            titleRef.current || '',
+            activeTab?.sermonId ?? '',
+        );
         message.success('Ajouté à la note');
 
         setVisible(false);
     };
 
     useEffect(() => {
-        const showModal = (e: CustomEventInit) => {
-            documentRefTree.current = e.detail;
+        const showModal = (e: CustomEventInit<SubjectRefTree>) => {
+            documentRefTree.current = e.detail ?? undefined;
             setVisible(true);
         };
 
