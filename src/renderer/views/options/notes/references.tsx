@@ -1,6 +1,6 @@
 import { Col, Divider, message, Modal, Row, Space, Typography } from 'antd';
 import { type Dispatch, type SetStateAction, useRef, useState, useCallback } from 'react';
-import { useSubjectsStore } from '@renderer/stores';
+import { useSermonStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import { FileOutlined } from '@ant-design/icons';
 import {
@@ -19,7 +19,7 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 
 export const useShowReferenceDetail = () => {
     const viewDocument = useDocumentViewOpen();
-    const setSelectedSubjectItem = useSubjectsStore((s) => s.setSelectedSubjectItem);
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
     const { getSermon } = useSermonLookup();
 
@@ -29,12 +29,12 @@ export const useShowReferenceDetail = () => {
 
         const openDocument = () => {
             viewDocument(reference.documentTitle, () => {
-                setSelectedSubjectItem({
-                    subject: '',
-                    documentHtmlTree: reference.documentHtmlTree,
-                    documentTitle: reference.documentTitle,
-                    textContent: reference.textContent,
-                } as any);
+                if (reference.documentHtmlTree) {
+                    setPendingNavigation({
+                        documentTitle: reference.documentTitle,
+                        documentHtmlTree: reference.documentHtmlTree,
+                    });
+                }
             });
         };
 

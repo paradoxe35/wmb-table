@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { Dropdown, Spin } from 'antd';
 import {
     useSermonStore,
@@ -15,7 +15,7 @@ import {
     useSermonContent,
     useScrollAndZoom,
     useSearchHighlight,
-    useSubjectNavigation,
+    useReferenceNavigation,
     useContextMenuItems,
     useMatchNavigation,
 } from './hooks';
@@ -23,12 +23,17 @@ import {
 export default function SermonDocumentView() {
     const { content, loading } = useSermonContent();
     const containerRef = useRef<HTMLDivElement>(null);
+    const contextTargetRef = useRef<Element | null>(null);
     const { zoom } = useScrollAndZoom(containerRef);
     const searchTerm = useSearchHighlight();
     const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-    useSubjectNavigation(containerRef);
-    const contextMenuItems = useContextMenuItems(content);
+    useReferenceNavigation(containerRef);
+    const contextMenuItems = useContextMenuItems(content, contextTargetRef);
+
+    const onContextMenu = useCallback((e: React.MouseEvent) => {
+        contextTargetRef.current = e.target as Element;
+    }, []);
     const activeTab = useSermonStore(selectActiveTab);
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
@@ -64,6 +69,7 @@ export default function SermonDocumentView() {
                             id={DOCUMENT_CONTAINER_ID}
                             className="sermon-body"
                             style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
+                            onContextMenu={onContextMenu}
                         >
                             <SermonContentHeader meta={content.meta} />
                             {content.paragraphs.map((p, i) => (

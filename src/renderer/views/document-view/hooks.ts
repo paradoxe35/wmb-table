@@ -1,10 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
     useSermonStore,
     useSearchStore,
-    useSubjectsStore,
     useAppStore,
     selectActiveTabTitle,
     selectActiveTab,
@@ -106,16 +104,16 @@ export function useSearchHighlight(): string | null {
     }, [documentViewQueries, activeTitle]);
 }
 
-export function useSubjectNavigation(containerRef: React.RefObject<HTMLDivElement | null>) {
-    const selectedSubjectItem = useSubjectsStore((s) => s.selectedSubjectItem);
-    const setSelectedSubjectItem = useSubjectsStore((s) => s.setSelectedSubjectItem);
+export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElement | null>) {
+    const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const activeTitle = useSermonStore(selectActiveTabTitle);
 
     useEffect(() => {
-        if (!selectedSubjectItem || !containerRef.current) return;
-        if (selectedSubjectItem.documentTitle !== activeTitle) return;
+        if (!pendingNavigation || !containerRef.current) return;
+        if (pendingNavigation.documentTitle !== activeTitle) return;
 
-        const ref = selectedSubjectItem.documentHtmlTree;
+        const ref = pendingNavigation.documentHtmlTree;
         const paragraphIndex = ref
             ? isParagraphReference(ref)
                 ? ref.paragraphIndex
@@ -127,30 +125,51 @@ export function useSubjectNavigation(containerRef: React.RefObject<HTMLDivElemen
         if (el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-        setSelectedSubjectItem(null);
-    }, [selectedSubjectItem, activeTitle, setSelectedSubjectItem]);
+        setPendingNavigation(null);
+    }, [pendingNavigation, activeTitle, setPendingNavigation]);
 }
 
-export function useContextMenuItems(content: SermonContentType | null): MenuProps['items'] {
+export function useContextMenuItems(
+    content: SermonContentType | null,
+    contextTargetRef: React.RefObject<Element | null>,
+): MenuProps['items'] {
     return useMemo(() => {
         if (!content) return [];
 
-        const getSelectionRef = (): { sel: Selection; ref: ParagraphReference } | null => {
+        const getRef = (): { ref: ParagraphReference; text: string } | null => {
             const sel = window.getSelection();
-            if (!sel || sel.isCollapsed) {
-                message.warning('Aucun texte sélectionné');
-                return null;
+
+            if (sel && !sel.isCollapsed) {
+                const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
+                const idx = anchor ? parseInt(anchor.getAttribute('data-paragraph-index')!) : 0;
+                return {
+                    ref: {
+                        paragraphIndex: idx,
+                        translationId: content.meta.translationId,
+                        languageCode: content.meta.languageCode,
+                        textSnippet: sel.toString().slice(0, 200),
+                    },
+                    text: sel.toString(),
+                };
             }
-            const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
-            const idx = anchor ? parseInt(anchor.getAttribute('data-paragraph-index')!) : 0;
+
+            const target = contextTargetRef.current;
+            const paragraph =
+                target instanceof Element ? target.closest('[data-paragraph-index]') : null;
+            if (!paragraph) return null;
+
+            const idx = parseInt(paragraph.getAttribute('data-paragraph-index')!);
+            const paragraphData = content.paragraphs.find((p) => p.paragraphIndex === idx);
+            const text = paragraphData?.content ?? paragraph.textContent ?? '';
+
             return {
-                sel,
                 ref: {
                     paragraphIndex: idx,
                     translationId: content.meta.translationId,
                     languageCode: content.meta.languageCode,
-                    textSnippet: sel.toString().slice(0, 200),
+                    textSnippet: text.slice(0, 200),
                 },
+                text,
             };
         };
 
@@ -159,13 +178,13 @@ export function useContextMenuItems(content: SermonContentType | null): MenuProp
                 key: 'add-to-subject',
                 label: 'Ajouter au sujet',
                 onClick: () => {
-                    const result = getSelectionRef();
+                    const result = getRef();
                     if (!result) return;
                     window.dispatchEvent(
                         new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, {
                             detail: {
                                 documentHtmlTree: result.ref,
-                                textContent: result.sel.toString(),
+                                textContent: result.text,
                             },
                         }),
                     );
@@ -175,13 +194,13 @@ export function useContextMenuItems(content: SermonContentType | null): MenuProp
                 key: 'add-to-note',
                 label: 'Ajouter à la note',
                 onClick: () => {
-                    const result = getSelectionRef();
+                    const result = getRef();
                     if (!result) return;
                     window.dispatchEvent(
                         new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, {
                             detail: {
                                 documentHtmlTree: result.ref,
-                                textContent: result.sel.toString(),
+                                textContent: result.text,
                             },
                         }),
                     );

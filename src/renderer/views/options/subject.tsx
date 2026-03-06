@@ -25,7 +25,7 @@ import {
 import type { SubjectDocument, SubjectDocumentItem } from '@shared/types';
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useSubjectsStore } from '@renderer/stores';
+import { useSermonStore, useSubjectsStore } from '@renderer/stores';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { BookOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
@@ -219,15 +219,21 @@ export default function Subject() {
 
 function ItemFromSelectedSubject({
     item,
-    setSubjectItemSelected,
     confirm,
 }: {
     item: SubjectDocumentItem;
-    setSubjectItemSelected: (s: SubjectDocumentItem | null) => void;
     confirm: (item: SubjectDocumentItem) => void;
 }) {
     const { getSermon } = useSermonLookup();
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const displayTitle = getSermon(item.documentTitle)?.title ?? item.documentTitle;
+
+    const onNavigate = () => {
+        setPendingNavigation({
+            documentTitle: item.documentTitle,
+            documentHtmlTree: item.documentHtmlTree,
+        });
+    };
 
     const title = item.bible ? (
         <span>
@@ -235,10 +241,7 @@ function ItemFromSelectedSubject({
         </span>
     ) : (
         <a className="underline">
-            <DocumentViewer
-                onItemClick={() => setSubjectItemSelected(item)}
-                name={item.documentTitle}
-            >
+            <DocumentViewer onItemClick={onNavigate} name={item.documentTitle}>
                 {displayTitle}
             </DocumentViewer>
         </a>
@@ -272,8 +275,6 @@ function ShowActiveDocuments({
     documents: SubjectDocumentItem[];
     setDocuments: Dispatch<SetStateAction<SubjectDocumentItem[]>>;
 }) {
-    const setSubjectItemSelected = useSubjectsStore((s) => s.setSelectedSubjectItem);
-
     function confirm(item: SubjectDocumentItem) {
         window.api.subjects.deleteItem(item.id).then(() => {
             setDocuments((ds) => ds.filter((d) => d.id !== item.id));
@@ -295,12 +296,7 @@ function ShowActiveDocuments({
                         itemLayout="vertical"
                         dataSource={documents}
                         renderItem={(item) => (
-                            <ItemFromSelectedSubject
-                                key={item.id}
-                                item={item}
-                                confirm={confirm}
-                                setSubjectItemSelected={setSubjectItemSelected}
-                            />
+                            <ItemFromSelectedSubject key={item.id} item={item} confirm={confirm} />
                         )}
                     />
                 </>

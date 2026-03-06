@@ -5,13 +5,13 @@ import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/
 import { BookOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useSubjectsStore } from '@renderer/stores';
+import { useSermonStore, useSubjectsStore } from '@renderer/stores';
 
 export function SubjectSelectModal() {
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
 
-    const setSelectedSubjectItem = useSubjectsStore((s) => s.setSelectedSubjectItem);
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
     const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
 
@@ -35,7 +35,10 @@ export function SubjectSelectModal() {
                 documentRefTree.current.bible,
             )
             .then((item) => {
-                setSelectedSubjectItem(item);
+                setPendingNavigation({
+                    documentTitle: item.documentTitle,
+                    documentHtmlTree: item.documentHtmlTree,
+                });
                 window.dispatchEvent(
                     new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
                 );

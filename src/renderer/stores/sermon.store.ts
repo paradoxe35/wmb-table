@@ -1,6 +1,17 @@
 import { create } from 'zustand';
-import type { DocumentTab, SermonContent, SermonMetaWithTraductions } from '@shared/types';
+import type {
+    DocumentHtmlTree,
+    DocumentTab,
+    ParagraphReference,
+    SermonContent,
+    SermonMetaWithTraductions,
+} from '@shared/types';
 import { getSermonYear } from '@renderer/utils/sermon-utils';
+
+export type PendingNavigation = {
+    documentTitle: string;
+    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
+} | null;
 
 interface SermonState {
     sermons: SermonMetaWithTraductions[];
@@ -8,9 +19,11 @@ interface SermonState {
     sermonsByYear: Record<string, SermonMetaWithTraductions[]>;
     activeContent: SermonContent | null;
     tabs: DocumentTab[];
+    pendingNavigation: PendingNavigation;
 
     setSermons(s: SermonMetaWithTraductions[]): void;
     setActiveContent(c: SermonContent | null): void;
+    setPendingNavigation(nav: PendingNavigation): void;
     setTabs(tabs: DocumentTab[]): void;
     addTab(title: string, type?: 'sermon' | 'custom'): void;
     removeTab(title: string): void;
@@ -30,6 +43,7 @@ export const useSermonStore = create<SermonState>((set) => ({
     sermonsByYear: {},
     activeContent: null,
     tabs: [],
+    pendingNavigation: null,
 
     setSermons: (s) => {
         const sermonsByTitle: Record<string, SermonMetaWithTraductions> = {};
@@ -46,6 +60,7 @@ export const useSermonStore = create<SermonState>((set) => ({
     },
 
     setActiveContent: (c) => set({ activeContent: c }),
+    setPendingNavigation: (nav) => set({ pendingNavigation: nav }),
     setTabs: (tabs) => set({ tabs }),
 
     addTab: (title, type) =>
