@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Input, Modal, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useModalVisible } from '@renderer/hooks';
@@ -52,15 +52,20 @@ function LanguageRow({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '10px 12px',
-                borderBottom: '1px solid var(--ant-color-border)',
+                borderBottom: '1px solid #f0f0f0',
                 cursor: lang.installed && !isActive ? 'pointer' : 'default',
-                background: isActive
-                    ? 'var(--ant-color-primary-bg)'
-                    : lang.installed
-                      ? undefined
-                      : 'var(--ant-color-bg-layout)',
-                borderRadius: 4,
+                background: isActive ? 'rgba(24, 143, 255, 0.06)' : undefined,
                 transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => {
+                if (lang.installed && !isActive) {
+                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.02)';
+                }
+            }}
+            onMouseLeave={(e) => {
+                if (lang.installed && !isActive) {
+                    e.currentTarget.style.background = '';
+                }
             }}
             onClick={lang.installed && !isActive ? onSelect : undefined}
         >
@@ -73,9 +78,7 @@ function LanguageRow({
                         </Tag>
                     )}
                     {lang.installed && !isActive && (
-                        <Tag color="green" style={{ margin: 0 }}>
-                            Téléchargé
-                        </Tag>
+                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
                     )}
                 </div>
                 <Text type="secondary" style={{ fontSize: '0.85em' }}>
@@ -90,7 +93,13 @@ function LanguageRow({
                 onClick={(e) => e.stopPropagation()}
             >
                 {lang.installed ? (
-                    <Button danger size="small" icon={<DeleteOutlined />} onClick={onDelete} />
+                    <Button
+                        type="text"
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={onDelete}
+                    />
                 ) : isDownloading ? (
                     <Progress type="circle" size={28} percent={downloadPercent} />
                 ) : (
@@ -109,8 +118,6 @@ export default function LanguageManagerModal() {
     const [loading, setLoading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const wasEmptyRef = useRef(false);
-
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
     const setSermons = useSermonStore((s) => s.setSermons);
@@ -155,14 +162,20 @@ export default function LanguageManagerModal() {
     }, []);
 
     const filteredLanguages = useMemo(() => {
-        if (!searchQuery.trim()) return languages;
-        const re = simpleRegExp(searchQuery);
-        return languages.filter(
-            (l) =>
-                re.test(strNormalize(l.language)) ||
-                re.test(strNormalize(l.enLanguage)) ||
-                re.test(strNormalize(l.code)),
-        );
+        let list = languages;
+        if (searchQuery.trim()) {
+            const re = simpleRegExp(searchQuery);
+            list = list.filter(
+                (l) =>
+                    re.test(strNormalize(l.language)) ||
+                    re.test(strNormalize(l.enLanguage)) ||
+                    re.test(strNormalize(l.code)),
+            );
+        }
+        const sorted = [...list].sort((a, b) => a.language.localeCompare(b.language));
+        const installed = sorted.filter((l) => l.installed);
+        const available = sorted.filter((l) => !l.installed);
+        return [...installed, ...available];
     }, [languages, searchQuery]);
 
     // Listen for open events (DOM event + IPC push from menu)
@@ -176,20 +189,18 @@ export default function LanguageManagerModal() {
         };
     }, []);
 
-    // Auto-open when no languages installed
+    // Auto-open only when no languages installed or no active language persisted
     useEffect(() => {
-        window.api.languages.getInstalled().then((inst) => {
-            if (inst.length === 0) {
-                wasEmptyRef.current = true;
-                setVisible(true);
-            }
-        });
+        Promise.all([window.api.languages.getInstalled(), window.api.app.getActiveLanguage()]).then(
+            ([inst, activeLang]) => {
+                if (inst.length === 0) {
+                    setVisible(true);
+                } else if (!activeLang) {
+                    setVisible(true);
+                }
+            },
+        );
     }, []);
-
-    // Keep modal open when activeLanguage is null
-    useEffect(() => {
-        if (!activeLanguage) setVisible(true);
-    }, [activeLanguage]);
 
     useEffect(() => {
         if (visible) {
@@ -210,11 +221,6 @@ export default function LanguageManagerModal() {
             });
             refresh();
             message.success('Langue téléchargée avec succès');
-
-            if (wasEmptyRef.current || !useAppStore.getState().activeLanguage) {
-                wasEmptyRef.current = false;
-                handleSelectLanguage(langCode);
-            }
         });
         return () => {
             unsub1();
@@ -227,6 +233,7 @@ export default function LanguageManagerModal() {
         await window.api.app.setActiveLanguage(langCode);
         const sermons = await window.api.documents.getTitles(langCode);
         setSermons(sermons);
+        hide();
     };
 
     const handleInstall = (langCode: string) => {
@@ -258,7 +265,8 @@ export default function LanguageManagerModal() {
             open={visible}
             onCancel={canClose ? hide : undefined}
             closable={canClose}
-            mask={canClose ? undefined : { closable: false }}
+            maskClosable={canClose}
+            keyboard={canClose}
             footer={null}
             width={480}
         >
@@ -297,18 +305,80 @@ export default function LanguageManagerModal() {
                                 Aucune langue trouvée
                             </div>
                         ) : (
-                            filteredLanguages.map((lang) => (
-                                <LanguageRow
-                                    key={lang.code}
-                                    lang={lang}
-                                    isActive={lang.code === activeLanguage}
-                                    isDownloading={downloadProgress[lang.code] != null}
-                                    downloadPercent={downloadProgress[lang.code] ?? 0}
-                                    onSelect={() => handleSelectLanguage(lang.code)}
-                                    onInstall={() => handleInstall(lang.code)}
-                                    onDelete={() => handleDelete(lang.code)}
-                                />
-                            ))
+                            (() => {
+                                const installedLangs = filteredLanguages.filter((l) => l.installed);
+                                const availableLangs = filteredLanguages.filter(
+                                    (l) => !l.installed,
+                                );
+                                return (
+                                    <>
+                                        {installedLangs.length > 0 && (
+                                            <>
+                                                <Text
+                                                    type="secondary"
+                                                    style={{
+                                                        fontSize: '0.8em',
+                                                        padding: '8px 12px 4px',
+                                                        display: 'block',
+                                                    }}
+                                                >
+                                                    Mes langues
+                                                </Text>
+                                                {installedLangs.map((lang) => (
+                                                    <LanguageRow
+                                                        key={lang.code}
+                                                        lang={lang}
+                                                        isActive={lang.code === activeLanguage}
+                                                        isDownloading={
+                                                            downloadProgress[lang.code] != null
+                                                        }
+                                                        downloadPercent={
+                                                            downloadProgress[lang.code] ?? 0
+                                                        }
+                                                        onSelect={() =>
+                                                            handleSelectLanguage(lang.code)
+                                                        }
+                                                        onInstall={() => handleInstall(lang.code)}
+                                                        onDelete={() => handleDelete(lang.code)}
+                                                    />
+                                                ))}
+                                            </>
+                                        )}
+                                        {availableLangs.length > 0 && (
+                                            <>
+                                                <Text
+                                                    type="secondary"
+                                                    style={{
+                                                        fontSize: '0.8em',
+                                                        padding: '8px 12px 4px',
+                                                        display: 'block',
+                                                    }}
+                                                >
+                                                    Disponibles
+                                                </Text>
+                                                {availableLangs.map((lang) => (
+                                                    <LanguageRow
+                                                        key={lang.code}
+                                                        lang={lang}
+                                                        isActive={false}
+                                                        isDownloading={
+                                                            downloadProgress[lang.code] != null
+                                                        }
+                                                        downloadPercent={
+                                                            downloadProgress[lang.code] ?? 0
+                                                        }
+                                                        onSelect={() =>
+                                                            handleSelectLanguage(lang.code)
+                                                        }
+                                                        onInstall={() => handleInstall(lang.code)}
+                                                        onDelete={() => handleDelete(lang.code)}
+                                                    />
+                                                ))}
+                                            </>
+                                        )}
+                                    </>
+                                );
+                            })()
                         )}
                     </div>
                 </>

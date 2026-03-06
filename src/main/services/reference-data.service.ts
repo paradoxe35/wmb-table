@@ -135,16 +135,31 @@ export function getSermonMeta(
         return null;
     }
 
-    // For translated languages, we need to find the translation
-    // This is less efficient but correct for single-lookup scenarios
-    const allForLang = getSermonListForLanguage(langCode);
-    return (
-        allForLang.find(
-            (m) =>
-                m.translationId === translatorId &&
-                (sermonDate === undefined || m.sermonDate === sermonDate),
-        ) ?? null
-    );
+    // Direct single-sermon lookup for translated languages
+    if (sermonDate) {
+        const row = refRepo.getTranslationByIds(translatorId, sermonDate, langCode);
+        if (!row) return null;
+        const audioLink = refRepo.getAudioForSermonByIds(sermonDate, langCode);
+        return {
+            id: makeId(langCode, row.translator_id, row.sermon_id),
+            translationId: row.translator_id,
+            languageCode: langCode,
+            sermonDate: row.sermon_id,
+            title: row.title,
+            enTitle: row.sermon_title,
+            audioLink,
+            traductionName: row.translator_name,
+            dateMs: row.sermon_date_ms,
+            minutes: row.sermon_minutes,
+            location: row.location_name,
+            cityState: row.city_name
+                ? row.state_abbr
+                    ? `${row.city_name}, ${row.state_abbr}`
+                    : row.city_name
+                : null,
+        };
+    }
+    return null;
 }
 
 /**
@@ -158,17 +173,21 @@ export function getTraductionsForSermon(sermonDate: string, langCode: string): S
 }
 
 /**
- * Get all cross-language translations for a sermon.
+ * Get cross-language translations for a sermon, filtered to installed languages only.
  */
 export function getTranslationsForSermon(
     sermonId: string,
+    installedLanguages?: string[],
 ): { languageCode: string; title: string; translatorName: string | null }[] {
     const rows = refRepo.getTranslationsForSermon(sermonId);
-    return rows.map((r) => ({
-        languageCode: r.lang_code,
-        title: r.title,
-        translatorName: r.translator_name,
-    }));
+    const installed = installedLanguages ? new Set(installedLanguages) : null;
+    return rows
+        .filter((r) => !installed || installed.has(r.lang_code))
+        .map((r) => ({
+            languageCode: r.lang_code,
+            title: r.title,
+            translatorName: r.translator_name,
+        }));
 }
 
 /**

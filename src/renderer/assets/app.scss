@@ -1,9 +1,8 @@
 // ============================================================================
-// WMB Table — Global Stylesheet
-//
-// All colors come from antd's ConfigProvider theme tokens, exposed as CSS
-// variables (--ant-*). Do NOT duplicate color values here — edit App.tsx.
+// WMB Table — Global Stylesheet (Classic UI)
 // ============================================================================
+
+@use './chrome-tabs' as *;
 
 // ---------------------------------------------------------------------------
 // Reset
@@ -14,10 +13,22 @@ body {
     padding: 0;
     overflow: hidden;
     height: 100%;
+    user-select: none;
+
+    .ant-list-item {
+        user-select: text;
+    }
 }
 
 #root {
     height: 100%;
+}
+
+// ---------------------------------------------------------------------------
+// Ant Design overrides
+// ---------------------------------------------------------------------------
+.ant-modal-wrap {
+    outline: none !important;
 }
 
 // ---------------------------------------------------------------------------
@@ -33,16 +44,39 @@ body {
     justify-content: center;
 }
 
+.flex-column {
+    flex-direction: column;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.list__clickable {
+    cursor: pointer;
+    &:hover {
+        background-color: var(--ant-color-bg-text-hover, rgba(0, 0, 0, 0.06));
+    }
+}
+
+.hover-underline:hover {
+    text-decoration: underline;
+}
+
 .mt-2 {
-    margin-top: 0.5rem;
+    margin-top: 10px;
 }
 
 .mb-2 {
-    margin-bottom: 0.5rem;
+    margin-bottom: 10px;
 }
 
 .mb-3 {
     margin-bottom: 1rem;
+}
+
+.mr-2 {
+    margin-right: 12px;
 }
 
 .w-100 {
@@ -62,11 +96,7 @@ body {
 // ---------------------------------------------------------------------------
 .app-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    background: var(--ant-layout-header-bg);
-    height: 48px;
-    padding: 0;
     -webkit-app-region: drag;
 
     * {
@@ -75,9 +105,11 @@ body {
 }
 
 .logo {
-    display: flex;
-    align-items: center;
+    top: 0;
+    margin-top: 0;
     padding: 0 20px;
+    border-color: #001529;
+    border-bottom: 0;
     color: rgb(218, 218, 218);
     font-size: large;
     font-weight: 600;
@@ -91,19 +123,37 @@ body {
 }
 
 .site-layout-content {
-    overflow: auto;
-    flex: 1;
-    background: var(--ant-color-bg-layout);
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
-.main-content {
-    padding: 24px;
-    padding-bottom: 0;
+.container-y {
+    overflow-y: auto;
+    height: 100%;
+    mask-image:
+        linear-gradient(to top, transparent, black),
+        linear-gradient(to left, transparent 17px, black 17px);
+    mask-size: 100% 20000px;
+    mask-position: left bottom;
+    -webkit-mask-image:
+        linear-gradient(to top, transparent, black),
+        linear-gradient(to left, transparent 17px, black 17px);
+    -webkit-mask-size: 100% 20000px;
+    -webkit-mask-position: left bottom;
+    transition:
+        mask-position 0.5s,
+        -webkit-mask-position 0.5s;
+}
+
+.container-y:hover {
+    -webkit-mask-position: left top;
 }
 
 .layout__sidebar {
-    background: var(--ant-color-bg-container);
-    border-inline-end: 1px solid var(--ant-color-border);
+    background: var(--ant-color-bg-container, #fff);
     overflow: hidden;
 }
 
@@ -115,7 +165,296 @@ body {
 }
 
 // ---------------------------------------------------------------------------
-// Sidebar document items
+// Smart editable & o-icon
+// ---------------------------------------------------------------------------
+.smart-editable {
+    display: block;
+    white-space: nowrap;
+    padding: 3px 5px;
+    border-radius: 2px;
+    transition: background-color 0.2s ease;
+    background-color: transparent;
+    box-shadow: none;
+    position: relative;
+    cursor: pointer;
+
+    &.big {
+        font-size: 20px;
+        u {
+            width: 15px;
+            height: 17px;
+        }
+    }
+
+    &:hover,
+    &.active {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.281));
+    }
+
+    .o-icon {
+        font-size: 15px;
+        vertical-align: middle;
+        width: 16px;
+        height: 18px;
+        display: inline-block;
+        border-top-right-radius: 4px;
+        margin-right: 5px;
+        text-decoration: none;
+        position: relative;
+    }
+
+    u {
+        font-size: 13px;
+        color: var(--ant-color-text-tertiary, #91999e);
+        vertical-align: middle;
+        background-color: #6d7275;
+        width: 8px;
+        height: 10px;
+        display: inline-block;
+        border-top-right-radius: 4px;
+        margin-right: 4px;
+        text-decoration: none;
+        position: relative;
+    }
+
+    span {
+        display: block;
+        white-space: nowrap;
+        padding: 2px 5px;
+        border-radius: 2px;
+        transition: background-color 0.2s ease;
+    }
+
+    b {
+        color: inherit;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        line-height: 14px;
+        vertical-align: middle;
+        margin: 0px 2px;
+        padding: 3px 4px;
+        border-radius: 2px;
+        max-width: 92%;
+        font-weight: normal;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Panel group (right sidebar tabs)
+// ---------------------------------------------------------------------------
+.panel__group {
+    --tabs-background: var(--ant-color-bg-text-hover, rgb(218, 218, 218));
+    --panel-background: var(--ant-color-bg-container, #fff);
+    .tabs {
+        height: auto;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: var(--tabs-background);
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+
+    .tab-squeeze {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        .tab-holder {
+            display: flex;
+        }
+    }
+
+    .tab-holder {
+        overflow: visible;
+        transition: transform 0.2s;
+        white-space: nowrap;
+    }
+
+    .tabs .tab:first-child {
+        border-left-width: 0;
+    }
+
+    .tab-holder .tab {
+        position: relative;
+        transition:
+            transform 0.2s,
+            z-index 0.4s;
+        white-space: nowrap;
+        /* max-width removed so tabs fill sidebar */
+        z-index: 1;
+    }
+
+    .tabs .active {
+        background: var(--panel-background);
+        color: inherit;
+    }
+
+    .tabs .tab {
+        color: var(--ant-color-text, #45474a);
+        padding: 9px 12px;
+        flex: 1;
+        position: relative;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        min-width: 60px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .tabs .tab.active:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(255, 255, 255, 0.4), transparent);
+        z-index: -1;
+    }
+
+    .tab > div {
+        overflow: hidden;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Document grouped tree
+// ---------------------------------------------------------------------------
+.document_grouped {
+    overflow: hidden;
+    & > :first-child {
+        width: 0;
+    }
+    .ant-tree-title {
+        display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ant-tree-node-content-wrapper {
+        display: flex;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Mock browser content (document view)
+// ---------------------------------------------------------------------------
+.mock-browser-content {
+    position: relative;
+    z-index: 1;
+    background: var(--ant-color-bg-container, #fff);
+    padding: 0;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sermon-body {
+    overflow: auto;
+    flex: 1;
+    padding: 0.5em;
+}
+
+// ---------------------------------------------------------------------------
+// Content descriptions
+// ---------------------------------------------------------------------------
+.content-description {
+    font-size: 1.2em;
+}
+
+.content-description-2 {
+    font-size: 1.1em;
+}
+
+// ---------------------------------------------------------------------------
+// Bible
+// ---------------------------------------------------------------------------
+.bible-version-bar {
+    padding: 8px 0;
+    margin-bottom: 4px;
+}
+
+.bible-search-content {
+    padding: 0 8px;
+}
+
+.verse-item {
+    &:hover {
+        .verse-action {
+            visibility: visible;
+            opacity: 1;
+        }
+    }
+    .verse-action {
+        visibility: hidden;
+        opacity: 0;
+        transition: all 0.2s;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Disabled area overlay
+// ---------------------------------------------------------------------------
+.area-wrapper {
+    position: relative;
+    &::after {
+        content: '';
+        z-index: 3;
+        position: absolute;
+        background-color: var(--ant-color-bg-container, #fff);
+        opacity: 0.7;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    .area-content {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        z-index: 4;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Spinner
+// ---------------------------------------------------------------------------
+.spinner-bg {
+    margin: 20px 0;
+    text-align: center;
+}
+
+// ---------------------------------------------------------------------------
+// View transitions (keeps both views mounted)
+// ---------------------------------------------------------------------------
+.view-panel {
+    opacity: 1;
+    transition: opacity 0.15s ease;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.view-panel--hidden {
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    visibility: hidden;
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar item (document list in right sidebar)
 // ---------------------------------------------------------------------------
 .sidebar-item {
     display: flex;
@@ -124,16 +463,16 @@ body {
     padding: 8px 10px;
     cursor: pointer;
     border-left: 3px solid transparent;
-    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
+    border-radius: 0 var(--ant-border-radius, 6px) var(--ant-border-radius, 6px) 0;
     transition: all 0.15s ease;
 
     &:hover {
-        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
+        background: color-mix(in srgb, var(--ant-color-primary, #1990ff) 4%, transparent);
     }
 
     &--active {
-        border-left-color: var(--ant-color-primary);
-        background: var(--ant-color-primary-bg);
+        border-left-color: var(--ant-color-primary, #1990ff);
+        background: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.1));
     }
 
     &__left {
@@ -156,12 +495,12 @@ body {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        color: var(--ant-color-text);
+        color: var(--ant-color-text, #45474a);
     }
 
     &__en-title {
         font-size: 0.8em;
-        color: var(--ant-color-text-secondary);
+        color: var(--ant-color-text-secondary, #6b7280);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -169,7 +508,7 @@ body {
 
     &__date {
         font-size: 0.78em;
-        color: var(--ant-color-text-secondary);
+        color: var(--ant-color-text-secondary, #6b7280);
         margin-top: 2px;
     }
 
@@ -182,12 +521,12 @@ body {
 
     &__city {
         font-size: 0.7em;
-        color: var(--ant-color-text-secondary);
+        color: var(--ant-color-text-secondary, #6b7280);
     }
 
     &__audio {
         font-size: 0.75em;
-        color: var(--ant-color-primary);
+        color: var(--ant-color-primary, #1990ff);
     }
 }
 
@@ -203,356 +542,71 @@ body {
     padding-right: 4px;
 }
 
-// ---------------------------------------------------------------------------
-// Panel tabs (right sidebar tabs)
-// ---------------------------------------------------------------------------
-.panel-tabs {
-    display: flex;
-    border-bottom: 1px solid var(--ant-color-border);
-    position: relative;
-}
-
-.panel-tab {
-    flex: 1;
-    padding: 8px 4px;
-    text-align: center;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.8em;
-    color: var(--ant-color-text-secondary);
-    position: relative;
-    transition: color 0.15s ease;
-
-    &:hover {
-        color: var(--ant-color-text);
-    }
-
-    &--active {
-        color: var(--ant-color-primary);
-        font-weight: 500;
-    }
-
-    &__indicator {
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: var(--ant-color-primary);
-        border-radius: 1px;
-    }
+.sidebar-item + .sidebar-item {
+    border-top: 1px solid var(--ant-color-border-secondary, #f0f0f0);
 }
 
 // ---------------------------------------------------------------------------
-// Chrome tabs (document tabs)
-// ---------------------------------------------------------------------------
-.chrome-tabs-wrapper {
-    border-bottom: 1px solid var(--ant-color-border);
-    display: flex;
-    align-items: stretch;
-    position: relative;
-}
-
-.chrome-tabs {
-    display: flex;
-    overflow-x: auto;
-    flex: 1;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-        display: none;
-    }
-}
-
-.tab-scroll-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    flex-shrink: 0;
-    border: none;
-    background: var(--ant-color-bg-container);
-    cursor: pointer;
-    color: var(--ant-color-text-secondary);
-    font-size: 10px;
-    z-index: 1;
-
-    &:hover {
-        background: color-mix(in srgb, var(--ant-color-primary) 6%, transparent);
-        color: var(--ant-color-text);
-    }
-
-    &--left {
-        border-right: 1px solid var(--ant-color-border);
-    }
-
-    &--right {
-        border-left: 1px solid var(--ant-color-border);
-    }
-}
-
-.chrome-tab {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 4px 12px;
-    cursor: pointer;
-    user-select: none;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    border-radius: 4px 4px 0 0;
-    white-space: nowrap;
-    min-width: 0;
-    flex-shrink: 0;
-    transition:
-        background 0.15s ease,
-        border-color 0.15s ease;
-
-    &:hover {
-        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
-    }
-
-    &--active {
-        border-bottom-color: var(--ant-color-primary);
-        background: var(--ant-color-bg-container);
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    }
-
-    &__icon {
-        font-size: 12px;
-        flex-shrink: 0;
-    }
-
-    &__title {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-size: 12px;
-    }
-
-    &__close {
-        font-size: 10px;
-        flex-shrink: 0;
-        margin-left: auto;
-        opacity: 0.5;
-        transition: opacity 0.15s ease;
-
-        &:hover {
-            opacity: 1;
-        }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Subject page
-// ---------------------------------------------------------------------------
-.subject-panel {
-    width: 95%;
-    min-height: 300px;
-    background: var(--ant-color-bg-container);
-    border-radius: var(--ant-border-radius);
-    border: 1px solid var(--ant-color-border);
-}
-
-.subject-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 12px;
-    cursor: pointer;
-    border-left: 3px solid transparent;
-    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
-    transition: all 0.15s ease;
-    margin-bottom: 2px;
-
-    &:hover {
-        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
-    }
-
-    &.active {
-        border-left-color: var(--ant-color-primary);
-        background: var(--ant-color-primary-bg);
-    }
-
-    .o-icon {
-        margin-right: 10px;
-        color: var(--ant-color-text-secondary);
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Smart editable & o-icon (legacy compat)
-// ---------------------------------------------------------------------------
-.smart-editable {
-    display: flex;
-    align-items: center;
-    padding: 8px 10px;
-    cursor: pointer;
-    border-left: 3px solid transparent;
-    border-radius: 0 var(--ant-border-radius) var(--ant-border-radius) 0;
-    transition: all 0.15s ease;
-
-    &:hover {
-        background: color-mix(in srgb, var(--ant-color-primary) 4%, transparent);
-    }
-
-    &.active {
-        border-left-color: var(--ant-color-primary);
-        background: var(--ant-color-primary-bg);
-    }
-
-    .o-icon {
-        margin-right: 10px;
-        color: var(--ant-color-text-secondary);
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Content descriptions
-// ---------------------------------------------------------------------------
-.content-description {
-    color: var(--ant-color-text);
-    font-size: 1.1em;
-}
-
-.content-description-2 {
-    color: var(--ant-color-text-secondary);
-    font-size: 1em;
-}
-
-// ---------------------------------------------------------------------------
-// Bible
-// ---------------------------------------------------------------------------
-.bible-version-bar {
-    padding: 8px 0;
-    margin-bottom: 4px;
-}
-
-.bible-search-content {
-    padding: 0 8px;
-}
-
-.chapter-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.chapter-btn {
-    border-radius: 16px !important;
-    min-width: 36px;
-}
-
-.verse-item {
-    transition: background 0.15s ease;
-
-    &:hover {
-        background: color-mix(in srgb, var(--ant-color-primary) 2%, transparent);
-    }
-}
-
-.verse-action {
-    opacity: 0;
-    transition: opacity 0.15s ease;
-
-    .verse-item:hover & {
-        opacity: 1;
-    }
-}
-
-.list__clickable {
-    cursor: pointer;
-}
-
-// ---------------------------------------------------------------------------
-// Document view
-// ---------------------------------------------------------------------------
-.mock-browser-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background: var(--ant-color-bg-container);
-}
-
-.sermon-meta-detail {
-    margin-left: 8px;
-    color: var(--ant-color-text-secondary);
-    font-size: 0.9em;
-}
-
-.sermon-body {
-    overflow: auto;
-    flex: 1;
-}
-
-// ---------------------------------------------------------------------------
-// Notes
+// Notes grid (used in notes.tsx)
 // ---------------------------------------------------------------------------
 .notes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
+    gap: 12px;
+    margin-top: 12px;
 }
 
+// ---------------------------------------------------------------------------
+// Editor styles (used in editor.tsx)
+// ---------------------------------------------------------------------------
 .editor-toolbar {
-    display: flex;
-    justify-content: space-between;
-    margin: 12px 0;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--ant-color-border);
+    border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
+    background: var(--ant-color-bg-container, #fff);
 }
 
 .editor-container {
-    padding: 20px;
-    border-radius: var(--ant-border-radius);
+    background: var(--ant-color-bg-container, #fff);
 }
 
 // ---------------------------------------------------------------------------
-// View transitions (keeps both views mounted)
+// CKEditor 5 custom styles
 // ---------------------------------------------------------------------------
-.view-panel {
-    opacity: 1;
-    transition: opacity 0.15s ease;
-}
-
-.view-panel--hidden {
-    opacity: 0;
-    pointer-events: none;
-    position: absolute;
-    visibility: hidden;
-}
-
-// ---------------------------------------------------------------------------
-// Scrollable container
-// ---------------------------------------------------------------------------
-.container-y {
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-// ---------------------------------------------------------------------------
-// Mini player bar
-// ---------------------------------------------------------------------------
-.mini-player-bar {
-    display: flex;
-    align-items: center;
-    height: 56px;
-    padding: 0 16px;
-    border-top: 1px solid var(--ant-color-border);
-    background: var(--ant-color-bg-container);
-    gap: 12px;
-    flex-shrink: 0;
-}
-
-.mini-player-title {
-    font-size: 0.85em;
-    font-weight: 500;
-    cursor: pointer;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    max-width: 200px;
-
-    &:hover {
-        text-decoration: underline;
+.cke5-decoupled-custom-document-editable {
+    font-size: 1.09rem;
+    line-height: 1.6rem;
+    h1 {
+        display: block;
+        font-size: 1.7em;
+        margin-block-start: 0.67em;
+        margin-block-end: 0.67em;
+        font-weight: bold;
     }
+    a[reference='true'] {
+        color: #049c95;
+        background-color: rgba(4, 156, 148, 0.089);
+        &::after {
+            content: '🗎 ';
+            font-size: 18px;
+        }
+    }
+    a[reference='true'][bible='true'] {
+        &::after {
+            content: '📖 ';
+        }
+    }
+}
+
+:root {
+    --ck-sample-editor-min-height: 400px;
+    --ck-sample-editor-z-index: 10;
+}
+
+.ck.editor__editable[role='textbox'],
+.ck.ck-editor__editable[role='textbox'] {
+    width: 100%;
+    background: var(--ant-color-bg-container, #fff);
+    font-size: 1em;
+    line-height: 1.6em;
+    min-height: var(--ck-sample-editor-min-height);
+    padding: 1.5em 2em;
 }

@@ -12,7 +12,7 @@ export function getConfig(): AppSettingsStatus | null {
         app_id: row.appId,
         initialized: row.initialized,
         lastCheckBackupStatus: new Date(row.lastCheckBackupStatus ?? Date.now()),
-        activeLanguage: row.activeLanguage ?? 'en',
+        activeLanguage: row.activeLanguage ?? null,
     };
 }
 
@@ -35,9 +35,9 @@ export function markInitialized(): void {
         .run();
 }
 
-export function getActiveLanguage(): string {
+export function getActiveLanguage(): string | null {
     const config = getConfig();
-    return config?.activeLanguage ?? 'en';
+    return config?.activeLanguage ?? null;
 }
 
 export function setActiveLanguage(langCode: string): void {

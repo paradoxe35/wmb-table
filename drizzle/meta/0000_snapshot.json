@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "989f033a-057f-44d7-8df4-ed9a62dd0b22",
+    "id": "1d3020a8-5340-4b99-91cc-bee786db57f8",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "audio_document_last_play": {
@@ -274,8 +274,7 @@
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
-                    "autoincrement": false,
-                    "default": "'en'"
+                    "autoincrement": false
                 }
             },
             "indexes": {},

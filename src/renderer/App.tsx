@@ -7,28 +7,17 @@ import { ContentApp } from './content-app';
 const appTheme = {
     token: {
         colorPrimary: '#1990ff',
-        colorBgContainer: '#ffffff',
-        colorBgLayout: '#f5f6f8',
-        borderRadius: 6,
-        colorBorder: '#e8eaed',
-        colorText: '#1f2937',
-        colorTextSecondary: '#6b7280',
-        fontFamily: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`,
-        fontSize: 14,
     },
     components: {
         Layout: {
-            headerBg: '#001528',
-            headerHeight: 48,
+            headerBg: '#001529',
             headerPadding: '0',
             siderBg: '#ffffff',
         },
         Menu: {
-            darkItemBg: '#001528',
-            darkItemSelectedBg: '#002040',
+            darkItemBg: '#001529',
+            darkItemSelectedBg: '#1990ff',
         },
-        Card: { borderRadiusLG: 8 },
-        Collapse: { headerBg: '#fafbfc', contentBg: '#ffffff' },
     },
 };
 

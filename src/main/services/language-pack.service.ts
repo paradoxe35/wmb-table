@@ -142,14 +142,14 @@ export async function downloadLanguagePack(
     await rename(tmpDir, finalDir);
 
     // Open index (no metadata build needed — data.sqlite is the source of truth)
-    tantivyService.openIndex(langCode);
+    await tantivyService.openIndex(langCode);
 
     log.info(`[language-pack] Installed language pack "${langCode}"`);
 }
 
 export async function deleteLanguagePack(langCode: string): Promise<void> {
     // Close all indexes and re-open the remaining ones
-    tantivyService.closeAllIndexes();
+    await tantivyService.closeAllIndexes();
 
     const indexDir = join(getIndexesDir(), langCode);
     if (existsSync(indexDir)) {
@@ -157,7 +157,7 @@ export async function deleteLanguagePack(langCode: string): Promise<void> {
     }
 
     // Re-initialize remaining indexes
-    tantivyService.initializeTantivy();
+    await tantivyService.initializeTantivy();
 
     log.info(`[language-pack] Deleted language pack "${langCode}"`);
 }
@@ -170,7 +170,7 @@ export async function getInstalledLanguages(): Promise<InstalledLanguage[]> {
         const lang = refRepo.getLanguageByCode(code);
         const dirPath = join(indexesDir, code);
         const translationCount = lang?.translationsSupport
-            ? refRepo.getTranslationCountForLanguage(code)
+            ? refRepo.getUniqueSermonCountForLanguage(code)
             : refRepo.getAllSermons().length;
         return {
             code,
@@ -188,7 +188,7 @@ export async function getDownloadableLanguages(): Promise<DownloadableLanguage[]
 
     return allLanguages.map((lang) => {
         const sermonsAvailable = lang.translationsSupport
-            ? refRepo.getTranslationCountForLanguage(lang.code)
+            ? refRepo.getUniqueSermonCountForLanguage(lang.code)
             : refRepo.getAllSermons().length;
         const audioCount = refRepo.getAudioCountForLanguage(lang.code);
 

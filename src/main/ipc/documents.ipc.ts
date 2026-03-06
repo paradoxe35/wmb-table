@@ -3,7 +3,7 @@ import { registerHandler } from './register';
 import * as tabsRepo from '@main/database/repositories/tabs.repository';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as referenceDataService from '@main/services/reference-data.service';
-import * as refRepo from '@main/database/repositories/reference.repository';
+import { getInstalledLanguages } from '@main/services/tantivy.service';
 
 export function registerDocumentsHandlers(): void {
     registerHandler(DocumentChannels.getTitles, async (_event, langCode) => {
@@ -18,11 +18,10 @@ export function registerDocumentsHandlers(): void {
                 throw new Error(
                     `Sermon not found: tid=${translationId} date=${sermonDate} (${langCode})`,
                 );
-            const tantivyDate = refRepo.sermonIdToTantivyDate(sermonDate);
-            const paragraphs = tantivyService.getSermonParagraphs(
+            const paragraphs = await tantivyService.getSermonParagraphs(
                 langCode,
                 translationId,
-                tantivyDate,
+                meta.dateMs,
             );
             return { meta, paragraphs };
         },
@@ -37,7 +36,8 @@ export function registerDocumentsHandlers(): void {
     });
 
     registerHandler(DocumentChannels.getTranslations, async (_event, sermonId) => {
-        return referenceDataService.getTranslationsForSermon(sermonId);
+        const installed = getInstalledLanguages();
+        return referenceDataService.getTranslationsForSermon(sermonId, installed);
     });
 
     registerHandler(

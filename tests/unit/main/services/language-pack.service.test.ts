@@ -50,6 +50,23 @@ describe('language-pack.service', () => {
         expect(installed.find((l) => l.code === 'fr')!.sermonsCount).toBeGreaterThan(0);
     });
 
+    it('getInstalledLanguages uses deduplicated sermon count for French', async () => {
+        const refRepo = await import('@main/database/repositories/reference.repository');
+        const { getInstalledLanguages } = await import('@main/services/language-pack.service');
+        const installed = await getInstalledLanguages();
+        const fr = installed.find((l) => l.code === 'fr')!;
+
+        // Should match unique sermon count, not total translation count
+        const uniqueCount = refRepo.getUniqueSermonCountForLanguage('fr');
+        const totalCount = refRepo.getTranslationCountForLanguage('fr');
+
+        expect(fr.sermonsCount).toBe(uniqueCount);
+        // If there are multiple translators, unique should be less than total
+        if (uniqueCount < totalCount) {
+            expect(fr.sermonsCount).toBeLessThan(totalCount);
+        }
+    });
+
     it('getDownloadableLanguages returns all languages from data.sqlite', async () => {
         const { getDownloadableLanguages } = await import('@main/services/language-pack.service');
         const downloadable = await getDownloadableLanguages();

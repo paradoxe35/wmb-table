@@ -23,7 +23,7 @@ export const useAppStore = create<AppState>((set) => ({
     loaded: false,
     mainView: 'document',
     optionView: 'search',
-    sidebarHidden: true,
+    sidebarHidden: false,
     activeLanguage: null,
 
     setLoaded: (v) => set({ loaded: v }),

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
-import { Input, AutoComplete, Typography, Divider, Pagination, message } from 'antd';
+import { Input, AutoComplete, Typography, List, Pagination, message } from 'antd';
 import { SelectProps } from 'antd/es/select';
 import { debounce } from '@renderer/utils/functions';
 import type { TantivySearchResult, TantivySearchHit, Suggestions } from '@shared/types';
@@ -159,24 +159,23 @@ const ListView = ({ hit, query }: { hit: TantivySearchHit; query: string }) => {
     const displayTitle = getSermon(hit.title)?.title ?? hit.title;
 
     return (
-        <div style={{ padding: '8px 0' }}>
-            <div>
-                <Text underline>
-                    <a>
+        <List.Item>
+            <List.Item.Meta
+                title={
+                    <a className="underline">
                         <DocumentViewer onItemClick={handleDocumentClick} name={hit.title}>
                             {displayTitle}
                         </DocumentViewer>
                     </a>
-                </Text>
-            </div>
-            <div>
-                <span
-                    className="content-description-2"
-                    dangerouslySetInnerHTML={{ __html: hit.snippet }}
-                />
-            </div>
-            <Divider style={{ margin: '8px 0' }} />
-        </div>
+                }
+                description={
+                    <span
+                        className="content-description-2"
+                        dangerouslySetInnerHTML={{ __html: hit.snippet }}
+                    />
+                }
+            />
+        </List.Item>
     );
 };
 
@@ -194,20 +193,23 @@ const SearchResultComponent = memo(function SearchResultComponent({
             {results && (
                 <div className="mt-2 flex flex-center">
                     <Text type="secondary">
-                        Trouvé dans {results.total} document
-                        {results.total > 1 ? 's' : ''}
+                        {results.total} correspondance{results.total > 1 ? 's' : ''} trouvée
+                        {results.total > 1 ? 's' : ''}.
                     </Text>
                 </div>
             )}
-            <div className="mt-2" style={{ width: '100%' }}>
-                {(results?.hits || []).map((hit) => (
+            <List
+                className="mt-2"
+                itemLayout="vertical"
+                dataSource={results?.hits || []}
+                renderItem={(hit) => (
                     <ListView
                         key={`${hit.title}-${results?.query}`}
                         hit={hit}
                         query={results?.query ?? ''}
                     />
-                ))}
-            </div>
+                )}
+            />
             {results && totalPages > 1 && (
                 <div className="mt-2 flex flex-center mb-2">
                     <Pagination

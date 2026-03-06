@@ -19,9 +19,10 @@ export function registerSearchHandlers(): void {
 
     registerHandler(SearchChannels.searchText, async (_event, langCode, query, page) => {
         const offset = page * ITEMS_PER_PAGE;
-        const result = tantivyService.searchSermons(langCode, query, ITEMS_PER_PAGE, offset);
+        const result = await tantivyService.searchSermons(langCode, query, ITEMS_PER_PAGE, offset);
 
-        const hits: TantivySearchHit[] = result.hits.map((hit) => {
+        const hits: TantivySearchHit[] = [];
+        for (const hit of result.hits) {
             // Reverse-lookup: Tantivy sermonDate (number) → sermon IDs
             const sermonIds = refRepo.tantivyDateToSermonIds(hit.sermonDate);
             const sermonDate = sermonIds[0] ?? String(hit.sermonDate);
@@ -30,15 +31,19 @@ export function registerSearchHandlers(): void {
                 langCode,
                 sermonDate,
             );
-            const snippet = tantivyService.getSearchSnippet(langCode, query, hit.bestDocAddress);
-            return {
+            const snippet = await tantivyService.getSearchSnippet(
+                langCode,
+                query,
+                hit.bestDocAddress,
+            );
+            hits.push({
                 translationId: hit.translationId,
                 sermonDate: hit.sermonDate,
                 title: meta?.title ?? sermonDate,
                 snippet,
                 score: hit.score,
-            };
-        });
+            });
+        }
 
         return { hits, total: result.total, query };
     });
@@ -46,10 +51,10 @@ export function registerSearchHandlers(): void {
     registerHandler(
         SearchChannels.searchContent,
         async (_event, langCode, query, translationId) => {
-            const result = tantivyService.searchSermons(langCode, query, 1, 0);
+            const result = await tantivyService.searchSermons(langCode, query, 1, 0);
             const hit = result.hits.find((h) => h.translationId === translationId);
             if (!hit) return '';
-            return tantivyService.getSearchSnippet(langCode, query, hit.bestDocAddress);
+            return await tantivyService.getSearchSnippet(langCode, query, hit.bestDocAddress);
         },
     );
 }

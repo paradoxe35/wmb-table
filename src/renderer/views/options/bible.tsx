@@ -4,8 +4,9 @@ import {
     Divider,
     Dropdown,
     Input,
+    List,
+    Menu,
     Pagination,
-    Segmented,
     Space,
     Spin,
     Typography,
@@ -14,6 +15,7 @@ import {
     Progress,
     Empty,
 } from 'antd';
+import type { MenuProps } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import LoadByVisibility from '@renderer/components/load-by-visibility';
 import {
@@ -38,31 +40,33 @@ import ContainerScrollY from '@renderer/components/container-scroll-y';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
 export default function Bible() {
-    const [menu, setMenu] = useState<string | number>('bible');
+    const [menu, setMenu] = useState<string>('bible');
+
+    const menuItems: MenuProps['items'] = [
+        { key: 'bible', label: 'Bible', icon: <BibleIcons /> },
+        { key: 'search', label: 'Recherche', icon: <SearchOutlined /> },
+    ];
 
     return (
         <LoadByVisibility>
-            <BibleVersionSelector />
-            <Segmented
-                value={menu}
-                onChange={setMenu}
-                options={[
-                    { label: 'Bible', value: 'bible', icon: <BibleIcons /> },
-                    { label: 'Recherche', value: 'search', icon: <SearchOutlined /> },
-                ]}
-                block
+            <Menu
+                mode="horizontal"
+                selectedKeys={[menu]}
+                onClick={(e) => setMenu(e.key)}
+                items={menuItems}
                 style={{ marginBottom: 12 }}
             />
-            <div hidden={menu !== 'bible'}>
+            <BibleVersionSelector />
+            {menu === 'bible' && (
                 <ContainerScrollY>
                     <BibleContent verseMetaContent={true} />
                 </ContainerScrollY>
-            </div>
-            <div hidden={menu !== 'search'}>
+            )}
+            {menu === 'search' && (
                 <ContainerScrollY className="bible-search-content">
                     <SearchContent />
                 </ContainerScrollY>
-            </div>
+            )}
         </LoadByVisibility>
     );
 }
@@ -226,11 +230,13 @@ function BookContent({
             .then(setVerses);
     }, [chaptersKey, bookDetail.book]);
 
+    const sortedVerses = verses ? verses.slice().sort((a, b) => +a.verse - +b.verse) : [];
+
     const collapseItems = [
         {
             key: '1',
             label: (
-                <div className="chapter-grid">
+                <Space wrap={true}>
                     {new Array(+bookDetail.chapters).fill(null).map((_, i) => {
                         const key = i + 1;
                         return (
@@ -240,7 +246,6 @@ function BookContent({
                                     setChaptersKey(key);
                                 }}
                                 key={key}
-                                className="chapter-btn"
                                 type={key === chaptersKey ? 'primary' : 'dashed'}
                                 size="small"
                             >
@@ -248,7 +253,7 @@ function BookContent({
                             </Button>
                         );
                     })}
-                </div>
+                </Space>
             ),
             children: (
                 <>
@@ -257,37 +262,36 @@ function BookContent({
                             <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
                         </div>
                     )}
-                    {verses &&
-                        verses.length > 0 &&
-                        verses
-                            .slice()
-                            .sort((a, b) => +a.verse - +b.verse)
-                            .map((item) => (
-                                <div
+                    {sortedVerses.length > 0 && (
+                        <List
+                            dataSource={sortedVerses}
+                            renderItem={(item) => (
+                                <List.Item
                                     key={item.id}
                                     className={`verse-item ${onClick ? 'list__clickable' : ''}`}
                                     onClick={() => onClick?.(item.id)}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        justifyContent: 'space-between',
-                                        padding: '8px 0',
-                                        borderBottom: '1px solid var(--ant-color-border)',
-                                    }}
+                                    actions={
+                                        verseMetaContent
+                                            ? [
+                                                  <span key="action" className="verse-action">
+                                                      <AddToSubject verse={item} />
+                                                  </span>,
+                                              ]
+                                            : undefined
+                                    }
                                 >
-                                    <div style={{ display: 'flex', gap: 8, flex: 1 }}>
-                                        <span>{item.verse}.</span>
-                                        <Typography.Text className="content-description">
-                                            {item.content}
-                                        </Typography.Text>
-                                    </div>
-                                    {verseMetaContent && (
-                                        <span className="verse-action">
-                                            <AddToSubject verse={item} />
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
+                                    <List.Item.Meta
+                                        title={`${item.verse}.`}
+                                        description={
+                                            <Typography.Text className="content-description">
+                                                {item.content}
+                                            </Typography.Text>
+                                        }
+                                    />
+                                </List.Item>
+                            )}
+                        />
+                    )}
                 </>
             ),
         },

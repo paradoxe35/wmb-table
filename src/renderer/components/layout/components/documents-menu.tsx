@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 
 type Tabs = {
     name: string;
@@ -12,31 +11,40 @@ const PanelGroup: React.FC<{ tabs: Tabs[]; children: (index: number) => React.Re
         const currentActive = active < 0 ? 0 : active;
 
         return (
-            <>
-                <div className="panel-tabs">
-                    {tabs.map((tab, i) => {
-                        const isActive = i === currentActive;
-                        return (
-                            <button
-                                key={i}
-                                title={tab.name}
-                                onClick={() => setActive(i)}
-                                className={`panel-tab ${isActive ? 'panel-tab--active' : ''}`}
-                            >
-                                {tab.name}
-                                {isActive && (
-                                    <motion.div
-                                        className="panel-tab__indicator"
-                                        layoutId="panel-tab-indicator"
-                                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                                    />
-                                )}
-                            </button>
-                        );
-                    })}
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div className="panel__group">
+                    <div className="tabs">
+                        <div className="tab-squeeze">
+                            <div className="tab-holder">
+                                {tabs.map((tab, i) => {
+                                    return (
+                                        <div
+                                            key={i}
+                                            title={tab.name}
+                                            onClick={() => setActive(i)}
+                                            className={`tab ${i === currentActive ? 'active' : ''}`}
+                                        >
+                                            <div>
+                                                <span>{tab.name}</span>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                {tabs.length > 0 && children(currentActive)}
-            </>
+                <div
+                    style={{
+                        flex: 1,
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
+                    {tabs.length > 0 && children(currentActive)}
+                </div>
+            </div>
         );
     };
 

@@ -7,7 +7,7 @@ import MenuBuilder from '@main/lib/menu';
 import { initializeLogger } from '@main/lib/logger';
 import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
-import { initializeTantivy, closeAllIndexes } from '@main/services/tantivy.service';
+import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 
 // Initialize logger first
@@ -15,9 +15,6 @@ initializeLogger();
 
 // Initialize database before IPC handlers
 initializeDatabase();
-
-// Initialize Tantivy search indexes
-initializeTantivy();
 
 // Register all IPC handlers before window creation
 initializeIpc();
@@ -98,8 +95,9 @@ function createWindow(): void {
     }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
     setupCSP();
+    await initializeTantivy();
     createWindow();
     tryStartSynchronizer();
 
@@ -112,7 +110,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
     stopSynchronizer();
-    closeAllIndexes();
+    terminateWorker();
     closeDatabase();
 });
 

@@ -4,6 +4,7 @@ import { Menu, Layout } from 'antd';
 import type { MenuProps } from 'antd';
 import { useAppStore } from '@renderer/stores';
 import { BibleIcons } from '../icons';
+import AudioDocumentPlayerIndicator from '../audio-document-player-indicator';
 
 const { Sider } = Layout;
 
@@ -67,7 +68,10 @@ export default function SidebarMenu({
             collapsed={collapsed}
             onCollapse={onCollapse}
         >
-            <Menu mode="inline" selectedKeys={[optionView]} items={menuItems} />
+            <div className="full-item-separated">
+                <Menu mode="inline" selectedKeys={[optionView]} items={menuItems} />
+                <AudioDocumentPlayerIndicator />
+            </div>
         </Sider>
     );
 }

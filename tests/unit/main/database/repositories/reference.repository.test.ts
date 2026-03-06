@@ -125,4 +125,37 @@ describe('reference.repository', () => {
         const count = refRepo.getAudioCountForLanguage('en');
         expect(count).toBeGreaterThanOrEqual(0);
     });
+
+    it('getTranslationByIds returns a single translation row', () => {
+        // Use a known French translation directly
+        const translations = refRepo.getTranslationsForLanguage('fr');
+        expect(translations.length).toBeGreaterThan(0);
+        const sample = translations[0];
+
+        const row = refRepo.getTranslationByIds(sample.translator_id, sample.sermon_id, 'fr');
+        expect(row).not.toBeNull();
+        expect(row!.sermon_id).toBe(sample.sermon_id);
+        expect(row!.translator_id).toBe(sample.translator_id);
+        expect(row!.title).toBeTruthy();
+        expect(row!.sermon_title).toBeTruthy();
+        expect(typeof row!.sermon_date_ms).toBe('number');
+    });
+
+    it('getTranslationByIds returns null for non-existent', () => {
+        const row = refRepo.getTranslationByIds(9999, 'XX-XXXX', 'fr');
+        expect(row).toBeNull();
+    });
+
+    it('getUniqueSermonCountForLanguage returns deduplicated count', () => {
+        const uniqueCount = refRepo.getUniqueSermonCountForLanguage('fr');
+        const totalCount = refRepo.getTranslationCountForLanguage('fr');
+        // Unique count should be <= total count (fewer due to multiple translators per sermon)
+        expect(uniqueCount).toBeGreaterThan(0);
+        expect(uniqueCount).toBeLessThanOrEqual(totalCount);
+    });
+
+    it('getUniqueSermonCountForLanguage returns 0 for non-existent language', () => {
+        const count = refRepo.getUniqueSermonCountForLanguage('zzzz');
+        expect(count).toBe(0);
+    });
 });

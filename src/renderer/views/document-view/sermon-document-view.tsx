@@ -1,0 +1,84 @@
+import { useMemo, useRef } from 'react';
+import { Dropdown, Spin } from 'antd';
+import {
+    useSermonStore,
+    useSearchStore,
+    selectActiveTabTitle,
+    selectActiveTab,
+} from '@renderer/stores';
+import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
+import InlineSearchBar from '../components/inline-search-bar';
+import SermonHeader from './sermon-header';
+import SermonContentHeader from './sermon-content-header';
+import SermonParagraphView from './sermon-paragraph';
+import {
+    useSermonContent,
+    useScrollAndZoom,
+    useSearchHighlight,
+    useSubjectNavigation,
+    useContextMenuItems,
+    useMatchNavigation,
+} from './hooks';
+
+export default function SermonDocumentView() {
+    const { content, loading } = useSermonContent();
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { zoom } = useScrollAndZoom(containerRef);
+    const searchTerm = useSearchHighlight();
+    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
+    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
+    useSubjectNavigation(containerRef);
+    const contextMenuItems = useContextMenuItems(content);
+    const activeTab = useSermonStore(selectActiveTab);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const sermonsByTitle = useSermonStore((s) => s.sermonsByTitle);
+    const sermonInfo = activeTitle ? sermonsByTitle[activeTitle] : undefined;
+    const tabTranslationId = activeTab?.translationId;
+
+    const paragraphTexts = useMemo(
+        () => (content?.paragraphs ?? []).map((p) => p.content),
+        [content?.paragraphs],
+    );
+
+    const { matchOffsets } = useMatchNavigation(searchTerm, paragraphTexts);
+
+    return (
+        <div className="mock-browser-content">
+            {loading && (
+                <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                    <Spin />
+                </div>
+            )}
+            {!loading && content && (
+                <>
+                    <SermonHeader
+                        meta={content.meta}
+                        zoom={zoom}
+                        sermonInfo={sermonInfo}
+                        currentTranslationId={tabTranslationId ?? content.meta.translationId}
+                    />
+                    {searchBarOpen && <InlineSearchBar />}
+                    <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
+                        <div
+                            ref={containerRef}
+                            id={DOCUMENT_CONTAINER_ID}
+                            className="sermon-body"
+                            style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
+                        >
+                            <SermonContentHeader meta={content.meta} />
+                            {content.paragraphs.map((p, i) => (
+                                <SermonParagraphView
+                                    key={p.paragraphIndex}
+                                    paragraph={p}
+                                    searchTerm={searchTerm}
+                                    currentMatchIndex={currentMatchIndex}
+                                    matchOffset={matchOffsets[i] ?? 0}
+                                />
+                            ))}
+                        </div>
+                    </Dropdown>
+                </>
+            )}
+        </div>
+    );
+}

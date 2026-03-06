@@ -417,7 +417,7 @@ export interface AppSettingsStatus {
     app_id: string;
     initialized: boolean;
     lastCheckBackupStatus: Date;
-    activeLanguage: string;
+    activeLanguage: string | null;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {

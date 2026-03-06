@@ -55,15 +55,16 @@ export function useInitApp() {
                 if (tabs?.length) setTabs(tabs);
 
                 // Validate active language is still installed
-                const validLang = installed.some((l) => l.code === langCode);
-                const effectiveLang = validLang ? langCode : installed[0].code;
+                const validLang = langCode && installed.some((l) => l.code === langCode);
 
                 if (!validLang) {
-                    await window.api.app.setActiveLanguage(effectiveLang);
+                    // No persisted language or it was uninstalled — language modal will open
+                    setLoaded(true);
+                    return;
                 }
 
-                setActiveLanguage(effectiveLang);
-                const sermons = await window.api.documents.getTitles(effectiveLang);
+                setActiveLanguage(langCode);
+                const sermons = await window.api.documents.getTitles(langCode);
                 setSermons(sermons);
             } finally {
                 setLoaded(true);

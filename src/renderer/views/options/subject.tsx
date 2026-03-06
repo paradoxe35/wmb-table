@@ -18,6 +18,7 @@ import {
     Modal,
     Divider,
     Empty,
+    List,
     message,
     Typography,
 } from 'antd';
@@ -173,9 +174,16 @@ export default function Subject() {
     };
 
     return (
-        <Row gutter={16}>
+        <Row>
             <Col span={12}>
-                <div className="subject-panel">
+                <div
+                    style={{
+                        width: '95%',
+                        minHeight: '300px',
+                        backgroundColor: 'var(--ant-color-bg-container)',
+                    }}
+                    className="layout__sidebar"
+                >
                     <Card style={{ width: '100%' }}>
                         <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
                     </Card>
@@ -221,59 +229,37 @@ function ItemFromSelectedSubject({
     const { getSermon } = useSermonLookup();
     const displayTitle = getSermon(item.documentTitle)?.title ?? item.documentTitle;
 
-    return (
-        <div style={{ padding: '8px 0' }}>
-            <div
-                style={{
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                }}
+    const title = item.bible ? (
+        <span>
+            {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
+        </span>
+    ) : (
+        <a className="underline">
+            <DocumentViewer
+                onItemClick={() => setSubjectItemSelected(item)}
+                name={item.documentTitle}
             >
-                <div style={{ flex: 1 }}>
-                    {item.bible ? (
-                        <>
-                            <div style={{ fontWeight: 500 }}>
-                                {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: '0.85em',
-                                    color: 'var(--ant-color-text-secondary)',
-                                }}
-                            >
-                                Référence: Biblique
-                            </div>
-                            <span className="content-description-2">{item.bible.content}</span>
-                        </>
-                    ) : (
-                        <>
-                            <div>
-                                <a className="underline">
-                                    <DocumentViewer
-                                        onItemClick={() => setSubjectItemSelected(item)}
-                                        name={item.documentTitle}
-                                    >
-                                        {displayTitle}
-                                    </DocumentViewer>
-                                </a>
-                            </div>
-                            <div
-                                style={{
-                                    fontSize: '0.85em',
-                                    color: 'var(--ant-color-text-secondary)',
-                                }}
-                            >
-                                Référence: Document
-                            </div>
-                            <span className="content-description-2">{item.textContent}...</span>
-                        </>
-                    )}
-                </div>
-                <DeleteBtn confirm={() => confirm(item)} />
-            </div>
-            <Divider style={{ margin: '8px 0' }} />
-        </div>
+                {displayTitle}
+            </DocumentViewer>
+        </a>
+    );
+
+    const description = item.bible ? (
+        <>
+            <div>Référence: Biblique</div>
+            <span className="content-description-2">{item.bible.content}</span>
+        </>
+    ) : (
+        <>
+            <div>Référence: Document</div>
+            <span className="content-description-2">{item.textContent}...</span>
+        </>
+    );
+
+    return (
+        <List.Item actions={[<DeleteBtn key="delete" confirm={() => confirm(item)} />]}>
+            <List.Item.Meta title={title} description={description} />
+        </List.Item>
     );
 }
 
@@ -304,16 +290,19 @@ function ShowActiveDocuments({
                             {subject.name} ({documents.length})
                         </Text>
                     </div>
-                    <div className="mt-2" style={{ width: '100%' }}>
-                        {documents.map((item) => (
+                    <List
+                        className="mt-2"
+                        itemLayout="vertical"
+                        dataSource={documents}
+                        renderItem={(item) => (
                             <ItemFromSelectedSubject
                                 key={item.id}
                                 item={item}
                                 confirm={confirm}
                                 setSubjectItemSelected={setSubjectItemSelected}
                             />
-                        ))}
-                    </div>
+                        )}
+                    />
                 </>
             ) : (
                 <Empty description={`Aucune référence touvée dans le suject: ${subject.name}`} />
@@ -332,18 +321,19 @@ const ItemSubject: FC<{
     }, [item, onSelectItem]);
 
     return (
-        <div
-            className={`subject-item ${item.active ? 'active' : ''}`}
-            onClick={onSelect}
-            title={item.name}
-        >
-            <div className="o-icon">
-                <BookOutlined />
-            </div>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'space-between' }}>
+        <>
+            <span
+                className={`smart-editable big ${item.active ? 'active' : ''}`}
+                onClick={onSelect}
+                title={item.name}
+            >
+                <div className="o-icon">
+                    <BookOutlined />
+                </div>
                 <b>{item.name}</b>
                 <DeleteBtn confirm={() => onDeleteSubject(item)} />
-            </div>
-        </div>
+            </span>
+            <Divider style={{ margin: '4px 0' }} />
+        </>
     );
 };

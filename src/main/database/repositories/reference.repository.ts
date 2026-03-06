@@ -311,6 +311,61 @@ export function getAudioCountForLanguage(langCode: string): number {
 }
 
 // ---------------------------------------------------------------------------
+// Single-sermon translation lookup
+// ---------------------------------------------------------------------------
+
+interface TranslationJoinedRow {
+    title: string;
+    sermon_id: string;
+    translator_id: number;
+    translator_name: string;
+    sermon_title: string;
+    sermon_date_ms: number;
+    sermon_minutes: number;
+    location_name: string | null;
+    city_name: string | null;
+    state_abbr: string | null;
+}
+
+export function getTranslationByIds(
+    translatorId: number,
+    sermonId: string,
+    langCode: string,
+): TranslationJoinedRow | null {
+    const stmt = getRefDb().prepare(`
+        SELECT t.title, s.id as sermon_id, tr.translator_id, tr.name as translator_name,
+               s.title as sermon_title, s.date_ms as sermon_date_ms,
+               s.minutes as sermon_minutes, l2.name as location_name,
+               c.name as city_name, st.idx as state_abbr
+        FROM translation t
+        JOIN translator tr ON t.translator_id = tr.isar_id
+        JOIN language lang ON t.language_id = lang.isar_id
+        JOIN sermon s ON t.sermon_id = s.isar_id
+        LEFT JOIN location l2 ON s.location_id = l2.isar_id
+        LEFT JOIN city c ON l2.city_id = c.isar_id
+        LEFT JOIN state st ON c.state_id = st.isar_id
+        WHERE tr.translator_id = ? AND s.id = ? AND lang.code = ?
+        LIMIT 1
+    `);
+    return (stmt.get(translatorId, sermonId, langCode) as TranslationJoinedRow) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Deduplicated sermon count
+// ---------------------------------------------------------------------------
+
+export function getUniqueSermonCountForLanguage(langCode: string): number {
+    const stmt = getRefDb().prepare(`
+        SELECT COUNT(DISTINCT t.sermon_id) as cnt
+        FROM translation t
+        JOIN language lang ON t.language_id = lang.isar_id
+        WHERE lang.code = ?
+    `);
+    const row = stmt.get(langCode) as { cnt: number };
+    return row.cnt;
+}
+
+// ---------------------------------------------------------------------------
 // Mapping helpers
 // ---------------------------------------------------------------------------
 

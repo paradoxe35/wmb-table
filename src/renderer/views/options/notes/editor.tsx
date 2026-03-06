@@ -24,17 +24,11 @@ import {
 } from './references';
 import { EDITOR_EVENT } from '@renderer/utils/events';
 
-let DecoupledDocumentEditor: any;
+// CKEditor UMD bundle — side-effect import assigns to window.DecoupledDocumentEditor
+import './ckeditor/ckeditor';
 
-if (process.env.NODE_ENV === 'development') {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    require('./ckeditor/ckeditor');
-    // @ts-expect-error — CKEditor attaches to window in dev mode
-    DecoupledDocumentEditor = window.DecoupledDocumentEditor;
-} else {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    DecoupledDocumentEditor = require('./ckeditor/ckeditor');
-}
+// @ts-expect-error — CKEditor UMD attaches to window
+const DecoupledDocumentEditor: any = window.DecoupledDocumentEditor;
 
 function styleProperty(color = 'var(--ant-color-bg-container)') {
     return {

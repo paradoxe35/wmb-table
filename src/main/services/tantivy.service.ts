@@ -1,21 +1,10 @@
 import { app } from 'electron';
 import { join } from 'node:path';
-import { readdirSync, readFileSync, existsSync } from 'node:fs';
+import { Worker } from 'node:worker_threads';
 import log from 'electron-log';
 import type { SermonParagraph } from '@shared/types';
-import {
-    Index,
-    Query,
-    SnippetGenerator,
-    TextAnalyzerBuilder,
-    TokenizerStatic,
-    FilterStatic,
-    type DocAddress,
-} from '@oxdev03/node-tantivy-binding';
-
-// Order is a const enum in the binding, which can't be accessed with isolatedModules.
-// Inline the values instead.
-const ORDER_ASC = 0 as const;
+import * as refRepo from '@main/database/repositories/reference.repository';
+import workerPath from './tantivy.worker?modulePath';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,7 +16,7 @@ export interface GroupedSearchHit {
     translationId: number;
     sermonDate: number;
     score: number;
-    bestDocAddress: DocAddress;
+    bestDocAddress: { segmentOrd: number; doc: number };
     hitCount: number;
 }
 
@@ -36,298 +25,131 @@ export interface SearchSermonResult {
     total: number;
 }
 
-export type { DocAddress };
-
 // ---------------------------------------------------------------------------
-// Module state
+// Worker management
 // ---------------------------------------------------------------------------
 
-const indexCache = new Map<string, Index>();
-let indexesDir = '';
+let worker: Worker | null = null;
+let requestId = 0;
+const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
 
-// ---------------------------------------------------------------------------
-// Tokenizer builders
-// ---------------------------------------------------------------------------
+// Installed languages cache (kept in sync via lifecycle calls)
+let installedLanguagesCache: string[] = [];
 
-interface MetaJsonSchema {
-    name: string;
-    type: string;
-    options: {
-        indexing?: {
-            tokenizer: string;
-        };
-    };
+function getWorker(): Worker {
+    if (!worker) throw new Error('Tantivy worker not initialized');
+    return worker;
 }
 
-const TOKENIZER_BUILDERS: Record<string, () => ReturnType<TextAnalyzerBuilder['build']>> = {
-    en_stem: () =>
-        new TextAnalyzerBuilder(TokenizerStatic.simple())
-            .filter(FilterStatic.lowercase())
-            .filter(FilterStatic.stemmer('english'))
-            .build(),
-};
+function call<T>(method: string, ...args: unknown[]): Promise<T> {
+    const id = ++requestId;
+    return new Promise<T>((resolve, reject) => {
+        pending.set(id, {
+            resolve: resolve as (v: unknown) => void,
+            reject,
+        });
+        getWorker().postMessage({ id, method, args });
+    });
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function getIndexesDir(): string {
-    if (!indexesDir) {
-        indexesDir = join(app.getPath('userData'), 'indexes');
+    return join(app.getPath('userData'), 'indexes');
+}
+
+/** Build a map of langCode → English title for all languages in the reference DB */
+function getLangTitlesMap(): Record<string, string> {
+    const all = refRepo.getAllLanguages();
+    const map: Record<string, string> = {};
+    for (const lang of all) {
+        map[lang.code] = lang.title;
     }
-    return indexesDir;
-}
-
-function getIndex(langCode: string): Index {
-    const idx = indexCache.get(langCode);
-    if (!idx) throw new Error(`No Tantivy index loaded for language "${langCode}"`);
-    return idx;
-}
-
-function extractNumeric(dict: Record<string, unknown[]>, field: string): number {
-    const vals = dict[field];
-    if (!vals || vals.length === 0) return 0;
-    return Number(vals[0]);
-}
-
-function extractString(dict: Record<string, unknown[]>, field: string): string {
-    const vals = dict[field];
-    if (!vals || vals.length === 0) return '';
-    return String(vals[0]);
-}
-
-function registerTokenizersForIndex(index: Index, metaJsonPath: string): void {
-    const raw = readFileSync(metaJsonPath, 'utf-8');
-    const meta = JSON.parse(raw) as { schema: MetaJsonSchema[] };
-
-    const registered = new Set<string>();
-    for (const field of meta.schema) {
-        const tokenizerName = field.options?.indexing?.tokenizer;
-        if (!tokenizerName || tokenizerName === 'default' || registered.has(tokenizerName))
-            continue;
-
-        const builder = TOKENIZER_BUILDERS[tokenizerName];
-        if (builder) {
-            index.registerTokenizer(tokenizerName, builder());
-            registered.add(tokenizerName);
-        } else {
-            log.warn(
-                `[tantivy] Unknown tokenizer "${tokenizerName}" in index — skipping registration`,
-            );
-        }
-    }
-}
-
-function getTextFieldNames(index: Index): string[] {
-    const schema = index.schema;
-    const names: string[] = [];
-    for (const name of schema.fieldNames()) {
-        // FieldType.Str = 0 for text fields
-        if (schema.getFieldType(name) === 0) {
-            names.push(name);
-        }
-    }
-    return names;
+    return map;
 }
 
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
-export function initializeTantivy(): void {
-    const dir = getIndexesDir();
-    if (!existsSync(dir)) {
-        log.info(`[tantivy] Indexes directory does not exist yet: ${dir}`);
-        return;
-    }
-
-    let entries: string[];
-    try {
-        entries = readdirSync(dir, { withFileTypes: true })
-            .filter((d) => d.isDirectory())
-            .map((d) => d.name);
-    } catch (err) {
-        log.error('[tantivy] Failed to read indexes directory:', err);
-        return;
-    }
-
-    for (const langCode of entries) {
-        const indexPath = join(dir, langCode);
-        const metaPath = join(indexPath, 'meta.json');
-        if (!existsSync(metaPath)) continue;
-
-        try {
-            openIndex(langCode);
-            log.info(`[tantivy] Opened index for "${langCode}"`);
-        } catch (err) {
-            log.error(`[tantivy] Failed to open index for "${langCode}":`, err);
+export async function initializeTantivy(): Promise<void> {
+    worker = new Worker(workerPath);
+    worker.on('message', (msg: { id: number; result?: unknown; error?: string }) => {
+        const p = pending.get(msg.id);
+        if (!p) return;
+        pending.delete(msg.id);
+        if (msg.error) {
+            p.reject(new Error(msg.error));
+        } else {
+            p.resolve(msg.result);
         }
-    }
+    });
+    worker.on('error', (err) => {
+        log.error('[tantivy-worker] Worker error:', err);
+    });
+
+    const indexesDir = getIndexesDir();
+    const langTitles = getLangTitlesMap();
+    await call('initialize', indexesDir, langTitles);
+    installedLanguagesCache = await call<string[]>('getInstalledLanguages');
+    log.info(`[tantivy] Worker initialized, ${installedLanguagesCache.length} indexes loaded`);
 }
 
-export function openIndex(langCode: string): void {
-    const dir = getIndexesDir();
-    const indexPath = join(dir, langCode);
-    const index = Index.open(indexPath);
-    registerTokenizersForIndex(index, join(indexPath, 'meta.json'));
-    index.configReader('OnCommit');
-    indexCache.set(langCode, index);
+export async function openIndex(langCode: string): Promise<void> {
+    const lang = refRepo.getLanguageByCode(langCode);
+    await call('openIndex', getIndexesDir(), langCode, lang?.title ?? null);
+    installedLanguagesCache = await call<string[]>('getInstalledLanguages');
 }
 
-export function closeAllIndexes(): void {
-    indexCache.clear();
+export async function closeAllIndexes(): Promise<void> {
+    await call('closeAllIndexes');
+    installedLanguagesCache = [];
 }
 
 export function getInstalledLanguages(): string[] {
-    return Array.from(indexCache.keys());
+    return installedLanguagesCache;
 }
 
-export function getSermonParagraphs(
+export async function getSermonParagraphs(
     langCode: string,
     translationId: number,
     sermonDate?: number,
-): SermonParagraph[] {
-    const index = getIndex(langCode);
-    const schema = index.schema;
-    const hasStemmed = schema.hasField('stemmed_content');
-
-    const query = Query.termQuery(schema, 'translation_id', translationId);
-    const searcher = index.searcher();
-    const result = searcher.search(query, 10000, false, 'line_index', 0, ORDER_ASC);
-
-    const paragraphs: SermonParagraph[] = [];
-    for (const hit of result.hits) {
-        const doc = searcher.doc(hit.docAddress);
-        const dict = doc.toDict() as Record<string, unknown[]>;
-
-        const docSermonDate = extractNumeric(dict, 'sermon_date');
-        // Filter by sermonDate if provided
-        if (sermonDate !== undefined && docSermonDate !== sermonDate) continue;
-
-        const paragraph: SermonParagraph = {
-            lineIndex: extractNumeric(dict, 'line_index'),
-            paragraphIndex: extractNumeric(dict, 'paragraph_index'),
-            translationId: extractNumeric(dict, 'translation_id'),
-            sermonDate: docSermonDate,
-            content: extractString(dict, 'unstemmed_content'),
-        };
-
-        if (hasStemmed) {
-            const stemmed = extractString(dict, 'stemmed_content');
-            if (stemmed) paragraph.stemmedContent = stemmed;
-        }
-
-        paragraphs.push(paragraph);
-    }
-
-    return paragraphs;
+): Promise<SermonParagraph[]> {
+    return call<SermonParagraph[]>('getSermonParagraphs', langCode, translationId, sermonDate);
 }
 
-export function searchSermons(
+export async function searchSermons(
     langCode: string,
     queryText: string,
     limit: number,
     offset: number,
-): SearchSermonResult {
-    const index = getIndex(langCode);
-    const textFields = getTextFieldNames(index);
-    const query = index.parseQuery(queryText, textFields);
-    const searcher = index.searcher();
-
-    const fetchLimit = Math.min((offset + limit) * 20, 10000);
-    const result = searcher.search(query, fetchLimit, true);
-
-    // Group hits by translation_id
-    const groups = new Map<
-        number,
-        { score: number; bestDocAddress: DocAddress; hitCount: number; sermonDate: number }
-    >();
-
-    for (const hit of result.hits) {
-        const doc = searcher.doc(hit.docAddress);
-        const dict = doc.toDict() as Record<string, unknown[]>;
-        const translationId = extractNumeric(dict, 'translation_id');
-        const score = hit.score ?? 0;
-
-        const existing = groups.get(translationId);
-        if (!existing) {
-            groups.set(translationId, {
-                score,
-                bestDocAddress: hit.docAddress,
-                hitCount: 1,
-                sermonDate: extractNumeric(dict, 'sermon_date'),
-            });
-        } else {
-            existing.hitCount++;
-            if (score > existing.score) {
-                existing.score = score;
-                existing.bestDocAddress = hit.docAddress;
-            }
-        }
-    }
-
-    // Sort by score desc
-    const sorted = Array.from(groups.entries())
-        .map(([translationId, g]) => ({
-            translationId,
-            sermonDate: g.sermonDate,
-            score: g.score,
-            bestDocAddress: g.bestDocAddress,
-            hitCount: g.hitCount,
-        }))
-        .sort((a, b) => b.score - a.score);
-
-    const total = sorted.length;
-    const hits = sorted.slice(offset, offset + limit);
-
-    return { hits, total };
+): Promise<SearchSermonResult> {
+    return call<SearchSermonResult>('searchSermons', langCode, queryText, limit, offset);
 }
 
-export function getSermonParagraphCount(
+export async function getSearchSnippet(
+    langCode: string,
+    queryText: string,
+    docAddress: { segmentOrd: number; doc: number },
+): Promise<string> {
+    return call<string>('getSearchSnippet', langCode, queryText, docAddress);
+}
+
+export async function getSermonParagraphCount(
     langCode: string,
     translationId: number,
     sermonDate?: number,
-): number {
-    if (sermonDate !== undefined) {
-        // Count paragraphs matching both translationId and sermonDate
-        return getSermonParagraphs(langCode, translationId, sermonDate).length;
+): Promise<number> {
+    return call<number>('getSermonParagraphCount', langCode, translationId, sermonDate);
+}
+
+export async function terminateWorker(): Promise<void> {
+    if (worker) {
+        await worker.terminate();
+        worker = null;
+        pending.clear();
+        installedLanguagesCache = [];
     }
-    const index = getIndex(langCode);
-    const schema = index.schema;
-    const query = Query.termQuery(schema, 'translation_id', translationId);
-    const searcher = index.searcher();
-    const result = searcher.search(query, 1, true);
-    return result.count ?? 0;
-}
-
-export function getSearchSnippet(
-    langCode: string,
-    queryText: string,
-    docAddress: DocAddress,
-): string {
-    const index = getIndex(langCode);
-    const textFields = getTextFieldNames(index);
-    const query = index.parseQuery(queryText, textFields);
-    const searcher = index.searcher();
-    const schema = index.schema;
-
-    const generator = SnippetGenerator.create(searcher, query, schema, 'unstemmed_content');
-    const doc = searcher.doc(docAddress);
-    const snippet = generator.snippetFromDoc(doc);
-    return snippet.toHtml();
-}
-
-// ---------------------------------------------------------------------------
-// Testing helpers
-// ---------------------------------------------------------------------------
-
-export function _openIndexFromPathForTesting(langCode: string, path: string): void {
-    const index = Index.open(path);
-    registerTokenizersForIndex(index, join(path, 'meta.json'));
-    index.configReader('OnCommit');
-    indexCache.set(langCode, index);
-}
-
-export function _clearCacheForTesting(): void {
-    indexCache.clear();
 }

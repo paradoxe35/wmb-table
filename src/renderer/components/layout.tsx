@@ -65,7 +65,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
     return (
         <AudioProvider>
-            <Layout style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+            <Layout>
                 <Header className="app-header">
                     <div className="logo" onClick={() => toggle()}>
                         <Title />
@@ -77,17 +77,30 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                         <SidebarStatusHandler />
                     </div>
                 </Header>
-                <Layout style={{ flex: 1, minHeight: 0 }}>
+                <Layout style={{ overflow: 'hidden' }}>
                     <SidebarMenu onCollapse={toggle} collapsed={collapsed} />
                     <Layout>
                         <div ref={containerScroll} className="site-layout-content">
-                            <Content className="main-content">{children}</Content>
+                            <Content
+                                style={{
+                                    padding: 24,
+                                    paddingBottom: 0,
+                                    flex: 1,
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                }}
+                            >
+                                {children}
+                            </Content>
                         </div>
                     </Layout>
                     <SidebarDocuments />
                 </Layout>
-                <MiniPlayerBar />
             </Layout>
+            <div style={{ display: 'none' }}>
+                <MiniPlayerBar />
+            </div>
         </AudioProvider>
     );
 };

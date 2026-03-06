@@ -1,7 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Input, Card, Tree, Divider, Select, Tag } from 'antd';
 import { SoundOutlined } from '@ant-design/icons';
-import { AnimatePresence, motion } from 'framer-motion';
 import type { SermonMetaWithTraductions } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
 import { useSermonStore, useCustomDocumentsStore, selectActiveTabTitle } from '@renderer/stores';
@@ -18,50 +17,97 @@ export default function SidebarDocuments() {
     const sidebarHidden = useAppStore((s) => s.sidebarHidden);
 
     return (
-        <AnimatePresence initial={false}>
-            {!sidebarHidden && (
-                <motion.div
-                    key="sidebar-documents"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 265, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-                    style={{ overflow: 'hidden', flexShrink: 0 }}
-                >
-                    <div style={{ width: 265 }} className="layout__sidebar">
-                        <PanelGroup
-                            tabs={[
-                                { name: 'Tous', active: true },
-                                { name: 'Années', active: false },
-                                { name: 'Alphabet', active: false },
-                                { name: 'Ajoutés', active: false },
-                            ]}
+        <div
+            style={{
+                width: sidebarHidden ? 0 : 300,
+                opacity: sidebarHidden ? 0 : 1,
+                flexShrink: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                transition:
+                    'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+            className="layout__sidebar"
+        >
+            <PanelGroup
+                tabs={[
+                    { name: 'Tous', active: true },
+                    { name: 'Années', active: false },
+                    { name: 'Alphabet', active: false },
+                    { name: 'Ajoutés', active: false },
+                ]}
+            >
+                {(index: number) => (
+                    <>
+                        <div
+                            hidden={index !== 0}
+                            style={
+                                index === 0
+                                    ? {
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          flex: 1,
+                                          overflow: 'hidden',
+                                      }
+                                    : undefined
+                            }
                         >
-                            {(index: number) => (
-                                <>
-                                    <div hidden={index !== 0}>
-                                        <DocumentSearch />
-                                    </div>
-                                    <div hidden={index !== 1}>
-                                        <ContainerScrollY>
-                                            <div className="mt-2" />
-                                            <DocumentByYears />
-                                        </ContainerScrollY>
-                                    </div>
-                                    <div hidden={index !== 2}>
-                                        <DocumentByAlphabetic />
-                                    </div>
-                                    <div hidden={index !== 3}>
-                                        <div className="mt-2" />
-                                        <DocumentsAdded />
-                                    </div>
-                                </>
-                            )}
-                        </PanelGroup>
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+                            <DocumentSearch />
+                        </div>
+                        <div
+                            hidden={index !== 1}
+                            style={
+                                index === 1
+                                    ? {
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          flex: 1,
+                                          overflow: 'hidden',
+                                      }
+                                    : undefined
+                            }
+                        >
+                            <ContainerScrollY>
+                                <div className="mt-2" />
+                                <DocumentByYears />
+                            </ContainerScrollY>
+                        </div>
+                        <div
+                            hidden={index !== 2}
+                            style={
+                                index === 2
+                                    ? {
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          flex: 1,
+                                          overflow: 'hidden',
+                                      }
+                                    : undefined
+                            }
+                        >
+                            <DocumentByAlphabetic />
+                        </div>
+                        <div
+                            hidden={index !== 3}
+                            style={
+                                index === 3
+                                    ? {
+                                          display: 'flex',
+                                          flexDirection: 'column',
+                                          flex: 1,
+                                          overflow: 'hidden',
+                                      }
+                                    : undefined
+                            }
+                        >
+                            <div className="mt-2" />
+                            <DocumentsAdded />
+                        </div>
+                    </>
+                )}
+            </PanelGroup>
+        </div>
     );
 }
 
@@ -222,33 +268,35 @@ const DocumentList = ({
     const openDocument = useOpenDocument();
     const isEnglish = useAppStore((s) => s.activeLanguage) === 'en';
 
+    const sorted = useMemo(
+        () => datas.slice().sort((a, b) => a.title.localeCompare(b.title)),
+        [datas],
+    );
+
     return (
         <>
             <Divider style={{ padding: 0, margin: 0 }} />
             <ContainerScrollY className="document-list">
-                {datas
-                    .slice()
-                    .sort((a, b) => a.title.localeCompare(b.title))
-                    .map((d, i) => (
-                        <ItemOutline
-                            key={d.id || i}
-                            sermon={d}
-                            active={activeTitle === d.title}
-                            isEnglish={isEnglish}
-                            onClick={() => openDocument(d.title)}
-                        />
-                    ))}
+                {sorted.map((d, i) => (
+                    <ItemOutline
+                        key={d.id || i}
+                        sermon={d}
+                        active={activeTitle === d.title}
+                        isEnglish={isEnglish}
+                        onClick={() => openDocument(d.title)}
+                    />
+                ))}
             </ContainerScrollY>
         </>
     );
 };
 
-const ItemOutline: React.FC<{
+const ItemOutline = React.memo<{
     sermon: SermonMetaWithTraductions;
     active?: boolean;
     isEnglish: boolean;
     onClick: () => void;
-}> = ({ sermon, active, isEnglish, onClick }) => {
+}>(({ sermon, active, isEnglish, onClick }) => {
     const hasMultipleTraductions =
         sermon.availableTraductions && sermon.availableTraductions.length > 1;
 
@@ -284,4 +332,5 @@ const ItemOutline: React.FC<{
             </div>
         </div>
     );
-};
+});
+ItemOutline.displayName = 'ItemOutline';

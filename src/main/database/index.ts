@@ -70,7 +70,7 @@ export function initializeDatabase(): void {
 
     // Bible database (read-only, bundled per language)
     const activeLanguage = configRepo.getActiveLanguage();
-    switchBibleLanguage(activeLanguage);
+    if (activeLanguage) switchBibleLanguage(activeLanguage);
 }
 
 /**
