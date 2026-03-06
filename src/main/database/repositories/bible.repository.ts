@@ -37,7 +37,8 @@ export function getIndexes(): BibleIndex {
               GROUP_CONCAT(DISTINCT chapter) as chapters,
               GROUP_CONCAT(DISTINCT verse) as verses
        FROM bible_verses
-       GROUP BY book_name, book, testament`,
+       GROUP BY book_name, book, testament
+       ORDER BY book`,
         )
         .all() as Array<{
         book_name: string;

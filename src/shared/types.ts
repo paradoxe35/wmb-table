@@ -402,6 +402,7 @@ export interface TantivySearchHit {
     title: string;
     snippet: string;
     score: number;
+    hitCount: number;
 }
 
 export interface TantivySearchResult {

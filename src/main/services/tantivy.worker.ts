@@ -112,6 +112,25 @@ function getIndex(langCode: string): Index {
     return idx;
 }
 
+function buildQuery(index: Index, queryText: string): Query {
+    const textFields = getTextFieldNames(index);
+    const fieldBoosts: Record<string, number> = { unstemmed_content: 2.0, stemmed_content: 1.0 };
+    const fuzzyFields: Record<string, [boolean, number, boolean]> = {
+        unstemmed_content: [true, 1, true],
+        stemmed_content: [true, 1, true],
+    };
+    const [query, errors] = index.parseQueryLenient(
+        queryText,
+        textFields,
+        fieldBoosts,
+        fuzzyFields,
+    );
+    if (errors.length > 0) {
+        console.warn('[tantivy] Query parse warnings:', errors);
+    }
+    return query;
+}
+
 // ---------------------------------------------------------------------------
 // Methods exposed to main process
 // ---------------------------------------------------------------------------
@@ -221,8 +240,7 @@ function searchSermons(
     offset: number,
 ): { hits: GroupedSearchHitResult[]; total: number } {
     const index = getIndex(langCode);
-    const textFields = getTextFieldNames(index);
-    const query = index.parseQuery(queryText, textFields);
+    const query = buildQuery(index, queryText);
     const searcher = index.searcher();
 
     const fetchLimit = Math.min((offset + limit) * 20, 10000);
@@ -289,12 +307,12 @@ function getSearchSnippet(
     docAddress: { segmentOrd: number; doc: number },
 ): string {
     const index = getIndex(langCode);
-    const textFields = getTextFieldNames(index);
-    const query = index.parseQuery(queryText, textFields);
+    const query = buildQuery(index, queryText);
     const searcher = index.searcher();
     const schema = index.schema;
 
     const generator = SnippetGenerator.create(searcher, query, schema, 'unstemmed_content');
+    generator.setMaxNumChars(400);
     const doc = searcher.doc(docAddress as DocAddress);
     const snippet = generator.snippetFromDoc(doc);
     return snippet.toHtml();

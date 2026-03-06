@@ -181,10 +181,19 @@ const ListView = ({ hit, query }: { hit: TantivySearchHit; query: string }) => {
                     </a>
                 }
                 description={
-                    <span
-                        className="content-description-2"
-                        dangerouslySetInnerHTML={{ __html: hit.snippet }}
-                    />
+                    <>
+                        <span
+                            className="content-description-2"
+                            dangerouslySetInnerHTML={{ __html: hit.snippet }}
+                        />
+                        {hit.hitCount > 0 && (
+                            <div>
+                                <Text type="secondary" style={{ fontSize: 12 }}>
+                                    {hit.hitCount} correspondance{hit.hitCount > 1 ? 's' : ''}
+                                </Text>
+                            </div>
+                        )}
+                    </>
                 }
             />
         </List.Item>
@@ -199,14 +208,28 @@ const SearchResultComponent = memo(function SearchResultComponent({
     onPageChange?: (page: number) => void;
 }) {
     const totalPages = results ? Math.ceil(results.total / ITEMS_PER_PAGE) : 0;
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const handlePageChange = useCallback(
+        (page: number) => {
+            setCurrentPage(page);
+            onPageChange?.(page);
+        },
+        [onPageChange],
+    );
+
+    // Reset to page 1 when query changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [results?.query]);
 
     return (
         <>
             {results && (
                 <div className="mt-2 flex flex-center">
                     <Text type="secondary">
-                        {results.total} correspondance{results.total > 1 ? 's' : ''} trouvée
-                        {results.total > 1 ? 's' : ''}.
+                        Trouvé dans {results.total} document{results.total > 1 ? 's' : ''}
+                        {totalPages > 1 ? `, page (${currentPage}/${totalPages})` : ''}
                     </Text>
                 </div>
             )}
@@ -226,7 +249,7 @@ const SearchResultComponent = memo(function SearchResultComponent({
                 <div className="mt-2 flex flex-center mb-2">
                     <Pagination
                         key={results.query}
-                        onChange={onPageChange}
+                        onChange={handlePageChange}
                         defaultCurrent={1}
                         showSizeChanger={false}
                         pageSize={ITEMS_PER_PAGE}

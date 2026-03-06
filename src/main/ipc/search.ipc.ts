@@ -38,6 +38,7 @@ export function registerSearchHandlers(): void {
                 title: meta?.title ?? sermonId,
                 snippet,
                 score: hit.score,
+                hitCount: hit.hitCount,
             });
         }
 

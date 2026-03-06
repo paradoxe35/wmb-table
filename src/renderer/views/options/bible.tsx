@@ -16,7 +16,7 @@ import {
     Empty,
 } from 'antd';
 import type { MenuProps } from 'antd';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LoadByVisibility from '@renderer/components/load-by-visibility';
 import {
     SearchOutlined,
@@ -38,13 +38,27 @@ import type {
 import { debounce } from '@renderer/utils/functions';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 
+const TESTAMENTS = [
+    { name: 'Nouveau Testament', value: 'N' },
+    { name: 'Ancien Testament', value: 'O' },
+];
+
+type Testament = (typeof TESTAMENTS)[0];
+
+// ---------------------------------------------------------------------------
+// Root
+// ---------------------------------------------------------------------------
+
 export default function Bible() {
     const [menu, setMenu] = useState<string>('bible');
 
-    const menuItems: MenuProps['items'] = [
-        { key: 'bible', label: 'Bible', icon: <BibleIcons /> },
-        { key: 'search', label: 'Recherche', icon: <SearchOutlined /> },
-    ];
+    const menuItems: MenuProps['items'] = useMemo(
+        () => [
+            { key: 'bible', label: 'Bible', icon: <BibleIcons /> },
+            { key: 'search', label: 'Recherche', icon: <SearchOutlined /> },
+        ],
+        [],
+    );
 
     return (
         <LoadByVisibility>
@@ -65,6 +79,10 @@ export default function Bible() {
         </LoadByVisibility>
     );
 }
+
+// ---------------------------------------------------------------------------
+// Version selector
+// ---------------------------------------------------------------------------
 
 function BibleVersionSelector() {
     const [versions, setVersions] = useState<BibleVersionInfo[]>([]);
@@ -110,7 +128,6 @@ function BibleVersionSelector() {
         async (abbreviation: string) => {
             await window.api.bible.switchVersion(abbreviation);
             refresh();
-            // Force re-render of Bible content by dispatching a custom event
             window.dispatchEvent(new Event('bible-version-changed'));
         },
         [refresh],
@@ -178,168 +195,9 @@ function BibleVersionSelector() {
     );
 }
 
-function AddToSubject({ verse }: { verse: BibleBook }) {
-    const handler = useCallback(() => {
-        window.dispatchEvent(
-            new CustomEvent<Partial<SubjectRefTree>>(
-                CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
-                { detail: { bible: verse } },
-            ),
-        );
-    }, [verse]);
-
-    return (
-        <Dropdown
-            menu={{
-                items: [{ key: 'add', label: 'Ajouter à un sujet', onClick: handler }],
-            }}
-            placement="bottomRight"
-            arrow
-            trigger={['click']}
-        >
-            <Button>
-                <DownOutlined />
-            </Button>
-        </Dropdown>
-    );
-}
-
-function BookContent({
-    bookDetail,
-    onClick,
-    verseMetaContent,
-}: {
-    bookDetail: BibleIndexValue;
-    onClick?: (id: string) => void;
-    verseMetaContent?: boolean;
-}) {
-    const [chaptersKey, setChaptersKey] = useState(1);
-    const [verses, setVerses] = useState<BibleBook[]>();
-
-    useEffect(() => {
-        window.api.bible
-            .getBooks({
-                book: bookDetail.book,
-                chapter: chaptersKey.toString(),
-            })
-            .then(setVerses);
-    }, [chaptersKey, bookDetail.book]);
-
-    const sortedVerses = verses ? verses.slice().sort((a, b) => +a.verse - +b.verse) : [];
-
-    const collapseItems = [
-        {
-            key: '1',
-            label: (
-                <Space wrap={true}>
-                    {new Array(+bookDetail.chapters).fill(null).map((_, i) => {
-                        const key = i + 1;
-                        return (
-                            <Button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setChaptersKey(key);
-                                }}
-                                key={key}
-                                type={key === chaptersKey ? 'primary' : 'dashed'}
-                                size="small"
-                            >
-                                {i + 1}
-                            </Button>
-                        );
-                    })}
-                </Space>
-            ),
-            children: (
-                <>
-                    {(!verses || verses.length === 0) && (
-                        <div className="flex flex-center">
-                            <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-                        </div>
-                    )}
-                    {sortedVerses.length > 0 && (
-                        <List
-                            dataSource={sortedVerses}
-                            renderItem={(item) => (
-                                <List.Item
-                                    key={item.id}
-                                    className={`verse-item ${onClick ? 'list__clickable' : ''}`}
-                                    onClick={() => onClick?.(item.id)}
-                                    actions={
-                                        verseMetaContent
-                                            ? [
-                                                  <span key="action" className="verse-action">
-                                                      <AddToSubject verse={item} />
-                                                  </span>,
-                                              ]
-                                            : undefined
-                                    }
-                                >
-                                    <List.Item.Meta
-                                        title={`${item.verse}.`}
-                                        description={
-                                            <Typography.Text className="content-description">
-                                                {item.content}
-                                            </Typography.Text>
-                                        }
-                                    />
-                                </List.Item>
-                            )}
-                        />
-                    )}
-                </>
-            ),
-        },
-    ];
-
-    return <Collapse activeKey="1" accordion items={collapseItems} />;
-}
-
-function BibleTestamentContent({
-    bibleIndex,
-    onClick,
-    verseMetaContent,
-}: {
-    bibleIndex: BibleIndex;
-    onClick?: (id: string) => void;
-    verseMetaContent?: boolean;
-}) {
-    const [currentKey, setCurrentKey] = useState<string>();
-
-    function onChangeKey(key: string | string[]) {
-        const k = Array.isArray(key) ? key[0] : key;
-        setCurrentKey(k);
-    }
-
-    useEffect(() => {
-        if (currentKey) {
-            document
-                .getElementById(`book-${currentKey}`)
-                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, [currentKey]);
-
-    const collapseItems = bibleIndex
-        ? Object.keys(bibleIndex).map((key) => {
-              const book = bibleIndex[key];
-              return {
-                  key: book.book,
-                  id: `book-${book.book}`,
-                  label: key,
-                  children:
-                      currentKey === book.book ? (
-                          <BookContent
-                              verseMetaContent={verseMetaContent}
-                              onClick={onClick}
-                              bookDetail={book}
-                          />
-                      ) : null,
-              };
-          })
-        : [];
-
-    return <Collapse onChange={onChangeKey} accordion items={collapseItems} />;
-}
+// ---------------------------------------------------------------------------
+// Bible content (book browsing)
+// ---------------------------------------------------------------------------
 
 export function BibleContent({
     onClick,
@@ -359,7 +217,6 @@ export function BibleContent({
                     setNoBible(true);
                     return;
                 }
-                // Group by testament (e.g. "A" = Ancien, "N" = Nouveau)
                 const grouped: Record<string, BibleIndex> = {};
                 for (const [bookName, val] of Object.entries(flat)) {
                     const t = val.testament;
@@ -412,6 +269,273 @@ export function BibleContent({
     );
 }
 
+// ---------------------------------------------------------------------------
+// Testament → Books accordion
+// ---------------------------------------------------------------------------
+
+function BibleTestamentContent({
+    bibleIndex,
+    onClick,
+    verseMetaContent,
+}: {
+    bibleIndex: BibleIndex;
+    onClick?: (id: string) => void;
+    verseMetaContent?: boolean;
+}) {
+    const [currentKey, setCurrentKey] = useState<string>();
+
+    const onChangeKey = useCallback((key: string | string[]) => {
+        const k = Array.isArray(key) ? key[0] : key;
+        setCurrentKey(k);
+    }, []);
+
+    useEffect(() => {
+        if (currentKey) {
+            document
+                .getElementById(`book-${currentKey}`)
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [currentKey]);
+
+    const collapseItems = useMemo(
+        () =>
+            bibleIndex
+                ? Object.keys(bibleIndex).map((key) => {
+                      const book = bibleIndex[key];
+                      return {
+                          key: book.book,
+                          id: `book-${book.book}`,
+                          label: key,
+                          children:
+                              currentKey === book.book ? (
+                                  <BookContent
+                                      verseMetaContent={verseMetaContent}
+                                      onClick={onClick}
+                                      bookDetail={book}
+                                  />
+                              ) : null,
+                      };
+                  })
+                : [],
+        [bibleIndex, currentKey, onClick, verseMetaContent],
+    );
+
+    return <Collapse onChange={onChangeKey} accordion items={collapseItems} />;
+}
+
+// ---------------------------------------------------------------------------
+// Single book: chapter selector + verse list
+// ---------------------------------------------------------------------------
+
+function BookContent({
+    bookDetail,
+    onClick,
+    verseMetaContent,
+}: {
+    bookDetail: BibleIndexValue;
+    onClick?: (id: string) => void;
+    verseMetaContent?: boolean;
+}) {
+    const [chaptersKey, setChaptersKey] = useState(1);
+    const [verses, setVerses] = useState<BibleBook[]>();
+
+    useEffect(() => {
+        window.api.bible
+            .getBooks({
+                book: bookDetail.book,
+                chapter: chaptersKey.toString(),
+            })
+            .then(setVerses);
+    }, [chaptersKey, bookDetail.book]);
+
+    const sortedVerses = useMemo(
+        () => (verses ? verses.slice().sort((a, b) => +a.verse - +b.verse) : []),
+        [verses],
+    );
+
+    const chapterList = useMemo(
+        () =>
+            bookDetail.chapters
+                .split(',')
+                .map((c) => c.trim())
+                .filter(Boolean)
+                .sort((a, b) => +a - +b),
+        [bookDetail.chapters],
+    );
+
+    return (
+        <Collapse
+            activeKey="1"
+            accordion
+            items={[
+                {
+                    key: '1',
+                    label: (
+                        <ChapterButtons
+                            chapters={chapterList}
+                            activeChapter={chaptersKey}
+                            onSelect={setChaptersKey}
+                        />
+                    ),
+                    children: (
+                        <VerseList
+                            verses={sortedVerses}
+                            loading={!verses || verses.length === 0}
+                            onClick={onClick}
+                            verseMetaContent={verseMetaContent}
+                        />
+                    ),
+                },
+            ]}
+        />
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Chapter buttons (inside collapse header)
+// ---------------------------------------------------------------------------
+
+const ChapterButtons = memo(function ChapterButtons({
+    chapters,
+    activeChapter,
+    onSelect,
+}: {
+    chapters: string[];
+    activeChapter: number;
+    onSelect: (ch: number) => void;
+}) {
+    return (
+        <Space wrap={true}>
+            {chapters.map((ch) => {
+                const key = +ch;
+                return (
+                    <Button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onSelect(key);
+                        }}
+                        key={key}
+                        type={key === activeChapter ? 'primary' : 'dashed'}
+                    >
+                        {ch}
+                    </Button>
+                );
+            })}
+        </Space>
+    );
+});
+
+// ---------------------------------------------------------------------------
+// Verse list
+// ---------------------------------------------------------------------------
+
+const VerseList = memo(function VerseList({
+    verses,
+    loading,
+    onClick,
+    verseMetaContent,
+}: {
+    verses: BibleBook[];
+    loading: boolean;
+    onClick?: (id: string) => void;
+    verseMetaContent?: boolean;
+}) {
+    if (loading) {
+        return (
+            <div className="flex flex-center">
+                <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+            </div>
+        );
+    }
+
+    return (
+        <List
+            itemLayout="horizontal"
+            dataSource={verses}
+            renderItem={(item) => (
+                <VerseItem item={item} onClick={onClick} verseMetaContent={verseMetaContent} />
+            )}
+        />
+    );
+});
+
+// ---------------------------------------------------------------------------
+// Single verse row
+// ---------------------------------------------------------------------------
+
+const VerseItem = memo(function VerseItem({
+    item,
+    onClick,
+    verseMetaContent,
+}: {
+    item: BibleBook;
+    onClick?: (id: string) => void;
+    verseMetaContent?: boolean;
+}) {
+    const handleClick = useCallback(() => onClick?.(item.id), [onClick, item.id]);
+
+    const actions = useMemo(
+        () =>
+            verseMetaContent
+                ? [
+                      <span key="action" className="verse-action">
+                          <AddToSubject verse={item} />
+                      </span>,
+                  ]
+                : undefined,
+        [verseMetaContent, item],
+    );
+
+    return (
+        <List.Item
+            className={`verse-item ${onClick ? 'list__clickable' : ''}`}
+            onClick={handleClick}
+            actions={actions}
+        >
+            <List.Item.Meta
+                avatar={<span>{item.verse}.</span>}
+                description={
+                    <Typography.Text className="content-description">
+                        {item.content}
+                    </Typography.Text>
+                }
+            />
+        </List.Item>
+    );
+});
+
+// ---------------------------------------------------------------------------
+// Add to subject dropdown
+// ---------------------------------------------------------------------------
+
+const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook }) {
+    const handler = useCallback(() => {
+        window.dispatchEvent(
+            new CustomEvent<Partial<SubjectRefTree>>(
+                CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
+                { detail: { bible: verse } },
+            ),
+        );
+    }, [verse]);
+
+    const menuItems = useMemo(
+        () => [{ key: 'add', label: 'Ajouter à un sujet', onClick: handler }],
+        [handler],
+    );
+
+    return (
+        <Dropdown menu={{ items: menuItems }} placement="bottomRight" arrow trigger={['click']}>
+            <Button>
+                <DownOutlined />
+            </Button>
+        </Dropdown>
+    );
+});
+
+// ---------------------------------------------------------------------------
+// Bible search
+// ---------------------------------------------------------------------------
+
 function SearchContent() {
     const [results, setResults] = useState<BibleSearchResult | null>(null);
     const lastSearch = useRef<string>('');
@@ -440,14 +564,11 @@ function SearchContent() {
     );
 }
 
-const TESTAMENTS = [
-    { name: 'Nouveau Testament', value: 'N' },
-    { name: 'Ancien Testament', value: 'O' },
-];
+// ---------------------------------------------------------------------------
+// Search results
+// ---------------------------------------------------------------------------
 
-type Testament = (typeof TESTAMENTS)[0];
-
-function SearchResult({
+const SearchResult = memo(function SearchResult({
     results,
     onPageChange,
 }: {
@@ -488,30 +609,42 @@ function SearchResult({
             )}
         </>
     );
-}
+});
 
-const ContentItem = ({ item }: { item: BibleSearchItem }) => {
+// ---------------------------------------------------------------------------
+// Search result content with highlight
+// ---------------------------------------------------------------------------
+
+const ContentItem = memo(function ContentItem({ item }: { item: BibleSearchItem }) {
     const parentRef = useRef<HTMLSpanElement | null>(null);
 
     useEffect(() => {
-        if (parentRef.current) {
-            const element = parentRef.current;
-            const node = document.createTextNode(item.item.content);
-            element.appendChild(node);
+        const element = parentRef.current;
+        if (!element) return;
 
-            const matcher = item.matches[0];
-            if (matcher?.start != null && matcher?.end != null) {
-                const range = document.createRange();
-                const tag = document.createElement('mark');
-                range.setStart(node, matcher.start);
-                range.setEnd(node, matcher.end);
-                range.surroundContents(tag);
-            }
+        const node = document.createTextNode(item.item.content);
+        element.appendChild(node);
+
+        const matcher = item.matches[0];
+        if (matcher?.start != null && matcher?.end != null) {
+            const range = document.createRange();
+            const tag = document.createElement('mark');
+            range.setStart(node, matcher.start);
+            range.setEnd(node, matcher.end);
+            range.surroundContents(tag);
         }
+
+        return () => {
+            element.textContent = '';
+        };
     }, [item]);
 
     return <span className="content-description-2" ref={parentRef}></span>;
-};
+});
+
+// ---------------------------------------------------------------------------
+// Search input
+// ---------------------------------------------------------------------------
 
 function InputSearchBible({
     setResults,
@@ -537,9 +670,17 @@ function InputSearchBible({
         [lastSearch, setResults],
     );
 
-    const onTestamentChange = (value: string | undefined) => {
-        testament.current = TESTAMENTS.find((t) => t.value === value);
-    };
+    const onTestamentChange = useCallback(
+        (value: string | undefined) => {
+            testament.current = TESTAMENTS.find((t) => t.value === value);
+        },
+        [testament],
+    );
+
+    const testamentOptions = useMemo(
+        () => TESTAMENTS.map((t) => ({ value: t.value, label: t.name })),
+        [],
+    );
 
     return (
         <Space>
@@ -560,7 +701,7 @@ function InputSearchBible({
                 className="w-100 max-w-100"
                 onChange={onTestamentChange}
                 allowClear
-                options={TESTAMENTS.map((t) => ({ value: t.value, label: t.name }))}
+                options={testamentOptions}
             />
         </Space>
     );
