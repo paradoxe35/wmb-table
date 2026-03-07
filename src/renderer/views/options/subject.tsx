@@ -9,7 +9,11 @@ import {
     useState,
 } from 'react';
 import { Card, Input, Space, App as AntApp, Button, Empty, List, message, Typography } from 'antd';
-import type { SubjectDocument, SubjectDocumentItem } from '@shared/types';
+import {
+    type SubjectDocument,
+    type SubjectDocumentItem,
+    isParagraphReference,
+} from '@shared/types';
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
@@ -222,6 +226,11 @@ function ItemFromSelectedSubject({
         });
     };
 
+    const refTranslationId =
+        item.documentHtmlTree && isParagraphReference(item.documentHtmlTree)
+            ? item.documentHtmlTree.translationId
+            : undefined;
+
     const title = item.bible ? (
         <span>
             {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
@@ -232,6 +241,7 @@ function ItemFromSelectedSubject({
                 onItemClick={onNavigate}
                 name={item.documentTitle}
                 sermonId={item.sermonId}
+                translationId={refTranslationId}
             >
                 {displayTitle}
             </DocumentViewer>

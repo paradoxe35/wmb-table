@@ -35,6 +35,8 @@ export const useShowReferenceDetail = () => {
         const ref = reference.documentHtmlTree;
         const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
 
+        const refTranslationId = ref && isParagraphReference(ref) ? ref.translationId : undefined;
+
         const openDocument = () => {
             viewDocument(
                 reference.documentTitle,
@@ -47,6 +49,7 @@ export const useShowReferenceDetail = () => {
                     }
                 },
                 reference.sermonId,
+                refTranslationId,
             );
         };
 

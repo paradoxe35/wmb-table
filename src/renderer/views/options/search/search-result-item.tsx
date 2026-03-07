@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { List, Typography } from 'antd';
 import type { TantivySearchHit, SearchSnippet } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { useSearchStore, useSermonStore } from '@renderer/stores';
+import { useSearchStore, useSermonStore, useAppStore } from '@renderer/stores';
 import { useSermonLookup } from '@renderer/hooks';
 import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
 
@@ -83,6 +83,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const [expanded, setExpanded] = useState(false);
 
     const searchMode = useSearchStore((s) => s.searchMode);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
 
     const navigateTo = useCallback(
         (paragraphIndex: number) => {
@@ -106,12 +107,20 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                     documentHtmlTree: {
                         paragraphIndex,
                         translationId: hit.translationId,
-                        languageCode: '',
+                        languageCode: activeLanguage ?? '',
                     },
                 });
             }
         },
-        [hit, setDocumentViewQueries, openSearchBar, setPendingNavigation, query, searchMode],
+        [
+            hit,
+            setDocumentViewQueries,
+            openSearchBar,
+            setPendingNavigation,
+            query,
+            searchMode,
+            activeLanguage,
+        ],
     );
 
     const handleTitleClick = useCallback(() => {

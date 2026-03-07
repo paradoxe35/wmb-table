@@ -157,7 +157,13 @@ const DocumentByYears = () => {
                             title: (
                                 <span
                                     title={sermon.title}
-                                    onClick={() => openDocument(sermon.title, sermon.sermonId)}
+                                    onClick={() =>
+                                        openDocument(
+                                            sermon.title,
+                                            sermon.sermonId,
+                                            sermon.translationId,
+                                        )
+                                    }
                                 >
                                     {sermon.title}
                                 </span>
@@ -285,7 +291,7 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                                 active={activeTabKeyStr === sermonKey}
                                 isEnglish={isEnglish}
                                 formatDate={formatDate}
-                                onClick={() => openDocument(d.title, d.sermonId)}
+                                onClick={() => openDocument(d.title, d.sermonId, d.translationId)}
                             />
                         );
                     }}
