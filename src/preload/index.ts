@@ -25,6 +25,7 @@ import type {
     LanguageDownloadProgress,
     ParagraphReference,
     RestoreProgressEvent,
+    SearchMode,
     SubjectRefTree,
     UpdaterNotification,
     ViewMenuValue,
@@ -77,7 +78,7 @@ const api = {
         getSuggestions: (langCode: string) => invoke(SearchChannels.getSuggestions, langCode),
         addSuggestion: (text: string, found: number, langCode: string) =>
             invoke(SearchChannels.addSuggestion, text, found, langCode),
-        searchText: (langCode: string, query: string, page: number, mode?: string) =>
+        searchText: (langCode: string, query: string, page: number, mode?: SearchMode) =>
             invoke(SearchChannels.searchText, langCode, query, page, mode ?? 'any'),
         searchContent: (langCode: string, query: string, translationId: number) =>
             invoke(SearchChannels.searchContent, langCode, query, translationId),
