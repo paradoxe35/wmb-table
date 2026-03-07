@@ -75,7 +75,7 @@ upload_file() {
 
     if echo "$EXISTING_ASSETS" | grep -qx "$file_name"; then
         echo "  SKIP $file_name (already uploaded)"
-        ((skipped++))
+        ((skipped++)) || true
         return 0
     fi
 
@@ -89,11 +89,11 @@ upload_file() {
 
     if echo "$response" | jq -e '.id' &>/dev/null; then
         echo "  UPLOADED $file_name"
-        ((uploaded++))
+        ((uploaded++)) || true
         return 0
     else
         echo "  FAIL upload $file_name: $response" >&2
-        ((failed++))
+        ((failed++)) || true
         return 1
     fi
 }
@@ -118,18 +118,18 @@ for i in $(seq 0 $((LANG_COUNT - 1))); do
 
     if echo "$EXISTING_ASSETS" | grep -qx "$FILE_NAME"; then
         echo "  SKIP (already uploaded)"
-        ((skipped++))
+        ((skipped++)) || true
         continue
     fi
 
     LOCAL_PATH="$TMP_DIR/$FILE_NAME"
 
-    if curl --fail --silent --show-error --retry 3 --location -o "$LOCAL_PATH" "$URL"; then
+    if curl --fail --progress-bar --show-error --retry 3 --location -o "$LOCAL_PATH" "$URL"; then
         upload_file "$LOCAL_PATH"
         rm -f "$LOCAL_PATH"
     else
         echo "  FAIL download from $URL" >&2
-        ((failed++))
+        ((failed++)) || true
     fi
 done
 
