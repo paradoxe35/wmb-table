@@ -4,8 +4,8 @@ import { app, BrowserWindow } from 'electron';
 import { APP_NAME } from './utils/constants';
 
 export const RESOURCES_PATH = app.isPackaged
-  ? path.join(process.resourcesPath, 'assets')
-  : path.join(__dirname, '../assets');
+    ? path.join(process.resourcesPath, 'assets')
+    : path.join(__dirname, '../assets');
 
 export let mainWindow: BrowserWindow | null = null;
 
@@ -13,73 +13,70 @@ export const setMainWindow = (mWindow: BrowserWindow) => (mainWindow = mWindow);
 
 // app paths
 export function childsProcessesPath(file: string): string {
-  return __dirname + '/main/childs_processes/' + file;
+    return __dirname + '/main/childs_processes/' + file;
 }
 
 export const getAssetPath = (...paths: string[]): string => {
-  return path.join(RESOURCES_PATH, ...paths);
+    return path.join(RESOURCES_PATH, ...paths);
 };
 
 export const getAssetDatasPath = (...paths: string[]): string => {
-  return getAssetPath('datas', ...paths);
+    return getAssetPath('datas', ...paths);
 };
 
 export const getPdf2HtmlPath = (...paths: string[]): string => {
-  return getAssetPath('pdf2html-ex', ...paths);
+    return getAssetPath('pdf2html-ex', ...paths);
 };
 
 export const getAssetDocumentsDbPath = (...paths: string[]): string => {
-  return getAssetPath('datas/documents-db', ...paths);
+    return getAssetPath('datas/documents-db', ...paths);
 };
 
 export const getAssetBiblePath = (...paths: string[]): string => {
-  return getAssetPath('datas/bible', ...paths);
+    return getAssetPath('datas/bible', ...paths);
 };
 
 export const getAssetBackupPath = (...paths: string[]): string => {
-  return getAssetPath('datas/backup', ...paths);
+    return getAssetPath('datas/backup', ...paths);
 };
 
 export const getAssetBackupPendingPath = (...paths: string[]): string => {
-  return getAssetPath('datas/backup/pending', ...paths);
+    return getAssetPath('datas/backup/pending', ...paths);
 };
 
 export const getAssetDbPath = (...paths: string[]): string => {
-  return getAssetPath('datas/db', ...paths);
+    return getAssetPath('datas/db', ...paths);
 };
 
 export const getAssetDocumentsPath = (...paths: string[]): string => {
-  return getAssetPath('datas/documents', ...paths);
+    return getAssetPath('datas/documents', ...paths);
 };
 
 export const getAssetCredentialsPath = (...paths: string[]): string => {
-  return getAssetPath('datas/credentials', ...paths);
+    return getAssetPath('datas/credentials', ...paths);
 };
 
 // get image path
 
 export function getImagesPath(relativePath: string) {
-  if (app.isPackaged === false) {
-    return path.join(__dirname, relativePath);
-  } else {
-    let asarUnpackedPath = __dirname.replace(
-      /\.asar([\\/])/,
-      '.asar.unpacked$1'
-    );
-    return path.join(asarUnpackedPath, relativePath);
-  }
+    if (app.isPackaged === false) {
+        return path.join(__dirname, relativePath);
+    } else {
+        let asarUnpackedPath = __dirname.replace(/\.asar([\\/])/, '.asar.unpacked$1');
+        return path.join(asarUnpackedPath, relativePath);
+    }
 }
 
 export function getAppPath() {
-  return app.getAppPath();
+    return app.getAppPath();
 }
 
 export function getAppHomePath(...paths: string[]) {
-  const appName = APP_NAME.toLowerCase().split(' ').join('-');
-  const homePath = path.join(app.getPath('home'), `.${appName}`, ...paths);
-  if (!fs.existsSync(homePath)) {
-    fs.mkdirSync(homePath, { recursive: true });
-  }
+    const appName = APP_NAME.toLowerCase().split(' ').join('-');
+    const homePath = path.join(app.getPath('home'), `.${appName}`, ...paths);
+    if (!fs.existsSync(homePath)) {
+        fs.mkdirSync(homePath, { recursive: true });
+    }
 
-  return homePath;
+    return homePath;
 }

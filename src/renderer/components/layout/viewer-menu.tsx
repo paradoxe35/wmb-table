@@ -1,66 +1,61 @@
-import React, { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { FundViewOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
-import { appViewStore, MAIN_VIEWS } from '@renderer/store';
-import { useRecoilState } from 'recoil';
-import { ipcRenderer } from 'electron';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { useValueStateRef } from '@renderer/hooks';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { ViewMenuValue } from '@localtypes/index';
+import { useAppStore } from '@renderer/stores';
+import type { ViewMenuValue } from '@shared/types';
+import { ItemType, MenuItemType } from 'antd/es/menu/interface';
 
 export default function ViewerMenu() {
-  const [view, setView] = useRecoilState(appViewStore);
-  const viewRef = useValueStateRef(view);
+    const mainView = useAppStore((s) => s.mainView);
+    const setMainView = useAppStore((s) => s.setMainView);
 
-  const m1 = useCallback(() => {
-    setView(MAIN_VIEWS.options);
-  }, []);
+    const showOptions = useCallback(() => setMainView('options'), [setMainView]);
+    const showDocument = useCallback(() => setMainView('document'), [setMainView]);
 
-  const m2 = useCallback(() => {
-    setView(MAIN_VIEWS.document);
-  }, []);
+    useEffect(() => {
+        return window.api.on.switchOnMenu(() => {
+            const current = useAppStore.getState().mainView;
+            setMainView(current === 'options' ? 'document' : 'options');
+        });
+    }, [setMainView]);
 
-  useEffect(() => {
-    const switch_on_menu = () => {
-      switch (viewRef.current) {
-        case MAIN_VIEWS.options:
-          setView(MAIN_VIEWS.document);
-          break;
-        case MAIN_VIEWS.document:
-          setView(MAIN_VIEWS.options);
-          break;
-        default:
-          break;
-      }
-    };
-    ipcRenderer.on(IPC_EVENTS.switch_on_menu, switch_on_menu);
-  }, []);
+    useEffect(() => {
+        return window.api.on.changeMenuViewer((value: string) => {
+            setMainView(value as ViewMenuValue);
+        });
+    }, [setMainView]);
 
-  useEffect(() => {
-    sendIpcRequest(IPC_EVENTS.has_change_viewer_menu, view);
-  }, [view]);
+    const items = useMemo(() => {
+        return [
+            {
+                key: 'options',
+                icon: (
+                    <ProfileOutlined
+                        style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
+                    />
+                ),
+                label: '',
+                onClick: showOptions,
+            },
+            {
+                key: 'document',
+                icon: (
+                    <FundViewOutlined
+                        style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
+                    />
+                ),
+                onClick: showDocument,
+            },
+        ] satisfies ItemType<MenuItemType>[];
+    }, [showOptions, showDocument]);
 
-  useEffect(() => {
-    const change_menu_viewer = (_: any, view: ViewMenuValue) => {
-      setView(view);
-    };
-    ipcRenderer.on(IPC_EVENTS.change_menu_viewer, change_menu_viewer);
-  }, []);
-
-  return (
-    <Menu
-      theme="dark"
-      mode="horizontal"
-      className="row__center"
-      selectedKeys={[view]}
-    >
-      <Menu.Item key={MAIN_VIEWS.options} onClick={m1}>
-        <ProfileOutlined style={{ fontSize: '20px' }} />
-      </Menu.Item>
-      <Menu.Item key={MAIN_VIEWS.document} onClick={m2}>
-        <FundViewOutlined style={{ fontSize: '20px' }} />
-      </Menu.Item>
-    </Menu>
-  );
+    return (
+        <Menu
+            theme="dark"
+            mode="horizontal"
+            className="row__center"
+            selectedKeys={[mainView]}
+            items={items}
+        />
+    );
 }

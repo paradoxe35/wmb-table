@@ -1,39 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { respondToVisibility } from '@root/utils/functions';
+import { respondToVisibility } from '@renderer/utils/functions';
 
-const LoadByVisibility: React.FC = function ({ children }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [load, setLoaded] = useState(false);
+const LoadByVisibility: React.FC<{ children?: React.ReactNode }> = function ({ children }) {
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const [load, setLoaded] = useState(false);
 
-  useEffect(() => {
-    let hasWidth = 0;
-    const rebuildEl = () => {
-      if (containerRef.current) {
-        const { width } = containerRef.current.getBoundingClientRect();
-        if (hasWidth === width) return;
-        hasWidth = width;
-        setLoaded(true);
-      }
-    };
+    useEffect(() => {
+        let hasWidth = 0;
+        const rebuildEl = () => {
+            if (containerRef.current) {
+                const { width } = containerRef.current.getBoundingClientRect();
+                if (hasWidth === width) return;
+                hasWidth = width;
+                setLoaded(true);
+            }
+        };
 
-    window.addEventListener('load', rebuildEl);
+        window.addEventListener('load', rebuildEl);
 
-    let unobserve: { (): any; (): void } | null = null;
-    if (hasWidth === 0) {
-      unobserve = respondToVisibility(
-        containerRef.current as Element,
-        (isVisible) => {
-          if (hasWidth === 0 && isVisible) rebuildEl();
+        let unobserve: (() => void) | null = null;
+        if (hasWidth === 0 && containerRef.current) {
+            unobserve = respondToVisibility(containerRef.current, (isVisible) => {
+                if (hasWidth === 0 && isVisible) rebuildEl();
+            });
         }
-      );
-    }
 
-    return () => {
-      window.removeEventListener('load', rebuildEl);
-      unobserve && unobserve();
-    };
-  }, []);
+        return () => {
+            window.removeEventListener('load', rebuildEl);
+            unobserve?.();
+        };
+    }, []);
 
-  return <div ref={containerRef}>{load ? children : []}</div>;
+    return <div ref={containerRef}>{load ? children : null}</div>;
 };
 export default LoadByVisibility;

@@ -1,351 +1,347 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-import { Input, Card, Layout, Tree, Divider, Select, Space } from 'antd';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Input, Button, Card, Tree, Divider, Select, Tag, Typography } from 'antd';
+import { SoundOutlined, GlobalOutlined } from '@ant-design/icons';
+import { Virtuoso } from 'react-virtuoso';
+import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types';
+import { getTabKey } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
-import { Title } from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import DocumentViewer, { useDocumentViewOpen } from '../viewer/document-viewer';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
 import {
-  appDatasLoadedStore,
-  currentDocumentTabsSelector,
-  customDocumentsStore,
-  documentTitlesStore,
-  sidebarStatusHiddenStore,
-  titlesGroupedByYearSelector,
-  titlesStore,
-} from '@renderer/store';
+    useSermonStore,
+    useCustomDocumentsStore,
+    selectActiveTab,
+    selectActiveTabTitle,
+} from '@renderer/stores';
+import { useAppStore } from '@renderer/stores';
+import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
-import { DataNode } from 'antd/lib/tree';
-import DocumentTitle from '@renderer/store/models/document_title';
-import { TRADUCTIONS } from '@root/utils/constants';
-import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { LANGUAGE_EVENT } from '@renderer/utils/events';
 
 const { DirectoryTree } = Tree;
-
 const { Search } = Input;
 
-const { Sider } = Layout;
-
-const { Option } = Select;
-
-const useDocumentData = () => {
-  const [datas, setDatas] = useState<DocumentTitle[]>([]);
-  const title = useRecoilValue(currentDocumentTabsSelector);
-
-  const documents = useRecoilValue(documentTitlesStore);
-  const setDocuments = useSetRecoilState(titlesStore);
-
-  return {
-    datas,
-    setDatas,
-    documents,
-    setDocuments,
-    title,
-  };
-};
-
 export default function SidebarDocuments() {
-  const status = useRecoilValue(sidebarStatusHiddenStore);
-  return (
-    <Sider
-      hidden={status}
-      width="265px"
-      trigger={null}
-      className="layout__sidebar"
-      theme="light"
-    >
-      <PanelGroup
-        tabs={[
-          { name: 'Tous', active: true },
-          { name: 'Années', active: false },
-          { name: 'Alphabet', active: false },
-          { name: 'Ajoutés', active: false },
-        ]}
-      >
-        {(index: number) => {
-          return (
-            <>
-              <div hidden={index !== 0}>
-                <DocumentSearch />
-              </div>
-              <div hidden={index !== 1}>
-                <ContainerScrollY>
-                  <div className="mt-2" />
-                  <DocumentByYears />
-                </ContainerScrollY>
-              </div>
-              <div hidden={index !== 2}>
-                <DocumentByAlphabetic />
-              </div>
-              <div hidden={index !== 3}>
-                <div className="mt-2" />
-                <DocumentsAdded />
-              </div>
-            </>
-          );
-        }}
-      </PanelGroup>
-    </Sider>
-  );
+    const sidebarHidden = useAppStore((s) => s.sidebarHidden);
+
+    return (
+        <div
+            style={{
+                width: sidebarHidden ? 0 : 300,
+                opacity: sidebarHidden ? 0 : 1,
+                flexShrink: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                flexDirection: 'column',
+                transition:
+                    'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+            className="layout__sidebar"
+        >
+            <PanelGroup
+                tabs={[
+                    { name: 'Tous', active: true },
+                    { name: 'Années', active: false },
+                    { name: 'Alphabet', active: false },
+                    { name: 'Ajoutés', active: false },
+                ]}
+            >
+                {(index: number) => (
+                    <div
+                        style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            flex: 1,
+                            overflow: 'hidden',
+                        }}
+                    >
+                        {index === 0 && <DocumentSearch />}
+                        {index === 1 && (
+                            <ContainerScrollY>
+                                <div className="mt-2" />
+                                <DocumentByYears />
+                            </ContainerScrollY>
+                        )}
+                        {index === 2 && <DocumentByAlphabetic />}
+                        {index === 3 && (
+                            <>
+                                <div className="mt-2" />
+                                <DocumentsAdded />
+                            </>
+                        )}
+                    </div>
+                )}
+            </PanelGroup>
+        </div>
+    );
 }
 
 const DocumentsAdded = () => {
-  const customDocuments = useRecoilValue(customDocumentsStore);
-  const title = useRecoilValue(currentDocumentTabsSelector);
+    const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
+    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const openCustomDocument = useOpenCustomDocument();
 
-  return (
-    <ContainerScrollY style={{ paddingLeft: '10px' }}>
-      {customDocuments.map((d, i) => (
-        <ItemOutline
-          key={d._id || i}
-          id={d._id}
-          name={d.title}
-          active={title === d.title}
-          title={d.title}
-        />
-      ))}
-    </ContainerScrollY>
-  );
+    return (
+        <ContainerScrollY style={{ paddingLeft: '10px' }}>
+            {customDocuments.map((d, i) => (
+                <div
+                    key={d.id || i}
+                    className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
+                    onClick={() => openCustomDocument(d.title, d.sermonId)}
+                >
+                    <div className="sidebar-item__left">
+                        <div className="sidebar-item__title">{d.title}</div>
+                    </div>
+                </div>
+            ))}
+        </ContainerScrollY>
+    );
 };
 
 const alpha = Array.from(Array(26)).map((_e, i) => i + 65);
 const alphabets = alpha.map((x) => String.fromCharCode(x));
 
 const DocumentByAlphabetic = () => {
-  const { datas, setDatas, documents, title } = useDocumentData();
+    const sermons = useSermonStore((s) => s.sermons);
+    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
+    const alphabet = useRef(alphabets[0]);
 
-  const alphabet = useRef(alphabets[0]);
+    const onSearch = useCallback(() => {
+        const newDocs = sermons.filter((d) => {
+            return strNormalize(d.title).charAt(0).toUpperCase() === alphabet.current;
+        });
+        setDatas(newDocs);
+    }, [sermons]);
 
-  const onSearch = useCallback(() => {
-    const newDocuments = documents.filter((d) => {
-      return (
-        strNormalize(d.getTitle()).charAt(0).toUpperCase() === alphabet.current
-      );
-    });
-    setDatas(newDocuments);
-  }, [setDatas, documents]);
+    const onChangeAlphabetic = useCallback(
+        (value: string) => {
+            alphabet.current = value;
+            onSearch();
+        },
+        [onSearch],
+    );
 
-  const onChangeAlphabetic = useCallback(
-    (value: string) => {
-      alphabet.current = value;
-      onSearch();
-    },
-    [onSearch]
-  );
+    useEffect(() => {
+        onSearch();
+    }, [onSearch]);
 
-  useEffect(() => {
-    onSearch();
-  }, [documents]);
-
-  return (
-    <>
-      <Card bordered={false}>
-        <Select
-          className="w-100 max-w-100"
-          placeholder="Alphabet"
-          defaultValue={alphabets[0]}
-          onChange={onChangeAlphabetic}
-        >
-          {alphabets.map((al) => {
-            return (
-              <Option key={al} value={al}>
-                {al}
-              </Option>
-            );
-          })}
-        </Select>
-      </Card>
-      <DocumentList datas={datas} title={title} />
-    </>
-  );
+    return (
+        <>
+            <Card variant="borderless">
+                <Select
+                    className="w-100 max-w-100"
+                    placeholder="Alphabet"
+                    defaultValue={alphabets[0]}
+                    onChange={onChangeAlphabetic}
+                    options={alphabets.map((al) => ({ value: al, label: al }))}
+                />
+            </Card>
+            <DocumentList datas={datas} />
+        </>
+    );
 };
 
 const DocumentByYears = () => {
-  const documents = useRecoilValue(titlesGroupedByYearSelector);
-  const viewDocument = useDocumentViewOpen();
+    const sermonsByYear = useSermonStore((s) => s.sermonsByYear);
+    const openDocument = useOpenDocument();
 
-  const dataTree = Object.keys(documents).map((year) => {
-    const docs = documents[year]
-      .slice()
-      .sort((a, b) => a.getTitle().localeCompare(b.getTitle()))
-      .map((doc) => {
-        const title = doc.getTitle();
-        return {
-          key: title + year,
-          title: (
-            <span
-              key={doc.getId()}
-              title={title}
-              onClick={() => viewDocument(title)}
-            >
-              {title}
-            </span>
-          ),
-          className: 'document_grouped',
-          isLeaf: true,
-        };
-      }) as DataNode[];
-    return {
-      title: (
-        <span>
-          {year} - ({docs.length})
-        </span>
-      ),
-      key: year,
-      children: docs,
-    } as DataNode;
-  });
-  return (
-    <>
-      <DirectoryTree treeData={dataTree} />
-    </>
-  );
+    const dataTree = useMemo(
+        () =>
+            Object.keys(sermonsByYear)
+                .sort()
+                .map((year) => {
+                    const docs = sermonsByYear[year]
+                        .slice()
+                        .sort((a, b) => a.title.localeCompare(b.title))
+                        .map((sermon) => ({
+                            key: `${sermon.id}-${year}`,
+                            title: (
+                                <span
+                                    title={sermon.title}
+                                    onClick={() =>
+                                        openDocument(
+                                            sermon.title,
+                                            sermon.sermonId,
+                                            sermon.translationId,
+                                        )
+                                    }
+                                >
+                                    {sermon.title}
+                                </span>
+                            ),
+                            className: 'document_grouped',
+                            isLeaf: true,
+                        }));
+                    return {
+                        title: (
+                            <span>
+                                {year} - ({docs.length})
+                            </span>
+                        ),
+                        key: year,
+                        children: docs,
+                    };
+                }),
+        [sermonsByYear, openDocument],
+    );
+
+    return <DirectoryTree treeData={dataTree} />;
+};
+
+const ActiveLanguageBar = () => {
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const [langName, setLangName] = useState<string>('');
+
+    useEffect(() => {
+        if (!activeLanguage) return;
+        window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
+            const lang = langs.find((l) => l.code === activeLanguage);
+            if (lang) setLangName(lang.language);
+        });
+    }, [activeLanguage]);
+
+    const openManager = () => {
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
+    };
+
+    if (!langName) return null;
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0 2px',
+                marginTop: 6,
+            }}
+        >
+            <Typography.Text type="secondary" style={{ fontSize: '0.8em' }}>
+                {langName}
+            </Typography.Text>
+            <Button
+                type="text"
+                size="small"
+                icon={<GlobalOutlined />}
+                onClick={openManager}
+                style={{ fontSize: '0.8em' }}
+            />
+        </div>
+    );
 };
 
 const DocumentSearch = () => {
-  const { datas, setDatas, documents, setDocuments, title } = useDocumentData();
-  const setAppDataLoaded = useSetRecoilState(appDatasLoadedStore);
+    const sermons = useSermonStore((s) => s.sermons);
+    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
 
-  const exceptMessageFrenchKey = 'BBV';
+    useEffect(() => {
+        setDatas(sermons);
+    }, [sermons]);
 
-  const traductions = useMemo(
-    () =>
-      Object.keys(TRADUCTIONS).filter((key) => key !== exceptMessageFrenchKey),
-    []
-  );
+    const onSearch = useCallback(
+        (value: string) => {
+            if (sermons.length) {
+                const filtered = sermons.filter((d) => {
+                    return simpleRegExp(value).test(strNormalize(d.title));
+                });
+                setDatas(filtered);
+            }
+        },
+        [sermons],
+    );
 
-  const traductionFilter = useRef<string>();
-  const searchValue = useRef<string>('');
-
-  useEffect(() => {
-    setDatas(documents);
-  }, [documents]);
-
-  useEffect(() => {
-    sendIpcRequest<Title[]>(IPC_EVENTS.title_documents)
-      .then((titles) => {
-        setDocuments(titles);
-      })
-      .finally(() => setAppDataLoaded(true));
-  }, []);
-
-  const onSearch = useCallback(
-    (value: string) => {
-      searchValue.current = value;
-      const trans = traductionFilter.current;
-
-      if (documents.length) {
-        const newDocuments = documents.filter((d) => {
-          const matchTitle = simpleRegExp(value).test(
-            strNormalize(d.getTitle())
-          );
-          if (trans) {
-            return (
-              matchTitle &&
-              (trans === d.getTraduction() ||
-                (d.getTraduction() === exceptMessageFrenchKey &&
-                  trans === 'MS'))
-            );
-          }
-          return matchTitle;
-        });
-        setDatas(newDocuments);
-      }
-    },
-    [setDatas, documents]
-  );
-
-  const onTraductionChange = useCallback(
-    (value: string | undefined) => {
-      traductionFilter.current = value;
-      onSearch(searchValue.current);
-    },
-    [onSearch]
-  );
-
-  return (
-    <>
-      <Card bordered={false}>
-        <Space direction="vertical">
-          <Search
-            key={documents.length}
-            placeholder="Recherche"
-            allowClear
-            onSearch={onSearch}
-          />
-          <Select
-            className="w-100 max-w-100"
-            placeholder="Traductions"
-            onChange={onTraductionChange}
-            allowClear
-          >
-            {traductions.map((key) => {
-              return (
-                <Option key={key} value={key}>
-                  {TRADUCTIONS[key]}
-                </Option>
-              );
-            })}
-          </Select>
-        </Space>
-      </Card>
-      <DocumentList datas={datas} title={title} />
-    </>
-  );
+    return (
+        <>
+            <Card variant="borderless" styles={{ body: { paddingBottom: 8 } }}>
+                <Search
+                    key={sermons.length}
+                    placeholder="Recherche"
+                    allowClear
+                    onSearch={onSearch}
+                />
+                <ActiveLanguageBar />
+            </Card>
+            <DocumentList datas={datas} />
+        </>
+    );
 };
 
-const DocumentList = ({
-  datas,
-  title,
-}: {
-  datas: DocumentTitle[];
-  title: string;
-}) => {
-  return (
-    <>
-      <Divider style={{ padding: '0', margin: '0' }} />
-      <ContainerScrollY style={{ paddingLeft: '22px' }}>
-        {datas
-          .slice()
-          .sort((a, b) => a.getTitle().localeCompare(b.getTitle()))
-          .map((d, i) => (
-            <ItemOutline
-              key={d.getId() || i}
-              id={d.getId()}
-              active={title === d.getTitle()}
-              name={d.getTitle()}
-              title={d.getTitle()}
-            />
-          ))}
-      </ContainerScrollY>
-    </>
-  );
+const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
+    const openDocument = useOpenDocument();
+    const activeTab = useSermonStore(selectActiveTab);
+    const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
+    const isEnglish = useAppStore((s) => s.activeLanguage) === 'en';
+    const formatDate = useFormatSermonDate();
+
+    const sorted = useMemo(
+        () => datas.slice().sort((a, b) => a.title.localeCompare(b.title)),
+        [datas],
+    );
+
+    return (
+        <>
+            <Divider style={{ padding: 0, margin: 0 }} />
+            <div className="document-list" style={{ flex: 1 }}>
+                <Virtuoso
+                    data={sorted}
+                    itemContent={(_index, d) => {
+                        const sermonKey = getTabKey({ title: d.title, sermonId: d.sermonId });
+                        return (
+                            <ItemOutline
+                                sermon={d}
+                                active={activeTabKeyStr === sermonKey}
+                                isEnglish={isEnglish}
+                                formatDate={formatDate}
+                                onClick={() => openDocument(d.title, d.sermonId, d.translationId)}
+                            />
+                        );
+                    }}
+                />
+            </div>
+        </>
+    );
 };
 
-const ItemOutline: React.FC<{
-  name: string;
-  id: string;
-  title: string;
-  active?: boolean;
-}> = ({ name, id, title, active }) => {
-  return (
-    <DocumentViewer name={name} id={id}>
-      <span
-        className={`smart-editable ${active ? 'active' : ''}`}
-        title={title}
-      >
-        <u>
-          <span></span>
-        </u>
-        <b className="name">{title} </b>
-      </span>
-    </DocumentViewer>
-  );
-};
+const ItemOutline = React.memo<{
+    sermon: SermonMetaWithTraductions;
+    active?: boolean;
+    isEnglish: boolean;
+    formatDate: (dateMs: number) => string;
+    onClick: () => void;
+}>(({ sermon, active, isEnglish, formatDate, onClick }) => {
+    const hasMultipleTraductions =
+        sermon.availableTraductions && sermon.availableTraductions.length > 1;
+
+    return (
+        <div
+            className={`sidebar-item ${active ? 'sidebar-item--active' : ''}`}
+            title={sermon.title}
+            onClick={onClick}
+        >
+            <div className="sidebar-item__left">
+                <div className="sidebar-item__title">{sermon.title}</div>
+                {!isEnglish && sermon.enTitle && sermon.enTitle !== sermon.title && (
+                    <div className="sidebar-item__en-title">{sermon.enTitle}</div>
+                )}
+                <div className="sidebar-item__date">{formatDate(sermon.dateMs)}</div>
+                {hasMultipleTraductions && (
+                    <div className="sidebar-item__tags">
+                        {sermon.availableTraductions.map((t) => (
+                            <Tag key={t.translationId} color="blue" className="translation-tag">
+                                {t.traductionName ?? `T${t.translationId}`}
+                            </Tag>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <div className="sidebar-item__right">
+                {sermon.cityState && <div className="sidebar-item__city">{sermon.cityState}</div>}
+                {sermon.audioLink && (
+                    <div className="sidebar-item__audio">
+                        <SoundOutlined />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+});
+ItemOutline.displayName = 'ItemOutline';

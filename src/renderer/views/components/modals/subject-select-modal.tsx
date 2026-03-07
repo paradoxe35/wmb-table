@@ -1,160 +1,147 @@
-import { Divider, Input, Modal, Space } from 'antd';
+import { Divider, Input, Modal, Space, message } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useRecoilValue, useSetRecoilState } from 'recoil';
-import {
-  subjectDocumentStore,
-  subjectDocumentItemStore,
-  currentDocumentTabsSelector,
-} from '@renderer/store';
-import {
-  SubjectDocument,
-  SubjectDocumentItem,
-  SubjectRefTree,
-} from '@localtypes/index';
-import { useModalVisible, useValueStateRef } from '@renderer/hooks';
+import { SubjectDocument, SubjectRefTree } from '@shared/types';
+import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import {
-  CHILD_PARENT_WINDOW_EVENT,
-  SUBJECT_EVENT,
-} from '@modules/shared/shared';
-import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
+import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useSermonStore, useSubjectsStore, selectActiveTab } from '@renderer/stores';
 
 export function SubjectSelectModal() {
-  const title = useRecoilValue(currentDocumentTabsSelector);
-  const titleRef = useValueStateRef(title);
+    const title = useActiveTabTitle();
+    const titleRef = useValueStateRef(title);
+    const activeTab = useSermonStore(selectActiveTab);
 
-  const setSubjectItems = useSetRecoilState(subjectDocumentItemStore);
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
-  const documentRefTree = useRef<SubjectRefTree>();
+    const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
 
-  const {
-    isModalVisible,
-    handleOk,
-    handleCancel,
-    setIsModalVisible,
-  } = useModalVisible();
+    const { visible, hide, setVisible } = useModalVisible();
 
-  const [datas, setDatas] = useState<SubjectDocument[]>([]);
-  const odatas = useRecoilValue<SubjectDocument[]>(subjectDocumentStore);
+    const [datas, setDatas] = useState<SubjectDocument[]>([]);
+    const subjects = useSubjectsStore((s) => s.subjects);
 
-  const onSelectItem = (name: string) => {
-    if (!documentRefTree.current) return;
+    const onSelectItem = (name: string) => {
+        if (!documentRefTree.current) return;
 
-    const subjectItem: Partial<SubjectDocumentItem> = {
-      documentHtmlTree: documentRefTree.current?.documentHtmlTree,
-      documentTitle: titleRef.current,
-      textContent: documentRefTree.current?.textContent,
-      subject: name,
-      bible: documentRefTree.current?.bible,
+        const subject = subjects.find((s) => s.name === name);
+        if (!subject) return;
+
+        const ref = documentRefTree.current;
+        const documentHtmlTree = ref.documentHtmlTree ?? { tree: [] };
+        const textContent = ref.textContent ?? '';
+
+        window.api.subjects
+            .createItem(
+                subject.id,
+                titleRef.current || '',
+                documentHtmlTree,
+                textContent,
+                ref.bible,
+                activeTab?.sermonId,
+            )
+            .then((item) => {
+                setPendingNavigation({
+                    documentTitle: item.documentTitle,
+                    documentHtmlTree: item.documentHtmlTree,
+                });
+                window.dispatchEvent(
+                    new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
+                );
+                message.success('Ajouté au sujet');
+            })
+            .catch(() => {
+                message.error("Erreur lors de l'ajout au sujet");
+            });
+        setVisible(false);
     };
 
-    sendIpcRequest<SubjectDocumentItem>(
-      IPC_EVENTS.subject_items_store,
-      subjectItem
-    ).then((item) => {
-      setSubjectItems(item);
-      window.dispatchEvent(
-        new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } })
-      );
-    });
-    setIsModalVisible(false);
-  };
-
-  const onSearch = useCallback(
-    (value: string) => {
-      if (odatas.length) {
-        setDatas(
-          odatas.filter((d) => simpleRegExp(value).test(strNormalize(d.name)))
-        );
-      }
-    },
-    [odatas]
-  );
-
-  useEffect(() => {
-    setDatas(odatas);
-  }, [odatas]);
-
-  useEffect(() => {
-    const showModal = (e: CustomEventInit<SubjectRefTree>) => {
-      documentRefTree.current = e.detail;
-      setIsModalVisible(true);
-    };
-
-    window.addEventListener(
-      CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
-      showModal
+    const onSearch = useCallback(
+        (value: string) => {
+            if (subjects.length) {
+                setDatas(subjects.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
+            }
+        },
+        [subjects],
     );
-    return () => {
-      window.removeEventListener(
-        CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
-        showModal
-      );
-    };
-  }, []);
-  return (
-    <Modal
-      title={
-        <Space direction="horizontal">
-          <span>Choiser un sujet</span>
-          <Search onSearch={onSearch} />
-        </Space>
-      }
-      footer={[]}
-      visible={isModalVisible}
-      onOk={handleOk}
-      onCancel={handleCancel}
-    >
-      <div style={{ overflow: 'auto', height: '300px' }}>
-        <ContentModal onSelectItem={onSelectItem} datas={datas} />
-      </div>
-    </Modal>
-  );
+
+    useEffect(() => {
+        setDatas(subjects);
+    }, [subjects]);
+
+    useEffect(() => {
+        const showModal = (e: CustomEventInit<SubjectRefTree>) => {
+            documentRefTree.current = e.detail ?? undefined;
+            setVisible(true);
+        };
+
+        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);
+        return () => {
+            window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);
+        };
+    }, []);
+    return (
+        <Modal
+            title={
+                <Space orientation="horizontal">
+                    <span>Choiser un sujet</span>
+                    <Search onSearch={onSearch} />
+                </Space>
+            }
+            footer={[]}
+            open={visible}
+            onOk={hide}
+            onCancel={hide}
+        >
+            <div style={{ overflow: 'auto', height: '300px' }}>
+                <ContentModal onSelectItem={onSelectItem} datas={datas} />
+            </div>
+        </Modal>
+    );
 }
 
 function ContentModal({
-  onSelectItem,
-  datas,
+    onSelectItem,
+    datas,
 }: {
-  onSelectItem: (name: string) => void;
-  datas: SubjectDocument[];
+    onSelectItem: (name: string) => void;
+    datas: SubjectDocument[];
 }) {
-  return (
-    <>
-      {datas.map((item) => (
-        <ItemSubject key={item.name} item={item} onSelectItem={onSelectItem} />
-      ))}
-    </>
-  );
+    return (
+        <>
+            {datas.map((item) => (
+                <ItemSubject key={item.name} item={item} onSelectItem={onSelectItem} />
+            ))}
+        </>
+    );
 }
 
 const ItemSubject: React.FC<{
-  item: SubjectDocument;
-  onSelectItem: (name: string) => void;
+    item: SubjectDocument;
+    onSelectItem: (name: string) => void;
+    children?: React.ReactNode;
 }> = ({ item, onSelectItem }) => {
-  return (
-    <>
-      <span
-        className={`smart-editable big`}
-        onClick={() => onSelectItem(item.name)}
-        title={item.name}
-      >
-        <div className="o-icon">
-          <BookOutlined />
-        </div>
-        <b>{item.name}</b>
-      </span>
-      <Divider style={{ margin: '7px 0' }} />
-    </>
-  );
+    return (
+        <>
+            <span
+                className={`smart-editable big`}
+                onClick={() => onSelectItem(item.name)}
+                title={item.name}
+            >
+                <div className="o-icon">
+                    <BookOutlined />
+                </div>
+                <b>{item.name}</b>
+            </span>
+            <Divider style={{ margin: '7px 0' }} />
+        </>
+    );
 };
 
 function Search({ onSearch }: { onSearch: (value: string) => void }) {
-  return (
-    <Space direction="horizontal">
-      <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
-    </Space>
-  );
+    return (
+        <Space orientation="horizontal">
+            <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
+        </Space>
+    );
 }

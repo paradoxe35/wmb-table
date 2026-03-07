@@ -1,0 +1,855 @@
+// ============================================================================
+// WMB Table — Global Stylesheet (Classic UI)
+// ============================================================================
+
+@use './chrome-tabs' as *;
+
+// ---------------------------------------------------------------------------
+// Reset
+// ---------------------------------------------------------------------------
+html,
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
+    user-select: none;
+
+    .ant-list-item {
+        user-select: text;
+    }
+}
+
+#root {
+    height: 100%;
+}
+
+// ---------------------------------------------------------------------------
+// Ant Design overrides
+// ---------------------------------------------------------------------------
+.ant-modal-wrap {
+    outline: none !important;
+}
+
+// ---------------------------------------------------------------------------
+// Utility classes
+// ---------------------------------------------------------------------------
+.flex {
+    display: flex;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-column {
+    flex-direction: column;
+}
+
+.clickable {
+    cursor: pointer;
+}
+
+.list__clickable {
+    cursor: pointer;
+    &:hover {
+        background-color: var(--ant-color-bg-text-hover, rgba(0, 0, 0, 0.06));
+    }
+}
+
+.hover-underline:hover {
+    text-decoration: underline;
+}
+
+.mt-2 {
+    margin-top: 10px;
+}
+
+.mb-2 {
+    margin-bottom: 10px;
+}
+
+.mb-3 {
+    margin-bottom: 1rem;
+}
+
+.mr-2 {
+    margin-right: 12px;
+}
+
+.w-100 {
+    width: 100%;
+}
+
+.max-w-100 {
+    max-width: 100%;
+}
+
+.underline {
+    text-decoration: underline;
+}
+
+// ---------------------------------------------------------------------------
+// Layout classes
+// ---------------------------------------------------------------------------
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    -webkit-app-region: drag;
+
+    * {
+        -webkit-app-region: no-drag;
+    }
+}
+
+.logo {
+    top: 0;
+    margin-top: 0;
+    padding: 0 20px;
+    border-color: #001529;
+    border-bottom: 0;
+    color: rgb(218, 218, 218);
+    font-size: large;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.row__center {
+    display: flex;
+    justify-content: center;
+}
+
+.site-layout-content {
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.container-y {
+    overflow-y: auto;
+    height: 100%;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+
+    &:hover {
+        scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+    }
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 3px;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.35);
+    }
+}
+
+.layout__sidebar {
+    background: var(--ant-color-bg-container, #fff);
+    overflow: hidden;
+}
+
+.full-item-separated {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+// ---------------------------------------------------------------------------
+// Smart editable & o-icon
+// ---------------------------------------------------------------------------
+.smart-editable {
+    display: block;
+    white-space: nowrap;
+    padding: 3px 5px;
+    border-radius: 2px;
+    transition: background-color 0.2s ease;
+    background-color: transparent;
+    box-shadow: none;
+    position: relative;
+    cursor: pointer;
+
+    &.big {
+        font-size: 20px;
+        u {
+            width: 15px;
+            height: 17px;
+        }
+    }
+
+    &:hover,
+    &.active {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.281));
+    }
+
+    .o-icon {
+        font-size: 15px;
+        vertical-align: middle;
+        width: 16px;
+        height: 18px;
+        display: inline-block;
+        border-top-right-radius: 4px;
+        margin-right: 5px;
+        text-decoration: none;
+        position: relative;
+    }
+
+    u {
+        font-size: 13px;
+        color: var(--ant-color-text-tertiary, #91999e);
+        vertical-align: middle;
+        background-color: #6d7275;
+        width: 8px;
+        height: 10px;
+        display: inline-block;
+        border-top-right-radius: 4px;
+        margin-right: 4px;
+        text-decoration: none;
+        position: relative;
+    }
+
+    span {
+        display: block;
+        white-space: nowrap;
+        padding: 2px 5px;
+        border-radius: 2px;
+        transition: background-color 0.2s ease;
+    }
+
+    b {
+        color: inherit;
+        font-size: 13px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+        line-height: 14px;
+        vertical-align: middle;
+        margin: 0px 2px;
+        padding: 3px 4px;
+        border-radius: 2px;
+        max-width: 92%;
+        font-weight: normal;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Panel group (right sidebar tabs)
+// ---------------------------------------------------------------------------
+.panel__group {
+    --tabs-background: var(--ant-color-bg-text-hover, rgb(218, 218, 218));
+    --panel-background: var(--ant-color-bg-container, #fff);
+    .tabs {
+        height: auto;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: var(--tabs-background);
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+
+    .tab-squeeze {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        .tab-holder {
+            display: flex;
+        }
+    }
+
+    .tab-holder {
+        overflow: visible;
+        transition: transform 0.2s;
+        white-space: nowrap;
+    }
+
+    .tabs .tab:first-child {
+        border-left-width: 0;
+    }
+
+    .tab-holder .tab {
+        position: relative;
+        transition:
+            transform 0.2s,
+            z-index 0.4s;
+        white-space: nowrap;
+        /* max-width removed so tabs fill sidebar */
+        z-index: 1;
+    }
+
+    .tabs .active {
+        background: var(--panel-background);
+        color: inherit;
+    }
+
+    .tabs .tab {
+        color: var(--ant-color-text, #45474a);
+        padding: 9px 12px;
+        flex: 1;
+        position: relative;
+        border-top-left-radius: 4px;
+        border-top-right-radius: 4px;
+        min-width: 60px;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .tabs .tab.active:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(255, 255, 255, 0.4), transparent);
+        z-index: -1;
+    }
+
+    .tab > div {
+        overflow: hidden;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Document grouped tree
+// ---------------------------------------------------------------------------
+.document_grouped {
+    overflow: hidden;
+    & > :first-child {
+        width: 0;
+    }
+    .ant-tree-title {
+        display: inline-block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .ant-tree-node-content-wrapper {
+        display: flex;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Mock browser content (document view)
+// ---------------------------------------------------------------------------
+.mock-browser-content {
+    position: relative;
+    z-index: 1;
+    background: var(--ant-color-bg-container, #fff);
+    padding: 0;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.sermon-body {
+    overflow: auto;
+    flex: 1;
+    padding: 0.5em;
+}
+
+// Blink highlight for navigated-to paragraphs
+@keyframes paragraph-blink {
+    0%,
+    100% {
+        background-color: transparent;
+    }
+    25%,
+    75% {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.15));
+    }
+}
+
+.paragraph-highlight-blink {
+    animation: paragraph-blink 2s ease-in-out;
+}
+
+// ---------------------------------------------------------------------------
+// Content descriptions
+// ---------------------------------------------------------------------------
+.content-description {
+    font-size: 1.2em;
+}
+
+.content-description-2 {
+    font-size: 1.1em;
+}
+
+// ---------------------------------------------------------------------------
+// Bible
+// ---------------------------------------------------------------------------
+.bible-version-bar {
+    padding: 8px 0;
+    margin-bottom: 4px;
+}
+
+.bible-search-content {
+    padding: 0 8px;
+}
+
+.verse-item {
+    &:hover {
+        .verse-action {
+            visibility: visible;
+            opacity: 1;
+        }
+    }
+    .verse-action {
+        visibility: hidden;
+        opacity: 0;
+        transition: all 0.2s;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Disabled area overlay
+// ---------------------------------------------------------------------------
+.area-wrapper {
+    position: relative;
+    &::after {
+        content: '';
+        z-index: 3;
+        position: absolute;
+        background-color: var(--ant-color-bg-container, #fff);
+        opacity: 0.7;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    .area-content {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        z-index: 4;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Spinner
+// ---------------------------------------------------------------------------
+.spinner-bg {
+    margin: 20px 0;
+    text-align: center;
+}
+
+// ---------------------------------------------------------------------------
+// View transitions (keeps both views mounted)
+// ---------------------------------------------------------------------------
+.view-panel {
+    opacity: 1;
+    transition: opacity 0.15s ease;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.view-panel--scrollable {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+
+    &:hover {
+        scrollbar-color: rgba(0, 0, 0, 0.35) transparent;
+    }
+
+    &::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 3px;
+    }
+
+    &:hover::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.35);
+    }
+}
+
+.view-panel--hidden {
+    display: none;
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar item (document list in right sidebar)
+// ---------------------------------------------------------------------------
+.sidebar-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 8px 10px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    border-radius: 0 var(--ant-border-radius, 6px) var(--ant-border-radius, 6px) 0;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: color-mix(in srgb, var(--ant-color-primary, #1990ff) 4%, transparent);
+    }
+
+    &--active {
+        border-left-color: var(--ant-color-primary, #1990ff);
+        background: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.1));
+    }
+
+    &__left {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__right {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        margin-left: 8px;
+    }
+
+    &__title {
+        font-size: 0.9em;
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--ant-color-text, #45474a);
+    }
+
+    &__en-title {
+        font-size: 0.8em;
+        color: var(--ant-color-text-secondary, #6b7280);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__date {
+        font-size: 0.78em;
+        color: var(--ant-color-text-secondary, #6b7280);
+        margin-top: 2px;
+    }
+
+    &__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        margin-top: 3px;
+    }
+
+    &__city {
+        font-size: 0.7em;
+        color: var(--ant-color-text-secondary, #6b7280);
+    }
+
+    &__audio {
+        font-size: 0.75em;
+        color: var(--ant-color-primary, #1990ff);
+    }
+}
+
+.translation-tag {
+    font-size: 0.65em;
+    line-height: 14px;
+    padding: 0 3px;
+    margin-right: 2px;
+}
+
+.document-list {
+    padding-left: 10px;
+    padding-right: 4px;
+}
+
+.sidebar-item {
+    border-bottom: 1px solid var(--ant-color-border-secondary, #f0f0f0);
+}
+
+// ---------------------------------------------------------------------------
+// Subject item (subject list in subject view)
+// ---------------------------------------------------------------------------
+.subject-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--ant-color-border-secondary, #f0f0f0);
+    border-left: 3px solid transparent;
+    border-radius: 0 var(--ant-border-radius, 6px) var(--ant-border-radius, 6px) 0;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: color-mix(in srgb, var(--ant-color-primary, #1990ff) 4%, transparent);
+    }
+
+    &--active {
+        border-left-color: var(--ant-color-primary, #1990ff);
+        background: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.1));
+    }
+
+    &__left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex: 1;
+    }
+
+    &__name {
+        font-weight: 500;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Subject reference cards (subject view right panel)
+// ---------------------------------------------------------------------------
+.subject-ref-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.subject-ref-card {
+    border: 1px solid #e6e6e6;
+    border-radius: var(--ant-border-radius, 6px);
+    padding: 10px 12px;
+    transition: border-color 0.15s ease;
+
+    &:hover {
+        border-color: var(--ant-color-border, #d9d9d9);
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        > :last-child {
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+    }
+
+    &__meta {
+        margin-top: 4px;
+        font-size: 0.85em;
+        color: var(--ant-color-text-tertiary, #999);
+    }
+
+    &__body {
+        margin-top: 6px;
+        font-size: 0.95em;
+        color: var(--ant-color-text-secondary);
+        line-height: 1.5;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Notes grid (used in notes.tsx)
+// ---------------------------------------------------------------------------
+.notes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 12px;
+
+    > * {
+        width: 250px;
+    }
+}
+
+.note-card {
+    cursor: pointer;
+    transition: border-color 0.2s;
+
+    &:hover {
+        border-color: color-mix(in srgb, var(--ant-color-primary, #1677ff) 40%, transparent);
+    }
+
+    .ant-card-meta-title {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Editor styles (used in editor.tsx)
+// ---------------------------------------------------------------------------
+.editor-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 12px 0;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
+    background: var(--ant-color-bg-container, #fff);
+}
+
+.editor-container {
+    background: var(--ant-color-bg-container, #fff);
+}
+
+// ---------------------------------------------------------------------------
+// CKEditor 5 custom styles
+// ---------------------------------------------------------------------------
+.cke5-decoupled-custom-document-editable {
+    font-size: 1.09rem;
+    line-height: 1.6rem;
+    h1 {
+        display: block;
+        font-size: 1.7em;
+        margin-block-start: 0.67em;
+        margin-block-end: 0.67em;
+        font-weight: bold;
+    }
+    a[reference='true'] {
+        color: #049c95;
+        background-color: rgba(4, 156, 148, 0.089);
+        &::after {
+            content: '🗎 ';
+            font-size: 18px;
+        }
+    }
+    a[reference='true'][bible='true'] {
+        &::after {
+            content: '📖 ';
+        }
+    }
+}
+
+:root {
+    --ck-sample-editor-min-height: 400px;
+    --ck-sample-editor-z-index: 10;
+}
+
+// ---------------------------------------------------------------------------
+// Search input
+// ---------------------------------------------------------------------------
+
+.search-input-container {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: 500px;
+}
+
+.search-mode-select {
+    min-width: 160px;
+}
+
+// ---------------------------------------------------------------------------
+// Search results
+// ---------------------------------------------------------------------------
+.search-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+
+    a {
+        font-size: 1.1em;
+        font-weight: 500;
+    }
+}
+
+.search-result-hit-count {
+    font-size: 0.85em;
+    flex-shrink: 0;
+    margin-left: 8px;
+}
+
+.search-result-snippets {
+    margin-top: 6px;
+}
+
+.search-snippet-row {
+    padding: 6px 8px;
+    margin: 4px 0;
+    border-bottom: 1px solid var(--ant-color-border-secondary, #f0f0f0);
+    cursor: pointer;
+    font-size: 1em;
+    line-height: 1.6;
+    color: var(--ant-color-text, #45474a);
+    transition: background-color 0.15s ease;
+
+    &:hover {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.08));
+    }
+}
+
+.search-highlight-mark {
+    background-color: var(--ant-color-warning-bg, #fff7e6);
+    color: var(--ant-color-warning-text, #d48806);
+    padding: 1px 2px;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
+.snippet-paragraph-badge {
+    display: inline-block;
+    font-size: 0.85em;
+    color: var(--ant-color-text-tertiary, #91999e);
+    background: var(--ant-color-fill-quaternary, rgba(0, 0, 0, 0.02));
+    border-radius: 3px;
+    padding: 1px 5px;
+    margin-right: 6px;
+    vertical-align: baseline;
+    font-variant-numeric: tabular-nums;
+}
+
+.search-result-toggle {
+    display: inline-block;
+    font-size: 0.85em;
+    margin-top: 4px;
+    margin-left: 8px;
+    cursor: pointer;
+    color: var(--ant-color-primary, #1990ff);
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.ck.editor__editable[role='textbox'],
+.ck.ck-editor__editable[role='textbox'] {
+    width: 100%;
+    background: var(--ant-color-bg-container, #fff);
+    font-size: 1em;
+    line-height: 1.6em;
+    min-height: var(--ck-sample-editor-min-height);
+    padding: 1.5em 2em;
+}

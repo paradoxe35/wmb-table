@@ -1,438 +1,343 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
+import {
+    type Dispatch,
+    type FC,
+    type SetStateAction,
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
 } from 'react';
+import { Card, Input, Space, App as AntApp, Button, Empty, message, Typography } from 'antd';
 import {
-  Row,
-  Col,
-  Card,
-  Input,
-  Space,
-  Button,
-  Modal,
-  Divider,
-  Empty,
-  message,
-  List,
-  Typography,
-} from 'antd';
-import { SubjectDocument, SubjectDocumentItem } from '@localtypes/index';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { getDateTime } from '@root/utils/functions';
+    type SubjectDocument,
+    type SubjectDocumentItem,
+    isParagraphReference,
+} from '@shared/types';
+
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { SetterOrUpdater, useRecoilValue, useSetRecoilState } from 'recoil';
-import {
-  selectedSubjectDocumentItemStore,
-  subjectDocumentStore,
-  subjectDocumentItemStore,
-} from '@renderer/store';
-import ContainerScrollY from '@renderer/components/container-scroll-y';
+import { useSermonStore, useSubjectsStore } from '@renderer/stores';
 import { BookOutlined } from '@ant-design/icons';
+import { BibleIcons } from '@renderer/components/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { SUBJECT_EVENT } from '@modules/shared/shared';
-import { simpleRegExp, strNormalize } from '@modules/shared/searchable';
-import { useDocumentTitle } from '@renderer/hooks';
+import { SUBJECT_EVENT } from '@renderer/utils/events';
+import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useSermonLookup, useFormatSermonDate } from '@renderer/hooks';
 
 const { Text } = Typography;
 
 function ModalNewSubject({
-  onSaveNewSubject,
+    onSaveNewSubject,
 }: {
-  onSaveNewSubject: (searchValue: string) => void;
+    onSaveNewSubject: (searchValue: string) => void;
 }) {
-  const searchValue = useRef<string>('');
+    const searchValue = useRef<string>('');
+    const { modal } = AntApp.useApp();
 
-  const onSave = () => onSaveNewSubject(searchValue.current);
+    const onSave = () => onSaveNewSubject(searchValue.current);
 
-  const modal = useCallback(() => {
-    const modalInstance = Modal.info({
-      closable: true,
-      icon: null,
-      onOk: onSave,
-      okText: 'Enregistrer',
-      title: 'Créer un sujet',
-      content: (
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onSave();
-            modalInstance.destroy();
-          }}
-        >
-          <Input
-            autoFocus={true}
-            size="large"
-            minLength={3}
-            allowClear
-            onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
-            placeholder="Nom sujet"
-          />
-        </form>
-      ),
-    });
-  }, []);
+    const openModal = useCallback(() => {
+        const modalInstance = modal.info({
+            closable: true,
+            icon: null,
+            onOk: onSave,
+            okText: 'Enregistrer',
+            title: 'Créer un sujet',
+            content: (
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        onSave();
+                        modalInstance.destroy();
+                    }}
+                >
+                    <Input
+                        autoFocus={true}
+                        size="large"
+                        minLength={3}
+                        allowClear
+                        onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
+                        placeholder="Nom sujet"
+                    />
+                </form>
+            ),
+        });
+    }, [onSave, modal]);
 
-  return (
-    <Button type="primary" onClick={modal}>
-      Créer un sujet
-    </Button>
-  );
+    return (
+        <Button type="primary" onClick={openModal}>
+            Créer un sujet
+        </Button>
+    );
 }
 
 function Title({
-  onSearch,
-  onSaveNewSubject,
+    onSearch,
+    onSaveNewSubject,
 }: {
-  onSearch: (value: string) => void;
-  onSaveNewSubject: (searchValue: string) => void;
+    onSearch: (value: string) => void;
+    onSaveNewSubject: (searchValue: string) => void;
 }) {
-  return (
-    <Space direction="horizontal">
-      <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
-      <div />
-      <ModalNewSubject onSaveNewSubject={onSaveNewSubject} />
-    </Space>
-  );
+    return (
+        <Space orientation="horizontal">
+            <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
+            <div />
+            <ModalNewSubject onSaveNewSubject={onSaveNewSubject} />
+        </Space>
+    );
 }
 
 export function useSubjectsDatas() {
-  const odatas = useRef<SubjectDocument[]>([]);
-  const [datas, setDatas] = useState<SubjectDocument[]>([]);
-  const setSubjectDocument = useSetRecoilState(subjectDocumentStore);
+    const odatas = useRef<SubjectDocument[]>([]);
+    const [datas, setDatas] = useState<SubjectDocument[]>([]);
+    const setSubjects = useSubjectsStore((s) => s.setSubjects);
 
-  const onSearch = useCallback((value: string) => {
-    if (odatas.current.length) {
-      setDatas(
-        odatas.current.filter((d) =>
-          simpleRegExp(value).test(strNormalize(d.name))
-        )
-      );
-    }
-  }, []);
+    const onSearch = useCallback((value: string) => {
+        if (odatas.current.length) {
+            setDatas(odatas.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
+        }
+    }, []);
 
-  return { odatas, datas, setDatas, setSubjectDocument, onSearch };
+    return { odatas, datas, setDatas, setSubjects, onSearch };
 }
 
 export default function Subject() {
-  const {
-    odatas,
-    datas,
-    setDatas,
-    setSubjectDocument,
-    onSearch,
-  } = useSubjectsDatas();
+    const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
+    const activeSubject = useSubjectsStore((s) => s.activeSubject);
+    const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
 
-  const subjectItems = useRecoilValue(subjectDocumentItemStore);
-
-  const [subjectItemsData, setSubjectItemData] = useState<
-    SubjectDocumentItem[]
-  >([]);
-
-  useEffect(() => {
-    sendIpcRequest<SubjectDocument[]>(IPC_EVENTS.subject_document).then(
-      (subjects) => {
-        odatas.current = subjects;
-        setDatas(subjects);
-        setSubjectDocument(subjects);
-      }
-    );
-  }, []);
-
-  useEffect(() => {
-    if (datas.length > 0) {
-      const hasActive = datas.some((d) => d.active);
-      if (!hasActive) {
-        setDatas((ds) => {
-          return ds.map((nd, i) => {
-            const d = { ...nd };
-            d.active = i == 0;
-            return d;
-          });
+    useEffect(() => {
+        window.api.subjects.getAll().then((subjects) => {
+            odatas.current = subjects;
+            setDatas(subjects);
+            setSubjects(subjects);
         });
-      }
-    }
-  }, [datas]);
+    }, [setSubjects]);
 
-  useEffect(() => {
-    const focusSubject = (event: CustomEventInit<{ name: string }>) => {
-      setDatas((ds) => {
-        return ds.map((nd) => {
-          const d = { ...nd };
-          d.active = d.name == event.detail?.name;
-          return d;
+    useEffect(() => {
+        if (datas.length > 0) {
+            const hasActive = datas.some((d) => d.active);
+            if (!hasActive) {
+                setDatas((ds) => ds.map((nd, i) => ({ ...nd, active: i === 0 })));
+            }
+        }
+    }, [datas]);
+
+    useEffect(() => {
+        const focusSubject = (event: Event) => {
+            const name = (event as CustomEvent<{ name: string }>).detail?.name;
+            setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
+        };
+        window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
+        return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
+    }, []);
+
+    useEffect(() => {
+        const subject = datas.find((d) => d.active);
+        if (subject) {
+            window.api.subjects.getItems(subject.id).then(setSubjectItemData);
+        }
+    }, [datas, activeSubject]);
+
+    const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
+
+    const onSelectItem = useCallback((name: string) => {
+        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
+    }, []);
+
+    const saveNewSubject = (searchValue: string) => {
+        const value = searchValue.trim();
+        if (value.length < 2 || odatas.current.some((d) => d.name === value)) return;
+
+        window.api.subjects.create(value).then((subject) => {
+            const active = { ...subject, active: true };
+            odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
+            setDatas(odatas.current);
+            setSubjects(odatas.current);
+            message.success('Sujet créé');
         });
-      });
-    };
-    window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-    return () => {
-      window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-    };
-  }, []);
-
-  useEffect(() => {
-    const subject = datas.find((d) => d.active);
-    if (subject) {
-      sendIpcRequest<SubjectDocumentItem[]>(
-        IPC_EVENTS.subject_items,
-        subject.name
-      ).then((items) => {
-        setSubjectItemData(items);
-      });
-    }
-  }, [datas, subjectItems]);
-
-  const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
-
-  const onSelectItem = useCallback((name: string) => {
-    setDatas((ds) => {
-      return ds.map((nd) => {
-        const d = { ...nd };
-        d.active = nd.name === name;
-        return d;
-      });
-    });
-  }, []);
-
-  const saveNewSubject = (searchValue: string) => {
-    const value = searchValue.trim();
-    if (value.length < 2 || odatas.current.some((d) => d.name === value)) {
-      return;
-    }
-    const dateTime = getDateTime();
-    //@ts-ignore
-    const subject: SubjectDocument = {
-      name: value,
-      date: dateTime.date,
-      active: true,
-      documents: [],
     };
 
-    sendIpcRequest<SubjectDocument[]>(IPC_EVENTS.subject_document, {
-      name: value,
-      date: dateTime.date,
-    });
+    const handleSubjectDeletion = (item: SubjectDocument) => {
+        window.api.subjects.delete(item.id).then(() => {
+            odatas.current = odatas.current.filter((d) => d.name !== item.name);
+            setDatas(odatas.current);
+            setSubjects(odatas.current);
+            message.success('Supprimé');
+        });
+    };
 
-    odatas.current = [
-      subject,
-      ...odatas.current.map((d) => {
-        const nd = { ...d };
-        nd.active = false;
-        return nd;
-      }),
-    ];
-    setDatas(odatas.current);
-    setSubjectDocument(odatas.current);
-  };
-
-  const handleSubjectDeletion = (item: SubjectDocument) => {
-    sendIpcRequest<boolean>(IPC_EVENTS.subject_document_delete, item.name).then(
-      (deleted) => {
-        if (!deleted) return;
-        odatas.current = odatas.current.filter((d) => d.name != item.name);
-        setDatas(odatas.current);
-        setSubjectDocument(odatas.current);
-      }
-    );
-  };
-
-  return (
-    <Row>
-      <Col span={12}>
-        <div
-          style={{ width: '95%', minHeight: '300px', backgroundColor: '#fff' }}
-          className="layout__sidebar"
-        >
-          <Card style={{ width: '100%' }}>
-            <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
-          </Card>
-          <ContainerScrollY
-            className="mt-2"
-            style={{
-              padding: '22px',
-              overflowX: 'hidden',
-            }}
-          >
-            <List
-              itemLayout="vertical"
-              style={{ width: '100%' }}
-              dataSource={datas}
-              renderItem={(item) => (
-                <ItemSubject
-                  key={item.name}
-                  item={item}
-                  onSelectItem={onSelectItem}
-                  onDeleteSubject={handleSubjectDeletion}
-                />
-              )}
-            />
-          </ContainerScrollY>
+    return (
+        <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 4 }}>
+            <div
+                style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 0,
+                    backgroundColor: 'var(--ant-color-bg-container)',
+                }}
+                className="layout__sidebar"
+            >
+                <Card style={{ width: '100%', flexShrink: 0 }}>
+                    <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
+                </Card>
+                <div
+                    className="mt-2 container-y"
+                    style={{ flex: 1, padding: '22px', overflowX: 'hidden', minHeight: 0 }}
+                >
+                    {datas.map((item) => (
+                        <ItemSubject
+                            key={item.name}
+                            item={item}
+                            onSelectItem={onSelectItem}
+                            onDeleteSubject={handleSubjectDeletion}
+                        />
+                    ))}
+                </div>
+            </div>
+            <div className="container-y" style={{ flex: 1, padding: '0 10px', minHeight: 0 }}>
+                {activeDocument && (
+                    <ShowActiveDocuments
+                        subject={activeDocument}
+                        documents={subjectItemsData}
+                        setDocuments={setSubjectItemData}
+                    />
+                )}
+            </div>
         </div>
-      </Col>
-      <Col span={12}>
-        <ContainerScrollY susDiff={10} style={{ padding: '0 10px' }}>
-          {activeDocument && (
-            <ShowActiveDocuments
-              subject={activeDocument}
-              documents={subjectItemsData}
-              setDocuments={setSubjectItemData}
-            />
-          )}
-        </ContainerScrollY>
-      </Col>
-    </Row>
-  );
+    );
 }
 
-type ItemFromSelectedSubjectType = {
-  item: SubjectDocumentItem;
-  setSubjectItemSelected: SetterOrUpdater<SubjectDocumentItem | null>;
-  confirm(item: SubjectDocumentItem): void;
-  getTitle: (id: string) => string;
-};
-
 function ItemFromSelectedSubject({
-  item,
-  setSubjectItemSelected,
-  confirm,
-  getTitle,
-}: ItemFromSelectedSubjectType) {
-  return (
-    <>
-      <List.Item actions={[<DeleteBtn confirm={() => confirm(item)} />]}>
-        {item.bible ? (
-          <>
-            <List.Item.Meta
-              title={
-                <span>
-                  {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
-                </span>
-              }
-              description={<span>Référence: Biblique</span>}
-            />
-            <span className="content-description-2">{item.bible.content}</span>
-          </>
-        ) : (
-          <>
-            <List.Item.Meta
-              title={
-                <a className="underline">
-                  <DocumentViewer
-                    onItemClick={() => setSubjectItemSelected(item)}
-                    name={item.documentTitle}
-                  >
-                    {getTitle(item.documentTitle)}
-                  </DocumentViewer>
+    item,
+    confirm,
+}: {
+    item: SubjectDocumentItem;
+    confirm: (item: SubjectDocumentItem) => void;
+}) {
+    const { getSermonById } = useSermonLookup();
+    const formatDate = useFormatSermonDate();
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+
+    const sermon = getSermonById(item.sermonId);
+    const displayTitle = sermon?.title ?? item.documentTitle;
+    const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
+    const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
+
+    const onNavigate = () => {
+        setPendingNavigation({
+            documentTitle: item.documentTitle,
+            documentHtmlTree: item.documentHtmlTree,
+        });
+    };
+
+    const refTranslationId = paragraphRef?.translationId;
+
+    if (item.bible) {
+        return (
+            <div className="subject-ref-card">
+                <div className="subject-ref-card__header">
+                    <BibleIcons />
+                    <Text strong style={{ fontSize: '0.95em' }}>
+                        {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
+                    </Text>
+                    <DeleteBtn confirm={() => confirm(item)} />
+                </div>
+                <div className="subject-ref-card__body">{item.bible.content}</div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="subject-ref-card">
+            <div className="subject-ref-card__header">
+                <BookOutlined style={{ fontSize: 14 }} />
+                <a className="underline" style={{ flex: 1, fontSize: '0.95em' }}>
+                    <DocumentViewer
+                        onItemClick={onNavigate}
+                        name={item.documentTitle}
+                        sermonId={item.sermonId}
+                        translationId={refTranslationId}
+                    >
+                        {displayTitle}
+                    </DocumentViewer>
                 </a>
-              }
-              description={<span>Référence: Document</span>}
-            />
-            <span className="content-description-2">{item.textContent}...</span>
-          </>
-        )}
-      </List.Item>
-      <Divider />
-    </>
-  );
+                <DeleteBtn confirm={() => confirm(item)} />
+            </div>
+            {sermon && (
+                <div className="subject-ref-card__meta">
+                    {formatDate(sermon.dateMs)}
+                    {sermon.location ? ` — ${sermon.location}` : ''}
+                </div>
+            )}
+            {item.textContent && (
+                <div className="subject-ref-card__body">
+                    {paragraphNum != null && <Text strong>{paragraphNum}.</Text>} {item.textContent}
+                </div>
+            )}
+        </div>
+    );
 }
 
 function ShowActiveDocuments({
-  subject,
-  documents,
-  setDocuments,
+    subject,
+    documents,
+    setDocuments,
 }: {
-  subject: SubjectDocument;
-  documents: SubjectDocumentItem[];
-  setDocuments: React.Dispatch<React.SetStateAction<SubjectDocumentItem[]>>;
+    subject: SubjectDocument;
+    documents: SubjectDocumentItem[];
+    setDocuments: Dispatch<SetStateAction<SubjectDocumentItem[]>>;
 }) {
-  const setSubjectItemSelected = useSetRecoilState(
-    selectedSubjectDocumentItemStore
-  );
+    function confirm(item: SubjectDocumentItem) {
+        window.api.subjects.deleteItem(item.id).then(() => {
+            setDocuments((ds) => ds.filter((d) => d.id !== item.id));
+            message.success('Supprimé');
+        });
+    }
 
-  const { getTitle } = useDocumentTitle();
-
-  function confirm(item: SubjectDocumentItem) {
-    sendIpcRequest<boolean>(IPC_EVENTS.subject_items_delete, item._id).then(
-      (deleted) => {
-        if (!deleted) return;
-        setDocuments((ds) => ds.filter((d) => d._id !== item._id));
-        message.success('Supprimé');
-      }
-    );
-  }
-
-  return (
-    <>
-      {documents.length > 0 ? (
+    return (
         <>
-          <div className="flex flex-center">
-            <Text type="secondary">
-              {subject.name} ({documents.length})
-            </Text>
-          </div>
-          <div className="mt-2 flex flex-center">
-            <List
-              itemLayout="vertical"
-              size="small"
-              style={{ width: '100%' }}
-              dataSource={documents}
-              renderItem={(item) => (
-                <ItemFromSelectedSubject
-                  item={item}
-                  confirm={confirm}
-                  getTitle={getTitle}
-                  setSubjectItemSelected={setSubjectItemSelected}
-                />
-              )}
-            />
-          </div>
+            {documents.length > 0 ? (
+                <>
+                    <div className="flex flex-center">
+                        <Text type="secondary">
+                            {subject.name} ({documents.length})
+                        </Text>
+                    </div>
+                    <div className="subject-ref-list">
+                        {documents.map((item) => (
+                            <ItemFromSelectedSubject key={item.id} item={item} confirm={confirm} />
+                        ))}
+                    </div>
+                </>
+            ) : (
+                <Empty description={`Aucune référence trouvée dans le sujet: ${subject.name}`} />
+            )}
         </>
-      ) : (
-        <Empty
-          description={`Aucune référence touvée dans le suject: ${subject.name}`}
-        />
-      )}
-    </>
-  );
+    );
 }
 
-const ItemSubject: React.FC<{
-  item: SubjectDocument;
-  onSelectItem: (name: string) => void;
-  onDeleteSubject: (item: SubjectDocument) => void;
+const ItemSubject: FC<{
+    item: SubjectDocument;
+    onSelectItem: (name: string) => void;
+    onDeleteSubject: (item: SubjectDocument) => void;
 }> = ({ item, onSelectItem, onDeleteSubject }) => {
-  //
-  const onSelect = useCallback(() => {
-    !item.active && onSelectItem(item.name);
-  }, [item, onSelectItem]);
+    const onSelect = useCallback(() => {
+        if (!item.active) onSelectItem(item.name);
+    }, [item, onSelectItem]);
 
-  return (
-    <>
-      <span
-        className={`smart-editable big ${item.active ? 'active' : ''}`}
-        onClick={onSelect}
-        title={item.name}
-      >
-        <div className="o-icon">
-          <BookOutlined />
-        </div>
+    return (
         <div
-          style={{
-            width: '100%',
-            display: 'inline-flex',
-            justifyContent: 'space-between',
-          }}
+            className={`subject-item ${item.active ? 'subject-item--active' : ''}`}
+            onClick={onSelect}
+            title={item.name}
         >
-          <b>{item.name}</b>
-          <b style={{ paddingRight: '20px' }}>
+            <div className="subject-item__left">
+                <BookOutlined style={{ fontSize: 14, flexShrink: 0 }} />
+                <span className="subject-item__name">{item.name}</span>
+            </div>
             <DeleteBtn confirm={() => onDeleteSubject(item)} />
-          </b>
         </div>
-      </span>
-      <Divider style={{ margin: '7px 0' }} />
-    </>
-  );
+    );
 };

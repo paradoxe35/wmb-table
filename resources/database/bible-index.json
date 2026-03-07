@@ -1,0 +1,9 @@
+[
+    {
+        "langCode": "fr",
+        "abbreviation": "lsg",
+        "name": "Louis Segond",
+        "fileName": "bible.fr-lsg.sqlite",
+        "type": "local"
+    }
+]

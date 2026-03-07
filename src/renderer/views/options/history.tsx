@@ -1,124 +1,96 @@
-import React, { useEffect, useState } from 'react';
-import { useRecoilValue } from 'recoil';
-import { currentDocumentTabsSelector, defaultTitle } from '@renderer/store';
-import { Empty, List } from 'antd';
-import {
-  HistoryData,
-  HistoryDataItem,
-  HistoryDateUpload,
-} from '@localtypes/index';
-import { Collapse } from 'antd';
-import sendIpcRequest from '@root/ipc/ipc-renderer';
-import { IPC_EVENTS } from '@root/utils/ipc-events';
-import { getDateTime } from '@root/utils/functions';
+import { useEffect, useState, useRef } from 'react';
+import { Empty, Collapse, List } from 'antd';
+import type { HistoryData, HistoryDataItem } from '@shared/types';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { useDocumentTitle } from '@renderer/hooks';
-
-const { Panel } = Collapse;
+import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
+import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
 
 export default function History() {
-  const title = useRecoilValue(currentDocumentTabsSelector);
-  const [histories, setHistories] = useState<HistoryData[]>([]);
+    const title = useActiveTabTitle();
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const [histories, setHistories] = useState<HistoryData[]>([]);
+    const [key, setKey] = useState<string | null>(null);
+    const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
+    const [reloadKey, setReloadKey] = useState(0);
+    const { getSermonById } = useSermonLookup();
+    const activeTab = useSermonStore(selectActiveTab);
+    const prevTitle = useRef<string | null>(null);
 
-  const [key, setKey] = useState<string | null>(null);
+    const onChange = (key: string | string[]) => {
+        if (typeof key === 'string') setKey(key);
+    };
 
-  const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
-
-  const [reloadKey, setReloadKey] = useState(0);
-
-  const { getTitle, getDocument } = useDocumentTitle();
-
-  const onChange = (key: string | string[]) => {
-    if (typeof key === 'string') setKey(key);
-  };
-
-  useEffect(() => {
-    if (key && title && !defaultTitle.isDefault) {
-      const history = histories.find((k) => k._id == key);
-      if (history) {
-        sendIpcRequest<HistoryDataItem[]>(
-          IPC_EVENTS.history_data_item,
-          history
-        ).then((items) => {
-          setHistoryItems(items);
-        });
-      }
-    }
-  }, [key, title]);
-
-  useEffect(() => {
-    let history = null;
-    if (title) {
-      if (!defaultTitle.isDefault) {
-        const dateTime = getDateTime();
-        history = {
-          ...dateTime,
-          documentTitle: title,
-        } as HistoryDateUpload;
-      }
-
-      sendIpcRequest<HistoryData[]>(IPC_EVENTS.history_data, history).then(
-        (items) => {
-          setHistories(items);
+    // Record history when active tab changes
+    useEffect(() => {
+        if (activeLanguage && title && title !== prevTitle.current && activeTab?.sermonId) {
+            window.api.app.addHistoryEntry(activeLanguage, title, activeTab.sermonId);
         }
-      );
-    }
-  }, [title]);
+        prevTitle.current = title;
+    }, [title, activeLanguage, activeTab?.sermonId]);
 
-  if (process.env.NODE_ENV === 'development') {
-    console.log('new history data');
-  }
+    useEffect(() => {
+        if (key) {
+            const history = histories.find((k) => k.id === key);
+            if (history) {
+                window.api.app.getHistoryItems(history.id).then(setHistoryItems);
+            }
+        }
+    }, [key, histories]);
 
-  useEffect(() => {
-    if (histories.length > 0) {
-      setKey(histories[0]._id);
-      setReloadKey((d) => d + 1);
-    }
-  }, [histories]);
+    useEffect(() => {
+        if (activeLanguage) {
+            window.api.app.getHistory(activeLanguage).then(setHistories);
+        }
+    }, [title, activeLanguage]);
 
-  return (
-    <>
-      {histories.length === 0 && <Empty description="Aucune historique" />}
-      <Collapse
-        key={reloadKey}
-        defaultActiveKey={key || undefined}
-        accordion
-        onChange={onChange}
-        style={{ margin: '20px 0' }}
-      >
-        {histories.map((h) => {
-          return (
-            <Panel header={h.date} key={h._id}>
-              {key === h._id && (
-                <>
-                  <List
-                    itemLayout="horizontal"
-                    dataSource={historyItems.filter((i) =>
-                      getDocument(i.documentTitle)
-                    )}
-                    renderItem={(item) => (
-                      <List.Item>
-                        <List.Item.Meta
-                          avatar={<HistoryOutlined />}
-                          title={
-                            <a>
-                              <DocumentViewer name={item.documentTitle}>
-                                {getTitle(item.documentTitle)}
-                              </DocumentViewer>
-                            </a>
-                          }
-                          description={`${item.date} - ${item.time}`}
-                        />
-                      </List.Item>
-                    )}
-                  />
-                </>
-              )}
-            </Panel>
-          );
-        })}
-      </Collapse>
-    </>
-  );
+    useEffect(() => {
+        if (histories.length > 0) {
+            setKey(histories[0].id);
+            setReloadKey((d) => d + 1);
+        }
+    }, [histories]);
+
+    return (
+        <>
+            {histories.length === 0 && <Empty description="Aucune historique" />}
+            <Collapse
+                key={reloadKey}
+                defaultActiveKey={key || undefined}
+                accordion
+                onChange={onChange}
+                style={{ margin: '20px 0' }}
+                items={histories.map((h) => ({
+                    key: h.id,
+                    label: h.date,
+                    children:
+                        key === h.id ? (
+                            <List
+                                itemLayout="horizontal"
+                                dataSource={historyItems.filter((i) => getSermonById(i.sermonId))}
+                                renderItem={(item) => (
+                                    <List.Item key={item.id}>
+                                        <List.Item.Meta
+                                            avatar={<HistoryOutlined />}
+                                            title={
+                                                <a>
+                                                    <DocumentViewer
+                                                        name={item.documentTitle}
+                                                        sermonId={item.sermonId}
+                                                    >
+                                                        {getSermonById(item.sermonId)?.title ??
+                                                            item.documentTitle}
+                                                    </DocumentViewer>
+                                                </a>
+                                            }
+                                            description={`${item.date} - ${item.time}`}
+                                        />
+                                    </List.Item>
+                                )}
+                            />
+                        ) : null,
+                }))}
+            />
+        </>
+    );
 }

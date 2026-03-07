@@ -1,0 +1,71 @@
+.sermon-content-header {
+    text-align: center;
+    padding: 1.5em 1em 1em;
+
+    &__title {
+        font-size: 1.4em;
+        font-weight: 600;
+        margin: 0 0 0.3em;
+        color: var(--ant-color-text, #45474a);
+    }
+
+    &__date,
+    &__traduction {
+        font-size: 0.9em;
+        color: var(--ant-color-text-secondary, #6b7280);
+        margin: 0.15em 0;
+    }
+}
+
+.sermon-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
+    gap: 8px;
+    font-size: 21px;
+    color: var(--ant-color-text-secondary, #6b7280);
+}
+
+.sermon-body {
+    user-select: text;
+}
+
+.sermon-paragraph {
+    padding: 2px 16px 2px 48px;
+    margin: 0;
+    line-height: 1.8;
+    position: relative;
+    white-space: pre-wrap;
+
+    .line-number {
+        position: absolute;
+        left: 8px;
+        width: 32px;
+        text-align: right;
+        color: var(--ant-color-text-secondary, #6b7280);
+        font-family: monospace;
+        font-size: 0.85em;
+        user-select: none;
+    }
+
+    mark {
+        background-color: var(--ant-color-warning-bg, #ffe58f);
+        padding: 0 1px;
+        border-radius: 2px;
+
+        &.mark-current {
+            background-color: var(--ant-color-warning, #fa8c16);
+        }
+    }
+}
+
+.inline-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
+    background: var(--ant-color-bg-layout, #fafafa);
+}

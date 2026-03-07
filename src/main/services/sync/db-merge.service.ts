@@ -1,0 +1,177 @@
+import Database from 'better-sqlite3';
+import { getMainSqlite } from '@main/database';
+import { setSyncing } from './change-log.service';
+import log from 'electron-log';
+
+interface RemoteChangeLog {
+    changeId: string;
+    tableName: string;
+    rowId: string;
+    operation: 'SAVE' | 'DELETE';
+    newData: string; // JSON of the row
+}
+
+export type AffectedTables = Record<string, string[]>;
+
+/** Tables that we sync — must match the actual SQLite table names. */
+const SYNCED_TABLES = new Set([
+    'notes',
+    'notes_references',
+    'notes_bible_references',
+    'subjects',
+    'subject_items',
+    'custom_documents',
+    'suggestions',
+]);
+
+/** Only allow safe SQL identifiers (alphanumeric + underscore). */
+const SAFE_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
+
+function isValidIdentifier(name: string): boolean {
+    return SAFE_IDENTIFIER.test(name);
+}
+
+/**
+ * Apply a single remote change log to the local DB inside a transaction.
+ * Wrapped in setSyncing to prevent local change logging.
+ * Returns affected tables with record IDs.
+ */
+export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
+    if (!SYNCED_TABLES.has(change.tableName)) {
+        log.warn(`Skipping sync for unknown table: ${change.tableName}`);
+        return {};
+    }
+
+    const db = getMainSqlite();
+    const affectedTables: AffectedTables = {};
+
+    setSyncing(true);
+    try {
+        db.pragma('foreign_keys = OFF');
+
+        // Wrap in a transaction for atomicity
+        const applyInTransaction = db.transaction(() => {
+            if (change.operation === 'DELETE') {
+                // Use rowId directly
+                db.prepare(`DELETE FROM ${change.tableName} WHERE id = ?`).run(change.rowId);
+                affectedTables[change.tableName] = [change.rowId];
+            } else if (change.operation === 'SAVE') {
+                const record = JSON.parse(change.newData);
+                const columns = Object.keys(record).filter(isValidIdentifier);
+                if (columns.length === 0) {
+                    throw new Error(`No valid columns in change ${change.changeId}`);
+                }
+                const placeholders = columns.map(() => '?').join(', ');
+                const values = columns.map((col) => record[col]);
+
+                // INSERT OR REPLACE — upsert by primary key
+                const sql = `INSERT OR REPLACE INTO ${change.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+                db.prepare(sql).run(...values);
+                affectedTables[change.tableName] = [change.rowId];
+            }
+        });
+
+        applyInTransaction();
+    } finally {
+        // Always restore foreign keys and syncing state, even on error
+        db.pragma('foreign_keys = ON');
+        setSyncing(false);
+    }
+
+    return affectedTables;
+}
+
+/**
+ * Apply a full database snapshot: for each synced table, upsert all records
+ * from the remote DB into the local DB.
+ * Includes schema compatibility check before merging each table.
+ * Returns affected tables with record IDs.
+ */
+export function applySnapshot(snapshotDbPath: string): AffectedTables {
+    const localDb = getMainSqlite();
+    const remoteDb = new Database(snapshotDbPath, { readonly: true });
+    const affectedTables: AffectedTables = {};
+
+    setSyncing(true);
+    try {
+        localDb.pragma('foreign_keys = OFF');
+
+        for (const tableName of SYNCED_TABLES) {
+            try {
+                // Schema compatibility check before merge
+                if (!areTableSchemasCompatible(localDb, remoteDb, tableName)) {
+                    log.warn(`Schema mismatch for table ${tableName}, skipping`);
+                    continue;
+                }
+
+                const rows = remoteDb.prepare(`SELECT * FROM ${tableName}`).all();
+                if (rows.length === 0) continue;
+
+                const columns = Object.keys(rows[0] as Record<string, unknown>).filter(
+                    isValidIdentifier,
+                );
+                if (columns.length === 0) continue;
+
+                const placeholders = columns.map(() => '?').join(', ');
+                const sql = `INSERT OR REPLACE INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+                const stmt = localDb.prepare(sql);
+
+                const insertMany = localDb.transaction((records: Record<string, unknown>[]) => {
+                    for (const record of records) {
+                        stmt.run(...columns.map((col) => record[col]));
+                    }
+                });
+
+                insertMany(rows as Record<string, unknown>[]);
+
+                const recordIds = (rows as Record<string, unknown>[])
+                    .map((r) => String(r.id ?? ''))
+                    .filter(Boolean);
+                affectedTables[tableName] = recordIds;
+            } catch (err) {
+                log.warn(`Snapshot merge skipped table ${tableName}:`, err);
+            }
+        }
+    } finally {
+        localDb.pragma('foreign_keys = ON');
+        setSyncing(false);
+        remoteDb.close();
+    }
+
+    return affectedTables;
+}
+
+/**
+ * Verify schema compatibility between local and remote DB for a given table.
+ * Checks that the table exists in both DBs and that every remote column
+ * exists in the local DB with the same type.
+ * Prevents errors when the app version differs between syncing devices.
+ */
+function areTableSchemasCompatible(
+    localDb: Database.Database,
+    remoteDb: Database.Database,
+    tableName: string,
+): boolean {
+    try {
+        const localColumns = localDb.prepare(`PRAGMA table_info(${tableName})`).all() as {
+            name: string;
+            type: string;
+        }[];
+        const remoteColumns = remoteDb.prepare(`PRAGMA table_info(${tableName})`).all() as {
+            name: string;
+            type: string;
+        }[];
+
+        if (localColumns.length === 0 || remoteColumns.length === 0) return false;
+
+        const localMap = new Map(localColumns.map((c) => [c.name, c.type]));
+        for (const col of remoteColumns) {
+            const localType = localMap.get(col.name);
+            if (localType === undefined || localType !== col.type) return false;
+        }
+
+        return true;
+    } catch {
+        return false;
+    }
+}
