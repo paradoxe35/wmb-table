@@ -134,6 +134,7 @@ export const AppChannels = {
     getUpdateStatus: 'app:getUpdateStatus',
     startDownloadUpdate: 'app:startDownloadUpdate',
     quitAndInstallUpdate: 'app:quitAndInstallUpdate',
+    checkForUpdates: 'app:checkForUpdates',
     getSidebarStatus: 'app:getSidebarStatus',
     setSidebarStatus: 'app:setSidebarStatus',
     getCustomDocuments: 'app:getCustomDocuments',
@@ -308,6 +309,7 @@ export interface InvokeChannelMap {
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
     [AppChannels.startDownloadUpdate]: { args: []; return: void };
     [AppChannels.quitAndInstallUpdate]: { args: []; return: void };
+    [AppChannels.checkForUpdates]: { args: []; return: void };
     [AppChannels.getSidebarStatus]: { args: []; return: SidebarStatus | null };
     [AppChannels.setSidebarStatus]: { args: [boolean]; return: void };
     [AppChannels.getCustomDocuments]: { args: []; return: CustomDocument[] };

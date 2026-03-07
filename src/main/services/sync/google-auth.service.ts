@@ -22,10 +22,7 @@ function getCredentialsPath(): string {
             'google-drive-credentials.json',
         );
     }
-    return join(
-        __dirname,
-        '../../../../resources/credentials/google/google-drive-credentials.json',
-    );
+    return join(app.getAppPath(), 'resources/credentials/google/google-drive-credentials.json');
 }
 
 function getTokenPath(): string {
@@ -169,6 +166,52 @@ export async function authenticateWithGoogle(): Promise<{
     }
 }
 
+function authResultPage(success: boolean): string {
+    const title = success ? 'Connexion réussie' : 'Échec de la connexion';
+    const message = success
+        ? "Vous pouvez fermer cette fenêtre et retourner à l'application."
+        : "L'autorisation a échoué. Veuillez réessayer depuis l'application.";
+    const color = success ? '#52c41a' : '#ff4d4f';
+    const icon = success ? '✓' : '✗';
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>${title}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; background: #f5f5f5; color: #333;
+        }
+        .card {
+            background: #fff; border-radius: 12px; padding: 48px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;
+            max-width: 420px;
+        }
+        .icon {
+            width: 64px; height: 64px; border-radius: 50%;
+            background: ${color}; color: #fff; font-size: 32px;
+            display: inline-flex; align-items: center; justify-content: center;
+            margin-bottom: 24px;
+        }
+        h1 { font-size: 22px; margin-bottom: 12px; }
+        p { font-size: 15px; color: #666; line-height: 1.5; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">${icon}</div>
+        <h1>${title}</h1>
+        <p>${message}</p>
+    </div>
+</body>
+</html>`;
+}
+
 function startAuthServer(): Promise<{
     port: number;
     codePromise: Promise<string>;
@@ -186,22 +229,18 @@ function startAuthServer(): Promise<{
             const errorParam = url.searchParams.get('error');
 
             if (errorParam) {
-                res.writeHead(400, { 'Content-Type': 'text/html' });
-                res.end(
-                    '<html><body><h2>Authorization failed. You may close this window.</h2></body></html>',
-                );
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(authResultPage(false));
                 return;
             }
 
             if (code) {
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(
-                    '<html><body><h2>Connexion r\u00e9ussie ! Vous pouvez fermer cette fen\u00eatre.</h2></body></html>',
-                );
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(authResultPage(true));
                 resolveCode(code);
             } else {
-                res.writeHead(400);
-                res.end('Missing code parameter');
+                res.writeHead(400, { 'Content-Type': 'text/html; charset=utf-8' });
+                res.end(authResultPage(false));
             }
         });
 

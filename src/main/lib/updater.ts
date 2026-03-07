@@ -40,6 +40,7 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
 
     autoUpdater.on('update-not-available', () => {
         log.info('Updater: no update available');
+        notify({ type: 'noUpdate' });
     });
 
     autoUpdater.on('download-progress', (progress) => {
@@ -75,6 +76,12 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
 
 export function getUpdateStatus(): UpdaterNotification {
     return lastNotification;
+}
+
+export function checkForUpdates(): void {
+    autoUpdater.checkForUpdates().catch((err) => {
+        log.error('Updater: failed to check for updates', err);
+    });
 }
 
 export function startDownload(): void {

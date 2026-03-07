@@ -480,7 +480,7 @@ export type UpdateInfo = {
 };
 
 export type UpdaterNotification = {
-    type: 'none' | 'hasUpdate' | 'downloading' | 'downloaded' | 'error';
+    type: 'none' | 'noUpdate' | 'hasUpdate' | 'downloading' | 'downloaded' | 'error';
     updateInfo?: UpdateInfo;
     progress?: UpdaterProgress;
     message?: string;

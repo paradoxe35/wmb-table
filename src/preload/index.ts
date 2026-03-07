@@ -184,6 +184,7 @@ const api = {
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
         startDownloadUpdate: () => invoke(AppChannels.startDownloadUpdate),
         quitAndInstallUpdate: () => invoke(AppChannels.quitAndInstallUpdate),
+        checkForUpdates: () => invoke(AppChannels.checkForUpdates),
         getSidebarStatus: () => invoke(AppChannels.getSidebarStatus),
         setSidebarStatus: (hidden: boolean) => invoke(AppChannels.setSidebarStatus, hidden),
         getCustomDocuments: () => invoke(AppChannels.getCustomDocuments),

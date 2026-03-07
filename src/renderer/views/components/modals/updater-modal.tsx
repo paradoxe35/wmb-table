@@ -45,12 +45,30 @@ export default function Updater() {
 
     const [updaterInfo, setUpdaterInfo] = useState<UpdaterNotification | undefined>(undefined);
 
+    const [checking, setChecking] = useState(false);
+
     useEffect(() => {
         const cleanupNotify = window.api.on.notifyForNewUpdate((info) => {
+            setChecking(false);
             setUpdaterInfo(info);
         });
 
-        const cleanupMenu = window.api.on.appUpdateMenu(show);
+        const cleanupMenu = window.api.on.appUpdateMenu(() => {
+            show();
+            if (!updaterInfo || updaterInfo.type === 'none') {
+                setChecking(true);
+                window.api.app.checkForUpdates();
+                // Auto-hide checking state after timeout (no update found)
+                setTimeout(
+                    () =>
+                        setChecking((c) => {
+                            if (c) setUpdaterInfo({ type: 'noUpdate' } as UpdaterNotification);
+                            return false;
+                        }),
+                    10_000,
+                );
+            }
+        });
 
         return () => {
             cleanupNotify();
@@ -88,13 +106,13 @@ export default function Updater() {
             }
             preventActions = false;
             nextStepAction = {
-                type: 'Mettre \u00e0 jour',
+                type: 'Mettre à jour',
                 action: start_download_update,
             };
             content = (
                 <Alert
-                    message="Mise \u00e0 jour de l'application"
-                    description="Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour d\u00e9marrer le processus de mise \u00e0 jour."
+                    message="Mise à jour de l'application"
+                    description="Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour."
                     type="info"
                     showIcon
                 />
@@ -107,7 +125,7 @@ export default function Updater() {
                 <>
                     <ShowProgress
                         onlyPercent={true}
-                        title="T\u00e9l\u00e9chargement du mise \u00e0 jour"
+                        title="Téléchargement de la mise à jour"
                         progress={{
                             percent: updaterInfo.progress?.downloadProgress?.percent,
                         }}
@@ -118,13 +136,13 @@ export default function Updater() {
         case 'downloaded':
             preventActions = true;
             nextStepAction = {
-                type: 'Installer la mise \u00e0 jour',
+                type: 'Installer la mise à jour',
                 action: quit_and_install_update,
             };
             content = (
                 <Alert
-                    message="T\u00e9l\u00e9chargement termin\u00e9"
-                    description="Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise \u00e0 jour."
+                    message="Téléchargement terminé"
+                    description="Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise à jour."
                     type="success"
                     showIcon
                 />
@@ -137,11 +155,23 @@ export default function Updater() {
                 <>
                     <Alert
                         message="Erreur !"
-                        description="Une erreur s'est produite lors de la mise \u00e0 jour, veuillez r\u00e9essayer plus tard."
+                        description="Une erreur s'est produite lors de la mise à jour, veuillez réessayer plus tard."
                         type="error"
                         showIcon
                     />
                 </>
+            );
+            break;
+        case 'noUpdate':
+            preventActions = false;
+            nextStepAction = undefined;
+            content = (
+                <Alert
+                    message="Aucune mise à jour disponible"
+                    description="Vous utilisez déjà la dernière version de l'application."
+                    type="info"
+                    showIcon
+                />
             );
             break;
         default:
@@ -161,7 +191,7 @@ export default function Updater() {
                 title={
                     <>
                         <Space orientation="horizontal">
-                            <span>Mise \u00e0 jour</span>
+                            <span>Mise à jour</span>
                         </Space>
                     </>
                 }
@@ -181,7 +211,14 @@ export default function Updater() {
                 ]}
                 onCancel={hide}
             >
-                {updaterInfo && (
+                {checking ? (
+                    <Space orientation="vertical">
+                        <Space>
+                            <Typography.Text>Vérification des mises à jour...</Typography.Text>
+                            <Icon />
+                        </Space>
+                    </Space>
+                ) : updaterInfo ? (
                     <Space orientation="vertical">
                         {updaterInfo.updateInfo?.version && (
                             <Typography>
@@ -192,7 +229,7 @@ export default function Updater() {
                         )}
                         {content}
                     </Space>
-                )}
+                ) : null}
             </Modal>
         </>
     );

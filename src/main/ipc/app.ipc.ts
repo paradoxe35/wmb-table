@@ -7,7 +7,7 @@ import * as customDocsRepo from '@main/database/repositories/custom-documents.re
 import * as historyRepo from '@main/database/repositories/history.repository';
 import { switchBibleLanguage } from '@main/database/index';
 import { extractTextFromPdf } from '@main/services/pdf-extract.service';
-import { getUpdateStatus, startDownload, quitAndInstall } from '@main/lib/updater';
+import { getUpdateStatus, startDownload, quitAndInstall, checkForUpdates } from '@main/lib/updater';
 
 export function registerAppHandlers(): void {
     registerHandler(AppChannels.initialize, async () => {
@@ -38,6 +38,10 @@ export function registerAppHandlers(): void {
 
     registerHandler(AppChannels.quitAndInstallUpdate, async () => {
         quitAndInstall();
+    });
+
+    registerHandler(AppChannels.checkForUpdates, async () => {
+        checkForUpdates();
     });
 
     registerHandler(AppChannels.getSidebarStatus, async () => {

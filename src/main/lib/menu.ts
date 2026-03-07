@@ -183,7 +183,7 @@ export default class MenuBuilder {
                         },
                     },
                     {
-                        label: 'Mis \u00e0 jour',
+                        label: 'Mise à jour',
                         accelerator: this.isD('Ctrl+U'),
                         click: () => {
                             sendToRenderer(this.mainWindow, PushChannels.appUpdateMenu);
