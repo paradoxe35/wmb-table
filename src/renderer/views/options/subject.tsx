@@ -8,7 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import { Card, Input, Space, App as AntApp, Button, Empty, List, message, Typography } from 'antd';
+import { Card, Input, Space, App as AntApp, Button, Empty, message, Typography } from 'antd';
 import {
     type SubjectDocument,
     type SubjectDocumentItem,
@@ -18,10 +18,11 @@ import {
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
 import { BookOutlined } from '@ant-design/icons';
+import { BibleIcons } from '@renderer/components/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { SUBJECT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useSermonLookup } from '@renderer/hooks';
+import { useSermonLookup, useFormatSermonDate } from '@renderer/hooks';
 
 const { Text } = Typography;
 
@@ -216,8 +217,13 @@ function ItemFromSelectedSubject({
     confirm: (item: SubjectDocumentItem) => void;
 }) {
     const { getSermonById } = useSermonLookup();
+    const formatDate = useFormatSermonDate();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
-    const displayTitle = getSermonById(item.sermonId)?.title ?? item.documentTitle;
+
+    const sermon = getSermonById(item.sermonId);
+    const displayTitle = sermon?.title ?? item.documentTitle;
+    const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
+    const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
 
     const onNavigate = () => {
         setPendingNavigation({
@@ -226,44 +232,51 @@ function ItemFromSelectedSubject({
         });
     };
 
-    const refTranslationId =
-        item.documentHtmlTree && isParagraphReference(item.documentHtmlTree)
-            ? item.documentHtmlTree.translationId
-            : undefined;
+    const refTranslationId = paragraphRef?.translationId;
 
-    const title = item.bible ? (
-        <span>
-            {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
-        </span>
-    ) : (
-        <a className="underline">
-            <DocumentViewer
-                onItemClick={onNavigate}
-                name={item.documentTitle}
-                sermonId={item.sermonId}
-                translationId={refTranslationId}
-            >
-                {displayTitle}
-            </DocumentViewer>
-        </a>
-    );
-
-    const description = item.bible ? (
-        <>
-            <div>Référence: Biblique</div>
-            <span className="content-description-2">{item.bible.content}</span>
-        </>
-    ) : (
-        <>
-            <div>Référence: Document</div>
-            <span className="content-description-2">{item.textContent}...</span>
-        </>
-    );
+    if (item.bible) {
+        return (
+            <div className="subject-ref-card">
+                <div className="subject-ref-card__header">
+                    <BibleIcons />
+                    <Text strong style={{ fontSize: '0.95em' }}>
+                        {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
+                    </Text>
+                    <DeleteBtn confirm={() => confirm(item)} />
+                </div>
+                <div className="subject-ref-card__body">{item.bible.content}</div>
+            </div>
+        );
+    }
 
     return (
-        <List.Item actions={[<DeleteBtn key="delete" confirm={() => confirm(item)} />]}>
-            <List.Item.Meta title={title} description={description} />
-        </List.Item>
+        <div className="subject-ref-card">
+            <div className="subject-ref-card__header">
+                <BookOutlined style={{ fontSize: 14 }} />
+                <a className="underline" style={{ flex: 1, fontSize: '0.95em' }}>
+                    <DocumentViewer
+                        onItemClick={onNavigate}
+                        name={item.documentTitle}
+                        sermonId={item.sermonId}
+                        translationId={refTranslationId}
+                    >
+                        {displayTitle}
+                    </DocumentViewer>
+                </a>
+                <DeleteBtn confirm={() => confirm(item)} />
+            </div>
+            {sermon && (
+                <div className="subject-ref-card__meta">
+                    {formatDate(sermon.dateMs)}
+                    {sermon.location ? ` — ${sermon.location}` : ''}
+                </div>
+            )}
+            {item.textContent && (
+                <div className="subject-ref-card__body">
+                    {paragraphNum != null && <Text strong>{paragraphNum}.</Text>} {item.textContent}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -292,17 +305,14 @@ function ShowActiveDocuments({
                             {subject.name} ({documents.length})
                         </Text>
                     </div>
-                    <List
-                        className="mt-2"
-                        itemLayout="vertical"
-                        dataSource={documents}
-                        renderItem={(item) => (
+                    <div className="subject-ref-list">
+                        {documents.map((item) => (
                             <ItemFromSelectedSubject key={item.id} item={item} confirm={confirm} />
-                        )}
-                    />
+                        ))}
+                    </div>
                 </>
             ) : (
-                <Empty description={`Aucune référence touvée dans le suject: ${subject.name}`} />
+                <Empty description={`Aucune référence trouvée dans le sujet: ${subject.name}`} />
             )}
         </>
     );

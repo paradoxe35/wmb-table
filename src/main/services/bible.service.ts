@@ -48,7 +48,7 @@ function loadLocalIndex(): BibleVersion[] {
 }
 
 /**
- * Load the cached remote index from userData (if available).
+ * Load the cached remote index from ~/.wmb-table (if available).
  */
 function loadCachedRemoteIndex(): BibleVersion[] {
     const cachePath = getCachedRemoteIndexPath();
@@ -134,7 +134,7 @@ export function getDefaultBibleVersion(langCode: string): BibleVersion | null {
 /**
  * Resolve the file path for a Bible version.
  * Local: bundled in resources/database/
- * Remote: downloaded to userData/databases/bibles/
+ * Remote: downloaded to ~/.wmb-table/databases/bibles/
  */
 function resolveBiblePath(version: BibleVersion): string {
     if (version.type === 'local') {

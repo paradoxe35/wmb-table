@@ -634,6 +634,51 @@ body {
 }
 
 // ---------------------------------------------------------------------------
+// Subject reference cards (subject view right panel)
+// ---------------------------------------------------------------------------
+.subject-ref-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.subject-ref-card {
+    border: 1px solid var(--ant-color-border-secondary, #f0f0f0);
+    border-radius: var(--ant-border-radius, 6px);
+    padding: 10px 12px;
+    transition: border-color 0.15s ease;
+
+    &:hover {
+        border-color: var(--ant-color-border, #d9d9d9);
+    }
+
+    &__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        > :last-child {
+            margin-left: auto;
+            flex-shrink: 0;
+        }
+    }
+
+    &__meta {
+        margin-top: 4px;
+        font-size: 0.85em;
+        color: var(--ant-color-text-tertiary, #999);
+    }
+
+    &__body {
+        margin-top: 6px;
+        font-size: 0.95em;
+        color: var(--ant-color-text-secondary);
+        line-height: 1.5;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Notes grid (used in notes.tsx)
 // ---------------------------------------------------------------------------
 .notes-grid {
