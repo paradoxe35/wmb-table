@@ -41,7 +41,7 @@ describe('notes.repository', () => {
 
     it('delete cascades to references', () => {
         const note = notesRepo.create('Test');
-        notesRepo.createReference(note.id, 'Doc Title', { tree: [1, 2] }, 'Some text');
+        notesRepo.createReference(note.id, 'Doc Title');
         notesRepo.createBibleReference(note.id, 'Gen 1:1');
 
         notesRepo.deleteNote(note.id);
@@ -51,9 +51,9 @@ describe('notes.repository', () => {
 
     it('createReference and getReferences', () => {
         const note = notesRepo.create('Test');
-        const ref = notesRepo.createReference(note.id, 'Doc', { tree: [1] }, 'text');
-        expect(ref.documentTitle).toBe('Doc');
-        expect(ref.documentHtmlTree).toEqual({ tree: [1] });
+        const ref = notesRepo.createReference(note.id, 'Doc');
+        expect(ref.label).toBe('Doc');
+        expect(ref.documentHtmlTree).toEqual({ tree: [] });
 
         const refs = notesRepo.getReferences(note.id);
         expect(refs).toHaveLength(1);

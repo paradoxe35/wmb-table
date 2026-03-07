@@ -57,7 +57,7 @@ describe('repository change tracking', () => {
 
         it('createReference logs a SAVE change for notes_references', () => {
             const note = notesRepo.create('Test');
-            notesRepo.createReference(note.id, 'Doc', { tree: [1] }, 'text');
+            notesRepo.createReference(note.id, 'Doc');
             const changes = getAllChangeLogs();
             const refChange = changes.find((c) => c.tableName === 'notes_references');
             expect(refChange).toBeDefined();
