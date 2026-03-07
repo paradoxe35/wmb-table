@@ -219,8 +219,6 @@ export default function EditorContent({
 
     const [ready, setReady] = useState(false);
 
-    const workingNoteRef = useValueStateRef(workingNote);
-
     const bibleReferenceModal = useBibleReferenceModal();
 
     const ipcRequestWithLoader = useIpcRequestWithLoader();
@@ -257,7 +255,7 @@ export default function EditorContent({
             return await window.api.notes.getReference(idRef);
         }).then((data) => {
             if (data) {
-                modalRefence(data, workingNoteRef.current as NoteItem);
+                modalRefence(data);
             } else {
                 message.error('La référence est invalide');
             }

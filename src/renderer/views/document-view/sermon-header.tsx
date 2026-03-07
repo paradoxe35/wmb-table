@@ -159,7 +159,7 @@ export default function SermonHeader({
                     type="text"
                     size="small"
                     icon={<SearchOutlined />}
-                    onClick={openSearchBar}
+                    onClick={() => openSearchBar()}
                 />
             </Space>
             <ParagraphNavigatorModal

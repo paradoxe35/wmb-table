@@ -12,7 +12,6 @@ import { useSermonStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import {
     BibleBook,
-    NoteItem,
     NoteItemReference,
     NoteItemReferenceBible,
     isParagraphReference,
@@ -31,7 +30,7 @@ export const useShowReferenceDetail = () => {
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
 
-    const modal = useCallback((reference: NoteItemReference, workingNote: NoteItem) => {
+    const modal = useCallback((reference: NoteItemReference) => {
         const ref = reference.documentHtmlTree;
         const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
 

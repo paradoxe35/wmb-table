@@ -154,7 +154,7 @@ export default function CustomDocumentView() {
                                 type="text"
                                 size="small"
                                 icon={<SearchOutlined />}
-                                onClick={openSearchBar}
+                                onClick={() => openSearchBar()}
                             />
                         </Space>
                     </div>
