@@ -68,7 +68,7 @@ jobs:
                     - os: windows-latest
                       platform: windows
                       arch: x64
-                      args: --win nsis portable --x64
+                      args: --win --x64
                     - os: macos-latest
                       platform: mac-arm64
                       arch: arm64
@@ -106,6 +106,8 @@ jobs:
                       release/*.dmg
                       release/*.exe
                       release/*.AppImage
+                      release/*.deb
+                      release/*.tar.gz
                       release/*.zip
                       release/*.blockmap
                       release/latest*.yml
