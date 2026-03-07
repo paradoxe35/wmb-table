@@ -78,6 +78,8 @@ jobs:
                       arch: x64
                       args: --mac --x64
         runs-on: ${{ matrix.os }}
+        env:
+            GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
         steps:
             - uses: actions/checkout@v4
 
@@ -89,6 +91,14 @@ jobs:
               with:
                   node-version: 22
                   cache: pnpm
+
+            - name: Write Google credentials
+              if: env.GOOGLE_DRIVE_CREDENTIALS != ''
+              uses: jsdaniell/create-json@v1.2.3
+              with:
+                  name: google-drive-credentials.json
+                  json: ${{ env.GOOGLE_DRIVE_CREDENTIALS }}
+                  dir: resources/credentials/google/
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile

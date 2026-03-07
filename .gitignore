@@ -37,7 +37,8 @@ coverage
 !resources/database/*.sqlite
 
 # Google credentials (not versioned)
-resources/credentials/google/
+resources/credentials/google/*
+!resources/credentials/google/.gitkeep
 
 # Runtime data
 assets/datas/
