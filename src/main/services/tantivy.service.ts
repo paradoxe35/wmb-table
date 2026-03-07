@@ -138,7 +138,6 @@ export async function getMatchingParagraphs(
     queryText: string,
     translationId: number,
     sermonDate: number,
-    maxSnippets: number = 5,
 ): Promise<{ paragraphIndex: number; snippet: string }[]> {
     return call<{ paragraphIndex: number; snippet: string }[]>(
         'getMatchingParagraphs',
@@ -146,7 +145,6 @@ export async function getMatchingParagraphs(
         queryText,
         translationId,
         sermonDate,
-        maxSnippets,
     );
 }
 

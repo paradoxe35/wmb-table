@@ -66,6 +66,7 @@ export function addSuggestion(
         const toDelete = all.slice(0, all.length - MAX_SUGGESTIONS);
         for (const old of toDelete) {
             db.delete(suggestions).where(eq(suggestions.id, old.id)).run();
+            logChange('suggestions', old.id, 'DELETE', old);
         }
     }
 

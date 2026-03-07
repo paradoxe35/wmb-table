@@ -14,8 +14,10 @@ export default function InlineSearchBar() {
     const prevMatch = useSearchStore((s) => s.prevMatch);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
     const totalMatches = useSearchStore((s) => s.totalMatches);
+    const navOnly = useSearchStore((s) => s.searchBarNavOnly);
 
     const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
+    const searchMode = useSearchStore((s) => s.searchMode);
 
     const inputRef = useRef<any>(null);
     const searchTermRef = useRef('');
@@ -26,7 +28,7 @@ export default function InlineSearchBar() {
             inputRef.current.input.value = existing.term;
             searchTermRef.current = existing.term;
         }
-        inputRef.current?.focus();
+        if (!navOnly) inputRef.current?.focus();
     }, []);
 
     const updateSearch = useCallback(
@@ -46,11 +48,12 @@ export default function InlineSearchBar() {
                         textContentLength: 0,
                         searchForParagraph: false,
                         term: value.trim(),
+                        mode: searchMode,
                     },
                 ];
             });
         }, 300),
-        [activeTitle, setDocumentViewQueries, clearSearch],
+        [activeTitle, setDocumentViewQueries, clearSearch, searchMode],
     );
 
     const handleChange = useCallback(
@@ -81,7 +84,6 @@ export default function InlineSearchBar() {
         [handleClose, nextMatch, prevMatch],
     );
 
-    // Paragraph jump via number input
     const handleParagraphJump = useCallback(() => {
         const val = searchTermRef.current.trim();
         const num = parseInt(val, 10);
@@ -92,15 +94,17 @@ export default function InlineSearchBar() {
 
     return (
         <div className="inline-search-bar">
-            <Input
-                ref={inputRef}
-                size="small"
-                placeholder="Rechercher..."
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                style={{ width: 220 }}
-                allowClear
-            />
+            {!navOnly && (
+                <Input
+                    ref={inputRef}
+                    size="small"
+                    placeholder="Rechercher..."
+                    onChange={handleChange}
+                    onKeyDown={handleKeyDown}
+                    style={{ width: 220 }}
+                    allowClear
+                />
+            )}
             <span
                 style={{
                     fontSize: '0.8em',
@@ -125,15 +129,17 @@ export default function InlineSearchBar() {
                 onClick={nextMatch}
                 disabled={totalMatches === 0}
             />
-            <Button
-                type="text"
-                size="small"
-                title="Aller au paragraphe"
-                onClick={handleParagraphJump}
-                style={{ fontSize: '0.75em' }}
-            >
-                &para;
-            </Button>
+            {!navOnly && (
+                <Button
+                    type="text"
+                    size="small"
+                    title="Aller au paragraphe"
+                    onClick={handleParagraphJump}
+                    style={{ fontSize: '0.75em' }}
+                >
+                    &para;
+                </Button>
+            )}
             <Button type="text" size="small" icon={<CloseOutlined />} onClick={handleClose} />
         </div>
     );

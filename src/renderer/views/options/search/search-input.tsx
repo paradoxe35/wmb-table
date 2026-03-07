@@ -1,11 +1,18 @@
 import { useCallback, useRef, useState } from 'react';
-import { Input, AutoComplete, Typography } from 'antd';
+import { Input, AutoComplete, Select, Typography } from 'antd';
 import { SelectProps } from 'antd/es/select';
 import { debounce } from '@renderer/utils/functions';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import type { Suggestions } from '@shared/types';
+import { useSearchStore } from '@renderer/stores';
+import type { Suggestions, SearchMode } from '@shared/types';
 
 const { Text } = Typography;
+
+const SEARCH_MODE_OPTIONS: { value: SearchMode; label: string }[] = [
+    { value: 'any', label: 'Au moins un mot' },
+    { value: 'all', label: 'Tous les mots' },
+    { value: 'exact', label: 'Phrase exacte' },
+];
 
 function buildSuggestionOptions(query: string, suggestions: Suggestions[]) {
     return suggestions
@@ -34,6 +41,8 @@ export default function SearchInput({
 }) {
     const [options, setOptions] = useState<SelectProps<object>['options']>([]);
     const searchValue = useRef<string | null>(null);
+    const searchMode = useSearchStore((s) => s.searchMode);
+    const setSearchMode = useSearchStore((s) => s.setSearchMode);
 
     const handleSearchAutoComplete = (value: string) => {
         setOptions(value ? buildSuggestionOptions(value, suggestions.current) : []);
@@ -54,22 +63,31 @@ export default function SearchInput({
     );
 
     return (
-        <AutoComplete
-            popupMatchSelectWidth={252}
-            style={{ width: 300 }}
-            options={options}
-            onSelect={onSelect}
-            onSearch={handleSearchAutoComplete}
-        >
-            <Input.Search
+        <div className="search-input-container">
+            <AutoComplete
+                popupMatchSelectWidth={252}
+                style={{ flex: 1 }}
+                options={options}
+                onSelect={onSelect}
+                onSearch={handleSearchAutoComplete}
+            >
+                <Input.Search
+                    size="large"
+                    minLength={3}
+                    allowClear
+                    loading={loading}
+                    placeholder="Faites vos recherches ici"
+                    enterButton
+                    onSearch={debounce(handleSearch, 100)}
+                />
+            </AutoComplete>
+            <Select
                 size="large"
-                minLength={3}
-                allowClear
-                loading={loading}
-                placeholder="Faites vos recherches ici"
-                enterButton
-                onSearch={debounce(handleSearch, 100)}
+                value={searchMode}
+                onChange={setSearchMode}
+                options={SEARCH_MODE_OPTIONS}
+                className="search-mode-select"
             />
-        </AutoComplete>
+        </div>
     );
 }

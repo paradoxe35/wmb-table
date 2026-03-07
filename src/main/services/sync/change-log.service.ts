@@ -45,28 +45,23 @@ export function logChange(
     const now = new Date().toISOString();
     const newData = JSON.stringify(data);
 
-    // Upsert: if changeId exists, update it; otherwise insert
-    const existing = db.select().from(changeLogs).where(eq(changeLogs.changeId, changeId)).get();
-
-    if (existing) {
-        db.update(changeLogs)
-            .set({ newData, synced: false, updatedAt: now })
-            .where(eq(changeLogs.id, existing.id))
-            .run();
-    } else {
-        db.insert(changeLogs)
-            .values({
-                changeId,
-                tableName,
-                rowId,
-                operation,
-                newData,
-                synced: false,
-                createdAt: now,
-                updatedAt: now,
-            })
-            .run();
-    }
+    // Atomic upsert: insert or update on changeId conflict
+    db.insert(changeLogs)
+        .values({
+            changeId,
+            tableName,
+            rowId,
+            operation,
+            newData,
+            synced: false,
+            createdAt: now,
+            updatedAt: now,
+        })
+        .onConflictDoUpdate({
+            target: changeLogs.changeId,
+            set: { newData, synced: false, updatedAt: now },
+        })
+        .run();
 }
 
 export function getUnsyncedChanges(): ChangeLogRecord[] {
@@ -74,12 +69,33 @@ export function getUnsyncedChanges(): ChangeLogRecord[] {
     return rows as ChangeLogRecord[];
 }
 
+/**
+ * Mark a change as synced only if it was NOT modified during the upload.
+ * Prevents marking a change as synced when the user made another edit
+ * while the upload was in progress.
+ */
+export function markSyncedIfNotChanged(change: ChangeLogRecord): void {
+    const db = getSyncDb();
+    const current = db.select().from(changeLogs).where(eq(changeLogs.id, change.id)).get();
+
+    if (!current) return;
+
+    // If the changeId still matches AND it was updated after we read it,
+    // the user made another edit during upload — skip marking as synced.
+    if (
+        current.changeId === change.changeId &&
+        current.updatedAt &&
+        change.updatedAt &&
+        current.updatedAt > change.updatedAt
+    ) {
+        return;
+    }
+
+    db.update(changeLogs).set({ synced: true }).where(eq(changeLogs.id, change.id)).run();
+}
+
 export function markSynced(id: number): void {
-    getSyncDb()
-        .update(changeLogs)
-        .set({ synced: true, updatedAt: new Date().toISOString() })
-        .where(eq(changeLogs.id, id))
-        .run();
+    getSyncDb().update(changeLogs).set({ synced: true }).where(eq(changeLogs.id, id)).run();
 }
 
 export function deleteOldChangeLogs(before: string): void {

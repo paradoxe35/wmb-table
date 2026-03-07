@@ -82,8 +82,8 @@ export function useOpenDocument() {
     const setMainView = useAppStore((s) => s.setMainView);
 
     return useCallback(
-        (title: string, sermonId: string) => {
-            addTab(title, sermonId);
+        (title: string, sermonId: string, translationId?: number) => {
+            addTab(title, sermonId, 'sermon', undefined, translationId);
             setMainView('document');
         },
         [addTab, setMainView],

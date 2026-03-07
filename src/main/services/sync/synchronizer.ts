@@ -8,9 +8,18 @@ import log from 'electron-log';
 
 import { getSyncDb, getMainSqlite } from '@main/database';
 import { syncState, processedChanges, applyFailures } from '@main/database/sync-schema';
-import { getUnsyncedChanges, markSynced, deleteOldChangeLogs } from './change-log.service';
-import { GoogleDriveService, type DriveFile } from './drive.service';
-import { applyChangeLog, applySnapshot } from './db-merge.service';
+import {
+    getUnsyncedChanges,
+    markSyncedIfNotChanged,
+    deleteOldChangeLogs,
+} from './change-log.service';
+import {
+    GoogleDriveService,
+    DB_SNAPSHOT_PREFIX,
+    CHANGES_FILE_PREFIX,
+    type DriveFile,
+} from './drive.service';
+import { applyChangeLog, applySnapshot, type AffectedTables } from './db-merge.service';
 import { getExistingClient } from './google-auth.service';
 import { getMainWindow } from '@main/lib/window';
 import { PushChannels } from '@shared/ipc.types';
@@ -19,6 +28,7 @@ const SYNC_INTERVAL_MS = 10_000;
 const MAX_CHANGE_RETRIES = 5;
 const MAX_SNAPSHOT_RETRIES = 10;
 const SNAPSHOT_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const DEFAULT_TIME_OFFSET = '2000-01-01T00:00:00Z';
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 let isSyncRunning = false;
@@ -26,6 +36,9 @@ let driveService: GoogleDriveService | null = null;
 let lastError: string | null = null;
 let lastSyncTime: string | null = null;
 let lastSnapshotTime = 0;
+
+// Affected tables tracked per sync cycle (table → record IDs)
+let affectedTables: AffectedTables = {};
 
 // -----------------------------------------------------------------------
 // Public API
@@ -89,6 +102,27 @@ export function initializeSynchronizer(authClient: OAuth2Client): void {
 }
 
 // -----------------------------------------------------------------------
+// Affected tables helpers
+// -----------------------------------------------------------------------
+
+function resetAffectedTables(): void {
+    affectedTables = {};
+}
+
+function mergeAffectedTables(tables: AffectedTables): void {
+    for (const [table, ids] of Object.entries(tables)) {
+        if (!affectedTables[table]) {
+            affectedTables[table] = [];
+        }
+        for (const id of ids) {
+            if (!affectedTables[table].includes(id)) {
+                affectedTables[table].push(id);
+            }
+        }
+    }
+}
+
+// -----------------------------------------------------------------------
 // Scheduler
 // -----------------------------------------------------------------------
 
@@ -97,113 +131,137 @@ async function schedulerWorker(): Promise<void> {
     if (!net.isOnline()) return;
 
     isSyncRunning = true;
-    lastError = null;
+    resetAffectedTables();
+
+    // Apply remote changes and create snapshots — collect last failure
+    let failure: Error | null = null;
 
     try {
-        const affectedTables = await applyRemoteChanges();
-        await createDbSnapshotIfNeeded();
-        await syncChangesToDrive();
-        lastSyncTime = new Date().toISOString();
-        if (affectedTables.length > 0) {
-            notifyRenderer(affectedTables);
-        }
+        await applyRemoteChanges();
     } catch (err) {
-        const msg = err instanceof Error ? err.message : String(err);
-        lastError = msg;
-        log.error('Sync cycle error:', msg);
-    } finally {
-        isSyncRunning = false;
+        failure = err instanceof Error ? err : new Error(String(err));
     }
+
+    // Snapshot creation runs even if pull had errors
+    try {
+        await createDbSnapshotIfNeeded();
+    } catch (err) {
+        failure = err instanceof Error ? err : new Error(String(err));
+    }
+
+    // Emit success/failure before push
+    if (failure) {
+        lastError = failure.message;
+        log.error('Sync cycle error:', failure.message);
+    } else {
+        lastError = null;
+        lastSyncTime = new Date().toISOString();
+        const tableNames = Object.keys(affectedTables);
+        if (tableNames.length > 0) {
+            notifyRenderer(tableNames);
+        }
+    }
+
+    // Push always runs last, regardless of pull result
+    await syncChangesToDrive();
+
+    isSyncRunning = false;
 }
 
 // -----------------------------------------------------------------------
 // Pull: apply remote changes
 // -----------------------------------------------------------------------
 
-async function applyRemoteChanges(): Promise<string[]> {
-    if (!driveService) return [];
+/**
+ * Processes ALL remote files (snapshots + changes) in chronological order.
+ * Snapshots and changes are sorted together by createdTime and applied in sequence.
+ */
+async function applyRemoteChanges(): Promise<void> {
+    if (!driveService) return;
 
-    const db = getSyncDb();
     const timeOffset = getLastSyncTimeOffset();
-    const affectedTables = new Set<string>();
+    const files = await driveService.getChangeFilesAfterTimeOffset(timeOffset);
 
-    // Check for snapshot first
-    const snapshot = await driveService.getLatestSnapshot();
-    if (snapshot && snapshot.createdTime > timeOffset) {
-        const alreadyProcessed = db
-            .select()
-            .from(processedChanges)
-            .where(eq(processedChanges.fileId, snapshot.id))
-            .get();
-
-        if (alreadyProcessed) {
-            updateSyncTimeOffset(snapshot.createdTime);
-        } else {
-            const failures = getFailureCount(snapshot.id);
-            if (failures < MAX_SNAPSHOT_RETRIES) {
-                try {
-                    const tables = await applyRemoteSnapshot(snapshot);
-                    for (const t of tables) affectedTables.add(t);
-                    resetFailureCount(snapshot.id);
-                    updateSyncTimeOffset(snapshot.createdTime);
-                    saveProcessedChange(snapshot.id);
-                } catch (err) {
-                    incrementFailure(snapshot.id);
-                    log.error('Failed to apply snapshot:', err);
-                }
-            }
-        }
-    }
-
-    // Then apply individual change files
-    const remoteFiles = await driveService.getChangesAfterTimeOffset(timeOffset);
-
-    for (const file of remoteFiles) {
+    for (const file of files) {
+        // Skip files we can't process (not a snapshot or change file)
+        if (!canBeApplied(file)) continue;
         if (file.createdTime <= timeOffset) continue;
 
-        const alreadyProcessed = db
-            .select()
-            .from(processedChanges)
-            .where(eq(processedChanges.fileId, file.id))
-            .get();
-
-        if (alreadyProcessed) {
+        // Skip if already processed
+        if (isAlreadyProcessed(file.id)) {
             updateSyncTimeOffset(file.createdTime);
             continue;
         }
 
-        const failures = getFailureCount(file.id);
-        if (failures >= MAX_CHANGE_RETRIES) continue;
+        let error: Error | null = null;
 
         try {
-            const content = await driveService.getFileContent(file.id);
-            const change = JSON.parse(content.toString('utf-8'));
-            applyChangeLog(change);
-            affectedTables.add(change.tableName);
-
-            resetFailureCount(file.id);
-            updateSyncTimeOffset(file.createdTime);
-            saveProcessedChange(file.id);
+            if (file.isSnapshot) {
+                const tables = await applyRemoteSnapshotFile(file);
+                mergeAffectedTables(tables);
+            } else {
+                const tables = await applyRemoteChangeLogFile(file);
+                mergeAffectedTables(tables);
+            }
         } catch (err) {
-            incrementFailure(file.id);
-            log.warn(`Failed to apply change file ${file.id}:`, err);
+            error = err instanceof Error ? err : new Error(String(err));
         }
-    }
 
-    return [...affectedTables];
+        // Check if we can ignore this failure
+        if (!canIgnoreRemoteApplyFailure(file, error)) {
+            throw error!;
+        }
+
+        // Success or permanently skipped — reset failure, update state
+        saveFailureCount(file.id, 0);
+        updateSyncTimeOffset(file.createdTime);
+        saveProcessedChange(file.id);
+    }
 }
 
-async function applyRemoteSnapshot(snapshot: DriveFile): Promise<string[]> {
-    if (!driveService) return [];
+/**
+ * Check if a remote file is a sync file we can process.
+ * Filters out non-sync files from appDataFolder.
+ */
+function canBeApplied(file: DriveFile): boolean {
+    return file.name.startsWith(DB_SNAPSHOT_PREFIX) || file.name.startsWith(CHANGES_FILE_PREFIX);
+}
 
-    const content = await driveService.getFileContent(snapshot.id);
+/**
+ * Determine whether a remote apply failure can be ignored:
+ * - No error → true (proceed normally)
+ * - Error but too many retries → true (give up on this file, skip it)
+ * - Error within retry limit → false (stop processing, will throw)
+ */
+function canIgnoreRemoteApplyFailure(file: DriveFile, error: Error | null): boolean {
+    const maxFailures = file.isSnapshot ? MAX_SNAPSHOT_RETRIES : MAX_CHANGE_RETRIES;
+
+    if (error === null) {
+        return true;
+    }
+
+    const failureCount = getFailureCount(file.id);
+    if (failureCount > maxFailures) {
+        log.error(`Failed to apply remote file (ignored, too many failures): ${file.name}`, error);
+        return true;
+    }
+
+    log.error(`Failed to apply remote file: ${file.name}`, error);
+    saveFailureCount(file.id, failureCount + 1);
+    return false;
+}
+
+async function applyRemoteSnapshotFile(file: DriveFile): Promise<AffectedTables> {
+    const content = await driveService!.getFileContent(file.id);
     const decompressed = gunzipSync(content);
 
     const tmpPath = join(app.getPath('temp'), `wmb-snapshot-${Date.now()}.sqlite`);
     writeFileSync(tmpPath, decompressed);
 
     try {
-        return applySnapshot(tmpPath);
+        const tables = applySnapshot(tmpPath);
+        log.debug(`Snapshot applied successfully: ${file.name}`);
+        return tables;
     } finally {
         try {
             unlinkSync(tmpPath);
@@ -213,30 +271,60 @@ async function applyRemoteSnapshot(snapshot: DriveFile): Promise<string[]> {
     }
 }
 
+async function applyRemoteChangeLogFile(file: DriveFile): Promise<AffectedTables> {
+    const content = await driveService!.getFileContent(file.id);
+    const change = JSON.parse(content.toString('utf-8'));
+    const tables = applyChangeLog(change);
+    log.debug(`Change log applied successfully: ${file.name}`);
+    return tables;
+}
+
 // -----------------------------------------------------------------------
 // Push: upload local changes
 // -----------------------------------------------------------------------
 
+/**
+ * Upload local unsynced changes to Drive.
+ * Runs concurrently for better performance.
+ * Uses markSyncedIfNotChanged to avoid marking a change as synced
+ * if the user modified it during the upload.
+ */
 async function syncChangesToDrive(): Promise<void> {
     if (!driveService) return;
 
     const unsynced = getUnsyncedChanges();
-    for (const change of unsynced) {
-        try {
-            // Delete old version of this change from Drive
-            const deletedFiles = await driveService.deleteChangeLog(change.changeId);
-            for (const file of deletedFiles) {
-                deleteProcessedChange(file.id);
-            }
+    if (unsynced.length === 0) return;
 
-            // Upload new version
-            const uploaded = await driveService.uploadChangeLog(change);
-            saveProcessedChange(uploaded.id);
-            markSynced(change.id);
-        } catch (err) {
-            log.warn(`Failed to upload change ${change.changeId}:`, err);
-            break; // Stop on first failure to maintain order
-        }
+    const drive = driveService;
+
+    const CONCURRENCY = 20;
+    for (let i = 0; i < unsynced.length; i += CONCURRENCY) {
+        const batch = unsynced.slice(i, i + CONCURRENCY);
+        await Promise.all(
+            batch.map(async (change) => {
+                // Delete old version from Drive — isolated error handling
+                // (delete error doesn't prevent upload)
+                try {
+                    const deletedFiles = await drive.deleteChangeLog(change.changeId);
+                    if (deletedFiles.length > 0) {
+                        for (const file of deletedFiles) {
+                            deleteProcessedChange(file.id);
+                        }
+                    }
+                } catch (err) {
+                    log.warn(`Failed to delete old change ${change.changeId}:`, err);
+                }
+
+                // Upload new version
+                try {
+                    const uploaded = await drive.uploadChangeLog(change);
+                    saveProcessedChange(uploaded.id);
+                    markSyncedIfNotChanged(change);
+                } catch (err) {
+                    log.warn(`Failed to upload change ${change.changeId}:`, err);
+                }
+            }),
+        );
     }
 }
 
@@ -262,38 +350,45 @@ async function createDbSnapshotIfNeeded(): Promise<void> {
 
     // Don't snapshot if there are pending remote changes
     const timeOffset = getLastSyncTimeOffset();
-    const pendingRemote = await driveService.getChangesAfterTimeOffset(timeOffset);
+    const pendingRemote = await driveService.getChangeFilesAfterTimeOffset(timeOffset);
     if (pendingRemote.length > 0) return;
 
+    const mainDb = getMainSqlite();
+
+    // Checkpoint WAL to ensure all data is in the main file
+    mainDb.pragma('wal_checkpoint(TRUNCATE)');
+
+    const dbContent = readFileSync(mainDb.name);
+    const compressed = gzipSync(dbContent);
+
+    const newSnapshot = await driveService.saveSnapshot(compressed);
+    lastSnapshotTime = now;
+
+    // Record snapshot in sync state
+    updateSyncTimeOffset(newSnapshot.createdTime);
+    saveProcessedChange(newSnapshot.id);
+
+    // Prune everything older than 1 second before the snapshot
+    const pruneTime = new Date(new Date(newSnapshot.createdTime).getTime() - 1000).toISOString();
+
     try {
-        const mainDb = getMainSqlite();
-
-        // Checkpoint WAL to ensure all data is in the main file
-        mainDb.pragma('wal_checkpoint(TRUNCATE)');
-
-        const dbContent = readFileSync(mainDb.name);
-        const compressed = gzipSync(dbContent);
-
-        const newSnapshot = await driveService.saveSnapshot(compressed);
-        lastSnapshotTime = now;
-
-        // Record snapshot in sync state
-        updateSyncTimeOffset(newSnapshot.createdTime);
-        saveProcessedChange(newSnapshot.id);
-
-        // Cleanup old data
-        const pruneTime = new Date(
-            new Date(newSnapshot.createdTime).getTime() - 1000,
-        ).toISOString();
-        deleteOldChangeLogs(pruneTime);
         await driveService.pruneOldChanges(pruneTime);
-        await driveService.pruneOldSnapshots(2);
-        cleanupOldSyncRecords(pruneTime);
-
-        log.info('Database snapshot created and old data pruned');
     } catch (err) {
-        log.warn('Failed to create snapshot:', err);
+        log.warn('Failed to prune old changes, retrying...', err);
+        // Retry once after a short delay
+        await new Promise((r) => setTimeout(r, 5000));
+        try {
+            await driveService.pruneOldChanges(pruneTime);
+        } catch {
+            // Give up on pruning this cycle
+        }
     }
+
+    // Cleanup local sync records
+    deleteOldChangeLogs(pruneTime);
+    cleanupOldSyncRecords(pruneTime);
+
+    log.info('Database snapshot created and old data pruned');
 }
 
 // -----------------------------------------------------------------------
@@ -303,19 +398,22 @@ async function createDbSnapshotIfNeeded(): Promise<void> {
 function getLastSyncTimeOffset(): string {
     const db = getSyncDb();
     const row = db.select().from(syncState).get();
-    return row?.syncTimeOffset ?? new Date(0).toISOString();
+    return row?.syncTimeOffset ?? DEFAULT_TIME_OFFSET;
 }
 
+/**
+ * Update the sync time offset.
+ * Guards against zero/invalid times being stored.
+ */
 function updateSyncTimeOffset(offset: string): void {
+    // Guard against invalid/zero times
+    const safeOffset = !offset || offset < DEFAULT_TIME_OFFSET ? DEFAULT_TIME_OFFSET : offset;
+
     const db = getSyncDb();
-    const existing = db.select().from(syncState).get();
-    if (existing) {
-        db.update(syncState)
-            .set({ syncTimeOffset: offset })
-            .where(eq(syncState.id, existing.id))
-            .run();
-    } else {
-        db.insert(syncState).values({ syncTimeOffset: offset }).run();
+    // Single-row table: try update first, insert if no rows exist
+    const result = db.update(syncState).set({ syncTimeOffset: safeOffset }).run();
+    if (result.changes === 0) {
+        db.insert(syncState).values({ syncTimeOffset: safeOffset }).run();
     }
 }
 
@@ -325,24 +423,32 @@ function getFailureCount(fileId: string): number {
     return row?.count ?? 0;
 }
 
-function incrementFailure(fileId: string): void {
-    const db = getSyncDb();
-    const existing = db.select().from(applyFailures).where(eq(applyFailures.fileId, fileId)).get();
-    if (existing) {
-        db.update(applyFailures)
-            .set({ count: existing.count + 1 })
-            .where(eq(applyFailures.id, existing.id))
-            .run();
-    } else {
-        db.insert(applyFailures).values({ fileId, count: 1 }).run();
-    }
+/**
+ * Save (upsert) the failure count for a file.
+ * Sets count to exact value rather than incrementing
+ * (allows reset to 0 on success).
+ */
+function saveFailureCount(fileId: string, count: number): void {
+    getSyncDb()
+        .insert(applyFailures)
+        .values({ fileId, count })
+        .onConflictDoUpdate({
+            target: applyFailures.fileId,
+            set: { count },
+        })
+        .run();
 }
 
-function notifyRenderer(affectedTables: string[]): void {
+function isAlreadyProcessed(fileId: string): boolean {
+    const db = getSyncDb();
+    return !!db.select().from(processedChanges).where(eq(processedChanges.fileId, fileId)).get();
+}
+
+function notifyRenderer(tableNames: string[]): void {
     try {
         const win = getMainWindow();
         if (win && !win.isDestroyed()) {
-            win.webContents.send(PushChannels.newSynchronizedDatas, affectedTables);
+            win.webContents.send(PushChannels.newSynchronizedDatas, tableNames);
         }
     } catch {
         // Window may not exist yet
@@ -350,7 +456,7 @@ function notifyRenderer(affectedTables: string[]): void {
 }
 
 // -----------------------------------------------------------------------
-// Processed changes & failure helpers
+// Processed changes & cleanup helpers
 // -----------------------------------------------------------------------
 
 function saveProcessedChange(fileId: string): void {
@@ -359,10 +465,6 @@ function saveProcessedChange(fileId: string): void {
 
 function deleteProcessedChange(fileId: string): void {
     getSyncDb().delete(processedChanges).where(eq(processedChanges.fileId, fileId)).run();
-}
-
-function resetFailureCount(fileId: string): void {
-    getSyncDb().delete(applyFailures).where(eq(applyFailures.fileId, fileId)).run();
 }
 
 function cleanupOldSyncRecords(before: string): void {

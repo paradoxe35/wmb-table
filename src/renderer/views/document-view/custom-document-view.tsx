@@ -8,7 +8,7 @@ import {
     selectActiveTabTitle,
     selectActiveTabKey,
 } from '@renderer/stores';
-import { simpleRegExp } from '@renderer/utils/searchable';
+import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
 import type { CustomDocumentContent } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
@@ -23,7 +23,7 @@ export default function CustomDocumentView() {
     const { zoom } = useScrollAndZoom(containerRef);
     const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
     const [loading, setLoading] = useState(false);
-    const searchTerm = useSearchHighlight();
+    const search = useSearchHighlight();
     const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
@@ -59,11 +59,11 @@ export default function CustomDocumentView() {
         [docContent?.content],
     );
 
-    const { matchOffsets } = useMatchNavigation(searchTerm, paragraphs);
+    const { matchOffsets } = useMatchNavigation(search, paragraphs);
 
     const renderParagraph = useCallback(
         (text: string, i: number) => {
-            if (!searchTerm) {
+            if (!search) {
                 return (
                     <p key={i} data-paragraph-index={i} className="sermon-paragraph">
                         {text}
@@ -71,9 +71,8 @@ export default function CustomDocumentView() {
                 );
             }
 
-            const regex = simpleRegExp(searchTerm);
-            const parts = text.split(regex);
-            if (parts.length <= 1) {
+            const regex = buildHighlightRegex(search.term, search.mode);
+            if (!regex) {
                 return (
                     <p key={i} data-paragraph-index={i} className="sermon-paragraph">
                         {text}
@@ -81,25 +80,37 @@ export default function CustomDocumentView() {
                 );
             }
 
-            const matches = text.match(regex) || [];
+            const normalized = strNormalizeNoLower(text);
+            const matches = [...normalized.matchAll(regex)];
+            if (matches.length === 0) {
+                return (
+                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
+                        {text}
+                    </p>
+                );
+            }
+
             const result: (string | React.ReactElement)[] = [];
             const offset = matchOffsets[i] ?? 0;
-            parts.forEach((part, j) => {
-                result.push(part);
-                if (j < matches.length) {
-                    const globalIdx = offset + j;
-                    const isCurrent = globalIdx === currentMatchIndex;
-                    result.push(
-                        <mark
-                            key={j}
-                            data-match-index={globalIdx}
-                            className={isCurrent ? 'mark-current' : undefined}
-                        >
-                            {matches[j]}
-                        </mark>,
-                    );
-                }
+            let lastIdx = 0;
+            matches.forEach((m, j) => {
+                const start = m.index!;
+                const end = start + m[0].length;
+                if (start > lastIdx) result.push(text.slice(lastIdx, start));
+                const globalIdx = offset + j;
+                const isCurrent = globalIdx === currentMatchIndex;
+                result.push(
+                    <mark
+                        key={j}
+                        data-match-index={globalIdx}
+                        className={isCurrent ? 'mark-current' : undefined}
+                    >
+                        {text.slice(start, end)}
+                    </mark>,
+                );
+                lastIdx = end;
             });
+            if (lastIdx < text.length) result.push(text.slice(lastIdx));
 
             return (
                 <p key={i} data-paragraph-index={i} className="sermon-paragraph">
@@ -107,7 +118,7 @@ export default function CustomDocumentView() {
                 </p>
             );
         },
-        [searchTerm, matchOffsets, currentMatchIndex],
+        [search, matchOffsets, currentMatchIndex],
     );
 
     return (

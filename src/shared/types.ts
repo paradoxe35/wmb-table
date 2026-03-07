@@ -125,6 +125,8 @@ export function isParagraphReference(
 // Search
 // ---------------------------------------------------------------------------
 
+export type SearchMode = 'exact' | 'all' | 'any';
+
 export type SearchMatchersValue = {
     term: string;
     index?: number;
@@ -139,6 +141,7 @@ export interface Suggestions extends Readonly<BaseEntity> {
 
 export type DocumentViewQuery = {
     term: string;
+    mode: SearchMode;
     documentTitle: string;
     textContentLength: number;
     searchForParagraph?: boolean;

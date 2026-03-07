@@ -372,7 +372,6 @@ function getMatchingParagraphs(
     queryText: string,
     translationId: number,
     sermonDate: number,
-    maxSnippets: number = 5,
 ): MatchingParagraphSnippet[] {
     const index = getIndex(langCode);
     const schema = index.schema;
@@ -404,19 +403,37 @@ function getMatchingParagraphs(
     // Sort by paragraphIndex
     const sorted = Array.from(paragraphMap.entries()).sort((a, b) => a[0] - b[0]);
 
-    // Build snippets
-    const generator = SnippetGenerator.create(searcher, textQuery, schema, 'unstemmed_content');
-    generator.setMaxNumChars(400);
+    // Collect all lines for matching paragraphs.
+    // paragraph_index is not indexed so we query all sermon lines and filter in-memory.
+    const matchingIndices = new Set(sorted.map(([idx]) => idx));
 
-    const snippets: MatchingParagraphSnippet[] = [];
-    for (const [paragraphIndex, { docAddress }] of sorted) {
-        if (snippets.length >= maxSnippets) break;
-        const doc = searcher.doc(docAddress);
-        const snippet = generator.snippetFromDoc(doc);
-        const html = snippet.toHtml();
-        if (html) {
-            snippets.push({ paragraphIndex, snippet: html });
+    const allLinesQuery = Query.booleanQuery([
+        { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
+        { occur: 'must', query: Query.termQuery(schema, 'sermon_date', sermonDate) },
+    ]);
+    const allResult = searcher.search(allLinesQuery, 100000, false, 'line_index', 0, ORDER_ASC);
+
+    const allLines = new Map<number, string[]>();
+    for (const hit of allResult.hits) {
+        const doc = searcher.doc(hit.docAddress);
+        const dict = doc.toDict() as Record<string, unknown[]>;
+        const pIdx = extractNumeric(dict, 'paragraph_index');
+        if (!matchingIndices.has(pIdx)) continue;
+        const content = extractString(dict, 'unstemmed_content');
+        let lines = allLines.get(pIdx);
+        if (!lines) {
+            lines = [];
+            allLines.set(pIdx, lines);
         }
+        lines.push(content);
+    }
+
+    // Build full paragraph content for matching paragraphs
+    const snippets: MatchingParagraphSnippet[] = [];
+    for (const [paragraphIndex] of sorted) {
+        const lines = allLines.get(paragraphIndex);
+        if (!lines || lines.length === 0) continue;
+        snippets.push({ paragraphIndex, snippet: lines.join('\n') });
     }
 
     return snippets;

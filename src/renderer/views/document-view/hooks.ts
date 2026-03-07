@@ -10,10 +10,11 @@ import {
     selectActiveTab,
 } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
-import { simpleRegExp } from '@renderer/utils/searchable';
+import { buildHighlightRegex, strNormalizeNoLower } from '@renderer/utils/searchable';
 import {
     type SermonContent as SermonContentType,
     type ParagraphReference,
+    type SearchMode,
     isParagraphReference,
 } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
@@ -95,14 +96,15 @@ export function useScrollAndZoom(containerRef: React.RefObject<HTMLDivElement | 
     return { zoom };
 }
 
-export function useSearchHighlight(): string | null {
+export function useSearchHighlight(): { term: string; mode: SearchMode } | null {
     const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
     const activeTitle = useSermonStore(selectActiveTabTitle);
 
     return useMemo(() => {
         if (!activeTitle) return null;
         const query = documentViewQueries.find((q) => q.documentTitle === activeTitle);
-        return query?.term ?? null;
+        if (!query?.term) return null;
+        return { term: query.term, mode: query.mode };
     }, [documentViewQueries, activeTitle]);
 }
 
@@ -124,16 +126,27 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
             : undefined;
         if (paragraphIndex == null) return;
 
-        const el = containerRef.current.querySelector(`[data-paragraph-index="${paragraphIndex}"]`);
-        if (!el) return; // content not loaded yet — wait for next render
+        const tryScroll = () => {
+            const el = containerRef.current?.querySelector(
+                `[data-paragraph-index="${paragraphIndex}"]`,
+            );
+            if (!el) return false;
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.classList.add('paragraph-highlight-blink');
+            const cleanup = () => el.classList.remove('paragraph-highlight-blink');
+            el.addEventListener('animationend', cleanup, { once: true });
+            setTimeout(cleanup, 2500);
+            return true;
+        };
 
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('paragraph-highlight-blink');
-        const cleanup = () => el.classList.remove('paragraph-highlight-blink');
-        el.addEventListener('animationend', cleanup, { once: true });
-        // Fallback removal in case animation doesn't fire
-        setTimeout(cleanup, 2500);
-
+        // Try immediately, then retry after a short delay for content that's still rendering
+        if (!tryScroll()) {
+            const timer = setTimeout(() => {
+                tryScroll();
+                setPendingNavigation(null);
+            }, 300);
+            return () => clearTimeout(timer);
+        }
         setPendingNavigation(null);
     }, [pendingNavigation, activeTitle, activeContent, setPendingNavigation]);
 }
@@ -230,23 +243,28 @@ export function useContextMenuItems(
     }, [content]);
 }
 
-export function useMatchNavigation(searchTerm: string | null, paragraphs: string[]) {
+export function useMatchNavigation(
+    search: { term: string; mode: SearchMode } | null,
+    paragraphs: string[],
+) {
     const setTotalMatches = useSearchStore((s) => s.setTotalMatches);
     const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
 
     const { matchOffsets, total } = useMemo(() => {
-        if (!searchTerm) return { matchOffsets: [] as number[], total: 0 };
-        const regex = simpleRegExp(searchTerm);
+        if (!search) return { matchOffsets: [] as number[], total: 0 };
+        const regex = buildHighlightRegex(search.term, search.mode);
+        if (!regex) return { matchOffsets: [] as number[], total: 0 };
         let cumulative = 0;
         const offsets: number[] = [];
         for (const text of paragraphs) {
             offsets.push(cumulative);
-            const matches = text.match(regex);
-            cumulative += matches?.length ?? 0;
+            regex.lastIndex = 0;
+            const matches = [...strNormalizeNoLower(text).matchAll(regex)];
+            cumulative += matches.length;
         }
         return { matchOffsets: offsets, total: cumulative };
-    }, [searchTerm, paragraphs]);
+    }, [search, paragraphs]);
 
     useEffect(() => {
         setTotalMatches(total);

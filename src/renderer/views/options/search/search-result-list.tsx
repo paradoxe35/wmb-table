@@ -34,8 +34,9 @@ export default memo(function SearchResultList({
             {results && (
                 <div className="mt-2 flex flex-center">
                     <Text type="secondary">
-                        Trouvé dans {results.total} document{results.total > 1 ? 's' : ''}
-                        {totalPages > 1 ? `, page (${currentPage}/${totalPages})` : ''}
+                        {results.hits.length > 0
+                            ? `Trouvé dans ${results.hits.length} document${results.hits.length > 1 ? 's' : ''}${totalPages > 1 ? `, page (${currentPage}/${totalPages})` : ''}`
+                            : 'Aucun résultat trouvé'}
                     </Text>
                 </div>
             )}

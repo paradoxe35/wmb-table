@@ -203,7 +203,10 @@ export interface InvokeChannelMap {
     // Search
     [SearchChannels.getSuggestions]: { args: [string]; return: Suggestions[] };
     [SearchChannels.addSuggestion]: { args: [string, number, string]; return: Suggestions };
-    [SearchChannels.searchText]: { args: [string, string, number]; return: TantivySearchResult };
+    [SearchChannels.searchText]: {
+        args: [string, string, number, import('./types').SearchMode];
+        return: TantivySearchResult;
+    };
     [SearchChannels.searchContent]: {
         args: [string, string, number];
         return: string;

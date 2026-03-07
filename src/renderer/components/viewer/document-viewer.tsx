@@ -6,9 +6,14 @@ export const useDocumentViewOpen = () => {
     const openDocument = useOpenDocument();
     const sermonsById = useSermonStore((s) => s.sermonsById);
 
-    const onClick = (name: string, onItemClick?: () => void, sermonId?: string) => {
+    const onClick = (
+        name: string,
+        onItemClick?: () => void,
+        sermonId?: string,
+        translationId?: number,
+    ) => {
         const id = sermonId ?? sermonsById[name]?.sermonId ?? '';
-        openDocument(name, id);
+        openDocument(name, id, translationId);
         onItemClick?.();
     };
 
@@ -18,12 +23,17 @@ export const useDocumentViewOpen = () => {
 const DocumentViewer: React.FC<{
     name: string;
     sermonId?: string;
+    translationId?: number;
     onItemClick?: () => void;
     children?: React.ReactNode;
-}> = ({ children, name, sermonId, onItemClick }) => {
+}> = ({ children, name, sermonId, translationId, onItemClick }) => {
     const viewDocument = useDocumentViewOpen();
 
-    return <span onClick={() => viewDocument(name, onItemClick, sermonId)}>{children}</span>;
+    return (
+        <span onClick={() => viewDocument(name, onItemClick, sermonId, translationId)}>
+            {children}
+        </span>
+    );
 };
 
 export default DocumentViewer;

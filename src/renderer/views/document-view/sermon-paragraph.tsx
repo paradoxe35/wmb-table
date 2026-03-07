@@ -1,43 +1,48 @@
 import React, { memo } from 'react';
-import { simpleRegExp } from '@renderer/utils/searchable';
-import type { SermonParagraph as SermonParagraphType } from '@shared/types';
+import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
+import type { SermonParagraph as SermonParagraphType, SearchMode } from '@shared/types';
 
 const SermonParagraphView = memo(function SermonParagraphView({
     paragraph,
-    searchTerm,
+    search,
     currentMatchIndex,
     matchOffset,
 }: {
     paragraph: SermonParagraphType;
-    searchTerm: string | null;
+    search: { term: string; mode: SearchMode } | null;
     currentMatchIndex: number;
     matchOffset: number;
 }) {
     const renderContent = () => {
-        if (!searchTerm) return paragraph.content;
+        if (!search) return paragraph.content;
 
-        const regex = simpleRegExp(searchTerm);
-        const parts = paragraph.content.split(regex);
-        if (parts.length <= 1) return paragraph.content;
+        const regex = buildHighlightRegex(search.term, search.mode);
+        if (!regex) return paragraph.content;
 
-        const matches = paragraph.content.match(regex) || [];
+        const normalized = strNormalizeNoLower(paragraph.content);
+        const matches = [...normalized.matchAll(regex)];
+        if (matches.length === 0) return paragraph.content;
+
         const result: (string | React.ReactElement)[] = [];
-        parts.forEach((part, i) => {
-            result.push(part);
-            if (i < matches.length) {
-                const globalIdx = matchOffset + i;
-                const isCurrent = globalIdx === currentMatchIndex;
-                result.push(
-                    <mark
-                        key={i}
-                        data-match-index={globalIdx}
-                        className={isCurrent ? 'mark-current' : undefined}
-                    >
-                        {matches[i]}
-                    </mark>,
-                );
-            }
+        let lastIndex = 0;
+        matches.forEach((m, i) => {
+            const start = m.index!;
+            const end = start + m[0].length;
+            if (start > lastIndex) result.push(paragraph.content.slice(lastIndex, start));
+            const globalIdx = matchOffset + i;
+            const isCurrent = globalIdx === currentMatchIndex;
+            result.push(
+                <mark
+                    key={i}
+                    data-match-index={globalIdx}
+                    className={isCurrent ? 'mark-current' : undefined}
+                >
+                    {paragraph.content.slice(start, end)}
+                </mark>,
+            );
+            lastIndex = end;
         });
+        if (lastIndex < paragraph.content.length) result.push(paragraph.content.slice(lastIndex));
         return result;
     };
 

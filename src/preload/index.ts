@@ -77,8 +77,8 @@ const api = {
         getSuggestions: (langCode: string) => invoke(SearchChannels.getSuggestions, langCode),
         addSuggestion: (text: string, found: number, langCode: string) =>
             invoke(SearchChannels.addSuggestion, text, found, langCode),
-        searchText: (langCode: string, query: string, page: number) =>
-            invoke(SearchChannels.searchText, langCode, query, page),
+        searchText: (langCode: string, query: string, page: number, mode?: string) =>
+            invoke(SearchChannels.searchText, langCode, query, page, mode ?? 'any'),
         searchContent: (langCode: string, query: string, translationId: number) =>
             invoke(SearchChannels.searchContent, langCode, query, translationId),
     },

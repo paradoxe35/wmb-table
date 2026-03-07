@@ -20,7 +20,7 @@ export default function SermonDocumentView() {
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const { zoom } = useScrollAndZoom(containerRef);
-    const searchTerm = useSearchHighlight();
+    const search = useSearchHighlight();
     const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
     useReferenceNavigation(containerRef);
@@ -39,7 +39,7 @@ export default function SermonDocumentView() {
         [content?.paragraphs],
     );
 
-    const { matchOffsets } = useMatchNavigation(searchTerm, paragraphTexts);
+    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
 
     return (
         <div className="mock-browser-content">
@@ -71,7 +71,7 @@ export default function SermonDocumentView() {
                                 <SermonParagraphView
                                     key={`${p.paragraphIndex}-${i}`}
                                     paragraph={p}
-                                    searchTerm={searchTerm}
+                                    search={search}
                                     currentMatchIndex={currentMatchIndex}
                                     matchOffset={matchOffsets[i] ?? 0}
                                 />

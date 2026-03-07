@@ -57,7 +57,8 @@ export function hasCredentials(): boolean {
 
 /**
  * Try to restore an authenticated OAuth2Client from the saved token.
- * Returns null if no token exists.
+ * Proactively refreshes expired tokens and saves the updated token.
+ * Compares access tokens to detect refresh and persists the new token.
  */
 export async function getExistingClient(): Promise<OAuth2Client | null> {
     const tokenPath = getTokenPath();
@@ -68,6 +69,21 @@ export async function getExistingClient(): Promise<OAuth2Client | null> {
         const client = createOAuth2Client(credentials, 'http://localhost');
         const token = JSON.parse(readFileSync(tokenPath, 'utf-8'));
         client.setCredentials(token);
+
+        // Proactively refresh if needed and save updated token
+        try {
+            const refreshed = await client.getAccessToken();
+            if (refreshed.token && refreshed.token !== token.access_token) {
+                const updatedToken = client.credentials;
+                writeFileSync(tokenPath, JSON.stringify(updatedToken));
+                log.debug('Google auth token refreshed and saved');
+            }
+        } catch {
+            // Offline or refresh failed — return client with existing token.
+            // The scheduler checks connectivity before each sync cycle.
+            log.debug('Token refresh skipped (offline or failed), using saved token');
+        }
+
         return client;
     } catch (err) {
         log.warn('Failed to restore Google auth token:', err);
@@ -76,7 +92,25 @@ export async function getExistingClient(): Promise<OAuth2Client | null> {
 }
 
 /**
+ * Verify that the token includes all required scopes.
+ * Ensures no required scopes were denied by the user.
+ */
+function verifyScopes(scopeString: string | undefined): void {
+    if (!scopeString) {
+        throw new Error('No scopes returned in token response');
+    }
+
+    const grantedScopes = new Set(scopeString.split(' '));
+    const missingScopes = SCOPES.filter((s) => !grantedScopes.has(s));
+
+    if (missingScopes.length > 0) {
+        throw new Error(`Authorization incomplete: missing scopes: ${missingScopes.join(', ')}`);
+    }
+}
+
+/**
  * Full OAuth2 login flow: opens browser, listens for callback, exchanges code.
+ * Includes scope verification after token exchange.
  */
 export async function authenticateWithGoogle(): Promise<{
     client: OAuth2Client;
@@ -110,6 +144,10 @@ export async function authenticateWithGoogle(): Promise<{
 
         // Exchange code for tokens
         const { tokens } = await client.getToken(code);
+
+        // Verify scopes before saving
+        verifyScopes(tokens.scope ?? undefined);
+
         client.setCredentials(tokens);
 
         // Save token for future sessions
@@ -145,6 +183,15 @@ function startAuthServer(): Promise<{
         const server = createServer((req, res) => {
             const url = new URL(req.url ?? '/', `http://localhost`);
             const code = url.searchParams.get('code');
+            const errorParam = url.searchParams.get('error');
+
+            if (errorParam) {
+                res.writeHead(400, { 'Content-Type': 'text/html' });
+                res.end(
+                    '<html><body><h2>Authorization failed. You may close this window.</h2></body></html>',
+                );
+                return;
+            }
 
             if (code) {
                 res.writeHead(200, { 'Content-Type': 'text/html' });

@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
 import type { TantivySearchResult, Suggestions } from '@shared/types';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useSearchStore } from '@renderer/stores';
 import SearchInput from './search-input';
 import SearchResultList from './search-result-list';
-
-const ITEMS_PER_PAGE = 20;
 
 function useSearch() {
     const lastSearch = useRef('');
@@ -13,38 +11,60 @@ function useSearch() {
     const [results, setResults] = useState<TantivySearchResult | null>(null);
     const hasNewResult = useRef(0);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const searchMode = useSearchStore((s) => s.searchMode);
+    const isFirstRender = useRef(true);
 
-    const onSearch = (value: string) => {
-        if (!activeLanguage) return;
-        if (value.trim().length < 3 || lastSearch.current === value) {
+    const fetchResults = useCallback(
+        (term: string, page: number) => {
+            if (!activeLanguage || term.trim().length < 3) return;
+            setLoading(true);
+            window.api.search
+                .searchText(activeLanguage, term.trim(), page, searchMode)
+                .then((datas) => {
+                    hasNewResult.current += 1;
+                    setResults(datas);
+                })
+                .finally(() => setLoading(false));
+        },
+        [activeLanguage, searchMode],
+    );
+
+    const onSearch = useCallback(
+        (value: string) => {
             if (value.trim().length < 3) {
                 message.warning('Votre recherche doit comporter au moins trois caractères');
+                return;
             }
+            if (lastSearch.current === value) return;
+            lastSearch.current = value;
+            fetchResults(value, 1);
+        },
+        [fetchResults],
+    );
+
+    // Re-search when mode changes (skip initial render)
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
             return;
         }
-        lastSearch.current = value;
-        setLoading(true);
-        window.api.search
-            .searchText(activeLanguage, value.trim(), 1)
-            .then((datas) => {
-                hasNewResult.current += 1;
-                setResults(datas);
-            })
-            .finally(() => setLoading(false));
-    };
+        if (lastSearch.current.trim().length >= 3) {
+            fetchResults(lastSearch.current, 1);
+        }
+    }, [searchMode]);
 
     const onPageChange = useCallback(
         (page: number) => {
             if (!activeLanguage) return;
             window.api.search
-                .searchText(activeLanguage, lastSearch.current.trim(), page)
+                .searchText(activeLanguage, lastSearch.current.trim(), page, searchMode)
                 .then((datas) => {
                     const lc = document.querySelector('.search__option__content');
                     lc?.scrollTo({ top: 0, behavior: 'smooth' });
                     setResults(datas);
                 });
         },
-        [activeLanguage],
+        [activeLanguage, searchMode],
     );
 
     return { onSearch, loading, results, onPageChange, lastSearch, hasNewResult };

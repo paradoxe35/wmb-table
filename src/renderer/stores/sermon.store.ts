@@ -31,6 +31,7 @@ interface SermonState {
         sermonId: string,
         type?: 'sermon' | 'custom',
         languageCode?: string,
+        translationId?: number,
     ): void;
     removeTab(key: string): void;
     activateTab(key: string): void;
@@ -71,7 +72,7 @@ export const useSermonStore = create<SermonState>((set) => ({
     setPendingNavigation: (nav) => set({ pendingNavigation: nav }),
     setTabs: (tabs) => set({ tabs }),
 
-    addTab: (title, sermonId, type, languageCode) =>
+    addTab: (title, sermonId, type, languageCode, translationId) =>
         set((s) => {
             const tabType = type ?? 'sermon';
             const exists = s.tabs.some(
@@ -79,19 +80,23 @@ export const useSermonStore = create<SermonState>((set) => ({
             );
             if (exists) {
                 return {
-                    tabs: s.tabs.map((t) => ({
-                        ...t,
-                        active: tabMatches(t, title, sermonId) && (t.type ?? 'sermon') === tabType,
-                    })),
+                    tabs: s.tabs.map((t) => {
+                        const isMatch =
+                            tabMatches(t, title, sermonId) && (t.type ?? 'sermon') === tabType;
+                        return {
+                            ...t,
+                            active: isMatch,
+                            ...(isMatch && translationId != null ? { translationId } : {}),
+                        };
+                    }),
                 };
             }
 
             const deactivated = s.tabs.map((t) => ({ ...t, active: false }));
 
             const newTab: DocumentTab = { title, active: true, type: tabType, sermonId };
-            if (languageCode) {
-                newTab.languageCode = languageCode;
-            }
+            if (languageCode) newTab.languageCode = languageCode;
+            if (translationId != null) newTab.translationId = translationId;
 
             const newTabs = [...deactivated, newTab];
 
