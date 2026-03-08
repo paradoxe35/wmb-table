@@ -122,6 +122,7 @@
                 "to": "credentials/google"
             }
         ],
+        "afterPack": "scripts/afterPack.cjs",
         "mac": {
             "type": "distribution",
             "hardenedRuntime": true,
