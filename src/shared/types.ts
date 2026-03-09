@@ -259,7 +259,14 @@ export interface SubjectDocument extends Readonly<BaseEntity> {
 // Highlights
 // ---------------------------------------------------------------------------
 
+export interface HighlightParagraphRange {
+    paragraphIndex: number;
+    startOffset: number;
+    endOffset: number;
+}
+
 export interface HighlightItem extends Readonly<BaseEntity> {
+    groupId: string;
     documentTitle: string;
     sermonId: string;
     paragraphIndex: number;

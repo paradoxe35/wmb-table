@@ -35,6 +35,8 @@ import type {
     TantivySearchResult,
     LanguageDownloadProgress,
     SyncStatus,
+    DocumentType,
+    HighlightParagraphRange,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -301,18 +303,16 @@ export interface InvokeChannelMap {
             {
                 documentTitle: string;
                 sermonId: string;
-                paragraphIndex: number;
-                startOffset: number;
-                endOffset: number;
+                paragraphs: HighlightParagraphRange[];
                 textSnippet: string;
                 color: string;
                 comment?: string;
-                documentType: 'sermon' | 'custom';
+                documentType: DocumentType;
                 translationId: number;
                 languageCode: string;
             },
         ];
-        return: HighlightItem;
+        return: HighlightItem[];
     };
     [HighlightChannels.update]: {
         args: [string, { color?: string; comment?: string }];

@@ -17,10 +17,15 @@ import {
     type ParagraphReference,
     type SearchMode,
     type HighlightItem,
+    type HighlightParagraphRange,
     type DocumentType,
     isParagraphReference,
 } from '@shared/types';
-import { CHILD_PARENT_WINDOW_EVENT, HIGHLIGHT_EVENT } from '@renderer/utils/events';
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    DOCUMENT_CONTAINER_ID,
+    HIGHLIGHT_EVENT,
+} from '@renderer/utils/events';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
 
 // ---------------------------------------------------------------------------
@@ -190,23 +195,65 @@ export function useContextMenuItems(
             };
         };
 
-        const getSelectionOffsets = (): {
-            paragraphIndex: number;
-            startOffset: number;
-            endOffset: number;
-        } | null => {
+        const getSelectionParagraphs = (): HighlightParagraphRange[] | null => {
             const sel = window.getSelection();
             if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
             const range = sel.getRangeAt(0);
-            const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
-            if (!anchor) return null;
-            const paragraphIndex = parseInt(anchor.getAttribute('data-paragraph-index')!);
-            const preRange = document.createRange();
-            preRange.selectNodeContents(anchor);
-            preRange.setEnd(range.startContainer, range.startOffset);
-            const startOffset = preRange.toString().length;
-            const endOffset = startOffset + sel.toString().length;
-            return { paragraphIndex, startOffset, endOffset };
+
+            // Find all paragraph elements that intersect the selection
+            const container = document.getElementById(DOCUMENT_CONTAINER_ID);
+            if (!container) return null;
+            const allParagraphs = Array.from(container.querySelectorAll('[data-paragraph-index]'));
+
+            const result: HighlightParagraphRange[] = [];
+
+            for (const pEl of allParagraphs) {
+                if (!range.intersectsNode(pEl)) continue;
+                const contentEl = pEl.querySelector('.paragraph-content') ?? pEl;
+                const paragraphIndex = parseInt(pEl.getAttribute('data-paragraph-index')!);
+                const pContent = content?.paragraphs.find(
+                    (p) => p.paragraphIndex === paragraphIndex,
+                );
+                const contentLength =
+                    pContent?.content.length ?? contentEl.textContent?.length ?? 0;
+
+                // Compute start offset within this paragraph
+                let startOffset = 0;
+                if (
+                    range.compareBoundaryPoints(
+                        Range.START_TO_START,
+                        (() => {
+                            const r = document.createRange();
+                            r.selectNodeContents(contentEl);
+                            return r;
+                        })(),
+                    ) > 0
+                ) {
+                    // Selection starts inside or after this paragraph's content
+                    const preRange = document.createRange();
+                    preRange.selectNodeContents(contentEl);
+                    preRange.setEnd(range.startContainer, range.startOffset);
+                    startOffset = preRange.toString().length;
+                }
+
+                // Compute end offset within this paragraph
+                let endOffset = contentLength;
+                const pRange = document.createRange();
+                pRange.selectNodeContents(contentEl);
+                if (range.compareBoundaryPoints(Range.END_TO_END, pRange) < 0) {
+                    // Selection ends inside this paragraph
+                    const preRange = document.createRange();
+                    preRange.selectNodeContents(contentEl);
+                    preRange.setEnd(range.endContainer, range.endOffset);
+                    endOffset = preRange.toString().length;
+                }
+
+                if (endOffset > startOffset) {
+                    result.push({ paragraphIndex, startOffset, endOffset });
+                }
+            }
+
+            return result.length > 0 ? result : null;
         };
 
         /** For bible views, find the BibleBook matching the verse (paragraph index) */
@@ -242,17 +289,15 @@ export function useContextMenuItems(
                         message.warning('Sélectionnez du texte à souligner');
                         return;
                     }
-                    const offsets = getSelectionOffsets();
+                    const paragraphs = getSelectionParagraphs();
                     const result = getRef();
-                    if (!offsets || !result) return;
+                    if (!paragraphs || !result) return;
                     window.dispatchEvent(
                         new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openHighlightModal, {
                             detail: {
                                 documentTitle: content.meta.title,
                                 sermonId: content.meta.sermonId,
-                                paragraphIndex: offsets.paragraphIndex,
-                                startOffset: offsets.startOffset,
-                                endOffset: offsets.endOffset,
+                                paragraphs,
                                 textSnippet: result.text.slice(0, 200),
                                 translationId: content.meta.translationId,
                                 languageCode: content.meta.languageCode,

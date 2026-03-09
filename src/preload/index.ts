@@ -23,6 +23,8 @@ import type {
     BookRequest,
     DocumentHtmlTree,
     DocumentTab,
+    DocumentType,
+    HighlightParagraphRange,
     LanguageDownloadProgress,
     ParagraphReference,
     RestoreProgressEvent,
@@ -164,13 +166,11 @@ const api = {
         create: (data: {
             documentTitle: string;
             sermonId: string;
-            paragraphIndex: number;
-            startOffset: number;
-            endOffset: number;
+            paragraphs: HighlightParagraphRange[];
             textSnippet: string;
             color: string;
             comment?: string;
-            documentType: 'sermon' | 'custom';
+            documentType: DocumentType;
             translationId: number;
             languageCode: string;
         }) => invoke(HighlightChannels.create, data),

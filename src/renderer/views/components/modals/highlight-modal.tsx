@@ -2,26 +2,31 @@ import { Button, Input, Modal, Space, message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useModalVisible } from '@renderer/hooks';
 import { CHILD_PARENT_WINDOW_EVENT, HIGHLIGHT_EVENT } from '@renderer/utils/events';
+import type { DocumentType, HighlightParagraphRange } from '@shared/types';
 
 const PRESET_COLORS = [
     { label: 'Jaune', value: '#FFFF00' },
-    { label: 'Vert', value: '#90EE90' },
-    { label: 'Bleu', value: '#87CEEB' },
+    { label: 'Vert clair', value: '#90EE90' },
+    { label: 'Bleu ciel', value: '#87CEEB' },
     { label: 'Rose', value: '#FFB6C1' },
     { label: 'Orange', value: '#FFD700' },
     { label: 'Violet', value: '#DDA0DD' },
+    { label: 'Menthe', value: '#98FFD6' },
+    { label: 'Pêche', value: '#FFDAB9' },
+    { label: 'Lavande', value: '#E6E6FA' },
+    { label: 'Corail', value: '#FF7F7F' },
+    { label: 'Cyan', value: '#B0E0E6' },
+    { label: 'Lime', value: '#D4FF00' },
 ];
 
 interface HighlightModalData {
     documentTitle: string;
     sermonId: string;
-    paragraphIndex: number;
-    startOffset: number;
-    endOffset: number;
+    paragraphs: HighlightParagraphRange[];
     textSnippet: string;
     translationId: number;
     languageCode: string;
-    documentType: 'sermon' | 'custom';
+    documentType: DocumentType;
 }
 
 export default function HighlightModal() {
@@ -52,9 +57,7 @@ export default function HighlightModal() {
             await window.api.highlights.create({
                 documentTitle: data.documentTitle,
                 sermonId: data.sermonId,
-                paragraphIndex: data.paragraphIndex,
-                startOffset: data.startOffset,
-                endOffset: data.endOffset,
+                paragraphs: data.paragraphs,
                 textSnippet: data.textSnippet,
                 color,
                 comment: comment || undefined,
@@ -103,7 +106,7 @@ export default function HighlightModal() {
             </div>
             <div style={{ marginBottom: 16 }}>
                 <div style={{ marginBottom: 6, fontWeight: 500 }}>Couleur</div>
-                <Space size="small">
+                <Space size="small" wrap>
                     {PRESET_COLORS.map((c) => (
                         <div
                             key={c.value}
@@ -115,9 +118,9 @@ export default function HighlightModal() {
                                 borderRadius: '50%',
                                 backgroundColor: c.value,
                                 cursor: 'pointer',
-                                border:
-                                    color === c.value ? '3px solid #1677ff' : '2px solid #d9d9d9',
-                                transition: 'border 0.2s',
+                                border: '2px solid #d9d9d9',
+                                boxShadow: color === c.value ? '0 0 0 2px #1677ff' : 'none',
+                                transition: 'box-shadow 0.2s',
                             }}
                         />
                     ))}

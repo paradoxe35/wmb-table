@@ -57,6 +57,24 @@ CREATE TABLE `custom_documents` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `custom_documents_title_unique` ON `custom_documents` (`title`);--> statement-breakpoint
+CREATE TABLE `highlights` (
+	`id` text PRIMARY KEY NOT NULL,
+	`group_id` text DEFAULT '' NOT NULL,
+	`document_title` text NOT NULL,
+	`sermon_id` text DEFAULT '' NOT NULL,
+	`paragraph_index` integer NOT NULL,
+	`start_offset` integer NOT NULL,
+	`end_offset` integer NOT NULL,
+	`text_snippet` text NOT NULL,
+	`color` text DEFAULT '#FFFF00' NOT NULL,
+	`comment` text,
+	`document_type` text DEFAULT 'sermon' NOT NULL,
+	`translation_id` integer DEFAULT 0 NOT NULL,
+	`language_code` text DEFAULT '' NOT NULL,
+	`created_at` text DEFAULT (datetime('now')),
+	`updated_at` text DEFAULT (datetime('now'))
+);
+--> statement-breakpoint
 CREATE TABLE `history` (
 	`id` text PRIMARY KEY NOT NULL,
 	`date` text NOT NULL,

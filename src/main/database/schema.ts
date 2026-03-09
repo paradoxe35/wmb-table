@@ -183,6 +183,7 @@ export const audioDownloads = sqliteTable('audio_downloads', {
 
 export const highlights = sqliteTable('highlights', {
     id: text('id').primaryKey(),
+    groupId: text('group_id').notNull().default(''),
     documentTitle: text('document_title').notNull(),
     sermonId: text('sermon_id').notNull().default(''),
     paragraphIndex: integer('paragraph_index').notNull(),

@@ -3,11 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { highlights } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
-import type { HighlightItem } from '@shared/types';
+import type { DocumentType, HighlightItem, HighlightParagraphRange } from '@shared/types';
 
 function toHighlightItem(row: typeof highlights.$inferSelect): HighlightItem {
     return {
         id: row.id,
+        groupId: row.groupId,
         documentTitle: row.documentTitle,
         sermonId: row.sermonId,
         paragraphIndex: row.paragraphIndex,
@@ -16,7 +17,7 @@ function toHighlightItem(row: typeof highlights.$inferSelect): HighlightItem {
         textSnippet: row.textSnippet,
         color: row.color,
         comment: row.comment ?? undefined,
-        documentType: row.documentType as 'sermon' | 'custom',
+        documentType: row.documentType as DocumentType,
         translationId: row.translationId,
         languageCode: row.languageCode,
         createdAt: new Date(row.createdAt ?? Date.now()),
@@ -36,37 +37,43 @@ export function getByDocument(documentTitle: string, sermonId: string): Highligh
 export function create(data: {
     documentTitle: string;
     sermonId: string;
-    paragraphIndex: number;
-    startOffset: number;
-    endOffset: number;
+    paragraphs: HighlightParagraphRange[];
     textSnippet: string;
     color: string;
     comment?: string;
-    documentType: 'sermon' | 'custom';
+    documentType: DocumentType;
     translationId: number;
     languageCode: string;
-}): HighlightItem {
-    const id = randomUUID();
+}): HighlightItem[] {
+    const groupId = randomUUID();
     const now = new Date().toISOString();
-    const values = {
-        id,
-        documentTitle: data.documentTitle,
-        sermonId: data.sermonId,
-        paragraphIndex: data.paragraphIndex,
-        startOffset: data.startOffset,
-        endOffset: data.endOffset,
-        textSnippet: data.textSnippet,
-        color: data.color,
-        comment: data.comment ?? null,
-        documentType: data.documentType,
-        translationId: data.translationId,
-        languageCode: data.languageCode,
-        createdAt: now,
-        updatedAt: now,
-    };
-    getDb().insert(highlights).values(values).run();
-    logChange('highlights', id, 'SAVE', values);
-    return toHighlightItem({ ...values, comment: values.comment });
+    const results: HighlightItem[] = [];
+
+    for (const p of data.paragraphs) {
+        const id = randomUUID();
+        const values = {
+            id,
+            groupId,
+            documentTitle: data.documentTitle,
+            sermonId: data.sermonId,
+            paragraphIndex: p.paragraphIndex,
+            startOffset: p.startOffset,
+            endOffset: p.endOffset,
+            textSnippet: data.textSnippet,
+            color: data.color,
+            comment: data.comment ?? null,
+            documentType: data.documentType,
+            translationId: data.translationId,
+            languageCode: data.languageCode,
+            createdAt: now,
+            updatedAt: now,
+        };
+        getDb().insert(highlights).values(values).run();
+        logChange('highlights', id, 'SAVE', values);
+        results.push(toHighlightItem({ ...values, comment: values.comment }));
+    }
+
+    return results;
 }
 
 export function update(
@@ -91,6 +98,24 @@ export function update(
 }
 
 export function deleteHighlight(id: string): void {
-    getDb().delete(highlights).where(eq(highlights.id, id)).run();
-    logChange('highlights', id, 'DELETE', { id });
+    const db = getDb();
+    // Find the highlight to check if it belongs to a group
+    const existing = db.select().from(highlights).where(eq(highlights.id, id)).get();
+    if (!existing) return;
+
+    if (existing.groupId) {
+        // Delete all highlights in the same group
+        const group = db
+            .select()
+            .from(highlights)
+            .where(eq(highlights.groupId, existing.groupId))
+            .all();
+        for (const row of group) {
+            db.delete(highlights).where(eq(highlights.id, row.id)).run();
+            logChange('highlights', row.id, 'DELETE', { id: row.id });
+        }
+    } else {
+        db.delete(highlights).where(eq(highlights.id, id)).run();
+        logChange('highlights', id, 'DELETE', { id });
+    }
 }

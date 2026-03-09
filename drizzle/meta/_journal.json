@@ -5,15 +5,8 @@
         {
             "idx": 0,
             "version": "6",
-            "when": 1772798895868,
-            "tag": "0000_panoramic_ultimatum",
-            "breakpoints": true
-        },
-        {
-            "idx": 1,
-            "version": "6",
-            "when": 1773043263991,
-            "tag": "0001_spooky_star_brand",
+            "when": 1773054327783,
+            "tag": "0000_little_ma_gnuci",
             "breakpoints": true
         }
     ]

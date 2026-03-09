@@ -225,7 +225,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
     return (
         <p data-paragraph-index={paragraph.paragraphIndex} className="sermon-paragraph">
             <span className="line-number">{paragraph.paragraphIndex}</span>
-            {renderContent()}
+            <span className="paragraph-content">{renderContent()}</span>
         </p>
     );
 });
