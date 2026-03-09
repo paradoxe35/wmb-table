@@ -79,7 +79,7 @@ export function getBooks(request: BookRequest): BibleBook[] {
     return rows.map(toBook);
 }
 
-export function search(query: string, pageNumber: number): BibleSearchResult {
+export function search(query: string, pageNumber: number, testament?: string): BibleSearchResult {
     const itemsPerPage = 20;
     const offset = (pageNumber - 1) * itemsPerPage;
     const sqlite = getSqlite();
@@ -95,22 +95,31 @@ export function search(query: string, pageNumber: number): BibleSearchResult {
 
     if (!sqlite) return emptyResult;
 
+    const testamentFilter = testament ? ` AND bv.testament = ?` : '';
+    const params: (string | number)[] = [query];
+    if (testament) params.push(testament);
+
     // Count total matches
     const countResult = sqlite
-        .prepare(`SELECT COUNT(*) as total FROM bible_verses_fts WHERE bible_verses_fts MATCH ?`)
-        .get(query) as { total: number } | undefined;
+        .prepare(
+            `SELECT COUNT(*) as total FROM bible_verses_fts
+       JOIN bible_verses bv ON bv.rowid = bible_verses_fts.rowid
+       WHERE bible_verses_fts MATCH ?${testamentFilter}`,
+        )
+        .get(...params) as { total: number } | undefined;
     const total = countResult?.total ?? 0;
 
     // Get page of results
+    const pageParams: (string | number)[] = [...params, itemsPerPage, offset];
     const rows = sqlite
         .prepare(
             `SELECT bv.* FROM bible_verses_fts
        JOIN bible_verses bv ON bv.rowid = bible_verses_fts.rowid
-       WHERE bible_verses_fts MATCH ?
+       WHERE bible_verses_fts MATCH ?${testamentFilter}
        ORDER BY rank
        LIMIT ? OFFSET ?`,
         )
-        .all(query, itemsPerPage, offset) as Array<{
+        .all(...pageParams) as Array<{
         id: string;
         book_name: string;
         book: string;

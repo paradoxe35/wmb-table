@@ -264,7 +264,7 @@ export interface InvokeChannelMap {
     // Bible
     [BibleChannels.getIndexes]: { args: []; return: BibleIndex };
     [BibleChannels.getBooks]: { args: [BookRequest]; return: BibleBook[] };
-    [BibleChannels.search]: { args: [string, number]; return: BibleSearchResult };
+    [BibleChannels.search]: { args: [string, number, string?]; return: BibleSearchResult };
     [BibleChannels.getVersions]: { args: []; return: BibleVersionInfo[] };
     [BibleChannels.getAllVersions]: { args: []; return: BibleVersionInfo[] };
     [BibleChannels.getActiveVersion]: { args: []; return: BibleVersionInfo | null };

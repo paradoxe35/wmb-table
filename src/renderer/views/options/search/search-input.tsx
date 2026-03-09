@@ -37,7 +37,7 @@ export default function SearchInput({
 }: {
     onSearch: (value: string) => void;
     loading: boolean;
-    suggestions: React.MutableRefObject<Suggestions[]>;
+    suggestions: React.RefObject<Suggestions[]>;
 }) {
     const [options, setOptions] = useState<SelectProps<object>['options']>([]);
     const searchValue = useRef<string | null>(null);

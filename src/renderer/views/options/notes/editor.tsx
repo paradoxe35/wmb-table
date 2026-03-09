@@ -98,7 +98,7 @@ function ButtonsControllers({
 }: {
     backToNotes: () => void;
     workingNote: NoteItem | null;
-    editorRef: React.MutableRefObject<any>;
+    editorRef: React.RefObject<any>;
 }) {
     const openModal = useRenameNote(workingNote);
 
@@ -474,8 +474,8 @@ function Editor({
     deleteReference: () => void;
     setReady: React.Dispatch<React.SetStateAction<boolean>>;
     onChange: () => void;
-    contextEvent: React.MutableRefObject<MouseEvent | null>;
-    editorRef: React.MutableRefObject<any>;
+    contextEvent: React.RefObject<MouseEvent | null>;
+    editorRef: React.RefObject<any>;
 }) {
     useEffect(() => {
         if (editorRef.current && editorRef.current.editor) {

@@ -121,7 +121,8 @@ const api = {
     bible: {
         getIndexes: () => invoke(BibleChannels.getIndexes),
         getBooks: (request: BookRequest) => invoke(BibleChannels.getBooks, request),
-        search: (query: string, page: number) => invoke(BibleChannels.search, query, page),
+        search: (query: string, page: number, testament?: string) =>
+            invoke(BibleChannels.search, query, page, testament),
         getVersions: () => invoke(BibleChannels.getVersions),
         getAllVersions: () => invoke(BibleChannels.getAllVersions),
         getActiveVersion: () => invoke(BibleChannels.getActiveVersion),

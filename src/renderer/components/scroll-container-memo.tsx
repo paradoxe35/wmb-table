@@ -4,7 +4,7 @@ import { debounce, respondToVisibility } from '@renderer/utils/functions';
 const ScrollContainerMemo: React.FC<{
     children?:
         | React.ReactNode
-        | ((ref: React.MutableRefObject<HTMLElement | undefined>) => React.ReactNode);
+        | ((ref: React.RefObject<HTMLElement | undefined>) => React.ReactNode);
 }> = function ({ children }) {
     const lastScroll = useRef(0);
     const targetElement = useRef<HTMLElement | undefined>(undefined);
