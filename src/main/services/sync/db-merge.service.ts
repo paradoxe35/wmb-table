@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { getMainSqlite } from '@main/database';
+import { SYNCED_TABLE_NAMES, toSqlColumnNames } from '@main/database/sync-tables';
 import { setSyncing } from './change-log.service';
 import log from 'electron-log';
 
@@ -13,23 +14,35 @@ interface RemoteChangeLog {
 
 export type AffectedTables = Record<string, string[]>;
 
-/** Tables that we sync — must match the actual SQLite table names. */
-const SYNCED_TABLES = new Set([
-    'notes',
-    'notes_references',
-    'notes_bible_references',
-    'subjects',
-    'subject_items',
-    'custom_documents',
-    'suggestions',
-    'highlights',
-]);
-
 /** Only allow safe SQL identifiers (alphanumeric + underscore). */
 const SAFE_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
 
 function isValidIdentifier(name: string): boolean {
     return SAFE_IDENTIFIER.test(name);
+}
+
+/** Quote a column name to handle SQL reserved words (e.g. "references"). */
+function quoteColumn(name: string): string {
+    return `"${name}"`;
+}
+
+/** Cache of local table columns to avoid repeated PRAGMA calls. */
+const localColumnsCache = new Map<string, Set<string>>();
+
+/** Get the set of column names for a local table. */
+function getLocalColumns(tableName: string): Set<string> {
+    let columns = localColumnsCache.get(tableName);
+    if (columns) return columns;
+    const db = getMainSqlite();
+    const rows = db.prepare(`PRAGMA table_info("${tableName}")`).all() as { name: string }[];
+    columns = new Set(rows.map((r) => r.name));
+    localColumnsCache.set(tableName, columns);
+    return columns;
+}
+
+/** Invalidate local columns cache (e.g. after a migration). */
+export function clearLocalColumnsCache(): void {
+    localColumnsCache.clear();
 }
 
 /**
@@ -38,7 +51,7 @@ function isValidIdentifier(name: string): boolean {
  * Returns affected tables with record IDs.
  */
 export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
-    if (!SYNCED_TABLES.has(change.tableName)) {
+    if (!SYNCED_TABLE_NAMES.has(change.tableName)) {
         log.warn(`Skipping sync for unknown table: ${change.tableName}`);
         return {};
     }
@@ -53,20 +66,26 @@ export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
         // Wrap in a transaction for atomicity
         const applyInTransaction = db.transaction(() => {
             if (change.operation === 'DELETE') {
-                // Use rowId directly
-                db.prepare(`DELETE FROM ${change.tableName} WHERE id = ?`).run(change.rowId);
+                db.prepare(`DELETE FROM "${change.tableName}" WHERE id = ?`).run(change.rowId);
                 affectedTables[change.tableName] = [change.rowId];
             } else if (change.operation === 'SAVE') {
-                const record = JSON.parse(change.newData);
-                const columns = Object.keys(record).filter(isValidIdentifier);
+                const rawRecord = JSON.parse(change.newData);
+                // Normalize keys: convert any Drizzle JS names to SQL column names
+                const record = toSqlColumnNames(change.tableName, rawRecord);
+                const localCols = getLocalColumns(change.tableName);
+                // Filter to columns that exist in the local schema
+                const columns = Object.keys(record).filter(
+                    (c) => isValidIdentifier(c) && localCols.has(c),
+                );
                 if (columns.length === 0) {
                     throw new Error(`No valid columns in change ${change.changeId}`);
                 }
+                const quoted = columns.map(quoteColumn).join(', ');
                 const placeholders = columns.map(() => '?').join(', ');
                 const values = columns.map((col) => record[col]);
 
                 // INSERT OR REPLACE — upsert by primary key
-                const sql = `INSERT OR REPLACE INTO ${change.tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+                const sql = `INSERT OR REPLACE INTO "${change.tableName}" (${quoted}) VALUES (${placeholders})`;
                 db.prepare(sql).run(...values);
                 affectedTables[change.tableName] = [change.rowId];
             }
@@ -74,7 +93,6 @@ export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
 
         applyInTransaction();
     } finally {
-        // Always restore foreign keys and syncing state, even on error
         db.pragma('foreign_keys = ON');
         setSyncing(false);
     }
@@ -97,7 +115,7 @@ export function applySnapshot(snapshotDbPath: string): AffectedTables {
     try {
         localDb.pragma('foreign_keys = OFF');
 
-        for (const tableName of SYNCED_TABLES) {
+        for (const tableName of SYNCED_TABLE_NAMES) {
             try {
                 // Schema compatibility check before merge
                 if (!areTableSchemasCompatible(localDb, remoteDb, tableName)) {
@@ -105,16 +123,18 @@ export function applySnapshot(snapshotDbPath: string): AffectedTables {
                     continue;
                 }
 
-                const rows = remoteDb.prepare(`SELECT * FROM ${tableName}`).all();
+                const rows = remoteDb.prepare(`SELECT * FROM "${tableName}"`).all();
                 if (rows.length === 0) continue;
 
+                const localCols = getLocalColumns(tableName);
                 const columns = Object.keys(rows[0] as Record<string, unknown>).filter(
-                    isValidIdentifier,
+                    (c) => isValidIdentifier(c) && localCols.has(c),
                 );
                 if (columns.length === 0) continue;
 
+                const quoted = columns.map(quoteColumn).join(', ');
                 const placeholders = columns.map(() => '?').join(', ');
-                const sql = `INSERT OR REPLACE INTO ${tableName} (${columns.join(', ')}) VALUES (${placeholders})`;
+                const sql = `INSERT OR REPLACE INTO "${tableName}" (${quoted}) VALUES (${placeholders})`;
                 const stmt = localDb.prepare(sql);
 
                 const insertMany = localDb.transaction((records: Record<string, unknown>[]) => {
@@ -144,9 +164,8 @@ export function applySnapshot(snapshotDbPath: string): AffectedTables {
 
 /**
  * Verify schema compatibility between local and remote DB for a given table.
- * Checks that the table exists in both DBs and that every remote column
- * exists in the local DB with the same type.
- * Prevents errors when the app version differs between syncing devices.
+ * Checks that the table exists in both DBs and that there is at least one
+ * overlapping column.
  */
 function areTableSchemasCompatible(
     localDb: Database.Database,
@@ -154,24 +173,19 @@ function areTableSchemasCompatible(
     tableName: string,
 ): boolean {
     try {
-        const localColumns = localDb.prepare(`PRAGMA table_info(${tableName})`).all() as {
+        const localColumns = localDb.prepare(`PRAGMA table_info("${tableName}")`).all() as {
             name: string;
             type: string;
         }[];
-        const remoteColumns = remoteDb.prepare(`PRAGMA table_info(${tableName})`).all() as {
+        const remoteColumns = remoteDb.prepare(`PRAGMA table_info("${tableName}")`).all() as {
             name: string;
             type: string;
         }[];
 
         if (localColumns.length === 0 || remoteColumns.length === 0) return false;
 
-        const localMap = new Map(localColumns.map((c) => [c.name, c.type]));
-        for (const col of remoteColumns) {
-            const localType = localMap.get(col.name);
-            if (localType === undefined || localType !== col.type) return false;
-        }
-
-        return true;
+        const localNames = new Set(localColumns.map((c) => c.name));
+        return remoteColumns.some((col) => localNames.has(col.name));
     } catch {
         return false;
     }

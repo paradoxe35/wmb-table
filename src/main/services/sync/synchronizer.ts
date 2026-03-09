@@ -21,6 +21,7 @@ import {
 } from './drive.service';
 import { applyChangeLog, applySnapshot, type AffectedTables } from './db-merge.service';
 import { getExistingClient } from './google-auth.service';
+import * as backupRepo from '@main/database/repositories/backup.repository';
 import { getMainWindow } from '@main/lib/window';
 import { PushChannels } from '@shared/ipc.types';
 
@@ -79,11 +80,14 @@ export function getSyncStatus(): {
 }
 
 /**
- * Auto-start synchronizer if user has saved Google credentials.
- * Safe to call at app startup — no-op if no credentials.
+ * Auto-start synchronizer if user has an active backup status AND saved credentials.
+ * Safe to call at app startup — no-op if backup is disabled or no credentials.
  */
 export async function tryStartSynchronizer(): Promise<void> {
     try {
+        const status = backupRepo.getStatus();
+        if (!status?.active) return;
+
         const client = await getExistingClient();
         if (client) {
             startSynchronizer(client);

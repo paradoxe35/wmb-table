@@ -218,3 +218,18 @@ export const backupStatus = sqliteTable('backup_status', {
     restored: integer('restored', { mode: 'boolean' }).notNull().default(false),
     lastUpdate: text('last_update').default(sql`(datetime('now'))`),
 });
+
+// ---------------------------------------------------------------------------
+// Synced tables — add a table here to include it in sync
+// ---------------------------------------------------------------------------
+
+export const syncedTables = [
+    notes,
+    notesReferences,
+    notesBibleReferences,
+    subjects,
+    subjectItems,
+    customDocuments,
+    suggestions,
+    highlights,
+] as const;
