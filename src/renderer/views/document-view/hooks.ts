@@ -120,12 +120,16 @@ export function useSearchHighlight(): { term: string; mode: SearchMode } | null 
 export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElement | null>) {
     const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTab = useSermonStore(selectActiveTab);
     const activeContent = useSermonStore((s) => s.activeContent);
 
     useEffect(() => {
-        if (!pendingNavigation || !containerRef.current) return;
-        if (pendingNavigation.documentTitle !== activeTitle) return;
+        if (!pendingNavigation || !activeTab) return;
+        if (pendingNavigation.documentTitle !== activeTab.title) return;
+
+        // Wait until the correct content is loaded (avoid scrolling in stale content from a previous tab)
+        if (!activeContent || activeContent.meta.sermonId !== activeTab.sermonId) return;
+        if (!containerRef.current) return;
 
         const ref = pendingNavigation.documentHtmlTree;
         const paragraphIndex = ref
@@ -133,20 +137,25 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
                 ? ref.paragraphIndex
                 : ref.tree?.[0]
             : undefined;
-        if (paragraphIndex == null) return;
+        if (paragraphIndex == null) {
+            setPendingNavigation(null);
+            return;
+        }
 
         const tryScroll = () => scrollToParagraph(containerRef.current, paragraphIndex);
 
-        // Try immediately, then retry after a short delay for content that's still rendering
-        if (!tryScroll()) {
-            const timer = setTimeout(() => {
-                tryScroll();
-                setPendingNavigation(null);
-            }, 300);
-            return () => clearTimeout(timer);
+        if (tryScroll()) {
+            setPendingNavigation(null);
+            return;
         }
-        setPendingNavigation(null);
-    }, [pendingNavigation, activeTitle, activeContent, setPendingNavigation]);
+
+        // DOM may not have painted yet — retry after a short delay
+        const timer = setTimeout(() => {
+            tryScroll();
+            setPendingNavigation(null);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [pendingNavigation, activeTab, activeContent, setPendingNavigation]);
 }
 
 export function useContextMenuItems(
