@@ -1,18 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button, Col, Divider, Input, Modal, Row, Space, Typography, message, Spin } from 'antd';
+import React, { useEffect, useRef, useState } from 'react';
+import { Button, Input, Modal, Space, Typography, message, Spin } from 'antd';
 import type { CustomDocument } from '@shared/types';
-import { FileAddOutlined, EyeOutlined, LoadingOutlined, UploadOutlined } from '@ant-design/icons';
-import { DeleteBtn } from '@renderer/components/delete-btn';
+import {
+    EyeOutlined,
+    FileTextOutlined,
+    LoadingOutlined,
+    PlusOutlined,
+    UploadOutlined,
+} from '@ant-design/icons';
 
 import { useModalVisible, useIpcRequestWithLoader, useOpenCustomDocument } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useAppStore, useCustomDocumentsStore, useSermonStore } from '@renderer/stores';
+import { useAppStore, useCustomDocumentsStore } from '@renderer/stores';
+import { DeleteBtn } from '@renderer/components/delete-btn';
 
 export default function CustomDocuments() {
     const { visible, show, hide } = useModalVisible();
-
-    const sermons = useSermonStore((s) => s.sermons);
+    const [showUploadForm, setShowUploadForm] = useState(false);
 
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
@@ -35,87 +40,72 @@ export default function CustomDocuments() {
         return () => window.removeEventListener(CUSTOM_DOCUMENT_EVENT.openModal, show);
     }, [show]);
 
+    const handleClose = () => {
+        hide();
+        setShowUploadForm(false);
+    };
+
+    const handleDocumentAdded = (doc: CustomDocument) => {
+        addCustomDocument(doc);
+        setShowUploadForm(false);
+    };
+
     return (
-        <>
-            <Modal
-                width="80%"
-                title={
-                    <>
-                        <Space orientation="horizontal">
-                            <span>Documents</span>
-                            <span>-</span>
-                            <div className="flex flex-center">
-                                <Typography.Text type="secondary">
-                                    Total({sermons.length})
-                                </Typography.Text>
-                            </div>
-                        </Space>
-                    </>
-                }
-                open={visible}
-                footer={null}
-                onOk={hide}
-                onCancel={hide}
-            >
-                <Row>
-                    <Col span={11}>
-                        <CustomDocumentItem
-                            customDocuments={customDocuments}
-                            removeCustomDocument={removeCustomDocument}
-                            handleCancel={hide}
-                        />
-                    </Col>
-                    <Col span={2}>
-                        <Divider style={{ minHeight: '250px' }} orientation="vertical" />
-                    </Col>
-                    <Col span={11}>
-                        <UploadForm
-                            customDocuments={customDocuments}
-                            addCustomDocument={addCustomDocument}
-                        />
-                    </Col>
-                </Row>
-            </Modal>
-        </>
+        <Modal
+            width={480}
+            title={<ModalTitle count={customDocuments.length} />}
+            open={visible}
+            footer={null}
+            onCancel={handleClose}
+        >
+            {showUploadForm ? (
+                <UploadForm
+                    customDocuments={customDocuments}
+                    onAdded={handleDocumentAdded}
+                    onCancel={() => setShowUploadForm(false)}
+                />
+            ) : (
+                <DocumentList
+                    customDocuments={customDocuments}
+                    removeCustomDocument={removeCustomDocument}
+                    onClose={handleClose}
+                    onAdd={() => setShowUploadForm(true)}
+                />
+            )}
+        </Modal>
     );
 }
 
-const DocumentTitle = ({ length }: { length: number }) => {
+const ModalTitle = ({ count }: { count: number }) => {
     const appLoaded = useAppStore((s) => s.loaded);
 
     return (
-        <Space orientation="horizontal">
-            <Typography.Text type="secondary">Documents ajoutés ({length})</Typography.Text>
-            {!appLoaded && <Spin indicator={<LoadingOutlined spin />} />}
+        <Space>
+            <span>Documents ajoutés</span>
+            <Typography.Text type="secondary">({count})</Typography.Text>
+            {!appLoaded && <Spin indicator={<LoadingOutlined spin />} size="small" />}
         </Space>
     );
 };
 
-function CustomDocumentItem({
-    handleCancel,
+function DocumentList({
     customDocuments,
     removeCustomDocument,
+    onClose,
+    onAdd,
 }: {
-    handleCancel: () => void;
     customDocuments: CustomDocument[];
     removeCustomDocument: (id: string) => void;
+    onClose: () => void;
+    onAdd: () => void;
 }) {
     const openCustomDocument = useOpenCustomDocument();
-    const [documents, setDocuments] = useState<CustomDocument[]>([]);
-
-    useEffect(() => {
-        setDocuments(customDocuments);
-    }, [customDocuments]);
-
-    const onSearch = (value: string) => {
-        if (customDocuments.length) {
-            setDocuments(
-                customDocuments.filter((d) => simpleRegExp(value).test(strNormalize(d.title))),
-            );
-        }
-    };
-
+    const [searchTerm, setSearchTerm] = useState('');
     const ipcRequestWithLoader = useIpcRequestWithLoader();
+
+    const filtered = searchTerm
+        ? customDocuments.filter((d) => simpleRegExp(searchTerm).test(strNormalize(d.title)))
+        : customDocuments;
 
     const handleDeletion = (document: CustomDocument) => {
         ipcRequestWithLoader(async () => {
@@ -131,73 +121,99 @@ function CustomDocumentItem({
     };
 
     return (
-        <>
-            <div className="flex flex-center">
-                <DocumentTitle length={documents.length} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+                <Input.Search
+                    placeholder="Rechercher..."
+                    allowClear
+                    onSearch={setSearchTerm}
+                    onChange={(e) => !e.target.value && setSearchTerm('')}
+                    style={{ flex: 1 }}
+                />
+                <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+                    Ajouter
+                </Button>
             </div>
 
-            <div className="flex flex-center mt-2 mb-2">
-                <Space orientation="horizontal">
-                    <Input.Search onSearch={onSearch} />
-                </Space>
-            </div>
-
-            <div style={{ overflow: 'auto', maxHeight: '300px' }}>
-                {documents.map((document) => (
+            <div style={{ overflow: 'auto', maxHeight: 350 }}>
+                {filtered.length === 0 && (
                     <div
-                        key={document.id}
                         style={{
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '8px 0',
-                            borderBottom: '1px solid var(--ant-color-border)',
+                            padding: '2rem 0',
+                            gap: 8,
                         }}
                     >
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                flex: 1,
-                                minWidth: 0,
-                            }}
-                        >
-                            <FileAddOutlined />
-                            <span
-                                style={{
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap',
-                                }}
-                            >
-                                {document.title}
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                            <Button
-                                shape="circle"
-                                icon={<EyeOutlined />}
-                                onClick={() => {
-                                    openCustomDocument(document.title, document.sermonId);
-                                    handleCancel();
-                                }}
-                            />
-                            <DeleteBtn confirm={() => handleDeletion(document)} />
-                        </div>
+                        <FileTextOutlined style={{ fontSize: 28, opacity: 0.25 }} />
+                        <Typography.Text type="secondary">
+                            {customDocuments.length === 0
+                                ? 'Aucun document ajouté'
+                                : 'Aucun résultat'}
+                        </Typography.Text>
                     </div>
+                )}
+
+                {filtered.map((doc) => (
+                    <DocumentItem
+                        key={doc.id}
+                        document={doc}
+                        onView={() => {
+                            openCustomDocument(doc.title, doc.sermonId);
+                            onClose();
+                        }}
+                        onDelete={() => handleDeletion(doc)}
+                    />
                 ))}
             </div>
-        </>
+        </div>
     );
 }
 
+const DocumentItem = React.memo<{
+    document: CustomDocument;
+    onView: () => void;
+    onDelete: () => void;
+}>(({ document, onView, onDelete }) => (
+    <div
+        style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px 4px',
+            borderBottom: '1px solid var(--ant-color-border-secondary, var(--ant-color-border))',
+            gap: 10,
+        }}
+    >
+        <FileTextOutlined style={{ fontSize: 16, opacity: 0.45, flexShrink: 0 }} />
+        <div
+            style={{
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+            }}
+            title={document.title}
+        >
+            {document.title}
+        </div>
+        <Space size={4} style={{ flexShrink: 0 }}>
+            <Button type="text" size="small" icon={<EyeOutlined />} onClick={onView} />
+            <DeleteBtn confirm={onDelete} />
+        </Space>
+    </div>
+));
+DocumentItem.displayName = 'DocumentItem';
+
 function UploadForm({
     customDocuments,
-    addCustomDocument,
+    onAdded,
+    onCancel,
 }: {
     customDocuments: CustomDocument[];
-    addCustomDocument: (doc: CustomDocument) => void;
+    onAdded: (doc: CustomDocument) => void;
+    onCancel: () => void;
 }) {
     const [name, setName] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -207,10 +223,6 @@ function UploadForm({
     const nameExists = customDocuments.some(
         (d) => d.title.toLowerCase() === name.trim().toLowerCase(),
     );
-
-    const handleFileSelect = () => {
-        fileInputRef.current?.click();
-    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -238,11 +250,8 @@ function UploadForm({
             const buffer = await selectedFile.arrayBuffer();
             const pdfBytes = new Uint8Array(buffer);
             const doc = await window.api.app.createCustomDocument(trimmedName, pdfBytes);
-            addCustomDocument(doc);
+            onAdded(doc);
             message.success('Document ajouté');
-            setName('');
-            setSelectedFile(null);
-            if (fileInputRef.current) fileInputRef.current.value = '';
         } catch {
             message.error("Erreur lors de l'extraction du document.");
         } finally {
@@ -251,51 +260,58 @@ function UploadForm({
     };
 
     return (
-        <>
-            <div className="flex flex-center mb-2">
-                <Typography.Text type="secondary">Nouveau Document</Typography.Text>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div>
+                <Typography.Text
+                    strong
+                    style={{ fontSize: '0.85em', display: 'block', marginBottom: 4 }}
+                >
+                    Nom du document
+                </Typography.Text>
+                <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Nom du document"
+                    status={nameExists ? 'error' : undefined}
+                />
+                {nameExists && (
+                    <Typography.Text type="danger" style={{ fontSize: '0.8em' }}>
+                        Ce nom existe déjà
+                    </Typography.Text>
+                )}
             </div>
 
-            <div style={{ padding: '0 10px' }}>
-                <div className="mb-2">
-                    <Typography.Text>Nom</Typography.Text>
-                    <Input
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Nom du document"
-                        status={nameExists ? 'error' : undefined}
-                    />
-                    {nameExists && (
-                        <Typography.Text type="danger" style={{ fontSize: '0.85em' }}>
-                            Ce nom existe déjà
-                        </Typography.Text>
-                    )}
-                </div>
-
-                <div className="mb-2">
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept=".pdf"
-                        style={{ display: 'none' }}
-                        onChange={handleFileChange}
-                    />
-                    <Button icon={<UploadOutlined />} onClick={handleFileSelect}>
-                        {selectedFile ? selectedFile.name : 'Choisir un fichier PDF'}
-                    </Button>
-                </div>
-
-                <div className="flex flex-center">
-                    <Button
-                        type="primary"
-                        onClick={handleUpload}
-                        disabled={!name.trim() || !selectedFile || nameExists}
-                        loading={uploading}
-                    >
-                        {uploading ? 'Traitement...' : 'Ajouter'}
-                    </Button>
-                </div>
+            <div>
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                />
+                <Button
+                    icon={<UploadOutlined />}
+                    onClick={() => fileInputRef.current?.click()}
+                    block
+                    style={{ textAlign: 'left' }}
+                >
+                    {selectedFile ? selectedFile.name : 'Choisir un fichier PDF'}
+                </Button>
             </div>
-        </>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <Button onClick={onCancel} disabled={uploading}>
+                    Retour
+                </Button>
+                <Button
+                    type="primary"
+                    onClick={handleUpload}
+                    disabled={!name.trim() || !selectedFile || nameExists}
+                    loading={uploading}
+                >
+                    {uploading ? 'Traitement...' : 'Ajouter'}
+                </Button>
+            </div>
+        </div>
     );
 }

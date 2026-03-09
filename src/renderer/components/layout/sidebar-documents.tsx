@@ -106,23 +106,32 @@ const DocumentsAdded = () => {
                     icon={<PlusOutlined />}
                     onClick={openCustomDocumentModal}
                 >
-                    Ajouter
+                    Gérer
                 </Button>
             </div>
-            <ContainerScrollY style={{ paddingLeft: '10px' }}>
-                {customDocuments.map((d, i) => (
-                    <div
-                        key={d.id || i}
-                        className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                        onClick={() => openCustomDocument(d.title, d.sermonId)}
-                    >
-                        <div className="sidebar-item__left">
-                            <FileTextOutlined style={{ marginRight: 8, opacity: 0.5 }} />
-                            <div className="sidebar-item__title">{d.title}</div>
+            <Divider style={{ padding: 0, margin: 0 }} />
+            <div className="document-list" style={{ flex: 1 }}>
+                <ContainerScrollY>
+                    {customDocuments.map((d, i) => (
+                        <div
+                            key={d.id || i}
+                            className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
+                            onClick={() => openCustomDocument(d.title, d.sermonId)}
+                            title={d.title}
+                        >
+                            <div className="sidebar-item__left">
+                                <div className="sidebar-item__title">{d.title}</div>
+                                <div className="sidebar-item__date">
+                                    {new Date(d.createdAt).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <div className="sidebar-item__right">
+                                <FileTextOutlined style={{ fontSize: '0.75em', opacity: 0.4 }} />
+                            </div>
                         </div>
-                    </div>
-                ))}
-            </ContainerScrollY>
+                    ))}
+                </ContainerScrollY>
+            </div>
         </>
     );
 };
