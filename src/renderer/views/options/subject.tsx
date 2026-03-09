@@ -22,6 +22,7 @@ import { BibleIcons } from '@renderer/components/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { SUBJECT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { interactiveProps } from '@renderer/utils/interactive';
 import { useSermonLookup, useFormatSermonDate } from '@renderer/hooks';
 
 const { Text } = Typography;
@@ -340,7 +341,7 @@ const ItemSubject: FC<{
     return (
         <div
             className={`subject-item ${item.active ? 'subject-item--active' : ''}`}
-            onClick={onSelect}
+            {...interactiveProps(onSelect)}
             title={item.name}
         >
             <div className="subject-item__left">

@@ -13,21 +13,27 @@ function useSearch() {
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const searchMode = useSearchStore((s) => s.searchMode);
     const isFirstRender = useRef(true);
+    const generationRef = useRef(0);
 
     const fetchResults = useCallback(
         (term: string, page: number) => {
             if (!activeLanguage || term.trim().length < 3) return;
+            const gen = ++generationRef.current;
             setLoading(true);
             window.api.search
                 .searchText(activeLanguage, term.trim(), page, searchMode)
                 .then((datas) => {
+                    if (gen !== generationRef.current) return;
                     hasNewResult.current += 1;
                     setResults(datas);
                 })
                 .catch(() => {
+                    if (gen !== generationRef.current) return;
                     message.error('Erreur lors de la recherche');
                 })
-                .finally(() => setLoading(false));
+                .finally(() => {
+                    if (gen === generationRef.current) setLoading(false);
+                });
         },
         [activeLanguage, searchMode],
     );
@@ -59,14 +65,17 @@ function useSearch() {
     const onPageChange = useCallback(
         (page: number) => {
             if (!activeLanguage) return;
+            const gen = ++generationRef.current;
             window.api.search
                 .searchText(activeLanguage, lastSearch.current.trim(), page, searchMode)
                 .then((datas) => {
+                    if (gen !== generationRef.current) return;
                     const lc = document.querySelector('.search__option__content');
                     lc?.scrollTo({ top: 0, behavior: 'smooth' });
                     setResults(datas);
                 })
                 .catch(() => {
+                    if (gen !== generationRef.current) return;
                     message.error('Erreur lors de la recherche');
                 });
         },

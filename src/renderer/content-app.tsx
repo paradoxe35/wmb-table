@@ -2,9 +2,7 @@ import { lazy, memo, Suspense, useMemo, type FC, type ReactElement, type ReactNo
 import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAppStore } from './stores';
-
 import LoadByVisibility from './components/load-by-visibility';
-
 import CustomDocumentsModal from './views/components/modals/custom-documents';
 import BackupProfileModal from './views/components/modals/backup-profile-modal';
 import UpdaterModal from './views/components/modals/updater-modal';
@@ -16,12 +14,13 @@ import LanguageManagerModal from './views/components/modals/language-manager-mod
 import HighlightModal from './views/components/modals/highlight-modal';
 import SyncListener from './components/sync-listener';
 
-const Search = lazy(() => import('./views/options/search'));
-const History = lazy(() => import('./views/options/history'));
-const Subject = lazy(() => import('./views/options/subject'));
-const Bible = lazy(() => import('./views/options/bible'));
+import Search from './views/options/search';
+import History from './views/options/history';
+import Subject from './views/options/subject';
+import Bible from './views/options/bible';
+import DocumentView from './views/document-view';
+
 const Notes = lazy(() => import('./views/options/notes'));
-const DocumentView = lazy(() => import('./views/document-view'));
 
 const Loader: FC<{ children?: ReactNode }> = ({ children }) => {
     return (

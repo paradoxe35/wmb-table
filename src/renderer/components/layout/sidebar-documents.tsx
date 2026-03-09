@@ -16,6 +16,7 @@ import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@re
 import PanelGroup from './components/documents-menu';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { LANGUAGE_EVENT, CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
+import { interactiveProps } from '@renderer/utils/interactive';
 
 const { Search } = Input;
 
@@ -116,7 +117,7 @@ const DocumentsAdded = () => {
                         <div
                             key={d.id || i}
                             className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                            onClick={() => openCustomDocument(d.title, d.sermonId)}
+                            {...interactiveProps(() => openCustomDocument(d.title, d.sermonId))}
                             title={d.title}
                         >
                             <div className="sidebar-item__left">
@@ -360,7 +361,7 @@ const ItemOutline = React.memo<{
         <div
             className={`sidebar-item ${active ? 'sidebar-item--active' : ''}`}
             title={sermon.title}
-            onClick={onClick}
+            {...interactiveProps(onClick)}
         >
             <div className="sidebar-item__left">
                 <div className="sidebar-item__title">{sermon.title}</div>
