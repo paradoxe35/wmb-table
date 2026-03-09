@@ -252,6 +252,24 @@ export interface SubjectDocument extends Readonly<BaseEntity> {
 }
 
 // ---------------------------------------------------------------------------
+// Highlights
+// ---------------------------------------------------------------------------
+
+export interface HighlightItem extends Readonly<BaseEntity> {
+    documentTitle: string;
+    sermonId: string;
+    paragraphIndex: number;
+    startOffset: number;
+    endOffset: number;
+    textSnippet: string;
+    color: string;
+    comment?: string;
+    documentType: 'sermon' | 'custom';
+    translationId: number;
+    languageCode: string;
+}
+
+// ---------------------------------------------------------------------------
 // Audio
 // ---------------------------------------------------------------------------
 

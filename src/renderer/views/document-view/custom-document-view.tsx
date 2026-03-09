@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Space, Spin, Tooltip } from 'antd';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Dropdown, Space, Spin, Tooltip } from 'antd';
 import { ZoomInOutlined, ZoomOutOutlined, SearchOutlined } from '@ant-design/icons';
 import {
     useSermonStore,
@@ -8,11 +8,18 @@ import {
     selectActiveTabTitle,
     selectActiveTabKey,
 } from '@renderer/stores';
-import type { CustomDocumentContent } from '@shared/types';
+import type { CustomDocumentContent, SermonContent } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 import SermonParagraphView from './sermon-paragraph';
-import { useScrollAndZoom, useSearchHighlight, useMatchNavigation } from './hooks';
+import {
+    useScrollAndZoom,
+    useSearchHighlight,
+    useMatchNavigation,
+    useContextMenuItems,
+    useDocumentHighlights,
+    useReferenceNavigation,
+} from './hooks';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -51,6 +58,7 @@ export default function CustomDocumentView() {
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const containerRef = useRef<HTMLDivElement>(null);
+    const contextTargetRef = useRef<Element | null>(null);
     const { zoom } = useScrollAndZoom(containerRef);
     const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
     const [loading, setLoading] = useState(false);
@@ -58,6 +66,8 @@ export default function CustomDocumentView() {
     const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
+
+    useReferenceNavigation(containerRef);
 
     const customDoc = useMemo(
         () => customDocuments.find((d) => d.title === activeTitle),
@@ -92,6 +102,43 @@ export default function CustomDocumentView() {
 
     const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
     const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+
+    // Build a minimal SermonContent-like object for context menu
+    const contentForMenu = useMemo((): SermonContent | null => {
+        if (!docContent) return null;
+        return {
+            meta: {
+                id: customDoc?.id ?? '',
+                translationId: 0,
+                languageCode: '',
+                sermonId: customDoc?.sermonId ?? '',
+                title: docContent.title,
+                enTitle: docContent.title,
+                audioLink: null,
+                traductionName: null,
+                dateMs: 0,
+                minutes: 0,
+                location: null,
+                cityState: null,
+            },
+            paragraphs: paragraphs.map((p) => ({
+                paragraphIndex: p.paragraphIndex,
+                translationId: 0,
+                sermonId: 0,
+                content: p.content,
+            })),
+        };
+    }, [docContent, paragraphs, customDoc]);
+
+    const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'custom');
+    const { highlightsByParagraph } = useDocumentHighlights(
+        docContent?.title ?? null,
+        customDoc?.sermonId,
+    );
+
+    const onContextMenu = useCallback((e: React.MouseEvent) => {
+        contextTargetRef.current = e.target as Element;
+    }, []);
 
     return (
         <div className="mock-browser-content">
@@ -140,22 +187,26 @@ export default function CustomDocumentView() {
                         </Space>
                     </div>
                     {searchBarOpen && <InlineSearchBar />}
-                    <div
-                        ref={containerRef}
-                        id={DOCUMENT_CONTAINER_ID}
-                        className="sermon-body"
-                        style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
-                    >
-                        {paragraphs.map((p, i) => (
-                            <SermonParagraphView
-                                key={p.paragraphIndex}
-                                paragraph={p}
-                                search={search}
-                                currentMatchIndex={currentMatchIndex}
-                                matchOffset={matchOffsets[i] ?? 0}
-                            />
-                        ))}
-                    </div>
+                    <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
+                        <div
+                            ref={containerRef}
+                            id={DOCUMENT_CONTAINER_ID}
+                            className="sermon-body"
+                            style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
+                            onContextMenu={onContextMenu}
+                        >
+                            {paragraphs.map((p, i) => (
+                                <SermonParagraphView
+                                    key={p.paragraphIndex}
+                                    paragraph={p}
+                                    search={search}
+                                    currentMatchIndex={currentMatchIndex}
+                                    matchOffset={matchOffsets[i] ?? 0}
+                                    highlights={highlightsByParagraph.get(p.paragraphIndex)}
+                                />
+                            ))}
+                        </div>
+                    </Dropdown>
                 </>
             )}
         </div>

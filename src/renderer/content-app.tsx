@@ -13,6 +13,8 @@ import { SubjectSelectModal } from './views/components/modals/subject-select-mod
 import { NoteReferencesModal } from './views/components/modals/note-references-modal';
 import DocumentAudioPlayer from './views/components/modals/document-audio-player';
 import LanguageManagerModal from './views/components/modals/language-manager-modal';
+import HighlightModal from './views/components/modals/highlight-modal';
+import SyncListener from './components/sync-listener';
 
 const Search = lazy(() => import('./views/options/search'));
 const History = lazy(() => import('./views/options/history'));
@@ -118,6 +120,8 @@ export function ContentApp() {
             <NoteReferencesModal />
             <DocumentAudioPlayer />
             <LanguageManagerModal />
+            <HighlightModal />
+            <SyncListener />
         </>
     );
 }

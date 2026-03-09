@@ -19,6 +19,15 @@ export const CHILD_PARENT_WINDOW_EVENT = {
     openOtherTraductionsModal: 'open-other-traductions-modal',
     audioDocumentPlay: 'audio-document-play',
     noSelectableDocumentText: 'no-selectable-document-text',
+    openHighlightModal: 'open-highlight-modal',
+} as const;
+
+export const HIGHLIGHT_EVENT = {
+    highlightsUpdated: 'highlights-updated',
+} as const;
+
+export const SYNC_EVENT = {
+    syncCompleted: 'sync-completed',
 } as const;
 
 export const LANGUAGE_EVENT = {

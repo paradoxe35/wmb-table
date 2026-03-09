@@ -1,5 +1,6 @@
 import type {
     DocumentTab,
+    HighlightItem,
     Suggestions,
     SidebarStatus,
     NoteItem,
@@ -106,6 +107,13 @@ export const SubjectChannels = {
     getItems: 'subjects:getItems',
     deleteItem: 'subjects:deleteItem',
     createItem: 'subjects:createItem',
+} as const;
+
+export const HighlightChannels = {
+    getByDocument: 'highlights:getByDocument',
+    create: 'highlights:create',
+    update: 'highlights:update',
+    delete: 'highlights:delete',
 } as const;
 
 export const AudioChannels = {
@@ -282,6 +290,35 @@ export interface InvokeChannelMap {
         args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?, string?];
         return: SubjectDocumentItem;
     };
+
+    // Highlights
+    [HighlightChannels.getByDocument]: {
+        args: [string, string];
+        return: HighlightItem[];
+    };
+    [HighlightChannels.create]: {
+        args: [
+            {
+                documentTitle: string;
+                sermonId: string;
+                paragraphIndex: number;
+                startOffset: number;
+                endOffset: number;
+                textSnippet: string;
+                color: string;
+                comment?: string;
+                documentType: 'sermon' | 'custom';
+                translationId: number;
+                languageCode: string;
+            },
+        ];
+        return: HighlightItem;
+    };
+    [HighlightChannels.update]: {
+        args: [string, { color?: string; comment?: string }];
+        return: HighlightItem | null;
+    };
+    [HighlightChannels.delete]: { args: [string]; return: void };
 
     // Audio
     [AudioChannels.getTimeAndLocalFile]: {

@@ -110,19 +110,39 @@ export default function BackupProfile() {
                 onOk={hide}
                 onCancel={hide}
             >
-                {activeBackup ? <ActiveBackup activeBackup={activeBackup} /> : <BackupContent />}
+                {activeBackup ? (
+                    <ActiveBackup activeBackup={activeBackup} onStatusRefresh={setActiveBackup} />
+                ) : (
+                    <BackupContent />
+                )}
             </Modal>
         </>
     );
 }
 
-const ActiveBackup = ({ activeBackup: status }: { activeBackup: BackupStatus }) => {
+const ActiveBackup = ({
+    activeBackup: status,
+    onStatusRefresh,
+}: {
+    activeBackup: BackupStatus;
+    onStatusRefresh?: (s: BackupStatus) => void;
+}) => {
     const [restoreProgress, setRestoreProgress] = useState<RestoreProgressEvent>();
 
     useEffect(() => {
         const cleanup = window.api.on.backupProgression((data) => setRestoreProgress(data));
         return cleanup;
     }, []);
+
+    useEffect(() => {
+        const handler = () => {
+            window.api.backup.getStatus().then((s) => {
+                if (s && onStatusRefresh) onStatusRefresh(s);
+            });
+        };
+        window.addEventListener('sync-completed', handler);
+        return () => window.removeEventListener('sync-completed', handler);
+    }, [onStatusRefresh]);
 
     const restartAppNow = useCallback(() => {
         window.api.app.restart();

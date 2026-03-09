@@ -13,6 +13,7 @@ import {
     useReferenceNavigation,
     useContextMenuItems,
     useMatchNavigation,
+    useDocumentHighlights,
 } from './hooks';
 
 export default function SermonDocumentView() {
@@ -40,6 +41,10 @@ export default function SermonDocumentView() {
     );
 
     const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+    const { highlightsByParagraph } = useDocumentHighlights(
+        content?.meta.title ?? null,
+        activeTab?.sermonId,
+    );
 
     return (
         <div className="mock-browser-content">
@@ -74,6 +79,7 @@ export default function SermonDocumentView() {
                                     search={search}
                                     currentMatchIndex={currentMatchIndex}
                                     matchOffset={matchOffsets[i] ?? 0}
+                                    highlights={highlightsByParagraph.get(p.paragraphIndex)}
                                 />
                             ))}
                         </div>

@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Button, Empty, Modal, Segmented } from 'antd';
 import type { SermonParagraph } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
+import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
 
 const STEP_OPTIONS = [1, 2, 3, 5, 10] as const;
 
@@ -26,15 +27,7 @@ export default function ParagraphNavigatorModal({
             onClose();
             requestAnimationFrame(() => {
                 const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-                if (!container) return;
-                const el = container.querySelector(`[data-paragraph-index="${paragraphIndex}"]`);
-                if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.classList.add('paragraph-highlight-blink');
-                    const cleanup = () => el.classList.remove('paragraph-highlight-blink');
-                    el.addEventListener('animationend', cleanup, { once: true });
-                    setTimeout(cleanup, 2500);
-                }
+                scrollToParagraph(container, paragraphIndex);
             });
         },
         [onClose],

@@ -22,6 +22,7 @@ const SYNCED_TABLES = new Set([
     'subject_items',
     'custom_documents',
     'suggestions',
+    'highlights',
 ]);
 
 /** Only allow safe SQL identifiers (alphanumeric + underscore). */

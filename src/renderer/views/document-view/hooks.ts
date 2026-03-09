@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -15,9 +15,11 @@ import {
     type SermonContent as SermonContentType,
     type ParagraphReference,
     type SearchMode,
+    type HighlightItem,
     isParagraphReference,
 } from '@shared/types';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { CHILD_PARENT_WINDOW_EVENT, HIGHLIGHT_EVENT } from '@renderer/utils/events';
+import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
 
 // ---------------------------------------------------------------------------
 // Content cache (avoids re-fetching on tab switches)
@@ -91,7 +93,7 @@ export function useScrollAndZoom(containerRef: React.RefObject<HTMLDivElement | 
         }, 500);
         el.addEventListener('scroll', handler as EventListener);
         return () => el.removeEventListener('scroll', handler as EventListener);
-    }, [activeTabKey, updateTabScroll]);
+    }, [activeTabKey, updateTabScroll, containerRef]);
 
     return { zoom };
 }
@@ -126,18 +128,7 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
             : undefined;
         if (paragraphIndex == null) return;
 
-        const tryScroll = () => {
-            const el = containerRef.current?.querySelector(
-                `[data-paragraph-index="${paragraphIndex}"]`,
-            );
-            if (!el) return false;
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.add('paragraph-highlight-blink');
-            const cleanup = () => el.classList.remove('paragraph-highlight-blink');
-            el.addEventListener('animationend', cleanup, { once: true });
-            setTimeout(cleanup, 2500);
-            return true;
-        };
+        const tryScroll = () => scrollToParagraph(containerRef.current, paragraphIndex);
 
         // Try immediately, then retry after a short delay for content that's still rendering
         if (!tryScroll()) {
@@ -154,6 +145,7 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
 export function useContextMenuItems(
     content: SermonContentType | null,
     contextTargetRef: React.RefObject<Element | null>,
+    documentType: 'sermon' | 'custom' = 'sermon',
 ): MenuProps['items'] {
     return useMemo(() => {
         if (!content) return [];
@@ -195,6 +187,26 @@ export function useContextMenuItems(
             };
         };
 
+        const getSelectionOffsets = (): {
+            paragraphIndex: number;
+            startOffset: number;
+            endOffset: number;
+        } | null => {
+            const sel = window.getSelection();
+            if (!sel || sel.isCollapsed || sel.rangeCount === 0) return null;
+            const range = sel.getRangeAt(0);
+            const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
+            if (!anchor) return null;
+            const paragraphIndex = parseInt(anchor.getAttribute('data-paragraph-index')!);
+            // Calculate text offset within the paragraph element
+            const preRange = document.createRange();
+            preRange.selectNodeContents(anchor);
+            preRange.setEnd(range.startContainer, range.startOffset);
+            const startOffset = preRange.toString().length;
+            const endOffset = startOffset + sel.toString().length;
+            return { paragraphIndex, startOffset, endOffset };
+        };
+
         return [
             {
                 key: 'copy-text',
@@ -207,6 +219,36 @@ export function useContextMenuItems(
                 },
             },
             { type: 'divider' as const, key: 'divider-1' },
+            {
+                key: 'highlight-text',
+                label: 'Souligner',
+                onClick: () => {
+                    const sel = window.getSelection();
+                    if (!sel || sel.isCollapsed) {
+                        message.warning('Sélectionnez du texte à souligner');
+                        return;
+                    }
+                    const offsets = getSelectionOffsets();
+                    const result = getRef();
+                    if (!offsets || !result) return;
+                    window.dispatchEvent(
+                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openHighlightModal, {
+                            detail: {
+                                documentTitle: content.meta.title,
+                                sermonId: content.meta.sermonId,
+                                paragraphIndex: offsets.paragraphIndex,
+                                startOffset: offsets.startOffset,
+                                endOffset: offsets.endOffset,
+                                textSnippet: result.text.slice(0, 200),
+                                translationId: content.meta.translationId,
+                                languageCode: content.meta.languageCode,
+                                documentType,
+                            },
+                        }),
+                    );
+                },
+            },
+            { type: 'divider' as const, key: 'divider-2' },
             {
                 key: 'add-to-subject',
                 label: 'Ajouter au sujet',
@@ -240,7 +282,44 @@ export function useContextMenuItems(
                 },
             },
         ];
-    }, [content]);
+    }, [content, documentType]);
+}
+
+export function useDocumentHighlights(documentTitle: string | null, sermonId: string | undefined) {
+    const [highlights, setHighlights] = useState<HighlightItem[]>([]);
+
+    const fetchHighlights = useCallback(() => {
+        if (!documentTitle) {
+            setHighlights([]);
+            return;
+        }
+        window.api.highlights
+            .getByDocument(documentTitle, sermonId ?? '')
+            .then(setHighlights)
+            .catch(() => setHighlights([]));
+    }, [documentTitle, sermonId]);
+
+    useEffect(() => {
+        fetchHighlights();
+    }, [fetchHighlights]);
+
+    useEffect(() => {
+        const handler = () => fetchHighlights();
+        window.addEventListener(HIGHLIGHT_EVENT.highlightsUpdated, handler);
+        return () => window.removeEventListener(HIGHLIGHT_EVENT.highlightsUpdated, handler);
+    }, [fetchHighlights]);
+
+    const highlightsByParagraph = useMemo(() => {
+        const map = new Map<number, HighlightItem[]>();
+        for (const h of highlights) {
+            const arr = map.get(h.paragraphIndex) ?? [];
+            arr.push(h);
+            map.set(h.paragraphIndex, arr);
+        }
+        return map;
+    }, [highlights]);
+
+    return { highlights, highlightsByParagraph };
 }
 
 export function useMatchNavigation(

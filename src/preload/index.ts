@@ -5,6 +5,7 @@ import {
     NotesChannels,
     BibleChannels,
     SubjectChannels,
+    HighlightChannels,
     AudioChannels,
     BackupChannels,
     SyncChannels,
@@ -155,6 +156,27 @@ const api = {
                 bible,
                 sermonId,
             ),
+    },
+
+    highlights: {
+        getByDocument: (documentTitle: string, sermonId: string) =>
+            invoke(HighlightChannels.getByDocument, documentTitle, sermonId),
+        create: (data: {
+            documentTitle: string;
+            sermonId: string;
+            paragraphIndex: number;
+            startOffset: number;
+            endOffset: number;
+            textSnippet: string;
+            color: string;
+            comment?: string;
+            documentType: 'sermon' | 'custom';
+            translationId: number;
+            languageCode: string;
+        }) => invoke(HighlightChannels.create, data),
+        update: (id: string, data: { color?: string; comment?: string }) =>
+            invoke(HighlightChannels.update, id, data),
+        delete: (id: string) => invoke(HighlightChannels.delete, id),
     },
 
     audio: {

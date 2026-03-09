@@ -178,6 +178,27 @@ export const audioDownloads = sqliteTable('audio_downloads', {
 });
 
 // ---------------------------------------------------------------------------
+// Highlights
+// ---------------------------------------------------------------------------
+
+export const highlights = sqliteTable('highlights', {
+    id: text('id').primaryKey(),
+    documentTitle: text('document_title').notNull(),
+    sermonId: text('sermon_id').notNull().default(''),
+    paragraphIndex: integer('paragraph_index').notNull(),
+    startOffset: integer('start_offset').notNull(),
+    endOffset: integer('end_offset').notNull(),
+    textSnippet: text('text_snippet').notNull(),
+    color: text('color').notNull().default('#FFFF00'),
+    comment: text('comment'),
+    documentType: text('document_type').notNull().default('sermon'),
+    translationId: integer('translation_id').notNull().default(0),
+    languageCode: text('language_code').notNull().default(''),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+// ---------------------------------------------------------------------------
 // Backup
 // ---------------------------------------------------------------------------
 
