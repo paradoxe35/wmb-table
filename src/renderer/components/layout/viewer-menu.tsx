@@ -29,16 +29,17 @@ export default function ViewerMenu() {
         return [
             {
                 key: 'options',
+                title: 'Outils',
                 icon: (
                     <ProfileOutlined
                         style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
                     />
                 ),
-                label: '',
                 onClick: showOptions,
             },
             {
                 key: 'document',
+                title: 'Lecture',
                 icon: (
                     <FundViewOutlined
                         style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}

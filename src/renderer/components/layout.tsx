@@ -58,8 +58,9 @@ const SidebarStatusHandler = () => {
 const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const [collapsed, setCollapsed] = useState(true);
 
-    const toggle = (collapsed?: boolean | unknown) =>
-        typeof collapsed === 'boolean' ? setCollapsed(collapsed) : setCollapsed((c) => !c);
+    const toggle = (collapsed?: boolean | unknown) => {
+        return typeof collapsed === 'boolean' ? setCollapsed(collapsed) : setCollapsed((c) => !c);
+    };
 
     const containerScroll = useContainerHeight<HTMLDivElement>();
 
