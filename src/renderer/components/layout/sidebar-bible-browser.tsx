@@ -13,17 +13,28 @@ import ContainerScrollY from '../container-scroll-y';
 import { interactiveProps } from '@renderer/utils/interactive';
 
 // ---------------------------------------------------------------------------
+// Module-level cache — survives unmount/remount across tab switches
+// ---------------------------------------------------------------------------
+
+let cachedVersions: BibleVersionInfo[] = [];
+let cachedActiveVersion: string | undefined;
+let cachedBooks: BookEntry[] = [];
+let cachedNoBible = false;
+
+// ---------------------------------------------------------------------------
 // Compact version selector (Select dropdown for sidebar)
 // ---------------------------------------------------------------------------
 
 function CompactVersionSelector() {
-    const [versions, setVersions] = useState<BibleVersionInfo[]>([]);
-    const [activeVersion, setActiveVersion] = useState<string | undefined>();
+    const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
+    const [activeVersion, setActiveVersion] = useState<string | undefined>(cachedActiveVersion);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
 
     const refresh = useCallback(() => {
         Promise.all([window.api.bible.getVersions(), window.api.bible.getActiveVersion()]).then(
             ([all, active]) => {
+                cachedVersions = all;
+                cachedActiveVersion = active?.abbreviation;
                 setVersions(all);
                 setActiveVersion(active?.abbreviation);
             },
@@ -31,6 +42,8 @@ function CompactVersionSelector() {
     }, []);
 
     useEffect(() => {
+        // If we already have cached data, skip the blocking refresh
+        if (cachedVersions.length > 0) return;
         window.api.bible
             .refreshIndex()
             .then(() => refresh())
@@ -82,7 +95,7 @@ function CompactVersionSelector() {
     // send resize event to help ContainerScrollY to get space available
     useEffect(() => {
         requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
-    }, [installed, downloadable]);  
+    }, [installed, downloadable]);
 
     if (versions.length === 0) return null;
 
@@ -217,8 +230,8 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
 // ---------------------------------------------------------------------------
 
 export default function SidebarBibleBrowser() {
-    const [books, setBooks] = useState<BookEntry[]>([]);
-    const [noBible, setNoBible] = useState(false);
+    const [books, setBooks] = useState<BookEntry[]>(cachedBooks);
+    const [noBible, setNoBible] = useState(cachedNoBible);
     const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
 
     const loadIndex = useCallback(() => {
@@ -226,6 +239,8 @@ export default function SidebarBibleBrowser() {
             .getIndexes()
             .then((flat: BibleIndex) => {
                 if (!flat || Object.keys(flat).length === 0) {
+                    cachedNoBible = true;
+                    cachedBooks = [];
                     setNoBible(true);
                     return;
                 }
@@ -241,14 +256,23 @@ export default function SidebarBibleBrowser() {
                             .sort((a, b) => +a - +b),
                     }),
                 );
+                cachedBooks = entries;
+                cachedNoBible = false;
                 setBooks(entries);
                 setNoBible(false);
             })
-            .catch(() => setNoBible(true));
+            .catch(() => {
+                cachedNoBible = true;
+                setNoBible(true);
+            });
     }, []);
 
     useEffect(() => {
-        loadIndex();
+        // Only fetch if no cached data — cache is invalidated on version change
+        if (cachedBooks.length === 0) {
+            loadIndex();
+        }
+
         const handler = () => {
             loadIndex();
             setSelectedBook(null);
