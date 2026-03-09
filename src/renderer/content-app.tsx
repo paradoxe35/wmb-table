@@ -27,7 +27,7 @@ const Loader: FC<{ children?: ReactNode }> = ({ children }) => {
             <Suspense
                 fallback={
                     <div className="flex flex-center" style={{ marginTop: '2rem' }}>
-                        <Spin indicator={<LoadingOutlined style={{ fontSize: 30 }} spin />} />
+                        <Spin />
                     </div>
                 }
             >

@@ -103,7 +103,7 @@ const DocumentsAdded = () => {
 
     return (
         <>
-            <div style={{ padding: '8px 10px 4px', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ padding: '8px 10px 4px', display: 'flex', justifyContent: 'center' }}>
                 <Button
                     type="text"
                     size="small"
@@ -129,8 +129,8 @@ const DocumentsAdded = () => {
                                     {new Date(d.createdAt).toLocaleDateString()}
                                 </div>
                             </div>
-                            <div className="sidebar-item__right">
-                                <FileTextOutlined style={{ fontSize: '0.75em', opacity: 0.4 }} />
+                            <div className="sidebar-item__right" style={{ alignSelf: 'center' }}>
+                                <FileTextOutlined style={{ opacity: 0.4 }} />
                             </div>
                         </div>
                     ))}

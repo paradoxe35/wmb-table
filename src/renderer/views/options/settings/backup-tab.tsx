@@ -164,7 +164,7 @@ export default function BackupTab() {
             {/* Access warning */}
             {!status.access && (
                 <Alert
-                    message="Accès limité"
+                    title="Accès limité"
                     description="Reconnectez-vous et assurez-vous d'avoir autorisé l'accès demandé en cochant les cases qui s'afficheront."
                     type="error"
                     showIcon

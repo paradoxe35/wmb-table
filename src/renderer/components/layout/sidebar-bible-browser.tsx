@@ -9,6 +9,7 @@ import type {
     BibleVersionInfo,
 } from '@shared/types';
 import { useOpenBibleChapter } from '@renderer/hooks';
+import { useAppStore } from '@renderer/stores';
 import ContainerScrollY from '../container-scroll-y';
 import { interactiveProps } from '@renderer/utils/interactive';
 
@@ -20,35 +21,58 @@ let cachedVersions: BibleVersionInfo[] = [];
 let cachedActiveVersion: string | undefined;
 let cachedBooks: BookEntry[] = [];
 let cachedNoBible = false;
+let cachedForLanguage: string | null = null;
+
+function invalidateCache() {
+    cachedVersions = [];
+    cachedActiveVersion = undefined;
+    cachedBooks = [];
+    cachedNoBible = false;
+}
 
 // ---------------------------------------------------------------------------
 // Compact version selector (Select dropdown for sidebar)
 // ---------------------------------------------------------------------------
 
 function CompactVersionSelector() {
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
     const [activeVersion, setActiveVersion] = useState<string | undefined>(cachedActiveVersion);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
 
     const refresh = useCallback(() => {
         Promise.all([window.api.bible.getVersions(), window.api.bible.getActiveVersion()]).then(
-            ([all, active]) => {
+            async ([langVersions, active]) => {
+                // If no versions for the active language, show all available versions
+                const all =
+                    langVersions.length > 0
+                        ? langVersions
+                        : await window.api.bible.getAllVersions();
                 cachedVersions = all;
                 cachedActiveVersion = active?.abbreviation;
+                cachedForLanguage = activeLanguage;
                 setVersions(all);
                 setActiveVersion(active?.abbreviation);
             },
         );
-    }, []);
+    }, [activeLanguage]);
 
     useEffect(() => {
+        // Invalidate cache on language change
+        if (activeLanguage !== cachedForLanguage) {
+            invalidateCache();
+            setVersions([]);
+            setActiveVersion(undefined);
+        }
         // If we already have cached data, skip the blocking refresh
-        if (cachedVersions.length > 0) return;
+        if (cachedVersions.length > 0) {
+            return;
+        }
         window.api.bible
             .refreshIndex()
             .then(() => refresh())
             .catch(() => refresh());
-    }, [refresh]);
+    }, [refresh, activeLanguage]);
 
     useEffect(() => {
         const unsub1 = window.api.on.bibleDownloadProgress((p: BibleDownloadProgress) => {
@@ -230,6 +254,7 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
 // ---------------------------------------------------------------------------
 
 export default function SidebarBibleBrowser() {
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [books, setBooks] = useState<BookEntry[]>(cachedBooks);
     const [noBible, setNoBible] = useState(cachedNoBible);
     const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
@@ -268,9 +293,10 @@ export default function SidebarBibleBrowser() {
     }, []);
 
     useEffect(() => {
-        // Only fetch if no cached data — cache is invalidated on version change
-        if (cachedBooks.length === 0) {
+        // Reload when language changes or no cached data
+        if (cachedBooks.length === 0 || activeLanguage !== cachedForLanguage) {
             loadIndex();
+            setSelectedBook(null);
         }
 
         const handler = () => {
@@ -279,7 +305,7 @@ export default function SidebarBibleBrowser() {
         };
         window.addEventListener('bible-version-changed', handler);
         return () => window.removeEventListener('bible-version-changed', handler);
-    }, [loadIndex]);
+    }, [loadIndex, activeLanguage]);
 
     if (noBible) {
         return (

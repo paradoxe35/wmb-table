@@ -75,7 +75,7 @@ export default function UpdateTab() {
             action = { label: 'Mettre à jour', onClick: startDownload };
             content = (
                 <Alert
-                    message="Mise à jour de l'application"
+                    title="Mise à jour de l'application"
                     description="Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour."
                     type="info"
                     showIcon
@@ -95,7 +95,7 @@ export default function UpdateTab() {
             action = { label: 'Installer la mise à jour', onClick: quitAndInstall };
             content = (
                 <Alert
-                    message="Téléchargement terminé"
+                    title="Téléchargement terminé"
                     description="Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise à jour."
                     type="success"
                     showIcon
@@ -105,7 +105,7 @@ export default function UpdateTab() {
         case 'error':
             content = (
                 <Alert
-                    message="Erreur !"
+                    title="Erreur !"
                     description="Une erreur s'est produite lors de la mise à jour, veuillez réessayer plus tard."
                     type="error"
                     showIcon
@@ -115,7 +115,7 @@ export default function UpdateTab() {
         case 'noUpdate':
             content = (
                 <Alert
-                    message="Aucune mise à jour disponible"
+                    title="Aucune mise à jour disponible"
                     description="Vous utilisez déjà la dernière version de l'application."
                     type="info"
                     showIcon
