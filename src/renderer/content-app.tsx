@@ -4,8 +4,6 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { useAppStore } from './stores';
 import LoadByVisibility from './components/load-by-visibility';
 import CustomDocumentsModal from './views/components/modals/custom-documents';
-import BackupProfileModal from './views/components/modals/backup-profile-modal';
-import UpdaterModal from './views/components/modals/updater-modal';
 import { OtherTraductionsModal } from './views/components/modals/other-traductions-modal';
 import { SubjectSelectModal } from './views/components/modals/subject-select-modal';
 import { NoteReferencesModal } from './views/components/modals/note-references-modal';
@@ -18,6 +16,7 @@ import Search from './views/options/search';
 import History from './views/options/history';
 import Subject from './views/options/subject';
 import Bible from './views/options/bible';
+import Settings from './views/options/settings';
 import DocumentView from './views/document-view';
 
 const Notes = lazy(() => import('./views/options/notes'));
@@ -67,6 +66,11 @@ const AppOptions = memo(function AppOptions(): ReactElement {
                     <Bible />
                 </Loader>
             ),
+            settings: (
+                <Loader>
+                    <Settings />
+                </Loader>
+            ),
         }),
         [],
     );
@@ -112,8 +116,6 @@ export function ContentApp() {
             </div>
             {/* independent components */}
             <CustomDocumentsModal />
-            <BackupProfileModal />
-            <UpdaterModal />
             <OtherTraductionsModal />
             <SubjectSelectModal />
             <NoteReferencesModal />

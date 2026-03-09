@@ -1,6 +1,7 @@
 import { Menu, shell, app, type BrowserWindow } from 'electron';
 import { is } from '@electron-toolkit/utils';
 import { PushChannels } from '@shared/ipc.types';
+import { DOCS_LINK } from '@shared/constants';
 import { sendToRenderer } from '@main/ipc/register';
 
 export default class MenuBuilder {
@@ -125,6 +126,21 @@ export default class MenuBuilder {
                             sendToRenderer(this.mainWindow, PushChannels.switchOnOptions);
                         },
                     },
+                    { type: 'separator' },
+                    {
+                        label: 'Paramètres',
+                        accelerator: this.isD('Ctrl+,'),
+                        click: () => {
+                            sendToRenderer(this.mainWindow, PushChannels.openSettings);
+                        },
+                    },
+                    {
+                        label: 'Langues',
+                        accelerator: this.isD('Ctrl+L'),
+                        click: () => {
+                            sendToRenderer(this.mainWindow, PushChannels.openLanguageManager);
+                        },
+                    },
                     ...(is.dev
                         ? [
                               {
@@ -165,42 +181,12 @@ export default class MenuBuilder {
                 ],
             },
             {
-                label: 'Outils',
-                submenu: [
-                    {
-                        label: 'Langues',
-                        accelerator: this.isD('Ctrl+L'),
-                        click: () => {
-                            sendToRenderer(this.mainWindow, PushChannels.openLanguageManager);
-                        },
-                    },
-                    { type: 'separator' },
-                    {
-                        label: 'Sauvegarde',
-                        accelerator: this.isD('Ctrl+Shift+R'),
-                        click: () => {
-                            sendToRenderer(this.mainWindow, PushChannels.openBackupModalFromMain);
-                        },
-                    },
-                    {
-                        label: 'Mise à jour',
-                        accelerator: this.isD('Ctrl+U'),
-                        click: () => {
-                            sendToRenderer(this.mainWindow, PushChannels.appUpdateMenu);
-                        },
-                    },
-                ],
-            },
-            {
                 label: 'Aide',
                 submenu: [
                     {
                         label: 'Documentation',
                         click: () => {
-                            const url = process.env['DOCS_LINK'];
-                            if (url) {
-                                shell.openExternal(url);
-                            }
+                            shell.openExternal(DOCS_LINK);
                         },
                     },
                     {

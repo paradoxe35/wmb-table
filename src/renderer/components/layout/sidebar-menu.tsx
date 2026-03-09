@@ -1,5 +1,11 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { HistoryOutlined, GroupOutlined, SearchOutlined, EditOutlined } from '@ant-design/icons';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+    HistoryOutlined,
+    GroupOutlined,
+    SearchOutlined,
+    EditOutlined,
+    SettingOutlined,
+} from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
 import type { MenuProps } from 'antd';
 import { useAppStore } from '@renderer/stores';
@@ -9,6 +15,22 @@ import AudioDocumentPlayerIndicator from '../audio-document-player-indicator';
 const { Sider } = Layout;
 
 type OptionDef = { key: string; name: string; icon: React.ReactNode };
+
+const mainOptions: OptionDef[] = [
+    { key: 'history', name: 'Historique', icon: <HistoryOutlined /> },
+    { key: 'search', name: 'Recherche', icon: <SearchOutlined /> },
+    { key: 'subject', name: 'Sujets', icon: <GroupOutlined /> },
+    { key: 'editor', name: 'Notes', icon: <EditOutlined /> },
+];
+
+const secondaryOptions: OptionDef[] = [{ key: 'bible', name: 'Bible', icon: <BibleIcons /> }];
+
+const bottomOptions: OptionDef[] = [
+    { key: 'settings', name: 'Paramètres', icon: <SettingOutlined /> },
+];
+
+// Options that participate in Ctrl+Shift+Tab cycling (exclude settings)
+const cyclableOptions = [...mainOptions, ...secondaryOptions];
 
 export default function SidebarMenu({
     collapsed,
@@ -22,43 +44,37 @@ export default function SidebarMenu({
     const optionViewRef = useRef(optionView);
     optionViewRef.current = optionView;
 
-    const optionDefs: OptionDef[] = useMemo(
-        () => [
-            { key: 'history', name: 'Historique', icon: <HistoryOutlined /> },
-            { key: 'search', name: 'Recherche', icon: <SearchOutlined /> },
-            { key: 'subject', name: 'Sujets', icon: <GroupOutlined /> },
-            { key: 'editor', name: 'Notes', icon: <EditOutlined /> },
-            { key: 'bible', name: 'Bible', icon: <BibleIcons /> },
-        ],
-        [],
+    const toItem = useCallback(
+        (op: OptionDef) => ({
+            key: op.key,
+            icon: op.icon,
+            label: op.name,
+            onClick: () => showOptions(op.key as 'search'),
+        }),
+        [showOptions],
     );
 
     const menuItems: MenuProps['items'] = useMemo(
         () => [
-            ...optionDefs.slice(0, 4).map((op) => ({
-                key: op.key,
-                icon: op.icon,
-                label: op.name,
-                onClick: () => showOptions(op.key as 'search'),
-            })),
+            ...mainOptions.map(toItem),
             { type: 'divider' as const },
-            ...optionDefs.slice(4).map((op) => ({
-                key: op.key,
-                icon: op.icon,
-                label: op.name,
-                onClick: () => showOptions(op.key as 'search'),
-            })),
+            ...secondaryOptions.map(toItem),
         ],
-        [optionDefs, showOptions],
+        [toItem],
+    );
+
+    const bottomMenuItems: MenuProps['items'] = useMemo(
+        () => bottomOptions.map((op) => toItem(op)),
+        [toItem],
     );
 
     useEffect(() => {
         return window.api.on.switchOnOptions(() => {
-            let index = optionDefs.findIndex((v) => optionViewRef.current === v.key);
-            index = index >= 0 && optionDefs[index + 1] ? index + 1 : 0;
-            showOptions(optionDefs[index].key as 'search');
+            let index = cyclableOptions.findIndex((v) => optionViewRef.current === v.key);
+            index = index >= 0 && cyclableOptions[index + 1] ? index + 1 : 0;
+            showOptions(cyclableOptions[index].key as 'search');
         });
-    }, [optionDefs, showOptions]);
+    }, [showOptions]);
 
     return (
         <Sider
@@ -69,7 +85,11 @@ export default function SidebarMenu({
             onCollapse={onCollapse}
         >
             <div className="full-item-separated">
-                <Menu mode="inline" selectedKeys={[optionView]} items={menuItems} />
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                    <Menu mode="inline" selectedKeys={[optionView]} items={menuItems} />
+                    <div style={{ flex: 1 }} />
+                    <Menu mode="inline" selectedKeys={[optionView]} items={bottomMenuItems} />
+                </div>
                 <AudioDocumentPlayerIndicator />
             </div>
         </Sider>

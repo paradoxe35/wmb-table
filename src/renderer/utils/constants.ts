@@ -1,7 +1,11 @@
 export const APP_NAME = 'Wmb Table';
-export const DOCS_LINK = 'https://wmb-table.web.app/';
-export const DOCS_SUBJECT_LINK = 'https://wmb-table.web.app/docs/features/subjects';
-export const DOCS_NOTE_LINK = 'https://wmb-table.web.app/docs/features/notes';
+export {
+    WEBSITE_LINK,
+    DOCS_LINK,
+    DOCS_SUBJECT_LINK,
+    DOCS_NOTE_LINK,
+    DOCS_CUSTOM_DOCUMENT_LINK,
+} from '@shared/constants';
 
 export const AUDIO_SPEEDS = [0.75, 1, 1.25, 1.5, 2] as const;
 export const DEBOUNCE_MS = 300;

@@ -182,6 +182,7 @@ export const PushChannels = {
     languageInstalled: 'push:languageInstalled',
     bibleDownloadProgress: 'push:bibleDownloadProgress',
     bibleDownloaded: 'push:bibleDownloaded',
+    openSettings: 'push:openSettings',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -375,6 +376,7 @@ export interface PushEventMap {
     [PushChannels.languageInstalled]: LanguageInstalledEvent;
     [PushChannels.bibleDownloadProgress]: BibleDownloadProgress;
     [PushChannels.bibleDownloaded]: BibleDownloadedEvent;
+    [PushChannels.openSettings]: void;
 }
 
 // ---------------------------------------------------------------------------

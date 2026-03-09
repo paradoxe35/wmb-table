@@ -251,6 +251,8 @@ const api = {
         ) => onPush(PushChannels.bibleDownloadProgress, cb),
         bibleDownloaded: (cb: (p: PushEventMap[typeof PushChannels.bibleDownloaded]) => void) =>
             onPush(PushChannels.bibleDownloaded, cb),
+        openSettings: (cb: (p: PushEventMap[typeof PushChannels.openSettings]) => void) =>
+            onPush(PushChannels.openSettings, cb),
     },
 } as const;
 
