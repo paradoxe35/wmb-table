@@ -4,8 +4,7 @@ import { useModalVisible, useActiveTabTitle } from '@renderer/hooks';
 import { useSermonStore, useAppStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-
-type Translation = { languageCode: string; title: string; translatorName: string | null };
+import type { SermonTranslation } from '@shared/types';
 
 export function OtherTraductionsModal() {
     const { visible, hide, setVisible } = useModalVisible();
@@ -17,7 +16,7 @@ export function OtherTraductionsModal() {
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
     const activeTabKey = useSermonStore(selectActiveTabKey);
 
-    const [translations, setTranslations] = useState<Translation[]>([]);
+    const [translations, setTranslations] = useState<SermonTranslation[]>([]);
     const [loading, setLoading] = useState(false);
 
     const meta = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;

@@ -18,20 +18,15 @@ import {
     type PushEventMap,
 } from '@shared/ipc.types';
 import type {
-    AudioDownloadProgress,
     BibleBook,
     BookRequest,
     DocumentHtmlTree,
     DocumentTab,
-    DocumentType,
-    HighlightParagraphRange,
-    LanguageDownloadProgress,
+    HighlightCreateData,
+    HighlightUpdateData,
     ParagraphReference,
-    RestoreProgressEvent,
     SearchMode,
     SubjectRefTree,
-    UpdaterNotification,
-    ViewMenuValue,
 } from '@shared/types';
 
 function invoke<C extends InvokeChannel>(
@@ -163,18 +158,8 @@ const api = {
     highlights: {
         getByDocument: (documentTitle: string, sermonId: string) =>
             invoke(HighlightChannels.getByDocument, documentTitle, sermonId),
-        create: (data: {
-            documentTitle: string;
-            sermonId: string;
-            paragraphs: HighlightParagraphRange[];
-            textSnippet: string;
-            color: string;
-            comment?: string;
-            documentType: DocumentType;
-            translationId: number;
-            languageCode: string;
-        }) => invoke(HighlightChannels.create, data),
-        update: (id: string, data: { color?: string; comment?: string }) =>
+        create: (data: HighlightCreateData) => invoke(HighlightChannels.create, data),
+        update: (id: string, data: HighlightUpdateData) =>
             invoke(HighlightChannels.update, id, data),
         delete: (id: string) => invoke(HighlightChannels.delete, id),
     },
@@ -223,35 +208,48 @@ const api = {
     },
 
     on: {
-        openModalDocumentFromMain: (cb: () => void) =>
-            onPush(PushChannels.openModalDocumentFromMain, cb as () => void),
-        backupProgression: (cb: (event: RestoreProgressEvent) => void) =>
+        openModalDocumentFromMain: (
+            cb: (p: PushEventMap[typeof PushChannels.openModalDocumentFromMain]) => void,
+        ) => onPush(PushChannels.openModalDocumentFromMain, cb),
+        backupProgression: (cb: (p: PushEventMap[typeof PushChannels.backupProgression]) => void) =>
             onPush(PushChannels.backupProgression, cb),
-        backupAccessStatus: (cb: (status: boolean) => void) =>
-            onPush(PushChannels.backupAccessStatus, cb),
-        openBackupModalFromMain: (cb: () => void) =>
-            onPush(PushChannels.openBackupModalFromMain, cb as () => void),
-        appUpdateMenu: (cb: () => void) => onPush(PushChannels.appUpdateMenu, cb as () => void),
-        toggleSidebar: (cb: () => void) => onPush(PushChannels.toggleSidebar, cb as () => void),
-        switchOnMenu: (cb: () => void) => onPush(PushChannels.switchOnMenu, cb as () => void),
-        notifyForNewUpdate: (cb: (notification: UpdaterNotification) => void) =>
-            onPush(PushChannels.notifyForNewUpdate, cb),
-        switchOnOptions: (cb: () => void) => onPush(PushChannels.switchOnOptions, cb as () => void),
-        changeMenuViewer: (cb: (value: ViewMenuValue) => void) =>
+        backupAccessStatus: (
+            cb: (p: PushEventMap[typeof PushChannels.backupAccessStatus]) => void,
+        ) => onPush(PushChannels.backupAccessStatus, cb),
+        openBackupModalFromMain: (
+            cb: (p: PushEventMap[typeof PushChannels.openBackupModalFromMain]) => void,
+        ) => onPush(PushChannels.openBackupModalFromMain, cb),
+        appUpdateMenu: (cb: (p: PushEventMap[typeof PushChannels.appUpdateMenu]) => void) =>
+            onPush(PushChannels.appUpdateMenu, cb),
+        toggleSidebar: (cb: (p: PushEventMap[typeof PushChannels.toggleSidebar]) => void) =>
+            onPush(PushChannels.toggleSidebar, cb),
+        switchOnMenu: (cb: (p: PushEventMap[typeof PushChannels.switchOnMenu]) => void) =>
+            onPush(PushChannels.switchOnMenu, cb),
+        notifyForNewUpdate: (
+            cb: (p: PushEventMap[typeof PushChannels.notifyForNewUpdate]) => void,
+        ) => onPush(PushChannels.notifyForNewUpdate, cb),
+        switchOnOptions: (cb: (p: PushEventMap[typeof PushChannels.switchOnOptions]) => void) =>
+            onPush(PushChannels.switchOnOptions, cb),
+        changeMenuViewer: (cb: (p: PushEventMap[typeof PushChannels.changeMenuViewer]) => void) =>
             onPush(PushChannels.changeMenuViewer, cb),
-        downloadAudioProgress: (cb: (progress: AudioDownloadProgress) => void) =>
-            onPush(PushChannels.downloadAudioProgress, cb),
-        newSynchronizedDatas: (cb: (tables: string[]) => void) =>
-            onPush(PushChannels.newSynchronizedDatas, cb),
-        openLanguageManager: (cb: () => void) =>
-            onPush(PushChannels.openLanguageManager, cb as () => void),
-        languageDownloadProgress: (cb: (p: LanguageDownloadProgress) => void) =>
-            onPush(PushChannels.languageDownloadProgress, cb),
-        languageInstalled: (cb: (p: { langCode: string }) => void) =>
+        downloadAudioProgress: (
+            cb: (p: PushEventMap[typeof PushChannels.downloadAudioProgress]) => void,
+        ) => onPush(PushChannels.downloadAudioProgress, cb),
+        newSynchronizedDatas: (
+            cb: (p: PushEventMap[typeof PushChannels.newSynchronizedDatas]) => void,
+        ) => onPush(PushChannels.newSynchronizedDatas, cb),
+        openLanguageManager: (
+            cb: (p: PushEventMap[typeof PushChannels.openLanguageManager]) => void,
+        ) => onPush(PushChannels.openLanguageManager, cb),
+        languageDownloadProgress: (
+            cb: (p: PushEventMap[typeof PushChannels.languageDownloadProgress]) => void,
+        ) => onPush(PushChannels.languageDownloadProgress, cb),
+        languageInstalled: (cb: (p: PushEventMap[typeof PushChannels.languageInstalled]) => void) =>
             onPush(PushChannels.languageInstalled, cb),
-        bibleDownloadProgress: (cb: (p: { abbreviation: string; percentage: number }) => void) =>
-            onPush(PushChannels.bibleDownloadProgress, cb),
-        bibleDownloaded: (cb: (p: { abbreviation: string }) => void) =>
+        bibleDownloadProgress: (
+            cb: (p: PushEventMap[typeof PushChannels.bibleDownloadProgress]) => void,
+        ) => onPush(PushChannels.bibleDownloadProgress, cb),
+        bibleDownloaded: (cb: (p: PushEventMap[typeof PushChannels.bibleDownloaded]) => void) =>
             onPush(PushChannels.bibleDownloaded, cb),
     },
 } as const;

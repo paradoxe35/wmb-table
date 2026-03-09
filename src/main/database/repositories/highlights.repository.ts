@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { highlights } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
-import type { DocumentType, HighlightItem, HighlightParagraphRange } from '@shared/types';
+import type {
+    DocumentType,
+    HighlightCreateData,
+    HighlightItem,
+    HighlightUpdateData,
+} from '@shared/types';
 
 function toHighlightItem(row: typeof highlights.$inferSelect): HighlightItem {
     return {
@@ -34,17 +39,7 @@ export function getByDocument(documentTitle: string, sermonId: string): Highligh
     return rows.map(toHighlightItem);
 }
 
-export function create(data: {
-    documentTitle: string;
-    sermonId: string;
-    paragraphs: HighlightParagraphRange[];
-    textSnippet: string;
-    color: string;
-    comment?: string;
-    documentType: DocumentType;
-    translationId: number;
-    languageCode: string;
-}): HighlightItem[] {
+export function create(data: HighlightCreateData): HighlightItem[] {
     const groupId = randomUUID();
     const now = new Date().toISOString();
     const results: HighlightItem[] = [];
@@ -76,10 +71,7 @@ export function create(data: {
     return results;
 }
 
-export function update(
-    id: string,
-    data: { color?: string; comment?: string },
-): HighlightItem | null {
+export function update(id: string, data: HighlightUpdateData): HighlightItem | null {
     const db = getDb();
     const existing = db.select().from(highlights).where(eq(highlights.id, id)).get();
     if (!existing) return null;

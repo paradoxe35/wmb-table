@@ -1,7 +1,13 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Divider, Empty, Progress, Select, Space, Typography } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
-import type { BibleIndex, BibleIndexValue, BibleVersionInfo } from '@shared/types';
+import type {
+    BibleDownloadProgress,
+    BibleDownloadedEvent,
+    BibleIndex,
+    BibleIndexValue,
+    BibleVersionInfo,
+} from '@shared/types';
 import { useOpenBibleChapter } from '@renderer/hooks';
 import ContainerScrollY from '../container-scroll-y';
 import { interactiveProps } from '@renderer/utils/interactive';
@@ -32,21 +38,17 @@ function CompactVersionSelector() {
     }, [refresh]);
 
     useEffect(() => {
-        const unsub1 = window.api.on.bibleDownloadProgress(
-            (p: { abbreviation: string; percentage: number }) => {
-                setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
-            },
-        );
-        const unsub2 = window.api.on.bibleDownloaded(
-            ({ abbreviation }: { abbreviation: string }) => {
-                setDownloadProgress((prev) => {
-                    const next = { ...prev };
-                    delete next[abbreviation];
-                    return next;
-                });
-                handleSwitch(abbreviation);
-            },
-        );
+        const unsub1 = window.api.on.bibleDownloadProgress((p: BibleDownloadProgress) => {
+            setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
+        });
+        const unsub2 = window.api.on.bibleDownloaded(({ abbreviation }: BibleDownloadedEvent) => {
+            setDownloadProgress((prev) => {
+                const next = { ...prev };
+                delete next[abbreviation];
+                return next;
+            });
+            handleSwitch(abbreviation);
+        });
         return () => {
             unsub1();
             unsub2();

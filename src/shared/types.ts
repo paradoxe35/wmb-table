@@ -68,8 +68,19 @@ export interface SermonMeta {
     cityState: string | null;
 }
 
+export interface AvailableTraduction {
+    translationId: number;
+    traductionName: string | null;
+}
+
 export interface SermonMetaWithTraductions extends SermonMeta {
-    availableTraductions: { translationId: number; traductionName: string | null }[];
+    availableTraductions: AvailableTraduction[];
+}
+
+export interface SermonTranslation {
+    languageCode: string;
+    title: string;
+    translatorName: string | null;
 }
 
 export type DocumentType = 'sermon' | 'custom' | 'bible';
@@ -265,6 +276,23 @@ export interface HighlightParagraphRange {
     endOffset: number;
 }
 
+export interface HighlightCreateData {
+    documentTitle: string;
+    sermonId: string;
+    paragraphs: HighlightParagraphRange[];
+    textSnippet: string;
+    color: string;
+    comment?: string;
+    documentType: DocumentType;
+    translationId: number;
+    languageCode: string;
+}
+
+export interface HighlightUpdateData {
+    color?: string;
+    comment?: string;
+}
+
 export interface HighlightItem extends Readonly<BaseEntity> {
     groupId: string;
     documentTitle: string;
@@ -292,6 +320,11 @@ export interface AudioDocumentTime extends BaseEntity {
 export interface AudioDocumentDownload extends BaseEntity {
     local_file?: string;
     audio_link: string;
+}
+
+export interface AudioTimeAndDownload {
+    time: AudioDocumentTime | null;
+    download: AudioDocumentDownload | null;
 }
 
 export type AudioDownloadProgress = {
@@ -423,6 +456,10 @@ export interface LanguageDownloadProgress {
     percentage: number;
 }
 
+export interface LanguageInstalledEvent {
+    langCode: string;
+}
+
 // ---------------------------------------------------------------------------
 // Tantivy Search
 // ---------------------------------------------------------------------------
@@ -458,6 +495,15 @@ export interface BibleVersionInfo {
     name: string;
     type: 'local' | 'remote';
     available: boolean;
+}
+
+export interface BibleDownloadProgress {
+    abbreviation: string;
+    percentage: number;
+}
+
+export interface BibleDownloadedEvent {
+    abbreviation: string;
 }
 
 // ---------------------------------------------------------------------------

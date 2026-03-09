@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Progress, Space, Tag, Tooltip, Typography } from 'antd';
 import { CheckCircleOutlined, CloudDownloadOutlined } from '@ant-design/icons';
-import type { BibleVersionInfo } from '@shared/types';
+import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
 
 export function BibleVersionSelector() {
     const [versions, setVersions] = useState<BibleVersionInfo[]>([]);
@@ -26,22 +26,18 @@ export function BibleVersionSelector() {
     }, [refresh]);
 
     useEffect(() => {
-        const unsub1 = window.api.on.bibleDownloadProgress(
-            (p: { abbreviation: string; percentage: number }) => {
-                setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
-            },
-        );
-        const unsub2 = window.api.on.bibleDownloaded(
-            ({ abbreviation }: { abbreviation: string }) => {
-                setDownloadProgress((prev) => {
-                    const next = { ...prev };
-                    delete next[abbreviation];
-                    return next;
-                });
-                // Auto-switch to the newly downloaded version
-                handleSwitch(abbreviation);
-            },
-        );
+        const unsub1 = window.api.on.bibleDownloadProgress((p: BibleDownloadProgress) => {
+            setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
+        });
+        const unsub2 = window.api.on.bibleDownloaded(({ abbreviation }: BibleDownloadedEvent) => {
+            setDownloadProgress((prev) => {
+                const next = { ...prev };
+                delete next[abbreviation];
+                return next;
+            });
+            // Auto-switch to the newly downloaded version
+            handleSwitch(abbreviation);
+        });
         return () => {
             unsub1();
             unsub2();

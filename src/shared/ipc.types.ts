@@ -18,9 +18,9 @@ import type {
     CustomDocumentContent,
     HistoryData,
     HistoryDataItem,
-    AudioDocumentTime,
-    AudioDocumentDownload,
+    AudioTimeAndDownload,
     AudioDownloadProgress,
+    SearchMode,
     BackupStatus,
     RestoreProgressEvent,
     UpdaterNotification,
@@ -35,8 +35,12 @@ import type {
     TantivySearchResult,
     LanguageDownloadProgress,
     SyncStatus,
-    DocumentType,
-    HighlightParagraphRange,
+    HighlightCreateData,
+    HighlightUpdateData,
+    SermonTranslation,
+    BibleDownloadProgress,
+    BibleDownloadedEvent,
+    LanguageInstalledEvent,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -196,7 +200,7 @@ export interface InvokeChannelMap {
     [DocumentChannels.getSermonsByYear]: { args: [string]; return: Record<string, SermonMeta[]> };
     [DocumentChannels.getTranslations]: {
         args: [string];
-        return: { languageCode: string; title: string; translatorName: string | null }[];
+        return: SermonTranslation[];
     };
     [DocumentChannels.getTraductionsForSermon]: {
         args: [string, string];
@@ -215,7 +219,7 @@ export interface InvokeChannelMap {
     [SearchChannels.getSuggestions]: { args: [string]; return: Suggestions[] };
     [SearchChannels.addSuggestion]: { args: [string, number, string]; return: Suggestions };
     [SearchChannels.searchText]: {
-        args: [string, string, number, import('./types').SearchMode];
+        args: [string, string, number, SearchMode];
         return: TantivySearchResult;
     };
     [SearchChannels.searchContent]: {
@@ -299,23 +303,11 @@ export interface InvokeChannelMap {
         return: HighlightItem[];
     };
     [HighlightChannels.create]: {
-        args: [
-            {
-                documentTitle: string;
-                sermonId: string;
-                paragraphs: HighlightParagraphRange[];
-                textSnippet: string;
-                color: string;
-                comment?: string;
-                documentType: DocumentType;
-                translationId: number;
-                languageCode: string;
-            },
-        ];
+        args: [HighlightCreateData];
         return: HighlightItem[];
     };
     [HighlightChannels.update]: {
-        args: [string, { color?: string; comment?: string }];
+        args: [string, HighlightUpdateData];
         return: HighlightItem | null;
     };
     [HighlightChannels.delete]: { args: [string]; return: void };
@@ -323,7 +315,7 @@ export interface InvokeChannelMap {
     // Audio
     [AudioChannels.getTimeAndLocalFile]: {
         args: [string];
-        return: { time: AudioDocumentTime | null; download: AudioDocumentDownload | null };
+        return: AudioTimeAndDownload;
     };
     [AudioChannels.setTime]: { args: [string, number]; return: void };
     [AudioChannels.getLastPlay]: { args: []; return: string | null };
@@ -380,9 +372,9 @@ export interface PushEventMap {
     [PushChannels.newSynchronizedDatas]: string[];
     [PushChannels.openLanguageManager]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
-    [PushChannels.languageInstalled]: { langCode: string };
-    [PushChannels.bibleDownloadProgress]: { abbreviation: string; percentage: number };
-    [PushChannels.bibleDownloaded]: { abbreviation: string };
+    [PushChannels.languageInstalled]: LanguageInstalledEvent;
+    [PushChannels.bibleDownloadProgress]: BibleDownloadProgress;
+    [PushChannels.bibleDownloaded]: BibleDownloadedEvent;
 }
 
 // ---------------------------------------------------------------------------

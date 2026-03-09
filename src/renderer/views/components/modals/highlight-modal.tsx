@@ -2,7 +2,9 @@ import { Button, Input, Modal, Space, message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useModalVisible } from '@renderer/hooks';
 import { CHILD_PARENT_WINDOW_EVENT, HIGHLIGHT_EVENT } from '@renderer/utils/events';
-import type { DocumentType, HighlightParagraphRange } from '@shared/types';
+import type { HighlightCreateData } from '@shared/types';
+
+type HighlightModalData = Omit<HighlightCreateData, 'color' | 'comment'>;
 
 const PRESET_COLORS = [
     { label: 'Jaune', value: '#FFFF00' },
@@ -18,16 +20,6 @@ const PRESET_COLORS = [
     { label: 'Cyan', value: '#B0E0E6' },
     { label: 'Lime', value: '#D4FF00' },
 ];
-
-interface HighlightModalData {
-    documentTitle: string;
-    sermonId: string;
-    paragraphs: HighlightParagraphRange[];
-    textSnippet: string;
-    translationId: number;
-    languageCode: string;
-    documentType: DocumentType;
-}
 
 export default function HighlightModal() {
     const { visible, hide, setVisible } = useModalVisible();

@@ -4,7 +4,7 @@ import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-desi
 import { useModalVisible } from '@renderer/hooks';
 import { useAppStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
-import type { LanguageDownloadProgress } from '@shared/types';
+import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 
 const { Text } = Typography;
@@ -215,7 +215,7 @@ export default function LanguageManagerModal() {
         const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
             setDownloadProgress((prev) => ({ ...prev, [p.langCode]: p.percentage }));
         });
-        const unsub2 = window.api.on.languageInstalled(({ langCode }: { langCode: string }) => {
+        const unsub2 = window.api.on.languageInstalled(({ langCode }: LanguageInstalledEvent) => {
             setDownloadProgress((prev) => {
                 const next = { ...prev };
                 delete next[langCode];
