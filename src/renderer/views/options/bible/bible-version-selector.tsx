@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Button, Progress, Space, Tag, Typography } from 'antd';
-import { CheckCircleOutlined, DownloadOutlined } from '@ant-design/icons';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Progress, Space, Tag, Tooltip, Typography } from 'antd';
+import { CheckCircleOutlined, CloudDownloadOutlined } from '@ant-design/icons';
 import type { BibleVersionInfo } from '@shared/types';
 
 export function BibleVersionSelector() {
@@ -9,7 +9,7 @@ export function BibleVersionSelector() {
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
 
     const refresh = useCallback(() => {
-        Promise.all([window.api.bible.getAllVersions(), window.api.bible.getActiveVersion()]).then(
+        Promise.all([window.api.bible.getVersions(), window.api.bible.getActiveVersion()]).then(
             ([all, active]) => {
                 setVersions(all);
                 setActiveVersion(active);
@@ -17,8 +17,12 @@ export function BibleVersionSelector() {
         );
     }, []);
 
+    // On mount: fetch remote index (discovers new versions), then refresh UI
     useEffect(() => {
-        refresh();
+        window.api.bible
+            .refreshIndex()
+            .then(() => refresh())
+            .catch(() => refresh());
     }, [refresh]);
 
     useEffect(() => {
@@ -34,14 +38,15 @@ export function BibleVersionSelector() {
                     delete next[abbreviation];
                     return next;
                 });
-                refresh();
+                // Auto-switch to the newly downloaded version
+                handleSwitch(abbreviation);
             },
         );
         return () => {
             unsub1();
             unsub2();
         };
-    }, [refresh]);
+    }, [refresh]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSwitch = useCallback(
         async (abbreviation: string) => {
@@ -57,47 +62,30 @@ export function BibleVersionSelector() {
         window.api.bible.downloadVersion(abbreviation);
     }, []);
 
+    const { installed, downloadable } = useMemo(() => {
+        const inst: BibleVersionInfo[] = [];
+        const dl: BibleVersionInfo[] = [];
+        for (const v of versions) {
+            if (v.available) inst.push(v);
+            else dl.push(v);
+        }
+        return { installed: inst, downloadable: dl };
+    }, [versions]);
+
+    // Nothing to show if only one version and it's active
     if (versions.length <= 1 && activeVersion) return null;
     if (versions.length === 0) return null;
 
     return (
         <div className="bible-version-bar">
-            <Space wrap size="small">
+            <Space wrap size="small" style={{ alignItems: 'center' }}>
                 <Typography.Text type="secondary" style={{ fontSize: '0.85em' }}>
                     Version:
                 </Typography.Text>
-                {versions.map((v) => {
+
+                {/* Installed versions — clickable tags */}
+                {installed.map((v) => {
                     const isActive = activeVersion?.abbreviation === v.abbreviation;
-                    const isDownloading = downloadProgress[v.abbreviation] != null;
-
-                    if (!v.available && !isDownloading) {
-                        return (
-                            <Button
-                                key={v.abbreviation}
-                                size="small"
-                                icon={<DownloadOutlined />}
-                                onClick={() => handleDownload(v.abbreviation)}
-                            >
-                                {v.name}
-                            </Button>
-                        );
-                    }
-
-                    if (isDownloading) {
-                        return (
-                            <Space key={v.abbreviation} size="small">
-                                <Typography.Text style={{ fontSize: '0.85em' }}>
-                                    {v.name}
-                                </Typography.Text>
-                                <Progress
-                                    type="circle"
-                                    size={24}
-                                    percent={downloadProgress[v.abbreviation]}
-                                />
-                            </Space>
-                        );
-                    }
-
                     return (
                         <Tag
                             key={v.abbreviation}
@@ -107,6 +95,40 @@ export function BibleVersionSelector() {
                         >
                             {isActive && <CheckCircleOutlined />} {v.name}
                         </Tag>
+                    );
+                })}
+
+                {/* Downloadable versions — small download buttons */}
+                {downloadable.map((v) => {
+                    const progress = downloadProgress[v.abbreviation];
+                    const isDownloading = progress != null;
+
+                    if (isDownloading) {
+                        return (
+                            <Tag key={v.abbreviation} color="processing">
+                                {v.name}{' '}
+                                <Progress
+                                    type="circle"
+                                    size={16}
+                                    percent={progress}
+                                    showInfo={false}
+                                    style={{ marginLeft: 4 }}
+                                />
+                            </Tag>
+                        );
+                    }
+
+                    return (
+                        <Tooltip key={v.abbreviation} title={`Télécharger ${v.name}`}>
+                            <Button
+                                size="small"
+                                type="dashed"
+                                icon={<CloudDownloadOutlined />}
+                                onClick={() => handleDownload(v.abbreviation)}
+                            >
+                                {v.name}
+                            </Button>
+                        </Tooltip>
                     );
                 })}
             </Space>
