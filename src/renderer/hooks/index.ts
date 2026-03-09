@@ -108,6 +108,21 @@ export function useOpenCustomDocument() {
     );
 }
 
+export function useOpenBibleChapter() {
+    const addTab = useSermonStore((s) => s.addTab);
+    const setMainView = useAppStore((s) => s.setMainView);
+
+    return useCallback(
+        (bookName: string, bookCode: string, chapter: string) => {
+            const title = `${bookName} ${chapter}`;
+            const sermonId = `${bookCode}:${chapter}`;
+            addTab(title, sermonId, 'bible', undefined, undefined, bookCode, chapter);
+            setMainView('document');
+        },
+        [addTab, setMainView],
+    );
+}
+
 export function useShowOptions() {
     const showOptions = useAppStore((s) => s.showOptions);
     return showOptions;

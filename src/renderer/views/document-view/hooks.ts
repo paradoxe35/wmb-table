@@ -13,9 +13,11 @@ import { debounce } from '@renderer/utils/functions';
 import { buildHighlightRegex, strNormalizeNoLower } from '@renderer/utils/searchable';
 import {
     type SermonContent as SermonContentType,
+    type BibleBook,
     type ParagraphReference,
     type SearchMode,
     type HighlightItem,
+    type DocumentType,
     isParagraphReference,
 } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT, HIGHLIGHT_EVENT } from '@renderer/utils/events';
@@ -145,7 +147,8 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
 export function useContextMenuItems(
     content: SermonContentType | null,
     contextTargetRef: React.RefObject<Element | null>,
-    documentType: 'sermon' | 'custom' = 'sermon',
+    documentType: DocumentType = 'sermon',
+    bibleVerses?: BibleBook[],
 ): MenuProps['items'] {
     return useMemo(() => {
         if (!content) return [];
@@ -198,13 +201,24 @@ export function useContextMenuItems(
             const anchor = sel.anchorNode?.parentElement?.closest('[data-paragraph-index]');
             if (!anchor) return null;
             const paragraphIndex = parseInt(anchor.getAttribute('data-paragraph-index')!);
-            // Calculate text offset within the paragraph element
             const preRange = document.createRange();
             preRange.selectNodeContents(anchor);
             preRange.setEnd(range.startContainer, range.startOffset);
             const startOffset = preRange.toString().length;
             const endOffset = startOffset + sel.toString().length;
             return { paragraphIndex, startOffset, endOffset };
+        };
+
+        /** For bible views, find the BibleBook matching the verse (paragraph index) */
+        const getBibleVerse = (paragraphIndex: number): BibleBook | undefined =>
+            bibleVerses?.find((v) => +v.verse === paragraphIndex);
+
+        const buildRefDetail = (result: { ref: ParagraphReference; text: string }) => {
+            if (documentType === 'bible') {
+                const verse = getBibleVerse(result.ref.paragraphIndex);
+                if (verse) return { bible: verse, textContent: result.text };
+            }
+            return { documentHtmlTree: result.ref, textContent: result.text };
         };
 
         return [
@@ -257,32 +271,30 @@ export function useContextMenuItems(
                     if (!result) return;
                     window.dispatchEvent(
                         new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, {
-                            detail: {
-                                documentHtmlTree: result.ref,
-                                textContent: result.text,
-                            },
+                            detail: buildRefDetail(result),
                         }),
                     );
                 },
             },
-            {
-                key: 'add-to-note',
-                label: 'Ajouter à la note',
-                onClick: () => {
-                    const result = getRef();
-                    if (!result) return;
-                    window.dispatchEvent(
-                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, {
-                            detail: {
-                                documentHtmlTree: result.ref,
-                                textContent: result.text,
-                            },
-                        }),
-                    );
-                },
-            },
+            ...(documentType !== 'bible'
+                ? [
+                      {
+                          key: 'add-to-note',
+                          label: 'Ajouter à la note',
+                          onClick: () => {
+                              const result = getRef();
+                              if (!result) return;
+                              window.dispatchEvent(
+                                  new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, {
+                                      detail: buildRefDetail(result),
+                                  }),
+                              );
+                          },
+                      },
+                  ]
+                : []),
         ];
-    }, [content, documentType]);
+    }, [content, documentType, bibleVerses]);
 }
 
 export function useDocumentHighlights(documentTitle: string | null, sermonId: string | undefined) {

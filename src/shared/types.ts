@@ -72,6 +72,8 @@ export interface SermonMetaWithTraductions extends SermonMeta {
     availableTraductions: { translationId: number; traductionName: string | null }[];
 }
 
+export type DocumentType = 'sermon' | 'custom' | 'bible';
+
 export type DocumentTab = {
     title: string;
     sermonId: string;
@@ -81,7 +83,9 @@ export type DocumentTab = {
     zoom?: number;
     translationId?: number;
     languageCode?: string;
-    type?: 'sermon' | 'custom';
+    type?: DocumentType;
+    bibleBook?: string;
+    bibleChapter?: string;
 };
 
 export function getTabKey(tab: { title: string; sermonId: string }): string {
@@ -264,7 +268,7 @@ export interface HighlightItem extends Readonly<BaseEntity> {
     textSnippet: string;
     color: string;
     comment?: string;
-    documentType: 'sermon' | 'custom';
+    documentType: DocumentType;
     translationId: number;
     languageCode: string;
 }

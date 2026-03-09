@@ -1,9 +1,35 @@
 import { Reorder } from 'framer-motion';
-import { FileFilled } from '@ant-design/icons';
+import { FileOutlined, SnippetsOutlined } from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import type { DocumentTab } from '@shared/types';
 import { formatShortDate } from '@renderer/utils/sermon-utils';
+import { BibleIcons } from '../icons';
+
+function getTabIcon(tab: DocumentTab) {
+    if (tab.type === 'bible') return <BibleIcons />;
+    if (tab.type === 'custom') return <SnippetsOutlined style={{ fontSize: 12 }} />;
+    return <FileOutlined style={{ fontSize: 12 }} />;
+}
+
+function getTabLabel(tab: DocumentTab) {
+    if (tab.type === 'bible') return tab.title;
+
+    return (
+        <>
+            {tab.title} - {formatShortDate(tab.sermonId)}
+            {tab.languageCode && (
+                <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
+            )}
+        </>
+    );
+}
+
+function getTabTooltip(tab: DocumentTab) {
+    if (tab.type === 'bible') return tab.title;
+    const lang = tab.languageCode ? ` (${tab.languageCode})` : '';
+    return `${tab.title} - ${formatShortDate(tab.sermonId)}${lang}`;
+}
 
 export default function TabItem({
     tab,
@@ -68,19 +94,9 @@ export default function TabItem({
                     </svg>
                 </div>
                 <div className="chrome-tab-content">
-                    <div className="chrome-tab-favicon">
-                        <FileFilled style={{ fontSize: 12 }} />
-                    </div>
-                    <div
-                        className="chrome-tab-title"
-                        title={`${tab.title} - ${formatShortDate(tab.sermonId)}${tab.languageCode ? ` (${tab.languageCode})` : ''}`}
-                    >
-                        {tab.title} - {formatShortDate(tab.sermonId)}
-                        {tab.languageCode && (
-                            <span style={{ opacity: 0.6, marginLeft: 4 }}>
-                                ({tab.languageCode})
-                            </span>
-                        )}
+                    <div className="chrome-tab-favicon">{getTabIcon(tab)}</div>
+                    <div className="chrome-tab-title" title={getTabTooltip(tab)}>
+                        {getTabLabel(tab)}
                     </div>
                     <div className="chrome-tab-drag-handle" />
                     <div

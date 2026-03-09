@@ -8,6 +8,7 @@ import {
 } from '@renderer/stores';
 import SermonDocumentView from './sermon-document-view';
 import CustomDocumentView from './custom-document-view';
+import BibleDocumentView from './bible-document-view';
 
 export default function DocumentView() {
     const tabType = useSermonStore(selectActiveTabType);
@@ -47,7 +48,13 @@ export default function DocumentView() {
         >
             <DocumentTabs />
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                {tabType === 'custom' ? <CustomDocumentView /> : <SermonDocumentView />}
+                {tabType === 'bible' ? (
+                    <BibleDocumentView />
+                ) : tabType === 'custom' ? (
+                    <CustomDocumentView />
+                ) : (
+                    <SermonDocumentView />
+                )}
             </div>
         </div>
     );

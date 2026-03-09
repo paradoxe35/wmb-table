@@ -28,6 +28,24 @@
     color: var(--ant-color-text-secondary, #6b7280);
 }
 
+.bible-chapter-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 0;
+    background: var(--ant-color-fill-quaternary, rgba(0, 0, 0, 0.02));
+    border: 1px solid var(--ant-color-border, #e8e8e8);
+    border-radius: var(--ant-border-radius-lg, 8px);
+    padding: 0 2px;
+
+    &__title {
+        font-size: 0.62em;
+        font-weight: 600;
+        padding: 0 8px;
+        white-space: nowrap;
+        color: var(--ant-color-text, #1f1f1f);
+    }
+}
+
 .sermon-body {
     user-select: text;
 }

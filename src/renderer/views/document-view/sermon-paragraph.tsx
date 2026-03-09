@@ -1,6 +1,8 @@
-import React, { memo } from 'react';
-import { Tooltip } from 'antd';
+import React, { memo, useCallback } from 'react';
+import { Dropdown, message, Tooltip } from 'antd';
+import type { MenuProps } from 'antd';
 import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
+import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
 import type {
     SermonParagraph as SermonParagraphType,
     SearchMode,
@@ -14,6 +16,7 @@ interface HighlightRange {
     end: number;
     color: string;
     comment?: string;
+    highlightId?: string;
     type: 'search' | 'persistent';
     matchIndex?: number;
     isCurrent?: boolean;
@@ -27,6 +30,84 @@ function mergeRanges(
     all.sort((a, b) => a.start - b.start || a.end - b.end);
     return all;
 }
+
+// ---------------------------------------------------------------------------
+// Persistent highlight with context menu to delete
+// ---------------------------------------------------------------------------
+
+function PersistentHighlight({
+    text,
+    color,
+    comment,
+    highlightId,
+    reactKey,
+}: {
+    text: string;
+    color: string;
+    comment?: string;
+    highlightId?: string;
+    reactKey: string;
+}) {
+    const handleDelete = useCallback(async () => {
+        if (!highlightId) return;
+        try {
+            await window.api.highlights.delete(highlightId);
+            window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
+            message.success('Surlignage supprimé');
+        } catch {
+            message.error('Erreur lors de la suppression');
+        }
+    }, [highlightId]);
+
+    const menuItems: MenuProps['items'] = [
+        ...(comment
+            ? [
+                  {
+                      key: 'comment',
+                      label: comment,
+                      disabled: true,
+                      style: {
+                          fontSize: '0.85em',
+                          fontStyle: 'italic',
+                          whiteSpace: 'normal' as const,
+                          maxWidth: 250,
+                      },
+                  },
+                  { type: 'divider' as const, key: 'divider' },
+              ]
+            : []),
+        {
+            key: 'delete',
+            label: 'Supprimer le surlignage',
+            danger: true,
+            onClick: handleDelete,
+        },
+    ];
+
+    const stopPropagation = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+    }, []);
+
+    const markEl = (
+        <mark key={reactKey} style={{ backgroundColor: color, borderRadius: 2, cursor: 'pointer' }}>
+            {text}
+        </mark>
+    );
+
+    const wrapped = comment ? <Tooltip title={comment}>{markEl}</Tooltip> : markEl;
+
+    return (
+        <span key={`dd-${reactKey}`} onContextMenu={stopPropagation}>
+            <Dropdown menu={{ items: menuItems }} trigger={['contextMenu']}>
+                {wrapped}
+            </Dropdown>
+        </span>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Render ranges
+// ---------------------------------------------------------------------------
 
 function renderWithRanges(
     content: string,
@@ -59,19 +140,15 @@ function renderWithRanges(
                 </mark>,
             );
         } else {
-            const el = (
-                <mark key={`h-${i}`} style={{ backgroundColor: range.color, borderRadius: 2 }}>
-                    {text}
-                </mark>
-            );
             result.push(
-                range.comment ? (
-                    <Tooltip key={`ht-${i}`} title={range.comment}>
-                        {el}
-                    </Tooltip>
-                ) : (
-                    el
-                ),
+                <PersistentHighlight
+                    key={`h-${i}`}
+                    reactKey={`h-${i}`}
+                    text={text}
+                    color={range.color}
+                    comment={range.comment}
+                    highlightId={range.highlightId}
+                />,
             );
         }
         lastIndex = end;
@@ -83,6 +160,10 @@ function renderWithRanges(
 
     return result;
 }
+
+// ---------------------------------------------------------------------------
+// Paragraph view
+// ---------------------------------------------------------------------------
 
 const SermonParagraphView = memo(function SermonParagraphView({
     paragraph,
@@ -129,6 +210,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
                     end: Math.min(h.endOffset, paragraph.content.length),
                     color: h.color,
                     comment: h.comment,
+                    highlightId: h.id,
                     type: 'persistent',
                 });
             }

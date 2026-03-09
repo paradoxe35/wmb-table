@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Input, Button, Card, Divider, Select, Tag, Typography } from 'antd';
+import { Input, Button, Card, Divider, Segmented, Select, Tag, Typography } from 'antd';
 import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
 import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types';
@@ -14,11 +14,16 @@ import {
 import { useAppStore } from '@renderer/stores';
 import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
+import SidebarBibleBrowser from './sidebar-bible-browser';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { LANGUAGE_EVENT, CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { interactiveProps } from '@renderer/utils/interactive';
 
 const { Search } = Input;
+
+// ---------------------------------------------------------------------------
+// Main sidebar
+// ---------------------------------------------------------------------------
 
 export default function SidebarDocuments() {
     const sidebarHidden = useAppStore((s) => s.sidebarHidden);
@@ -39,10 +44,9 @@ export default function SidebarDocuments() {
         >
             <PanelGroup
                 tabs={[
-                    { name: 'Tous', active: true },
-                    { name: 'Années', active: false },
-                    { name: 'Alphabet', active: false },
-                    { name: 'Ajoutés', active: false },
+                    { name: 'Prédications', active: true },
+                    { name: 'Bible', active: false },
+                    { name: 'Documents', active: false },
                 ]}
             >
                 {(index: number) => (
@@ -54,10 +58,9 @@ export default function SidebarDocuments() {
                             overflow: 'hidden',
                         }}
                     >
-                        {index === 0 && <DocumentSearch />}
-                        {index === 1 && <DocumentByYears />}
-                        {index === 2 && <DocumentByAlphabetic />}
-                        {index === 3 && <DocumentsAdded />}
+                        {index === 0 && <SermonsTab />}
+                        {index === 1 && <SidebarBibleBrowser />}
+                        {index === 2 && <DocumentsAdded />}
                     </div>
                 )}
             </PanelGroup>
@@ -310,6 +313,39 @@ const DocumentSearch = () => {
         </>
     );
 };
+
+// ---------------------------------------------------------------------------
+// Sermon filter modes for the Prédications tab
+// ---------------------------------------------------------------------------
+
+type SermonFilterMode = 'Recherche' | 'Années' | 'A-Z';
+
+const SERMON_FILTER_OPTIONS: SermonFilterMode[] = ['Recherche', 'Années', 'A-Z'];
+
+const SermonFilterContent: Record<SermonFilterMode, React.FC> = {
+    Recherche: DocumentSearch,
+    Années: DocumentByYears,
+    'A-Z': DocumentByAlphabetic,
+};
+
+function SermonsTab() {
+    const [filterMode, setFilterMode] = useState<SermonFilterMode>('Recherche');
+    const FilterComponent = SermonFilterContent[filterMode];
+
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+            <div style={{ padding: '8px 10px 4px', display: 'flex', justifyContent: 'center' }}>
+                <Segmented
+                    size="small"
+                    options={SERMON_FILTER_OPTIONS}
+                    value={filterMode}
+                    onChange={(v) => setFilterMode(v as SermonFilterMode)}
+                />
+            </div>
+            <FilterComponent />
+        </div>
+    );
+}
 
 const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
     const openDocument = useOpenDocument();

@@ -150,9 +150,7 @@ export default function CustomDocumentView() {
             {!loading && docContent && (
                 <>
                     <div className="sermon-header">
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <strong>{docContent.title}</strong>
-                        </div>
+                        <div style={{ flex: 1 }} />
                         <Space size="small">
                             <Tooltip title="Zoom arrière">
                                 <Button
@@ -195,6 +193,9 @@ export default function CustomDocumentView() {
                             style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
                             onContextMenu={onContextMenu}
                         >
+                            <div className="sermon-content-header">
+                                <h2 className="sermon-content-header__title">{docContent.title}</h2>
+                            </div>
                             {paragraphs.map((p, i) => (
                                 <SermonParagraphView
                                     key={p.paragraphIndex}
