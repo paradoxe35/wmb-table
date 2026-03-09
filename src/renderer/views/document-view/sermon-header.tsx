@@ -116,51 +116,72 @@ export default function SermonHeader({
             <div style={{ flex: 1 }} />
             <Space size="small">
                 {meta.audioLink && (
+                    <Tooltip title={isPlaying ? 'Pause' : 'Écouter'}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                            onClick={handleAudioPlay}
+                            aria-label={isPlaying ? 'Pause' : 'Écouter'}
+                            style={
+                                isCurrentDocument
+                                    ? {
+                                          color: 'var(--ant-color-primary)',
+                                          backgroundColor: 'var(--ant-color-primary-bg)',
+                                      }
+                                    : undefined
+                            }
+                        />
+                    </Tooltip>
+                )}
+                <Tooltip title="Traductions">
                     <Button
                         type="text"
                         size="small"
-                        icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-                        onClick={handleAudioPlay}
-                        style={
-                            isCurrentDocument
-                                ? {
-                                      color: 'var(--ant-color-primary)',
-                                      backgroundColor: 'var(--ant-color-primary-bg)',
-                                  }
-                                : undefined
-                        }
+                        icon={<TranslationOutlined />}
+                        onClick={handleOtherTraductions}
+                        aria-label="Traductions"
                     />
-                )}
-                <Button
-                    type="text"
-                    size="small"
-                    icon={<TranslationOutlined />}
-                    onClick={handleOtherTraductions}
-                />
-                <Button
-                    type="text"
-                    size="small"
-                    icon={<ZoomOutOutlined />}
-                    onClick={handleZoomOut}
-                />
+                </Tooltip>
+                <Tooltip title="Zoom arrière">
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<ZoomOutOutlined />}
+                        onClick={handleZoomOut}
+                        aria-label="Zoom arrière"
+                    />
+                </Tooltip>
                 <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>
                     {zoom}%
                 </span>
-                <Button type="text" size="small" icon={<ZoomInOutlined />} onClick={handleZoomIn} />
+                <Tooltip title="Zoom avant">
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<ZoomInOutlined />}
+                        onClick={handleZoomIn}
+                        aria-label="Zoom avant"
+                    />
+                </Tooltip>
                 <Tooltip title="Sélectionnez un paragraphe">
                     <Button
                         type="text"
                         size="small"
                         icon={<NumberOutlined />}
                         onClick={() => setParagraphModalOpen(true)}
+                        aria-label="Sélectionnez un paragraphe"
                     />
                 </Tooltip>
-                <Button
-                    type="text"
-                    size="small"
-                    icon={<SearchOutlined />}
-                    onClick={() => openSearchBar()}
-                />
+                <Tooltip title="Rechercher">
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<SearchOutlined />}
+                        onClick={() => openSearchBar()}
+                        aria-label="Rechercher"
+                    />
+                </Tooltip>
             </Space>
             <ParagraphNavigatorModal
                 open={paragraphModalOpen}

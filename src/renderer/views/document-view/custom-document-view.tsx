@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Space, Spin } from 'antd';
+import { Button, Space, Spin, Tooltip } from 'antd';
 import { ZoomInOutlined, ZoomOutOutlined, SearchOutlined } from '@ant-design/icons';
 import {
     useSermonStore,
@@ -107,27 +107,36 @@ export default function CustomDocumentView() {
                             <strong>{docContent.title}</strong>
                         </div>
                         <Space size="small">
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<ZoomOutOutlined />}
-                                onClick={handleZoomOut}
-                            />
+                            <Tooltip title="Zoom arrière">
+                                <Button
+                                    type="text"
+                                    size="small"
+                                    icon={<ZoomOutOutlined />}
+                                    onClick={handleZoomOut}
+                                    aria-label="Zoom arrière"
+                                />
+                            </Tooltip>
                             <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>
                                 {zoom}%
                             </span>
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<ZoomInOutlined />}
-                                onClick={handleZoomIn}
-                            />
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<SearchOutlined />}
-                                onClick={() => openSearchBar()}
-                            />
+                            <Tooltip title="Zoom avant">
+                                <Button
+                                    type="text"
+                                    size="small"
+                                    icon={<ZoomInOutlined />}
+                                    onClick={handleZoomIn}
+                                    aria-label="Zoom avant"
+                                />
+                            </Tooltip>
+                            <Tooltip title="Rechercher">
+                                <Button
+                                    type="text"
+                                    size="small"
+                                    icon={<SearchOutlined />}
+                                    onClick={() => openSearchBar()}
+                                    aria-label="Rechercher"
+                                />
+                            </Tooltip>
                         </Space>
                     </div>
                     {searchBarOpen && <InlineSearchBar />}

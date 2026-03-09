@@ -24,6 +24,9 @@ function useSearch() {
                     hasNewResult.current += 1;
                     setResults(datas);
                 })
+                .catch(() => {
+                    message.error('Erreur lors de la recherche');
+                })
                 .finally(() => setLoading(false));
         },
         [activeLanguage, searchMode],
@@ -62,6 +65,9 @@ function useSearch() {
                     const lc = document.querySelector('.search__option__content');
                     lc?.scrollTo({ top: 0, behavior: 'smooth' });
                     setResults(datas);
+                })
+                .catch(() => {
+                    message.error('Erreur lors de la recherche');
                 });
         },
         [activeLanguage, searchMode],

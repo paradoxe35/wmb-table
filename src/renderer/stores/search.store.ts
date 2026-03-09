@@ -8,6 +8,7 @@ interface SearchState {
     currentMatchIndex: number;
     totalMatches: number;
     searchMode: SearchMode;
+    error: string | null;
 
     setDocumentViewQueries(
         q: DocumentViewQuery[] | ((prev: DocumentViewQuery[]) => DocumentViewQuery[]),
@@ -20,6 +21,7 @@ interface SearchState {
     nextMatch(): void;
     prevMatch(): void;
     clearSearch(documentTitle: string): void;
+    setError(error: string | null): void;
 }
 
 export const useSearchStore = create<SearchState>((set) => ({
@@ -29,6 +31,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     currentMatchIndex: 0,
     totalMatches: 0,
     searchMode: 'any',
+    error: null,
 
     setDocumentViewQueries: (q) =>
         set((s) => ({
@@ -66,4 +69,6 @@ export const useSearchStore = create<SearchState>((set) => ({
             currentMatchIndex: 0,
             totalMatches: 0,
         })),
+
+    setError: (error) => set({ error }),
 }));

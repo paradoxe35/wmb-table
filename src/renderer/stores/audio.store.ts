@@ -31,6 +31,8 @@ interface AudioState {
     closeModal(): void;
     stopAudio(): void;
     setCurrentPlay(play: CurrentAudioDocumentPlay | null): void;
+    error: string | null;
+    setError(error: string | null): void;
 }
 
 export const useAudioStore = create<AudioState>((set) => ({
@@ -46,6 +48,7 @@ export const useAudioStore = create<AudioState>((set) => ({
     volume: 0.5,
     defaultTime: 0,
     modalOpen: false,
+    error: null,
 
     loadAudio: (src, originLink, title, traduction, defaultTime, sermonId) =>
         set({
@@ -77,4 +80,5 @@ export const useAudioStore = create<AudioState>((set) => ({
             currentPlay: null,
         }),
     setCurrentPlay: (play) => set({ currentPlay: play }),
+    setError: (error) => set({ error }),
 }));

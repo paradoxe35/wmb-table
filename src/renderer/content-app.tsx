@@ -3,12 +3,6 @@ import { Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
 import { useAppStore } from './stores';
 
-import Search from './views/options/search';
-import History from './views/options/history';
-import Subject from './views/options/subject';
-import Bible from './views/options/bible';
-
-import DocumentView from './views/document-view';
 import LoadByVisibility from './components/load-by-visibility';
 
 import CustomDocumentsModal from './views/components/modals/custom-documents';
@@ -20,7 +14,12 @@ import { NoteReferencesModal } from './views/components/modals/note-references-m
 import DocumentAudioPlayer from './views/components/modals/document-audio-player';
 import LanguageManagerModal from './views/components/modals/language-manager-modal';
 
+const Search = lazy(() => import('./views/options/search'));
+const History = lazy(() => import('./views/options/history'));
+const Subject = lazy(() => import('./views/options/subject'));
+const Bible = lazy(() => import('./views/options/bible'));
 const Notes = lazy(() => import('./views/options/notes'));
+const DocumentView = lazy(() => import('./views/document-view'));
 
 const Loader: FC<{ children?: ReactNode }> = ({ children }) => {
     return (
@@ -42,15 +41,31 @@ const AppOptions = memo(function AppOptions(): ReactElement {
     const view = useAppStore((s) => s.optionView);
     const views: Record<string, ReactElement> = useMemo(
         () => ({
-            search: <Search />,
-            history: <History />,
-            subject: <Subject />,
+            search: (
+                <Loader>
+                    <Search />
+                </Loader>
+            ),
+            history: (
+                <Loader>
+                    <History />
+                </Loader>
+            ),
+            subject: (
+                <Loader>
+                    <Subject />
+                </Loader>
+            ),
             editor: (
                 <Loader>
                     <Notes />
                 </Loader>
             ),
-            bible: <Bible />,
+            bible: (
+                <Loader>
+                    <Bible />
+                </Loader>
+            ),
         }),
         [],
     );
@@ -84,7 +99,15 @@ export function ContentApp() {
                 id="app-view-document"
                 className={`view-panel ${mainView !== 'document' ? 'view-panel--hidden' : ''}`}
             >
-                <DocumentView />
+                <Suspense
+                    fallback={
+                        <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                            <Spin indicator={<LoadingOutlined style={{ fontSize: 30 }} spin />} />
+                        </div>
+                    }
+                >
+                    <DocumentView />
+                </Suspense>
             </div>
             {/* independent components */}
             <CustomDocumentsModal />

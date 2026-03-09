@@ -36,6 +36,8 @@ export function useInitApp() {
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
 
+    const setError = useAppStore((s) => s.setError);
+
     useEffect(() => {
         (async () => {
             try {
@@ -70,11 +72,14 @@ export function useInitApp() {
                 ]);
                 setSermons(sermons);
                 if (savedTabs?.length) setTabs(savedTabs);
+            } catch (err) {
+                console.error('[useInitApp] Initialization failed:', err);
+                setError("Erreur lors de l'initialisation de l'application");
             } finally {
                 setLoaded(true);
             }
         })();
-    }, [setLoaded, setSidebarHidden, setActiveLanguage, setSermons, setTabs]);
+    }, [setLoaded, setSidebarHidden, setActiveLanguage, setSermons, setTabs, setError]);
 }
 
 export function useOpenDocument() {

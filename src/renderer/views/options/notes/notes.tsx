@@ -1,4 +1,4 @@
-import { Button, Card, Empty, Input, Space, Typography, message } from 'antd';
+import { Button, Card, Empty, Input, Space, Spin, Typography, message } from 'antd';
 import {
     useCallback,
     useEffect,
@@ -29,21 +29,34 @@ export function Notes({
                 odatas.current = notes;
                 setNotes(notes);
             })
-            .then(() => setLoaded(true));
+            .catch(() => {
+                message.error('Erreur lors du chargement des notes');
+            })
+            .finally(() => setLoaded(true));
     }, []);
 
     const handleDeletion = (note: NoteItem) => {
-        window.api.notes.delete(note.id).then(() => {
-            odatas.current = odatas.current.filter((d) => d.id !== note.id);
-            setNotes(odatas.current);
-            message.success('Note supprimée');
-        });
+        window.api.notes
+            .delete(note.id)
+            .then(() => {
+                odatas.current = odatas.current.filter((d) => d.id !== note.id);
+                setNotes(odatas.current);
+                message.success('Note supprimée');
+            })
+            .catch(() => {
+                message.error('Erreur lors de la suppression');
+            });
     };
 
     const newNote = () => {
-        window.api.notes.create('Nouvelle note').then((note) => {
-            setWorkingNote(note.id);
-        });
+        window.api.notes
+            .create('Nouvelle note')
+            .then((note) => {
+                setWorkingNote(note.id);
+            })
+            .catch(() => {
+                message.error('Erreur lors de la création de la note');
+            });
     };
 
     const editDocument = (note: NoteItem) => {
@@ -55,6 +68,14 @@ export function Notes({
             setNotes(odatas.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
         }
     }, []);
+
+    if (!loaded) {
+        return (
+            <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                <Spin />
+            </div>
+        );
+    }
 
     return (
         <>
@@ -94,9 +115,9 @@ export function Notes({
                 )}
             </Space>
 
-            {loaded && notes.length < 1 && (
+            {notes.length < 1 && (
                 <div className="flex flex-center">
-                    <Empty />
+                    <Empty description="Aucune note" />
                 </div>
             )}
         </>

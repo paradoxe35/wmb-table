@@ -8,6 +8,7 @@ export default [
     {
         ignores: [
             'out/**',
+            'tmp/**',
             'release/**',
             'node_modules/**',
             'resources/**',

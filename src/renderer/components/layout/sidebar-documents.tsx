@@ -235,10 +235,13 @@ const ActiveLanguageBar = () => {
 
     useEffect(() => {
         if (!activeLanguage) return;
-        window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
-            const lang = langs.find((l) => l.code === activeLanguage);
-            if (lang) setLangName(lang.language);
-        });
+        window.api.languages
+            .getInstalled()
+            .then((langs: InstalledLanguage[]) => {
+                const lang = langs.find((l) => l.code === activeLanguage);
+                if (lang) setLangName(lang.language);
+            })
+            .catch(() => {});
     }, [activeLanguage]);
 
     const openManager = () => {

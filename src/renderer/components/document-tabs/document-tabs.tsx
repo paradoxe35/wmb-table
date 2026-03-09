@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { Reorder } from 'framer-motion';
-import type { MenuProps } from 'antd';
+import { App as AntApp, type MenuProps } from 'antd';
 import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
 import { useTabPersistence } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
@@ -17,8 +17,19 @@ export default function DocumentTabs() {
     const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
     const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const { modal } = AntApp.useApp();
 
     useTabPersistence(tabs, activeLanguage);
+
+    const confirmRemoveAll = useCallback(() => {
+        modal.confirm({
+            title: 'Fermer tous les onglets',
+            content: 'Voulez-vous vraiment fermer tous les onglets ?',
+            okText: 'Tout fermer',
+            cancelText: 'Annuler',
+            onOk: () => removeAllTabs(),
+        });
+    }, [modal, removeAllTabs]);
 
     const getContextMenuItems = useCallback(
         (key: string): MenuProps['items'] => [
@@ -34,9 +45,9 @@ export default function DocumentTabs() {
                 onClick: () => removeTabsToRight(key),
             },
             { type: 'divider' },
-            { key: 'close-all', label: 'Tout fermer', onClick: () => removeAllTabs() },
+            { key: 'close-all', label: 'Tout fermer', onClick: () => confirmRemoveAll() },
         ],
-        [removeTab, removeOtherTabs, removeTabsToRight, removeAllTabs],
+        [removeTab, removeOtherTabs, removeTabsToRight, confirmRemoveAll],
     );
 
     // Listen for custom document removal events

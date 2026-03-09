@@ -1,4 +1,4 @@
-import { Button, Modal, Tooltip, message } from 'antd';
+import { Button, Empty, Modal, Tooltip, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
 import {
     type NoteItem,
@@ -118,6 +118,10 @@ function ContentModal({
     datas: NoteItemReference[];
 }) {
     const { getSermonById } = useSermonLookup();
+
+    if (datas.length === 0) {
+        return <Empty description="Aucune référence disponible" />;
+    }
 
     return (
         <>

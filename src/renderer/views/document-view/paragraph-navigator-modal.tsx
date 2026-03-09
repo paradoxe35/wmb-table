@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Modal, Segmented } from 'antd';
+import { Button, Empty, Modal, Segmented } from 'antd';
 import type { SermonParagraph } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 
@@ -66,17 +66,21 @@ export default function ParagraphNavigatorModal({
                     gap: 4,
                 }}
             >
-                {visibleParagraphs.map((p) => (
-                    <Button
-                        key={p.paragraphIndex}
-                        size="small"
-                        type="dashed"
-                        style={{ minWidth: 36 }}
-                        onClick={() => scrollTo(p.paragraphIndex)}
-                    >
-                        {p.paragraphIndex}
-                    </Button>
-                ))}
+                {visibleParagraphs.length === 0 ? (
+                    <Empty description="Aucun paragraphe" />
+                ) : (
+                    visibleParagraphs.map((p) => (
+                        <Button
+                            key={p.paragraphIndex}
+                            size="small"
+                            type="dashed"
+                            style={{ minWidth: 36 }}
+                            onClick={() => scrollTo(p.paragraphIndex)}
+                        >
+                            {p.paragraphIndex}
+                        </Button>
+                    ))
+                )}
             </div>
         </Modal>
     );

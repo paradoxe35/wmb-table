@@ -107,11 +107,16 @@ export default function Subject() {
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
 
     useEffect(() => {
-        window.api.subjects.getAll().then((subjects) => {
-            odatas.current = subjects;
-            setDatas(subjects);
-            setSubjects(subjects);
-        });
+        window.api.subjects
+            .getAll()
+            .then((subjects) => {
+                odatas.current = subjects;
+                setDatas(subjects);
+                setSubjects(subjects);
+            })
+            .catch(() => {
+                message.error('Erreur lors du chargement des sujets');
+            });
     }, [setSubjects]);
 
     useEffect(() => {
@@ -135,7 +140,12 @@ export default function Subject() {
     useEffect(() => {
         const subject = datas.find((d) => d.active);
         if (subject) {
-            window.api.subjects.getItems(subject.id).then(setSubjectItemData);
+            window.api.subjects
+                .getItems(subject.id)
+                .then(setSubjectItemData)
+                .catch(() => {
+                    message.error('Erreur lors du chargement des éléments du sujet');
+                });
         }
     }, [datas, activeSubject]);
 

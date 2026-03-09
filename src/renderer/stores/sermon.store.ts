@@ -21,11 +21,13 @@ interface SermonState {
     activeContent: SermonContent | null;
     tabs: DocumentTab[];
     pendingNavigation: PendingNavigation;
+    error: string | null;
 
     setSermons(s: SermonMetaWithTraductions[]): void;
     setActiveContent(c: SermonContent | null): void;
     setPendingNavigation(nav: PendingNavigation): void;
     setTabs(tabs: DocumentTab[]): void;
+    setError(error: string | null): void;
     addTab(
         title: string,
         sermonId: string,
@@ -53,6 +55,7 @@ export const useSermonStore = create<SermonState>((set) => ({
     activeContent: null,
     tabs: [],
     pendingNavigation: null,
+    error: null,
 
     setSermons: (s) => {
         const sermonsById: Record<string, SermonMetaWithTraductions> = {};
@@ -71,6 +74,7 @@ export const useSermonStore = create<SermonState>((set) => ({
     setActiveContent: (c) => set({ activeContent: c }),
     setPendingNavigation: (nav) => set({ pendingNavigation: nav }),
     setTabs: (tabs) => set({ tabs }),
+    setError: (error) => set({ error }),
 
     addTab: (title, sermonId, type, languageCode, translationId) =>
         set((s) => {

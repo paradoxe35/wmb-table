@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
-import { Button, Input, Modal, Progress, Spin, Tag, message, Typography } from 'antd';
+import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useModalVisible } from '@renderer/hooks';
 import { useAppStore, useSermonStore } from '@renderer/stores';
@@ -93,13 +93,16 @@ function LanguageRow({
                 onClick={(e) => e.stopPropagation()}
             >
                 {lang.installed ? (
-                    <Button
-                        type="text"
-                        danger
-                        size="small"
-                        icon={<DeleteOutlined />}
-                        onClick={onDelete}
-                    />
+                    <Popconfirm
+                        title="Supprimer cette langue ?"
+                        description="Les données de cette langue seront supprimées du disque."
+                        onConfirm={onDelete}
+                        okText="Supprimer"
+                        cancelText="Annuler"
+                        okButtonProps={{ danger: true }}
+                    >
+                        <Button type="text" danger size="small" icon={<DeleteOutlined />} />
+                    </Popconfirm>
                 ) : isDownloading ? (
                     <Progress type="circle" size={28} percent={downloadPercent} />
                 ) : (

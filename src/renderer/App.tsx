@@ -3,6 +3,7 @@ import frFR from 'antd/locale/fr_FR';
 import { useInitApp } from './hooks/index';
 import AppLayout from './components/layout';
 import { ContentApp } from './content-app';
+import { ErrorBoundary } from './components/error-boundary';
 
 const appTheme = {
     token: {
@@ -25,12 +26,14 @@ export default function App() {
     useInitApp();
 
     return (
-        <ConfigProvider locale={frFR} theme={appTheme}>
-            <AntApp>
-                <AppLayout>
-                    <ContentApp />
-                </AppLayout>
-            </AntApp>
-        </ConfigProvider>
+        <ErrorBoundary>
+            <ConfigProvider locale={frFR} theme={appTheme}>
+                <AntApp>
+                    <AppLayout>
+                        <ContentApp />
+                    </AppLayout>
+                </AntApp>
+            </ConfigProvider>
+        </ErrorBoundary>
     );
 }

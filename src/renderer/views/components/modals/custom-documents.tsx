@@ -25,9 +25,14 @@ export default function CustomDocuments() {
     const removeCustomDocument = useCustomDocumentsStore((s) => s.removeCustomDocument);
 
     useEffect(() => {
-        window.api.app.getCustomDocuments().then((datas) => {
-            setCustomDocuments(datas);
-        });
+        window.api.app
+            .getCustomDocuments()
+            .then((docs) => {
+                setCustomDocuments(docs);
+            })
+            .catch(() => {
+                message.error('Erreur lors du chargement des documents');
+            });
     }, []);
 
     useEffect(() => {
