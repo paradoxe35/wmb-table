@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Input, Button, Card, Tree, Divider, Select, Tag, Typography } from 'antd';
-import { SoundOutlined, GlobalOutlined } from '@ant-design/icons';
+import { Input, Button, Card, Divider, Select, Tag, Typography } from 'antd';
+import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
 import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types';
 import { getTabKey } from '@shared/types';
@@ -15,9 +15,8 @@ import { useAppStore } from '@renderer/stores';
 import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { LANGUAGE_EVENT } from '@renderer/utils/events';
+import { LANGUAGE_EVENT, CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 
-const { DirectoryTree } = Tree;
 const { Search } = Input;
 
 export default function SidebarDocuments() {
@@ -55,19 +54,9 @@ export default function SidebarDocuments() {
                         }}
                     >
                         {index === 0 && <DocumentSearch />}
-                        {index === 1 && (
-                            <ContainerScrollY>
-                                <div className="mt-2" />
-                                <DocumentByYears />
-                            </ContainerScrollY>
-                        )}
+                        {index === 1 && <DocumentByYears />}
                         {index === 2 && <DocumentByAlphabetic />}
-                        {index === 3 && (
-                            <>
-                                <div className="mt-2" />
-                                <DocumentsAdded />
-                            </>
-                        )}
+                        {index === 3 && <DocumentsAdded />}
                     </div>
                 )}
             </PanelGroup>
@@ -75,25 +64,66 @@ export default function SidebarDocuments() {
     );
 }
 
+const openCustomDocumentModal = () => {
+    window.dispatchEvent(new Event(CUSTOM_DOCUMENT_EVENT.openModal));
+};
+
 const DocumentsAdded = () => {
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const openCustomDocument = useOpenCustomDocument();
 
+    if (customDocuments.length === 0) {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '2rem 1rem',
+                    gap: 12,
+                    flex: 1,
+                }}
+            >
+                <FileTextOutlined style={{ fontSize: 32, opacity: 0.3 }} />
+                <Typography.Text type="secondary" style={{ textAlign: 'center' }}>
+                    Aucun document ajouté
+                </Typography.Text>
+                <Button type="primary" icon={<PlusOutlined />} onClick={openCustomDocumentModal}>
+                    Ajouter un document
+                </Button>
+            </div>
+        );
+    }
+
     return (
-        <ContainerScrollY style={{ paddingLeft: '10px' }}>
-            {customDocuments.map((d, i) => (
-                <div
-                    key={d.id || i}
-                    className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                    onClick={() => openCustomDocument(d.title, d.sermonId)}
+        <>
+            <div style={{ padding: '8px 10px 4px', display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={openCustomDocumentModal}
                 >
-                    <div className="sidebar-item__left">
-                        <div className="sidebar-item__title">{d.title}</div>
+                    Ajouter
+                </Button>
+            </div>
+            <ContainerScrollY style={{ paddingLeft: '10px' }}>
+                {customDocuments.map((d, i) => (
+                    <div
+                        key={d.id || i}
+                        className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
+                        onClick={() => openCustomDocument(d.title, d.sermonId)}
+                    >
+                        <div className="sidebar-item__left">
+                            <FileTextOutlined style={{ marginRight: 8, opacity: 0.5 }} />
+                            <div className="sidebar-item__title">{d.title}</div>
+                        </div>
                     </div>
-                </div>
-            ))}
-        </ContainerScrollY>
+                ))}
+            </ContainerScrollY>
+        </>
     );
 };
 
@@ -142,49 +172,52 @@ const DocumentByAlphabetic = () => {
 
 const DocumentByYears = () => {
     const sermonsByYear = useSermonStore((s) => s.sermonsByYear);
-    const openDocument = useOpenDocument();
+    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
+    const selectedYear = useRef<string>('');
 
-    const dataTree = useMemo(
-        () =>
-            Object.keys(sermonsByYear)
-                .sort()
-                .map((year) => {
-                    const docs = sermonsByYear[year]
-                        .slice()
-                        .sort((a, b) => a.title.localeCompare(b.title))
-                        .map((sermon) => ({
-                            key: `${sermon.id}-${year}`,
-                            title: (
-                                <span
-                                    title={sermon.title}
-                                    onClick={() =>
-                                        openDocument(
-                                            sermon.title,
-                                            sermon.sermonId,
-                                            sermon.translationId,
-                                        )
-                                    }
-                                >
-                                    {sermon.title}
-                                </span>
-                            ),
-                            className: 'document_grouped',
-                            isLeaf: true,
-                        }));
-                    return {
-                        title: (
-                            <span>
-                                {year} - ({docs.length})
-                            </span>
-                        ),
-                        key: year,
-                        children: docs,
-                    };
-                }),
-        [sermonsByYear, openDocument],
+    const years = useMemo(
+        () => Object.keys(sermonsByYear).sort((a, b) => b.localeCompare(a)),
+        [sermonsByYear],
     );
 
-    return <DirectoryTree treeData={dataTree} />;
+    const onChangeYear = useCallback(
+        (value: string) => {
+            selectedYear.current = value;
+            setDatas(sermonsByYear[value] ?? []);
+        },
+        [sermonsByYear],
+    );
+
+    // Auto-select first year on load
+    useEffect(() => {
+        if (years.length > 0 && !selectedYear.current) {
+            onChangeYear(years[0]);
+        }
+    }, [years, onChangeYear]);
+
+    const yearOptions = useMemo(
+        () =>
+            years.map((y) => ({
+                value: y,
+                label: `${y} (${sermonsByYear[y]?.length ?? 0})`,
+            })),
+        [years, sermonsByYear],
+    );
+
+    return (
+        <>
+            <Card variant="borderless">
+                <Select
+                    className="w-100 max-w-100"
+                    placeholder="Année"
+                    value={selectedYear.current || undefined}
+                    onChange={onChangeYear}
+                    options={yearOptions}
+                />
+            </Card>
+            <DocumentList datas={datas} />
+        </>
+    );
 };
 
 const ActiveLanguageBar = () => {

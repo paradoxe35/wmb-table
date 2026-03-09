@@ -30,6 +30,11 @@ export default function CustomDocuments() {
         return cleanup;
     }, []);
 
+    useEffect(() => {
+        window.addEventListener(CUSTOM_DOCUMENT_EVENT.openModal, show);
+        return () => window.removeEventListener(CUSTOM_DOCUMENT_EVENT.openModal, show);
+    }, [show]);
+
     return (
         <>
             <Modal

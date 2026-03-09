@@ -6,6 +6,7 @@ export const EDITOR_EVENT = {
 export const CUSTOM_DOCUMENT_EVENT = {
     customDocumentRemoved: 'custom-document-removed',
     customDocumentAdded: 'custom-document-added',
+    openModal: 'custom-document-open-modal',
 } as const;
 
 export const SUBJECT_EVENT = {

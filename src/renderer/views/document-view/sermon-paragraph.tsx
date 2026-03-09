@@ -2,13 +2,15 @@ import React, { memo } from 'react';
 import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
 import type { SermonParagraph as SermonParagraphType, SearchMode } from '@shared/types';
 
+type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'>;
+
 const SermonParagraphView = memo(function SermonParagraphView({
     paragraph,
     search,
     currentMatchIndex,
     matchOffset,
 }: {
-    paragraph: SermonParagraphType;
+    paragraph: ParagraphProp;
     search: { term: string; mode: SearchMode } | null;
     currentMatchIndex: number;
     matchOffset: number;

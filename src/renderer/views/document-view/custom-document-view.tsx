@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Space, Spin } from 'antd';
 import { ZoomInOutlined, ZoomOutOutlined, SearchOutlined } from '@ant-design/icons';
 import {
@@ -8,11 +8,42 @@ import {
     selectActiveTabTitle,
     selectActiveTabKey,
 } from '@renderer/stores';
-import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
 import type { CustomDocumentContent } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
+import SermonParagraphView from './sermon-paragraph';
 import { useScrollAndZoom, useSearchHighlight, useMatchNavigation } from './hooks';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+interface DocumentParagraph {
+    paragraphIndex: number;
+    content: string;
+}
+
+/** Parse stored content into paragraphs. Handles both JSON array and legacy plain text. */
+function parseContentToParagraphs(content: string): DocumentParagraph[] {
+    let lines: string[];
+
+    try {
+        const parsed = JSON.parse(content);
+        lines = Array.isArray(parsed) ? parsed : [];
+    } catch {
+        // Legacy: plain text split by newlines
+        lines = content.split('\n').filter((l) => l.trim() !== '');
+    }
+
+    return lines.map((text, i) => ({
+        paragraphIndex: i + 1,
+        content: text,
+    }));
+}
+
+// ---------------------------------------------------------------------------
+// Custom Document View
+// ---------------------------------------------------------------------------
 
 export default function CustomDocumentView() {
     const activeTitle = useSermonStore(selectActiveTabTitle);
@@ -55,71 +86,12 @@ export default function CustomDocumentView() {
     }, [activeTabKey, zoom, updateTabZoom]);
 
     const paragraphs = useMemo(
-        () => (docContent?.content ?? '').split('\n').filter((line) => line.trim() !== ''),
+        () => parseContentToParagraphs(docContent?.content ?? ''),
         [docContent?.content],
     );
 
-    const { matchOffsets } = useMatchNavigation(search, paragraphs);
-
-    const renderParagraph = useCallback(
-        (text: string, i: number) => {
-            if (!search) {
-                return (
-                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                        {text}
-                    </p>
-                );
-            }
-
-            const regex = buildHighlightRegex(search.term, search.mode);
-            if (!regex) {
-                return (
-                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                        {text}
-                    </p>
-                );
-            }
-
-            const normalized = strNormalizeNoLower(text);
-            const matches = [...normalized.matchAll(regex)];
-            if (matches.length === 0) {
-                return (
-                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                        {text}
-                    </p>
-                );
-            }
-
-            const result: (string | React.ReactElement)[] = [];
-            const offset = matchOffsets[i] ?? 0;
-            let lastIdx = 0;
-            matches.forEach((m, j) => {
-                const start = m.index!;
-                const end = start + m[0].length;
-                if (start > lastIdx) result.push(text.slice(lastIdx, start));
-                const globalIdx = offset + j;
-                const isCurrent = globalIdx === currentMatchIndex;
-                result.push(
-                    <mark
-                        key={j}
-                        data-match-index={globalIdx}
-                        className={isCurrent ? 'mark-current' : undefined}
-                    >
-                        {text.slice(start, end)}
-                    </mark>,
-                );
-                lastIdx = end;
-            });
-            if (lastIdx < text.length) result.push(text.slice(lastIdx));
-
-            return (
-                <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                    {result}
-                </p>
-            );
-        },
-        [search, matchOffsets, currentMatchIndex],
-    );
+    const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
+    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
 
     return (
         <div className="mock-browser-content">
@@ -165,7 +137,15 @@ export default function CustomDocumentView() {
                         className="sermon-body"
                         style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
                     >
-                        {paragraphs.map(renderParagraph)}
+                        {paragraphs.map((p, i) => (
+                            <SermonParagraphView
+                                key={p.paragraphIndex}
+                                paragraph={p}
+                                search={search}
+                                currentMatchIndex={currentMatchIndex}
+                                matchOffset={matchOffsets[i] ?? 0}
+                            />
+                        ))}
                     </div>
                 </>
             )}
