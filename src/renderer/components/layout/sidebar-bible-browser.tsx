@@ -79,6 +79,11 @@ function CompactVersionSelector() {
         return { installed: inst, downloadable: dl };
     }, [versions]);
 
+    // send resize event to help ContainerScrollY to get space available
+    useEffect(() => {
+        requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+    }, [installed, downloadable]);  
+
     if (versions.length === 0) return null;
 
     return (
