@@ -11,6 +11,7 @@ import {
     SyncChannels,
     AppChannels,
     LanguageChannels,
+    TtsChannels,
     PushChannels,
     type InvokeChannel,
     type InvokeChannelMap,
@@ -28,6 +29,13 @@ import type {
     SearchMode,
     SubjectRefTree,
 } from '@shared/types';
+import type {
+    TtsProviderType,
+    TtsSettings,
+    TtsSynthesizeRequest,
+    TtsSegment,
+    TtsVoiceCloneRequest,
+} from '@shared/tts.types';
 
 function invoke<C extends InvokeChannel>(
     channel: C,
@@ -207,6 +215,28 @@ const api = {
         openExternal: (url: string) => shell.openExternal(url),
     },
 
+    tts: {
+        getProviders: () => invoke(TtsChannels.getProviders),
+        getSettings: () => invoke(TtsChannels.getSettings),
+        updateSettings: (s: Partial<TtsSettings>) => invoke(TtsChannels.updateSettings, s),
+        synthesize: (req: TtsSynthesizeRequest) => invoke(TtsChannels.synthesize, req),
+        startPlayback: (segs: TtsSegment[], lang: string) =>
+            invoke(TtsChannels.startPlayback, segs, lang),
+        pausePlayback: () => invoke(TtsChannels.pausePlayback),
+        resumePlayback: () => invoke(TtsChannels.resumePlayback),
+        stopPlayback: () => invoke(TtsChannels.stopPlayback),
+        seekToSegment: (i: number) => invoke(TtsChannels.seekToSegment, i),
+        segmentComplete: () => invoke(TtsChannels.segmentComplete),
+        checkLanguageSupport: (lang: string) => invoke(TtsChannels.checkLanguageSupport, lang),
+        downloadModel: (p: TtsProviderType) => invoke(TtsChannels.downloadModel, p),
+        getModelStatus: (p: TtsProviderType) => invoke(TtsChannels.getModelStatus, p),
+        clearCache: () => invoke(TtsChannels.clearCache),
+        getCacheSize: () => invoke(TtsChannels.getCacheSize),
+        cloneVoice: (req: TtsVoiceCloneRequest) => invoke(TtsChannels.cloneVoice, req),
+        listClonedVoices: () => invoke(TtsChannels.listClonedVoices),
+        deleteClonedVoice: (id: string) => invoke(TtsChannels.deleteClonedVoice, id),
+    },
+
     on: {
         openModalDocumentFromMain: (
             cb: (p: PushEventMap[typeof PushChannels.openModalDocumentFromMain]) => void,
@@ -253,6 +283,13 @@ const api = {
             onPush(PushChannels.bibleDownloaded, cb),
         openSettings: (cb: (p: PushEventMap[typeof PushChannels.openSettings]) => void) =>
             onPush(PushChannels.openSettings, cb),
+        ttsPlaybackState: (cb: (p: PushEventMap[typeof PushChannels.ttsPlaybackState]) => void) =>
+            onPush(PushChannels.ttsPlaybackState, cb),
+        ttsModelDownloadProgress: (
+            cb: (p: PushEventMap[typeof PushChannels.ttsModelDownloadProgress]) => void,
+        ) => onPush(PushChannels.ttsModelDownloadProgress, cb),
+        ttsSegmentAudio: (cb: (p: PushEventMap[typeof PushChannels.ttsSegmentAudio]) => void) =>
+            onPush(PushChannels.ttsSegmentAudio, cb),
     },
 } as const;
 

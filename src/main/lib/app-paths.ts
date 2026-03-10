@@ -20,3 +20,15 @@ export function getIndexesDir(): string {
     mkdirSync(dir, { recursive: true });
     return dir;
 }
+
+export function getTtsCacheDir(): string {
+    const dir = join(APP_DIR, 'tts-cache');
+    mkdirSync(dir, { recursive: true });
+    return dir;
+}
+
+export function getTtsModelsDir(): string {
+    const dir = join(APP_DIR, 'tts-models');
+    mkdirSync(dir, { recursive: true });
+    return dir;
+}

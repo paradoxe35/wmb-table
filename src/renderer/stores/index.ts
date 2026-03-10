@@ -11,3 +11,4 @@ export { useSubjectsStore } from './subjects.store';
 export { useNotesStore } from './notes.store';
 export { useAudioStore } from './audio.store';
 export { useCustomDocumentsStore } from './custom-documents.store';
+export { useTtsStore, selectCurrentTtsSegment, selectIsTtsPlaying } from './tts.store';

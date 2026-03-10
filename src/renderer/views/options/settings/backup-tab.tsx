@@ -224,7 +224,7 @@ function RestoreProgress({
         }
         if (type === 'complete') {
             return (
-                <Space direction="vertical" size="small">
+                <Space orientation="vertical" size="small">
                     <Text type="success">Vos données ont été restaurées avec succès.</Text>
                     <Button size="small" onClick={restartAppNow}>
                         Redémarrer l&apos;application
@@ -242,7 +242,7 @@ function RestoreProgress({
 
     return (
         <Card size="small">
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 <Space>
                     <Text strong>
                         {restoreProgress.type === 'sauvegarde' ? 'Sauvegarde' : 'Restauration'} de

@@ -34,4 +34,9 @@ export const LANGUAGE_EVENT = {
     openLanguageManager: 'open-language-manager',
 } as const;
 
+export const TTS_EVENT = {
+    segmentComplete: 'tts-segment-complete',
+    stateChanged: 'tts-state-changed',
+} as const;
+
 export const DOCUMENT_CONTAINER_ID = 'page-container';

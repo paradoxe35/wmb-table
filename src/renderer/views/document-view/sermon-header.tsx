@@ -18,6 +18,7 @@ import {
 import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
+import { TtsButton, type TtsControls } from './tts-controls';
 
 export default function SermonHeader({
     meta,
@@ -25,12 +26,14 @@ export default function SermonHeader({
     sermonInfo,
     currentTranslationId,
     paragraphs,
+    tts,
 }: {
     meta: SermonMeta;
     zoom: number;
     sermonInfo: SermonMetaWithTraductions | undefined;
     currentTranslationId: number;
     paragraphs: SermonParagraph[];
+    tts?: TtsControls;
 }) {
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
@@ -134,6 +137,7 @@ export default function SermonHeader({
                         />
                     </Tooltip>
                 )}
+                {!meta.audioLink && tts && <TtsButton tts={tts} />}
                 <Tooltip title="Traductions">
                     <Button
                         type="text"

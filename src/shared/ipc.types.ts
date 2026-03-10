@@ -42,6 +42,20 @@ import type {
     BibleDownloadedEvent,
     LanguageInstalledEvent,
 } from './types';
+import type {
+    TtsProviderInfo,
+    TtsProviderType,
+    TtsSettings,
+    TtsSynthesizeRequest,
+    TtsSynthesizeResult,
+    TtsSegment,
+    TtsPlaybackState,
+    TtsModelDownloadProgress,
+    TtsSegmentAudio,
+    TtsVoice,
+    TtsVoiceCloneRequest,
+    TtsVoiceCloneResult,
+} from './tts.types';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -160,6 +174,27 @@ export const AppChannels = {
     getHistoryItems: 'app:getHistoryItems',
 } as const;
 
+export const TtsChannels = {
+    getProviders: 'tts:getProviders',
+    getSettings: 'tts:getSettings',
+    updateSettings: 'tts:updateSettings',
+    synthesize: 'tts:synthesize',
+    startPlayback: 'tts:startPlayback',
+    pausePlayback: 'tts:pausePlayback',
+    resumePlayback: 'tts:resumePlayback',
+    stopPlayback: 'tts:stopPlayback',
+    seekToSegment: 'tts:seekToSegment',
+    segmentComplete: 'tts:segmentComplete',
+    checkLanguageSupport: 'tts:checkLanguageSupport',
+    downloadModel: 'tts:downloadModel',
+    getModelStatus: 'tts:getModelStatus',
+    clearCache: 'tts:clearCache',
+    getCacheSize: 'tts:getCacheSize',
+    cloneVoice: 'tts:cloneVoice',
+    listClonedVoices: 'tts:listClonedVoices',
+    deleteClonedVoice: 'tts:deleteClonedVoice',
+} as const;
+
 // ---------------------------------------------------------------------------
 // Push channels — main → renderer (one-way events via webContents.send)
 // ---------------------------------------------------------------------------
@@ -183,6 +218,9 @@ export const PushChannels = {
     bibleDownloadProgress: 'push:bibleDownloadProgress',
     bibleDownloaded: 'push:bibleDownloaded',
     openSettings: 'push:openSettings',
+    ttsPlaybackState: 'push:ttsPlaybackState',
+    ttsModelDownloadProgress: 'push:ttsModelDownloadProgress',
+    ttsSegmentAudio: 'push:ttsSegmentAudio',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -355,6 +393,32 @@ export interface InvokeChannelMap {
         args: [string];
         return: HistoryDataItem[];
     };
+
+    // TTS
+    [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
+    [TtsChannels.getSettings]: { args: []; return: TtsSettings };
+    [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
+    [TtsChannels.synthesize]: { args: [TtsSynthesizeRequest]; return: TtsSynthesizeResult };
+    [TtsChannels.startPlayback]: { args: [TtsSegment[], string]; return: void };
+    [TtsChannels.pausePlayback]: { args: []; return: void };
+    [TtsChannels.resumePlayback]: { args: []; return: void };
+    [TtsChannels.stopPlayback]: { args: []; return: void };
+    [TtsChannels.seekToSegment]: { args: [number]; return: void };
+    [TtsChannels.segmentComplete]: { args: []; return: void };
+    [TtsChannels.checkLanguageSupport]: {
+        args: [string];
+        return: Record<TtsProviderType, boolean>;
+    };
+    [TtsChannels.downloadModel]: { args: [TtsProviderType]; return: void };
+    [TtsChannels.getModelStatus]: {
+        args: [TtsProviderType];
+        return: { downloaded: boolean; sizeBytes: number };
+    };
+    [TtsChannels.clearCache]: { args: []; return: void };
+    [TtsChannels.getCacheSize]: { args: []; return: number };
+    [TtsChannels.cloneVoice]: { args: [TtsVoiceCloneRequest]; return: TtsVoiceCloneResult };
+    [TtsChannels.listClonedVoices]: { args: []; return: TtsVoice[] };
+    [TtsChannels.deleteClonedVoice]: { args: [string]; return: void };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */
@@ -377,6 +441,9 @@ export interface PushEventMap {
     [PushChannels.bibleDownloadProgress]: BibleDownloadProgress;
     [PushChannels.bibleDownloaded]: BibleDownloadedEvent;
     [PushChannels.openSettings]: void;
+    [PushChannels.ttsPlaybackState]: TtsPlaybackState;
+    [PushChannels.ttsModelDownloadProgress]: TtsModelDownloadProgress;
+    [PushChannels.ttsSegmentAudio]: TtsSegmentAudio;
 }
 
 // ---------------------------------------------------------------------------

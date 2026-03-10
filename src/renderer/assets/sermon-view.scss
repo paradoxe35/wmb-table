@@ -79,6 +79,18 @@
     }
 }
 
+.tts-active-paragraph {
+    background-color: var(--ant-color-primary-bg, #e6f4ff);
+    transition: background-color 0.3s ease;
+    border-radius: 4px;
+}
+
+.tts-active-sentence {
+    background-color: var(--ant-color-warning-bg, #fff7e6);
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
 .inline-search-bar {
     display: flex;
     align-items: center;

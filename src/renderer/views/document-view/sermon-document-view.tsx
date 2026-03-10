@@ -5,7 +5,7 @@ import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
-import SermonParagraphView from './sermon-paragraph';
+import { TtsParagraph } from './tts-controls';
 import {
     useSermonContent,
     useScrollAndZoom,
@@ -15,6 +15,7 @@ import {
     useMatchNavigation,
     useDocumentHighlights,
 } from './hooks';
+import { useTts } from '@renderer/hooks/use-tts';
 
 export default function SermonDocumentView() {
     const { content, loading } = useSermonContent();
@@ -40,6 +41,17 @@ export default function SermonDocumentView() {
         [content?.paragraphs],
     );
 
+    const ttsParagraphs = useMemo(
+        () =>
+            (content?.paragraphs ?? []).map((p) => ({
+                paragraphIndex: p.paragraphIndex,
+                content: p.content,
+            })),
+        [content?.paragraphs],
+    );
+
+    const tts = useTts(ttsParagraphs, content?.meta.languageCode ?? '', content?.meta.title ?? '');
+
     const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
     const { highlightsByParagraph } = useDocumentHighlights(
         content?.meta.title ?? null,
@@ -61,6 +73,7 @@ export default function SermonDocumentView() {
                         sermonInfo={sermonInfo}
                         currentTranslationId={tabTranslationId ?? content.meta.translationId}
                         paragraphs={content.paragraphs}
+                        tts={tts}
                     />
                     {searchBarOpen && <InlineSearchBar />}
                     <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
@@ -73,7 +86,7 @@ export default function SermonDocumentView() {
                         >
                             <SermonContentHeader meta={content.meta} />
                             {content.paragraphs.map((p, i) => (
-                                <SermonParagraphView
+                                <TtsParagraph
                                     key={`${p.paragraphIndex}-${i}`}
                                     paragraph={p}
                                     search={search}

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -217,6 +217,23 @@ export const backupStatus = sqliteTable('backup_status', {
     access: integer('access', { mode: 'boolean' }).notNull().default(false),
     restored: integer('restored', { mode: 'boolean' }).notNull().default(false),
     lastUpdate: text('last_update').default(sql`(datetime('now'))`),
+});
+
+// ---------------------------------------------------------------------------
+// TTS Settings (single-row)
+// ---------------------------------------------------------------------------
+
+export const ttsSettings = sqliteTable('tts_settings', {
+    id: text('id').primaryKey(),
+    activeProvider: text('active_provider').notNull(),
+    fallbackOrder: text('fallback_order').notNull(), // JSON array of TtsProviderType
+    highlightMode: text('highlight_mode').notNull(),
+    autoPlay: integer('auto_play', { mode: 'boolean' }).notNull(),
+    rate: real('rate').notNull().default(1),
+    cacheMaxSizeMb: integer('cache_max_size_mb').notNull(),
+    providerConfigs: text('provider_configs').notNull(), // JSON<Record<TtsProviderType, TtsProviderSettings>>
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
 // ---------------------------------------------------------------------------

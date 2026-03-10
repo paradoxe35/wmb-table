@@ -6,18 +6,21 @@ import {
     InfoCircleOutlined,
     ReloadOutlined,
     SettingOutlined,
+    SoundOutlined,
 } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
 import GeneralTab from './general-tab';
 import LanguagesTab from './languages-tab';
 import BackupTab from './backup-tab';
 import UpdateTab from './update-tab';
+import TtsTab from './tts-tab';
 
 const { Title, Text } = Typography;
 
 const TAB_KEYS = {
     general: 'general',
     languages: 'languages',
+    tts: 'tts',
     backup: 'backup',
     update: 'update',
 } as const;
@@ -74,6 +77,15 @@ export default function Settings() {
                     </span>
                 ),
                 children: <LanguagesTab />,
+            },
+            {
+                key: TAB_KEYS.tts,
+                label: (
+                    <span>
+                        <SoundOutlined /> Lecture audio
+                    </span>
+                ),
+                children: <TtsTab />,
             },
             {
                 key: TAB_KEYS.backup,

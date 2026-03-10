@@ -90,7 +90,7 @@ export default function GeneralTab() {
 
     return (
         <Card size="small" variant="borderless">
-            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Space orientation="vertical" style={{ width: '100%' }} size="middle">
                 {items.map((item) => (
                     <div
                         key={item.label}

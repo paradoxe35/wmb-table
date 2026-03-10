@@ -5,13 +5,14 @@ import {
     useSermonStore,
     useSearchStore,
     useCustomDocumentsStore,
+    useAppStore,
     selectActiveTabTitle,
     selectActiveTabKey,
 } from '@renderer/stores';
 import type { CustomDocumentContent, SermonContent } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
-import SermonParagraphView from './sermon-paragraph';
+import { TtsButton, TtsParagraph } from './tts-controls';
 import {
     useScrollAndZoom,
     useSearchHighlight,
@@ -20,6 +21,7 @@ import {
     useDocumentHighlights,
     useReferenceNavigation,
 } from './hooks';
+import { useTts } from '@renderer/hooks/use-tts';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -136,6 +138,9 @@ export default function CustomDocumentView() {
         customDoc?.sermonId,
     );
 
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const tts = useTts(paragraphs, activeLanguage ?? 'en', docContent?.title ?? '');
+
     const onContextMenu = useCallback((e: React.MouseEvent) => {
         contextTargetRef.current = e.target as Element;
     }, []);
@@ -152,6 +157,7 @@ export default function CustomDocumentView() {
                     <div className="sermon-header">
                         <div style={{ flex: 1 }} />
                         <Space size="small">
+                            <TtsButton tts={tts} />
                             <Tooltip title="Zoom arrière">
                                 <Button
                                     type="text"
@@ -197,7 +203,7 @@ export default function CustomDocumentView() {
                                 <h2 className="sermon-content-header__title">{docContent.title}</h2>
                             </div>
                             {paragraphs.map((p, i) => (
-                                <SermonParagraphView
+                                <TtsParagraph
                                     key={p.paragraphIndex}
                                     paragraph={p}
                                     search={search}

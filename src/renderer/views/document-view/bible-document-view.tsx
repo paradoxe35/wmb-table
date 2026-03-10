@@ -17,7 +17,7 @@ import type { BibleBook, BibleIndex, SermonContent } from '@shared/types';
 import { getTabKey } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
-import SermonParagraphView from './sermon-paragraph';
+import { TtsButton, TtsParagraph, type TtsControls } from './tts-controls';
 import {
     useScrollAndZoom,
     useSearchHighlight,
@@ -25,6 +25,7 @@ import {
     useContextMenuItems,
     useDocumentHighlights,
 } from './hooks';
+import { useTts } from '@renderer/hooks/use-tts';
 
 // ---------------------------------------------------------------------------
 // Content header (inside body, like SermonContentHeader)
@@ -168,6 +169,7 @@ function BibleHeader({
     onNext,
     onZoomIn,
     onZoomOut,
+    tts,
 }: {
     title: string;
     zoom: number;
@@ -177,6 +179,7 @@ function BibleHeader({
     onNext: () => void;
     onZoomIn: () => void;
     onZoomOut: () => void;
+    tts?: TtsControls;
 }) {
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
 
@@ -207,6 +210,7 @@ function BibleHeader({
             </div>
             <div style={{ flex: 1 }} />
             <Space size="small">
+                {tts && <TtsButton tts={tts} />}
                 <Tooltip title="Zoom arrière">
                     <Button
                         type="text"
@@ -259,6 +263,7 @@ export default function BibleDocumentView() {
 
     const [verses, setVerses] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(false);
+    const [bibleLang, setBibleLang] = useState('');
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
@@ -273,9 +278,19 @@ export default function BibleDocumentView() {
             .finally(() => setLoading(false));
     }, [bookCode, chapter]);
 
+    // Get Bible language from active version
+    useEffect(() => {
+        window.api.bible
+            .getActiveVersion()
+            .then((v) => setBibleLang(v?.langCode ?? ''))
+            .catch(() => setBibleLang(''));
+    }, []);
+
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
     const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
     const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+
+    const tts = useTts(paragraphs, bibleLang, activeTab?.title ?? '');
 
     const contentForMenu = useMemo(
         () => buildContentForMenu(activeTab, paragraphs),
@@ -319,6 +334,7 @@ export default function BibleDocumentView() {
                         onNext={goNext}
                         onZoomIn={handleZoomIn}
                         onZoomOut={handleZoomOut}
+                        tts={tts}
                     />
                     {searchBarOpen && <InlineSearchBar />}
                     <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
@@ -331,7 +347,7 @@ export default function BibleDocumentView() {
                         >
                             <BibleContentHeader title={activeTab?.title} chapter={chapter} />
                             {paragraphs.map((p, i) => (
-                                <SermonParagraphView
+                                <TtsParagraph
                                     key={p.paragraphIndex}
                                     paragraph={p}
                                     search={search}

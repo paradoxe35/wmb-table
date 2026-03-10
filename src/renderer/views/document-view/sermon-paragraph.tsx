@@ -17,7 +17,7 @@ interface HighlightRange {
     color: string;
     comment?: string;
     highlightId?: string;
-    type: 'search' | 'persistent';
+    type: 'search' | 'persistent' | 'tts';
     matchIndex?: number;
     isCurrent?: boolean;
 }
@@ -129,7 +129,13 @@ function renderWithRanges(
         }
 
         const text = content.slice(start, end);
-        if (range.type === 'search') {
+        if (range.type === 'tts') {
+            result.push(
+                <mark key={`tts-${i}`} className="tts-active-sentence">
+                    {text}
+                </mark>,
+            );
+        } else if (range.type === 'search') {
             result.push(
                 <mark
                     key={`s-${i}`}
@@ -171,16 +177,29 @@ const SermonParagraphView = memo(function SermonParagraphView({
     currentMatchIndex,
     matchOffset,
     highlights,
+    ttsHighlight,
 }: {
     paragraph: ParagraphProp;
     search: { term: string; mode: SearchMode } | null;
     currentMatchIndex: number;
     matchOffset: number;
     highlights?: HighlightItem[];
+    ttsHighlight?: { isActive: boolean; highlightRange: { start: number; end: number } | null };
 }) {
     const renderContent = () => {
         const searchRanges: HighlightRange[] = [];
         const persistentRanges: HighlightRange[] = [];
+        const ttsRanges: HighlightRange[] = [];
+
+        // Build TTS highlight range
+        if (ttsHighlight?.isActive && ttsHighlight.highlightRange) {
+            ttsRanges.push({
+                start: ttsHighlight.highlightRange.start,
+                end: Math.min(ttsHighlight.highlightRange.end, paragraph.content.length),
+                color: '',
+                type: 'tts',
+            });
+        }
 
         // Build search ranges
         if (search) {
@@ -216,14 +235,18 @@ const SermonParagraphView = memo(function SermonParagraphView({
             }
         }
 
-        const allRanges = mergeRanges(searchRanges, persistentRanges);
+        const allRanges = mergeRanges(searchRanges, [...persistentRanges, ...ttsRanges]);
         if (allRanges.length === 0) return paragraph.content;
 
         return renderWithRanges(paragraph.content, allRanges);
     };
 
+    const className = ttsHighlight?.isActive
+        ? 'sermon-paragraph tts-active-paragraph'
+        : 'sermon-paragraph';
+
     return (
-        <p data-paragraph-index={paragraph.paragraphIndex} className="sermon-paragraph">
+        <p data-paragraph-index={paragraph.paragraphIndex} className={className}>
             <span className="line-number">{paragraph.paragraphIndex}</span>
             <span className="paragraph-content">{renderContent()}</span>
         </p>
