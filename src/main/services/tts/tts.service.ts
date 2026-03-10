@@ -182,7 +182,23 @@ export class TtsService {
                 this.stop();
                 return;
             }
-            await this.playSegment(nextIndex, this.playbackGeneration);
+            const gapMs = this.settings.segmentGapMs ?? 700;
+            const gapStart = Date.now();
+
+            // Prepare next segment (synthesis/cache lookup) — may take time
+            const generation = this.playbackGeneration;
+            const prepared = await this.prepareSegment(this.segments[nextIndex]);
+            if (generation !== this.playbackGeneration) return;
+
+            // If synthesis was faster than the gap, wait the remaining time
+            const elapsed = Date.now() - gapStart;
+            const remaining = gapMs - elapsed;
+            if (remaining > 0) {
+                await new Promise((r) => setTimeout(r, remaining));
+            }
+            if (generation !== this.playbackGeneration) return;
+
+            await this.playPreparedSegment(nextIndex, prepared, generation);
         }
     }
 
@@ -294,29 +310,9 @@ export class TtsService {
 
         try {
             const prepared = await this.prepareSegment(this.segments[index]);
-
-            // Abort if playback was stopped or restarted while awaiting synthesis
             if (generation !== this.playbackGeneration) return;
 
-            // Resolve to TtsSynthesizeResult — read from disk only now
-            const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
-
-            const win = getMainWindow();
-            if (win) {
-                sendToRenderer(win, PushChannels.ttsSegmentAudio, {
-                    segmentIndex: index,
-                    audioBase64: result.audioBase64,
-                    mimeType: result.mimeType,
-                    duration: result.duration,
-                });
-            }
-            // result (and its audioBase64) goes out of scope here → eligible for GC
-
-            this.status = 'playing';
-            this.pushState();
-
-            // Prefetch ahead: skip already-cached segments, synthesize the first uncached ones
-            this.prefetchAhead(index + 1);
+            await this.playPreparedSegment(index, prepared, generation);
         } catch (err) {
             if (generation !== this.playbackGeneration) return;
             log.error('TTS playSegment error:', err);
@@ -324,6 +320,32 @@ export class TtsService {
             this.lastError = err instanceof Error ? err.message : 'Erreur inconnue';
             this.pushState();
         }
+    }
+
+    private async playPreparedSegment(
+        index: number,
+        prepared: PreparedSegment,
+        generation: number,
+    ): Promise<void> {
+        this.currentIndex = index;
+
+        const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
+        if (generation !== this.playbackGeneration) return;
+
+        const win = getMainWindow();
+        if (win) {
+            sendToRenderer(win, PushChannels.ttsSegmentAudio, {
+                segmentIndex: index,
+                audioBase64: result.audioBase64,
+                mimeType: result.mimeType,
+                duration: result.duration,
+            });
+        }
+
+        this.status = 'playing';
+        this.pushState();
+
+        this.prefetchAhead(index + 1);
     }
 
     /**

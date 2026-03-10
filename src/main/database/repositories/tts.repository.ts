@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { safeStorage } from 'electron';
 import { getDb } from '../index';
 import { ttsSettings } from '../schema';
-import type { TtsSettings, TtsProviderSettings, TtsProviderType } from '@shared/tts.types';
+import type {
+    TtsHighlightMode,
+    TtsSettings,
+    TtsProviderSettings,
+    TtsProviderType,
+} from '@shared/tts.types';
 import { createDefaultTtsSettings } from '@shared/tts.types';
 
 function encryptApiKey(key: string): string {
@@ -55,9 +60,10 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
     return {
         activeProvider: row.activeProvider as TtsProviderType,
         fallbackOrder: JSON.parse(row.fallbackOrder),
-        highlightMode: row.highlightMode as TtsSettings['highlightMode'],
+        highlightMode: row.highlightMode as TtsHighlightMode,
         autoPlay: row.autoPlay,
         rate: row.rate,
+        segmentGapMs: row.segmentGapMs ?? 700,
         cacheMaxSizeMb: row.cacheMaxSizeMb,
         providers: decryptProviderConfigs(providers),
     };
@@ -84,6 +90,7 @@ export function ensureSettings(): TtsSettings {
             highlightMode: defaults.highlightMode,
             autoPlay: defaults.autoPlay,
             rate: defaults.rate,
+            segmentGapMs: defaults.segmentGapMs,
             cacheMaxSizeMb: defaults.cacheMaxSizeMb,
             providerConfigs: JSON.stringify(encryptProviderConfigs(defaults.providers)),
         })
@@ -101,6 +108,7 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
     if (partial.highlightMode !== undefined) update.highlightMode = partial.highlightMode;
     if (partial.autoPlay !== undefined) update.autoPlay = partial.autoPlay;
     if (partial.rate !== undefined) update.rate = partial.rate;
+    if (partial.segmentGapMs !== undefined) update.segmentGapMs = partial.segmentGapMs;
     if (partial.cacheMaxSizeMb !== undefined) update.cacheMaxSizeMb = partial.cacheMaxSizeMb;
     if (partial.providers !== undefined) {
         const merged = { ...current.providers };

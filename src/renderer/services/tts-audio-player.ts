@@ -1,39 +1,90 @@
 export class TtsAudioPlayer {
-    private audioElement: HTMLAudioElement;
-    private currentBlobUrl: string | null = null;
+    private audioContext: AudioContext | null = null;
+    private sourceNode: AudioBufferSourceNode | null = null;
+    private gainNode: GainNode | null = null;
     private onEnded: (() => void) | null = null;
+    private isPlaying = false;
+    private isPaused = false;
+    private pausedAt = 0;
+    private startedAt = 0;
+    private currentBuffer: AudioBuffer | null = null;
+    private currentRate = 1;
 
-    constructor() {
-        this.audioElement = new Audio();
-        this.audioElement.addEventListener('ended', () => this.onEnded?.());
+    private getContext(): AudioContext {
+        if (!this.audioContext) {
+            this.audioContext = new AudioContext();
+        }
+        return this.audioContext;
     }
 
-    play(audioBase64: string, mimeType: string, rate: number = 1): void {
-        this.cleanup();
+    async play(audioBase64: string, _mimeType: string, rate: number = 1): Promise<void> {
+        this.stopSource();
+
+        const ctx = this.getContext();
+        if (ctx.state === 'suspended') await ctx.resume();
+
         const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
-        const blob = new Blob([bytes], { type: mimeType });
-        this.currentBlobUrl = URL.createObjectURL(blob);
-        this.audioElement.src = this.currentBlobUrl;
-        this.audioElement.playbackRate = rate;
-        this.audioElement.play().catch((err) => {
-            console.error('TTS audio playback failed:', err);
-        });
+        try {
+            const audioBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+            this.currentBuffer = audioBuffer;
+            this.currentRate = rate;
+            this.pausedAt = 0;
+            this.playBuffer(audioBuffer, 0, rate);
+        } catch (err) {
+            console.error('TTS audio decode failed:', err);
+        }
+    }
+
+    private playBuffer(buffer: AudioBuffer, offset: number, rate: number): void {
+        const ctx = this.getContext();
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = rate;
+
+        const gain = ctx.createGain();
+        // Start at full volume — no fade-in needed since decodeAudioData ensures
+        // the buffer is fully decoded before playback begins
+        gain.gain.setValueAtTime(1, ctx.currentTime);
+
+        source.connect(gain);
+        gain.connect(ctx.destination);
+
+        source.onended = () => {
+            if (this.isPlaying && !this.isPaused) {
+                this.isPlaying = false;
+                this.onEnded?.();
+            }
+        };
+
+        this.sourceNode = source;
+        this.gainNode = gain;
+        this.isPlaying = true;
+        this.isPaused = false;
+        this.startedAt = ctx.currentTime - offset;
+        source.start(0, offset);
     }
 
     pause(): void {
-        this.audioElement.pause();
+        if (!this.isPlaying || this.isPaused) return;
+        const ctx = this.getContext();
+        this.pausedAt = ctx.currentTime - this.startedAt;
+        this.isPaused = true;
+        this.stopSource();
     }
 
     resume(): void {
-        this.audioElement.play().catch((err) => {
-            console.error('TTS resume failed:', err);
-        });
+        if (!this.isPaused || !this.currentBuffer) return;
+        this.isPaused = false;
+        this.playBuffer(this.currentBuffer, this.pausedAt, this.currentRate);
     }
 
     stop(): void {
-        this.audioElement.pause();
-        this.audioElement.currentTime = 0;
-        this.cleanup();
+        this.stopSource();
+        this.isPlaying = false;
+        this.isPaused = false;
+        this.pausedAt = 0;
+        this.currentBuffer = null;
     }
 
     setOnEnded(cb: () => void): void {
@@ -42,12 +93,24 @@ export class TtsAudioPlayer {
 
     dispose(): void {
         this.stop();
+        this.audioContext?.close();
+        this.audioContext = null;
     }
 
-    private cleanup(): void {
-        if (this.currentBlobUrl) {
-            URL.revokeObjectURL(this.currentBlobUrl);
-            this.currentBlobUrl = null;
+    private stopSource(): void {
+        if (this.sourceNode) {
+            this.sourceNode.onended = null;
+            try {
+                this.sourceNode.stop();
+            } catch {
+                // already stopped
+            }
+            this.sourceNode.disconnect();
+            this.sourceNode = null;
+        }
+        if (this.gainNode) {
+            this.gainNode.disconnect();
+            this.gainNode = null;
         }
     }
 }

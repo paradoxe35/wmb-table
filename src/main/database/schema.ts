@@ -230,6 +230,7 @@ export const ttsSettings = sqliteTable('tts_settings', {
     highlightMode: text('highlight_mode').notNull(),
     autoPlay: integer('auto_play', { mode: 'boolean' }).notNull(),
     rate: real('rate').notNull().default(1),
+    segmentGapMs: integer('segment_gap_ms').notNull().default(700),
     cacheMaxSizeMb: integer('cache_max_size_mb').notNull(),
     providerConfigs: text('provider_configs').notNull(), // JSON<Record<TtsProviderType, TtsProviderSettings>>
     createdAt: text('created_at').default(sql`(datetime('now'))`),

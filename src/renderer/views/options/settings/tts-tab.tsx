@@ -160,7 +160,6 @@ export default function TtsTab() {
                         >
                             <Radio value="sentence">Phrase</Radio>
                             <Radio value="paragraph">Paragraphe</Radio>
-                            <Radio value="word">Mot</Radio>
                         </Radio.Group>
                     </Field>
                     <Divider style={{ margin: '4px 0' }} />
@@ -171,6 +170,19 @@ export default function TtsTab() {
                             step={0.1}
                             value={settings.rate ?? 1}
                             onChange={(v) => handleUpdate({ rate: v })}
+                        />
+                    </Field>
+                    <Divider style={{ margin: '4px 0' }} />
+                    <Field
+                        label={`Pause entre les segments: ${((settings.segmentGapMs ?? 700) / 1000).toFixed(1)}s`}
+                        hint="Durée de la pause entre chaque phrase ou paragraphe lu."
+                    >
+                        <Slider
+                            min={0}
+                            max={2000}
+                            step={100}
+                            value={settings.segmentGapMs ?? 700}
+                            onChange={(v) => handleUpdate({ segmentGapMs: v })}
                         />
                     </Field>
                     <Divider style={{ margin: '4px 0' }} />

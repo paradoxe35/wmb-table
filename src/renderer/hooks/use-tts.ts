@@ -3,13 +3,13 @@ import { message } from 'antd';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
-import type { TtsSegment, TtsSettings } from '@shared/tts.types';
+import type { TtsHighlightMode, TtsSegment, TtsSettings } from '@shared/tts.types';
 
 // ── Text segmentation ──
 
 function segmentText(
     paragraphs: { paragraphIndex: number; content: string }[],
-    mode: 'word' | 'sentence' | 'paragraph',
+    mode: TtsHighlightMode,
 ): TtsSegment[] {
     let index = 0;
     const segments: TtsSegment[] = [];
@@ -24,7 +24,7 @@ function segmentText(
                 startOffset: 0,
                 endOffset: p.content.length,
             });
-        } else if (mode === 'sentence') {
+        } else {
             const sentenceRegex = /[^.!?]+[.!?]*(\s+|$)/g;
             let match: RegExpExecArray | null;
             while ((match = sentenceRegex.exec(p.content)) !== null) {
@@ -38,18 +38,6 @@ function segmentText(
                         endOffset: match.index + match[0].length,
                     });
                 }
-            }
-        } else {
-            const wordRegex = /\S+/g;
-            let match: RegExpExecArray | null;
-            while ((match = wordRegex.exec(p.content)) !== null) {
-                segments.push({
-                    index: index++,
-                    text: match[0],
-                    paragraphIndex: p.paragraphIndex,
-                    startOffset: match.index,
-                    endOffset: match.index + match[0].length,
-                });
             }
         }
     }
@@ -72,8 +60,13 @@ function playBrowserSegment(segments: TtsSegment[], index: number, settings: Tts
     });
 
     const cfg = settings.providers.browser;
+    const gapMs = settings.segmentGapMs ?? 700;
     browserTts.setOnSegmentEnd(() => {
-        playBrowserSegment(segments, index + 1, settings);
+        if (gapMs > 0) {
+            setTimeout(() => playBrowserSegment(segments, index + 1, settings), gapMs);
+        } else {
+            playBrowserSegment(segments, index + 1, settings);
+        }
     });
     browserTts.speak(segments[index].text, cfg?.voiceId, {
         rate: settings.rate,
@@ -170,6 +163,7 @@ export function useTts(
     }, [settings]);
 
     // Signal segment completion from audio player to main process
+    // Gap is handled in the main process (overlaps with synthesis time)
     useEffect(() => {
         let pending = false;
         ttsAudioPlayer.setOnEnded(() => {

@@ -14,7 +14,7 @@ export async function hasInternet(): Promise<boolean> {
         const response = await net.fetch(CONNECTIVITY_URL, {
             signal: AbortSignal.timeout(CONNECTIVITY_TIMEOUT_MS),
             session: session.defaultSession,
-        });
+        } as Parameters<typeof net.fetch>[1]);
         return response.status === 204;
     } catch {
         return false;

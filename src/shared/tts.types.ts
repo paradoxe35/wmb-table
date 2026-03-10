@@ -41,10 +41,13 @@ export interface TtsProviderSettings {
 }
 
 // ── Global TTS settings ──
+export type TtsHighlightMode = 'sentence' | 'paragraph';
+
 export interface TtsSettings {
     activeProvider: TtsProviderType;
     fallbackOrder: TtsProviderType[];
-    highlightMode: 'word' | 'sentence' | 'paragraph'; // default: 'sentence'
+    highlightMode: TtsHighlightMode; // default: 'sentence'
+    segmentGapMs: number; // pause between segments in ms, default: 700
     autoPlay: boolean;
     rate: number; // 0.5–2.0, default: 1
     cacheMaxSizeMb: number; // default: 1000
@@ -210,6 +213,7 @@ export function createDefaultTtsSettings(): TtsSettings {
         activeProvider: 'browser',
         fallbackOrder: [...TTS_PROVIDER_TYPES],
         highlightMode: 'sentence',
+        segmentGapMs: 700,
         autoPlay: false,
         rate: 1,
         cacheMaxSizeMb: 1000,
