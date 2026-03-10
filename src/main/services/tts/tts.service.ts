@@ -202,15 +202,27 @@ export class TtsService {
             throw new Error(`Provider ${providerType} does not support model download`);
         }
         const win = getMainWindow();
-        await provider.downloadModel((percentage) => {
+        try {
+            await provider.downloadModel((percentage) => {
+                if (win) {
+                    sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
+                        provider: providerType,
+                        percentage,
+                        status: percentage >= 100 ? 'complete' : 'downloading',
+                    });
+                }
+            }, modelName);
+        } catch (err) {
             if (win) {
                 sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
                     provider: providerType,
-                    percentage,
-                    status: percentage >= 100 ? 'complete' : 'downloading',
+                    percentage: 0,
+                    status: 'error',
+                    error: err instanceof Error ? err.message : String(err),
                 });
             }
-        }, modelName);
+            throw err;
+        }
     }
 
     getProviderModels(providerType: TtsProviderType): TtsModelInfo[] {

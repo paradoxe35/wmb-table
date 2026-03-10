@@ -13,7 +13,8 @@ import type {
     TtsModelInfo,
     TtsVoice,
 } from '@shared/tts.types';
-import { SHERPA_MODEL_CATALOG, findModelByName } from '@shared/sherpa-models';
+import { normalizeLangCode, getLangLabelFr } from './sherpa-catalog';
+import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
 import { getTtsModelsDir } from '@main/lib/app-paths';
 import workerPath from './sherpa.worker?modulePath';
 
@@ -81,10 +82,12 @@ function isModelInstalled(modelName: string): boolean {
     return findOnnxFile(dir) !== null && existsSync(join(dir, 'tokens.txt'));
 }
 
-function readModelMeta(modelName: string): {
+interface ModelMeta {
     numSpeakers: number;
     speakerIdMap: Record<string, number>;
-} {
+}
+
+function readModelMeta(modelName: string): ModelMeta {
     const dir = join(getSherpaModelsDir(), modelName);
     try {
         const metaFile = readdirSync(dir).find((f) => f.endsWith('.onnx.json'));
@@ -111,6 +114,24 @@ function getInstalledModelNames(): string[] {
     }
 }
 
+/** Resolve language code for an installed model directory name */
+function getLangCodeForModel(modelName: string): string {
+    // MMS models: mms-{langCode}
+    if (modelName.startsWith('mms-')) {
+        return normalizeLangCode(modelName.slice(4));
+    }
+    // Catalog models: look up in catalog
+    const entry = findCatalogModelByModelName(modelName);
+    if (entry) return entry.langCode;
+    // Fallback: try to extract from dir name pattern like vits-piper-{lang}_{region}-...
+    const parts = modelName.split('-');
+    if (parts.length >= 3) {
+        const langPart = parts[2].split('_')[0];
+        if (langPart.length === 2 || langPart.length === 3) return normalizeLangCode(langPart);
+    }
+    return 'en';
+}
+
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -124,17 +145,19 @@ export class SherpaProvider implements TtsProvider {
 
     async getInfo(): Promise<TtsProviderInfo> {
         const installed = getInstalledModelNames();
+        const installedSet = new Set(installed);
         const voices: TtsVoice[] = [];
+
         for (const name of installed) {
-            const entry = findModelByName(name);
-            const langCodes = entry ? [entry.langCode] : ['en'];
+            const langCode = getLangCodeForModel(name);
+            const entry = findCatalogModelByModelName(name);
             const { numSpeakers, speakerIdMap } = readModelMeta(name);
 
             if (numSpeakers <= 1) {
                 voices.push({
                     id: `${name}:0`,
-                    name: entry?.voiceName ?? name.replace(/[-_]/g, ' '),
-                    languageCodes: langCodes,
+                    name: entry?.name ?? name.replace(/[-_]/g, ' '),
+                    languageCodes: [langCode],
                 });
             } else {
                 const speakerNames = Object.keys(speakerIdMap);
@@ -143,15 +166,13 @@ export class SherpaProvider implements TtsProvider {
                     voices.push({
                         id: `${name}:${i}`,
                         name: speakerName ?? `Speaker ${i + 1}`,
-                        languageCodes: langCodes,
+                        languageCodes: [langCode],
                     });
                 }
             }
         }
 
-        const supportedLangs = SHERPA_MODEL_CATALOG.filter((m) =>
-            installed.includes(m.modelName),
-        ).map((m) => m.langCode);
+        const supportedLangs = [...new Set(installed.map(getLangCodeForModel))];
 
         return {
             type: 'sherpa',
@@ -165,17 +186,14 @@ export class SherpaProvider implements TtsProvider {
             availableModels: installed,
             requiresApiKey: false,
             requiresModelDownload: true,
-            modelDownloaded: installed.length > 0,
+            modelDownloaded: installedSet.size > 0,
         };
     }
 
     supportsLanguage(langCode: string): boolean {
-        const code = langCode.split('-')[0].toLowerCase();
+        const code = normalizeLangCode(langCode);
         const installed = getInstalledModelNames();
-        return installed.some((name) => {
-            const entry = findModelByName(name);
-            return entry?.langCode === code;
-        });
+        return installed.some((name) => getLangCodeForModel(name) === code);
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
@@ -197,13 +215,22 @@ export class SherpaProvider implements TtsProvider {
 
     async downloadModel(onProgress: (pct: number) => void, modelName?: string): Promise<void> {
         if (!modelName) throw new Error('Model name required for Sherpa download');
-        const entry = findModelByName(modelName);
-        if (!entry) throw new Error(`Unknown model: ${modelName}`);
 
         progressCallback = onProgress;
         try {
             onProgress(0);
-            await call<void>('downloadModel', entry.url, entry.modelName, getSherpaModelsDir());
+
+            if (modelName.startsWith('mms-')) {
+                // MMS model: download individual files
+                const langCode = modelName.slice(4);
+                await call<void>('downloadMmsModel', langCode, getSherpaModelsDir());
+            } else {
+                // Catalog model: download tar.bz2
+                const entry = findCatalogModelByModelName(modelName);
+                if (!entry) throw new Error(`Unknown model: ${modelName}`);
+                await call<void>('downloadModel', entry.url, entry.modelName, getSherpaModelsDir());
+            }
+
             onProgress(100);
         } finally {
             progressCallback = null;
@@ -215,13 +242,19 @@ export class SherpaProvider implements TtsProvider {
     }
 
     getAvailableModels(): TtsModelInfo[] {
-        const installed = getInstalledModelNames();
-        return SHERPA_MODEL_CATALOG.map((entry) => ({
+        const installedSet = new Set(getInstalledModelNames());
+
+        return getAllCatalogModels().map((entry) => ({
             langCode: entry.langCode,
-            langLabel: entry.langLabel,
+            langLabel: getLangLabelFr(entry.langCode) || entry.langName,
+            langName: entry.langName,
             modelName: entry.modelName,
-            voiceName: entry.voiceName,
-            installed: installed.includes(entry.modelName),
+            voiceName: entry.name,
+            installed: installedSet.has(entry.modelName),
+            engine: entry.engine,
+            quality: entry.quality,
+            filesizeMb: entry.filesizeMb,
+            numSpeakers: entry.numSpeakers,
         }));
     }
 
@@ -271,12 +304,20 @@ export class SherpaProvider implements TtsProvider {
 
     private findModelForLanguage(language?: string): string | undefined {
         if (!language) return undefined;
-        const code = language.split('-')[0].toLowerCase();
+        const code = normalizeLangCode(language);
         const installed = getInstalledModelNames();
-        const entry = SHERPA_MODEL_CATALOG.find(
-            (m) => m.langCode === code && installed.includes(m.modelName),
+
+        // Prefer non-MMS model (typically higher quality)
+        const nonMms = getAllCatalogModels().find(
+            (m) =>
+                m.engine !== 'mms' &&
+                normalizeLangCode(m.langCode) === code &&
+                installed.includes(m.modelName),
         );
-        return entry?.modelName;
+        if (nonMms) return nonMms.modelName;
+
+        // Fallback: any installed model matching the language (including MMS)
+        return installed.find((name) => getLangCodeForModel(name) === code);
     }
 
     private async initializeModel(modelName: string): Promise<void> {

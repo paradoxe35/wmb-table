@@ -1,19 +1,36 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Button, message, Progress, Select, Space, Tag, Typography } from 'antd';
-import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Input, List, message, Progress, Select, Space, Typography } from 'antd';
+import { DeleteOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
-import type { TtsModelInfo } from '@shared/tts.types';
-import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
+import {
+    Field,
+    groupVoicesByLanguage,
+    providerUpdate,
+    type ProviderConfigProps,
+} from './tts-shared';
 
 const { Text } = Typography;
 
-export default function SherpaConfig({ settings, onUpdate }: ProviderConfigProps) {
+const BROWSE_PAGE_SIZE = 10;
+
+interface SherpaConfigProps extends ProviderConfigProps {
+    info?: TtsProviderInfo;
+}
+
+export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigProps) {
     const cfg = settings.providers.sherpa;
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const langCode = activeLanguage?.split('-')[0].toLowerCase() ?? '';
+
     const [models, setModels] = useState<TtsModelInfo[]>([]);
     const [downloading, setDownloading] = useState<string | null>(null);
     const [downloadPct, setDownloadPct] = useState(0);
+    const [search, setSearch] = useState('');
+    const [browsePage, setBrowsePage] = useState(1);
+
+    // ── Data loading ──
 
     const loadModels = useCallback(() => {
         window.api.tts
@@ -31,10 +48,11 @@ export default function SherpaConfig({ settings, onUpdate }: ProviderConfigProps
             if (p.provider !== 'sherpa') return;
             setDownloadPct(p.percentage);
             if (p.status === 'complete') {
-                message.success('Modèle installé');
+                message.success('Voix installée');
                 setDownloading(null);
                 setDownloadPct(0);
                 loadModels();
+                window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
             }
             if (p.status === 'error') {
                 message.error(`Erreur: ${p.error}`);
@@ -43,6 +61,8 @@ export default function SherpaConfig({ settings, onUpdate }: ProviderConfigProps
             }
         });
     }, [loadModels]);
+
+    // ── Actions ──
 
     const handleDownload = useCallback((modelName: string) => {
         setDownloading(modelName);
@@ -57,8 +77,9 @@ export default function SherpaConfig({ settings, onUpdate }: ProviderConfigProps
         async (modelName: string) => {
             try {
                 await window.api.tts.deleteProviderModel('sherpa', modelName);
-                message.success('Modèle supprimé');
+                message.success('Voix supprimée');
                 loadModels();
+                window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
                 if (cfg.model === modelName) {
                     onUpdate(providerUpdate(settings, 'sherpa', 'model', undefined));
                 }
@@ -69,55 +90,95 @@ export default function SherpaConfig({ settings, onUpdate }: ProviderConfigProps
         [loadModels, cfg.model, settings, onUpdate],
     );
 
-    const installed = models.filter((m) => m.installed);
-    const activeLangModel = models.find((m) => m.langCode === langCode);
-    const activeLangInstalled = activeLangModel?.installed ?? false;
+    // ── Derived data ──
 
-    // Models not yet installed for the active language
-    const needsDownload = activeLangModel && !activeLangInstalled;
+    const installed = useMemo(() => models.filter((m) => m.installed), [models]);
+    const allVoices = info?.voices ?? [];
+
+    // Best available model for active language (not yet installed), lightest first
+    const suggestedModel = useMemo(() => {
+        const candidates = models
+            .filter((m) => m.langCode === langCode && !m.installed)
+            .sort((a, b) => (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity));
+        return candidates[0];
+    }, [models, langCode]);
+
+    // Browse: search-filtered, sorted by installed first then lightest
+    const browseResults = useMemo(() => {
+        if (!search) return [];
+        const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+        return models
+            .filter((m) => {
+                const haystack =
+                    `${m.voiceName} ${m.langLabel} ${m.langName ?? ''} ${m.langCode} ${m.engine ?? ''}`.toLowerCase();
+                return terms.every((t) => haystack.includes(t));
+            })
+            .sort((a, b) => {
+                if (a.installed !== b.installed) return a.installed ? -1 : 1;
+                return (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity);
+            });
+    }, [models, search]);
+
+    // Auto-select voice matching active language
+    useEffect(() => {
+        if (!langCode || allVoices.length === 0) return;
+        const langVoices = allVoices.filter((v) => v.languageCodes.some((lc) => lc === langCode));
+        if (langVoices.length === 0) return;
+        const currentVoice = cfg.voiceId;
+        const currentMatchesLang = currentVoice && langVoices.some((v) => v.id === currentVoice);
+        if (!currentMatchesLang) {
+            onUpdate(providerUpdate(settings, 'sherpa', 'voiceId', langVoices[0].id));
+        }
+    }, [langCode]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // ── Render ──
 
     return (
-        <Space orientation="vertical" style={{ width: '100%' }} size="small">
-            {/* Show download prompt only when the active language model is missing */}
-            {needsDownload && (
+        <Space direction="vertical" style={{ width: '100%' }} size="small">
+            {/* 1. Suggested download for active language */}
+            {suggestedModel && (
                 <Field
-                    label={`Modèle ${activeLangModel.langLabel}`}
-                    hint={`Voix « ${activeLangModel.voiceName} » — environ 50 Mo.`}
+                    label={`Voix disponible — ${suggestedModel.langLabel}`}
+                    hint="Téléchargez une voix pour la langue active du document."
                 >
-                    <div>
-                        {downloading === activeLangModel.modelName ? (
-                            <Progress percent={downloadPct} size="small" style={{ width: 200 }} />
-                        ) : (
+                    {downloading === suggestedModel.modelName ? (
+                        <Progress percent={downloadPct} size="small" />
+                    ) : (
+                        <Space size="small" align="center">
                             <Button
-                                size="small"
                                 icon={<DownloadOutlined />}
-                                onClick={() => handleDownload(activeLangModel.modelName)}
+                                onClick={() => handleDownload(suggestedModel.modelName)}
+                                size="small"
                             >
-                                Télécharger
+                                Télécharger « {suggestedModel.voiceName} »
                             </Button>
-                        )}
-                    </div>
+                            {suggestedModel.filesizeMb != null && (
+                                <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                    ~{Math.round(suggestedModel.filesizeMb)} Mo
+                                </Text>
+                            )}
+                        </Space>
+                    )}
                 </Field>
             )}
 
-            {/* Voice selector — only when at least one model is installed */}
-            {installed.length > 0 && (
-                <Field label="Voix" hint="Chaque langue dispose d'une voix dédiée.">
+            {/* 2. Voice selector (when voices installed) */}
+            {allVoices.length > 0 && (
+                <Field label="Voix active">
                     <Select
                         style={{ width: '100%' }}
-                        value={cfg.model ?? installed[0].modelName}
-                        onChange={(v) => onUpdate(providerUpdate(settings, 'sherpa', 'model', v))}
-                        options={installed.map((m) => ({
-                            label: `${m.voiceName} (${m.langLabel})`,
-                            value: m.modelName,
-                        }))}
+                        value={cfg.voiceId ?? allVoices[0]?.id}
+                        showSearch
+                        optionFilterProp="label"
+                        onChange={(v) => onUpdate(providerUpdate(settings, 'sherpa', 'voiceId', v))}
+                        options={groupVoicesByLanguage(allVoices)}
                     />
                 </Field>
             )}
 
-            {/* Manage installed models */}
+            {/* 3. Installed voices with delete */}
             {installed.length > 0 && (
-                <Field label="Modèles installés">
+                <Field label={`Voix installées (${installed.length})`}>
                     <div>
                         {installed.map((m) => (
                             <div
@@ -126,37 +187,116 @@ export default function SherpaConfig({ settings, onUpdate }: ProviderConfigProps
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    padding: '4px 0',
+                                    padding: '3px 0',
                                 }}
                             >
                                 <Text style={{ fontSize: '0.9em' }}>
-                                    {m.voiceName}{' '}
-                                    <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                                        ({m.langLabel})
-                                    </Text>
+                                    {m.voiceName} <Text type="secondary">({m.langLabel})</Text>
+                                    {m.filesizeMb != null && (
+                                        <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                                            {' '}
+                                            · ~{Math.round(m.filesizeMb)} Mo
+                                        </Text>
+                                    )}
                                 </Text>
-                                <Space size="small">
-                                    <Tag color="green" icon={<CheckCircleOutlined />}>
-                                        Installé
-                                    </Tag>
-                                    <Button
-                                        type="text"
-                                        size="small"
-                                        danger
-                                        icon={<DeleteOutlined />}
-                                        onClick={() => handleDelete(m.modelName)}
-                                    />
-                                </Space>
+                                <Button
+                                    type="text"
+                                    size="small"
+                                    danger
+                                    icon={<DeleteOutlined />}
+                                    onClick={() => handleDelete(m.modelName)}
+                                />
                             </div>
                         ))}
                     </div>
                 </Field>
             )}
 
-            {/* No models at all and no active lang match */}
-            {installed.length === 0 && !needsDownload && (
+            {/* 4. Browse other languages */}
+            <Field label="Ajouter une autre langue" hint="Recherchez une langue ou un nom de voix.">
+                <Input
+                    prefix={<SearchOutlined />}
+                    placeholder="Ex: arabe, portugais, swahili…"
+                    size="small"
+                    allowClear
+                    value={search}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                        setBrowsePage(1);
+                    }}
+                />
+            </Field>
+
+            {search && (
+                <List
+                    size="small"
+                    dataSource={browseResults}
+                    locale={{ emptyText: 'Aucun résultat' }}
+                    pagination={{
+                        current: browsePage,
+                        pageSize: BROWSE_PAGE_SIZE,
+                        size: 'small',
+                        simple: true,
+                        hideOnSinglePage: true,
+                        onChange: setBrowsePage,
+                    }}
+                    renderItem={(m) => (
+                        <List.Item
+                            actions={[
+                                downloading === m.modelName ? (
+                                    <Progress
+                                        key="progress"
+                                        percent={downloadPct}
+                                        size="small"
+                                        style={{ width: 80 }}
+                                    />
+                                ) : m.installed ? (
+                                    <Button
+                                        key="delete"
+                                        type="text"
+                                        size="small"
+                                        danger
+                                        icon={<DeleteOutlined />}
+                                        onClick={() => handleDelete(m.modelName)}
+                                    />
+                                ) : (
+                                    <Button
+                                        key="download"
+                                        size="small"
+                                        icon={<DownloadOutlined />}
+                                        onClick={() => handleDownload(m.modelName)}
+                                    >
+                                        Télécharger
+                                    </Button>
+                                ),
+                            ]}
+                        >
+                            <List.Item.Meta
+                                title={
+                                    <Text style={{ fontSize: '0.9em' }}>
+                                        {m.langLabel}
+                                        {m.installed && <Text type="success"> ✓</Text>}
+                                    </Text>
+                                }
+                                description={
+                                    <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                        {m.voiceName}
+                                        {m.engine && ` · ${m.engine}`}
+                                        {m.filesizeMb != null &&
+                                            ` · ~${Math.round(m.filesizeMb)} Mo`}
+                                    </Text>
+                                }
+                            />
+                        </List.Item>
+                    )}
+                />
+            )}
+
+            {/* Empty state */}
+            {installed.length === 0 && !suggestedModel && !search && (
                 <Text type="secondary" style={{ fontSize: '0.9em' }}>
-                    Aucun modèle disponible pour la langue active.
+                    Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus
+                    pour trouver une voix dans une autre langue.
                 </Text>
             )}
         </Space>

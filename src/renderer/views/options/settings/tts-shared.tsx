@@ -1,6 +1,12 @@
 import { Tag, Typography } from 'antd';
 import { CloudOutlined, LaptopOutlined } from '@ant-design/icons';
-import type { TtsProviderType, TtsSettings, TtsVoice } from '@shared/tts.types';
+import { LANG_LABELS_FR } from '@shared/tts.types';
+import type {
+    TtsProviderLocality,
+    TtsProviderType,
+    TtsSettings,
+    TtsVoice,
+} from '@shared/tts.types';
 
 const { Text } = Typography;
 
@@ -8,8 +14,8 @@ const { Text } = Typography;
 
 export const PROVIDER_LABELS: Record<TtsProviderType, string> = {
     browser: 'Navigateur (SpeechSynthesis)',
-    kokoro: 'Kokoro TTS (local)',
     sherpa: 'Sherpa-ONNX TTS (local)',
+    kokoro: 'Kokoro TTS (local)',
     qwen: 'Qwen AI TTS (DashScope)',
     openai: 'OpenAI TTS',
 };
@@ -17,21 +23,10 @@ export const PROVIDER_LABELS: Record<TtsProviderType, string> = {
 export const PROVIDER_HINTS: Record<TtsProviderType, string> = {
     browser:
         'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.',
-    kokoro: 'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.',
     sherpa: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
+    kokoro: 'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.',
     qwen: 'Très bonne qualité. Permet de créer une voix personnalisée. Nécessite un compte et une connexion internet.',
     openai: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
-};
-
-const LANG_LABELS: Record<string, string> = {
-    en: 'Anglais',
-    fr: 'Français',
-    es: 'Espagnol',
-    ja: 'Japonais',
-    zh: 'Chinois',
-    hi: 'Hindi',
-    it: 'Italien',
-    pt: 'Portugais',
 };
 
 // ── Shared props ──
@@ -39,6 +34,20 @@ const LANG_LABELS: Record<string, string> = {
 export interface ProviderConfigProps {
     settings: TtsSettings;
     onUpdate: (s: Partial<TtsSettings>) => void;
+}
+
+interface HintProps {
+    children: string;
+}
+
+interface FieldProps {
+    label: string;
+    hint?: string;
+    children: React.ReactNode;
+}
+
+interface LocalityTagProps {
+    type: TtsProviderLocality;
 }
 
 // ── Helpers ──
@@ -71,7 +80,7 @@ export function groupVoicesByLanguage(voices: TtsVoice[]) {
         groups.get(lang)!.push(v);
     }
     return Array.from(groups.entries()).map(([lang, items]) => ({
-        label: LANG_LABELS[lang] ?? lang,
+        label: LANG_LABELS_FR[lang] ?? lang,
         options: items.map((v) => ({
             label: `${v.name} (${v.gender === 'female' ? 'F' : 'M'})`,
             value: v.id,
@@ -81,7 +90,7 @@ export function groupVoicesByLanguage(voices: TtsVoice[]) {
 
 // ── UI components ──
 
-export function Hint({ children }: { children: string }) {
+export function Hint({ children }: HintProps) {
     return (
         <Text type="secondary" style={{ fontSize: '0.8em', display: 'block', marginTop: 2 }}>
             {children}
@@ -89,15 +98,7 @@ export function Hint({ children }: { children: string }) {
     );
 }
 
-export function Field({
-    label,
-    hint,
-    children,
-}: {
-    label: string;
-    hint?: string;
-    children: React.ReactNode;
-}) {
+export function Field({ label, hint, children }: FieldProps) {
     return (
         <div>
             <Text strong style={{ fontSize: '0.9em' }}>
@@ -109,7 +110,7 @@ export function Field({
     );
 }
 
-export function LocalityTag({ type }: { type: 'local' | 'remote' }) {
+export function LocalityTag({ type }: LocalityTagProps) {
     return type === 'local' ? (
         <Tag color="green" icon={<LaptopOutlined />}>
             Local

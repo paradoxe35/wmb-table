@@ -1,5 +1,5 @@
 // ── Provider identification ──
-export const TTS_PROVIDER_TYPES = ['browser', 'kokoro', 'sherpa', 'qwen', 'openai'] as const;
+export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'kokoro', 'qwen', 'openai'] as const;
 export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
 export type TtsProviderLocality = 'local' | 'remote';
 
@@ -119,36 +119,104 @@ export interface TtsSegmentAudio {
 export interface TtsVoiceCloneRequest {
     name: string; // up to 16 chars, [a-zA-Z0-9_]
     audioBase64: string; // base64-encoded audio (WAV/MP3/M4A, 10-60s, ≥24kHz mono)
-    targetModel: string; // e.g. 'qwen3-tts-vc-2026-01-22'
 }
 
 export interface TtsVoiceCloneResult {
     voiceId: string; // returned voice ID for use in synthesis
-    targetModel: string;
 }
 
 // ── Per-language model info (for providers with multiple downloadable models) ──
 export interface TtsModelInfo {
     langCode: string;
     langLabel: string;
+    langName?: string;
     modelName: string;
     voiceName: string;
     installed: boolean;
+    engine?: string;
+    quality?: string;
+    filesizeMb?: number;
+    numSpeakers?: number;
 }
+
+// ── French language labels (shared across main + renderer) ──
+export const LANG_LABELS_FR: Record<string, string> = {
+    en: 'Anglais',
+    fr: 'Français',
+    de: 'Allemand',
+    es: 'Espagnol',
+    it: 'Italien',
+    pt: 'Portugais',
+    ru: 'Russe',
+    zh: 'Chinois',
+    nl: 'Néerlandais',
+    pl: 'Polonais',
+    uk: 'Ukrainien',
+    sv: 'Suédois',
+    da: 'Danois',
+    no: 'Norvégien',
+    fi: 'Finnois',
+    tr: 'Turc',
+    cs: 'Tchèque',
+    ro: 'Roumain',
+    hu: 'Hongrois',
+    el: 'Grec',
+    ar: 'Arabe',
+    hi: 'Hindi',
+    vi: 'Vietnamien',
+    id: 'Indonésien',
+    ka: 'Géorgien',
+    sk: 'Slovaque',
+    sr: 'Serbe',
+    ca: 'Catalan',
+    sw: 'Swahili',
+    is: 'Islandais',
+    bg: 'Bulgare',
+    bn: 'Bengali',
+    fa: 'Persan',
+    ja: 'Japonais',
+    ko: 'Coréen',
+    th: 'Thaï',
+    he: 'Hébreu',
+    ms: 'Malais',
+    ta: 'Tamoul',
+    te: 'Télougou',
+    ml: 'Malayalam',
+    mr: 'Marathi',
+    ne: 'Népalais',
+    si: 'Cingalais',
+    lb: 'Luxembourgeois',
+    mk: 'Macédonien',
+    lt: 'Lituanien',
+    lv: 'Letton',
+    et: 'Estonien',
+    gl: 'Galicien',
+    eu: 'Basque',
+    gu: 'Gujarati',
+    kn: 'Kannada',
+    ha: 'Haoussa',
+    am: 'Amharique',
+    cy: 'Gallois',
+    be: 'Biélorusse',
+    sl: 'Slovène',
+    hr: 'Croate',
+    sq: 'Albanais',
+    yue: 'Cantonais',
+};
 
 // ── Default settings factory ──
 export function createDefaultTtsSettings(): TtsSettings {
     return {
         activeProvider: 'browser',
-        fallbackOrder: ['browser', 'kokoro', 'sherpa', 'qwen', 'openai'],
+        fallbackOrder: [...TTS_PROVIDER_TYPES],
         highlightMode: 'sentence',
         autoPlay: false,
         rate: 1,
         cacheMaxSizeMb: 1000,
         providers: {
             browser: { provider: 'browser', enabled: true },
-            kokoro: { provider: 'kokoro', enabled: false },
             sherpa: { provider: 'sherpa', enabled: false },
+            kokoro: { provider: 'kokoro', enabled: false },
             qwen: {
                 provider: 'qwen',
                 enabled: false,

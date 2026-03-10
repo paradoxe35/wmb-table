@@ -67,6 +67,8 @@ const SUPPORTED_LANGUAGES = ['zh', 'en', 'ja', 'ko', 'de', 'fr', 'ru', 'pt', 'es
 const DEFAULT_ENDPOINT =
     'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation';
 
+const DEFAULT_CLONE_MODEL = 'qwen3-tts-vc-2026-01-22';
+
 interface QwenSynthesizeResponse {
     output?: { audio?: { url?: string } };
 }
@@ -180,7 +182,7 @@ export class QwenProvider implements TtsProvider {
                 model: 'qwen-voice-enrollment',
                 input: {
                     action: 'create',
-                    target_model: request.targetModel,
+                    target_model: DEFAULT_CLONE_MODEL,
                     preferred_name: request.name,
                     audio: { data: `data:audio/mpeg;base64,${request.audioBase64}` },
                 },
@@ -194,8 +196,6 @@ export class QwenProvider implements TtsProvider {
 
         const data = (await response.json()) as QwenCloneResponse;
         const voiceId = data?.output?.voice;
-        const targetModel = data?.output?.target_model ?? request.targetModel;
-
         if (!voiceId) throw new Error('Qwen voice clone: no voice ID in response');
 
         // Add to local list
@@ -206,7 +206,7 @@ export class QwenProvider implements TtsProvider {
             isCloned: true,
         });
 
-        return { voiceId, targetModel };
+        return { voiceId };
     }
 
     async listClonedVoices(): Promise<TtsVoice[]> {

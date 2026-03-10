@@ -51,7 +51,9 @@ function ActiveProviderConfig({
                 <KokoroConfig settings={settings} info={getInfo('kokoro')} onUpdate={onUpdate} />
             );
         case 'sherpa':
-            return <SherpaConfig settings={settings} onUpdate={onUpdate} />;
+            return (
+                <SherpaConfig settings={settings} info={getInfo('sherpa')} onUpdate={onUpdate} />
+            );
         case 'qwen':
             return <QwenConfig settings={settings} info={getInfo('qwen')} onUpdate={onUpdate} />;
         case 'openai':

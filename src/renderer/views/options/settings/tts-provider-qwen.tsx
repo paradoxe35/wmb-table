@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Input, message, Select, Space, Typography } from 'antd';
-import { DeleteOutlined } from '@ant-design/icons';
+import { Collapse, Input, message, Select, Space, Typography } from 'antd';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
+import { ClonedVoicesList, VoiceCloneForm } from './tts-qwen-voice-clone';
 
 const { Text } = Typography;
 
@@ -31,13 +31,22 @@ export default function QwenConfig({ settings, info, onUpdate }: QwenConfigProps
         }
     }, []);
 
+    const handleVoiceCloned = useCallback(
+        async (voiceId: string) => {
+            const voices = await window.api.tts.listClonedVoices();
+            setClonedVoices(voices);
+            onUpdate(providerUpdate(settings, 'qwen', 'voiceId', voiceId));
+        },
+        [settings, onUpdate],
+    );
+
     const allVoices = [
         ...(info?.voices ?? []),
         ...clonedVoices.filter((c) => !info?.voices.some((v) => v.id === c.id)),
     ];
 
     return (
-        <Space orientation="vertical" style={{ width: '100%' }} size="small">
+        <Space direction="vertical" style={{ width: '100%' }} size="small">
             <Field
                 label="Clé API DashScope"
                 hint="Votre clé secrète Qwen. Elle est stockée en toute sécurité sur votre ordinateur."
@@ -47,17 +56,6 @@ export default function QwenConfig({ settings, info, onUpdate }: QwenConfigProps
                     placeholder="sk-..."
                     onChange={(e) =>
                         onUpdate(providerUpdate(settings, 'qwen', 'apiKey', e.target.value))
-                    }
-                />
-            </Field>
-            <Field
-                label="Endpoint"
-                hint="Adresse du service. Ne modifiez que si on vous l'a demandé."
-            >
-                <Input
-                    value={cfg.apiEndpoint ?? ''}
-                    onChange={(e) =>
-                        onUpdate(providerUpdate(settings, 'qwen', 'apiEndpoint', e.target.value))
                     }
                 />
             </Field>
@@ -82,32 +80,29 @@ export default function QwenConfig({ settings, info, onUpdate }: QwenConfigProps
                     }))}
                 />
             </Field>
-            {clonedVoices.length > 0 && (
-                <Field label="Voix clonées" hint="Vos voix personnalisées.">
-                    <div>
-                        {clonedVoices.map((v) => (
-                            <div
-                                key={v.id}
-                                style={{
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    padding: '4px 0',
-                                }}
-                            >
-                                <Text style={{ fontSize: '0.9em' }}>{v.name}</Text>
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    onClick={() => handleDeleteVoice(v.id)}
+            <Collapse
+                size="small"
+                ghost
+                items={[
+                    {
+                        key: 'advanced',
+                        label: (
+                            <Text strong style={{ fontSize: '0.9em' }}>
+                                Paramètres avancés
+                            </Text>
+                        ),
+                        children: (
+                            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                                <ClonedVoicesList
+                                    voices={clonedVoices}
+                                    onDelete={handleDeleteVoice}
                                 />
-                            </div>
-                        ))}
-                    </div>
-                </Field>
-            )}
+                                <VoiceCloneForm onCloned={handleVoiceCloned} />
+                            </Space>
+                        ),
+                    },
+                ]}
+            />
         </Space>
     );
 }
