@@ -150,7 +150,6 @@ async function schedulerWorker(): Promise<void> {
 
     isSyncRunning = true;
     resetAffectedTables();
-    log.info('[Sync] Cycle started');
 
     // Apply remote changes and create snapshots — collect last failure
     let failure: Error | null = null;
@@ -197,11 +196,9 @@ async function schedulerWorker(): Promise<void> {
     }
 
     // Push always runs last, regardless of pull result
-    log.info('[Sync] Pushing local changes to Drive...');
     await syncChangesToDrive();
 
     isSyncRunning = false;
-    log.info('[Sync] Cycle completed');
 }
 
 // -----------------------------------------------------------------------
@@ -218,13 +215,12 @@ async function applyRemoteChanges(): Promise<void> {
     const timeOffset = getLastSyncTimeOffset();
     const files = await driveService.getChangeFilesAfterTimeOffset(timeOffset);
 
-    if (files.length === 0) {
-        log.info('[Sync] No remote changes to apply');
-        return;
-    }
+    if (files.length === 0) return;
 
     const applicable = files.filter((f) => canBeApplied(f) && f.createdTime > timeOffset);
-    log.info(`[Sync] Found ${applicable.length} remote file(s) to process`);
+    if (applicable.length > 0) {
+        log.info(`[Sync] Applying ${applicable.length} remote file(s)`);
+    }
     let processed = 0;
 
     for (const file of files) {
@@ -344,10 +340,7 @@ async function syncChangesToDrive(): Promise<void> {
     if (!driveService) return;
 
     const unsynced = getUnsyncedChanges();
-    if (unsynced.length === 0) {
-        log.info('[Sync] No local changes to push');
-        return;
-    }
+    if (unsynced.length === 0) return;
     log.info(`[Sync] Pushing ${unsynced.length} local change(s) to Drive`);
 
     const drive = driveService;
