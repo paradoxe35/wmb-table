@@ -67,13 +67,17 @@ const SUPPORTED_LANGUAGES = [
     'sw',
 ];
 
+interface ElevenLabsVoiceEntry {
+    voice_id: string;
+    name: string;
+    category: string;
+    labels?: Record<string, string>;
+}
+
 interface ElevenLabsVoiceResponse {
-    voices: Array<{
-        voice_id: string;
-        name: string;
-        category: string;
-        labels?: Record<string, string>;
-    }>;
+    voices: ElevenLabsVoiceEntry[];
+    has_more: boolean;
+    next_page_token?: string;
 }
 
 export class ElevenLabsProvider implements TtsProvider {
@@ -112,21 +116,29 @@ export class ElevenLabsProvider implements TtsProvider {
         const model = request.model ?? this.model;
         const voiceId = request.voiceId ?? this.voiceId;
 
-        const response = await fetch(`${ELEVENLABS_API_BASE}/text-to-speech/${voiceId}`, {
+        const url = new URL(`${ELEVENLABS_API_BASE}/text-to-speech/${voiceId}`);
+        url.searchParams.set('output_format', 'mp3_44100_128');
+
+        const body: Record<string, unknown> = {
+            text: request.text,
+            model_id: model,
+            voice_settings: {
+                stability: 0.5,
+                similarity_boost: 0.75,
+            },
+        };
+
+        if (request.language) {
+            body.language_code = request.language.split('-')[0].toLowerCase();
+        }
+
+        const response = await fetch(url.toString(), {
             method: 'POST',
             headers: {
                 'xi-api-key': this.apiKey,
                 'Content-Type': 'application/json',
-                Accept: 'audio/mpeg',
             },
-            body: JSON.stringify({
-                text: request.text,
-                model_id: model,
-                voice_settings: {
-                    stability: 0.5,
-                    similarity_boost: 0.75,
-                },
-            }),
+            body: JSON.stringify(body),
         });
 
         if (!response.ok) {
@@ -218,14 +230,26 @@ export class ElevenLabsProvider implements TtsProvider {
         if (!this.apiKey) return this.cachedVoices;
 
         try {
-            const response = await fetch(`${ELEVENLABS_API_BASE}/voices`, {
-                headers: { 'xi-api-key': this.apiKey },
-            });
+            const all: ElevenLabsVoiceEntry[] = [];
+            let pageToken: string | undefined;
 
-            if (!response.ok) return this.cachedVoices;
+            do {
+                const url = new URL(`${ELEVENLABS_API_BASE.replace('/v1', '/v2')}/voices`);
+                url.searchParams.set('page_size', '100');
+                if (pageToken) url.searchParams.set('next_page_token', pageToken);
 
-            const data = (await response.json()) as ElevenLabsVoiceResponse;
-            this.cachedVoices = data.voices.map((v) => ({
+                const response = await fetch(url.toString(), {
+                    headers: { 'xi-api-key': this.apiKey },
+                });
+
+                if (!response.ok) return this.cachedVoices;
+
+                const data = (await response.json()) as ElevenLabsVoiceResponse;
+                all.push(...data.voices);
+                pageToken = data.has_more ? data.next_page_token : undefined;
+            } while (pageToken);
+
+            this.cachedVoices = all.map((v) => ({
                 id: v.voice_id,
                 name: v.name,
                 languageCodes: SUPPORTED_LANGUAGES,
