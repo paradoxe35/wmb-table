@@ -42,6 +42,7 @@ export class TtsService {
     private currentIndex = 0;
     private currentLanguage = '';
     private status: TtsPlaybackStatus = 'idle';
+    private lastError?: string;
     private playbackGeneration = 0;
     private prefetchQueue = new Map<number, Promise<PreparedSegment>>();
 
@@ -290,6 +291,7 @@ export class TtsService {
             if (generation !== this.playbackGeneration) return;
             log.error('TTS playSegment error:', err);
             this.status = 'error';
+            this.lastError = err instanceof Error ? err.message : 'Erreur inconnue';
             this.pushState();
         }
     }
@@ -396,7 +398,7 @@ export class TtsService {
             currentSegmentIndex: this.currentIndex,
             totalSegments: this.segments.length,
             provider: this.settings.activeProvider,
-            error: this.status === 'error' ? 'Synthesis failed' : undefined,
+            error: this.status === 'error' ? this.lastError : undefined,
         });
     }
 }

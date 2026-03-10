@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { message } from 'antd';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
@@ -135,7 +136,14 @@ export function useTts(
 
     // Listen to push events for playback state (main-process providers)
     useEffect(() => {
-        return window.api.on.ttsPlaybackState((state) => setPlaybackState(state));
+        return window.api.on.ttsPlaybackState((state) => {
+            setPlaybackState(state);
+            if (state.status === 'error') {
+                message.error(
+                    'La lecture audio a échoué. Vérifiez la configuration du fournisseur.',
+                );
+            }
+        });
     }, [setPlaybackState]);
 
     // Listen to segment audio and play it (main-process providers)
@@ -168,7 +176,12 @@ export function useTts(
         if (settings.activeProvider === 'browser') {
             playBrowserSegment(segments, 0, settings, () => {});
         } else {
-            window.api.tts.startPlayback(segments, language);
+            window.api.tts.startPlayback(segments, language).catch(() => {
+                message.error(
+                    'La lecture audio a échoué. Vérifiez la configuration du fournisseur.',
+                );
+                useTtsStore.getState().reset();
+            });
         }
     }, [paragraphs, language, documentId, settings]);
 
