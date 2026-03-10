@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import { useSearchStore } from '@renderer/stores';
