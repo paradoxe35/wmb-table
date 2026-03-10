@@ -228,13 +228,17 @@ const api = {
         seekToSegment: (i: number) => invoke(TtsChannels.seekToSegment, i),
         segmentComplete: () => invoke(TtsChannels.segmentComplete),
         checkLanguageSupport: (lang: string) => invoke(TtsChannels.checkLanguageSupport, lang),
-        downloadModel: (p: TtsProviderType) => invoke(TtsChannels.downloadModel, p),
+        downloadModel: (p: TtsProviderType, modelName?: string) =>
+            invoke(TtsChannels.downloadModel, p, modelName),
         getModelStatus: (p: TtsProviderType) => invoke(TtsChannels.getModelStatus, p),
         clearCache: () => invoke(TtsChannels.clearCache),
         getCacheSize: () => invoke(TtsChannels.getCacheSize),
         cloneVoice: (req: TtsVoiceCloneRequest) => invoke(TtsChannels.cloneVoice, req),
         listClonedVoices: () => invoke(TtsChannels.listClonedVoices),
         deleteClonedVoice: (id: string) => invoke(TtsChannels.deleteClonedVoice, id),
+        getProviderModels: (p: TtsProviderType) => invoke(TtsChannels.getProviderModels, p),
+        deleteProviderModel: (p: TtsProviderType, modelName: string) =>
+            invoke(TtsChannels.deleteProviderModel, p, modelName),
     },
 
     on: {

@@ -26,7 +26,13 @@ import {
 } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import type { TtsProviderInfo, TtsProviderType, TtsSettings, TtsVoice } from '@shared/tts.types';
+import type {
+    TtsModelInfo,
+    TtsProviderInfo,
+    TtsProviderType,
+    TtsSettings,
+    TtsVoice,
+} from '@shared/tts.types';
 
 const { Text } = Typography;
 
@@ -35,6 +41,7 @@ const { Text } = Typography;
 const PROVIDER_LABELS: Record<TtsProviderType, string> = {
     browser: 'Navigateur (SpeechSynthesis)',
     kokoro: 'Kokoro TTS (local)',
+    sherpa: 'Sherpa-ONNX TTS (local)',
     qwen: 'Qwen AI TTS (DashScope)',
     openai: 'OpenAI TTS',
 };
@@ -43,6 +50,7 @@ const PROVIDER_HINTS: Record<TtsProviderType, string> = {
     browser:
         'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.',
     kokoro: 'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.',
+    sherpa: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
     qwen: 'Très bonne qualité. Permet de créer une voix personnalisée. Nécessite un compte et une connexion internet.',
     openai: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
 };
@@ -96,6 +104,33 @@ function Field({
             <div style={{ marginTop: 4 }}>{children}</div>
         </div>
     );
+}
+
+const LANG_LABELS: Record<string, string> = {
+    en: 'Anglais',
+    fr: 'Français',
+    es: 'Espagnol',
+    ja: 'Japonais',
+    zh: 'Chinois',
+    hi: 'Hindi',
+    it: 'Italien',
+    pt: 'Portugais',
+};
+
+function groupVoicesByLanguage(voices: TtsVoice[]) {
+    const groups = new Map<string, TtsVoice[]>();
+    for (const v of voices) {
+        const lang = v.languageCodes[0] ?? 'other';
+        if (!groups.has(lang)) groups.set(lang, []);
+        groups.get(lang)!.push(v);
+    }
+    return Array.from(groups.entries()).map(([lang, items]) => ({
+        label: LANG_LABELS[lang] ?? lang,
+        options: items.map((v) => ({
+            label: `${v.name} (${v.gender === 'female' ? 'F' : 'M'})`,
+            value: v.id,
+        })),
+    }));
 }
 
 /** Locality tag for provider panels. */
@@ -192,23 +227,20 @@ function KokoroConfig({
     const cfg = settings.providers.kokoro;
     const activeLanguage = useAppStore((s) => s.activeLanguage);
 
-    // Filter voices matching the active language, with all voices as fallback
     const allVoices = info?.voices ?? [];
     const langCode = activeLanguage?.split('-')[0].toLowerCase() ?? '';
-    const filteredVoices = langCode
-        ? allVoices.filter((v) => v.languageCodes.some((lc) => lc === langCode))
-        : allVoices;
-    const displayVoices = filteredVoices.length > 0 ? filteredVoices : allVoices;
 
-    // Auto-select first voice matching the active language when current voice doesn't match
+    // Auto-select a voice matching the active language when no voice is set or current doesn't match
     useEffect(() => {
-        if (!langCode || filteredVoices.length === 0) return;
+        if (!langCode || allVoices.length === 0) return;
+        const langVoices = allVoices.filter((v) => v.languageCodes.some((lc) => lc === langCode));
+        if (langVoices.length === 0) return;
         const currentVoice = cfg.voiceId ?? 'af_heart';
-        const currentMatches = filteredVoices.some((v) => v.id === currentVoice);
-        if (!currentMatches) {
-            onUpdate(providerUpdate(settings, 'kokoro', 'voiceId', filteredVoices[0].id));
+        const currentMatchesLang = langVoices.some((v) => v.id === currentVoice);
+        if (!currentMatchesLang) {
+            onUpdate(providerUpdate(settings, 'kokoro', 'voiceId', langVoices[0].id));
         }
-    }, [langCode, filteredVoices.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [langCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const [downloadPct, setDownloadPct] = useState<number | null>(null);
 
@@ -255,11 +287,7 @@ function KokoroConfig({
             </Field>
             <Field
                 label="Voix"
-                hint={
-                    langCode && filteredVoices.length > 0
-                        ? `Voix disponibles pour votre langue. Les noms contenant « f » sont féminins, « m » sont masculins.`
-                        : 'Choisissez une voix. Les noms contenant « f » sont féminins, « m » sont masculins.'
-                }
+                hint="Toutes les voix sont disponibles. La voix par défaut correspond à la langue active."
             >
                 <Select
                     style={{ width: '100%' }}
@@ -267,12 +295,155 @@ function KokoroConfig({
                     showSearch
                     optionFilterProp="label"
                     onChange={(v) => onUpdate(providerUpdate(settings, 'kokoro', 'voiceId', v))}
-                    options={displayVoices.map((v) => ({
-                        label: `${v.name} (${v.languageCodes.join(', ')})`,
-                        value: v.id,
-                    }))}
+                    options={groupVoicesByLanguage(allVoices)}
                 />
             </Field>
+        </Space>
+    );
+}
+
+function SherpaConfig({
+    settings,
+    onUpdate,
+}: {
+    settings: TtsSettings;
+    info?: TtsProviderInfo;
+    onUpdate: (s: Partial<TtsSettings>) => void;
+}) {
+    const cfg = settings.providers.sherpa;
+    const [models, setModels] = useState<TtsModelInfo[]>([]);
+    const [downloading, setDownloading] = useState<string | null>(null);
+    const [downloadPct, setDownloadPct] = useState(0);
+
+    const loadModels = useCallback(() => {
+        window.api.tts
+            .getProviderModels('sherpa')
+            .then(setModels)
+            .catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        loadModels();
+    }, [loadModels]);
+
+    useEffect(() => {
+        return window.api.on.ttsModelDownloadProgress((p) => {
+            if (p.provider !== 'sherpa') return;
+            setDownloadPct(p.percentage);
+            if (p.status === 'complete') {
+                message.success('Modèle installé');
+                setDownloading(null);
+                setDownloadPct(0);
+                loadModels();
+            }
+            if (p.status === 'error') {
+                message.error(`Erreur: ${p.error}`);
+                setDownloading(null);
+                setDownloadPct(0);
+            }
+        });
+    }, [loadModels]);
+
+    const handleDownload = useCallback((modelName: string) => {
+        setDownloading(modelName);
+        setDownloadPct(0);
+        window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
+            message.error(`Erreur: ${err.message}`);
+            setDownloading(null);
+        });
+    }, []);
+
+    const handleDelete = useCallback(
+        async (modelName: string) => {
+            try {
+                await window.api.tts.deleteProviderModel('sherpa', modelName);
+                message.success('Modèle supprimé');
+                loadModels();
+                if (cfg.model === modelName) {
+                    onUpdate(providerUpdate(settings, 'sherpa', 'model', undefined));
+                }
+            } catch (err) {
+                message.error(`Erreur: ${(err as Error).message}`);
+            }
+        },
+        [loadModels, cfg.model, settings, onUpdate],
+    );
+
+    const installed = models.filter((m) => m.installed);
+
+    return (
+        <Space orientation="vertical" style={{ width: '100%' }} size="small">
+            <Field
+                label="Langues disponibles"
+                hint="Installez un modèle par langue. Chaque modèle fait environ 50 Mo."
+            >
+                <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+                    {models.map((m) => (
+                        <div
+                            key={m.modelName}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: '6px 4px',
+                                borderBottom:
+                                    '1px solid var(--ant-color-border-secondary, #f0f0f0)',
+                            }}
+                        >
+                            <div>
+                                <Text style={{ fontSize: '0.9em' }}>{m.langLabel}</Text>
+                                <Text type="secondary" style={{ fontSize: '0.8em', marginLeft: 8 }}>
+                                    {m.voiceName}
+                                </Text>
+                            </div>
+                            <div style={{ minWidth: 120, textAlign: 'right' }}>
+                                {downloading === m.modelName ? (
+                                    <Progress
+                                        percent={downloadPct}
+                                        size="small"
+                                        style={{ width: 100 }}
+                                    />
+                                ) : m.installed ? (
+                                    <Space size="small">
+                                        <Tag color="green" icon={<CheckCircleOutlined />}>
+                                            Installé
+                                        </Tag>
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            danger
+                                            icon={<DeleteOutlined />}
+                                            onClick={() => handleDelete(m.modelName)}
+                                        />
+                                    </Space>
+                                ) : (
+                                    <Button
+                                        size="small"
+                                        icon={<DownloadOutlined />}
+                                        disabled={downloading !== null}
+                                        onClick={() => handleDownload(m.modelName)}
+                                    >
+                                        Installer
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </Field>
+            {installed.length > 0 && (
+                <Field label="Modèle actif" hint="Le modèle utilisé pour la lecture.">
+                    <Select
+                        style={{ width: '100%' }}
+                        value={cfg.model ?? installed[0].modelName}
+                        onChange={(v) => onUpdate(providerUpdate(settings, 'sherpa', 'model', v))}
+                        options={installed.map((m) => ({
+                            label: `${m.langLabel} — ${m.voiceName}`,
+                            value: m.modelName,
+                        }))}
+                    />
+                </Field>
+            )}
         </Space>
     );
 }
@@ -495,6 +666,21 @@ export default function TtsTab() {
                 <KokoroConfig
                     settings={settings}
                     info={getProviderInfo('kokoro')}
+                    onUpdate={handleUpdate}
+                />
+            ),
+        },
+        {
+            key: 'sherpa',
+            label: (
+                <span>
+                    {PROVIDER_LABELS.sherpa} <LocalityTag type="local" />
+                </span>
+            ),
+            children: (
+                <SherpaConfig
+                    settings={settings}
+                    info={getProviderInfo('sherpa')}
                     onUpdate={handleUpdate}
                 />
             ),

@@ -55,6 +55,7 @@ import type {
     TtsVoice,
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
+    TtsModelInfo,
 } from './tts.types';
 
 // ---------------------------------------------------------------------------
@@ -193,6 +194,8 @@ export const TtsChannels = {
     cloneVoice: 'tts:cloneVoice',
     listClonedVoices: 'tts:listClonedVoices',
     deleteClonedVoice: 'tts:deleteClonedVoice',
+    getProviderModels: 'tts:getProviderModels',
+    deleteProviderModel: 'tts:deleteProviderModel',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -409,7 +412,7 @@ export interface InvokeChannelMap {
         args: [string];
         return: Record<TtsProviderType, boolean>;
     };
-    [TtsChannels.downloadModel]: { args: [TtsProviderType]; return: void };
+    [TtsChannels.downloadModel]: { args: [TtsProviderType, string?]; return: void };
     [TtsChannels.getModelStatus]: {
         args: [TtsProviderType];
         return: { downloaded: boolean; sizeBytes: number };
@@ -419,6 +422,8 @@ export interface InvokeChannelMap {
     [TtsChannels.cloneVoice]: { args: [TtsVoiceCloneRequest]; return: TtsVoiceCloneResult };
     [TtsChannels.listClonedVoices]: { args: []; return: TtsVoice[] };
     [TtsChannels.deleteClonedVoice]: { args: [string]; return: void };
+    [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
+    [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */

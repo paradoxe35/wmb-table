@@ -49,8 +49,8 @@ export function registerTtsHandlers(): void {
         return getTtsService().checkLanguageSupport(langCode);
     });
 
-    registerHandler(TtsChannels.downloadModel, async (_event, provider) => {
-        await getTtsService().downloadModel(provider);
+    registerHandler(TtsChannels.downloadModel, async (_event, provider, modelName) => {
+        await getTtsService().downloadModel(provider, modelName);
     });
 
     registerHandler(TtsChannels.getModelStatus, async (_event, provider) => {
@@ -75,5 +75,13 @@ export function registerTtsHandlers(): void {
 
     registerHandler(TtsChannels.deleteClonedVoice, async (_event, voiceId) => {
         await getTtsService().deleteClonedVoice(voiceId);
+    });
+
+    registerHandler(TtsChannels.getProviderModels, async (_event, provider) => {
+        return getTtsService().getProviderModels(provider);
+    });
+
+    registerHandler(TtsChannels.deleteProviderModel, async (_event, provider, modelName) => {
+        await getTtsService().deleteProviderModel(provider, modelName);
     });
 }

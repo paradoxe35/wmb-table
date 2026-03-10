@@ -2,6 +2,7 @@ import { readFile, writeFile, unlink, rm, mkdir, access } from 'node:fs/promises
 import { join } from 'node:path';
 import log from 'electron-log';
 import { getTtsCacheDir } from '@main/lib/app-paths';
+import { TTS_PROVIDER_TYPES } from '@shared/tts.types';
 import type { TtsCacheKey, TtsSynthesizeResult } from '@shared/tts.types';
 
 interface CacheEntry {
@@ -100,7 +101,7 @@ export class TtsCache {
         }
         await Promise.all(deletePromises);
         this.entries.clear();
-        for (const sub of ['browser', 'kokoro', 'qwen', 'openai']) {
+        for (const sub of TTS_PROVIDER_TYPES) {
             const subDir = join(cacheDir, sub);
             if (await fileExists(subDir)) {
                 await rm(subDir, { recursive: true, force: true }).catch(() => {});

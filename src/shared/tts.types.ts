@@ -1,5 +1,6 @@
 // ── Provider identification ──
-export type TtsProviderType = 'browser' | 'kokoro' | 'qwen' | 'openai';
+export const TTS_PROVIDER_TYPES = ['browser', 'kokoro', 'sherpa', 'qwen', 'openai'] as const;
+export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
 export type TtsProviderLocality = 'local' | 'remote';
 
 // ── Voice definition ──
@@ -126,11 +127,20 @@ export interface TtsVoiceCloneResult {
     targetModel: string;
 }
 
+// ── Per-language model info (for providers with multiple downloadable models) ──
+export interface TtsModelInfo {
+    langCode: string;
+    langLabel: string;
+    modelName: string;
+    voiceName: string;
+    installed: boolean;
+}
+
 // ── Default settings factory ──
 export function createDefaultTtsSettings(): TtsSettings {
     return {
         activeProvider: 'browser',
-        fallbackOrder: ['browser', 'kokoro', 'qwen', 'openai'],
+        fallbackOrder: ['browser', 'kokoro', 'sherpa', 'qwen', 'openai'],
         highlightMode: 'sentence',
         autoPlay: false,
         rate: 1,
@@ -138,6 +148,7 @@ export function createDefaultTtsSettings(): TtsSettings {
         providers: {
             browser: { provider: 'browser', enabled: true },
             kokoro: { provider: 'kokoro', enabled: false },
+            sherpa: { provider: 'sherpa', enabled: false },
             qwen: {
                 provider: 'qwen',
                 enabled: false,

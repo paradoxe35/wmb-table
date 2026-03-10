@@ -8,8 +8,10 @@ import { TtsCache } from './tts-cache';
 import type { CacheHit } from './tts-cache';
 import { OpenAiProvider } from './openai.provider';
 import { KokoroProvider } from './kokoro.provider';
+import { SherpaProvider } from './sherpa.provider';
 import { QwenProvider } from './qwen.provider';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
+import { TTS_PROVIDER_TYPES } from '@shared/tts.types';
 import type {
     TtsProviderType,
     TtsProviderInfo,
@@ -19,6 +21,7 @@ import type {
     TtsSynthesizeResult,
     TtsPlaybackStatus,
     TtsCacheKey,
+    TtsModelInfo,
     TtsVoice,
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
@@ -54,10 +57,12 @@ export class TtsService {
 
     private initProviders(): void {
         const kokoro = new KokoroProvider();
+        const sherpa = new SherpaProvider();
         const qwen = new QwenProvider();
         const openai = new OpenAiProvider();
 
         this.providers.set('kokoro', kokoro);
+        this.providers.set('sherpa', sherpa);
         this.providers.set('qwen', qwen);
         this.providers.set('openai', openai);
 
@@ -178,19 +183,16 @@ export class TtsService {
     }
 
     checkLanguageSupport(langCode: string): Record<TtsProviderType, boolean> {
-        const result: Record<TtsProviderType, boolean> = {
-            browser: true,
-            kokoro: false,
-            qwen: false,
-            openai: false,
-        };
+        const result = Object.fromEntries(
+            TTS_PROVIDER_TYPES.map((t) => [t, t === 'browser']),
+        ) as Record<TtsProviderType, boolean>;
         for (const [type, provider] of this.providers) {
             result[type] = provider.supportsLanguage(langCode);
         }
         return result;
     }
 
-    async downloadModel(providerType: TtsProviderType): Promise<void> {
+    async downloadModel(providerType: TtsProviderType, modelName?: string): Promise<void> {
         const provider = this.providers.get(providerType);
         if (!provider?.downloadModel) {
             throw new Error(`Provider ${providerType} does not support model download`);
@@ -204,7 +206,20 @@ export class TtsService {
                     status: percentage >= 100 ? 'complete' : 'downloading',
                 });
             }
-        });
+        }, modelName);
+    }
+
+    getProviderModels(providerType: TtsProviderType): TtsModelInfo[] {
+        const provider = this.providers.get(providerType);
+        return provider?.getAvailableModels?.() ?? [];
+    }
+
+    async deleteProviderModel(providerType: TtsProviderType, modelName: string): Promise<void> {
+        const provider = this.providers.get(providerType);
+        if (!provider?.deleteModel) {
+            throw new Error(`Provider ${providerType} does not support model deletion`);
+        }
+        await provider.deleteModel(modelName);
     }
 
     async getModelStatus(

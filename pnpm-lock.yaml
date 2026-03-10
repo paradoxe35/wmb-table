@@ -16,6 +16,9 @@ importers:
             '@oxdev03/node-tantivy-binding':
                 specifier: ^0.2.0
                 version: 0.2.0
+            '@pngwasi/kokoro-js':
+                specifier: ^1.1.1
+                version: 1.1.1
             antd:
                 specifier: ^6.3.1
                 version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -43,9 +46,6 @@ importers:
             googleapis:
                 specifier: ^171.4.0
                 version: 171.4.0
-            kokoro-js:
-                specifier: ^1.2.1
-                version: 1.2.1
             lodash:
                 specifier: ^4.17.23
                 version: 4.17.23
@@ -61,6 +61,9 @@ importers:
             react-virtuoso:
                 specifier: ^4.18.3
                 version: 4.18.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+            sherpa-onnx-node:
+                specifier: ^1.12.28
+                version: 1.12.28
             unpdf:
                 specifier: ^1.4.0
                 version: 1.4.0
@@ -1816,6 +1819,12 @@ packages:
                 integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==,
             }
         engines: { node: '>=14' }
+
+    '@pngwasi/kokoro-js@1.1.1':
+        resolution:
+            {
+                integrity: sha512-m5eCbrurFrmwNREqLkC2n4nXHEGkqfUaZsBNNnkUjQuDCM5MsZ5VbNl0eM2BAPf/1kOgVfte78O7C1JekBSi8g==,
+            }
 
     '@protobufjs/aspromise@1.1.2':
         resolution:
@@ -5286,12 +5295,6 @@ packages:
                 integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==,
             }
 
-    kokoro-js@1.2.1:
-        resolution:
-            {
-                integrity: sha512-oq0HZJWis3t8lERkMJh84WLU86dpYD0EuBPtqYnLlQzyFP1OkyBRDcweAqCfhNOpltyN9j/azp1H6uuC47gShw==,
-            }
-
     lazy-val@1.0.5:
         resolution:
             {
@@ -5972,12 +5975,6 @@ packages:
                 integrity: sha512-F3asv42UuXchdzt+xXqfW1OGlVBe+mxa2mqI0pg5yAHZPvFmY3Y6drSf/GQ1A86WgWEN9Kzh/WrgKa6iGcHXLg==,
             }
 
-    phonemizer@1.2.1:
-        resolution:
-            {
-                integrity: sha512-v0KJ4mi2T4Q7eJQ0W15Xd4G9k4kICSXE8bpDeJ8jisL4RyJhNWsweKTOi88QXFc4r4LZlz5jVL5lCHhkpdT71A==,
-            }
-
     picocolors@1.1.1:
         resolution:
             {
@@ -6495,6 +6492,60 @@ packages:
                 integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==,
             }
         engines: { node: '>=8' }
+
+    sherpa-onnx-darwin-arm64@1.12.28:
+        resolution:
+            {
+                integrity: sha512-QzKrJwZR9aOmz/X6i37e0p0XDCEAGS9AuLXD5SejQxyrwOc+8db+Qi7Y+IOKk7DUebpe1mTS4gAFEXk2JnSAAg==,
+            }
+        cpu: [arm64]
+        os: [darwin]
+
+    sherpa-onnx-darwin-x64@1.12.28:
+        resolution:
+            {
+                integrity: sha512-YG5WNS/19zNS25TbG5HttsBaHWo97Mdoz4OLspyQ3EkM/XEZILz6M+Kt1/2NjZEuDKMlpgdjIyfANnBY2GYRZA==,
+            }
+        cpu: [x64]
+        os: [darwin]
+
+    sherpa-onnx-linux-arm64@1.12.28:
+        resolution:
+            {
+                integrity: sha512-NeDVuNcSUmqye/fUlqogIDX/O8NVkD9423KTQt4E/EftwoiReHLQP4CbtGoL9wHhRAy+opCzw+ssMb/coB+TqA==,
+            }
+        cpu: [arm64]
+        os: [linux]
+
+    sherpa-onnx-linux-x64@1.12.28:
+        resolution:
+            {
+                integrity: sha512-+7ZwpAqQYz5fjNQ13F9+sR11zKo6+HhOa1OvT+F4g4PjmoCS1o3YYQqT4JZuLeNRWAY6kKn4IXGWLx93K+OV7A==,
+            }
+        cpu: [x64]
+        os: [linux]
+
+    sherpa-onnx-node@1.12.28:
+        resolution:
+            {
+                integrity: sha512-EHSB3EG6hKyXaTNh6GU/bwh6i3dncCH6ZCU2mScNzkxRbVStZ7QmNj0Oo4E9XrGGo9jX9pKg9MPHEPyjdK+ApA==,
+            }
+
+    sherpa-onnx-win-ia32@1.12.28:
+        resolution:
+            {
+                integrity: sha512-C9bvyg3SuVGVVRCjPH3sKk9C1rYiihTO7C9EF1T9n1V7ABdr6VE2O/7HzzMeTx9B4kUaAIDQNUq52XFE5x8oWQ==,
+            }
+        cpu: [ia32]
+        os: [win32]
+
+    sherpa-onnx-win-x64@1.12.28:
+        resolution:
+            {
+                integrity: sha512-p8vpdVUtPRuI9ksm2EnuabK9+r285m5ARYzZkCfvg9ia/TQAq8pVoOCOuUTbMteBSQRPOl9lamfOcg3Sy085yQ==,
+            }
+        cpu: [x64]
+        os: [win32]
 
     side-channel-list@1.0.0:
         resolution:
@@ -8317,6 +8368,10 @@ snapshots:
 
     '@pkgjs/parseargs@0.11.0':
         optional: true
+
+    '@pngwasi/kokoro-js@1.1.1':
+        dependencies:
+            '@huggingface/transformers': 3.8.1
 
     '@protobufjs/aspromise@1.1.2': {}
 
@@ -10754,11 +10809,6 @@ snapshots:
         dependencies:
             json-buffer: 3.0.1
 
-    kokoro-js@1.2.1:
-        dependencies:
-            '@huggingface/transformers': 3.8.1
-            phonemizer: 1.2.1
-
     lazy-val@1.0.5: {}
 
     levn@0.4.1:
@@ -11156,8 +11206,6 @@ snapshots:
 
     pend@1.2.0: {}
 
-    phonemizer@1.2.1: {}
-
     picocolors@1.1.1: {}
 
     picomatch@2.3.1: {}
@@ -11533,6 +11581,33 @@ snapshots:
             shebang-regex: 3.0.0
 
     shebang-regex@3.0.0: {}
+
+    sherpa-onnx-darwin-arm64@1.12.28:
+        optional: true
+
+    sherpa-onnx-darwin-x64@1.12.28:
+        optional: true
+
+    sherpa-onnx-linux-arm64@1.12.28:
+        optional: true
+
+    sherpa-onnx-linux-x64@1.12.28:
+        optional: true
+
+    sherpa-onnx-node@1.12.28:
+        optionalDependencies:
+            sherpa-onnx-darwin-arm64: 1.12.28
+            sherpa-onnx-darwin-x64: 1.12.28
+            sherpa-onnx-linux-arm64: 1.12.28
+            sherpa-onnx-linux-x64: 1.12.28
+            sherpa-onnx-win-ia32: 1.12.28
+            sherpa-onnx-win-x64: 1.12.28
+
+    sherpa-onnx-win-ia32@1.12.28:
+        optional: true
+
+    sherpa-onnx-win-x64@1.12.28:
+        optional: true
 
     side-channel-list@1.0.0:
         dependencies:

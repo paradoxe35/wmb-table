@@ -1,5 +1,4 @@
-import { access, readFile, unlink } from 'node:fs/promises';
-import { join } from 'node:path';
+import { Worker } from 'node:worker_threads';
 import log from 'electron-log';
 import type { TtsProvider } from './provider';
 import type {
@@ -11,6 +10,7 @@ import type {
     TtsVoice,
 } from '@shared/tts.types';
 import { getTtsModelsDir } from '@main/lib/app-paths';
+import workerPath from './kokoro.worker?modulePath';
 
 const MODEL_ID = 'onnx-community/Kokoro-82M-v1.0-ONNX';
 
@@ -47,9 +47,58 @@ function getVoiceGender(voiceId: string): 'male' | 'female' {
     return voiceId[1] === 'm' ? 'male' : 'female';
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let kokoroInstance: any = null;
-let modelReady = false;
+// ---------------------------------------------------------------------------
+// Worker RPC
+// ---------------------------------------------------------------------------
+
+let worker: Worker | null = null;
+let requestId = 0;
+const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+let progressCallback: ((pct: number) => void) | null = null;
+
+function getWorker(): Worker {
+    if (!worker) {
+        worker = new Worker(workerPath);
+        worker.on('message', (msg: { id: number; result?: unknown; error?: string }) => {
+            // Handle progress broadcasts (id === -1)
+            if (msg.id === -1 && msg.result && typeof msg.result === 'object') {
+                const r = msg.result as { type?: string; percentage?: number };
+                if (r.type === 'progress' && progressCallback) {
+                    progressCallback(r.percentage ?? 0);
+                }
+                return;
+            }
+
+            const p = pending.get(msg.id);
+            if (!p) return;
+            pending.delete(msg.id);
+            if (msg.error) {
+                p.reject(new Error(msg.error));
+            } else {
+                p.resolve(msg.result);
+            }
+        });
+        worker.on('error', (err) => {
+            log.error('[tts-worker] Worker error:', err);
+        });
+    }
+    return worker;
+}
+
+function call<T>(method: string, ...args: unknown[]): Promise<T> {
+    const id = ++requestId;
+    return new Promise<T>((resolve, reject) => {
+        pending.set(id, {
+            resolve: resolve as (v: unknown) => void,
+            reject,
+        });
+        getWorker().postMessage({ id, method, args });
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
 
 export class KokoroProvider implements TtsProvider {
     readonly type: TtsProviderType = 'kokoro';
@@ -80,67 +129,35 @@ export class KokoroProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        const tts = await this.ensureModel();
         const voice = request.voiceId ?? this.voiceId;
+        const modelsDir = getTtsModelsDir();
 
-        // kokoro-js generate() only supports { voice } — no speed/rate parameter
-        // Rate adjustment is handled at playback level via HTMLAudioElement.playbackRate
-        const audio = await tts.generate(request.text, { voice });
+        const audioBase64 = await call<string>('synthesize', request.text, voice, modelsDir);
 
-        // Extract audio data as WAV buffer
-        // kokoro-js audio object has toWav() or save() methods
-        // We need to get the raw buffer
-        let wavBuffer: Buffer;
-
-        if (typeof audio.toBlob === 'function') {
-            const blob = await audio.toBlob();
-            wavBuffer = Buffer.from(await blob.arrayBuffer());
-        } else if (audio.data) {
-            // Raw PCM data - wrap in WAV header
-            wavBuffer = this.pcmToWav(audio.data, audio.sampling_rate ?? 24000);
-        } else {
-            // Fallback: save to temp file and read
-            const tmpPath = join(getTtsModelsDir(), `tmp-${Date.now()}.wav`);
-            await audio.save(tmpPath);
-            wavBuffer = await readFile(tmpPath);
-            await unlink(tmpPath);
+        // Refresh cached voices after first synthesis
+        if (this.cachedVoices.length === 0) {
+            this.cachedVoices = await call<string[]>('listVoices');
         }
 
-        return {
-            audioBase64: wavBuffer.toString('base64'),
-            mimeType: 'audio/wav',
-        };
+        return { audioBase64, mimeType: 'audio/wav' };
     }
 
-    async downloadModel(onProgress: (pct: number) => void): Promise<void> {
+    async downloadModel(onProgress: (pct: number) => void, _modelName?: string): Promise<void> {
         onProgress(0);
+        progressCallback = onProgress;
 
         try {
-            const { KokoroTTS } = await import('kokoro-js');
-            onProgress(10);
-            kokoroInstance = await KokoroTTS.from_pretrained(MODEL_ID, {
-                dtype: 'q8',
-                device: 'cpu',
-            });
-            modelReady = true;
-            this.cachedVoices = kokoroInstance.list_voices?.() ?? [];
-            onProgress(100);
+            await call<void>('downloadModel');
+            this.cachedVoices = await call<string[]>('listVoices');
         } catch (err) {
-            modelReady = false;
             throw err;
+        } finally {
+            progressCallback = null;
         }
     }
 
     async isModelReady(): Promise<boolean> {
-        if (modelReady && kokoroInstance) return true;
-        const cacheDir = join(getTtsModelsDir(), 'kokoro');
-        try {
-            await access(cacheDir);
-            await access(join(cacheDir, 'onnx'));
-            return true;
-        } catch {
-            return false;
-        }
+        return call<boolean>('isModelReady');
     }
 
     setConfig(settings: TtsProviderSettings): void {
@@ -148,22 +165,13 @@ export class KokoroProvider implements TtsProvider {
     }
 
     dispose(): void {
-        kokoroInstance = null;
-        modelReady = false;
+        call('dispose').catch(() => {});
+        if (worker) {
+            worker.terminate().catch(() => {});
+            worker = null;
+            pending.clear();
+        }
         log.info('Kokoro TTS provider disposed');
-    }
-
-    private async ensureModel() {
-        if (kokoroInstance) return kokoroInstance;
-
-        const { KokoroTTS } = await import('kokoro-js');
-        kokoroInstance = await KokoroTTS.from_pretrained(MODEL_ID, {
-            dtype: 'q8',
-            device: 'cpu',
-        });
-        modelReady = true;
-        this.cachedVoices = kokoroInstance.list_voices?.() ?? [];
-        return kokoroInstance;
     }
 
     private getVoiceList(): TtsVoice[] {
@@ -242,42 +250,5 @@ export class KokoroProvider implements TtsProvider {
             languageCodes: getVoiceLanguage(id),
             gender: getVoiceGender(id),
         }));
-    }
-
-    private pcmToWav(pcmData: Float32Array, sampleRate: number): Buffer {
-        const numChannels = 1;
-        const bitsPerSample = 16;
-        const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
-        const blockAlign = (numChannels * bitsPerSample) / 8;
-        const dataSize = pcmData.length * 2; // 16-bit = 2 bytes per sample
-        const headerSize = 44;
-        const buffer = Buffer.alloc(headerSize + dataSize);
-
-        // RIFF header
-        buffer.write('RIFF', 0);
-        buffer.writeUInt32LE(36 + dataSize, 4);
-        buffer.write('WAVE', 8);
-
-        // fmt chunk
-        buffer.write('fmt ', 12);
-        buffer.writeUInt32LE(16, 16); // chunk size
-        buffer.writeUInt16LE(1, 20); // PCM format
-        buffer.writeUInt16LE(numChannels, 22);
-        buffer.writeUInt32LE(sampleRate, 24);
-        buffer.writeUInt32LE(byteRate, 28);
-        buffer.writeUInt16LE(blockAlign, 32);
-        buffer.writeUInt16LE(bitsPerSample, 34);
-
-        // data chunk
-        buffer.write('data', 36);
-        buffer.writeUInt32LE(dataSize, 40);
-
-        // Convert float32 to int16
-        for (let i = 0; i < pcmData.length; i++) {
-            const sample = Math.max(-1, Math.min(1, pcmData[i]));
-            buffer.writeInt16LE(sample < 0 ? sample * 0x8000 : sample * 0x7fff, headerSize + i * 2);
-        }
-
-        return buffer;
     }
 }
