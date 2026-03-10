@@ -16,7 +16,7 @@ export const PROVIDER_LABELS: Record<TtsProviderType, string> = {
     browser: 'Navigateur (SpeechSynthesis)',
     sherpa: 'Sherpa-ONNX TTS (local)',
     kokoro: 'Kokoro TTS (local)',
-    qwen: 'Qwen AI TTS (DashScope)',
+    elevenlabs: 'ElevenLabs TTS',
     openai: 'OpenAI TTS',
 };
 
@@ -25,7 +25,8 @@ export const PROVIDER_HINTS: Record<TtsProviderType, string> = {
         'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.',
     sherpa: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
     kokoro: 'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.',
-    qwen: 'Très bonne qualité. Permet de créer une voix personnalisée. Nécessite un compte et une connexion internet.',
+    elevenlabs:
+        'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
     openai: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
 };
 

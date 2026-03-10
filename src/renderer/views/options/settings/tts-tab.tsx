@@ -26,7 +26,7 @@ import {
 import BrowserConfig from './tts-provider-browser';
 import KokoroConfig from './tts-provider-kokoro';
 import SherpaConfig from './tts-provider-sherpa';
-import QwenConfig from './tts-provider-qwen';
+import ElevenLabsConfig from './tts-provider-elevenlabs';
 import OpenAIConfig from './tts-provider-openai';
 
 const { Text } = Typography;
@@ -54,8 +54,14 @@ function ActiveProviderConfig({
             return (
                 <SherpaConfig settings={settings} info={getInfo('sherpa')} onUpdate={onUpdate} />
             );
-        case 'qwen':
-            return <QwenConfig settings={settings} info={getInfo('qwen')} onUpdate={onUpdate} />;
+        case 'elevenlabs':
+            return (
+                <ElevenLabsConfig
+                    settings={settings}
+                    info={getInfo('elevenlabs')}
+                    onUpdate={onUpdate}
+                />
+            );
         case 'openai':
             return (
                 <OpenAIConfig settings={settings} info={getInfo('openai')} onUpdate={onUpdate} />

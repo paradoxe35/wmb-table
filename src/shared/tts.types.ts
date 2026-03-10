@@ -1,5 +1,5 @@
 // ── Provider identification ──
-export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'kokoro', 'qwen', 'openai'] as const;
+export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'kokoro', 'elevenlabs', 'openai'] as const;
 export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
 export type TtsProviderLocality = 'local' | 'remote';
 
@@ -9,7 +9,7 @@ export interface TtsVoice {
     name: string;
     languageCodes: string[]; // BCP-47 codes: 'en', 'fr', 'zh', etc.
     gender?: 'male' | 'female' | 'neutral';
-    isCloned?: boolean; // true for Qwen cloned voices
+    isCloned?: boolean; // true for cloned voices (e.g. ElevenLabs IVC)
 }
 
 // ── Provider capabilities (serializable across IPC) ──
@@ -33,7 +33,7 @@ export interface TtsProviderSettings {
     provider: TtsProviderType;
     enabled: boolean;
     apiKey?: string; // encrypted at rest via safeStorage
-    apiEndpoint?: string; // for Qwen DashScope URL
+    apiEndpoint?: string; // custom API endpoint override
     model?: string;
     voiceId?: string;
     pitch?: number; // 0.5–2.0 (browser only)
@@ -118,7 +118,7 @@ export interface TtsSegmentAudio {
     duration?: number;
 }
 
-// ── Voice cloning (Qwen) ──
+// ── Voice cloning (ElevenLabs) ──
 export interface TtsVoiceCloneRequest {
     name: string; // up to 16 chars, [a-zA-Z0-9_]
     audioBase64: string; // base64-encoded audio (WAV/MP3/M4A, 10-60s, ≥24kHz mono)
@@ -221,11 +221,9 @@ export function createDefaultTtsSettings(): TtsSettings {
             browser: { provider: 'browser', enabled: true },
             sherpa: { provider: 'sherpa', enabled: false },
             kokoro: { provider: 'kokoro', enabled: false },
-            qwen: {
-                provider: 'qwen',
+            elevenlabs: {
+                provider: 'elevenlabs',
                 enabled: false,
-                apiEndpoint:
-                    'https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation',
             },
             openai: { provider: 'openai', enabled: false },
         },

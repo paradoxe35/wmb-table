@@ -2,16 +2,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { Collapse, Input, message, Select, Space, Typography } from 'antd';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
-import { ClonedVoicesList, VoiceCloneForm } from './tts-qwen-voice-clone';
+import { ClonedVoicesList, VoiceCloneForm } from './tts-elevenlabs-voice-clone';
 
 const { Text } = Typography;
 
-interface QwenConfigProps extends ProviderConfigProps {
+interface ElevenLabsConfigProps extends ProviderConfigProps {
     info?: TtsProviderInfo;
 }
 
-export default function QwenConfig({ settings, info, onUpdate }: QwenConfigProps) {
-    const cfg = settings.providers.qwen;
+export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLabsConfigProps) {
+    const cfg = settings.providers.elevenlabs;
     const [clonedVoices, setClonedVoices] = useState<TtsVoice[]>([]);
 
     useEffect(() => {
@@ -35,7 +35,7 @@ export default function QwenConfig({ settings, info, onUpdate }: QwenConfigProps
         async (voiceId: string) => {
             const voices = await window.api.tts.listClonedVoices();
             setClonedVoices(voices);
-            onUpdate(providerUpdate(settings, 'qwen', 'voiceId', voiceId));
+            onUpdate(providerUpdate(settings, 'elevenlabs', 'voiceId', voiceId));
         },
         [settings, onUpdate],
     );
@@ -48,32 +48,32 @@ export default function QwenConfig({ settings, info, onUpdate }: QwenConfigProps
     return (
         <Space direction="vertical" style={{ width: '100%' }} size="small">
             <Field
-                label="Clé API DashScope"
-                hint="Votre clé secrète Qwen. Elle est stockée en toute sécurité sur votre ordinateur."
+                label="Clé API ElevenLabs"
+                hint="Votre clé secrète ElevenLabs. Elle est stockée en toute sécurité sur votre ordinateur."
             >
                 <Input.Password
                     value={cfg.apiKey ?? ''}
-                    placeholder="sk-..."
+                    placeholder="xi_..."
                     onChange={(e) =>
-                        onUpdate(providerUpdate(settings, 'qwen', 'apiKey', e.target.value))
+                        onUpdate(providerUpdate(settings, 'elevenlabs', 'apiKey', e.target.value))
                     }
                 />
             </Field>
             <Field label="Modèle" hint="Le choix par défaut convient pour la plupart des usages.">
                 <Select
                     style={{ width: '100%' }}
-                    value={cfg.model ?? 'qwen3-tts-flash'}
-                    onChange={(v) => onUpdate(providerUpdate(settings, 'qwen', 'model', v))}
+                    value={cfg.model ?? 'eleven_v3'}
+                    onChange={(v) => onUpdate(providerUpdate(settings, 'elevenlabs', 'model', v))}
                     options={(info?.availableModels ?? []).map((m) => ({ label: m, value: m }))}
                 />
             </Field>
             <Field label="Voix" hint="Les voix marquées « cloné » sont vos voix personnalisées.">
                 <Select
                     style={{ width: '100%' }}
-                    value={cfg.voiceId ?? 'Cherry'}
+                    value={cfg.voiceId ?? 'JBFqnCBsd6RMkjVDRZzb'}
                     showSearch
                     optionFilterProp="label"
-                    onChange={(v) => onUpdate(providerUpdate(settings, 'qwen', 'voiceId', v))}
+                    onChange={(v) => onUpdate(providerUpdate(settings, 'elevenlabs', 'voiceId', v))}
                     options={allVoices.map((v) => ({
                         label: `${v.name}${v.isCloned ? ' (cloné)' : ''}`,
                         value: v.id,

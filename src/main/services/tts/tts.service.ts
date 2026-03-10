@@ -9,7 +9,7 @@ import type { CacheHit } from './tts-cache';
 import { OpenAiProvider } from './openai.provider';
 import { KokoroProvider } from './kokoro.provider';
 import { SherpaProvider } from './sherpa.provider';
-import { QwenProvider } from './qwen.provider';
+import { ElevenLabsProvider } from './elevenlabs.provider';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
 import { TTS_PROVIDER_TYPES } from '@shared/tts.types';
 import type {
@@ -58,12 +58,12 @@ export class TtsService {
     private initProviders(): void {
         const kokoro = new KokoroProvider();
         const sherpa = new SherpaProvider();
-        const qwen = new QwenProvider();
+        const elevenlabs = new ElevenLabsProvider();
         const openai = new OpenAiProvider();
 
         this.providers.set('kokoro', kokoro);
         this.providers.set('sherpa', sherpa);
-        this.providers.set('qwen', qwen);
+        this.providers.set('elevenlabs', elevenlabs);
         this.providers.set('openai', openai);
 
         for (const [type, provider] of this.providers) {
@@ -273,21 +273,21 @@ export class TtsService {
     }
 
     async cloneVoice(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult> {
-        const qwen = this.providers.get('qwen') as QwenProvider | undefined;
-        if (!qwen) throw new Error('Qwen provider not available');
-        return qwen.cloneVoice(request);
+        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
+        if (!elevenlabs) throw new Error('ElevenLabs provider not available');
+        return elevenlabs.cloneVoice(request);
     }
 
     async listClonedVoices(): Promise<TtsVoice[]> {
-        const qwen = this.providers.get('qwen') as QwenProvider | undefined;
-        if (!qwen) return [];
-        return qwen.listClonedVoices();
+        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
+        if (!elevenlabs) return [];
+        return elevenlabs.listClonedVoices();
     }
 
     async deleteClonedVoice(voiceId: string): Promise<void> {
-        const qwen = this.providers.get('qwen') as QwenProvider | undefined;
-        if (!qwen) throw new Error('Qwen provider not available');
-        return qwen.deleteClonedVoice(voiceId);
+        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
+        if (!elevenlabs) throw new Error('ElevenLabs provider not available');
+        return elevenlabs.deleteClonedVoice(voiceId);
     }
 
     async dispose(): Promise<void> {
