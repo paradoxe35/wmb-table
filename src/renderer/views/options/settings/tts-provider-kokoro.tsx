@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, message, Progress, Select, Space } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
+import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsProviderInfo } from '@shared/tts.types';
 import {
     Field,
@@ -41,6 +42,7 @@ export default function KokoroConfig({ settings, info, onUpdate }: KokoroConfigP
                 setDownloadPct(p.percentage);
                 if (p.status === 'complete') {
                     message.success('Modèle Kokoro téléchargé');
+                    window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
                     setTimeout(() => setDownloadPct(null), 1000);
                 }
                 if (p.status === 'error') {

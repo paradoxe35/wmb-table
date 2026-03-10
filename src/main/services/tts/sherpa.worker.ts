@@ -1,8 +1,8 @@
 import { parentPort } from 'node:worker_threads';
-import { createReadStream, createWriteStream, existsSync, mkdirSync } from 'node:fs';
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
 import { pipeline } from 'node:stream/promises';
-import { join, sep } from 'node:path';
+import { join, sep, extname } from 'node:path';
 import os from 'node:os';
 import { extract as tarExtract } from 'tar';
 import unbzip2 from 'unbzip2-stream';
@@ -122,12 +122,18 @@ function loadSherpa(): void {
 // Worker methods
 // ---------------------------------------------------------------------------
 
+function findOnnxFile(dir: string): string | null {
+    if (!existsSync(dir)) return null;
+    const file = readdirSync(dir).find((f) => extname(f) === '.onnx' && !f.endsWith('.json'));
+    return file ? join(dir, file) : null;
+}
+
 function initialize(modelDir: string): boolean {
     loadSherpa();
 
-    const modelOnnx = join(modelDir, 'model.onnx');
+    const modelOnnx = findOnnxFile(modelDir);
     const tokens = join(modelDir, 'tokens.txt');
-    if (!existsSync(modelOnnx) || !existsSync(tokens)) return false;
+    if (!modelOnnx || !existsSync(tokens)) return false;
 
     const hasLexicon = existsSync(join(modelDir, 'lexicon.txt'));
     const hasDataDir = existsSync(join(modelDir, 'espeak-ng-data'));
@@ -158,6 +164,10 @@ function initialize(modelDir: string): boolean {
     ttsInstance = new sherpaOnnx.OfflineTts(config);
     currentModelDir = modelDir;
     return true;
+}
+
+function getNumSpeakers(): number {
+    return ttsInstance?.numSpeakers ?? 1;
 }
 
 function synthesize(text: string, speakerId: number, speed: number): string {
@@ -234,6 +244,7 @@ const methods: Record<string, (...args: never[]) => unknown> = {
     initialize,
     synthesize,
     isReady,
+    getNumSpeakers,
     getModelDir,
     dispose,
     downloadModel,

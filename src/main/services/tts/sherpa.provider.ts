@@ -1,7 +1,7 @@
 import { Worker } from 'node:worker_threads';
-import { existsSync, readdirSync, mkdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, mkdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, extname } from 'node:path';
 import log from 'electron-log';
 import type { TtsProvider } from './provider';
 import type {
@@ -66,9 +66,37 @@ function getSherpaModelsDir(): string {
     return dir;
 }
 
+function findOnnxFile(dir: string): string | null {
+    if (!existsSync(dir)) return null;
+    try {
+        const file = readdirSync(dir).find((f) => extname(f) === '.onnx' && !f.endsWith('.json'));
+        return file ? join(dir, file) : null;
+    } catch {
+        return null;
+    }
+}
+
 function isModelInstalled(modelName: string): boolean {
     const dir = join(getSherpaModelsDir(), modelName);
-    return existsSync(join(dir, 'model.onnx')) && existsSync(join(dir, 'tokens.txt'));
+    return findOnnxFile(dir) !== null && existsSync(join(dir, 'tokens.txt'));
+}
+
+function readModelMeta(modelName: string): {
+    numSpeakers: number;
+    speakerIdMap: Record<string, number>;
+} {
+    const dir = join(getSherpaModelsDir(), modelName);
+    try {
+        const metaFile = readdirSync(dir).find((f) => f.endsWith('.onnx.json'));
+        if (!metaFile) return { numSpeakers: 1, speakerIdMap: {} };
+        const meta = JSON.parse(readFileSync(join(dir, metaFile), 'utf-8'));
+        return {
+            numSpeakers: meta.num_speakers ?? 1,
+            speakerIdMap: meta.speaker_id_map ?? {},
+        };
+    } catch {
+        return { numSpeakers: 1, speakerIdMap: {} };
+    }
 }
 
 function getInstalledModelNames(): string[] {
@@ -96,14 +124,30 @@ export class SherpaProvider implements TtsProvider {
 
     async getInfo(): Promise<TtsProviderInfo> {
         const installed = getInstalledModelNames();
-        const voices: TtsVoice[] = installed.map((name) => {
+        const voices: TtsVoice[] = [];
+        for (const name of installed) {
             const entry = findModelByName(name);
-            return {
-                id: `${name}:0`,
-                name: entry?.voiceName ?? name.replace(/[-_]/g, ' '),
-                languageCodes: entry ? [entry.langCode] : ['en'],
-            };
-        });
+            const langCodes = entry ? [entry.langCode] : ['en'];
+            const { numSpeakers, speakerIdMap } = readModelMeta(name);
+
+            if (numSpeakers <= 1) {
+                voices.push({
+                    id: `${name}:0`,
+                    name: entry?.voiceName ?? name.replace(/[-_]/g, ' '),
+                    languageCodes: langCodes,
+                });
+            } else {
+                const speakerNames = Object.keys(speakerIdMap);
+                for (let i = 0; i < numSpeakers; i++) {
+                    const speakerName = speakerNames.find((k) => speakerIdMap[k] === i);
+                    voices.push({
+                        id: `${name}:${i}`,
+                        name: speakerName ?? `Speaker ${i + 1}`,
+                        languageCodes: langCodes,
+                    });
+                }
+            }
+        }
 
         const supportedLangs = SHERPA_MODEL_CATALOG.filter((m) =>
             installed.includes(m.modelName),
