@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Layout, Space, Spin } from 'antd';
-import { LeftCircleOutlined, RightCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { Button, Layout, Space, Spin, Tooltip } from 'antd';
+import {
+    LeftCircleOutlined,
+    RightCircleOutlined,
+    LoadingOutlined,
+    CloudSyncOutlined,
+} from '@ant-design/icons';
 
 import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
@@ -15,10 +20,31 @@ const { Header, Content } = Layout;
 
 function Title() {
     const appLoaded = useAppStore((s) => s.loaded);
+    const syncing = useAppStore((s) => s.syncing);
+
+    const showSpinner = !appLoaded || syncing;
+    const hint = !appLoaded
+        ? 'Chargement des données...'
+        : syncing
+          ? 'Synchronisation en cours...'
+          : '';
+
     return (
         <Space orientation="horizontal">
             <span>{APP_NAME}</span>
-            {!appLoaded && <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />}
+            {showSpinner && (
+                <Tooltip title={hint}>
+                    <Spin
+                        indicator={
+                            syncing && appLoaded ? (
+                                <CloudSyncOutlined style={{ fontSize: 18 }} spin />
+                            ) : (
+                                <LoadingOutlined style={{ fontSize: 20 }} spin />
+                            )
+                        }
+                    />
+                </Tooltip>
+            )}
         </Space>
     );
 }

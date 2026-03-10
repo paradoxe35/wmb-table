@@ -1,53 +1,17 @@
 import { eq } from 'drizzle-orm';
-import { randomUUID } from 'node:crypto';
-import { safeStorage } from 'electron';
 import { getDb } from '../index';
 import { ttsSettings } from '../schema';
-import type {
-    TtsHighlightMode,
-    TtsSettings,
-    TtsProviderSettings,
-    TtsProviderType,
-} from '@shared/tts.types';
+import type { TtsHighlightMode, TtsSettings, TtsProviderType } from '@shared/tts.types';
 import { createDefaultTtsSettings } from '@shared/tts.types';
 
-function encryptApiKey(key: string): string {
-    if (!key || !safeStorage.isEncryptionAvailable()) return key;
-    return safeStorage.encryptString(key).toString('base64');
-}
+// Fixed ID so that all devices share the same row via Google Drive sync.
+// Using a deterministic ID ensures INSERT OR REPLACE merges correctly.
+const TTS_SETTINGS_ID = 'tts_settings';
 
-function decryptApiKey(encrypted: string): string {
-    if (!encrypted || !safeStorage.isEncryptionAvailable()) return encrypted;
-    try {
-        return safeStorage.decryptString(Buffer.from(encrypted, 'base64'));
-    } catch {
-        return encrypted;
-    }
-}
-
-function encryptProviderConfigs(
-    configs: Record<TtsProviderType, TtsProviderSettings>,
-): Record<TtsProviderType, TtsProviderSettings> {
-    const result = { ...configs };
-    for (const key of Object.keys(result) as TtsProviderType[]) {
-        if (result[key]?.apiKey) {
-            result[key] = { ...result[key], apiKey: encryptApiKey(result[key].apiKey!) };
-        }
-    }
-    return result;
-}
-
-function decryptProviderConfigs(
-    configs: Record<TtsProviderType, TtsProviderSettings>,
-): Record<TtsProviderType, TtsProviderSettings> {
-    const result = { ...configs };
-    for (const key of Object.keys(result) as TtsProviderType[]) {
-        if (result[key]?.apiKey) {
-            result[key] = { ...result[key], apiKey: decryptApiKey(result[key].apiKey!) };
-        }
-    }
-    return result;
-}
+// API keys are stored as plain text (not encrypted with safeStorage) because:
+// - safeStorage encryption is machine-specific and cannot be decrypted on another device
+// - This table is synced across devices via Google Drive (appDataFolder, not publicly accessible)
+// - Encrypting would break cross-device sync and force users to re-enter keys on each device
 
 function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
     const defaults = createDefaultTtsSettings();
@@ -65,7 +29,7 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
         rate: row.rate,
         segmentGapMs: row.segmentGapMs ?? 700,
         cacheMaxSizeMb: row.cacheMaxSizeMb,
-        providers: decryptProviderConfigs(providers),
+        providers,
     };
 }
 
@@ -80,11 +44,10 @@ export function ensureSettings(): TtsSettings {
     if (existing) return existing;
 
     const defaults = createDefaultTtsSettings();
-    const id = randomUUID();
     getDb()
         .insert(ttsSettings)
         .values({
-            id,
+            id: TTS_SETTINGS_ID,
             activeProvider: defaults.activeProvider,
             fallbackOrder: JSON.stringify(defaults.fallbackOrder),
             highlightMode: defaults.highlightMode,
@@ -92,7 +55,7 @@ export function ensureSettings(): TtsSettings {
             rate: defaults.rate,
             segmentGapMs: defaults.segmentGapMs,
             cacheMaxSizeMb: defaults.cacheMaxSizeMb,
-            providerConfigs: JSON.stringify(encryptProviderConfigs(defaults.providers)),
+            providerConfigs: JSON.stringify(defaults.providers),
         })
         .run();
     return getSettings()!;
@@ -115,7 +78,7 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
         for (const key of Object.keys(partial.providers) as TtsProviderType[]) {
             merged[key] = { ...merged[key], ...partial.providers[key] };
         }
-        update.providerConfigs = JSON.stringify(encryptProviderConfigs(merged));
+        update.providerConfigs = JSON.stringify(merged);
     }
 
     const row = getDb().select().from(ttsSettings).get();

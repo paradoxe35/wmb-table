@@ -150,6 +150,7 @@ async function schedulerWorker(): Promise<void> {
 
     isSyncRunning = true;
     resetAffectedTables();
+    log.info('[Sync] Cycle started');
 
     // Apply remote changes and create snapshots — collect last failure
     let failure: Error | null = null;
@@ -192,16 +193,15 @@ async function schedulerWorker(): Promise<void> {
         lastError = null;
         consecutiveAuthFailures = 0;
         lastSyncTime = new Date().toISOString();
-        const tableNames = Object.keys(affectedTables);
-        if (tableNames.length > 0) {
-            pushToRenderer(PushChannels.newSynchronizedDatas, tableNames);
-        }
+        pushToRenderer(PushChannels.newSynchronizedDatas, Object.keys(affectedTables));
     }
 
     // Push always runs last, regardless of pull result
+    log.info('[Sync] Pushing local changes to Drive...');
     await syncChangesToDrive();
 
     isSyncRunning = false;
+    log.info('[Sync] Cycle completed');
 }
 
 // -----------------------------------------------------------------------
@@ -218,6 +218,15 @@ async function applyRemoteChanges(): Promise<void> {
     const timeOffset = getLastSyncTimeOffset();
     const files = await driveService.getChangeFilesAfterTimeOffset(timeOffset);
 
+    if (files.length === 0) {
+        log.info('[Sync] No remote changes to apply');
+        return;
+    }
+
+    const applicable = files.filter((f) => canBeApplied(f) && f.createdTime > timeOffset);
+    log.info(`[Sync] Found ${applicable.length} remote file(s) to process`);
+    let processed = 0;
+
     for (const file of files) {
         // Skip files we can't process (not a snapshot or change file)
         if (!canBeApplied(file)) continue;
@@ -233,6 +242,7 @@ async function applyRemoteChanges(): Promise<void> {
 
         try {
             if (file.isSnapshot) {
+                log.info(`[Sync] Applying snapshot: ${file.name}`);
                 const tables = await applyRemoteSnapshotFile(file);
                 mergeAffectedTables(tables);
             } else {
@@ -252,6 +262,11 @@ async function applyRemoteChanges(): Promise<void> {
         saveFailureCount(file.id, 0);
         updateSyncTimeOffset(file.createdTime);
         saveProcessedChange(file.id);
+        processed++;
+
+        if (processed % 10 === 0 || processed === applicable.length) {
+            log.info(`[Sync] Processed ${processed}/${applicable.length} remote file(s)`);
+        }
     }
 }
 
@@ -329,7 +344,11 @@ async function syncChangesToDrive(): Promise<void> {
     if (!driveService) return;
 
     const unsynced = getUnsyncedChanges();
-    if (unsynced.length === 0) return;
+    if (unsynced.length === 0) {
+        log.info('[Sync] No local changes to push');
+        return;
+    }
+    log.info(`[Sync] Pushing ${unsynced.length} local change(s) to Drive`);
 
     const drive = driveService;
 

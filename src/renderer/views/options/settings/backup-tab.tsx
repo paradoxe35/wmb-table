@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { message } from 'antd';
 import type { BackupStatus, RestoreProgressEvent, RestoreProgressEventType } from '@shared/types';
+import { useAppStore } from '@renderer/stores';
 import { SYNC_EVENT } from '@renderer/utils/events';
 
 const { Text, Paragraph } = Typography;
@@ -57,32 +58,16 @@ export default function BackupTab() {
         };
     }, []);
 
+    const setSyncing = useAppStore((s) => s.setSyncing);
+
     const handleLogin = useCallback(() => {
         setLoading(true);
         window.api.backup
             .login()
             .then((result) => {
                 if (result && typeof result === 'object') setStatus(result);
-
-                // Show loading toast while first sync runs
-                const hideMsg = message.loading(
-                    'Restauration de vos données depuis Google Drive...',
-                    0,
-                );
-                const onComplete = () => {
-                    hideMsg();
-                    cleanup();
-                };
-                const onFailed = () => {
-                    hideMsg();
-                    cleanup();
-                };
-                const cleanup = () => {
-                    window.removeEventListener(SYNC_EVENT.syncCompleted, onComplete);
-                    window.removeEventListener(SYNC_EVENT.syncFailed, onFailed);
-                };
-                window.addEventListener(SYNC_EVENT.syncCompleted, onComplete, { once: true });
-                window.addEventListener(SYNC_EVENT.syncFailed, onFailed, { once: true });
+                setSyncing(true);
+                message.success('Connexion réussie. Synchronisation en arrière-plan...', 3);
             })
             .catch(() => {
                 message.error(
@@ -91,7 +76,7 @@ export default function BackupTab() {
                 );
             })
             .finally(() => setLoading(false));
-    }, []);
+    }, [setSyncing]);
 
     const handleToggleStatus = useCallback(() => {
         const newActive = status ? !status.active : true;

@@ -250,4 +250,5 @@ export const syncedTables = [
     customDocuments,
     suggestions,
     highlights,
+    ttsSettings,
 ] as const;

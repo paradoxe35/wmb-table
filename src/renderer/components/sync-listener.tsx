@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { message } from 'antd';
-import { useSubjectsStore, useCustomDocumentsStore } from '@renderer/stores';
+import { useAppStore, useSubjectsStore, useCustomDocumentsStore } from '@renderer/stores';
+import { useTtsStore } from '@renderer/stores/tts.store';
 import { HIGHLIGHT_EVENT, SYNC_EVENT } from '@renderer/utils/events';
 
 const AUTH_FAILURE_THRESHOLD = 4;
@@ -8,9 +9,11 @@ const AUTH_FAILURE_THRESHOLD = 4;
 export default function SyncListener() {
     const setSubjects = useSubjectsStore((s) => s.setSubjects);
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
+    const setSyncing = useAppStore((s) => s.setSyncing);
 
     useEffect(() => {
         const cleanupSuccess = window.api.on.newSynchronizedDatas((tables) => {
+            setSyncing(false);
             if (tables.includes('highlights')) {
                 window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
             }
@@ -20,10 +23,14 @@ export default function SyncListener() {
             if (tables.includes('custom_documents')) {
                 window.api.app.getCustomDocuments().then(setCustomDocuments);
             }
+            if (tables.includes('tts_settings')) {
+                window.api.tts.getSettings().then((s) => useTtsStore.getState().setSettings(s));
+            }
             window.dispatchEvent(new Event(SYNC_EVENT.syncCompleted));
         });
 
         const cleanupFailure = window.api.on.syncFailure((event) => {
+            setSyncing(false);
             window.dispatchEvent(new Event(SYNC_EVENT.syncFailed));
 
             if (event.isAuthError && event.consecutiveFailures >= AUTH_FAILURE_THRESHOLD) {
@@ -43,7 +50,7 @@ export default function SyncListener() {
             cleanupFailure();
             window.removeEventListener('online', onOnline);
         };
-    }, [setSubjects, setCustomDocuments]);
+    }, [setSubjects, setCustomDocuments, setSyncing]);
 
     return null;
 }
