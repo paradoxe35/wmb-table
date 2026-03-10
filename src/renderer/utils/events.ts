@@ -28,6 +28,7 @@ export const HIGHLIGHT_EVENT = {
 
 export const SYNC_EVENT = {
     syncCompleted: 'sync-completed',
+    syncFailed: 'sync-failed',
 } as const;
 
 export const LANGUAGE_EVENT = {

@@ -1,9 +1,11 @@
 import { Reorder } from 'framer-motion';
-import { FileOutlined, SnippetsOutlined } from '@ant-design/icons';
+import { FileOutlined, SnippetsOutlined, SoundOutlined } from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import type { DocumentTab } from '@shared/types';
 import { formatShortDate } from '@renderer/utils/sermon-utils';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { useAudioStore } from '@renderer/stores';
 import { BibleIcons } from '../icons';
 
 function getTabIcon(tab: DocumentTab) {
@@ -12,8 +14,34 @@ function getTabIcon(tab: DocumentTab) {
     return <FileOutlined style={{ fontSize: 12 }} />;
 }
 
-function getTabLabel(tab: DocumentTab) {
-    if (tab.type === 'bible') return tab.title;
+function useIsTabPlaying(tab: DocumentTab): boolean {
+    const ttsDocId = useTtsStore((s) => s.documentId);
+    const ttsStatus = useTtsStore((s) => s.status);
+    const audioTitle = useAudioStore((s) => s.title);
+    const audioStatus = useAudioStore((s) => s.currentPlay?.status);
+
+    const ttsPlaying =
+        ttsDocId === tab.title &&
+        (ttsStatus === 'playing' || ttsStatus === 'loading' || ttsStatus === 'paused');
+    const audioPlaying =
+        audioTitle === tab.title && (audioStatus === 'play' || audioStatus === 'pause');
+
+    return ttsPlaying || audioPlaying;
+}
+
+function getTabLabel(tab: DocumentTab, isPlaying: boolean) {
+    const speakerIcon = isPlaying ? (
+        <SoundOutlined style={{ fontSize: 11, marginLeft: 4, color: 'var(--ant-color-primary)' }} />
+    ) : null;
+
+    if (tab.type === 'bible') {
+        return (
+            <>
+                {tab.title}
+                {speakerIcon}
+            </>
+        );
+    }
 
     return (
         <>
@@ -21,6 +49,7 @@ function getTabLabel(tab: DocumentTab) {
             {tab.languageCode && (
                 <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
             )}
+            {speakerIcon}
         </>
     );
 }
@@ -44,6 +73,8 @@ export default function TabItem({
     onRemove: () => void;
     contextMenuItems: MenuProps['items'];
 }) {
+    const isPlaying = useIsTabPlaying(tab);
+
     return (
         <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
             <Reorder.Item
@@ -96,7 +127,7 @@ export default function TabItem({
                 <div className="chrome-tab-content">
                     <div className="chrome-tab-favicon">{getTabIcon(tab)}</div>
                     <div className="chrome-tab-title" title={getTabTooltip(tab)}>
-                        {getTabLabel(tab)}
+                        {getTabLabel(tab, isPlaying)}
                     </div>
                     <div className="chrome-tab-drag-handle" />
                     <div

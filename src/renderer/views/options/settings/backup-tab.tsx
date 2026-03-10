@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { message } from 'antd';
 import type { BackupStatus, RestoreProgressEvent, RestoreProgressEventType } from '@shared/types';
+import { SYNC_EVENT } from '@renderer/utils/events';
 
 const { Text, Paragraph } = Typography;
 
@@ -17,6 +18,7 @@ export default function BackupTab() {
     const [status, setStatus] = useState<BackupStatus | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [fetchedStatus, setFetchedStatus] = useState(false);
+    const [syncError, setSyncError] = useState<string | null>(null);
 
     useEffect(() => {
         window.api.backup
@@ -26,6 +28,11 @@ export default function BackupTab() {
             })
             .finally(() => setFetchedStatus(true));
 
+        // Fetch initial sync status for error display
+        window.api.sync.getStatus().then((s) => {
+            if (s.error) setSyncError(s.error);
+        });
+
         const cleanup = window.api.on.backupAccessStatus((hasAccess) => {
             if (hasAccess) {
                 window.api.backup.getStatus().then((s) => {
@@ -33,7 +40,21 @@ export default function BackupTab() {
                 });
             }
         });
-        return cleanup;
+
+        // Clear error on successful sync
+        const onSyncCompleted = () => setSyncError(null);
+        window.addEventListener(SYNC_EVENT.syncCompleted, onSyncCompleted);
+
+        // Show error on sync failure
+        const cleanupFailure = window.api.on.syncFailure((event) => {
+            setSyncError(event.message);
+        });
+
+        return () => {
+            cleanup();
+            cleanupFailure();
+            window.removeEventListener(SYNC_EVENT.syncCompleted, onSyncCompleted);
+        };
     }, []);
 
     const handleLogin = useCallback(() => {
@@ -42,6 +63,26 @@ export default function BackupTab() {
             .login()
             .then((result) => {
                 if (result && typeof result === 'object') setStatus(result);
+
+                // Show loading toast while first sync runs
+                const hideMsg = message.loading(
+                    'Restauration de vos données depuis Google Drive...',
+                    0,
+                );
+                const onComplete = () => {
+                    hideMsg();
+                    cleanup();
+                };
+                const onFailed = () => {
+                    hideMsg();
+                    cleanup();
+                };
+                const cleanup = () => {
+                    window.removeEventListener(SYNC_EVENT.syncCompleted, onComplete);
+                    window.removeEventListener(SYNC_EVENT.syncFailed, onFailed);
+                };
+                window.addEventListener(SYNC_EVENT.syncCompleted, onComplete, { once: true });
+                window.addEventListener(SYNC_EVENT.syncFailed, onFailed, { once: true });
             })
             .catch(() => {
                 message.error(
@@ -58,6 +99,9 @@ export default function BackupTab() {
             window.api.backup.getStatus().then((s) => {
                 if (s) setStatus(s);
             });
+            if (newActive) {
+                message.info('Synchronisation activée');
+            }
         });
     }, [status]);
 
@@ -168,6 +212,18 @@ export default function BackupTab() {
                     description="Reconnectez-vous et assurez-vous d'avoir autorisé l'accès demandé en cochant les cases qui s'afficheront."
                     type="error"
                     showIcon
+                />
+            )}
+
+            {/* Sync error */}
+            {syncError && status.active && (
+                <Alert
+                    message="Erreur de synchronisation"
+                    description={syncError}
+                    type="warning"
+                    showIcon
+                    closable
+                    onClose={() => setSyncError(null)}
                 />
             )}
 

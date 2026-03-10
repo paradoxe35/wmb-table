@@ -4,10 +4,8 @@ import {
     NumberOutlined,
     PlayCircleOutlined,
     PauseCircleOutlined,
-    ZoomInOutlined,
-    ZoomOutOutlined,
-    SearchOutlined,
     TranslationOutlined,
+    SearchOutlined,
 } from '@ant-design/icons';
 import {
     useSermonStore,
@@ -18,7 +16,8 @@ import {
 import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
-import { TtsButton, type TtsControls } from './tts-controls';
+import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
+import { useDocumentZoom } from './hooks';
 
 export default function SermonHeader({
     meta,
@@ -36,10 +35,10 @@ export default function SermonHeader({
     tts?: TtsControls;
 }) {
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
-    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
-    const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const activeTabKey = useSermonStore(selectActiveTabKey);
+    const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     const currentPlay = useAudioStore((s) => s.currentPlay);
     const audioTitle = useAudioStore((s) => s.title);
@@ -57,7 +56,6 @@ export default function SermonHeader({
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
 
-        // If this is not the current player document, open modal and force autoplay
         if (!isCurrentDocument) {
             openAudioModal();
         }
@@ -81,14 +79,6 @@ export default function SermonHeader({
     const handleOtherTraductions = useCallback(() => {
         window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
     }, []);
-
-    const handleZoomIn = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
-    }, [activeTabKey, zoom, updateTabZoom]);
-
-    const handleZoomOut = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
-    }, [activeTabKey, zoom, updateTabZoom]);
 
     const handleTraductionChange = useCallback(
         (value: string | number) => {
@@ -147,27 +137,7 @@ export default function SermonHeader({
                         aria-label="Traductions"
                     />
                 </Tooltip>
-                <Tooltip title="Zoom arrière">
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<ZoomOutOutlined />}
-                        onClick={handleZoomOut}
-                        aria-label="Zoom arrière"
-                    />
-                </Tooltip>
-                <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>
-                    {zoom}%
-                </span>
-                <Tooltip title="Zoom avant">
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<ZoomInOutlined />}
-                        onClick={handleZoomIn}
-                        aria-label="Zoom avant"
-                    />
-                </Tooltip>
+                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
                 <Tooltip title="Sélectionnez un paragraphe">
                     <Button
                         type="text"

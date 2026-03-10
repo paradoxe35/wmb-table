@@ -35,6 +35,7 @@ import type {
     TantivySearchResult,
     LanguageDownloadProgress,
     SyncStatus,
+    SyncFailureEvent,
     HighlightCreateData,
     HighlightUpdateData,
     SermonTranslation,
@@ -153,6 +154,9 @@ export const BackupChannels = {
 
 export const SyncChannels = {
     getStatus: 'sync:getStatus',
+    start: 'sync:start',
+    stop: 'sync:stop',
+    syncNow: 'sync:syncNow',
 } as const;
 
 export const AppChannels = {
@@ -215,6 +219,7 @@ export const PushChannels = {
     changeMenuViewer: 'push:changeMenuViewer',
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
+    syncFailure: 'push:syncFailure',
     openLanguageManager: 'push:openLanguageManager',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
@@ -371,6 +376,9 @@ export interface InvokeChannelMap {
 
     // Sync
     [SyncChannels.getStatus]: { args: []; return: SyncStatus };
+    [SyncChannels.start]: { args: []; return: void };
+    [SyncChannels.stop]: { args: []; return: void };
+    [SyncChannels.syncNow]: { args: []; return: void };
 
     // App
     [AppChannels.initialize]: { args: []; return: void };
@@ -402,7 +410,7 @@ export interface InvokeChannelMap {
     [TtsChannels.getSettings]: { args: []; return: TtsSettings };
     [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
     [TtsChannels.synthesize]: { args: [TtsSynthesizeRequest]; return: TtsSynthesizeResult };
-    [TtsChannels.startPlayback]: { args: [TtsSegment[], string]; return: void };
+    [TtsChannels.startPlayback]: { args: [TtsSegment[], string, number?]; return: void };
     [TtsChannels.pausePlayback]: { args: []; return: void };
     [TtsChannels.resumePlayback]: { args: []; return: void };
     [TtsChannels.stopPlayback]: { args: []; return: void };
@@ -440,6 +448,7 @@ export interface PushEventMap {
     [PushChannels.changeMenuViewer]: ViewMenuValue;
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: string[];
+    [PushChannels.syncFailure]: SyncFailureEvent;
     [PushChannels.openLanguageManager]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: LanguageInstalledEvent;

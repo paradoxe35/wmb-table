@@ -78,6 +78,21 @@ export function useSermonContent() {
     return { content: activeContent, loading };
 }
 
+export function useDocumentZoom(zoom: number) {
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
+
+    const zoomIn = useCallback(() => {
+        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
+    }, [activeTabKey, zoom, updateTabZoom]);
+
+    const zoomOut = useCallback(() => {
+        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
+    }, [activeTabKey, zoom, updateTabZoom]);
+
+    return { zoomIn, zoomOut };
+}
+
 export function useScrollAndZoom(containerRef: React.RefObject<HTMLDivElement | null>) {
     const activeTab = useSermonStore(selectActiveTab);
     const updateTabScroll = useSermonStore((s) => s.updateTabScroll);

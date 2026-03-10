@@ -1,12 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Dropdown, Space, Spin, Tooltip } from 'antd';
-import {
-    LeftOutlined,
-    RightOutlined,
-    SearchOutlined,
-    ZoomInOutlined,
-    ZoomOutOutlined,
-} from '@ant-design/icons';
+import { Button, Space, Tooltip } from 'antd';
+import { LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import {
     useSermonStore,
     useSearchStore,
@@ -15,15 +9,15 @@ import {
 } from '@renderer/stores';
 import type { BibleBook, BibleIndex, SermonContent } from '@shared/types';
 import { getTabKey } from '@shared/types';
-import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
-import InlineSearchBar from '../components/inline-search-bar';
-import { TtsButton, TtsParagraph, type TtsControls } from './tts-controls';
+import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
+import DocumentBody from './document-body';
 import {
     useScrollAndZoom,
     useSearchHighlight,
     useMatchNavigation,
     useContextMenuItems,
     useDocumentHighlights,
+    useDocumentZoom,
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 
@@ -33,7 +27,6 @@ import { useTts } from '@renderer/hooks/use-tts';
 
 function BibleContentHeader({ title, chapter }: { title?: string; chapter?: string }) {
     if (!title) return null;
-    // Title is "BookName Chapter" — extract book name by removing the chapter suffix
     const bookName = chapter ? title.replace(new RegExp(`\\s+${chapter}$`), '') : title;
 
     return (
@@ -132,7 +125,6 @@ function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
             if (!activeTabKey || !bookCode) return;
             const title = `${bookName} ${chapter}`;
             const sermonId = `${bookCode}:${chapter}`;
-            // If a tab with this chapter already exists, activate it instead
             const existingTab = tabs.find(
                 (t) => t.type === 'bible' && t.title === title && t.sermonId === sermonId,
             );
@@ -167,8 +159,6 @@ function BibleHeader({
     hasNext,
     onPrev,
     onNext,
-    onZoomIn,
-    onZoomOut,
     tts,
 }: {
     title: string;
@@ -177,11 +167,10 @@ function BibleHeader({
     hasNext: boolean;
     onPrev: () => void;
     onNext: () => void;
-    onZoomIn: () => void;
-    onZoomOut: () => void;
     tts?: TtsControls;
 }) {
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
         <div className="sermon-header">
@@ -211,27 +200,7 @@ function BibleHeader({
             <div style={{ flex: 1 }} />
             <Space size="small">
                 {tts && <TtsButton tts={tts} />}
-                <Tooltip title="Zoom arrière">
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<ZoomOutOutlined />}
-                        onClick={onZoomOut}
-                        aria-label="Zoom arrière"
-                    />
-                </Tooltip>
-                <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>
-                    {zoom}%
-                </span>
-                <Tooltip title="Zoom avant">
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<ZoomInOutlined />}
-                        onClick={onZoomIn}
-                        aria-label="Zoom avant"
-                    />
-                </Tooltip>
+                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
                 <Tooltip title="Rechercher">
                     <Button
                         type="text"
@@ -252,13 +221,10 @@ function BibleHeader({
 
 export default function BibleDocumentView() {
     const activeTab = useSermonStore(selectActiveTab);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
-    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const { zoom } = useScrollAndZoom(containerRef);
     const search = useSearchHighlight();
-    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
 
     const [verses, setVerses] = useState<BibleBook[]>([]);
@@ -278,7 +244,6 @@ export default function BibleDocumentView() {
             .finally(() => setLoading(false));
     }, [bookCode, chapter]);
 
-    // Get Bible language from active version
     useEffect(() => {
         window.api.bible
             .getActiveVersion()
@@ -304,62 +269,37 @@ export default function BibleDocumentView() {
 
     const { hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
 
-    const handleZoomIn = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
-    }, [activeTabKey, zoom, updateTabZoom]);
-
-    const handleZoomOut = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
-    }, [activeTabKey, zoom, updateTabZoom]);
-
-    const onContextMenu = useCallback((e: React.MouseEvent) => {
-        contextTargetRef.current = e.target as Element;
-    }, []);
-
     return (
-        <div className="mock-browser-content">
-            {loading && (
-                <div className="flex flex-center" style={{ marginTop: '2rem' }}>
-                    <Spin />
-                </div>
-            )}
-            {!loading && (
-                <>
-                    <BibleHeader
-                        title={activeTab?.title ?? ''}
-                        zoom={zoom}
-                        hasPrev={hasPrev}
-                        hasNext={hasNext}
-                        onPrev={goPrev}
-                        onNext={goNext}
-                        onZoomIn={handleZoomIn}
-                        onZoomOut={handleZoomOut}
-                        tts={tts}
-                    />
-                    {searchBarOpen && <InlineSearchBar />}
-                    <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
-                        <div
-                            ref={containerRef}
-                            id={DOCUMENT_CONTAINER_ID}
-                            className="sermon-body"
-                            style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
-                            onContextMenu={onContextMenu}
-                        >
-                            <BibleContentHeader title={activeTab?.title} chapter={chapter} />
-                            {paragraphs.map((p, i) => (
-                                <TtsParagraph
-                                    key={p.paragraphIndex}
-                                    paragraph={p}
-                                    search={search}
-                                    currentMatchIndex={currentMatchIndex}
-                                    matchOffset={matchOffsets[i] ?? 0}
-                                    highlights={highlightsByParagraph.get(p.paragraphIndex)}
-                                />
-                            ))}
-                        </div>
-                    </Dropdown>
-                </>
-            )}
-        </div>
+        <DocumentBody
+            loading={loading}
+            ready
+            containerRef={containerRef}
+            contextTargetRef={contextTargetRef}
+            zoom={zoom}
+            contextMenuItems={contextMenuItems}
+            header={
+                <BibleHeader
+                    title={activeTab?.title ?? ''}
+                    zoom={zoom}
+                    hasPrev={hasPrev}
+                    hasNext={hasNext}
+                    onPrev={goPrev}
+                    onNext={goNext}
+                    tts={tts}
+                />
+            }
+        >
+            <BibleContentHeader title={activeTab?.title} chapter={chapter} />
+            <ParagraphList
+                paragraphs={paragraphs}
+                documentId={activeTab?.title ?? ''}
+                search={search}
+                currentMatchIndex={currentMatchIndex}
+                matchOffsets={matchOffsets}
+                highlightsByParagraph={highlightsByParagraph}
+                onPlayFromHere={tts.playFromParagraph}
+                canSpeak={tts.canSpeak}
+            />
+        </DocumentBody>
     );
 }

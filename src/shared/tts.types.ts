@@ -47,7 +47,7 @@ export interface TtsSettings {
     highlightMode: 'word' | 'sentence' | 'paragraph'; // default: 'sentence'
     autoPlay: boolean;
     rate: number; // 0.5–2.0, default: 1
-    cacheMaxSizeMb: number; // default: 500
+    cacheMaxSizeMb: number; // default: 1000
     providers: Record<TtsProviderType, TtsProviderSettings>;
 }
 
@@ -144,7 +144,7 @@ export function createDefaultTtsSettings(): TtsSettings {
         highlightMode: 'sentence',
         autoPlay: false,
         rate: 1,
-        cacheMaxSizeMb: 500,
+        cacheMaxSizeMb: 1000,
         providers: {
             browser: { provider: 'browser', enabled: true },
             kokoro: { provider: 'kokoro', enabled: false },

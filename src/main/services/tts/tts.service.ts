@@ -127,15 +127,19 @@ export class TtsService {
         return result;
     }
 
-    async startPlayback(segments: TtsSegment[], language: string): Promise<void> {
+    async startPlayback(segments: TtsSegment[], language: string, startIndex = 0): Promise<void> {
         this.playbackGeneration++;
         this.segments = segments;
-        this.currentIndex = 0;
+        this.currentIndex = startIndex;
         this.currentLanguage = language;
         this.status = 'playing';
         this.prefetchQueue.clear();
         this.pushState();
-        await this.playSegment(0, this.playbackGeneration);
+
+        // Eagerly warm up: start synthesizing uncached segments beyond startIndex
+        this.prefetchAhead(startIndex + 1);
+
+        await this.playSegment(startIndex, this.playbackGeneration);
     }
 
     pause(): void {
@@ -299,9 +303,8 @@ export class TtsService {
             this.status = 'playing';
             this.pushState();
 
-            // Prefetch stores disk references, not audio buffers
-            this.prefetch(index + 1);
-            this.prefetch(index + 2);
+            // Prefetch ahead: skip already-cached segments, synthesize the first uncached ones
+            this.prefetchAhead(index + 1);
         } catch (err) {
             if (generation !== this.playbackGeneration) return;
             log.error('TTS playSegment error:', err);
@@ -375,15 +378,48 @@ export class TtsService {
         throw new Error('All TTS providers failed');
     }
 
-    private prefetch(index: number): void {
-        if (index >= this.segments.length || this.prefetchQueue.has(index)) return;
-        this.prefetchQueue.set(
-            index,
-            this.prepareSegment(this.segments[index]).catch((err) => {
-                log.warn(`TTS prefetch ${index} failed:`, err);
-                throw err;
-            }),
+    /**
+     * Scan ahead from `fromIndex`, skip segments already cached or in-flight,
+     * and kick off synthesis for up to `MAX_PREFETCH` uncached segments.
+     */
+    private async prefetchAhead(fromIndex: number): Promise<void> {
+        const MAX_PREFETCH = 3;
+        let queued = 0;
+
+        for (let i = fromIndex; i < this.segments.length && queued < MAX_PREFETCH; i++) {
+            if (this.prefetchQueue.has(i)) continue;
+
+            // Quick cache check — cheap disk-metadata lookup, no audio loaded
+            const cached = await this.isCached(this.segments[i]);
+            if (cached) continue;
+
+            // Not cached — start synthesis in background
+            this.prefetchQueue.set(
+                i,
+                this.prepareSegment(this.segments[i]).catch((err) => {
+                    log.warn(`TTS prefetch ${i} failed:`, err);
+                    throw err;
+                }),
+            );
+            queued++;
+        }
+    }
+
+    /** Check if a segment is already in the disk cache (metadata only). */
+    private async isCached(segment: TtsSegment): Promise<boolean> {
+        const providerType = this.settings.activeProvider;
+        if (providerType === 'browser') return false;
+        const cfg = this.settings.providers[providerType];
+        const cacheKey = this.buildCacheKey(
+            providerType,
+            segment.text,
+            this.currentLanguage,
+            cfg?.voiceId ?? '',
+            cfg?.model ?? '',
+            this.settings.rate,
         );
+        const hit = await this.cache.lookup(cacheKey);
+        return hit !== null;
     }
 
     private buildCacheKey(

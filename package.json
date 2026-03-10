@@ -63,6 +63,8 @@
         "react-dom": "^19.2.4",
         "react-virtuoso": "^4.18.3",
         "sherpa-onnx-node": "^1.12.28",
+        "tar": "^7.5.11",
+        "unbzip2-stream": "^1.4.3",
         "unpdf": "^1.4.0",
         "zustand": "^5.0.11"
     },
@@ -76,6 +78,7 @@
         "@types/node": "^22.19.0",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
+        "@types/unbzip2-stream": "^1.4.3",
         "@typescript-eslint/eslint-plugin": "^8.56.1",
         "@typescript-eslint/parser": "^8.56.1",
         "@vitejs/plugin-react": "^5.1.4",

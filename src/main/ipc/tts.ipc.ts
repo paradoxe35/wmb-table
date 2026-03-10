@@ -21,8 +21,8 @@ export function registerTtsHandlers(): void {
         return getTtsService().synthesize(request);
     });
 
-    registerHandler(TtsChannels.startPlayback, async (_event, segments, language) => {
-        await getTtsService().startPlayback(segments, language);
+    registerHandler(TtsChannels.startPlayback, async (_event, segments, language, startIndex) => {
+        await getTtsService().startPlayback(segments, language, startIndex ?? 0);
     });
 
     registerHandler(TtsChannels.pausePlayback, async () => {

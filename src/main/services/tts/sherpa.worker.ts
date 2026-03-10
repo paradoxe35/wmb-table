@@ -1,9 +1,11 @@
 import { parentPort } from 'node:worker_threads';
-import { createWriteStream, existsSync, mkdirSync } from 'node:fs';
+import { createReadStream, createWriteStream, existsSync, mkdirSync } from 'node:fs';
 import { unlink } from 'node:fs/promises';
+import { pipeline } from 'node:stream/promises';
 import { join, sep } from 'node:path';
-import { spawn } from 'node:child_process';
 import os from 'node:os';
+import { extract as tarExtract } from 'tar';
+import unbzip2 from 'unbzip2-stream';
 
 interface WorkerRequest {
     id: number;
@@ -213,16 +215,7 @@ async function downloadModel(url: string, modelName: string, modelsDir: string):
 
         sendProgress(80);
 
-        // Node.js zlib doesn't support bzip2 — use system tar
-        // Windows 10+ ships with tar.exe that supports bzip2 via -j flag
-        const tarCmd = os.platform() === 'win32' ? 'tar.exe' : 'tar';
-        await new Promise<void>((resolve, reject) => {
-            const p = spawn(tarCmd, ['xjf', tmpFile, '-C', modelsDir], { stdio: 'ignore' });
-            p.on('close', (code) =>
-                code === 0 ? resolve() : reject(new Error(`tar extraction failed (code ${code})`)),
-            );
-            p.on('error', reject);
-        });
+        await pipeline(createReadStream(tmpFile), unbzip2(), tarExtract({ cwd: modelsDir }));
 
         sendProgress(95);
         await unlink(tmpFile).catch(() => {});

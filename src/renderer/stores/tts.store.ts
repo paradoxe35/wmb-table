@@ -19,6 +19,9 @@ interface TtsState {
     error: string | null;
     documentId: string | null;
     languageSupported: boolean;
+    /** Remembered position for resume — preserved across stop/play cycles */
+    lastStoppedDocumentId: string | null;
+    lastStoppedSegmentIndex: number;
 
     setProviders(p: TtsProviderInfo[]): void;
     setSettings(s: TtsSettings): void;
@@ -26,10 +29,12 @@ interface TtsState {
     setSegments(s: TtsSegment[]): void;
     setDocumentId(id: string | null): void;
     setLanguageSupported(v: boolean): void;
+    /** Save position before clearing playback state */
+    stopAndRemember(): void;
     reset(): void;
 }
 
-export const useTtsStore = create<TtsState>((set) => ({
+export const useTtsStore = create<TtsState>((set, get) => ({
     providers: [],
     settings: null,
     status: 'idle',
@@ -40,6 +45,8 @@ export const useTtsStore = create<TtsState>((set) => ({
     error: null,
     documentId: null,
     languageSupported: false,
+    lastStoppedDocumentId: null,
+    lastStoppedSegmentIndex: 0,
 
     setProviders: (providers) => set({ providers }),
     setSettings: (settings) => set({ settings }),
@@ -54,6 +61,19 @@ export const useTtsStore = create<TtsState>((set) => ({
     setSegments: (segments) => set({ segments, totalSegments: segments.length }),
     setDocumentId: (documentId) => set({ documentId }),
     setLanguageSupported: (languageSupported) => set({ languageSupported }),
+    stopAndRemember: () => {
+        const { documentId, currentSegmentIndex } = get();
+        set({
+            status: 'idle',
+            currentSegmentIndex: 0,
+            totalSegments: 0,
+            segments: [],
+            error: null,
+            documentId: null,
+            lastStoppedDocumentId: documentId,
+            lastStoppedSegmentIndex: currentSegmentIndex,
+        });
+    },
     reset: () =>
         set({
             status: 'idle',
@@ -62,6 +82,8 @@ export const useTtsStore = create<TtsState>((set) => ({
             segments: [],
             error: null,
             documentId: null,
+            lastStoppedDocumentId: null,
+            lastStoppedSegmentIndex: 0,
         }),
 }));
 

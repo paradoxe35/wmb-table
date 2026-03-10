@@ -58,19 +58,9 @@ function segmentText(
 
 // ── Browser TTS playback ──
 
-function playBrowserSegment(
-    segments: TtsSegment[],
-    index: number,
-    settings: TtsSettings,
-    onComplete: () => void,
-): void {
+function playBrowserSegment(segments: TtsSegment[], index: number, settings: TtsSettings): void {
     if (index >= segments.length) {
-        useTtsStore.getState().setPlaybackState({
-            status: 'idle',
-            currentSegmentIndex: 0,
-            totalSegments: 0,
-            provider: 'browser',
-        });
+        useTtsStore.getState().reset();
         return;
     }
 
@@ -83,13 +73,35 @@ function playBrowserSegment(
 
     const cfg = settings.providers.browser;
     browserTts.setOnSegmentEnd(() => {
-        playBrowserSegment(segments, index + 1, settings, onComplete);
+        playBrowserSegment(segments, index + 1, settings);
     });
     browserTts.speak(segments[index].text, cfg?.voiceId, {
         rate: settings.rate,
         pitch: cfg?.pitch,
         volume: cfg?.volume,
     });
+}
+
+// ── Shared start logic ──
+
+function startPlaybackAtIndex(
+    segments: TtsSegment[],
+    startIndex: number,
+    settings: TtsSettings,
+    language: string,
+    documentId: string,
+): void {
+    useTtsStore.getState().setSegments(segments);
+    useTtsStore.getState().setDocumentId(documentId);
+
+    if (settings.activeProvider === 'browser') {
+        playBrowserSegment(segments, startIndex, settings);
+    } else {
+        window.api.tts.startPlayback(segments, language, startIndex).catch(() => {
+            message.error('La lecture audio a échoué. Vérifiez la configuration du fournisseur.');
+            useTtsStore.getState().reset();
+        });
+    }
 }
 
 // ── Hook ──
@@ -117,13 +129,11 @@ export function useTts(
     useEffect(() => {
         if (!settings) return;
         if (settings.activeProvider === 'browser') {
-            // Browser voices load asynchronously
             const check = () => {
                 const supported = browserTts.supportsLanguage(language);
                 useTtsStore.getState().setLanguageSupported(supported);
             };
             check();
-            // Voices may load late
             window.speechSynthesis.addEventListener('voiceschanged', check);
             return () => window.speechSynthesis.removeEventListener('voiceschanged', check);
         } else {
@@ -137,7 +147,12 @@ export function useTts(
     // Listen to push events for playback state (main-process providers)
     useEffect(() => {
         return window.api.on.ttsPlaybackState((state) => {
-            setPlaybackState(state);
+            if (state.status === 'idle') {
+                // Natural playback end — clear resume position
+                useTtsStore.getState().reset();
+            } else {
+                setPlaybackState(state);
+            }
             if (state.status === 'error') {
                 message.error(
                     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.',
@@ -170,19 +185,19 @@ export function useTts(
         if (!settings || !paragraphs.length) return;
         const segments = segmentText(paragraphs, settings.highlightMode);
         if (!segments.length) return;
-        useTtsStore.getState().setSegments(segments);
-        useTtsStore.getState().setDocumentId(documentId);
 
-        if (settings.activeProvider === 'browser') {
-            playBrowserSegment(segments, 0, settings, () => {});
-        } else {
-            window.api.tts.startPlayback(segments, language).catch(() => {
-                message.error(
-                    'La lecture audio a échoué. Vérifiez la configuration du fournisseur.',
-                );
-                useTtsStore.getState().reset();
-            });
+        // Resume from last position if same document
+        const store = useTtsStore.getState();
+        let startIndex = 0;
+        if (
+            store.lastStoppedDocumentId === documentId &&
+            store.lastStoppedSegmentIndex > 0 &&
+            store.lastStoppedSegmentIndex < segments.length
+        ) {
+            startIndex = store.lastStoppedSegmentIndex;
         }
+
+        startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
     }, [paragraphs, language, documentId, settings]);
 
     const pause = useCallback(() => {
@@ -222,19 +237,35 @@ export function useTts(
             ttsAudioPlayer.stop();
             window.api.tts.stopPlayback();
         }
-        useTtsStore.getState().reset();
+        useTtsStore.getState().stopAndRemember();
     }, [settings?.activeProvider]);
 
     const seekToSegment = useCallback(
         (i: number) => {
             if (settings?.activeProvider === 'browser') {
+                browserTts.cancel();
                 const segs = useTtsStore.getState().segments;
-                if (segs.length) playBrowserSegment(segs, i, settings, () => {});
+                if (segs.length) playBrowserSegment(segs, i, settings);
             } else {
                 window.api.tts.seekToSegment(i);
             }
         },
         [settings],
+    );
+
+    const playFromParagraph = useCallback(
+        (paragraphIndex: number) => {
+            if (!settings || !paragraphs.length) return;
+            const segments = segmentText(paragraphs, settings.highlightMode);
+            if (!segments.length) return;
+
+            // Find first segment at or after the target paragraph
+            const startIndex = segments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
+            if (startIndex < 0) return;
+
+            startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
+        },
+        [paragraphs, language, documentId, settings],
     );
 
     const isThisDocument = currentDocId === documentId;
@@ -251,5 +282,6 @@ export function useTts(
         resume,
         stop,
         seekToSegment,
+        playFromParagraph,
     };
 }

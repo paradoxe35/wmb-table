@@ -66,6 +66,36 @@
         font-family: monospace;
         font-size: 0.85em;
         user-select: none;
+
+        .tts-play-from-here {
+            display: none;
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--ant-color-primary-bg, #e6f4ff);
+            color: var(--ant-color-primary, #1677ff);
+            border: none;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            cursor: pointer;
+            font-size: 10px;
+            line-height: 1;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+
+            &:hover {
+                background: var(--ant-color-primary, #1677ff);
+                color: #fff;
+            }
+        }
+    }
+
+    &:hover .tts-play-from-here {
+        display: inline-flex;
     }
 
     mark {

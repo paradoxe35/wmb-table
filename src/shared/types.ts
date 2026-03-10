@@ -531,6 +531,12 @@ export interface SyncStatus {
     error: string | null;
 }
 
+export interface SyncFailureEvent {
+    message: string;
+    isAuthError: boolean;
+    consecutiveFailures: number;
+}
+
 // ---------------------------------------------------------------------------
 // Updater (inlined — no electron-updater import)
 // ---------------------------------------------------------------------------

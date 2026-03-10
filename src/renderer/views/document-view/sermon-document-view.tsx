@@ -1,11 +1,9 @@
-import { useCallback, useMemo, useRef } from 'react';
-import { Dropdown, Spin } from 'antd';
+import { useMemo, useRef } from 'react';
 import { useSermonStore, useSearchStore, selectActiveTab } from '@renderer/stores';
-import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
-import InlineSearchBar from '../components/inline-search-bar';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
-import { TtsParagraph } from './tts-controls';
+import { ParagraphList } from './tts-controls';
+import DocumentBody from './document-body';
 import {
     useSermonContent,
     useScrollAndZoom,
@@ -23,14 +21,10 @@ export default function SermonDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const { zoom } = useScrollAndZoom(containerRef);
     const search = useSearchHighlight();
-    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
     useReferenceNavigation(containerRef);
     const contextMenuItems = useContextMenuItems(content, contextTargetRef);
 
-    const onContextMenu = useCallback((e: React.MouseEvent) => {
-        contextTargetRef.current = e.target as Element;
-    }, []);
     const activeTab = useSermonStore(selectActiveTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const sermonInfo = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
@@ -59,14 +53,15 @@ export default function SermonDocumentView() {
     );
 
     return (
-        <div className="mock-browser-content">
-            {loading && (
-                <div className="flex flex-center" style={{ marginTop: '2rem' }}>
-                    <Spin />
-                </div>
-            )}
-            {!loading && content && (
-                <>
+        <DocumentBody
+            loading={loading}
+            ready={!!content}
+            containerRef={containerRef}
+            contextTargetRef={contextTargetRef}
+            zoom={zoom}
+            contextMenuItems={contextMenuItems}
+            header={
+                content && (
                     <SermonHeader
                         meta={content.meta}
                         zoom={zoom}
@@ -75,30 +70,22 @@ export default function SermonDocumentView() {
                         paragraphs={content.paragraphs}
                         tts={tts}
                     />
-                    {searchBarOpen && <InlineSearchBar />}
-                    <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
-                        <div
-                            ref={containerRef}
-                            id={DOCUMENT_CONTAINER_ID}
-                            className="sermon-body"
-                            style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
-                            onContextMenu={onContextMenu}
-                        >
-                            <SermonContentHeader meta={content.meta} />
-                            {content.paragraphs.map((p, i) => (
-                                <TtsParagraph
-                                    key={`${p.paragraphIndex}-${i}`}
-                                    paragraph={p}
-                                    search={search}
-                                    currentMatchIndex={currentMatchIndex}
-                                    matchOffset={matchOffsets[i] ?? 0}
-                                    highlights={highlightsByParagraph.get(p.paragraphIndex)}
-                                />
-                            ))}
-                        </div>
-                    </Dropdown>
-                </>
+                )
+            }
+        >
+            {content && <SermonContentHeader meta={content.meta} />}
+            {content && (
+                <ParagraphList
+                    paragraphs={ttsParagraphs}
+                    documentId={content.meta.title}
+                    search={search}
+                    currentMatchIndex={currentMatchIndex}
+                    matchOffsets={matchOffsets}
+                    highlightsByParagraph={highlightsByParagraph}
+                    onPlayFromHere={!content.meta.audioLink ? tts.playFromParagraph : undefined}
+                    canSpeak={!content.meta.audioLink && tts.canSpeak}
+                />
             )}
-        </div>
+        </DocumentBody>
     );
 }

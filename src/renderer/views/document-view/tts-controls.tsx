@@ -1,5 +1,11 @@
 import { Button, Tooltip } from 'antd';
-import { PauseCircleOutlined, SoundOutlined } from '@ant-design/icons';
+import {
+    PauseCircleOutlined,
+    SoundOutlined,
+    CaretRightOutlined,
+    ZoomInOutlined,
+    ZoomOutOutlined,
+} from '@ant-design/icons';
 import type { SearchMode, HighlightItem } from '@shared/types';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
@@ -14,6 +20,7 @@ export interface TtsControls {
     pause: () => void;
     resume: () => void;
     stop: () => void;
+    playFromParagraph: (paragraphIndex: number) => void;
 }
 
 // ── TTS play/pause button ──
@@ -49,24 +56,108 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
     );
 }
 
+// ── Zoom controls ──
+
+export function ZoomControls({
+    zoom,
+    onZoomIn,
+    onZoomOut,
+}: {
+    zoom: number;
+    onZoomIn: () => void;
+    onZoomOut: () => void;
+}) {
+    return (
+        <>
+            <Tooltip title="Zoom arrière">
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<ZoomOutOutlined />}
+                    onClick={onZoomOut}
+                    aria-label="Zoom arrière"
+                />
+            </Tooltip>
+            <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>{zoom}%</span>
+            <Tooltip title="Zoom avant">
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<ZoomInOutlined />}
+                    onClick={onZoomIn}
+                    aria-label="Zoom avant"
+                />
+            </Tooltip>
+        </>
+    );
+}
+
+// ── Paragraph list ──
+
+interface ParagraphListProps {
+    paragraphs: { paragraphIndex: number; content: string }[];
+    documentId: string;
+    search: { term: string; mode: SearchMode } | null;
+    currentMatchIndex: number;
+    matchOffsets: number[];
+    highlightsByParagraph: Map<number, HighlightItem[]>;
+    onPlayFromHere?: (paragraphIndex: number) => void;
+    canSpeak?: boolean;
+}
+
+export function ParagraphList({
+    paragraphs,
+    documentId,
+    search,
+    currentMatchIndex,
+    matchOffsets,
+    highlightsByParagraph,
+    onPlayFromHere,
+    canSpeak,
+}: ParagraphListProps) {
+    return (
+        <>
+            {paragraphs.map((p, i) => (
+                <TtsParagraph
+                    key={p.paragraphIndex}
+                    paragraph={p}
+                    documentId={documentId}
+                    search={search}
+                    currentMatchIndex={currentMatchIndex}
+                    matchOffset={matchOffsets[i] ?? 0}
+                    highlights={highlightsByParagraph.get(p.paragraphIndex)}
+                    onPlayFromHere={onPlayFromHere}
+                    canSpeak={canSpeak}
+                />
+            ))}
+        </>
+    );
+}
+
 // ── Paragraph wrapper with TTS highlighting ──
 
 interface TtsParagraphProps {
     paragraph: { paragraphIndex: number; content: string };
+    documentId: string;
     search: { term: string; mode: SearchMode } | null;
     currentMatchIndex: number;
     matchOffset: number;
     highlights?: HighlightItem[];
+    onPlayFromHere?: (paragraphIndex: number) => void;
+    canSpeak?: boolean;
 }
 
 export function TtsParagraph({
     paragraph,
+    documentId,
     search,
     currentMatchIndex,
     matchOffset,
     highlights,
+    onPlayFromHere,
+    canSpeak,
 }: TtsParagraphProps) {
-    const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex);
+    const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentId);
     return (
         <SermonParagraphView
             paragraph={paragraph}
@@ -75,6 +166,22 @@ export function TtsParagraph({
             matchOffset={matchOffset}
             highlights={highlights}
             ttsHighlight={ttsHighlight}
+            playFromHereButton={
+                onPlayFromHere && canSpeak ? (
+                    <Tooltip title="Lire à partir d'ici">
+                        <button
+                            className="tts-play-from-here"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onPlayFromHere(paragraph.paragraphIndex);
+                            }}
+                            aria-label="Lire à partir d'ici"
+                        >
+                            <CaretRightOutlined />
+                        </button>
+                    </Tooltip>
+                ) : undefined
+            }
         />
     );
 }

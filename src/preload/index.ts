@@ -190,6 +190,9 @@ const api = {
 
     sync: {
         getStatus: () => invoke(SyncChannels.getStatus),
+        start: () => invoke(SyncChannels.start),
+        stop: () => invoke(SyncChannels.stop),
+        syncNow: () => invoke(SyncChannels.syncNow),
     },
 
     app: {
@@ -220,8 +223,8 @@ const api = {
         getSettings: () => invoke(TtsChannels.getSettings),
         updateSettings: (s: Partial<TtsSettings>) => invoke(TtsChannels.updateSettings, s),
         synthesize: (req: TtsSynthesizeRequest) => invoke(TtsChannels.synthesize, req),
-        startPlayback: (segs: TtsSegment[], lang: string) =>
-            invoke(TtsChannels.startPlayback, segs, lang),
+        startPlayback: (segs: TtsSegment[], lang: string, startIndex?: number) =>
+            invoke(TtsChannels.startPlayback, segs, lang, startIndex),
         pausePlayback: () => invoke(TtsChannels.pausePlayback),
         resumePlayback: () => invoke(TtsChannels.resumePlayback),
         stopPlayback: () => invoke(TtsChannels.stopPlayback),
@@ -272,6 +275,8 @@ const api = {
         newSynchronizedDatas: (
             cb: (p: PushEventMap[typeof PushChannels.newSynchronizedDatas]) => void,
         ) => onPush(PushChannels.newSynchronizedDatas, cb),
+        syncFailure: (cb: (p: PushEventMap[typeof PushChannels.syncFailure]) => void) =>
+            onPush(PushChannels.syncFailure, cb),
         openLanguageManager: (
             cb: (p: PushEventMap[typeof PushChannels.openLanguageManager]) => void,
         ) => onPush(PushChannels.openLanguageManager, cb),
