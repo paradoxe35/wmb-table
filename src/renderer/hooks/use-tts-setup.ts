@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
@@ -40,7 +40,7 @@ export function useTtsSetup(): void {
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const settings = useTtsStore((s) => s.settings);
     const settingsLoaded = useRef(false);
-    const [recheckCounter, setRecheckCounter] = useState(0);
+    const recheckTrigger = useTtsStore((s) => s.recheckTrigger);
 
     // Load settings once
     useEffect(() => {
@@ -78,7 +78,6 @@ export function useTtsSetup(): void {
         return () => {
             cancelled = true;
         };
-         
     }, [activeLanguage, settings?.activeProvider, settings?.autoSwitchVoice]);
 
     // Language compatibility check
@@ -150,14 +149,14 @@ export function useTtsSetup(): void {
         activeProviderCfg?.model,
         activeProviderCfg?.apiKey,
         t,
-        recheckCounter,
+        recheckTrigger,
     ]);
 
     // Re-check after model download
     useEffect(() => {
         return window.api.on.ttsModelDownloadProgress((p) => {
             if (p.status === 'complete') {
-                setRecheckCounter((c) => c + 1);
+                useTtsStore.getState().triggerRecheck();
             }
         });
     }, []);

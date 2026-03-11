@@ -23,6 +23,8 @@ interface TtsState {
     /** Remembered position for resume — preserved across stop/play cycles */
     lastStoppedDocumentId: string | null;
     lastStoppedSegmentIndex: number;
+    /** Bumped to force a compatibility recheck (e.g. after API key save) */
+    recheckTrigger: number;
 
     setProviders(p: TtsProviderInfo[]): void;
     setSettings(s: TtsSettings): void;
@@ -31,6 +33,7 @@ interface TtsState {
     setDocumentId(id: string | null): void;
     setLanguageSupported(v: boolean): void;
     setIncompatibleMessage(msg: string | undefined): void;
+    triggerRecheck(): void;
     /** Save position before clearing playback state */
     stopAndRemember(): void;
     reset(): void;
@@ -50,6 +53,7 @@ export const useTtsStore = create<TtsState>((set, get) => ({
     incompatibleMessage: undefined,
     lastStoppedDocumentId: null,
     lastStoppedSegmentIndex: 0,
+    recheckTrigger: 0,
 
     setProviders: (providers) => set({ providers }),
     setSettings: (settings) => set({ settings }),
@@ -65,6 +69,7 @@ export const useTtsStore = create<TtsState>((set, get) => ({
     setDocumentId: (documentId) => set({ documentId }),
     setLanguageSupported: (languageSupported) => set({ languageSupported }),
     setIncompatibleMessage: (incompatibleMessage) => set({ incompatibleMessage }),
+    triggerRecheck: () => set((s) => ({ recheckTrigger: s.recheckTrigger + 1 })),
     stopAndRemember: () => {
         const { documentId, currentSegmentIndex } = get();
         set({
