@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { List, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
@@ -48,6 +49,7 @@ function SnippetRow({
 }
 
 export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit; query: string }) {
+    const { t } = useTranslation();
     const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
@@ -120,7 +122,9 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                     </a>
                     {hit.hitCount > 0 && (
                         <Text type="secondary" className="search-result-hit-count">
-                            {hit.hitCount} correspondance{hit.hitCount > 1 ? 's' : ''}
+                            {hit.hitCount > 1
+                                ? t('{{count}} correspondances', { count: hit.hitCount })
+                                : t('{{count}} correspondance', { count: hit.hitCount })}
                         </Text>
                     )}
                 </div>
@@ -145,7 +149,9 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                                 setExpanded(!expanded);
                             }}
                         >
-                            {expanded ? 'Voir moins' : `Voir tout (${snippets.length})`}
+                            {expanded
+                                ? t('Voir moins')
+                                : t('Voir tout ({{count}})', { count: snippets.length })}
                         </a>
                     )}
                 </div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button, Input, Modal, Space, Typography, message, Spin } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { CustomDocument } from '@shared/types';
 import {
     EyeOutlined,
@@ -16,6 +17,7 @@ import { useAppStore, useCustomDocumentsStore } from '@renderer/stores';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 
 export default function CustomDocuments() {
+    const { t } = useTranslation();
     const { visible, show, hide } = useModalVisible();
     const [showUploadForm, setShowUploadForm] = useState(false);
 
@@ -31,7 +33,7 @@ export default function CustomDocuments() {
                 setCustomDocuments(docs);
             })
             .catch(() => {
-                message.error('Erreur lors du chargement des documents');
+                message.error(t('Erreur lors du chargement des documents'));
             });
     }, []);
 
@@ -82,11 +84,12 @@ export default function CustomDocuments() {
 }
 
 const ModalTitle = ({ count }: { count: number }) => {
+    const { t } = useTranslation();
     const appLoaded = useAppStore((s) => s.loaded);
 
     return (
         <Space>
-            <span>Documents ajoutés</span>
+            <span>{t('Documents ajoutés')}</span>
             <Typography.Text type="secondary">({count})</Typography.Text>
             {!appLoaded && <Spin indicator={<LoadingOutlined spin />} size="small" />}
         </Space>
@@ -104,6 +107,7 @@ function DocumentList({
     onClose: () => void;
     onAdd: () => void;
 }) {
+    const { t } = useTranslation();
     const openCustomDocument = useOpenCustomDocument();
     const [searchTerm, setSearchTerm] = useState('');
     const ipcRequestWithLoader = useIpcRequestWithLoader();
@@ -121,7 +125,7 @@ function DocumentList({
                     detail: document,
                 }),
             );
-            message.success('Document supprimé');
+            message.success(t('Document supprimé'));
         });
     };
 
@@ -129,14 +133,14 @@ function DocumentList({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', gap: 8 }}>
                 <Input.Search
-                    placeholder="Rechercher..."
+                    placeholder={t('Rechercher...')}
                     allowClear
                     onSearch={setSearchTerm}
                     onChange={(e) => !e.target.value && setSearchTerm('')}
                     style={{ flex: 1 }}
                 />
                 <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
-                    Ajouter
+                    {t('Ajouter')}
                 </Button>
             </div>
 
@@ -154,8 +158,8 @@ function DocumentList({
                         <FileTextOutlined style={{ fontSize: 28, opacity: 0.25 }} />
                         <Typography.Text type="secondary">
                             {customDocuments.length === 0
-                                ? 'Aucun document ajouté'
-                                : 'Aucun résultat'}
+                                ? t('Aucun document ajouté')
+                                : t('Aucun résultat')}
                         </Typography.Text>
                     </div>
                 )}
@@ -220,6 +224,7 @@ function UploadForm({
     onAdded: (doc: CustomDocument) => void;
     onCancel: () => void;
 }) {
+    const { t } = useTranslation();
     const [name, setName] = useState('');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
@@ -233,7 +238,7 @@ function UploadForm({
         const file = e.target.files?.[0];
         if (!file) return;
         if (file.type !== 'application/pdf') {
-            message.error('Seul le format PDF est pris en charge.');
+            message.error(t('Seul le format PDF est pris en charge.'));
             return;
         }
         setSelectedFile(file);
@@ -246,7 +251,7 @@ function UploadForm({
         const trimmedName = name.trim();
         if (!trimmedName || !selectedFile) return;
         if (nameExists) {
-            message.error('Un document avec ce nom existe déjà.');
+            message.error(t('Un document avec ce nom existe déjà.'));
             return;
         }
 
@@ -256,9 +261,9 @@ function UploadForm({
             const pdfBytes = new Uint8Array(buffer);
             const doc = await window.api.app.createCustomDocument(trimmedName, pdfBytes);
             onAdded(doc);
-            message.success('Document ajouté');
+            message.success(t('Document ajouté'));
         } catch {
-            message.error("Erreur lors de l'extraction du document.");
+            message.error(t("Erreur lors de l'extraction du document."));
         } finally {
             setUploading(false);
         }
@@ -271,17 +276,17 @@ function UploadForm({
                     strong
                     style={{ fontSize: '0.85em', display: 'block', marginBottom: 4 }}
                 >
-                    Nom du document
+                    {t('Nom du document')}
                 </Typography.Text>
                 <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="Nom du document"
+                    placeholder={t('Nom du document')}
                     status={nameExists ? 'error' : undefined}
                 />
                 {nameExists && (
                     <Typography.Text type="danger" style={{ fontSize: '0.8em' }}>
-                        Ce nom existe déjà
+                        {t('Ce nom existe déjà')}
                     </Typography.Text>
                 )}
             </div>
@@ -300,13 +305,13 @@ function UploadForm({
                     block
                     style={{ textAlign: 'left' }}
                 >
-                    {selectedFile ? selectedFile.name : 'Choisir un fichier PDF'}
+                    {selectedFile ? selectedFile.name : t('Choisir un fichier PDF')}
                 </Button>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <Button onClick={onCancel} disabled={uploading}>
-                    Retour
+                    {t('Retour')}
                 </Button>
                 <Button
                     type="primary"
@@ -314,7 +319,7 @@ function UploadForm({
                     disabled={!name.trim() || !selectedFile || nameExists}
                     loading={uploading}
                 >
-                    {uploading ? 'Traitement...' : 'Ajouter'}
+                    {uploading ? t('Traitement...') : t('Ajouter')}
                 </Button>
             </div>
         </div>

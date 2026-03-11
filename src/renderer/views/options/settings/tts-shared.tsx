@@ -1,5 +1,7 @@
 import { Tag, Typography } from 'antd';
 import { CloudOutlined, LaptopOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { LANG_LABELS_FR } from '@shared/tts.types';
 import type {
     TtsProviderLocality,
@@ -53,10 +55,10 @@ interface LocalityTagProps {
 
 // ── Helpers ──
 
-export function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} o`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} Ko`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+export function formatBytes(bytes: number, t: TFunction): string {
+    if (bytes < 1024) return `${bytes} ${t('o')}`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} ${t('Ko')}`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} ${t('Mo')}`;
 }
 
 export function providerUpdate(
@@ -112,13 +114,14 @@ export function Field({ label, hint, children }: FieldProps) {
 }
 
 export function LocalityTag({ type }: LocalityTagProps) {
+    const { t } = useTranslation();
     return type === 'local' ? (
         <Tag color="green" icon={<LaptopOutlined />}>
-            Local
+            {t('Local')}
         </Tag>
     ) : (
         <Tag color="blue" icon={<CloudOutlined />}>
-            Cloud
+            {t('Cloud')}
         </Tag>
     );
 }

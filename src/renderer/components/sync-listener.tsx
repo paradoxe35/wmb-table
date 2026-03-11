@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { message } from 'antd';
 import { useAppStore, useSubjectsStore, useCustomDocumentsStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
@@ -7,6 +8,7 @@ import { HIGHLIGHT_EVENT, SYNC_EVENT } from '@renderer/utils/events';
 const AUTH_FAILURE_THRESHOLD = 4;
 
 export default function SyncListener() {
+    const { t } = useTranslation();
     const setSubjects = useSubjectsStore((s) => s.setSubjects);
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
     const setSyncing = useAppStore((s) => s.setSyncing);
@@ -35,7 +37,9 @@ export default function SyncListener() {
 
             if (event.isAuthError && event.consecutiveFailures >= AUTH_FAILURE_THRESHOLD) {
                 message.warning(
-                    'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.',
+                    t(
+                        'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.',
+                    ),
                     10,
                 );
             }

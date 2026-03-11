@@ -1,18 +1,13 @@
 import { useCallback, useRef, useState } from 'react';
 import { Input, AutoComplete, Select, Typography } from 'antd';
 import { SelectProps } from 'antd/es/select';
+import { useTranslation } from 'react-i18next';
 import { debounce } from '@renderer/utils/functions';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useSearchStore } from '@renderer/stores';
 import type { Suggestions, SearchMode } from '@shared/types';
 
 const { Text } = Typography;
-
-const SEARCH_MODE_OPTIONS: { value: SearchMode; label: string }[] = [
-    { value: 'any', label: 'Au moins un mot' },
-    { value: 'all', label: 'Tous les mots' },
-    { value: 'exact', label: 'Phrase exacte' },
-];
 
 function buildSuggestionOptions(query: string, suggestions: Suggestions[]) {
     return suggestions
@@ -24,7 +19,7 @@ function buildSuggestionOptions(query: string, suggestions: Suggestions[]) {
                     <span>
                         <Text type="secondary">{sgg.searchText}</Text>
                     </span>
-                    <span>{sgg.found} resultat</span>
+                    <span>{sgg.found}</span>
                 </div>
             ),
         }));
@@ -39,10 +34,17 @@ export default function SearchInput({
     loading: boolean;
     suggestions: React.RefObject<Suggestions[]>;
 }) {
+    const { t } = useTranslation();
     const [options, setOptions] = useState<SelectProps<object>['options']>([]);
     const searchValue = useRef<string | null>(null);
     const searchMode = useSearchStore((s) => s.searchMode);
     const setSearchMode = useSearchStore((s) => s.setSearchMode);
+
+    const searchModeOptions: { value: SearchMode; label: string }[] = [
+        { value: 'any', label: t('Au moins un mot') },
+        { value: 'all', label: t('Tous les mots') },
+        { value: 'exact', label: t('Phrase exacte') },
+    ];
 
     const handleSearchAutoComplete = (value: string) => {
         setOptions(value ? buildSuggestionOptions(value, suggestions.current) : []);
@@ -76,7 +78,7 @@ export default function SearchInput({
                     minLength={3}
                     allowClear
                     loading={loading}
-                    placeholder="Faites vos recherches ici"
+                    placeholder={t('Faites vos recherches ici')}
                     enterButton
                     onSearch={debounce(handleSearch, 100)}
                 />
@@ -85,7 +87,7 @@ export default function SearchInput({
                 size="large"
                 value={searchMode}
                 onChange={setSearchMode}
-                options={SEARCH_MODE_OPTIONS}
+                options={searchModeOptions}
                 className="search-mode-select"
             />
         </div>

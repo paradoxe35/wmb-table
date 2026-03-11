@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FundViewOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
 import { useAppStore } from '@renderer/stores';
@@ -6,6 +7,7 @@ import type { ViewMenuValue } from '@shared/types';
 import { ItemType, MenuItemType } from 'antd/es/menu/interface';
 
 export default function ViewerMenu() {
+    const { t } = useTranslation();
     const mainView = useAppStore((s) => s.mainView);
     const setMainView = useAppStore((s) => s.setMainView);
 
@@ -29,7 +31,7 @@ export default function ViewerMenu() {
         return [
             {
                 key: 'options',
-                title: 'Outils',
+                title: t('Outils'),
                 icon: (
                     <ProfileOutlined
                         style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
@@ -39,7 +41,7 @@ export default function ViewerMenu() {
             },
             {
                 key: 'document',
-                title: 'Lecture',
+                title: t('Lecture'),
                 icon: (
                     <FundViewOutlined
                         style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
@@ -48,7 +50,7 @@ export default function ViewerMenu() {
                 onClick: showDocument,
             },
         ] satisfies ItemType<MenuItemType>[];
-    }, [showOptions, showDocument]);
+    }, [showOptions, showDocument, t]);
 
     return (
         <Menu

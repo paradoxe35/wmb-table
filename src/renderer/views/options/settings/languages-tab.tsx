@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Card, Space, Tag, Typography } from 'antd';
 import { CheckCircleOutlined, GlobalOutlined } from '@ant-design/icons';
 import type { InstalledLanguage } from '@shared/types';
@@ -8,6 +9,7 @@ import { LANGUAGE_EVENT } from '@renderer/utils/events';
 const { Text } = Typography;
 
 export default function LanguagesTab() {
+    const { t } = useTranslation();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [langs, setLangs] = useState<InstalledLanguage[]>([]);
 
@@ -30,14 +32,14 @@ export default function LanguagesTab() {
                     }}
                 >
                     <Text strong>
-                        <GlobalOutlined /> Langues installées
+                        <GlobalOutlined /> {t('Langues installées')}
                     </Text>
                     <Button size="small" onClick={openManager}>
-                        Changer la langue
+                        {t('Changer la langue')}
                     </Button>
                 </div>
                 {langs.length === 0 ? (
-                    <Text type="secondary">Aucune langue installée</Text>
+                    <Text type="secondary">{t('Aucune langue installée')}</Text>
                 ) : (
                     langs.map((l) => (
                         <div
@@ -57,12 +59,12 @@ export default function LanguagesTab() {
                                         icon={<CheckCircleOutlined />}
                                         style={{ marginLeft: 8 }}
                                     >
-                                        Actif
+                                        {t('Actif')}
                                     </Tag>
                                 )}
                             </Text>
                             <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                                {l.sermonsCount} sermons
+                                {l.sermonsCount} {t('sermons')}
                             </Text>
                         </div>
                     ))

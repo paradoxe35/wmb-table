@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Divider, Tabs, Typography } from 'antd';
 import {
     CloudSyncOutlined,
@@ -26,6 +27,7 @@ const TAB_KEYS = {
 } as const;
 
 export default function Settings() {
+    const { t } = useTranslation();
     const showOptions = useAppStore((s) => s.showOptions);
     const [activeTab, setActiveTab] = useState<string>(TAB_KEYS.general);
 
@@ -64,7 +66,7 @@ export default function Settings() {
                 key: TAB_KEYS.general,
                 label: (
                     <span>
-                        <InfoCircleOutlined /> Général
+                        <InfoCircleOutlined /> {t('Général')}
                     </span>
                 ),
                 children: <GeneralTab />,
@@ -73,7 +75,7 @@ export default function Settings() {
                 key: TAB_KEYS.languages,
                 label: (
                     <span>
-                        <GlobalOutlined /> Langues
+                        <GlobalOutlined /> {t('Langues')}
                     </span>
                 ),
                 children: <LanguagesTab />,
@@ -82,7 +84,7 @@ export default function Settings() {
                 key: TAB_KEYS.tts,
                 label: (
                     <span>
-                        <SoundOutlined /> Lecture audio
+                        <SoundOutlined /> {t('Lecture audio')}
                     </span>
                 ),
                 children: <TtsTab />,
@@ -91,7 +93,7 @@ export default function Settings() {
                 key: TAB_KEYS.backup,
                 label: (
                     <span>
-                        <CloudSyncOutlined /> Sauvegarde
+                        <CloudSyncOutlined /> {t('Sauvegarde')}
                     </span>
                 ),
                 children: <BackupTab />,
@@ -100,13 +102,13 @@ export default function Settings() {
                 key: TAB_KEYS.update,
                 label: (
                     <span>
-                        <ReloadOutlined /> Mise à jour
+                        <ReloadOutlined /> {t('Mise à jour')}
                     </span>
                 ),
                 children: <UpdateTab />,
             },
         ],
-        [],
+        [t],
     );
 
     return (
@@ -114,11 +116,11 @@ export default function Settings() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <SettingOutlined style={{ fontSize: 18 }} />
                 <Title level={5} style={{ margin: 0 }}>
-                    Paramètres
+                    {t('Paramètres')}
                 </Title>
             </div>
             <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                Gérez les préférences de votre application.
+                {t('Gérez les préférences de votre application.')}
             </Text>
             <Divider style={{ margin: '12px 0' }} />
             <Tabs items={tabItems} activeKey={activeTab} onChange={onTabChange} />

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, memo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Typography, List, Pagination } from 'antd';
 import type { TantivySearchResult } from '@shared/types';
 import SearchResultItem from './search-result-item';
@@ -14,6 +15,7 @@ export default memo(function SearchResultList({
     results: TantivySearchResult | null;
     onPageChange?: (page: number) => void;
 }) {
+    const { t } = useTranslation();
     const totalPages = results ? Math.ceil(results.total / ITEMS_PER_PAGE) : 0;
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -35,8 +37,8 @@ export default memo(function SearchResultList({
                 <div className="mt-2 flex flex-center">
                     <Text type="secondary">
                         {results.hits.length > 0
-                            ? `Trouvé dans ${results.hits.length} document${results.hits.length > 1 ? 's' : ''}${totalPages > 1 ? `, page (${currentPage}/${totalPages})` : ''}`
-                            : 'Aucun résultat trouvé'}
+                            ? `${t(results.hits.length > 1 ? 'Trouvé dans {{count}} documents' : 'Trouvé dans {{count}} document', { count: results.hits.length })}${totalPages > 1 ? `, ${t('page ({{current}}/{{total}})', { current: currentPage, total: totalPages })}` : ''}`
+                            : t('Aucun résultat trouvé')}
                     </Text>
                 </div>
             )}

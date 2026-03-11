@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Divider, Empty, Progress, Select, Space, Typography } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type {
     BibleDownloadProgress,
     BibleDownloadedEvent,
@@ -183,12 +184,14 @@ const BookListItem = memo(function BookListItem({
     book: BookEntry;
     onSelect: (book: BookEntry) => void;
 }) {
+    const { t } = useTranslation();
     return (
         <div className="sidebar-item" {...interactiveProps(() => onSelect(book))}>
             <div className="sidebar-item__left">
                 <div className="sidebar-item__title">{book.bookName}</div>
                 <div className="sidebar-item__date">
-                    {book.chapters.length} chapitre{book.chapters.length > 1 ? 's' : ''}
+                    {book.chapters.length}{' '}
+                    {book.chapters.length > 1 ? t('chapitres') : t('chapitre')}
                 </div>
             </div>
         </div>
@@ -201,6 +204,7 @@ const BookListItem = memo(function BookListItem({
 
 function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) {
     const openChapter = useOpenBibleChapter();
+    const { t } = useTranslation();
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
@@ -217,7 +221,7 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
                     size="small"
                     icon={<LeftOutlined />}
                     onClick={onBack}
-                    aria-label="Retour"
+                    aria-label={t('Retour')}
                 />
                 <Typography.Text strong ellipsis style={{ flex: 1 }}>
                     {book.bookName}
@@ -307,10 +311,12 @@ export default function SidebarBibleBrowser() {
         return () => window.removeEventListener('bible-version-changed', handler);
     }, [loadIndex, activeLanguage]);
 
+    const { t } = useTranslation();
+
     if (noBible) {
         return (
             <Empty
-                description="Aucune Bible disponible pour cette langue"
+                description={t('Aucune Bible disponible pour cette langue')}
                 style={{ marginTop: '2rem' }}
             />
         );
@@ -333,14 +339,14 @@ export default function SidebarBibleBrowser() {
                 <ContainerScrollY>
                     {oldTestament.length > 0 && (
                         <BookSection
-                            label="Ancien Testament"
+                            label={t('Ancien Testament')}
                             books={oldTestament}
                             onSelect={setSelectedBook}
                         />
                     )}
                     {newTestament.length > 0 && (
                         <BookSection
-                            label="Nouveau Testament"
+                            label={t('Nouveau Testament')}
                             books={newTestament}
                             onSelect={setSelectedBook}
                         />

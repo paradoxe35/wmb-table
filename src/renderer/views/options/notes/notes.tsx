@@ -1,4 +1,5 @@
 import { Button, Card, Empty, Input, Space, Spin, Typography, message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
     useCallback,
     useEffect,
@@ -17,6 +18,7 @@ export function Notes({
 }: {
     setWorkingNote: Dispatch<SetStateAction<string | null>>;
 }) {
+    const { t } = useTranslation();
     const [loaded, setLoaded] = useState<boolean>(false);
 
     const [notes, setNotes] = useState<NoteItem[]>([]);
@@ -30,7 +32,7 @@ export function Notes({
                 setNotes(notes);
             })
             .catch(() => {
-                message.error('Erreur lors du chargement des notes');
+                message.error(t('Erreur lors du chargement des notes'));
             })
             .finally(() => setLoaded(true));
     }, []);
@@ -41,10 +43,10 @@ export function Notes({
             .then(() => {
                 odatas.current = odatas.current.filter((d) => d.id !== note.id);
                 setNotes(odatas.current);
-                message.success('Note supprimée');
+                message.success(t('Note supprimée'));
             })
             .catch(() => {
-                message.error('Erreur lors de la suppression');
+                message.error(t('Erreur lors de la suppression'));
             });
     };
 
@@ -55,7 +57,7 @@ export function Notes({
                 setWorkingNote(note.id);
             })
             .catch(() => {
-                message.error('Erreur lors de la création de la note');
+                message.error(t('Erreur lors de la création de la note'));
             });
     };
 
@@ -82,10 +84,10 @@ export function Notes({
             <Space orientation="vertical">
                 <Space orientation="horizontal">
                     <Button onClick={newNote} icon={<PlusOutlined />}>
-                        Nouvelle note
+                        {t('Nouvelle note')}
                     </Button>
 
-                    <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
+                    <Input.Search placeholder={t('Recherche')} allowClear onSearch={onSearch} />
                 </Space>
 
                 {notes.length > 0 && (
@@ -117,7 +119,7 @@ export function Notes({
 
             {notes.length < 1 && (
                 <div className="flex flex-center">
-                    <Empty description="Aucune note" />
+                    <Empty description={t('Aucune note')} />
                 </div>
             )}
         </>

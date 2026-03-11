@@ -1,5 +1,6 @@
 import { Button, Input, Modal, Space, message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useModalVisible } from '@renderer/hooks';
 import { CHILD_PARENT_WINDOW_EVENT, HIGHLIGHT_EVENT } from '@renderer/utils/events';
 import type { HighlightCreateData } from '@shared/types';
@@ -22,6 +23,7 @@ const PRESET_COLORS = [
 ];
 
 export default function HighlightModal() {
+    const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
     const dataRef = useRef<HighlightModalData | null>(null);
     const [color, setColor] = useState(PRESET_COLORS[0].value);
@@ -58,10 +60,10 @@ export default function HighlightModal() {
                 languageCode: data.languageCode,
             });
             window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
-            message.success('Surlignage enregistré');
+            message.success(t('Surlignage enregistré'));
             hide();
         } catch {
-            message.error("Erreur lors de l'enregistrement");
+            message.error(t("Erreur lors de l'enregistrement"));
         } finally {
             setSaving(false);
         }
@@ -69,15 +71,15 @@ export default function HighlightModal() {
 
     return (
         <Modal
-            title="Souligner"
+            title={t('Souligner')}
             open={visible}
             onCancel={hide}
             footer={[
                 <Button key="cancel" onClick={hide}>
-                    Annuler
+                    {t('Annuler')}
                 </Button>,
                 <Button key="save" type="primary" loading={saving} onClick={handleSave}>
-                    Enregistrer
+                    {t('Enregistrer')}
                 </Button>,
             ]}
             width={420}
@@ -97,12 +99,12 @@ export default function HighlightModal() {
                 </div>
             </div>
             <div style={{ marginBottom: 16 }}>
-                <div style={{ marginBottom: 6, fontWeight: 500 }}>Couleur</div>
+                <div style={{ marginBottom: 6, fontWeight: 500 }}>{t('Couleur')}</div>
                 <Space size="small" wrap>
                     {PRESET_COLORS.map((c) => (
                         <div
                             key={c.value}
-                            title={c.label}
+                            title={t(c.label)}
                             onClick={() => setColor(c.value)}
                             style={{
                                 width: 32,
@@ -119,12 +121,12 @@ export default function HighlightModal() {
                 </Space>
             </div>
             <div>
-                <div style={{ marginBottom: 6, fontWeight: 500 }}>Commentaire</div>
+                <div style={{ marginBottom: 6, fontWeight: 500 }}>{t('Commentaire')}</div>
                 <Input.TextArea
                     rows={2}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
-                    placeholder="Ajouter un commentaire (optionnel)"
+                    placeholder={t('Ajouter un commentaire (optionnel)')}
                 />
             </div>
         </Modal>

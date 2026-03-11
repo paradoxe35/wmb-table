@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Collapse, Empty, List, Space, Spin, Typography, Dropdown } from 'antd';
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
 import type { BibleBook, BibleIndex, BibleIndexValue, SubjectRefTree } from '@shared/types';
@@ -17,6 +18,7 @@ export function BibleContent({
     verseMetaContent?: boolean;
     compact?: boolean;
 }) {
+    const { t } = useTranslation();
     const [bibleIndex, setBibleIndex] = useState<Record<string, BibleIndex>>({});
     const [noBible, setNoBible] = useState(false);
 
@@ -52,7 +54,7 @@ export function BibleContent({
     if (noBible) {
         return (
             <Empty
-                description="Aucune Bible disponible pour cette langue"
+                description={t('Aucune Bible disponible pour cette langue')}
                 style={{ marginTop: '2rem' }}
             />
         );
@@ -68,7 +70,7 @@ export function BibleContent({
                             level={5}
                             style={compact && i === 0 ? { marginTop: 0 } : undefined}
                         >
-                            {key === 'N' ? 'Nouveau' : 'Ancien'} Testament
+                            {key === 'N' ? t('Nouveau') : t('Ancien')} {t('Testament')}
                         </Typography.Title>
                         <BibleTestamentContent
                             key={key}
@@ -324,6 +326,7 @@ const VerseItem = memo(function VerseItem({
 // ---------------------------------------------------------------------------
 
 const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook }) {
+    const { t } = useTranslation();
     const handler = useCallback(() => {
         window.dispatchEvent(
             new CustomEvent<Partial<SubjectRefTree>>(
@@ -334,8 +337,8 @@ const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook })
     }, [verse]);
 
     const menuItems = useMemo(
-        () => [{ key: 'add', label: 'Ajouter à un sujet', onClick: handler }],
-        [handler],
+        () => [{ key: 'add', label: t('Ajouter à un sujet'), onClick: handler }],
+        [handler, t],
     );
 
     return (

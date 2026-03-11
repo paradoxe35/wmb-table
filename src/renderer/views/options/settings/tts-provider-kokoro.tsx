@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button, message, Progress, Select, Space } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsProviderInfo } from '@shared/tts.types';
@@ -16,6 +17,7 @@ interface KokoroConfigProps extends ProviderConfigProps {
 }
 
 export default function KokoroConfig({ settings, info, onUpdate }: KokoroConfigProps) {
+    const { t } = useTranslation();
     const cfg = settings.providers.kokoro;
     const activeLanguage = useAppStore((s) => s.activeLanguage);
 
@@ -41,30 +43,33 @@ export default function KokoroConfig({ settings, info, onUpdate }: KokoroConfigP
             if (p.provider === 'kokoro') {
                 setDownloadPct(p.percentage);
                 if (p.status === 'complete') {
-                    message.success('Modèle Kokoro téléchargé');
+                    message.success(t('Modèle Kokoro téléchargé'));
                     window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
                     setTimeout(() => setDownloadPct(null), 1000);
                 }
                 if (p.status === 'error') {
-                    message.error(`Erreur: ${p.error}`);
+                    message.error(t('Erreur: {{error}}', { error: p.error }));
                     setDownloadPct(null);
                 }
             }
         });
-    }, []);
+    }, [t]);
 
     const handleDownload = useCallback(() => {
         setDownloadPct(0);
         window.api.tts.downloadModel('kokoro').catch((err) => {
-            message.error(`Erreur: ${err.message}`);
+            message.error(t('Erreur: {{error}}', { error: err.message }));
             setDownloadPct(null);
         });
-    }, []);
+    }, [t]);
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">
             {!info?.modelDownloaded && (
-                <Field label="Modèle" hint="À télécharger une seule fois. Environ 160 Mo.">
+                <Field
+                    label={t('Modèle')}
+                    hint={t('À télécharger une seule fois. Environ 160 Mo.')}
+                >
                     <div>
                         {downloadPct !== null ? (
                             <Progress percent={downloadPct} size="small" />
@@ -74,15 +79,17 @@ export default function KokoroConfig({ settings, info, onUpdate }: KokoroConfigP
                                 onClick={handleDownload}
                                 size="small"
                             >
-                                Télécharger le modèle
+                                {t('Télécharger le modèle')}
                             </Button>
                         )}
                     </div>
                 </Field>
             )}
             <Field
-                label="Voix"
-                hint="Toutes les voix sont disponibles. La voix par défaut correspond à la langue active."
+                label={t('Voix')}
+                hint={t(
+                    'Toutes les voix sont disponibles. La voix par défaut correspond à la langue active.',
+                )}
             >
                 <Select
                     style={{ width: '100%' }}

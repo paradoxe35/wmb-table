@@ -1,0 +1,448 @@
+const en: Record<string, string> = {
+    // ── Sidebar menu ──
+    Historique: 'History',
+    Recherche: 'Search',
+    Sujets: 'Subjects',
+    Notes: 'Notes',
+    Paramètres: 'Settings',
+
+    // ── Viewer menu ──
+    Outils: 'Tools',
+    Lecture: 'Reading',
+
+    // ── Sidebar documents ──
+    Prédications: 'Sermons',
+    Bible: 'Bible',
+    Documents: 'Documents',
+    'Aucun document ajouté': 'No documents added',
+    'Ajouter un document': 'Add a document',
+    Gérer: 'Manage',
+    Alphabet: 'Alphabet',
+    Année: 'Year',
+    Années: 'Years',
+    'A-Z': 'A-Z',
+
+    // ── Settings index ──
+    Général: 'General',
+    Langues: 'Languages',
+    'Lecture audio': 'Text-to-Speech',
+    Sauvegarde: 'Backup',
+    'Mise à jour': 'Update',
+    'Gérez les préférences de votre application.': 'Manage your application preferences.',
+
+    // ── General tab ──
+    'Langue active': 'Active language',
+    'Langues installées': 'Installed languages',
+    Actif: 'Active',
+    'En pause': 'Paused',
+    'Non connecté': 'Not connected',
+    'À jour': 'Up to date',
+
+    // ── Languages tab ──
+    'Changer la langue': 'Change language',
+    'Aucune langue installée': 'No languages installed',
+
+    // ── TTS tab ──
+    'Fournisseur actif': 'Active provider',
+    'Le service qui lira le texte à voix haute. Si celui-ci ne fonctionne pas, un autre sera utilisé automatiquement.':
+        'The service that will read text aloud. If it fails, another will be used automatically.',
+    'Mode de surlignage': 'Highlight mode',
+    'Choisissez comment le texte est mis en évidence pendant la lecture.':
+        'Choose how text is highlighted during reading.',
+    Phrase: 'Sentence',
+    Paragraphe: 'Paragraph',
+    'Vitesse de lecture: {{rate}}x': 'Reading speed: {{rate}}x',
+    'Pause entre les segments: {{gap}}s': 'Pause between segments: {{gap}}s',
+    'Durée de la pause entre chaque phrase ou paragraphe lu.':
+        'Duration of the pause between each spoken sentence or paragraph.',
+    'Lecture automatique': 'Auto-play',
+    "Démarrer la lecture automatiquement à l'ouverture d'un document.":
+        'Automatically start reading when a document is opened.',
+    'Cache audio': 'Audio cache',
+    'Les lectures passées sont conservées pour une relecture plus rapide.':
+        'Past readings are cached for faster replay.',
+    Utilisé: 'Used',
+    Limite: 'Limit',
+    Vider: 'Clear',
+    'Cache TTS vidé': 'TTS cache cleared',
+    'Taille maximale du cache': 'Maximum cache size',
+
+    // ── TTS shared ──
+    'Navigateur (SpeechSynthesis)': 'Browser (SpeechSynthesis)',
+    'Sherpa-ONNX TTS (local)': 'Sherpa-ONNX TTS (local)',
+    'Kokoro TTS (local)': 'Kokoro TTS (local)',
+    'ElevenLabs TTS': 'ElevenLabs TTS',
+    'OpenAI TTS': 'OpenAI TTS',
+    'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.':
+        'Free, works offline. Uses the voices already installed on your computer.',
+    'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.':
+        'Free, works offline. Supports many languages and voices. Requires an initial download.',
+    'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.':
+        'Free, works offline. Good quality, requires an initial download.',
+    'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.':
+        'Excellent quality. Allows voice cloning. Requires an account and internet connection.',
+    'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.':
+        'Excellent quality, many languages available. Requires an account and internet connection.',
+    Local: 'Local',
+    Cloud: 'Cloud',
+    o: 'B',
+    Ko: 'KB',
+    Mo: 'MB',
+
+    // ── TTS provider browser ──
+    Voix: 'Voice',
+    'Les voix disponibles dépendent de celles installées sur votre ordinateur.':
+        'Available voices depend on those installed on your computer.',
+    'Voix par défaut du système': 'System default voice',
+    'Hauteur: {{value}}': 'Pitch: {{value}}',
+    'Ajuste la tonalité de la voix.': 'Adjusts the voice tone.',
+    'Volume: {{value}}%': 'Volume: {{value}}%',
+
+    // ── TTS provider Kokoro ──
+    Modèle: 'Model',
+    'À télécharger une seule fois. Environ 160 Mo.': 'Download once. Approximately 160 MB.',
+    'Télécharger le modèle': 'Download model',
+    'Toutes les voix sont disponibles. La voix par défaut correspond à la langue active.':
+        'All voices are available. The default voice matches the active language.',
+    'Modèle Kokoro téléchargé': 'Kokoro model downloaded',
+    'Erreur: {{error}}': 'Error: {{error}}',
+
+    // ── TTS provider Sherpa ──
+    'Voix disponible — {{lang}}': 'Voice available — {{lang}}',
+    'Téléchargez une voix pour la langue active du document.':
+        'Download a voice for the active document language.',
+    'Télécharger « {{name}} »': 'Download "{{name}}"',
+    'Voix active': 'Active voice',
+    'Voix installées ({{count}})': 'Installed voices ({{count}})',
+    'Ajouter une autre langue': 'Add another language',
+    'Recherchez une langue ou un nom de voix.': 'Search for a language or voice name.',
+    'Ex: arabe, portugais, swahili…': 'E.g.: Arabic, Portuguese, Swahili…',
+    'Aucun résultat': 'No results',
+    'Voix installée': 'Voice installed',
+    'Voix supprimée': 'Voice removed',
+    Télécharger: 'Download',
+    'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
+        'No voice available for the active language. Use the search above to find a voice in another language.',
+
+    // ── TTS provider ElevenLabs ──
+    'Clé API ElevenLabs': 'ElevenLabs API Key',
+    'Votre clé secrète ElevenLabs. Elle est stockée en toute sécurité sur votre ordinateur.':
+        'Your secret ElevenLabs key. It is stored securely on your computer.',
+    'Les voix marquées « cloné » sont vos voix personnalisées.':
+        'Voices marked "cloned" are your custom voices.',
+    'Le choix par défaut convient pour la plupart des usages.':
+        'The default choice is suitable for most uses.',
+    'Paramètres avancés': 'Advanced settings',
+    'Voix clonées': 'Cloned voices',
+    'Vos voix personnalisées.': 'Your custom voices.',
+    'Cloner une voix': 'Clone a voice',
+    'Enregistrez un audio WAV ou MP3 de 10 à 60 secondes pour créer votre propre voix.':
+        'Record a WAV or MP3 audio of 10 to 60 seconds to create your own voice.',
+    'Nom de la voix (ex: MaVoix)': 'Voice name (e.g.: MyVoice)',
+    'Choisir un fichier audio': 'Choose an audio file',
+    Cloner: 'Clone',
+    'Voix clonée avec succès': 'Voice cloned successfully',
+    'Voix clonée supprimée': 'Cloned voice deleted',
+
+    // ── TTS provider OpenAI ──
+    'Clé API OpenAI': 'OpenAI API Key',
+    'Votre clé secrète OpenAI. Elle est stockée en toute sécurité sur votre ordinateur.':
+        'Your secret OpenAI key. It is stored securely on your computer.',
+    'Le choix par défaut offre la meilleure qualité.':
+        'The default choice offers the best quality.',
+    'Marin et Cedar sont recommandées pour la meilleure qualité.':
+        'Marin and Cedar are recommended for the best quality.',
+
+    // ── TTS controls ──
+    'Pause lecture': 'Pause reading',
+    'Reprendre la lecture': 'Resume reading',
+    'Démarrer la lecture': 'Start reading',
+    'Lecture audio TTS': 'TTS audio playback',
+    'Zoom arrière': 'Zoom out',
+    'Zoom avant': 'Zoom in',
+    "Lire à partir d'ici": 'Read from here',
+
+    // ── History ──
+    'Aucune historique': 'No history',
+
+    // ── Search ──
+    'Votre recherche doit comporter au moins trois caractères':
+        'Your search must contain at least three characters',
+    'Erreur lors de la recherche': 'Error during search',
+
+    // ── Subject ──
+    'Créer un sujet': 'Create a subject',
+    'Nom sujet': 'Subject name',
+    Enregistrer: 'Save',
+    'Erreur lors du chargement des sujets': 'Error loading subjects',
+    'Erreur lors du chargement des éléments du sujet': 'Error loading subject items',
+    'Sujet créé': 'Subject created',
+    Supprimé: 'Deleted',
+    'Aucune référence trouvée dans le sujet: {{name}}': 'No references found in subject: {{name}}',
+
+    // ── Backup tab ──
+    'Connectez-vous avec Google pour sauvegarder vos données sur Google Drive.':
+        'Sign in with Google to back up your data to Google Drive.',
+    'Vos données seront restaurées automatiquement lors de la connexion.':
+        'Your data will be automatically restored upon sign-in.',
+    'Connexion Google': 'Google Sign-in',
+    'Synchronisation automatique': 'Automatic sync',
+    'Dernière synchronisation : {{time}}': 'Last sync: {{time}}',
+    'Accès limité': 'Limited access',
+    "Reconnectez-vous et assurez-vous d'avoir autorisé l'accès demandé en cochant les cases qui s'afficheront.":
+        'Sign in again and make sure to authorize the requested access by checking the boxes that appear.',
+    'Erreur de synchronisation': 'Sync error',
+    'Connexion réussie. Synchronisation en arrière-plan...':
+        'Connection successful. Syncing in background...',
+    "Une erreur s'est produite lors de la connexion, réessayez plus tard":
+        'An error occurred during sign-in, please try again later',
+    'Synchronisation activée': 'Sync enabled',
+    'Début de la récupération des données': 'Starting data recovery',
+    'Préparation de la restauration des données': 'Preparing data restoration',
+    "Une erreur s'est produite lors de la restauration, veuillez réessayer plus tard":
+        'An error occurred during restoration, please try again later',
+    'Vos données ont été restaurées avec succès.': 'Your data has been successfully restored.',
+    "Redémarrer l'application": 'Restart the application',
+    Restauration: 'Restoration',
+    'de données': 'data',
+
+    // ── Update tab ──
+    "Mise à jour de l'application": 'Application update',
+    'Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour.':
+        'A new version is available. Click the button below to start the update process.',
+    'Téléchargement de la mise à jour': 'Downloading update',
+    'Téléchargement terminé': 'Download complete',
+    "Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise à jour.":
+        'Please click the install button below to install the update.',
+    'Erreur !': 'Error!',
+    "Une erreur s'est produite lors de la mise à jour, veuillez réessayer plus tard.":
+        'An error occurred during the update, please try again later.',
+    'Aucune mise à jour disponible': 'No updates available',
+    "Vous utilisez déjà la dernière version de l'application.":
+        'You are already using the latest version of the application.',
+    Vérifier: 'Check',
+    'Vérification des mises à jour...': 'Checking for updates...',
+    'Mettre à jour': 'Update',
+    'Installer la mise à jour': 'Install update',
+
+    // ── Language manager modal ──
+    'Supprimer cette langue ?': 'Delete this language?',
+    'Les données de cette langue seront supprimées du disque.':
+        'This language data will be deleted from disk.',
+    Supprimer: 'Delete',
+    Annuler: 'Cancel',
+    'Langue téléchargée avec succès': 'Language downloaded successfully',
+    'Téléchargez une langue pour commencer': 'Download a language to get started',
+    'Rechercher une langue...': 'Search for a language...',
+    'Aucune langue trouvée': 'No languages found',
+    'Mes langues': 'My languages',
+    Disponibles: 'Available',
+    'Échec de la sélection de la langue': 'Failed to select language',
+    'Langue supprimée': 'Language deleted',
+
+    // ── Custom documents modal ──
+    'Documents ajoutés': 'Added documents',
+    'Erreur lors du chargement des documents': 'Error loading documents',
+    'Rechercher...': 'Search...',
+    Ajouter: 'Add',
+    'Nom du document': 'Document name',
+    'Ce nom existe déjà': 'This name already exists',
+    'Seul le format PDF est pris en charge.': 'Only PDF format is supported.',
+    'Un document avec ce nom existe déjà.': 'A document with this name already exists.',
+    'Choisir un fichier PDF': 'Choose a PDF file',
+    'Document supprimé': 'Document deleted',
+    'Traitement...': 'Processing...',
+    Retour: 'Back',
+    "Erreur lors de l'extraction du document.": 'Error extracting the document.',
+    'Document ajouté': 'Document added',
+
+    // ── Highlight modal ──
+    Souligner: 'Highlight',
+    Couleur: 'Color',
+    Jaune: 'Yellow',
+    'Vert clair': 'Light green',
+    'Bleu ciel': 'Sky blue',
+    Rose: 'Pink',
+    Orange: 'Orange',
+    Violet: 'Purple',
+    Menthe: 'Mint',
+    Pêche: 'Peach',
+    Lavande: 'Lavender',
+    Corail: 'Coral',
+    Cyan: 'Cyan',
+    Lime: 'Lime',
+    Commentaire: 'Comment',
+    'Ajouter un commentaire (optionnel)': 'Add a comment (optional)',
+    'Surlignage enregistré': 'Highlight saved',
+    "Erreur lors de l'enregistrement": 'Error saving',
+
+    // ── Document audio player ──
+    'Langue: {{name}}': 'Language: {{name}}',
+
+    // ── Bible version selector ──
+    'Version:': 'Version:',
+    'Télécharger {{name}}': 'Download {{name}}',
+
+    // ── Delete button ──
+    'Confirmer la suppression?': 'Confirm deletion?',
+    Oui: 'Yes',
+    Non: 'No',
+
+    // ── Note references modal ──
+    'Lier ce paragraphe à une référence de la note :': 'Link this paragraph to a note reference:',
+    "Aucune note n'est actuellement sélectionnée": 'No note is currently selected',
+    'Aucune référence disponible': 'No references available',
+    'Lié à : {{title}}': 'Linked to: {{title}}',
+    'Aucun document attribué': 'No document assigned',
+    'Ajouter à cette référence': 'Add to this reference',
+    'Ajouté à la note': 'Added to note',
+
+    // ── Other traductions modal ──
+    'Traductions du document: {{title}}': 'Document translations: {{title}}',
+    'Sources de traduction': 'Translation sources',
+    'Traduction {{id}}': 'Translation {{id}}',
+    'Basculer vers cette traduction': 'Switch to this translation',
+    'Autres langues': 'Other languages',
+    'Langue: {{code}}': 'Language: {{code}}',
+    'Ouvrir le document': 'Open document',
+
+    // ── Subject select modal ──
+    'Choiser un sujet': 'Choose a subject',
+    'Choisir un sujet': 'Choose a subject',
+    'Ajouté au sujet': 'Added to subject',
+    "Erreur lors de l'ajout au sujet": 'Error adding to subject',
+
+    // ── Document tabs ──
+    'Fermer tous les onglets': 'Close all tabs',
+    'Voulez-vous vraiment fermer tous les onglets ?': 'Do you really want to close all tabs?',
+    'Tout fermer': 'Close all',
+    Fermer: 'Close',
+    'Fermer les autres': 'Close others',
+    'Fermer à droite': 'Close to the right',
+
+    // ── Sync listener ──
+    'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.':
+        'Google session expired. Please reconnect in backup settings.',
+
+    // ── Layout ──
+    'Chargement des données...': 'Loading data...',
+    'Synchronisation en cours...': 'Syncing...',
+
+    // ── Paragraph navigator modal ──
+    'Sélectionnez un paragraphe': 'Select a paragraph',
+    'Aucun paragraphe': 'No paragraphs',
+
+    // ── Sermon paragraph ──
+    'Surlignage supprimé': 'Highlight deleted',
+    'Erreur lors de la suppression': 'Error deleting',
+    'Supprimer le surlignage': 'Delete highlight',
+
+    // ── Sermon header ──
+    Pause: 'Pause',
+    Écouter: 'Listen',
+    Traductions: 'Translations',
+    Rechercher: 'Search',
+
+    // ── Bible document view ──
+    'Chapitre {{chapter}}': 'Chapter {{chapter}}',
+    'Chapitre précédent': 'Previous chapter',
+    'Chapitre suivant': 'Next chapter',
+
+    // ── Search result list ──
+    'Trouvé dans {{count}} document': 'Found in {{count}} document',
+    'Trouvé dans {{count}} documents': 'Found in {{count}} documents',
+    'page ({{current}}/{{total}})': 'page ({{current}}/{{total}})',
+    'Aucun résultat trouvé': 'No results found',
+
+    // ── Bible search ──
+    'Nouveau Testament': 'New Testament',
+    'Ancien Testament': 'Old Testament',
+    'Faites vos recherches biblique ici': 'Search the Bible here',
+    Testaments: 'Testaments',
+    'Trouvé dans {{count}} verset': 'Found in {{count}} verse',
+    'Trouvé dans {{count}} versets': 'Found in {{count}} verses',
+
+    // ── Bible content ──
+    'Aucune Bible disponible pour cette langue': 'No Bible available for this language',
+    Nouveau: 'New',
+    Ancien: 'Old',
+    Testament: 'Testament',
+    'Ajouter à un sujet': 'Add to a subject',
+
+    // ── Notes ──
+    'Erreur lors du chargement des notes': 'Error loading notes',
+    'Note supprimée': 'Note deleted',
+    'Erreur lors de la création de la note': 'Error creating note',
+    'Nouvelle note': 'New note',
+    'Aucune note': 'No notes',
+
+    // ── Inline search bar ──
+    'Aller au paragraphe': 'Go to paragraph',
+
+    // ── Langue label ──
+    'Langue:': 'Language:',
+
+    // ── Sermon content header ──
+    'Date:': 'Date:',
+    'Traduction:': 'Translation:',
+
+    // ── Search input ──
+    'Au moins un mot': 'At least one word',
+    'Tous les mots': 'All words',
+    'Phrase exacte': 'Exact phrase',
+    'Faites vos recherches ici': 'Search here',
+
+    // ── Search result item ──
+    '{{count}} correspondance': '{{count}} match',
+    '{{count}} correspondances': '{{count}} matches',
+    'Voir moins': 'See less',
+    'Voir tout ({{count}})': 'See all ({{count}})',
+
+    // ── Editor ──
+    'Le nom entré est invalid': 'The name entered is invalid',
+    Modifié: 'Modified',
+    Enregistré: 'Saved',
+    Alerte: 'Alert',
+    "Semble que votre note n'a pas de contenu, si vous continuez cette note sera inconsidérée et elle sera supprimée":
+        'It seems your note has no content; if you continue, this note will be ignored and deleted',
+    Continuer: 'Continue',
+    'Activer le mode lecture': 'Enable reading mode',
+    'Désactiver le mode lecture': 'Disable reading mode',
+    'Exporter au format PDF': 'Export to PDF',
+    'La référence est invalide': 'The reference is invalid',
+    'La référence biblique est invalide': 'The biblical reference is invalid',
+    'Référence supprimée': 'Reference deleted',
+    'Cliquez droit sur une référence pour la supprimer': 'Right-click on a reference to delete it',
+    'Référence document: {{label}}': 'Document reference: {{label}}',
+    'Référence biblique: {{label}}': 'Biblical reference: {{label}}',
+    'Aucune sélection trouvée pour la référence': 'No selection found for the reference',
+    'Référence document': 'Document reference',
+    'Référence biblique': 'Biblical reference',
+    'Supprimer la référence': 'Delete reference',
+    Français: 'French',
+    English: 'English',
+
+    // ── References modal ──
+    'Référence: {{label}}': 'Reference: {{label}}',
+    "Aucun document n'a été attribué pour cette référence":
+        'No document has been assigned for this reference',
+    'Verset supprimé': 'Verse deleted',
+    'Le verset cliqué existe déjà dans la références !':
+        'The clicked verse already exists in the references!',
+    'Verset ajouté': 'Verse added',
+    'Aucun verset sélectionné': 'No verse selected',
+    'Ajouter des versets': 'Add verses',
+
+    // ── Error boundary ──
+    "Une erreur inattendue s'est produite": 'An unexpected error occurred',
+    "Recharger l'application": 'Reload the application',
+
+    // ── General ──
+    sermons: 'sermons',
+    disponible: 'available',
+    "Erreur lors de l'initialisation de l'application": 'Application initialization error',
+    chapitres: 'chapters',
+    chapitre: 'chapter',
+};
+
+export default en;

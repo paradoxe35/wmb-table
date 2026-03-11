@@ -13,6 +13,7 @@ import {
     Typography,
     message,
 } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsProviderType, TtsSettings } from '@shared/tts.types';
 import {
@@ -74,6 +75,7 @@ function ActiveProviderConfig({
 // ── Main tab ──
 
 export default function TtsTab() {
+    const { t } = useTranslation();
     const settings = useTtsStore((s) => s.settings);
     const setSettings = useTtsStore((s) => s.setSettings);
     const setProviders = useTtsStore((s) => s.setProviders);
@@ -101,7 +103,7 @@ export default function TtsTab() {
     const handleClearCache = useCallback(async () => {
         await window.api.tts.clearCache();
         setCacheSize(0);
-        message.success('Cache TTS vidé');
+        message.success(t('Cache TTS vidé'));
     }, []);
 
     if (!settings) return null;
@@ -115,15 +117,17 @@ export default function TtsTab() {
             {/* Active provider selector */}
             <Card size="small">
                 <Field
-                    label="Fournisseur actif"
-                    hint="Le service qui lira le texte à voix haute. Si celui-ci ne fonctionne pas, un autre sera utilisé automatiquement."
+                    label={t('Fournisseur actif')}
+                    hint={t(
+                        'Le service qui lira le texte à voix haute. Si celui-ci ne fonctionne pas, un autre sera utilisé automatiquement.',
+                    )}
                 >
                     <Select
                         style={{ width: '100%' }}
                         value={settings.activeProvider}
                         onChange={(v) => handleUpdate({ activeProvider: v })}
                         options={Object.entries(PROVIDER_LABELS).map(([key, label]) => ({
-                            label,
+                            label: t(label),
                             value: key,
                         }))}
                     />
@@ -134,7 +138,7 @@ export default function TtsTab() {
                     style={{ marginTop: 8 }}
                     title={
                         <Text type="secondary" style={{ fontSize: '0.8em' }}>
-                            {PROVIDER_HINTS[settings.activeProvider]}
+                            {t(PROVIDER_HINTS[settings.activeProvider])}
                         </Text>
                     }
                 />
@@ -145,7 +149,7 @@ export default function TtsTab() {
                 size="small"
                 title={
                     <span>
-                        {PROVIDER_LABELS[settings.activeProvider]}{' '}
+                        {t(PROVIDER_LABELS[settings.activeProvider])}{' '}
                         <LocalityTag type={locality as 'local' | 'remote'} />
                     </span>
                 }
@@ -157,19 +161,21 @@ export default function TtsTab() {
             <Card size="small">
                 <Space orientation="vertical" style={{ width: '100%' }} size="small">
                     <Field
-                        label="Mode de surlignage"
-                        hint="Choisissez comment le texte est mis en évidence pendant la lecture."
+                        label={t('Mode de surlignage')}
+                        hint={t(
+                            'Choisissez comment le texte est mis en évidence pendant la lecture.',
+                        )}
                     >
                         <Radio.Group
                             value={settings.highlightMode}
                             onChange={(e) => handleUpdate({ highlightMode: e.target.value })}
                         >
-                            <Radio value="sentence">Phrase</Radio>
-                            <Radio value="paragraph">Paragraphe</Radio>
+                            <Radio value="sentence">{t('Phrase')}</Radio>
+                            <Radio value="paragraph">{t('Paragraphe')}</Radio>
                         </Radio.Group>
                     </Field>
                     <Divider style={{ margin: '4px 0' }} />
-                    <Field label={`Vitesse de lecture: ${settings.rate ?? 1}x`}>
+                    <Field label={t('Vitesse de lecture: {{rate}}x', { rate: settings.rate ?? 1 })}>
                         <Slider
                             min={0.5}
                             max={2}
@@ -180,8 +186,10 @@ export default function TtsTab() {
                     </Field>
                     <Divider style={{ margin: '4px 0' }} />
                     <Field
-                        label={`Pause entre les segments: ${((settings.segmentGapMs ?? 700) / 1000).toFixed(1)}s`}
-                        hint="Durée de la pause entre chaque phrase ou paragraphe lu."
+                        label={t('Pause entre les segments: {{gap}}s', {
+                            gap: ((settings.segmentGapMs ?? 700) / 1000).toFixed(1),
+                        })}
+                        hint={t('Durée de la pause entre chaque phrase ou paragraphe lu.')}
                     >
                         <Slider
                             min={0}
@@ -199,9 +207,11 @@ export default function TtsTab() {
                             onChange={(v) => handleUpdate({ autoPlay: v })}
                         />
                         <div>
-                            <Text style={{ fontSize: '0.9em' }}>Lecture automatique</Text>
+                            <Text style={{ fontSize: '0.9em' }}>{t('Lecture automatique')}</Text>
                             <Hint>
-                                {"Démarrer la lecture automatiquement à l'ouverture d'un document."}
+                                {t(
+                                    "Démarrer la lecture automatiquement à l'ouverture d'un document.",
+                                )}
                             </Hint>
                         </div>
                     </div>
@@ -211,8 +221,8 @@ export default function TtsTab() {
             {/* Cache */}
             <Card size="small">
                 <Field
-                    label="Cache audio"
-                    hint="Les lectures passées sont conservées pour une relecture plus rapide."
+                    label={t('Cache audio')}
+                    hint={t('Les lectures passées sont conservées pour une relecture plus rapide.')}
                 >
                     <div
                         style={{
@@ -223,23 +233,23 @@ export default function TtsTab() {
                         }}
                     >
                         <Statistic
-                            title="Utilisé"
-                            value={formatBytes(cacheSize)}
+                            title={t('Utilisé')}
+                            value={formatBytes(cacheSize, t)}
                             valueStyle={{ fontSize: '1em' }}
                         />
                         <Statistic
-                            title="Limite"
-                            value={`${settings.cacheMaxSizeMb} Mo`}
+                            title={t('Limite')}
+                            value={`${settings.cacheMaxSizeMb} ${t('Mo')}`}
                             valueStyle={{ fontSize: '1em' }}
                         />
                         <Button size="small" danger onClick={handleClearCache}>
-                            Vider
+                            {t('Vider')}
                         </Button>
                     </div>
                 </Field>
                 <div style={{ marginTop: 8 }}>
                     <Text type="secondary" style={{ fontSize: '0.8em' }}>
-                        Taille maximale du cache
+                        {t('Taille maximale du cache')}
                     </Text>
                     <Slider
                         min={100}

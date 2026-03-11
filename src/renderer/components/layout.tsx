@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Layout, Space, Spin, Tooltip } from 'antd';
 import {
     LeftCircleOutlined,
@@ -19,14 +20,15 @@ import { APP_NAME } from '@renderer/utils/constants';
 const { Header, Content } = Layout;
 
 function Title() {
+    const { t } = useTranslation();
     const appLoaded = useAppStore((s) => s.loaded);
     const syncing = useAppStore((s) => s.syncing);
 
     const showSpinner = !appLoaded || syncing;
     const hint = !appLoaded
-        ? 'Chargement des données...'
+        ? t('Chargement des données...')
         : syncing
-          ? 'Synchronisation en cours...'
+          ? t('Synchronisation en cours...')
           : '';
 
     return (

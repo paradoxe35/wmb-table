@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Empty, Collapse, List } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { HistoryData, HistoryDataItem } from '@shared/types';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
@@ -7,6 +8,7 @@ import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
 import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
 
 export default function History() {
+    const { t } = useTranslation();
     const title = useActiveTabTitle();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [histories, setHistories] = useState<HistoryData[]>([]);
@@ -56,7 +58,7 @@ export default function History() {
 
     return (
         <>
-            {histories.length === 0 && <Empty description="Aucune historique" />}
+            {histories.length === 0 && <Empty description={t('Aucune historique')} />}
             <Collapse
                 activeKey={key || undefined}
                 accordion

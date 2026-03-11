@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Segmented, Space, Tooltip } from 'antd';
 import {
     NumberOutlined,
@@ -34,6 +35,7 @@ export default function SermonHeader({
     paragraphs: SermonParagraph[];
     tts?: TtsControls;
 }) {
+    const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
     const activeTabKey = useSermonStore(selectActiveTabKey);
@@ -109,13 +111,13 @@ export default function SermonHeader({
             <div style={{ flex: 1 }} />
             <Space size="small">
                 {meta.audioLink && (
-                    <Tooltip title={isPlaying ? 'Pause' : 'Écouter'}>
+                    <Tooltip title={isPlaying ? t('Pause') : t('Écouter')}>
                         <Button
                             type="text"
                             size="small"
                             icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
                             onClick={handleAudioPlay}
-                            aria-label={isPlaying ? 'Pause' : 'Écouter'}
+                            aria-label={isPlaying ? t('Pause') : t('Écouter')}
                             style={
                                 isCurrentDocument
                                     ? {
@@ -128,32 +130,32 @@ export default function SermonHeader({
                     </Tooltip>
                 )}
                 {!meta.audioLink && tts && <TtsButton tts={tts} />}
-                <Tooltip title="Traductions">
+                <Tooltip title={t('Traductions')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<TranslationOutlined />}
                         onClick={handleOtherTraductions}
-                        aria-label="Traductions"
+                        aria-label={t('Traductions')}
                     />
                 </Tooltip>
                 <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
-                <Tooltip title="Sélectionnez un paragraphe">
+                <Tooltip title={t('Sélectionnez un paragraphe')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<NumberOutlined />}
                         onClick={() => setParagraphModalOpen(true)}
-                        aria-label="Sélectionnez un paragraphe"
+                        aria-label={t('Sélectionnez un paragraphe')}
                     />
                 </Tooltip>
-                <Tooltip title="Rechercher">
+                <Tooltip title={t('Rechercher')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<SearchOutlined />}
                         onClick={() => openSearchBar()}
-                        aria-label="Rechercher"
+                        aria-label={t('Rechercher')}
                     />
                 </Tooltip>
             </Space>

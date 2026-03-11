@@ -1,4 +1,5 @@
 import React, { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dropdown, message, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
@@ -48,14 +49,15 @@ function PersistentHighlight({
     highlightId?: string;
     reactKey: string;
 }) {
+    const { t } = useTranslation();
     const handleDelete = useCallback(async () => {
         if (!highlightId) return;
         try {
             await window.api.highlights.delete(highlightId);
             window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
-            message.success('Surlignage supprimé');
+            message.success(t('Surlignage supprimé'));
         } catch {
-            message.error('Erreur lors de la suppression');
+            message.error(t('Erreur lors de la suppression'));
         }
     }, [highlightId]);
 
@@ -78,7 +80,7 @@ function PersistentHighlight({
             : []),
         {
             key: 'delete',
-            label: 'Supprimer le surlignage',
+            label: t('Supprimer le surlignage'),
             danger: true,
             onClick: handleDelete,
         },

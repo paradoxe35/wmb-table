@@ -6,6 +6,7 @@ import {
     ZoomInOutlined,
     ZoomOutOutlined,
 } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { SearchMode, HighlightItem } from '@shared/types';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
@@ -31,13 +32,14 @@ const ttsActiveStyle = {
 };
 
 export function TtsButton({ tts }: { tts: TtsControls }) {
+    const { t } = useTranslation();
     if (!tts.canSpeak) return null;
 
     const label = tts.isPlaying
-        ? 'Pause lecture'
+        ? t('Pause lecture')
         : tts.isPaused
-          ? 'Reprendre la lecture'
-          : 'Lecture audio';
+          ? t('Reprendre la lecture')
+          : t('Démarrer la lecture');
 
     const handler = tts.isPlaying ? tts.pause : tts.isPaused ? tts.resume : tts.play;
     const isActive = tts.isPlaying || tts.isPaused;
@@ -49,7 +51,7 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
                 size="small"
                 icon={tts.isPlaying ? <PauseCircleOutlined /> : <SoundOutlined />}
                 onClick={handler}
-                aria-label="Lecture audio TTS"
+                aria-label={t('Lecture audio TTS')}
                 style={isActive ? ttsActiveStyle : undefined}
             />
         </Tooltip>
@@ -67,25 +69,26 @@ export function ZoomControls({
     onZoomIn: () => void;
     onZoomOut: () => void;
 }) {
+    const { t } = useTranslation();
     return (
         <>
-            <Tooltip title="Zoom arrière">
+            <Tooltip title={t('Zoom arrière')}>
                 <Button
                     type="text"
                     size="small"
                     icon={<ZoomOutOutlined />}
                     onClick={onZoomOut}
-                    aria-label="Zoom arrière"
+                    aria-label={t('Zoom arrière')}
                 />
             </Tooltip>
             <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>{zoom}%</span>
-            <Tooltip title="Zoom avant">
+            <Tooltip title={t('Zoom avant')}>
                 <Button
                     type="text"
                     size="small"
                     icon={<ZoomInOutlined />}
                     onClick={onZoomIn}
-                    aria-label="Zoom avant"
+                    aria-label={t('Zoom avant')}
                 />
             </Tooltip>
         </>
@@ -157,6 +160,7 @@ export function TtsParagraph({
     onPlayFromHere,
     canSpeak,
 }: TtsParagraphProps) {
+    const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentId);
     return (
         <SermonParagraphView
@@ -168,14 +172,14 @@ export function TtsParagraph({
             ttsHighlight={ttsHighlight}
             playFromHereButton={
                 onPlayFromHere && canSpeak ? (
-                    <Tooltip title="Lire à partir d'ici">
+                    <Tooltip title={t("Lire à partir d'ici")}>
                         <button
                             className="tts-play-from-here"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 onPlayFromHere(paragraph.paragraphIndex);
                             }}
-                            aria-label="Lire à partir d'ici"
+                            aria-label={t("Lire à partir d'ici")}
                         >
                             <CaretRightOutlined />
                         </button>

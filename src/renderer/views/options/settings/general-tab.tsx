@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, Space, Tag, Typography } from 'antd';
 import {
     CheckCircleOutlined,
@@ -14,6 +15,7 @@ import { useAppStore } from '@renderer/stores';
 const { Text } = Typography;
 
 export default function GeneralTab() {
+    const { t } = useTranslation();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [langName, setLangName] = useState('');
     const [installedCount, setInstalledCount] = useState(0);
@@ -56,36 +58,38 @@ export default function GeneralTab() {
 
     const backupValue = backupStatus?.active ? (
         <Tag color="green" icon={<CheckCircleOutlined />}>
-            Actif
+            {t('Actif')}
         </Tag>
     ) : backupStatus ? (
-        <Tag icon={<PauseCircleOutlined />}>En pause</Tag>
+        <Tag icon={<PauseCircleOutlined />}>{t('En pause')}</Tag>
     ) : (
-        <Text type="secondary">Non connecté</Text>
+        <Text type="secondary">{t('Non connecté')}</Text>
     );
 
     const updateValue =
         updateInfo?.type === 'hasUpdate' ? (
-            <Tag color="blue">v{updateInfo.updateInfo?.version} disponible</Tag>
+            <Tag color="blue">
+                v{updateInfo.updateInfo?.version} {t('disponible')}
+            </Tag>
         ) : (
             <Tag color="green" icon={<CheckCircleOutlined />}>
-                À jour
+                {t('À jour')}
             </Tag>
         );
 
     const items: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
         {
             icon: <TranslationOutlined />,
-            label: 'Langue active',
+            label: t('Langue active'),
             value: <Text>{langName || '—'}</Text>,
         },
         {
             icon: <GlobalOutlined />,
-            label: 'Langues installées',
+            label: t('Langues installées'),
             value: <Text>{installedCount}</Text>,
         },
-        { icon: <CloudSyncOutlined />, label: 'Sauvegarde', value: backupValue },
-        { icon: <ReloadOutlined />, label: 'Mise à jour', value: updateValue },
+        { icon: <CloudSyncOutlined />, label: t('Sauvegarde'), value: backupValue },
+        { icon: <ReloadOutlined />, label: t('Mise à jour'), value: updateValue },
     ];
 
     return (

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { TantivySearchResult, Suggestions } from '@shared/types';
 import { useAppStore, useSearchStore } from '@renderer/stores';
 import SearchInput from './search-input';
 import SearchResultList from './search-result-list';
 
 function useSearch() {
+    const { t } = useTranslation();
     const lastSearch = useRef('');
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<TantivySearchResult | null>(null);
@@ -29,7 +31,7 @@ function useSearch() {
                 })
                 .catch(() => {
                     if (gen !== generationRef.current) return;
-                    message.error('Erreur lors de la recherche');
+                    message.error(t('Erreur lors de la recherche'));
                 })
                 .finally(() => {
                     if (gen === generationRef.current) setLoading(false);
@@ -41,7 +43,7 @@ function useSearch() {
     const onSearch = useCallback(
         (value: string) => {
             if (value.trim().length < 3) {
-                message.warning('Votre recherche doit comporter au moins trois caractères');
+                message.warning(t('Votre recherche doit comporter au moins trois caractères'));
                 return;
             }
             if (lastSearch.current === value) return;
@@ -76,7 +78,7 @@ function useSearch() {
                 })
                 .catch(() => {
                     if (gen !== generationRef.current) return;
-                    message.error('Erreur lors de la recherche');
+                    message.error(t('Erreur lors de la recherche'));
                 });
         },
         [activeLanguage, searchMode],

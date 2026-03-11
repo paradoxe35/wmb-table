@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Avatar, Button, Card, Progress, Space, Spin, Switch, Tag, Typography } from 'antd';
 import {
     CheckCircleOutlined,
@@ -16,6 +17,7 @@ import { SYNC_EVENT } from '@renderer/utils/events';
 const { Text, Paragraph } = Typography;
 
 export default function BackupTab() {
+    const { t } = useTranslation();
     const [status, setStatus] = useState<BackupStatus | undefined>(undefined);
     const [loading, setLoading] = useState(false);
     const [fetchedStatus, setFetchedStatus] = useState(false);
@@ -67,11 +69,11 @@ export default function BackupTab() {
             .then((result) => {
                 if (result && typeof result === 'object') setStatus(result);
                 setSyncing(true);
-                message.success('Connexion réussie. Synchronisation en arrière-plan...', 3);
+                message.success(t('Connexion réussie. Synchronisation en arrière-plan...'), 3);
             })
             .catch(() => {
                 message.error(
-                    "Une erreur s'est produite lors de la connexion, réessayez plus tard",
+                    t("Une erreur s'est produite lors de la connexion, réessayez plus tard"),
                     7,
                 );
             })
@@ -85,7 +87,7 @@ export default function BackupTab() {
                 if (s) setStatus(s);
             });
             if (newActive) {
-                message.info('Synchronisation activée');
+                message.info(t('Synchronisation activée'));
             }
         });
     }, [status]);
@@ -113,11 +115,14 @@ export default function BackupTab() {
                     <Avatar size={48} icon={<CloudOutlined />} style={{ background: '#1677ff' }} />
                     <div style={{ textAlign: 'center' }}>
                         <Paragraph style={{ marginBottom: 4 }}>
-                            Connectez-vous avec Google pour sauvegarder vos données sur Google
-                            Drive.
+                            {t(
+                                'Connectez-vous avec Google pour sauvegarder vos données sur Google Drive.',
+                            )}
                         </Paragraph>
                         <Paragraph type="secondary" style={{ fontSize: '0.85em', marginBottom: 0 }}>
-                            Vos données seront restaurées automatiquement lors de la connexion.
+                            {t(
+                                'Vos données seront restaurées automatiquement lors de la connexion.',
+                            )}
                         </Paragraph>
                     </div>
                     <Button
@@ -126,7 +131,7 @@ export default function BackupTab() {
                         loading={loading}
                         onClick={handleLogin}
                     >
-                        Connexion Google
+                        {t('Connexion Google')}
                     </Button>
                 </div>
             </Card>
@@ -155,10 +160,10 @@ export default function BackupTab() {
                     </div>
                     {status.active ? (
                         <Tag color="green" icon={<CheckCircleOutlined />}>
-                            Actif
+                            {t('Actif')}
                         </Tag>
                     ) : (
-                        <Tag icon={<PauseCircleOutlined />}>En pause</Tag>
+                        <Tag icon={<PauseCircleOutlined />}>{t('En pause')}</Tag>
                     )}
                 </div>
             </Card>
@@ -173,7 +178,7 @@ export default function BackupTab() {
                     }}
                 >
                     <div>
-                        <Text style={{ display: 'block' }}>Synchronisation automatique</Text>
+                        <Text style={{ display: 'block' }}>{t('Synchronisation automatique')}</Text>
                         <Text type="secondary" style={{ fontSize: '0.85em' }}>
                             Google Drive
                         </Text>
@@ -185,7 +190,9 @@ export default function BackupTab() {
                         type="secondary"
                         style={{ fontSize: '0.8em', display: 'block', marginTop: 8 }}
                     >
-                        Dernière synchronisation : {status.lastUpdate.toLocaleTimeString('fr')}
+                        {t('Dernière synchronisation : {{time}}', {
+                            time: status.lastUpdate.toLocaleTimeString('fr'),
+                        })}
                     </Text>
                 )}
             </Card>
@@ -193,8 +200,10 @@ export default function BackupTab() {
             {/* Access warning */}
             {!status.access && (
                 <Alert
-                    title="Accès limité"
-                    description="Reconnectez-vous et assurez-vous d'avoir autorisé l'accès demandé en cochant les cases qui s'afficheront."
+                    title={t('Accès limité')}
+                    description={t(
+                        "Reconnectez-vous et assurez-vous d'avoir autorisé l'accès demandé en cochant les cases qui s'afficheront.",
+                    )}
                     type="error"
                     showIcon
                 />
@@ -203,7 +212,7 @@ export default function BackupTab() {
             {/* Sync error */}
             {syncError && status.active && (
                 <Alert
-                    message="Erreur de synchronisation"
+                    message={t('Erreur de synchronisation')}
                     description={syncError}
                     type="warning"
                     showIcon
@@ -228,6 +237,7 @@ function RestoreProgress({
     status: BackupStatus;
     onStatusRefresh: (s: BackupStatus) => void;
 }) {
+    const { t } = useTranslation();
     const [restoreProgress, setRestoreProgress] = useState<RestoreProgressEvent>();
 
     useEffect(() => {
@@ -253,22 +263,24 @@ function RestoreProgress({
     const isInProgress = !['complete', 'error'].some((t) => restoreProgress.type.includes(t));
 
     const renderContent = (type: RestoreProgressEventType, proceed: number, total: number) => {
-        if (type === 'start') return <Text>Début de la récupération des données</Text>;
-        if (type === 'prepare') return <Text>Préparation de la restauration des données</Text>;
+        if (type === 'start') return <Text>{t('Début de la récupération des données')}</Text>;
+        if (type === 'prepare')
+            return <Text>{t('Préparation de la restauration des données')}</Text>;
         if (type === 'error') {
             return (
                 <Text type="danger">
-                    Une erreur s&apos;est produite lors de la restauration, veuillez réessayer plus
-                    tard
+                    {t(
+                        "Une erreur s'est produite lors de la restauration, veuillez réessayer plus tard",
+                    )}
                 </Text>
             );
         }
         if (type === 'complete') {
             return (
                 <Space orientation="vertical" size="small">
-                    <Text type="success">Vos données ont été restaurées avec succès.</Text>
+                    <Text type="success">{t('Vos données ont été restaurées avec succès.')}</Text>
                     <Button size="small" onClick={restartAppNow}>
-                        Redémarrer l&apos;application
+                        {t("Redémarrer l'application")}
                     </Button>
                 </Space>
             );
@@ -286,8 +298,9 @@ function RestoreProgress({
             <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 <Space>
                     <Text strong>
-                        {restoreProgress.type === 'sauvegarde' ? 'Sauvegarde' : 'Restauration'} de
-                        données
+                        {restoreProgress.type === 'sauvegarde'
+                            ? t('Sauvegarde de données')
+                            : t('Restauration de données')}
                     </Text>
                     {isInProgress && (
                         <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />

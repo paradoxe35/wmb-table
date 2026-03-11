@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Space, Tooltip } from 'antd';
 import { LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import {
@@ -26,13 +27,16 @@ import { useTts } from '@renderer/hooks/use-tts';
 // ---------------------------------------------------------------------------
 
 function BibleContentHeader({ title, chapter }: { title?: string; chapter?: string }) {
+    const { t } = useTranslation();
     if (!title) return null;
     const bookName = chapter ? title.replace(new RegExp(`\\s+${chapter}$`), '') : title;
 
     return (
         <div className="sermon-content-header">
             <h2 className="sermon-content-header__title">{bookName}</h2>
-            <div className="sermon-content-header__date">Chapitre {chapter}</div>
+            <div className="sermon-content-header__date">
+                {t('Chapitre {{chapter}}', { chapter })}
+            </div>
         </div>
     );
 }
@@ -169,31 +173,32 @@ function BibleHeader({
     onNext: () => void;
     tts?: TtsControls;
 }) {
+    const { t } = useTranslation();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
         <div className="sermon-header">
             <div className="bible-chapter-nav">
-                <Tooltip title="Chapitre précédent">
+                <Tooltip title={t('Chapitre précédent')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<LeftOutlined />}
                         disabled={!hasPrev}
                         onClick={onPrev}
-                        aria-label="Chapitre précédent"
+                        aria-label={t('Chapitre précédent')}
                     />
                 </Tooltip>
                 <span className="bible-chapter-nav__title">{title}</span>
-                <Tooltip title="Chapitre suivant">
+                <Tooltip title={t('Chapitre suivant')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<RightOutlined />}
                         disabled={!hasNext}
                         onClick={onNext}
-                        aria-label="Chapitre suivant"
+                        aria-label={t('Chapitre suivant')}
                     />
                 </Tooltip>
             </div>
@@ -201,13 +206,13 @@ function BibleHeader({
             <Space size="small">
                 {tts && <TtsButton tts={tts} />}
                 <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
-                <Tooltip title="Rechercher">
+                <Tooltip title={t('Rechercher')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<SearchOutlined />}
                         onClick={() => openSearchBar()}
-                        aria-label="Rechercher"
+                        aria-label={t('Rechercher')}
                     />
                 </Tooltip>
             </Space>

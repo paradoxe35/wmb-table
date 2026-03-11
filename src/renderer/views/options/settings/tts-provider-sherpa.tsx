@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Input, List, message, Progress, Select, Space, Typography } from 'antd';
 import { DeleteOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
@@ -20,6 +21,7 @@ interface SherpaConfigProps extends ProviderConfigProps {
 }
 
 export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigProps) {
+    const { t } = useTranslation();
     const cfg = settings.providers.sherpa;
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const langCode = activeLanguage?.split('-')[0].toLowerCase() ?? '';
@@ -48,19 +50,19 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             if (p.provider !== 'sherpa') return;
             setDownloadPct(p.percentage);
             if (p.status === 'complete') {
-                message.success('Voix installée');
+                message.success(t('Voix installée'));
                 setDownloading(null);
                 setDownloadPct(0);
                 loadModels();
                 window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
             }
             if (p.status === 'error') {
-                message.error(`Erreur: ${p.error}`);
+                message.error(t('Erreur: {{error}}', { error: p.error }));
                 setDownloading(null);
                 setDownloadPct(0);
             }
         });
-    }, [loadModels]);
+    }, [loadModels, t]);
 
     // ── Actions ──
 
@@ -68,7 +70,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
         setDownloading(modelName);
         setDownloadPct(0);
         window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
-            message.error(`Erreur: ${err.message}`);
+            message.error(t('Erreur: {{error}}', { error: err.message }));
             setDownloading(null);
         });
     }, []);
@@ -77,14 +79,14 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
         async (modelName: string) => {
             try {
                 await window.api.tts.deleteProviderModel('sherpa', modelName);
-                message.success('Voix supprimée');
+                message.success(t('Voix supprimée'));
                 loadModels();
                 window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
                 if (cfg.model === modelName) {
                     onUpdate(providerUpdate(settings, 'sherpa', 'model', undefined));
                 }
             } catch (err) {
-                message.error(`Erreur: ${(err as Error).message}`);
+                message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
             }
         },
         [loadModels, cfg.model, settings, onUpdate],
@@ -138,8 +140,8 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             {/* 1. Suggested download for active language */}
             {suggestedModel && (
                 <Field
-                    label={`Voix disponible — ${suggestedModel.langLabel}`}
-                    hint="Téléchargez une voix pour la langue active du document."
+                    label={t('Voix disponible — {{lang}}', { lang: suggestedModel.langLabel })}
+                    hint={t('Téléchargez une voix pour la langue active du document.')}
                 >
                     {downloading === suggestedModel.modelName ? (
                         <Progress percent={downloadPct} size="small" />
@@ -150,11 +152,11 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 onClick={() => handleDownload(suggestedModel.modelName)}
                                 size="small"
                             >
-                                Télécharger « {suggestedModel.voiceName} »
+                                {t('Télécharger « {{name}} »', { name: suggestedModel.voiceName })}
                             </Button>
                             {suggestedModel.filesizeMb != null && (
                                 <Text type="secondary" style={{ fontSize: '0.8em' }}>
-                                    ~{Math.round(suggestedModel.filesizeMb)} Mo
+                                    ~{Math.round(suggestedModel.filesizeMb)} {t('Mo')}
                                 </Text>
                             )}
                         </Space>
@@ -164,7 +166,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
             {/* 2. Voice selector (when voices installed) */}
             {allVoices.length > 0 && (
-                <Field label="Voix active">
+                <Field label={t('Voix active')}>
                     <Select
                         style={{ width: '100%' }}
                         value={cfg.voiceId ?? allVoices[0]?.id}
@@ -178,7 +180,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
             {/* 3. Installed voices with delete */}
             {installed.length > 0 && (
-                <Field label={`Voix installées (${installed.length})`}>
+                <Field label={t('Voix installées ({{count}})', { count: installed.length })}>
                     <div>
                         {installed.map((m) => (
                             <div
@@ -195,7 +197,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                     {m.filesizeMb != null && (
                                         <Text type="secondary" style={{ fontSize: '0.85em' }}>
                                             {' '}
-                                            · ~{Math.round(m.filesizeMb)} Mo
+                                            · ~{Math.round(m.filesizeMb)} {t('Mo')}
                                         </Text>
                                     )}
                                 </Text>
@@ -213,10 +215,13 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             )}
 
             {/* 4. Browse other languages */}
-            <Field label="Ajouter une autre langue" hint="Recherchez une langue ou un nom de voix.">
+            <Field
+                label={t('Ajouter une autre langue')}
+                hint={t('Recherchez une langue ou un nom de voix.')}
+            >
                 <Input
                     prefix={<SearchOutlined />}
-                    placeholder="Ex: arabe, portugais, swahili…"
+                    placeholder={t('Ex: arabe, portugais, swahili…')}
                     size="small"
                     allowClear
                     value={search}
@@ -231,7 +236,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 <List
                     size="small"
                     dataSource={browseResults}
-                    locale={{ emptyText: 'Aucun résultat' }}
+                    locale={{ emptyText: t('Aucun résultat') }}
                     pagination={{
                         current: browsePage,
                         pageSize: BROWSE_PAGE_SIZE,
@@ -266,7 +271,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                         icon={<DownloadOutlined />}
                                         onClick={() => handleDownload(m.modelName)}
                                     >
-                                        Télécharger
+                                        {t('Télécharger')}
                                     </Button>
                                 ),
                             ]}
@@ -283,7 +288,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                         {m.voiceName}
                                         {m.engine && ` · ${m.engine}`}
                                         {m.filesizeMb != null &&
-                                            ` · ~${Math.round(m.filesizeMb)} Mo`}
+                                            ` · ~${Math.round(m.filesizeMb)} ${t('Mo')}`}
                                     </Text>
                                 }
                             />
@@ -295,8 +300,9 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             {/* Empty state */}
             {installed.length === 0 && !suggestedModel && !search && (
                 <Text type="secondary" style={{ fontSize: '0.9em' }}>
-                    Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus
-                    pour trouver une voix dans une autre langue.
+                    {t(
+                        'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.',
+                    )}
                 </Text>
             )}
         </Space>

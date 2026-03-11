@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
 import { App as AntApp, type MenuProps } from 'antd';
 import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
@@ -8,6 +9,7 @@ import { getTabKey } from '@shared/types';
 import TabItem from './tab-item';
 
 export default function DocumentTabs() {
+    const { t } = useTranslation();
     const tabs = useSermonStore((s) => s.tabs);
     const reorderTabs = useSermonStore((s) => s.reorderTabs);
     const activateTab = useSermonStore((s) => s.activateTab);
@@ -23,29 +25,29 @@ export default function DocumentTabs() {
 
     const confirmRemoveAll = useCallback(() => {
         modal.confirm({
-            title: 'Fermer tous les onglets',
-            content: 'Voulez-vous vraiment fermer tous les onglets ?',
-            okText: 'Tout fermer',
-            cancelText: 'Annuler',
+            title: t('Fermer tous les onglets'),
+            content: t('Voulez-vous vraiment fermer tous les onglets ?'),
+            okText: t('Tout fermer'),
+            cancelText: t('Annuler'),
             onOk: () => removeAllTabs(),
         });
     }, [modal, removeAllTabs]);
 
     const getContextMenuItems = useCallback(
         (key: string): MenuProps['items'] => [
-            { key: 'close', label: 'Fermer', onClick: () => removeTab(key) },
+            { key: 'close', label: t('Fermer'), onClick: () => removeTab(key) },
             {
                 key: 'close-others',
-                label: 'Fermer les autres',
+                label: t('Fermer les autres'),
                 onClick: () => removeOtherTabs(key),
             },
             {
                 key: 'close-right',
-                label: 'Fermer à droite',
+                label: t('Fermer à droite'),
                 onClick: () => removeTabsToRight(key),
             },
             { type: 'divider' },
-            { key: 'close-all', label: 'Tout fermer', onClick: () => confirmRemoveAll() },
+            { key: 'close-all', label: t('Tout fermer'), onClick: () => confirmRemoveAll() },
         ],
         [removeTab, removeOtherTabs, removeTabsToRight, confirmRemoveAll],
     );

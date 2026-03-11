@@ -1,4 +1,5 @@
 import { Input, Select, Space } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo } from '@shared/tts.types';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 
@@ -7,13 +8,16 @@ interface OpenAIConfigProps extends ProviderConfigProps {
 }
 
 export default function OpenAIConfig({ settings, info, onUpdate }: OpenAIConfigProps) {
+    const { t } = useTranslation();
     const cfg = settings.providers.openai;
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">
             <Field
-                label="Clé API OpenAI"
-                hint="Votre clé secrète OpenAI. Elle est stockée en toute sécurité sur votre ordinateur."
+                label={t('Clé API OpenAI')}
+                hint={t(
+                    'Votre clé secrète OpenAI. Elle est stockée en toute sécurité sur votre ordinateur.',
+                )}
             >
                 <Input.Password
                     value={cfg.apiKey ?? ''}
@@ -23,7 +27,7 @@ export default function OpenAIConfig({ settings, info, onUpdate }: OpenAIConfigP
                     }
                 />
             </Field>
-            <Field label="Modèle" hint="Le choix par défaut offre la meilleure qualité.">
+            <Field label={t('Modèle')} hint={t('Le choix par défaut offre la meilleure qualité.')}>
                 <Select
                     style={{ width: '100%' }}
                     value={cfg.model ?? 'gpt-4o-mini-tts'}
@@ -31,7 +35,10 @@ export default function OpenAIConfig({ settings, info, onUpdate }: OpenAIConfigP
                     options={(info?.availableModels ?? []).map((m) => ({ label: m, value: m }))}
                 />
             </Field>
-            <Field label="Voix" hint="Marin et Cedar sont recommandées pour la meilleure qualité.">
+            <Field
+                label={t('Voix')}
+                hint={t('Marin et Cedar sont recommandées pour la meilleure qualité.')}
+            >
                 <Select
                     style={{ width: '100%' }}
                     value={cfg.voiceId ?? 'nova'}

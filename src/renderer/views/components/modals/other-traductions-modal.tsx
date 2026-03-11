@@ -1,5 +1,6 @@
 import { Button, Divider, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useModalVisible, useActiveTabTitle } from '@renderer/hooks';
 import { useSermonStore, useAppStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
@@ -7,6 +8,7 @@ import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import type { SermonTranslation } from '@shared/types';
 
 export function OtherTraductionsModal() {
+    const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
     const activeTab = useSermonStore(selectActiveTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
@@ -62,11 +64,7 @@ export function OtherTraductionsModal() {
 
     return (
         <Modal
-            title={
-                <div className="mr-2">
-                    Traductions du document: <em>{title}</em>
-                </div>
-            }
+            title={<div className="mr-2">{t('Traductions du document: {{title}}', { title })}</div>}
             footer={[]}
             open={visible}
             onOk={hide}
@@ -76,11 +74,11 @@ export function OtherTraductionsModal() {
                 {hasWithinLanguage && (
                     <>
                         <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>
-                            Sources de traduction
+                            {t('Sources de traduction')}
                         </Divider>
-                        {availableTraductions.map((t) => (
+                        {availableTraductions.map((tr) => (
                             <div
-                                key={t.translationId}
+                                key={tr.translationId}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -92,15 +90,16 @@ export function OtherTraductionsModal() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <BookOutlined />
                                     <span>
-                                        {t.traductionName ?? `Traduction ${t.translationId}`}
+                                        {tr.traductionName ??
+                                            `${t('Traduction')} ${tr.translationId}`}
                                         <Tag color="blue" style={{ marginLeft: 8 }}>
-                                            ID: {t.translationId}
+                                            ID: {tr.translationId}
                                         </Tag>
                                     </span>
                                 </div>
-                                <Tooltip title="Basculer vers cette traduction">
+                                <Tooltip title={t('Basculer vers cette traduction')}>
                                     <Button
-                                        onClick={() => handleSwitchTraduction(t.translationId)}
+                                        onClick={() => handleSwitchTraduction(tr.translationId)}
                                         shape="circle"
                                         icon={<EyeOutlined />}
                                     />
@@ -111,16 +110,16 @@ export function OtherTraductionsModal() {
                 )}
 
                 <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>
-                    Autres langues
+                    {t('Autres langues')}
                 </Divider>
                 {loading ? (
                     <div className="flex flex-center" style={{ marginTop: '2rem' }}>
                         <Spin />
                     </div>
                 ) : (
-                    translations.map((t, i) => (
+                    translations.map((tr, i) => (
                         <div
-                            key={`${t.languageCode}-${t.title}`}
+                            key={`${tr.languageCode}-${tr.title}`}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
@@ -133,7 +132,7 @@ export function OtherTraductionsModal() {
                                 <BookOutlined />
                                 <div>
                                     <div>
-                                        {i + 1}. {t.title}
+                                        {i + 1}. {tr.title}
                                     </div>
                                     <div
                                         style={{
@@ -141,13 +140,13 @@ export function OtherTraductionsModal() {
                                             color: 'var(--ant-color-text-secondary)',
                                         }}
                                     >
-                                        Langue: {t.languageCode}
+                                        {t('Langue: {{name}}', { name: tr.languageCode })}
                                     </div>
                                 </div>
                             </div>
-                            <Tooltip title="Ouvrir le document">
+                            <Tooltip title={t('Ouvrir le document')}>
                                 <Button
-                                    onClick={() => handleOpen(t.title, t.languageCode)}
+                                    onClick={() => handleOpen(tr.title, tr.languageCode)}
                                     shape="circle"
                                     icon={<EyeOutlined />}
                                 />

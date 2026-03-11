@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Modal, Slider, Space } from 'antd';
 import {
     PlayCircleOutlined,
@@ -14,6 +15,7 @@ import { formatTime } from '@renderer/utils/functions';
 import { AUDIO_SPEEDS } from '@renderer/utils/constants';
 
 export default function DocumentAudioPlayer() {
+    const { t } = useTranslation();
     const audioRef = useAudioRef();
     const modalOpen = useAudioStore((s) => s.modalOpen);
     const closeModal = useAudioStore((s) => s.closeModal);
@@ -111,7 +113,7 @@ export default function DocumentAudioPlayer() {
                                 marginBottom: 16,
                             }}
                         >
-                            Langue: <i>{traduction}</i>
+                            {t('Langue: {{name}}', { name: traduction })}
                         </div>
                     )}
 

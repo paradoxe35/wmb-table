@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Button, Card, Progress, Space, Spin, Typography } from 'antd';
 import { LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { UpdaterNotification } from '@shared/types';
@@ -35,6 +36,7 @@ const ShowProgress = ({ title, progress, onlyPercent = false }: ProgressType) =>
 };
 
 export default function UpdateTab() {
+    const { t } = useTranslation();
     const [info, setInfo] = useState<UpdaterNotification | undefined>(undefined);
     const [checking, setChecking] = useState(false);
 
@@ -72,11 +74,13 @@ export default function UpdateTab() {
 
     switch (info?.type) {
         case 'hasUpdate':
-            action = { label: 'Mettre à jour', onClick: startDownload };
+            action = { label: t('Mettre à jour'), onClick: startDownload };
             content = (
                 <Alert
-                    title="Mise à jour de l'application"
-                    description="Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour."
+                    title={t("Mise à jour de l'application")}
+                    description={t(
+                        'Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour.',
+                    )}
                     type="info"
                     showIcon
                 />
@@ -86,17 +90,19 @@ export default function UpdateTab() {
             content = (
                 <ShowProgress
                     onlyPercent
-                    title="Téléchargement de la mise à jour"
+                    title={t('Téléchargement de la mise à jour')}
                     progress={{ percent: info.progress?.downloadProgress?.percent }}
                 />
             );
             break;
         case 'downloaded':
-            action = { label: 'Installer la mise à jour', onClick: quitAndInstall };
+            action = { label: t('Installer la mise à jour'), onClick: quitAndInstall };
             content = (
                 <Alert
-                    title="Téléchargement terminé"
-                    description="Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise à jour."
+                    title={t('Téléchargement terminé')}
+                    description={t(
+                        "Veuillez cliquer sur le bouton d'installation ci-dessous pour installer la mise à jour.",
+                    )}
                     type="success"
                     showIcon
                 />
@@ -105,8 +111,10 @@ export default function UpdateTab() {
         case 'error':
             content = (
                 <Alert
-                    title="Erreur !"
-                    description="Une erreur s'est produite lors de la mise à jour, veuillez réessayer plus tard."
+                    title={t('Erreur !')}
+                    description={t(
+                        "Une erreur s'est produite lors de la mise à jour, veuillez réessayer plus tard.",
+                    )}
                     type="error"
                     showIcon
                 />
@@ -115,8 +123,8 @@ export default function UpdateTab() {
         case 'noUpdate':
             content = (
                 <Alert
-                    title="Aucune mise à jour disponible"
-                    description="Vous utilisez déjà la dernière version de l'application."
+                    title={t('Aucune mise à jour disponible')}
+                    description={t("Vous utilisez déjà la dernière version de l'application.")}
                     type="info"
                     showIcon
                 />
@@ -135,16 +143,16 @@ export default function UpdateTab() {
                     }}
                 >
                     <Text strong>
-                        <ReloadOutlined /> Mise à jour
+                        <ReloadOutlined /> {t('Mise à jour')}
                     </Text>
                     <Button size="small" loading={checking} onClick={checkNow}>
-                        Vérifier
+                        {t('Vérifier')}
                     </Button>
                 </div>
 
                 {checking ? (
                     <Space>
-                        <Text>Vérification des mises à jour...</Text>
+                        <Text>{t('Vérification des mises à jour...')}</Text>
                         <SpinIcon />
                     </Space>
                 ) : info ? (

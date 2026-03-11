@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     HistoryOutlined,
     GroupOutlined,
@@ -39,6 +40,7 @@ export default function SidebarMenu({
     collapsed: boolean;
     onCollapse?: (collapsed: boolean) => void;
 }) {
+    const { t } = useTranslation();
     const optionView = useAppStore((s) => s.optionView);
     const showOptions = useAppStore((s) => s.showOptions);
     const optionViewRef = useRef(optionView);
@@ -48,10 +50,10 @@ export default function SidebarMenu({
         (op: OptionDef) => ({
             key: op.key,
             icon: op.icon,
-            label: op.name,
+            label: t(op.name),
             onClick: () => showOptions(op.key as 'search'),
         }),
-        [showOptions],
+        [showOptions, t],
     );
 
     const menuItems: MenuProps['items'] = useMemo(

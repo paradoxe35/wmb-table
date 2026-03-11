@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
 import type { SermonMetaWithTraductions } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
@@ -74,7 +75,7 @@ export function useInitApp() {
                 if (savedTabs?.length) setTabs(savedTabs);
             } catch (err) {
                 console.error('[useInitApp] Initialization failed:', err);
-                setError("Erreur lors de l'initialisation de l'application");
+                setError(i18n.t("Erreur lors de l'initialisation de l'application"));
             } finally {
                 setLoaded(true);
             }

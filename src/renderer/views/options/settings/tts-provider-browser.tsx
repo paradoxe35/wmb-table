@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Select, Slider, Space } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 
 function useBrowserVoices() {
@@ -14,19 +15,22 @@ function useBrowserVoices() {
 }
 
 export default function BrowserConfig({ settings, onUpdate }: ProviderConfigProps) {
+    const { t } = useTranslation();
     const voices = useBrowserVoices();
     const cfg = settings.providers.browser;
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">
             <Field
-                label="Voix"
-                hint="Les voix disponibles dépendent de celles installées sur votre ordinateur."
+                label={t('Voix')}
+                hint={t(
+                    'Les voix disponibles dépendent de celles installées sur votre ordinateur.',
+                )}
             >
                 <Select
                     style={{ width: '100%' }}
                     value={cfg.voiceId ?? ''}
-                    placeholder="Voix par défaut du système"
+                    placeholder={t('Voix par défaut du système')}
                     allowClear
                     showSearch
                     optionFilterProp="label"
@@ -39,7 +43,10 @@ export default function BrowserConfig({ settings, onUpdate }: ProviderConfigProp
                     }))}
                 />
             </Field>
-            <Field label={`Hauteur: ${cfg.pitch ?? 1}`} hint="Ajuste la tonalité de la voix.">
+            <Field
+                label={t('Hauteur: {{value}}', { value: cfg.pitch ?? 1 })}
+                hint={t('Ajuste la tonalité de la voix.')}
+            >
                 <Slider
                     min={0.5}
                     max={2}
@@ -48,7 +55,7 @@ export default function BrowserConfig({ settings, onUpdate }: ProviderConfigProp
                     onChange={(v) => onUpdate(providerUpdate(settings, 'browser', 'pitch', v))}
                 />
             </Field>
-            <Field label={`Volume: ${Math.round((cfg.volume ?? 1) * 100)}%`}>
+            <Field label={t('Volume: {{value}}%', { value: Math.round((cfg.volume ?? 1) * 100) })}>
                 <Slider
                     min={0}
                     max={1}

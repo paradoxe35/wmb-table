@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input, Button, Card, Divider, Segmented, Select, Tag, Typography } from 'antd';
 import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
@@ -26,6 +27,7 @@ const { Search } = Input;
 // ---------------------------------------------------------------------------
 
 export default function SidebarDocuments() {
+    const { t } = useTranslation();
     const sidebarHidden = useAppStore((s) => s.sidebarHidden);
 
     return (
@@ -44,9 +46,9 @@ export default function SidebarDocuments() {
         >
             <PanelGroup
                 tabs={[
-                    { name: 'Prédications', active: true },
-                    { name: 'Bible', active: false },
-                    { name: 'Documents', active: false },
+                    { name: t('Prédications'), active: true },
+                    { name: t('Bible'), active: false },
+                    { name: t('Documents'), active: false },
                 ]}
             >
                 {(index: number) => (
@@ -73,6 +75,7 @@ const openCustomDocumentModal = () => {
 };
 
 const DocumentsAdded = () => {
+    const { t } = useTranslation();
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const openCustomDocument = useOpenCustomDocument();
@@ -92,10 +95,10 @@ const DocumentsAdded = () => {
             >
                 <FileTextOutlined style={{ fontSize: 32, opacity: 0.3 }} />
                 <Typography.Text type="secondary" style={{ textAlign: 'center' }}>
-                    Aucun document ajouté
+                    {t('Aucun document ajouté')}
                 </Typography.Text>
                 <Button type="primary" icon={<PlusOutlined />} onClick={openCustomDocumentModal}>
-                    Ajouter un document
+                    {t('Ajouter un document')}
                 </Button>
             </div>
         );
@@ -110,7 +113,7 @@ const DocumentsAdded = () => {
                     icon={<PlusOutlined />}
                     onClick={openCustomDocumentModal}
                 >
-                    Gérer
+                    {t('Gérer')}
                 </Button>
             </div>
             <Divider style={{ padding: 0, margin: 0 }} />
@@ -144,6 +147,7 @@ const alpha = Array.from(Array(26)).map((_e, i) => i + 65);
 const alphabets = alpha.map((x) => String.fromCharCode(x));
 
 const DocumentByAlphabetic = () => {
+    const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
     const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
     const alphabet = useRef(alphabets[0]);
@@ -172,7 +176,7 @@ const DocumentByAlphabetic = () => {
             <Card variant="borderless">
                 <Select
                     className="w-100 max-w-100"
-                    placeholder="Alphabet"
+                    placeholder={t('Alphabet')}
                     defaultValue={alphabets[0]}
                     onChange={onChangeAlphabetic}
                     options={alphabets.map((al) => ({ value: al, label: al }))}
@@ -184,6 +188,7 @@ const DocumentByAlphabetic = () => {
 };
 
 const DocumentByYears = () => {
+    const { t } = useTranslation();
     const sermonsByYear = useSermonStore((s) => s.sermonsByYear);
     const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
     const selectedYear = useRef<string>('');
@@ -222,7 +227,7 @@ const DocumentByYears = () => {
             <Card variant="borderless">
                 <Select
                     className="w-100 max-w-100"
-                    placeholder="Année"
+                    placeholder={t('Année')}
                     value={selectedYear.current || undefined}
                     onChange={onChangeYear}
                     options={yearOptions}
@@ -279,6 +284,7 @@ const ActiveLanguageBar = () => {
 };
 
 const DocumentSearch = () => {
+    const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
     const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
 
@@ -303,7 +309,7 @@ const DocumentSearch = () => {
             <Card variant="borderless" styles={{ body: { paddingBottom: 8 } }}>
                 <Search
                     key={sermons.length}
-                    placeholder="Recherche"
+                    placeholder={t('Recherche')}
                     allowClear
                     onSearch={onSearch}
                 />
@@ -329,15 +335,21 @@ const SermonFilterContent: Record<SermonFilterMode, React.FC> = {
 };
 
 function SermonsTab() {
+    const { t } = useTranslation();
     const [filterMode, setFilterMode] = useState<SermonFilterMode>('Recherche');
     const FilterComponent = SermonFilterContent[filterMode];
+
+    const segmentedOptions = useMemo(
+        () => SERMON_FILTER_OPTIONS.map((key) => ({ label: t(key), value: key })),
+        [t],
+    );
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
             <div style={{ padding: '8px 10px 4px', display: 'flex', justifyContent: 'center' }}>
                 <Segmented
                     size="small"
-                    options={SERMON_FILTER_OPTIONS}
+                    options={segmentedOptions}
                     value={filterMode}
                     onChange={(v) => setFilterMode(v as SermonFilterMode)}
                 />

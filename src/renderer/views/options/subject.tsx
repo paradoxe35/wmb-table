@@ -9,6 +9,7 @@ import {
     useState,
 } from 'react';
 import { Card, Input, Space, App as AntApp, Button, Empty, message, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
     type SubjectDocument,
     type SubjectDocumentItem,
@@ -33,6 +34,7 @@ function ModalNewSubject({
 }: {
     onSaveNewSubject: (searchValue: string) => void;
 }) {
+    const { t } = useTranslation();
     const searchValue = useRef<string>('');
     const { modal } = AntApp.useApp();
 
@@ -43,8 +45,8 @@ function ModalNewSubject({
             closable: true,
             icon: null,
             onOk: onSave,
-            okText: 'Enregistrer',
-            title: 'Créer un sujet',
+            okText: t('Enregistrer'),
+            title: t('Créer un sujet'),
             content: (
                 <form
                     onSubmit={(e) => {
@@ -59,16 +61,16 @@ function ModalNewSubject({
                         minLength={3}
                         allowClear
                         onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
-                        placeholder="Nom sujet"
+                        placeholder={t('Nom sujet')}
                     />
                 </form>
             ),
         });
-    }, [onSave, modal]);
+    }, [onSave, modal, t]);
 
     return (
         <Button type="primary" onClick={openModal}>
-            Créer un sujet
+            {t('Créer un sujet')}
         </Button>
     );
 }
@@ -80,9 +82,10 @@ function Title({
     onSearch: (value: string) => void;
     onSaveNewSubject: (searchValue: string) => void;
 }) {
+    const { t } = useTranslation();
     return (
         <Space orientation="horizontal">
-            <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
+            <Input.Search placeholder={t('Recherche')} allowClear onSearch={onSearch} />
             <div />
             <ModalNewSubject onSaveNewSubject={onSaveNewSubject} />
         </Space>
@@ -104,6 +107,7 @@ export function useSubjectsDatas() {
 }
 
 export default function Subject() {
+    const { t } = useTranslation();
     const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
     const activeSubject = useSubjectsStore((s) => s.activeSubject);
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
@@ -117,7 +121,7 @@ export default function Subject() {
                 setSubjects(subjects);
             })
             .catch(() => {
-                message.error('Erreur lors du chargement des sujets');
+                message.error(t('Erreur lors du chargement des sujets'));
             });
     }, [setSubjects]);
 
@@ -146,7 +150,7 @@ export default function Subject() {
                 .getItems(subject.id)
                 .then(setSubjectItemData)
                 .catch(() => {
-                    message.error('Erreur lors du chargement des éléments du sujet');
+                    message.error(t('Erreur lors du chargement des éléments du sujet'));
                 });
         }
     }, [datas, activeSubject]);
@@ -166,7 +170,7 @@ export default function Subject() {
             odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
             setDatas(odatas.current);
             setSubjects(odatas.current);
-            message.success('Sujet créé');
+            message.success(t('Sujet créé'));
         });
     };
 
@@ -175,7 +179,7 @@ export default function Subject() {
             odatas.current = odatas.current.filter((d) => d.name !== item.name);
             setDatas(odatas.current);
             setSubjects(odatas.current);
-            message.success('Supprimé');
+            message.success(t('Supprimé'));
         });
     };
 
@@ -298,10 +302,11 @@ function ShowActiveDocuments({
     documents: SubjectDocumentItem[];
     setDocuments: Dispatch<SetStateAction<SubjectDocumentItem[]>>;
 }) {
+    const { t } = useTranslation();
     function confirm(item: SubjectDocumentItem) {
         window.api.subjects.deleteItem(item.id).then(() => {
             setDocuments((ds) => ds.filter((d) => d.id !== item.id));
-            message.success('Supprimé');
+            message.success(t('Supprimé'));
         });
     }
 
@@ -321,7 +326,11 @@ function ShowActiveDocuments({
                     </div>
                 </>
             ) : (
-                <Empty description={`Aucune référence trouvée dans le sujet: ${subject.name}`} />
+                <Empty
+                    description={t('Aucune référence trouvée dans le sujet: {{name}}', {
+                        name: subject.name,
+                    })}
+                />
             )}
         </>
     );

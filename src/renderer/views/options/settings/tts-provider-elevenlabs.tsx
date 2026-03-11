@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Collapse, Input, message, Select, Space, Typography } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 import { ClonedVoicesList, VoiceCloneForm } from './tts-elevenlabs-voice-clone';
@@ -11,6 +12,7 @@ interface ElevenLabsConfigProps extends ProviderConfigProps {
 }
 
 export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLabsConfigProps) {
+    const { t } = useTranslation();
     const cfg = settings.providers.elevenlabs;
     const [clonedVoices, setClonedVoices] = useState<TtsVoice[]>([]);
 
@@ -25,9 +27,9 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
         try {
             await window.api.tts.deleteClonedVoice(voiceId);
             setClonedVoices((prev) => prev.filter((v) => v.id !== voiceId));
-            message.success('Voix clonée supprimée');
+            message.success(t('Voix clonée supprimée'));
         } catch (err) {
-            message.error(`Erreur: ${(err as Error).message}`);
+            message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
         }
     }, []);
 
@@ -48,8 +50,10 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
     return (
         <Space direction="vertical" style={{ width: '100%' }} size="small">
             <Field
-                label="Clé API ElevenLabs"
-                hint="Votre clé secrète ElevenLabs. Elle est stockée en toute sécurité sur votre ordinateur."
+                label={t('Clé API ElevenLabs')}
+                hint={t(
+                    'Votre clé secrète ElevenLabs. Elle est stockée en toute sécurité sur votre ordinateur.',
+                )}
             >
                 <Input.Password
                     value={cfg.apiKey ?? ''}
@@ -59,7 +63,10 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                     }
                 />
             </Field>
-            <Field label="Modèle" hint="Le choix par défaut convient pour la plupart des usages.">
+            <Field
+                label={t('Modèle')}
+                hint={t('Le choix par défaut convient pour la plupart des usages.')}
+            >
                 <Select
                     style={{ width: '100%' }}
                     value={cfg.model ?? 'eleven_v3'}
@@ -67,7 +74,10 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                     options={(info?.availableModels ?? []).map((m) => ({ label: m, value: m }))}
                 />
             </Field>
-            <Field label="Voix" hint="Les voix marquées « cloné » sont vos voix personnalisées.">
+            <Field
+                label={t('Voix')}
+                hint={t('Les voix marquées « cloné » sont vos voix personnalisées.')}
+            >
                 <Select
                     style={{ width: '100%' }}
                     value={cfg.voiceId ?? 'JBFqnCBsd6RMkjVDRZzb'}
@@ -88,7 +98,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                         key: 'advanced',
                         label: (
                             <Text strong style={{ fontSize: '0.9em' }}>
-                                Paramètres avancés
+                                {t('Paramètres avancés')}
                             </Text>
                         ),
                         children: (

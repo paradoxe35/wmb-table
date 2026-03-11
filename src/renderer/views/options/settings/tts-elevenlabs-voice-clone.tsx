@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { Button, Input, message, Space, Typography } from 'antd';
 import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { TtsVoice } from '@shared/tts.types';
 import { Field } from './tts-shared';
 
@@ -16,10 +17,11 @@ interface ClonedVoicesListProps {
 }
 
 export function ClonedVoicesList({ voices, onDelete }: ClonedVoicesListProps) {
+    const { t } = useTranslation();
     if (voices.length === 0) return null;
 
     return (
-        <Field label="Voix clonées" hint="Vos voix personnalisées.">
+        <Field label={t('Voix clonées')} hint={t('Vos voix personnalisées.')}>
             <div>
                 {voices.map((v) => (
                     <div
@@ -47,6 +49,7 @@ export function ClonedVoicesList({ voices, onDelete }: ClonedVoicesListProps) {
 }
 
 export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
+    const { t } = useTranslation();
     const [name, setName] = useState('');
     const [file, setFile] = useState<File | null>(null);
     const [cloning, setCloning] = useState(false);
@@ -61,12 +64,12 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
                 new Uint8Array(arrayBuf).reduce((s, b) => s + String.fromCharCode(b), ''),
             );
             const result = await window.api.tts.cloneVoice({ name, audioBase64 });
-            message.success('Voix clonée avec succès');
+            message.success(t('Voix clonée avec succès'));
             setName('');
             setFile(null);
             onCloned(result.voiceId);
         } catch (err) {
-            message.error(`Erreur: ${(err as Error).message}`);
+            message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
         } finally {
             setCloning(false);
         }
@@ -74,12 +77,14 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
 
     return (
         <Field
-            label="Cloner une voix"
-            hint="Enregistrez un audio WAV ou MP3 de 10 à 60 secondes pour créer votre propre voix."
+            label={t('Cloner une voix')}
+            hint={t(
+                'Enregistrez un audio WAV ou MP3 de 10 à 60 secondes pour créer votre propre voix.',
+            )}
         >
             <Space direction="vertical" size="small" style={{ width: '100%' }}>
                 <Input
-                    placeholder="Nom de la voix (ex: MaVoix)"
+                    placeholder={t('Nom de la voix (ex: MaVoix)')}
                     size="small"
                     value={name}
                     maxLength={16}
@@ -91,7 +96,7 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
                         size="small"
                         onClick={() => fileInputRef.current?.click()}
                     >
-                        {file ? file.name : 'Choisir un fichier audio'}
+                        {file ? file.name : t('Choisir un fichier audio')}
                     </Button>
                     <input
                         ref={fileInputRef}
@@ -107,7 +112,7 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
                         loading={cloning}
                         onClick={handleClone}
                     >
-                        Cloner
+                        {t('Cloner')}
                     </Button>
                 </Space>
             </Space>

@@ -7,6 +7,7 @@ import {
     useState,
     useCallback,
 } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PlusOutlined } from '@ant-design/icons';
 import { useSermonStore } from '@renderer/stores';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
@@ -24,6 +25,7 @@ export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 
 export const useShowReferenceDetail = () => {
+    const { t } = useTranslation();
     const viewDocument = useDocumentViewOpen();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
@@ -60,9 +62,11 @@ export const useShowReferenceDetail = () => {
         Modal[assigned ? 'info' : 'warning']({
             closable: true,
             onOk: assigned ? openDocument : undefined,
-            okText: assigned ? 'Ouvrir le document' : 'Fermer',
+            okText: assigned ? t('Ouvrir le document') : t('Fermer'),
             title: (
-                <span style={{ fontSize: 13, fontWeight: 500 }}>Référence: {reference.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>
+                    {t('Référence: {{label}}', { label: reference.label })}
+                </span>
             ),
             content: assigned ? (
                 <div>
@@ -90,7 +94,7 @@ export const useShowReferenceDetail = () => {
                 </div>
             ) : (
                 <div>
-                    <p>Aucun document n&apos;a été attribué pour cette référence</p>
+                    <p>{t("Aucun document n'a été attribué pour cette référence")}</p>
                 </div>
             ),
         });
@@ -139,6 +143,7 @@ export function ReferenceBibleModal({
     reference: NoteItemReferenceBible | undefined;
     setReference: Dispatch<SetStateAction<NoteItemReferenceBible | undefined>>;
 }) {
+    const { t } = useTranslation();
     const referenceRef = useValueStateRef(reference);
     const versesRef = useRef<HTMLDivElement | null>(null);
 
@@ -151,14 +156,14 @@ export function ReferenceBibleModal({
                     .filter((f) => f.id !== ref.id);
                 return nr;
             });
-            message.success('Verset supprimé');
+            message.success(t('Verset supprimé'));
         });
     };
 
     const onClickVerse = useCallback((refId: string) => {
         const exists = referenceRef.current?.references.some((d) => (d as BibleBook).id == refId);
         if (exists) {
-            message.warning('Le verset cliqué existe déjà dans la références !');
+            message.warning(t('Le verset cliqué existe déjà dans la références !'));
             return;
         }
         (
@@ -174,7 +179,7 @@ export function ReferenceBibleModal({
                     nr.references.push(item);
                     return nr;
                 });
-                message.success('Verset ajouté');
+                message.success(t('Verset ajouté'));
             })
             .finally(() => {
                 window.setTimeout(() => {
@@ -209,7 +214,7 @@ export function ReferenceBibleModal({
                             color: 'var(--ant-color-text-secondary)',
                         }}
                     >
-                        Référence biblique
+                        {t('Référence biblique')}
                     </div>
                     {reference && (
                         <div>
@@ -228,7 +233,7 @@ export function ReferenceBibleModal({
                     <div ref={versesRef} style={{ overflow: 'auto', maxHeight: 400 }}>
                         {verses.length === 0 && !showBible && (
                             <Typography.Text type="secondary">
-                                Aucun verset sélectionné
+                                {t('Aucun verset sélectionné')}
                             </Typography.Text>
                         )}
                         {verses.map((ref) => (
@@ -261,7 +266,7 @@ export function ReferenceBibleModal({
                             style={{ marginTop: 12 }}
                             block
                         >
-                            Ajouter des versets
+                            {t('Ajouter des versets')}
                         </Button>
                     )}
                 </Col>

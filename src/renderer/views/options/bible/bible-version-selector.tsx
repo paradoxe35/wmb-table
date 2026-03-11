@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Progress, Space, Tag, Tooltip, Typography } from 'antd';
 import { CheckCircleOutlined, CloudDownloadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
 
 export function BibleVersionSelector() {
+    const { t } = useTranslation();
     const [versions, setVersions] = useState<BibleVersionInfo[]>([]);
     const [activeVersion, setActiveVersion] = useState<BibleVersionInfo | null>(null);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
@@ -76,7 +78,7 @@ export function BibleVersionSelector() {
         <div className="bible-version-bar">
             <Space wrap size="small" style={{ alignItems: 'center' }}>
                 <Typography.Text type="secondary" style={{ fontSize: '0.85em' }}>
-                    Version:
+                    {t('Version:')}
                 </Typography.Text>
 
                 {/* Installed versions — clickable tags */}
@@ -115,7 +117,10 @@ export function BibleVersionSelector() {
                     }
 
                     return (
-                        <Tooltip key={v.abbreviation} title={`Télécharger ${v.name}`}>
+                        <Tooltip
+                            key={v.abbreviation}
+                            title={t('Télécharger {{name}}', { name: v.name })}
+                        >
                             <Button
                                 size="small"
                                 type="dashed"

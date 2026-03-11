@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Space, Tooltip } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import {
     useSermonStore,
     useSearchStore,
@@ -53,6 +54,7 @@ function parseContentToParagraphs(content: string): DocumentParagraph[] {
 // ---------------------------------------------------------------------------
 
 function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
+    const { t } = useTranslation();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
@@ -62,13 +64,13 @@ function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof u
             <Space size="small">
                 <TtsButton tts={tts} />
                 <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
-                <Tooltip title="Rechercher">
+                <Tooltip title={t('Rechercher')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<SearchOutlined />}
                         onClick={() => openSearchBar()}
-                        aria-label="Rechercher"
+                        aria-label={t('Rechercher')}
                     />
                 </Tooltip>
             </Space>

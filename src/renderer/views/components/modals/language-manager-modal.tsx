@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
 import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useModalVisible } from '@renderer/hooks';
 import { useAppStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
@@ -42,6 +43,7 @@ function LanguageRow({
     onInstall: () => void;
     onDelete: () => void;
 }) {
+    const { t } = useTranslation();
     const displayName =
         lang.language !== lang.enLanguage ? `${lang.language} (${lang.enLanguage})` : lang.language;
 
@@ -74,7 +76,7 @@ function LanguageRow({
                     <span>{displayName}</span>
                     {isActive && (
                         <Tag color="blue" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
-                            Actif
+                            {t('Actif')}
                         </Tag>
                     )}
                     {lang.installed && !isActive && (
@@ -82,7 +84,7 @@ function LanguageRow({
                     )}
                 </div>
                 <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                    {lang.sermonsCount} sermons
+                    {lang.sermonsCount} {t('sermons')}
                     {lang.installed
                         ? ` — ${formatSize(lang.sizeOnDisk)}`
                         : ` — ${formatSize(lang.filesize)}`}
@@ -94,11 +96,11 @@ function LanguageRow({
             >
                 {lang.installed ? (
                     <Popconfirm
-                        title="Supprimer cette langue ?"
-                        description="Les données de cette langue seront supprimées du disque."
+                        title={t('Supprimer cette langue ?')}
+                        description={t('Les données de cette langue seront supprimées du disque.')}
                         onConfirm={onDelete}
-                        okText="Supprimer"
-                        cancelText="Annuler"
+                        okText={t('Supprimer')}
+                        cancelText={t('Annuler')}
                         okButtonProps={{ danger: true }}
                     >
                         <Button type="text" danger size="small" icon={<DeleteOutlined />} />
@@ -107,7 +109,7 @@ function LanguageRow({
                     <Progress type="circle" size={28} percent={downloadPercent} />
                 ) : (
                     <Button size="small" icon={<DownloadOutlined />} onClick={onInstall}>
-                        Télécharger
+                        {t('Télécharger')}
                     </Button>
                 )}
             </div>
@@ -116,6 +118,7 @@ function LanguageRow({
 }
 
 export default function LanguageManagerModal() {
+    const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
     const [languages, setLanguages] = useState<LanguageItem[]>([]);
     const [loading, setLoading] = useState(false);
@@ -222,7 +225,7 @@ export default function LanguageManagerModal() {
                 return next;
             });
             refresh();
-            message.success('Langue téléchargée avec succès');
+            message.success(t('Langue téléchargée avec succès'));
         });
         return () => {
             unsub1();
@@ -256,7 +259,7 @@ export default function LanguageManagerModal() {
             hide();
         } catch (err) {
             console.error('[LanguageManager] Failed to select language:', err);
-            message.error('Échec de la sélection de la langue');
+            message.error(t('Échec de la sélection de la langue'));
         }
     };
 
@@ -277,7 +280,7 @@ export default function LanguageManagerModal() {
             }
         }
         refresh();
-        message.success('Langue supprimée');
+        message.success(t('Langue supprimée'));
     };
 
     const hasInstalledLanguages = languages.some((l) => l.installed);
@@ -285,7 +288,7 @@ export default function LanguageManagerModal() {
 
     return (
         <Modal
-            title="Langues"
+            title={t('Langues')}
             open={visible}
             onCancel={canClose ? hide : undefined}
             closable={canClose}
@@ -308,11 +311,11 @@ export default function LanguageManagerModal() {
                                 color: 'var(--ant-color-text-secondary)',
                             }}
                         >
-                            Téléchargez une langue pour commencer
+                            {t('Téléchargez une langue pour commencer')}
                         </div>
                     )}
                     <Input.Search
-                        placeholder="Rechercher une langue..."
+                        placeholder={t('Rechercher une langue...')}
                         allowClear
                         onChange={(e) => setSearchQuery(e.target.value)}
                         value={searchQuery}
@@ -327,7 +330,7 @@ export default function LanguageManagerModal() {
                                     color: 'var(--ant-color-text-secondary)',
                                 }}
                             >
-                                Aucune langue trouvée
+                                {t('Aucune langue trouvée')}
                             </div>
                         ) : (
                             (() => {
@@ -347,7 +350,7 @@ export default function LanguageManagerModal() {
                                                         display: 'block',
                                                     }}
                                                 >
-                                                    Mes langues
+                                                    {t('Mes langues')}
                                                 </Text>
                                                 {installedLangs.map((lang) => (
                                                     <LanguageRow
@@ -379,7 +382,7 @@ export default function LanguageManagerModal() {
                                                         display: 'block',
                                                     }}
                                                 >
-                                                    Disponibles
+                                                    {t('Disponibles')}
                                                 </Text>
                                                 {availableLangs.map((lang) => (
                                                     <LanguageRow

@@ -1,20 +1,23 @@
 import { Button, Popconfirm, Tooltip } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 
 export function DeleteBtn({ confirm, loading }: { confirm: () => void; loading?: boolean }) {
+    const { t } = useTranslation();
+
     return (
         <Popconfirm
-            title="Confirmer la suppression?"
+            title={t('Confirmer la suppression?')}
             onConfirm={() => confirm()}
-            okText="Oui"
-            cancelText="Non"
+            okText={t('Oui')}
+            cancelText={t('Non')}
         >
-            <Tooltip title="Supprimer">
+            <Tooltip title={t('Supprimer')}>
                 <Button
                     shape="circle"
                     icon={<DeleteOutlined />}
                     loading={loading}
-                    aria-label="Supprimer"
+                    aria-label={t('Supprimer')}
                 />
             </Tooltip>
         </Popconfirm>

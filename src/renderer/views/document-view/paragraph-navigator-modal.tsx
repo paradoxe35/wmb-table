@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Empty, Modal, Segmented } from 'antd';
 import type { SermonParagraph } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
@@ -15,6 +16,7 @@ export default function ParagraphNavigatorModal({
     onClose: () => void;
     paragraphs: SermonParagraph[];
 }) {
+    const { t } = useTranslation();
     const [step, setStep] = useState<number>(3);
 
     const visibleParagraphs = useMemo(() => {
@@ -35,7 +37,7 @@ export default function ParagraphNavigatorModal({
 
     return (
         <Modal
-            title="Sélectionnez un paragraphe"
+            title={t('Sélectionnez un paragraphe')}
             open={open}
             footer={null}
             onCancel={onClose}
@@ -60,7 +62,7 @@ export default function ParagraphNavigatorModal({
                 }}
             >
                 {visibleParagraphs.length === 0 ? (
-                    <Empty description="Aucun paragraphe" />
+                    <Empty description={t('Aucun paragraphe')} />
                 ) : (
                     visibleParagraphs.map((p) => (
                         <Button
