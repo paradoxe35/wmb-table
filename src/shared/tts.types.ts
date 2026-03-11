@@ -87,6 +87,7 @@ export interface TtsCacheKey {
 // ── Model download progress ──
 export interface TtsModelDownloadProgress {
     provider: TtsProviderType;
+    modelName?: string;
     percentage: number;
     status: 'downloading' | 'complete' | 'error';
     error?: string;

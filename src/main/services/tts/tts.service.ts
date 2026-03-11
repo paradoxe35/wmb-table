@@ -253,6 +253,7 @@ export class TtsService {
                 if (win) {
                     sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
                         provider: providerType,
+                        modelName,
                         percentage,
                         status: percentage >= 100 ? 'complete' : 'downloading',
                     });
@@ -262,6 +263,7 @@ export class TtsService {
             if (win) {
                 sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
                     provider: providerType,
+                    modelName,
                     percentage: 0,
                     status: 'error',
                     error: err instanceof Error ? err.message : String(err),

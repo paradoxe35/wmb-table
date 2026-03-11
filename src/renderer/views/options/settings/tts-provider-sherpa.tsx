@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Input, List, message, Progress, Select, Space, Typography } from 'antd';
-import { DeleteOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
 import { getErrorMessage } from '@renderer/utils/functions';
+import { DeleteBtn } from '@renderer/components/delete-btn';
 import { Field, groupVoicesByLanguage, type ProviderConfigProps } from './tts-shared';
 
 const { Text } = Typography;
@@ -23,8 +24,8 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     const langCode = activeLanguage?.split('-')[0].toLowerCase() ?? '';
 
     const [models, setModels] = useState<TtsModelInfo[]>([]);
-    const [downloading, setDownloading] = useState<string | null>(null);
-    const [downloadPct, setDownloadPct] = useState(0);
+    // Per-model download progress: modelName → percentage
+    const [downloads, setDownloads] = useState<Map<string, number>>(new Map());
     const [search, setSearch] = useState('');
     const [browsePage, setBrowsePage] = useState(1);
 
@@ -43,19 +44,33 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
     useEffect(() => {
         return window.api.on.ttsModelDownloadProgress((p) => {
-            if (p.provider !== 'sherpa') return;
-            setDownloadPct(p.percentage);
+            if (p.provider !== 'sherpa' || !p.modelName) {
+                return;
+            }
+            const model = p.modelName;
+
             if (p.status === 'complete') {
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.delete(model);
+                    return next;
+                });
                 message.success(t('Voix installée'));
-                setDownloading(null);
-                setDownloadPct(0);
                 loadModels();
                 window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
-            }
-            if (p.status === 'error') {
+            } else if (p.status === 'error') {
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.delete(model);
+                    return next;
+                });
                 message.error(t('Erreur: {{error}}', { error: p.error }));
-                setDownloading(null);
-                setDownloadPct(0);
+            } else {
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.set(model, p.percentage);
+                    return next;
+                });
             }
         });
     }, [loadModels, t]);
@@ -64,11 +79,14 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
     const handleDownload = useCallback(
         (modelName: string) => {
-            setDownloading(modelName);
-            setDownloadPct(0);
+            setDownloads((prev) => new Map(prev).set(modelName, 0));
             window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
                 message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
-                setDownloading(null);
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.delete(modelName);
+                    return next;
+                });
             });
         },
         [t],
@@ -117,19 +135,45 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
     // Browse: search-filtered, sorted by installed first then lightest
     const browseResults = useMemo(() => {
-        if (!search) return [];
+        if (!search) {
+            return [];
+        }
         const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
         return models
             .filter((m) => {
                 const haystack =
                     `${m.voiceName} ${m.langLabel} ${m.langName ?? ''} ${m.langCode} ${m.engine ?? ''}`.toLowerCase();
-                return terms.every((t) => haystack.includes(t));
+                return terms.every((term) => haystack.includes(term));
             })
             .sort((a, b) => {
-                if (a.installed !== b.installed) return a.installed ? -1 : 1;
+                if (a.installed !== b.installed) {
+                    return a.installed ? -1 : 1;
+                }
                 return (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity);
             });
     }, [models, search]);
+
+    // ── Render helpers ──
+
+    function renderModelAction(m: TtsModelInfo) {
+        const pct = downloads.get(m.modelName);
+        if (pct !== undefined) {
+            return <Progress key="progress" percent={pct} size="small" style={{ width: 80 }} />;
+        }
+        if (m.installed) {
+            return <DeleteBtn key="delete" confirm={() => handleDelete(m.modelName)} />;
+        }
+        return (
+            <Button
+                key="download"
+                size="small"
+                icon={<DownloadOutlined />}
+                onClick={() => handleDownload(m.modelName)}
+            >
+                {t('Télécharger')}
+            </Button>
+        );
+    }
 
     // ── Render ──
 
@@ -141,8 +185,11 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                     label={t('Voix disponible — {{lang}}', { lang: suggestedModel.langLabel })}
                     hint={t('Téléchargez une voix pour la langue active du document.')}
                 >
-                    {downloading === suggestedModel.modelName ? (
-                        <Progress percent={downloadPct} size="small" />
+                    {downloads.has(suggestedModel.modelName) ? (
+                        <Progress
+                            percent={downloads.get(suggestedModel.modelName) ?? 0}
+                            size="small"
+                        />
                     ) : (
                         <Space size="small" align="center">
                             <Button
@@ -170,7 +217,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                         value={cfg.voiceId ?? allVoices[0]?.id}
                         showSearch
                         optionFilterProp="label"
-                        onChange={(v) =>
+                        onChange={(v) => {
                             onUpdate({
                                 providers: {
                                     ...settings.providers,
@@ -180,8 +227,8 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                         model: v.split(':')[0] || undefined,
                                     },
                                 },
-                            })
-                        }
+                            });
+                        }}
                         options={groupVoicesByLanguage(allVoices)}
                     />
                 </Field>
@@ -210,13 +257,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                         </Text>
                                     )}
                                 </Text>
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    onClick={() => handleDelete(m.modelName)}
-                                />
+                                <DeleteBtn confirm={() => handleDelete(m.modelName)} />
                             </div>
                         ))}
                     </div>
@@ -255,36 +296,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                         onChange: setBrowsePage,
                     }}
                     renderItem={(m) => (
-                        <List.Item
-                            actions={[
-                                downloading === m.modelName ? (
-                                    <Progress
-                                        key="progress"
-                                        percent={downloadPct}
-                                        size="small"
-                                        style={{ width: 80 }}
-                                    />
-                                ) : m.installed ? (
-                                    <Button
-                                        key="delete"
-                                        type="text"
-                                        size="small"
-                                        danger
-                                        icon={<DeleteOutlined />}
-                                        onClick={() => handleDelete(m.modelName)}
-                                    />
-                                ) : (
-                                    <Button
-                                        key="download"
-                                        size="small"
-                                        icon={<DownloadOutlined />}
-                                        onClick={() => handleDownload(m.modelName)}
-                                    >
-                                        {t('Télécharger')}
-                                    </Button>
-                                ),
-                            ]}
-                        >
+                        <List.Item actions={[renderModelAction(m)]}>
                             <List.Item.Meta
                                 title={
                                     <Text style={{ fontSize: '0.9em' }}>
