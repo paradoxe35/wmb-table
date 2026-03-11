@@ -44,8 +44,10 @@ const es: Record<string, string> = {
 
     // ── TTS tab ──
     'Fournisseur actif': 'Proveedor activo',
-    'Le service qui lira le texte à voix haute. Si celui-ci ne fonctionne pas, un autre sera utilisé automatiquement.':
-        'El servicio que leerá el texto en voz alta. Si falla, se usará otro automáticamente.',
+    'Le service qui lira le texte à voix haute.': 'El servicio que leerá el texto en voz alta.',
+    'Changer la voix automatiquement': 'Cambiar la voz automáticamente',
+    'Choisir automatiquement une voix adaptée à la langue du document.':
+        'Elegir automáticamente una voz adaptada al idioma del documento.',
     'Mode de surlignage': 'Modo de resaltado',
     'Choisissez comment le texte est mis en évidence pendant la lecture.':
         'Elija cómo se resalta el texto durante la lectura.',
@@ -159,9 +161,26 @@ const es: Record<string, string> = {
     'Reprendre la lecture': 'Reanudar lectura',
     'Démarrer la lecture': 'Iniciar lectura',
     'Lecture audio TTS': 'Reproducción de audio TTS',
+    'Lecture audio TTS indisponible': 'Audio TTS no disponible',
     'Zoom arrière': 'Alejar',
     'Zoom avant': 'Acercar',
     "Lire à partir d'ici": 'Leer desde aquí',
+    'Aucune voix disponible pour cette langue.': 'No hay voz disponible para este idioma.',
+
+    // ── TTS compatibility messages ──
+    "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres TTS.":
+        'Este proveedor no está configurado. Añada una clave API en los ajustes TTS.',
+    "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres TTS.":
+        'El modelo de voz no está descargado. Descárguelo en los ajustes TTS.',
+    'La voix sélectionnée ne prend pas en charge cette langue. Changez de voix dans les paramètres TTS.':
+        'La voz seleccionada no es compatible con este idioma. Cambie la voz en los ajustes TTS.',
+    'Ce fournisseur ne prend pas en charge cette langue.':
+        'Este proveedor no es compatible con este idioma.',
+    'Ce fournisseur ne peut pas lire cette langue.': 'Este proveedor no puede leer este idioma.',
+    'Le navigateur ne dispose pas de voix pour cette langue.':
+        'El navegador no tiene voz para este idioma.',
+    'Impossible de vérifier la compatibilité du fournisseur.':
+        'No se puede verificar la compatibilidad del proveedor.',
 
     // ── History ──
     'Aucune historique': 'Sin historial',

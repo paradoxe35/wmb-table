@@ -304,6 +304,7 @@ export default function BibleDocumentView() {
                 highlightsByParagraph={highlightsByParagraph}
                 onPlayFromHere={tts.playFromParagraph}
                 canSpeak={tts.canSpeak}
+                incompatibleMessage={tts.incompatibleMessage}
             />
         </DocumentBody>
     );

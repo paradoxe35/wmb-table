@@ -104,6 +104,10 @@ export function registerTtsHandlers(): void {
         return getTtsService().previewVoice(language);
     });
 
+    registerHandler(TtsChannels.resolveVoiceForLanguage, async (_event, language) => {
+        return getTtsService().resolveVoiceForLanguage(language);
+    });
+
     registerHandler(TtsChannels.segmentParagraphs, (_event, paragraphs, language) => {
         let index = 0;
         const segments: TtsSegment[] = [];

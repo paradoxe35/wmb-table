@@ -1,7 +1,6 @@
-import { Worker } from 'node:worker_threads';
 import { existsSync, readdirSync, readFileSync, mkdirSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
-import { join, extname } from 'node:path';
+import { extname, join } from 'node:path';
 import log from 'electron-log';
 import type { TtsProvider } from './provider';
 import type {
@@ -12,60 +11,17 @@ import type {
     TtsSynthesizeResult,
     TtsModelInfo,
     TtsVoice,
+    TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { normalizeLangCode, getLangLabelFr } from './sherpa-catalog';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
 import { getTtsModelsDir } from '@main/lib/app-paths';
+import { WorkerRpc } from './worker-rpc';
 import workerPath from './sherpa.worker?modulePath';
-
-// ---------------------------------------------------------------------------
-// Worker RPC
-// ---------------------------------------------------------------------------
-
-let worker: Worker | null = null;
-let requestId = 0;
-const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
-let progressCallback: ((pct: number) => void) | null = null;
-
-function getWorker(): Worker {
-    if (!worker) {
-        worker = new Worker(workerPath);
-        worker.on('message', (msg: { id: number; result?: unknown; error?: string }) => {
-            if (msg.id === -1 && msg.result && typeof msg.result === 'object') {
-                const r = msg.result as { type?: string; percentage?: number };
-                if (r.type === 'progress' && progressCallback) {
-                    progressCallback(r.percentage ?? 0);
-                }
-                return;
-            }
-            const p = pending.get(msg.id);
-            if (!p) return;
-            pending.delete(msg.id);
-            if (msg.error) p.reject(new Error(msg.error));
-            else p.resolve(msg.result);
-        });
-        worker.on('error', (err) => log.error('[sherpa-worker] Worker error:', err));
-    }
-    return worker;
-}
-
-function call<T>(method: string, ...args: unknown[]): Promise<T> {
-    const id = ++requestId;
-    return new Promise<T>((resolve, reject) => {
-        pending.set(id, { resolve: resolve as (v: unknown) => void, reject });
-        getWorker().postMessage({ id, method, args });
-    });
-}
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function getSherpaModelsDir(): string {
-    const dir = join(getTtsModelsDir(), 'sherpa');
-    mkdirSync(dir, { recursive: true });
-    return dir;
-}
 
 function findOnnxFile(dir: string): string | null {
     if (!existsSync(dir)) return null;
@@ -77,9 +33,14 @@ function findOnnxFile(dir: string): string | null {
     }
 }
 
-function isModelInstalled(modelName: string): boolean {
-    const dir = join(getSherpaModelsDir(), modelName);
-    return findOnnxFile(dir) !== null && existsSync(join(dir, 'tokens.txt'));
+function isModelInstalled(modelDir: string): boolean {
+    return findOnnxFile(modelDir) !== null && existsSync(join(modelDir, 'tokens.txt'));
+}
+
+function getSherpaModelsDir(): string {
+    const dir = join(getTtsModelsDir(), 'sherpa');
+    mkdirSync(dir, { recursive: true });
+    return dir;
 }
 
 interface ModelMeta {
@@ -107,23 +68,17 @@ function getInstalledModelNames(): string[] {
     if (!existsSync(modelsDir)) return [];
     try {
         return readdirSync(modelsDir, { withFileTypes: true })
-            .filter((e) => e.isDirectory() && isModelInstalled(e.name))
+            .filter((e) => e.isDirectory() && isModelInstalled(join(modelsDir, e.name)))
             .map((e) => e.name);
     } catch {
         return [];
     }
 }
 
-/** Resolve language code for an installed model directory name */
 function getLangCodeForModel(modelName: string): string {
-    // MMS models: mms-{langCode}
-    if (modelName.startsWith('mms-')) {
-        return normalizeLangCode(modelName.slice(4));
-    }
-    // Catalog models: look up in catalog
+    if (modelName.startsWith('mms-')) return normalizeLangCode(modelName.slice(4));
     const entry = findCatalogModelByModelName(modelName);
     if (entry) return entry.langCode;
-    // Fallback: try to extract from dir name pattern like vits-piper-{lang}_{region}-...
     const parts = modelName.split('-');
     if (parts.length >= 3) {
         const langPart = parts[2].split('_')[0];
@@ -142,6 +97,7 @@ export class SherpaProvider implements TtsProvider {
     private speed = 1.0;
     private activeModel = '';
     private initialized = false;
+    private readonly rpc = new WorkerRpc(workerPath, 'sherpa');
 
     async getInfo(): Promise<TtsProviderInfo> {
         const installed = getInstalledModelNames();
@@ -190,10 +146,31 @@ export class SherpaProvider implements TtsProvider {
         };
     }
 
-    supportsLanguage(langCode: string): boolean {
+    async checkCompatibility(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Promise<TtsCompatibilityResult> {
         const code = normalizeLangCode(langCode);
         const installed = getInstalledModelNames();
-        return installed.some((name) => getLangCodeForModel(name) === code);
+
+        if (installed.length === 0) {
+            return { supported: false, reason: 'model_not_downloaded' };
+        }
+
+        // If a specific voice is configured, validate that model's language
+        if (cfg?.voiceId) {
+            const modelName = cfg.voiceId.split(':')[0];
+            if (modelName && installed.includes(modelName)) {
+                return normalizeLangCode(getLangCodeForModel(modelName)) === code
+                    ? { supported: true }
+                    : { supported: false, reason: 'no_voice_for_language' };
+            }
+        }
+
+        // No voice configured: check if any installed model supports the language
+        return installed.some((name) => normalizeLangCode(getLangCodeForModel(name)) === code)
+            ? { supported: true }
+            : { supported: false, reason: 'no_voice_for_language' };
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
@@ -209,31 +186,34 @@ export class SherpaProvider implements TtsProvider {
             }
         }
 
-        const audioBase64 = await call<string>('synthesize', request.text, sid, speed);
+        const audioBase64 = await this.rpc.call<string>('synthesize', request.text, sid, speed);
         return { audioBase64, mimeType: 'audio/wav' };
     }
 
     async downloadModel(onProgress: (pct: number) => void, modelName?: string): Promise<void> {
         if (!modelName) throw new Error('Model name required for Sherpa download');
 
-        progressCallback = onProgress;
+        this.rpc.onProgress = onProgress;
         try {
             onProgress(0);
 
             if (modelName.startsWith('mms-')) {
-                // MMS model: download individual files
                 const langCode = modelName.slice(4);
-                await call<void>('downloadMmsModel', langCode, getSherpaModelsDir());
+                await this.rpc.call<void>('downloadMmsModel', langCode, getSherpaModelsDir());
             } else {
-                // Catalog model: download tar.bz2
                 const entry = findCatalogModelByModelName(modelName);
                 if (!entry) throw new Error(`Unknown model: ${modelName}`);
-                await call<void>('downloadModel', entry.url, entry.modelName, getSherpaModelsDir());
+                await this.rpc.call<void>(
+                    'downloadModel',
+                    entry.url,
+                    entry.modelName,
+                    getSherpaModelsDir(),
+                );
             }
 
             onProgress(100);
         } finally {
-            progressCallback = null;
+            this.rpc.onProgress = null;
         }
     }
 
@@ -266,7 +246,7 @@ export class SherpaProvider implements TtsProvider {
         if (this.activeModel === modelName) {
             this.initialized = false;
             this.activeModel = '';
-            call('dispose').catch(() => {});
+            this.rpc.call('dispose').catch(() => {});
         }
     }
 
@@ -278,17 +258,34 @@ export class SherpaProvider implements TtsProvider {
         if (settings.model) this.activeModel = settings.model;
     }
 
+    resolveVoiceForLanguage(langCode: string, cfg?: TtsProviderSettings): string | null {
+        const code = normalizeLangCode(langCode);
+        const installed = getInstalledModelNames();
+
+        // If the configured voiceId already points to an installed model for this language, no change needed
+        if (cfg?.voiceId) {
+            const modelName = cfg.voiceId.split(':')[0];
+            if (modelName && installed.includes(modelName)) {
+                if (normalizeLangCode(getLangCodeForModel(modelName)) === code) {
+                    return null;
+                }
+            }
+        }
+
+        // Find the first installed model whose language matches
+        const compatibleModel = installed.find(
+            (name) => normalizeLangCode(getLangCodeForModel(name)) === code,
+        );
+        return compatibleModel ? `${compatibleModel}:0` : null;
+    }
+
     async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
         return this.synthesize(request);
     }
 
     dispose(): void {
-        call('dispose').catch(() => {});
-        if (worker) {
-            worker.terminate().catch(() => {});
-            worker = null;
-            pending.clear();
-        }
+        this.rpc.call('dispose').catch(() => {});
+        this.rpc.dispose();
         this.initialized = false;
         log.info('Sherpa-ONNX TTS provider disposed');
     }
@@ -320,16 +317,15 @@ export class SherpaProvider implements TtsProvider {
         );
         if (nonMms) return nonMms.modelName;
 
-        // Fallback: any installed model matching the language (including MMS)
         return installed.find((name) => getLangCodeForModel(name) === code);
     }
 
     private async initializeModel(modelName: string): Promise<void> {
         const modelDir = join(getSherpaModelsDir(), modelName);
-        if (!isModelInstalled(modelName)) {
+        if (!isModelInstalled(modelDir)) {
             throw new Error(`Modèle Sherpa-ONNX non trouvé: ${modelName}`);
         }
-        const ok = await call<boolean>('initialize', modelDir);
+        const ok = await this.rpc.call<boolean>('initialize', modelDir);
         if (!ok) throw new Error(`Échec d'initialisation du modèle: ${modelName}`);
         this.activeModel = modelName;
         this.initialized = true;

@@ -44,8 +44,10 @@ const en: Record<string, string> = {
 
     // ── TTS tab ──
     'Fournisseur actif': 'Active provider',
-    'Le service qui lira le texte à voix haute. Si celui-ci ne fonctionne pas, un autre sera utilisé automatiquement.':
-        'The service that will read text aloud. If it fails, another will be used automatically.',
+    'Le service qui lira le texte à voix haute.': 'The service that will read text aloud.',
+    'Changer la voix automatiquement': 'Switch voice automatically',
+    'Choisir automatiquement une voix adaptée à la langue du document.':
+        'Automatically choose a voice that matches the document language.',
     'Mode de surlignage': 'Highlight mode',
     'Choisissez comment le texte est mis en évidence pendant la lecture.':
         'Choose how text is highlighted during reading.',
@@ -158,9 +160,26 @@ const en: Record<string, string> = {
     'Reprendre la lecture': 'Resume reading',
     'Démarrer la lecture': 'Start reading',
     'Lecture audio TTS': 'TTS audio playback',
+    'Lecture audio TTS indisponible': 'TTS audio unavailable',
     'Zoom arrière': 'Zoom out',
     'Zoom avant': 'Zoom in',
     "Lire à partir d'ici": 'Read from here',
+    'Aucune voix disponible pour cette langue.': 'No voice available for this language.',
+
+    // ── TTS compatibility messages ──
+    "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres TTS.":
+        'This provider is not configured. Add an API key in the TTS settings.',
+    "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres TTS.":
+        'The voice model is not downloaded. Download it in the TTS settings.',
+    'La voix sélectionnée ne prend pas en charge cette langue. Changez de voix dans les paramètres TTS.':
+        'The selected voice does not support this language. Change the voice in the TTS settings.',
+    'Ce fournisseur ne prend pas en charge cette langue.':
+        'This provider does not support this language.',
+    'Ce fournisseur ne peut pas lire cette langue.': 'This provider cannot read this language.',
+    'Le navigateur ne dispose pas de voix pour cette langue.':
+        'The browser has no voice for this language.',
+    'Impossible de vérifier la compatibilité du fournisseur.':
+        'Unable to verify provider compatibility.',
 
     // ── History ──
     'Aucune historique': 'No history',

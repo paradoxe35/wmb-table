@@ -9,6 +9,7 @@ import type {
     TtsVoice,
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
+    TtsCompatibilityResult,
 } from '@shared/tts.types';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
@@ -33,6 +34,8 @@ const ELEVENLABS_MODELS = [
     'eleven_english_sts_v2',
     'eleven_english_sts_v1',
 ] as const;
+
+const ENGLISH_ONLY_MODELS = new Set(['eleven_english_sts_v2', 'eleven_english_sts_v1']);
 
 const SUPPORTED_LANGUAGES = [
     'en',
@@ -114,9 +117,22 @@ export class ElevenLabsProvider implements TtsProvider {
         };
     }
 
-    supportsLanguage(langCode: string): boolean {
+    async checkCompatibility(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Promise<TtsCompatibilityResult> {
+        if (!this.apiKey) {
+            return { supported: false, reason: 'not_configured' };
+        }
         const code = langCode.split('-')[0].toLowerCase();
-        return SUPPORTED_LANGUAGES.includes(code);
+        const model = cfg?.model ?? this.model;
+        if (ENGLISH_ONLY_MODELS.has(model) && code !== 'en') {
+            return { supported: false, reason: 'no_voice_for_language' };
+        }
+        if (!SUPPORTED_LANGUAGES.includes(code)) {
+            return { supported: false, reason: 'unsupported_language' };
+        }
+        return { supported: true };
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {

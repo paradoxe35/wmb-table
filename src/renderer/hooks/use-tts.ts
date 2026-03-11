@@ -1,9 +1,41 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
-import type { TtsHighlightMode, TtsSegment, TtsSettings } from '@shared/tts.types';
+import {
+    type TtsHighlightMode,
+    type TtsSegment,
+    type TtsSettings,
+    type TtsIncompatibilityReason,
+} from '@shared/tts.types';
+
+// ── Language compatibility ──
+
+function getIncompatibilityMessage(
+    reason: TtsIncompatibilityReason | undefined,
+    t: (k: string) => string,
+): string {
+    switch (reason) {
+        case 'not_configured':
+            return t(
+                "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres TTS.",
+            );
+        case 'model_not_downloaded':
+            return t(
+                "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres TTS.",
+            );
+        case 'no_voice_for_language':
+            return t(
+                'La voix sélectionnée ne prend pas en charge cette langue. Changez de voix dans les paramètres TTS.',
+            );
+        case 'unsupported_language':
+            return t('Ce fournisseur ne prend pas en charge cette langue.');
+        default:
+            return t('Ce fournisseur ne peut pas lire cette langue.');
+    }
+}
 
 // ── Text segmentation ──
 
@@ -92,11 +124,18 @@ export function useTts(
     language: string,
     documentId: string,
 ) {
+    const { t } = useTranslation();
     const settings = useTtsStore((s) => s.settings);
     const status = useTtsStore((s) => s.status);
     const currentDocId = useTtsStore((s) => s.documentId);
     const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
+    const languageSupported = useTtsStore((s) => s.languageSupported);
     const settingsLoaded = useRef(false);
+
+    const [incompatibleMessage, setIncompatibleMessage] = useState<string | undefined>(undefined);
+
+    // Used to re-trigger the language support check (e.g. after a model download)
+    const [recheckCounter, setRecheckCounter] = useState(0);
 
     // Load settings on mount
     useEffect(() => {
@@ -106,38 +145,91 @@ export function useTts(
         }
     }, []);
 
-    // Check language support
+    // Track active provider config to re-run check when voice/model changes
+    const activeProviderCfg = settings?.providers[settings.activeProvider ?? 'browser'];
+
+    // Language support check + auto-switch for the active provider
     useEffect(() => {
         if (!settings) return;
-        if (settings.activeProvider === 'browser') {
-            const check = () => {
+
+        let cancelled = false;
+
+        const check = async () => {
+            const activeProvider = settings.activeProvider;
+
+            if (activeProvider === 'browser') {
                 const supported = browserTts.supportsLanguage(language);
+                if (cancelled) return;
                 useTtsStore.getState().setLanguageSupported(supported);
-            };
-            check();
+                setIncompatibleMessage(
+                    supported
+                        ? undefined
+                        : t('Le navigateur ne dispose pas de voix pour cette langue.'),
+                );
+                return;
+            }
+
+            // Ask the active provider to resolve a compatible voice/model for this language.
+            // The service is provider-agnostic: any provider can implement resolveVoiceForLanguage.
+            // If it returns fresh settings, update the store immediately — no need to wait for recheck.
+            if (settings.autoSwitchVoice) {
+                const resolved = await window.api.tts.resolveVoiceForLanguage(language);
+                if (cancelled) return;
+                if (resolved) {
+                    useTtsStore.getState().setSettings(resolved);
+                }
+            }
+
+            try {
+                const results = await window.api.tts.checkLanguageSupport(language);
+                if (cancelled) return;
+                const result = results[activeProvider];
+                useTtsStore.getState().setLanguageSupported(result.supported);
+                setIncompatibleMessage(
+                    result.supported ? undefined : getIncompatibilityMessage(result.reason, t),
+                );
+            } catch {
+                if (cancelled) return;
+                useTtsStore.getState().setLanguageSupported(false);
+                setIncompatibleMessage(
+                    t('Impossible de vérifier la compatibilité du fournisseur.'),
+                );
+            }
+        };
+
+        check();
+
+        // Browser voices may load asynchronously; re-check when they become available
+        const isBrowser = settings.activeProvider === 'browser';
+        if (isBrowser) {
             window.speechSynthesis.addEventListener('voiceschanged', check);
-            return () => window.speechSynthesis.removeEventListener('voiceschanged', check);
-        } else {
-            window.api.tts.checkLanguageSupport(language).then((support) => {
-                const active = settings.activeProvider;
-                useTtsStore.getState().setLanguageSupported(support[active] ?? false);
-            });
         }
-    }, [language, settings?.activeProvider]);
+        return () => {
+            cancelled = true;
+            if (isBrowser) {
+                window.speechSynthesis.removeEventListener('voiceschanged', check);
+            }
+        };
+        // Include active provider config so the check reruns when voice/model changes
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        language,
+        settings?.activeProvider,
+        settings?.autoSwitchVoice,
+        activeProviderCfg?.voiceId,
+        activeProviderCfg?.model,
+        t,
+        recheckCounter,
+    ]);
 
     // Re-check language support after a model download completes
     useEffect(() => {
         return window.api.on.ttsModelDownloadProgress((p) => {
-            if (p.status !== 'complete' || !settings || settings.activeProvider === 'browser')
-                return;
-            window.api.tts.checkLanguageSupport(language).then((support) => {
-                const active = useTtsStore.getState().settings?.activeProvider;
-                if (active && active !== 'browser') {
-                    useTtsStore.getState().setLanguageSupported(support[active] ?? false);
-                }
-            });
+            if (p.status === 'complete') {
+                setRecheckCounter((c) => c + 1);
+            }
         });
-    }, [language, settings?.activeProvider]);
+    }, []);
 
     // Listen to push events for playback state (main-process providers)
     useEffect(() => {
@@ -177,6 +269,8 @@ export function useTts(
         });
     }, []);
 
+    const activeProvider = settings?.activeProvider;
+
     const play = useCallback(async () => {
         if (!settings || !paragraphs.length) return;
         const segments = await segmentText(paragraphs, settings.highlightMode, language);
@@ -197,7 +291,7 @@ export function useTts(
     }, [paragraphs, language, documentId, settings]);
 
     const pause = useCallback(() => {
-        if (settings?.activeProvider === 'browser') {
+        if (activeProvider === 'browser') {
             browserTts.pause();
             setPlaybackState({
                 status: 'paused',
@@ -209,10 +303,10 @@ export function useTts(
             window.api.tts.pausePlayback();
             ttsAudioPlayer.pause();
         }
-    }, [settings?.activeProvider, setPlaybackState]);
+    }, [activeProvider, setPlaybackState]);
 
     const resume = useCallback(() => {
-        if (settings?.activeProvider === 'browser') {
+        if (activeProvider === 'browser') {
             browserTts.resume();
             setPlaybackState({
                 status: 'playing',
@@ -224,29 +318,29 @@ export function useTts(
             window.api.tts.resumePlayback();
             ttsAudioPlayer.resume();
         }
-    }, [settings?.activeProvider, setPlaybackState]);
+    }, [activeProvider, setPlaybackState]);
 
     const stop = useCallback(() => {
-        if (settings?.activeProvider === 'browser') {
+        if (activeProvider === 'browser') {
             browserTts.cancel();
         } else {
             ttsAudioPlayer.stop();
             window.api.tts.stopPlayback();
         }
         useTtsStore.getState().stopAndRemember();
-    }, [settings?.activeProvider]);
+    }, [activeProvider]);
 
     const seekToSegment = useCallback(
         (i: number) => {
-            if (settings?.activeProvider === 'browser') {
+            if (activeProvider === 'browser') {
                 browserTts.cancel();
                 const segs = useTtsStore.getState().segments;
-                if (segs.length) playBrowserSegment(segs, i, settings);
+                if (segs.length && settings) playBrowserSegment(segs, i, settings);
             } else {
                 window.api.tts.seekToSegment(i);
             }
         },
-        [settings],
+        [activeProvider, settings],
     );
 
     const playFromParagraph = useCallback(
@@ -267,10 +361,10 @@ export function useTts(
     const isThisDocument = currentDocId === documentId;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');
     const isPaused = isThisDocument && status === 'paused';
-    const languageSupported = useTtsStore((s) => s.languageSupported);
 
     return {
         canSpeak: languageSupported,
+        incompatibleMessage,
         isPlaying,
         isPaused,
         play,

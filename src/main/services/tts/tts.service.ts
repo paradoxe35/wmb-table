@@ -12,7 +12,6 @@ import { KokoroProvider } from './kokoro.provider';
 import { SherpaProvider } from './sherpa.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
-import { TTS_PROVIDER_TYPES } from '@shared/tts.types';
 import type {
     TtsProviderType,
     TtsProviderInfo,
@@ -26,6 +25,7 @@ import type {
     TtsVoice,
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
+    TtsCompatibilityResult,
 } from '@shared/tts.types';
 
 /**
@@ -203,12 +203,36 @@ export class TtsService {
         }
     }
 
-    checkLanguageSupport(langCode: string): Record<TtsProviderType, boolean> {
-        const result = Object.fromEntries(
-            TTS_PROVIDER_TYPES.map((t) => [t, t === 'browser']),
-        ) as Record<TtsProviderType, boolean>;
+    async resolveVoiceForLanguage(language: string): Promise<TtsSettings | null> {
+        const activeProvider = this.settings.activeProvider;
+        const provider = this.providers.get(activeProvider);
+        if (!provider?.resolveVoiceForLanguage) return null;
+
+        const cfg = this.settings.providers[activeProvider];
+        const resolved = provider.resolveVoiceForLanguage(language, cfg);
+        if (!resolved) return null;
+        const nextConfig =
+            activeProvider === 'sherpa'
+                ? { ...cfg, voiceId: resolved, model: resolved.split(':')[0] || undefined }
+                : { ...cfg, voiceId: resolved };
+
+        ttsRepo.updateSettings({
+            providers: {
+                ...this.settings.providers,
+                [activeProvider]: nextConfig,
+            },
+        });
+        await this.reloadSettings();
+        return this.settings;
+    }
+
+    async checkLanguageSupport(
+        langCode: string,
+    ): Promise<Record<TtsProviderType, TtsCompatibilityResult>> {
+        const result = {} as Record<TtsProviderType, TtsCompatibilityResult>;
         for (const [type, provider] of this.providers) {
-            result[type] = provider.supportsLanguage(langCode);
+            const cfg = this.settings.providers[type];
+            result[type] = await provider.checkCompatibility(langCode, cfg);
         }
         return result;
     }
@@ -384,52 +408,33 @@ export class TtsService {
             }
         }
 
-        const providerOrder = [this.settings.activeProvider, ...this.settings.fallbackOrder];
-        const tried = new Set<TtsProviderType>();
+        const providerType = this.settings.activeProvider;
+        const provider = this.providers.get(providerType);
+        if (!provider) throw new Error(`Provider not found: ${providerType}`);
 
-        for (const providerType of providerOrder) {
-            if (tried.has(providerType) || providerType === 'browser') continue;
-            tried.add(providerType);
+        const cfg = this.settings.providers[providerType];
+        const cacheKey = this.buildCacheKey(
+            providerType,
+            segment.text,
+            this.currentLanguage,
+            cfg?.voiceId ?? '',
+            cfg?.model ?? '',
+            this.settings.rate,
+        );
 
-            const provider = this.providers.get(providerType);
-            if (!provider || !provider.supportsLanguage(this.currentLanguage)) continue;
+        const hit = await this.cache.lookup(cacheKey);
+        if (hit) return hit;
 
-            const cfg = this.settings.providers[providerType];
-            if (!cfg?.enabled && providerType !== this.settings.activeProvider) continue;
-
-            const cacheKey = this.buildCacheKey(
-                providerType,
-                segment.text,
-                this.currentLanguage,
-                cfg?.voiceId ?? '',
-                cfg?.model ?? '',
-                this.settings.rate,
-            );
-
-            // Check disk cache — returns a file reference, no audio loaded into RAM
-            const hit = await this.cache.lookup(cacheKey);
-            if (hit) return hit;
-
-            try {
-                const result = await provider.synthesize({
-                    text: segment.text,
-                    language: this.currentLanguage,
-                    voiceId: cfg?.voiceId,
-                    model: cfg?.model,
-                    rate: this.settings.rate,
-                });
-                // Write to disk cache immediately, so future lookups return disk refs
-                await this.cache.set(cacheKey, result);
-                // Return a disk reference instead of keeping result in memory
-                const freshHit = await this.cache.lookup(cacheKey);
-                if (freshHit) return freshHit;
-                return result;
-            } catch (err) {
-                log.error(`TTS provider ${providerType} failed:`, err);
-                continue;
-            }
-        }
-        throw new Error('All TTS providers failed');
+        const result = await provider.synthesize({
+            text: segment.text,
+            language: this.currentLanguage,
+            voiceId: cfg?.voiceId,
+            model: cfg?.model,
+            rate: this.settings.rate,
+        });
+        await this.cache.set(cacheKey, result);
+        const freshHit = await this.cache.lookup(cacheKey);
+        return freshHit ?? result;
     }
 
     /**

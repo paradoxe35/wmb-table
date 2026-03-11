@@ -15,6 +15,7 @@ import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
 
 export interface TtsControls {
     canSpeak: boolean;
+    incompatibleMessage?: string;
     isPlaying: boolean;
     isPaused: boolean;
     play: () => void;
@@ -33,7 +34,23 @@ const ttsActiveStyle = {
 
 export function TtsButton({ tts }: { tts: TtsControls }) {
     const { t } = useTranslation();
-    if (!tts.canSpeak) return null;
+
+    if (!tts.canSpeak) {
+        // Show a disabled button so the user knows TTS exists but isn't available
+        return (
+            <Tooltip
+                title={tts.incompatibleMessage ?? t('Aucune voix disponible pour cette langue.')}
+            >
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<SoundOutlined />}
+                    disabled
+                    aria-label={t('Lecture audio TTS indisponible')}
+                />
+            </Tooltip>
+        );
+    }
 
     const label = tts.isPlaying
         ? t('Pause lecture')
@@ -106,6 +123,7 @@ interface ParagraphListProps {
     highlightsByParagraph: Map<number, HighlightItem[]>;
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
+    incompatibleMessage?: string;
 }
 
 export function ParagraphList({
@@ -117,6 +135,7 @@ export function ParagraphList({
     highlightsByParagraph,
     onPlayFromHere,
     canSpeak,
+    incompatibleMessage,
 }: ParagraphListProps) {
     return (
         <>
@@ -131,6 +150,7 @@ export function ParagraphList({
                     highlights={highlightsByParagraph.get(p.paragraphIndex)}
                     onPlayFromHere={onPlayFromHere}
                     canSpeak={canSpeak}
+                    incompatibleMessage={incompatibleMessage}
                 />
             ))}
         </>
@@ -148,6 +168,7 @@ interface TtsParagraphProps {
     highlights?: HighlightItem[];
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
+    incompatibleMessage?: string;
 }
 
 export function TtsParagraph({
@@ -159,9 +180,16 @@ export function TtsParagraph({
     highlights,
     onPlayFromHere,
     canSpeak,
+    incompatibleMessage,
 }: TtsParagraphProps) {
     const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentId);
+
+    const readFromHereLabel = t("Lire à partir d'ici");
+    const tooltip = canSpeak
+        ? readFromHereLabel
+        : (incompatibleMessage ?? t('Aucune voix disponible pour cette langue.'));
+
     return (
         <SermonParagraphView
             paragraph={paragraph}
@@ -171,18 +199,26 @@ export function TtsParagraph({
             highlights={highlights}
             ttsHighlight={ttsHighlight}
             playFromHereButton={
-                onPlayFromHere && canSpeak ? (
-                    <Tooltip title={t("Lire à partir d'ici")}>
-                        <button
-                            className="tts-play-from-here"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onPlayFromHere(paragraph.paragraphIndex);
-                            }}
-                            aria-label={t("Lire à partir d'ici")}
-                        >
-                            <CaretRightOutlined />
-                        </button>
+                onPlayFromHere ? (
+                    <Tooltip title={tooltip}>
+                        <span>
+                            <button
+                                className="tts-play-from-here"
+                                disabled={!canSpeak}
+                                onClick={(e) => {
+                                    if (!canSpeak) return;
+                                    e.stopPropagation();
+                                    onPlayFromHere(paragraph.paragraphIndex);
+                                }}
+                                aria-label={
+                                    canSpeak
+                                        ? readFromHereLabel
+                                        : t('Lecture audio TTS indisponible')
+                                }
+                            >
+                                <CaretRightOutlined />
+                            </button>
+                        </span>
                     </Tooltip>
                 ) : undefined
             }

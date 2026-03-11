@@ -6,6 +6,7 @@ import type {
     TtsProviderSettings,
     TtsSynthesizeRequest,
     TtsSynthesizeResult,
+    TtsCompatibilityResult,
 } from '@shared/tts.types';
 
 const OPENAI_VOICES = [
@@ -105,9 +106,15 @@ export class OpenAiProvider implements TtsProvider {
         };
     }
 
-    supportsLanguage(langCode: string): boolean {
+    async checkCompatibility(langCode: string): Promise<TtsCompatibilityResult> {
+        if (!this.apiKey) {
+            return { supported: false, reason: 'not_configured' };
+        }
         const code = langCode.split('-')[0].toLowerCase();
-        return SUPPORTED_LANGUAGES.includes(code);
+        if (!SUPPORTED_LANGUAGES.includes(code)) {
+            return { supported: false, reason: 'unsupported_language' };
+        }
+        return { supported: true };
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {

@@ -46,6 +46,27 @@ export function clearLocalColumnsCache(): void {
 }
 
 /**
+ * Build an INSERT ... ON CONFLICT(id) DO UPDATE SET statement.
+ * Only updates columns present in the incoming data, preserving
+ * local values for columns the remote doesn't know about.
+ */
+function buildUpsertSql(tableName: string, columns: string[]): string {
+    const quoted = columns.map(quoteColumn).join(', ');
+    const placeholders = columns.map(() => '?').join(', ');
+    const updateSet = columns
+        .filter((c) => c !== 'id')
+        .map((c) => `${quoteColumn(c)} = excluded.${quoteColumn(c)}`)
+        .join(', ');
+
+    if (!updateSet) {
+        // Only the id column — just insert, ignore conflicts
+        return `INSERT OR IGNORE INTO "${tableName}" (${quoted}) VALUES (${placeholders})`;
+    }
+
+    return `INSERT INTO "${tableName}" (${quoted}) VALUES (${placeholders}) ON CONFLICT("id") DO UPDATE SET ${updateSet}`;
+}
+
+/**
  * Apply a single remote change log to the local DB inside a transaction.
  * Wrapped in setSyncing to prevent local change logging.
  * Returns affected tables with record IDs.
@@ -80,12 +101,8 @@ export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
                 if (columns.length === 0) {
                     throw new Error(`No valid columns in change ${change.changeId}`);
                 }
-                const quoted = columns.map(quoteColumn).join(', ');
-                const placeholders = columns.map(() => '?').join(', ');
                 const values = columns.map((col) => record[col]);
-
-                // INSERT OR REPLACE — upsert by primary key
-                const sql = `INSERT OR REPLACE INTO "${change.tableName}" (${quoted}) VALUES (${placeholders})`;
+                const sql = buildUpsertSql(change.tableName, columns);
                 db.prepare(sql).run(...values);
                 affectedTables[change.tableName] = [change.rowId];
             }
@@ -132,9 +149,7 @@ export function applySnapshot(snapshotDbPath: string): AffectedTables {
                 );
                 if (columns.length === 0) continue;
 
-                const quoted = columns.map(quoteColumn).join(', ');
-                const placeholders = columns.map(() => '?').join(', ');
-                const sql = `INSERT OR REPLACE INTO "${tableName}" (${quoted}) VALUES (${placeholders})`;
+                const sql = buildUpsertSql(tableName, columns);
                 const stmt = localDb.prepare(sql);
 
                 const insertMany = localDb.transaction((records: Record<string, unknown>[]) => {

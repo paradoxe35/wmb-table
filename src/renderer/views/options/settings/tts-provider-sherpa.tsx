@@ -6,12 +6,7 @@ import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
 import { getErrorMessage } from '@renderer/utils/functions';
-import {
-    Field,
-    groupVoicesByLanguage,
-    providerUpdate,
-    type ProviderConfigProps,
-} from './tts-shared';
+import { Field, groupVoicesByLanguage, type ProviderConfigProps } from './tts-shared';
 
 const { Text } = Typography;
 
@@ -67,14 +62,17 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
     // ── Actions ──
 
-    const handleDownload = useCallback((modelName: string) => {
-        setDownloading(modelName);
-        setDownloadPct(0);
-        window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
-            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
-            setDownloading(null);
-        });
-    }, []);
+    const handleDownload = useCallback(
+        (modelName: string) => {
+            setDownloading(modelName);
+            setDownloadPct(0);
+            window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
+                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+                setDownloading(null);
+            });
+        },
+        [t],
+    );
 
     const handleDelete = useCallback(
         async (modelName: string) => {
@@ -83,14 +81,25 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 message.success(t('Voix supprimée'));
                 loadModels();
                 window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
-                if (cfg.model === modelName) {
-                    onUpdate(providerUpdate(settings, 'sherpa', 'model', undefined));
+                if (cfg.model === modelName || cfg.voiceId?.startsWith(`${modelName}:`)) {
+                    onUpdate({
+                        providers: {
+                            ...settings.providers,
+                            sherpa: {
+                                ...settings.providers.sherpa,
+                                model: cfg.model === modelName ? undefined : cfg.model,
+                                voiceId: cfg.voiceId?.startsWith(`${modelName}:`)
+                                    ? undefined
+                                    : cfg.voiceId,
+                            },
+                        },
+                    });
                 }
             } catch (err) {
                 message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
             }
         },
-        [loadModels, cfg.model, settings, onUpdate],
+        [loadModels, cfg.model, cfg.voiceId, onUpdate, settings, t],
     );
 
     // ── Derived data ──
@@ -121,18 +130,6 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 return (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity);
             });
     }, [models, search]);
-
-    // Auto-select voice matching active language
-    useEffect(() => {
-        if (!langCode || allVoices.length === 0) return;
-        const langVoices = allVoices.filter((v) => v.languageCodes.some((lc) => lc === langCode));
-        if (langVoices.length === 0) return;
-        const currentVoice = cfg.voiceId;
-        const currentMatchesLang = currentVoice && langVoices.some((v) => v.id === currentVoice);
-        if (!currentMatchesLang) {
-            onUpdate(providerUpdate(settings, 'sherpa', 'voiceId', langVoices[0].id));
-        }
-    }, [langCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // ── Render ──
 
@@ -173,7 +170,18 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                         value={cfg.voiceId ?? allVoices[0]?.id}
                         showSearch
                         optionFilterProp="label"
-                        onChange={(v) => onUpdate(providerUpdate(settings, 'sherpa', 'voiceId', v))}
+                        onChange={(v) =>
+                            onUpdate({
+                                providers: {
+                                    ...settings.providers,
+                                    sherpa: {
+                                        ...settings.providers.sherpa,
+                                        voiceId: v,
+                                        model: v.split(':')[0] || undefined,
+                                    },
+                                },
+                            })
+                        }
                         options={groupVoicesByLanguage(allVoices)}
                     />
                 </Field>

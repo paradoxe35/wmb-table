@@ -49,6 +49,7 @@ export interface TtsSettings {
     highlightMode: TtsHighlightMode; // default: 'sentence'
     segmentGapMs: number; // pause between segments in ms, default: 700
     autoPlay: boolean;
+    autoSwitchVoice: boolean;
     rate: number; // 0.5–2.0, default: 1
     cacheMaxSizeMb: number; // default: 1000
     providers: Record<TtsProviderType, TtsProviderSettings>;
@@ -142,6 +143,18 @@ export interface TtsModelInfo {
     numSpeakers?: number;
 }
 
+// ── Language compatibility ──
+export type TtsIncompatibilityReason =
+    | 'not_configured' // API key missing (ElevenLabs, OpenAI)
+    | 'model_not_downloaded' // local model not installed (Kokoro, Sherpa)
+    | 'no_voice_for_language' // selected voice/model doesn't match the document language
+    | 'unsupported_language'; // provider doesn't support this language at all
+
+export interface TtsCompatibilityResult {
+    supported: boolean;
+    reason?: TtsIncompatibilityReason;
+}
+
 // ── French language labels (shared across main + renderer) ──
 export const LANG_LABELS_FR: Record<string, string> = {
     en: 'Anglais',
@@ -215,6 +228,7 @@ export function createDefaultTtsSettings(): TtsSettings {
         highlightMode: 'sentence',
         segmentGapMs: 700,
         autoPlay: false,
+        autoSwitchVoice: true,
         rate: 1,
         cacheMaxSizeMb: 1000,
         providers: {

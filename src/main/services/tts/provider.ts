@@ -5,12 +5,16 @@ import type {
     TtsSynthesizeRequest,
     TtsSynthesizeResult,
     TtsModelInfo,
+    TtsCompatibilityResult,
 } from '@shared/tts.types';
 
 export interface TtsProvider {
     readonly type: TtsProviderType;
     getInfo(): Promise<TtsProviderInfo>;
-    supportsLanguage(langCode: string): boolean;
+    checkCompatibility(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Promise<TtsCompatibilityResult>;
     synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
     previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
     synthesizeStream?(request: TtsSynthesizeRequest): AsyncGenerator<Buffer>;
@@ -18,6 +22,8 @@ export interface TtsProvider {
     isModelReady?(): Promise<boolean>;
     getAvailableModels?(): TtsModelInfo[];
     deleteModel?(modelName: string): Promise<void>;
+    /** Return a compatible voiceId for the given language, or null if already correct / not applicable. */
+    resolveVoiceForLanguage?(langCode: string, cfg?: TtsProviderSettings): string | null;
     setConfig(settings: TtsProviderSettings): void;
     dispose(): void;
 }

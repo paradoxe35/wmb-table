@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Button, message, Progress, Select, Space } from 'antd';
 import { DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsProviderInfo } from '@shared/tts.types';
 import { getErrorMessage } from '@renderer/utils/functions';
@@ -20,22 +19,7 @@ interface KokoroConfigProps extends ProviderConfigProps {
 export default function KokoroConfig({ settings, info, onUpdate }: KokoroConfigProps) {
     const { t } = useTranslation();
     const cfg = settings.providers.kokoro;
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
-
     const allVoices = info?.voices ?? [];
-    const langCode = activeLanguage?.split('-')[0].toLowerCase() ?? '';
-
-    // Auto-select a voice matching the active language when no voice is set or current doesn't match
-    useEffect(() => {
-        if (!langCode || allVoices.length === 0) return;
-        const langVoices = allVoices.filter((v) => v.languageCodes.some((lc) => lc === langCode));
-        if (langVoices.length === 0) return;
-        const currentVoice = cfg.voiceId ?? 'af_heart';
-        const currentMatchesLang = langVoices.some((v) => v.id === currentVoice);
-        if (!currentMatchesLang) {
-            onUpdate(providerUpdate(settings, 'kokoro', 'voiceId', langVoices[0].id));
-        }
-    }, [langCode]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const [downloadPct, setDownloadPct] = useState<number | null>(null);
 

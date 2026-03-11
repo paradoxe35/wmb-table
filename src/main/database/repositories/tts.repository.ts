@@ -26,6 +26,7 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
         fallbackOrder: JSON.parse(row.fallbackOrder),
         highlightMode: row.highlightMode as TtsHighlightMode,
         autoPlay: row.autoPlay,
+        autoSwitchVoice: row.autoSwitchVoice ?? true,
         rate: row.rate,
         segmentGapMs: row.segmentGapMs ?? 700,
         cacheMaxSizeMb: row.cacheMaxSizeMb,
@@ -52,6 +53,7 @@ export function ensureSettings(): TtsSettings {
             fallbackOrder: JSON.stringify(defaults.fallbackOrder),
             highlightMode: defaults.highlightMode,
             autoPlay: defaults.autoPlay,
+            autoSwitchVoice: defaults.autoSwitchVoice,
             rate: defaults.rate,
             segmentGapMs: defaults.segmentGapMs,
             cacheMaxSizeMb: defaults.cacheMaxSizeMb,
@@ -70,6 +72,7 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
         update.fallbackOrder = JSON.stringify(partial.fallbackOrder);
     if (partial.highlightMode !== undefined) update.highlightMode = partial.highlightMode;
     if (partial.autoPlay !== undefined) update.autoPlay = partial.autoPlay;
+    if (partial.autoSwitchVoice !== undefined) update.autoSwitchVoice = partial.autoSwitchVoice;
     if (partial.rate !== undefined) update.rate = partial.rate;
     if (partial.segmentGapMs !== undefined) update.segmentGapMs = partial.segmentGapMs;
     if (partial.cacheMaxSizeMb !== undefined) update.cacheMaxSizeMb = partial.cacheMaxSizeMb;

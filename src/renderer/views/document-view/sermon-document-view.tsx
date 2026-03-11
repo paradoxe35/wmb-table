@@ -84,6 +84,7 @@ export default function SermonDocumentView() {
                     highlightsByParagraph={highlightsByParagraph}
                     onPlayFromHere={!content.meta.audioLink ? tts.playFromParagraph : undefined}
                     canSpeak={!content.meta.audioLink && tts.canSpeak}
+                    incompatibleMessage={tts.incompatibleMessage}
                 />
             )}
         </DocumentBody>

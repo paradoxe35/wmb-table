@@ -57,6 +57,7 @@ import type {
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
     TtsModelInfo,
+    TtsCompatibilityResult,
 } from './tts.types';
 
 // ---------------------------------------------------------------------------
@@ -203,6 +204,7 @@ export const TtsChannels = {
     deleteProviderModel: 'tts:deleteProviderModel',
     segmentParagraphs: 'tts:segmentParagraphs',
     previewVoice: 'tts:previewVoice',
+    resolveVoiceForLanguage: 'tts:resolveVoiceForLanguage',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -414,7 +416,10 @@ export interface InvokeChannelMap {
     [TtsChannels.getSettings]: { args: []; return: TtsSettings };
     [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
     [TtsChannels.synthesize]: { args: [TtsSynthesizeRequest]; return: TtsSynthesizeResult };
-    [TtsChannels.startPlayback]: { args: [TtsSegment[], string, number?]; return: void };
+    [TtsChannels.startPlayback]: {
+        args: [TtsSegment[], string, number?];
+        return: void;
+    };
     [TtsChannels.pausePlayback]: { args: []; return: void };
     [TtsChannels.resumePlayback]: { args: []; return: void };
     [TtsChannels.stopPlayback]: { args: []; return: void };
@@ -422,7 +427,7 @@ export interface InvokeChannelMap {
     [TtsChannels.segmentComplete]: { args: []; return: void };
     [TtsChannels.checkLanguageSupport]: {
         args: [string];
-        return: Record<TtsProviderType, boolean>;
+        return: Record<TtsProviderType, TtsCompatibilityResult>;
     };
     [TtsChannels.downloadModel]: { args: [TtsProviderType, string?]; return: void };
     [TtsChannels.getModelStatus]: {
@@ -441,6 +446,7 @@ export interface InvokeChannelMap {
         return: TtsSegment[];
     };
     [TtsChannels.previewVoice]: { args: [string]; return: TtsSynthesizeResult };
+    [TtsChannels.resolveVoiceForLanguage]: { args: [string]; return: TtsSettings | null };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */

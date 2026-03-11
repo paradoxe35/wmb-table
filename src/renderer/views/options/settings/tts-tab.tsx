@@ -102,6 +102,12 @@ export default function TtsTab() {
                     volume: cfg?.volume,
                 });
             } else {
+                if (settings.autoSwitchVoice) {
+                    const resolved = await window.api.tts.resolveVoiceForLanguage(language);
+                    if (resolved) {
+                        setSettings(resolved);
+                    }
+                }
                 const result = await window.api.tts.previewVoice(language);
                 ttsAudioPlayer.play(result.audioBase64, result.mimeType, settings.rate ?? 1);
             }
@@ -110,7 +116,7 @@ export default function TtsTab() {
         } finally {
             setPreviewing(false);
         }
-    }, [settings, activeLanguage, previewing, t]);
+    }, [settings, activeLanguage, previewing, setSettings, t]);
 
     useEffect(() => {
         window.api.tts.getSettings().then(setSettings);
@@ -149,9 +155,7 @@ export default function TtsTab() {
             <Card size="small">
                 <Field
                     label={t('Fournisseur actif')}
-                    hint={t(
-                        'Le service qui lira le texte à voix haute. Si celui-ci ne fonctionne pas, un autre sera utilisé automatiquement.',
-                    )}
+                    hint={t('Le service qui lira le texte à voix haute.')}
                 >
                     <Select
                         style={{ width: '100%' }}
@@ -252,6 +256,24 @@ export default function TtsTab() {
                             <Hint>
                                 {t(
                                     "Démarrer la lecture automatiquement à l'ouverture d'un document.",
+                                )}
+                            </Hint>
+                        </div>
+                    </div>
+                    <Divider style={{ margin: '4px 0' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Switch
+                            size="small"
+                            checked={settings.autoSwitchVoice}
+                            onChange={(v) => handleUpdate({ autoSwitchVoice: v })}
+                        />
+                        <div>
+                            <Text style={{ fontSize: '0.9em' }}>
+                                {t('Changer la voix automatiquement')}
+                            </Text>
+                            <Hint>
+                                {t(
+                                    'Choisir automatiquement une voix adaptée à la langue du document.',
                                 )}
                             </Hint>
                         </div>
