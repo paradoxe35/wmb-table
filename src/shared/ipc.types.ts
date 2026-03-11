@@ -163,6 +163,7 @@ export const AppChannels = {
     initialize: 'app:initialize',
     getActiveLanguage: 'app:getActiveLanguage',
     setActiveLanguage: 'app:setActiveLanguage',
+    openExternal: 'app:openExternal',
     restart: 'app:restart',
     getUpdateStatus: 'app:getUpdateStatus',
     startDownloadUpdate: 'app:startDownloadUpdate',
@@ -387,6 +388,7 @@ export interface InvokeChannelMap {
     [AppChannels.initialize]: { args: []; return: void };
     [AppChannels.getActiveLanguage]: { args: []; return: string | null };
     [AppChannels.setActiveLanguage]: { args: [string]; return: void };
+    [AppChannels.openExternal]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
     [AppChannels.startDownloadUpdate]: { args: []; return: void };

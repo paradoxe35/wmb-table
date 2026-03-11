@@ -48,6 +48,31 @@ Vous pouvez ajouter à un sujet :
 
 Cela peut se faire depuis la lecture ou depuis la Bible.
 
+## Ajouter un passage depuis la vue de lecture
+
+Quand vous lisez une prédication, la Bible ou un document personnel, vous pouvez envoyer un passage directement vers un sujet.
+
+Faites ceci :
+
+1. sélectionnez le texte voulu
+2. faites un clic droit
+3. choisissez `Ajouter au sujet`
+4. choisissez le sujet voulu dans la liste
+
+Si vous préparez un thème, cette méthode est la plus simple : vous lisez, puis vous rangez immédiatement le passage au bon endroit.
+
+<ScreenshotPlaceholder
+  file="fr-subject-add-from-reading-menu.png"
+  label="Ajouter un passage à un sujet depuis la lecture"
+  hint="Montrer un texte sélectionné dans la vue de lecture avec le menu de clic droit et l’option Ajouter au sujet."
+/>
+
+<ScreenshotPlaceholder
+  file="fr-subject-select-modal-from-reading.png"
+  label="Fenêtre de choix du sujet"
+  hint="Montrer la fenêtre de sélection du sujet après avoir choisi Ajouter au sujet."
+/>
+
 ## Ce que contient un sujet
 
 Un sujet peut afficher :
@@ -86,5 +111,6 @@ Faites cela seulement si vous êtes sûr de ne plus avoir besoin de toutes ses r
 ## Voir aussi
 
 - [Prendre des notes](/guide/notes)
+- [Utiliser la vue de lecture](/guide/document-view)
 - [Utiliser la Bible](/guide/bible)
 - [Lire les prédications](/guide/sermons)

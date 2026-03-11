@@ -43,6 +43,49 @@ Notes can contain links to:
 - sermon passages
 - Bible references
 
+## Linking a reading passage to a note
+
+While reading a sermon, the Bible, or a personal document, you can connect a precise passage to your note.
+
+The important idea is this:
+
+- open the note first
+- create a reference inside the note
+- then return to the reading view and attach the correct passage
+
+In other words, `Add to note` is not only for copying text. It is mainly used to connect an exact passage to a marker that already exists in your note.
+
+## Simple steps
+
+1. Open the note you want to use.
+2. In the editor, select a word or short phrase that will act as a marker.
+3. Create a document or Bible reference from that selection.
+4. Return to the reading view.
+5. Select the paragraph or passage you want.
+6. Right-click.
+7. Choose `Add to note`.
+8. Choose the reference you want to complete.
+
+After that, your note keeps a clear link to the exact place.
+
+<ScreenshotPlaceholder
+  file="en-note-create-reference-in-editor.png"
+  label="Creating a reference inside the note"
+  hint="Show the note editor with selected text ready to become a reference."
+/>
+
+<ScreenshotPlaceholder
+  file="en-note-add-reading-passage-menu.png"
+  label="Adding a passage to a note from the reading view"
+  hint="Show a selected passage in the reading view with the right-click menu and the Add to note option."
+/>
+
+<ScreenshotPlaceholder
+  file="en-note-reference-select-modal.png"
+  label="Choosing the note reference to complete"
+  hint="Show the window with the current note and the list of available references."
+/>
+
 ## Opening a reference from a note
 
 When you click a reference, the app can show the detail or open the linked content.
@@ -60,3 +103,9 @@ When the note is ready, you can export it as a PDF.
   label="Note editor toolbar"
   hint="Show the back button, note name, reading mode, and PDF export."
 />
+
+## See also
+
+- [Using the Reading View](/en/guide/document-view)
+- [Creating Subjects](/en/guide/subjects)
+- [Searching](/en/guide/search)

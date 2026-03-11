@@ -57,6 +57,49 @@ Les notes peuvent contenir des références utiles vers :
 
 Ces liens vous permettent d’ouvrir plus tard le contenu lié sans avoir à le rechercher à nouveau.
 
+## Lier un passage de lecture à une note
+
+Quand vous êtes en train de lire une prédication, la Bible ou un document personnel, vous pouvez relier un passage précis à votre note.
+
+Le plus important à comprendre est ceci :
+
+- vous ouvrez d’abord la note
+- vous créez dans la note une référence à compléter
+- ensuite vous revenez dans la lecture pour y attacher le bon passage
+
+Autrement dit, `Ajouter à la note` ne sert pas seulement à copier du texte. Cela sert surtout à relier un passage précis à un repère déjà prévu dans votre note.
+
+## Étapes simples
+
+1. Ouvrez la note que vous voulez utiliser.
+2. Dans l’éditeur, sélectionnez un mot ou une petite phrase qui servira de repère.
+3. Créez une référence de document ou de Bible dans cette sélection.
+4. Revenez dans la vue de lecture.
+5. Sélectionnez le paragraphe ou le passage voulu.
+6. Faites un clic droit.
+7. Choisissez `Ajouter à la note`.
+8. Choisissez la référence à laquelle vous voulez lier ce passage.
+
+Après cela, votre note garde un lien clair vers l’endroit exact.
+
+<ScreenshotPlaceholder
+  file="fr-note-create-reference-in-editor.png"
+  label="Créer une référence dans la note"
+  hint="Montrer l’éditeur de note avec un texte sélectionné prêt à être transformé en référence."
+/>
+
+<ScreenshotPlaceholder
+  file="fr-note-add-reading-passage-menu.png"
+  label="Ajouter un passage à une note depuis la lecture"
+  hint="Montrer un passage sélectionné dans la vue de lecture avec le menu de clic droit et l’option Ajouter à la note."
+/>
+
+<ScreenshotPlaceholder
+  file="fr-note-reference-select-modal.png"
+  label="Choisir la référence de note à compléter"
+  hint="Montrer la fenêtre qui affiche la note en cours et la liste des références disponibles."
+/>
+
 ## Ouvrir une référence depuis une note
 
 Quand une référence est dans la note :
@@ -95,6 +138,7 @@ Cette fonction est utile pour :
 
 ## Voir aussi
 
+- [Utiliser la vue de lecture](/guide/document-view)
 - [Créer des sujets](/guide/subjects)
 - [Faire une recherche](/guide/search)
 - [Voir votre historique](/guide/history)

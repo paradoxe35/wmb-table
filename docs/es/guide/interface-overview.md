@@ -19,3 +19,10 @@ La pantalla principal está dividida en varias zonas.
 - centro: la lectura o la herramienta abierta
 - derecha: acceso rápido a predicaciones, Biblia y documentos
 - pestañas: documentos abiertos al mismo tiempo
+
+## Lea después
+
+- [Usar la vista de lectura](/es/guide/document-view)
+- [Leer predicaciones](/es/guide/sermons)
+- [Usar la Biblia](/es/guide/bible)
+- [Agregar documentos PDF](/es/guide/custom-documents)

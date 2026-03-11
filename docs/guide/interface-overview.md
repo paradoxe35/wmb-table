@@ -116,6 +116,7 @@ Utilisez :
 
 ## À lire ensuite
 
+- [Utiliser la vue de lecture](/guide/document-view)
 - [Lire les prédications](/guide/sermons)
 - [Utiliser la Bible](/guide/bible)
 - [Ajouter vos documents PDF](/guide/custom-documents)

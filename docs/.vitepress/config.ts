@@ -3,19 +3,19 @@ import { defineConfig } from 'vitepress';
 const frNav = [
     { text: 'Accueil', link: '/' },
     { text: 'Commencer', link: '/guide/getting-started' },
-    { text: 'Guides', link: '/guide/interface-overview' },
+    { text: 'Documentation', link: '/guide/interface-overview' },
 ];
 
 const enNav = [
     { text: 'Home', link: '/en/' },
     { text: 'Start Here', link: '/en/guide/getting-started' },
-    { text: 'Guides', link: '/en/guide/interface-overview' },
+    { text: 'Documentation', link: '/en/guide/interface-overview' },
 ];
 
 const esNav = [
     { text: 'Inicio', link: '/es/' },
     { text: 'Empezar', link: '/es/guide/getting-started' },
-    { text: 'Guías', link: '/es/guide/interface-overview' },
+    { text: 'Documentación', link: '/es/guide/interface-overview' },
 ];
 
 const frSidebar = [
@@ -27,15 +27,16 @@ const frSidebar = [
         ],
     },
     {
-        text: 'Lire et chercher',
+        text: 'Lecture',
         items: [
             { text: 'Lire les prédications', link: '/guide/sermons' },
+            { text: 'Utiliser la vue de lecture', link: '/guide/document-view' },
             { text: 'Faire une recherche', link: '/guide/search' },
             { text: 'Utiliser la Bible', link: '/guide/bible' },
         ],
     },
     {
-        text: 'Organiser votre travail',
+        text: 'Préparer votre message',
         items: [
             { text: 'Prendre des notes', link: '/guide/notes' },
             { text: 'Créer des sujets', link: '/guide/subjects' },
@@ -44,7 +45,7 @@ const frSidebar = [
         ],
     },
     {
-        text: 'Réglages et services',
+        text: 'Paramètres',
         items: [
             { text: 'Vue d’ensemble des paramètres', link: '/guide/settings-overview' },
             { text: 'Général', link: '/guide/settings-general' },
@@ -73,15 +74,16 @@ const enSidebar = [
         ],
     },
     {
-        text: 'Read and Search',
+        text: 'Reading',
         items: [
             { text: 'Reading Sermons', link: '/en/guide/sermons' },
+            { text: 'Using the Reading View', link: '/en/guide/document-view' },
             { text: 'Searching', link: '/en/guide/search' },
             { text: 'Using the Bible', link: '/en/guide/bible' },
         ],
     },
     {
-        text: 'Organize Your Work',
+        text: 'Prepare Your Message',
         items: [
             { text: 'Taking Notes', link: '/en/guide/notes' },
             { text: 'Creating Subjects', link: '/en/guide/subjects' },
@@ -90,7 +92,7 @@ const enSidebar = [
         ],
     },
     {
-        text: 'Settings and Services',
+        text: 'Settings',
         items: [
             { text: 'Settings Overview', link: '/en/guide/settings-overview' },
             { text: 'General', link: '/en/guide/settings-general' },
@@ -119,15 +121,16 @@ const esSidebar = [
         ],
     },
     {
-        text: 'Leer y buscar',
+        text: 'Lectura',
         items: [
             { text: 'Leer predicaciones', link: '/es/guide/sermons' },
+            { text: 'Usar la vista de lectura', link: '/es/guide/document-view' },
             { text: 'Buscar', link: '/es/guide/search' },
             { text: 'Usar la Biblia', link: '/es/guide/bible' },
         ],
     },
     {
-        text: 'Organizar su trabajo',
+        text: 'Preparar su mensaje',
         items: [
             { text: 'Tomar notas', link: '/es/guide/notes' },
             { text: 'Crear temas', link: '/es/guide/subjects' },
@@ -136,7 +139,7 @@ const esSidebar = [
         ],
     },
     {
-        text: 'Ajustes y servicios',
+        text: 'Ajustes',
         items: [
             { text: 'Vista general de ajustes', link: '/es/guide/settings-overview' },
             { text: 'General', link: '/es/guide/settings-general' },

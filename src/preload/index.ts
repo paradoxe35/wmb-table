@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, shell } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import {
     DocumentChannels,
     SearchChannels,
@@ -215,7 +215,7 @@ const api = {
             invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         setUiLanguage: (langCode: string) => invoke(AppChannels.setUiLanguage, langCode),
-        openExternal: (url: string) => shell.openExternal(url),
+        openExternal: (url: string) => invoke(AppChannels.openExternal, url),
     },
 
     tts: {

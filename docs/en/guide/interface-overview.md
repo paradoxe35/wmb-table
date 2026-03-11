@@ -75,3 +75,10 @@ Settings are separated into clear sections:
 - on the right, you open what you want to read
 - in the center, you read
 - on the left, you prepare your work
+
+## Read next
+
+- [Using the Reading View](/en/guide/document-view)
+- [Reading Sermons](/en/guide/sermons)
+- [Using the Bible](/en/guide/bible)
+- [Adding PDF Documents](/en/guide/custom-documents)

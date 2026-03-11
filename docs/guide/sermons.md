@@ -28,6 +28,8 @@ Quand la prédication est ouverte :
 - le texte s’affiche paragraphe par paragraphe
 - vous pouvez lire tranquillement sans quitter la fenêtre
 
+Pour apprendre en détail la barre du haut, le clic droit, le surlignage, l’ajout à un sujet, l’ajout à une note et la lecture à voix haute, lisez aussi [Utiliser la vue de lecture](/guide/document-view).
+
 ## Utiliser plusieurs onglets
 
 Vous pouvez garder plusieurs contenus ouverts en même temps.
@@ -107,6 +109,7 @@ Cette partie est détaillée dans [Lecture audio et voix](/guide/audio-and-tts).
 
 ## Voir aussi
 
+- [Utiliser la vue de lecture](/guide/document-view)
 - [Faire une recherche](/guide/search)
 - [Prendre des notes](/guide/notes)
 - [Créer des sujets](/guide/subjects)

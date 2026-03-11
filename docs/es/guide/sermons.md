@@ -25,3 +25,12 @@ Puede recorrer la biblioteca:
 - comparar con otro sermón o con la Biblia
 - buscar dentro del documento abierto
 - usar zoom y lectura en voz
+
+Para ver en detalle la barra superior, el clic derecho, el resaltado, cómo agregar a un tema, cómo vincular a una nota y la lectura en voz alta, lea también [Usar la vista de lectura](/es/guide/document-view).
+
+## Ver también
+
+- [Usar la vista de lectura](/es/guide/document-view)
+- [Buscar](/es/guide/search)
+- [Tomar notas](/es/guide/notes)
+- [Crear temas](/es/guide/subjects)

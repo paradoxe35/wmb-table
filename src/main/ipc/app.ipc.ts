@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as configRepo from '@main/database/repositories/config.repository';
@@ -30,6 +30,10 @@ export function registerAppHandlers(): void {
     registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
         configRepo.setActiveLanguage(langCode);
         switchBibleLanguage(langCode);
+    });
+
+    registerHandler(AppChannels.openExternal, async (_event, url) => {
+        await shell.openExternal(url);
     });
 
     registerHandler(AppChannels.restart, async () => {

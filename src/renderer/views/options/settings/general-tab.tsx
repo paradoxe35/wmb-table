@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Space, Tag, Typography } from 'antd';
+import { Button, Card, Space, Tag, Typography, message } from 'antd';
 import {
     CheckCircleOutlined,
     CloudSyncOutlined,
@@ -59,8 +59,10 @@ export default function GeneralTab() {
     }, []);
 
     const openDocs = useCallback(() => {
-        window.api.app.openExternal(DOCS_LINK);
-    }, []);
+        window.api.app.openExternal(DOCS_LINK).catch(() => {
+            message.error(t("Impossible d'ouvrir la documentation"));
+        });
+    }, [t]);
 
     const backupValue = backupStatus?.active ? (
         <Tag color="green" icon={<CheckCircleOutlined />}>

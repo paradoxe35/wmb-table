@@ -33,10 +33,13 @@ const en: Record<string, string> = {
     // ── General tab ──
     'Langue active': 'Active language',
     'Langues installées': 'Installed languages',
+    "Documentation d'utilisation": 'User documentation',
+    "Impossible d'ouvrir la documentation": 'Unable to open the documentation',
     Actif: 'Active',
     'En pause': 'Paused',
     'Non connecté': 'Not connected',
     'À jour': 'Up to date',
+    Ouvrir: 'Open',
 
     // ── Languages tab ──
     'Changer la langue': 'Change language',

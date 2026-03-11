@@ -28,6 +28,8 @@ When the sermon opens:
 - the text is shown paragraph by paragraph
 - you can read without leaving the window
 
+For a detailed explanation of the top bar, right-click menu, highlighting, adding to a subject, adding to a note, and read aloud, also read [Using the Reading View](/en/guide/document-view).
+
 ## Using several tabs
 
 You can keep multiple items open at the same time, for example:
@@ -73,3 +75,10 @@ Depending on the content and settings:
 - otherwise the app can read the text with a configured voice
 
 See [Audio Reading and Voices](/en/guide/audio-and-tts).
+
+## See also
+
+- [Using the Reading View](/en/guide/document-view)
+- [Searching](/en/guide/search)
+- [Taking Notes](/en/guide/notes)
+- [Creating Subjects](/en/guide/subjects)
