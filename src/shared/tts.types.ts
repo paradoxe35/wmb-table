@@ -1,6 +1,7 @@
 // ── Provider identification ──
 export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'kokoro', 'elevenlabs', 'openai'] as const;
 export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
+export const DEFAULT_TTS_PROVIDER: TtsProviderType = 'sherpa';
 export type TtsProviderLocality = 'local' | 'remote';
 
 // ── Voice definition ──
@@ -30,8 +31,6 @@ export interface TtsProviderInfo {
 
 // ── Per-provider settings (persisted) ──
 export interface TtsProviderSettings {
-    provider: TtsProviderType;
-    enabled: boolean;
     apiKey?: string;
     apiEndpoint?: string;
     model?: string;
@@ -223,7 +222,7 @@ export const LANG_LABELS_FR: Record<string, string> = {
 // ── Default settings factory ──
 export function createDefaultTtsSettings(): TtsSettings {
     return {
-        activeProvider: 'browser',
+        activeProvider: DEFAULT_TTS_PROVIDER,
         fallbackOrder: [...TTS_PROVIDER_TYPES],
         highlightMode: 'sentence',
         segmentGapMs: 700,
@@ -232,14 +231,11 @@ export function createDefaultTtsSettings(): TtsSettings {
         rate: 1,
         cacheMaxSizeMb: 1000,
         providers: {
-            browser: { provider: 'browser', enabled: true },
-            sherpa: { provider: 'sherpa', enabled: false },
-            kokoro: { provider: 'kokoro', enabled: false },
-            elevenlabs: {
-                provider: 'elevenlabs',
-                enabled: false,
-            },
-            openai: { provider: 'openai', enabled: false },
+            browser: {},
+            sherpa: {},
+            kokoro: {},
+            elevenlabs: {},
+            openai: {},
         },
     };
 }

@@ -9,6 +9,7 @@ import {
     type TtsSegment,
     type TtsSettings,
     type TtsIncompatibilityReason,
+    DEFAULT_TTS_PROVIDER,
 } from '@shared/tts.types';
 
 // ── Language compatibility ──
@@ -146,7 +147,7 @@ export function useTts(
     }, []);
 
     // Track active provider config to re-run check when voice/model changes
-    const activeProviderCfg = settings?.providers[settings.activeProvider ?? 'browser'];
+    const activeProviderCfg = settings?.providers[settings.activeProvider ?? DEFAULT_TTS_PROVIDER];
 
     // Language support check + auto-switch for the active provider
     useEffect(() => {
