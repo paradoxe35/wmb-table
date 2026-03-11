@@ -1,3 +1,5 @@
+import '@main/lib/sentry';
+
 import { app, BrowserWindow, session, shell } from 'electron';
 import { join } from 'node:path';
 import { is } from '@electron-toolkit/utils';

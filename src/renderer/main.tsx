@@ -1,3 +1,5 @@
+import './sentry';
+
 import { createRoot } from 'react-dom/client';
 import './i18n';
 import './assets/context-menu.css';
