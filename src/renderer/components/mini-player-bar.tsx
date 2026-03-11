@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Button, Slider, Dropdown, Tooltip } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, SoundOutlined } from '@ant-design/icons';
-import { useAudioStore } from '@renderer/stores';
+import { useAppStore, useAudioStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useAudioRef } from './audio-context';
@@ -55,6 +55,12 @@ export default function MiniPlayerBar() {
         };
         const onLoadedMetadata = () => setDuration(el.duration);
         const onPlay = () => {
+            // Stop TTS when sermon audio starts
+            if (useTtsStore.getState().status !== 'idle') {
+                stopAllTtsPlayback();
+                useTtsStore.getState().reset();
+            }
+
             setCurrentPlay({
                 documentTitle: titleRef.current ?? '',
                 status: 'play',
@@ -88,6 +94,16 @@ export default function MiniPlayerBar() {
         };
     }, [audioRef, setCurrentTime, setDuration, setCurrentPlay, saveTime]);
 
+    // Pause sermon audio when TTS starts playing
+    useEffect(() => {
+        return useTtsStore.subscribe((state, prev) => {
+            if (prev.status !== 'playing' && state.status === 'playing') {
+                const el = audioRef.current;
+                if (el && !el.paused) el.pause();
+            }
+        });
+    }, [audioRef]);
+
     // Handle audio play events from document header
     useEffect(() => {
         const handleAudioPlay = async (event: CustomEventInit<any>) => {
@@ -95,13 +111,6 @@ export default function MiniPlayerBar() {
             if (!detail?.audio_link) return;
             const el = audioRef.current;
             if (!el) return;
-
-            // Stop TTS playback if active
-            const ttsState = useTtsStore.getState();
-            if (ttsState.status !== 'idle') {
-                stopAllTtsPlayback();
-                ttsState.reset();
-            }
 
             // Same title → toggle play/pause
             if (titleRef.current === detail.title) {
@@ -162,6 +171,17 @@ export default function MiniPlayerBar() {
             );
         };
     }, [audioRef, loadAudio, setCurrentPlay, openModal]);
+
+    // Stop sermon audio when the active language changes
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const prevLangRef = useRef(activeLanguage);
+    useEffect(() => {
+        if (prevLangRef.current !== activeLanguage) {
+            prevLangRef.current = activeLanguage;
+            const el = audioRef.current;
+            if (el && !el.paused) el.pause();
+        }
+    }, [activeLanguage, audioRef]);
 
     // Restore last played on mount
     useEffect(() => {

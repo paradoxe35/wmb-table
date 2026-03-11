@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import { useAudioRef } from '@renderer/components/audio-context';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import {
@@ -147,6 +146,18 @@ export function useTts(
         }
     }, []);
 
+    // Stop TTS playback when the document language changes (e.g. switching activeLang)
+    const prevLanguageRef = useRef(language);
+    useEffect(() => {
+        if (prevLanguageRef.current !== language) {
+            prevLanguageRef.current = language;
+            if (useTtsStore.getState().status !== 'idle') {
+                stopAllTtsPlayback();
+                useTtsStore.getState().reset();
+            }
+        }
+    }, [language]);
+
     // Track active provider config to re-run check when voice/model changes
     const activeProviderCfg = settings?.providers[settings.activeProvider ?? DEFAULT_TTS_PROVIDER];
 
@@ -171,10 +182,11 @@ export function useTts(
                 return;
             }
 
-            // Ask the active provider to resolve a compatible voice/model for this language.
-            // The service is provider-agnostic: any provider can implement resolveConfigForLanguage.
-            // If it returns fresh settings, update the store immediately — no need to wait for recheck.
+            // Ensure main process has the current provider before resolving.
+            // The renderer store may update ahead of the debounced IPC save.
             if (settings.autoSwitchVoice) {
+                await window.api.tts.updateSettings({ activeProvider });
+                if (cancelled) return;
                 const resolved = await window.api.tts.resolveConfigForLanguage(language);
                 if (cancelled) return;
                 if (resolved) {
@@ -273,22 +285,11 @@ export function useTts(
     }, []);
 
     const activeProvider = settings?.activeProvider;
-    const audioRef = useAudioRef();
-
-    // Stop sermon audio when TTS starts
-    const stopSermonAudio = useCallback(() => {
-        const el = audioRef.current;
-        if (el && !el.paused) {
-            el.pause();
-        }
-    }, [audioRef]);
 
     const play = useCallback(async () => {
         if (!settings || !paragraphs.length) return;
         const segments = await segmentText(paragraphs, settings.highlightMode, language);
         if (!segments.length) return;
-
-        stopSermonAudio();
 
         // Resume from last position if same document
         const store = useTtsStore.getState();
@@ -302,7 +303,7 @@ export function useTts(
         }
 
         startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
-    }, [paragraphs, language, documentId, settings, stopSermonAudio]);
+    }, [paragraphs, language, documentId, settings]);
 
     const pause = useCallback(() => {
         const state = useTtsStore.getState();
@@ -360,15 +361,13 @@ export function useTts(
             const segments = await segmentText(paragraphs, settings.highlightMode, language);
             if (!segments.length) return;
 
-            stopSermonAudio();
-
             // Find first segment at or after the target paragraph
             const startIndex = segments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
             if (startIndex < 0) return;
 
             startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
         },
-        [paragraphs, language, documentId, settings, stopSermonAudio],
+        [paragraphs, language, documentId, settings],
     );
 
     const isThisDocument = currentDocId === documentId;
