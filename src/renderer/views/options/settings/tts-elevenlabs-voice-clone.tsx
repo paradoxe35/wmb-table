@@ -3,6 +3,7 @@ import { Button, Input, message, Space, Typography } from 'antd';
 import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { TtsVoice } from '@shared/tts.types';
+import { getErrorMessage } from '@renderer/utils/functions';
 import { Field } from './tts-shared';
 
 const { Text } = Typography;
@@ -69,7 +70,7 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
             setFile(null);
             onCloned(result.voiceId);
         } catch (err) {
-            message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
+            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
         } finally {
             setCloning(false);
         }

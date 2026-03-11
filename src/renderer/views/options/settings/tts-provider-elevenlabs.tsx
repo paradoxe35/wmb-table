@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Collapse, Input, message, Select, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
+import { getErrorMessage } from '@renderer/utils/functions';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 import { ClonedVoicesList, VoiceCloneForm } from './tts-elevenlabs-voice-clone';
 
@@ -30,7 +31,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
             setClonedVoices((prev) => prev.filter((v) => v.id !== voiceId));
             message.success(t('Voix clonée supprimée'));
         } catch (err) {
-            message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
+            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
         }
     }, []);
 

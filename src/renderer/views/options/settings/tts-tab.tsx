@@ -29,6 +29,7 @@ import {
     Hint,
     formatBytes,
 } from './tts-shared';
+import { getErrorMessage } from '@renderer/utils/functions';
 import BrowserConfig from './tts-provider-browser';
 import KokoroConfig from './tts-provider-kokoro';
 import SherpaConfig from './tts-provider-sherpa';
@@ -105,8 +106,7 @@ export default function TtsTab() {
                 ttsAudioPlayer.play(result.audioBase64, result.mimeType, settings.rate ?? 1);
             }
         } catch (err) {
-            const detail = err instanceof Error ? err.message : null;
-            message.error(detail ?? t('Erreur lors de la prévisualisation de la voix'));
+            message.error(getErrorMessage(err, t('Erreur lors de la prévisualisation de la voix')));
         } finally {
             setPreviewing(false);
         }

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsProviderInfo } from '@shared/tts.types';
+import { getErrorMessage } from '@renderer/utils/functions';
 import {
     Field,
     groupVoicesByLanguage,
@@ -58,7 +59,7 @@ export default function KokoroConfig({ settings, info, onUpdate }: KokoroConfigP
     const handleDownload = useCallback(() => {
         setDownloadPct(0);
         window.api.tts.downloadModel('kokoro').catch((err) => {
-            message.error(t('Erreur: {{error}}', { error: err.message }));
+            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
             setDownloadPct(null);
         });
     }, [t]);

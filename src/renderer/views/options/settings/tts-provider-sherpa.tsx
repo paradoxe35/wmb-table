@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
+import { getErrorMessage } from '@renderer/utils/functions';
 import {
     Field,
     groupVoicesByLanguage,
@@ -70,7 +71,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
         setDownloading(modelName);
         setDownloadPct(0);
         window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
-            message.error(t('Erreur: {{error}}', { error: err.message }));
+            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
             setDownloading(null);
         });
     }, []);
@@ -86,7 +87,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                     onUpdate(providerUpdate(settings, 'sherpa', 'model', undefined));
                 }
             } catch (err) {
-                message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
+                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
             }
         },
         [loadModels, cfg.model, settings, onUpdate],

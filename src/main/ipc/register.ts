@@ -29,12 +29,12 @@ export function registerHandler<C extends InvokeChannel>(
             return await handler(event, ...(args as unknown as InvokeChannelMap[C]['args']));
         } catch (err) {
             const error = err instanceof Error ? err : new Error(String(err));
-            throw {
-                __error: true,
-                message: error.message,
-                name: error.name,
-                stack: error.stack,
-            };
+            const forwarded = new Error(error.message);
+            forwarded.name = error.name;
+            if (error.stack) {
+                forwarded.stack = error.stack;
+            }
+            throw forwarded;
         }
     });
 }

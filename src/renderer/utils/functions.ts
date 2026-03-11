@@ -1,5 +1,37 @@
 export { debounce, throttle, capitalize as capitalizeFirstLetter } from 'lodash';
 
+const REMOTE_ERROR_PATTERNS = [
+    /^Error invoking remote (?:method|function)\s+['"].*?['"]:\s*(.+)$/s,
+    /^Error invoking remote (?:method|function)\s+\S+:\s*(.+)$/s,
+];
+
+function unwrapRemoteErrorMessage(message: string): string {
+    for (const pattern of REMOTE_ERROR_PATTERNS) {
+        const normalized = message.match(pattern)?.[1]?.trim();
+        if (normalized) return normalized;
+    }
+    return message;
+}
+
+/**
+ * Extracts a human-readable message from any thrown value.
+ * Handles native Error objects and IPC error objects { __error: true, message: string }.
+ */
+export function getErrorMessage(err: unknown, fallback?: string): string {
+    if (err instanceof Error) {
+        return unwrapRemoteErrorMessage(err.message);
+    }
+    if (
+        err &&
+        typeof err === 'object' &&
+        typeof (err as { message?: unknown }).message === 'string'
+    ) {
+        const message = (err as { message: string }).message;
+        return unwrapRemoteErrorMessage(message);
+    }
+    return fallback ?? 'Une erreur inattendue est survenue.';
+}
+
 export function formatTime(seconds: number): string {
     if (!isFinite(seconds) || seconds < 0) return '0:00';
     const m = Math.floor(seconds / 60);
