@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import log from 'electron-log';
 import { getMainWindow } from '@main/lib/window';
 import { sendToRenderer } from '@main/ipc/register';
@@ -11,6 +13,7 @@ import { OpenAiProvider } from './openai.provider';
 import { KokoroProvider } from './kokoro.provider';
 import { SherpaProvider } from './sherpa.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
+import { getTtsResourceDir } from '@main/lib/app-paths';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
 import {
     type TtsProviderType,
@@ -26,6 +29,7 @@ import {
     type TtsVoiceCloneRequest,
     type TtsVoiceCloneResult,
     type TtsCompatibilityResult,
+    TTS_REFERENCE_VOICES,
     SEGMENT_GAP_MS,
 } from '@shared/tts.types';
 
@@ -288,16 +292,23 @@ export class TtsService {
         return this.cache.getSize();
     }
 
-    async cloneVoice(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult> {
-        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
-        if (!elevenlabs) throw new Error('ElevenLabs provider not available');
-        return elevenlabs.cloneVoice(request);
+    async cloneVoice(
+        providerType: TtsProviderType,
+        request: TtsVoiceCloneRequest,
+    ): Promise<TtsVoiceCloneResult> {
+        const provider = this.providers.get(providerType);
+        if (!provider?.cloneVoice) {
+            throw new Error(`Provider ${providerType} does not support voice cloning`);
+        }
+        return provider.cloneVoice(request);
     }
 
-    async listClonedVoices(): Promise<TtsVoice[]> {
-        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
-        if (!elevenlabs) return [];
-        return elevenlabs.listClonedVoices();
+    async listClonedVoices(providerType: TtsProviderType): Promise<TtsVoice[]> {
+        const provider = this.providers.get(providerType);
+        if (!provider?.listClonedVoices) {
+            return [];
+        }
+        return provider.listClonedVoices();
     }
 
     async previewVoice(language: string): Promise<TtsSynthesizeResult> {
@@ -320,10 +331,21 @@ export class TtsService {
         });
     }
 
-    async deleteClonedVoice(voiceId: string): Promise<void> {
-        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
-        if (!elevenlabs) throw new Error('ElevenLabs provider not available');
-        return elevenlabs.deleteClonedVoice(voiceId);
+    async deleteClonedVoice(providerType: TtsProviderType, voiceId: string): Promise<void> {
+        const provider = this.providers.get(providerType);
+        if (!provider?.deleteClonedVoice) {
+            throw new Error(`Provider ${providerType} does not support voice cloning`);
+        }
+        return provider.deleteClonedVoice(voiceId);
+    }
+
+    getReferenceVoiceAudio(referenceId: string): string {
+        const ref = TTS_REFERENCE_VOICES.find((v) => v.id === referenceId);
+        if (!ref) {
+            throw new Error(`Unknown reference voice: ${referenceId}`);
+        }
+        const filePath = join(getTtsResourceDir(), ref.fileName);
+        return readFileSync(filePath).toString('base64');
     }
 
     async dispose(): Promise<void> {

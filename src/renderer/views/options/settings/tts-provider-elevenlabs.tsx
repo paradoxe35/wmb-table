@@ -2,14 +2,28 @@ import { useCallback, useEffect, useState } from 'react';
 import { Collapse, Input, message, Select, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
+import { useTtsStore } from '@renderer/stores/tts.store';
 import { getErrorMessage } from '@renderer/utils/functions';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 import { ClonedVoicesList, VoiceCloneForm } from './tts-elevenlabs-voice-clone';
+import TtsReferenceVoices from './tts-reference-voices';
 
 const { Text } = Typography;
 
+const PROVIDER_TYPE = 'elevenlabs' as const;
+
 interface ElevenLabsConfigProps extends ProviderConfigProps {
     info?: TtsProviderInfo;
+}
+
+/** Refresh both cloned voices list and provider info (voice dropdown) */
+async function refreshVoices(setClonedVoices: (v: TtsVoice[]) => void): Promise<void> {
+    const [cloned, providers] = await Promise.all([
+        window.api.tts.listClonedVoices(PROVIDER_TYPE),
+        window.api.tts.getProviders(),
+    ]);
+    setClonedVoices(cloned);
+    useTtsStore.getState().setProviders(providers);
 }
 
 export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLabsConfigProps) {
@@ -18,28 +32,32 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
     const [clonedVoices, setClonedVoices] = useState<TtsVoice[]>([]);
 
     useEffect(() => {
-        if (!cfg.apiKey) return;
+        if (!cfg.apiKey) {
+            return;
+        }
         window.api.tts
-            .listClonedVoices()
+            .listClonedVoices(PROVIDER_TYPE)
             .then(setClonedVoices)
             .catch(() => {});
     }, [cfg.apiKey]);
 
-    const handleDeleteVoice = useCallback(async (voiceId: string) => {
-        try {
-            await window.api.tts.deleteClonedVoice(voiceId);
-            setClonedVoices((prev) => prev.filter((v) => v.id !== voiceId));
-            message.success(t('Voix clonée supprimée'));
-        } catch (err) {
-            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
-        }
-    }, []);
+    const handleDeleteVoice = useCallback(
+        async (voiceId: string) => {
+            try {
+                await window.api.tts.deleteClonedVoice(PROVIDER_TYPE, voiceId);
+                await refreshVoices(setClonedVoices);
+                message.success(t('Voix clonée supprimée'));
+            } catch (err) {
+                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+            }
+        },
+        [t],
+    );
 
     const handleVoiceCloned = useCallback(
         async (voiceId: string) => {
-            const voices = await window.api.tts.listClonedVoices();
-            setClonedVoices(voices);
-            onUpdate(providerUpdate(settings, 'elevenlabs', 'voiceId', voiceId));
+            await refreshVoices(setClonedVoices);
+            onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'voiceId', voiceId));
         },
         [settings, onUpdate],
     );
@@ -50,7 +68,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
     ];
 
     return (
-        <Space direction="vertical" style={{ width: '100%' }} size="small">
+        <Space orientation="vertical" style={{ width: '100%' }} size="small">
             <Field
                 label={t('Clé API ElevenLabs')}
                 hint={t(
@@ -60,9 +78,9 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                 <Input.Password
                     value={cfg.apiKey ?? ''}
                     placeholder="xi_..."
-                    onChange={(e) =>
-                        onUpdate(providerUpdate(settings, 'elevenlabs', 'apiKey', e.target.value))
-                    }
+                    onChange={(e) => {
+                        onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'apiKey', e.target.value));
+                    }}
                 />
             </Field>
             <Field
@@ -72,7 +90,9 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                 <Select
                     style={{ width: '100%' }}
                     value={cfg.model ?? 'eleven_flash_v2_5'}
-                    onChange={(v) => onUpdate(providerUpdate(settings, 'elevenlabs', 'model', v))}
+                    onChange={(v) => {
+                        onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'model', v));
+                    }}
                     options={(info?.availableModels ?? []).map((m) => ({ label: m, value: m }))}
                 />
             </Field>
@@ -85,7 +105,9 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                     value={cfg.voiceId ?? 'JBFqnCBsd6RMkjVDRZzb'}
                     showSearch
                     optionFilterProp="label"
-                    onChange={(v) => onUpdate(providerUpdate(settings, 'elevenlabs', 'voiceId', v))}
+                    onChange={(v) => {
+                        onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'voiceId', v));
+                    }}
                     options={allVoices.map((v) => ({
                         label: `${v.name}${v.isCloned ? ' (cloné)' : ''}`,
                         value: v.id,
@@ -104,12 +126,20 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                             </Text>
                         ),
                         children: (
-                            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+                            <Space orientation="vertical" size="small" style={{ width: '100%' }}>
+                                <TtsReferenceVoices
+                                    providerType={PROVIDER_TYPE}
+                                    clonedVoices={clonedVoices}
+                                    onVoiceCloned={handleVoiceCloned}
+                                />
                                 <ClonedVoicesList
                                     voices={clonedVoices}
                                     onDelete={handleDeleteVoice}
                                 />
-                                <VoiceCloneForm onCloned={handleVoiceCloned} />
+                                <VoiceCloneForm
+                                    providerType={PROVIDER_TYPE}
+                                    onCloned={handleVoiceCloned}
+                                />
                             </Space>
                         ),
                     },

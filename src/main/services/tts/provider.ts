@@ -6,6 +6,9 @@ import type {
     TtsSynthesizeResult,
     TtsModelInfo,
     TtsCompatibilityResult,
+    TtsVoiceCloneRequest,
+    TtsVoiceCloneResult,
+    TtsVoice,
 } from '@shared/tts.types';
 
 export interface TtsProvider {
@@ -26,6 +29,10 @@ export interface TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Partial<TtsProviderSettings> | null;
+    // Voice cloning (optional — providers set supportsVoiceCloning: true)
+    cloneVoice?(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult>;
+    listClonedVoices?(): Promise<TtsVoice[]>;
+    deleteClonedVoice?(voiceId: string): Promise<void>;
     setConfig(settings: TtsProviderSettings): void;
     dispose(): void;
 }

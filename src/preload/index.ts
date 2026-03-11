@@ -234,9 +234,14 @@ const api = {
             invoke(TtsChannels.downloadModel, p, modelName),
         clearCache: () => invoke(TtsChannels.clearCache),
         getCacheSize: () => invoke(TtsChannels.getCacheSize),
-        cloneVoice: (req: TtsVoiceCloneRequest) => invoke(TtsChannels.cloneVoice, req),
-        listClonedVoices: () => invoke(TtsChannels.listClonedVoices),
-        deleteClonedVoice: (id: string) => invoke(TtsChannels.deleteClonedVoice, id),
+        cloneVoice: (provider: TtsProviderType, req: TtsVoiceCloneRequest) =>
+            invoke(TtsChannels.cloneVoice, provider, req),
+        listClonedVoices: (provider: TtsProviderType) =>
+            invoke(TtsChannels.listClonedVoices, provider),
+        deleteClonedVoice: (provider: TtsProviderType, id: string) =>
+            invoke(TtsChannels.deleteClonedVoice, provider, id),
+        getReferenceVoiceAudio: (referenceId: string) =>
+            invoke(TtsChannels.getReferenceVoiceAudio, referenceId),
         getProviderModels: (p: TtsProviderType) => invoke(TtsChannels.getProviderModels, p),
         deleteProviderModel: (p: TtsProviderType, modelName: string) =>
             invoke(TtsChannels.deleteProviderModel, p, modelName),

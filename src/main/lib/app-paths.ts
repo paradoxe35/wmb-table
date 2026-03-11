@@ -1,6 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { mkdirSync } from 'node:fs';
+import { app } from 'electron';
 
 const APP_DIR = join(homedir(), '.wmb-table');
 
@@ -31,4 +32,13 @@ export function getTtsModelsDir(): string {
     const dir = join(APP_DIR, 'tts-models');
     mkdirSync(dir, { recursive: true });
     return dir;
+}
+
+// ── Bundled resources ──
+
+export function getTtsResourceDir(): string {
+    if (app.isPackaged) {
+        return join(process.resourcesPath, 'tts');
+    }
+    return join(__dirname, '../../resources/tts');
 }

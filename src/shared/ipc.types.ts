@@ -197,6 +197,7 @@ export const TtsChannels = {
     cloneVoice: 'tts:cloneVoice',
     listClonedVoices: 'tts:listClonedVoices',
     deleteClonedVoice: 'tts:deleteClonedVoice',
+    getReferenceVoiceAudio: 'tts:getReferenceVoiceAudio',
     getProviderModels: 'tts:getProviderModels',
     deleteProviderModel: 'tts:deleteProviderModel',
     segmentParagraphs: 'tts:segmentParagraphs',
@@ -428,9 +429,13 @@ export interface InvokeChannelMap {
     [TtsChannels.downloadModel]: { args: [TtsProviderType, string?]; return: void };
     [TtsChannels.clearCache]: { args: []; return: void };
     [TtsChannels.getCacheSize]: { args: []; return: number };
-    [TtsChannels.cloneVoice]: { args: [TtsVoiceCloneRequest]; return: TtsVoiceCloneResult };
-    [TtsChannels.listClonedVoices]: { args: []; return: TtsVoice[] };
-    [TtsChannels.deleteClonedVoice]: { args: [string]; return: void };
+    [TtsChannels.cloneVoice]: {
+        args: [TtsProviderType, TtsVoiceCloneRequest];
+        return: TtsVoiceCloneResult;
+    };
+    [TtsChannels.listClonedVoices]: { args: [TtsProviderType]; return: TtsVoice[] };
+    [TtsChannels.deleteClonedVoice]: { args: [TtsProviderType, string]; return: void };
+    [TtsChannels.getReferenceVoiceAudio]: { args: [string]; return: string };
     [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
     [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
     [TtsChannels.segmentParagraphs]: {

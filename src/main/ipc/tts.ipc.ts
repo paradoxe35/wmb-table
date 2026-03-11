@@ -72,16 +72,20 @@ export function registerTtsHandlers(): void {
         return getTtsService().getCacheSize();
     });
 
-    registerHandler(TtsChannels.cloneVoice, async (_event, request) => {
-        return getTtsService().cloneVoice(request);
+    registerHandler(TtsChannels.cloneVoice, async (_event, providerType, request) => {
+        return getTtsService().cloneVoice(providerType, request);
     });
 
-    registerHandler(TtsChannels.listClonedVoices, async () => {
-        return getTtsService().listClonedVoices();
+    registerHandler(TtsChannels.listClonedVoices, async (_event, providerType) => {
+        return getTtsService().listClonedVoices(providerType);
     });
 
-    registerHandler(TtsChannels.deleteClonedVoice, async (_event, voiceId) => {
-        await getTtsService().deleteClonedVoice(voiceId);
+    registerHandler(TtsChannels.deleteClonedVoice, async (_event, providerType, voiceId) => {
+        await getTtsService().deleteClonedVoice(providerType, voiceId);
+    });
+
+    registerHandler(TtsChannels.getReferenceVoiceAudio, async (_event, referenceId) => {
+        return getTtsService().getReferenceVoiceAudio(referenceId);
     });
 
     registerHandler(TtsChannels.getProviderModels, async (_event, provider) => {

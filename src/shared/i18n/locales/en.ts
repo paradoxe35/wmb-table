@@ -145,6 +145,11 @@ const en: Record<string, string> = {
     Cloner: 'Clone',
     'Voix clonée avec succès': 'Voice cloned successfully',
     'Voix clonée supprimée': 'Cloned voice deleted',
+    'Voix de référence': 'Reference voices',
+    'Voix intégrées pour le clonage vocal. Clonez-les pour les utiliser.':
+        'Built-in voices for voice cloning. Clone them to use.',
+    Cloné: 'Cloned',
+    'Erreur lors de la lecture': 'Playback error',
 
     // ── TTS provider OpenAI ──
     'Clé API OpenAI': 'OpenAI API Key',

@@ -118,7 +118,7 @@ export interface TtsSegmentAudio {
     duration?: number;
 }
 
-// ── Voice cloning (ElevenLabs) ──
+// ── Voice cloning ──
 export interface TtsVoiceCloneRequest {
     name: string; // up to 16 chars, [a-zA-Z0-9_]
     audioBase64: string; // base64-encoded audio (WAV/MP3/M4A, 10-60s, ≥24kHz mono)
@@ -127,6 +127,21 @@ export interface TtsVoiceCloneRequest {
 export interface TtsVoiceCloneResult {
     voiceId: string; // returned voice ID for use in synthesis
 }
+
+// ── Built-in reference voices for cloning ──
+export interface TtsReferenceVoice {
+    id: string; // unique key, e.g. 'francois_lepicard'
+    name: string; // display name
+    fileName: string; // file in resources/tts/
+}
+
+export const TTS_REFERENCE_VOICES: TtsReferenceVoice[] = [
+    {
+        id: 'francois_lepicard',
+        name: 'François Lepicard',
+        fileName: 'francois-lepicard-voice.mp3',
+    },
+];
 
 // ── Per-language model info (for providers with multiple downloadable models) ──
 export interface TtsModelInfo {

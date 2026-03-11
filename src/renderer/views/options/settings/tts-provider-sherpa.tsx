@@ -134,7 +134,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     // ── Render ──
 
     return (
-        <Space direction="vertical" style={{ width: '100%' }} size="small">
+        <Space orientation="vertical" style={{ width: '100%' }} size="small">
             {/* 1. Suggested download for active language */}
             {suggestedModel && (
                 <Field
