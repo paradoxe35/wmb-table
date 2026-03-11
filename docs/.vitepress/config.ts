@@ -20,14 +20,14 @@ const esNav = [
 
 const frSidebar = [
     {
-        text: 'Découvrir',
+        text: 'Commencer',
         items: [
             { text: 'Commencer', link: '/guide/getting-started' },
             { text: "Comprendre l'interface", link: '/guide/interface-overview' },
         ],
     },
     {
-        text: 'Lire et retrouver',
+        text: 'Lire et chercher',
         items: [
             { text: 'Lire les prédications', link: '/guide/sermons' },
             { text: 'Faire une recherche', link: '/guide/search' },
@@ -46,7 +46,10 @@ const frSidebar = [
     {
         text: 'Réglages et services',
         items: [
+            { text: 'Vue d’ensemble des paramètres', link: '/guide/settings-overview' },
+            { text: 'Général', link: '/guide/settings-general' },
             { text: 'Langues', link: '/guide/languages' },
+            { text: 'Assistant', link: '/guide/settings-assistant' },
             { text: 'Lecture audio et voix', link: '/guide/audio-and-tts' },
             { text: 'Sauvegarde et synchronisation', link: '/guide/backup-and-sync' },
             { text: 'Mises à jour', link: '/guide/updates' },
@@ -63,14 +66,14 @@ const frSidebar = [
 
 const enSidebar = [
     {
-        text: 'Discover',
+        text: 'Start Here',
         items: [
             { text: 'Getting Started', link: '/en/guide/getting-started' },
             { text: 'Understanding the Interface', link: '/en/guide/interface-overview' },
         ],
     },
     {
-        text: 'Read and Find',
+        text: 'Read and Search',
         items: [
             { text: 'Reading Sermons', link: '/en/guide/sermons' },
             { text: 'Searching', link: '/en/guide/search' },
@@ -89,7 +92,10 @@ const enSidebar = [
     {
         text: 'Settings and Services',
         items: [
+            { text: 'Settings Overview', link: '/en/guide/settings-overview' },
+            { text: 'General', link: '/en/guide/settings-general' },
             { text: 'Languages', link: '/en/guide/languages' },
+            { text: 'Assistant', link: '/en/guide/settings-assistant' },
             { text: 'Audio Reading and Voices', link: '/en/guide/audio-and-tts' },
             { text: 'Backup and Sync', link: '/en/guide/backup-and-sync' },
             { text: 'Updates', link: '/en/guide/updates' },
@@ -106,14 +112,14 @@ const enSidebar = [
 
 const esSidebar = [
     {
-        text: 'Descubrir',
+        text: 'Empezar',
         items: [
             { text: 'Primeros pasos', link: '/es/guide/getting-started' },
             { text: 'Entender la interfaz', link: '/es/guide/interface-overview' },
         ],
     },
     {
-        text: 'Leer y encontrar',
+        text: 'Leer y buscar',
         items: [
             { text: 'Leer predicaciones', link: '/es/guide/sermons' },
             { text: 'Buscar', link: '/es/guide/search' },
@@ -132,7 +138,10 @@ const esSidebar = [
     {
         text: 'Ajustes y servicios',
         items: [
+            { text: 'Vista general de ajustes', link: '/es/guide/settings-overview' },
+            { text: 'General', link: '/es/guide/settings-general' },
             { text: 'Idiomas', link: '/es/guide/languages' },
+            { text: 'Assistant', link: '/es/guide/settings-assistant' },
             { text: 'Lectura en audio y voces', link: '/es/guide/audio-and-tts' },
             { text: 'Copia de seguridad y sincronización', link: '/es/guide/backup-and-sync' },
             { text: 'Actualizaciones', link: '/es/guide/updates' },

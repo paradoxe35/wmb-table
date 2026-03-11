@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Space, Tag, Typography } from 'antd';
+import { Button, Card, Space, Tag, Typography } from 'antd';
 import {
     CheckCircleOutlined,
     CloudSyncOutlined,
+    BookOutlined,
     GlobalOutlined,
     PauseCircleOutlined,
     ReloadOutlined,
@@ -11,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
+import { DOCS_LINK } from '@renderer/utils/constants';
 
 const { Text } = Typography;
 
@@ -54,6 +56,10 @@ export default function GeneralTab() {
     // Stay in sync when update status changes
     useEffect(() => {
         return window.api.on.notifyForNewUpdate(setUpdateInfo);
+    }, []);
+
+    const openDocs = useCallback(() => {
+        window.api.app.openExternal(DOCS_LINK);
     }, []);
 
     const backupValue = backupStatus?.active ? (
@@ -111,6 +117,23 @@ export default function GeneralTab() {
                         {item.value}
                     </div>
                 ))}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Space size="small">
+                        <Text type="secondary">
+                            <BookOutlined />
+                        </Text>
+                        <Text type="secondary">{t("Documentation d'utilisation")}</Text>
+                    </Space>
+                    <Button size="small" onClick={openDocs}>
+                        {t('Ouvrir')}
+                    </Button>
+                </div>
             </Space>
         </Card>
     );

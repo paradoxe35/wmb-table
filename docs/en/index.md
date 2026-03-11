@@ -3,15 +3,15 @@ layout: home
 
 hero:
     name: Wmb Table
-    text: Read, search, and organize your sermons with ease.
+    text: Read and prepare your sermons more easily.
     tagline: A clear workspace for reading sermons, using the Bible, taking notes, building subjects, and keeping your documents together.
     image:
         src: /icon.png
         alt: Wmb Table
     actions:
         - theme: brand
-          text: Get Started
-          link: /en/guide/getting-started
+          text: Download
+          link: '#download'
         - theme: alt
           text: View Guides
           link: /en/guide/interface-overview
@@ -63,6 +63,27 @@ features:
   ]"
 />
 
+<ReleaseDownloadPanel
+  :labels="{
+    title: 'Download the latest version',
+    loading: 'Looking for the latest version...',
+    downloading: 'Download for this computer',
+    fallback: 'Automatic detection is temporarily unavailable. You can still open the GitHub releases page.',
+    all: 'View all releases',
+    version: 'Version',
+    windows: 'Windows',
+    mac: 'macOS',
+    linux: 'Linux',
+    direct: 'Direct download',
+    recommended: 'Recommended download',
+    notFound: 'No recommended file was found automatically for this device.',
+    installTitle: 'Quick install',
+    installWindows: 'Windows: preferably download the .exe file, open it, and follow the steps shown on screen.',
+    installMac: 'macOS: download the .dmg file that matches your Mac, open it, and move the app to Applications if asked.',
+    installLinux: 'Linux: use AppImage first if you want the simplest option, otherwise choose .deb or .tar.gz based on your preference.'
+  }"
+/>
+
 ## What you will find in this documentation
 
 <div class="doc-overview-grid">
@@ -79,8 +100,8 @@ features:
     <p>A separate group of pages explains voices, audio reading, Google Drive backup, sync, and updates.</p>
   </div>
   <div class="doc-overview-card">
-    <h3>For the future AI chat</h3>
-    <p>A dedicated page already explains the planned experience so users know what to expect once it is enabled.</p>
+    <h3>For AI chat</h3>
+    <p>A dedicated page explains how to use the assistant, find references, and add useful items to subjects more easily.</p>
   </div>
 </div>
 

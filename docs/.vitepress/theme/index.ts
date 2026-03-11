@@ -4,6 +4,7 @@ import DefaultTheme from 'vitepress/theme';
 import ScreenshotPlaceholder from './components/ScreenshotPlaceholder.vue';
 import HomeFeatureCards from './components/HomeFeatureCards.vue';
 import HomeQuickSteps from './components/HomeQuickSteps.vue';
+import ReleaseDownloadPanel from './components/ReleaseDownloadPanel.vue';
 import './style.css';
 
 export default {
@@ -15,5 +16,6 @@ export default {
         app.component('ScreenshotPlaceholder', ScreenshotPlaceholder);
         app.component('HomeFeatureCards', HomeFeatureCards);
         app.component('HomeQuickSteps', HomeQuickSteps);
+        app.component('ReleaseDownloadPanel', ReleaseDownloadPanel);
     },
 } satisfies Theme;

@@ -3,15 +3,15 @@ layout: home
 
 hero:
     name: Wmb Table
-    text: Lea, busque y organice sus predicaciones con sencillez.
+    text: Lea y prepare sus predicaciones con mayor facilidad.
     tagline: Un espacio claro para leer predicaciones, usar la Biblia, tomar notas, crear temas y mantener sus documentos juntos.
     image:
         src: /icon.png
         alt: Wmb Table
     actions:
         - theme: brand
-          text: Empezar
-          link: /es/guide/getting-started
+          text: Descargar
+          link: '#download'
         - theme: alt
           text: Ver guías
           link: /es/guide/interface-overview
@@ -63,6 +63,27 @@ features:
   ]"
 />
 
+<ReleaseDownloadPanel
+  :labels="{
+    title: 'Descargar la última versión',
+    loading: 'Buscando la última versión...',
+    downloading: 'Descargar para esta computadora',
+    fallback: 'La detección automática no está disponible por el momento. Aun así puede abrir la página de versiones en GitHub.',
+    all: 'Ver todas las versiones',
+    version: 'Versión',
+    windows: 'Windows',
+    mac: 'macOS',
+    linux: 'Linux',
+    direct: 'Descarga directa',
+    recommended: 'Descarga recomendada',
+    notFound: 'No se encontró automáticamente un archivo recomendado para este equipo.',
+    installTitle: 'Instalación rápida',
+    installWindows: 'Windows: descargue preferiblemente el archivo .exe, ábralo y siga los pasos que aparecen en pantalla.',
+    installMac: 'macOS: descargue el archivo .dmg adecuado para su Mac, ábralo y mueva la aplicación a Aplicaciones si se le pide.',
+    installLinux: 'Linux: use primero AppImage si quiere la opción más sencilla; si no, elija .deb o .tar.gz según su costumbre.'
+  }"
+/>
+
 ## Lo que encontrará en esta documentación
 
 <div class="doc-overview-grid">
@@ -79,8 +100,8 @@ features:
     <p>Un grupo aparte de páginas explica voces, lectura en audio, copia de seguridad con Google Drive, sincronización y actualizaciones.</p>
   </div>
   <div class="doc-overview-card">
-    <h3>Para el futuro chat con IA</h3>
-    <p>Una página dedicada ya explica la experiencia prevista para que los usuarios sepan qué esperar cuando se active.</p>
+    <h3>Para el chat con IA</h3>
+    <p>Una página dedicada explica cómo usar el asistente, encontrar referencias y agregar elementos útiles a los temas con más facilidad.</p>
   </div>
 </div>
 

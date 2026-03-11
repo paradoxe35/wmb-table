@@ -3,15 +3,15 @@ layout: home
 
 hero:
     name: Wmb Table
-    text: Lire, rechercher et organiser vos prédications simplement.
+    text: Lire et préparer vos prédications plus facilement.
     tagline: Un espace clair pour lire les prédications, consulter la Bible, prendre des notes, créer des sujets et retrouver facilement vos documents.
     image:
         src: /icon.png
         alt: Wmb Table
     actions:
         - theme: brand
-          text: Commencer
-          link: /guide/getting-started
+          text: Télécharger
+          link: '#download'
         - theme: alt
           text: Voir les guides
           link: /guide/interface-overview
@@ -63,6 +63,27 @@ features:
   ]"
 />
 
+<ReleaseDownloadPanel
+  :labels="{
+    title: 'Télécharger la dernière version',
+    loading: 'Recherche de la dernière version en cours...',
+    downloading: 'Télécharger pour cet ordinateur',
+    fallback: 'La détection automatique est momentanément indisponible. Vous pouvez toujours ouvrir la page des versions GitHub.',
+    all: 'Voir toutes les versions',
+    version: 'Version',
+    windows: 'Windows',
+    mac: 'macOS',
+    linux: 'Linux',
+    direct: 'Téléchargement direct',
+    recommended: 'Téléchargement recommandé',
+    notFound: 'Aucun fichier recommandé trouvé automatiquement pour cet appareil.',
+    installTitle: 'Installation rapide',
+    installWindows: 'Windows : téléchargez de préférence le fichier .exe, ouvrez-le puis suivez les étapes affichées.',
+    installMac: 'macOS : téléchargez le fichier .dmg adapté à votre Mac, ouvrez-le puis glissez l’application vers Applications si demandé.',
+    installLinux: 'Linux : utilisez d’abord AppImage si vous voulez le plus simple, sinon choisissez .deb ou .tar.gz selon votre habitude.'
+  }"
+/>
+
 ## Ce que vous trouverez dans cette documentation
 
 <div class="doc-overview-grid">
@@ -79,8 +100,8 @@ features:
     <p>Un groupe de pages explique les voix, la lecture audio, la sauvegarde Google Drive, la synchronisation et les mises à jour.</p>
   </div>
   <div class="doc-overview-card">
-    <h3>Pour la future discussion IA</h3>
-    <p>Une page présente déjà le fonctionnement prévu, pour que les utilisateurs sachent à quoi s’attendre quand cette fonction sera activée.</p>
+    <h3>Pour la discussion IA</h3>
+    <p>Une page explique comment utiliser l’assistant, retrouver des références et ajouter plus facilement des éléments dans vos sujets.</p>
   </div>
 </div>
 

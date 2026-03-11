@@ -12,11 +12,22 @@ Cada idioma instalado puede traer:
 
 El francés es el idioma predeterminado de la aplicación, pero el inglés y el español también se pueden usar cuando estén instalados.
 
+Wmb Table admite una gran cantidad de idiomas. La base de referencia incluida en la aplicación contiene 81 idiomas disponibles. Por eso la aplicación usa una ventana de gestión de idiomas: ayuda al usuario a instalar solo los idiomas que realmente necesita, en lugar de cargar todo de una vez.
+
 <ScreenshotPlaceholder
   file="es-languages-manager.png"
   label="Ventana de gestión de idiomas"
   hint="Mostrar idiomas instalados, idiomas disponibles, descargas y la etiqueta del idioma activo."
 />
+
+## Por qué esta ventana es importante
+
+Como hay muchos idiomas disponibles, esta ventana ayuda a:
+
+- ver lo que ya está instalado
+- descargar solo lo que es útil
+- evitar perderse en una lista muy grande de idiomas
+- cambiar más fácilmente de un idioma a otro
 
 ## Cómo descargar un idioma
 

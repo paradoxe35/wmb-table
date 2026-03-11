@@ -37,3 +37,10 @@ Después de elegir el idioma, la aplicación se abre con tres áreas principales
 - a la derecha: predicaciones, Biblia y sus propios documentos
 
 La parte central sirve para la lectura.
+
+## Lea después
+
+- [Vista general de ajustes](/es/guide/settings-overview)
+- [Entender la interfaz](/es/guide/interface-overview)
+- [Leer predicaciones](/es/guide/sermons)
+- [Tomar notas](/es/guide/notes)

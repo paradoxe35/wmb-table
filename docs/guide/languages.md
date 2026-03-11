@@ -12,6 +12,8 @@ Chaque langue installée peut apporter :
 
 Le français est la langue par défaut de l’application, mais vous pouvez aussi utiliser l’anglais et l’espagnol si ces langues sont installées.
 
+Wmb Table prend en charge un très grand nombre de langues. La base fournie avec l’application contient 81 langues disponibles. C’est pour cela que l’application utilise une fenêtre de gestion des langues : elle vous aide à choisir seulement les langues dont vous avez réellement besoin, au lieu de tout charger d’un seul coup.
+
 ## Ouvrir la gestion des langues
 
 Vous pouvez ouvrir cette fenêtre :
@@ -25,6 +27,15 @@ Vous pouvez ouvrir cette fenêtre :
   label="Fenêtre de gestion des langues"
   hint="Montrer les langues installées, les langues disponibles, le téléchargement et la langue active."
 />
+
+## Pourquoi cette fenêtre est importante
+
+Comme il existe beaucoup de langues disponibles, cette fenêtre sert à :
+
+- voir ce qui est déjà installé
+- télécharger seulement ce qui vous est utile
+- éviter de vous perdre dans une très grande liste de langues
+- passer plus facilement d’une langue à une autre
 
 ## Télécharger une langue
 

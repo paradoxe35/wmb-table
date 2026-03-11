@@ -73,3 +73,10 @@ The most useful tools are:
 - Open a few important sermons in tabs.
 - Test one note and one subject early so the workflow becomes clear.
 - If you use more than one computer, also set up backup.
+
+## Read next
+
+- [Settings Overview](/en/guide/settings-overview)
+- [Understanding the Interface](/en/guide/interface-overview)
+- [Reading Sermons](/en/guide/sermons)
+- [Taking Notes](/en/guide/notes)
