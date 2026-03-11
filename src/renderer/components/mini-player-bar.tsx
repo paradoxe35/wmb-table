@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import { Button, Slider, Dropdown, Tooltip } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, SoundOutlined } from '@ant-design/icons';
 import { useAudioStore } from '@renderer/stores';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useAudioRef } from './audio-context';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { throttle, formatTime } from '@renderer/utils/functions';
@@ -93,6 +95,13 @@ export default function MiniPlayerBar() {
             if (!detail?.audio_link) return;
             const el = audioRef.current;
             if (!el) return;
+
+            // Stop TTS playback if active
+            const ttsState = useTtsStore.getState();
+            if (ttsState.status !== 'idle') {
+                stopAllTtsPlayback();
+                ttsState.reset();
+            }
 
             // Same title → toggle play/pause
             if (titleRef.current === detail.title) {

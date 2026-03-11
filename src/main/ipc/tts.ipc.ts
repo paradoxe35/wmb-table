@@ -29,7 +29,7 @@ export function registerTtsHandlers(): void {
 
     registerHandler(TtsChannels.updateSettings, async (_event, settings) => {
         ttsRepo.updateSettings(settings);
-        getTtsService().reloadSettings();
+        await getTtsService().reloadSettings();
     });
 
     registerHandler(TtsChannels.startPlayback, async (_event, segments, language, startIndex) => {

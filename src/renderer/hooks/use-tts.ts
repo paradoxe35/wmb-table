@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
+import { useAudioRef } from '@renderer/components/audio-context';
 import { browserTts } from '@renderer/services/browser-tts';
-import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
+import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import {
     type TtsHighlightMode,
     type TtsSegment,
@@ -151,7 +152,7 @@ export function useTts(
 
     // Language support check + auto-switch for the active provider
     useEffect(() => {
-        if (!settings) return;
+        if (!settings || !language) return;
 
         let cancelled = false;
 
@@ -272,11 +273,22 @@ export function useTts(
     }, []);
 
     const activeProvider = settings?.activeProvider;
+    const audioRef = useAudioRef();
+
+    // Stop sermon audio when TTS starts
+    const stopSermonAudio = useCallback(() => {
+        const el = audioRef.current;
+        if (el && !el.paused) {
+            el.pause();
+        }
+    }, [audioRef]);
 
     const play = useCallback(async () => {
         if (!settings || !paragraphs.length) return;
         const segments = await segmentText(paragraphs, settings.highlightMode, language);
         if (!segments.length) return;
+
+        stopSermonAudio();
 
         // Resume from last position if same document
         const store = useTtsStore.getState();
@@ -290,47 +302,44 @@ export function useTts(
         }
 
         startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
-    }, [paragraphs, language, documentId, settings]);
+    }, [paragraphs, language, documentId, settings, stopSermonAudio]);
 
     const pause = useCallback(() => {
+        const state = useTtsStore.getState();
         if (activeProvider === 'browser') {
             browserTts.pause();
-            setPlaybackState({
-                status: 'paused',
-                currentSegmentIndex: useTtsStore.getState().currentSegmentIndex,
-                totalSegments: useTtsStore.getState().totalSegments,
-                provider: 'browser',
-            });
         } else {
             window.api.tts.pausePlayback();
             ttsAudioPlayer.pause();
         }
+        setPlaybackState({
+            status: 'paused',
+            currentSegmentIndex: state.currentSegmentIndex,
+            totalSegments: state.totalSegments,
+            provider: activeProvider ?? DEFAULT_TTS_PROVIDER,
+        });
     }, [activeProvider, setPlaybackState]);
 
     const resume = useCallback(() => {
+        const state = useTtsStore.getState();
         if (activeProvider === 'browser') {
             browserTts.resume();
-            setPlaybackState({
-                status: 'playing',
-                currentSegmentIndex: useTtsStore.getState().currentSegmentIndex,
-                totalSegments: useTtsStore.getState().totalSegments,
-                provider: 'browser',
-            });
         } else {
             window.api.tts.resumePlayback();
             ttsAudioPlayer.resume();
         }
+        setPlaybackState({
+            status: 'playing',
+            currentSegmentIndex: state.currentSegmentIndex,
+            totalSegments: state.totalSegments,
+            provider: activeProvider ?? DEFAULT_TTS_PROVIDER,
+        });
     }, [activeProvider, setPlaybackState]);
 
     const stop = useCallback(() => {
-        if (activeProvider === 'browser') {
-            browserTts.cancel();
-        } else {
-            ttsAudioPlayer.stop();
-            window.api.tts.stopPlayback();
-        }
+        stopAllTtsPlayback();
         useTtsStore.getState().stopAndRemember();
-    }, [activeProvider]);
+    }, []);
 
     const seekToSegment = useCallback(
         (i: number) => {
@@ -351,13 +360,15 @@ export function useTts(
             const segments = await segmentText(paragraphs, settings.highlightMode, language);
             if (!segments.length) return;
 
+            stopSermonAudio();
+
             // Find first segment at or after the target paragraph
             const startIndex = segments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
             if (startIndex < 0) return;
 
             startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
         },
-        [paragraphs, language, documentId, settings],
+        [paragraphs, language, documentId, settings, stopSermonAudio],
     );
 
     const isThisDocument = currentDocId === documentId;

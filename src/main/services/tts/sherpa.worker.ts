@@ -66,7 +66,18 @@ function findAcousticModelFile(dir: string): string | null {
 }
 
 function initialize(modelDir: string): boolean {
+    // Skip if already initialized with this model
+    if (ttsInstance && currentModelDir === modelDir) {
+        return true;
+    }
+
     loadSherpa();
+
+    // Dispose previous model only when switching to a different one
+    if (ttsInstance?.free) {
+        ttsInstance.free();
+        ttsInstance = null;
+    }
 
     const tokens = join(modelDir, 'tokens.txt');
     if (!existsSync(tokens)) return false;

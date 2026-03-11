@@ -97,6 +97,7 @@ export class SherpaProvider implements TtsProvider {
     private speed = 1.0;
     private activeModel = '';
     private initialized = false;
+    private initPromise: Promise<void> | null = null;
     private readonly rpc = new WorkerRpc(workerPath, 'sherpa');
 
     async getInfo(): Promise<TtsProviderInfo> {
@@ -174,18 +175,17 @@ export class SherpaProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        await this.ensureInitialized(request.model, request.language);
-        const speed = request.rate ?? this.speed;
+        // Extract model name from voiceId (format: "modelName:speakerId")
+        let modelName = request.model;
         let sid = this.speakerId;
-
         if (request.voiceId?.includes(':')) {
-            const [modelName, speakerStr] = request.voiceId.split(':');
+            const [voiceModel, speakerStr] = request.voiceId.split(':');
+            modelName = voiceModel || modelName;
             sid = parseInt(speakerStr, 10) || 0;
-            if (modelName !== this.activeModel) {
-                await this.initializeModel(modelName);
-            }
         }
 
+        await this.ensureInitialized(modelName, request.language);
+        const speed = request.rate ?? this.speed;
         const audioBase64 = await this.rpc.call<string>('synthesize', request.text, sid, speed);
         return { audioBase64, mimeType: 'audio/wav' };
     }
@@ -302,16 +302,22 @@ export class SherpaProvider implements TtsProvider {
     }
 
     private async ensureInitialized(modelName?: string, language?: string): Promise<void> {
+        // If already initializing, wait for it to finish
+        if (this.initPromise) {
+            await this.initPromise;
+        }
+
         const target = modelName || this.findModelForLanguage(language) || this.activeModel;
         if (this.initialized && (!target || target === this.activeModel)) return;
 
-        if (target) {
-            await this.initializeModel(target);
-        } else {
-            const installed = getInstalledModelNames();
-            if (installed.length === 0) throw new Error('Aucun modèle Sherpa-ONNX installé');
-            await this.initializeModel(installed[0]);
-        }
+        const model = target || getInstalledModelNames()[0];
+        if (!model) throw new Error('Aucun modèle Sherpa-ONNX installé');
+
+        // Serialize: only one initialization at a time
+        this.initPromise = this.initializeModel(model).finally(() => {
+            this.initPromise = null;
+        });
+        await this.initPromise;
     }
 
     private findModelForLanguage(language?: string): string | undefined {

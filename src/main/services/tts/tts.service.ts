@@ -129,7 +129,6 @@ export class TtsService {
     }
 
     async startPlayback(segments: TtsSegment[], language: string, startIndex = 0): Promise<void> {
-        // Ensure we have the latest settings (e.g. after resolveConfigForLanguage)
         await this.reloadSettings();
 
         this.playbackGeneration++;
@@ -207,6 +206,7 @@ export class TtsService {
     }
 
     async resolveConfigForLanguage(language: string): Promise<TtsSettings | null> {
+        await this.reloadSettings();
         const activeProvider = this.settings.activeProvider;
         const provider = this.providers.get(activeProvider);
         if (!provider?.resolveConfigForLanguage) return null;
@@ -228,6 +228,7 @@ export class TtsService {
     async checkLanguageSupport(
         langCode: string,
     ): Promise<Record<TtsProviderType, TtsCompatibilityResult>> {
+        await this.reloadSettings();
         const result = {} as Record<TtsProviderType, TtsCompatibilityResult>;
         for (const [type, provider] of this.providers) {
             const cfg = this.settings.providers[type];
@@ -299,6 +300,7 @@ export class TtsService {
     }
 
     async previewVoice(language: string): Promise<TtsSynthesizeResult> {
+        await this.reloadSettings();
         const providerType = this.settings.activeProvider;
         if (providerType === 'browser') {
             throw new Error('Browser TTS preview is handled in the renderer process');
