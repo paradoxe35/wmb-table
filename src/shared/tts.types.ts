@@ -2,6 +2,7 @@
 export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'kokoro', 'elevenlabs', 'openai'] as const;
 export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
 export const DEFAULT_TTS_PROVIDER: TtsProviderType = 'sherpa';
+export const SEGMENT_GAP_MS = 500;
 export type TtsProviderLocality = 'local' | 'remote';
 
 // ── Voice definition ──
@@ -45,7 +46,7 @@ export type TtsHighlightMode = 'sentence' | 'paragraph';
 export interface TtsSettings {
     activeProvider: TtsProviderType;
     highlightMode: TtsHighlightMode; // default: 'sentence'
-    segmentGapMs: number; // pause between segments in ms, default: 700
+    segmentGapMs: number; // pause between segments in ms
     autoPlay: boolean;
     autoSwitchVoice: boolean;
     rate: number; // 0.5–2.0, default: 1
@@ -223,7 +224,7 @@ export function createDefaultTtsSettings(): TtsSettings {
     return {
         activeProvider: DEFAULT_TTS_PROVIDER,
         highlightMode: 'sentence',
-        segmentGapMs: 700,
+        segmentGapMs: SEGMENT_GAP_MS,
         autoPlay: false,
         autoSwitchVoice: true,
         rate: 1,

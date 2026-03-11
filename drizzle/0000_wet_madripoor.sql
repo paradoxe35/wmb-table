@@ -180,7 +180,7 @@ CREATE TABLE `tts_settings` (
 	`auto_play` integer NOT NULL,
 	`auto_switch_voice` integer DEFAULT true NOT NULL,
 	`rate` real DEFAULT 1 NOT NULL,
-	`segment_gap_ms` integer DEFAULT 700 NOT NULL,
+	`segment_gap_ms` integer,
 	`cache_max_size_mb` integer NOT NULL,
 	`provider_configs` text NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),

@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "ce695c2a-095c-4c1d-b7f3-1167fa1aba6e",
+    "id": "3f82433a-8024-47b4-88cf-e80d403d8239",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "audio_document_last_play": {
@@ -1138,9 +1138,8 @@
                     "name": "segment_gap_ms",
                     "type": "integer",
                     "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 700
+                    "notNull": false,
+                    "autoincrement": false
                 },
                 "cache_max_size_mb": {
                     "name": "cache_max_size_mb",

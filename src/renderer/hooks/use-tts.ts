@@ -9,6 +9,7 @@ import {
     type TtsSegment,
     type TtsSettings,
     DEFAULT_TTS_PROVIDER,
+    SEGMENT_GAP_MS,
 } from '@shared/tts.types';
 
 // ── Segmentation ──
@@ -55,7 +56,8 @@ function playBrowserSegment(segments: TtsSegment[], index: number, settings: Tts
     });
 
     const cfg = settings.providers.browser;
-    const gapMs = settings.segmentGapMs ?? 700;
+    const gapMs = settings.segmentGapMs ?? SEGMENT_GAP_MS;
+
     browserTts.setOnSegmentEnd(() => {
         if (gapMs > 0) {
             setTimeout(() => playBrowserSegment(segments, index + 1, settings), gapMs);

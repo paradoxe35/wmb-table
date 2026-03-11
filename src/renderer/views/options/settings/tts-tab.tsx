@@ -20,7 +20,7 @@ import { useAppStore } from '@renderer/stores/app.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
-import type { TtsProviderType, TtsSettings } from '@shared/tts.types';
+import { SEGMENT_GAP_MS, type TtsProviderType, type TtsSettings } from '@shared/tts.types';
 import {
     PROVIDER_LABELS,
     PROVIDER_HINTS,
@@ -291,7 +291,7 @@ export default function TtsTab() {
                     <Divider style={{ margin: '4px 0' }} />
                     <Field
                         label={t('Pause entre les segments: {{gap}}s', {
-                            gap: ((settings.segmentGapMs ?? 700) / 1000).toFixed(1),
+                            gap: ((settings.segmentGapMs ?? SEGMENT_GAP_MS) / 1000).toFixed(1),
                         })}
                         hint={t('Durée de la pause entre chaque phrase ou paragraphe lu.')}
                     >
@@ -299,7 +299,7 @@ export default function TtsTab() {
                             min={0}
                             max={2000}
                             step={100}
-                            value={settings.segmentGapMs ?? 700}
+                            value={settings.segmentGapMs ?? SEGMENT_GAP_MS}
                             onChange={(v) => handleUpdate({ segmentGapMs: v })}
                         />
                     </Field>

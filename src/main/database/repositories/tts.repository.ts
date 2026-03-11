@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '../index';
 import { ttsSettings } from '../schema';
 import type { TtsHighlightMode, TtsSettings, TtsProviderType } from '@shared/tts.types';
-import { createDefaultTtsSettings } from '@shared/tts.types';
+import { createDefaultTtsSettings, SEGMENT_GAP_MS } from '@shared/tts.types';
 
 // Fixed ID so that all devices share the same row via Google Drive sync.
 // Using a deterministic ID ensures INSERT OR REPLACE merges correctly.
@@ -27,7 +27,7 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
         autoPlay: row.autoPlay,
         autoSwitchVoice: row.autoSwitchVoice ?? true,
         rate: row.rate,
-        segmentGapMs: row.segmentGapMs ?? 700,
+        segmentGapMs: row.segmentGapMs ?? SEGMENT_GAP_MS,
         cacheMaxSizeMb: row.cacheMaxSizeMb,
         providers,
     };

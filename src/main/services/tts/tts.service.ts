@@ -12,20 +12,21 @@ import { KokoroProvider } from './kokoro.provider';
 import { SherpaProvider } from './sherpa.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
-import type {
-    TtsProviderType,
-    TtsProviderInfo,
-    TtsSettings,
-    TtsSegment,
-    TtsSynthesizeRequest,
-    TtsSynthesizeResult,
-    TtsPlaybackStatus,
-    TtsCacheKey,
-    TtsModelInfo,
-    TtsVoice,
-    TtsVoiceCloneRequest,
-    TtsVoiceCloneResult,
-    TtsCompatibilityResult,
+import {
+    type TtsProviderType,
+    type TtsProviderInfo,
+    type TtsSettings,
+    type TtsSegment,
+    type TtsSynthesizeRequest,
+    type TtsSynthesizeResult,
+    type TtsPlaybackStatus,
+    type TtsCacheKey,
+    type TtsModelInfo,
+    type TtsVoice,
+    type TtsVoiceCloneRequest,
+    type TtsVoiceCloneResult,
+    type TtsCompatibilityResult,
+    SEGMENT_GAP_MS,
 } from '@shared/tts.types';
 
 /**
@@ -185,7 +186,7 @@ export class TtsService {
                 this.stop();
                 return;
             }
-            const gapMs = this.settings.segmentGapMs ?? 700;
+            const gapMs = this.settings.segmentGapMs ?? SEGMENT_GAP_MS;
             const gapStart = Date.now();
 
             // Prepare next segment (synthesis/cache lookup) — may take time
