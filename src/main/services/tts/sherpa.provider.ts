@@ -278,6 +278,10 @@ export class SherpaProvider implements TtsProvider {
         if (settings.model) this.activeModel = settings.model;
     }
 
+    async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+        return this.synthesize(request);
+    }
+
     dispose(): void {
         call('dispose').catch(() => {});
         if (worker) {

@@ -3,6 +3,7 @@ import log from 'electron-log';
 import { getMainWindow } from '@main/lib/window';
 import { sendToRenderer } from '@main/ipc/register';
 import { PushChannels } from '@shared/ipc.types';
+import { getTtsDemoText } from '@shared/tts-demo-texts';
 import type { TtsProvider } from './provider';
 import { TtsCache } from './tts-cache';
 import type { CacheHit } from './tts-cache';
@@ -282,6 +283,25 @@ export class TtsService {
         const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
         if (!elevenlabs) return [];
         return elevenlabs.listClonedVoices();
+    }
+
+    async previewVoice(language: string): Promise<TtsSynthesizeResult> {
+        const providerType = this.settings.activeProvider;
+        if (providerType === 'browser') {
+            throw new Error('Browser TTS preview is handled in the renderer process');
+        }
+        const provider = this.providers.get(providerType);
+        if (!provider) throw new Error(`Unknown TTS provider: ${providerType}`);
+
+        const cfg = this.settings.providers[providerType];
+        const text = getTtsDemoText(language);
+        return provider.previewVoice({
+            text,
+            language,
+            voiceId: cfg?.voiceId,
+            model: cfg?.model,
+            rate: this.settings.rate,
+        });
     }
 
     async deleteClonedVoice(voiceId: string): Promise<void> {

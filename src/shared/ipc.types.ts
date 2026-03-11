@@ -202,6 +202,7 @@ export const TtsChannels = {
     getProviderModels: 'tts:getProviderModels',
     deleteProviderModel: 'tts:deleteProviderModel',
     segmentParagraphs: 'tts:segmentParagraphs',
+    previewVoice: 'tts:previewVoice',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -439,6 +440,7 @@ export interface InvokeChannelMap {
         args: [{ paragraphIndex: number; content: string }[], string];
         return: TtsSegment[];
     };
+    [TtsChannels.previewVoice]: { args: [string]; return: TtsSynthesizeResult };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */

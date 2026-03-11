@@ -149,6 +149,10 @@ export class OpenAiProvider implements TtsProvider {
         if (settings.voiceId) this.voiceId = settings.voiceId;
     }
 
+    async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+        return this.synthesize(request);
+    }
+
     dispose(): void {
         log.info('OpenAI TTS provider disposed');
     }

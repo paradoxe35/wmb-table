@@ -164,6 +164,10 @@ export class KokoroProvider implements TtsProvider {
         if (settings.voiceId) this.voiceId = settings.voiceId;
     }
 
+    async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+        return this.synthesize(request);
+    }
+
     dispose(): void {
         call('dispose').catch(() => {});
         if (worker) {

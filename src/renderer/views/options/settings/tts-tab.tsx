@@ -13,8 +13,13 @@ import {
     Typography,
     message,
 } from 'antd';
+import { SoundOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
+import { useAppStore } from '@renderer/stores/app.store';
+import { browserTts } from '@renderer/services/browser-tts';
+import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
+import { getTtsDemoText } from '@shared/tts-demo-texts';
 import type { TtsProviderType, TtsSettings } from '@shared/tts.types';
 import {
     PROVIDER_LABELS,
@@ -79,7 +84,32 @@ export default function TtsTab() {
     const settings = useTtsStore((s) => s.settings);
     const setSettings = useTtsStore((s) => s.setSettings);
     const setProviders = useTtsStore((s) => s.setProviders);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [cacheSize, setCacheSize] = useState(0);
+    const [previewing, setPreviewing] = useState(false);
+
+    const handlePreview = useCallback(async () => {
+        if (!settings || previewing) return;
+        const language = activeLanguage ?? 'fr';
+        setPreviewing(true);
+        try {
+            if (settings.activeProvider === 'browser') {
+                const cfg = settings.providers.browser;
+                browserTts.speak(getTtsDemoText(language), cfg?.voiceId, {
+                    rate: settings.rate ?? 1,
+                    pitch: cfg?.pitch,
+                    volume: cfg?.volume,
+                });
+            } else {
+                const result = await window.api.tts.previewVoice(language);
+                ttsAudioPlayer.play(result.audioBase64, result.mimeType, settings.rate ?? 1);
+            }
+        } catch {
+            message.error(t('Erreur lors de la prévisualisation de la voix'));
+        } finally {
+            setPreviewing(false);
+        }
+    }, [settings, activeLanguage, previewing, t]);
 
     useEffect(() => {
         window.api.tts.getSettings().then(setSettings);
@@ -152,6 +182,16 @@ export default function TtsTab() {
                         {t(PROVIDER_LABELS[settings.activeProvider])}{' '}
                         <LocalityTag type={locality as 'local' | 'remote'} />
                     </span>
+                }
+                extra={
+                    <Button
+                        size="small"
+                        icon={<SoundOutlined />}
+                        loading={previewing}
+                        onClick={handlePreview}
+                    >
+                        {t('Tester la voix')}
+                    </Button>
                 }
             >
                 <ActiveProviderConfig settings={settings} onUpdate={handleUpdate} />

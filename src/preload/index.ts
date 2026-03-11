@@ -247,6 +247,7 @@ const api = {
             paragraphs: { paragraphIndex: number; content: string }[],
             language: string,
         ) => invoke(TtsChannels.segmentParagraphs, paragraphs, language),
+        previewVoice: (language: string) => invoke(TtsChannels.previewVoice, language),
     },
 
     on: {

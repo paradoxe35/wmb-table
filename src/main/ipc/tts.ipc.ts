@@ -100,6 +100,10 @@ export function registerTtsHandlers(): void {
         await getTtsService().deleteProviderModel(provider, modelName);
     });
 
+    registerHandler(TtsChannels.previewVoice, async (_event, language) => {
+        return getTtsService().previewVoice(language);
+    });
+
     registerHandler(TtsChannels.segmentParagraphs, (_event, paragraphs, language) => {
         let index = 0;
         const segments: TtsSegment[] = [];
