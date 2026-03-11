@@ -129,6 +129,9 @@ export class TtsService {
     }
 
     async startPlayback(segments: TtsSegment[], language: string, startIndex = 0): Promise<void> {
+        // Ensure we have the latest settings (e.g. after resolveConfigForLanguage)
+        await this.reloadSettings();
+
         this.playbackGeneration++;
         this.segments = segments;
         this.currentIndex = startIndex;

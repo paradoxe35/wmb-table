@@ -255,7 +255,10 @@ export class SherpaProvider implements TtsProvider {
             const parts = settings.voiceId.split(':');
             this.speakerId = parseInt(parts[1] ?? '0', 10) || 0;
         }
-        if (settings.model) this.activeModel = settings.model;
+        if (settings.model && settings.model !== this.activeModel) {
+            this.activeModel = settings.model;
+            this.initialized = false;
+        }
     }
 
     resolveConfigForLanguage(
