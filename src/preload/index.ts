@@ -215,6 +215,7 @@ const api = {
         addHistoryEntry: (langCode: string, documentTitle: string, sermonId: string) =>
             invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
+        setUiLanguage: (langCode: string) => invoke(AppChannels.setUiLanguage, langCode),
         openExternal: (url: string) => shell.openExternal(url),
     },
 

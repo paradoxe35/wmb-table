@@ -8,6 +8,15 @@ import * as historyRepo from '@main/database/repositories/history.repository';
 import { switchBibleLanguage } from '@main/database/index';
 import { extractTextFromPdf } from '@main/services/pdf-extract.service';
 import { getUpdateStatus, startDownload, quitAndInstall, checkForUpdates } from '@main/lib/updater';
+import i18n from '@main/lib/i18n';
+import MenuBuilder from '@main/lib/menu';
+import { getMainWindow } from '@main/lib/window';
+
+const langToLocale: Record<string, string> = {
+    fr: 'fr-FR',
+    en: 'en-US',
+    es: 'es-ES',
+};
 
 export function registerAppHandlers(): void {
     registerHandler(AppChannels.initialize, async () => {
@@ -77,7 +86,8 @@ export function registerAppHandlers(): void {
         AppChannels.addHistoryEntry,
         async (_event, langCode, documentTitle, sermonId) => {
             const now = new Date();
-            const date = now.toLocaleDateString('fr-FR', {
+            const locale = langToLocale[langCode] ?? 'fr-FR';
+            const date = now.toLocaleDateString(locale, {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -88,7 +98,7 @@ export function registerAppHandlers(): void {
                 now.getMonth(),
                 now.getDate(),
             ).getTime();
-            const time = now.toLocaleTimeString('fr-FR', {
+            const time = now.toLocaleTimeString(locale, {
                 hour: '2-digit',
                 minute: '2-digit',
             });
@@ -105,5 +115,11 @@ export function registerAppHandlers(): void {
 
     registerHandler(AppChannels.getHistoryItems, async (_event, historyId) => {
         return historyRepo.getHistoryItems(historyId);
+    });
+
+    registerHandler(AppChannels.setUiLanguage, async (_event, langCode) => {
+        await i18n.changeLanguage(langCode);
+        const win = getMainWindow();
+        if (win) new MenuBuilder(win).buildMenu();
     });
 }

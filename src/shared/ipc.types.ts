@@ -177,6 +177,7 @@ export const AppChannels = {
     getHistory: 'app:getHistory',
     addHistoryEntry: 'app:addHistoryEntry',
     getHistoryItems: 'app:getHistoryItems',
+    setUiLanguage: 'app:setUiLanguage',
 } as const;
 
 export const TtsChannels = {
@@ -404,6 +405,7 @@ export interface InvokeChannelMap {
         args: [string];
         return: HistoryDataItem[];
     };
+    [AppChannels.setUiLanguage]: { args: [string]; return: void };
 
     // TTS
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };

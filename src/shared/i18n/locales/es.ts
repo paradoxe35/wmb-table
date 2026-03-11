@@ -441,6 +441,25 @@ const es: Record<string, string> = {
     "Une erreur inattendue s'est produite": 'Se produjo un error inesperado',
     "Recharger l'application": 'Recargar la aplicación',
 
+    // ── Native menu ──
+    '&Fichier': '&Archivo',
+    '&Fermer': '&Salir',
+    Éditer: 'Editar',
+    Défaire: 'Deshacer',
+    Refaire: 'Rehacer',
+    Couper: 'Cortar',
+    Copier: 'Copiar',
+    Coller: 'Pegar',
+    'Tout sélectionner': 'Seleccionar todo',
+    '&Vue': '&Vista',
+    'Basculer la barre latérale': 'Alternar barra lateral',
+    'Changer de menu': 'Cambiar menú',
+    "Changer d'option": 'Cambiar opción',
+    'Basculer en plein écran': 'Pantalla completa',
+    Aide: 'Ayuda',
+    Documentation: 'Documentación',
+    'À propos': 'Acerca de',
+
     // ── General ──
     sermons: 'sermones',
     disponible: 'disponible',

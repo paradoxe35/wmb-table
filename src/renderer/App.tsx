@@ -36,6 +36,7 @@ function useAntdLocale(): Locale {
     useEffect(() => {
         if (activeLanguage && i18n.language !== activeLanguage) {
             i18n.changeLanguage(activeLanguage);
+            window.api.app.setUiLanguage(activeLanguage);
         }
     }, [activeLanguage, i18n]);
 

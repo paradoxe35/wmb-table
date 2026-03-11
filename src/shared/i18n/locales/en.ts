@@ -437,6 +437,25 @@ const en: Record<string, string> = {
     "Une erreur inattendue s'est produite": 'An unexpected error occurred',
     "Recharger l'application": 'Reload the application',
 
+    // ── Native menu ──
+    '&Fichier': '&File',
+    '&Fermer': '&Quit',
+    Éditer: 'Edit',
+    Défaire: 'Undo',
+    Refaire: 'Redo',
+    Couper: 'Cut',
+    Copier: 'Copy',
+    Coller: 'Paste',
+    'Tout sélectionner': 'Select all',
+    '&Vue': '&View',
+    'Basculer la barre latérale': 'Toggle sidebar',
+    'Changer de menu': 'Switch menu',
+    "Changer d'option": 'Switch option',
+    'Basculer en plein écran': 'Toggle fullscreen',
+    Aide: 'Help',
+    Documentation: 'Documentation',
+    'À propos': 'About',
+
     // ── General ──
     sermons: 'sermons',
     disponible: 'available',
