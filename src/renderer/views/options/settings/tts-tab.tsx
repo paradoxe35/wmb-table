@@ -104,8 +104,9 @@ export default function TtsTab() {
                 const result = await window.api.tts.previewVoice(language);
                 ttsAudioPlayer.play(result.audioBase64, result.mimeType, settings.rate ?? 1);
             }
-        } catch {
-            message.error(t('Erreur lors de la prévisualisation de la voix'));
+        } catch (err) {
+            const detail = err instanceof Error ? err.message : null;
+            message.error(detail ?? t('Erreur lors de la prévisualisation de la voix'));
         } finally {
             setPreviewing(false);
         }

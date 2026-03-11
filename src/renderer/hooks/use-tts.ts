@@ -125,6 +125,20 @@ export function useTts(
         }
     }, [language, settings?.activeProvider]);
 
+    // Re-check language support after a model download completes
+    useEffect(() => {
+        return window.api.on.ttsModelDownloadProgress((p) => {
+            if (p.status !== 'complete' || !settings || settings.activeProvider === 'browser')
+                return;
+            window.api.tts.checkLanguageSupport(language).then((support) => {
+                const active = useTtsStore.getState().settings?.activeProvider;
+                if (active && active !== 'browser') {
+                    useTtsStore.getState().setLanguageSupported(support[active] ?? false);
+                }
+            });
+        });
+    }, [language, settings?.activeProvider]);
+
     // Listen to push events for playback state (main-process providers)
     useEffect(() => {
         return window.api.on.ttsPlaybackState((state) => {

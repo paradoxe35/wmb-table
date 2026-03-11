@@ -13,6 +13,15 @@ import type {
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 
+function parseElevenLabsError(body: string): string | null {
+    try {
+        const json = JSON.parse(body);
+        return json?.detail?.message ?? json?.detail ?? null;
+    } catch {
+        return body || null;
+    }
+}
+
 const ELEVENLABS_MODELS = [
     'eleven_v3',
     'eleven_flash_v2_5',
@@ -142,8 +151,9 @@ export class ElevenLabsProvider implements TtsProvider {
         });
 
         if (!response.ok) {
-            const errText = await response.text().catch(() => 'Unknown error');
-            throw new Error(`ElevenLabs TTS error ${response.status}: ${errText}`);
+            const errText = await response.text().catch(() => '');
+            const detail = parseElevenLabsError(errText);
+            throw new Error(detail ?? `ElevenLabs TTS error ${response.status}`);
         }
 
         const arrayBuffer = await response.arrayBuffer();
