@@ -176,7 +176,6 @@ CREATE TABLE `tabs` (
 CREATE TABLE `tts_settings` (
 	`id` text PRIMARY KEY NOT NULL,
 	`active_provider` text NOT NULL,
-	`fallback_order` text NOT NULL,
 	`highlight_mode` text NOT NULL,
 	`auto_play` integer NOT NULL,
 	`auto_switch_voice` integer DEFAULT true NOT NULL,

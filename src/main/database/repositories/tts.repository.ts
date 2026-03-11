@@ -23,7 +23,6 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
 
     return {
         activeProvider: row.activeProvider as TtsProviderType,
-        fallbackOrder: JSON.parse(row.fallbackOrder),
         highlightMode: row.highlightMode as TtsHighlightMode,
         autoPlay: row.autoPlay,
         autoSwitchVoice: row.autoSwitchVoice ?? true,
@@ -50,7 +49,6 @@ export function ensureSettings(): TtsSettings {
         .values({
             id: TTS_SETTINGS_ID,
             activeProvider: defaults.activeProvider,
-            fallbackOrder: JSON.stringify(defaults.fallbackOrder),
             highlightMode: defaults.highlightMode,
             autoPlay: defaults.autoPlay,
             autoSwitchVoice: defaults.autoSwitchVoice,
@@ -68,8 +66,6 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
     const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     if (partial.activeProvider !== undefined) update.activeProvider = partial.activeProvider;
-    if (partial.fallbackOrder !== undefined)
-        update.fallbackOrder = JSON.stringify(partial.fallbackOrder);
     if (partial.highlightMode !== undefined) update.highlightMode = partial.highlightMode;
     if (partial.autoPlay !== undefined) update.autoPlay = partial.autoPlay;
     if (partial.autoSwitchVoice !== undefined) update.autoSwitchVoice = partial.autoSwitchVoice;

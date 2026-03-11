@@ -44,7 +44,6 @@ export type TtsHighlightMode = 'sentence' | 'paragraph';
 
 export interface TtsSettings {
     activeProvider: TtsProviderType;
-    fallbackOrder: TtsProviderType[];
     highlightMode: TtsHighlightMode; // default: 'sentence'
     segmentGapMs: number; // pause between segments in ms, default: 700
     autoPlay: boolean;
@@ -223,7 +222,6 @@ export const LANG_LABELS_FR: Record<string, string> = {
 export function createDefaultTtsSettings(): TtsSettings {
     return {
         activeProvider: DEFAULT_TTS_PROVIDER,
-        fallbackOrder: [...TTS_PROVIDER_TYPES],
         highlightMode: 'sentence',
         segmentGapMs: 700,
         autoPlay: false,

@@ -275,16 +275,6 @@ export class TtsService {
         await provider.deleteModel(modelName);
     }
 
-    async getModelStatus(
-        providerType: TtsProviderType,
-    ): Promise<{ downloaded: boolean; sizeBytes: number }> {
-        const provider = this.providers.get(providerType);
-        return {
-            downloaded: (await provider?.isModelReady?.()) ?? false,
-            sizeBytes: 0,
-        };
-    }
-
     async clearCache(): Promise<void> {
         await this.cache.clear();
     }

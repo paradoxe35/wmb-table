@@ -32,10 +32,6 @@ export function registerTtsHandlers(): void {
         getTtsService().reloadSettings();
     });
 
-    registerHandler(TtsChannels.synthesize, async (_event, request) => {
-        return getTtsService().synthesize(request);
-    });
-
     registerHandler(TtsChannels.startPlayback, async (_event, segments, language, startIndex) => {
         await getTtsService().startPlayback(segments, language, startIndex ?? 0);
     });
@@ -66,10 +62,6 @@ export function registerTtsHandlers(): void {
 
     registerHandler(TtsChannels.downloadModel, async (_event, provider, modelName) => {
         await getTtsService().downloadModel(provider, modelName);
-    });
-
-    registerHandler(TtsChannels.getModelStatus, async (_event, provider) => {
-        return getTtsService().getModelStatus(provider);
     });
 
     registerHandler(TtsChannels.clearCache, async () => {

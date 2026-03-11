@@ -17,7 +17,6 @@ export interface TtsProvider {
     ): Promise<TtsCompatibilityResult>;
     synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
     previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
-    synthesizeStream?(request: TtsSynthesizeRequest): AsyncGenerator<Buffer>;
     downloadModel?(onProgress: (pct: number) => void, modelName?: string): Promise<void>;
     isModelReady?(): Promise<boolean>;
     getAvailableModels?(): TtsModelInfo[];

@@ -32,7 +32,6 @@ import type {
 import type {
     TtsProviderType,
     TtsSettings,
-    TtsSynthesizeRequest,
     TtsSegment,
     TtsVoiceCloneRequest,
 } from '@shared/tts.types';
@@ -223,7 +222,6 @@ const api = {
         getProviders: () => invoke(TtsChannels.getProviders),
         getSettings: () => invoke(TtsChannels.getSettings),
         updateSettings: (s: Partial<TtsSettings>) => invoke(TtsChannels.updateSettings, s),
-        synthesize: (req: TtsSynthesizeRequest) => invoke(TtsChannels.synthesize, req),
         startPlayback: (segs: TtsSegment[], lang: string, startIndex?: number) =>
             invoke(TtsChannels.startPlayback, segs, lang, startIndex),
         pausePlayback: () => invoke(TtsChannels.pausePlayback),
@@ -234,7 +232,6 @@ const api = {
         checkLanguageSupport: (lang: string) => invoke(TtsChannels.checkLanguageSupport, lang),
         downloadModel: (p: TtsProviderType, modelName?: string) =>
             invoke(TtsChannels.downloadModel, p, modelName),
-        getModelStatus: (p: TtsProviderType) => invoke(TtsChannels.getModelStatus, p),
         clearCache: () => invoke(TtsChannels.clearCache),
         getCacheSize: () => invoke(TtsChannels.getCacheSize),
         cloneVoice: (req: TtsVoiceCloneRequest) => invoke(TtsChannels.cloneVoice, req),

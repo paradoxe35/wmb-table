@@ -47,7 +47,6 @@ import type {
     TtsProviderInfo,
     TtsProviderType,
     TtsSettings,
-    TtsSynthesizeRequest,
     TtsSynthesizeResult,
     TtsSegment,
     TtsPlaybackState,
@@ -185,7 +184,6 @@ export const TtsChannels = {
     getProviders: 'tts:getProviders',
     getSettings: 'tts:getSettings',
     updateSettings: 'tts:updateSettings',
-    synthesize: 'tts:synthesize',
     startPlayback: 'tts:startPlayback',
     pausePlayback: 'tts:pausePlayback',
     resumePlayback: 'tts:resumePlayback',
@@ -194,7 +192,6 @@ export const TtsChannels = {
     segmentComplete: 'tts:segmentComplete',
     checkLanguageSupport: 'tts:checkLanguageSupport',
     downloadModel: 'tts:downloadModel',
-    getModelStatus: 'tts:getModelStatus',
     clearCache: 'tts:clearCache',
     getCacheSize: 'tts:getCacheSize',
     cloneVoice: 'tts:cloneVoice',
@@ -415,7 +412,6 @@ export interface InvokeChannelMap {
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
     [TtsChannels.getSettings]: { args: []; return: TtsSettings };
     [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
-    [TtsChannels.synthesize]: { args: [TtsSynthesizeRequest]; return: TtsSynthesizeResult };
     [TtsChannels.startPlayback]: {
         args: [TtsSegment[], string, number?];
         return: void;
@@ -430,10 +426,6 @@ export interface InvokeChannelMap {
         return: Record<TtsProviderType, TtsCompatibilityResult>;
     };
     [TtsChannels.downloadModel]: { args: [TtsProviderType, string?]; return: void };
-    [TtsChannels.getModelStatus]: {
-        args: [TtsProviderType];
-        return: { downloaded: boolean; sizeBytes: number };
-    };
     [TtsChannels.clearCache]: { args: []; return: void };
     [TtsChannels.getCacheSize]: { args: []; return: number };
     [TtsChannels.cloneVoice]: { args: [TtsVoiceCloneRequest]; return: TtsVoiceCloneResult };

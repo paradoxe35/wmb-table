@@ -226,7 +226,6 @@ export const backupStatus = sqliteTable('backup_status', {
 export const ttsSettings = sqliteTable('tts_settings', {
     id: text('id').primaryKey(),
     activeProvider: text('active_provider').notNull(),
-    fallbackOrder: text('fallback_order').notNull(), // JSON array of TtsProviderType
     highlightMode: text('highlight_mode').notNull(),
     autoPlay: integer('auto_play', { mode: 'boolean' }).notNull(),
     autoSwitchVoice: integer('auto_switch_voice', { mode: 'boolean' }).notNull().default(true),
