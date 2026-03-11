@@ -248,8 +248,8 @@ const api = {
             language: string,
         ) => invoke(TtsChannels.segmentParagraphs, paragraphs, language),
         previewVoice: (language: string) => invoke(TtsChannels.previewVoice, language),
-        resolveVoiceForLanguage: (language: string) =>
-            invoke(TtsChannels.resolveVoiceForLanguage, language),
+        resolveConfigForLanguage: (language: string) =>
+            invoke(TtsChannels.resolveConfigForLanguage, language),
     },
 
     on: {

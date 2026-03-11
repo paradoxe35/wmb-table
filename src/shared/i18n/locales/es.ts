@@ -66,7 +66,7 @@ const es: Record<string, string> = {
     Utilisé: 'Usado',
     Limite: 'Límite',
     Vider: 'Vaciar',
-    'Cache TTS vidé': 'Caché TTS vaciado',
+    'Cache audio vidé': 'Caché de audio vaciado',
     'Taille maximale du cache': 'Tamaño máximo del caché',
 
     // ── TTS shared ──
@@ -160,20 +160,20 @@ const es: Record<string, string> = {
     'Pause lecture': 'Pausar lectura',
     'Reprendre la lecture': 'Reanudar lectura',
     'Démarrer la lecture': 'Iniciar lectura',
-    'Lecture audio TTS': 'Reproducción de audio TTS',
-    'Lecture audio TTS indisponible': 'Audio TTS no disponible',
+    'Lire à voix haute': 'Leer en voz alta',
+    'Lecture audio indisponible': 'Audio no disponible',
     'Zoom arrière': 'Alejar',
     'Zoom avant': 'Acercar',
     "Lire à partir d'ici": 'Leer desde aquí',
     'Aucune voix disponible pour cette langue.': 'No hay voz disponible para este idioma.',
 
     // ── TTS compatibility messages ──
-    "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres TTS.":
-        'Este proveedor no está configurado. Añada una clave API en los ajustes TTS.',
-    "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres TTS.":
-        'El modelo de voz no está descargado. Descárguelo en los ajustes TTS.',
-    'La voix sélectionnée ne prend pas en charge cette langue. Changez de voix dans les paramètres TTS.':
-        'La voz seleccionada no es compatible con este idioma. Cambie la voz en los ajustes TTS.',
+    "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres de Lecture audio.":
+        'Este proveedor no está configurado. Añada una clave API en los ajustes de Lectura en voz alta.',
+    "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres de Lecture audio.":
+        'El modelo de voz no está descargado. Descárguelo en los ajustes de Lectura en voz alta.',
+    'Le modèle sélectionné ne prend pas en charge cette langue. Changez de modèle dans les paramètres de Lecture audio.':
+        'El modelo seleccionado no es compatible con este idioma. Cambie el modelo en los ajustes de Lectura en voz alta.',
     'Ce fournisseur ne prend pas en charge cette langue.':
         'Este proveedor no es compatible con este idioma.',
     'Ce fournisseur ne peut pas lire cette langue.': 'Este proveedor no puede leer este idioma.',

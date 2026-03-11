@@ -20,15 +20,15 @@ function getIncompatibilityMessage(
     switch (reason) {
         case 'not_configured':
             return t(
-                "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres TTS.",
+                "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres de Lecture audio.",
             );
         case 'model_not_downloaded':
             return t(
-                "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres TTS.",
+                "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres de Lecture audio.",
             );
-        case 'no_voice_for_language':
+        case 'no_model_for_language':
             return t(
-                'La voix sélectionnée ne prend pas en charge cette langue. Changez de voix dans les paramètres TTS.',
+                'Le modèle sélectionné ne prend pas en charge cette langue. Changez de modèle dans les paramètres de Lecture audio.',
             );
         case 'unsupported_language':
             return t('Ce fournisseur ne prend pas en charge cette langue.');
@@ -170,10 +170,10 @@ export function useTts(
             }
 
             // Ask the active provider to resolve a compatible voice/model for this language.
-            // The service is provider-agnostic: any provider can implement resolveVoiceForLanguage.
+            // The service is provider-agnostic: any provider can implement resolveConfigForLanguage.
             // If it returns fresh settings, update the store immediately — no need to wait for recheck.
             if (settings.autoSwitchVoice) {
-                const resolved = await window.api.tts.resolveVoiceForLanguage(language);
+                const resolved = await window.api.tts.resolveConfigForLanguage(language);
                 if (cancelled) return;
                 if (resolved) {
                     useTtsStore.getState().setSettings(resolved);
@@ -218,6 +218,7 @@ export function useTts(
         settings?.autoSwitchVoice,
         activeProviderCfg?.voiceId,
         activeProviderCfg?.model,
+        activeProviderCfg?.apiKey,
         t,
         recheckCounter,
     ]);

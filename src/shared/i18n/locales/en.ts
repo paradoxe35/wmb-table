@@ -66,7 +66,7 @@ const en: Record<string, string> = {
     Utilisé: 'Used',
     Limite: 'Limit',
     Vider: 'Clear',
-    'Cache TTS vidé': 'TTS cache cleared',
+    'Cache audio vidé': 'Audio cache cleared',
     'Taille maximale du cache': 'Maximum cache size',
 
     // ── TTS shared ──
@@ -159,20 +159,20 @@ const en: Record<string, string> = {
     'Pause lecture': 'Pause reading',
     'Reprendre la lecture': 'Resume reading',
     'Démarrer la lecture': 'Start reading',
-    'Lecture audio TTS': 'TTS audio playback',
-    'Lecture audio TTS indisponible': 'TTS audio unavailable',
+    'Lire à voix haute': 'Read aloud',
+    'Lecture audio indisponible': 'Audio playback unavailable',
     'Zoom arrière': 'Zoom out',
     'Zoom avant': 'Zoom in',
     "Lire à partir d'ici": 'Read from here',
     'Aucune voix disponible pour cette langue.': 'No voice available for this language.',
 
     // ── TTS compatibility messages ──
-    "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres TTS.":
-        'This provider is not configured. Add an API key in the TTS settings.',
-    "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres TTS.":
-        'The voice model is not downloaded. Download it in the TTS settings.',
-    'La voix sélectionnée ne prend pas en charge cette langue. Changez de voix dans les paramètres TTS.':
-        'The selected voice does not support this language. Change the voice in the TTS settings.',
+    "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres de Lecture audio.":
+        'This provider is not configured. Add an API key in the Audio Playback settings.',
+    "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres de Lecture audio.":
+        'The voice model is not downloaded. Download it in the Audio Playback settings.',
+    'Le modèle sélectionné ne prend pas en charge cette langue. Changez de modèle dans les paramètres de Lecture audio.':
+        'The selected model does not support this language. Change the model in the Audio Playback settings.',
     'Ce fournisseur ne prend pas en charge cette langue.':
         'This provider does not support this language.',
     'Ce fournisseur ne peut pas lire cette langue.': 'This provider cannot read this language.',

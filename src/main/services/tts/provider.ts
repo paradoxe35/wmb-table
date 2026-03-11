@@ -22,8 +22,11 @@ export interface TtsProvider {
     isModelReady?(): Promise<boolean>;
     getAvailableModels?(): TtsModelInfo[];
     deleteModel?(modelName: string): Promise<void>;
-    /** Return a compatible voiceId for the given language, or null if already correct / not applicable. */
-    resolveVoiceForLanguage?(langCode: string, cfg?: TtsProviderSettings): string | null;
+    /** Return config fields to update for language compatibility, or null if already correct / not applicable. */
+    resolveConfigForLanguage?(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Partial<TtsProviderSettings> | null;
     setConfig(settings: TtsProviderSettings): void;
     dispose(): void;
 }

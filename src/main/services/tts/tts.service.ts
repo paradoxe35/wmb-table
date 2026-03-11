@@ -203,23 +203,19 @@ export class TtsService {
         }
     }
 
-    async resolveVoiceForLanguage(language: string): Promise<TtsSettings | null> {
+    async resolveConfigForLanguage(language: string): Promise<TtsSettings | null> {
         const activeProvider = this.settings.activeProvider;
         const provider = this.providers.get(activeProvider);
-        if (!provider?.resolveVoiceForLanguage) return null;
+        if (!provider?.resolveConfigForLanguage) return null;
 
         const cfg = this.settings.providers[activeProvider];
-        const resolved = provider.resolveVoiceForLanguage(language, cfg);
+        const resolved = provider.resolveConfigForLanguage(language, cfg);
         if (!resolved) return null;
-        const nextConfig =
-            activeProvider === 'sherpa'
-                ? { ...cfg, voiceId: resolved, model: resolved.split(':')[0] || undefined }
-                : { ...cfg, voiceId: resolved };
 
         ttsRepo.updateSettings({
             providers: {
                 ...this.settings.providers,
-                [activeProvider]: nextConfig,
+                [activeProvider]: { ...cfg, ...resolved },
             },
         });
         await this.reloadSettings();

@@ -32,8 +32,8 @@ export interface TtsProviderInfo {
 export interface TtsProviderSettings {
     provider: TtsProviderType;
     enabled: boolean;
-    apiKey?: string; // encrypted at rest via safeStorage
-    apiEndpoint?: string; // custom API endpoint override
+    apiKey?: string;
+    apiEndpoint?: string;
     model?: string;
     voiceId?: string;
     pitch?: number; // 0.5–2.0 (browser only)
@@ -147,7 +147,7 @@ export interface TtsModelInfo {
 export type TtsIncompatibilityReason =
     | 'not_configured' // API key missing (ElevenLabs, OpenAI)
     | 'model_not_downloaded' // local model not installed (Kokoro, Sherpa)
-    | 'no_voice_for_language' // selected voice/model doesn't match the document language
+    | 'no_model_for_language' // selected model doesn't support the document language
     | 'unsupported_language'; // provider doesn't support this language at all
 
 export interface TtsCompatibilityResult {

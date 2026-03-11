@@ -46,7 +46,7 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
                     size="small"
                     icon={<SoundOutlined />}
                     disabled
-                    aria-label={t('Lecture audio TTS indisponible')}
+                    aria-label={t('Lecture audio indisponible')}
                 />
             </Tooltip>
         );
@@ -68,7 +68,7 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
                 size="small"
                 icon={tts.isPlaying ? <PauseCircleOutlined /> : <SoundOutlined />}
                 onClick={handler}
-                aria-label={t('Lecture audio TTS')}
+                aria-label={t('Lire à voix haute')}
                 style={isActive ? ttsActiveStyle : undefined}
             />
         </Tooltip>
@@ -211,9 +211,7 @@ export function TtsParagraph({
                                     onPlayFromHere(paragraph.paragraphIndex);
                                 }}
                                 aria-label={
-                                    canSpeak
-                                        ? readFromHereLabel
-                                        : t('Lecture audio TTS indisponible')
+                                    canSpeak ? readFromHereLabel : t('Lecture audio indisponible')
                                 }
                             >
                                 <CaretRightOutlined />

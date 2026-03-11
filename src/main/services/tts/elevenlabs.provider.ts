@@ -35,49 +35,171 @@ const ELEVENLABS_MODELS = [
     'eleven_english_sts_v1',
 ] as const;
 
-const ENGLISH_ONLY_MODELS = new Set(['eleven_english_sts_v2', 'eleven_english_sts_v1']);
+// ── Per-model language support (ISO 639-1 codes) ──
 
-const SUPPORTED_LANGUAGES = [
+const ENGLISH_ONLY: string[] = ['en'];
+
+// Flash v2.5 — 32 languages
+const FLASH_V2_5_LANGUAGES = [
+    'ar',
+    'bg',
+    'zh',
+    'hr',
+    'cs',
+    'da',
+    'nl',
     'en',
+    'fil',
+    'fi',
     'fr',
     'de',
-    'es',
+    'el',
+    'hu',
+    'hi',
+    'id',
     'it',
-    'pt',
-    'zh',
     'ja',
     'ko',
-    'hi',
-    'ar',
-    'ru',
-    'nl',
-    'pl',
-    'sv',
-    'da',
-    'no',
-    'fi',
-    'tr',
-    'cs',
-    'ro',
-    'hu',
-    'el',
-    'he',
-    'th',
-    'vi',
-    'id',
     'ms',
+    'no',
+    'pl',
+    'pt',
+    'ro',
+    'ru',
+    'sk',
+    'es',
+    'sv',
+    'ta',
+    'tr',
     'uk',
+    'vi',
+];
+
+// Multilingual v2 — 29 languages
+const MULTILINGUAL_V2_LANGUAGES = [
+    'ar',
     'bg',
+    'zh',
     'hr',
+    'cs',
+    'da',
+    'nl',
+    'en',
+    'fil',
+    'fi',
+    'fr',
+    'de',
+    'el',
+    'hi',
+    'id',
+    'it',
+    'ja',
+    'ko',
+    'ms',
+    'pl',
+    'pt',
+    'ro',
+    'ru',
+    'sk',
+    'es',
+    'sv',
+    'ta',
+    'tr',
+    'uk',
+];
+
+// Eleven v3 — 74 languages
+const V3_LANGUAGES = [
+    'af',
+    'ar',
+    'hy',
+    'as',
+    'az',
+    'be',
+    'bn',
+    'bs',
+    'bg',
+    'ca',
+    'ceb',
+    'ny',
+    'hr',
+    'cs',
+    'da',
+    'nl',
+    'en',
+    'et',
+    'fil',
+    'fi',
+    'fr',
+    'gl',
+    'ka',
+    'de',
+    'el',
+    'gu',
+    'ha',
+    'he',
+    'hi',
+    'hu',
+    'is',
+    'id',
+    'ga',
+    'it',
+    'ja',
+    'jv',
+    'kn',
+    'kk',
+    'ky',
+    'ko',
+    'lv',
+    'ln',
+    'lt',
+    'lb',
+    'mk',
+    'ms',
+    'ml',
+    'zh',
+    'mr',
+    'ne',
+    'no',
+    'ps',
+    'fa',
+    'pl',
+    'pt',
+    'pa',
+    'ro',
+    'ru',
+    'sr',
+    'sd',
     'sk',
     'sl',
+    'so',
+    'es',
+    'sw',
+    'sv',
     'ta',
     'te',
-    'bn',
-    'ml',
-    'fil',
-    'sw',
+    'th',
+    'tr',
+    'uk',
+    'ur',
+    'vi',
+    'cy',
 ];
+
+const MODEL_LANGUAGES: Record<string, string[]> = {
+    eleven_v3: V3_LANGUAGES,
+    eleven_flash_v2_5: FLASH_V2_5_LANGUAGES,
+    eleven_flash_v2: ENGLISH_ONLY,
+    eleven_turbo_v2_5: FLASH_V2_5_LANGUAGES, // same coverage as flash v2.5
+    eleven_turbo_v2: FLASH_V2_5_LANGUAGES,
+    eleven_multilingual_v2: MULTILINGUAL_V2_LANGUAGES,
+    eleven_multilingual_v1: MULTILINGUAL_V2_LANGUAGES,
+    eleven_english_sts_v2: ENGLISH_ONLY,
+    eleven_english_sts_v1: ENGLISH_ONLY,
+};
+
+/** All languages supported by at least one model (used for getInfo). */
+const ALL_SUPPORTED_LANGUAGES = V3_LANGUAGES;
 
 interface ElevenLabsVoiceEntry {
     voice_id: string;
@@ -106,7 +228,7 @@ export class ElevenLabsProvider implements TtsProvider {
             type: 'elevenlabs',
             locality: 'remote',
             displayName: 'ElevenLabs TTS',
-            supportedLanguages: SUPPORTED_LANGUAGES,
+            supportedLanguages: ALL_SUPPORTED_LANGUAGES,
             supportsVoiceCloning: true,
             supportsStreaming: true,
             voices,
@@ -126,11 +248,13 @@ export class ElevenLabsProvider implements TtsProvider {
         }
         const code = langCode.split('-')[0].toLowerCase();
         const model = cfg?.model ?? this.model;
-        if (ENGLISH_ONLY_MODELS.has(model) && code !== 'en') {
-            return { supported: false, reason: 'no_voice_for_language' };
-        }
-        if (!SUPPORTED_LANGUAGES.includes(code)) {
-            return { supported: false, reason: 'unsupported_language' };
+        const modelLangs = MODEL_LANGUAGES[model] ?? V3_LANGUAGES;
+        if (!modelLangs.includes(code)) {
+            // Distinguish: no model supports it vs just this model doesn't
+            if (!ALL_SUPPORTED_LANGUAGES.includes(code)) {
+                return { supported: false, reason: 'unsupported_language' };
+            }
+            return { supported: false, reason: 'no_model_for_language' };
         }
         return { supported: true };
     }
@@ -278,7 +402,7 @@ export class ElevenLabsProvider implements TtsProvider {
             this.cachedVoices = all.map((v) => ({
                 id: v.voice_id,
                 name: v.name,
-                languageCodes: SUPPORTED_LANGUAGES,
+                languageCodes: ALL_SUPPORTED_LANGUAGES,
                 isCloned: v.category === 'cloned',
             }));
             return this.cachedVoices;

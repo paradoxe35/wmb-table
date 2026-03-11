@@ -204,7 +204,7 @@ export const TtsChannels = {
     deleteProviderModel: 'tts:deleteProviderModel',
     segmentParagraphs: 'tts:segmentParagraphs',
     previewVoice: 'tts:previewVoice',
-    resolveVoiceForLanguage: 'tts:resolveVoiceForLanguage',
+    resolveConfigForLanguage: 'tts:resolveConfigForLanguage',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -446,7 +446,7 @@ export interface InvokeChannelMap {
         return: TtsSegment[];
     };
     [TtsChannels.previewVoice]: { args: [string]; return: TtsSynthesizeResult };
-    [TtsChannels.resolveVoiceForLanguage]: { args: [string]; return: TtsSettings | null };
+    [TtsChannels.resolveConfigForLanguage]: { args: [string]; return: TtsSettings | null };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */

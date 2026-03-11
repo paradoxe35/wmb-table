@@ -92,7 +92,7 @@ export class KokoroProvider implements TtsProvider {
 
     async checkCompatibility(
         langCode: string,
-        cfg?: TtsProviderSettings,
+        _cfg?: TtsProviderSettings,
     ): Promise<TtsCompatibilityResult> {
         const code = langCode.split('-')[0].toLowerCase();
         if (!SUPPORTED_LANGUAGES.includes(code)) {
@@ -101,12 +101,7 @@ export class KokoroProvider implements TtsProvider {
         if (!(await this.isModelReady())) {
             return { supported: false, reason: 'model_not_downloaded' };
         }
-        if (cfg?.voiceId) {
-            const voiceLangs = getVoiceLanguage(cfg.voiceId);
-            if (!voiceLangs.includes(code)) {
-                return { supported: false, reason: 'no_voice_for_language' };
-            }
-        }
+        // Any Kokoro voice can speak any supported language
         return { supported: true };
     }
 
@@ -144,17 +139,26 @@ export class KokoroProvider implements TtsProvider {
         if (settings.voiceId) this.voiceId = settings.voiceId;
     }
 
-    resolveVoiceForLanguage(langCode: string, cfg?: TtsProviderSettings): string | null {
+    resolveConfigForLanguage(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Partial<TtsProviderSettings> | null {
         const code = langCode.split('-')[0].toLowerCase();
+        if (!SUPPORTED_LANGUAGES.includes(code)) {
+            return null;
+        }
+
         const currentVoice = cfg?.voiceId ?? this.voiceId;
         if (getVoiceLanguage(currentVoice).includes(code)) {
             return null;
         }
 
+        // Try to find a voice whose default language matches, otherwise keep current voice
+        // (any Kokoro voice can speak any supported language)
         const compatibleVoice = this.getVoiceList().find((voice) =>
             voice.languageCodes.includes(code),
         );
-        return compatibleVoice?.id ?? null;
+        return compatibleVoice ? { voiceId: compatibleVoice.id } : null;
     }
 
     async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Alert,
     Button,
@@ -29,7 +29,7 @@ import {
     Hint,
     formatBytes,
 } from './tts-shared';
-import { getErrorMessage } from '@renderer/utils/functions';
+import { debounce, getErrorMessage } from '@renderer/utils/functions';
 import BrowserConfig from './tts-provider-browser';
 import KokoroConfig from './tts-provider-kokoro';
 import SherpaConfig from './tts-provider-sherpa';
@@ -103,7 +103,7 @@ export default function TtsTab() {
                 });
             } else {
                 if (settings.autoSwitchVoice) {
-                    const resolved = await window.api.tts.resolveVoiceForLanguage(language);
+                    const resolved = await window.api.tts.resolveConfigForLanguage(language);
                     if (resolved) {
                         setSettings(resolved);
                     }
@@ -124,6 +124,25 @@ export default function TtsTab() {
         window.api.tts.getCacheSize().then(setCacheSize);
     }, [setSettings, setProviders]);
 
+    // Debounced IPC save — prevents excessive writes while typing (e.g. API keys)
+    const debouncedSave = useMemo(() => {
+        return debounce((partial: Partial<TtsSettings>) => {
+            window.api.tts.updateSettings(partial).then(() => {
+                // Refresh provider info when an API key changes (fetches voices from API)
+                const providerEntries = partial.providers ? Object.values(partial.providers) : [];
+                const hasApiKeyChange = providerEntries.some((p) => p && 'apiKey' in p);
+                if (hasApiKeyChange) {
+                    window.api.tts.getProviders().then(setProviders);
+                }
+            });
+        }, 1000);
+    }, [setProviders]);
+
+    // Cleanup debounce on unmount
+    const debouncedSaveRef = useRef(debouncedSave);
+    debouncedSaveRef.current = debouncedSave;
+    useEffect(() => () => debouncedSaveRef.current.cancel(), []);
+
     const handleUpdate = useCallback(
         (partial: Partial<TtsSettings>) => {
             if (!settings) return;
@@ -132,22 +151,23 @@ export default function TtsTab() {
                 updated.providers = { ...settings.providers, ...partial.providers };
             }
             setSettings(updated);
-            window.api.tts.updateSettings(partial);
+            debouncedSave(partial);
         },
-        [settings, setSettings],
+        [settings, setSettings, debouncedSave],
     );
 
     const handleClearCache = useCallback(async () => {
         await window.api.tts.clearCache();
         setCacheSize(0);
-        message.success(t('Cache TTS vidé'));
+        message.success(t('Cache audio vidé'));
     }, []);
+
+    const providers = useTtsStore((s) => s.providers);
 
     if (!settings) return null;
 
-    const locality = ['browser', 'kokoro', 'sherpa'].includes(settings.activeProvider)
-        ? 'local'
-        : 'remote';
+    const activeInfo = providers.find((p) => p.type === settings.activeProvider);
+    const locality = activeInfo?.locality ?? 'local';
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
@@ -177,6 +197,23 @@ export default function TtsTab() {
                         </Text>
                     }
                 />
+
+                <Divider style={{ margin: '4px 0' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Switch
+                        size="small"
+                        checked={settings.autoSwitchVoice}
+                        onChange={(v) => handleUpdate({ autoSwitchVoice: v })}
+                    />
+                    <div>
+                        <Text style={{ fontSize: '0.9em' }}>
+                            {t('Changer la voix automatiquement')}
+                        </Text>
+                        <Hint>
+                            {t('Choisir automatiquement une voix adaptée à la langue du document.')}
+                        </Hint>
+                    </div>
+                </div>
             </Card>
 
             {/* Active provider config */}
@@ -256,24 +293,6 @@ export default function TtsTab() {
                             <Hint>
                                 {t(
                                     "Démarrer la lecture automatiquement à l'ouverture d'un document.",
-                                )}
-                            </Hint>
-                        </div>
-                    </div>
-                    <Divider style={{ margin: '4px 0' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Switch
-                            size="small"
-                            checked={settings.autoSwitchVoice}
-                            onChange={(v) => handleUpdate({ autoSwitchVoice: v })}
-                        />
-                        <div>
-                            <Text style={{ fontSize: '0.9em' }}>
-                                {t('Changer la voix automatiquement')}
-                            </Text>
-                            <Hint>
-                                {t(
-                                    'Choisir automatiquement une voix adaptée à la langue du document.',
                                 )}
                             </Hint>
                         </div>

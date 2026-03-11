@@ -163,14 +163,14 @@ export class SherpaProvider implements TtsProvider {
             if (modelName && installed.includes(modelName)) {
                 return normalizeLangCode(getLangCodeForModel(modelName)) === code
                     ? { supported: true }
-                    : { supported: false, reason: 'no_voice_for_language' };
+                    : { supported: false, reason: 'no_model_for_language' };
             }
         }
 
         // No voice configured: check if any installed model supports the language
         return installed.some((name) => normalizeLangCode(getLangCodeForModel(name)) === code)
             ? { supported: true }
-            : { supported: false, reason: 'no_voice_for_language' };
+            : { supported: false, reason: 'no_model_for_language' };
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
@@ -258,7 +258,10 @@ export class SherpaProvider implements TtsProvider {
         if (settings.model) this.activeModel = settings.model;
     }
 
-    resolveVoiceForLanguage(langCode: string, cfg?: TtsProviderSettings): string | null {
+    resolveConfigForLanguage(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Partial<TtsProviderSettings> | null {
         const code = normalizeLangCode(langCode);
         const installed = getInstalledModelNames();
 
@@ -276,7 +279,12 @@ export class SherpaProvider implements TtsProvider {
         const compatibleModel = installed.find(
             (name) => normalizeLangCode(getLangCodeForModel(name)) === code,
         );
-        return compatibleModel ? `${compatibleModel}:0` : null;
+
+        if (!compatibleModel) {
+            return null;
+        }
+
+        return { voiceId: `${compatibleModel}:0`, model: compatibleModel };
     }
 
     async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
