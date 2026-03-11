@@ -70,6 +70,9 @@ importers:
             react-virtuoso:
                 specifier: ^4.18.3
                 version: 4.18.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+            sentencex:
+                specifier: ^1.0.17
+                version: 1.0.17
             sherpa-onnx:
                 specifier: ^1.12.28
                 version: 1.12.28
@@ -7067,6 +7070,53 @@ packages:
         engines: { node: '>=10' }
         hasBin: true
 
+    sentencex-darwin-arm64@1.0.17:
+        resolution:
+            {
+                integrity: sha512-dg+qTHfHgUNXSjMkTKT5Y7+pJOgUPxnNM8cgvgdnK2ZGKN8HDudPdbrQZk23U5t5uqJqpb/jQ9TnovS4iGOXGg==,
+            }
+        cpu: [arm64]
+        os: [darwin]
+
+    sentencex-darwin-x64@1.0.17:
+        resolution:
+            {
+                integrity: sha512-OZR1kckH9Vn9IitTKN8h8gazUt27An2j+PvZYBaM1c+5/piuvtbCoNUfARHqRyu/kAc8TXzUS21YExvgjT1xXA==,
+            }
+        cpu: [x64]
+        os: [darwin]
+
+    sentencex-linux-arm64@1.0.17:
+        resolution:
+            {
+                integrity: sha512-xSOQJUGLADvILjLTnVYP3lVCxM06DzzETaA2PRivDtNKln3dBYJthyN6jhIRE5CAW3xe77a9p92ErJfduZmBvQ==,
+            }
+        cpu: [arm64]
+        os: [linux]
+
+    sentencex-linux-x64@1.0.17:
+        resolution:
+            {
+                integrity: sha512-cmkXCpBaWmPSpNOe8scSvM19PKwZtdgKFmeXIj1zOCWG8bu6CTx1/cxFls6QXfg7eYNzyMGyz+Gt0P/LyY4YyQ==,
+            }
+        cpu: [x64]
+        os: [linux]
+
+    sentencex-win32-x64@1.0.17:
+        resolution:
+            {
+                integrity: sha512-0+1rxt98LgXkDq0OlELDfOs5QO1lXc2I/02Aj7/hkS35pwqry6IKh8dF/mY+oItt2OTrE0A3cLHMpFS0XFfDgQ==,
+            }
+        cpu: [x64]
+        os: [win32]
+
+    sentencex@1.0.17:
+        resolution:
+            {
+                integrity: sha512-gNsXwSJlPpGd/riUW4tSyZBZv++p46pOJk8kpS0LVCnDQfjwIqwEk8I7PjvvuPH3GShCQpEnSc01jU38eWS59w==,
+            }
+        engines: { node: '>=20' }
+
     serialize-error@7.0.1:
         resolution:
             {
@@ -12610,6 +12660,29 @@ snapshots:
     semver@6.3.1: {}
 
     semver@7.7.4: {}
+
+    sentencex-darwin-arm64@1.0.17:
+        optional: true
+
+    sentencex-darwin-x64@1.0.17:
+        optional: true
+
+    sentencex-linux-arm64@1.0.17:
+        optional: true
+
+    sentencex-linux-x64@1.0.17:
+        optional: true
+
+    sentencex-win32-x64@1.0.17:
+        optional: true
+
+    sentencex@1.0.17:
+        optionalDependencies:
+            sentencex-darwin-arm64: 1.0.17
+            sentencex-darwin-x64: 1.0.17
+            sentencex-linux-arm64: 1.0.17
+            sentencex-linux-x64: 1.0.17
+            sentencex-win32-x64: 1.0.17
 
     serialize-error@7.0.1:
         dependencies:

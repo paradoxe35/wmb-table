@@ -83,7 +83,7 @@ interface ElevenLabsVoiceResponse {
 export class ElevenLabsProvider implements TtsProvider {
     readonly type: TtsProviderType = 'elevenlabs';
     private apiKey = '';
-    private model = 'eleven_v3';
+    private model = 'eleven_flash_v2_5';
     private voiceId = 'JBFqnCBsd6RMkjVDRZzb'; // Rachel (default)
     private cachedVoices: TtsVoice[] = [];
 
@@ -98,7 +98,7 @@ export class ElevenLabsProvider implements TtsProvider {
             supportsVoiceCloning: true,
             supportsStreaming: true,
             voices,
-            defaultModel: 'eleven_v3',
+            defaultModel: 'eleven_flash_v2_5',
             availableModels: [...ELEVENLABS_MODELS],
             requiresApiKey: true,
             requiresModelDownload: false,

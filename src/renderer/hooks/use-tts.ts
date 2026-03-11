@@ -7,41 +7,29 @@ import type { TtsHighlightMode, TtsSegment, TtsSettings } from '@shared/tts.type
 
 // ── Text segmentation ──
 
-function segmentText(
+async function segmentText(
     paragraphs: { paragraphIndex: number; content: string }[],
     mode: TtsHighlightMode,
-): TtsSegment[] {
-    let index = 0;
-    const segments: TtsSegment[] = [];
-    for (const p of paragraphs) {
-        if (!p.content.trim()) continue;
-
-        if (mode === 'paragraph') {
+    language: string,
+): Promise<TtsSegment[]> {
+    if (mode === 'paragraph') {
+        let index = 0;
+        const segments: TtsSegment[] = [];
+        for (const p of paragraphs) {
+            const text = p.content.replace(/[*^]/g, '').replace(/\s+/g, ' ').trim();
+            if (!text) continue;
             segments.push({
                 index: index++,
-                text: p.content,
+                text,
                 paragraphIndex: p.paragraphIndex,
                 startOffset: 0,
                 endOffset: p.content.length,
             });
-        } else {
-            const sentenceRegex = /[^.!?]+[.!?]*(\s+|$)/g;
-            let match: RegExpExecArray | null;
-            while ((match = sentenceRegex.exec(p.content)) !== null) {
-                const text = match[0].trim();
-                if (text) {
-                    segments.push({
-                        index: index++,
-                        text,
-                        paragraphIndex: p.paragraphIndex,
-                        startOffset: match.index,
-                        endOffset: match.index + match[0].length,
-                    });
-                }
-            }
         }
+        return segments;
     }
-    return segments;
+    // Sentence mode: delegate to main process (native sentencex)
+    return window.api.tts.segmentParagraphs(paragraphs, language);
 }
 
 // ── Browser TTS playback ──
@@ -175,9 +163,9 @@ export function useTts(
         });
     }, []);
 
-    const play = useCallback(() => {
+    const play = useCallback(async () => {
         if (!settings || !paragraphs.length) return;
-        const segments = segmentText(paragraphs, settings.highlightMode);
+        const segments = await segmentText(paragraphs, settings.highlightMode, language);
         if (!segments.length) return;
 
         // Resume from last position if same document
@@ -248,9 +236,9 @@ export function useTts(
     );
 
     const playFromParagraph = useCallback(
-        (paragraphIndex: number) => {
+        async (paragraphIndex: number) => {
             if (!settings || !paragraphs.length) return;
-            const segments = segmentText(paragraphs, settings.highlightMode);
+            const segments = await segmentText(paragraphs, settings.highlightMode, language);
             if (!segments.length) return;
 
             // Find first segment at or after the target paragraph

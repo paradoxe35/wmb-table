@@ -17,11 +17,12 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
     const [clonedVoices, setClonedVoices] = useState<TtsVoice[]>([]);
 
     useEffect(() => {
+        if (!cfg.apiKey) return;
         window.api.tts
             .listClonedVoices()
             .then(setClonedVoices)
             .catch(() => {});
-    }, []);
+    }, [cfg.apiKey]);
 
     const handleDeleteVoice = useCallback(async (voiceId: string) => {
         try {
@@ -69,7 +70,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
             >
                 <Select
                     style={{ width: '100%' }}
-                    value={cfg.model ?? 'eleven_v3'}
+                    value={cfg.model ?? 'eleven_flash_v2_5'}
                     onChange={(v) => onUpdate(providerUpdate(settings, 'elevenlabs', 'model', v))}
                     options={(info?.availableModels ?? []).map((m) => ({ label: m, value: m }))}
                 />

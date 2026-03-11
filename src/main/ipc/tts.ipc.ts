@@ -1,7 +1,22 @@
+import { get_sentence_boundaries } from 'sentencex';
 import { TtsChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import { getTtsService } from '@main/services/tts';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
+import type { TtsSegment } from '@shared/tts.types';
+
+function stripMarkers(content: string): { clean: string; posMap: number[] } {
+    const posMap: number[] = [];
+    let clean = '';
+    for (let i = 0; i < content.length; i++) {
+        const c = content[i];
+        if (c !== '*' && c !== '^') {
+            posMap.push(i);
+            clean += c;
+        }
+    }
+    return { clean, posMap };
+}
 
 export function registerTtsHandlers(): void {
     registerHandler(TtsChannels.getProviders, async () => {
@@ -83,5 +98,35 @@ export function registerTtsHandlers(): void {
 
     registerHandler(TtsChannels.deleteProviderModel, async (_event, provider, modelName) => {
         await getTtsService().deleteProviderModel(provider, modelName);
+    });
+
+    registerHandler(TtsChannels.segmentParagraphs, (_event, paragraphs, language) => {
+        let index = 0;
+        const segments: TtsSegment[] = [];
+        for (const p of paragraphs) {
+            if (!p.content.trim()) continue;
+            const { clean, posMap } = stripMarkers(p.content);
+            const text = clean.trim();
+            if (!text) continue;
+            const boundaries: { start_index: number; end_index: number; text: string }[] =
+                get_sentence_boundaries(language, clean);
+            for (const b of boundaries) {
+                const sentenceText = b.text.trim();
+                if (!sentenceText) continue;
+                const startOffset = posMap[b.start_index] ?? 0;
+                const endOffset =
+                    b.end_index > 0
+                        ? (posMap[b.end_index - 1] ?? p.content.length - 1) + 1
+                        : p.content.length;
+                segments.push({
+                    index: index++,
+                    text: sentenceText,
+                    paragraphIndex: p.paragraphIndex,
+                    startOffset,
+                    endOffset,
+                });
+            }
+        }
+        return segments;
     });
 }

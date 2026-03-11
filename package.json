@@ -65,6 +65,7 @@
         "react-dom": "^19.2.4",
         "react-i18next": "^16.5.6",
         "react-virtuoso": "^4.18.3",
+        "sentencex": "^1.0.17",
         "sherpa-onnx": "^1.12.28",
         "tar": "^7.5.11",
         "unbzip2-stream": "^1.4.3",
@@ -204,6 +205,7 @@
             "electron-winstaller",
             "esbuild",
             "onnxruntime-node",
+            "sentencex",
             "sherpa-onnx",
             "simple-git-hooks"
         ]

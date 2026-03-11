@@ -243,6 +243,10 @@ const api = {
         getProviderModels: (p: TtsProviderType) => invoke(TtsChannels.getProviderModels, p),
         deleteProviderModel: (p: TtsProviderType, modelName: string) =>
             invoke(TtsChannels.deleteProviderModel, p, modelName),
+        segmentParagraphs: (
+            paragraphs: { paragraphIndex: number; content: string }[],
+            language: string,
+        ) => invoke(TtsChannels.segmentParagraphs, paragraphs, language),
     },
 
     on: {

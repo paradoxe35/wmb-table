@@ -201,6 +201,7 @@ export const TtsChannels = {
     deleteClonedVoice: 'tts:deleteClonedVoice',
     getProviderModels: 'tts:getProviderModels',
     deleteProviderModel: 'tts:deleteProviderModel',
+    segmentParagraphs: 'tts:segmentParagraphs',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -434,6 +435,10 @@ export interface InvokeChannelMap {
     [TtsChannels.deleteClonedVoice]: { args: [string]; return: void };
     [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
     [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
+    [TtsChannels.segmentParagraphs]: {
+        args: [{ paragraphIndex: number; content: string }[], string];
+        return: TtsSegment[];
+    };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */
