@@ -1,5 +1,6 @@
 import type {
     DocumentTab,
+    HighlightItem,
     Suggestions,
     SidebarStatus,
     NoteItem,
@@ -17,9 +18,9 @@ import type {
     CustomDocumentContent,
     HistoryData,
     HistoryDataItem,
-    AudioDocumentTime,
-    AudioDocumentDownload,
+    AudioTimeAndDownload,
     AudioDownloadProgress,
+    SearchMode,
     BackupStatus,
     RestoreProgressEvent,
     UpdaterNotification,
@@ -34,7 +35,29 @@ import type {
     TantivySearchResult,
     LanguageDownloadProgress,
     SyncStatus,
+    SyncFailureEvent,
+    HighlightCreateData,
+    HighlightUpdateData,
+    SermonTranslation,
+    BibleDownloadProgress,
+    BibleDownloadedEvent,
+    LanguageInstalledEvent,
 } from './types';
+import type {
+    TtsProviderInfo,
+    TtsProviderType,
+    TtsSettings,
+    TtsSynthesizeRequest,
+    TtsSynthesizeResult,
+    TtsSegment,
+    TtsPlaybackState,
+    TtsModelDownloadProgress,
+    TtsSegmentAudio,
+    TtsVoice,
+    TtsVoiceCloneRequest,
+    TtsVoiceCloneResult,
+    TtsModelInfo,
+} from './tts.types';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -108,6 +131,13 @@ export const SubjectChannels = {
     createItem: 'subjects:createItem',
 } as const;
 
+export const HighlightChannels = {
+    getByDocument: 'highlights:getByDocument',
+    create: 'highlights:create',
+    update: 'highlights:update',
+    delete: 'highlights:delete',
+} as const;
+
 export const AudioChannels = {
     getTimeAndLocalFile: 'audio:getTimeAndLocalFile',
     setTime: 'audio:setTime',
@@ -124,6 +154,9 @@ export const BackupChannels = {
 
 export const SyncChannels = {
     getStatus: 'sync:getStatus',
+    start: 'sync:start',
+    stop: 'sync:stop',
+    syncNow: 'sync:syncNow',
 } as const;
 
 export const AppChannels = {
@@ -144,6 +177,30 @@ export const AppChannels = {
     getHistory: 'app:getHistory',
     addHistoryEntry: 'app:addHistoryEntry',
     getHistoryItems: 'app:getHistoryItems',
+    setUiLanguage: 'app:setUiLanguage',
+} as const;
+
+export const TtsChannels = {
+    getProviders: 'tts:getProviders',
+    getSettings: 'tts:getSettings',
+    updateSettings: 'tts:updateSettings',
+    synthesize: 'tts:synthesize',
+    startPlayback: 'tts:startPlayback',
+    pausePlayback: 'tts:pausePlayback',
+    resumePlayback: 'tts:resumePlayback',
+    stopPlayback: 'tts:stopPlayback',
+    seekToSegment: 'tts:seekToSegment',
+    segmentComplete: 'tts:segmentComplete',
+    checkLanguageSupport: 'tts:checkLanguageSupport',
+    downloadModel: 'tts:downloadModel',
+    getModelStatus: 'tts:getModelStatus',
+    clearCache: 'tts:clearCache',
+    getCacheSize: 'tts:getCacheSize',
+    cloneVoice: 'tts:cloneVoice',
+    listClonedVoices: 'tts:listClonedVoices',
+    deleteClonedVoice: 'tts:deleteClonedVoice',
+    getProviderModels: 'tts:getProviderModels',
+    deleteProviderModel: 'tts:deleteProviderModel',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -163,11 +220,16 @@ export const PushChannels = {
     changeMenuViewer: 'push:changeMenuViewer',
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
+    syncFailure: 'push:syncFailure',
     openLanguageManager: 'push:openLanguageManager',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
     bibleDownloadProgress: 'push:bibleDownloadProgress',
     bibleDownloaded: 'push:bibleDownloaded',
+    openSettings: 'push:openSettings',
+    ttsPlaybackState: 'push:ttsPlaybackState',
+    ttsModelDownloadProgress: 'push:ttsModelDownloadProgress',
+    ttsSegmentAudio: 'push:ttsSegmentAudio',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -186,7 +248,7 @@ export interface InvokeChannelMap {
     [DocumentChannels.getSermonsByYear]: { args: [string]; return: Record<string, SermonMeta[]> };
     [DocumentChannels.getTranslations]: {
         args: [string];
-        return: { languageCode: string; title: string; translatorName: string | null }[];
+        return: SermonTranslation[];
     };
     [DocumentChannels.getTraductionsForSermon]: {
         args: [string, string];
@@ -205,7 +267,7 @@ export interface InvokeChannelMap {
     [SearchChannels.getSuggestions]: { args: [string]; return: Suggestions[] };
     [SearchChannels.addSuggestion]: { args: [string, number, string]; return: Suggestions };
     [SearchChannels.searchText]: {
-        args: [string, string, number, import('./types').SearchMode];
+        args: [string, string, number, SearchMode];
         return: TantivySearchResult;
     };
     [SearchChannels.searchContent]: {
@@ -264,7 +326,7 @@ export interface InvokeChannelMap {
     // Bible
     [BibleChannels.getIndexes]: { args: []; return: BibleIndex };
     [BibleChannels.getBooks]: { args: [BookRequest]; return: BibleBook[] };
-    [BibleChannels.search]: { args: [string, number]; return: BibleSearchResult };
+    [BibleChannels.search]: { args: [string, number, string?]; return: BibleSearchResult };
     [BibleChannels.getVersions]: { args: []; return: BibleVersionInfo[] };
     [BibleChannels.getAllVersions]: { args: []; return: BibleVersionInfo[] };
     [BibleChannels.getActiveVersion]: { args: []; return: BibleVersionInfo | null };
@@ -283,10 +345,25 @@ export interface InvokeChannelMap {
         return: SubjectDocumentItem;
     };
 
+    // Highlights
+    [HighlightChannels.getByDocument]: {
+        args: [string, string];
+        return: HighlightItem[];
+    };
+    [HighlightChannels.create]: {
+        args: [HighlightCreateData];
+        return: HighlightItem[];
+    };
+    [HighlightChannels.update]: {
+        args: [string, HighlightUpdateData];
+        return: HighlightItem | null;
+    };
+    [HighlightChannels.delete]: { args: [string]; return: void };
+
     // Audio
     [AudioChannels.getTimeAndLocalFile]: {
         args: [string];
-        return: { time: AudioDocumentTime | null; download: AudioDocumentDownload | null };
+        return: AudioTimeAndDownload;
     };
     [AudioChannels.setTime]: { args: [string, number]; return: void };
     [AudioChannels.getLastPlay]: { args: []; return: string | null };
@@ -300,6 +377,9 @@ export interface InvokeChannelMap {
 
     // Sync
     [SyncChannels.getStatus]: { args: []; return: SyncStatus };
+    [SyncChannels.start]: { args: []; return: void };
+    [SyncChannels.stop]: { args: []; return: void };
+    [SyncChannels.syncNow]: { args: []; return: void };
 
     // App
     [AppChannels.initialize]: { args: []; return: void };
@@ -325,6 +405,35 @@ export interface InvokeChannelMap {
         args: [string];
         return: HistoryDataItem[];
     };
+    [AppChannels.setUiLanguage]: { args: [string]; return: void };
+
+    // TTS
+    [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
+    [TtsChannels.getSettings]: { args: []; return: TtsSettings };
+    [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
+    [TtsChannels.synthesize]: { args: [TtsSynthesizeRequest]; return: TtsSynthesizeResult };
+    [TtsChannels.startPlayback]: { args: [TtsSegment[], string, number?]; return: void };
+    [TtsChannels.pausePlayback]: { args: []; return: void };
+    [TtsChannels.resumePlayback]: { args: []; return: void };
+    [TtsChannels.stopPlayback]: { args: []; return: void };
+    [TtsChannels.seekToSegment]: { args: [number]; return: void };
+    [TtsChannels.segmentComplete]: { args: []; return: void };
+    [TtsChannels.checkLanguageSupport]: {
+        args: [string];
+        return: Record<TtsProviderType, boolean>;
+    };
+    [TtsChannels.downloadModel]: { args: [TtsProviderType, string?]; return: void };
+    [TtsChannels.getModelStatus]: {
+        args: [TtsProviderType];
+        return: { downloaded: boolean; sizeBytes: number };
+    };
+    [TtsChannels.clearCache]: { args: []; return: void };
+    [TtsChannels.getCacheSize]: { args: []; return: number };
+    [TtsChannels.cloneVoice]: { args: [TtsVoiceCloneRequest]; return: TtsVoiceCloneResult };
+    [TtsChannels.listClonedVoices]: { args: []; return: TtsVoice[] };
+    [TtsChannels.deleteClonedVoice]: { args: [string]; return: void };
+    [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
+    [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */
@@ -341,11 +450,16 @@ export interface PushEventMap {
     [PushChannels.changeMenuViewer]: ViewMenuValue;
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: string[];
+    [PushChannels.syncFailure]: SyncFailureEvent;
     [PushChannels.openLanguageManager]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
-    [PushChannels.languageInstalled]: { langCode: string };
-    [PushChannels.bibleDownloadProgress]: { abbreviation: string; percentage: number };
-    [PushChannels.bibleDownloaded]: { abbreviation: string };
+    [PushChannels.languageInstalled]: LanguageInstalledEvent;
+    [PushChannels.bibleDownloadProgress]: BibleDownloadProgress;
+    [PushChannels.bibleDownloaded]: BibleDownloadedEvent;
+    [PushChannels.openSettings]: void;
+    [PushChannels.ttsPlaybackState]: TtsPlaybackState;
+    [PushChannels.ttsModelDownloadProgress]: TtsModelDownloadProgress;
+    [PushChannels.ttsSegmentAudio]: TtsSegmentAudio;
 }
 
 // ---------------------------------------------------------------------------

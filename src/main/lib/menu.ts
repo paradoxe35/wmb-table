@@ -1,7 +1,9 @@
 import { Menu, shell, app, type BrowserWindow } from 'electron';
 import { is } from '@electron-toolkit/utils';
 import { PushChannels } from '@shared/ipc.types';
+import { DOCS_LINK } from '@shared/constants';
 import { sendToRenderer } from '@main/ipc/register';
+import i18n from '@main/lib/i18n';
 
 export default class MenuBuilder {
     private mainWindow: BrowserWindow;
@@ -44,19 +46,20 @@ export default class MenuBuilder {
     }
 
     private buildDefaultTemplate(): Electron.MenuItemConstructorOptions[] {
+        const t = i18n.t.bind(i18n);
         return [
             {
-                label: '&Fichier',
+                label: t('&Fichier'),
                 submenu: [
                     {
-                        label: 'Documents',
+                        label: t('Documents'),
                         accelerator: this.isD('Ctrl+N'),
                         click: () => {
                             sendToRenderer(this.mainWindow, PushChannels.openModalDocumentFromMain);
                         },
                     },
                     {
-                        label: '&Fermer',
+                        label: t('&Fermer'),
                         accelerator: process.platform === 'darwin' ? 'Command+Q' : 'Ctrl+W',
                         click: () => {
                             app.quit();
@@ -65,64 +68,79 @@ export default class MenuBuilder {
                 ],
             },
             {
-                label: 'Éditer',
+                label: t('Éditer'),
                 submenu: [
                     {
-                        label: 'Défaire',
+                        label: t('Défaire'),
                         accelerator: this.isD('Ctrl+Z'),
                         role: 'undo',
                     },
                     {
-                        label: 'Refaire',
+                        label: t('Refaire'),
                         accelerator: this.isD('Ctrl+Y'),
                         role: 'redo',
                     },
                     { type: 'separator' },
                     {
-                        label: 'Couper',
+                        label: t('Couper'),
                         accelerator: this.isD('Ctrl+X'),
                         role: 'cut',
                     },
                     {
-                        label: 'Copier',
+                        label: t('Copier'),
                         accelerator: this.isD('Ctrl+C'),
                         role: 'copy',
                     },
                     {
-                        label: 'Coller',
+                        label: t('Coller'),
                         accelerator: this.isD('Ctrl+V'),
                         role: 'paste',
                     },
                     { type: 'separator' },
                     {
-                        label: 'Tout sélectionner',
+                        label: t('Tout sélectionner'),
                         accelerator: this.isD('Ctrl+A'),
                         role: 'selectAll',
                     },
                 ],
             },
             {
-                label: '&Vue',
+                label: t('&Vue'),
                 submenu: [
                     {
-                        label: 'Basculer la barre latérale',
+                        label: t('Basculer la barre latérale'),
                         accelerator: this.isD('Ctrl+B'),
                         click: () => {
                             sendToRenderer(this.mainWindow, PushChannels.toggleSidebar);
                         },
                     },
                     {
-                        label: 'Changer de menu',
+                        label: t('Changer de menu'),
                         accelerator: 'Ctrl+Tab',
                         click: () => {
                             sendToRenderer(this.mainWindow, PushChannels.switchOnMenu);
                         },
                     },
                     {
-                        label: "Changer d'option",
+                        label: t("Changer d'option"),
                         accelerator: 'Ctrl+Shift+Tab',
                         click: () => {
                             sendToRenderer(this.mainWindow, PushChannels.switchOnOptions);
+                        },
+                    },
+                    { type: 'separator' },
+                    {
+                        label: t('Paramètres'),
+                        accelerator: this.isD('Ctrl+,'),
+                        click: () => {
+                            sendToRenderer(this.mainWindow, PushChannels.openSettings);
+                        },
+                    },
+                    {
+                        label: t('Langues'),
+                        accelerator: this.isD('Ctrl+L'),
+                        click: () => {
+                            sendToRenderer(this.mainWindow, PushChannels.openLanguageManager);
                         },
                     },
                     ...(is.dev
@@ -153,7 +171,7 @@ export default class MenuBuilder {
                           ]
                         : [
                               {
-                                  label: 'Basculer en plein écran',
+                                  label: t('Basculer en plein écran'),
                                   accelerator: 'F11',
                                   click: () => {
                                       this.mainWindow.setFullScreen(
@@ -165,46 +183,16 @@ export default class MenuBuilder {
                 ],
             },
             {
-                label: 'Outils',
+                label: t('Aide'),
                 submenu: [
                     {
-                        label: 'Langues',
-                        accelerator: this.isD('Ctrl+L'),
+                        label: t('Documentation'),
                         click: () => {
-                            sendToRenderer(this.mainWindow, PushChannels.openLanguageManager);
-                        },
-                    },
-                    { type: 'separator' },
-                    {
-                        label: 'Sauvegarde',
-                        accelerator: this.isD('Ctrl+Shift+R'),
-                        click: () => {
-                            sendToRenderer(this.mainWindow, PushChannels.openBackupModalFromMain);
+                            shell.openExternal(DOCS_LINK);
                         },
                     },
                     {
-                        label: 'Mise à jour',
-                        accelerator: this.isD('Ctrl+U'),
-                        click: () => {
-                            sendToRenderer(this.mainWindow, PushChannels.appUpdateMenu);
-                        },
-                    },
-                ],
-            },
-            {
-                label: 'Aide',
-                submenu: [
-                    {
-                        label: 'Documentation',
-                        click: () => {
-                            const url = process.env['DOCS_LINK'];
-                            if (url) {
-                                shell.openExternal(url);
-                            }
-                        },
-                    },
-                    {
-                        label: 'À propos',
+                        label: t('À propos'),
                         click: () => {
                             // About dialog will be ported in a later phase
                         },

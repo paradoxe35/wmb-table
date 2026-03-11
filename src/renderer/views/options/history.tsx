@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Empty, Collapse, List } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { HistoryData, HistoryDataItem } from '@shared/types';
 import { HistoryOutlined } from '@ant-design/icons';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
@@ -7,24 +8,29 @@ import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
 import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
 
 export default function History() {
+    const { t } = useTranslation();
     const title = useActiveTabTitle();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [key, setKey] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
-    const [reloadKey, setReloadKey] = useState(0);
     const { getSermonById } = useSermonLookup();
     const activeTab = useSermonStore(selectActiveTab);
     const prevTitle = useRef<string | null>(null);
 
     const onChange = (key: string | string[]) => {
-        if (typeof key === 'string') setKey(key);
+        const activeKey = Array.isArray(key) ? (key[0] ?? null) : key;
+        setKey(activeKey);
     };
 
     // Record history when active tab changes
     useEffect(() => {
         if (activeLanguage && title && title !== prevTitle.current && activeTab?.sermonId) {
             window.api.app.addHistoryEntry(activeLanguage, title, activeTab.sermonId);
+            // Refresh histories to include the new entry
+            window.api.app.getHistory(activeLanguage).then((data) => {
+                setHistories(data);
+            });
         }
         prevTitle.current = title;
     }, [title, activeLanguage, activeTab?.sermonId]);
@@ -38,25 +44,23 @@ export default function History() {
         }
     }, [key, histories]);
 
+    // Load histories on language change (initial load)
     useEffect(() => {
         if (activeLanguage) {
-            window.api.app.getHistory(activeLanguage).then(setHistories);
+            window.api.app.getHistory(activeLanguage).then((data) => {
+                setHistories(data);
+                if (data.length > 0) {
+                    setKey(data[0].id);
+                }
+            });
         }
-    }, [title, activeLanguage]);
-
-    useEffect(() => {
-        if (histories.length > 0) {
-            setKey(histories[0].id);
-            setReloadKey((d) => d + 1);
-        }
-    }, [histories]);
+    }, [activeLanguage]);
 
     return (
         <>
-            {histories.length === 0 && <Empty description="Aucune historique" />}
+            {histories.length === 0 && <Empty description={t('Aucune historique')} />}
             <Collapse
-                key={reloadKey}
-                defaultActiveKey={key || undefined}
+                activeKey={key || undefined}
                 accordion
                 onChange={onChange}
                 style={{ margin: '20px 0' }}

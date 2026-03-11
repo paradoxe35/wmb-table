@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
 import type { SermonMetaWithTraductions } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
@@ -36,6 +37,8 @@ export function useInitApp() {
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
 
+    const setError = useAppStore((s) => s.setError);
+
     useEffect(() => {
         (async () => {
             try {
@@ -70,11 +73,14 @@ export function useInitApp() {
                 ]);
                 setSermons(sermons);
                 if (savedTabs?.length) setTabs(savedTabs);
+            } catch (err) {
+                console.error('[useInitApp] Initialization failed:', err);
+                setError(i18n.t("Erreur lors de l'initialisation de l'application"));
             } finally {
                 setLoaded(true);
             }
         })();
-    }, [setLoaded, setSidebarHidden, setActiveLanguage, setSermons, setTabs]);
+    }, [setLoaded, setSidebarHidden, setActiveLanguage, setSermons, setTabs, setError]);
 }
 
 export function useOpenDocument() {
@@ -97,6 +103,21 @@ export function useOpenCustomDocument() {
     return useCallback(
         (title: string, sermonId: string) => {
             addTab(title, sermonId, 'custom');
+            setMainView('document');
+        },
+        [addTab, setMainView],
+    );
+}
+
+export function useOpenBibleChapter() {
+    const addTab = useSermonStore((s) => s.addTab);
+    const setMainView = useAppStore((s) => s.setMainView);
+
+    return useCallback(
+        (bookName: string, bookCode: string, chapter: string) => {
+            const title = `${bookName} ${chapter}`;
+            const sermonId = `${bookCode}:${chapter}`;
+            addTab(title, sermonId, 'bible', undefined, undefined, bookCode, chapter);
             setMainView('document');
         },
         [addTab, setMainView],

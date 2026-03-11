@@ -1,55 +1,261 @@
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Dropdown, message, Tooltip } from 'antd';
+import type { MenuProps } from 'antd';
 import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
-import type { SermonParagraph as SermonParagraphType, SearchMode } from '@shared/types';
+import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
+import type {
+    SermonParagraph as SermonParagraphType,
+    SearchMode,
+    HighlightItem,
+} from '@shared/types';
+
+type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'>;
+
+interface HighlightRange {
+    start: number;
+    end: number;
+    color: string;
+    comment?: string;
+    highlightId?: string;
+    type: 'search' | 'persistent' | 'tts';
+    matchIndex?: number;
+    isCurrent?: boolean;
+}
+
+function mergeRanges(
+    searchRanges: HighlightRange[],
+    persistentRanges: HighlightRange[],
+): HighlightRange[] {
+    const all = [...searchRanges, ...persistentRanges];
+    all.sort((a, b) => a.start - b.start || a.end - b.end);
+    return all;
+}
+
+// ---------------------------------------------------------------------------
+// Persistent highlight with context menu to delete
+// ---------------------------------------------------------------------------
+
+function PersistentHighlight({
+    text,
+    color,
+    comment,
+    highlightId,
+    reactKey,
+}: {
+    text: string;
+    color: string;
+    comment?: string;
+    highlightId?: string;
+    reactKey: string;
+}) {
+    const { t } = useTranslation();
+    const handleDelete = useCallback(async () => {
+        if (!highlightId) return;
+        try {
+            await window.api.highlights.delete(highlightId);
+            window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
+            message.success(t('Surlignage supprimé'));
+        } catch {
+            message.error(t('Erreur lors de la suppression'));
+        }
+    }, [highlightId]);
+
+    const menuItems: MenuProps['items'] = [
+        ...(comment
+            ? [
+                  {
+                      key: 'comment',
+                      label: comment,
+                      disabled: true,
+                      style: {
+                          fontSize: '0.85em',
+                          fontStyle: 'italic',
+                          whiteSpace: 'normal' as const,
+                          maxWidth: 250,
+                      },
+                  },
+                  { type: 'divider' as const, key: 'divider' },
+              ]
+            : []),
+        {
+            key: 'delete',
+            label: t('Supprimer le surlignage'),
+            danger: true,
+            onClick: handleDelete,
+        },
+    ];
+
+    const stopPropagation = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+    }, []);
+
+    const markEl = (
+        <mark key={reactKey} style={{ backgroundColor: color, borderRadius: 2, cursor: 'pointer' }}>
+            {text}
+        </mark>
+    );
+
+    const wrapped = comment ? <Tooltip title={comment}>{markEl}</Tooltip> : markEl;
+
+    return (
+        <span key={`dd-${reactKey}`} onContextMenu={stopPropagation}>
+            <Dropdown menu={{ items: menuItems }} trigger={['contextMenu']}>
+                {wrapped}
+            </Dropdown>
+        </span>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Render ranges
+// ---------------------------------------------------------------------------
+
+function renderWithRanges(
+    content: string,
+    ranges: HighlightRange[],
+): (string | React.ReactElement)[] {
+    if (ranges.length === 0) return [content];
+
+    const result: (string | React.ReactElement)[] = [];
+    let lastIndex = 0;
+
+    for (let i = 0; i < ranges.length; i++) {
+        const range = ranges[i];
+        const start = Math.max(range.start, lastIndex);
+        const end = range.end;
+        if (start >= end) continue;
+
+        if (start > lastIndex) {
+            result.push(content.slice(lastIndex, start));
+        }
+
+        const text = content.slice(start, end);
+        if (range.type === 'tts') {
+            result.push(
+                <mark key={`tts-${i}`} className="tts-active-sentence">
+                    {text}
+                </mark>,
+            );
+        } else if (range.type === 'search') {
+            result.push(
+                <mark
+                    key={`s-${i}`}
+                    data-match-index={range.matchIndex}
+                    className={range.isCurrent ? 'mark-current' : undefined}
+                >
+                    {text}
+                </mark>,
+            );
+        } else {
+            result.push(
+                <PersistentHighlight
+                    key={`h-${i}`}
+                    reactKey={`h-${i}`}
+                    text={text}
+                    color={range.color}
+                    comment={range.comment}
+                    highlightId={range.highlightId}
+                />,
+            );
+        }
+        lastIndex = end;
+    }
+
+    if (lastIndex < content.length) {
+        result.push(content.slice(lastIndex));
+    }
+
+    return result;
+}
+
+// ---------------------------------------------------------------------------
+// Paragraph view
+// ---------------------------------------------------------------------------
 
 const SermonParagraphView = memo(function SermonParagraphView({
     paragraph,
     search,
     currentMatchIndex,
     matchOffset,
+    highlights,
+    ttsHighlight,
+    playFromHereButton,
 }: {
-    paragraph: SermonParagraphType;
+    paragraph: ParagraphProp;
     search: { term: string; mode: SearchMode } | null;
     currentMatchIndex: number;
     matchOffset: number;
+    highlights?: HighlightItem[];
+    ttsHighlight?: { isActive: boolean; highlightRange: { start: number; end: number } | null };
+    playFromHereButton?: React.ReactNode;
 }) {
     const renderContent = () => {
-        if (!search) return paragraph.content;
+        const searchRanges: HighlightRange[] = [];
+        const persistentRanges: HighlightRange[] = [];
+        const ttsRanges: HighlightRange[] = [];
 
-        const regex = buildHighlightRegex(search.term, search.mode);
-        if (!regex) return paragraph.content;
+        // Build TTS highlight range
+        if (ttsHighlight?.isActive && ttsHighlight.highlightRange) {
+            ttsRanges.push({
+                start: ttsHighlight.highlightRange.start,
+                end: Math.min(ttsHighlight.highlightRange.end, paragraph.content.length),
+                color: '',
+                type: 'tts',
+            });
+        }
 
-        const normalized = strNormalizeNoLower(paragraph.content);
-        const matches = [...normalized.matchAll(regex)];
-        if (matches.length === 0) return paragraph.content;
+        // Build search ranges
+        if (search) {
+            const regex = buildHighlightRegex(search.term, search.mode);
+            if (regex) {
+                const normalized = strNormalizeNoLower(paragraph.content);
+                const matches = [...normalized.matchAll(regex)];
+                matches.forEach((m, i) => {
+                    const globalIdx = matchOffset + i;
+                    searchRanges.push({
+                        start: m.index!,
+                        end: m.index! + m[0].length,
+                        color: '',
+                        type: 'search',
+                        matchIndex: globalIdx,
+                        isCurrent: globalIdx === currentMatchIndex,
+                    });
+                });
+            }
+        }
 
-        const result: (string | React.ReactElement)[] = [];
-        let lastIndex = 0;
-        matches.forEach((m, i) => {
-            const start = m.index!;
-            const end = start + m[0].length;
-            if (start > lastIndex) result.push(paragraph.content.slice(lastIndex, start));
-            const globalIdx = matchOffset + i;
-            const isCurrent = globalIdx === currentMatchIndex;
-            result.push(
-                <mark
-                    key={i}
-                    data-match-index={globalIdx}
-                    className={isCurrent ? 'mark-current' : undefined}
-                >
-                    {paragraph.content.slice(start, end)}
-                </mark>,
-            );
-            lastIndex = end;
-        });
-        if (lastIndex < paragraph.content.length) result.push(paragraph.content.slice(lastIndex));
-        return result;
+        // Build persistent highlight ranges
+        if (highlights?.length) {
+            for (const h of highlights) {
+                persistentRanges.push({
+                    start: h.startOffset,
+                    end: Math.min(h.endOffset, paragraph.content.length),
+                    color: h.color,
+                    comment: h.comment,
+                    highlightId: h.id,
+                    type: 'persistent',
+                });
+            }
+        }
+
+        const allRanges = mergeRanges(searchRanges, [...persistentRanges, ...ttsRanges]);
+        if (allRanges.length === 0) return paragraph.content;
+
+        return renderWithRanges(paragraph.content, allRanges);
     };
 
+    const className = ttsHighlight?.isActive
+        ? 'sermon-paragraph tts-active-paragraph'
+        : 'sermon-paragraph';
+
     return (
-        <p data-paragraph-index={paragraph.paragraphIndex} className="sermon-paragraph">
-            <span className="line-number">{paragraph.paragraphIndex}</span>
-            {renderContent()}
+        <p data-paragraph-index={paragraph.paragraphIndex} className={className}>
+            <span className="line-number">
+                {paragraph.paragraphIndex}
+                {playFromHereButton}
+            </span>
+            <span className="paragraph-content">{renderContent()}</span>
         </p>
     );
 });

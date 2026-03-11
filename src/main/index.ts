@@ -9,6 +9,7 @@ import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
+import { disposeTtsService } from '@main/services/tts';
 
 // Initialize logger first
 initializeLogger();
@@ -111,6 +112,7 @@ app.whenReady().then(async () => {
 app.on('will-quit', () => {
     stopSynchronizer();
     terminateWorker();
+    disposeTtsService();
     closeDatabase();
 });
 

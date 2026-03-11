@@ -5,6 +5,15 @@
 @use './chrome-tabs' as *;
 
 // ---------------------------------------------------------------------------
+// Transition tokens
+// ---------------------------------------------------------------------------
+:root {
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.2s ease;
+    --transition-slow: 0.25s ease;
+}
+
+// ---------------------------------------------------------------------------
 // Reset
 // ---------------------------------------------------------------------------
 html,
@@ -29,6 +38,14 @@ body {
 // ---------------------------------------------------------------------------
 .ant-modal-wrap {
     outline: none !important;
+}
+
+// ---------------------------------------------------------------------------
+// Accessibility — focus indicators
+// ---------------------------------------------------------------------------
+:focus-visible {
+    outline: 2px solid var(--ant-color-primary, #1990ff);
+    outline-offset: 2px;
 }
 
 // ---------------------------------------------------------------------------
@@ -178,7 +195,7 @@ body {
     white-space: nowrap;
     padding: 3px 5px;
     border-radius: 2px;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-normal);
     background-color: transparent;
     box-shadow: none;
     position: relative;
@@ -228,7 +245,7 @@ body {
         white-space: nowrap;
         padding: 2px 5px;
         border-radius: 2px;
-        transition: background-color 0.2s ease;
+        transition: background-color var(--transition-normal);
     }
 
     b {
@@ -274,7 +291,7 @@ body {
 
     .tab-holder {
         overflow: visible;
-        transition: transform 0.2s;
+        transition: transform var(--transition-normal);
         white-space: nowrap;
     }
 
@@ -285,7 +302,7 @@ body {
     .tab-holder .tab {
         position: relative;
         transition:
-            transform 0.2s,
+            transform var(--transition-normal),
             z-index 0.4s;
         white-space: nowrap;
         /* max-width removed so tabs fill sidebar */
@@ -415,7 +432,7 @@ body {
     .verse-action {
         visibility: hidden;
         opacity: 0;
-        transition: all 0.2s;
+        transition: all var(--transition-normal);
     }
 }
 
@@ -461,7 +478,7 @@ body {
 // ---------------------------------------------------------------------------
 .view-panel {
     opacity: 1;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--transition-fast);
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -512,7 +529,7 @@ body {
     cursor: pointer;
     border-left: 3px solid transparent;
     border-radius: 0 var(--ant-border-radius, 6px) var(--ant-border-radius, 6px) 0;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
 
     &:hover {
         background: color-mix(in srgb, var(--ant-color-primary, #1990ff) 4%, transparent);
@@ -606,7 +623,7 @@ body {
     border-bottom: 1px solid var(--ant-color-border-secondary, #f0f0f0);
     border-left: 3px solid transparent;
     border-radius: 0 var(--ant-border-radius, 6px) var(--ant-border-radius, 6px) 0;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
 
     &:hover {
         background: color-mix(in srgb, var(--ant-color-primary, #1990ff) 4%, transparent);
@@ -647,7 +664,7 @@ body {
     border: 1px solid #e6e6e6;
     border-radius: var(--ant-border-radius, 6px);
     padding: 10px 12px;
-    transition: border-color 0.15s ease;
+    transition: border-color var(--transition-fast);
 
     &:hover {
         border-color: var(--ant-color-border, #d9d9d9);
@@ -694,7 +711,7 @@ body {
 
 .note-card {
     cursor: pointer;
-    transition: border-color 0.2s;
+    transition: border-color var(--transition-normal);
 
     &:hover {
         border-color: color-mix(in srgb, var(--ant-color-primary, #1677ff) 40%, transparent);
@@ -804,7 +821,7 @@ body {
     font-size: 1em;
     line-height: 1.6;
     color: var(--ant-color-text, #45474a);
-    transition: background-color 0.15s ease;
+    transition: background-color var(--transition-fast);
 
     &:hover {
         background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.08));

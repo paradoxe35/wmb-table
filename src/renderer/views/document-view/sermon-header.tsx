@@ -1,13 +1,12 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Segmented, Space, Tooltip } from 'antd';
 import {
     NumberOutlined,
     PlayCircleOutlined,
     PauseCircleOutlined,
-    ZoomInOutlined,
-    ZoomOutOutlined,
-    SearchOutlined,
     TranslationOutlined,
+    SearchOutlined,
 } from '@ant-design/icons';
 import {
     useSermonStore,
@@ -18,6 +17,8 @@ import {
 import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
+import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
+import { useDocumentZoom } from './hooks';
 
 export default function SermonHeader({
     meta,
@@ -25,18 +26,21 @@ export default function SermonHeader({
     sermonInfo,
     currentTranslationId,
     paragraphs,
+    tts,
 }: {
     meta: SermonMeta;
     zoom: number;
     sermonInfo: SermonMetaWithTraductions | undefined;
     currentTranslationId: number;
     paragraphs: SermonParagraph[];
+    tts?: TtsControls;
 }) {
+    const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
-    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
-    const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const activeTabKey = useSermonStore(selectActiveTabKey);
+    const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     const currentPlay = useAudioStore((s) => s.currentPlay);
     const audioTitle = useAudioStore((s) => s.title);
@@ -54,7 +58,6 @@ export default function SermonHeader({
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
 
-        // If this is not the current player document, open modal and force autoplay
         if (!isCurrentDocument) {
             openAudioModal();
         }
@@ -78,14 +81,6 @@ export default function SermonHeader({
     const handleOtherTraductions = useCallback(() => {
         window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
     }, []);
-
-    const handleZoomIn = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
-    }, [activeTabKey, zoom, updateTabZoom]);
-
-    const handleZoomOut = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
-    }, [activeTabKey, zoom, updateTabZoom]);
 
     const handleTraductionChange = useCallback(
         (value: string | number) => {
@@ -116,51 +111,53 @@ export default function SermonHeader({
             <div style={{ flex: 1 }} />
             <Space size="small">
                 {meta.audioLink && (
+                    <Tooltip title={isPlaying ? t('Pause') : t('Écouter')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
+                            onClick={handleAudioPlay}
+                            aria-label={isPlaying ? t('Pause') : t('Écouter')}
+                            style={
+                                isCurrentDocument
+                                    ? {
+                                          color: 'var(--ant-color-primary)',
+                                          backgroundColor: 'var(--ant-color-primary-bg)',
+                                      }
+                                    : undefined
+                            }
+                        />
+                    </Tooltip>
+                )}
+                {!meta.audioLink && tts && <TtsButton tts={tts} />}
+                <Tooltip title={t('Traductions')}>
                     <Button
                         type="text"
                         size="small"
-                        icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-                        onClick={handleAudioPlay}
-                        style={
-                            isCurrentDocument
-                                ? {
-                                      color: 'var(--ant-color-primary)',
-                                      backgroundColor: 'var(--ant-color-primary-bg)',
-                                  }
-                                : undefined
-                        }
+                        icon={<TranslationOutlined />}
+                        onClick={handleOtherTraductions}
+                        aria-label={t('Traductions')}
                     />
-                )}
-                <Button
-                    type="text"
-                    size="small"
-                    icon={<TranslationOutlined />}
-                    onClick={handleOtherTraductions}
-                />
-                <Button
-                    type="text"
-                    size="small"
-                    icon={<ZoomOutOutlined />}
-                    onClick={handleZoomOut}
-                />
-                <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>
-                    {zoom}%
-                </span>
-                <Button type="text" size="small" icon={<ZoomInOutlined />} onClick={handleZoomIn} />
-                <Tooltip title="Sélectionnez un paragraphe">
+                </Tooltip>
+                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
+                <Tooltip title={t('Sélectionnez un paragraphe')}>
                     <Button
                         type="text"
                         size="small"
                         icon={<NumberOutlined />}
                         onClick={() => setParagraphModalOpen(true)}
+                        aria-label={t('Sélectionnez un paragraphe')}
                     />
                 </Tooltip>
-                <Button
-                    type="text"
-                    size="small"
-                    icon={<SearchOutlined />}
-                    onClick={() => openSearchBar()}
-                />
+                <Tooltip title={t('Rechercher')}>
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<SearchOutlined />}
+                        onClick={() => openSearchBar()}
+                        aria-label={t('Rechercher')}
+                    />
+                </Tooltip>
             </Space>
             <ParagraphNavigatorModal
                 open={paragraphModalOpen}

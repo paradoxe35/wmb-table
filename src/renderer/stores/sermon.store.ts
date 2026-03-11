@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type {
     DocumentHtmlTree,
     DocumentTab,
+    DocumentType,
     ParagraphReference,
     SermonContent,
     SermonMetaWithTraductions,
@@ -21,17 +22,21 @@ interface SermonState {
     activeContent: SermonContent | null;
     tabs: DocumentTab[];
     pendingNavigation: PendingNavigation;
+    error: string | null;
 
     setSermons(s: SermonMetaWithTraductions[]): void;
     setActiveContent(c: SermonContent | null): void;
     setPendingNavigation(nav: PendingNavigation): void;
     setTabs(tabs: DocumentTab[]): void;
+    setError(error: string | null): void;
     addTab(
         title: string,
         sermonId: string,
-        type?: 'sermon' | 'custom',
+        type?: DocumentType,
         languageCode?: string,
         translationId?: number,
+        bibleBook?: string,
+        bibleChapter?: string,
     ): void;
     removeTab(key: string): void;
     activateTab(key: string): void;
@@ -42,6 +47,13 @@ interface SermonState {
     updateTabScroll(key: string, scrollY?: number, scrollX?: number): void;
     updateTabZoom(key: string, zoom: number): void;
     updateTabTranslationId(key: string, translationId: number): void;
+    updateBibleTab(
+        key: string,
+        title: string,
+        sermonId: string,
+        bibleBook: string,
+        bibleChapter: string,
+    ): void;
 }
 
 const matchKey = (t: DocumentTab, key: string) => getTabKey(t) === key;
@@ -53,6 +65,7 @@ export const useSermonStore = create<SermonState>((set) => ({
     activeContent: null,
     tabs: [],
     pendingNavigation: null,
+    error: null,
 
     setSermons: (s) => {
         const sermonsById: Record<string, SermonMetaWithTraductions> = {};
@@ -71,8 +84,9 @@ export const useSermonStore = create<SermonState>((set) => ({
     setActiveContent: (c) => set({ activeContent: c }),
     setPendingNavigation: (nav) => set({ pendingNavigation: nav }),
     setTabs: (tabs) => set({ tabs }),
+    setError: (error) => set({ error }),
 
-    addTab: (title, sermonId, type, languageCode, translationId) =>
+    addTab: (title, sermonId, type, languageCode, translationId, bibleBook, bibleChapter) =>
         set((s) => {
             const tabType = type ?? 'sermon';
             const exists = s.tabs.some(
@@ -97,6 +111,8 @@ export const useSermonStore = create<SermonState>((set) => ({
             const newTab: DocumentTab = { title, active: true, type: tabType, sermonId };
             if (languageCode) newTab.languageCode = languageCode;
             if (translationId != null) newTab.translationId = translationId;
+            if (bibleBook) newTab.bibleBook = bibleBook;
+            if (bibleChapter) newTab.bibleChapter = bibleChapter;
 
             const newTabs = [...deactivated, newTab];
 
@@ -155,6 +171,15 @@ export const useSermonStore = create<SermonState>((set) => ({
         set((s) => ({
             tabs: s.tabs.map((t) => (matchKey(t, key) ? { ...t, translationId } : t)),
         })),
+
+    updateBibleTab: (key, title, sermonId, bibleBook, bibleChapter) =>
+        set((s) => ({
+            tabs: s.tabs.map((t) =>
+                matchKey(t, key)
+                    ? { ...t, title, sermonId, bibleBook, bibleChapter, scrollY: 0 }
+                    : t,
+            ),
+        })),
 }));
 
 export function selectActiveTabTitle(state: SermonState): string | null {
@@ -171,7 +196,7 @@ export function selectActiveTab(state: SermonState): DocumentTab | null {
     return state.tabs.find((t) => t.active) ?? null;
 }
 
-export function selectActiveTabType(state: SermonState): 'sermon' | 'custom' {
+export function selectActiveTabType(state: SermonState): DocumentType {
     const active = state.tabs.find((t) => t.active);
     return active?.type ?? 'sermon';
 }

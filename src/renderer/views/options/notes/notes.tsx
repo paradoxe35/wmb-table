@@ -1,4 +1,5 @@
-import { Button, Card, Empty, Input, Space, Typography, message } from 'antd';
+import { Button, Card, Empty, Input, Space, Spin, Typography, message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
     useCallback,
     useEffect,
@@ -17,6 +18,7 @@ export function Notes({
 }: {
     setWorkingNote: Dispatch<SetStateAction<string | null>>;
 }) {
+    const { t } = useTranslation();
     const [loaded, setLoaded] = useState<boolean>(false);
 
     const [notes, setNotes] = useState<NoteItem[]>([]);
@@ -29,21 +31,34 @@ export function Notes({
                 odatas.current = notes;
                 setNotes(notes);
             })
-            .then(() => setLoaded(true));
+            .catch(() => {
+                message.error(t('Erreur lors du chargement des notes'));
+            })
+            .finally(() => setLoaded(true));
     }, []);
 
     const handleDeletion = (note: NoteItem) => {
-        window.api.notes.delete(note.id).then(() => {
-            odatas.current = odatas.current.filter((d) => d.id !== note.id);
-            setNotes(odatas.current);
-            message.success('Note supprimée');
-        });
+        window.api.notes
+            .delete(note.id)
+            .then(() => {
+                odatas.current = odatas.current.filter((d) => d.id !== note.id);
+                setNotes(odatas.current);
+                message.success(t('Note supprimée'));
+            })
+            .catch(() => {
+                message.error(t('Erreur lors de la suppression'));
+            });
     };
 
     const newNote = () => {
-        window.api.notes.create('Nouvelle note').then((note) => {
-            setWorkingNote(note.id);
-        });
+        window.api.notes
+            .create('Nouvelle note')
+            .then((note) => {
+                setWorkingNote(note.id);
+            })
+            .catch(() => {
+                message.error(t('Erreur lors de la création de la note'));
+            });
     };
 
     const editDocument = (note: NoteItem) => {
@@ -56,15 +71,23 @@ export function Notes({
         }
     }, []);
 
+    if (!loaded) {
+        return (
+            <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                <Spin />
+            </div>
+        );
+    }
+
     return (
         <>
             <Space orientation="vertical">
                 <Space orientation="horizontal">
                     <Button onClick={newNote} icon={<PlusOutlined />}>
-                        Nouvelle note
+                        {t('Nouvelle note')}
                     </Button>
 
-                    <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
+                    <Input.Search placeholder={t('Recherche')} allowClear onSearch={onSearch} />
                 </Space>
 
                 {notes.length > 0 && (
@@ -94,9 +117,9 @@ export function Notes({
                 )}
             </Space>
 
-            {loaded && notes.length < 1 && (
+            {notes.length < 1 && (
                 <div className="flex flex-center">
-                    <Empty />
+                    <Empty description={t('Aucune note')} />
                 </div>
             )}
         </>

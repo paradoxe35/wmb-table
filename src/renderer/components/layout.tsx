@@ -1,6 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Button, Layout, Space, Spin } from 'antd';
-import { LeftCircleOutlined, RightCircleOutlined, LoadingOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
+import { Button, Layout, Space, Spin, Tooltip } from 'antd';
+import {
+    LeftCircleOutlined,
+    RightCircleOutlined,
+    LoadingOutlined,
+    CloudSyncOutlined,
+} from '@ant-design/icons';
 
 import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
@@ -14,11 +20,33 @@ import { APP_NAME } from '@renderer/utils/constants';
 const { Header, Content } = Layout;
 
 function Title() {
+    const { t } = useTranslation();
     const appLoaded = useAppStore((s) => s.loaded);
+    const syncing = useAppStore((s) => s.syncing);
+
+    const showSpinner = !appLoaded || syncing;
+    const hint = !appLoaded
+        ? t('Chargement des données...')
+        : syncing
+          ? t('Synchronisation en cours...')
+          : '';
+
     return (
         <Space orientation="horizontal">
             <span>{APP_NAME}</span>
-            {!appLoaded && <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />}
+            {showSpinner && (
+                <Tooltip title={hint}>
+                    <Spin
+                        indicator={
+                            syncing && appLoaded ? (
+                                <CloudSyncOutlined style={{ fontSize: 18 }} spin />
+                            ) : (
+                                <LoadingOutlined style={{ fontSize: 20 }} spin />
+                            )
+                        }
+                    />
+                </Tooltip>
+            )}
         </Space>
     );
 }
@@ -58,8 +86,9 @@ const SidebarStatusHandler = () => {
 const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const [collapsed, setCollapsed] = useState(true);
 
-    const toggle = (collapsed?: boolean | unknown) =>
-        typeof collapsed === 'boolean' ? setCollapsed(collapsed) : setCollapsed((c) => !c);
+    const toggle = (collapsed?: boolean | unknown) => {
+        return typeof collapsed === 'boolean' ? setCollapsed(collapsed) : setCollapsed((c) => !c);
+    };
 
     const containerScroll = useContainerHeight<HTMLDivElement>();
 

@@ -1,53 +1,20 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { List, Typography } from 'antd';
-import type { TantivySearchHit, SearchSnippet } from '@shared/types';
+import { useTranslation } from 'react-i18next';
+import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
+import HighlightedText from '@renderer/components/highlighted-text';
 import { useSearchStore, useSermonStore, useAppStore } from '@renderer/stores';
 import { useSermonLookup } from '@renderer/hooks';
-import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
 
 const { Text } = Typography;
 
 const INITIAL_SNIPPETS = 2;
 
-function HighlightedText({ text, query }: { text: string; query: string }) {
-    const searchMode = useSearchStore((s) => s.searchMode);
-
-    const parts = useMemo(() => {
-        const regex = buildHighlightRegex(query, searchMode);
-        if (!regex) return [text];
-
-        const normalized = strNormalizeNoLower(text);
-        const matches = [...normalized.matchAll(regex)];
-        if (matches.length === 0) return [text];
-
-        const result: (string | React.ReactElement)[] = [];
-        let lastIndex = 0;
-        matches.forEach((m, i) => {
-            const start = m.index!;
-            const end = start + m[0].length;
-            if (start > lastIndex) {
-                result.push(text.slice(lastIndex, start));
-            }
-            result.push(
-                <mark key={i} className="search-highlight-mark">
-                    {text.slice(start, end)}
-                </mark>,
-            );
-            lastIndex = end;
-        });
-        if (lastIndex < text.length) {
-            result.push(text.slice(lastIndex));
-        }
-        return result;
-    }, [text, query, searchMode]);
-
-    return <>{parts}</>;
-}
-
 function SnippetRow({
     snippet,
     query,
+    searchMode,
     hitTitle,
     sermonId,
     translationId,
@@ -55,6 +22,7 @@ function SnippetRow({
 }: {
     snippet: SearchSnippet;
     query: string;
+    searchMode: SearchMode;
     hitTitle: string;
     sermonId: string;
     translationId: number;
@@ -69,13 +37,19 @@ function SnippetRow({
         >
             <div className="search-snippet-row">
                 <span className="snippet-paragraph-badge">{snippet.paragraphIndex}</span>
-                <HighlightedText text={snippet.snippet} query={query} />
+                <HighlightedText
+                    text={snippet.snippet}
+                    query={query}
+                    mode={searchMode}
+                    className="search-highlight-mark"
+                />
             </div>
         </DocumentViewer>
     );
 }
 
 export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit; query: string }) {
+    const { t } = useTranslation();
     const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
@@ -148,7 +122,9 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                     </a>
                     {hit.hitCount > 0 && (
                         <Text type="secondary" className="search-result-hit-count">
-                            {hit.hitCount} correspondance{hit.hitCount > 1 ? 's' : ''}
+                            {hit.hitCount > 1
+                                ? t('{{count}} correspondances', { count: hit.hitCount })
+                                : t('{{count}} correspondance', { count: hit.hitCount })}
                         </Text>
                     )}
                 </div>
@@ -158,6 +134,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                             key={s.paragraphIndex}
                             snippet={s}
                             query={query}
+                            searchMode={searchMode}
                             hitTitle={hit.title}
                             sermonId={hit.sermonId}
                             translationId={hit.translationId}
@@ -172,7 +149,9 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                                 setExpanded(!expanded);
                             }}
                         >
-                            {expanded ? 'Voir moins' : `Voir tout (${snippets.length})`}
+                            {expanded
+                                ? t('Voir moins')
+                                : t('Voir tout ({{count}})', { count: snippets.length })}
                         </a>
                     )}
                 </div>

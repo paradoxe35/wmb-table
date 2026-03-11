@@ -1,5 +1,12 @@
 export { debounce, throttle, capitalize as capitalizeFirstLetter } from 'lodash';
 
+export function formatTime(seconds: number): string {
+    if (!isFinite(seconds) || seconds < 0) return '0:00';
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export function getDateTime(date?: Date) {
     date = date || new Date();
     const int = new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full' });

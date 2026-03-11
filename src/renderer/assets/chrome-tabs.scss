@@ -60,7 +60,7 @@
     width: 1px;
     background: #a9adb0;
     opacity: 1;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-normal);
 }
 
 .chrome-tabs .chrome-tab .chrome-tab-dividers::before {
@@ -109,7 +109,7 @@
 }
 
 .chrome-tabs .chrome-tab:not([data-active='true']) .chrome-tab-background {
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-normal);
     opacity: 0;
 }
 

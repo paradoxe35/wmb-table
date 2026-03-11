@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Input, Button } from 'antd';
 import { UpOutlined, DownOutlined, CloseOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useSearchStore } from '@renderer/stores';
 import { selectActiveTabTitle, useSermonStore } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
+    const { t } = useTranslation();
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
@@ -98,7 +100,7 @@ export default function InlineSearchBar() {
                 <Input
                     ref={inputRef}
                     size="small"
-                    placeholder="Rechercher..."
+                    placeholder={t('Rechercher...')}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     style={{ width: 220 }}
@@ -133,7 +135,7 @@ export default function InlineSearchBar() {
                 <Button
                     type="text"
                     size="small"
-                    title="Aller au paragraphe"
+                    title={t('Aller au paragraphe')}
                     onClick={handleParagraphJump}
                     style={{ fontSize: '0.75em' }}
                 >

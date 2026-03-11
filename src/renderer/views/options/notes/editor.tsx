@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import ContainerScrollY from '@renderer/components/container-scroll-y';
 // @ts-expect-error — no type declarations for CKEditor 5 React
 import { CKEditor } from '@ckeditor/ckeditor5-react';
+import { useTranslation } from 'react-i18next';
 
 import { ContextMenu } from '@renderer/utils/context-menu';
 import { App as AntApp, Button, Input, Space, Tooltip, message } from 'antd';
@@ -37,6 +38,7 @@ function styleProperty(color = 'var(--ant-color-bg-container)') {
 }
 
 const useRenameNote = (note: NoteItem | null) => {
+    const { t } = useTranslation();
     const searchValue = useValueStateRef<string>(note?.name || '');
     const workingNote = useValueStateRef<NoteItem | null>(note);
     const { modal } = AntApp.useApp();
@@ -47,14 +49,14 @@ const useRenameNote = (note: NoteItem | null) => {
             .rename(workingNote.current.id, searchValue.current.trim())
             .then((saved) => {
                 if (typeof saved === 'boolean') {
-                    message.error('Le nom entré est invalid');
+                    message.error(t('Le nom entré est invalid'));
                 } else {
                     window.dispatchEvent(
                         new CustomEvent<{ name: string }>(EDITOR_EVENT.renameNote, {
                             detail: { name: searchValue.current.trim() },
                         }),
                     );
-                    message.success('Modifié');
+                    message.success(t('Modifié'));
                 }
             });
     };
@@ -64,8 +66,8 @@ const useRenameNote = (note: NoteItem | null) => {
             closable: true,
             icon: null,
             onOk: onSave,
-            okText: 'Enregistrer',
-            title: 'Renommer',
+            okText: t('Enregistrer'),
+            title: t('Renommer'),
             content: (
                 <form
                     onSubmit={(e) => {
@@ -81,7 +83,7 @@ const useRenameNote = (note: NoteItem | null) => {
                         minLength={3}
                         allowClear
                         onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
-                        placeholder="Nom sujet"
+                        placeholder={t('Nom sujet')}
                     />
                 </form>
             ),
@@ -98,8 +100,9 @@ function ButtonsControllers({
 }: {
     backToNotes: () => void;
     workingNote: NoteItem | null;
-    editorRef: React.MutableRefObject<any>;
+    editorRef: React.RefObject<any>;
 }) {
+    const { t } = useTranslation();
     const openModal = useRenameNote(workingNote);
 
     const workingNoteRef = useValueStateRef(workingNote);
@@ -117,7 +120,7 @@ function ButtonsControllers({
 
         window.api.notes
             .exportPdf(workingNoteRef.current?.id ?? '')
-            .then(() => message.success('Enregistré'))
+            .then(() => message.success(t('Enregistré')))
             .finally(() => setLoadingPdf(false));
     };
 
@@ -138,11 +141,13 @@ function ButtonsControllers({
 
     const confirm = useCallback(() => {
         antModal.confirm({
-            title: 'Alert',
+            title: t('Alerte'),
             icon: <ExclamationCircleOutlined />,
-            content: `Semble que votre note n'a pas de contenu, si vous continuez cette note sera inconsidérée et elle sera supprimée`,
-            okText: 'Continuer',
-            cancelText: 'Annuler',
+            content: t(
+                "Semble que votre note n'a pas de contenu, si vous continuez cette note sera inconsidérée et elle sera supprimée",
+            ),
+            okText: t('Continuer'),
+            cancelText: t('Annuler'),
             onOk: async () => {
                 if (workingNoteRef.current?.id) {
                     await window.api.notes.delete(workingNoteRef.current.id);
@@ -164,7 +169,7 @@ function ButtonsControllers({
         <div className="editor-toolbar">
             <Space orientation="horizontal">
                 <Button type="dashed" onClick={onBackToNotes} icon={<LeftOutlined />}>
-                    Notes
+                    {t('Notes')}
                 </Button>
             </Space>
 
@@ -172,7 +177,7 @@ function ButtonsControllers({
                 <span>{workingNote?.name}</span>
                 {workingNote && (
                     <a onClick={openModal}>
-                        <Tooltip title="Renommer">
+                        <Tooltip title={t('Renommer')}>
                             <EditOutlined />
                         </Tooltip>
                     </a>
@@ -180,14 +185,18 @@ function ButtonsControllers({
             </Space>
 
             <Space orientation="horizontal">
-                <Tooltip title={`${!readOnly ? 'Activer' : 'Désactiver'} mode lecture`}>
+                <Tooltip
+                    title={
+                        !readOnly ? t('Activer le mode lecture') : t('Désactiver le mode lecture')
+                    }
+                >
                     <Button
                         onClick={readOnlyMode}
                         type={readOnly ? 'primary' : 'dashed'}
                         icon={<ReadOutlined />}
                     />
                 </Tooltip>
-                <Tooltip title="Exporter au format PDF">
+                <Tooltip title={t('Exporter au format PDF')}>
                     <Button
                         type="dashed"
                         onClick={exportPdf}
@@ -207,6 +216,7 @@ export default function EditorContent({
     workingNoteId: string;
     backToNotes: () => void;
 }) {
+    const { t } = useTranslation();
     const modalRefence = useShowReferenceDetail();
 
     const workingNoteIdRef = useValueStateRef(workingNoteId);
@@ -257,7 +267,7 @@ export default function EditorContent({
             if (data) {
                 modalRefence(data);
             } else {
-                message.error('La référence est invalide');
+                message.error(t('La référence est invalide'));
             }
         });
     }, []);
@@ -269,7 +279,7 @@ export default function EditorContent({
             if (data) {
                 bibleReferenceModal.showModal(data);
             } else {
-                message.error('La référence biblique est invalide');
+                message.error(t('La référence biblique est invalide'));
             }
         });
     }, []);
@@ -341,10 +351,10 @@ export default function EditorContent({
                         editor.execute('unlink');
                     }
                 }
-                message.success('Référence supprimée');
+                message.success(t('Référence supprimée'));
             });
         } else {
-            message.warning('Cliquez droit sur une référence pour la supprimer');
+            message.warning(t('Cliquez droit sur une référence pour la supprimer'));
         }
     }, []);
 
@@ -371,7 +381,9 @@ export default function EditorContent({
                             );
                         }).then((ref) => {
                             editor.execute('link', referenceDocumentBrandLink + ref.id);
-                            message.success(`Référence document: ${ref.label}`);
+                            message.success(
+                                t('Référence document: {{label}}', { label: ref.label }),
+                            );
                         });
                         break;
 
@@ -383,16 +395,18 @@ export default function EditorContent({
                             );
                         }).then((ref) => {
                             editor.execute('link', referenceBibleBrandLink + ref.id);
-                            message.success(`Référence biblique: ${ref.label}`);
+                            message.success(
+                                t('Référence biblique: {{label}}', { label: ref.label }),
+                            );
                             bibleReferenceModal.showModal(ref);
                         });
                         break;
                     default:
-                        message.error('Aucune sélection trouvée pour la référence');
+                        message.error(t('Aucune sélection trouvée pour la référence'));
                         break;
                 }
             } else {
-                message.error('Aucune sélection trouvée pour la référence');
+                message.error(t('Aucune sélection trouvée pour la référence'));
             }
         }
     }, []);
@@ -474,9 +488,10 @@ function Editor({
     deleteReference: () => void;
     setReady: React.Dispatch<React.SetStateAction<boolean>>;
     onChange: () => void;
-    contextEvent: React.MutableRefObject<MouseEvent | null>;
-    editorRef: React.MutableRefObject<any>;
+    contextEvent: React.RefObject<MouseEvent | null>;
+    editorRef: React.RefObject<any>;
 }) {
+    const { t } = useTranslation();
     useEffect(() => {
         if (editorRef.current && editorRef.current.editor) {
             editorRef.current.editor.ui.view.toolbar.element.remove();
@@ -495,16 +510,16 @@ function Editor({
                 editorRef.current.ui.getEditableElement().parentElement,
                 [
                     {
-                        text: 'Référence document',
+                        text: t('Référence document'),
                         onclick: () => refereToDocument('document'),
                     },
                     {
-                        text: 'Référence biblique',
+                        text: t('Référence biblique'),
                         onclick: () => refereToDocument('bible'),
                     },
                     null,
                     {
-                        text: 'Supprimer la référence',
+                        text: t('Supprimer la référence'),
                         onclick: () => deleteReference(),
                         color: '#ff4d4f',
                     },
@@ -596,7 +611,7 @@ function Editor({
                                             typeof url === 'string' &&
                                             url.includes(referenceDocumentBrandLink),
                                         attributes: {
-                                            title: 'Référence document',
+                                            title: t('Référence document'),
                                             reference: 'true',
                                             onclick: 'event.preventDefault()',
                                         },
@@ -607,7 +622,7 @@ function Editor({
                                             typeof url === 'string' &&
                                             url.includes(referenceBibleBrandLink),
                                         attributes: {
-                                            title: 'Référence biblique',
+                                            title: t('Référence biblique'),
                                             reference: 'true',
                                             bible: 'true',
                                             onclick: 'event.preventDefault()',
@@ -619,8 +634,8 @@ function Editor({
                                 ui: 'fr',
                                 content: 'fr',
                                 textPartLanguage: [
-                                    { title: 'Français', languageCode: 'fr' },
-                                    { title: 'English', languageCode: 'en' },
+                                    { title: t('Français'), languageCode: 'fr' },
+                                    { title: t('English'), languageCode: 'en' },
                                 ],
                             },
                         }}

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button, Modal, Slider, Space } from 'antd';
 import {
     PlayCircleOutlined,
@@ -10,17 +11,11 @@ import {
 import { useAudioStore } from '@renderer/stores';
 import { useAudioRef } from '@renderer/components/audio-context';
 import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
-
-const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
-
-function formatTime(seconds: number): string {
-    if (!isFinite(seconds) || seconds < 0) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-}
+import { formatTime } from '@renderer/utils/functions';
+import { AUDIO_SPEEDS } from '@renderer/utils/constants';
 
 export default function DocumentAudioPlayer() {
+    const { t } = useTranslation();
     const audioRef = useAudioRef();
     const modalOpen = useAudioStore((s) => s.modalOpen);
     const closeModal = useAudioStore((s) => s.closeModal);
@@ -118,7 +113,7 @@ export default function DocumentAudioPlayer() {
                                 marginBottom: 16,
                             }}
                         >
-                            Langue: <i>{traduction}</i>
+                            {t('Langue: {{name}}', { name: traduction })}
                         </div>
                     )}
 
@@ -175,7 +170,7 @@ export default function DocumentAudioPlayer() {
                         }}
                     >
                         <Space>
-                            {SPEEDS.map((s) => (
+                            {AUDIO_SPEEDS.map((s) => (
                                 <Button
                                     key={s}
                                     type={playbackRate === s ? 'primary' : 'default'}

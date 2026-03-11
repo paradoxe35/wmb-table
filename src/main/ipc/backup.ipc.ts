@@ -2,7 +2,11 @@ import { BackupChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as backupRepo from '@main/database/repositories/backup.repository';
 import { authenticateWithGoogle } from '@main/services/sync/google-auth.service';
-import { initializeSynchronizer } from '@main/services/sync/synchronizer';
+import {
+    initializeSynchronizer,
+    stopSynchronizer,
+    tryStartSynchronizer,
+} from '@main/services/sync/synchronizer';
 
 export function registerBackupHandlers(): void {
     registerHandler(BackupChannels.getStatus, async () => {
@@ -11,6 +15,11 @@ export function registerBackupHandlers(): void {
 
     registerHandler(BackupChannels.toggleStatus, async (_event, active) => {
         backupRepo.toggleStatus(active);
+        if (active) {
+            await tryStartSynchronizer();
+        } else {
+            stopSynchronizer();
+        }
     });
 
     registerHandler(BackupChannels.getReminder, async () => {

@@ -1,5 +1,5 @@
 import * as refRepo from '../database/repositories/reference.repository';
-import type { SermonMeta, SermonMetaWithTraductions } from '@shared/types';
+import type { SermonMeta, SermonMetaWithTraductions, SermonTranslation } from '@shared/types';
 
 /**
  * Build a unique SermonMeta id from components.
@@ -178,7 +178,7 @@ export function getTraductionsForSermon(sermonId: string, langCode: string): Ser
 export function getTranslationsForSermon(
     sermonId: string,
     installedLanguages?: string[],
-): { languageCode: string; title: string; translatorName: string | null }[] {
+): SermonTranslation[] {
     const rows = refRepo.getTranslationsForSermon(sermonId);
     const installed = installedLanguages ? new Set(installedLanguages) : null;
     return rows

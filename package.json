@@ -47,6 +47,7 @@
         "@ant-design/icons": "^6.1.0",
         "@ckeditor/ckeditor5-react": "5.0.2",
         "@oxdev03/node-tantivy-binding": "^0.2.0",
+        "@pngwasi/kokoro-js": "^1.1.1",
         "antd": "^6.3.1",
         "better-sqlite3": "^12.6.2",
         "chokidar": "^5.0.0",
@@ -56,11 +57,16 @@
         "framer-motion": "^12.35.0",
         "google-auth-library": "^10.6.1",
         "googleapis": "^171.4.0",
+        "i18next": "^25.8.17",
         "lodash": "^4.17.23",
         "node-html-parser": "^7.1.0",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
+        "react-i18next": "^16.5.6",
         "react-virtuoso": "^4.18.3",
+        "sherpa-onnx": "^1.12.28",
+        "tar": "^7.5.11",
+        "unbzip2-stream": "^1.4.3",
         "unpdf": "^1.4.0",
         "zustand": "^5.0.11"
     },
@@ -74,6 +80,7 @@
         "@types/node": "^22.19.0",
         "@types/react": "^19.2.14",
         "@types/react-dom": "^19.2.3",
+        "@types/unbzip2-stream": "^1.4.3",
         "@typescript-eslint/eslint-plugin": "^8.56.1",
         "@typescript-eslint/parser": "^8.56.1",
         "@vitejs/plugin-react": "^5.1.4",
@@ -120,8 +127,13 @@
             {
                 "from": "resources/credentials/google",
                 "to": "credentials/google"
+            },
+            {
+                "from": "resources/tts",
+                "to": "tts"
             }
         ],
+        "afterPack": "scripts/afterPack.cjs",
         "mac": {
             "type": "distribution",
             "hardenedRuntime": true,
@@ -190,6 +202,8 @@
             "electron",
             "electron-winstaller",
             "esbuild",
+            "onnxruntime-node",
+            "sherpa-onnx",
             "simple-git-hooks"
         ]
     }

@@ -10,6 +10,8 @@ import { registerBackupHandlers } from './backup.ipc';
 import { registerAppHandlers } from './app.ipc';
 import { registerLanguageHandlers } from './languages.ipc';
 import { registerSyncHandlers } from './sync.ipc';
+import { registerHighlightsHandlers } from './highlights.ipc';
+import { registerTtsHandlers } from './tts.ipc';
 
 /**
  * Type-safe wrapper around `ipcMain.handle`.
@@ -64,4 +66,6 @@ export function initializeIpc(): void {
     registerAppHandlers();
     registerLanguageHandlers();
     registerSyncHandlers();
+    registerHighlightsHandlers();
+    registerTtsHandlers();
 }

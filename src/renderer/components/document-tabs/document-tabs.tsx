@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
-import type { MenuProps } from 'antd';
+import { App as AntApp, type MenuProps } from 'antd';
 import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
 import { useTabPersistence } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
@@ -8,6 +9,7 @@ import { getTabKey } from '@shared/types';
 import TabItem from './tab-item';
 
 export default function DocumentTabs() {
+    const { t } = useTranslation();
     const tabs = useSermonStore((s) => s.tabs);
     const reorderTabs = useSermonStore((s) => s.reorderTabs);
     const activateTab = useSermonStore((s) => s.activateTab);
@@ -17,26 +19,37 @@ export default function DocumentTabs() {
     const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
     const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const { modal } = AntApp.useApp();
 
     useTabPersistence(tabs, activeLanguage);
 
+    const confirmRemoveAll = useCallback(() => {
+        modal.confirm({
+            title: t('Fermer tous les onglets'),
+            content: t('Voulez-vous vraiment fermer tous les onglets ?'),
+            okText: t('Tout fermer'),
+            cancelText: t('Annuler'),
+            onOk: () => removeAllTabs(),
+        });
+    }, [modal, removeAllTabs]);
+
     const getContextMenuItems = useCallback(
         (key: string): MenuProps['items'] => [
-            { key: 'close', label: 'Fermer', onClick: () => removeTab(key) },
+            { key: 'close', label: t('Fermer'), onClick: () => removeTab(key) },
             {
                 key: 'close-others',
-                label: 'Fermer les autres',
+                label: t('Fermer les autres'),
                 onClick: () => removeOtherTabs(key),
             },
             {
                 key: 'close-right',
-                label: 'Fermer à droite',
+                label: t('Fermer à droite'),
                 onClick: () => removeTabsToRight(key),
             },
             { type: 'divider' },
-            { key: 'close-all', label: 'Tout fermer', onClick: () => removeAllTabs() },
+            { key: 'close-all', label: t('Tout fermer'), onClick: () => confirmRemoveAll() },
         ],
-        [removeTab, removeOtherTabs, removeTabsToRight, removeAllTabs],
+        [removeTab, removeOtherTabs, removeTabsToRight, confirmRemoveAll],
     );
 
     // Listen for custom document removal events

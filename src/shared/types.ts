@@ -68,9 +68,22 @@ export interface SermonMeta {
     cityState: string | null;
 }
 
-export interface SermonMetaWithTraductions extends SermonMeta {
-    availableTraductions: { translationId: number; traductionName: string | null }[];
+export interface AvailableTraduction {
+    translationId: number;
+    traductionName: string | null;
 }
+
+export interface SermonMetaWithTraductions extends SermonMeta {
+    availableTraductions: AvailableTraduction[];
+}
+
+export interface SermonTranslation {
+    languageCode: string;
+    title: string;
+    translatorName: string | null;
+}
+
+export type DocumentType = 'sermon' | 'custom' | 'bible';
 
 export type DocumentTab = {
     title: string;
@@ -81,7 +94,9 @@ export type DocumentTab = {
     zoom?: number;
     translationId?: number;
     languageCode?: string;
-    type?: 'sermon' | 'custom';
+    type?: DocumentType;
+    bibleBook?: string;
+    bibleChapter?: string;
 };
 
 export function getTabKey(tab: { title: string; sermonId: string }): string {
@@ -252,6 +267,48 @@ export interface SubjectDocument extends Readonly<BaseEntity> {
 }
 
 // ---------------------------------------------------------------------------
+// Highlights
+// ---------------------------------------------------------------------------
+
+export interface HighlightParagraphRange {
+    paragraphIndex: number;
+    startOffset: number;
+    endOffset: number;
+}
+
+export interface HighlightCreateData {
+    documentTitle: string;
+    sermonId: string;
+    paragraphs: HighlightParagraphRange[];
+    textSnippet: string;
+    color: string;
+    comment?: string;
+    documentType: DocumentType;
+    translationId: number;
+    languageCode: string;
+}
+
+export interface HighlightUpdateData {
+    color?: string;
+    comment?: string;
+}
+
+export interface HighlightItem extends Readonly<BaseEntity> {
+    groupId: string;
+    documentTitle: string;
+    sermonId: string;
+    paragraphIndex: number;
+    startOffset: number;
+    endOffset: number;
+    textSnippet: string;
+    color: string;
+    comment?: string;
+    documentType: DocumentType;
+    translationId: number;
+    languageCode: string;
+}
+
+// ---------------------------------------------------------------------------
 // Audio
 // ---------------------------------------------------------------------------
 
@@ -263,6 +320,11 @@ export interface AudioDocumentTime extends BaseEntity {
 export interface AudioDocumentDownload extends BaseEntity {
     local_file?: string;
     audio_link: string;
+}
+
+export interface AudioTimeAndDownload {
+    time: AudioDocumentTime | null;
+    download: AudioDocumentDownload | null;
 }
 
 export type AudioDownloadProgress = {
@@ -394,6 +456,10 @@ export interface LanguageDownloadProgress {
     percentage: number;
 }
 
+export interface LanguageInstalledEvent {
+    langCode: string;
+}
+
 // ---------------------------------------------------------------------------
 // Tantivy Search
 // ---------------------------------------------------------------------------
@@ -431,6 +497,15 @@ export interface BibleVersionInfo {
     available: boolean;
 }
 
+export interface BibleDownloadProgress {
+    abbreviation: string;
+    percentage: number;
+}
+
+export interface BibleDownloadedEvent {
+    abbreviation: string;
+}
+
 // ---------------------------------------------------------------------------
 // App / Settings
 // ---------------------------------------------------------------------------
@@ -454,6 +529,12 @@ export interface SyncStatus {
     syncing: boolean;
     lastSync: string | null;
     error: string | null;
+}
+
+export interface SyncFailureEvent {
+    message: string;
+    isAuthError: boolean;
+    consecutiveFailures: number;
 }
 
 // ---------------------------------------------------------------------------

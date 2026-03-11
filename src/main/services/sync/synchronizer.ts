@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { gzipSync, gunzipSync } from 'node:zlib';
-import { app, net } from 'electron';
+import { app } from 'electron';
 import { eq, lt } from 'drizzle-orm';
 import type { OAuth2Client } from 'google-auth-library';
 import log from 'electron-log';
@@ -21,10 +21,13 @@ import {
 } from './drive.service';
 import { applyChangeLog, applySnapshot, type AffectedTables } from './db-merge.service';
 import { getExistingClient } from './google-auth.service';
-import { getMainWindow } from '@main/lib/window';
+import * as backupRepo from '@main/database/repositories/backup.repository';
+import { hasInternet } from '@main/lib/network';
+import { pushToRenderer } from '@main/lib/push';
 import { PushChannels } from '@shared/ipc.types';
 
 const SYNC_INTERVAL_MS = 10_000;
+const MAX_CONSECUTIVE_AUTH_FAILURES = 4;
 const MAX_CHANGE_RETRIES = 5;
 const MAX_SNAPSHOT_RETRIES = 10;
 const SNAPSHOT_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -36,6 +39,7 @@ let driveService: GoogleDriveService | null = null;
 let lastError: string | null = null;
 let lastSyncTime: string | null = null;
 let lastSnapshotTime = 0;
+let consecutiveAuthFailures = 0;
 
 // Affected tables tracked per sync cycle (table → record IDs)
 let affectedTables: AffectedTables = {};
@@ -48,6 +52,7 @@ export function startSynchronizer(authClient: OAuth2Client): void {
     if (syncTimer) return;
 
     driveService = new GoogleDriveService(authClient);
+    consecutiveAuthFailures = 0;
     syncTimer = setInterval(schedulerWorker, SYNC_INTERVAL_MS);
     log.info('Synchronizer started');
 
@@ -61,7 +66,17 @@ export function stopSynchronizer(): void {
         syncTimer = null;
     }
     driveService = null;
+    consecutiveAuthFailures = 0;
     log.info('Synchronizer stopped');
+}
+
+/**
+ * Trigger an immediate sync cycle.
+ * No-op if sync is already running or synchronizer is not started.
+ */
+export function syncNow(): void {
+    if (!driveService || isSyncRunning) return;
+    schedulerWorker();
 }
 
 export function getSyncStatus(): {
@@ -79,11 +94,14 @@ export function getSyncStatus(): {
 }
 
 /**
- * Auto-start synchronizer if user has saved Google credentials.
- * Safe to call at app startup — no-op if no credentials.
+ * Auto-start synchronizer if user has an active backup status AND saved credentials.
+ * Safe to call at app startup — no-op if backup is disabled or no credentials.
  */
 export async function tryStartSynchronizer(): Promise<void> {
     try {
+        const status = backupRepo.getStatus();
+        if (!status?.active) return;
+
         const client = await getExistingClient();
         if (client) {
             startSynchronizer(client);
@@ -128,7 +146,7 @@ function mergeAffectedTables(tables: AffectedTables): void {
 
 async function schedulerWorker(): Promise<void> {
     if (isSyncRunning || !driveService) return;
-    if (!net.isOnline()) return;
+    if (!(await hasInternet())) return;
 
     isSyncRunning = true;
     resetAffectedTables();
@@ -153,13 +171,28 @@ async function schedulerWorker(): Promise<void> {
     if (failure) {
         lastError = failure.message;
         log.error('Sync cycle error:', failure.message);
+
+        const isAuthError = isGoogleAuthError(failure);
+        if (isAuthError) {
+            consecutiveAuthFailures++;
+        }
+
+        pushToRenderer(PushChannels.syncFailure, {
+            message: failure.message,
+            isAuthError,
+            consecutiveFailures: consecutiveAuthFailures,
+        });
+
+        // After too many consecutive auth failures, stop and let frontend handle re-auth
+        if (isAuthError && consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES) {
+            log.error('Too many consecutive auth failures — stopping synchronizer');
+            stopSynchronizer();
+        }
     } else {
         lastError = null;
+        consecutiveAuthFailures = 0;
         lastSyncTime = new Date().toISOString();
-        const tableNames = Object.keys(affectedTables);
-        if (tableNames.length > 0) {
-            notifyRenderer(tableNames);
-        }
+        pushToRenderer(PushChannels.newSynchronizedDatas, Object.keys(affectedTables));
     }
 
     // Push always runs last, regardless of pull result
@@ -182,6 +215,14 @@ async function applyRemoteChanges(): Promise<void> {
     const timeOffset = getLastSyncTimeOffset();
     const files = await driveService.getChangeFilesAfterTimeOffset(timeOffset);
 
+    if (files.length === 0) return;
+
+    const applicable = files.filter((f) => canBeApplied(f) && f.createdTime > timeOffset);
+    if (applicable.length > 0) {
+        log.info(`[Sync] Applying ${applicable.length} remote file(s)`);
+    }
+    let processed = 0;
+
     for (const file of files) {
         // Skip files we can't process (not a snapshot or change file)
         if (!canBeApplied(file)) continue;
@@ -197,6 +238,7 @@ async function applyRemoteChanges(): Promise<void> {
 
         try {
             if (file.isSnapshot) {
+                log.info(`[Sync] Applying snapshot: ${file.name}`);
                 const tables = await applyRemoteSnapshotFile(file);
                 mergeAffectedTables(tables);
             } else {
@@ -216,6 +258,11 @@ async function applyRemoteChanges(): Promise<void> {
         saveFailureCount(file.id, 0);
         updateSyncTimeOffset(file.createdTime);
         saveProcessedChange(file.id);
+        processed++;
+
+        if (processed % 10 === 0 || processed === applicable.length) {
+            log.info(`[Sync] Processed ${processed}/${applicable.length} remote file(s)`);
+        }
     }
 }
 
@@ -294,6 +341,7 @@ async function syncChangesToDrive(): Promise<void> {
 
     const unsynced = getUnsyncedChanges();
     if (unsynced.length === 0) return;
+    log.info(`[Sync] Pushing ${unsynced.length} local change(s) to Drive`);
 
     const drive = driveService;
 
@@ -444,15 +492,17 @@ function isAlreadyProcessed(fileId: string): boolean {
     return !!db.select().from(processedChanges).where(eq(processedChanges.fileId, fileId)).get();
 }
 
-function notifyRenderer(tableNames: string[]): void {
-    try {
-        const win = getMainWindow();
-        if (win && !win.isDestroyed()) {
-            win.webContents.send(PushChannels.newSynchronizedDatas, tableNames);
-        }
-    } catch {
-        // Window may not exist yet
-    }
+/**
+ * Detect Google auth errors (invalid_grant, token revoked, etc.)
+ */
+function isGoogleAuthError(error: Error): boolean {
+    const msg = error.message.toLowerCase();
+    return (
+        msg.includes('invalid_grant') ||
+        msg.includes('token has been expired or revoked') ||
+        msg.includes('invalid credentials') ||
+        msg.includes('unauthorized')
+    );
 }
 
 // -----------------------------------------------------------------------

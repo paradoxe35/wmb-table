@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -178,6 +178,28 @@ export const audioDownloads = sqliteTable('audio_downloads', {
 });
 
 // ---------------------------------------------------------------------------
+// Highlights
+// ---------------------------------------------------------------------------
+
+export const highlights = sqliteTable('highlights', {
+    id: text('id').primaryKey(),
+    groupId: text('group_id').notNull().default(''),
+    documentTitle: text('document_title').notNull(),
+    sermonId: text('sermon_id').notNull().default(''),
+    paragraphIndex: integer('paragraph_index').notNull(),
+    startOffset: integer('start_offset').notNull(),
+    endOffset: integer('end_offset').notNull(),
+    textSnippet: text('text_snippet').notNull(),
+    color: text('color').notNull().default('#FFFF00'),
+    comment: text('comment'),
+    documentType: text('document_type').notNull().default('sermon'),
+    translationId: integer('translation_id').notNull().default(0),
+    languageCode: text('language_code').notNull().default(''),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+// ---------------------------------------------------------------------------
 // Backup
 // ---------------------------------------------------------------------------
 
@@ -196,3 +218,37 @@ export const backupStatus = sqliteTable('backup_status', {
     restored: integer('restored', { mode: 'boolean' }).notNull().default(false),
     lastUpdate: text('last_update').default(sql`(datetime('now'))`),
 });
+
+// ---------------------------------------------------------------------------
+// TTS Settings (single-row)
+// ---------------------------------------------------------------------------
+
+export const ttsSettings = sqliteTable('tts_settings', {
+    id: text('id').primaryKey(),
+    activeProvider: text('active_provider').notNull(),
+    fallbackOrder: text('fallback_order').notNull(), // JSON array of TtsProviderType
+    highlightMode: text('highlight_mode').notNull(),
+    autoPlay: integer('auto_play', { mode: 'boolean' }).notNull(),
+    rate: real('rate').notNull().default(1),
+    segmentGapMs: integer('segment_gap_ms').notNull().default(700),
+    cacheMaxSizeMb: integer('cache_max_size_mb').notNull(),
+    providerConfigs: text('provider_configs').notNull(), // JSON<Record<TtsProviderType, TtsProviderSettings>>
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+// ---------------------------------------------------------------------------
+// Synced tables — add a table here to include it in sync
+// ---------------------------------------------------------------------------
+
+export const syncedTables = [
+    notes,
+    notesReferences,
+    notesBibleReferences,
+    subjects,
+    subjectItems,
+    customDocuments,
+    suggestions,
+    highlights,
+    ttsSettings,
+] as const;

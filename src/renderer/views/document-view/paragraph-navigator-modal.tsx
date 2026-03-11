@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Button, Modal, Segmented } from 'antd';
+import { useTranslation } from 'react-i18next';
+import { Button, Empty, Modal, Segmented } from 'antd';
 import type { SermonParagraph } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
+import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
 
 const STEP_OPTIONS = [1, 2, 3, 5, 10] as const;
 
@@ -14,6 +16,7 @@ export default function ParagraphNavigatorModal({
     onClose: () => void;
     paragraphs: SermonParagraph[];
 }) {
+    const { t } = useTranslation();
     const [step, setStep] = useState<number>(3);
 
     const visibleParagraphs = useMemo(() => {
@@ -26,15 +29,7 @@ export default function ParagraphNavigatorModal({
             onClose();
             requestAnimationFrame(() => {
                 const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-                if (!container) return;
-                const el = container.querySelector(`[data-paragraph-index="${paragraphIndex}"]`);
-                if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    el.classList.add('paragraph-highlight-blink');
-                    const cleanup = () => el.classList.remove('paragraph-highlight-blink');
-                    el.addEventListener('animationend', cleanup, { once: true });
-                    setTimeout(cleanup, 2500);
-                }
+                scrollToParagraph(container, paragraphIndex);
             });
         },
         [onClose],
@@ -42,7 +37,7 @@ export default function ParagraphNavigatorModal({
 
     return (
         <Modal
-            title="Sélectionnez un paragraphe"
+            title={t('Sélectionnez un paragraphe')}
             open={open}
             footer={null}
             onCancel={onClose}
@@ -66,17 +61,21 @@ export default function ParagraphNavigatorModal({
                     gap: 4,
                 }}
             >
-                {visibleParagraphs.map((p) => (
-                    <Button
-                        key={p.paragraphIndex}
-                        size="small"
-                        type="dashed"
-                        style={{ minWidth: 36 }}
-                        onClick={() => scrollTo(p.paragraphIndex)}
-                    >
-                        {p.paragraphIndex}
-                    </Button>
-                ))}
+                {visibleParagraphs.length === 0 ? (
+                    <Empty description={t('Aucun paragraphe')} />
+                ) : (
+                    visibleParagraphs.map((p) => (
+                        <Button
+                            key={p.paragraphIndex}
+                            size="small"
+                            type="dashed"
+                            style={{ minWidth: 36 }}
+                            onClick={() => scrollTo(p.paragraphIndex)}
+                        >
+                            {p.paragraphIndex}
+                        </Button>
+                    ))
+                )}
             </div>
         </Modal>
     );

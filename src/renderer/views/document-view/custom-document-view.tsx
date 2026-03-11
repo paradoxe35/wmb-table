@@ -1,32 +1,99 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Space, Spin } from 'antd';
-import { ZoomInOutlined, ZoomOutOutlined, SearchOutlined } from '@ant-design/icons';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button, Space, Tooltip } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import {
     useSermonStore,
     useSearchStore,
     useCustomDocumentsStore,
+    useAppStore,
     selectActiveTabTitle,
-    selectActiveTabKey,
 } from '@renderer/stores';
-import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
-import type { CustomDocumentContent } from '@shared/types';
-import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
-import InlineSearchBar from '../components/inline-search-bar';
-import { useScrollAndZoom, useSearchHighlight, useMatchNavigation } from './hooks';
+import type { CustomDocumentContent, SermonContent } from '@shared/types';
+import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
+import DocumentBody from './document-body';
+import {
+    useScrollAndZoom,
+    useSearchHighlight,
+    useMatchNavigation,
+    useContextMenuItems,
+    useDocumentHighlights,
+    useReferenceNavigation,
+    useDocumentZoom,
+} from './hooks';
+import { useTts } from '@renderer/hooks/use-tts';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+interface DocumentParagraph {
+    paragraphIndex: number;
+    content: string;
+}
+
+/** Parse stored content into paragraphs. Handles both JSON array and legacy plain text. */
+function parseContentToParagraphs(content: string): DocumentParagraph[] {
+    let lines: string[];
+
+    try {
+        const parsed = JSON.parse(content);
+        lines = Array.isArray(parsed) ? parsed : [];
+    } catch {
+        lines = content.split('\n').filter((l) => l.trim() !== '');
+    }
+
+    return lines.map((text, i) => ({
+        paragraphIndex: i + 1,
+        content: text,
+    }));
+}
+
+// ---------------------------------------------------------------------------
+// Header
+// ---------------------------------------------------------------------------
+
+function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
+    const { t } = useTranslation();
+    const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const { zoomIn, zoomOut } = useDocumentZoom(zoom);
+
+    return (
+        <div className="sermon-header">
+            <div style={{ flex: 1 }} />
+            <Space size="small">
+                <TtsButton tts={tts} />
+                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
+                <Tooltip title={t('Rechercher')}>
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<SearchOutlined />}
+                        onClick={() => openSearchBar()}
+                        aria-label={t('Rechercher')}
+                    />
+                </Tooltip>
+            </Space>
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
 
 export default function CustomDocumentView() {
     const activeTitle = useSermonStore(selectActiveTabTitle);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
-    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
     const containerRef = useRef<HTMLDivElement>(null);
+    const contextTargetRef = useRef<Element | null>(null);
     const { zoom } = useScrollAndZoom(containerRef);
     const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
     const [loading, setLoading] = useState(false);
     const search = useSearchHighlight();
-    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
-    const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
+
+    useReferenceNavigation(containerRef);
 
     const customDoc = useMemo(
         () => customDocuments.find((d) => d.title === activeTitle),
@@ -46,129 +113,73 @@ export default function CustomDocumentView() {
             .finally(() => setLoading(false));
     }, [customDoc?.id]);
 
-    const handleZoomIn = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
-    }, [activeTabKey, zoom, updateTabZoom]);
-
-    const handleZoomOut = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
-    }, [activeTabKey, zoom, updateTabZoom]);
-
     const paragraphs = useMemo(
-        () => (docContent?.content ?? '').split('\n').filter((line) => line.trim() !== ''),
+        () => parseContentToParagraphs(docContent?.content ?? ''),
         [docContent?.content],
     );
 
-    const { matchOffsets } = useMatchNavigation(search, paragraphs);
+    const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
+    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
 
-    const renderParagraph = useCallback(
-        (text: string, i: number) => {
-            if (!search) {
-                return (
-                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                        {text}
-                    </p>
-                );
-            }
+    // Build a minimal SermonContent-like object for context menu
+    const contentForMenu = useMemo((): SermonContent | null => {
+        if (!docContent) return null;
+        return {
+            meta: {
+                id: customDoc?.id ?? '',
+                translationId: 0,
+                languageCode: '',
+                sermonId: customDoc?.sermonId ?? '',
+                title: docContent.title,
+                enTitle: docContent.title,
+                audioLink: null,
+                traductionName: null,
+                dateMs: 0,
+                minutes: 0,
+                location: null,
+                cityState: null,
+            },
+            paragraphs: paragraphs.map((p) => ({
+                paragraphIndex: p.paragraphIndex,
+                translationId: 0,
+                sermonId: 0,
+                content: p.content,
+            })),
+        };
+    }, [docContent, paragraphs, customDoc]);
 
-            const regex = buildHighlightRegex(search.term, search.mode);
-            if (!regex) {
-                return (
-                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                        {text}
-                    </p>
-                );
-            }
-
-            const normalized = strNormalizeNoLower(text);
-            const matches = [...normalized.matchAll(regex)];
-            if (matches.length === 0) {
-                return (
-                    <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                        {text}
-                    </p>
-                );
-            }
-
-            const result: (string | React.ReactElement)[] = [];
-            const offset = matchOffsets[i] ?? 0;
-            let lastIdx = 0;
-            matches.forEach((m, j) => {
-                const start = m.index!;
-                const end = start + m[0].length;
-                if (start > lastIdx) result.push(text.slice(lastIdx, start));
-                const globalIdx = offset + j;
-                const isCurrent = globalIdx === currentMatchIndex;
-                result.push(
-                    <mark
-                        key={j}
-                        data-match-index={globalIdx}
-                        className={isCurrent ? 'mark-current' : undefined}
-                    >
-                        {text.slice(start, end)}
-                    </mark>,
-                );
-                lastIdx = end;
-            });
-            if (lastIdx < text.length) result.push(text.slice(lastIdx));
-
-            return (
-                <p key={i} data-paragraph-index={i} className="sermon-paragraph">
-                    {result}
-                </p>
-            );
-        },
-        [search, matchOffsets, currentMatchIndex],
+    const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'custom');
+    const { highlightsByParagraph } = useDocumentHighlights(
+        docContent?.title ?? null,
+        customDoc?.sermonId,
     );
 
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const tts = useTts(paragraphs, activeLanguage ?? 'en', docContent?.title ?? '');
+
     return (
-        <div className="mock-browser-content">
-            {loading && (
-                <div className="flex flex-center" style={{ marginTop: '2rem' }}>
-                    <Spin />
-                </div>
-            )}
-            {!loading && docContent && (
-                <>
-                    <div className="sermon-header">
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <strong>{docContent.title}</strong>
-                        </div>
-                        <Space size="small">
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<ZoomOutOutlined />}
-                                onClick={handleZoomOut}
-                            />
-                            <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>
-                                {zoom}%
-                            </span>
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<ZoomInOutlined />}
-                                onClick={handleZoomIn}
-                            />
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<SearchOutlined />}
-                                onClick={() => openSearchBar()}
-                            />
-                        </Space>
-                    </div>
-                    {searchBarOpen && <InlineSearchBar />}
-                    <div
-                        ref={containerRef}
-                        id={DOCUMENT_CONTAINER_ID}
-                        className="sermon-body"
-                        style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
-                    >
-                        {paragraphs.map(renderParagraph)}
-                    </div>
-                </>
-            )}
-        </div>
+        <DocumentBody
+            loading={loading}
+            ready={!!docContent}
+            containerRef={containerRef}
+            contextTargetRef={contextTargetRef}
+            zoom={zoom}
+            contextMenuItems={contextMenuItems}
+            header={<CustomDocHeader zoom={zoom} tts={tts} />}
+        >
+            <div className="sermon-content-header">
+                <h2 className="sermon-content-header__title">{docContent?.title}</h2>
+            </div>
+            <ParagraphList
+                paragraphs={paragraphs}
+                documentId={docContent?.title ?? ''}
+                search={search}
+                currentMatchIndex={currentMatchIndex}
+                matchOffsets={matchOffsets}
+                highlightsByParagraph={highlightsByParagraph}
+                onPlayFromHere={tts.playFromParagraph}
+                canSpeak={tts.canSpeak}
+            />
+        </DocumentBody>
     );
 }

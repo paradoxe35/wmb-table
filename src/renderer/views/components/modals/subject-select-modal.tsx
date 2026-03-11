@@ -1,5 +1,6 @@
 import { Divider, Input, Modal, Space, message } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SubjectDocument, SubjectRefTree } from '@shared/types';
 import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
@@ -8,6 +9,7 @@ import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useSermonStore, useSubjectsStore, selectActiveTab } from '@renderer/stores';
 
 export function SubjectSelectModal() {
+    const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
     const activeTab = useSermonStore(selectActiveTab);
@@ -48,10 +50,10 @@ export function SubjectSelectModal() {
                 window.dispatchEvent(
                     new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
                 );
-                message.success('Ajouté au sujet');
+                message.success(t('Ajouté au sujet'));
             })
             .catch(() => {
-                message.error("Erreur lors de l'ajout au sujet");
+                message.error(t("Erreur lors de l'ajout au sujet"));
             });
         setVisible(false);
     };
@@ -84,7 +86,7 @@ export function SubjectSelectModal() {
         <Modal
             title={
                 <Space orientation="horizontal">
-                    <span>Choiser un sujet</span>
+                    <span>{t('Choisir un sujet')}</span>
                     <Search onSearch={onSearch} />
                 </Space>
             }
@@ -139,9 +141,10 @@ const ItemSubject: React.FC<{
 };
 
 function Search({ onSearch }: { onSearch: (value: string) => void }) {
+    const { t } = useTranslation();
     return (
         <Space orientation="horizontal">
-            <Input.Search placeholder="Recherche" allowClear onSearch={onSearch} />
+            <Input.Search placeholder={t('Recherche')} allowClear onSearch={onSearch} />
         </Space>
     );
 }

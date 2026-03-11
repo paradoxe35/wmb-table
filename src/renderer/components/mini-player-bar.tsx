@@ -1,19 +1,11 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { Button, Slider, Dropdown } from 'antd';
+import { Button, Slider, Dropdown, Tooltip } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, SoundOutlined } from '@ant-design/icons';
 import { useAudioStore } from '@renderer/stores';
 import { useAudioRef } from './audio-context';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-import { throttle } from '@renderer/utils/functions';
-
-const SPEEDS = [0.75, 1, 1.25, 1.5, 2];
-
-function formatTime(seconds: number): string {
-    if (!isFinite(seconds) || seconds < 0) return '0:00';
-    const m = Math.floor(seconds / 60);
-    const s = Math.floor(seconds % 60);
-    return `${m}:${s.toString().padStart(2, '0')}`;
-}
+import { throttle, formatTime } from '@renderer/utils/functions';
+import { AUDIO_SPEEDS, THROTTLE_MS } from '@renderer/utils/constants';
 
 export default function MiniPlayerBar() {
     const audioRef = useAudioRef();
@@ -44,7 +36,7 @@ export default function MiniPlayerBar() {
     const saveTime = useCallback(
         throttle((link: string, time: number) => {
             window.api.audio.setTime(link, time);
-        }, 5000),
+        }, THROTTLE_MS),
         [],
     );
 
@@ -211,7 +203,7 @@ export default function MiniPlayerBar() {
         setVolume(value);
     };
 
-    const speedMenuItems = SPEEDS.map((s) => ({
+    const speedMenuItems = AUDIO_SPEEDS.map((s) => ({
         key: String(s),
         label: `${s}x`,
         onClick: () => handleSpeedChange(s),
@@ -277,7 +269,9 @@ export default function MiniPlayerBar() {
                     </div>
                 )}
             >
-                <Button type="text" size="small" icon={<SoundOutlined />} />
+                <Tooltip title="Volume">
+                    <Button type="text" size="small" icon={<SoundOutlined />} aria-label="Volume" />
+                </Tooltip>
             </Dropdown>
         </div>
     );

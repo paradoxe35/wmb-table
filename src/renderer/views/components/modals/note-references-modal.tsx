@@ -1,5 +1,6 @@
-import { Button, Modal, Tooltip, message } from 'antd';
+import { Button, Empty, Modal, Tooltip, message } from 'antd';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     type NoteItem,
     type NoteItemReference,
@@ -17,6 +18,7 @@ import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useNotesStore, useSermonStore, selectActiveTab } from '@renderer/stores';
 
 export function NoteReferencesModal() {
+    const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
     const activeTab = useSermonStore(selectActiveTab);
@@ -59,7 +61,7 @@ export function NoteReferencesModal() {
             titleRef.current || '',
             activeTab?.sermonId ?? '',
         );
-        message.success('Ajouté à la note');
+        message.success(t('Ajouté à la note'));
 
         setVisible(false);
     };
@@ -89,12 +91,12 @@ export function NoteReferencesModal() {
                                     color: 'var(--ant-color-text-secondary)',
                                 }}
                             >
-                                Lier ce paragraphe à une référence de la note :
+                                {t('Lier ce paragraphe à une référence de la note :')}
                             </div>
                             <div>{workingNote.current.name}</div>
                         </div>
                     ) : (
-                        <span>Aucune note n&apos;est actuellement sélectionnée</span>
+                        <span>{t("Aucune note n'est actuellement sélectionnée")}</span>
                     )}
                 </div>
             }
@@ -117,7 +119,12 @@ function ContentModal({
     onSelectItem: (item: NoteItemReference) => void;
     datas: NoteItemReference[];
 }) {
+    const { t } = useTranslation();
     const { getSermonById } = useSermonLookup();
+
+    if (datas.length === 0) {
+        return <Empty description={t('Aucune référence disponible')} />;
+    }
 
     return (
         <>
@@ -159,12 +166,16 @@ function ContentModal({
                                     }}
                                 >
                                     {assigned
-                                        ? `Lié à : ${getSermonById(item.sermonId)?.title || item.documentTitle}`
-                                        : 'Aucun document attribué'}
+                                        ? t('Lié à : {{title}}', {
+                                              title:
+                                                  getSermonById(item.sermonId)?.title ||
+                                                  item.documentTitle,
+                                          })
+                                        : t('Aucun document attribué')}
                                 </div>
                             </div>
                         </div>
-                        <Tooltip title="Ajouter à cette référence">
+                        <Tooltip title={t('Ajouter à cette référence')}>
                             <Button
                                 onClick={() => onSelectItem(item)}
                                 shape="circle"

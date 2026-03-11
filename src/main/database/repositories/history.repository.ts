@@ -90,6 +90,17 @@ export function addHistoryEntry(
         historyRow = db.select().from(history).where(eq(history.id, id)).get()!;
     }
 
+    // Skip if the most recent entry is the same document
+    const lastItem = db
+        .select()
+        .from(historyItems)
+        .where(eq(historyItems.historyId, historyRow.id))
+        .orderBy(desc(historyItems.createdAt))
+        .limit(1)
+        .get();
+
+    if (lastItem?.sermonId === sermonId) return;
+
     // Enforce item cap per history
     const items = db
         .select()

@@ -1,6 +1,7 @@
 import { eq, and, lt } from 'drizzle-orm';
 import { getSyncDb } from '@main/database';
 import { changeLogs } from '@main/database/sync-schema';
+import { toSqlColumnNames } from '@main/database/sync-tables';
 
 export interface ChangeLogRecord {
     id: number;
@@ -43,7 +44,12 @@ export function logChange(
     const db = getSyncDb();
     const changeId = `${tableName}-${rowId}-${operation}`;
     const now = new Date().toISOString();
-    const newData = JSON.stringify(data);
+    // Convert Drizzle JS property names to SQL column names before storing
+    const sqlData =
+        data && typeof data === 'object' && !Array.isArray(data)
+            ? toSqlColumnNames(tableName, data as Record<string, unknown>)
+            : data;
+    const newData = JSON.stringify(sqlData);
 
     // Atomic upsert: insert or update on changeId conflict
     db.insert(changeLogs)

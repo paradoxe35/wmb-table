@@ -26,8 +26,8 @@ export function registerBibleHandlers(): void {
         return bibleRepo.getBooks(request);
     });
 
-    registerHandler(BibleChannels.search, async (_event, query, pageNumber) => {
-        return bibleRepo.search(query, pageNumber);
+    registerHandler(BibleChannels.search, async (_event, query, pageNumber, testament) => {
+        return bibleRepo.search(query, pageNumber, testament);
     });
 
     registerHandler(BibleChannels.getVersions, async () => {
