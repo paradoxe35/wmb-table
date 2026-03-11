@@ -45,7 +45,9 @@ export default function MiniPlayerBar() {
     // Audio event listeners
     useEffect(() => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         const onTimeUpdate = () => {
             setCurrentTime(el.currentTime);
@@ -99,7 +101,9 @@ export default function MiniPlayerBar() {
         return useTtsStore.subscribe((state, prev) => {
             if (prev.status !== 'playing' && state.status === 'playing') {
                 const el = audioRef.current;
-                if (el && !el.paused) el.pause();
+                if (el && !el.paused) {
+                    el.pause();
+                }
             }
         });
     }, [audioRef]);
@@ -108,9 +112,13 @@ export default function MiniPlayerBar() {
     useEffect(() => {
         const handleAudioPlay = async (event: CustomEventInit<any>) => {
             const detail = event.detail;
-            if (!detail?.audio_link) return;
+            if (!detail?.audio_link) {
+                return;
+            }
             const el = audioRef.current;
-            if (!el) return;
+            if (!el) {
+                return;
+            }
 
             // Same title → toggle play/pause
             if (titleRef.current === detail.title) {
@@ -203,7 +211,9 @@ export default function MiniPlayerBar() {
 
     const handlePlayPause = () => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         if (el.paused) {
             el.play().catch(() => {});
         } else {
@@ -213,21 +223,27 @@ export default function MiniPlayerBar() {
 
     const handleSeek = (value: number) => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         el.currentTime = value;
         setCurrentTime(value);
     };
 
     const handleSpeedChange = (rate: number) => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         el.playbackRate = rate;
         setPlaybackRate(rate);
     };
 
     const handleVolumeChange = (value: number) => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         el.volume = value;
         setVolume(value);
     };

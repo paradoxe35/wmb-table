@@ -6,6 +6,7 @@ import enUS from 'antd/locale/en_US';
 import esES from 'antd/locale/es_ES';
 import { useTranslation } from 'react-i18next';
 import { useInitApp } from './hooks/index';
+import { useTtsSetup } from './hooks/use-tts-setup';
 import { useAppStore } from './stores';
 import AppLayout from './components/layout';
 import { ContentApp } from './content-app';
@@ -49,6 +50,7 @@ function useAntdLocale(): Locale {
 
 export default function App() {
     useInitApp();
+    useTtsSetup();
     const antdLocale = useAntdLocale();
 
     return (

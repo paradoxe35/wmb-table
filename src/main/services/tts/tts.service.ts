@@ -483,7 +483,7 @@ export class TtsService {
         const hash = createHash('sha256').update(text).digest('hex').substring(0, 16);
         return {
             provider,
-            model: model || 'default',
+            model,
             voiceId: voiceId || 'default',
             language,
             rate,

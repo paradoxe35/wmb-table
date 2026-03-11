@@ -19,6 +19,7 @@ interface TtsState {
     error: string | null;
     documentId: string | null;
     languageSupported: boolean;
+    incompatibleMessage: string | undefined;
     /** Remembered position for resume — preserved across stop/play cycles */
     lastStoppedDocumentId: string | null;
     lastStoppedSegmentIndex: number;
@@ -29,6 +30,7 @@ interface TtsState {
     setSegments(s: TtsSegment[]): void;
     setDocumentId(id: string | null): void;
     setLanguageSupported(v: boolean): void;
+    setIncompatibleMessage(msg: string | undefined): void;
     /** Save position before clearing playback state */
     stopAndRemember(): void;
     reset(): void;
@@ -45,6 +47,7 @@ export const useTtsStore = create<TtsState>((set, get) => ({
     error: null,
     documentId: null,
     languageSupported: false,
+    incompatibleMessage: undefined,
     lastStoppedDocumentId: null,
     lastStoppedSegmentIndex: 0,
 
@@ -61,6 +64,7 @@ export const useTtsStore = create<TtsState>((set, get) => ({
     setSegments: (segments) => set({ segments, totalSegments: segments.length }),
     setDocumentId: (documentId) => set({ documentId }),
     setLanguageSupported: (languageSupported) => set({ languageSupported }),
+    setIncompatibleMessage: (incompatibleMessage) => set({ incompatibleMessage }),
     stopAndRemember: () => {
         const { documentId, currentSegmentIndex } = get();
         set({

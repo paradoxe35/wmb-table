@@ -145,15 +145,33 @@ export default function TtsTab() {
 
     const handleUpdate = useCallback(
         (partial: Partial<TtsSettings>) => {
-            if (!settings) return;
+            if (!settings) {
+                return;
+            }
             const updated = { ...settings, ...partial };
             if (partial.providers) {
                 updated.providers = { ...settings.providers, ...partial.providers };
             }
             setSettings(updated);
-            debouncedSave(partial);
+
+            // Provider switch: save immediately and resolve voice for current language
+            if ('activeProvider' in partial) {
+                debouncedSave.cancel();
+                const language = activeLanguage ?? 'fr';
+                window.api.tts.updateSettings(partial).then(async () => {
+                    if (!updated.autoSwitchVoice) {
+                        return;
+                    }
+                    const resolved = await window.api.tts.resolveConfigForLanguage(language);
+                    if (resolved) {
+                        setSettings(resolved);
+                    }
+                });
+            } else {
+                debouncedSave(partial);
+            }
         },
-        [settings, setSettings, debouncedSave],
+        [settings, setSettings, debouncedSave, activeLanguage],
     );
 
     const handleClearCache = useCallback(async () => {

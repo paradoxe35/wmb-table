@@ -180,6 +180,8 @@ const en: Record<string, string> = {
         'The browser has no voice for this language.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Unable to verify provider compatibility.',
+    'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
+        'Audio playback failed. Check the provider configuration.',
 
     // ── History ──
     'Aucune historique': 'No history',

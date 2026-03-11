@@ -181,6 +181,8 @@ const es: Record<string, string> = {
         'El navegador no tiene voz para este idioma.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'No se puede verificar la compatibilidad del proveedor.',
+    'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
+        'La reproducción de audio falló. Verifique la configuración del proveedor.',
 
     // ── History ──
     'Aucune historique': 'Sin historial',
