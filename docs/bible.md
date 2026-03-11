@@ -34,7 +34,7 @@ Maintained by `AFTER INSERT/DELETE/UPDATE` triggers on `bible_verses`.
 
 ## File Naming
 
-```
+```text
 bible.{langCode}-{abbreviation}.sqlite
 ```
 
@@ -93,7 +93,7 @@ Fallback order for `switchBibleForLanguage(langCode)`:
 
 ## Note Bible References
 
-Verses saved in notes are **snapshots** — the full `BibleBook` object (id, bookName, chapter, verse, content) is stored at the time of creation. This means:
+Verses saved in notes are snapshots. The full `BibleBook` object is stored at the time of creation. This means:
 
 - Saved references always display correctly regardless of the active Bible version
 - Verse IDs are specific to the Bible file they came from

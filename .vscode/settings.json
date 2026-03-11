@@ -1,0 +1,8 @@
+{
+    "i18n-ally.localesPaths": [
+        "src/renderer/i18n",
+        "src/shared/i18n",
+        "src/renderer/i18n/locales",
+        "src/shared/i18n/locales"
+    ]
+}

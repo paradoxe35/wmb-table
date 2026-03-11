@@ -57,8 +57,8 @@ Schema: `src/main/database/sync-schema.ts`
 
 ## Key Patterns
 
-- **Text primary keys** with `crypto.randomUUID()`
-- **JSON-in-TEXT columns** serialized/deserialized in the repository layer
-- **Read-only databases** opened with mmap (256MB) and cache pragmas
-- **Testing:** in-memory SQLite via `_setDbForTesting()` helpers
-- **Migrations:** single Drizzle migration in `drizzle/0000_panoramic_ultimatum.sql`
+- Text primary keys with `crypto.randomUUID()`
+- JSON-in-TEXT columns serialized/deserialized in the repository layer
+- Read-only databases opened with mmap (256MB) and cache pragmas
+- Testing: in-memory SQLite via `_setDbForTesting()` helpers
+- Migrations: single Drizzle migration in `drizzle/0000_panoramic_ultimatum.sql`

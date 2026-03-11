@@ -43,3 +43,7 @@ resources/credentials/google/*
 
 # Runtime data
 assets/datas/
+
+# Docs
+docs/.vitepress/dist
+docs/.vitepress/cache
