@@ -114,11 +114,17 @@ function getIndex(langCode: string): Index {
 
 function buildQuery(index: Index, queryText: string): Query {
     const textFields = getTextFieldNames(index);
-    const fieldBoosts: Record<string, number> = { unstemmed_content: 2.0, stemmed_content: 1.0 };
-    const fuzzyFields: Record<string, [boolean, number, boolean]> = {
-        unstemmed_content: [true, 1, true],
-        stemmed_content: [true, 1, true],
-    };
+    const fieldSet = new Set(textFields);
+    const fieldBoosts: Record<string, number> = {};
+    const fuzzyFields: Record<string, [boolean, number, boolean]> = {};
+    if (fieldSet.has('unstemmed_content')) {
+        fieldBoosts.unstemmed_content = 2.0;
+        fuzzyFields.unstemmed_content = [true, 1, true];
+    }
+    if (fieldSet.has('stemmed_content')) {
+        fieldBoosts.stemmed_content = 1.0;
+        fuzzyFields.stemmed_content = [true, 1, true];
+    }
     const [query, errors] = index.parseQueryLenient(
         queryText,
         textFields,

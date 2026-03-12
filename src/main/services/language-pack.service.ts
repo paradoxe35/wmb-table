@@ -8,7 +8,7 @@ import type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 import * as tantivyService from './tantivy.service';
 import * as refRepo from '../database/repositories/reference.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
-import { GITHUB_RELEASE_DOWNLOAD_BASE, githubFetch } from '@main/lib/github';
+import { githubDownload } from '@main/lib/github';
 
 const execFileAsync = promisify(execFile);
 
@@ -17,8 +17,6 @@ export type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-const FALLBACK_DOWNLOAD_BASE = GITHUB_RELEASE_DOWNLOAD_BASE;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -78,9 +76,8 @@ export async function downloadLanguagePack(
     if (existsSync(tmpDir)) await rm(tmpDir, { recursive: true });
     if (existsSync(zipPath)) await rm(zipPath);
 
-    // Primary: data.sqlite language.url, Fallback: GitHub releases
+    // Primary: data.sqlite language.url, Fallback: GitHub release asset
     const primaryUrl = lang.url;
-    const fallbackUrl = `${FALLBACK_DOWNLOAD_BASE}/${lang.fileName}`;
 
     let response: Response | null = null;
     try {
@@ -96,7 +93,7 @@ export async function downloadLanguagePack(
     }
 
     if (!response) {
-        response = await githubFetch(fallbackUrl);
+        response = await githubDownload(lang.fileName);
         if (!response.ok) {
             throw new Error(
                 `Download failed from both sources: ${response.status} ${response.statusText}`,
