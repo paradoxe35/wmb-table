@@ -8,6 +8,7 @@ import type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 import * as tantivyService from './tantivy.service';
 import * as refRepo from '../database/repositories/reference.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
+import { GITHUB_RELEASE_DOWNLOAD_BASE, githubFetch } from '@main/lib/github';
 
 const execFileAsync = promisify(execFile);
 
@@ -17,7 +18,7 @@ export type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 // Constants
 // ---------------------------------------------------------------------------
 
-const FALLBACK_DOWNLOAD_BASE = 'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0';
+const FALLBACK_DOWNLOAD_BASE = GITHUB_RELEASE_DOWNLOAD_BASE;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -95,7 +96,7 @@ export async function downloadLanguagePack(
     }
 
     if (!response) {
-        response = await fetch(fallbackUrl);
+        response = await githubFetch(fallbackUrl);
         if (!response.ok) {
             throw new Error(
                 `Download failed from both sources: ${response.status} ${response.statusText}`,

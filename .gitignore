@@ -11,6 +11,9 @@ release/
 .env
 .env.local
 .env.*.local
+docs/.env
+docs/.env.local
+docs/.env.*.local
 
 # Logs
 *.log

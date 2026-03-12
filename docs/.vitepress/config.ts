@@ -1,5 +1,9 @@
 import { defineConfig } from 'vitepress';
 
+const docsGitHubOwner = process.env.VITE_GITHUB_OWNER ?? 'paradoxe35';
+const docsGitHubRepo = process.env.VITE_GITHUB_REPO ?? 'wmb-table';
+const docsGitHubRepoUrl = `https://github.com/${docsGitHubOwner}/${docsGitHubRepo}`;
+
 const frNav = [
     { text: 'Accueil', link: '/' },
     { text: 'Commencer', link: '/guide/getting-started' },
@@ -172,7 +176,7 @@ export default defineConfig({
         search: {
             provider: 'local',
         },
-        socialLinks: [{ icon: 'github', link: 'https://github.com/paradoxe35/wmb-table' }],
+        socialLinks: [{ icon: 'github', link: docsGitHubRepoUrl }],
     },
     locales: {
         root: {

@@ -4,6 +4,7 @@ import { readFileSync, existsSync, createWriteStream, mkdirSync, writeFileSync }
 import Database from 'better-sqlite3';
 import log from 'electron-log';
 import { getDatabaseDir } from '@main/lib/app-paths';
+import { GITHUB_RELEASE_DOWNLOAD_BASE, githubFetch } from '@main/lib/github';
 
 export interface BibleVersion {
     langCode: string;
@@ -13,7 +14,7 @@ export interface BibleVersion {
     type: 'local' | 'remote';
 }
 
-const GITHUB_RELEASE_BASE = 'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0';
+const GITHUB_RELEASE_BASE = GITHUB_RELEASE_DOWNLOAD_BASE;
 const REMOTE_INDEX_URL = `${GITHUB_RELEASE_BASE}/bible-index.json`;
 
 let bibleIndex: BibleVersion[] | null = null;
@@ -94,7 +95,7 @@ export function loadBibleIndex(): BibleVersion[] {
 export async function refreshRemoteIndex(): Promise<BibleVersion[]> {
     try {
         log.info(`Fetching remote bible index: ${REMOTE_INDEX_URL}`);
-        const response = await fetch(REMOTE_INDEX_URL);
+        const response = await githubFetch(REMOTE_INDEX_URL);
         if (!response.ok) {
             log.warn(`Failed to fetch remote bible index: ${response.status}`);
             return loadBibleIndex();
@@ -240,7 +241,7 @@ export async function downloadBibleVersion(
     const url = `${GITHUB_RELEASE_BASE}/${version.fileName}`;
     log.info(`Downloading Bible: ${url}`);
 
-    const response = await fetch(url);
+    const response = await githubFetch(url);
     if (!response.ok)
         throw new Error(`Failed to download Bible: ${response.status} ${response.statusText}`);
 

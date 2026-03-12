@@ -35,6 +35,11 @@ const props = defineProps<{
     labels: Labels;
 }>();
 
+const githubOwner = import.meta.env.VITE_GITHUB_OWNER || 'paradoxe35';
+const githubRepo = import.meta.env.VITE_GITHUB_REPO || 'wmb-table';
+const githubReleasesUrl = `https://github.com/${githubOwner}/${githubRepo}/releases`;
+const githubLatestReleaseApiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}/releases/latest`;
+
 const release = ref<ReleaseInfo | null>(null);
 const loading = ref(true);
 const platform = ref<'windows' | 'mac' | 'linux' | 'unknown'>('unknown');
@@ -113,7 +118,7 @@ const manualGroups = computed(() => {
 onMounted(async () => {
     detectPlatform();
     try {
-        const res = await fetch('https://api.github.com/repos/paradoxe35/wmb-table/releases/latest');
+        const res = await fetch(githubLatestReleaseApiUrl);
         if (!res.ok) throw new Error(`GitHub API error ${res.status}`);
         release.value = (await res.json()) as ReleaseInfo;
     } catch {
@@ -192,7 +197,7 @@ onMounted(async () => {
                 </div>
 
                 <p class="release-panel__foot">
-                    <a :href="release.html_url">{{ labels.all }}</a>
+                    <a :href="release.html_url || githubReleasesUrl">{{ labels.all }}</a>
                 </p>
             </template>
 
@@ -201,7 +206,7 @@ onMounted(async () => {
                     {{ labels.fallback }}
                 </div>
                 <p class="release-panel__foot">
-                    <a href="https://github.com/paradoxe35/wmb-table/releases">{{ labels.all }}</a>
+                    <a :href="githubReleasesUrl">{{ labels.all }}</a>
                 </p>
             </template>
         </div>
