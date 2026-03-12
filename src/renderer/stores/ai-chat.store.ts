@@ -40,6 +40,7 @@ interface AiChatState {
         apiKey?: string;
         baseUrl?: string;
     }): Promise<AiProviderTestResult>;
+    downloadModel(modelId: string): Promise<void>;
 }
 
 function upsertMessage(messages: AiMessage[], message: AiMessage): AiMessage[] {
@@ -306,5 +307,9 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
 
     testProvider: async (input) => {
         return window.api.ai.testProvider(input);
+    },
+
+    downloadModel: async (modelId) => {
+        await window.api.ai.downloadModel(modelId);
     },
 }));

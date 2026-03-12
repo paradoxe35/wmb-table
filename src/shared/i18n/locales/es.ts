@@ -73,6 +73,8 @@ const es: Record<string, string> = {
     Actualiser: 'Actualizar',
     'Choisir un modèle': 'Elegir un modelo',
     Utiliser: 'Usar',
+    'Modèle téléchargé': 'Modelo descargado',
+    'Le téléchargement a échoué.': 'La descarga ha fallado.',
     'Rapide et léger, idéal pour la recherche et les réponses courtes.':
         'Rápido y ligero, ideal para búsquedas y respuestas cortas.',
     'Polyvalent, adapté aux réponses courtes et au travail hors ligne.':

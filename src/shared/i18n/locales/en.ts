@@ -72,6 +72,8 @@ const en: Record<string, string> = {
     Actualiser: 'Refresh',
     'Choisir un modèle': 'Choose a model',
     Utiliser: 'Use',
+    'Modèle téléchargé': 'Model downloaded',
+    'Le téléchargement a échoué.': 'Download failed.',
     'Rapide et léger, idéal pour la recherche et les réponses courtes.':
         'Fast and lightweight, ideal for search and short answers.',
     'Polyvalent, adapté aux réponses courtes et au travail hors ligne.':

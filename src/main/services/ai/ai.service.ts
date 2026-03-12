@@ -17,6 +17,7 @@ import type {
 } from '@shared/ai.types';
 import { buildSystemPrompt } from './system-prompt';
 import { scanLocalModels } from './local/local-model.service';
+import { downloadLocalModel } from './local/model-download.service';
 import { LocalRuntimeService } from './local/local-runtime.service';
 import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
@@ -69,6 +70,10 @@ export class AiService {
 
     async scanLocalModels() {
         return scanLocalModels();
+    }
+
+    async downloadModel(browserWindow: BrowserWindow, modelId: string): Promise<void> {
+        await downloadLocalModel(browserWindow, modelId);
     }
 
     stopGeneration(conversationId: string): void {

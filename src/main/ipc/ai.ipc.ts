@@ -46,4 +46,12 @@ export function registerAiHandlers(): void {
     registerHandler(AiChannels.testProvider, async (_event, input) =>
         getAiService().testProvider(input),
     );
+
+    registerHandler(AiChannels.downloadModel, async (event, modelId) => {
+        const browserWindow = BrowserWindow.fromWebContents(event.sender);
+        if (!browserWindow) {
+            throw new Error('Main window not available for model download.');
+        }
+        return getAiService().downloadModel(browserWindow, modelId);
+    });
 }

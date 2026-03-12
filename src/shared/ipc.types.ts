@@ -62,6 +62,7 @@ import type {
 import type {
     AiConversation,
     AiMessage,
+    AiModelDownloadProgress,
     AiModelScanResult,
     AiProviderTestResult,
     AiProviderDefinition,
@@ -238,6 +239,7 @@ export const AiChannels = {
     stopGeneration: 'ai:stopGeneration',
     scanLocalModels: 'ai:scanLocalModels',
     testProvider: 'ai:testProvider',
+    downloadModel: 'ai:downloadModel',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -272,6 +274,7 @@ export const PushChannels = {
     aiStreamError: 'push:aiStreamError',
     aiToolCallStart: 'push:aiToolCallStart',
     aiToolCallComplete: 'push:aiToolCallComplete',
+    aiModelDownloadProgress: 'push:aiModelDownloadProgress',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -512,6 +515,7 @@ export interface InvokeChannelMap {
         args: [{ providerId: string; model: string; apiKey?: string; baseUrl?: string }];
         return: AiProviderTestResult;
     };
+    [AiChannels.downloadModel]: { args: [string]; return: void };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */
@@ -543,6 +547,7 @@ export interface PushEventMap {
     [PushChannels.aiStreamError]: AiStreamErrorEvent;
     [PushChannels.aiToolCallStart]: AiToolEvent;
     [PushChannels.aiToolCallComplete]: AiToolEvent;
+    [PushChannels.aiModelDownloadProgress]: AiModelDownloadProgress;
 }
 
 // ---------------------------------------------------------------------------

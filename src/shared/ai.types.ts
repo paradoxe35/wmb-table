@@ -131,6 +131,13 @@ export interface AiModelScanResult {
     scannedPath: string;
 }
 
+export interface AiModelDownloadProgress {
+    modelId: string;
+    percentage: number;
+    status: 'downloading' | 'complete' | 'error';
+    error?: string;
+}
+
 export interface AiStreamChunkEvent {
     conversationId: string;
     messageId: string;

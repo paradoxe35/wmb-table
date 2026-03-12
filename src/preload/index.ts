@@ -286,6 +286,7 @@ const api = {
             apiKey?: string;
             baseUrl?: string;
         }) => invoke(AiChannels.testProvider, input),
+        downloadModel: (modelId: string) => invoke(AiChannels.downloadModel, modelId),
     },
 
     on: {
@@ -354,6 +355,9 @@ const api = {
         aiToolCallComplete: (
             cb: (p: PushEventMap[typeof PushChannels.aiToolCallComplete]) => void,
         ) => onPush(PushChannels.aiToolCallComplete, cb),
+        aiModelDownloadProgress: (
+            cb: (p: PushEventMap[typeof PushChannels.aiModelDownloadProgress]) => void,
+        ) => onPush(PushChannels.aiModelDownloadProgress, cb),
     },
 } as const;
 

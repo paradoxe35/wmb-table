@@ -1,4 +1,5 @@
-import { Button, Card, Select, Space, Tag, Typography } from 'antd';
+import { useEffect, useState } from 'react';
+import { Button, Card, message, Progress, Select, Space, Tag, Typography } from 'antd';
 import {
     CheckCircleOutlined,
     DownloadOutlined,
@@ -6,9 +7,80 @@ import {
     ReloadOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { AiLocalModelInfo, AiSettings, AiSupportedLocalModel } from '@shared/ai.types';
+import type {
+    AiLocalModelInfo,
+    AiModelDownloadProgress,
+    AiSettings,
+    AiSupportedLocalModel,
+} from '@shared/ai.types';
+import { useAiChatStore } from '@renderer/stores';
 
 const { Text } = Typography;
+
+function ModelRow({
+    model,
+    downloading,
+    downloadPct,
+    onSelect,
+    onDownload,
+}: {
+    model: AiSupportedLocalModel;
+    downloading: boolean;
+    downloadPct: number;
+    onSelect: (modelId: string) => void;
+    onDownload: (modelId: string) => void;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '4px 0',
+                gap: 8,
+            }}
+        >
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ fontSize: '0.85em' }}>
+                    {model.name}{' '}
+                    {model.installed ? (
+                        <Tag
+                            color="success"
+                            icon={<CheckCircleOutlined />}
+                            style={{ marginInlineStart: 2 }}
+                        >
+                            {t('Installé')}
+                        </Tag>
+                    ) : null}
+                </Text>
+                <Text type="secondary" style={{ fontSize: '0.75em', display: 'block' }}>
+                    {t(model.description)}
+                </Text>
+            </div>
+            {downloading ? (
+                <Progress
+                    percent={downloadPct}
+                    size="small"
+                    style={{ width: 100, flexShrink: 0 }}
+                />
+            ) : model.installed ? (
+                <Button size="small" type="link" onClick={() => onSelect(model.id)}>
+                    {t('Utiliser')}
+                </Button>
+            ) : (
+                <Button
+                    size="small"
+                    icon={<DownloadOutlined />}
+                    onClick={() => onDownload(model.id)}
+                >
+                    {t('Télécharger')}
+                </Button>
+            )}
+        </div>
+    );
+}
 
 export default function AiLocalModels({
     settings,
@@ -24,6 +96,32 @@ export default function AiLocalModels({
     onUpdate: (partial: Partial<AiSettings>) => void;
 }) {
     const { t } = useTranslation();
+    const downloadModel = useAiChatStore((s) => s.downloadModel);
+    const scanLocalModels = useAiChatStore((s) => s.scanLocalModels);
+    const [downloads, setDownloads] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        return window.api.on.aiModelDownloadProgress((event: AiModelDownloadProgress) => {
+            if (event.status === 'complete') {
+                setDownloads((prev) => {
+                    const next = { ...prev };
+                    delete next[event.modelId];
+                    return next;
+                });
+                message.success(t('Modèle téléchargé'));
+                void scanLocalModels();
+            } else if (event.status === 'error') {
+                setDownloads((prev) => {
+                    const next = { ...prev };
+                    delete next[event.modelId];
+                    return next;
+                });
+                message.error(event.error ?? t('Le téléchargement a échoué.'));
+            } else {
+                setDownloads((prev) => ({ ...prev, [event.modelId]: event.percentage }));
+            }
+        });
+    }, [t, scanLocalModels]);
 
     function selectModel(modelId: string) {
         onUpdate({
@@ -33,6 +131,17 @@ export default function AiLocalModels({
                 ...settings.providers,
                 local: { ...settings.providers.local, enabled: true, model: modelId },
             },
+        });
+    }
+
+    function handleDownload(modelId: string) {
+        setDownloads((prev) => ({ ...prev, [modelId]: 0 }));
+        void downloadModel(modelId).catch(() => {
+            setDownloads((prev) => {
+                const next = { ...prev };
+                delete next[modelId];
+                return next;
+            });
         });
     }
 
@@ -83,48 +192,14 @@ export default function AiLocalModels({
                 ) : null}
 
                 {supportedModels.map((m) => (
-                    <div
+                    <ModelRow
                         key={m.id}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '4px 0',
-                        }}
-                    >
-                        <div>
-                            <Text style={{ fontSize: '0.85em' }}>
-                                {m.name}{' '}
-                                {m.installed ? (
-                                    <Tag
-                                        color="success"
-                                        icon={<CheckCircleOutlined />}
-                                        style={{ marginInlineStart: 2 }}
-                                    >
-                                        {t('Installé')}
-                                    </Tag>
-                                ) : null}
-                            </Text>
-                            <Text type="secondary" style={{ fontSize: '0.75em', display: 'block' }}>
-                                {t(m.description)}
-                            </Text>
-                        </div>
-                        {m.installed ? (
-                            <Button size="small" type="link" onClick={() => selectModel(m.id)}>
-                                {t('Utiliser')}
-                            </Button>
-                        ) : (
-                            <Button
-                                size="small"
-                                type="link"
-                                icon={<DownloadOutlined />}
-                                href={m.downloadUrl}
-                                target="_blank"
-                            >
-                                {t('Télécharger')}
-                            </Button>
-                        )}
-                    </div>
+                        model={m}
+                        downloading={m.id in downloads}
+                        downloadPct={downloads[m.id] ?? 0}
+                        onSelect={selectModel}
+                        onDownload={handleDownload}
+                    />
                 ))}
             </Space>
         </Card>
