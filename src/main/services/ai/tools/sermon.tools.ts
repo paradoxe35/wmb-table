@@ -2,21 +2,25 @@ import { z } from 'zod';
 import * as referenceRepo from '@main/database/repositories/reference.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
+import { strNormalize } from '@shared/searchable';
 import type { AiToolDefinition } from './types';
 import { inferTranslationId } from './shared';
 
 export function buildSermonTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
     return {
         searchSermons: {
-            description: 'Search sermons by title, date, sermon id, town, state, or location.',
+            description:
+                'Search sermons by title, date, sermon id, town/city, state, or location. ' +
+                'Use this to find sermons by metadata (not by content inside the sermon). ' +
+                'Returns sermon metadata including sermonId which can be used with getSermonContent.',
             inputSchema: z.object({
                 query: z.string().min(1),
                 languageCode: z.string().optional(),
                 limit: z.number().int().min(1).max(20).optional(),
             }),
-            execute: async ({ query, languageCode, limit = 8 }) => {
-                const normalized = query.toLowerCase();
-                return referenceDataService
+            execute: async ({ query, languageCode, limit = 10 }) => {
+                const normalized = strNormalize(query);
+                const sermons = referenceDataService
                     .getSermonListForLanguage(languageCode ?? defaultLanguageCode)
                     .filter((sermon) => {
                         return [
@@ -28,22 +32,29 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                             new Date(sermon.dateMs).toISOString().slice(0, 10),
                         ]
                             .filter(Boolean)
-                            .some((value) => {
-                                return value!.toLowerCase().includes(normalized);
-                            });
-                    })
-                    .slice(0, limit);
+                            .some((value) => strNormalize(value!).includes(normalized));
+                    });
+                return { results: sermons.slice(0, limit), total: sermons.length };
             },
         },
         getSermonContent: {
-            description: 'Retrieve sermon paragraphs for a sermon id in a language.',
+            description:
+                'Retrieve the text content (paragraphs) of a sermon by its sermonId. ' +
+                'Use startParagraph and maxParagraphs to paginate through long sermons.',
             inputSchema: z.object({
                 sermonId: z.string(),
                 languageCode: z.string().optional(),
                 translationId: z.number().int().optional(),
-                maxParagraphs: z.number().int().min(1).max(40).optional(),
+                startParagraph: z.number().int().min(0).optional(),
+                maxParagraphs: z.number().int().min(1).max(50).optional(),
             }),
-            execute: async ({ sermonId, languageCode, translationId, maxParagraphs = 12 }) => {
+            execute: async ({
+                sermonId,
+                languageCode,
+                translationId,
+                startParagraph = 0,
+                maxParagraphs = 20,
+            }) => {
                 const lang = languageCode ?? defaultLanguageCode;
                 const meta =
                     referenceDataService.getSermonMeta(
@@ -63,13 +74,17 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 );
                 return {
                     meta,
-                    paragraphs: paragraphs.slice(0, maxParagraphs),
+                    paragraphs: paragraphs.slice(startParagraph, startParagraph + maxParagraphs),
                     totalParagraphs: paragraphs.length,
+                    startParagraph,
                 };
             },
         },
         searchContent: {
-            description: 'Search sermon content full-text and return snippets.',
+            description:
+                'Full-text search inside sermon content. Use this when searching for specific words, ' +
+                'phrases, or quotes within the text of sermons (not titles). ' +
+                'Returns matching sermons with relevant paragraph snippets.',
             inputSchema: z.object({
                 query: z.string().min(2),
                 languageCode: z.string().optional(),
@@ -87,14 +102,20 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                         lang,
                         sermonId,
                     );
-                    const snippet = await tantivyService.getSearchSnippet(
+                    const matchingParagraphs = await tantivyService.getMatchingParagraphs(
                         lang,
                         query,
-                        hit.bestDocAddress,
+                        hit.translationId,
+                        hit.tantivySermonDate,
                     );
-                    items.push({ sermonId, meta, snippet, paragraphIndex: hit.bestParagraphIndex });
+                    items.push({
+                        sermonId,
+                        meta,
+                        matchingParagraphs: matchingParagraphs.slice(0, 5),
+                        totalMatches: matchingParagraphs.length,
+                    });
                 }
-                return items;
+                return { results: items, totalSermons: result.total };
             },
         },
     };

@@ -7,6 +7,7 @@ type KnownLocalModelSeed = Omit<AiLocalModelInfo, 'downloaded' | 'localPath' | '
     directDownloadUrl: string;
     expectedFileName: string;
     approximateSizeMb: number;
+    contextSize: number;
 };
 
 export const KNOWN_LOCAL_MODELS: KnownLocalModelSeed[] = [
@@ -24,6 +25,7 @@ export const KNOWN_LOCAL_MODELS: KnownLocalModelSeed[] = [
             'https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B.q4_k_m.gguf',
         expectedFileName: 'Qwen3.5-0.8B.q4_k_m.gguf',
         approximateSizeMb: 550,
+        contextSize: 4096,
         aliases: ['qwen3.5-0.8b', 'qwen3.5', 'qwen'],
     },
     {
@@ -39,6 +41,7 @@ export const KNOWN_LOCAL_MODELS: KnownLocalModelSeed[] = [
             'https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf',
         expectedFileName: 'gemma-3-1b-it-Q4_K_M.gguf',
         approximateSizeMb: 750,
+        contextSize: 4096,
         aliases: ['gemma3-1b', 'gemma-3-1b', 'gemma'],
     },
 ];

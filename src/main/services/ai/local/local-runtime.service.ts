@@ -6,7 +6,11 @@ import {
 } from 'node-llama-cpp';
 import type { LlamaModel } from 'node-llama-cpp';
 import log from '@main/lib/logger';
+import { compactLocalHistory } from '../context-memory';
 import { resolveAutoSelectedLocalModel } from './local-model.service';
+
+const DEFAULT_CONTEXT_SIZE = 4096;
+const MAX_TOKENS = 768;
 
 export class LocalRuntimeService {
     private static readonly IDLE_DISPOSE_MS = 5 * 60 * 1000;
@@ -30,19 +34,29 @@ export class LocalRuntimeService {
             throw new Error('Aucun modèle local GGUF trouvé dans ~/.wmb-table/ai-models.');
         }
 
+        const contextSize = localModel.contextSize ?? DEFAULT_CONTEXT_SIZE;
+
         await this.ensureModel(localModel.localPath);
         if (!this.model) {
             throw new Error('Le modèle local n\u2019est pas chargé.');
         }
 
+        const compactedHistory = compactLocalHistory(
+            input.systemPrompt,
+            input.history,
+            input.prompt,
+            contextSize,
+        );
+
         const context = await this.model.createContext({
+            contextSize,
             ignoreMemorySafetyChecks: true,
         });
         const session = new LlamaChatSession({
             contextSequence: context.getSequence(),
             systemPrompt: input.systemPrompt,
         });
-        session.setChatHistory(input.history);
+        session.setChatHistory(compactedHistory);
 
         try {
             return await session.prompt(input.prompt, {
@@ -50,7 +64,7 @@ export class LocalRuntimeService {
                 signal: input.signal,
                 stopOnAbortSignal: true,
                 onTextChunk: input.onTextChunk,
-                maxTokens: 768,
+                maxTokens: MAX_TOKENS,
             });
         } finally {
             session.dispose({ disposeSequence: true });

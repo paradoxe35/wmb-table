@@ -106,6 +106,9 @@ importers:
             tar:
                 specifier: ^7.5.11
                 version: 7.5.11
+            tokenx:
+                specifier: ^1.3.0
+                version: 1.3.0
             unbzip2-stream:
                 specifier: ^1.4.3
                 version: 1.4.3
@@ -8967,6 +8970,12 @@ packages:
             }
         engines: { node: '>=8.0' }
 
+    tokenx@1.3.0:
+        resolution:
+            {
+                integrity: sha512-NLdXTEZkKiO0gZuLtMoZKjCXTREXeZZt8nnnNeyoXtNZAfG/GKGSbQtLU5STspc0rMSwcA+UJfWZkbNU01iKmQ==,
+            }
+
     tough-cookie@5.1.2:
         resolution:
             {
@@ -15431,6 +15440,8 @@ snapshots:
     to-regex-range@5.0.1:
         dependencies:
             is-number: 7.0.0
+
+    tokenx@1.3.0: {}
 
     tough-cookie@5.1.2:
         dependencies:

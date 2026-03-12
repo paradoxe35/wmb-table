@@ -1,10 +1,16 @@
+import type { ChatHistoryItem } from 'node-llama-cpp';
+import { countTokens } from 'tokenx';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
+import log from '@main/lib/logger';
 
 export type PromptHistoryMessage = {
     role: 'user' | 'assistant';
     content: string;
 };
+
+const LOCAL_MAX_TOKENS = 768;
+const LOCAL_CONTEXT_BUFFER = 128;
 
 const SUMMARY_CHAR_BUDGET = 6000;
 const USER_MESSAGE_CHAR_LIMIT = 320;
@@ -299,6 +305,67 @@ function buildSummary(messages: PromptHistoryMessage[]): string | null {
     }
 
     return trimmedLines.join('\n');
+}
+
+function estimateTokens(text: string): number {
+    try {
+        return countTokens(text);
+    } catch {
+        return Math.ceil(text.length / 3.5);
+    }
+}
+
+function historyItemTokens(item: ChatHistoryItem): number {
+    if (item.type === 'user') {
+        return estimateTokens(item.text);
+    }
+    if (item.type === 'model') {
+        let tokens = 0;
+        for (const part of item.response) {
+            if (typeof part === 'string') {
+                tokens += estimateTokens(part);
+            } else {
+                tokens += estimateTokens(JSON.stringify(part));
+            }
+        }
+        return tokens;
+    }
+    return 0;
+}
+
+export function compactLocalHistory(
+    systemPrompt: string,
+    history: ChatHistoryItem[],
+    prompt: string,
+    contextSize: number,
+): ChatHistoryItem[] {
+    const available = contextSize - LOCAL_MAX_TOKENS - LOCAL_CONTEXT_BUFFER;
+    const fixedTokens = estimateTokens(systemPrompt) + estimateTokens(prompt);
+
+    if (fixedTokens >= available) {
+        log.warn('System prompt + user prompt alone exceed context budget, sending empty history');
+        return [];
+    }
+
+    let budget = available - fixedTokens;
+    const result: ChatHistoryItem[] = [];
+
+    for (let i = history.length - 1; i >= 0; i--) {
+        const cost = historyItemTokens(history[i]);
+        if (cost > budget) break;
+        budget -= cost;
+        result.unshift(history[i]);
+    }
+
+    if (result.length < history.length) {
+        log.info('Local history compacted', {
+            original: history.length,
+            kept: result.length,
+            contextSize,
+        });
+    }
+
+    return result;
 }
 
 export function buildConversationContext(

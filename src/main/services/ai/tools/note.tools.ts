@@ -8,14 +8,14 @@ import { inferTranslationId } from './shared';
 export function buildNoteTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
     return {
         getNotes: {
-            description: 'List notes.',
+            description: 'List all user notes with their names and ids.',
             inputSchema: z.object({}),
             execute: async () => {
                 return notesRepo.getAll();
             },
         },
         getNoteById: {
-            description: 'Get one note by id.',
+            description: 'Get a note with its full content and references by id.',
             inputSchema: z.object({ noteId: z.string() }),
             execute: async ({ noteId }) => {
                 return notesRepo.getById(noteId);

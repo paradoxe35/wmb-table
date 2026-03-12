@@ -31,6 +31,7 @@ export interface AiLocalModelInfo {
     downloaded: boolean;
     localPath?: string;
     recommended: boolean;
+    contextSize?: number;
 }
 
 export interface AiSupportedLocalModel {

@@ -15,13 +15,14 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
         },
         getBiblePassage: {
             description:
-                'Retrieve a Bible chapter or verse range from a specific version or language.',
+                'Retrieve Bible verses. Provide book name, chapter number, and optionally a verse range. ' +
+                'Use getBibleVersions first to find available abbreviations if needed.',
             inputSchema: z.object({
-                book: z.string(),
-                chapter: z.string(),
-                fromVerse: z.string().optional(),
-                toVerse: z.string().optional(),
-                abbreviation: z.string().optional(),
+                book: z.string().describe('Book name (e.g. "Genesis", "Jean", "Matthieu")'),
+                chapter: z.string().describe('Chapter number'),
+                fromVerse: z.string().optional().describe('Starting verse number'),
+                toVerse: z.string().optional().describe('Ending verse number'),
+                abbreviation: z.string().optional().describe('Bible version abbreviation'),
                 languageCode: z.string().optional(),
             }),
             execute: async (input) => {

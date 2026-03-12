@@ -37,6 +37,7 @@ export async function scanLocalModels(): Promise<AiModelScanResult> {
                 downloaded: true,
                 localPath,
                 recommended: known?.recommended ?? false,
+                contextSize: known?.contextSize,
             };
         }),
     );

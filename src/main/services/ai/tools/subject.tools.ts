@@ -8,7 +8,8 @@ import { inferTranslationId } from './shared';
 export function buildSubjectTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
     return {
         getSubjects: {
-            description: 'List subjects and their existing references.',
+            description:
+                'List all subjects (topics/themes) created by the user with their references.',
             inputSchema: z.object({}),
             execute: async () => {
                 return subjectsRepo.getAll();
