@@ -9,6 +9,47 @@ import { strNormalizeNoLower, matchesQuery, buildHighlightRegex } from '@shared/
 
 const ITEMS_PER_PAGE = 20;
 
+function countSnippetMatches(text: string, query: string, mode: SearchMode): number {
+    const highlightRegex = buildHighlightRegex(query, mode);
+    if (!highlightRegex) return 0;
+    highlightRegex.lastIndex = 0;
+    return [...strNormalizeNoLower(text).matchAll(highlightRegex)].length;
+}
+
+async function attachSnippetMatchIndices(
+    langCode: string,
+    query: string,
+    mode: SearchMode,
+    translationId: number,
+    sermonDate: number,
+    snippets: { paragraphIndex: number; snippet: string }[],
+) {
+    const paragraphs = await tantivyService.getSermonParagraphs(
+        langCode,
+        translationId,
+        sermonDate,
+    );
+    const snippetByParagraph = new Map(
+        snippets.map((snippet) => [snippet.paragraphIndex, snippet]),
+    );
+    let cumulativeMatchIndex = 0;
+
+    return paragraphs.flatMap((paragraph) => {
+        const paragraphMatchCount = countSnippetMatches(paragraph.content, query, mode);
+        const snippet = snippetByParagraph.get(paragraph.paragraphIndex);
+        const result = snippet
+            ? [
+                  {
+                      ...snippet,
+                      matchIndex: cumulativeMatchIndex,
+                  },
+              ]
+            : [];
+        cumulativeMatchIndex += paragraphMatchCount;
+        return result;
+    });
+}
+
 export function registerSearchHandlers(): void {
     registerHandler(SearchChannels.getSuggestions, async (_event, langCode) => {
         return suggestionsRepo.getSuggestions(langCode);
@@ -37,18 +78,23 @@ export function registerSearchHandlers(): void {
                 hit.translationId,
                 hit.tantivySermonDate,
             );
-            const snippets = rawSnippets.filter((p) =>
+            const filteredSnippets = rawSnippets.filter((p) =>
                 matchesQuery(strNormalizeNoLower(p.snippet), query, searchMode),
+            );
+            const snippets = await attachSnippetMatchIndices(
+                langCode,
+                query,
+                searchMode,
+                hit.translationId,
+                hit.tantivySermonDate,
+                filteredSnippets,
             );
             if (snippets.length === 0) continue;
             const hitCount = highlightRegex
-                ? snippets.reduce((count, s) => {
-                      highlightRegex.lastIndex = 0;
-                      return (
-                          count +
-                          [...strNormalizeNoLower(s.snippet).matchAll(highlightRegex)].length
-                      );
-                  }, 0)
+                ? snippets.reduce(
+                      (count, s) => count + countSnippetMatches(s.snippet, query, searchMode),
+                      0,
+                  )
                 : snippets.length;
             hits.push({
                 translationId: hit.translationId,

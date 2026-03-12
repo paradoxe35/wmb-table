@@ -4,7 +4,7 @@ import { Reorder } from 'framer-motion';
 import { App as AntApp, type MenuProps } from 'antd';
 import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
 import { useTabPersistence } from '@renderer/hooks';
-import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
+import { CUSTOM_DOCUMENT_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { getTabKey } from '@shared/types';
 import TabItem from './tab-item';
 
@@ -17,6 +17,7 @@ export default function DocumentTabs() {
     const removeOtherTabs = useSermonStore((s) => s.removeOtherTabs);
     const removeTabsToRight = useSermonStore((s) => s.removeTabsToRight);
     const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
+    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
     const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const { modal } = AntApp.useApp();
@@ -89,7 +90,16 @@ export default function DocumentTabs() {
                             key={key}
                             tab={tab}
                             isActive={key === activeTabKey}
-                            onActivate={() => activateTab(key)}
+                            onActivate={() => {
+                                const currentActive = tabs.find(
+                                    (t) => getTabKey(t) === activeTabKey,
+                                );
+                                const container = document.getElementById(DOCUMENT_CONTAINER_ID);
+                                if (currentActive && container) {
+                                    updateTabScroll(activeTabKey!, container.scrollTop);
+                                }
+                                activateTab(key);
+                            }}
                             onRemove={() => removeTab(key)}
                             contextMenuItems={getContextMenuItems(key)}
                         />

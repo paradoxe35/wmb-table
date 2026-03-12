@@ -1,94 +1,201 @@
 import { create } from 'zustand';
 import type { DocumentViewQuery, SearchMode } from '@shared/types';
 
-interface SearchStateData {
-    documentViewQueries: DocumentViewQuery[];
+type SearchUiState = {
     searchBarOpen: boolean;
     searchBarNavOnly: boolean;
     currentMatchIndex: number;
     totalMatches: number;
+    requestedMatchIndex: number | null;
+};
+
+interface SearchStateData {
+    documentViewQueries: Record<string, DocumentViewQuery>;
+    searchUiByTab: Record<string, SearchUiState>;
     searchMode: SearchMode;
     error: string | null;
-    scrollToMatchRequested: boolean;
 }
 
 interface SearchStateActions {
-    setDocumentViewQueries(
-        q: DocumentViewQuery[] | ((prev: DocumentViewQuery[]) => DocumentViewQuery[]),
-    ): void;
-    openSearchBar(navOnly?: boolean): void;
-    closeSearchBar(): void;
-    setCurrentMatchIndex(i: number): void;
-    setTotalMatches(n: number): void;
+    setDocumentViewQuery(tabKey: string, query: DocumentViewQuery | null): void;
+    getDocumentViewQuery(tabKey: string | null): DocumentViewQuery | null;
+    openSearchBar(tabKey: string, navOnly?: boolean): void;
+    closeSearchBar(tabKey: string): void;
+    setCurrentMatchIndex(tabKey: string, index: number): void;
+    setTotalMatches(tabKey: string, total: number): void;
     setSearchMode(mode: SearchMode): void;
-    nextMatch(): void;
-    prevMatch(): void;
-    clearSearch(documentTitle: string): void;
+    nextMatch(tabKey: string): void;
+    prevMatch(tabKey: string): void;
+    clearSearch(tabKey: string): void;
     setError(error: string | null): void;
-    requestScrollToMatch(): void;
-    clearScrollToMatchRequest(): void;
+    requestScrollToMatch(tabKey: string, matchIndex?: number): void;
+    clearScrollToMatchRequest(tabKey: string): void;
 }
 
 type SearchState = SearchStateData & SearchStateActions;
 
-export const useSearchStore = create<SearchState>((set) => ({
-    documentViewQueries: [],
+const defaultUiState = (): SearchUiState => ({
     searchBarOpen: false,
     searchBarNavOnly: false,
     currentMatchIndex: 0,
     totalMatches: 0,
+    requestedMatchIndex: null,
+});
+
+function getUiState(state: SearchStateData, tabKey: string): SearchUiState {
+    return state.searchUiByTab[tabKey] ?? defaultUiState();
+}
+
+export const useSearchStore = create<SearchState>((set, get) => ({
+    documentViewQueries: {},
+    searchUiByTab: {},
     searchMode: 'any',
     error: null,
-    scrollToMatchRequested: false,
 
-    setDocumentViewQueries: (q) =>
-        set((s) => ({
-            documentViewQueries: typeof q === 'function' ? q(s.documentViewQueries) : q,
-        })),
+    setDocumentViewQuery: (tabKey, query) =>
+        set((state) => {
+            if (!query) {
+                const { [tabKey]: _removed, ...rest } = state.documentViewQueries;
+                return { documentViewQueries: rest };
+            }
+
+            return {
+                documentViewQueries: {
+                    ...state.documentViewQueries,
+                    [tabKey]: query,
+                },
+            };
+        }),
+
+    getDocumentViewQuery: (tabKey) => (tabKey ? (get().documentViewQueries[tabKey] ?? null) : null),
 
     setSearchMode: (mode) => set({ searchMode: mode }),
-    openSearchBar: (navOnly) => set({ searchBarOpen: true, searchBarNavOnly: !!navOnly }),
-    closeSearchBar: () => set({ searchBarOpen: false, searchBarNavOnly: false }),
-    setCurrentMatchIndex: (i) => set({ currentMatchIndex: i }),
-    setTotalMatches: (n) => set({ totalMatches: n }),
 
-    nextMatch: () => {
-        return set((s) => {
-            if (s.totalMatches === 0) {
-                return {};
-            }
-            return {
-                currentMatchIndex: (s.currentMatchIndex + 1) % s.totalMatches,
-                scrollToMatchRequested: true,
-            };
-        });
-    },
-
-    prevMatch: () => {
-        return set((s) => {
-            if (s.totalMatches === 0) {
-                return {};
-            }
-
-            return {
-                currentMatchIndex: (s.currentMatchIndex - 1 + s.totalMatches) % s.totalMatches,
-                scrollToMatchRequested: true,
-            };
-        });
-    },
-
-    clearSearch: (documentTitle) =>
-        set((s) => ({
-            documentViewQueries: s.documentViewQueries.filter(
-                (q) => q.documentTitle !== documentTitle,
-            ),
-            currentMatchIndex: 0,
-            totalMatches: 0,
-            scrollToMatchRequested: false,
+    openSearchBar: (tabKey, navOnly) =>
+        set((state) => ({
+            searchUiByTab: {
+                ...state.searchUiByTab,
+                [tabKey]: {
+                    ...getUiState(state, tabKey),
+                    searchBarOpen: true,
+                    searchBarNavOnly: !!navOnly,
+                },
+            },
         })),
 
-    requestScrollToMatch: () => set({ scrollToMatchRequested: true }),
-    clearScrollToMatchRequest: () => set({ scrollToMatchRequested: false }),
+    closeSearchBar: (tabKey) =>
+        set((state) => ({
+            searchUiByTab: {
+                ...state.searchUiByTab,
+                [tabKey]: {
+                    ...getUiState(state, tabKey),
+                    searchBarOpen: false,
+                    searchBarNavOnly: false,
+                },
+            },
+        })),
+
+    setCurrentMatchIndex: (tabKey, index) =>
+        set((state) => ({
+            searchUiByTab: {
+                ...state.searchUiByTab,
+                [tabKey]: {
+                    ...getUiState(state, tabKey),
+                    currentMatchIndex: index,
+                },
+            },
+        })),
+
+    setTotalMatches: (tabKey, total) =>
+        set((state) => {
+            const current = getUiState(state, tabKey);
+            return {
+                searchUiByTab: {
+                    ...state.searchUiByTab,
+                    [tabKey]: {
+                        ...current,
+                        totalMatches: total,
+                        currentMatchIndex:
+                            total > 0 ? Math.min(current.currentMatchIndex, total - 1) : 0,
+                    },
+                },
+            };
+        }),
+
+    nextMatch: (tabKey) =>
+        set((state) => {
+            const current = getUiState(state, tabKey);
+            if (current.totalMatches === 0) return {};
+
+            const nextIndex = (current.currentMatchIndex + 1) % current.totalMatches;
+            return {
+                searchUiByTab: {
+                    ...state.searchUiByTab,
+                    [tabKey]: {
+                        ...current,
+                        currentMatchIndex: nextIndex,
+                        requestedMatchIndex: nextIndex,
+                    },
+                },
+            };
+        }),
+
+    prevMatch: (tabKey) =>
+        set((state) => {
+            const current = getUiState(state, tabKey);
+            if (current.totalMatches === 0) return {};
+
+            const nextIndex =
+                (current.currentMatchIndex - 1 + current.totalMatches) % current.totalMatches;
+            return {
+                searchUiByTab: {
+                    ...state.searchUiByTab,
+                    [tabKey]: {
+                        ...current,
+                        currentMatchIndex: nextIndex,
+                        requestedMatchIndex: nextIndex,
+                    },
+                },
+            };
+        }),
+
+    clearSearch: (tabKey) =>
+        set((state) => {
+            const { [tabKey]: _removedQuery, ...remainingQueries } = state.documentViewQueries;
+            return {
+                documentViewQueries: remainingQueries,
+                searchUiByTab: {
+                    ...state.searchUiByTab,
+                    [tabKey]: defaultUiState(),
+                },
+            };
+        }),
+
+    requestScrollToMatch: (tabKey, matchIndex) =>
+        set((state) => {
+            const current = getUiState(state, tabKey);
+            return {
+                searchUiByTab: {
+                    ...state.searchUiByTab,
+                    [tabKey]: {
+                        ...current,
+                        currentMatchIndex: matchIndex ?? current.currentMatchIndex,
+                        requestedMatchIndex: matchIndex ?? current.currentMatchIndex,
+                    },
+                },
+            };
+        }),
+
+    clearScrollToMatchRequest: (tabKey) =>
+        set((state) => ({
+            searchUiByTab: {
+                ...state.searchUiByTab,
+                [tabKey]: {
+                    ...getUiState(state, tabKey),
+                    requestedMatchIndex: null,
+                },
+            },
+        })),
 
     setError: (error) => set({ error }),
 }));

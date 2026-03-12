@@ -20,11 +20,25 @@ export function useContextMenuItems(
     contextTargetRef: React.RefObject<Element | null>,
     documentType: DocumentType = 'sermon',
     bibleVerses?: BibleBook[],
+    bibleVersionAbbreviation?: string,
 ): MenuProps['items'] {
     return useMemo(() => {
         if (!content) return [];
 
         const getRef = (): { ref: ParagraphReference; text: string } | null => {
+            const [bibleBook, bibleChapter] =
+                documentType === 'bible'
+                    ? content.meta.sermonId.split(':')
+                    : [undefined, undefined];
+            const referenceMeta = {
+                documentType,
+                sermonId: content.meta.sermonId,
+                customDocumentId: documentType === 'custom' ? content.meta.id : undefined,
+                bibleBook,
+                bibleChapter,
+                bibleVersionAbbreviation,
+            };
+
             const sel = window.getSelection();
 
             if (sel && !sel.isCollapsed) {
@@ -36,6 +50,7 @@ export function useContextMenuItems(
                         translationId: content.meta.translationId,
                         languageCode: content.meta.languageCode,
                         textSnippet: sel.toString().slice(0, 200),
+                        ...referenceMeta,
                     },
                     text: sel.toString(),
                 };
@@ -56,6 +71,7 @@ export function useContextMenuItems(
                     translationId: content.meta.translationId,
                     languageCode: content.meta.languageCode,
                     textSnippet: text.slice(0, 200),
+                    ...referenceMeta,
                 },
                 text,
             };
@@ -198,7 +214,7 @@ export function useContextMenuItems(
                   ]
                 : []),
         ];
-    }, [content, contextTargetRef, documentType, bibleVerses]);
+    }, [content, contextTargetRef, documentType, bibleVerses, bibleVersionAbbreviation]);
 }
 
 export function useDocumentHighlights(documentTitle: string | null, sermonId: string | undefined) {

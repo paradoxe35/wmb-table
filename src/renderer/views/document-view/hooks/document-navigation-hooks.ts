@@ -3,38 +3,89 @@ import {
     useSearchStore,
     useSermonStore,
     selectActiveTab,
-    selectActiveTabTitle,
+    selectActiveTabKey,
 } from '@renderer/stores';
 import { buildHighlightRegex, strNormalizeNoLower } from '@renderer/utils/searchable';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
-import type { SearchMode } from '@shared/types';
+import type { DocumentType, ParagraphReference, SearchMode } from '@shared/types';
 import { isParagraphReference } from '@shared/types';
 
 export function useSearchHighlight(): { term: string; mode: SearchMode } | null {
-    const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const query = useSearchStore((s) =>
+        activeTabKey ? s.documentViewQueries[activeTabKey] : null,
+    );
 
     return useMemo(() => {
-        if (!activeTitle) return null;
-        const query = documentViewQueries.find((q) => q.documentTitle === activeTitle);
         if (!query?.term) return null;
         return { term: query.term, mode: query.mode };
-    }, [documentViewQueries, activeTitle]);
+    }, [query]);
 }
 
-export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElement | null>) {
+function referenceMatchesCurrentDocument(
+    documentType: DocumentType,
+    ref: ParagraphReference,
+    current: {
+        title?: string;
+        sermonId?: string;
+        translationId?: number;
+        languageCode?: string;
+        customDocumentId?: string;
+    },
+): boolean {
+    if (ref.documentType && ref.documentType !== documentType) return false;
+    if (documentType === 'custom') {
+        return !ref.customDocumentId || ref.customDocumentId === current.customDocumentId;
+    }
+    if (documentType === 'sermon') {
+        if (ref.sermonId && current.sermonId && ref.sermonId !== current.sermonId) {
+            return false;
+        }
+        return current.translationId == null || ref.translationId === current.translationId;
+    }
+    if (documentType === 'bible') {
+        return !current.languageCode || ref.languageCode === current.languageCode;
+    }
+    return true;
+}
+
+export function useReferenceNavigation(
+    containerRef: React.RefObject<HTMLDivElement | null>,
+    options: {
+        contentReady: boolean;
+        documentType: DocumentType;
+        title?: string;
+        sermonId?: string;
+        translationId?: number;
+        languageCode?: string;
+        customDocumentId?: string;
+    },
+) {
     const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const activeTab = useSermonStore(selectActiveTab);
-    const activeContent = useSermonStore((s) => s.activeContent);
 
     useEffect(() => {
-        if (!pendingNavigation || !activeTab) return;
+        if (!pendingNavigation || !activeTab || !options.contentReady) return;
         if (pendingNavigation.documentTitle !== activeTab.title) return;
-        if (!activeContent || activeContent.meta.sermonId !== activeTab.sermonId) return;
         if (!containerRef.current) return;
 
         const ref = pendingNavigation.documentHtmlTree;
+        if (isParagraphReference(ref)) {
+            const matchesCurrentDocument = referenceMatchesCurrentDocument(
+                options.documentType,
+                ref,
+                {
+                    title: options.title,
+                    sermonId: options.sermonId,
+                    translationId: options.translationId,
+                    languageCode: options.languageCode,
+                    customDocumentId: options.customDocumentId,
+                },
+            );
+            if (!matchesCurrentDocument) return;
+        }
+
         const paragraphIndex = ref
             ? isParagraphReference(ref)
                 ? ref.paragraphIndex
@@ -45,31 +96,39 @@ export function useReferenceNavigation(containerRef: React.RefObject<HTMLDivElem
             return;
         }
 
-        const tryScroll = () => scrollToParagraph(containerRef.current, paragraphIndex);
-        if (tryScroll()) {
-            setPendingNavigation(null);
-            return;
-        }
+        let raf = 0;
+        let attemptsLeft = 120;
 
-        const timer = setTimeout(() => {
-            tryScroll();
-            setPendingNavigation(null);
-        }, 300);
-        return () => clearTimeout(timer);
-    }, [pendingNavigation, activeTab, activeContent, setPendingNavigation, containerRef]);
+        const tryScroll = () => {
+            if (scrollToParagraph(containerRef.current, paragraphIndex)) {
+                setPendingNavigation(null);
+                return;
+            }
+            if (attemptsLeft <= 0) return;
+            attemptsLeft -= 1;
+            raf = requestAnimationFrame(tryScroll);
+        };
+
+        raf = requestAnimationFrame(tryScroll);
+        return () => cancelAnimationFrame(raf);
+    }, [pendingNavigation, activeTab, options, setPendingNavigation, containerRef]);
 }
 
 export function useMatchNavigation(
+    tabKey: string | null,
     search: { term: string; mode: SearchMode } | null,
     paragraphs: string[],
+    enabled = true,
 ) {
     const setTotalMatches = useSearchStore((s) => s.setTotalMatches);
     const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-    const scrollToMatchRequested = useSearchStore((s) => s.scrollToMatchRequested);
+    const requestState = useSearchStore((s) => (tabKey ? s.searchUiByTab[tabKey] : undefined));
+    const currentMatchIndex = requestState?.currentMatchIndex ?? 0;
+    const requestedMatchIndex = requestState?.requestedMatchIndex ?? null;
     const clearScrollToMatchRequest = useSearchStore((s) => s.clearScrollToMatchRequest);
 
     const { matchOffsets, total } = useMemo(() => {
+        if (!enabled) return { matchOffsets: [] as number[], total: 0 };
         if (!search) return { matchOffsets: [] as number[], total: 0 };
         const regex = buildHighlightRegex(search.term, search.mode);
         if (!regex) return { matchOffsets: [] as number[], total: 0 };
@@ -82,22 +141,54 @@ export function useMatchNavigation(
             cumulative += matches.length;
         }
         return { matchOffsets: offsets, total: cumulative };
-    }, [search, paragraphs]);
+    }, [enabled, search, paragraphs]);
 
     useEffect(() => {
-        setTotalMatches(total);
-        setCurrentMatchIndex(0);
-    }, [total, setTotalMatches, setCurrentMatchIndex]);
+        if (!tabKey) return;
+        setTotalMatches(tabKey, total);
+        if (total === 0) {
+            setCurrentMatchIndex(tabKey, 0);
+        }
+    }, [tabKey, total, setTotalMatches, setCurrentMatchIndex]);
 
     useEffect(() => {
-        if (total === 0 || !scrollToMatchRequested) return;
-        clearScrollToMatchRequest();
-        const raf = requestAnimationFrame(() => {
-            const el = document.querySelector(`[data-match-index="${currentMatchIndex}"]`);
-            el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
+        if (!enabled || !tabKey) return;
+        if (total === 0 || requestedMatchIndex == null) return;
+        let raf = 0;
+        let attemptsLeft = 120;
+        const targetMatchIndex = Math.min(requestedMatchIndex, total - 1);
+
+        if (targetMatchIndex !== currentMatchIndex) {
+            setCurrentMatchIndex(tabKey, targetMatchIndex);
+        }
+
+        const tryScrollToMatch = () => {
+            const el = document.querySelector(`[data-match-index="${targetMatchIndex}"]`);
+            if (el) {
+                clearScrollToMatchRequest(tabKey);
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            if (attemptsLeft <= 0) {
+                return;
+            }
+
+            attemptsLeft -= 1;
+            raf = requestAnimationFrame(tryScrollToMatch);
+        };
+
+        raf = requestAnimationFrame(tryScrollToMatch);
         return () => cancelAnimationFrame(raf);
-    }, [currentMatchIndex, total, scrollToMatchRequested, clearScrollToMatchRequest]);
+    }, [
+        enabled,
+        tabKey,
+        total,
+        requestedMatchIndex,
+        currentMatchIndex,
+        setCurrentMatchIndex,
+        clearScrollToMatchRequest,
+    ]);
 
     return { matchOffsets, total };
 }

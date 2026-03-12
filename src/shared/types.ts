@@ -129,12 +129,21 @@ export type DocumentHtmlTree = {
     ranges?: DocumentTreeRanges;
 };
 
+export type StoredDocumentReference = {
+    documentType?: DocumentType;
+    sermonId?: string;
+    customDocumentId?: string;
+    bibleBook?: string;
+    bibleChapter?: string;
+    bibleVersionAbbreviation?: string;
+};
+
 export type ParagraphReference = {
     paragraphIndex: number;
     translationId: number;
     languageCode: string;
     textSnippet?: string;
-};
+} & StoredDocumentReference;
 
 export function isParagraphReference(
     ref: DocumentHtmlTree | ParagraphReference,
@@ -163,6 +172,7 @@ export interface Suggestions extends Readonly<BaseEntity> {
 export type DocumentViewQuery = {
     term: string;
     mode: SearchMode;
+    documentKey: string;
     documentTitle: string;
     textContentLength: number;
     searchForParagraph?: boolean;
@@ -473,6 +483,7 @@ export interface LanguageInstalledEvent {
 export interface SearchSnippet {
     paragraphIndex: number;
     snippet: string;
+    matchIndex: number;
 }
 
 export interface TantivySearchHit {

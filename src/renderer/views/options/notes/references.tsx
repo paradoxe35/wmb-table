@@ -10,7 +10,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { PlusOutlined } from '@ant-design/icons';
 import { useSermonStore } from '@renderer/stores';
-import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
 import {
     BibleBook,
     NoteItemReference,
@@ -19,14 +18,20 @@ import {
 } from '@shared/types';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useSermonLookup, useFormatSermonDate, useValueStateRef } from '@renderer/hooks';
+import {
+    buildReferenceOpenRequest,
+    useFormatSermonDate,
+    useOpenDocumentRequest,
+    useSermonLookup,
+    useValueStateRef,
+} from '@renderer/hooks';
 
 export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 
 export const useShowReferenceDetail = () => {
     const { t } = useTranslation();
-    const viewDocument = useDocumentViewOpen();
+    const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
     const { getSermonById } = useSermonLookup();
@@ -36,22 +41,20 @@ export const useShowReferenceDetail = () => {
         const ref = reference.documentHtmlTree;
         const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
 
-        const refTranslationId = ref && isParagraphReference(ref) ? ref.translationId : undefined;
-
         const openDocument = () => {
-            viewDocument(
-                reference.documentTitle,
-                () => {
-                    if (reference.documentHtmlTree) {
-                        setPendingNavigation({
-                            documentTitle: reference.documentTitle,
-                            documentHtmlTree: reference.documentHtmlTree,
-                        });
-                    }
-                },
-                reference.sermonId,
-                refTranslationId,
+            openDocumentRequest(
+                buildReferenceOpenRequest(
+                    reference.documentTitle,
+                    reference.sermonId,
+                    reference.documentHtmlTree,
+                ),
             );
+            if (reference.documentHtmlTree) {
+                setPendingNavigation({
+                    documentTitle: reference.documentTitle,
+                    documentHtmlTree: reference.documentHtmlTree,
+                });
+            }
         };
 
         const sermon = getSermonById(reference.sermonId);

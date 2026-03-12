@@ -3,7 +3,7 @@ import DocumentTabs from '../../components/document-tabs';
 import {
     useSermonStore,
     useSearchStore,
-    selectActiveTabTitle,
+    selectActiveTabKey,
     selectActiveTabType,
 } from '@renderer/stores';
 import SermonDocumentView from './sermon-document-view';
@@ -12,10 +12,12 @@ import BibleDocumentView from './bible-document-view';
 
 export default function DocumentView() {
     const tabType = useSermonStore(selectActiveTabType);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
-    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const searchBarOpen = useSearchStore((s) =>
+        activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
+    );
     const clearSearch = useSearchStore((s) => s.clearSearch);
 
     const tabs = useSermonStore((s) => s.tabs);
@@ -32,15 +34,15 @@ export default function DocumentView() {
         const handler = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                 e.preventDefault();
-                openSearchBar();
+                if (activeTabKey) openSearchBar(activeTabKey);
             } else if (e.key === 'Escape' && searchBarOpen) {
-                if (activeTitle) clearSearch(activeTitle);
-                closeSearchBar();
+                if (activeTabKey) clearSearch(activeTabKey);
+                if (activeTabKey) closeSearchBar(activeTabKey);
             }
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTitle, clearSearch]);
+    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTabKey, clearSearch]);
 
     return (
         <div

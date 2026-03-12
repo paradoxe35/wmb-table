@@ -3,65 +3,73 @@ import { Input, Button } from 'antd';
 import type { InputRef } from 'antd';
 import { UpOutlined, DownOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useSearchStore, selectActiveTabTitle, useSermonStore } from '@renderer/stores';
+import {
+    useSearchStore,
+    selectActiveTabKey,
+    selectActiveTabTitle,
+    useSermonStore,
+} from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
     const { t } = useTranslation();
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeTitle = useSermonStore(selectActiveTabTitle);
-    const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
+    const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQuery);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
     const clearSearch = useSearchStore((s) => s.clearSearch);
     const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
     const nextMatch = useSearchStore((s) => s.nextMatch);
     const prevMatch = useSearchStore((s) => s.prevMatch);
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-    const totalMatches = useSearchStore((s) => s.totalMatches);
-    const navOnly = useSearchStore((s) => s.searchBarNavOnly);
-
-    const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
+    const searchUi = useSearchStore((s) =>
+        activeTabKey ? s.searchUiByTab[activeTabKey] : undefined,
+    );
+    const currentMatchIndex = searchUi?.currentMatchIndex ?? 0;
+    const totalMatches = searchUi?.totalMatches ?? 0;
+    const navOnly = searchUi?.searchBarNavOnly ?? false;
+    const existingQuery = useSearchStore((s) =>
+        activeTabKey ? s.documentViewQueries[activeTabKey] : null,
+    );
     const searchMode = useSearchStore((s) => s.searchMode);
 
     const inputRef = useRef<InputRef>(null);
     const searchTermRef = useRef('');
 
     // Keep latest values in refs so the debounced callback never captures stale closures
-    const latestRef = useRef({ activeTitle, searchMode });
-    latestRef.current = { activeTitle, searchMode };
+    const latestRef = useRef({ activeTitle, activeTabKey, searchMode });
+    latestRef.current = { activeTitle, activeTabKey, searchMode };
 
     useEffect(() => {
-        const existing = documentViewQueries.find((q) => q.documentTitle === activeTitle);
-        if (existing?.term && inputRef.current?.input) {
-            inputRef.current.input.value = existing.term;
-            searchTermRef.current = existing.term;
+        if (existingQuery?.term && inputRef.current?.input) {
+            inputRef.current.input.value = existingQuery.term;
+            searchTermRef.current = existingQuery.term;
         }
         if (!navOnly) inputRef.current?.focus();
-    }, []);
+    }, [existingQuery, navOnly]);
 
     // Stable debounced function — never recreated, reads latest values from refs
     const debouncedSearch = useRef(
         debounce((value: string) => {
-            const { activeTitle: title, searchMode: mode } = latestRef.current;
-            if (!title) return;
+            const {
+                activeTitle: title,
+                activeTabKey: tabKey,
+                searchMode: mode,
+            } = latestRef.current;
+            if (!title || !tabKey) return;
             if (value.trim().length < 3) {
-                useSearchStore.getState().clearSearch(title);
+                useSearchStore.getState().clearSearch(tabKey);
                 return;
             }
-            setDocumentViewQueries((docs) => {
-                const filtered = docs.filter((d) => d.documentTitle !== title);
-                return [
-                    ...filtered,
-                    {
-                        documentTitle: title,
-                        matches: [],
-                        textContentLength: 0,
-                        searchForParagraph: false,
-                        term: value.trim(),
-                        mode,
-                    },
-                ];
+            setDocumentViewQuery(tabKey, {
+                documentKey: tabKey,
+                documentTitle: title,
+                matches: [],
+                textContentLength: 0,
+                searchForParagraph: false,
+                term: value.trim(),
+                mode,
             });
-            requestScrollToMatch();
+            requestScrollToMatch(tabKey, 0);
         }, 300),
     ).current;
 
@@ -74,9 +82,9 @@ export default function InlineSearchBar() {
     );
 
     const handleClose = useCallback(() => {
-        if (activeTitle) clearSearch(activeTitle);
-        closeSearchBar();
-    }, [activeTitle, clearSearch, closeSearchBar]);
+        if (activeTabKey) clearSearch(activeTabKey);
+        if (activeTabKey) closeSearchBar(activeTabKey);
+    }, [activeTabKey, clearSearch, closeSearchBar]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -84,13 +92,13 @@ export default function InlineSearchBar() {
                 handleClose();
             } else if (e.key === 'Enter') {
                 if (e.shiftKey) {
-                    prevMatch();
+                    if (activeTabKey) prevMatch(activeTabKey);
                 } else {
-                    nextMatch();
+                    if (activeTabKey) nextMatch(activeTabKey);
                 }
             }
         },
-        [handleClose, nextMatch, prevMatch],
+        [activeTabKey, handleClose, nextMatch, prevMatch],
     );
 
     const handleParagraphJump = useCallback(() => {
@@ -128,14 +136,14 @@ export default function InlineSearchBar() {
                 type="text"
                 size="small"
                 icon={<UpOutlined />}
-                onClick={prevMatch}
+                onClick={() => activeTabKey && prevMatch(activeTabKey)}
                 disabled={totalMatches === 0}
             />
             <Button
                 type="text"
                 size="small"
                 icon={<DownOutlined />}
-                onClick={nextMatch}
+                onClick={() => activeTabKey && nextMatch(activeTabKey)}
                 disabled={totalMatches === 0}
             />
             {!navOnly && (

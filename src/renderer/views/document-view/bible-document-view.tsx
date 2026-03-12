@@ -22,6 +22,7 @@ import {
     useContextMenuItems,
     useDocumentHighlights,
     useDocumentZoom,
+    useReferenceNavigation,
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 
@@ -61,13 +62,14 @@ function versesToParagraphs(verses: BibleBook[]) {
 function buildContentForMenu(
     tab: { title: string; sermonId: string } | null,
     paragraphs: { paragraphIndex: number; content: string }[],
+    bibleLang: string,
 ): SermonContent | null {
     if (!tab) return null;
     return {
         meta: {
             id: tab.sermonId,
             translationId: 0,
-            languageCode: '',
+            languageCode: bibleLang,
             sermonId: tab.sermonId,
             title: tab.title,
             enTitle: tab.title,
@@ -178,6 +180,7 @@ function BibleHeader({
 }) {
     const { t } = useTranslation();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
@@ -214,7 +217,7 @@ function BibleHeader({
                         type="text"
                         size="small"
                         icon={<SearchOutlined />}
-                        onClick={() => openSearchBar()}
+                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
                         aria-label={t('Rechercher')}
                     />
                 </Tooltip>
@@ -232,7 +235,10 @@ export default function BibleDocumentView() {
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const currentMatchIndex = useSearchStore((s) =>
+        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
+    );
 
     const [bibleLang, setBibleLang] = useState('');
 
@@ -243,8 +249,12 @@ export default function BibleDocumentView() {
     useEffect(() => {
         window.api.bible
             .getActiveVersion()
-            .then((v) => setBibleLang(v?.langCode ?? ''))
-            .catch(() => setBibleLang(''));
+            .then((v) => {
+                setBibleLang(v?.langCode ?? '');
+            })
+            .catch(() => {
+                setBibleLang('');
+            });
     }, []);
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
@@ -256,6 +266,13 @@ export default function BibleDocumentView() {
         chapter,
         loadedChapterKey,
     );
+    useReferenceNavigation(containerRef, {
+        contentReady: verses.length > 0 && !loading,
+        documentType: 'bible',
+        title: activeTab?.title,
+        sermonId: activeTab?.sermonId,
+        languageCode: bibleLang,
+    });
 
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: verses.length > 0 && !loading,
@@ -264,13 +281,18 @@ export default function BibleDocumentView() {
     });
 
     const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
-    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+    const { matchOffsets } = useMatchNavigation(
+        activeTabKey,
+        search,
+        paragraphTexts,
+        !!restoreIdentity,
+    );
 
     const tts = useTts(paragraphs, bibleLang, activeTab?.title ?? '');
 
     const contentForMenu = useMemo(
-        () => buildContentForMenu(activeTab, paragraphs),
-        [activeTab, paragraphs],
+        () => buildContentForMenu(activeTab, paragraphs, bibleLang),
+        [activeTab, paragraphs, bibleLang],
     );
     const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'bible', verses);
     const { highlightsByParagraph } = useDocumentHighlights(

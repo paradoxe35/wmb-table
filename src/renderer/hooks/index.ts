@@ -1,12 +1,78 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
-import type { SermonMetaWithTraductions } from '@shared/types';
+import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
+import type {
+    DocumentType,
+    NoteItemReference,
+    ParagraphReference,
+    SermonMetaWithTraductions,
+    SubjectDocumentItem,
+} from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { capitalize } from 'lodash';
+import { isParagraphReference } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
+
+type OpenDocumentRequest = {
+    title: string;
+    sermonId: string;
+    documentType: DocumentType;
+    translationId?: number;
+    bibleBook?: string;
+    bibleChapter?: string;
+};
+
+function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: number) => void) {
+    const currentTab = useSermonStore.getState().tabs.find((tab) => tab.active);
+    const container = document.getElementById(DOCUMENT_CONTAINER_ID);
+    if (!currentTab || !container) return;
+    updateTabScroll(`${currentTab.title}::${currentTab.sermonId}`, container.scrollTop);
+}
+
+function resolveReferenceDocumentType(
+    reference:
+        | ParagraphReference
+        | SubjectDocumentItem['documentHtmlTree']
+        | NoteItemReference['documentHtmlTree'],
+): DocumentType {
+    if (isParagraphReference(reference) && reference.documentType) {
+        return reference.documentType;
+    }
+    return 'sermon';
+}
+
+export function buildReferenceOpenRequest(
+    title: string,
+    sermonId: string,
+    reference: SubjectDocumentItem['documentHtmlTree'] | NoteItemReference['documentHtmlTree'],
+): OpenDocumentRequest {
+    const documentType = resolveReferenceDocumentType(reference);
+    if (documentType === 'custom') {
+        return {
+            title,
+            sermonId,
+            documentType,
+        };
+    }
+    if (documentType === 'bible' && isParagraphReference(reference)) {
+        return {
+            title,
+            sermonId,
+            documentType,
+            bibleBook: reference.bibleBook,
+            bibleChapter: reference.bibleChapter,
+        };
+    }
+    return {
+        title,
+        sermonId,
+        documentType: 'sermon',
+        translationId: isParagraphReference(reference) ? reference.translationId : undefined,
+    };
+}
 
 export function useValueStateRef<T>(value: T) {
     const ref = useRef<T>(value);
@@ -97,41 +163,74 @@ export function useInitApp() {
 export function useOpenDocument() {
     const addTab = useSermonStore((s) => s.addTab);
     const setMainView = useAppStore((s) => s.setMainView);
+    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
 
     return useCallback(
         (title: string, sermonId: string, translationId?: number) => {
+            snapshotActiveDocumentScroll(updateTabScroll);
             addTab(title, sermonId, 'sermon', undefined, translationId);
             setMainView('document');
         },
-        [addTab, setMainView],
+        [addTab, setMainView, updateTabScroll],
     );
 }
 
 export function useOpenCustomDocument() {
     const addTab = useSermonStore((s) => s.addTab);
     const setMainView = useAppStore((s) => s.setMainView);
+    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
 
     return useCallback(
         (title: string, sermonId: string) => {
+            snapshotActiveDocumentScroll(updateTabScroll);
             addTab(title, sermonId, 'custom');
             setMainView('document');
         },
-        [addTab, setMainView],
+        [addTab, setMainView, updateTabScroll],
     );
 }
 
 export function useOpenBibleChapter() {
     const addTab = useSermonStore((s) => s.addTab);
     const setMainView = useAppStore((s) => s.setMainView);
+    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
 
     return useCallback(
         (bookName: string, bookCode: string, chapter: string) => {
+            snapshotActiveDocumentScroll(updateTabScroll);
             const title = `${bookName} ${chapter}`;
             const sermonId = `${bookCode}:${chapter}`;
             addTab(title, sermonId, 'bible', undefined, undefined, bookCode, chapter);
             setMainView('document');
         },
-        [addTab, setMainView],
+        [addTab, setMainView, updateTabScroll],
+    );
+}
+
+export function useOpenDocumentRequest() {
+    const openDocument = useOpenDocument();
+    const openCustomDocument = useOpenCustomDocument();
+    const openBibleChapter = useOpenBibleChapter();
+
+    return useCallback(
+        (request: OpenDocumentRequest) => {
+            if (request.documentType === 'custom') {
+                openCustomDocument(request.title, request.sermonId);
+                return;
+            }
+
+            if (request.documentType === 'bible' && request.bibleBook && request.bibleChapter) {
+                const bookName = request.title.replace(
+                    new RegExp(`\\s+${request.bibleChapter}$`),
+                    '',
+                );
+                openBibleChapter(bookName, request.bibleBook, request.bibleChapter);
+                return;
+            }
+
+            openDocument(request.title, request.sermonId, request.translationId);
+        },
+        [openBibleChapter, openCustomDocument, openDocument],
     );
 }
 

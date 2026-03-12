@@ -7,6 +7,7 @@ import {
     useSearchStore,
     useCustomDocumentsStore,
     useAppStore,
+    selectActiveTabKey,
     selectActiveTabTitle,
 } from '@renderer/stores';
 import type { SermonContent } from '@shared/types';
@@ -58,6 +59,7 @@ function parseContentToParagraphs(content: string): DocumentParagraph[] {
 function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
     const { t } = useTranslation();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
@@ -71,7 +73,7 @@ function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof u
                         type="text"
                         size="small"
                         icon={<SearchOutlined />}
-                        onClick={() => openSearchBar()}
+                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
                         aria-label={t('Rechercher')}
                     />
                 </Tooltip>
@@ -90,9 +92,10 @@ export default function CustomDocumentView() {
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-
-    useReferenceNavigation(containerRef);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const currentMatchIndex = useSearchStore((s) =>
+        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
+    );
 
     const customDoc = useMemo(
         () => customDocuments.find((d) => d.title === activeTitle),
@@ -103,6 +106,13 @@ export default function CustomDocumentView() {
         customDoc?.id,
         docContent?.id,
     );
+    useReferenceNavigation(containerRef, {
+        contentReady: !!docContent,
+        documentType: 'custom',
+        title: customDoc?.title,
+        sermonId: customDoc?.sermonId,
+        customDocumentId: customDoc?.id,
+    });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!docContent,
         restoreIdentity,
@@ -115,7 +125,12 @@ export default function CustomDocumentView() {
     );
 
     const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
-    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+    const { matchOffsets } = useMatchNavigation(
+        activeTabKey,
+        search,
+        paragraphTexts,
+        !!restoreIdentity,
+    );
 
     // Build a minimal SermonContent-like object for context menu
     const contentForMenu = useMemo((): SermonContent | null => {

@@ -1,5 +1,11 @@
 import { useMemo, useRef } from 'react';
-import { useAppStore, useSermonStore, useSearchStore, selectActiveTab } from '@renderer/stores';
+import {
+    useAppStore,
+    useSermonStore,
+    useSearchStore,
+    selectActiveTab,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
 import { ParagraphList } from './tts-controls';
@@ -21,8 +27,10 @@ export default function SermonDocumentView() {
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-    useReferenceNavigation(containerRef);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const currentMatchIndex = useSearchStore((s) =>
+        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
+    );
     const contextMenuItems = useContextMenuItems(content, contextTargetRef);
 
     const activeTab = useSermonStore(selectActiveTab);
@@ -36,6 +44,13 @@ export default function SermonDocumentView() {
         activeLanguage,
         content,
     );
+    useReferenceNavigation(containerRef, {
+        contentReady: !!content,
+        documentType: 'sermon',
+        title: activeTab?.title,
+        sermonId: activeTab?.sermonId,
+        translationId: tabTranslationId ?? content?.meta.translationId,
+    });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!content,
         restoreIdentity,
@@ -58,7 +73,12 @@ export default function SermonDocumentView() {
 
     const tts = useTts(ttsParagraphs, content?.meta.languageCode ?? '', content?.meta.title ?? '');
 
-    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+    const { matchOffsets } = useMatchNavigation(
+        activeTabKey,
+        search,
+        paragraphTexts,
+        !!restoreIdentity,
+    );
     const { highlightsByParagraph } = useDocumentHighlights(
         content?.meta.title ?? null,
         activeTab?.sermonId,

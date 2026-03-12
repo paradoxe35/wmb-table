@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { List, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
+import { getTabKey } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
 import { useSearchStore, useSermonStore, useAppStore } from '@renderer/stores';
@@ -26,11 +27,11 @@ function SnippetRow({
     hitTitle: string;
     sermonId: string;
     translationId: number;
-    onNavigate: (paragraphIndex: number) => void;
+    onNavigate: (paragraphIndex: number, matchIndex: number) => void;
 }) {
     return (
         <DocumentViewer
-            onItemClick={() => onNavigate(snippet.paragraphIndex)}
+            onItemClick={() => onNavigate(snippet.paragraphIndex, snippet.matchIndex)}
             name={hitTitle}
             sermonId={sermonId}
             translationId={translationId}
@@ -50,8 +51,7 @@ function SnippetRow({
 
 export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit; query: string }) {
     const { t } = useTranslation();
-    const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
-    const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQuery);
     const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
@@ -61,24 +61,17 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const activeLanguage = useAppStore((s) => s.activeLanguage);
 
     const navigateTo = useCallback(
-        (paragraphIndex: number) => {
-            setDocumentViewQueries((docs) => {
-                const filtered = docs.filter((d) => d.documentTitle !== hit.title);
-                return [
-                    ...filtered,
-                    {
-                        documentTitle: hit.title,
-                        textContentLength: 0,
-                        matches: [],
-                        term: query,
-                        mode: searchMode,
-                    },
-                ];
+        (paragraphIndex: number, matchIndex: number) => {
+            const tabKey = getTabKey({ title: hit.title, sermonId: hit.sermonId });
+            setDocumentViewQuery(tabKey, {
+                documentKey: tabKey,
+                documentTitle: hit.title,
+                textContentLength: 0,
+                matches: [],
+                term: query,
+                mode: searchMode,
             });
-            openSearchBar(true);
-            if (paragraphIndex <= 0) {
-                requestScrollToMatch();
-            }
+            requestScrollToMatch(tabKey, matchIndex);
             if (paragraphIndex > 0) {
                 setPendingNavigation({
                     documentTitle: hit.title,
@@ -92,9 +85,8 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
         },
         [
             hit,
-            setDocumentViewQueries,
-            openSearchBar,
             requestScrollToMatch,
+            setDocumentViewQuery,
             setPendingNavigation,
             query,
             searchMode,
@@ -103,7 +95,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     );
 
     const handleTitleClick = useCallback(() => {
-        navigateTo(hit.paragraphIndex);
+        navigateTo(hit.paragraphIndex, 0);
     }, [navigateTo, hit.paragraphIndex]);
 
     const displayTitle = getSermonById(hit.sermonId)?.title ?? hit.title;

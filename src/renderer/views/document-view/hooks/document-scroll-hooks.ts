@@ -18,6 +18,7 @@ type ResolvedScrollRestoreOptions = {
 type RestoreState = {
     restoreScrollTop: number;
     restoreToken: string | null;
+    saveToken: string | null;
 };
 
 function resolveScrollRestoreOptions(
@@ -35,6 +36,7 @@ function buildRestoreState({
     activeTabKey,
     activeTabScrollY,
     contentReady,
+    rememberReadingPosition,
     readingPositionKey,
     restoreIdentity,
     savedPosition,
@@ -43,12 +45,15 @@ function buildRestoreState({
     activeTabKey: string | null;
     activeTabScrollY: number | undefined;
     contentReady: boolean;
+    rememberReadingPosition: boolean;
     readingPositionKey: string | null;
     restoreIdentity: string | null;
     savedPosition: ReadingPosition | null;
     savedPositionLoaded: boolean;
 }): RestoreState {
-    const restoreScrollTop = activeTabScrollY ?? savedPosition?.scrollY ?? 0;
+    const restoreScrollTop = rememberReadingPosition
+        ? (savedPosition?.scrollY ?? activeTabScrollY ?? 0)
+        : (activeTabScrollY ?? 0);
     const hasImmediateScroll = activeTabScrollY != null;
     const waitingOnPersistedPosition = !!readingPositionKey && !savedPositionLoaded;
     const canRestore =
@@ -58,7 +63,11 @@ function buildRestoreState({
         restoreScrollTop,
         restoreToken:
             canRestore && activeTabKey && restoreIdentity
-                ? `${activeTabKey}::${restoreIdentity}::${restoreScrollTop}`
+                ? `${activeTabKey}::${restoreIdentity}::${hasImmediateScroll ? 'tab' : 'saved'}`
+                : null,
+        saveToken:
+            contentReady && activeTabKey && restoreIdentity
+                ? `${activeTabKey}::${restoreIdentity}`
                 : null,
     };
 }
@@ -93,10 +102,11 @@ export function useScrollAndZoom(
     const { contentReady, restoreIdentity, readingPositionKey } = resolvedOptions;
 
     const zoom = activeTab?.zoom ?? 100;
-    const { restoreScrollTop, restoreToken } = buildRestoreState({
+    const { restoreScrollTop, restoreToken, saveToken } = buildRestoreState({
         activeTabKey,
         activeTabScrollY: activeTab?.scrollY,
         contentReady,
+        rememberReadingPosition,
         readingPositionKey,
         restoreIdentity,
         savedPosition,
@@ -156,16 +166,16 @@ export function useScrollAndZoom(
 
     useLayoutEffect(() => {
         const el = containerRef.current;
-        if (!el || !restoreToken || !activeTabKey) return;
+        if (!el || !saveToken || !activeTabKey) return;
         let lastScrollTop = el.scrollTop;
         const handler = debounce(() => {
-            updateTabScroll(activeTabKey, el.scrollTop);
             if (readingPositionKey) {
-                void window.api.documents.saveReadingPosition(readingPositionKey, el.scrollTop);
+                void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollTop);
             }
         }, 500);
         const onScroll = () => {
             lastScrollTop = el.scrollTop;
+            updateTabScroll(activeTabKey, lastScrollTop);
             handler();
         };
         el.addEventListener('scroll', onScroll);
@@ -177,7 +187,7 @@ export function useScrollAndZoom(
                 void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollTop);
             }
         };
-    }, [activeTabKey, readingPositionKey, restoreToken, updateTabScroll, containerRef]);
+    }, [activeTabKey, readingPositionKey, saveToken, updateTabScroll, containerRef]);
 
     return { zoom };
 }
