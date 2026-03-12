@@ -13,6 +13,9 @@ import { getTabKey } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
 import DocumentBody from './document-body';
 import {
+    buildBibleChapterKey,
+    resolveBibleScrollPersistence,
+    useBibleChapterContent,
     useScrollAndZoom,
     useSearchHighlight,
     useMatchNavigation,
@@ -231,23 +234,11 @@ export default function BibleDocumentView() {
     const search = useSearchHighlight();
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
 
-    const [verses, setVerses] = useState<BibleBook[]>([]);
-    const [loading, setLoading] = useState(false);
-    const { zoom } = useScrollAndZoom(containerRef, verses.length > 0 && !loading);
     const [bibleLang, setBibleLang] = useState('');
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
-
-    useEffect(() => {
-        if (!bookCode || !chapter) return;
-        setLoading(true);
-        window.api.bible
-            .getBooks({ book: bookCode, chapter })
-            .then(setVerses)
-            .catch(() => setVerses([]))
-            .finally(() => setLoading(false));
-    }, [bookCode, chapter]);
+    const { verses, loading } = useBibleChapterContent(bookCode, chapter);
 
     useEffect(() => {
         window.api.bible
@@ -257,6 +248,21 @@ export default function BibleDocumentView() {
     }, []);
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
+    const loadedChapterKey = verses[0]
+        ? buildBibleChapterKey(verses[0].book, verses[0].chapter)
+        : null;
+    const { restoreIdentity, readingPositionKey } = resolveBibleScrollPersistence(
+        bookCode,
+        chapter,
+        loadedChapterKey,
+    );
+
+    const { zoom } = useScrollAndZoom(containerRef, {
+        contentReady: verses.length > 0 && !loading,
+        restoreIdentity,
+        readingPositionKey,
+    });
+
     const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
     const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
 

@@ -23,6 +23,7 @@ import type {
     BookRequest,
     DocumentHtmlTree,
     DocumentTab,
+    ReadingPosition,
     HighlightCreateData,
     HighlightUpdateData,
     ParagraphReference,
@@ -70,6 +71,10 @@ const api = {
         getTabs: (langCode: string) => invoke(DocumentChannels.getTabs, langCode),
         saveTabs: (langCode: string, tabs: DocumentTab[]) =>
             invoke(DocumentChannels.saveTabs, langCode, tabs),
+        getReadingPosition: (documentKey: string): Promise<ReadingPosition | null> =>
+            invoke(DocumentChannels.getReadingPosition, documentKey),
+        saveReadingPosition: (documentKey: string, scrollY: number, scrollX?: number) =>
+            invoke(DocumentChannels.saveReadingPosition, documentKey, scrollY, scrollX),
     },
 
     languages: {
@@ -198,6 +203,9 @@ const api = {
         initialize: () => invoke(AppChannels.initialize),
         getActiveLanguage: () => invoke(AppChannels.getActiveLanguage),
         setActiveLanguage: (langCode: string) => invoke(AppChannels.setActiveLanguage, langCode),
+        getRememberReadingPosition: () => invoke(AppChannels.getRememberReadingPosition),
+        setRememberReadingPosition: (value: boolean) =>
+            invoke(AppChannels.setRememberReadingPosition, value),
         restart: () => invoke(AppChannels.restart),
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
         startDownloadUpdate: () => invoke(AppChannels.startDownloadUpdate),

@@ -85,6 +85,12 @@ export interface SermonTranslation {
 
 export type DocumentType = 'sermon' | 'custom' | 'bible';
 
+export interface ReadingPosition {
+    documentKey: string;
+    scrollY: number;
+    scrollX: number;
+}
+
 export type DocumentTab = {
     title: string;
     sermonId: string;
@@ -516,6 +522,7 @@ export interface AppSettingsStatus {
     initialized: boolean;
     lastCheckBackupStatus: Date;
     activeLanguage: string | null;
+    rememberReadingPosition: boolean;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {

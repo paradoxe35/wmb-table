@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { Button, Space, Tooltip } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -9,10 +9,12 @@ import {
     useAppStore,
     selectActiveTabTitle,
 } from '@renderer/stores';
-import type { CustomDocumentContent, SermonContent } from '@shared/types';
+import type { SermonContent } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
 import DocumentBody from './document-body';
 import {
+    resolveCustomDocumentScrollPersistence,
+    useCustomDocumentContent,
     useScrollAndZoom,
     useSearchHighlight,
     useMatchNavigation,
@@ -87,9 +89,6 @@ export default function CustomDocumentView() {
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
-    const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
-    const [loading, setLoading] = useState(false);
-    const { zoom } = useScrollAndZoom(containerRef, !!docContent);
     const search = useSearchHighlight();
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
 
@@ -99,19 +98,16 @@ export default function CustomDocumentView() {
         () => customDocuments.find((d) => d.title === activeTitle),
         [customDocuments, activeTitle],
     );
-
-    useEffect(() => {
-        if (!customDoc) {
-            setDocContent(null);
-            return;
-        }
-        setLoading(true);
-        window.api.app
-            .getCustomDocumentContent(customDoc.id)
-            .then((content) => setDocContent(content))
-            .catch(() => setDocContent(null))
-            .finally(() => setLoading(false));
-    }, [customDoc?.id]);
+    const { content: docContent, loading } = useCustomDocumentContent(customDoc?.id);
+    const { restoreIdentity, readingPositionKey } = resolveCustomDocumentScrollPersistence(
+        customDoc?.id,
+        docContent?.id,
+    );
+    const { zoom } = useScrollAndZoom(containerRef, {
+        contentReady: !!docContent,
+        restoreIdentity,
+        readingPositionKey,
+    });
 
     const paragraphs = useMemo(
         () => parseContentToParagraphs(docContent?.content ?? ''),

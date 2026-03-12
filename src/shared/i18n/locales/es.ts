@@ -24,6 +24,7 @@ const es: Record<string, string> = {
 
     // ── Settings index ──
     Général: 'General',
+    'Vue document': 'Vista del documento',
     Langues: 'Idiomas',
     'Lecture audio': 'Texto a voz',
     Sauvegarde: 'Copia de seguridad',
@@ -494,6 +495,10 @@ const es: Record<string, string> = {
     disponible: 'disponible',
     "Erreur lors de l'initialisation de l'application": 'Error de inicialización de la aplicación',
     'Une erreur inattendue est survenue.': 'Se produjo un error inesperado.',
+    'Mémoriser la position de lecture': 'Recordar la posición de lectura',
+    "Rouvrez un document là où vous l'aviez laissé la dernière fois.":
+        'Reabra un documento donde lo dejó la última vez.',
+    "Impossible d'enregistrer le paramètre": 'No se pudo guardar la configuración',
     chapitres: 'capítulos',
     chapitre: 'capítulo',
 };

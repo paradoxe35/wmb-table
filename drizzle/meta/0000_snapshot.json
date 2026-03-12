@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "3f82433a-8024-47b4-88cf-e80d403d8239",
+    "id": "ea16d6ac-be55-4db0-9dfa-b9c6690d1545",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "audio_document_last_play": {
@@ -275,6 +275,14 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
+                },
+                "remember_reading_position": {
+                    "name": "remember_reading_position",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": true
                 }
             },
             "indexes": {},
@@ -818,6 +826,47 @@
                     "onUpdate": "no action"
                 }
             },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "reading_positions": {
+            "name": "reading_positions",
+            "columns": {
+                "document_key": {
+                    "name": "document_key",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "scroll_y": {
+                    "name": "scroll_y",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "scroll_x": {
+                    "name": "scroll_x",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "(datetime('now'))"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}

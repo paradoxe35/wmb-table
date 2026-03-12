@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Space, Tag, Typography, message } from 'antd';
 import {
+    BookOutlined,
     CheckCircleOutlined,
     CloudSyncOutlined,
-    BookOutlined,
     GlobalOutlined,
     PauseCircleOutlined,
     ReloadOutlined,

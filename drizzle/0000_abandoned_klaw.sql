@@ -43,7 +43,8 @@ CREATE TABLE `configurations` (
 	`app_id` text NOT NULL,
 	`initialized` integer DEFAULT false NOT NULL,
 	`last_check_backup_status` text DEFAULT (datetime('now')),
-	`active_language` text
+	`active_language` text,
+	`remember_reading_position` integer DEFAULT true NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `custom_documents` (
@@ -127,6 +128,13 @@ CREATE TABLE `notes_references` (
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`note_id`) REFERENCES `notes`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE TABLE `reading_positions` (
+	`document_key` text PRIMARY KEY NOT NULL,
+	`scroll_y` integer DEFAULT 0 NOT NULL,
+	`scroll_x` integer DEFAULT 0 NOT NULL,
+	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint
 CREATE TABLE `sidebar_status` (

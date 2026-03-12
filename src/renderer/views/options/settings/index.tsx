@@ -5,6 +5,7 @@ import {
     CloudSyncOutlined,
     GlobalOutlined,
     InfoCircleOutlined,
+    ReadOutlined,
     ReloadOutlined,
     SettingOutlined,
     SoundOutlined,
@@ -15,11 +16,13 @@ import LanguagesTab from './languages-tab';
 import BackupTab from './backup-tab';
 import UpdateTab from './update-tab';
 import TtsTab from './tts-tab';
+import DocumentViewTab from './document-view-tab';
 
 const { Title, Text } = Typography;
 
 const TAB_KEYS = {
     general: 'general',
+    documentView: 'documentView',
     languages: 'languages',
     tts: 'tts',
     backup: 'backup',
@@ -70,6 +73,15 @@ export default function Settings() {
                     </span>
                 ),
                 children: <GeneralTab />,
+            },
+            {
+                key: TAB_KEYS.documentView,
+                label: (
+                    <span>
+                        <ReadOutlined /> {t('Vue document')}
+                    </span>
+                ),
+                children: <DocumentViewTab />,
             },
             {
                 key: TAB_KEYS.languages,

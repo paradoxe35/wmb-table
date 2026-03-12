@@ -32,6 +32,14 @@ export function registerAppHandlers(): void {
         switchBibleLanguage(langCode);
     });
 
+    registerHandler(AppChannels.getRememberReadingPosition, async () => {
+        return configRepo.getRememberReadingPosition();
+    });
+
+    registerHandler(AppChannels.setRememberReadingPosition, async (_event, value) => {
+        configRepo.setRememberReadingPosition(value);
+    });
+
     registerHandler(AppChannels.openExternal, async (_event, url) => {
         await shell.openExternal(url);
     });

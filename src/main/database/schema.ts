@@ -11,6 +11,9 @@ export const configurations = sqliteTable('configurations', {
     initialized: integer('initialized', { mode: 'boolean' }).notNull().default(false),
     lastCheckBackupStatus: text('last_check_backup_status').default(sql`(datetime('now'))`),
     activeLanguage: text('active_language'),
+    rememberReadingPosition: integer('remember_reading_position', { mode: 'boolean' })
+        .notNull()
+        .default(true),
 });
 
 // ---------------------------------------------------------------------------
@@ -72,6 +75,13 @@ export const tabs = sqliteTable('tabs', {
     id: text('id').primaryKey(),
     languageCode: text('language_code').notNull(),
     datas: text('datas').notNull(), // JSON DocumentTab[]
+});
+
+export const readingPositions = sqliteTable('reading_positions', {
+    documentKey: text('document_key').primaryKey(),
+    scrollY: integer('scroll_y').notNull().default(0),
+    scrollX: integer('scroll_x').notNull().default(0),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
 // ---------------------------------------------------------------------------

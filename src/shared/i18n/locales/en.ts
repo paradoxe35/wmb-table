@@ -24,6 +24,7 @@ const en: Record<string, string> = {
 
     // ── Settings index ──
     Général: 'General',
+    'Vue document': 'Document View',
     Langues: 'Languages',
     'Lecture audio': 'Text-to-Speech',
     Sauvegarde: 'Backup',
@@ -490,6 +491,10 @@ const en: Record<string, string> = {
     disponible: 'available',
     "Erreur lors de l'initialisation de l'application": 'Application initialization error',
     'Une erreur inattendue est survenue.': 'An unexpected error occurred.',
+    'Mémoriser la position de lecture': 'Remember reading position',
+    "Rouvrez un document là où vous l'aviez laissé la dernière fois.":
+        'Reopen a document where you left off last time.',
+    "Impossible d'enregistrer le paramètre": 'Unable to save the setting',
     chapitres: 'chapters',
     chapitre: 'chapter',
 };

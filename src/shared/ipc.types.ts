@@ -1,5 +1,6 @@
 import type {
     DocumentTab,
+    ReadingPosition,
     HighlightItem,
     Suggestions,
     SidebarStatus,
@@ -72,6 +73,8 @@ export const DocumentChannels = {
     getTraductionsForSermon: 'documents:getTraductionsForSermon',
     getTabs: 'documents:getTabs',
     saveTabs: 'documents:saveTabs',
+    getReadingPosition: 'documents:getReadingPosition',
+    saveReadingPosition: 'documents:saveReadingPosition',
 } as const;
 
 export const LanguageChannels = {
@@ -163,6 +166,8 @@ export const AppChannels = {
     initialize: 'app:initialize',
     getActiveLanguage: 'app:getActiveLanguage',
     setActiveLanguage: 'app:setActiveLanguage',
+    getRememberReadingPosition: 'app:getRememberReadingPosition',
+    setRememberReadingPosition: 'app:setRememberReadingPosition',
     openExternal: 'app:openExternal',
     restart: 'app:restart',
     getUpdateStatus: 'app:getUpdateStatus',
@@ -259,6 +264,11 @@ export interface InvokeChannelMap {
     };
     [DocumentChannels.getTabs]: { args: [string]; return: DocumentTab[] };
     [DocumentChannels.saveTabs]: { args: [string, DocumentTab[]]; return: void };
+    [DocumentChannels.getReadingPosition]: { args: [string]; return: ReadingPosition | null };
+    [DocumentChannels.saveReadingPosition]: {
+        args: [string, number, number?];
+        return: ReadingPosition;
+    };
 
     // Languages
     [LanguageChannels.getInstalled]: { args: []; return: InstalledLanguage[] };
@@ -388,6 +398,8 @@ export interface InvokeChannelMap {
     [AppChannels.initialize]: { args: []; return: void };
     [AppChannels.getActiveLanguage]: { args: []; return: string | null };
     [AppChannels.setActiveLanguage]: { args: [string]; return: void };
+    [AppChannels.getRememberReadingPosition]: { args: []; return: boolean };
+    [AppChannels.setRememberReadingPosition]: { args: [boolean]; return: void };
     [AppChannels.openExternal]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };

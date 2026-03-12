@@ -10,6 +10,7 @@ interface AppState {
     optionView: OptionViewValue;
     sidebarHidden: boolean;
     activeLanguage: string | null;
+    rememberReadingPosition: boolean;
     error: string | null;
 
     setLoaded(v: boolean): void;
@@ -18,6 +19,7 @@ interface AppState {
     setOptionView(v: OptionViewValue): void;
     setSidebarHidden(v: boolean): void;
     setActiveLanguage(code: string | null): void;
+    setRememberReadingPosition(value: boolean): void;
     setError(error: string | null): void;
     showOptions(option: OptionViewValue): void;
     toggleSidebar(): void;
@@ -30,6 +32,7 @@ export const useAppStore = create<AppState>((set) => ({
     optionView: 'search',
     sidebarHidden: false,
     activeLanguage: null,
+    rememberReadingPosition: true,
     error: null,
 
     setLoaded: (v) => set({ loaded: v }),
@@ -38,6 +41,7 @@ export const useAppStore = create<AppState>((set) => ({
     setOptionView: (v) => set({ optionView: v }),
     setSidebarHidden: (v) => set({ sidebarHidden: v }),
     setActiveLanguage: (code) => set({ activeLanguage: code }),
+    setRememberReadingPosition: (value) => set({ rememberReadingPosition: value }),
     setError: (error) => set({ error }),
     showOptions: (option) => set({ mainView: 'options', optionView: option }),
     toggleSidebar: () => set((s) => ({ sidebarHidden: !s.sidebarHidden })),

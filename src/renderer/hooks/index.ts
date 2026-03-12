@@ -34,6 +34,7 @@ export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
     const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
+    const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
 
@@ -54,8 +55,10 @@ export function useInitApp() {
                     window.api.app.getActiveLanguage(),
                     window.api.app.getSidebarStatus(),
                 ]);
+                const rememberReadingPosition = await window.api.app.getRememberReadingPosition();
 
                 if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
+                setRememberReadingPosition(rememberReadingPosition);
 
                 // Validate active language is still installed
                 const validLang = langCode && installed.some((l) => l.code === langCode);
@@ -80,7 +83,15 @@ export function useInitApp() {
                 setLoaded(true);
             }
         })();
-    }, [setLoaded, setSidebarHidden, setActiveLanguage, setSermons, setTabs, setError]);
+    }, [
+        setLoaded,
+        setSidebarHidden,
+        setActiveLanguage,
+        setRememberReadingPosition,
+        setSermons,
+        setTabs,
+        setError,
+    ]);
 }
 
 export function useOpenDocument() {
