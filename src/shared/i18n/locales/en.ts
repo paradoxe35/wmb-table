@@ -78,13 +78,17 @@ const en: Record<string, string> = {
         'Versatile, suitable for short answers and offline work.',
 
     // ── AI custom providers ──
-    'Fournisseurs personnalisés': 'Custom providers',
     'Ajouter un fournisseur': 'Add a provider',
-    'Ajoutez un service compatible OpenAI API.': 'Add an OpenAI-compatible service.',
-    'Aucun fournisseur personnalisé.': 'No custom provider.',
+    'Ajouter un fournisseur personnalisé': 'Add a custom provider',
     'Supprimer ce fournisseur ?': 'Delete this provider?',
-    'ex: mon-service': 'e.g. my-service',
+    'ex: Mon Service IA': 'e.g. My AI Service',
     'ex: gpt-4o-mini': 'e.g. gpt-4o-mini',
+
+    // ── AI provider test ──
+    'Tester la connexion': 'Test connection',
+    Connecté: 'Connected',
+    Échec: 'Failed',
+    'La connexion a échoué.': 'Connection failed.',
 
     // ── AI chat ──
     "L'assistant IA est désactivé.": 'The AI assistant is disabled.',

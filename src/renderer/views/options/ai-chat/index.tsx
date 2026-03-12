@@ -1,11 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, Empty } from 'antd';
+import { Alert, Button, Card, Empty, Typography } from 'antd';
 import { RobotOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
 import ChatConversationList from './chat-conversation-list';
 import ChatInput from './chat-input';
 import ChatMessageList from './chat-message-list';
+
+const { Text } = Typography;
+
+function DisabledState() {
+    const { t } = useTranslation();
+    const showOptions = useAppStore((s) => s.showOptions);
+
+    return (
+        <Card>
+            <Empty
+                image={<RobotOutlined style={{ fontSize: 48, color: '#8c8c8c' }} />}
+                description={<Text type="secondary">{t("L'assistant IA est désactivé.")}</Text>}
+            >
+                <Button type="primary" onClick={() => showOptions('settings')}>
+                    {t('Ouvrir les paramètres')}
+                </Button>
+            </Empty>
+        </Card>
+    );
+}
 
 export default function AiChatView() {
     const { t } = useTranslation();
@@ -22,7 +42,6 @@ export default function AiChatView() {
     const stopGeneration = useAiChatStore((s) => s.stopGeneration);
     const sending = useAiChatStore((s) => s.sending);
     const error = useAiChatStore((s) => s.error);
-    const showOptions = useAppStore((s) => s.showOptions);
     const [draft, setDraft] = useState('');
 
     useEffect(() => {
@@ -34,21 +53,20 @@ export default function AiChatView() {
         [activeConversationId, messagesByConversation],
     );
 
-    if (!settings) return null;
+    if (!settings) {
+        return null;
+    }
 
     if (!settings.enabled) {
-        return (
-            <Card>
-                <Empty
-                    image={<RobotOutlined style={{ fontSize: 48, color: '#8c8c8c' }} />}
-                    description={t("L'assistant IA est désactivé.")}
-                >
-                    <Button type="primary" onClick={() => showOptions('settings')}>
-                        {t('Ouvrir les paramètres')}
-                    </Button>
-                </Empty>
-            </Card>
-        );
+        return <DisabledState />;
+    }
+
+    function handleSend() {
+        if (!draft.trim()) {
+            return;
+        }
+        void sendMessage(draft);
+        setDraft('');
     }
 
     return (
@@ -63,9 +81,22 @@ export default function AiChatView() {
             />
 
             <div
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, gap: 12 }}
+                style={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    minHeight: 0,
+                }}
             >
-                {error ? <Alert type="error" showIcon closable message={error} /> : null}
+                {error ? (
+                    <Alert
+                        type="error"
+                        showIcon
+                        closable
+                        message={t(error)}
+                        style={{ marginBottom: 8 }}
+                    />
+                ) : null}
 
                 <ChatMessageList messages={activeMessages} sending={sending} />
 
@@ -73,10 +104,7 @@ export default function AiChatView() {
                     draft={draft}
                     sending={sending}
                     onDraftChange={setDraft}
-                    onSend={() => {
-                        void sendMessage(draft);
-                        setDraft('');
-                    }}
+                    onSend={handleSend}
                     onStop={() => void stopGeneration()}
                 />
             </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Empty, Spin, Typography } from 'antd';
 import { LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
+import Markdown from 'react-markdown';
 import type { AiMessage } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
 import ChatToolResult from './chat-tool-result';
@@ -15,7 +16,7 @@ function MessageBubble({ message, sending }: { message: AiMessage; sending: bool
         <div
             style={{
                 display: 'flex',
-                gap: 8,
+                gap: 10,
                 alignSelf: isUser ? 'flex-end' : 'flex-start',
                 maxWidth: '85%',
                 flexDirection: isUser ? 'row-reverse' : 'row',
@@ -23,8 +24,8 @@ function MessageBubble({ message, sending }: { message: AiMessage; sending: bool
         >
             <div
                 style={{
-                    width: 28,
-                    height: 28,
+                    width: 30,
+                    height: 30,
                     borderRadius: '50%',
                     background: isUser
                         ? 'var(--ant-color-primary)'
@@ -33,6 +34,7 @@ function MessageBubble({ message, sending }: { message: AiMessage; sending: bool
                     alignItems: 'center',
                     justifyContent: 'center',
                     flexShrink: 0,
+                    marginTop: 2,
                 }}
             >
                 {isUser ? (
@@ -43,8 +45,8 @@ function MessageBubble({ message, sending }: { message: AiMessage; sending: bool
             </div>
             <div
                 style={{
-                    padding: '8px 12px',
-                    borderRadius: 12,
+                    padding: isUser ? '8px 14px' : '6px 14px',
+                    borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
                     background: isUser
                         ? 'var(--ant-color-primary-bg)'
                         : 'var(--ant-color-bg-layout)',
@@ -53,16 +55,19 @@ function MessageBubble({ message, sending }: { message: AiMessage; sending: bool
             >
                 {isStreaming ? (
                     <Spin indicator={<LoadingOutlined spin />} size="small" />
-                ) : (
+                ) : isUser ? (
                     <Text style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
+                ) : (
+                    <div className="ai-markdown">
+                        <Markdown>{message.content}</Markdown>
+                    </div>
                 )}
                 {message.toolResults.length > 0 ? (
-                    <div style={{ marginTop: 6 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
                         {message.toolResults.map((result) => (
                             <ChatToolResult
                                 key={`${result.toolCallId}-${result.name}`}
                                 name={result.name}
-                                output={result.output}
                             />
                         ))}
                     </div>
@@ -95,14 +100,23 @@ export default function ChatMessageList({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 12,
-                padding: '12px 0',
+                padding: '12px 4px',
             }}
         >
             {messages.length === 0 ? (
-                <Empty
-                    image={<RobotOutlined style={{ fontSize: 36, color: '#8c8c8c' }} />}
-                    description={t('Posez votre question...')}
-                />
+                <div
+                    style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Empty
+                        image={<RobotOutlined style={{ fontSize: 40, color: '#8c8c8c' }} />}
+                        description={<Text type="secondary">{t('Posez votre question...')}</Text>}
+                    />
+                </div>
             ) : (
                 messages.map((msg) => (
                     <MessageBubble key={msg.id} message={msg} sending={sending} />

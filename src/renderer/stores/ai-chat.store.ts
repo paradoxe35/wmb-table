@@ -4,6 +4,7 @@ import type {
     AiMessage,
     AiModelScanResult,
     AiProviderDefinition,
+    AiProviderTestResult,
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
@@ -33,6 +34,12 @@ interface AiChatState {
     sendMessage(content: string, overrideLanguageCode?: string): Promise<void>;
     stopGeneration(): Promise<void>;
     scanLocalModels(): Promise<void>;
+    testProvider(input: {
+        providerId: string;
+        model: string;
+        apiKey?: string;
+        baseUrl?: string;
+    }): Promise<AiProviderTestResult>;
 }
 
 function upsertMessage(messages: AiMessage[], message: AiMessage): AiMessage[] {
@@ -295,5 +302,9 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
                 error: toErrorMessage(error, 'Le scan des modèles locaux a échoué.'),
             });
         }
+    },
+
+    testProvider: async (input) => {
+        return window.api.ai.testProvider(input);
     },
 }));

@@ -1,4 +1,4 @@
-import { Button, List, Popconfirm, Typography } from 'antd';
+import { Button, Popconfirm, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { AiConversation } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
@@ -39,7 +39,7 @@ export default function ChatConversationList({
     return (
         <div
             style={{
-                width: 240,
+                width: 220,
                 display: 'flex',
                 flexDirection: 'column',
                 minHeight: 0,
@@ -55,65 +55,100 @@ export default function ChatConversationList({
                     marginBottom: 8,
                 }}
             >
-                <Text strong>{t('Conversations')}</Text>
-                <Button size="small" icon={<PlusOutlined />} onClick={onCreateConversation}>
-                    {t('Nouveau')}
-                </Button>
+                <Text strong style={{ fontSize: '0.9em' }}>
+                    {t('Conversations')}
+                </Text>
+                <Button
+                    size="small"
+                    type="text"
+                    icon={<PlusOutlined />}
+                    onClick={onCreateConversation}
+                    title={t('Nouveau')}
+                />
             </div>
 
-            <List
-                style={{ flex: 1, overflow: 'auto' }}
-                dataSource={conversations}
-                locale={{ emptyText: t('Aucune conversation') }}
-                renderItem={(conversation) => (
-                    <List.Item
-                        style={{
-                            cursor: 'pointer',
-                            background:
-                                conversation.id === activeConversationId
-                                    ? 'var(--ant-color-primary-bg)'
-                                    : 'transparent',
-                            borderRadius: 8,
-                            paddingInline: 8,
-                            paddingBlock: 6,
-                        }}
-                        onClick={() => onSelectConversation(conversation.id)}
-                        actions={[
-                            <Button
-                                key="delete"
-                                type="text"
-                                size="small"
-                                danger
-                                icon={<DeleteOutlined />}
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onDeleteConversation(conversation.id);
-                                }}
-                            />,
-                        ]}
+            <div style={{ flex: 1, overflow: 'auto' }}>
+                {conversations.length === 0 ? (
+                    <Text
+                        type="secondary"
+                        style={{ fontSize: '0.8em', display: 'block', padding: '12px 4px' }}
                     >
-                        <List.Item.Meta
-                            title={
-                                <Text ellipsis style={{ fontSize: '0.85em', maxWidth: 140 }}>
-                                    {conversation.title || t('Conversation')}
-                                </Text>
-                            }
-                            description={
-                                <Text type="secondary" style={{ fontSize: '0.75em' }}>
-                                    {formatRelativeDate(conversation.updatedAt, t)}
-                                </Text>
-                            }
-                        />
-                    </List.Item>
+                        {t('Aucune conversation')}
+                    </Text>
+                ) : (
+                    conversations.map((conversation) => {
+                        const isActive = conversation.id === activeConversationId;
+                        return (
+                            <div
+                                key={conversation.id}
+                                role="button"
+                                tabIndex={0}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                    padding: '6px 8px',
+                                    borderRadius: 8,
+                                    cursor: 'pointer',
+                                    background: isActive
+                                        ? 'var(--ant-color-primary-bg)'
+                                        : 'transparent',
+                                    marginBottom: 2,
+                                    transition: 'background 0.15s',
+                                }}
+                                onClick={() => onSelectConversation(conversation.id)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        onSelectConversation(conversation.id);
+                                    }
+                                }}
+                            >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <Text
+                                        ellipsis
+                                        style={{
+                                            fontSize: '0.82em',
+                                            display: 'block',
+                                            fontWeight: isActive ? 500 : 400,
+                                        }}
+                                    >
+                                        {conversation.title || t('Conversation')}
+                                    </Text>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: '0.7em', display: 'block' }}
+                                    >
+                                        {formatRelativeDate(conversation.updatedAt, t)}
+                                    </Text>
+                                </div>
+                                <Button
+                                    type="text"
+                                    size="small"
+                                    danger
+                                    icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                                    style={{ opacity: 0.5, flexShrink: 0 }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteConversation(conversation.id);
+                                    }}
+                                />
+                            </div>
+                        );
+                    })
                 )}
-            />
+            </div>
 
             {conversations.length > 0 ? (
                 <Popconfirm
                     title={t('Supprimer toutes les conversations ?')}
                     onConfirm={onClearConversations}
                 >
-                    <Button size="small" danger style={{ marginTop: 8 }}>
+                    <Button
+                        size="small"
+                        type="text"
+                        danger
+                        style={{ marginTop: 8, fontSize: '0.8em' }}
+                    >
                         {t("Vider l'historique")}
                     </Button>
                 </Popconfirm>

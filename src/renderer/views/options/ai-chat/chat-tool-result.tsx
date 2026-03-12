@@ -1,34 +1,53 @@
+import type { ReactNode } from 'react';
 import { Tag } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import {
+    BookOutlined,
+    EditOutlined,
+    FileTextOutlined,
+    FolderOpenOutlined,
+    GlobalOutlined,
+    LinkOutlined,
+    PlusOutlined,
+    ReadOutlined,
+    SearchOutlined,
+    TagsOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
-const TOOL_LABELS: Record<string, string> = {
-    searchSermons: 'Recherche de sermons',
-    getSermonContent: 'Lecture du sermon',
-    searchContent: 'Recherche dans le contenu',
-    getBibleVersions: 'Versions de la Bible',
-    getBiblePassage: 'Passage biblique',
-    getSubjects: 'Liste des sujets',
-    createSubject: 'Création de sujet',
-    addSermonReferenceToSubject: 'Ajout au sujet',
-    addBibleReferenceToSubject: 'Ajout au sujet',
-    getNotes: 'Liste des notes',
-    getNoteById: 'Lecture de la note',
-    createNote: 'Création de note',
-    updateNoteContent: 'Mise à jour de la note',
-    addSermonReferenceToNote: 'Ajout à la note',
-    addBibleReferenceToNote: 'Ajout à la note',
-    getLanguages: 'Langues disponibles',
-    getCustomDocuments: 'Documents personnalisés',
-    getCustomDocumentContent: 'Lecture du document',
+interface ToolMeta {
+    label: string;
+    icon: ReactNode;
+}
+
+const TOOL_META: Record<string, ToolMeta> = {
+    searchSermons: { label: 'Recherche de sermons', icon: <SearchOutlined /> },
+    getSermonContent: { label: 'Lecture du sermon', icon: <ReadOutlined /> },
+    searchContent: { label: 'Recherche dans le contenu', icon: <SearchOutlined /> },
+    getBibleVersions: { label: 'Versions de la Bible', icon: <BookOutlined /> },
+    getBiblePassage: { label: 'Passage biblique', icon: <BookOutlined /> },
+    getSubjects: { label: 'Liste des sujets', icon: <TagsOutlined /> },
+    createSubject: { label: 'Création de sujet', icon: <PlusOutlined /> },
+    addSermonReferenceToSubject: { label: 'Ajout au sujet', icon: <LinkOutlined /> },
+    addBibleReferenceToSubject: { label: 'Ajout au sujet', icon: <LinkOutlined /> },
+    getNotes: { label: 'Liste des notes', icon: <FileTextOutlined /> },
+    getNoteById: { label: 'Lecture de la note', icon: <FileTextOutlined /> },
+    createNote: { label: 'Création de note', icon: <EditOutlined /> },
+    updateNoteContent: { label: 'Mise à jour de la note', icon: <EditOutlined /> },
+    addSermonReferenceToNote: { label: 'Ajout à la note', icon: <LinkOutlined /> },
+    addBibleReferenceToNote: { label: 'Ajout à la note', icon: <LinkOutlined /> },
+    getLanguages: { label: 'Langues disponibles', icon: <GlobalOutlined /> },
+    getCustomDocuments: { label: 'Documents personnalisés', icon: <FolderOpenOutlined /> },
+    getCustomDocumentContent: { label: 'Lecture du document', icon: <ReadOutlined /> },
 };
 
-export default function ChatToolResult({ name }: { name: string; output?: unknown }) {
+export default function ChatToolResult({ name }: { name: string }) {
     const { t } = useTranslation();
-    const label = TOOL_LABELS[name] ?? name;
+    const meta = TOOL_META[name];
+    const label = meta?.label ?? name;
+    const icon = meta?.icon ?? <SearchOutlined />;
 
     return (
-        <Tag icon={<SearchOutlined />} color="processing" style={{ marginTop: 4 }}>
+        <Tag icon={icon} color="processing" style={{ fontSize: '0.8em' }}>
             {t(label)}
         </Tag>
     );
