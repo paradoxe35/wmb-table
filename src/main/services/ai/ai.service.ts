@@ -322,8 +322,9 @@ export class AiService {
         assistantMessageId: string,
         toolCall: AiToolCall,
     ): void {
+        const existing = aiRepo.getMessage(assistantMessageId);
         aiRepo.setAssistantToolCalls(assistantMessageId, [
-            ...aiRepo.getMessage(assistantMessageId)!.toolCalls,
+            ...(existing?.toolCalls ?? []),
             toolCall,
         ]);
         sendToRenderer(browserWindow, PushChannels.aiToolCallStart, {

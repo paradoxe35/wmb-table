@@ -58,6 +58,7 @@ export async function scanLocalModels(): Promise<AiModelScanResult> {
             quantization: known.quantization,
             recommended: known.recommended,
             downloadUrl: known.downloadUrl,
+            approximateSizeMb: known.approximateSizeMb,
             installed: installedModel != null,
             installedModel: installedModel ?? undefined,
         };

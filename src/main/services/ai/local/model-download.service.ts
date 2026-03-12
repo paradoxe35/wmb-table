@@ -1,5 +1,5 @@
 import { createWriteStream } from 'node:fs';
-import { rename, unlink } from 'node:fs/promises';
+import { rename, stat, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
@@ -11,10 +11,13 @@ import type { AiModelDownloadProgress } from '@shared/ai.types';
 import { sendToRenderer } from '@main/ipc/register';
 import { KNOWN_LOCAL_MODELS } from './known-models';
 
+const MIN_VALID_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB minimum for a GGUF file
 const activeDownloads = new Set<string>();
 
 function sendProgress(browserWindow: BrowserWindow, progress: AiModelDownloadProgress): void {
-    sendToRenderer(browserWindow, PushChannels.aiModelDownloadProgress, progress);
+    if (!browserWindow.isDestroyed()) {
+        sendToRenderer(browserWindow, PushChannels.aiModelDownloadProgress, progress);
+    }
 }
 
 export async function downloadLocalModel(
@@ -22,12 +25,13 @@ export async function downloadLocalModel(
     modelId: string,
 ): Promise<void> {
     if (activeDownloads.has(modelId)) {
+        log.warn('AI model download already in progress', { modelId });
         return;
     }
 
     const knownModel = KNOWN_LOCAL_MODELS.find((m) => m.id === modelId);
     if (!knownModel) {
-        throw new Error(`Modèle inconnu: ${modelId}`);
+        throw new Error(`Unknown model: ${modelId}`);
     }
 
     activeDownloads.add(modelId);
@@ -40,9 +44,9 @@ export async function downloadLocalModel(
     try {
         sendProgress(browserWindow, { modelId, percentage: 0, status: 'downloading' });
 
-        const response = await fetch(knownModel.directDownloadUrl);
+        const response = await fetch(knownModel.directDownloadUrl, { redirect: 'follow' });
         if (!response.ok) {
-            throw new Error(`Download failed: HTTP ${response.status}`);
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
 
         const contentLength = Number(response.headers.get('content-length') ?? 0);
@@ -76,15 +80,32 @@ export async function downloadLocalModel(
         const fileStream = createWriteStream(tempPath);
 
         await pipeline(nodeStream, fileStream);
+
+        // Validate the downloaded file
+        const fileStat = await stat(tempPath);
+        if (fileStat.size < MIN_VALID_SIZE_BYTES) {
+            throw new Error(
+                `Downloaded file too small (${fileStat.size} bytes). Expected at least ${MIN_VALID_SIZE_BYTES} bytes.`,
+            );
+        }
+        if (contentLength > 0 && fileStat.size !== contentLength) {
+            throw new Error(
+                `Incomplete download: got ${fileStat.size} bytes, expected ${contentLength}.`,
+            );
+        }
+
         await rename(tempPath, targetPath);
 
-        log.info('AI model download complete', { modelId, targetPath });
+        log.info('AI model download complete', {
+            modelId,
+            targetPath,
+            sizeBytes: fileStat.size,
+        });
         sendProgress(browserWindow, { modelId, percentage: 100, status: 'complete' });
     } catch (error) {
         const message = error instanceof Error ? error.message : 'Download failed.';
         log.error('AI model download failed', { modelId, error: message });
 
-        // Clean up partial file
         await unlink(tempPath).catch(() => {});
 
         sendProgress(browserWindow, { modelId, percentage: 0, status: 'error', error: message });

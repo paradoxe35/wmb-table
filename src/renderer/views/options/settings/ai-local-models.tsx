@@ -45,6 +45,9 @@ function ModelRow({
             <div style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ fontSize: '0.85em' }}>
                     {model.name}{' '}
+                    <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                        ({model.quantization})
+                    </Text>{' '}
                     {model.installed ? (
                         <Tag
                             color="success"
@@ -57,6 +60,12 @@ function ModelRow({
                 </Text>
                 <Text type="secondary" style={{ fontSize: '0.75em', display: 'block' }}>
                     {t(model.description)}
+                    {!model.installed && model.approximateSizeMb > 0 ? (
+                        <>
+                            {' — '}
+                            {t('~{{size}} Mo', { size: model.approximateSizeMb })}
+                        </>
+                    ) : null}
                 </Text>
             </div>
             {downloading ? (

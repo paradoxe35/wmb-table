@@ -46,11 +46,16 @@ function finishReason(raw: string = 'stop'): LanguageModelV3FinishReason {
     };
 }
 
-function toJsonResult(output: unknown) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function toJsonResult(output: unknown): any {
     if (output == null) {
         return {};
     }
-    return JSON.parse(JSON.stringify(output));
+    try {
+        return JSON.parse(JSON.stringify(output));
+    } catch {
+        return { result: String(output) };
+    }
 }
 
 export class LocalLanguageModel implements LanguageModelV3 {

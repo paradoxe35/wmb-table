@@ -41,6 +41,7 @@ export interface AiSupportedLocalModel {
     quantization: string;
     recommended: boolean;
     downloadUrl: string;
+    approximateSizeMb: number;
     installed: boolean;
     installedModel?: AiLocalModelInfo;
 }

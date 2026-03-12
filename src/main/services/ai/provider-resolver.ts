@@ -79,7 +79,7 @@ export function resolveLanguageModel(input: {
         if (builtinFactory.requiresApiKey && !apiKey) {
             throw new Error(`API key is missing for provider: ${providerId}`);
         }
-        return wrapReasoningFilteredModel(builtinFactory.create(apiKey!, modelId));
+        return wrapReasoningFilteredModel(builtinFactory.create(apiKey ?? '', modelId));
     }
 
     const customProvider = settings.customProviders.find((p) => p.id === providerId);
