@@ -42,7 +42,18 @@ async function segmentText(
 
 // ── Browser TTS ──
 
+let browserTtsGapTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearBrowserTtsTimer(): void {
+    if (browserTtsGapTimer != null) {
+        clearTimeout(browserTtsGapTimer);
+        browserTtsGapTimer = null;
+    }
+}
+
 function playBrowserSegment(segments: TtsSegment[], index: number, settings: TtsSettings): void {
+    clearBrowserTtsTimer();
+
     if (index >= segments.length) {
         useTtsStore.getState().reset();
         return;
@@ -59,8 +70,14 @@ function playBrowserSegment(segments: TtsSegment[], index: number, settings: Tts
     const gapMs = settings.segmentGapMs ?? SEGMENT_GAP_MS;
 
     browserTts.setOnSegmentEnd(() => {
+        // Check if we were stopped while speaking
+        if (useTtsStore.getState().status === 'idle') return;
+
         if (gapMs > 0) {
-            setTimeout(() => playBrowserSegment(segments, index + 1, settings), gapMs);
+            browserTtsGapTimer = setTimeout(
+                () => playBrowserSegment(segments, index + 1, settings),
+                gapMs,
+            );
         } else {
             playBrowserSegment(segments, index + 1, settings);
         }
@@ -112,15 +129,18 @@ export function useTts(
     const incompatibleMessage = useTtsStore((s) => s.incompatibleMessage);
     const activeProvider = settings?.activeProvider;
 
-    // Stop TTS on language change
+    // Stop TTS on language change (ignore empty transitions during tab switches)
     const prevLanguageRef = useRef(language);
     useEffect(() => {
-        if (prevLanguageRef.current !== language) {
-            prevLanguageRef.current = language;
-            if (useTtsStore.getState().status !== 'idle') {
-                stopAllTtsPlayback();
-                useTtsStore.getState().reset();
-            }
+        if (!language || prevLanguageRef.current === language) {
+            return;
+        }
+
+        const hadLanguage = !!prevLanguageRef.current;
+        prevLanguageRef.current = language;
+        if (hadLanguage && useTtsStore.getState().status !== 'idle') {
+            stopAllTtsPlayback();
+            useTtsStore.getState().reset();
         }
     }, [language]);
 
@@ -180,6 +200,8 @@ export function useTts(
     }, [activeProvider, setPlaybackState]);
 
     const stop = useCallback(() => {
+        clearBrowserTtsTimer();
+        browserTts.cancel();
         stopAllTtsPlayback();
         useTtsStore.getState().stopAndRemember();
     }, []);

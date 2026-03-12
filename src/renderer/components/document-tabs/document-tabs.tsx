@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
 import { App as AntApp, type MenuProps } from 'antd';
 import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useTabPersistence } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { getTabKey } from '@shared/types';
@@ -24,33 +26,76 @@ export default function DocumentTabs() {
 
     useTabPersistence(tabs, activeLanguage);
 
+    const stopTtsIfPlaying = useCallback((closedTabTitle: string) => {
+        const tts = useTtsStore.getState();
+        if (tts.documentId === closedTabTitle && tts.status !== 'idle') {
+            stopAllTtsPlayback();
+            tts.reset();
+        }
+    }, []);
+
+    const handleRemoveTab = useCallback(
+        (key: string) => {
+            const tab = tabs.find((t) => getTabKey(t) === key);
+            if (tab) stopTtsIfPlaying(tab.title);
+            removeTab(key);
+        },
+        [tabs, removeTab, stopTtsIfPlaying],
+    );
+
+    const handleRemoveOtherTabs = useCallback(
+        (key: string) => {
+            for (const tab of tabs) {
+                if (getTabKey(tab) !== key) stopTtsIfPlaying(tab.title);
+            }
+            removeOtherTabs(key);
+        },
+        [tabs, removeOtherTabs, stopTtsIfPlaying],
+    );
+
+    const handleRemoveTabsToRight = useCallback(
+        (key: string) => {
+            const idx = tabs.findIndex((t) => getTabKey(t) === key);
+            for (const tab of tabs.slice(idx + 1)) {
+                stopTtsIfPlaying(tab.title);
+            }
+            removeTabsToRight(key);
+        },
+        [tabs, removeTabsToRight, stopTtsIfPlaying],
+    );
+
+    const handleRemoveAllTabs = useCallback(() => {
+        for (const tab of tabs) stopTtsIfPlaying(tab.title);
+        removeAllTabs();
+    }, [tabs, removeAllTabs, stopTtsIfPlaying]);
+
     const confirmRemoveAll = useCallback(() => {
         modal.confirm({
             title: t('Fermer tous les onglets'),
             content: t('Voulez-vous vraiment fermer tous les onglets ?'),
             okText: t('Tout fermer'),
             cancelText: t('Annuler'),
-            onOk: () => removeAllTabs(),
+            onOk: () => handleRemoveAllTabs(),
         });
-    }, [modal, removeAllTabs]);
+    }, [modal, handleRemoveAllTabs]);
 
     const getContextMenuItems = useCallback(
         (key: string): MenuProps['items'] => [
-            { key: 'close', label: t('Fermer'), onClick: () => removeTab(key) },
+            { key: 'close', label: t('Fermer'), onClick: () => handleRemoveTab(key) },
             {
                 key: 'close-others',
                 label: t('Fermer les autres'),
-                onClick: () => removeOtherTabs(key),
+                onClick: () => handleRemoveOtherTabs(key),
             },
             {
                 key: 'close-right',
                 label: t('Fermer à droite'),
-                onClick: () => removeTabsToRight(key),
+                onClick: () => handleRemoveTabsToRight(key),
             },
             { type: 'divider' },
             { key: 'close-all', label: t('Tout fermer'), onClick: () => confirmRemoveAll() },
         ],
-        [removeTab, removeOtherTabs, removeTabsToRight, confirmRemoveAll],
+        [handleRemoveTab, handleRemoveOtherTabs, handleRemoveTabsToRight, confirmRemoveAll],
     );
 
     // Listen for custom document removal events
@@ -58,7 +103,9 @@ export default function DocumentTabs() {
         const handleCustomDocRemoved = (e: Event) => {
             const detail = (e as CustomEvent)?.detail;
             if (detail?.title) {
-                removeTab(getTabKey({ title: detail.title, sermonId: detail.sermonId ?? '' }));
+                handleRemoveTab(
+                    getTabKey({ title: detail.title, sermonId: detail.sermonId ?? '' }),
+                );
             }
         };
 
@@ -72,7 +119,7 @@ export default function DocumentTabs() {
                 handleCustomDocRemoved,
             );
         };
-    }, [removeTab]);
+    }, [handleRemoveTab]);
 
     return (
         <>
@@ -100,7 +147,7 @@ export default function DocumentTabs() {
                                 }
                                 activateTab(key);
                             }}
-                            onRemove={() => removeTab(key)}
+                            onRemove={() => handleRemoveTab(key)}
                             contextMenuItems={getContextMenuItems(key)}
                         />
                     );
