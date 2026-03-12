@@ -19,7 +19,7 @@ export default function SermonDocumentView() {
     const { content, loading } = useSermonContent();
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
-    const { zoom } = useScrollAndZoom(containerRef);
+    const { zoom } = useScrollAndZoom(containerRef, !!content);
     const search = useSearchHighlight();
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
     useReferenceNavigation(containerRef);

@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Input, Button } from 'antd';
+import type { InputRef } from 'antd';
 import { UpOutlined, DownOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useSearchStore } from '@renderer/stores';
-import { selectActiveTabTitle, useSermonStore } from '@renderer/stores';
+import { useSearchStore, selectActiveTabTitle, useSermonStore } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
@@ -12,6 +12,7 @@ export default function InlineSearchBar() {
     const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
     const clearSearch = useSearchStore((s) => s.clearSearch);
+    const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
     const nextMatch = useSearchStore((s) => s.nextMatch);
     const prevMatch = useSearchStore((s) => s.prevMatch);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
@@ -21,49 +22,55 @@ export default function InlineSearchBar() {
     const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
     const searchMode = useSearchStore((s) => s.searchMode);
 
-    const inputRef = useRef<any>(null);
+    const inputRef = useRef<InputRef>(null);
     const searchTermRef = useRef('');
+
+    // Keep latest values in refs so the debounced callback never captures stale closures
+    const latestRef = useRef({ activeTitle, searchMode });
+    latestRef.current = { activeTitle, searchMode };
 
     useEffect(() => {
         const existing = documentViewQueries.find((q) => q.documentTitle === activeTitle);
-        if (existing?.term && inputRef.current) {
+        if (existing?.term && inputRef.current?.input) {
             inputRef.current.input.value = existing.term;
             searchTermRef.current = existing.term;
         }
         if (!navOnly) inputRef.current?.focus();
     }, []);
 
-    const updateSearch = useCallback(
+    // Stable debounced function — never recreated, reads latest values from refs
+    const debouncedSearch = useRef(
         debounce((value: string) => {
-            if (!activeTitle) return;
+            const { activeTitle: title, searchMode: mode } = latestRef.current;
+            if (!title) return;
             if (value.trim().length < 3) {
-                clearSearch(activeTitle);
+                useSearchStore.getState().clearSearch(title);
                 return;
             }
             setDocumentViewQueries((docs) => {
-                const filtered = docs.filter((d) => d.documentTitle !== activeTitle);
+                const filtered = docs.filter((d) => d.documentTitle !== title);
                 return [
                     ...filtered,
                     {
-                        documentTitle: activeTitle,
+                        documentTitle: title,
                         matches: [],
                         textContentLength: 0,
                         searchForParagraph: false,
                         term: value.trim(),
-                        mode: searchMode,
+                        mode,
                     },
                 ];
             });
+            requestScrollToMatch();
         }, 300),
-        [activeTitle, setDocumentViewQueries, clearSearch, searchMode],
-    );
+    ).current;
 
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             searchTermRef.current = e.target.value;
-            updateSearch(e.target.value);
+            debouncedSearch(e.target.value);
         },
-        [updateSearch],
+        [debouncedSearch],
     );
 
     const handleClose = useCallback(() => {

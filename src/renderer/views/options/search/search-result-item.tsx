@@ -52,6 +52,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const { t } = useTranslation();
     const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
     const [expanded, setExpanded] = useState(false);
@@ -75,6 +76,9 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 ];
             });
             openSearchBar(true);
+            if (paragraphIndex <= 0) {
+                requestScrollToMatch();
+            }
             if (paragraphIndex > 0) {
                 setPendingNavigation({
                     documentTitle: hit.title,
@@ -90,6 +94,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             hit,
             setDocumentViewQueries,
             openSearchBar,
+            requestScrollToMatch,
             setPendingNavigation,
             query,
             searchMode,

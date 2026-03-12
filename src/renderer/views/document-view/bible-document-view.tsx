@@ -228,12 +228,12 @@ export default function BibleDocumentView() {
     const activeTab = useSermonStore(selectActiveTab);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
-    const { zoom } = useScrollAndZoom(containerRef);
     const search = useSearchHighlight();
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
 
     const [verses, setVerses] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(false);
+    const { zoom } = useScrollAndZoom(containerRef, verses.length > 0 && !loading);
     const [bibleLang, setBibleLang] = useState('');
 
     const bookCode = activeTab?.bibleBook;

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { DocumentViewQuery, SearchMode } from '@shared/types';
 
-interface SearchState {
+interface SearchStateData {
     documentViewQueries: DocumentViewQuery[];
     searchBarOpen: boolean;
     searchBarNavOnly: boolean;
@@ -9,7 +9,10 @@ interface SearchState {
     totalMatches: number;
     searchMode: SearchMode;
     error: string | null;
+    scrollToMatchRequested: boolean;
+}
 
+interface SearchStateActions {
     setDocumentViewQueries(
         q: DocumentViewQuery[] | ((prev: DocumentViewQuery[]) => DocumentViewQuery[]),
     ): void;
@@ -22,7 +25,11 @@ interface SearchState {
     prevMatch(): void;
     clearSearch(documentTitle: string): void;
     setError(error: string | null): void;
+    requestScrollToMatch(): void;
+    clearScrollToMatchRequest(): void;
 }
+
+type SearchState = SearchStateData & SearchStateActions;
 
 export const useSearchStore = create<SearchState>((set) => ({
     documentViewQueries: [],
@@ -32,6 +39,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     totalMatches: 0,
     searchMode: 'any',
     error: null,
+    scrollToMatchRequested: false,
 
     setDocumentViewQueries: (q) =>
         set((s) => ({
@@ -44,22 +52,30 @@ export const useSearchStore = create<SearchState>((set) => ({
     setCurrentMatchIndex: (i) => set({ currentMatchIndex: i }),
     setTotalMatches: (n) => set({ totalMatches: n }),
 
-    nextMatch: () =>
-        set((s) =>
-            s.totalMatches === 0
-                ? {}
-                : { currentMatchIndex: (s.currentMatchIndex + 1) % s.totalMatches },
-        ),
+    nextMatch: () => {
+        return set((s) => {
+            if (s.totalMatches === 0) {
+                return {};
+            }
+            return {
+                currentMatchIndex: (s.currentMatchIndex + 1) % s.totalMatches,
+                scrollToMatchRequested: true,
+            };
+        });
+    },
 
-    prevMatch: () =>
-        set((s) =>
-            s.totalMatches === 0
-                ? {}
-                : {
-                      currentMatchIndex:
-                          (s.currentMatchIndex - 1 + s.totalMatches) % s.totalMatches,
-                  },
-        ),
+    prevMatch: () => {
+        return set((s) => {
+            if (s.totalMatches === 0) {
+                return {};
+            }
+
+            return {
+                currentMatchIndex: (s.currentMatchIndex - 1 + s.totalMatches) % s.totalMatches,
+                scrollToMatchRequested: true,
+            };
+        });
+    },
 
     clearSearch: (documentTitle) =>
         set((s) => ({
@@ -68,7 +84,11 @@ export const useSearchStore = create<SearchState>((set) => ({
             ),
             currentMatchIndex: 0,
             totalMatches: 0,
+            scrollToMatchRequested: false,
         })),
+
+    requestScrollToMatch: () => set({ scrollToMatchRequested: true }),
+    clearScrollToMatchRequest: () => set({ scrollToMatchRequested: false }),
 
     setError: (error) => set({ error }),
 }));

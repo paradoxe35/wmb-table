@@ -87,9 +87,9 @@ export default function CustomDocumentView() {
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
-    const { zoom } = useScrollAndZoom(containerRef);
     const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
     const [loading, setLoading] = useState(false);
+    const { zoom } = useScrollAndZoom(containerRef, !!docContent);
     const search = useSearchHighlight();
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
 

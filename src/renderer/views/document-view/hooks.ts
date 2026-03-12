@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
@@ -93,17 +93,23 @@ export function useDocumentZoom(zoom: number) {
     return { zoomIn, zoomOut };
 }
 
-export function useScrollAndZoom(containerRef: React.RefObject<HTMLDivElement | null>) {
+export function useScrollAndZoom(
+    containerRef: React.RefObject<HTMLDivElement | null>,
+    contentReady = true,
+) {
     const activeTab = useSermonStore(selectActiveTab);
     const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
     const activeTabKey = useSermonStore(selectActiveTabKey);
+    const lastRestoredKeyRef = useRef<string | null>(null);
 
     const zoom = activeTab?.zoom ?? 100;
 
     useEffect(() => {
-        if (!containerRef.current || !activeTab) return;
+        if (!contentReady || !containerRef.current || !activeTab || !activeTabKey) return;
+        if (lastRestoredKeyRef.current === activeTabKey) return;
+        lastRestoredKeyRef.current = activeTabKey;
         containerRef.current.scrollTop = activeTab.scrollY ?? 0;
-    }, [activeTabKey]);
+    }, [activeTabKey, contentReady]);
 
     useEffect(() => {
         const el = containerRef.current;
@@ -410,6 +416,8 @@ export function useMatchNavigation(
     const setTotalMatches = useSearchStore((s) => s.setTotalMatches);
     const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
     const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
+    const scrollToMatchRequested = useSearchStore((s) => s.scrollToMatchRequested);
+    const clearScrollToMatchRequest = useSearchStore((s) => s.clearScrollToMatchRequest);
 
     const { matchOffsets, total } = useMemo(() => {
         if (!search) return { matchOffsets: [] as number[], total: 0 };
@@ -428,14 +436,17 @@ export function useMatchNavigation(
 
     useEffect(() => {
         setTotalMatches(total);
-        if (total === 0) setCurrentMatchIndex(0);
+        setCurrentMatchIndex(0);
     }, [total, setTotalMatches, setCurrentMatchIndex]);
 
     useEffect(() => {
-        if (total === 0) return;
+        if (total === 0 || !scrollToMatchRequested) return;
         const el = document.querySelector(`[data-match-index="${currentMatchIndex}"]`);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, [currentMatchIndex, total]);
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        clearScrollToMatchRequest();
+    }, [currentMatchIndex, total, scrollToMatchRequested, clearScrollToMatchRequest]);
 
     return { matchOffsets, total };
 }
