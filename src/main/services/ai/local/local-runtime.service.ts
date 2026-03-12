@@ -5,6 +5,7 @@ import {
     type ChatHistoryItem,
 } from 'node-llama-cpp';
 import type { LlamaModel } from 'node-llama-cpp';
+import log from '@main/lib/logger';
 import { resolveAutoSelectedLocalModel } from './local-model.service';
 
 export class LocalRuntimeService {
@@ -13,6 +14,7 @@ export class LocalRuntimeService {
     private activeModelPath: string | null = null;
     private model: LlamaModel | null = null;
     private disposeTimer: NodeJS.Timeout | null = null;
+    private loadingPromise: Promise<void> | null = null;
 
     async run(input: {
         selectedModel: string | null | undefined;
@@ -30,7 +32,7 @@ export class LocalRuntimeService {
 
         await this.ensureModel(localModel.localPath);
         if (!this.model) {
-            throw new Error('Le modèle local n’est pas chargé.');
+            throw new Error('Le modèle local n\u2019est pas chargé.');
         }
 
         const context = await this.model.createContext();
@@ -56,35 +58,56 @@ export class LocalRuntimeService {
     }
 
     async dispose(): Promise<void> {
-        if (this.disposeTimer) {
-            clearTimeout(this.disposeTimer);
-            this.disposeTimer = null;
+        this.clearDisposeTimer();
+        if (this.model) {
+            log.info('Local model disposing', { modelPath: this.activeModelPath });
+            await this.model.dispose();
+            this.model = null;
+            this.activeModelPath = null;
         }
-        await this.model?.dispose();
-        this.model = null;
-        this.activeModelPath = null;
     }
 
     private async ensureModel(modelPath: string): Promise<void> {
+        // Wait for any in-flight loading to complete before proceeding
+        if (this.loadingPromise) {
+            await this.loadingPromise;
+        }
+
+        this.clearDisposeTimer();
+
+        if (this.activeModelPath === modelPath && this.model) {
+            return;
+        }
+
+        this.loadingPromise = this.loadModel(modelPath);
+        try {
+            await this.loadingPromise;
+        } finally {
+            this.loadingPromise = null;
+        }
+    }
+
+    private async loadModel(modelPath: string): Promise<void> {
+        await this.dispose();
+        log.info('Local model loading', { modelPath });
+        const llama = await getLlama();
+        this.model = await llama.loadModel({ modelPath });
+        this.activeModelPath = modelPath;
+        log.info('Local model loaded', { modelPath });
+    }
+
+    private scheduleDispose(): void {
+        this.clearDisposeTimer();
+        this.disposeTimer = setTimeout(() => {
+            log.info('Local model idle timeout, disposing');
+            void this.dispose();
+        }, LocalRuntimeService.IDLE_DISPOSE_MS);
+    }
+
+    private clearDisposeTimer(): void {
         if (this.disposeTimer) {
             clearTimeout(this.disposeTimer);
             this.disposeTimer = null;
         }
-        if (this.activeModelPath === modelPath && this.model) {
-            return;
-        }
-        await this.dispose();
-        const llama = await getLlama();
-        this.model = await llama.loadModel({ modelPath });
-        this.activeModelPath = modelPath;
-    }
-
-    private scheduleDispose(): void {
-        if (this.disposeTimer) {
-            clearTimeout(this.disposeTimer);
-        }
-        this.disposeTimer = setTimeout(() => {
-            void this.dispose();
-        }, LocalRuntimeService.IDLE_DISPOSE_MS);
     }
 }

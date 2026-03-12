@@ -93,45 +93,45 @@ export class LocalLanguageModel implements LanguageModelV3 {
 
         queue.push({ type: 'stream-start', warnings: [] });
 
-        void this.config.runtime
-            .run({
-                selectedModel: this.modelId,
-                systemPrompt: promptInput.systemPrompt,
-                history: promptInput.history,
-                prompt: promptInput.nextPrompt,
-                signal: options.abortSignal,
-                functions: buildLocalChatFunctions({
-                    executors,
-                    onToolCall: (toolCall) => {
-                        queue.push({
-                            type: 'tool-call',
-                            toolCallId: toolCall.id,
-                            toolName: toolCall.name,
-                            input: JSON.stringify(toolCall.input),
-                            providerExecuted: true,
-                        });
+        void (async () => {
+            try {
+                await this.config.runtime.run({
+                    selectedModel: this.modelId,
+                    systemPrompt: promptInput.systemPrompt,
+                    history: promptInput.history,
+                    prompt: promptInput.nextPrompt,
+                    signal: options.abortSignal,
+                    functions: buildLocalChatFunctions({
+                        executors,
+                        onToolCall: (toolCall) => {
+                            queue.push({
+                                type: 'tool-call',
+                                toolCallId: toolCall.id,
+                                toolName: toolCall.name,
+                                input: JSON.stringify(toolCall.input),
+                                providerExecuted: true,
+                            });
+                        },
+                        onToolResult: (toolResult) => {
+                            queue.push({
+                                type: 'tool-result',
+                                toolCallId: toolResult.toolCallId,
+                                toolName: toolResult.name,
+                                result: toJsonResult(toolResult.output),
+                            });
+                        },
+                    }),
+                    onTextChunk: (chunk) => {
+                        if (!chunk) {
+                            return;
+                        }
+                        if (!textStarted) {
+                            queue.push({ type: 'text-start', id: textPartId });
+                            textStarted = true;
+                        }
+                        queue.push({ type: 'text-delta', id: textPartId, delta: chunk });
                     },
-                    onToolResult: (toolResult) => {
-                        queue.push({
-                            type: 'tool-result',
-                            toolCallId: toolResult.toolCallId,
-                            toolName: toolResult.name,
-                            result: toJsonResult(toolResult.output),
-                        });
-                    },
-                }),
-                onTextChunk: (chunk) => {
-                    if (!chunk) {
-                        return;
-                    }
-                    if (!textStarted) {
-                        queue.push({ type: 'text-start', id: textPartId });
-                        textStarted = true;
-                    }
-                    queue.push({ type: 'text-delta', id: textPartId, delta: chunk });
-                },
-            })
-            .then(() => {
+                });
                 if (textStarted) {
                     queue.push({ type: 'text-end', id: textPartId });
                 }
@@ -140,12 +140,12 @@ export class LocalLanguageModel implements LanguageModelV3 {
                     finishReason: finishReason(),
                     usage: emptyUsage(),
                 });
-                queue.close();
-            })
-            .catch((error) => {
+            } catch (error) {
                 queue.push({ type: 'error', error });
+            } finally {
                 queue.close();
-            });
+            }
+        })();
 
         return {
             stream: convertAsyncIteratorToReadableStream(queue[Symbol.asyncIterator]()),
