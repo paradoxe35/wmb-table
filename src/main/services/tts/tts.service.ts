@@ -459,9 +459,16 @@ export class TtsService {
      */
     private async prefetchAhead(fromIndex: number): Promise<void> {
         const MAX_PREFETCH = 3;
+        const MAX_QUEUE_SIZE = 6;
         let queued = 0;
 
+        // Evict stale entries that are behind the current playback position
+        for (const key of this.prefetchQueue.keys()) {
+            if (key < fromIndex) this.prefetchQueue.delete(key);
+        }
+
         for (let i = fromIndex; i < this.segments.length && queued < MAX_PREFETCH; i++) {
+            if (this.prefetchQueue.size >= MAX_QUEUE_SIZE) break;
             if (this.prefetchQueue.has(i)) continue;
 
             // Quick cache check — cheap disk-metadata lookup, no audio loaded

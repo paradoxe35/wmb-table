@@ -489,6 +489,7 @@ const en: Record<string, string> = {
     sermons: 'sermons',
     disponible: 'available',
     "Erreur lors de l'initialisation de l'application": 'Application initialization error',
+    'Une erreur inattendue est survenue.': 'An unexpected error occurred.',
     chapitres: 'chapters',
     chapitre: 'chapter',
 };

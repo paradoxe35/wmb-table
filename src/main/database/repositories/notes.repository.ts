@@ -6,6 +6,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { notes, notesReferences, notesBibleReferences } from '../schema';
 import { bibleVerses } from '../bible-schema';
 import { logChange } from '@main/services/sync/change-log.service';
+import log from 'electron-log';
 import type {
     NoteItem,
     NoteItemReference,
@@ -13,6 +14,15 @@ import type {
     BibleBook,
     SubjectRefTree,
 } from '@shared/types';
+
+function safeJsonParse<T>(raw: string, fallback: T): T {
+    try {
+        return JSON.parse(raw);
+    } catch (err) {
+        log.warn('JSON parse failed in notes repository:', err);
+        return fallback;
+    }
+}
 
 function toNoteItem(row: typeof notes.$inferSelect): NoteItem {
     return {
@@ -32,7 +42,7 @@ function toNoteRef(row: typeof notesReferences.$inferSelect): NoteItemReference 
         noteId: row.noteId,
         label: row.label,
         documentTitle: row.documentTitle,
-        documentHtmlTree: JSON.parse(row.documentHtmlTree),
+        documentHtmlTree: safeJsonParse(row.documentHtmlTree, { tree: [] }),
         textContent: row.textContent,
         sermonId: row.sermonId,
         createdAt: new Date(row.createdAt ?? Date.now()),
@@ -45,7 +55,7 @@ function toBibleRef(row: typeof notesBibleReferences.$inferSelect): NoteItemRefe
         id: row.id,
         noteId: row.noteId,
         label: row.label,
-        references: JSON.parse(row.references),
+        references: safeJsonParse(row.references, []),
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -270,7 +280,7 @@ export function addBibleVerse(refId: string, verseId: string): BibleBook | null 
         .where(eq(notesBibleReferences.id, refId))
         .get();
     if (!row) return null;
-    const refs: BibleBook[] = JSON.parse(row.references);
+    const refs: BibleBook[] = safeJsonParse(row.references, []);
     // $addToSet equivalent — only add if not already present
     if (!refs.some((r) => r.id === bibleBook.id)) {
         refs.push(bibleBook);
@@ -303,7 +313,7 @@ export function removeBibleVerse(refId: string, verseId: string): void {
         .where(eq(notesBibleReferences.id, refId))
         .get();
     if (!row) return;
-    const refs: BibleBook[] = JSON.parse(row.references);
+    const refs: BibleBook[] = safeJsonParse(row.references, []);
     const filtered = refs.filter((r) => r.id !== verseId);
     const now = new Date().toISOString();
     getDb()

@@ -15,7 +15,12 @@ const TTS_SETTINGS_ID = 'tts_settings';
 
 function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
     const defaults = createDefaultTtsSettings();
-    const storedProviders = JSON.parse(row.providerConfigs || '{}');
+    let storedProviders: Record<string, unknown> = {};
+    try {
+        storedProviders = JSON.parse(row.providerConfigs || '{}');
+    } catch {
+        // Corrupted config — fall back to defaults
+    }
     const providers = { ...defaults.providers };
     for (const key of Object.keys(storedProviders) as TtsProviderType[]) {
         providers[key] = { ...providers[key], ...storedProviders[key] };

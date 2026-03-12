@@ -7,7 +7,16 @@
  * 3. Detect real paragraph breaks (blank lines, indentation, sentence endings)
  * 4. Return clean paragraph array as JSON string for storage
  */
+const MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+
 export async function extractTextFromPdf(pdfBytes: Uint8Array): Promise<string> {
+    if (pdfBytes.byteLength > MAX_PDF_SIZE_BYTES) {
+        const sizeMb = (pdfBytes.byteLength / (1024 * 1024)).toFixed(1);
+        throw new Error(
+            `Le fichier PDF est trop volumineux (${sizeMb} Mo). Taille maximale : 50 Mo.`,
+        );
+    }
+
     const { extractText } = await import('unpdf');
     const { text: pages } = await extractText(pdfBytes, { mergePages: false });
 

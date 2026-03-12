@@ -28,11 +28,26 @@ export function registerHandler<C extends InvokeChannel>(
         try {
             return await handler(event, ...(args as unknown as InvokeChannelMap[C]['args']));
         } catch (err) {
-            const error = err instanceof Error ? err : new Error(String(err));
-            const forwarded = new Error(error.message);
-            forwarded.name = error.name;
-            if (error.stack) {
-                forwarded.stack = error.stack;
+            let message: string;
+            let name = 'Error';
+            let stack: string | undefined;
+
+            if (err instanceof Error) {
+                message = err.message;
+                name = err.name;
+                stack = err.stack;
+            } else if (err && typeof err === 'object' && 'message' in err) {
+                message = String((err as { message: unknown }).message);
+            } else if (typeof err === 'string') {
+                message = err;
+            } else {
+                message = 'Une erreur inattendue est survenue.';
+            }
+
+            const forwarded = new Error(message);
+            forwarded.name = name;
+            if (stack) {
+                forwarded.stack = stack;
             }
             throw forwarded;
         }

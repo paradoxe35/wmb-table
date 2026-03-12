@@ -493,6 +493,7 @@ const es: Record<string, string> = {
     sermons: 'sermones',
     disponible: 'disponible',
     "Erreur lors de l'initialisation de l'application": 'Error de inicialización de la aplicación',
+    'Une erreur inattendue est survenue.': 'Se produjo un error inesperado.',
     chapitres: 'capítulos',
     chapitre: 'capítulo',
 };

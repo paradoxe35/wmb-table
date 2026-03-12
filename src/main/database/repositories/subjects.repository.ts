@@ -1,5 +1,6 @@
 import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import log from 'electron-log';
 import { getDb } from '../index';
 import { subjects, subjectItems } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
@@ -11,14 +12,23 @@ import type {
     BibleBook,
 } from '@shared/types';
 
+function safeJsonParse<T>(raw: string, fallback: T): T {
+    try {
+        return JSON.parse(raw);
+    } catch (err) {
+        log.warn('JSON parse failed in subjects repository:', err);
+        return fallback;
+    }
+}
+
 function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentItem {
     return {
         id: row.id,
         subject: row.subjectName,
         documentTitle: row.documentTitle,
-        documentHtmlTree: JSON.parse(row.documentHtmlTree),
+        documentHtmlTree: safeJsonParse(row.documentHtmlTree, { tree: [] }),
         textContent: row.textContent,
-        bible: row.bible ? JSON.parse(row.bible) : undefined,
+        bible: row.bible ? safeJsonParse<BibleBook | undefined>(row.bible, undefined) : undefined,
         sermonId: row.sermonId,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
