@@ -8,9 +8,17 @@ import ChatToolResult from './chat-tool-result';
 
 const { Text } = Typography;
 
-function MessageBubble({ message, sending }: { message: AiMessage; sending: boolean }) {
+function MessageBubble({
+    message,
+    isLastAssistant,
+    sending,
+}: {
+    message: AiMessage;
+    isLastAssistant: boolean;
+    sending: boolean;
+}) {
     const isUser = message.role === 'user';
-    const isStreaming = sending && !isUser && !message.content;
+    const isStreaming = sending && isLastAssistant && !message.content;
 
     return (
         <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
@@ -79,9 +87,19 @@ export default function ChatMessageList({
                     />
                 </div>
             ) : (
-                messages.map((msg) => (
-                    <MessageBubble key={msg.id} message={msg} sending={sending} />
-                ))
+                messages.map((msg, i) => {
+                    const isLastAssistant =
+                        msg.role === 'assistant' &&
+                        !messages.slice(i + 1).some((m) => m.role === 'assistant');
+                    return (
+                        <MessageBubble
+                            key={msg.id}
+                            message={msg}
+                            isLastAssistant={isLastAssistant}
+                            sending={sending}
+                        />
+                    );
+                })
             )}
             <div ref={bottomRef} />
         </div>
