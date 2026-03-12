@@ -1,5 +1,5 @@
 import type { ChatHistoryItem } from 'node-llama-cpp';
-import { countTokens } from 'tokenx';
+import { estimateTokenCount } from 'tokenx';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import log from '@main/lib/logger';
@@ -309,7 +309,7 @@ function buildSummary(messages: PromptHistoryMessage[]): string | null {
 
 function estimateTokens(text: string): number {
     try {
-        return countTokens(text);
+        return estimateTokenCount(text);
     } catch {
         return Math.ceil(text.length / 3.5);
     }
