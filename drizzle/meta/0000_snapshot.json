@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "ea16d6ac-be55-4db0-9dfa-b9c6690d1545",
+    "id": "6534b910-7eeb-45d7-9e2c-d762fafa042e",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "audio_document_last_play": {
@@ -833,8 +833,8 @@
         "reading_positions": {
             "name": "reading_positions",
             "columns": {
-                "document_key": {
-                    "name": "document_key",
+                "id": {
+                    "name": "id",
                     "type": "text",
                     "primaryKey": true,
                     "notNull": true,

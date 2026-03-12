@@ -241,6 +241,7 @@ export default function BibleDocumentView() {
     );
 
     const [bibleLang, setBibleLang] = useState('');
+    const [bibleVersionAbbreviation, setBibleVersionAbbreviation] = useState('');
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
@@ -251,9 +252,11 @@ export default function BibleDocumentView() {
             .getActiveVersion()
             .then((v) => {
                 setBibleLang(v?.langCode ?? '');
+                setBibleVersionAbbreviation(v?.abbreviation ?? '');
             })
             .catch(() => {
                 setBibleLang('');
+                setBibleVersionAbbreviation('');
             });
     }, []);
 
@@ -272,6 +275,7 @@ export default function BibleDocumentView() {
         title: activeTab?.title,
         sermonId: activeTab?.sermonId,
         languageCode: bibleLang,
+        bibleVersionAbbreviation,
     });
 
     const { zoom } = useScrollAndZoom(containerRef, {
@@ -294,7 +298,13 @@ export default function BibleDocumentView() {
         () => buildContentForMenu(activeTab, paragraphs, bibleLang),
         [activeTab, paragraphs, bibleLang],
     );
-    const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'bible', verses);
+    const contextMenuItems = useContextMenuItems(
+        contentForMenu,
+        contextTargetRef,
+        'bible',
+        verses,
+        bibleVersionAbbreviation,
+    );
     const { highlightsByParagraph } = useDocumentHighlights(
         activeTab?.title ?? null,
         activeTab?.sermonId,

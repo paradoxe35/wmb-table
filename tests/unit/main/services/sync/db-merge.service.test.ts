@@ -3,6 +3,7 @@ import { createTestDb } from '../../database/test-helpers';
 import { applyChangeLog } from '@main/services/sync/db-merge.service';
 import { getAllChangeLogs, setSyncing } from '@main/services/sync/change-log.service';
 import * as notesRepo from '@main/database/repositories/notes.repository';
+import * as readingPositionsRepo from '@main/database/repositories/reading-positions.repository';
 
 describe('db-merge.service', () => {
     beforeEach(() => {
@@ -110,5 +111,28 @@ describe('db-merge.service', () => {
         const note = notesRepo.getById(id);
         expect(note).not.toBeNull();
         expect(note?.name).toBe('Remote note');
+    });
+
+    it('applyChangeLog SAVE upserts a reading position', () => {
+        readingPositionsRepo.saveReadingPosition('sermon:en:1:abc', 120, 0);
+
+        applyChangeLog({
+            changeId: 'reading_positions-sermon:en:1:abc-SAVE',
+            tableName: 'reading_positions',
+            rowId: 'sermon:en:1:abc',
+            operation: 'SAVE',
+            newData: JSON.stringify({
+                id: 'sermon:en:1:abc',
+                scroll_y: 640,
+                scroll_x: 0,
+                updated_at: new Date().toISOString(),
+            }),
+        });
+
+        expect(readingPositionsRepo.getReadingPosition('sermon:en:1:abc')).toEqual({
+            documentKey: 'sermon:en:1:abc',
+            scrollY: 640,
+            scrollX: 0,
+        });
     });
 });

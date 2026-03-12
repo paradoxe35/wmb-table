@@ -30,6 +30,7 @@ function referenceMatchesCurrentDocument(
         sermonId?: string;
         translationId?: number;
         languageCode?: string;
+        bibleVersionAbbreviation?: string;
         customDocumentId?: string;
     },
 ): boolean {
@@ -44,7 +45,17 @@ function referenceMatchesCurrentDocument(
         return current.translationId == null || ref.translationId === current.translationId;
     }
     if (documentType === 'bible') {
-        return !current.languageCode || ref.languageCode === current.languageCode;
+        if (current.languageCode && ref.languageCode !== current.languageCode) {
+            return false;
+        }
+        if (
+            ref.bibleVersionAbbreviation &&
+            current.bibleVersionAbbreviation &&
+            ref.bibleVersionAbbreviation !== current.bibleVersionAbbreviation
+        ) {
+            return false;
+        }
+        return true;
     }
     return true;
 }
@@ -58,6 +69,7 @@ export function useReferenceNavigation(
         sermonId?: string;
         translationId?: number;
         languageCode?: string;
+        bibleVersionAbbreviation?: string;
         customDocumentId?: string;
     },
 ) {
@@ -80,6 +92,7 @@ export function useReferenceNavigation(
                     sermonId: options.sermonId,
                     translationId: options.translationId,
                     languageCode: options.languageCode,
+                    bibleVersionAbbreviation: options.bibleVersionAbbreviation,
                     customDocumentId: options.customDocumentId,
                 },
             );

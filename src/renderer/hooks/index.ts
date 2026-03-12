@@ -23,6 +23,7 @@ type OpenDocumentRequest = {
     translationId?: number;
     bibleBook?: string;
     bibleChapter?: string;
+    bibleVersionAbbreviation?: string;
 };
 
 function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: number) => void) {
@@ -64,6 +65,7 @@ export function buildReferenceOpenRequest(
             documentType,
             bibleBook: reference.bibleBook,
             bibleChapter: reference.bibleChapter,
+            bibleVersionAbbreviation: reference.bibleVersionAbbreviation,
         };
     }
     return {
@@ -213,13 +215,16 @@ export function useOpenDocumentRequest() {
     const openBibleChapter = useOpenBibleChapter();
 
     return useCallback(
-        (request: OpenDocumentRequest) => {
+        async (request: OpenDocumentRequest) => {
             if (request.documentType === 'custom') {
                 openCustomDocument(request.title, request.sermonId);
                 return;
             }
 
             if (request.documentType === 'bible' && request.bibleBook && request.bibleChapter) {
+                if (request.bibleVersionAbbreviation) {
+                    await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
+                }
                 const bookName = request.title.replace(
                     new RegExp(`\\s+${request.bibleChapter}$`),
                     '',

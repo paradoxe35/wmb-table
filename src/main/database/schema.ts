@@ -78,7 +78,7 @@ export const tabs = sqliteTable('tabs', {
 });
 
 export const readingPositions = sqliteTable('reading_positions', {
-    documentKey: text('document_key').primaryKey(),
+    documentKey: text('id').primaryKey(),
     scrollY: integer('scroll_y').notNull().default(0),
     scrollX: integer('scroll_x').notNull().default(0),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
@@ -258,6 +258,7 @@ export const syncedTables = [
     subjects,
     subjectItems,
     customDocuments,
+    readingPositions,
     suggestions,
     highlights,
     ttsSettings,

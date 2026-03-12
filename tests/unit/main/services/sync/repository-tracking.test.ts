@@ -4,6 +4,7 @@ import { getAllChangeLogs, setSyncing } from '@main/services/sync/change-log.ser
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
+import * as readingPositionsRepo from '@main/database/repositories/reading-positions.repository';
 import * as suggestionsRepo from '@main/database/repositories/suggestions.repository';
 
 describe('repository change tracking', () => {
@@ -155,6 +156,20 @@ describe('repository change tracking', () => {
                 (c) => c.tableName === 'suggestions' && c.operation === 'SAVE',
             );
             expect(suggestionChange).toBeDefined();
+        });
+    });
+
+    describe('reading positions', () => {
+        it('saveReadingPosition logs a SAVE change', () => {
+            readingPositionsRepo.saveReadingPosition('sermon:en:1:abc', 320, 0);
+            const changes = getAllChangeLogs();
+            const readingPositionChange = changes.find(
+                (c) =>
+                    c.tableName === 'reading_positions' &&
+                    c.operation === 'SAVE' &&
+                    c.rowId === 'sermon:en:1:abc',
+            );
+            expect(readingPositionChange).toBeDefined();
         });
     });
 });

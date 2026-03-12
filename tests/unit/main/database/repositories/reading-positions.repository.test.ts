@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createTestDb } from '../../test-helpers';
+import { createTestDb } from '../test-helpers';
 import * as readingPositionsRepo from '@main/database/repositories/reading-positions.repository';
 
 describe('reading-positions.repository', () => {

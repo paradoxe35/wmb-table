@@ -131,7 +131,7 @@ CREATE TABLE `notes_references` (
 );
 --> statement-breakpoint
 CREATE TABLE `reading_positions` (
-	`document_key` text PRIMARY KEY NOT NULL,
+	`id` text PRIMARY KEY NOT NULL,
 	`scroll_y` integer DEFAULT 0 NOT NULL,
 	`scroll_x` integer DEFAULT 0 NOT NULL,
 	`updated_at` text DEFAULT (datetime('now'))
