@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Button, Card, Empty, Typography } from 'antd';
+import { Alert, Button, Empty, Typography } from 'antd';
 import { RobotOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
 import ChatConversationList from './chat-conversation-list';
 import ChatInput from './chat-input';
 import ChatMessageList from './chat-message-list';
+import './ai-chat.css';
 
 const { Text } = Typography;
 
@@ -14,16 +15,20 @@ function DisabledState() {
     const showOptions = useAppStore((s) => s.showOptions);
 
     return (
-        <Card>
+        <div className="ai-chat__disabled">
             <Empty
-                image={<RobotOutlined style={{ fontSize: 48, color: '#8c8c8c' }} />}
+                image={
+                    <RobotOutlined
+                        style={{ fontSize: 48, color: 'var(--ant-color-text-quaternary)' }}
+                    />
+                }
                 description={<Text type="secondary">{t("L'assistant IA est désactivé.")}</Text>}
             >
                 <Button type="primary" onClick={() => showOptions('settings')}>
                     {t('Ouvrir les paramètres')}
                 </Button>
             </Empty>
-        </Card>
+        </div>
     );
 }
 
@@ -70,7 +75,7 @@ export default function AiChatView() {
     }
 
     return (
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 12 }}>
+        <div className="ai-chat">
             <ChatConversationList
                 conversations={conversations}
                 activeConversationId={activeConversationId}
@@ -80,21 +85,14 @@ export default function AiChatView() {
                 onClearConversations={() => void clearConversations()}
             />
 
-            <div
-                style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minHeight: 0,
-                }}
-            >
+            <div className="ai-chat__main">
                 {error ? (
                     <Alert
                         type="error"
                         showIcon
                         closable
                         message={t(error)}
-                        style={{ marginBottom: 8 }}
+                        style={{ margin: '12px 16px 0' }}
                     />
                 ) : null}
 

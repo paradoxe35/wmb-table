@@ -1,5 +1,5 @@
 import { Button, Input } from 'antd';
-import { SendOutlined, StopOutlined } from '@ant-design/icons';
+import { ArrowUpOutlined, StopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 export default function ChatInput({
@@ -18,46 +18,44 @@ export default function ChatInput({
     const { t } = useTranslation();
 
     return (
-        <div
-            style={{
-                display: 'flex',
-                gap: 8,
-                alignItems: 'flex-end',
-                padding: '8px 0 4px',
-                borderTop: '1px solid var(--ant-color-border)',
-            }}
-        >
-            <Input.TextArea
-                autoSize={{ minRows: 1, maxRows: 5 }}
-                value={draft}
-                onChange={(e) => onDraftChange(e.target.value)}
-                onPressEnter={(e) => {
-                    if (!e.shiftKey) {
-                        e.preventDefault();
-                        onSend();
-                    }
-                }}
-                placeholder={t('Posez votre question...')}
-                style={{ flex: 1 }}
-                variant="borderless"
-            />
-            {sending ? (
-                <Button
-                    shape="circle"
-                    icon={<StopOutlined />}
-                    onClick={onStop}
-                    title={t('Arrêter')}
+        <div className="ai-chat__input-wrapper">
+            <div className="ai-chat__input-box">
+                <Input.TextArea
+                    autoSize={{ minRows: 1, maxRows: 5 }}
+                    value={draft}
+                    onChange={(e) => onDraftChange(e.target.value)}
+                    onPressEnter={(e) => {
+                        if (!e.shiftKey) {
+                            e.preventDefault();
+                            onSend();
+                        }
+                    }}
+                    placeholder={t('Posez votre question...')}
+                    variant="borderless"
+                    className="ai-chat__input-textarea"
                 />
-            ) : (
-                <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<SendOutlined />}
-                    onClick={onSend}
-                    disabled={!draft.trim()}
-                    title={t('Envoyer')}
-                />
-            )}
+                <div className="ai-chat__input-actions">
+                    {sending ? (
+                        <Button
+                            size="small"
+                            shape="circle"
+                            icon={<StopOutlined style={{ fontSize: 12 }} />}
+                            onClick={onStop}
+                            title={t('Arrêter')}
+                        />
+                    ) : (
+                        <Button
+                            type="primary"
+                            size="small"
+                            shape="circle"
+                            icon={<ArrowUpOutlined style={{ fontSize: 13, fontWeight: 700 }} />}
+                            onClick={onSend}
+                            disabled={!draft.trim()}
+                            title={t('Envoyer')}
+                        />
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

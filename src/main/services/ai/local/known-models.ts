@@ -12,12 +12,13 @@ type KnownLocalModelSeed = Omit<AiLocalModelInfo, 'downloaded' | 'localPath' | '
 export const KNOWN_LOCAL_MODELS: KnownLocalModelSeed[] = [
     {
         id: 'qwen3.5-0.8b',
-        name: 'Qwen 3.5 0.8B',
+        name: 'Qwen 3.5',
         family: 'qwen',
         fileName: 'qwen3.5-0.8b',
         quantization: 'Q4_K_M',
         recommended: true,
-        description: 'Rapide et léger, idéal pour la recherche et les réponses courtes.',
+        description:
+            'Léger et rapide. Idéal pour un usage quotidien sur la plupart des ordinateurs.',
         downloadUrl: 'https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF',
         directDownloadUrl:
             'https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B.q4_k_m.gguf',
@@ -27,12 +28,12 @@ export const KNOWN_LOCAL_MODELS: KnownLocalModelSeed[] = [
     },
     {
         id: 'gemma3-1b',
-        name: 'Gemma 3 1B',
+        name: 'Gemma 3',
         family: 'gemma',
         fileName: 'gemma3-1b',
         quantization: 'Q4_K_M',
-        recommended: true,
-        description: 'Polyvalent, adapté aux réponses courtes et au travail hors ligne.',
+        recommended: false,
+        description: 'Plus complet, meilleure compréhension. Nécessite un peu plus de mémoire.',
         downloadUrl: 'https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF',
         directDownloadUrl:
             'https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf',

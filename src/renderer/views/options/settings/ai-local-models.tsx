@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, message, Progress, Select, Space, Tag, Typography } from 'antd';
+import { Button, Card, message, Progress, Select, Space, Tag, Tooltip, Typography } from 'antd';
 import {
     CheckCircleOutlined,
     DownloadOutlined,
     LaptopOutlined,
     ReloadOutlined,
+    StarFilled,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type {
@@ -38,34 +39,29 @@ function ModelRow({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                padding: '4px 0',
+                padding: '6px 0',
                 gap: 8,
             }}
         >
             <div style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontSize: '0.85em' }}>
-                    {model.name}{' '}
-                    <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                        ({model.quantization})
-                    </Text>{' '}
-                    {model.installed ? (
-                        <Tag
-                            color="success"
-                            icon={<CheckCircleOutlined />}
-                            style={{ marginInlineStart: 2 }}
-                        >
-                            {t('Installé')}
-                        </Tag>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Text style={{ fontSize: '0.85em' }}>{model.name}</Text>
+                    {model.recommended ? (
+                        <Tooltip title={t('Recommandé')}>
+                            <StarFilled style={{ color: '#1677ff', fontSize: 12 }} />
+                        </Tooltip>
                     ) : null}
-                </Text>
+                    {model.installed ? (
+                        <Tooltip title={t('Installé')}>
+                            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+                        </Tooltip>
+                    ) : null}
+                </div>
                 <Text type="secondary" style={{ fontSize: '0.75em', display: 'block' }}>
                     {t(model.description)}
-                    {!model.installed && model.approximateSizeMb > 0 ? (
-                        <>
-                            {' — '}
-                            {t('~{{size}} Mo', { size: model.approximateSizeMb })}
-                        </>
-                    ) : null}
+                    {!model.installed && model.approximateSizeMb > 0
+                        ? ` (${t('~{{size}} Mo', { size: model.approximateSizeMb })})`
+                        : null}
                 </Text>
             </div>
             {downloading ? (
@@ -159,9 +155,7 @@ export default function AiLocalModels({
             <span>
                 {m.name}
                 {m.recommended ? (
-                    <Tag color="blue" style={{ marginInlineStart: 4 }}>
-                        {t('Recommandé')}
-                    </Tag>
+                    <StarFilled style={{ color: '#1677ff', fontSize: 11, marginInlineStart: 4 }} />
                 ) : null}
             </span>
         ),
@@ -187,7 +181,9 @@ export default function AiLocalModels({
         >
             <Space direction="vertical" style={{ width: '100%' }} size="small">
                 <Text type="secondary" style={{ fontSize: '0.8em' }}>
-                    {t('Fonctionne sans connexion internet, directement sur votre ordinateur.')}
+                    {t(
+                        'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.',
+                    )}
                 </Text>
 
                 {models.length > 0 ? (

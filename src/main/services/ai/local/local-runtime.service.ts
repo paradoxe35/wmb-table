@@ -35,7 +35,9 @@ export class LocalRuntimeService {
             throw new Error('Le modèle local n\u2019est pas chargé.');
         }
 
-        const context = await this.model.createContext();
+        const context = await this.model.createContext({
+            ignoreMemorySafetyChecks: true,
+        });
         const session = new LlamaChatSession({
             contextSequence: context.getSequence(),
             systemPrompt: input.systemPrompt,
@@ -90,8 +92,8 @@ export class LocalRuntimeService {
     private async loadModel(modelPath: string): Promise<void> {
         await this.dispose();
         log.info('Local model loading', { modelPath });
-        const llama = await getLlama();
-        this.model = await llama.loadModel({ modelPath });
+        const llama = await getLlama({ gpu: false });
+        this.model = await llama.loadModel({ modelPath, gpuLayers: 0 });
         this.activeModelPath = modelPath;
         log.info('Local model loaded', { modelPath });
     }

@@ -76,10 +76,12 @@ const es: Record<string, string> = {
     'Modèle téléchargé': 'Modelo descargado',
     'Le téléchargement a échoué.': 'La descarga ha fallado.',
     '~{{size}} Mo': '~{{size}} MB',
-    'Rapide et léger, idéal pour la recherche et les réponses courtes.':
-        'Rápido y ligero, ideal para búsquedas y respuestas cortas.',
-    'Polyvalent, adapté aux réponses courtes et au travail hors ligne.':
-        'Versátil, adecuado para respuestas cortas y trabajo sin conexión.',
+    'Léger et rapide. Idéal pour un usage quotidien sur la plupart des ordinateurs.':
+        'Ligero y rápido. Ideal para uso diario en la mayoría de los ordenadores.',
+    'Plus complet, meilleure compréhension. Nécessite un peu plus de mémoire.':
+        'Más completo, mejor comprensión. Requiere un poco más de memoria.',
+    'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
+        'Funciona sin conexión a internet, directamente en su ordenador. Descargue un modelo para comenzar.',
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Añadir un proveedor',

@@ -29,7 +29,6 @@ import {
     useSermonLookup,
     useFormatSermonDate,
 } from '@renderer/hooks';
-import ContainerScrollY from '@renderer/components/container-scroll-y';
 
 const { Text } = Typography;
 
@@ -202,7 +201,10 @@ export default function Subject() {
                 <Card style={{ width: '100%', flexShrink: 0 }}>
                     <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
                 </Card>
-                <ContainerScrollY className="mt-2" style={{ padding: '22px', overflowX: 'hidden' }}>
+                <div
+                    className="container-y mt-2"
+                    style={{ flex: 1, minHeight: 0, padding: '22px', overflowX: 'hidden' }}
+                >
                     {datas.map((item) => (
                         <ItemSubject
                             key={item.name}
@@ -211,9 +213,9 @@ export default function Subject() {
                             onDeleteSubject={handleSubjectDeletion}
                         />
                     ))}
-                </ContainerScrollY>
+                </div>
             </div>
-            <ContainerScrollY susDiff={10} style={{ flex: 1, padding: '0 10px' }}>
+            <div className="container-y" style={{ flex: 1, minHeight: 0, padding: '0 10px' }}>
                 {activeDocument && (
                     <ShowActiveDocuments
                         subject={activeDocument}
@@ -221,7 +223,7 @@ export default function Subject() {
                         setDocuments={setSubjectItemData}
                     />
                 )}
-            </ContainerScrollY>
+            </div>
         </div>
     );
 }

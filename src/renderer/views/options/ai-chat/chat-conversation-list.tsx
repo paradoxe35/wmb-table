@@ -37,25 +37,9 @@ export default function ChatConversationList({
     const { t } = useTranslation();
 
     return (
-        <div
-            style={{
-                width: 220,
-                display: 'flex',
-                flexDirection: 'column',
-                minHeight: 0,
-                borderInlineEnd: '1px solid var(--ant-color-border)',
-                paddingInlineEnd: 12,
-            }}
-        >
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: 8,
-                }}
-            >
-                <Text strong style={{ fontSize: '0.9em' }}>
+        <div className="ai-chat__sidebar">
+            <div className="ai-chat__sidebar-header">
+                <Text strong style={{ fontSize: '0.85em' }}>
                     {t('Conversations')}
                 </Text>
                 <Button
@@ -67,11 +51,11 @@ export default function ChatConversationList({
                 />
             </div>
 
-            <div style={{ flex: 1, overflow: 'auto' }}>
+            <div className="ai-chat__sidebar-list">
                 {conversations.length === 0 ? (
                     <Text
                         type="secondary"
-                        style={{ fontSize: '0.8em', display: 'block', padding: '12px 4px' }}
+                        style={{ fontSize: '0.78em', display: 'block', padding: '16px 10px' }}
                     >
                         {t('Aucune conversation')}
                     </Text>
@@ -83,19 +67,7 @@ export default function ChatConversationList({
                                 key={conversation.id}
                                 role="button"
                                 tabIndex={0}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 4,
-                                    padding: '6px 8px',
-                                    borderRadius: 8,
-                                    cursor: 'pointer',
-                                    background: isActive
-                                        ? 'var(--ant-color-primary-bg)'
-                                        : 'transparent',
-                                    marginBottom: 2,
-                                    transition: 'background 0.15s',
-                                }}
+                                className={`ai-chat__conv-item ${isActive ? 'ai-chat__conv-item--active' : ''}`}
                                 onClick={() => onSelectConversation(conversation.id)}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
@@ -107,7 +79,7 @@ export default function ChatConversationList({
                                     <Text
                                         ellipsis
                                         style={{
-                                            fontSize: '0.82em',
+                                            fontSize: '0.8em',
                                             display: 'block',
                                             fontWeight: isActive ? 500 : 400,
                                         }}
@@ -116,7 +88,7 @@ export default function ChatConversationList({
                                     </Text>
                                     <Text
                                         type="secondary"
-                                        style={{ fontSize: '0.7em', display: 'block' }}
+                                        style={{ fontSize: '0.68em', display: 'block' }}
                                     >
                                         {formatRelativeDate(conversation.updatedAt, t)}
                                     </Text>
@@ -125,8 +97,9 @@ export default function ChatConversationList({
                                     type="text"
                                     size="small"
                                     danger
+                                    className="ai-chat__conv-delete"
                                     icon={<DeleteOutlined style={{ fontSize: 11 }} />}
-                                    style={{ opacity: 0.5, flexShrink: 0 }}
+                                    style={{ flexShrink: 0 }}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onDeleteConversation(conversation.id);
@@ -139,19 +112,22 @@ export default function ChatConversationList({
             </div>
 
             {conversations.length > 0 ? (
-                <Popconfirm
-                    title={t('Supprimer toutes les conversations ?')}
-                    onConfirm={onClearConversations}
-                >
-                    <Button
-                        size="small"
-                        type="text"
-                        danger
-                        style={{ marginTop: 8, fontSize: '0.8em' }}
+                <div className="ai-chat__sidebar-footer">
+                    <Popconfirm
+                        title={t('Supprimer toutes les conversations ?')}
+                        onConfirm={onClearConversations}
                     >
-                        {t("Vider l'historique")}
-                    </Button>
-                </Popconfirm>
+                        <Button
+                            size="small"
+                            type="text"
+                            danger
+                            block
+                            style={{ fontSize: '0.78em' }}
+                        >
+                            {t("Vider l'historique")}
+                        </Button>
+                    </Popconfirm>
+                </div>
             ) : null}
         </div>
     );

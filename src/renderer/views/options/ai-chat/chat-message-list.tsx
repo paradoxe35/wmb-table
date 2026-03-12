@@ -13,57 +13,24 @@ function MessageBubble({ message, sending }: { message: AiMessage; sending: bool
     const isStreaming = sending && !isUser && !message.content;
 
     return (
-        <div
-            style={{
-                display: 'flex',
-                gap: 10,
-                alignSelf: isUser ? 'flex-end' : 'flex-start',
-                maxWidth: '85%',
-                flexDirection: isUser ? 'row-reverse' : 'row',
-            }}
-        >
-            <div
-                style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: '50%',
-                    background: isUser
-                        ? 'var(--ant-color-primary)'
-                        : 'var(--ant-color-bg-container-disabled)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    marginTop: 2,
-                }}
-            >
-                {isUser ? (
-                    <UserOutlined style={{ color: '#fff', fontSize: 14 }} />
-                ) : (
-                    <RobotOutlined style={{ fontSize: 14 }} />
-                )}
+        <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
+            <div className={`ai-chat__avatar ai-chat__avatar--${isUser ? 'user' : 'assistant'}`}>
+                {isUser ? <UserOutlined /> : <RobotOutlined />}
             </div>
             <div
-                style={{
-                    padding: isUser ? '8px 14px' : '6px 14px',
-                    borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    background: isUser
-                        ? 'var(--ant-color-primary-bg)'
-                        : 'var(--ant-color-bg-layout)',
-                    minWidth: 40,
-                }}
+                className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
                 {isStreaming ? (
                     <Spin indicator={<LoadingOutlined spin />} size="small" />
                 ) : isUser ? (
-                    <Text style={{ whiteSpace: 'pre-wrap' }}>{message.content}</Text>
+                    <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                 ) : (
                     <div className="ai-markdown">
                         <Markdown>{message.content}</Markdown>
                     </div>
                 )}
                 {message.toolResults.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 6 }}>
+                    <div className="ai-chat__tool-results">
                         {message.toolResults.map((result) => (
                             <ChatToolResult
                                 key={`${result.toolCallId}-${result.name}`}
@@ -92,29 +59,23 @@ export default function ChatMessageList({
     }, [messages, sending]);
 
     return (
-        <div
-            style={{
-                flex: 1,
-                minHeight: 0,
-                overflow: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                padding: '12px 4px',
-            }}
-        >
+        <div className="ai-chat__messages">
             {messages.length === 0 ? (
-                <div
-                    style={{
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
+                <div className="ai-chat__empty">
                     <Empty
-                        image={<RobotOutlined style={{ fontSize: 40, color: '#8c8c8c' }} />}
-                        description={<Text type="secondary">{t('Posez votre question...')}</Text>}
+                        image={
+                            <RobotOutlined
+                                style={{
+                                    fontSize: 40,
+                                    color: 'var(--ant-color-text-quaternary)',
+                                }}
+                            />
+                        }
+                        description={
+                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                                {t('Posez votre question...')}
+                            </Text>
+                        }
                     />
                 </div>
             ) : (
