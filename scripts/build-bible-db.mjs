@@ -3,14 +3,19 @@
  * Build Bible SQLite databases from the getbible.net v2 API.
  *
  * Usage:
- *   node scripts/build-bible-db.mjs                  # Build new or changed versions only
- *   node scripts/build-bible-db.mjs darby kjv        # Check & build specific versions
- *   node scripts/build-bible-db.mjs --force           # Rebuild all, ignore existing content
+ *   node scripts/build-bible-db.mjs                  # Build & verify all versions
+ *   node scripts/build-bible-db.mjs darby kjv        # Build & verify specific versions
+ *   node scripts/build-bible-db.mjs --force           # Delete & rebuild all from scratch
  *   node scripts/build-bible-db.mjs --force darby     # Force rebuild specific versions
  *   node scripts/build-bible-db.mjs --list            # List available versions
  *
  * Local versions are output to resources/database/ (bundled with app).
  * Remote versions are output to build/bibles/ (uploaded to GitHub releases).
+ *
+ * Integrity: each verse gets a deterministic ID (SHA-256 of apiKey:book:chapter:verse).
+ * On re-run, existing DBs are verified row-by-row: missing verses are inserted,
+ * corrupted content is overwritten, orphan rows (old IDs, duplicates) are deleted.
+ * Up to 5 versions are processed in parallel.
  */
 
 import { existsSync, mkdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
@@ -24,6 +29,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const API_BASE = 'https://api.getbible.net/v2';
 const LOCAL_DIR = join(__dirname, '..', 'resources', 'database');
 const REMOTE_DIR = join(__dirname, '..', 'build', 'bibles');
+const CONCURRENCY = 5;
 
 // ---------------------------------------------------------------------------
 // Bible versions to build (OPEN LICENSE only — Public Domain, GPL, GFDL, CC)
@@ -383,16 +389,19 @@ const VERSIONS = {
     },
 };
 
-// Books 1-39 = Old Testament, 40-66 = New Testament
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 const isOT = (nr) => nr >= 1 && nr <= 39;
 
 /**
- * Generate a deterministic ID from the verse coordinates.
- * Same input always produces the same ID → no git diff on rebuild.
+ * Deterministic ID from verse coordinates.
+ * Same input → same ID, always. No randomness.
  */
-function generateId(apiKey, bookCode, chapter, verse) {
+function generateId(apiKey, book, chapter, verse) {
     return createHash('sha256')
-        .update(`${apiKey}:${bookCode}:${chapter}:${verse}`)
+        .update(`${apiKey}:${book}:${chapter}:${verse}`)
         .digest('base64url')
         .substring(0, 16);
 }
@@ -401,6 +410,18 @@ function bookCode(bookNr) {
     const testament = isOT(bookNr) ? 'O' : 'N';
     return `${String(bookNr).padStart(2, '0')}${testament}`;
 }
+
+function sleep(ms) {
+    return new Promise((r) => setTimeout(r, ms));
+}
+
+function outputDir(config) {
+    return config.distribution === 'local' ? LOCAL_DIR : REMOTE_DIR;
+}
+
+// ---------------------------------------------------------------------------
+// API fetching
+// ---------------------------------------------------------------------------
 
 async function fetchAvailableBooks(apiKey) {
     const url = `${API_BASE}/${apiKey}/books.json`;
@@ -411,7 +432,6 @@ async function fetchAvailableBooks(apiKey) {
         });
         if (!res.ok) return null;
         const books = await res.json();
-        // books is an object keyed by book number
         return Object.keys(books)
             .map(Number)
             .sort((a, b) => a - b);
@@ -437,11 +457,11 @@ async function fetchBook(apiKey, bookNr) {
     }
 }
 
-function sleep(ms) {
-    return new Promise((r) => setTimeout(r, ms));
-}
+// ---------------------------------------------------------------------------
+// Database
+// ---------------------------------------------------------------------------
 
-function createDatabase(dbPath) {
+function createFreshDatabase(dbPath) {
     if (existsSync(dbPath)) rmSync(dbPath);
 
     const db = new DatabaseSync(dbPath);
@@ -491,140 +511,213 @@ function createDatabase(dbPath) {
     return db;
 }
 
-function outputDir(config) {
-    return config.distribution === 'local' ? LOCAL_DIR : REMOTE_DIR;
-}
-
 /**
- * Compute a content hash from existing DB rows for comparison.
- * Hash covers: id, book, chapter, verse, content (sorted by id for determinism).
+ * Open existing DB if valid, otherwise create fresh.
  */
-function computeExistingHash(dbPath) {
-    try {
-        const db = new DatabaseSync(dbPath);
-        const rows = db
-            .prepare('SELECT id, book, chapter, verse, content FROM bible_verses ORDER BY id')
-            .all();
-        db.close();
-        if (rows.length === 0) return null;
-        const hash = createHash('sha256');
-        for (const r of rows) {
-            hash.update(`${r.id}|${r.book}|${r.chapter}|${r.verse}|${r.content}\n`);
+function openOrCreateDatabase(dbPath) {
+    if (existsSync(dbPath)) {
+        try {
+            const db = new DatabaseSync(dbPath);
+            // Verify schema is intact
+            db.prepare('SELECT id, content FROM bible_verses LIMIT 1').get();
+            return { db, isNew: false };
+        } catch {
+            console.log(`  Existing DB is corrupt, recreating from scratch.`);
+            rmSync(dbPath);
         }
-        return { hash: hash.digest('hex'), count: rows.length };
-    } catch {
-        return null;
     }
+    return { db: createFreshDatabase(dbPath), isNew: true };
 }
 
-/**
- * Fetch all verses from the API and return them as structured rows.
- */
-async function fetchAllVerses(config) {
-    const availableBooks = await fetchAvailableBooks(config.apiKey);
-    if (!availableBooks || availableBooks.length === 0) return null;
-
-    console.log(`  Found ${availableBooks.length} books available`);
-    const rows = [];
-
-    for (const bookNr of availableBooks) {
-        await sleep(300); // Rate limiting
-        const data = await fetchBook(config.apiKey, bookNr);
-        if (!data) {
-            console.log(`  Warning: Book ${bookNr} not found, skipping`);
-            continue;
-        }
-
-        const bookName = data.name;
-        const code = bookCode(bookNr);
-        const testament = isOT(bookNr) ? 'O' : 'N';
-        let bookVerses = 0;
-
-        for (const chapterData of data.chapters ?? []) {
-            const chapterNr = String(chapterData.chapter);
-            for (const verseData of chapterData.verses ?? []) {
-                const verseNr = String(verseData.verse);
-                const text = (verseData.text ?? '').trim();
-                if (!text) continue;
-
-                const id = generateId(config.apiKey, code, chapterNr, verseNr);
-                rows.push({ id, bookName, code, testament, chapterNr, verseNr, text });
-                bookVerses++;
-            }
-        }
-        console.log(`  Fetched: ${bookName.padEnd(20)} (${code}) - ${bookVerses} verses`);
-    }
-
-    return rows;
-}
-
-/**
- * Compute a content hash from fetched API rows (same format as computeExistingHash).
- */
-function computeFetchedHash(rows) {
-    const hash = createHash('sha256');
-    const sorted = [...rows].sort((a, b) => a.id.localeCompare(b.id));
-    for (const r of sorted) {
-        // Must match computeExistingHash format: id|book|chapter|verse|content
-        hash.update(`${r.id}|${r.code}|${r.chapterNr}|${r.verseNr}|${r.text}\n`);
-    }
-    return hash.digest('hex');
-}
+// ---------------------------------------------------------------------------
+// Build a single version
+// ---------------------------------------------------------------------------
 
 async function buildVersion(key, config, force) {
     const dir = outputDir(config);
     mkdirSync(dir, { recursive: true });
     const dbPath = join(dir, config.fileName);
 
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`Checking: ${config.name} (${key}) [${config.distribution}]`);
-    console.log(`${'='.repeat(60)}`);
+    const label = `${config.name} (${key})`;
+    console.log(`\n${'─'.repeat(60)}`);
+    console.log(`  ${label} [${config.distribution}]`);
+    console.log(`${'─'.repeat(60)}`);
 
-    // Fetch all verses from API
-    const apiRows = await fetchAllVerses(config);
-    if (!apiRows || apiRows.length === 0) {
-        console.log(`  Error: No verses fetched for ${config.apiKey}, skipping`);
-        return false;
+    // 1. Fetch available books from API
+    const availableBooks = await fetchAvailableBooks(config.apiKey);
+    if (!availableBooks || availableBooks.length === 0) {
+        console.log(`  ✗ Could not fetch book list for "${config.apiKey}", skipping.`);
+        return 'error';
     }
+    console.log(`  ${availableBooks.length} books available from API`);
 
-    // Compare against existing DB (unless --force)
-    if (!force && existsSync(dbPath)) {
-        const existing = computeExistingHash(dbPath);
-        if (existing) {
-            const apiHash = computeFetchedHash(apiRows);
-            if (existing.hash === apiHash) {
-                const sizeMb = (statSync(dbPath).size / (1024 * 1024)).toFixed(1);
-                console.log(
-                    `  Unchanged: ${config.name} (${key}) — ${existing.count} verses, ${sizeMb} MB. Skipping.`,
-                );
-                return 'skipped';
+    // 2. Fetch all verses from API
+    const apiVerses = [];
+    for (const bookNr of availableBooks) {
+        await sleep(200);
+        const data = await fetchBook(config.apiKey, bookNr);
+        if (!data) continue;
+
+        const bookName = data.name;
+        const code = bookCode(bookNr);
+        const testament = isOT(bookNr) ? 'O' : 'N';
+
+        for (const ch of data.chapters ?? []) {
+            const chapter = String(ch.chapter);
+            for (const v of ch.verses ?? []) {
+                const verse = String(v.verse);
+                const text = (v.text ?? '').trim();
+                if (!text) continue;
+                const id = generateId(config.apiKey, code, chapter, verse);
+                apiVerses.push({ id, bookName, code, testament, chapter, verse, text });
             }
-            console.log(
-                `  Content changed (existing: ${existing.count} verses, API: ${apiRows.length} verses). Rebuilding.`,
-            );
-        } else {
-            console.log(`  Existing DB is empty or corrupt. Rebuilding.`);
         }
     }
 
-    // Write new DB
-    console.log(`  Writing: ${dbPath}`);
-    const db = createDatabase(dbPath);
-    const insert = db.prepare(
-        'INSERT INTO bible_verses (id, book_name, book, testament, chapter, verse, content) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    );
-
-    db.exec('BEGIN');
-    for (const r of apiRows) {
-        insert.run(r.id, r.bookName, r.code, r.testament, r.chapterNr, r.verseNr, r.text);
+    if (apiVerses.length === 0) {
+        console.log(`  ✗ No verses fetched, skipping.`);
+        return 'error';
     }
-    db.exec('COMMIT');
+    console.log(`  ${apiVerses.length} verses fetched from API`);
+
+    // 3. Check for duplicate IDs in API data (should never happen with deterministic IDs)
+    const idSet = new Set();
+    for (const v of apiVerses) {
+        if (idSet.has(v.id)) {
+            console.error(
+                `  ✗ DUPLICATE ID detected: ${v.id} (${v.code} ${v.chapter}:${v.verse}). Aborting.`,
+            );
+            return 'error';
+        }
+        idSet.add(v.id);
+    }
+
+    // 4. Force mode: delete and rebuild from scratch
+    if (force && existsSync(dbPath)) {
+        rmSync(dbPath);
+    }
+
+    // 5. Open or create DB
+    const { db, isNew } = openOrCreateDatabase(dbPath);
+
+    let inserted = 0;
+    let updated = 0;
+    let unchanged = 0;
+    let deleted = 0;
+
+    if (isNew) {
+        // Fresh DB: bulk insert all verses
+        const insertStmt = db.prepare(
+            'INSERT INTO bible_verses (id, book_name, book, testament, chapter, verse, content) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        );
+        db.exec('BEGIN');
+        for (const v of apiVerses) {
+            insertStmt.run(v.id, v.bookName, v.code, v.testament, v.chapter, v.verse, v.text);
+        }
+        db.exec('COMMIT');
+        inserted = apiVerses.length;
+    } else {
+        // Existing DB: row-by-row verification
+        const selectStmt = db.prepare(
+            'SELECT book_name, book, testament, chapter, verse, content FROM bible_verses WHERE id = ?',
+        );
+        const insertStmt = db.prepare(
+            'INSERT INTO bible_verses (id, book_name, book, testament, chapter, verse, content) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        );
+        const updateStmt = db.prepare(
+            'UPDATE bible_verses SET book_name = ?, book = ?, testament = ?, chapter = ?, verse = ?, content = ? WHERE id = ?',
+        );
+
+        db.exec('BEGIN');
+        for (const v of apiVerses) {
+            const existing = selectStmt.get(v.id);
+            if (!existing) {
+                // Missing verse → insert
+                insertStmt.run(v.id, v.bookName, v.code, v.testament, v.chapter, v.verse, v.text);
+                inserted++;
+            } else if (
+                existing.content !== v.text ||
+                existing.book_name !== v.bookName ||
+                existing.book !== v.code ||
+                existing.testament !== v.testament ||
+                existing.chapter !== v.chapter ||
+                existing.verse !== v.verse
+            ) {
+                // Corrupted or changed → overwrite
+                updateStmt.run(v.bookName, v.code, v.testament, v.chapter, v.verse, v.text, v.id);
+                updated++;
+            } else {
+                unchanged++;
+            }
+        }
+
+        // Remove orphan rows (old random IDs, duplicates, anything not from API)
+        const allDbIds = db.prepare('SELECT id FROM bible_verses').all();
+        const validIds = idSet;
+        const deleteStmt = db.prepare('DELETE FROM bible_verses WHERE id = ?');
+        for (const row of allDbIds) {
+            if (!validIds.has(row.id)) {
+                deleteStmt.run(row.id);
+                deleted++;
+            }
+        }
+
+        db.exec('COMMIT');
+    }
+
+    // 6. Integrity check: verify final verse count matches API
+    const finalCount = db.prepare('SELECT COUNT(*) as cnt FROM bible_verses').get().cnt;
     db.close();
 
+    if (finalCount !== apiVerses.length) {
+        console.error(
+            `  ✗ INTEGRITY ERROR: DB has ${finalCount} verses but API has ${apiVerses.length}. DB may be corrupted.`,
+        );
+        return 'error';
+    }
+
     const sizeMb = (statSync(dbPath).size / (1024 * 1024)).toFixed(1);
-    console.log(`  Built: ${apiRows.length} verses, ${sizeMb} MB`);
-    return true;
+
+    if (isNew) {
+        console.log(`  ✓ Created: ${inserted} verses, ${sizeMb} MB`);
+    } else if (inserted === 0 && updated === 0 && deleted === 0) {
+        console.log(`  ✓ Verified: ${unchanged} verses accurate, ${sizeMb} MB`);
+    } else {
+        console.log(
+            `  ✓ Synced: +${inserted} inserted, ~${updated} fixed, -${deleted} orphans removed, ${unchanged} ok, ${sizeMb} MB`,
+        );
+    }
+
+    return inserted === 0 && updated === 0 && deleted === 0 && !isNew ? 'unchanged' : 'built';
 }
+
+// ---------------------------------------------------------------------------
+// Parallel runner — process up to CONCURRENCY versions at a time
+// ---------------------------------------------------------------------------
+
+async function runParallel(keys, force) {
+    let built = 0;
+    let unchangedCount = 0;
+    let errors = 0;
+
+    for (let i = 0; i < keys.length; i += CONCURRENCY) {
+        const batch = keys.slice(i, i + CONCURRENCY);
+        const results = await Promise.all(
+            batch.map((key) => buildVersion(key, VERSIONS[key], force)),
+        );
+        for (const r of results) {
+            if (r === 'built') built++;
+            else if (r === 'unchanged') unchangedCount++;
+            else if (r === 'error') errors++;
+        }
+    }
+
+    return { built, unchanged: unchangedCount, errors };
+}
+
+// ---------------------------------------------------------------------------
+// Remote index
+// ---------------------------------------------------------------------------
 
 function generateRemoteIndex() {
     const indexPath = join(REMOTE_DIR, 'bible-index.json');
@@ -647,6 +740,7 @@ function generateRemoteIndex() {
 // ---------------------------------------------------------------------------
 // CLI
 // ---------------------------------------------------------------------------
+
 const args = process.argv.slice(2);
 const listFlag = args.includes('--list');
 const forceFlag = args.includes('--force');
@@ -656,7 +750,7 @@ if (listFlag) {
     console.log('Available versions:');
     for (const [key, config] of Object.entries(VERSIONS)) {
         console.log(
-            `  ${key.padEnd(15)} ${config.name.padEnd(30)} (${config.langCode}) [${config.distribution}]`,
+            `  ${key.padEnd(20)} ${config.name.padEnd(35)} (${config.langCode}) [${config.distribution}]`,
         );
     }
     process.exit(0);
@@ -671,16 +765,13 @@ for (const key of keysToBuild) {
     }
 }
 
-let built = 0;
-let skipped = 0;
-for (const key of keysToBuild) {
-    const result = await buildVersion(key, VERSIONS[key], forceFlag);
-    if (result === 'skipped') skipped++;
-    else if (result) built++;
-}
+console.log(`Processing ${keysToBuild.length} versions (${CONCURRENCY} in parallel)...`);
+const { built, unchanged, errors } = await runParallel(keysToBuild, forceFlag);
 
 console.log(`\n${'='.repeat(60)}`);
-console.log(`Done: ${built} built, ${skipped} skipped, ${keysToBuild.length} total`);
+console.log(
+    `Done: ${built} built, ${unchanged} unchanged, ${errors} errors, ${keysToBuild.length} total`,
+);
 console.log(`${'='.repeat(60)}`);
 
 generateRemoteIndex();
