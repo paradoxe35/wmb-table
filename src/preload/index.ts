@@ -12,6 +12,7 @@ import {
     AppChannels,
     LanguageChannels,
     TtsChannels,
+    AiChannels,
     PushChannels,
     type InvokeChannel,
     type InvokeChannelMap,
@@ -36,6 +37,7 @@ import type {
     TtsSegment,
     TtsVoiceCloneRequest,
 } from '@shared/tts.types';
+import type { AiSendMessageRequest, AiSettings } from '@shared/ai.types';
 
 function invoke<C extends InvokeChannel>(
     channel: C,
@@ -262,6 +264,30 @@ const api = {
             invoke(TtsChannels.resolveConfigForLanguage, language),
     },
 
+    ai: {
+        getSettings: () => invoke(AiChannels.getSettings),
+        getProviderCatalog: () => invoke(AiChannels.getProviderCatalog),
+        updateSettings: (settings: Partial<AiSettings>) =>
+            invoke(AiChannels.updateSettings, settings),
+        getConversations: () => invoke(AiChannels.getConversations),
+        createConversation: (input?: { title?: string; languageCode?: string }) =>
+            invoke(AiChannels.createConversation, input),
+        deleteConversation: (conversationId: string) =>
+            invoke(AiChannels.deleteConversation, conversationId),
+        clearConversations: () => invoke(AiChannels.clearConversations),
+        getMessages: (conversationId: string) => invoke(AiChannels.getMessages, conversationId),
+        sendMessage: (request: AiSendMessageRequest) => invoke(AiChannels.sendMessage, request),
+        stopGeneration: (conversationId: string) =>
+            invoke(AiChannels.stopGeneration, conversationId),
+        scanLocalModels: () => invoke(AiChannels.scanLocalModels),
+        testProvider: (input: {
+            providerId: string;
+            model: string;
+            apiKey?: string;
+            baseUrl?: string;
+        }) => invoke(AiChannels.testProvider, input),
+    },
+
     on: {
         openModalDocumentFromMain: (
             cb: (p: PushEventMap[typeof PushChannels.openModalDocumentFromMain]) => void,
@@ -317,6 +343,17 @@ const api = {
         ) => onPush(PushChannels.ttsModelDownloadProgress, cb),
         ttsSegmentAudio: (cb: (p: PushEventMap[typeof PushChannels.ttsSegmentAudio]) => void) =>
             onPush(PushChannels.ttsSegmentAudio, cb),
+        aiStreamChunk: (cb: (p: PushEventMap[typeof PushChannels.aiStreamChunk]) => void) =>
+            onPush(PushChannels.aiStreamChunk, cb),
+        aiStreamComplete: (cb: (p: PushEventMap[typeof PushChannels.aiStreamComplete]) => void) =>
+            onPush(PushChannels.aiStreamComplete, cb),
+        aiStreamError: (cb: (p: PushEventMap[typeof PushChannels.aiStreamError]) => void) =>
+            onPush(PushChannels.aiStreamError, cb),
+        aiToolCallStart: (cb: (p: PushEventMap[typeof PushChannels.aiToolCallStart]) => void) =>
+            onPush(PushChannels.aiToolCallStart, cb),
+        aiToolCallComplete: (
+            cb: (p: PushEventMap[typeof PushChannels.aiToolCallComplete]) => void,
+        ) => onPush(PushChannels.aiToolCallComplete, cb),
     },
 } as const;
 

@@ -7,6 +7,7 @@ import {
     InfoCircleOutlined,
     ReadOutlined,
     ReloadOutlined,
+    RobotOutlined,
     SettingOutlined,
     SoundOutlined,
 } from '@ant-design/icons';
@@ -17,6 +18,7 @@ import BackupTab from './backup-tab';
 import UpdateTab from './update-tab';
 import TtsTab from './tts-tab';
 import DocumentViewTab from './document-view-tab';
+import AiTab from './ai-tab';
 
 const { Title, Text } = Typography;
 
@@ -25,6 +27,7 @@ const TAB_KEYS = {
     documentView: 'documentView',
     languages: 'languages',
     tts: 'tts',
+    ai: 'ai',
     backup: 'backup',
     update: 'update',
 } as const;
@@ -100,6 +103,15 @@ export default function Settings() {
                     </span>
                 ),
                 children: <TtsTab />,
+            },
+            {
+                key: TAB_KEYS.ai,
+                label: (
+                    <span>
+                        <RobotOutlined /> {t('Assistant')}
+                    </span>
+                ),
+                children: <AiTab />,
             },
             {
                 key: TAB_KEYS.backup,

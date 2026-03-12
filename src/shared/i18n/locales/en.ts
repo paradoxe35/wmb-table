@@ -30,6 +30,92 @@ const en: Record<string, string> = {
     Sauvegarde: 'Backup',
     'Mise à jour': 'Update',
     'Gérez les préférences de votre application.': 'Manage your application preferences.',
+    Assistant: 'Assistant',
+    'Assistant IA': 'AI Assistant',
+    "Activer l'assistant IA": 'Enable AI assistant',
+    "Une fois activé, l'assistant apparaît dans la barre latérale.":
+        'Once enabled, the assistant appears in the sidebar.',
+    'Clé API': 'API key',
+    'URL de base': 'Base URL',
+    Modèle: 'Model',
+    Identifiant: 'Identifier',
+    'Nom affiché': 'Display name',
+    Optionnel: 'Optional',
+    'Modèle par défaut': 'Default model',
+    Recommandé: 'Recommended',
+    Installé: 'Installed',
+    Nouveau: 'New',
+
+    // ── AI settings ──
+    'Choisissez le service à utiliser pour le chat IA.': 'Choose the service to use for AI chat.',
+    'Choisir un fournisseur': 'Choose a provider',
+    Personnalisé: 'Custom',
+    'Comportement des langues': 'Language behavior',
+    "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
+        'The assistant follows the active language unless you explicitly ask for another one.',
+    'Suivre la langue active': 'Follow the active language',
+    'Changer uniquement sur demande': 'Switch only on request',
+    "Utilisez l'identifiant exact du modèle fourni par ce service.":
+        'Use the exact model identifier provided by this service.',
+
+    // ── AI provider descriptions ──
+    'Fonctionne sans connexion internet, directement sur votre ordinateur.':
+        'Works offline, directly on your computer.',
+    'Accédez à plusieurs modèles avec une seule clé API.':
+        'Access multiple models with a single API key.',
+    'ChatGPT et autres modèles OpenAI.': 'ChatGPT and other OpenAI models.',
+    'Les modèles Gemini de Google.': 'Google Gemini models.',
+    "Les modèles Claude d'Anthropic.": 'Anthropic Claude models.',
+
+    // ── AI local models ──
+    'Modèle local': 'Local model',
+    Actualiser: 'Refresh',
+    'Choisir un modèle': 'Choose a model',
+    Utiliser: 'Use',
+    'Rapide et léger, idéal pour la recherche et les réponses courtes.':
+        'Fast and lightweight, ideal for search and short answers.',
+    'Polyvalent, adapté aux réponses courtes et au travail hors ligne.':
+        'Versatile, suitable for short answers and offline work.',
+
+    // ── AI custom providers ──
+    'Fournisseurs personnalisés': 'Custom providers',
+    'Ajouter un fournisseur': 'Add a provider',
+    'Ajoutez un service compatible OpenAI API.': 'Add an OpenAI-compatible service.',
+    'Aucun fournisseur personnalisé.': 'No custom provider.',
+    'Supprimer ce fournisseur ?': 'Delete this provider?',
+    'ex: mon-service': 'e.g. my-service',
+    'ex: gpt-4o-mini': 'e.g. gpt-4o-mini',
+
+    // ── AI chat ──
+    "L'assistant IA est désactivé.": 'The AI assistant is disabled.',
+    'Ouvrir les paramètres': 'Open settings',
+    'Posez votre question...': 'Ask your question...',
+    Envoyer: 'Send',
+    Arrêter: 'Stop',
+    Conversations: 'Conversations',
+    'Aucune conversation': 'No conversations',
+    Conversation: 'Conversation',
+    maintenant: 'now',
+    'Supprimer toutes les conversations ?': 'Delete all conversations?',
+    "Vider l'historique": 'Clear history',
+
+    // ── AI tool results ──
+    'Recherche de sermons': 'Sermon search',
+    'Lecture du sermon': 'Reading sermon',
+    'Recherche dans le contenu': 'Content search',
+    'Versions de la Bible': 'Bible versions',
+    'Passage biblique': 'Bible passage',
+    'Liste des sujets': 'Subject list',
+    'Création de sujet': 'Subject creation',
+    'Ajout au sujet': 'Added to subject',
+    'Liste des notes': 'Note list',
+    'Lecture de la note': 'Reading note',
+    'Création de note': 'Note creation',
+    'Mise à jour de la note': 'Note update',
+    'Ajout à la note': 'Added to note',
+    'Langues disponibles': 'Available languages',
+    'Documents personnalisés': 'Custom documents',
+    'Lecture du document': 'Reading document',
 
     // ── General tab ──
     'Langue active': 'Active language',
@@ -105,7 +191,6 @@ const en: Record<string, string> = {
     'Volume: {{value}}%': 'Volume: {{value}}%',
 
     // ── TTS provider Kokoro ──
-    Modèle: 'Model',
     'À télécharger une seule fois. Environ 160 Mo.': 'Download once. Approximately 160 MB.',
     'Télécharger le modèle': 'Download model',
     'Toutes les voix sont disponibles. La voix par défaut correspond à la langue active.':
@@ -394,7 +479,6 @@ const en: Record<string, string> = {
 
     // ── Bible content ──
     'Aucune Bible disponible pour cette langue': 'No Bible available for this language',
-    Nouveau: 'New',
     Ancien: 'Old',
     Testament: 'Testament',
     'Ajouter à un sujet': 'Add to a subject',

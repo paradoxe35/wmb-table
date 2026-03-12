@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -246,6 +246,51 @@ export const ttsSettings = sqliteTable('tts_settings', {
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
+
+// ---------------------------------------------------------------------------
+// AI assistant
+// ---------------------------------------------------------------------------
+
+export const aiSettings = sqliteTable('ai_settings', {
+    id: text('id').primaryKey(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(false),
+    activeProvider: text('active_provider'),
+    activeModel: text('active_model'),
+    languagePreference: text('language_preference').notNull().default('active'),
+    maxHistoryConversations: integer('max_history_conversations').notNull().default(50),
+    maxContextMessages: integer('max_context_messages').notNull().default(18),
+    providers: text('providers').notNull(),
+    customProviders: text('custom_providers').notNull(),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+export const aiConversations = sqliteTable('ai_conversations', {
+    id: text('id').primaryKey(),
+    title: text('title'),
+    languageCode: text('language_code').notNull(),
+    summary: text('summary'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+export const aiMessages = sqliteTable(
+    'ai_messages',
+    {
+        id: text('id').primaryKey(),
+        conversationId: text('conversation_id')
+            .notNull()
+            .references(() => aiConversations.id, { onDelete: 'cascade' }),
+        role: text('role').notNull(),
+        content: text('content').notNull().default(''),
+        toolCalls: text('tool_calls'),
+        toolResults: text('tool_results'),
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [
+        index('ai_messages_conversation_created_idx').on(table.conversationId, table.createdAt),
+    ],
+);
 
 // ---------------------------------------------------------------------------
 // Synced tables — add a table here to include it in sync

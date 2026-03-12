@@ -18,6 +18,7 @@ import Subject from './views/options/subject';
 import Bible from './views/options/bible';
 import Settings from './views/options/settings';
 import DocumentView from './views/document-view';
+import AiChatView from './views/options/ai-chat';
 
 const Notes = lazy(() => import('./views/options/notes'));
 
@@ -69,6 +70,11 @@ const AppOptions = memo(function AppOptions(): ReactElement {
             settings: (
                 <Loader>
                     <Settings />
+                </Loader>
+            ),
+            'ai-chat': (
+                <Loader>
+                    <AiChatView />
                 </Loader>
             ),
         }),

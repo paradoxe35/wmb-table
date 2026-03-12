@@ -34,6 +34,12 @@ export function getTtsModelsDir(): string {
     return dir;
 }
 
+export function getAiModelsDir(): string {
+    const dir = join(APP_DIR, 'ai-models');
+    mkdirSync(dir, { recursive: true });
+    return dir;
+}
+
 // ── Bundled resources ──
 
 export function getTtsResourceDir(): string {

@@ -12,6 +12,7 @@ import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 import { disposeTtsService } from '@main/services/tts';
+import { disposeAiService } from '@main/services/ai';
 
 // Initialize logger first
 initializeLogger();
@@ -115,6 +116,7 @@ app.on('will-quit', () => {
     stopSynchronizer();
     terminateWorker();
     disposeTtsService();
+    disposeAiService();
     closeDatabase();
 });
 

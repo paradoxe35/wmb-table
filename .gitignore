@@ -50,3 +50,6 @@ assets/datas/
 # Docs
 docs/.vitepress/dist
 docs/.vitepress/cache
+
+# PNPM
+.pnpm-store

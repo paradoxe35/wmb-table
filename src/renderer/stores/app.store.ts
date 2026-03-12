@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 import type { ViewMenuValue } from '@shared/types';
 
-type OptionViewValue = 'search' | 'subject' | 'history' | 'editor' | 'bible' | 'settings';
+type OptionViewValue =
+    | 'search'
+    | 'subject'
+    | 'history'
+    | 'editor'
+    | 'bible'
+    | 'settings'
+    | 'ai-chat';
 
 interface AppState {
     loaded: boolean;

@@ -1,3 +1,38 @@
+CREATE TABLE `ai_conversations` (
+	`id` text PRIMARY KEY NOT NULL,
+	`title` text,
+	`language_code` text NOT NULL,
+	`summary` text,
+	`created_at` text DEFAULT (datetime('now')),
+	`updated_at` text DEFAULT (datetime('now'))
+);
+--> statement-breakpoint
+CREATE TABLE `ai_messages` (
+	`id` text PRIMARY KEY NOT NULL,
+	`conversation_id` text NOT NULL,
+	`role` text NOT NULL,
+	`content` text DEFAULT '' NOT NULL,
+	`tool_calls` text,
+	`tool_results` text,
+	`created_at` text DEFAULT (datetime('now')),
+	FOREIGN KEY (`conversation_id`) REFERENCES `ai_conversations`(`id`) ON UPDATE no action ON DELETE cascade
+);
+--> statement-breakpoint
+CREATE INDEX `ai_messages_conversation_created_idx` ON `ai_messages` (`conversation_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `ai_settings` (
+	`id` text PRIMARY KEY NOT NULL,
+	`enabled` integer DEFAULT false NOT NULL,
+	`active_provider` text,
+	`active_model` text,
+	`language_preference` text DEFAULT 'active' NOT NULL,
+	`max_history_conversations` integer DEFAULT 50 NOT NULL,
+	`max_context_messages` integer DEFAULT 18 NOT NULL,
+	`providers` text NOT NULL,
+	`custom_providers` text NOT NULL,
+	`created_at` text DEFAULT (datetime('now')),
+	`updated_at` text DEFAULT (datetime('now'))
+);
+--> statement-breakpoint
 CREATE TABLE `audio_document_last_play` (
 	`id` text PRIMARY KEY NOT NULL,
 	`reference` text,

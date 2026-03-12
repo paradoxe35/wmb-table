@@ -59,6 +59,20 @@ import type {
     TtsModelInfo,
     TtsCompatibilityResult,
 } from './tts.types';
+import type {
+    AiConversation,
+    AiMessage,
+    AiModelScanResult,
+    AiProviderTestResult,
+    AiProviderDefinition,
+    AiSendMessageRequest,
+    AiSendMessageResult,
+    AiSettings,
+    AiStreamChunkEvent,
+    AiStreamCompleteEvent,
+    AiStreamErrorEvent,
+    AiToolEvent,
+} from './ai.types';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -211,6 +225,21 @@ export const TtsChannels = {
     resolveConfigForLanguage: 'tts:resolveConfigForLanguage',
 } as const;
 
+export const AiChannels = {
+    getSettings: 'ai:getSettings',
+    getProviderCatalog: 'ai:getProviderCatalog',
+    updateSettings: 'ai:updateSettings',
+    getConversations: 'ai:getConversations',
+    createConversation: 'ai:createConversation',
+    deleteConversation: 'ai:deleteConversation',
+    clearConversations: 'ai:clearConversations',
+    getMessages: 'ai:getMessages',
+    sendMessage: 'ai:sendMessage',
+    stopGeneration: 'ai:stopGeneration',
+    scanLocalModels: 'ai:scanLocalModels',
+    testProvider: 'ai:testProvider',
+} as const;
+
 // ---------------------------------------------------------------------------
 // Push channels — main → renderer (one-way events via webContents.send)
 // ---------------------------------------------------------------------------
@@ -238,6 +267,11 @@ export const PushChannels = {
     ttsPlaybackState: 'push:ttsPlaybackState',
     ttsModelDownloadProgress: 'push:ttsModelDownloadProgress',
     ttsSegmentAudio: 'push:ttsSegmentAudio',
+    aiStreamChunk: 'push:aiStreamChunk',
+    aiStreamComplete: 'push:aiStreamComplete',
+    aiStreamError: 'push:aiStreamError',
+    aiToolCallStart: 'push:aiToolCallStart',
+    aiToolCallComplete: 'push:aiToolCallComplete',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -458,6 +492,26 @@ export interface InvokeChannelMap {
     };
     [TtsChannels.previewVoice]: { args: [string]; return: TtsSynthesizeResult };
     [TtsChannels.resolveConfigForLanguage]: { args: [string]; return: TtsSettings | null };
+
+    // AI assistant
+    [AiChannels.getSettings]: { args: []; return: AiSettings };
+    [AiChannels.getProviderCatalog]: { args: []; return: AiProviderDefinition[] };
+    [AiChannels.updateSettings]: { args: [Partial<AiSettings>]; return: AiSettings };
+    [AiChannels.getConversations]: { args: []; return: AiConversation[] };
+    [AiChannels.createConversation]: {
+        args: [{ title?: string; languageCode?: string }?];
+        return: AiConversation;
+    };
+    [AiChannels.deleteConversation]: { args: [string]; return: void };
+    [AiChannels.clearConversations]: { args: []; return: void };
+    [AiChannels.getMessages]: { args: [string]; return: AiMessage[] };
+    [AiChannels.sendMessage]: { args: [AiSendMessageRequest]; return: AiSendMessageResult };
+    [AiChannels.stopGeneration]: { args: [string]; return: void };
+    [AiChannels.scanLocalModels]: { args: []; return: AiModelScanResult };
+    [AiChannels.testProvider]: {
+        args: [{ providerId: string; model: string; apiKey?: string; baseUrl?: string }];
+        return: AiProviderTestResult;
+    };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */
@@ -484,6 +538,11 @@ export interface PushEventMap {
     [PushChannels.ttsPlaybackState]: TtsPlaybackState;
     [PushChannels.ttsModelDownloadProgress]: TtsModelDownloadProgress;
     [PushChannels.ttsSegmentAudio]: TtsSegmentAudio;
+    [PushChannels.aiStreamChunk]: AiStreamChunkEvent;
+    [PushChannels.aiStreamComplete]: AiStreamCompleteEvent;
+    [PushChannels.aiStreamError]: AiStreamErrorEvent;
+    [PushChannels.aiToolCallStart]: AiToolEvent;
+    [PushChannels.aiToolCallComplete]: AiToolEvent;
 }
 
 // ---------------------------------------------------------------------------

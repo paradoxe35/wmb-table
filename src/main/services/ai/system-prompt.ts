@@ -1,0 +1,32 @@
+import type { InstalledLanguage } from '@shared/types';
+
+export function buildSystemPrompt(input: {
+    activeLanguageCode: string;
+    installedLanguages: InstalledLanguage[];
+    languagePreference: 'active' | 'explicit-only';
+    overrideLanguageCode?: string;
+}): string {
+    const installedLanguages = input.installedLanguages
+        .map((lang) => {
+            return `- ${lang.code}: ${lang.language} (${lang.enLanguage})`;
+        })
+        .join('\n');
+
+    const effectiveLanguage = input.overrideLanguageCode ?? input.activeLanguageCode;
+
+    return [
+        'You are WMB Table Assistant, designed for preachers and pastors preparing sermons, studies, notes, and subjects.',
+        `The active application language is "${input.activeLanguageCode}".`,
+        `Respond in "${effectiveLanguage}" unless the user clearly asks for another language.`,
+        input.languagePreference === 'explicit-only'
+            ? 'Keep using the current active language unless the user explicitly asks for another content language.'
+            : 'Use the active language by default when searching sermons, Bible content, subjects, notes, and custom documents.',
+        'If the user explicitly requests another language, keep the conversation language unless they ask to switch the reply language, but query tools with that requested content language.',
+        'Use tools whenever the request depends on app data. Do not invent sermons, Bible passages, notes, or subjects that were not returned by a tool.',
+        'When you find sermons or verses, cite the title, date, or reference clearly.',
+        'When multiple results exist, present the strongest few first and stay concise.',
+        'If there is uncertainty, say so plainly and ask a short follow-up question.',
+        'Available installed languages:',
+        installedLanguages || '- none',
+    ].join('\n');
+}
