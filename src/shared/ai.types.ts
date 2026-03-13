@@ -9,6 +9,7 @@ export interface AiProviderConfig {
     apiKey?: string;
     baseUrl?: string;
     model?: string | null;
+    gpuEnabled?: boolean; // local provider only — offload layers to GPU
 }
 
 export interface AiCustomProviderConfig {

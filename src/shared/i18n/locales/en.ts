@@ -81,6 +81,9 @@ const en: Record<string, string> = {
         'More capable, better understanding. Requires a bit more memory.',
     'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
         'Works offline, directly on your computer. Download a model to get started.',
+    'Utiliser la carte graphique (GPU)': 'Use graphics card (GPU)',
+    'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
+        'Speeds up responses if your computer has a compatible graphics card. Disable this option if you experience issues.',
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Add a provider',
@@ -169,11 +172,12 @@ const en: Record<string, string> = {
     'Taille maximale du cache': 'Maximum cache size',
 
     // ── TTS shared ──
-    'Navigateur (SpeechSynthesis)': 'Browser (SpeechSynthesis)',
-    'Sherpa-ONNX TTS (local)': 'Sherpa-ONNX TTS (local)',
-    'Kokoro TTS (local)': 'Kokoro TTS (local)',
+    'Voix du système': 'System voices',
+    'Sherpa-ONNX TTS': 'Sherpa-ONNX TTS',
+    'Kokoro TTS': 'Kokoro TTS',
     'ElevenLabs TTS': 'ElevenLabs TTS',
     'OpenAI TTS': 'OpenAI TTS',
+    'Edge TTS (Microsoft)': 'Edge TTS (Microsoft)',
     'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.':
         'Free, works offline. Uses the voices already installed on your computer.',
     'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.':
@@ -184,6 +188,9 @@ const en: Record<string, string> = {
         'Excellent quality. Allows voice cloning. Requires an account and internet connection.',
     'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.':
         'Excellent quality, many languages available. Requires an account and internet connection.',
+    'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.':
+        'Free, good quality, many languages. Requires an internet connection. No account needed.',
+    Gratuit: 'Free',
     Local: 'Local',
     Cloud: 'Cloud',
     o: 'B',
@@ -248,6 +255,10 @@ const en: Record<string, string> = {
         'Built-in voices for voice cloning. Clone them to use.',
     Cloné: 'Cloned',
     'Erreur lors de la lecture': 'Playback error',
+
+    // ── TTS provider Edge ──
+    'Sélectionnez une voix parmi les centaines disponibles, classées par langue.':
+        'Select a voice from the hundreds available, sorted by language.',
 
     // ── TTS provider OpenAI ──
     'Clé API OpenAI': 'OpenAI API Key',

@@ -30,7 +30,9 @@ export class AiService {
     private localRuntime = new LocalRuntimeService();
 
     getSettings(): AiSettings {
-        return aiRepo.ensureSettings();
+        const settings = aiRepo.ensureSettings();
+        this.localRuntime.setGpuEnabled(settings.providers.local.gpuEnabled ?? false);
+        return settings;
     }
 
     getProviderCatalog() {
@@ -40,6 +42,7 @@ export class AiService {
     updateSettings(partial: Partial<AiSettings>): AiSettings {
         const settings = aiRepo.updateSettings(partial);
         aiRepo.trimConversationHistory(settings.maxHistoryConversations);
+        this.localRuntime.setGpuEnabled(settings.providers.local.gpuEnabled ?? false);
         return settings;
     }
 

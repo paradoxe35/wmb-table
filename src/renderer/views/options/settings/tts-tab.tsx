@@ -21,16 +21,7 @@ import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
 import { SEGMENT_GAP_MS, type TtsProviderType, type TtsSettings } from '@shared/tts.types';
-import {
-    PROVIDER_LABELS,
-    PROVIDER_HINTS,
-    LocalityTag,
-    FreeTag,
-    FREE_PROVIDERS,
-    Field,
-    Hint,
-    formatBytes,
-} from './tts-shared';
+import { PROVIDER_CATALOG, LocalityTag, FreeTag, Field, Hint, formatBytes } from './tts-shared';
 import { debounce, getErrorMessage } from '@renderer/utils/functions';
 import BrowserConfig from './tts-provider-browser';
 import KokoroConfig from './tts-provider-kokoro';
@@ -189,12 +180,7 @@ export default function TtsTab() {
         message.success(t('Cache audio vidé'));
     }, []);
 
-    const providers = useTtsStore((s) => s.providers);
-
     if (!settings) return null;
-
-    const activeInfo = providers.find((p) => p.type === settings.activeProvider);
-    const locality = activeInfo?.locality ?? 'local';
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
@@ -208,8 +194,13 @@ export default function TtsTab() {
                         style={{ width: '100%' }}
                         value={settings.activeProvider}
                         onChange={(v) => handleUpdate({ activeProvider: v })}
-                        options={Object.entries(PROVIDER_LABELS).map(([key, label]) => ({
-                            label: t(label),
+                        options={Object.entries(PROVIDER_CATALOG).map(([key, meta]) => ({
+                            label: (
+                                <span>
+                                    {t(meta.label)} <LocalityTag type={meta.locality} />
+                                    {meta.free && <FreeTag />}
+                                </span>
+                            ),
                             value: key,
                         }))}
                     />
@@ -220,7 +211,7 @@ export default function TtsTab() {
                     style={{ marginTop: 8 }}
                     title={
                         <Text type="secondary" style={{ fontSize: '0.8em' }}>
-                            {t(PROVIDER_HINTS[settings.activeProvider])}
+                            {t(PROVIDER_CATALOG[settings.activeProvider].hint)}
                         </Text>
                     }
                 />
@@ -248,9 +239,9 @@ export default function TtsTab() {
                 size="small"
                 title={
                     <span>
-                        {t(PROVIDER_LABELS[settings.activeProvider])}{' '}
-                        <LocalityTag type={locality as 'local' | 'remote'} />
-                        {FREE_PROVIDERS.includes(settings.activeProvider) && <FreeTag />}
+                        {t(PROVIDER_CATALOG[settings.activeProvider].label)}{' '}
+                        <LocalityTag type={PROVIDER_CATALOG[settings.activeProvider].locality} />
+                        {PROVIDER_CATALOG[settings.activeProvider].free && <FreeTag />}
                     </span>
                 }
                 extra={

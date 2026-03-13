@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Button, Card, message, Progress, Select, Space, Tag, Tooltip, Typography } from 'antd';
+import {
+    Button,
+    Card,
+    Divider,
+    message,
+    Progress,
+    Select,
+    Space,
+    Switch,
+    Tag,
+    Tooltip,
+    Typography,
+} from 'antd';
 import {
     CheckCircleOutlined,
     DownloadOutlined,
@@ -206,6 +218,36 @@ export default function AiLocalModels({
                         onDownload={handleDownload}
                     />
                 ))}
+
+                <Divider style={{ margin: '4px 0' }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Switch
+                        size="small"
+                        checked={settings.providers.local.gpuEnabled ?? false}
+                        onChange={(checked) => {
+                            onUpdate({
+                                providers: {
+                                    ...settings.providers,
+                                    local: { ...settings.providers.local, gpuEnabled: checked },
+                                },
+                            });
+                        }}
+                    />
+                    <div>
+                        <Text style={{ fontSize: '0.85em' }}>
+                            {t('Utiliser la carte graphique (GPU)')}
+                        </Text>
+                        <Text
+                            type="secondary"
+                            style={{ fontSize: '0.75em', display: 'block', marginTop: 2 }}
+                        >
+                            {t(
+                                'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.',
+                            )}
+                        </Text>
+                    </div>
+                </div>
             </Space>
         </Card>
     );

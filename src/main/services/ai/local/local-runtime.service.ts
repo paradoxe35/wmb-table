@@ -16,9 +16,11 @@ export class LocalRuntimeService {
     private static readonly IDLE_DISPOSE_MS = 5 * 60 * 1000;
 
     private activeModelPath: string | null = null;
+    private activeGpu = false;
     private model: LlamaModel | null = null;
     private disposeTimer: NodeJS.Timeout | null = null;
     private loadingPromise: Promise<void> | null = null;
+    private gpuEnabled = false;
 
     async run(input: {
         selectedModel: string | null | undefined;
@@ -91,7 +93,11 @@ export class LocalRuntimeService {
 
         this.clearDisposeTimer();
 
-        if (this.activeModelPath === modelPath && this.model) {
+        if (
+            this.activeModelPath === modelPath &&
+            this.model &&
+            this.activeGpu === this.gpuEnabled
+        ) {
             return;
         }
 
@@ -103,13 +109,24 @@ export class LocalRuntimeService {
         }
     }
 
+    setGpuEnabled(enabled: boolean): void {
+        this.gpuEnabled = enabled;
+    }
+
     private async loadModel(modelPath: string): Promise<void> {
         await this.dispose();
-        log.info('Local model loading', { modelPath });
-        const llama = await getLlama({ gpu: false });
-        this.model = await llama.loadModel({ modelPath, gpuLayers: 0 });
+        const useGpu = this.gpuEnabled;
+        log.info('Local model loading', { modelPath, gpu: useGpu });
+
+        const llama = await getLlama({ gpu: useGpu ? 'auto' : false });
+        this.model = await llama.loadModel({
+            modelPath,
+            gpuLayers: useGpu ? 'auto' : 0,
+        });
+
         this.activeModelPath = modelPath;
-        log.info('Local model loaded', { modelPath });
+        this.activeGpu = useGpu;
+        log.info('Local model loaded', { modelPath, gpu: useGpu });
     }
 
     private scheduleDispose(): void {
