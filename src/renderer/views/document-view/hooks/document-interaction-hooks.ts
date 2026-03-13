@@ -1,6 +1,7 @@
 import { message } from 'antd';
 import type { MenuProps } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     CHILD_PARENT_WINDOW_EVENT,
     DOCUMENT_CONTAINER_ID,
@@ -22,6 +23,8 @@ export function useContextMenuItems(
     bibleVerses?: BibleBook[],
     bibleVersionAbbreviation?: string,
 ): MenuProps['items'] {
+    const { t } = useTranslation();
+
     return useMemo(() => {
         if (!content) return [];
 
@@ -146,22 +149,22 @@ export function useContextMenuItems(
         return [
             {
                 key: 'copy-text',
-                label: 'Copier',
+                label: t('Copier'),
                 onClick: () => {
                     const result = getRef();
                     if (!result) return;
                     navigator.clipboard.writeText(result.text);
-                    message.success('Texte copie');
+                    message.success(t('Texte copié'));
                 },
             },
             { type: 'divider' as const, key: 'divider-1' },
             {
                 key: 'highlight-text',
-                label: 'Souligner',
+                label: t('Souligner'),
                 onClick: () => {
                     const sel = window.getSelection();
                     if (!sel || sel.isCollapsed) {
-                        message.warning('Selectionnez du texte a souligner');
+                        message.warning(t('Sélectionnez du texte à souligner'));
                         return;
                     }
                     const paragraphs = getSelectionParagraphs();
@@ -185,7 +188,7 @@ export function useContextMenuItems(
             { type: 'divider' as const, key: 'divider-2' },
             {
                 key: 'add-to-subject',
-                label: 'Ajouter au sujet',
+                label: t('Ajouter au sujet'),
                 onClick: () => {
                     const result = getRef();
                     if (!result) return;
@@ -200,7 +203,7 @@ export function useContextMenuItems(
                 ? [
                       {
                           key: 'add-to-note',
-                          label: 'Ajouter a la note',
+                          label: t('Ajouter à la note'),
                           onClick: () => {
                               const result = getRef();
                               if (!result) return;
@@ -214,7 +217,7 @@ export function useContextMenuItems(
                   ]
                 : []),
         ];
-    }, [content, contextTargetRef, documentType, bibleVerses, bibleVersionAbbreviation]);
+    }, [content, contextTargetRef, documentType, bibleVerses, bibleVersionAbbreviation, t]);
 }
 
 export function useDocumentHighlights(documentTitle: string | null, sermonId: string | undefined) {

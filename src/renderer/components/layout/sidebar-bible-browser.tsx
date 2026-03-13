@@ -36,6 +36,7 @@ function invalidateCache() {
 // ---------------------------------------------------------------------------
 
 function CompactVersionSelector() {
+    const { t } = useTranslation();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
     const [activeVersion, setActiveVersion] = useState<string | undefined>(cachedActiveVersion);
@@ -133,7 +134,7 @@ function CompactVersionSelector() {
                     value={activeVersion}
                     onChange={handleSwitch}
                     options={installed.map((v) => ({ value: v.abbreviation, label: v.name }))}
-                    placeholder="Version"
+                    placeholder={t('Version')}
                 />
             )}
             {downloadable.length > 0 && (

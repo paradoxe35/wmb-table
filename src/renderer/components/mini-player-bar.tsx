@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Button, Slider, Dropdown, Tooltip } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, SoundOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import { useAppStore, useAudioStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
@@ -10,6 +11,7 @@ import { throttle, formatTime } from '@renderer/utils/functions';
 import { AUDIO_SPEEDS, THROTTLE_MS } from '@renderer/utils/constants';
 
 export default function MiniPlayerBar() {
+    const { t } = useTranslation();
     const audioRef = useAudioRef();
     const audioSrc = useAudioStore((s) => s.audioSrc);
     const title = useAudioStore((s) => s.title);
@@ -316,8 +318,13 @@ export default function MiniPlayerBar() {
                     </div>
                 )}
             >
-                <Tooltip title="Volume">
-                    <Button type="text" size="small" icon={<SoundOutlined />} aria-label="Volume" />
+                <Tooltip title={t('Volume')}>
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<SoundOutlined />}
+                        aria-label={t('Volume')}
+                    />
                 </Tooltip>
             </Dropdown>
         </div>

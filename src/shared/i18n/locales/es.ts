@@ -200,6 +200,9 @@ const es: Record<string, string> = {
 
     // ── TTS provider browser ──
     Voix: 'Voz',
+    Volume: 'Volumen',
+    Version: 'Versión',
+    'Tester la voix': 'Probar la voz',
     'Les voix disponibles dépendent de celles installées sur votre ordinateur.':
         'Las voces disponibles dependen de las instaladas en su ordenador.',
     'Voix par défaut du système': 'Voz predeterminada del sistema',
@@ -215,6 +218,7 @@ const es: Record<string, string> = {
         'Todas las voces están disponibles. La voz predeterminada corresponde al idioma activo.',
     'Modèle Kokoro téléchargé': 'Modelo Kokoro descargado',
     'Erreur: {{error}}': 'Error: {{error}}',
+    'Erreur lors de la prévisualisation de la voix': 'Error al probar la voz',
 
     // ── TTS provider Sherpa ──
     'Voix disponible — {{lang}}': 'Voz disponible — {{lang}}',
@@ -594,6 +598,18 @@ const es: Record<string, string> = {
     Aide: 'Ayuda',
     Documentation: 'Documentación',
     'À propos': 'Acerca de',
+    "Aujourd'hui": 'Hoy',
+    'Aucun document consulté ce jour': 'Ningún documento consultado este día',
+    Renommer: 'Renombrar',
+    Traduction: 'Traducción',
+    'Texte copié': 'Texto copiado',
+    'Sélectionnez du texte à souligner': 'Seleccione texto para resaltar',
+    'Ajouter au sujet': 'Añadir al tema',
+    'Ajouter à la note': 'Añadir a la nota',
+    Prédication: 'Predicación',
+    Document: 'Documento',
+    'Sauvegarde de données': 'Guardando datos',
+    'Restauration de données': 'Restaurando datos',
 
     // ── General ──
     sermons: 'sermones',
