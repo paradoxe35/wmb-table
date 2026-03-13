@@ -233,6 +233,13 @@ export async function downloadBibleVersion(
     if (version.type !== 'remote')
         throw new Error(`Bible version '${abbreviation}' is local, not remote`);
 
+    // Skip download if already available on disk
+    if (isBibleAvailable(version)) {
+        log.info(`Bible already downloaded: ${version.fileName}, skipping download`);
+        onProgress?.(100);
+        return;
+    }
+
     const targetDir = getBibleDataDir();
     mkdirSync(targetDir, { recursive: true });
     const targetPath = join(targetDir, version.fileName);
