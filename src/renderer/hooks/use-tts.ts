@@ -10,6 +10,7 @@ import {
     type TtsSettings,
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
+    hasSpeakableContent,
 } from '@shared/tts.types';
 
 // ── Segmentation ──
@@ -24,7 +25,7 @@ async function segmentText(
         const segments: TtsSegment[] = [];
         for (const p of paragraphs) {
             const text = p.content.replace(/[*^]/g, '').replace(/\s+/g, ' ').trim();
-            if (!text) {
+            if (!text || !hasSpeakableContent(text)) {
                 continue;
             }
             segments.push({

@@ -1,5 +1,12 @@
 // ── Provider identification ──
-export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'kokoro', 'elevenlabs', 'openai'] as const;
+export const TTS_PROVIDER_TYPES = [
+    'browser',
+    'sherpa',
+    'kokoro',
+    'elevenlabs',
+    'openai',
+    'edge',
+] as const;
 export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
 export const DEFAULT_TTS_PROVIDER: TtsProviderType = 'sherpa';
 export const SEGMENT_GAP_MS = 500;
@@ -233,7 +240,34 @@ export const LANG_LABELS_FR: Record<string, string> = {
     hr: 'Croate',
     sq: 'Albanais',
     yue: 'Cantonais',
+    my: 'Birman',
+    ur: 'Ourdou',
+    pa: 'Pendjabi',
+    af: 'Afrikaans',
+    az: 'Azerbaïdjanais',
+    bs: 'Bosnien',
+    fil: 'Filipino',
+    ga: 'Irlandais',
+    jv: 'Javanais',
+    km: 'Khmer',
+    lo: 'Lao',
+    mn: 'Mongol',
+    mt: 'Maltais',
+    nb: 'Norvégien bokmål',
+    ps: 'Pachto',
+    so: 'Somali',
+    su: 'Soundanais',
+    uz: 'Ouzbek',
+    zu: 'Zoulou',
+    wuu: 'Chinois wu',
 };
+
+// ── Text helpers ──
+
+/** Returns true if the text contains at least one letter (any script). */
+export function hasSpeakableContent(text: string): boolean {
+    return /\p{L}/u.test(text);
+}
 
 // ── Default settings factory ──
 export function createDefaultTtsSettings(): TtsSettings {
@@ -251,6 +285,7 @@ export function createDefaultTtsSettings(): TtsSettings {
             kokoro: {},
             elevenlabs: {},
             openai: {},
+            edge: {},
         },
     };
 }

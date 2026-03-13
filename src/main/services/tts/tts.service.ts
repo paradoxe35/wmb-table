@@ -13,6 +13,7 @@ import { OpenAiProvider } from './openai.provider';
 import { KokoroProvider } from './kokoro.provider';
 import { SherpaProvider } from './sherpa.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
+import { EdgeProvider } from './edge.provider';
 import { getTtsResourceDir } from '@main/lib/app-paths';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
 import {
@@ -66,11 +67,13 @@ export class TtsService {
         const sherpa = new SherpaProvider();
         const elevenlabs = new ElevenLabsProvider();
         const openai = new OpenAiProvider();
+        const edge = new EdgeProvider();
 
         this.providers.set('kokoro', kokoro);
         this.providers.set('sherpa', sherpa);
         this.providers.set('elevenlabs', elevenlabs);
         this.providers.set('openai', openai);
+        this.providers.set('edge', edge);
 
         for (const [type, provider] of this.providers) {
             const cfg = this.settings.providers[type];

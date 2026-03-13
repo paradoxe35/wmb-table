@@ -20,6 +20,7 @@ export const PROVIDER_LABELS: Record<TtsProviderType, string> = {
     kokoro: 'Kokoro TTS (local)',
     elevenlabs: 'ElevenLabs TTS',
     openai: 'OpenAI TTS',
+    edge: 'Edge TTS (Microsoft)',
 };
 
 export const PROVIDER_HINTS: Record<TtsProviderType, string> = {
@@ -30,6 +31,7 @@ export const PROVIDER_HINTS: Record<TtsProviderType, string> = {
     elevenlabs:
         'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
     openai: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
+    edge: 'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.',
 };
 
 // ── Shared props ──
@@ -125,3 +127,10 @@ export function LocalityTag({ type }: LocalityTagProps) {
         </Tag>
     );
 }
+
+export function FreeTag() {
+    const { t } = useTranslation();
+    return <Tag color="green">{t('Gratuit')}</Tag>;
+}
+
+export const FREE_PROVIDERS: TtsProviderType[] = ['edge', 'browser', 'sherpa', 'kokoro'];

@@ -25,6 +25,8 @@ import {
     PROVIDER_LABELS,
     PROVIDER_HINTS,
     LocalityTag,
+    FreeTag,
+    FREE_PROVIDERS,
     Field,
     Hint,
     formatBytes,
@@ -35,6 +37,7 @@ import KokoroConfig from './tts-provider-kokoro';
 import SherpaConfig from './tts-provider-sherpa';
 import ElevenLabsConfig from './tts-provider-elevenlabs';
 import OpenAIConfig from './tts-provider-openai';
+import EdgeConfig from './tts-provider-edge';
 
 const { Text } = Typography;
 
@@ -73,6 +76,8 @@ function ActiveProviderConfig({
             return (
                 <OpenAIConfig settings={settings} info={getInfo('openai')} onUpdate={onUpdate} />
             );
+        case 'edge':
+            return <EdgeConfig settings={settings} info={getInfo('edge')} onUpdate={onUpdate} />;
         default:
             return null;
     }
@@ -245,6 +250,7 @@ export default function TtsTab() {
                     <span>
                         {t(PROVIDER_LABELS[settings.activeProvider])}{' '}
                         <LocalityTag type={locality as 'local' | 'remote'} />
+                        {FREE_PROVIDERS.includes(settings.activeProvider) && <FreeTag />}
                     </span>
                 }
                 extra={

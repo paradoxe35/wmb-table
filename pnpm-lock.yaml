@@ -76,6 +76,9 @@ importers:
             lodash:
                 specifier: ^4.17.23
                 version: 4.17.23
+            node-edge-tts:
+                specifier: ^1.2.10
+                version: 1.2.10
             node-html-parser:
                 specifier: ^7.1.0
                 version: 7.1.0
@@ -211,7 +214,7 @@ importers:
                 version: 7.3.1(@types/node@22.19.13)(jiti@2.6.1)(sass@1.97.3)(yaml@2.8.2)
             vitepress:
                 specifier: 2.0.0-alpha.16
-                version: 2.0.0-alpha.16(@types/node@22.19.13)(jiti@2.6.1)(postcss@8.5.8)(sass@1.97.3)(typescript@5.9.3)(yaml@2.8.2)
+                version: 2.0.0-alpha.16(@types/node@22.19.13)(axios@1.13.6)(jiti@2.6.1)(postcss@8.5.8)(sass@1.97.3)(typescript@5.9.3)(yaml@2.8.2)
             vitest:
                 specifier: ^4.0.18
                 version: 4.0.18(@opentelemetry/api@1.9.0)(@types/node@22.19.13)(jiti@2.6.1)(jsdom@26.1.0)(sass@1.97.3)(yaml@2.8.2)
@@ -4276,6 +4279,12 @@ packages:
             }
         engines: { node: '>= 0.4' }
 
+    axios@1.13.6:
+        resolution:
+            {
+                integrity: sha512-ChTCHMouEe2kn713WHbQGcuYrr6fXTBiu460OTwWrWob16g1bXn4vtz07Ope7ewMozJAnEquLk5lWQWtBig9DQ==,
+            }
+
     bail@2.0.2:
         resolution:
             {
@@ -5715,6 +5724,18 @@ packages:
             {
                 integrity: sha512-/yNdlIkpWbM0ptxno3ONTuf+2g318kh2ez3KSeZN5dZ8YC6AAmgeWz+GasYYiBJPFaYcSAPeu4GfhUaChzIJXA==,
             }
+
+    follow-redirects@1.15.11:
+        resolution:
+            {
+                integrity: sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==,
+            }
+        engines: { node: '>=4.0' }
+        peerDependencies:
+            debug: '*'
+        peerDependenciesMeta:
+            debug:
+                optional: true
 
     for-each@0.3.5:
         resolution:
@@ -7402,6 +7423,13 @@ packages:
         engines: { node: '>=10.5.0' }
         deprecated: Use your platform's native DOMException instead
 
+    node-edge-tts@1.2.10:
+        resolution:
+            {
+                integrity: sha512-bV2i4XU54D45+US0Zm1HcJRkifuB3W438dWyuJEHLQdKxnuqlI1kim2MOvR6Q3XUQZvfF9PoDyR1Rt7aeXhPdQ==,
+            }
+        hasBin: true
+
     node-exports-info@1.6.0:
         resolution:
             {
@@ -7942,6 +7970,12 @@ packages:
                 integrity: sha512-CvexbZtbov6jW2eXAvLukXjXUW1TzFaivC46BpWc/3BpcCysb5Vffu+B3XHMm8lVEuy2Mm4XGex8hBSg1yapPg==,
             }
         engines: { node: '>=12.0.0' }
+
+    proxy-from-env@1.1.0:
+        resolution:
+            {
+                integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==,
+            }
 
     pump@3.0.4:
         resolution:
@@ -11951,12 +11985,13 @@ snapshots:
             '@vueuse/shared': 14.2.1(vue@3.5.30(typescript@5.9.3))
             vue: 3.5.30(typescript@5.9.3)
 
-    '@vueuse/integrations@14.2.1(focus-trap@7.8.0)(vue@3.5.30(typescript@5.9.3))':
+    '@vueuse/integrations@14.2.1(axios@1.13.6)(focus-trap@7.8.0)(vue@3.5.30(typescript@5.9.3))':
         dependencies:
             '@vueuse/core': 14.2.1(vue@3.5.30(typescript@5.9.3))
             '@vueuse/shared': 14.2.1(vue@3.5.30(typescript@5.9.3))
             vue: 3.5.30(typescript@5.9.3)
         optionalDependencies:
+            axios: 1.13.6
             focus-trap: 7.8.0
 
     '@vueuse/metadata@14.2.1': {}
@@ -12210,6 +12245,15 @@ snapshots:
     available-typed-arrays@1.0.7:
         dependencies:
             possible-typed-array-names: 1.1.0
+
+    axios@1.13.6:
+        dependencies:
+            follow-redirects: 1.15.11
+            form-data: 4.0.5
+            proxy-from-env: 1.1.0
+        transitivePeerDependencies:
+            - debug
+        optional: true
 
     bail@2.0.2: {}
 
@@ -13188,6 +13232,9 @@ snapshots:
     focus-trap@7.8.0:
         dependencies:
             tabbable: 6.4.0
+
+    follow-redirects@1.15.11:
+        optional: true
 
     for-each@0.3.5:
         dependencies:
@@ -14342,6 +14389,16 @@ snapshots:
 
     node-domexception@1.0.0: {}
 
+    node-edge-tts@1.2.10:
+        dependencies:
+            https-proxy-agent: 7.0.6
+            ws: 8.19.0
+            yargs: 17.7.2
+        transitivePeerDependencies:
+            - bufferutil
+            - supports-color
+            - utf-8-validate
+
     node-exports-info@1.6.0:
         dependencies:
             array.prototype.flatmap: 1.3.3
@@ -14730,6 +14787,9 @@ snapshots:
             '@protobufjs/utf8': 1.1.0
             '@types/node': 22.19.13
             long: 5.3.2
+
+    proxy-from-env@1.1.0:
+        optional: true
 
     pump@3.0.4:
         dependencies:
@@ -15629,7 +15689,7 @@ snapshots:
             sass: 1.97.3
             yaml: 2.8.2
 
-    vitepress@2.0.0-alpha.16(@types/node@22.19.13)(jiti@2.6.1)(postcss@8.5.8)(sass@1.97.3)(typescript@5.9.3)(yaml@2.8.2):
+    vitepress@2.0.0-alpha.16(@types/node@22.19.13)(axios@1.13.6)(jiti@2.6.1)(postcss@8.5.8)(sass@1.97.3)(typescript@5.9.3)(yaml@2.8.2):
         dependencies:
             '@docsearch/css': 4.6.0
             '@docsearch/js': 4.6.0
@@ -15643,7 +15703,7 @@ snapshots:
             '@vue/devtools-api': 8.0.7
             '@vue/shared': 3.5.30
             '@vueuse/core': 14.2.1(vue@3.5.30(typescript@5.9.3))
-            '@vueuse/integrations': 14.2.1(focus-trap@7.8.0)(vue@3.5.30(typescript@5.9.3))
+            '@vueuse/integrations': 14.2.1(axios@1.13.6)(focus-trap@7.8.0)(vue@3.5.30(typescript@5.9.3))
             focus-trap: 7.8.0
             mark.js: 8.11.1
             minisearch: 7.2.0

@@ -3,7 +3,7 @@ import { TtsChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import { getTtsService } from '@main/services/tts';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
-import type { TtsSegment } from '@shared/tts.types';
+import { hasSpeakableContent, type TtsSegment } from '@shared/tts.types';
 
 function stripMarkers(content: string): { clean: string; posMap: number[] } {
     const posMap: number[] = [];
@@ -116,7 +116,7 @@ export function registerTtsHandlers(): void {
                 get_sentence_boundaries(language, clean);
             for (const b of boundaries) {
                 const sentenceText = b.text.trim();
-                if (!sentenceText) continue;
+                if (!sentenceText || !hasSpeakableContent(sentenceText)) continue;
                 const startOffset = posMap[b.start_index] ?? 0;
                 const endOffset =
                     b.end_index > 0
