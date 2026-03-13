@@ -18,7 +18,6 @@ export default function DocumentView() {
     const searchBarOpen = useSearchStore((s) =>
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );
-    const clearSearch = useSearchStore((s) => s.clearSearch);
 
     const tabs = useSermonStore((s) => s.tabs);
     const sermons = useSermonStore((s) => s.sermons);
@@ -36,13 +35,12 @@ export default function DocumentView() {
                 e.preventDefault();
                 if (activeTabKey) openSearchBar(activeTabKey);
             } else if (e.key === 'Escape' && searchBarOpen) {
-                if (activeTabKey) clearSearch(activeTabKey);
                 if (activeTabKey) closeSearchBar(activeTabKey);
             }
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTabKey, clearSearch]);
+    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTabKey]);
 
     return (
         <div

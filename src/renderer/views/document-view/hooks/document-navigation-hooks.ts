@@ -143,7 +143,7 @@ export function useMatchNavigation(
     const { matchOffsets, total } = useMemo(() => {
         if (!enabled) return { matchOffsets: [] as number[], total: 0 };
         if (!search) return { matchOffsets: [] as number[], total: 0 };
-        const regex = buildHighlightRegex(search.term, search.mode);
+        const regex = buildHighlightRegex(search.term, search.mode, false);
         if (!regex) return { matchOffsets: [] as number[], total: 0 };
         let cumulative = 0;
         const offsets: number[] = [];

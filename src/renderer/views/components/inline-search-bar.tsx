@@ -39,14 +39,6 @@ export default function InlineSearchBar() {
     const latestRef = useRef({ activeTitle, activeTabKey, searchMode });
     latestRef.current = { activeTitle, activeTabKey, searchMode };
 
-    useEffect(() => {
-        if (existingQuery?.term && inputRef.current?.input) {
-            inputRef.current.input.value = existingQuery.term;
-            searchTermRef.current = existingQuery.term;
-        }
-        if (!navOnly) inputRef.current?.focus();
-    }, [existingQuery, navOnly]);
-
     // Stable debounced function — never recreated, reads latest values from refs
     const debouncedSearch = useRef(
         debounce((value: string) => {
@@ -73,18 +65,39 @@ export default function InlineSearchBar() {
         }, 300),
     ).current;
 
+    // Sync input value with the active tab's query (handles tab switches and external query changes)
+    useEffect(() => {
+        const term = existingQuery?.term ?? '';
+        if (inputRef.current?.input) {
+            inputRef.current.input.value = term;
+        }
+        searchTermRef.current = term;
+        if (!navOnly) inputRef.current?.focus();
+    }, [existingQuery, navOnly, activeTabKey]);
+
+    // Cancel pending debounced search on tab change to prevent cross-tab contamination
+    useEffect(() => {
+        return () => debouncedSearch.cancel();
+    }, [activeTabKey, debouncedSearch]);
+
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
-            searchTermRef.current = e.target.value;
-            debouncedSearch(e.target.value);
+            const value = e.target.value;
+            searchTermRef.current = value;
+            // Clear immediately when input is empty (allowClear X button or manual delete)
+            if (value.trim().length < 3) {
+                debouncedSearch.cancel();
+                if (activeTabKey) clearSearch(activeTabKey);
+                return;
+            }
+            debouncedSearch(value);
         },
-        [debouncedSearch],
+        [debouncedSearch, activeTabKey, clearSearch],
     );
 
     const handleClose = useCallback(() => {
-        if (activeTabKey) clearSearch(activeTabKey);
         if (activeTabKey) closeSearchBar(activeTabKey);
-    }, [activeTabKey, clearSearch, closeSearchBar]);
+    }, [activeTabKey, closeSearchBar]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {

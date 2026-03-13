@@ -27,6 +27,7 @@ interface SearchStateActions {
     nextMatch(tabKey: string): void;
     prevMatch(tabKey: string): void;
     clearSearch(tabKey: string): void;
+    cleanupTabs(removedKeys: string[]): void;
     setError(error: string | null): void;
     requestScrollToMatch(tabKey: string, matchIndex?: number): void;
     clearScrollToMatchRequest(tabKey: string): void;
@@ -84,16 +85,16 @@ export const useSearchStore = create<SearchState>((set, get) => ({
         })),
 
     closeSearchBar: (tabKey) =>
-        set((state) => ({
-            searchUiByTab: {
-                ...state.searchUiByTab,
-                [tabKey]: {
-                    ...getUiState(state, tabKey),
-                    searchBarOpen: false,
-                    searchBarNavOnly: false,
+        set((state) => {
+            const { [tabKey]: _removed, ...remainingQueries } = state.documentViewQueries;
+            return {
+                documentViewQueries: remainingQueries,
+                searchUiByTab: {
+                    ...state.searchUiByTab,
+                    [tabKey]: defaultUiState(),
                 },
-            },
-        })),
+            };
+        }),
 
     setCurrentMatchIndex: (tabKey, index) =>
         set((state) => ({
@@ -162,13 +163,30 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     clearSearch: (tabKey) =>
         set((state) => {
             const { [tabKey]: _removedQuery, ...remainingQueries } = state.documentViewQueries;
+            const current = getUiState(state, tabKey);
             return {
                 documentViewQueries: remainingQueries,
                 searchUiByTab: {
                     ...state.searchUiByTab,
-                    [tabKey]: defaultUiState(),
+                    [tabKey]: {
+                        ...current,
+                        currentMatchIndex: 0,
+                        totalMatches: 0,
+                        requestedMatchIndex: null,
+                    },
                 },
             };
+        }),
+
+    cleanupTabs: (removedKeys) =>
+        set((state) => {
+            const queries = { ...state.documentViewQueries };
+            const ui = { ...state.searchUiByTab };
+            for (const key of removedKeys) {
+                delete queries[key];
+                delete ui[key];
+            }
+            return { documentViewQueries: queries, searchUiByTab: ui };
         }),
 
     requestScrollToMatch: (tabKey, matchIndex) =>

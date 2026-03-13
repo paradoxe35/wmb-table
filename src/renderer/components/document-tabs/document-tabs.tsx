@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
 import { App as AntApp, type MenuProps } from 'antd';
-import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
+import { useSermonStore, useSearchStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useTabPersistence } from '@renderer/hooks';
@@ -22,6 +22,7 @@ export default function DocumentTabs() {
     const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
     const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const { modal } = AntApp.useApp();
 
     useTabPersistence(tabs, activeLanguage);
@@ -38,36 +39,48 @@ export default function DocumentTabs() {
         (key: string) => {
             const tab = tabs.find((t) => getTabKey(t) === key);
             if (tab) stopTtsIfPlaying(tab.title);
+            cleanupTabs([key]);
             removeTab(key);
         },
-        [tabs, removeTab, stopTtsIfPlaying],
+        [tabs, removeTab, stopTtsIfPlaying, cleanupTabs],
     );
 
     const handleRemoveOtherTabs = useCallback(
         (key: string) => {
+            const removedKeys: string[] = [];
             for (const tab of tabs) {
-                if (getTabKey(tab) !== key) stopTtsIfPlaying(tab.title);
+                const tabKey = getTabKey(tab);
+                if (tabKey !== key) {
+                    stopTtsIfPlaying(tab.title);
+                    removedKeys.push(tabKey);
+                }
             }
+            cleanupTabs(removedKeys);
             removeOtherTabs(key);
         },
-        [tabs, removeOtherTabs, stopTtsIfPlaying],
+        [tabs, removeOtherTabs, stopTtsIfPlaying, cleanupTabs],
     );
 
     const handleRemoveTabsToRight = useCallback(
         (key: string) => {
             const idx = tabs.findIndex((t) => getTabKey(t) === key);
+            const removedKeys: string[] = [];
             for (const tab of tabs.slice(idx + 1)) {
                 stopTtsIfPlaying(tab.title);
+                removedKeys.push(getTabKey(tab));
             }
+            cleanupTabs(removedKeys);
             removeTabsToRight(key);
         },
-        [tabs, removeTabsToRight, stopTtsIfPlaying],
+        [tabs, removeTabsToRight, stopTtsIfPlaying, cleanupTabs],
     );
 
     const handleRemoveAllTabs = useCallback(() => {
+        const allKeys = tabs.map((t) => getTabKey(t));
         for (const tab of tabs) stopTtsIfPlaying(tab.title);
+        cleanupTabs(allKeys);
         removeAllTabs();
-    }, [tabs, removeAllTabs, stopTtsIfPlaying]);
+    }, [tabs, removeAllTabs, stopTtsIfPlaying, cleanupTabs]);
 
     const confirmRemoveAll = useCallback(() => {
         modal.confirm({
