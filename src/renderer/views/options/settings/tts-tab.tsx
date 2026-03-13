@@ -182,6 +182,8 @@ export default function TtsTab() {
 
     if (!settings) return null;
 
+    const activeMeta = PROVIDER_CATALOG[settings.activeProvider];
+
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             {/* Active provider selector */}
@@ -198,7 +200,12 @@ export default function TtsTab() {
                             label: (
                                 <span>
                                     {t(meta.label)} <LocalityTag type={meta.locality} />
-                                    {meta.free && <FreeTag />}
+                                    {meta.free && meta.locality !== 'local' && (
+                                        <>
+                                            {' '}
+                                            <FreeTag />
+                                        </>
+                                    )}
                                 </span>
                             ),
                             value: key,
@@ -211,7 +218,7 @@ export default function TtsTab() {
                     style={{ marginTop: 8 }}
                     title={
                         <Text type="secondary" style={{ fontSize: '0.8em' }}>
-                            {t(PROVIDER_CATALOG[settings.activeProvider].hint)}
+                            {t(activeMeta.hint)}
                         </Text>
                     }
                 />
@@ -239,9 +246,13 @@ export default function TtsTab() {
                 size="small"
                 title={
                     <span>
-                        {t(PROVIDER_CATALOG[settings.activeProvider].label)}{' '}
-                        <LocalityTag type={PROVIDER_CATALOG[settings.activeProvider].locality} />
-                        {PROVIDER_CATALOG[settings.activeProvider].free && <FreeTag />}
+                        {t(activeMeta.label)} <LocalityTag type={activeMeta.locality} />
+                        {activeMeta.free && activeMeta.locality !== 'local' && (
+                            <>
+                                {' '}
+                                <FreeTag />
+                            </>
+                        )}
                     </span>
                 }
                 extra={
