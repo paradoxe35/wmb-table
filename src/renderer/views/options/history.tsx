@@ -1,11 +1,24 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Empty, Collapse, List } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Card, Empty, Tag, Timeline, Typography } from 'antd';
+import {
+    LeftOutlined,
+    RightOutlined,
+    HistoryOutlined,
+    BookOutlined,
+    FileTextOutlined,
+    ClockCircleOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { DocumentType, HistoryData, HistoryDataItem } from '@shared/types';
-import { HistoryOutlined, BookOutlined, FileTextOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
 import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
 import { HISTORY_EVENT } from '@renderer/utils/events';
+
+const { Text } = Typography;
+
+// ---------------------------------------------------------------------------
+// Open history item by document type
+// ---------------------------------------------------------------------------
 
 function useHistoryItemOpen() {
     const openDocument = useOpenDocument();
@@ -22,7 +35,6 @@ function useHistoryItemOpen() {
             }
 
             if (docType === 'bible') {
-                // sermonId format: "bookCode:chapter", title: "bookName chapter"
                 const [bookCode, chapter] = item.sermonId.split(':');
                 const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
                 openBibleChapter(bookName, bookCode, chapter);
@@ -35,46 +47,39 @@ function useHistoryItemOpen() {
     );
 }
 
-function getHistoryIcon(docType: DocumentType) {
-    if (docType === 'bible') return <BookOutlined />;
-    if (docType === 'custom') return <FileTextOutlined />;
-    return <HistoryOutlined />;
-}
+// ---------------------------------------------------------------------------
+// Document type metadata
+// ---------------------------------------------------------------------------
+
+const DOC_TYPE_META: Record<DocumentType, { icon: React.ReactNode; color: string; label: string }> =
+    {
+        sermon: { icon: <HistoryOutlined />, color: 'blue', label: 'Prédication' },
+        bible: { icon: <BookOutlined />, color: 'green', label: 'Bible' },
+        custom: { icon: <FileTextOutlined />, color: 'orange', label: 'Document' },
+    };
+
+// ---------------------------------------------------------------------------
+// History component
+// ---------------------------------------------------------------------------
 
 export default function History() {
     const { t } = useTranslation();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [histories, setHistories] = useState<HistoryData[]>([]);
-    const [key, setKey] = useState<string | null>(null);
+    const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
     const openHistoryItem = useHistoryItemOpen();
-
-    const onChange = (key: string | string[]) => {
-        const activeKey = Array.isArray(key) ? (key[0] ?? null) : key;
-        setKey(activeKey);
-    };
 
     const loadHistories = useCallback(() => {
         if (activeLanguage) {
             window.api.app.getHistory(activeLanguage).then((data) => {
                 setHistories(data);
-                if (data.length > 0) {
-                    setKey((prev) => prev ?? data[0].id);
-                }
+                setSelectedIndex(0);
             });
         }
     }, [activeLanguage]);
 
-    useEffect(() => {
-        if (key) {
-            const history = histories.find((k) => k.id === key);
-            if (history) {
-                window.api.app.getHistoryItems(history.id).then(setHistoryItems);
-            }
-        }
-    }, [key, histories]);
-
-    // Load histories on language change (initial load)
+    // Load on mount / language change
     useEffect(() => {
         loadHistories();
     }, [loadHistories]);
@@ -86,39 +91,119 @@ export default function History() {
         return () => window.removeEventListener(HISTORY_EVENT.historyUpdated, handler);
     }, [loadHistories]);
 
+    // Load items when selected day changes
+    const selectedHistory = histories[selectedIndex] ?? null;
+    useEffect(() => {
+        if (selectedHistory) {
+            window.api.app.getHistoryItems(selectedHistory.id).then(setHistoryItems);
+        } else {
+            setHistoryItems([]);
+        }
+    }, [selectedHistory]);
+
+    const canGoPrev = selectedIndex < histories.length - 1;
+    const canGoNext = selectedIndex > 0;
+
+    const isToday = useMemo(() => {
+        if (!selectedHistory) return false;
+        const todayMs = new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+        ).getTime();
+        return selectedHistory.milliseconds === todayMs;
+    }, [selectedHistory]);
+
+    if (histories.length === 0) {
+        return (
+            <div className="history-empty">
+                <Empty
+                    image={<ClockCircleOutlined style={{ fontSize: 48, opacity: 0.2 }} />}
+                    description={t('Aucune historique')}
+                />
+            </div>
+        );
+    }
+
     return (
-        <>
-            {histories.length === 0 && <Empty description={t('Aucune historique')} />}
-            <Collapse
-                activeKey={key || undefined}
-                accordion
-                onChange={onChange}
-                style={{ margin: '20px 0' }}
-                items={histories.map((h) => ({
-                    key: h.id,
-                    label: h.date,
-                    children:
-                        key === h.id ? (
-                            <List
-                                itemLayout="horizontal"
-                                dataSource={historyItems}
-                                renderItem={(item) => (
-                                    <List.Item key={item.id}>
-                                        <List.Item.Meta
-                                            avatar={getHistoryIcon(item.documentType)}
-                                            title={
-                                                <a onClick={() => openHistoryItem(item)}>
+        <div className="history-view">
+            <Card className="history-card">
+                {/* Date navigator */}
+                <div className="history-date-nav">
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<LeftOutlined />}
+                        disabled={!canGoPrev}
+                        onClick={() => setSelectedIndex((i) => i + 1)}
+                    />
+                    <div className="history-date-label">
+                        <Text strong>{isToday ? t("Aujourd'hui") : selectedHistory?.date}</Text>
+                        {isToday && (
+                            <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                {selectedHistory?.date}
+                            </Text>
+                        )}
+                    </div>
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<RightOutlined />}
+                        disabled={!canGoNext}
+                        onClick={() => setSelectedIndex((i) => i - 1)}
+                    />
+                </div>
+
+                {/* Timeline items */}
+                {historyItems.length === 0 ? (
+                    <div className="history-empty-day">
+                        <Text type="secondary">{t('Aucun document consulté ce jour')}</Text>
+                    </div>
+                ) : (
+                    <div className="history-timeline">
+                        <Timeline
+                            items={historyItems.map((item) => {
+                                const meta = DOC_TYPE_META[item.documentType ?? 'sermon'];
+                                return {
+                                    key: item.id,
+                                    dot: meta.icon,
+                                    children: (
+                                        <div
+                                            className="history-item"
+                                            onClick={() => openHistoryItem(item)}
+                                        >
+                                            <div className="history-item__header">
+                                                <Text className="history-item__title">
                                                     {item.documentTitle}
-                                                </a>
-                                            }
-                                            description={`${item.date} - ${item.time}`}
-                                        />
-                                    </List.Item>
-                                )}
-                            />
-                        ) : null,
-                }))}
-            />
-        </>
+                                                </Text>
+                                                <Tag
+                                                    color={meta.color}
+                                                    bordered={false}
+                                                    className="history-item__tag"
+                                                >
+                                                    {t(meta.label)}
+                                                </Tag>
+                                            </div>
+                                            <Text type="secondary" className="history-item__time">
+                                                {item.time}
+                                            </Text>
+                                        </div>
+                                    ),
+                                };
+                            })}
+                        />
+                    </div>
+                )}
+
+                {/* Page indicator */}
+                {histories.length > 1 && (
+                    <div className="history-page-indicator">
+                        <Text type="secondary" style={{ fontSize: '0.75em' }}>
+                            {selectedIndex + 1} / {histories.length}
+                        </Text>
+                    </div>
+                )}
+            </Card>
+        </div>
     );
 }
