@@ -12,6 +12,7 @@ const Bible = () => {
             id="Layer_1"
             x="0px"
             y="0px"
+            fill="currentColor"
             viewBox="0 0 512 512"
             style={style as any}
             xmlSpace="preserve"
