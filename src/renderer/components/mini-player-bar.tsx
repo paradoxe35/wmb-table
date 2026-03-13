@@ -96,10 +96,12 @@ export default function MiniPlayerBar() {
         };
     }, [audioRef, setCurrentTime, setDuration, setCurrentPlay, saveTime]);
 
-    // Pause sermon audio when TTS starts playing
+    // Pause sermon audio when TTS starts
     useEffect(() => {
         return useTtsStore.subscribe((state, prev) => {
-            if (prev.status !== 'playing' && state.status === 'playing') {
+            const ttsActive = state.status === 'playing' || state.status === 'loading';
+            const wasActive = prev.status === 'playing' || prev.status === 'loading';
+            if (ttsActive && !wasActive) {
                 const el = audioRef.current;
                 if (el && !el.paused) {
                     el.pause();

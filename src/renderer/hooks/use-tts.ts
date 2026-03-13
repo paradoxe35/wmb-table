@@ -101,6 +101,13 @@ function startPlaybackAtIndex(
     const store = useTtsStore.getState();
     store.setSegments(segments);
     store.setDocumentId(documentId);
+    // Set status eagerly so the mini-player subscriber pauses sermon audio
+    store.setPlaybackState({
+        status: 'loading',
+        currentSegmentIndex: startIndex,
+        totalSegments: segments.length,
+        provider: settings.activeProvider,
+    });
 
     if (settings.activeProvider === 'browser') {
         playBrowserSegment(segments, startIndex, settings);
