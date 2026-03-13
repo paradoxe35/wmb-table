@@ -24,6 +24,7 @@ import type {
     BookRequest,
     DocumentHtmlTree,
     DocumentTab,
+    DocumentType,
     ReadingPosition,
     HighlightCreateData,
     HighlightUpdateData,
@@ -221,8 +222,12 @@ const api = {
             invoke(AppChannels.createCustomDocument, title, pdfBytes),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
         getHistory: (langCode: string) => invoke(AppChannels.getHistory, langCode),
-        addHistoryEntry: (langCode: string, documentTitle: string, sermonId: string) =>
-            invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId),
+        addHistoryEntry: (
+            langCode: string,
+            documentTitle: string,
+            sermonId: string,
+            documentType: DocumentType,
+        ) => invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId, documentType),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         setUiLanguage: (langCode: string) => invoke(AppChannels.setUiLanguage, langCode),
         openExternal: (url: string) => invoke(AppChannels.openExternal, url),

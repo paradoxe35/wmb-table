@@ -96,7 +96,7 @@ export function registerAppHandlers(): void {
 
     registerHandler(
         AppChannels.addHistoryEntry,
-        async (_event, langCode, documentTitle, sermonId) => {
+        async (_event, langCode, documentTitle, sermonId, documentType) => {
             const now = new Date();
             const locale = langToLocale[langCode] ?? 'fr-FR';
             const date = now.toLocaleDateString(locale, {
@@ -121,6 +121,7 @@ export function registerAppHandlers(): void {
                 documentTitle,
                 langCode,
                 sermonId,
+                documentType,
             );
         },
     );

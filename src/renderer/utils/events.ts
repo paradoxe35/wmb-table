@@ -31,6 +31,10 @@ export const SYNC_EVENT = {
     syncFailed: 'sync-failed',
 } as const;
 
+export const HISTORY_EVENT = {
+    historyUpdated: 'history-updated',
+} as const;
+
 export const LANGUAGE_EVENT = {
     openLanguageManager: 'open-language-manager',
 } as const;

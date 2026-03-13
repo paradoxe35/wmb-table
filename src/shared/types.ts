@@ -383,6 +383,7 @@ export interface HistoryDataItem extends Readonly<BaseEntity> {
     time: string;
     documentTitle: string;
     sermonId: string;
+    documentType: DocumentType;
 }
 
 export type HistoryDateUpload = {

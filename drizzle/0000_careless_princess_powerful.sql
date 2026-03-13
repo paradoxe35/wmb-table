@@ -127,6 +127,7 @@ CREATE TABLE `history_items` (
 	`time` text NOT NULL,
 	`document_title` text NOT NULL,
 	`sermon_id` text DEFAULT '' NOT NULL,
+	`document_type` text DEFAULT 'sermon' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`history_id`) REFERENCES `history`(`id`) ON UPDATE no action ON DELETE cascade

@@ -17,6 +17,7 @@ import type {
     SubjectRefTree,
     CustomDocument,
     CustomDocumentContent,
+    DocumentType,
     HistoryData,
     HistoryDataItem,
     AudioTimeAndDownload,
@@ -453,7 +454,7 @@ export interface InvokeChannelMap {
         return: CustomDocumentContent | null;
     };
     [AppChannels.getHistory]: { args: [string]; return: HistoryData[] };
-    [AppChannels.addHistoryEntry]: { args: [string, string, string]; return: void };
+    [AppChannels.addHistoryEntry]: { args: [string, string, string, DocumentType]; return: void };
     [AppChannels.getHistoryItems]: {
         args: [string];
         return: HistoryDataItem[];

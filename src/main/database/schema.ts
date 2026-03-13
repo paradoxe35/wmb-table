@@ -38,6 +38,7 @@ export const historyItems = sqliteTable('history_items', {
     time: text('time').notNull(),
     documentTitle: text('document_title').notNull(),
     sermonId: text('sermon_id').notNull().default(''),
+    documentType: text('document_type').notNull().default('sermon'),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

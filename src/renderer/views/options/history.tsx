@@ -1,39 +1,69 @@
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Empty, Collapse, List } from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { HistoryData, HistoryDataItem } from '@shared/types';
-import { HistoryOutlined } from '@ant-design/icons';
-import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
-import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
+import type { DocumentType, HistoryData, HistoryDataItem } from '@shared/types';
+import { HistoryOutlined, BookOutlined, FileTextOutlined } from '@ant-design/icons';
+import { useAppStore } from '@renderer/stores';
+import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
+import { HISTORY_EVENT } from '@renderer/utils/events';
+
+function useHistoryItemOpen() {
+    const openDocument = useOpenDocument();
+    const openCustomDocument = useOpenCustomDocument();
+    const openBibleChapter = useOpenBibleChapter();
+
+    return useCallback(
+        (item: HistoryDataItem) => {
+            const docType: DocumentType = item.documentType ?? 'sermon';
+
+            if (docType === 'custom') {
+                openCustomDocument(item.documentTitle, item.sermonId);
+                return;
+            }
+
+            if (docType === 'bible') {
+                // sermonId format: "bookCode:chapter", title: "bookName chapter"
+                const [bookCode, chapter] = item.sermonId.split(':');
+                const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
+                openBibleChapter(bookName, bookCode, chapter);
+                return;
+            }
+
+            openDocument(item.documentTitle, item.sermonId);
+        },
+        [openDocument, openCustomDocument, openBibleChapter],
+    );
+}
+
+function getHistoryIcon(docType: DocumentType) {
+    if (docType === 'bible') return <BookOutlined />;
+    if (docType === 'custom') return <FileTextOutlined />;
+    return <HistoryOutlined />;
+}
 
 export default function History() {
     const { t } = useTranslation();
-    const title = useActiveTabTitle();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [key, setKey] = useState<string | null>(null);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
-    const { getSermonById } = useSermonLookup();
-    const activeTab = useSermonStore(selectActiveTab);
-    const prevTitle = useRef<string | null>(null);
+    const openHistoryItem = useHistoryItemOpen();
 
     const onChange = (key: string | string[]) => {
         const activeKey = Array.isArray(key) ? (key[0] ?? null) : key;
         setKey(activeKey);
     };
 
-    // Record history when active tab changes
-    useEffect(() => {
-        if (activeLanguage && title && title !== prevTitle.current && activeTab?.sermonId) {
-            window.api.app.addHistoryEntry(activeLanguage, title, activeTab.sermonId);
-            // Refresh histories to include the new entry
+    const loadHistories = useCallback(() => {
+        if (activeLanguage) {
             window.api.app.getHistory(activeLanguage).then((data) => {
                 setHistories(data);
+                if (data.length > 0) {
+                    setKey((prev) => prev ?? data[0].id);
+                }
             });
         }
-        prevTitle.current = title;
-    }, [title, activeLanguage, activeTab?.sermonId]);
+    }, [activeLanguage]);
 
     useEffect(() => {
         if (key) {
@@ -46,15 +76,15 @@ export default function History() {
 
     // Load histories on language change (initial load)
     useEffect(() => {
-        if (activeLanguage) {
-            window.api.app.getHistory(activeLanguage).then((data) => {
-                setHistories(data);
-                if (data.length > 0) {
-                    setKey(data[0].id);
-                }
-            });
-        }
-    }, [activeLanguage]);
+        loadHistories();
+    }, [loadHistories]);
+
+    // Refresh when new history entries are added
+    useEffect(() => {
+        const handler = () => loadHistories();
+        window.addEventListener(HISTORY_EVENT.historyUpdated, handler);
+        return () => window.removeEventListener(HISTORY_EVENT.historyUpdated, handler);
+    }, [loadHistories]);
 
     return (
         <>
@@ -71,20 +101,14 @@ export default function History() {
                         key === h.id ? (
                             <List
                                 itemLayout="horizontal"
-                                dataSource={historyItems.filter((i) => getSermonById(i.sermonId))}
+                                dataSource={historyItems}
                                 renderItem={(item) => (
                                     <List.Item key={item.id}>
                                         <List.Item.Meta
-                                            avatar={<HistoryOutlined />}
+                                            avatar={getHistoryIcon(item.documentType)}
                                             title={
-                                                <a>
-                                                    <DocumentViewer
-                                                        name={item.documentTitle}
-                                                        sermonId={item.sermonId}
-                                                    >
-                                                        {getSermonById(item.sermonId)?.title ??
-                                                            item.documentTitle}
-                                                    </DocumentViewer>
+                                                <a onClick={() => openHistoryItem(item)}>
+                                                    {item.documentTitle}
                                                 </a>
                                             }
                                             description={`${item.date} - ${item.time}`}

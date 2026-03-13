@@ -121,6 +121,7 @@ export function useScrollAndZoom(
         }
 
         let cancelled = false;
+        setSavedPosition(null);
         setSavedPositionLoaded(false);
 
         window.api.documents

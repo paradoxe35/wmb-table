@@ -1,18 +1,23 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import DocumentTabs from '../../components/document-tabs';
 import {
     useSermonStore,
     useSearchStore,
+    useAppStore,
+    selectActiveTab,
     selectActiveTabKey,
     selectActiveTabType,
 } from '@renderer/stores';
 import SermonDocumentView from './sermon-document-view';
 import CustomDocumentView from './custom-document-view';
 import BibleDocumentView from './bible-document-view';
+import { HISTORY_EVENT } from '@renderer/utils/events';
 
 export default function DocumentView() {
     const tabType = useSermonStore(selectActiveTabType);
+    const activeTab = useSermonStore(selectActiveTab);
     const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
     const searchBarOpen = useSearchStore((s) =>
@@ -28,6 +33,24 @@ export default function DocumentView() {
             addTab(sermons[0].title, sermons[0].sermonId);
         }
     }, [tabs.length, sermons, addTab]);
+
+    // Record history when the active document changes (works for all document types)
+    const prevTabKeyRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (!activeLanguage || !activeTab || !activeTabKey) return;
+        if (activeTabKey === prevTabKeyRef.current) return;
+        prevTabKeyRef.current = activeTabKey;
+        window.api.app
+            .addHistoryEntry(
+                activeLanguage,
+                activeTab.title,
+                activeTab.sermonId,
+                activeTab.type ?? 'sermon',
+            )
+            .then(() => {
+                window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
+            });
+    }, [activeTabKey, activeTab, activeLanguage]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
