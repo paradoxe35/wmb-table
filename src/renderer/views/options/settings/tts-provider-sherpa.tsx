@@ -6,12 +6,15 @@ import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
 import { getErrorMessage } from '@renderer/utils/functions';
+import { strNormalize } from '@shared/searchable';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { Field, groupVoicesByLanguage, type ProviderConfigProps } from './tts-shared';
 
 const { Text } = Typography;
 
 const BROWSE_PAGE_SIZE = 10;
+const MIN_QUALITY_SIZE_MB = 30;
+const INSTALLED_LIST_MAX_HEIGHT = 200;
 
 interface SherpaConfigProps extends ProviderConfigProps {
     info?: TtsProviderInfo;
@@ -125,30 +128,38 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     const installed = useMemo(() => models.filter((m) => m.installed), [models]);
     const allVoices = info?.voices ?? [];
 
-    // Best available model for active language (not yet installed), lightest first
+    // Best available model for active language: prefer quality (≥30MB), fallback to largest
+    // Skip if the language already has an installed model
     const suggestedModel = useMemo(() => {
-        const candidates = models
-            .filter((m) => m.langCode === langCode && !m.installed)
-            .sort((a, b) => (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity));
-        return candidates[0];
+        const hasInstalled = models.some((m) => m.langCode === langCode && m.installed);
+        if (hasInstalled) return undefined;
+
+        const candidates = models.filter((m) => m.langCode === langCode && !m.installed);
+        if (candidates.length === 0) return undefined;
+
+        const quality = candidates
+            .filter((m) => (m.filesizeMb ?? 0) >= MIN_QUALITY_SIZE_MB)
+            .sort((a, b) => (a.filesizeMb ?? 0) - (b.filesizeMb ?? 0));
+        if (quality.length > 0) return quality[0];
+
+        // Only small models available — pick the largest one
+        return candidates.sort((a, b) => (b.filesizeMb ?? 0) - (a.filesizeMb ?? 0))[0];
     }, [models, langCode]);
 
-    // Browse: search-filtered, sorted by installed first then lightest
+    // Browse: accent-insensitive search, sorted by installed first then lightest
     const browseResults = useMemo(() => {
-        if (!search) {
-            return [];
-        }
-        const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+        if (!search) return [];
+
+        const terms = strNormalize(search).split(/\s+/).filter(Boolean);
         return models
             .filter((m) => {
-                const haystack =
-                    `${m.voiceName} ${m.langLabel} ${m.langName ?? ''} ${m.langCode} ${m.engine ?? ''}`.toLowerCase();
+                const haystack = strNormalize(
+                    `${m.voiceName} ${m.langLabel} ${m.langName ?? ''} ${m.langCode} ${m.engine ?? ''}`,
+                );
                 return terms.every((term) => haystack.includes(term));
             })
             .sort((a, b) => {
-                if (a.installed !== b.installed) {
-                    return a.installed ? -1 : 1;
-                }
+                if (a.installed !== b.installed) return a.installed ? -1 : 1;
                 return (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity);
             });
     }, [models, search]);
@@ -237,7 +248,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             {/* 3. Installed voices with delete */}
             {installed.length > 0 && (
                 <Field label={t('Voix installées ({{count}})', { count: installed.length })}>
-                    <div>
+                    <div style={{ maxHeight: INSTALLED_LIST_MAX_HEIGHT, overflowY: 'auto' }}>
                         {installed.map((m) => (
                             <div
                                 key={m.modelName}
