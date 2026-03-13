@@ -1,17 +1,17 @@
 # Audio Reading and Voices
 
-<p class="lead">Wmb Table can read text aloud. This page explains how to set it up in simple words, without technical language.</p>
+<p class="lead">Wmb Table can read text aloud when you want to listen to a sermon, a Bible chapter, or a personal document. This page explains the settings in simple words.</p>
 
 ## What this feature is for
 
-Audio reading can help you:
+Audio reading is useful to:
 
 - listen to a sermon
 - listen to a Bible chapter
 - listen to a personal document
-- follow the text while the app reads it
+- follow the text while it is being read
 
-This feature is especially useful when a sermon does not already have its own audio. In that case, the application can read the text for you. The same feature can also be used for the Bible and for your personal documents.
+This is especially important when a sermon does not already have its own audio recording. In that case, the app can read the text for you.
 
 ## Where to open it
 
@@ -21,145 +21,98 @@ This feature is especially useful when a sermon does not already have its own au
 <ScreenshotPlaceholder
   file="en-settings-tts-tab.png"
   label="Audio Reading tab in settings"
-  hint="Show the chosen voice, the test button, the speed, text follow mode, and the cache area."
+  hint="Show the active provider, the Test voice button, the speed, the highlight mode, and the cache area."
 />
 
-## Simple recommended setup
+## The simplest setup
 
-If you want the easiest path, do only this:
+If you want something easy:
 
-1. open `Audio Reading`
-2. keep the default voice
-3. click `Test voice`
-4. change the speed only if needed
-5. return to your reading
+1. keep the suggested provider
+2. click `Test voice`
+3. adjust the speed if needed
+4. go back to your reading
 
-For many users, that is enough.
+## Types of voices available
+
+The app can use several families of voices.
+
+### System voices
+
+These are the voices already installed on your computer.
+
+### Sherpa-ONNX TTS
+
+Local voices with an initial download.
+
+### Kokoro TTS
+
+Local voices with an initial download.
+
+### Edge TTS (Microsoft)
+
+This provider is now available in the app.
+
+It is useful if you want:
+
+- many languages
+- good quality
+- a free service
+- no account to create
+
+It only needs an internet connection.
+
+### ElevenLabs TTS
+
+High-quality online voices. Account required.
+
+### OpenAI TTS
+
+High-quality online voices. Account required.
+
+<ScreenshotPlaceholder
+  file="en-settings-tts-provider-list.png"
+  label="List of audio providers"
+  hint="Show System voices, Sherpa, Kokoro, Edge TTS, ElevenLabs, and OpenAI in the provider list."
+/>
 
 ## Choosing a voice
 
-The app may offer several voices.
+The important thing is not the technical name. What matters is:
 
-For simple use:
+- clarity
+- language
+- listening comfort
 
-- choose a voice that sounds clear
-- if you are unsure, keep the default one
-- always test the voice before long listening
+If you use `Edge TTS`, the app shows many voices grouped by language.
 
-You do not need to understand the technical system behind the voice. What matters is:
+## Auto voice switching
 
-- do you like the voice?
-- does it fit your language?
-- is it comfortable to listen to?
+The app can automatically choose a voice that matches the language of the document.
 
-## Testing a voice
+This is very useful if you work in more than one language.
 
-To test a voice:
+## Reading controls
 
-1. choose the current voice
-2. click `Test voice`
-3. listen for a few seconds
-4. keep it or change it
+You can also set:
 
-If you hear nothing:
+- reading speed
+- highlight mode
+- the pause between sentences or paragraphs
+- automatic playback when a document opens
 
-- check your computer volume
-- try another voice
-- return to this page later if needed
+## Where it works
 
-## Changing the speed
+Read aloud can be used for:
 
-You can listen:
+- sermons
+- Bible chapters
+- personal documents
 
-- more slowly
-- at normal speed
-- a little faster
-
-Choose:
-
-- slower speed if you want to follow carefully
-- normal speed for everyday listening
-- slightly faster speed if you already know the passage
-
-## Following the text while it reads
-
-The application can highlight:
-
-- the sentence
-- or the paragraph
-
-Choose `sentence` for more precise tracking.
-
-Choose `paragraph` if you want a simpler visual experience.
-
-## Starting automatically
-
-If automatic reading is enabled, the application can begin reading as soon as a compatible document opens.
-
-Use this only if you like reading to begin right away.
-
-Otherwise, leave it turned off.
-
-## Starting from a document
-
-In a sermon, Bible chapter, or personal document, you can often:
-
-- start reading
-- pause
-- resume
-- stop
-- begin from a specific passage
-
-If a sermon already has its own audio, you can use that audio. If it does not, the app’s audio reading becomes a simple way to hear the text anyway.
-
-## If you want the simplest setup
-
-The easiest way is:
-
-1. open your document
-2. start audio reading
-3. listen
-4. adjust the speed later only if needed
-
-## Audio memory
-
-The application sometimes keeps past readings in memory so it can be faster next time.
-
-You can:
-
-- see how much space is used
-- allow more or less space
-- clear that memory if you want a fresh start
-
-If you are unsure, simply leave this setting as it is.
-
-## Recommended setup for most users
-
-- a clear voice
-- normal speed
-- sentence tracking
-- automatic reading turned off at first
-
-## When to return to this page
-
-Come back here if:
-
-- you do not like the voice
-- the reading is too fast or too slow
-- you hear nothing
-- you want another way to follow the text
-
-## Very simple summary
-
-If you want to remember only one thing:
-
-1. choose a voice
-2. test it
-3. set the speed
-4. listen to your reading
+If a sermon already has real audio, you can use that too.
 
 ## See also
 
-- [Settings Overview](/en/guide/settings-overview)
-- [Reading Sermons](/en/guide/sermons)
+- [Using the Reading View](/en/guide/document-view)
 - [Using the Bible](/en/guide/bible)
+- [Reading Sermons](/en/guide/sermons)

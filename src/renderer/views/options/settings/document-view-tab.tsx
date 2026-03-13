@@ -22,7 +22,7 @@ export default function DocumentViewTab() {
                     gap: 16,
                 }}
             >
-                <Space direction="vertical" size={2}>
+                <Space orientation="vertical" size={2}>
                     <Space size="small">
                         <Text type="secondary">
                             <BookOutlined />

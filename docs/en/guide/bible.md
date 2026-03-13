@@ -1,6 +1,6 @@
 # Using the Bible
 
-<p class="lead">The Bible is built into Wmb Table so you can read, compare, and keep verses close to your sermon preparation.</p>
+<p class="lead">The built-in Bible helps you read, search, compare, and keep useful verses without leaving your preparation work.</p>
 
 ## Opening the Bible
 
@@ -11,43 +11,66 @@ You can open the Bible:
 
 ## Reading a book and chapter
 
-Choose:
+The path is simple:
 
-1. a testament
-2. a book
-3. a chapter
+1. choose a testament
+2. choose a book
+3. choose a chapter
 
 <ScreenshotPlaceholder
   file="en-bible-book-browser.png"
   label="Bible navigation by testament, book, and chapter"
-  hint="Show an open testament, one selected book, and the verse list."
+  hint="Show an open testament, one selected book, and the chapter or verse list."
 />
 
 ## Changing Bible version
 
-The Bible page also lets you choose the version in use.
+Wmb Table can show more than one Bible version.
 
-You may be able to:
+Depending on your active language, you can:
 
-- use a version already available
-- download another version
+- use a version already installed
+- see other available versions
+- download a remote version if it is offered
 - switch from one version to another
 
-## Searching in the Bible
+When a new version finishes downloading, the app can switch to it automatically.
 
-You can search for a word or expression and also limit the search to:
+## Remote Bible versions
 
-- the Old Testament
-- the New Testament
+Some Bible versions are not yet stored on your computer at first.
 
-## Opening Bible chapters in tabs
+In that case, the app can show a download button next to the version name.
 
-A Bible chapter can stay open in a tab so you can move between it and a sermon while preparing a message.
+The simple flow is:
 
-## Previous and next chapter
+1. open the Bible
+2. look at the version area
+3. if a version is not yet installed, click its download button
+4. wait for the download to finish
+5. use that version like any other
 
-In the Bible reading view, you can move directly to the previous or next chapter.
+<ScreenshotPlaceholder
+  file="en-bible-remote-version-download.png"
+  label="Downloading a remote Bible version"
+  hint="Show one installed version and at least one version with a download button or progress indicator."
+/>
 
-## Adding a verse to a subject
+## Searching for a verse
 
-Important verses can be added to a subject so they stay grouped with sermon references on the same theme.
+Inside the Bible, you can search for a word or expression.
+
+You can also limit the search:
+
+- to the Old Testament
+- to the New Testament
+
+## Audio reading of the Bible
+
+If a voice is configured, the app can read the chapter aloud.
+
+## See also
+
+- [Audio Reading and Voices](/en/guide/audio-and-tts)
+- [Creating Subjects](/en/guide/subjects)
+- [Searching](/en/guide/search)

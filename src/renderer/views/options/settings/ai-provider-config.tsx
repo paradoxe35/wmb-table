@@ -116,7 +116,7 @@ export function BuiltinProviderConfig({
         >
             <Hint>{t(provider.description)}</Hint>
             <Divider style={{ margin: '8px 0' }} />
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 {provider.configurableFields.map((field) => {
                     if (field.key === 'apiKey') {
                         return (
@@ -208,7 +208,7 @@ export function CustomProviderConfig({
                 </Popconfirm>
             }
         >
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 <Field label={t('URL de base')}>
                     <Input
                         value={provider.baseUrl}

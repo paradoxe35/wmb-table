@@ -1,67 +1,163 @@
 # Paramètres Assistant
 
-<p class="lead">L’onglet `Assistant` sert à activer et régler la fonction de discussion IA dans Wmb Table.</p>
+<p class="lead">L’onglet `Assistant` sert à activer la discussion IA et à choisir comment elle doit fonctionner dans Wmb Table.</p>
 
-> [!IMPORTANT]
-> La fonction Assistant existe dans l’application, mais elle n’est pas activée automatiquement. Cet onglet sert à la mettre en route et à la régler.
-
-## Où ouvrir cette page
+## Où ouvrir cet onglet
 
 1. Ouvrez `Paramètres`
 2. Cliquez sur `Assistant`
 
-## À quoi sert cet onglet
-
-Cet onglet permet de :
-
-- activer ou désactiver l’assistant
-- voir si la fonction est disponible
-- choisir les réglages liés à l’assistant
-- préparer l’utilisation du chat IA dans l’application
-
 <ScreenshotPlaceholder
   file="fr-settings-assistant-tab.png"
   label="Onglet Assistant dans les paramètres"
-  hint="Prendre un écran montrant l’interrupteur d’activation, les options principales et l’état de disponibilité."
+  hint="Montrer l’interrupteur d’activation, le choix du fournisseur, les réglages de langue et, si possible, le bloc du modèle local."
 />
 
-## Ce que l’utilisateur doit faire
+## Ce que vous faites ici
 
-Le parcours est simple :
+Dans cet onglet, vous pouvez :
 
-1. ouvrir `Paramètres`
-2. entrer dans `Assistant`
-3. activer la fonction
-4. enregistrer les réglages nécessaires
-5. ouvrir ensuite la page de discussion IA
+- activer ou désactiver l’assistant
+- choisir le service utilisé pour répondre
+- régler un modèle local si vous voulez travailler sans internet
+- entrer les informations nécessaires pour un service en ligne
+- tester la connexion d’un service
+- choisir comment l’assistant suit la langue active
 
-## Ce qui sera important à vérifier
+## Étape 1 : activer l’assistant
 
-Avant d’utiliser l’assistant, l’utilisateur devra pouvoir vérifier :
+En haut de la page, vous trouvez un interrupteur simple.
 
-- si la fonction est bien activée
-- si la langue active de l’application est correcte
-- si les options de l’assistant correspondent à son besoin
+Quand il est activé :
 
-## Relation avec la langue active
+- l’assistant devient disponible dans le menu de gauche
+- vous pouvez ouvrir la page de discussion IA
 
-L’assistant devra utiliser la langue active de l’application pour mieux retrouver :
+Quand il est désactivé :
 
-- les prédications
-- les versets
-- les sujets
-- les notes
+- la page Assistant reste bloquée
+- l’application vous renvoie vers les paramètres pour l’activer
 
-## Quand ouvrir cet onglet
+## Étape 2 : choisir le service utilisé
 
-Ouvrez `Assistant` si vous voulez :
+L’application propose plusieurs choix.
 
-- commencer à utiliser la discussion IA
-- vérifier que l’assistant est bien activé
-- modifier son comportement
+### Local
+
+`Local` fonctionne directement sur votre ordinateur.
+
+Il est utile si vous voulez :
+
+- travailler sans connexion internet
+- garder le traitement sur votre machine
+- utiliser un petit modèle téléchargé à l’avance
+
+### OpenRouter
+
+Ce choix permet d’accéder à plusieurs modèles avec une seule clé.
+
+### OpenAI
+
+Ce choix permet d’utiliser les modèles OpenAI.
+
+### Gemini
+
+Ce choix permet d’utiliser les modèles Gemini de Google.
+
+### Claude
+
+Ce choix permet d’utiliser les modèles Claude.
+
+### Fournisseur personnalisé
+
+Vous pouvez aussi ajouter un service compatible si vous avez une adresse et un modèle à indiquer.
+
+<ScreenshotPlaceholder
+  file="fr-settings-assistant-provider-selector.png"
+  label="Choix du fournisseur IA"
+  hint="Montrer la liste des fournisseurs avec Local, OpenRouter, OpenAI, Gemini, Claude et Ajouter un fournisseur personnalisé."
+/>
+
+## Étape 3 : si vous choisissez un service en ligne
+
+Pour un service en ligne, vous devez généralement :
+
+1. choisir le fournisseur
+2. entrer votre clé
+3. entrer le nom du modèle
+4. tester la connexion
+
+Si le test est bon, l’application affiche que la connexion fonctionne.
+
+<ScreenshotPlaceholder
+  file="fr-settings-assistant-cloud-provider.png"
+  label="Réglage d’un fournisseur en ligne"
+  hint="Montrer la zone de clé, le champ du modèle et le bouton Tester la connexion."
+/>
+
+## Étape 4 : si vous choisissez Local
+
+Le mode local vous permet de télécharger un modèle sur votre ordinateur.
+
+Aujourd’hui, l’application propose des modèles légers comme :
+
+- `Qwen 3.5`
+- `Gemma 3`
+
+L’idée simple est :
+
+1. choisir `Local`
+2. télécharger un modèle
+3. sélectionner ce modèle
+4. utiliser ensuite l’assistant
+
+Vous pouvez aussi activer la carte graphique si votre ordinateur la supporte.
+
+<ScreenshotPlaceholder
+  file="fr-settings-assistant-local-models.png"
+  label="Téléchargement et choix d’un modèle local"
+  hint="Montrer la liste des modèles locaux avec Télécharger, Utiliser et l’option GPU."
+/>
+
+## Étape 5 : comportement de la langue
+
+L’assistant suit la langue active de l’application.
+
+Deux comportements sont proposés :
+
+- `Suivre la langue active`
+- `Changer uniquement sur demande`
+
+Pour la plupart des utilisateurs, gardez `Suivre la langue active`.
+
+Ainsi, l’assistant cherchera plus naturellement dans :
+
+- les prédications de votre langue active
+- les versions bibliques adaptées
+- vos sujets et vos notes dans le bon contexte
+
+## Réglage simple recommandé
+
+Pour commencer sans complication :
+
+1. activez l’assistant
+2. choisissez le service que vous voulez utiliser
+3. entrez les informations nécessaires si besoin
+4. gardez `Suivre la langue active`
+5. ouvrez ensuite la page `Discussion IA`
+
+## Quand revenir dans cet onglet
+
+Revenez ici si :
+
+- l’assistant ne répond pas
+- vous voulez changer de service
+- vous voulez passer en mode local
+- vous voulez utiliser un autre modèle
+- vous voulez modifier la manière dont l’assistant gère les langues
 
 ## Voir aussi
 
 - [Discussion IA](/guide/ai-chat)
-- [Vue d’ensemble des paramètres](/guide/settings-overview)
 - [Langues](/guide/languages)
+- [Vue d’ensemble des paramètres](/guide/settings-overview)

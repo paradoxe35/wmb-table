@@ -5,6 +5,11 @@ export {
     DOCS_SUBJECT_LINK,
     DOCS_NOTE_LINK,
     DOCS_CUSTOM_DOCUMENT_LINK,
+    DOCS_AI_CHAT_LINK,
+    DOCS_SETTINGS_ASSISTANT_LINK,
+    DOCS_TTS_LINK,
+    DOCS_BIBLE_LINK,
+    buildDocsGuideLink,
 } from '@shared/constants';
 
 export const AUDIO_SPEEDS = [0.75, 1, 1.25, 1.5, 2] as const;

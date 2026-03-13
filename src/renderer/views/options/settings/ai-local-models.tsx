@@ -191,7 +191,7 @@ export default function AiLocalModels({
                 </Button>
             }
         >
-            <Space direction="vertical" style={{ width: '100%' }} size="small">
+            <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 <Text type="secondary" style={{ fontSize: '0.8em' }}>
                     {t(
                         'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.',

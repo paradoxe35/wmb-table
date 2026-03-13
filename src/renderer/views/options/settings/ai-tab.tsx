@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Divider, Select, Space, Switch, Tag, Typography } from 'antd';
-import { CloudOutlined, LaptopOutlined, PlusOutlined } from '@ant-design/icons';
+import { BookOutlined, CloudOutlined, LaptopOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { AiBuiltinProviderId, AiCustomProviderConfig } from '@shared/ai.types';
-import { useAiChatStore } from '@renderer/stores';
+import { useAiChatStore, useAppStore } from '@renderer/stores';
+import { buildDocsGuideLink } from '@renderer/utils/constants';
 import { Field, Hint } from './ai-shared';
 import { BuiltinProviderConfig, CustomProviderConfig } from './ai-provider-config';
 import AiCustomProviderModal from './ai-custom-provider';
@@ -19,6 +20,7 @@ export default function AiTab() {
     const localModels = useAiChatStore((s) => s.localModels);
     const saveSettings = useAiChatStore((s) => s.saveSettings);
     const scanLocalModels = useAiChatStore((s) => s.scanLocalModels);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [customModalOpen, setCustomModalOpen] = useState(false);
 
     useEffect(() => {
@@ -90,10 +92,29 @@ export default function AiTab() {
         });
     }
 
+    function openDocs() {
+        const url = buildDocsGuideLink('settings-assistant', activeLanguage);
+        void window.api.app.openExternal(url);
+    }
+
     return (
-        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+        <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             {/* Enable toggle */}
-            <Card size="small">
+            <Card
+                size="small"
+                title={t('Assistant')}
+                extra={
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<BookOutlined />}
+                        onClick={openDocs}
+                        style={{ fontSize: '0.78em', paddingInline: 6 }}
+                    >
+                        {t('Documentation')}
+                    </Button>
+                }
+            >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <Switch
                         checked={settings.enabled}

@@ -1,17 +1,17 @@
 # Lecture audio et voix
 
-<p class="lead">Wmb Table peut lire le texte à voix haute. Cette page explique comment régler cette fonction avec des mots simples, sans connaissances techniques.</p>
+<p class="lead">Wmb Table peut lire le texte à voix haute quand vous voulez écouter une prédication, un chapitre biblique ou un document personnel. Cette page explique les réglages de façon simple.</p>
 
 ## À quoi sert cette fonction
 
-La lecture audio peut vous aider à :
+La lecture audio est utile pour :
 
 - écouter une prédication
 - écouter un chapitre de la Bible
 - écouter un document personnel
-- suivre le texte pendant que l’application le lit
+- suivre le texte pendant la lecture
 
-Cette fonction est particulièrement utile quand une prédication n’a pas d’audio déjà disponible. Dans ce cas, l’application peut lire le texte pour vous. La même fonction peut aussi servir pour la Bible et pour vos documents personnels.
+Cette fonction est particulièrement importante quand une prédication n’a pas déjà un enregistrement audio. Dans ce cas, l’application peut lire le texte pour vous.
 
 ## Où ouvrir ce réglage
 
@@ -21,145 +21,162 @@ Cette fonction est particulièrement utile quand une prédication n’a pas d’
 <ScreenshotPlaceholder
   file="fr-settings-tts-tab.png"
   label="Onglet Lecture audio des paramètres"
-  hint="Montrer la voix choisie, le bouton de test, la vitesse, le suivi du texte et la zone du cache."
+  hint="Montrer le fournisseur actif, le bouton Tester la voix, la vitesse, le mode de surlignage et la zone du cache."
 />
 
-## Réglage simple recommandé
+## Le parcours le plus simple
 
-Si vous voulez aller vite, faites seulement ceci :
+Si vous voulez aller vite :
 
-1. ouvrez `Lecture audio`
-2. gardez la voix par défaut proposée
-3. cliquez sur `Tester la voix`
-4. ajustez la vitesse si nécessaire
-5. revenez à votre lecture
+1. laissez le fournisseur proposé
+2. cliquez sur `Tester la voix`
+3. ajustez la vitesse si besoin
+4. revenez à votre lecture
 
-Cela suffit déjà pour beaucoup d’utilisateurs.
+Pour beaucoup d’utilisateurs, cela suffit.
+
+## Les types de voix proposés
+
+L’application peut utiliser plusieurs familles de voix.
+
+### Voix du système
+
+Ce sont les voix déjà présentes sur votre ordinateur.
+
+Avantages :
+
+- simples à utiliser
+- pas de compte
+- pas d’internet nécessaire
+
+### Sherpa-ONNX TTS
+
+Voix locales avec téléchargement initial.
+
+### Kokoro TTS
+
+Voix locales avec téléchargement initial.
+
+### Edge TTS (Microsoft)
+
+Ce fournisseur est maintenant disponible dans l’application.
+
+Il est utile si vous voulez :
+
+- beaucoup de langues
+- une bonne qualité
+- un service gratuit
+- aucun compte à créer
+
+Il a simplement besoin d’une connexion internet.
+
+### ElevenLabs TTS
+
+Voix en ligne de très bonne qualité. Compte nécessaire.
+
+### OpenAI TTS
+
+Voix en ligne de très bonne qualité. Compte nécessaire.
+
+<ScreenshotPlaceholder
+  file="fr-settings-tts-provider-list.png"
+  label="Liste des fournisseurs de lecture audio"
+  hint="Montrer la liste avec Voix du système, Sherpa, Kokoro, Edge TTS, ElevenLabs et OpenAI."
+/>
 
 ## Choisir une voix
 
-L’application peut proposer plusieurs voix.
+Le plus important n’est pas le nom technique du service. Ce qui compte est :
 
-Pour un usage simple :
+- la clarté de la voix
+- la langue de la voix
+- votre confort d’écoute
 
-- choisissez une voix qui vous semble claire
-- si vous hésitez, gardez celle proposée par défaut
-- testez toujours la voix avant de commencer une longue écoute
+Choisissez simplement une voix qui vous semble agréable.
 
-Vous n’avez pas besoin de comprendre les détails techniques du moteur utilisé. Ce qui compte est :
-
-- est-ce que la voix vous plaît ?
-- est-ce qu’elle correspond à votre langue ?
-- est-ce qu’elle est agréable à écouter ?
+Si vous utilisez `Edge TTS`, l’application affiche beaucoup de voix classées par langue.
 
 ## Tester la voix
 
-Pour essayer une voix :
+Pour essayer rapidement :
 
-1. choisissez la voix actuelle
-2. cliquez sur `Tester la voix`
-3. écoutez quelques secondes
-4. gardez-la ou changez-en
+1. choisissez le fournisseur
+2. choisissez la voix
+3. cliquez sur `Tester la voix`
+4. écoutez quelques secondes
 
-Si vous n’entendez rien :
+Si cela vous convient, gardez ce réglage.
 
-- vérifiez le volume de l’ordinateur
-- essayez une autre voix
-- revenez plus tard sur cette page si besoin
+## Changer automatiquement de voix
 
-## Changer la vitesse
+L’application peut choisir automatiquement une voix adaptée à la langue du document.
 
-Vous pouvez lire :
+Cela est très utile si vous travaillez dans plusieurs langues.
 
-- plus lentement
-- à vitesse normale
-- un peu plus vite
+Si vous voulez quelque chose de simple, laissez cette option activée.
 
-Choisissez :
+## Réglages de lecture
 
-- une vitesse plus lente pour bien suivre
-- une vitesse normale pour une écoute habituelle
-- une vitesse un peu plus rapide pour relire un passage déjà connu
+Vous pouvez aussi régler :
 
-## Suivre le texte pendant la lecture
+- la vitesse de lecture
+- le mode de surlignage
+- la pause entre les phrases ou les paragraphes
+- la lecture automatique à l’ouverture d’un document
 
-L’application peut mettre en évidence :
+### Mode de surlignage
+
+Vous pouvez suivre :
 
 - la phrase
 - ou le paragraphe
 
-Choisissez la `phrase` si vous voulez un suivi plus précis.
+Choisissez `phrase` si vous voulez un suivi plus précis.  
+Choisissez `paragraphe` si vous voulez un affichage plus calme.
 
-Choisissez le `paragraphe` si vous voulez une lecture plus simple visuellement.
+### Vitesse
 
-## Démarrer la lecture automatiquement
+Gardez une vitesse normale au début, puis ajustez selon votre confort.
 
-Si vous activez la lecture automatique, l’application peut commencer à lire dès qu’un document compatible s’ouvre.
+## Dans quels contenus cela fonctionne
 
-Utilisez cela seulement si vous aimez que la lecture démarre tout de suite.
+La lecture à voix haute peut être utilisée pour :
 
-Sinon, laissez cette option désactivée.
+- les prédications
+- les chapitres bibliques
+- les documents personnels
 
-## Commencer à écouter depuis un document
+Dans les prédications, si un audio réel existe déjà, vous pouvez aussi utiliser cet audio.
 
-Dans une prédication, dans la Bible ou dans un document personnel, vous pourrez souvent :
+## Commencer depuis un endroit précis
 
-- lancer la lecture
-- mettre en pause
-- reprendre
-- arrêter
-- commencer depuis un passage précis
+Dans la vue de lecture, un petit bouton peut apparaître sur un paragraphe pour commencer la lecture à partir de cet endroit précis.
 
-Si une prédication a déjà un audio prévu, vous pouvez utiliser cet audio. Si elle n’en a pas, la lecture audio de l’application devient une solution simple pour entendre le texte quand même.
+Cela est utile si vous ne voulez pas reprendre depuis le début.
 
-## Si vous voulez quelque chose de simple
+## Mémoire audio
 
-Le plus simple est :
+L’application garde certaines lectures en mémoire pour aller plus vite la fois suivante.
 
-1. ouvrir votre document
-2. lancer la lecture
-3. écouter
-4. ajuster ensuite la vitesse si nécessaire
-
-## Mémoire audio de l’application
-
-L’application garde parfois certaines lectures en mémoire pour être plus rapide la prochaine fois.
-
-Vous pouvez :
+Dans ce réglage, vous pouvez :
 
 - voir l’espace utilisé
-- autoriser plus ou moins d’espace
+- voir la limite autorisée
 - vider cette mémoire si vous voulez repartir proprement
 
-Si vous ne savez pas quoi faire, laissez simplement ce réglage tel quel.
+Si vous ne savez pas quoi faire, laissez ce réglage tel quel.
 
 ## Réglage conseillé pour la plupart des utilisateurs
 
+- un fournisseur simple
 - une voix claire
+- changement automatique de voix activé
 - vitesse normale
-- suivi par phrase
+- surlignage par phrase
 - lecture automatique désactivée au début
-
-## Quand revenir dans ce réglage
-
-Revenez ici si :
-
-- la voix ne vous plaît pas
-- la lecture va trop vite ou trop lentement
-- vous n’entendez rien
-- vous voulez une autre manière de suivre le texte
-
-## Résumé très simple
-
-Si vous ne voulez retenir qu’une seule chose :
-
-1. choisissez une voix
-2. testez-la
-3. réglez la vitesse
-4. écoutez votre lecture
 
 ## Voir aussi
 
-- [Vue d’ensemble des paramètres](/guide/settings-overview)
-- [Lire les prédications](/guide/sermons)
+- [Utiliser la vue de lecture](/guide/document-view)
 - [Utiliser la Bible](/guide/bible)
+- [Lire les prédications](/guide/sermons)

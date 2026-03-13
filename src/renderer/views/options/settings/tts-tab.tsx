@@ -13,7 +13,7 @@ import {
     Typography,
     message,
 } from 'antd';
-import { SoundOutlined } from '@ant-design/icons';
+import { BookOutlined, SoundOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAppStore } from '@renderer/stores/app.store';
@@ -29,6 +29,7 @@ import SherpaConfig from './tts-provider-sherpa';
 import ElevenLabsConfig from './tts-provider-elevenlabs';
 import OpenAIConfig from './tts-provider-openai';
 import EdgeConfig from './tts-provider-edge';
+import { buildDocsGuideLink } from '@renderer/utils/constants';
 
 const { Text } = Typography;
 
@@ -184,10 +185,29 @@ export default function TtsTab() {
 
     const activeMeta = PROVIDER_CATALOG[settings.activeProvider];
 
+    function openDocs() {
+        const url = buildDocsGuideLink('audio-and-tts', activeLanguage);
+        void window.api.app.openExternal(url);
+    }
+
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="middle">
             {/* Active provider selector */}
-            <Card size="small">
+            <Card
+                size="small"
+                title={t('Lecture audio')}
+                extra={
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<BookOutlined />}
+                        onClick={openDocs}
+                        style={{ fontSize: '0.78em', paddingInline: 6 }}
+                    >
+                        {t('Documentation')}
+                    </Button>
+                }
+            >
                 <Field
                     label={t('Fournisseur actif')}
                     hint={t('Le service qui lira le texte à voix haute.')}

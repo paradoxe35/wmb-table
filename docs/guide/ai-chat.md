@@ -1,179 +1,162 @@
 # Discussion IA
 
-<p class="lead">Wmb Table comprend une fonction de discussion IA pour aider à retrouver plus vite les informations utiles et préparer vos sujets plus facilement.</p>
+<p class="lead">Wmb Table comprend une vraie fonction de discussion IA pour vous aider à retrouver plus vite des prédications, des versets, des sujets, des notes et des documents personnels. Cette page explique son usage avec des mots simples.</p>
 
 > [!IMPORTANT]
-> Cette fonction n’est pas activée par défaut. Elle doit être activée volontairement dans l’onglet `Assistant` des paramètres.
+> La discussion IA existe dans l’application, mais elle reste désactivée tant que vous ne l’activez pas vous-même dans l’onglet `Assistant`.
 
-## À quoi sert cette fonction
+## À quoi sert la discussion IA
 
-La discussion IA est pensée pour vous aider à travailler plus simplement avec vos contenus déjà présents dans Wmb Table.
+La discussion IA sert surtout à gagner du temps dans votre préparation.
 
-Elle peut notamment :
+Elle peut vous aider à :
 
-- explorer les sujets existants
-- aider à créer de nouveaux sujets
-- retrouver des références bibliques
-- retrouver des documents et des prédications
-- retrouver des notes existantes
-- ajouter des références à un sujet
-- rechercher des sermons par titre, date, ville et autres informations disponibles
+- retrouver une prédication par son titre, sa date, sa ville ou d’autres informations
+- chercher un mot ou une expression à l’intérieur des prédications
+- lire le contenu d’une prédication
+- retrouver un passage biblique
+- voir les versions bibliques disponibles
+- retrouver vos sujets existants
+- créer un nouveau sujet
+- ajouter un passage biblique à un sujet
+- ajouter un passage de prédication à un sujet
+- retrouver vos notes
+- créer une note
+- ajouter un passage biblique ou une référence de prédication à une note
+- retrouver vos documents personnels
 
-## Quand cette fonction est utile
+## Où ouvrir cette fonction
 
-Elle est particulièrement utile si vous voulez :
+Quand elle est activée, la discussion IA apparaît dans la barre latérale de l’application, avec les autres outils.
 
-- retrouver vite un passage sans refaire plusieurs recherches
-- préparer un sujet à partir de plusieurs sources
-- vérifier si vous avez déjà une note ou un sujet sur un thème
-- retrouver une prédication à partir d’une information partielle
+Le plus simple est :
 
-## Utilisation simple
+1. ouvrir `Paramètres`
+2. ouvrir `Assistant`
+3. activer la fonction
+4. revenir ensuite dans le menu de gauche
+5. ouvrir `Assistant`
 
-Quand la fonction est activée, l’usage est très simple :
+<ScreenshotPlaceholder
+  file="fr-ai-chat-sidebar-entry.png"
+  label="Entrée Assistant dans le menu de gauche"
+  hint="Montrer l’entrée Assistant visible dans la barre latérale après activation."
+/>
 
-1. ouvrir la page ou le panneau `Discussion IA`
-2. écrire une demande avec des mots simples
-3. lire la réponse
-4. ouvrir le sermon, le verset, la note ou le sujet proposé
-5. ajouter une référence à un sujet si le résultat est bon
+## Ce que vous voyez dans la page Assistant
+
+La page de discussion IA contient trois zones simples :
+
+- à gauche, la liste des conversations
+- au centre, les messages
+- en bas, la zone où vous écrivez votre demande
+
+Vous pouvez aussi :
+
+- créer une nouvelle conversation
+- ouvrir une ancienne conversation
+- supprimer une conversation
+- vider tout l’historique des conversations
+- arrêter une réponse en cours
+
+<ScreenshotPlaceholder
+  file="fr-ai-chat-main-screen.png"
+  label="Page principale de discussion IA"
+  hint="Montrer la liste des conversations à gauche, les messages au centre et la zone de saisie en bas."
+/>
+
+## Utilisation très simple
+
+Le fonctionnement le plus simple est celui-ci :
+
+1. ouvrez `Assistant`
+2. écrivez votre demande
+3. appuyez sur `Entrée` pour envoyer
+4. lisez la réponse
+5. ouvrez ensuite le sermon, le passage biblique, le sujet ou la note si le résultat est bon
+
+Pour écrire sur plusieurs lignes, utilisez `Maj + Entrée`.
+
+Si vous voulez arrêter une réponse en cours, utilisez le bouton d’arrêt dans la zone de saisie.
 
 ## Exemples de demandes utiles
 
-- `Montre-moi les sujets sur la foi`
-- `Ajoute Jean 3:16 dans le sujet Salut`
 - `Trouve les prédications prêchées à Jeffersonville`
 - `Cherche les sermons sur le baptême`
-- `Retrouve mes notes parlant de la semence`
-- `Montre-moi les sujets où j’ai déjà mis des versets sur la repentance`
-- `Trouve une prédication par date sur la guérison`
+- `Montre-moi le passage de Jean 3:16`
+- `Montre-moi les versions bibliques disponibles en français`
+- `Liste mes sujets sur la foi`
+- `Crée un sujet appelé Repentance`
+- `Ajoute Jean 3:16 au sujet Salut`
+- `Montre mes notes sur la semence`
+- `Crée une note appelée Message du dimanche`
+- `Ajoute le paragraphe 25 de ce sermon à ma note`
 
-## Comment l’expérience se présente
+## Ce que la discussion IA sait utiliser
 
-L’idée la plus simple pour l’utilisateur est une page ou un panneau `Discussion IA` avec :
+La discussion IA travaille avec les informations déjà présentes dans Wmb Table.
 
-- une zone où écrire la demande
-- une liste de réponses faciles à lire
-- des boutons pour ouvrir ce qui a été trouvé
-- des actions simples comme `Ajouter au sujet`
+Elle sait utiliser :
+
+- les langues installées
+- les prédications disponibles dans la langue active
+- la recherche dans le contenu des prédications
+- les versions bibliques disponibles
+- vos sujets
+- vos notes
+- vos documents personnels
+
+Quand elle agit, l’application peut aussi afficher de petits repères sous la réponse pour montrer ce qu’elle a fait, par exemple :
+
+- recherche de sermons
+- lecture d’un sermon
+- passage biblique
+- ajout à un sujet
+- ajout à une note
 
 <ScreenshotPlaceholder
-  file="fr-ai-chat-page-placeholder.png"
-  label="Page ou panneau de discussion IA"
-  hint="Prendre un écran avec la zone de saisie, les réponses et les actions d’ajout vers les sujets."
+  file="fr-ai-chat-tool-results.png"
+  label="Repères d’actions dans la discussion IA"
+  hint="Montrer une réponse IA avec les petites étiquettes indiquant recherche de sermons, passage biblique, ajout au sujet ou ajout à la note."
 />
 
-## Ce qu’elle pourra faire avec les sujets
+## Relation avec la langue active
 
-La discussion IA devra aider à :
+La langue active est très importante.
 
-- lister les sujets existants
-- vérifier si un sujet semblable existe déjà
-- créer un nouveau sujet
-- ajouter une référence biblique à un sujet
-- ajouter une référence de prédication à un sujet
-- retrouver les éléments déjà placés dans un sujet
+Par défaut, l’assistant suit la langue active de l’application. Cela veut dire qu’il cherche d’abord dans ce que vous utilisez déjà.
 
-## Ce qu’elle pourra faire avec les prédications
+Par exemple :
 
-Elle devra pouvoir retrouver des sermons par :
+- si vous travaillez en français, il cherchera d’abord dans ce contexte
+- si vous travaillez en espagnol, il suivra ce contexte
+- si une autre langue est demandée clairement, il peut s’y adapter
 
-- titre
-- date
-- ville ou lieu
-- autres informations déjà disponibles dans l’application
-
-Cela est utile quand l’utilisateur se souvient d’un détail, mais pas du titre exact.
-
-## Ce qu’elle pourra faire avec les notes
-
-Elle devra aussi pouvoir :
-
-- retrouver les notes existantes
-- proposer les notes proches du sujet demandé
-- aider l’utilisateur à rouvrir une note plus vite
-
-## Comment elle choisira les bonnes données
-
-La discussion IA tiendra compte de la langue active dans l’application.
-
-Cela veut dire :
-
-- qu’elle pourra connaître les langues disponibles
-- qu’elle recevra la langue active
-- qu’elle cherchera les références selon cette langue
-
-Ainsi, les réponses seront mieux adaptées à ce que vous lisez réellement.
-
-## Activation de la fonction
-
-Cette fonction existe dans l’application, mais elle reste désactivée par défaut.
-
-Pour l’utiliser :
-
-1. ouvrez `Paramètres`
-2. ouvrez l’onglet `Assistant`
-3. activez l’assistant
-4. ouvrez ensuite la page de discussion IA
-
-## Choix des modèles
-
-Plusieurs services peuvent être utilisés en arrière-plan.
-
-Pour l’utilisateur, le plus important est ceci :
-
-- l’application propose plusieurs modèles
-- elle pourra recommander automatiquement le plus adapté
-- certains modèles seront plus simples ou plus rapides selon la situation
-
-## Recommandation automatique du modèle
-
-L’application utilise aussi un système de recommandation automatique.
-
-Le but est de choisir plus facilement un modèle selon :
-
-- les ressources disponibles
-- le type de demande
-- le contexte général de l’utilisateur
-
-Ainsi, l’utilisateur n’aura pas besoin de comprendre les détails techniques des modèles.
+Cela rend les réponses plus cohérentes avec ce que vous lisez réellement.
 
 ## Ce que la discussion IA ne remplace pas
 
-Même avec cette aide :
+Même si elle peut retrouver beaucoup de choses, elle ne remplace pas votre jugement.
 
-- vous gardez le contrôle de vos sujets
-- vous gardez le dernier mot avant d’ajouter des références
-- il reste important de relire les passages trouvés
+Gardez cette habitude :
 
-## Conseils pour bien l’utiliser
+1. ouvrez la source proposée
+2. relisez le passage dans son contexte
+3. vérifiez qu’il s’agit bien de la bonne référence
+4. ajoutez seulement ce qui vous sert vraiment
 
-- Posez une demande simple et claire.
-- Vérifiez toujours les références proposées.
-- Ouvrez le document ou le verset avant de l’utiliser dans une prédication.
-- Utilisez cette fonction comme une aide, pas comme un remplacement de votre étude.
+## Quand cette fonction est la plus utile
 
-## Vérifications à faire avant d’utiliser une réponse
+La discussion IA aide surtout quand :
 
-Avant de garder un résultat, prenez l’habitude de :
-
-1. ouvrir la source proposée
-2. relire le passage dans son contexte
-3. vérifier que la langue active est la bonne
-4. ajouter seulement les références vraiment utiles à vos sujets
-
-## Résumé simple
-
-La discussion IA est un assistant pratique dans Wmb Table :
-
-- pour retrouver plus vite
-- pour mieux organiser
-- pour gagner du temps
-
-Mais l’utilisateur garde toujours le contrôle final sur ce qu’il ouvre, ce qu’il ajoute et ce qu’il utilise pour prêcher.
+- vous vous souvenez d’un détail mais pas du titre exact
+- vous voulez vérifier si vous avez déjà un sujet sur un thème
+- vous voulez retrouver rapidement une note ancienne
+- vous voulez ajouter plusieurs références sans refaire toutes les recherches à la main
 
 ## Voir aussi
 
+- [Paramètres Assistant](/guide/settings-assistant)
 - [Créer des sujets](/guide/subjects)
-- [Faire une recherche](/guide/search)
-- [Langues](/guide/languages)
+- [Prendre des notes](/guide/notes)
+- [Utiliser la Bible](/guide/bible)
