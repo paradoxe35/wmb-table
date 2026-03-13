@@ -177,10 +177,12 @@ export function useTtsSetup(): void {
         });
     }, [t]);
 
-    // Segment audio playback
+    // Segment audio playback — skip if TTS was stopped while audio was in transit
     useEffect(() => {
         return window.api.on.ttsSegmentAudio((data) => {
-            const rate = useTtsStore.getState().settings?.rate ?? 1;
+            const state = useTtsStore.getState();
+            if (state.status === 'idle') return;
+            const rate = state.settings?.rate ?? 1;
             ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
         });
     }, []);
@@ -189,7 +191,7 @@ export function useTtsSetup(): void {
     useEffect(() => {
         let pending = false;
         ttsAudioPlayer.setOnEnded(() => {
-            if (pending) {
+            if (pending || useTtsStore.getState().status === 'idle') {
                 return;
             }
             pending = true;
