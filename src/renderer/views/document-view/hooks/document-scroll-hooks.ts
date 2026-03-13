@@ -140,6 +140,12 @@ export function useScrollAndZoom(
         };
     }, [readingPositionKey]);
 
+    // Reset the restore guard when the active tab changes so scroll is
+    // re-applied when the user switches back to a previously viewed tab.
+    useEffect(() => {
+        lastRestoredKeyRef.current = null;
+    }, [activeTabKey]);
+
     useLayoutEffect(() => {
         if (!restoreToken || !containerRef.current || !activeTab) return;
         if (lastRestoredKeyRef.current === restoreToken) return;
@@ -174,6 +180,8 @@ export function useScrollAndZoom(
             }
         }, 500);
         const onScroll = () => {
+            // Ignore scroll resets caused by parent becoming display:none
+            if (!el.offsetParent) return;
             lastScrollTop = el.scrollTop;
             updateTabScroll(activeTabKey, lastScrollTop);
             handler();

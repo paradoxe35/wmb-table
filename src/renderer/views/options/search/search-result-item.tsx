@@ -60,6 +60,8 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const searchMode = useSearchStore((s) => s.searchMode);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
 
+    const openSearchBar = useSearchStore((s) => s.openSearchBar);
+
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {
             const tabKey = getTabKey({ title: hit.title, sermonId: hit.sermonId });
@@ -71,6 +73,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 term: query,
                 mode: searchMode,
             });
+            openSearchBar(tabKey, true);
             requestScrollToMatch(tabKey, matchIndex);
             if (paragraphIndex > 0) {
                 setPendingNavigation({
@@ -85,6 +88,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
         },
         [
             hit,
+            openSearchBar,
             requestScrollToMatch,
             setDocumentViewQuery,
             setPendingNavigation,
