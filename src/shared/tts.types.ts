@@ -187,7 +187,7 @@ export const TTS_REFERENCE_VOICES: TtsReferenceVoice[] = [
 
 // ── Per-language model info (for providers with multiple downloadable models) ──
 export interface TtsModelInfo {
-    langCode: string;
+    langCode: string | string[];
     langLabel: string;
     langName?: string;
     modelName: string;

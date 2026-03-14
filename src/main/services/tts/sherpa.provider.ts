@@ -13,7 +13,7 @@ import type {
     TtsVoice,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { normalizeLangCode, getLangLabelFr } from './sherpa-catalog';
+import { normalizeLangCode, getLangLabelFr, entrySupportsLang } from './sherpa-catalog';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
 import { getTtsModelsDir } from '@main/lib/app-paths';
 import { WorkerRpc } from './worker-rpc';
@@ -78,7 +78,10 @@ function getInstalledModelNames(): string[] {
 function getLangCodeForModel(modelName: string): string {
     if (modelName.startsWith('mms-')) return normalizeLangCode(modelName.slice(4));
     const entry = findCatalogModelByModelName(modelName);
-    if (entry) return entry.langCode;
+    if (entry) {
+        const lc = entry.langCode;
+        return normalizeLangCode(Array.isArray(lc) ? lc[0] : lc);
+    }
     const parts = modelName.split('-');
     if (parts.length >= 3) {
         const langPart = parts[2].split('_')[0];
@@ -224,18 +227,21 @@ export class SherpaProvider implements TtsProvider {
     getAvailableModels(): TtsModelInfo[] {
         const installedSet = new Set(getInstalledModelNames());
 
-        return getAllCatalogModels().map((entry) => ({
-            langCode: entry.langCode,
-            langLabel: getLangLabelFr(entry.langCode) || entry.langName,
-            langName: entry.langName,
-            modelName: entry.modelName,
-            voiceName: entry.name,
-            installed: installedSet.has(entry.modelName),
-            engine: entry.engine,
-            quality: entry.quality,
-            filesizeMb: entry.filesizeMb,
-            numSpeakers: entry.numSpeakers,
-        }));
+        return getAllCatalogModels().map((entry) => {
+            const primaryLang = Array.isArray(entry.langCode) ? entry.langCode[0] : entry.langCode;
+            return {
+                langCode: entry.langCode,
+                langLabel: getLangLabelFr(primaryLang) || entry.langName,
+                langName: entry.langName,
+                modelName: entry.modelName,
+                voiceName: entry.name,
+                installed: installedSet.has(entry.modelName),
+                engine: entry.engine,
+                quality: entry.quality,
+                filesizeMb: entry.filesizeMb,
+                numSpeakers: entry.numSpeakers,
+            };
+        });
     }
 
     async deleteModel(modelName: string): Promise<void> {
@@ -328,9 +334,7 @@ export class SherpaProvider implements TtsProvider {
         // Prefer non-MMS model (typically higher quality)
         const nonMms = getAllCatalogModels().find(
             (m) =>
-                m.engine !== 'mms' &&
-                normalizeLangCode(m.langCode) === code &&
-                installed.includes(m.modelName),
+                m.engine !== 'mms' && entrySupportsLang(m, code) && installed.includes(m.modelName),
         );
         if (nonMms) return nonMms.modelName;
 

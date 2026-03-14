@@ -26,6 +26,7 @@ const frSidebar = [
     {
         text: 'Commencer',
         items: [
+            { text: 'Installation', link: '/guide/installation' },
             { text: 'Commencer', link: '/guide/getting-started' },
             { text: "Comprendre l'interface", link: '/guide/interface-overview' },
         ],
@@ -73,6 +74,7 @@ const enSidebar = [
     {
         text: 'Start Here',
         items: [
+            { text: 'Installation', link: '/en/guide/installation' },
             { text: 'Getting Started', link: '/en/guide/getting-started' },
             { text: 'Understanding the Interface', link: '/en/guide/interface-overview' },
         ],
@@ -120,6 +122,7 @@ const esSidebar = [
     {
         text: 'Empezar',
         items: [
+            { text: 'Instalación', link: '/es/guide/installation' },
             { text: 'Primeros pasos', link: '/es/guide/getting-started' },
             { text: 'Entender la interfaz', link: '/es/guide/interface-overview' },
         ],

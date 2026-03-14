@@ -6,7 +6,7 @@
         "langCode": "en",
         "langName": "English",
         "quality": "19",
-        "numSpeakers": 1,
+        "numSpeakers": 11,
         "filesizeMb": 304.84,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-en-v0_19.tar.bz2",
         "modelName": "kokoro-en-v0_19"
@@ -15,10 +15,10 @@
         "id": "kokoro-zh_en-int8-multi",
         "engine": "kokoro",
         "name": "int8",
-        "langCode": "zh",
-        "langName": "Chinese",
-        "quality": "multi",
-        "numSpeakers": 1,
+        "langCode": ["en", "zh", "ja", "ko", "fr", "es", "hi", "it", "pt"],
+        "langName": "Multilingual",
+        "quality": "int8",
+        "numSpeakers": 103,
         "filesizeMb": 140.19,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-multi-lang-v1_1.tar.bz2",
         "modelName": "kokoro-int8-multi-lang-v1_1"
@@ -27,13 +27,49 @@
         "id": "kokoro-zh_en-multi-lang",
         "engine": "kokoro",
         "name": "multi",
-        "langCode": "zh",
-        "langName": "Chinese",
+        "langCode": ["en", "zh", "ja", "ko", "fr", "es", "hi", "it", "pt"],
+        "langName": "Multilingual",
         "quality": "lang",
-        "numSpeakers": 1,
+        "numSpeakers": 103,
         "filesizeMb": 347.93,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_1.tar.bz2",
         "modelName": "kokoro-multi-lang-v1_1"
+    },
+    {
+        "id": "kokoro-en-int8-19",
+        "engine": "kokoro",
+        "name": "int8",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "19",
+        "numSpeakers": 11,
+        "filesizeMb": 98.5,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-en-v0_19.tar.bz2",
+        "modelName": "kokoro-int8-en-v0_19"
+    },
+    {
+        "id": "kokoro-multi-lang-v1_0",
+        "engine": "kokoro",
+        "name": "multi",
+        "langCode": ["en", "zh", "ja", "ko", "fr", "es", "hi", "it", "pt"],
+        "langName": "Multilingual",
+        "quality": "high",
+        "numSpeakers": 53,
+        "filesizeMb": 333.2,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-multi-lang-v1_0.tar.bz2",
+        "modelName": "kokoro-multi-lang-v1_0"
+    },
+    {
+        "id": "kokoro-int8-multi-lang-v1_0",
+        "engine": "kokoro",
+        "name": "int8",
+        "langCode": ["en", "zh", "ja", "ko", "fr", "es", "hi", "it", "pt"],
+        "langName": "Multilingual",
+        "quality": "int8",
+        "numSpeakers": 53,
+        "filesizeMb": 125.7,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kokoro-int8-multi-lang-v1_0.tar.bz2",
+        "modelName": "kokoro-int8-multi-lang-v1_0"
     },
     {
         "id": "icefall-fs-ljspeech",
@@ -1042,18 +1078,6 @@
         "filesizeMb": 64,
         "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-low.tar.bz2",
         "modelName": "vits-piper-en_US-amy-low"
-    },
-    {
-        "id": "piper-en-amy-medium",
-        "engine": "piper",
-        "name": "amy",
-        "langCode": "en",
-        "langName": "English",
-        "quality": "medium",
-        "numSpeakers": 1,
-        "filesizeMb": 64.1,
-        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-amy-medium.tar.bz2",
-        "modelName": "vits-piper-en_US-amy-medium"
     },
     {
         "id": "piper-en-arctic-medium",
@@ -3087,25 +3111,25 @@
         "id": "mms_azj-script_cyrillic",
         "engine": "mms",
         "name": "Azerbaijani, North",
-        "langCode": "cyrillic",
+        "langCode": "azj",
         "langName": "Azerbaijani, North",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/azj-script_cyrillic",
-        "modelName": "mms-cyrillic"
+        "modelName": "mms-azj-script_cyrillic"
     },
     {
         "id": "mms_azj-script_latin",
         "engine": "mms",
         "name": "Azerbaijani, North",
-        "langCode": "latin",
+        "langCode": "azj",
         "langName": "Azerbaijani, North",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/azj-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-azj-script_latin"
     },
     {
         "id": "mms_azb",
@@ -3255,25 +3279,25 @@
         "id": "mms_bcc-script_latin",
         "engine": "mms",
         "name": "Balochi, Southern",
-        "langCode": "latin",
+        "langCode": "bcc",
         "langName": "Balochi, Southern",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/bcc-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-bcc-script_latin"
     },
     {
         "id": "mms_bcc-script_arabic",
         "engine": "mms",
         "name": "Balochi, Southern",
-        "langCode": "arabic",
+        "langCode": "bcc",
         "langName": "Balochi, Southern",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/bcc-script_arabic",
-        "modelName": "mms-arabic"
+        "modelName": "mms-bcc-script_arabic"
     },
     {
         "id": "mms_bam",
@@ -4599,25 +4623,25 @@
         "id": "mms_cac-dialect_sansebastiáncoatán",
         "engine": "mms",
         "name": "Chuj",
-        "langCode": "sansebastiáncoatán",
+        "langCode": "cac",
         "langName": "Chuj",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cac-dialect_sansebastiáncoatán",
-        "modelName": "mms-sansebastiáncoatán"
+        "modelName": "mms-cac-dialect_sansebastiáncoatán"
     },
     {
         "id": "mms_cac-dialect_sanmateoixtatán",
         "engine": "mms",
         "name": "Chuj",
-        "langCode": "sanmateoixtatán",
+        "langCode": "cac",
         "langName": "Chuj",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cac-dialect_sanmateoixtatán",
-        "modelName": "mms-sanmateoixtatán"
+        "modelName": "mms-cac-dialect_sanmateoixtatán"
     },
     {
         "id": "mms_ckt",
@@ -4731,25 +4755,25 @@
         "id": "mms_crk-script_latin",
         "engine": "mms",
         "name": "Cree, Plains",
-        "langCode": "latin",
+        "langCode": "crk",
         "langName": "Cree, Plains",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/crk-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-crk-script_latin"
     },
     {
         "id": "mms_crk-script_syllabics",
         "engine": "mms",
         "name": "Cree, Plains",
-        "langCode": "syllabics",
+        "langCode": "crk",
         "langName": "Cree, Plains",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/crk-script_syllabics",
-        "modelName": "mms-syllabics"
+        "modelName": "mms-crk-script_syllabics"
     },
     {
         "id": "mms_crh",
@@ -4839,25 +4863,25 @@
         "id": "mms_dnj-dialect_gweetaawueast",
         "engine": "mms",
         "name": "Dan",
-        "langCode": "gweetaawueast",
+        "langCode": "dnj",
         "langName": "Dan",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/dnj-dialect_gweetaawueast",
-        "modelName": "mms-gweetaawueast"
+        "modelName": "mms-dnj-dialect_gweetaawueast"
     },
     {
         "id": "mms_dnj-dialect_blowowest",
         "engine": "mms",
         "name": "Dan",
-        "langCode": "blowowest",
+        "langCode": "dnj",
         "langName": "Dan",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/dnj-dialect_blowowest",
-        "modelName": "mms-blowowest"
+        "modelName": "mms-dnj-dialect_blowowest"
     },
     {
         "id": "mms_daa",
@@ -5475,25 +5499,25 @@
         "id": "mms_gag-script_cyrillic",
         "engine": "mms",
         "name": "Gagauz",
-        "langCode": "cyrillic",
+        "langCode": "gag",
         "langName": "Gagauz",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/gag-script_cyrillic",
-        "modelName": "mms-cyrillic"
+        "modelName": "mms-gag-script_cyrillic"
     },
     {
         "id": "mms_gag-script_latin",
         "engine": "mms",
         "name": "Gagauz",
-        "langCode": "latin",
+        "langCode": "gag",
         "langName": "Gagauz",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/gag-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-gag-script_latin"
     },
     {
         "id": "mms_gbi",
@@ -5691,13 +5715,13 @@
         "id": "mms_gof-script_latin",
         "engine": "mms",
         "name": "Gofa",
-        "langCode": "latin",
+        "langCode": "gof",
         "langName": "Gofa",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/gof-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-gof-script_latin"
     },
     {
         "id": "mms_gog",
@@ -6207,25 +6231,25 @@
         "id": "mms_hus-dialect_westernpotosino",
         "engine": "mms",
         "name": "Huastec",
-        "langCode": "westernpotosino",
+        "langCode": "hus",
         "langName": "Huastec",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/hus-dialect_westernpotosino",
-        "modelName": "mms-westernpotosino"
+        "modelName": "mms-hus-dialect_westernpotosino"
     },
     {
         "id": "mms_hus-dialect_centralveracruz",
         "engine": "mms",
         "name": "Huastec",
-        "langCode": "centralveracruz",
+        "langCode": "hus",
         "langName": "Huastec",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/hus-dialect_centralveracruz",
-        "modelName": "mms-centralveracruz"
+        "modelName": "mms-hus-dialect_centralveracruz"
     },
     {
         "id": "mms_huv",
@@ -6543,37 +6567,37 @@
         "id": "mms_ixl-dialect_sanjuancotzal",
         "engine": "mms",
         "name": "Ixil",
-        "langCode": "sanjuancotzal",
+        "langCode": "ixl",
         "langName": "Ixil",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/ixl-dialect_sanjuancotzal",
-        "modelName": "mms-sanjuancotzal"
+        "modelName": "mms-ixl-dialect_sanjuancotzal"
     },
     {
         "id": "mms_ixl-dialect_sangasparchajul",
         "engine": "mms",
         "name": "Ixil",
-        "langCode": "sangasparchajul",
+        "langCode": "ixl",
         "langName": "Ixil",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/ixl-dialect_sangasparchajul",
-        "modelName": "mms-sangasparchajul"
+        "modelName": "mms-ixl-dialect_sangasparchajul"
     },
     {
         "id": "mms_ixl-dialect_santamarianebaj",
         "engine": "mms",
         "name": "Ixil",
-        "langCode": "santamarianebaj",
+        "langCode": "ixl",
         "langName": "Ixil",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/ixl-dialect_santamarianebaj",
-        "modelName": "mms-santamarianebaj"
+        "modelName": "mms-ixl-dialect_santamarianebaj"
     },
     {
         "id": "mms_nca",
@@ -7167,73 +7191,73 @@
         "id": "mms_cak-dialect_santamaríadejesús",
         "engine": "mms",
         "name": "Kaqchikel",
-        "langCode": "santamaríadejesús",
+        "langCode": "cak",
         "langName": "Kaqchikel",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cak-dialect_santamaríadejesús",
-        "modelName": "mms-santamaríadejesús"
+        "modelName": "mms-cak-dialect_santamaríadejesús"
     },
     {
         "id": "mms_cak-dialect_southcentral",
         "engine": "mms",
         "name": "Kaqchikel",
-        "langCode": "southcentral",
+        "langCode": "cak",
         "langName": "Kaqchikel",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cak-dialect_southcentral",
-        "modelName": "mms-southcentral"
+        "modelName": "mms-cak-dialect_southcentral"
     },
     {
         "id": "mms_cak-dialect_yepocapa",
         "engine": "mms",
         "name": "Kaqchikel",
-        "langCode": "yepocapa",
+        "langCode": "cak",
         "langName": "Kaqchikel",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cak-dialect_yepocapa",
-        "modelName": "mms-yepocapa"
+        "modelName": "mms-cak-dialect_yepocapa"
     },
     {
         "id": "mms_cak-dialect_western",
         "engine": "mms",
         "name": "Kaqchikel",
-        "langCode": "western",
+        "langCode": "cak",
         "langName": "Kaqchikel",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cak-dialect_western",
-        "modelName": "mms-western"
+        "modelName": "mms-cak-dialect_western"
     },
     {
         "id": "mms_cak-dialect_santodomingoxenacoj",
         "engine": "mms",
         "name": "Kaqchikel",
-        "langCode": "santodomingoxenacoj",
+        "langCode": "cak",
         "langName": "Kaqchikel",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cak-dialect_santodomingoxenacoj",
-        "modelName": "mms-santodomingoxenacoj"
+        "modelName": "mms-cak-dialect_santodomingoxenacoj"
     },
     {
         "id": "mms_cak-dialect_central",
         "engine": "mms",
         "name": "Kaqchikel",
-        "langCode": "central",
+        "langCode": "cak",
         "langName": "Kaqchikel",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cak-dialect_central",
-        "modelName": "mms-central"
+        "modelName": "mms-cak-dialect_central"
     },
     {
         "id": "mms_xrb",
@@ -7899,13 +7923,13 @@
         "id": "mms_kff-script_telugu",
         "engine": "mms",
         "name": "Koya",
-        "langCode": "telugu",
+        "langCode": "kff",
         "langName": "Koya",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/kff-script_telugu",
-        "modelName": "mms-telugu"
+        "modelName": "mms-kff-script_telugu"
     },
     {
         "id": "mms_kri",
@@ -8139,37 +8163,37 @@
         "id": "mms_kmr-script_latin",
         "engine": "mms",
         "name": "Kurdish, Northern",
-        "langCode": "latin",
+        "langCode": "kmr",
         "langName": "Kurdish, Northern",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/kmr-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-kmr-script_latin"
     },
     {
         "id": "mms_kmr-script_arabic",
         "engine": "mms",
         "name": "Kurdish, Northern",
-        "langCode": "arabic",
+        "langCode": "kmr",
         "langName": "Kurdish, Northern",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/kmr-script_arabic",
-        "modelName": "mms-arabic"
+        "modelName": "mms-kmr-script_arabic"
     },
     {
         "id": "mms_kmr-script_cyrillic",
         "engine": "mms",
         "name": "Kurdish, Northern",
-        "langCode": "cyrillic",
+        "langCode": "kmr",
         "langName": "Kurdish, Northern",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/kmr-script_cyrillic",
-        "modelName": "mms-cyrillic"
+        "modelName": "mms-kmr-script_cyrillic"
     },
     {
         "id": "mms_xua",
@@ -8355,37 +8379,37 @@
         "id": "mms_quc-dialect_north",
         "engine": "mms",
         "name": "K’iche’",
-        "langCode": "north",
+        "langCode": "quc",
         "langName": "K’iche’",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/quc-dialect_north",
-        "modelName": "mms-north"
+        "modelName": "mms-quc-dialect_north"
     },
     {
         "id": "mms_quc-dialect_east",
         "engine": "mms",
         "name": "K’iche’",
-        "langCode": "east",
+        "langCode": "quc",
         "langName": "K’iche’",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/quc-dialect_east",
-        "modelName": "mms-east"
+        "modelName": "mms-quc-dialect_east"
     },
     {
         "id": "mms_quc-dialect_central",
         "engine": "mms",
         "name": "K’iche’",
-        "langCode": "central",
+        "langCode": "quc",
         "langName": "K’iche’",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/quc-dialect_central",
-        "modelName": "mms-central"
+        "modelName": "mms-quc-dialect_central"
     },
     {
         "id": "mms_lac",
@@ -9207,49 +9231,49 @@
         "id": "mms_mam-dialect_central",
         "engine": "mms",
         "name": "Mam",
-        "langCode": "central",
+        "langCode": "mam",
         "langName": "Mam",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/mam-dialect_central",
-        "modelName": "mms-central"
+        "modelName": "mms-mam-dialect_central"
     },
     {
         "id": "mms_mam-dialect_northern",
         "engine": "mms",
         "name": "Mam",
-        "langCode": "northern",
+        "langCode": "mam",
         "langName": "Mam",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/mam-dialect_northern",
-        "modelName": "mms-northern"
+        "modelName": "mms-mam-dialect_northern"
     },
     {
         "id": "mms_mam-dialect_southern",
         "engine": "mms",
         "name": "Mam",
-        "langCode": "southern",
+        "langCode": "mam",
         "langName": "Mam",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/mam-dialect_southern",
-        "modelName": "mms-southern"
+        "modelName": "mms-mam-dialect_southern"
     },
     {
         "id": "mms_mam-dialect_western",
         "engine": "mms",
         "name": "Mam",
-        "langCode": "western",
+        "langCode": "mam",
         "langName": "Mam",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/mam-dialect_western",
-        "modelName": "mms-western"
+        "modelName": "mms-mam-dialect_western"
     },
     {
         "id": "mms_mqj",
@@ -9663,25 +9687,25 @@
         "id": "mms_maa-dialect_sanantonio",
         "engine": "mms",
         "name": "Mazatec, San Jerónimo Tecóatl",
-        "langCode": "sanantonio",
+        "langCode": "maa",
         "langName": "Mazatec, San Jerónimo Tecóatl",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/maa-dialect_sanantonio",
-        "modelName": "mms-sanantonio"
+        "modelName": "mms-maa-dialect_sanantonio"
     },
     {
         "id": "mms_maa-dialect_sanjerónimo",
         "engine": "mms",
         "name": "Mazatec, San Jerónimo Tecóatl",
-        "langCode": "sanjerónimo",
+        "langCode": "maa",
         "langName": "Mazatec, San Jerónimo Tecóatl",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/maa-dialect_sanjerónimo",
-        "modelName": "mms-sanjerónimo"
+        "modelName": "mms-maa-dialect_sanjerónimo"
     },
     {
         "id": "mms_mhy",
@@ -10227,25 +10251,25 @@
         "id": "mms_cmo-script_latin",
         "engine": "mms",
         "name": "Mnong, Central",
-        "langCode": "latin",
+        "langCode": "cmo",
         "langName": "Mnong, Central",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cmo-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-cmo-script_latin"
     },
     {
         "id": "mms_cmo-script_khmer",
         "engine": "mms",
         "name": "Mnong, Central",
-        "langCode": "khmer",
+        "langCode": "cmo",
         "langName": "Mnong, Central",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/cmo-script_khmer",
-        "modelName": "mms-khmer"
+        "modelName": "mms-cmo-script_khmer"
     },
     {
         "id": "mms_mfq",
@@ -11439,25 +11463,25 @@
         "id": "mms_ojb-script_latin",
         "engine": "mms",
         "name": "Ojibwa, Northwestern",
-        "langCode": "latin",
+        "langCode": "ojb",
         "langName": "Ojibwa, Northwestern",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/ojb-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-ojb-script_latin"
     },
     {
         "id": "mms_ojb-script_syllabics",
         "engine": "mms",
         "name": "Ojibwa, Northwestern",
-        "langCode": "syllabics",
+        "langCode": "ojb",
         "langName": "Ojibwa, Northwestern",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/ojb-script_syllabics",
-        "modelName": "mms-syllabics"
+        "modelName": "mms-ojb-script_syllabics"
     },
     {
         "id": "mms_oku",
@@ -11931,25 +11955,25 @@
         "id": "mms_poh-dialect_eastern",
         "engine": "mms",
         "name": "Poqomchi’",
-        "langCode": "eastern",
+        "langCode": "poh",
         "langName": "Poqomchi’",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/poh-dialect_eastern",
-        "modelName": "mms-eastern"
+        "modelName": "mms-poh-dialect_eastern"
     },
     {
         "id": "mms_poh-dialect_western",
         "engine": "mms",
         "name": "Poqomchi’",
-        "langCode": "western",
+        "langCode": "poh",
         "langName": "Poqomchi’",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/poh-dialect_western",
-        "modelName": "mms-western"
+        "modelName": "mms-poh-dialect_western"
     },
     {
         "id": "mms_por",
@@ -12507,25 +12531,25 @@
         "id": "mms_rmc-script_latin",
         "engine": "mms",
         "name": "Romani, Carpathian",
-        "langCode": "latin",
+        "langCode": "rmc",
         "langName": "Romani, Carpathian",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/rmc-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-rmc-script_latin"
     },
     {
         "id": "mms_rmc-script_cyrillic",
         "engine": "mms",
         "name": "Romani, Carpathian",
-        "langCode": "cyrillic",
+        "langCode": "rmc",
         "langName": "Romani, Carpathian",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/rmc-script_cyrillic",
-        "modelName": "mms-cyrillic"
+        "modelName": "mms-rmc-script_cyrillic"
     },
     {
         "id": "mms_rmo",
@@ -12543,25 +12567,25 @@
         "id": "mms_rmy-script_latin",
         "engine": "mms",
         "name": "Romani, Vlax",
-        "langCode": "latin",
+        "langCode": "rmy",
         "langName": "Romani, Vlax",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/rmy-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-rmy-script_latin"
     },
     {
         "id": "mms_rmy-script_cyrillic",
         "engine": "mms",
         "name": "Romani, Vlax",
-        "langCode": "cyrillic",
+        "langCode": "rmy",
         "langName": "Romani, Vlax",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/rmy-script_cyrillic",
-        "modelName": "mms-cyrillic"
+        "modelName": "mms-rmy-script_cyrillic"
     },
     {
         "id": "mms_ron",
@@ -13671,13 +13695,13 @@
         "id": "mms_ttq-script_tifinagh",
         "engine": "mms",
         "name": "Tamajaq, Tawallammat",
-        "langCode": "tifinagh",
+        "langCode": "ttq",
         "langName": "Tamajaq, Tawallammat",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/ttq-script_tifinagh",
-        "modelName": "mms-tifinagh"
+        "modelName": "mms-ttq-script_tifinagh"
     },
     {
         "id": "mms_taj",
@@ -13767,25 +13791,25 @@
         "id": "mms_rif-script_latin",
         "engine": "mms",
         "name": "Tarifit",
-        "langCode": "latin",
+        "langCode": "rif",
         "langName": "Tarifit",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/rif-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-rif-script_latin"
     },
     {
         "id": "mms_rif-script_arabic",
         "engine": "mms",
         "name": "Tarifit",
-        "langCode": "arabic",
+        "langCode": "rif",
         "langName": "Tarifit",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/rif-script_arabic",
-        "modelName": "mms-arabic"
+        "modelName": "mms-rif-script_arabic"
     },
     {
         "id": "mms_tat",
@@ -14523,25 +14547,25 @@
         "id": "mms_tuk-script_latin",
         "engine": "mms",
         "name": "Turkmen",
-        "langCode": "latin",
+        "langCode": "tuk",
         "langName": "Turkmen",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tuk-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-tuk-script_latin"
     },
     {
         "id": "mms_tuk-script_arabic",
         "engine": "mms",
         "name": "Turkmen",
-        "langCode": "arabic",
+        "langCode": "tuk",
         "langName": "Turkmen",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tuk-script_arabic",
-        "modelName": "mms-arabic"
+        "modelName": "mms-tuk-script_arabic"
     },
     {
         "id": "mms_bov",
@@ -14583,73 +14607,73 @@
         "id": "mms_tzh-dialect_bachajón",
         "engine": "mms",
         "name": "Tzeltal",
-        "langCode": "bachajón",
+        "langCode": "tzh",
         "langName": "Tzeltal",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tzh-dialect_bachajón",
-        "modelName": "mms-bachajón"
+        "modelName": "mms-tzh-dialect_bachajón"
     },
     {
         "id": "mms_tzh-dialect_tenejapa",
         "engine": "mms",
         "name": "Tzeltal",
-        "langCode": "tenejapa",
+        "langCode": "tzh",
         "langName": "Tzeltal",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tzh-dialect_tenejapa",
-        "modelName": "mms-tenejapa"
+        "modelName": "mms-tzh-dialect_tenejapa"
     },
     {
         "id": "mms_tzo-dialect_chenalhó",
         "engine": "mms",
         "name": "Tzotzil",
-        "langCode": "chenalhó",
+        "langCode": "tzo",
         "langName": "Tzotzil",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tzo-dialect_chenalhó",
-        "modelName": "mms-chenalhó"
+        "modelName": "mms-tzo-dialect_chenalhó"
     },
     {
         "id": "mms_tzo-dialect_chamula",
         "engine": "mms",
         "name": "Tzotzil",
-        "langCode": "chamula",
+        "langCode": "tzo",
         "langName": "Tzotzil",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tzo-dialect_chamula",
-        "modelName": "mms-chamula"
+        "modelName": "mms-tzo-dialect_chamula"
     },
     {
         "id": "mms_tzj-dialect_western",
         "engine": "mms",
         "name": "Tz’utujil",
-        "langCode": "western",
+        "langCode": "tzj",
         "langName": "Tz’utujil",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tzj-dialect_western",
-        "modelName": "mms-western"
+        "modelName": "mms-tzj-dialect_western"
     },
     {
         "id": "mms_tzj-dialect_eastern",
         "engine": "mms",
         "name": "Tz’utujil",
-        "langCode": "eastern",
+        "langCode": "tzj",
         "langName": "Tz’utujil",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/tzj-dialect_eastern",
-        "modelName": "mms-eastern"
+        "modelName": "mms-tzj-dialect_eastern"
     },
     {
         "id": "mms_aoz",
@@ -14763,37 +14787,37 @@
         "id": "mms_urd-script_devanagari",
         "engine": "mms",
         "name": "Urdu",
-        "langCode": "devanagari",
+        "langCode": "urd",
         "langName": "Urdu",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/urd-script_devanagari",
-        "modelName": "mms-devanagari"
+        "modelName": "mms-urd-script_devanagari"
     },
     {
         "id": "mms_urd-script_arabic",
         "engine": "mms",
         "name": "Urdu",
-        "langCode": "arabic",
+        "langCode": "urd",
         "langName": "Urdu",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/urd-script_arabic",
-        "modelName": "mms-arabic"
+        "modelName": "mms-urd-script_arabic"
     },
     {
         "id": "mms_urd-script_latin",
         "engine": "mms",
         "name": "Urdu",
-        "langCode": "latin",
+        "langCode": "urd",
         "langName": "Urdu",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/urd-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-urd-script_latin"
     },
     {
         "id": "mms_upv",
@@ -14823,37 +14847,37 @@
         "id": "mms_uig-script_arabic",
         "engine": "mms",
         "name": "Uyghur",
-        "langCode": "arabic",
+        "langCode": "uig",
         "langName": "Uyghur",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/uig-script_arabic",
-        "modelName": "mms-arabic"
+        "modelName": "mms-uig-script_arabic"
     },
     {
         "id": "mms_uig-script_cyrillic",
         "engine": "mms",
         "name": "Uyghur",
-        "langCode": "cyrillic",
+        "langCode": "uig",
         "langName": "Uyghur",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/uig-script_cyrillic",
-        "modelName": "mms-cyrillic"
+        "modelName": "mms-uig-script_cyrillic"
     },
     {
         "id": "mms_uzb-script_cyrillic",
         "engine": "mms",
         "name": "Uzbek",
-        "langCode": "cyrillic",
+        "langCode": "uzb",
         "langName": "Uzbek",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/uzb-script_cyrillic",
-        "modelName": "mms-cyrillic"
+        "modelName": "mms-uzb-script_cyrillic"
     },
     {
         "id": "mms_vag",
@@ -15195,25 +15219,25 @@
         "id": "mms_wal-script_latin",
         "engine": "mms",
         "name": "Wolaytta",
-        "langCode": "latin",
+        "langCode": "wal",
         "langName": "Wolaytta",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/wal-script_latin",
-        "modelName": "mms-latin"
+        "modelName": "mms-wal-script_latin"
     },
     {
         "id": "mms_wal-script_ethiopic",
         "engine": "mms",
         "name": "Wolaytta",
-        "langCode": "ethiopic",
+        "langCode": "wal",
         "langName": "Wolaytta",
         "quality": "medium",
         "numSpeakers": 1,
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/wal-script_ethiopic",
-        "modelName": "mms-ethiopic"
+        "modelName": "mms-wal-script_ethiopic"
     },
     {
         "id": "mms_wlo",
@@ -15970,5 +15994,833 @@
         "filesizeMb": 114,
         "url": "https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main/ewe",
         "modelName": "mms-ewe"
+    },
+    {
+        "id": "kitten-mini-en-v0_1-fp16",
+        "engine": "kitten",
+        "name": "mini-en-v0_1-fp16",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "fp16",
+        "numSpeakers": 8,
+        "filesizeMb": 149.42,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-mini-en-v0_1-fp16.tar.bz2",
+        "modelName": "kitten-mini-en-v0_1-fp16"
+    },
+    {
+        "id": "kitten-nano-en-v0_1-fp16",
+        "engine": "kitten",
+        "name": "nano-en-v0_1-fp16",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "fp16",
+        "numSpeakers": 8,
+        "filesizeMb": 25.64,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_1-fp16.tar.bz2",
+        "modelName": "kitten-nano-en-v0_1-fp16"
+    },
+    {
+        "id": "kitten-nano-en-v0_2-fp16",
+        "engine": "kitten",
+        "name": "nano-en-v0_2-fp16",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "fp16",
+        "numSpeakers": 8,
+        "filesizeMb": 25.37,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/kitten-nano-en-v0_2-fp16.tar.bz2",
+        "modelName": "kitten-nano-en-v0_2-fp16"
+    },
+    {
+        "id": "matcha-icefall-zh-en",
+        "engine": "matcha",
+        "name": "icefall-zh-en",
+        "langCode": ["zh", "en"],
+        "langName": "Chinese + English",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 75.37,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/matcha-icefall-zh-en.tar.bz2",
+        "modelName": "matcha-icefall-zh-en"
+    },
+    {
+        "id": "pocket-tts-2026-01-26",
+        "engine": "pocket",
+        "name": "pocket-tts-2026-01-26",
+        "langCode": ["en", "zh"],
+        "langName": "English + Chinese",
+        "quality": "fp32",
+        "numSpeakers": 1,
+        "filesizeMb": 160.36,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-2026-01-26.tar.bz2",
+        "modelName": "sherpa-onnx-pocket-tts-2026-01-26"
+    },
+    {
+        "id": "pocket-tts-int8-2026-01-26",
+        "engine": "pocket",
+        "name": "pocket-tts-int8-2026-01-26",
+        "langCode": ["en", "zh"],
+        "langName": "English + Chinese",
+        "quality": "int8",
+        "numSpeakers": 1,
+        "filesizeMb": 93.78,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-pocket-tts-int8-2026-01-26.tar.bz2",
+        "modelName": "sherpa-onnx-pocket-tts-int8-2026-01-26"
+    },
+    {
+        "id": "supertonic-tts-int8-2026-03-06",
+        "engine": "supertonic",
+        "name": "supertonic-tts-int8-2026-03-06",
+        "langCode": ["en", "ko", "es", "pt", "fr"],
+        "langName": "Multilingual",
+        "quality": "int8",
+        "numSpeakers": 10,
+        "filesizeMb": 80.77,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-supertonic-tts-int8-2026-03-06.tar.bz2",
+        "modelName": "sherpa-onnx-supertonic-tts-int8-2026-03-06"
+    },
+    {
+        "id": "vits-zh-ll",
+        "engine": "vits",
+        "name": "zh-ll",
+        "langCode": "zh",
+        "langName": "Chinese",
+        "quality": "medium",
+        "numSpeakers": 5,
+        "filesizeMb": 113.31,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-vits-zh-ll.tar.bz2",
+        "modelName": "sherpa-onnx-vits-zh-ll"
+    },
+    {
+        "id": "zipvoice-distill-fp32-zh-en-emilia",
+        "engine": "zipvoice",
+        "name": "zipvoice-distill-fp32-zh-en-emilia",
+        "langCode": ["zh", "en"],
+        "langName": "Chinese + English",
+        "quality": "fp32",
+        "numSpeakers": 1,
+        "filesizeMb": 455.67,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-zipvoice-distill-fp32-zh-en-emilia.tar.bz2",
+        "modelName": "sherpa-onnx-zipvoice-distill-fp32-zh-en-emilia"
+    },
+    {
+        "id": "zipvoice-distill-int8-zh-en-emilia",
+        "engine": "zipvoice",
+        "name": "zipvoice-distill-int8-zh-en-emilia",
+        "langCode": ["zh", "en"],
+        "langName": "Chinese + English",
+        "quality": "int8",
+        "numSpeakers": 1,
+        "filesizeMb": 104.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-zipvoice-distill-int8-zh-en-emilia.tar.bz2",
+        "modelName": "sherpa-onnx-zipvoice-distill-int8-zh-en-emilia"
+    },
+    {
+        "id": "zipvoice-distill-zh-en-emilia",
+        "engine": "zipvoice",
+        "name": "zipvoice-distill-zh-en-emilia",
+        "langCode": ["zh", "en"],
+        "langName": "Chinese + English",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 605.41,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-zipvoice-distill-zh-en-emilia.tar.bz2",
+        "modelName": "sherpa-onnx-zipvoice-distill-zh-en-emilia"
+    },
+    {
+        "id": "zipvoice-zh-en-emilia",
+        "engine": "zipvoice",
+        "name": "zipvoice-zh-en-emilia",
+        "langCode": ["zh", "en"],
+        "langName": "Chinese + English",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 605.33,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/sherpa-onnx-zipvoice-zh-en-emilia.tar.bz2",
+        "modelName": "sherpa-onnx-zipvoice-zh-en-emilia"
+    },
+    {
+        "id": "vits-mms-deu",
+        "engine": "mms",
+        "name": "deu",
+        "langCode": "deu",
+        "langName": "German",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.72,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-deu.tar.bz2",
+        "modelName": "vits-mms-deu"
+    },
+    {
+        "id": "vits-mms-eng",
+        "engine": "mms",
+        "name": "eng",
+        "langCode": "eng",
+        "langName": "English",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.75,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-eng.tar.bz2",
+        "modelName": "vits-mms-eng"
+    },
+    {
+        "id": "vits-mms-fra",
+        "engine": "mms",
+        "name": "fra",
+        "langCode": "fra",
+        "langName": "French",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.72,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-fra.tar.bz2",
+        "modelName": "vits-mms-fra"
+    },
+    {
+        "id": "vits-mms-nan",
+        "engine": "mms",
+        "name": "nan",
+        "langCode": "nan",
+        "langName": "Min Nan Chinese",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.73,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-nan.tar.bz2",
+        "modelName": "vits-mms-nan"
+    },
+    {
+        "id": "vits-mms-rus",
+        "engine": "mms",
+        "name": "rus",
+        "langCode": "rus",
+        "langName": "Russian",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.77,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-rus.tar.bz2",
+        "modelName": "vits-mms-rus"
+    },
+    {
+        "id": "vits-mms-spa",
+        "engine": "mms",
+        "name": "spa",
+        "langCode": "spa",
+        "langName": "Spanish",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.74,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-spa.tar.bz2",
+        "modelName": "vits-mms-spa"
+    },
+    {
+        "id": "vits-mms-tha",
+        "engine": "mms",
+        "name": "tha",
+        "langCode": "tha",
+        "langName": "Thai",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.77,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-tha.tar.bz2",
+        "modelName": "vits-mms-tha"
+    },
+    {
+        "id": "vits-mms-ukr",
+        "engine": "mms",
+        "name": "ukr",
+        "langCode": "ukr",
+        "langName": "Ukrainian",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 102.73,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-mms-ukr.tar.bz2",
+        "modelName": "vits-mms-ukr"
+    },
+    {
+        "id": "piper-ar-SA_dii-high",
+        "engine": "piper",
+        "name": "SA_dii",
+        "langCode": "ar",
+        "langName": "Arabic",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 63.88,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_dii-high.tar.bz2",
+        "modelName": "vits-piper-ar_JO-SA_dii-high"
+    },
+    {
+        "id": "piper-ar-SA_miro-high",
+        "engine": "piper",
+        "name": "SA_miro",
+        "langCode": "ar",
+        "langName": "Arabic",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 63.81,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_miro-high.tar.bz2",
+        "modelName": "vits-piper-ar_JO-SA_miro-high"
+    },
+    {
+        "id": "piper-ar-SA_miro_V2-high",
+        "engine": "piper",
+        "name": "SA_miro_V2",
+        "langCode": "ar",
+        "langName": "Arabic",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 63.87,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ar_JO-SA_miro_V2-high.tar.bz2",
+        "modelName": "vits-piper-ar_JO-SA_miro_V2-high"
+    },
+    {
+        "id": "piper-cy-bu_tts-medium",
+        "engine": "piper",
+        "name": "bu_tts",
+        "langCode": "cy",
+        "langName": "Welsh",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 76.55,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-cy_GB-bu_tts-medium.tar.bz2",
+        "modelName": "vits-piper-cy_GB-bu_tts-medium"
+    },
+    {
+        "id": "piper-de-dii-high",
+        "engine": "piper",
+        "name": "dii",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.09,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-dii-high.tar.bz2",
+        "modelName": "vits-piper-de_DE-dii-high"
+    },
+    {
+        "id": "piper-de-glados-high",
+        "engine": "piper",
+        "name": "glados",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 110.24,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-high.tar.bz2",
+        "modelName": "vits-piper-de_DE-glados-high"
+    },
+    {
+        "id": "piper-de-glados-low",
+        "engine": "piper",
+        "name": "glados",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-low.tar.bz2",
+        "modelName": "vits-piper-de_DE-glados-low"
+    },
+    {
+        "id": "piper-de-glados-medium",
+        "engine": "piper",
+        "name": "glados",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.1,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados-medium.tar.bz2",
+        "modelName": "vits-piper-de_DE-glados-medium"
+    },
+    {
+        "id": "piper-de-glados_turret-high",
+        "engine": "piper",
+        "name": "glados_turret",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 110.22,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-high.tar.bz2",
+        "modelName": "vits-piper-de_DE-glados_turret-high"
+    },
+    {
+        "id": "piper-de-glados_turret-low",
+        "engine": "piper",
+        "name": "glados_turret",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "low",
+        "numSpeakers": 1,
+        "filesizeMb": 64.09,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-low.tar.bz2",
+        "modelName": "vits-piper-de_DE-glados_turret-low"
+    },
+    {
+        "id": "piper-de-glados_turret-medium",
+        "engine": "piper",
+        "name": "glados_turret",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.08,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-glados_turret-medium.tar.bz2",
+        "modelName": "vits-piper-de_DE-glados_turret-medium"
+    },
+    {
+        "id": "piper-de-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "de",
+        "langName": "German",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.05,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-de_DE-miro-high.tar.bz2",
+        "modelName": "vits-piper-de_DE-miro-high"
+    },
+    {
+        "id": "piper-en-dii-high",
+        "engine": "piper",
+        "name": "dii",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-dii-high.tar.bz2",
+        "modelName": "vits-piper-en_GB-dii-high"
+    },
+    {
+        "id": "piper-en-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.08,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_GB-miro-high.tar.bz2",
+        "modelName": "vits-piper-en_GB-miro-high"
+    },
+    {
+        "id": "piper-en-glados-high",
+        "engine": "piper",
+        "name": "glados",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 110.23,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-glados-high.tar.bz2",
+        "modelName": "vits-piper-en_US-glados-high"
+    },
+    {
+        "id": "piper-en-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.09,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-miro-high.tar.bz2",
+        "modelName": "vits-piper-en_US-miro-high"
+    },
+    {
+        "id": "piper-en-reza_ibrahim-medium",
+        "engine": "piper",
+        "name": "reza_ibrahim",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.1,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-reza_ibrahim-medium.tar.bz2",
+        "modelName": "vits-piper-en_US-reza_ibrahim-medium"
+    },
+    {
+        "id": "piper-en-sam-medium",
+        "engine": "piper",
+        "name": "sam",
+        "langCode": "en",
+        "langName": "English",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.13,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-en_US-sam-medium.tar.bz2",
+        "modelName": "vits-piper-en_US-sam-medium"
+    },
+    {
+        "id": "piper-es-daniela-high",
+        "engine": "piper",
+        "name": "daniela",
+        "langCode": "es",
+        "langName": "Spanish",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 110.21,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_AR-daniela-high.tar.bz2",
+        "modelName": "vits-piper-es_AR-daniela-high"
+    },
+    {
+        "id": "piper-es-glados-medium",
+        "engine": "piper",
+        "name": "glados",
+        "langCode": "es",
+        "langName": "Spanish",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.1,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-glados-medium.tar.bz2",
+        "modelName": "vits-piper-es_ES-glados-medium"
+    },
+    {
+        "id": "piper-es-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "es",
+        "langName": "Spanish",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.05,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-es_ES-miro-high.tar.bz2",
+        "modelName": "vits-piper-es_ES-miro-high"
+    },
+    {
+        "id": "piper-fa-ganji-medium",
+        "engine": "piper",
+        "name": "ganji",
+        "langCode": "fa",
+        "langName": "Persian",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.07,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-ganji-medium.tar.bz2",
+        "modelName": "vits-piper-fa_IR-ganji-medium"
+    },
+    {
+        "id": "piper-fa-ganji_adabi-medium",
+        "engine": "piper",
+        "name": "ganji_adabi",
+        "langCode": "fa",
+        "langName": "Persian",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-ganji_adabi-medium.tar.bz2",
+        "modelName": "vits-piper-fa_IR-ganji_adabi-medium"
+    },
+    {
+        "id": "piper-fa-reza_ibrahim-medium",
+        "engine": "piper",
+        "name": "reza_ibrahim",
+        "langCode": "fa",
+        "langName": "Persian",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.07,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fa_IR-reza_ibrahim-medium.tar.bz2",
+        "modelName": "vits-piper-fa_IR-reza_ibrahim-medium"
+    },
+    {
+        "id": "piper-fr-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "fr",
+        "langName": "French",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.05,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-fr_FR-miro-high.tar.bz2",
+        "modelName": "vits-piper-fr_FR-miro-high"
+    },
+    {
+        "id": "piper-hi-pratham-medium",
+        "engine": "piper",
+        "name": "pratham",
+        "langCode": "hi",
+        "langName": "Hindi",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.12,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-pratham-medium.tar.bz2",
+        "modelName": "vits-piper-hi_IN-pratham-medium"
+    },
+    {
+        "id": "piper-hi-priyamvada-medium",
+        "engine": "piper",
+        "name": "priyamvada",
+        "langCode": "hi",
+        "langName": "Hindi",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.13,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-priyamvada-medium.tar.bz2",
+        "modelName": "vits-piper-hi_IN-priyamvada-medium"
+    },
+    {
+        "id": "piper-hi-rohan-medium",
+        "engine": "piper",
+        "name": "rohan",
+        "langCode": "hi",
+        "langName": "Hindi",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-hi_IN-rohan-medium.tar.bz2",
+        "modelName": "vits-piper-hi_IN-rohan-medium"
+    },
+    {
+        "id": "piper-id-news_tts-medium",
+        "engine": "piper",
+        "name": "news_tts",
+        "langCode": "id",
+        "langName": "Indonesian",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.13,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-id_ID-news_tts-medium.tar.bz2",
+        "modelName": "vits-piper-id_ID-news_tts-medium"
+    },
+    {
+        "id": "piper-it-dii-high",
+        "engine": "piper",
+        "name": "dii",
+        "langCode": "it",
+        "langName": "Italian",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.08,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-dii-high.tar.bz2",
+        "modelName": "vits-piper-it_IT-dii-high"
+    },
+    {
+        "id": "piper-it-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "it",
+        "langName": "Italian",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.05,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-it_IT-miro-high.tar.bz2",
+        "modelName": "vits-piper-it_IT-miro-high"
+    },
+    {
+        "id": "piper-ml-arjun-medium",
+        "engine": "piper",
+        "name": "arjun",
+        "langCode": "ml",
+        "langName": "Malayalam",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ml_IN-arjun-medium.tar.bz2",
+        "modelName": "vits-piper-ml_IN-arjun-medium"
+    },
+    {
+        "id": "piper-ml-meera-medium",
+        "engine": "piper",
+        "name": "meera",
+        "langCode": "ml",
+        "langName": "Malayalam",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.08,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ml_IN-meera-medium.tar.bz2",
+        "modelName": "vits-piper-ml_IN-meera-medium"
+    },
+    {
+        "id": "piper-ne-chitwan-medium",
+        "engine": "piper",
+        "name": "chitwan",
+        "langCode": "ne",
+        "langName": "Nepali",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.13,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-ne_NP-chitwan-medium.tar.bz2",
+        "modelName": "vits-piper-ne_NP-chitwan-medium"
+    },
+    {
+        "id": "piper-nl-dii-high",
+        "engine": "piper",
+        "name": "dii",
+        "langCode": "nl",
+        "langName": "Dutch",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-dii-high.tar.bz2",
+        "modelName": "vits-piper-nl_NL-dii-high"
+    },
+    {
+        "id": "piper-nl-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "nl",
+        "langName": "Dutch",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.08,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-miro-high.tar.bz2",
+        "modelName": "vits-piper-nl_NL-miro-high"
+    },
+    {
+        "id": "piper-nl-pim-medium",
+        "engine": "piper",
+        "name": "pim",
+        "langCode": "nl",
+        "langName": "Dutch",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.12,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-pim-medium.tar.bz2",
+        "modelName": "vits-piper-nl_NL-pim-medium"
+    },
+    {
+        "id": "piper-nl-ronnie-medium",
+        "engine": "piper",
+        "name": "ronnie",
+        "langCode": "nl",
+        "langName": "Dutch",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-nl_NL-ronnie-medium.tar.bz2",
+        "modelName": "vits-piper-nl_NL-ronnie-medium"
+    },
+    {
+        "id": "piper-pl-jarvis_wg_glos-medium",
+        "engine": "piper",
+        "name": "jarvis_wg_glos",
+        "langCode": "pl",
+        "langName": "Polish",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.12,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-jarvis_wg_glos-medium.tar.bz2",
+        "modelName": "vits-piper-pl_PL-jarvis_wg_glos-medium"
+    },
+    {
+        "id": "piper-pl-justyna_wg_glos-medium",
+        "engine": "piper",
+        "name": "justyna_wg_glos",
+        "langCode": "pl",
+        "langName": "Polish",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.12,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-justyna_wg_glos-medium.tar.bz2",
+        "modelName": "vits-piper-pl_PL-justyna_wg_glos-medium"
+    },
+    {
+        "id": "piper-pl-meski_wg_glos-medium",
+        "engine": "piper",
+        "name": "meski_wg_glos",
+        "langCode": "pl",
+        "langName": "Polish",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.12,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-meski_wg_glos-medium.tar.bz2",
+        "modelName": "vits-piper-pl_PL-meski_wg_glos-medium"
+    },
+    {
+        "id": "piper-pl-zenski_wg_glos-medium",
+        "engine": "piper",
+        "name": "zenski_wg_glos",
+        "langCode": "pl",
+        "langName": "Polish",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.12,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pl_PL-zenski_wg_glos-medium.tar.bz2",
+        "modelName": "vits-piper-pl_PL-zenski_wg_glos-medium"
+    },
+    {
+        "id": "piper-pt-cadu-medium",
+        "engine": "piper",
+        "name": "cadu",
+        "langCode": "pt",
+        "langName": "Portuguese",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-cadu-medium.tar.bz2",
+        "modelName": "vits-piper-pt_BR-cadu-medium"
+    },
+    {
+        "id": "piper-pt-dii-high",
+        "engine": "piper",
+        "name": "dii",
+        "langCode": "pt",
+        "langName": "Portuguese",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.08,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-dii-high.tar.bz2",
+        "modelName": "vits-piper-pt_BR-dii-high"
+    },
+    {
+        "id": "piper-pt-jeff-medium",
+        "engine": "piper",
+        "name": "jeff",
+        "langCode": "pt",
+        "langName": "Portuguese",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.12,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-jeff-medium.tar.bz2",
+        "modelName": "vits-piper-pt_BR-jeff-medium"
+    },
+    {
+        "id": "piper-pt-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "pt",
+        "langName": "Portuguese",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.05,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_BR-miro-high.tar.bz2",
+        "modelName": "vits-piper-pt_BR-miro-high"
+    },
+    {
+        "id": "piper-pt-dii-high",
+        "engine": "piper",
+        "name": "dii",
+        "langCode": "pt",
+        "langName": "Portuguese",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.11,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-dii-high.tar.bz2",
+        "modelName": "vits-piper-pt_PT-dii-high"
+    },
+    {
+        "id": "piper-pt-miro-high",
+        "engine": "piper",
+        "name": "miro",
+        "langCode": "pt",
+        "langName": "Portuguese",
+        "quality": "high",
+        "numSpeakers": 1,
+        "filesizeMb": 64.09,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-pt_PT-miro-high.tar.bz2",
+        "modelName": "vits-piper-pt_PT-miro-high"
+    },
+    {
+        "id": "piper-sv-lisa-medium",
+        "engine": "piper",
+        "name": "lisa",
+        "langCode": "sv",
+        "langName": "Swedish",
+        "quality": "medium",
+        "numSpeakers": 1,
+        "filesizeMb": 64.07,
+        "url": "https://github.com/k2-fsa/sherpa-onnx/releases/download/tts-models/vits-piper-sv_SE-lisa-medium.tar.bz2",
+        "modelName": "vits-piper-sv_SE-lisa-medium"
     }
 ]

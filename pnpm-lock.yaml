@@ -46,6 +46,9 @@ importers:
             ai:
                 specifier: 6.0.116
                 version: 6.0.116(zod@4.3.6)
+            ansi-escapes:
+                specifier: ^6.2.1
+                version: 6.2.1
             antd:
                 specifier: ^6.3.1
                 version: 6.3.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -64,6 +67,9 @@ importers:
             electron-updater:
                 specifier: ^6.8.3
                 version: 6.8.3
+            eventsource-parser:
+                specifier: ^3.0.6
+                version: 3.0.6
             framer-motion:
                 specifier: ^12.35.0
                 version: 12.35.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
