@@ -109,9 +109,6 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
-            - name: Rebuild native modules
-              run: pnpm rebuild better-sqlite3
-
             - name: Build and package
               run: pnpm build && npx electron-builder ${{ matrix.args }} --publish never
               env:
