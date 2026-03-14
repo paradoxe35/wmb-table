@@ -76,6 +76,7 @@ The most useful tools are:
 
 ## Read next
 
+- [Installation](/en/guide/installation)
 - [Settings Overview](/en/guide/settings-overview)
 - [Understanding the Interface](/en/guide/interface-overview)
 - [Reading Sermons](/en/guide/sermons)

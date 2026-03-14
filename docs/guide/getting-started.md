@@ -76,6 +76,7 @@ Les fonctions les plus utiles sont :
 
 ## Pages à lire ensuite
 
+- [Installation](/guide/installation)
 - [Vue d’ensemble des paramètres](/guide/settings-overview)
 - [Comprendre l’interface](/guide/interface-overview)
 - [Lire les prédications](/guide/sermons)

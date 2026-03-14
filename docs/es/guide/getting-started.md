@@ -40,6 +40,7 @@ La parte central sirve para la lectura.
 
 ## Lea después
 
+- [Instalación](/es/guide/installation)
 - [Vista general de ajustes](/es/guide/settings-overview)
 - [Entender la interfaz](/es/guide/interface-overview)
 - [Leer predicaciones](/es/guide/sermons)
