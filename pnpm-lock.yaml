@@ -32,10 +32,10 @@ importers:
                 specifier: 5.0.2
                 version: 5.0.2(react@19.2.4)
             '@googleapis/drive':
-                specifier: ^20.0.0
+                specifier: ^20.1.0
                 version: 20.1.0
             '@googleapis/oauth2':
-                specifier: ^5.0.0
+                specifier: ^5.0.1
                 version: 5.0.1
             '@oxdev03/node-tantivy-binding':
                 specifier: ^0.2.0
@@ -104,7 +104,7 @@ importers:
                 specifier: ^1.0.17
                 version: 1.0.17
             sherpa-onnx:
-                specifier: ^1.12.28
+                specifier: ^1.12.29
                 version: 1.12.29
             tar:
                 specifier: ^7.5.11
