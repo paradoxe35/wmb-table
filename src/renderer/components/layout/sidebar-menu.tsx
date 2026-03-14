@@ -73,6 +73,7 @@ export default function SidebarMenu({
     const menuItems: MenuProps['items'] = useMemo(
         () => [
             ...mainOptions.map(toItem),
+            { type: 'divider' as const },
             ...(aiEnabled
                 ? [
                       {
@@ -83,7 +84,6 @@ export default function SidebarMenu({
                       },
                   ]
                 : []),
-            { type: 'divider' as const },
             ...secondaryOptions.map(toItem),
         ],
         [aiEnabled, showOptions, t, toItem],
