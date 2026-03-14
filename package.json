@@ -53,7 +53,6 @@
         "@ai-sdk/openai-compatible": "^2.0.35",
         "@ai-sdk/provider": "^3.0.8",
         "@ai-sdk/provider-utils": "^4.0.19",
-        "eventsource-parser": "^3.0.6",
         "@ant-design/icons": "^6.1.0",
         "@ckeditor/ckeditor5-react": "5.0.2",
         "@oxdev03/node-tantivy-binding": "^0.2.0",
