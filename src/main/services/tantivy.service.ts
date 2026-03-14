@@ -138,8 +138,8 @@ export async function getMatchingParagraphs(
     queryText: string,
     translationId: number,
     sermonDate: number,
-): Promise<{ paragraphIndex: number; snippet: string }[]> {
-    return call<{ paragraphIndex: number; snippet: string }[]>(
+): Promise<{ paragraphIndex: number; snippet: string; matchIndex: number }[]> {
+    return call<{ paragraphIndex: number; snippet: string; matchIndex: number }[]>(
         'getMatchingParagraphs',
         langCode,
         queryText,

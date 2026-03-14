@@ -45,6 +45,12 @@ function phrasePattern(query: string): string {
     return words.map((w) => wordPattern(w) + '[a-zA-Z]*').join('[\\s\\S]*?');
 }
 
+/** Like phrasePattern but without stem-matching suffixes (exact substring). */
+function phrasePatternExact(query: string): string {
+    const words = query.trim().split(/\s+/).filter(Boolean);
+    return words.map((w) => wordPattern(w)).join('[\\s\\S]*?');
+}
+
 /**
  * Legacy: sequential terms with flexible gaps between words.
  * Note: uses [^s+] (not [^\s+]) to allow spaces — matches the original
@@ -125,19 +131,24 @@ export function matchesQuery(text: string, query: string, mode: SearchMode): boo
 /**
  * Build a global regex for highlighting matches in text.
  * Returns null when no pattern can be built.
+ *
+ * @param stem — when true, each word gets a `[a-zA-Z]*` suffix so "eter"
+ *   matches "eternel".  Use `true` for global document search and `false`
+ *   for inline (Ctrl+F) highlighting where only exact substrings should match.
  */
-export function buildHighlightRegex(query: string, mode: SearchMode): RegExp | null {
+export function buildHighlightRegex(query: string, mode: SearchMode, stem = true): RegExp | null {
     const words = query.trim().split(/\s+/).filter(Boolean);
     if (words.length === 0) return null;
 
     if (mode === 'exact') {
-        return new RegExp(phrasePattern(query), 'gi');
+        return new RegExp(stem ? phrasePattern(query) : phrasePatternExact(query), 'gi');
     }
 
     // For 'all' and 'any': highlight each significant word independently
     const significant = words.filter((w) => w.length >= 3);
     if (significant.length === 0) return null;
 
-    const patterns = significant.map((w) => wordPattern(w) + '[a-zA-Z]*');
+    const suffix = stem ? '[a-zA-Z]*' : '';
+    const patterns = significant.map((w) => wordPattern(w) + suffix);
     return new RegExp(patterns.join('|'), 'gi');
 }

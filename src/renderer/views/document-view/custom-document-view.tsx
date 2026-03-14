@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import { Button, Space, Tooltip } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -7,12 +7,15 @@ import {
     useSearchStore,
     useCustomDocumentsStore,
     useAppStore,
+    selectActiveTabKey,
     selectActiveTabTitle,
 } from '@renderer/stores';
-import type { CustomDocumentContent, SermonContent } from '@shared/types';
+import type { SermonContent } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
 import DocumentBody from './document-body';
 import {
+    resolveCustomDocumentScrollPersistence,
+    useCustomDocumentContent,
     useScrollAndZoom,
     useSearchHighlight,
     useMatchNavigation,
@@ -56,6 +59,7 @@ function parseContentToParagraphs(content: string): DocumentParagraph[] {
 function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
     const { t } = useTranslation();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
@@ -69,7 +73,7 @@ function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof u
                         type="text"
                         size="small"
                         icon={<SearchOutlined />}
-                        onClick={() => openSearchBar()}
+                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
                         aria-label={t('Rechercher')}
                     />
                 </Tooltip>
@@ -87,31 +91,33 @@ export default function CustomDocumentView() {
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
-    const { zoom } = useScrollAndZoom(containerRef);
-    const [docContent, setDocContent] = useState<CustomDocumentContent | null>(null);
-    const [loading, setLoading] = useState(false);
     const search = useSearchHighlight();
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-
-    useReferenceNavigation(containerRef);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const currentMatchIndex = useSearchStore((s) =>
+        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
+    );
 
     const customDoc = useMemo(
         () => customDocuments.find((d) => d.title === activeTitle),
         [customDocuments, activeTitle],
     );
-
-    useEffect(() => {
-        if (!customDoc) {
-            setDocContent(null);
-            return;
-        }
-        setLoading(true);
-        window.api.app
-            .getCustomDocumentContent(customDoc.id)
-            .then((content) => setDocContent(content))
-            .catch(() => setDocContent(null))
-            .finally(() => setLoading(false));
-    }, [customDoc?.id]);
+    const { content: docContent, loading } = useCustomDocumentContent(customDoc?.id);
+    const { restoreIdentity, readingPositionKey } = resolveCustomDocumentScrollPersistence(
+        customDoc?.id,
+        docContent?.id,
+    );
+    useReferenceNavigation(containerRef, {
+        contentReady: !!docContent,
+        documentType: 'custom',
+        title: customDoc?.title,
+        sermonId: customDoc?.sermonId,
+        customDocumentId: customDoc?.id,
+    });
+    const { zoom } = useScrollAndZoom(containerRef, {
+        contentReady: !!docContent,
+        restoreIdentity,
+        readingPositionKey,
+    });
 
     const paragraphs = useMemo(
         () => parseContentToParagraphs(docContent?.content ?? ''),
@@ -119,7 +125,12 @@ export default function CustomDocumentView() {
     );
 
     const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
-    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+    const { matchOffsets } = useMatchNavigation(
+        activeTabKey,
+        search,
+        paragraphTexts,
+        !!restoreIdentity,
+    );
 
     // Build a minimal SermonContent-like object for context menu
     const contentForMenu = useMemo((): SermonContent | null => {
@@ -179,6 +190,7 @@ export default function CustomDocumentView() {
                 highlightsByParagraph={highlightsByParagraph}
                 onPlayFromHere={tts.playFromParagraph}
                 canSpeak={tts.canSpeak}
+                incompatibleMessage={tts.incompatibleMessage}
             />
         </DocumentBody>
     );

@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // ---------------------------------------------------------------------------
@@ -11,6 +11,9 @@ export const configurations = sqliteTable('configurations', {
     initialized: integer('initialized', { mode: 'boolean' }).notNull().default(false),
     lastCheckBackupStatus: text('last_check_backup_status').default(sql`(datetime('now'))`),
     activeLanguage: text('active_language'),
+    rememberReadingPosition: integer('remember_reading_position', { mode: 'boolean' })
+        .notNull()
+        .default(true),
 });
 
 // ---------------------------------------------------------------------------
@@ -35,6 +38,7 @@ export const historyItems = sqliteTable('history_items', {
     time: text('time').notNull(),
     documentTitle: text('document_title').notNull(),
     sermonId: text('sermon_id').notNull().default(''),
+    documentType: text('document_type').notNull().default('sermon'),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -72,6 +76,13 @@ export const tabs = sqliteTable('tabs', {
     id: text('id').primaryKey(),
     languageCode: text('language_code').notNull(),
     datas: text('datas').notNull(), // JSON DocumentTab[]
+});
+
+export const readingPositions = sqliteTable('reading_positions', {
+    documentKey: text('id').primaryKey(),
+    scrollY: integer('scroll_y').notNull().default(0),
+    scrollX: integer('scroll_x').notNull().default(0),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
 // ---------------------------------------------------------------------------
@@ -226,16 +237,61 @@ export const backupStatus = sqliteTable('backup_status', {
 export const ttsSettings = sqliteTable('tts_settings', {
     id: text('id').primaryKey(),
     activeProvider: text('active_provider').notNull(),
-    fallbackOrder: text('fallback_order').notNull(), // JSON array of TtsProviderType
     highlightMode: text('highlight_mode').notNull(),
     autoPlay: integer('auto_play', { mode: 'boolean' }).notNull(),
+    autoSwitchVoice: integer('auto_switch_voice', { mode: 'boolean' }).notNull().default(true),
     rate: real('rate').notNull().default(1),
-    segmentGapMs: integer('segment_gap_ms').notNull().default(700),
+    segmentGapMs: integer('segment_gap_ms'),
     cacheMaxSizeMb: integer('cache_max_size_mb').notNull(),
     providerConfigs: text('provider_configs').notNull(), // JSON<Record<TtsProviderType, TtsProviderSettings>>
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
+
+// ---------------------------------------------------------------------------
+// AI assistant
+// ---------------------------------------------------------------------------
+
+export const aiSettings = sqliteTable('ai_settings', {
+    id: text('id').primaryKey(),
+    enabled: integer('enabled', { mode: 'boolean' }).notNull().default(false),
+    activeProvider: text('active_provider'),
+    activeModel: text('active_model'),
+    languagePreference: text('language_preference').notNull().default('active'),
+    maxHistoryConversations: integer('max_history_conversations').notNull().default(50),
+    maxContextMessages: integer('max_context_messages').notNull().default(18),
+    providers: text('providers').notNull(),
+    customProviders: text('custom_providers').notNull(),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+export const aiConversations = sqliteTable('ai_conversations', {
+    id: text('id').primaryKey(),
+    title: text('title'),
+    languageCode: text('language_code').notNull(),
+    summary: text('summary'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
+export const aiMessages = sqliteTable(
+    'ai_messages',
+    {
+        id: text('id').primaryKey(),
+        conversationId: text('conversation_id')
+            .notNull()
+            .references(() => aiConversations.id, { onDelete: 'cascade' }),
+        role: text('role').notNull(),
+        content: text('content').notNull().default(''),
+        toolCalls: text('tool_calls'),
+        toolResults: text('tool_results'),
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [
+        index('ai_messages_conversation_created_idx').on(table.conversationId, table.createdAt),
+    ],
+);
 
 // ---------------------------------------------------------------------------
 // Synced tables — add a table here to include it in sync
@@ -248,6 +304,7 @@ export const syncedTables = [
     subjects,
     subjectItems,
     customDocuments,
+    readingPositions,
     suggestions,
     highlights,
     ttsSettings,

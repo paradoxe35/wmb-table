@@ -1,7 +1,9 @@
 import { parentPort } from 'node:worker_threads';
-import { access, readFile, unlink } from 'node:fs/promises';
+import { readFile, unlink } from 'node:fs/promises';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { tmpdir } from 'node:os';
+import { pcmToWav } from './utils.worker';
 
 interface WorkerRequest {
     id: number;
@@ -21,41 +23,7 @@ const MODEL_ID = 'onnx-community/Kokoro-82M-v1.0-ONNX';
 let kokoroInstance: any = null;
 let modelReady = false;
 let cachedVoices: string[] = [];
-
-// ---------------------------------------------------------------------------
-// Helper: PCM Float32 → WAV Buffer
-// ---------------------------------------------------------------------------
-
-function pcmToWav(pcmData: Float32Array, sampleRate: number): Buffer {
-    const numChannels = 1;
-    const bitsPerSample = 16;
-    const byteRate = (sampleRate * numChannels * bitsPerSample) / 8;
-    const blockAlign = (numChannels * bitsPerSample) / 8;
-    const dataSize = pcmData.length * 2;
-    const headerSize = 44;
-    const buffer = Buffer.alloc(headerSize + dataSize);
-
-    buffer.write('RIFF', 0);
-    buffer.writeUInt32LE(36 + dataSize, 4);
-    buffer.write('WAVE', 8);
-    buffer.write('fmt ', 12);
-    buffer.writeUInt32LE(16, 16);
-    buffer.writeUInt16LE(1, 20);
-    buffer.writeUInt16LE(numChannels, 22);
-    buffer.writeUInt32LE(sampleRate, 24);
-    buffer.writeUInt32LE(byteRate, 28);
-    buffer.writeUInt16LE(blockAlign, 32);
-    buffer.writeUInt16LE(bitsPerSample, 34);
-    buffer.write('data', 36);
-    buffer.writeUInt32LE(dataSize, 40);
-
-    for (let i = 0; i < pcmData.length; i++) {
-        const sample = Math.max(-1, Math.min(1, pcmData[i]));
-        buffer.writeInt16LE(sample < 0 ? sample * 0x8000 : sample * 0x7fff, headerSize + i * 2);
-    }
-
-    return buffer;
-}
+let modelsDir = ''; // set once via downloadModel / synthesize
 
 // ---------------------------------------------------------------------------
 // Worker methods
@@ -68,25 +36,26 @@ function sendProgress(percentage: number): void {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function makeProgressCallback(): (progress: any) => void {
     // @huggingface/transformers progress events: { status, file, progress, loaded, total }
-    // Track files being downloaded and compute overall progress
     const fileProgress = new Map<string, number>();
     return (event) => {
         if (!event || typeof event !== 'object') return;
         if (event.status === 'progress' && event.file) {
             fileProgress.set(event.file, event.progress ?? 0);
-            // Average progress across all tracked files, scale to 5–95 range
             const values = [...fileProgress.values()];
             const avg = values.reduce((a, b) => a + b, 0) / values.length;
             sendProgress(Math.round(5 + avg * 0.9));
-        } else if (event.status === 'done') {
-            // A file finished
-            if (event.file) fileProgress.set(event.file, 100);
+        } else if (event.status === 'done' && event.file) {
+            fileProgress.set(event.file, 100);
         }
     };
 }
 
 async function loadModel(withProgress: boolean): Promise<void> {
-    const { KokoroTTS } = await import('@pngwasi/kokoro-js');
+    const { KokoroTTS, env } = await import('@pngwasi/kokoro-js');
+
+    if (modelsDir) {
+        env.cacheDir = modelsDir;
+    }
 
     if (withProgress) sendProgress(2);
 
@@ -106,11 +75,15 @@ async function ensureModel(): Promise<void> {
     await loadModel(false);
 }
 
+function initialize(dir: string): void {
+    modelsDir = dir;
+}
+
 async function downloadModel(): Promise<void> {
     await loadModel(true);
 }
 
-async function synthesize(text: string, voice: string, modelsDir: string): Promise<string> {
+async function synthesize(text: string, voice: string): Promise<string> {
     await ensureModel();
 
     const audio = await kokoroInstance.generate(text, { voice });
@@ -122,7 +95,7 @@ async function synthesize(text: string, voice: string, modelsDir: string): Promi
     } else if (audio.data) {
         wavBuffer = pcmToWav(audio.data, audio.sampling_rate ?? 24000);
     } else {
-        const tmpPath = join(modelsDir, `tmp-${Date.now()}.wav`);
+        const tmpPath = join(tmpdir(), `kokoro-${Date.now()}.wav`);
         await audio.save(tmpPath);
         wavBuffer = await readFile(tmpPath);
         await unlink(tmpPath);
@@ -131,17 +104,11 @@ async function synthesize(text: string, voice: string, modelsDir: string): Promi
     return wavBuffer.toString('base64');
 }
 
-async function isModelReady(): Promise<boolean> {
-    if (modelReady && kokoroInstance) return true;
-
-    const cacheDir =
-        process.env.HF_HOME ??
-        process.env.HUGGINGFACE_HUB_CACHE ??
-        join(homedir(), '.cache', 'huggingface', 'hub');
-    const modelCacheDir = join(cacheDir, 'models--onnx-community--Kokoro-82M-v1.0-ONNX');
+function isModelReady(): boolean {
+    if (modelReady && kokoroInstance != null) return true;
+    if (!modelsDir) return false;
     try {
-        await access(modelCacheDir);
-        return true;
+        return existsSync(modelsDir) && readdirSync(modelsDir).length > 0;
     } catch {
         return false;
     }
@@ -162,6 +129,7 @@ function dispose(): void {
 // ---------------------------------------------------------------------------
 
 const methods: Record<string, (...args: never[]) => unknown> = {
+    initialize,
     downloadModel,
     synthesize,
     isModelReady,

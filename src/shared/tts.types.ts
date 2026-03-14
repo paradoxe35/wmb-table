@@ -1,6 +1,15 @@
 // ── Provider identification ──
-export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'kokoro', 'elevenlabs', 'openai'] as const;
+export const TTS_PROVIDER_TYPES = [
+    'browser',
+    'sherpa',
+    'kokoro',
+    'elevenlabs',
+    'openai',
+    'edge',
+] as const;
 export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
+export const DEFAULT_TTS_PROVIDER: TtsProviderType = 'sherpa';
+export const SEGMENT_GAP_MS = 500;
 export type TtsProviderLocality = 'local' | 'remote';
 
 // ── Voice definition ──
@@ -30,10 +39,8 @@ export interface TtsProviderInfo {
 
 // ── Per-provider settings (persisted) ──
 export interface TtsProviderSettings {
-    provider: TtsProviderType;
-    enabled: boolean;
-    apiKey?: string; // encrypted at rest via safeStorage
-    apiEndpoint?: string; // custom API endpoint override
+    apiKey?: string;
+    apiEndpoint?: string;
     model?: string;
     voiceId?: string;
     pitch?: number; // 0.5–2.0 (browser only)
@@ -45,10 +52,10 @@ export type TtsHighlightMode = 'sentence' | 'paragraph';
 
 export interface TtsSettings {
     activeProvider: TtsProviderType;
-    fallbackOrder: TtsProviderType[];
     highlightMode: TtsHighlightMode; // default: 'sentence'
-    segmentGapMs: number; // pause between segments in ms, default: 700
+    segmentGapMs: number; // pause between segments in ms
     autoPlay: boolean;
+    autoSwitchVoice: boolean;
     rate: number; // 0.5–2.0, default: 1
     cacheMaxSizeMb: number; // default: 1000
     providers: Record<TtsProviderType, TtsProviderSettings>;
@@ -87,6 +94,7 @@ export interface TtsCacheKey {
 // ── Model download progress ──
 export interface TtsModelDownloadProgress {
     provider: TtsProviderType;
+    modelName?: string;
     percentage: number;
     status: 'downloading' | 'complete' | 'error';
     error?: string;
@@ -118,7 +126,7 @@ export interface TtsSegmentAudio {
     duration?: number;
 }
 
-// ── Voice cloning (ElevenLabs) ──
+// ── Voice cloning ──
 export interface TtsVoiceCloneRequest {
     name: string; // up to 16 chars, [a-zA-Z0-9_]
     audioBase64: string; // base64-encoded audio (WAV/MP3/M4A, 10-60s, ≥24kHz mono)
@@ -127,6 +135,21 @@ export interface TtsVoiceCloneRequest {
 export interface TtsVoiceCloneResult {
     voiceId: string; // returned voice ID for use in synthesis
 }
+
+// ── Built-in reference voices for cloning ──
+export interface TtsReferenceVoice {
+    id: string; // unique key, e.g. 'francois_lepicard'
+    name: string; // display name
+    fileName: string; // file in resources/tts/
+}
+
+export const TTS_REFERENCE_VOICES: TtsReferenceVoice[] = [
+    {
+        id: 'francois_lepicard',
+        name: 'François Lepicard',
+        fileName: 'francois-lepicard-voice.mp3',
+    },
+];
 
 // ── Per-language model info (for providers with multiple downloadable models) ──
 export interface TtsModelInfo {
@@ -140,6 +163,18 @@ export interface TtsModelInfo {
     quality?: string;
     filesizeMb?: number;
     numSpeakers?: number;
+}
+
+// ── Language compatibility ──
+export type TtsIncompatibilityReason =
+    | 'not_configured' // API key missing (ElevenLabs, OpenAI)
+    | 'model_not_downloaded' // local model not installed (Kokoro, Sherpa)
+    | 'no_model_for_language' // selected model doesn't support the document language
+    | 'unsupported_language'; // provider doesn't support this language at all
+
+export interface TtsCompatibilityResult {
+    supported: boolean;
+    reason?: TtsIncompatibilityReason;
 }
 
 // ── French language labels (shared across main + renderer) ──
@@ -205,27 +240,52 @@ export const LANG_LABELS_FR: Record<string, string> = {
     hr: 'Croate',
     sq: 'Albanais',
     yue: 'Cantonais',
+    my: 'Birman',
+    ur: 'Ourdou',
+    pa: 'Pendjabi',
+    af: 'Afrikaans',
+    az: 'Azerbaïdjanais',
+    bs: 'Bosnien',
+    fil: 'Filipino',
+    ga: 'Irlandais',
+    jv: 'Javanais',
+    km: 'Khmer',
+    lo: 'Lao',
+    mn: 'Mongol',
+    mt: 'Maltais',
+    nb: 'Norvégien bokmål',
+    ps: 'Pachto',
+    so: 'Somali',
+    su: 'Soundanais',
+    uz: 'Ouzbek',
+    zu: 'Zoulou',
+    wuu: 'Chinois wu',
 };
+
+// ── Text helpers ──
+
+/** Returns true if the text contains at least one letter (any script). */
+export function hasSpeakableContent(text: string): boolean {
+    return /\p{L}/u.test(text);
+}
 
 // ── Default settings factory ──
 export function createDefaultTtsSettings(): TtsSettings {
     return {
-        activeProvider: 'browser',
-        fallbackOrder: [...TTS_PROVIDER_TYPES],
+        activeProvider: DEFAULT_TTS_PROVIDER,
         highlightMode: 'sentence',
-        segmentGapMs: 700,
+        segmentGapMs: SEGMENT_GAP_MS,
         autoPlay: false,
+        autoSwitchVoice: true,
         rate: 1,
         cacheMaxSizeMb: 1000,
         providers: {
-            browser: { provider: 'browser', enabled: true },
-            sherpa: { provider: 'sherpa', enabled: false },
-            kokoro: { provider: 'kokoro', enabled: false },
-            elevenlabs: {
-                provider: 'elevenlabs',
-                enabled: false,
-            },
-            openai: { provider: 'openai', enabled: false },
+            browser: {},
+            sherpa: {},
+            kokoro: {},
+            elevenlabs: {},
+            openai: {},
+            edge: {},
         },
     };
 }

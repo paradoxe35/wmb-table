@@ -1,0 +1,134 @@
+import { Button, Popconfirm, Typography } from 'antd';
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import type { AiConversation } from '@shared/ai.types';
+import { useTranslation } from 'react-i18next';
+
+const { Text } = Typography;
+
+function formatRelativeDate(isoDate: string, t: (key: string) => string): string {
+    const now = Date.now();
+    const date = new Date(isoDate).getTime();
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60_000);
+    if (diffMin < 1) return t('maintenant');
+    if (diffMin < 60) return `${diffMin} min`;
+    const diffH = Math.floor(diffMin / 60);
+    if (diffH < 24) return `${diffH}h`;
+    const diffD = Math.floor(diffH / 24);
+    if (diffD < 7) return `${diffD}j`;
+    return new Date(isoDate).toLocaleDateString();
+}
+
+export default function ChatConversationList({
+    conversations,
+    activeConversationId,
+    onCreateConversation,
+    onSelectConversation,
+    onDeleteConversation,
+    onClearConversations,
+}: {
+    conversations: AiConversation[];
+    activeConversationId: string | null;
+    onCreateConversation: () => void;
+    onSelectConversation: (conversationId: string) => void;
+    onDeleteConversation: (conversationId: string) => void;
+    onClearConversations: () => void;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div className="ai-chat__sidebar">
+            <div className="ai-chat__sidebar-header">
+                <Text strong style={{ fontSize: '0.85em' }}>
+                    {t('Conversations')}
+                </Text>
+                <Button
+                    size="small"
+                    type="text"
+                    icon={<PlusOutlined />}
+                    onClick={onCreateConversation}
+                    title={t('Nouveau')}
+                />
+            </div>
+
+            <div className="ai-chat__sidebar-list">
+                {conversations.length === 0 ? (
+                    <Text
+                        type="secondary"
+                        style={{ fontSize: '0.78em', display: 'block', padding: '16px 10px' }}
+                    >
+                        {t('Aucune conversation')}
+                    </Text>
+                ) : (
+                    conversations.map((conversation) => {
+                        const isActive = conversation.id === activeConversationId;
+                        return (
+                            <div
+                                key={conversation.id}
+                                role="button"
+                                tabIndex={0}
+                                className={`ai-chat__conv-item ${isActive ? 'ai-chat__conv-item--active' : ''}`}
+                                onClick={() => onSelectConversation(conversation.id)}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        onSelectConversation(conversation.id);
+                                    }
+                                }}
+                            >
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <Text
+                                        ellipsis
+                                        style={{
+                                            fontSize: '0.8em',
+                                            display: 'block',
+                                            fontWeight: isActive ? 500 : 400,
+                                        }}
+                                    >
+                                        {conversation.title || t('Conversation')}
+                                    </Text>
+                                    <Text
+                                        type="secondary"
+                                        style={{ fontSize: '0.68em', display: 'block' }}
+                                    >
+                                        {formatRelativeDate(conversation.updatedAt, t)}
+                                    </Text>
+                                </div>
+                                <Button
+                                    type="text"
+                                    size="small"
+                                    danger
+                                    className="ai-chat__conv-delete"
+                                    icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                                    style={{ flexShrink: 0 }}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDeleteConversation(conversation.id);
+                                    }}
+                                />
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            {conversations.length > 0 ? (
+                <div className="ai-chat__sidebar-footer">
+                    <Popconfirm
+                        title={t('Supprimer toutes les conversations ?')}
+                        onConfirm={onClearConversations}
+                    >
+                        <Button
+                            size="small"
+                            type="text"
+                            danger
+                            block
+                            style={{ fontSize: '0.78em' }}
+                        >
+                            {t("Vider l'historique")}
+                        </Button>
+                    </Popconfirm>
+                </div>
+            ) : null}
+        </div>
+    );
+}

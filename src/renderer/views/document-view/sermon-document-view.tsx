@@ -1,10 +1,17 @@
 import { useMemo, useRef } from 'react';
-import { useSermonStore, useSearchStore, selectActiveTab } from '@renderer/stores';
+import {
+    useAppStore,
+    useSermonStore,
+    useSearchStore,
+    selectActiveTab,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
 import { ParagraphList } from './tts-controls';
 import DocumentBody from './document-body';
 import {
+    resolveSermonScrollPersistence,
     useSermonContent,
     useScrollAndZoom,
     useSearchHighlight,
@@ -19,16 +26,36 @@ export default function SermonDocumentView() {
     const { content, loading } = useSermonContent();
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
-    const { zoom } = useScrollAndZoom(containerRef);
     const search = useSearchHighlight();
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-    useReferenceNavigation(containerRef);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const currentMatchIndex = useSearchStore((s) =>
+        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
+    );
     const contextMenuItems = useContextMenuItems(content, contextTargetRef);
 
     const activeTab = useSermonStore(selectActiveTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const sermonInfo = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
     const tabTranslationId = activeTab?.translationId;
+    const { restoreIdentity, readingPositionKey } = resolveSermonScrollPersistence(
+        activeTab,
+        sermonInfo,
+        activeLanguage,
+        content,
+    );
+    useReferenceNavigation(containerRef, {
+        contentReady: !!content,
+        documentType: 'sermon',
+        title: activeTab?.title,
+        sermonId: activeTab?.sermonId,
+        translationId: tabTranslationId ?? content?.meta.translationId,
+    });
+    const { zoom } = useScrollAndZoom(containerRef, {
+        contentReady: !!content,
+        restoreIdentity,
+        readingPositionKey,
+    });
 
     const paragraphTexts = useMemo(
         () => (content?.paragraphs ?? []).map((p) => p.content),
@@ -46,7 +73,12 @@ export default function SermonDocumentView() {
 
     const tts = useTts(ttsParagraphs, content?.meta.languageCode ?? '', content?.meta.title ?? '');
 
-    const { matchOffsets } = useMatchNavigation(search, paragraphTexts);
+    const { matchOffsets } = useMatchNavigation(
+        activeTabKey,
+        search,
+        paragraphTexts,
+        !!restoreIdentity,
+    );
     const { highlightsByParagraph } = useDocumentHighlights(
         content?.meta.title ?? null,
         activeTab?.sermonId,
@@ -84,6 +116,7 @@ export default function SermonDocumentView() {
                     highlightsByParagraph={highlightsByParagraph}
                     onPlayFromHere={!content.meta.audioLink ? tts.playFromParagraph : undefined}
                     canSpeak={!content.meta.audioLink && tts.canSpeak}
+                    incompatibleMessage={tts.incompatibleMessage}
                 />
             )}
         </DocumentBody>

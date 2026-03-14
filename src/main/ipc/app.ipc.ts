@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, shell } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as configRepo from '@main/database/repositories/config.repository';
@@ -30,6 +30,18 @@ export function registerAppHandlers(): void {
     registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
         configRepo.setActiveLanguage(langCode);
         switchBibleLanguage(langCode);
+    });
+
+    registerHandler(AppChannels.getRememberReadingPosition, async () => {
+        return configRepo.getRememberReadingPosition();
+    });
+
+    registerHandler(AppChannels.setRememberReadingPosition, async (_event, value) => {
+        configRepo.setRememberReadingPosition(value);
+    });
+
+    registerHandler(AppChannels.openExternal, async (_event, url) => {
+        await shell.openExternal(url);
     });
 
     registerHandler(AppChannels.restart, async () => {
@@ -84,7 +96,7 @@ export function registerAppHandlers(): void {
 
     registerHandler(
         AppChannels.addHistoryEntry,
-        async (_event, langCode, documentTitle, sermonId) => {
+        async (_event, langCode, documentTitle, sermonId, documentType) => {
             const now = new Date();
             const locale = langToLocale[langCode] ?? 'fr-FR';
             const date = now.toLocaleDateString(locale, {
@@ -109,6 +121,7 @@ export function registerAppHandlers(): void {
                 documentTitle,
                 langCode,
                 sermonId,
+                documentType,
             );
         },
     );

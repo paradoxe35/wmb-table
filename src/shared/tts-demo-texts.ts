@@ -1,0 +1,63 @@
+/**
+ * Short demo texts per language code (app language codes from the database).
+ * Used to preview TTS voices in settings.
+ * Source: John 3:16 adapted per language.
+ */
+export const TTS_DEMO_TEXTS: Record<string, string> = {
+    fr: "Car Dieu a tant aimé le monde qu'il a donné son Fils unique.",
+    en: 'For God so loved the world that he gave his only Son.',
+    de: 'Denn Gott hat die Welt so sehr geliebt, dass er seinen einzigen Sohn gab.',
+    es: 'Porque tanto amó Dios al mundo, que dio a su Hijo unigénito.',
+    pt: 'Porque Deus amou o mundo de tal maneira que deu o seu Filho unigênito.',
+    it: 'Perché Dio ha tanto amato il mondo da dare il suo Figlio unigenito.',
+    nl: 'Want zo lief had God de wereld, dat hij zijn eniggeboren Zoon gegeven heeft.',
+    ru: 'Ибо так возлюбил Бог мир, что отдал Сына Своего единородного.',
+    ar: 'لأنه هكذا أحب الله العالم حتى بذل ابنه الوحيد.',
+    fa: 'زيرا خدا جهان را اين‌قدر محبت نمود كه پسر يگانه خود را داد.',
+    ur: 'کیونکہ خدا نے دنیا سے اس قدر محبت رکھی کہ اس نے اپنا اکلوتا بیٹا بخش دیا۔',
+    zh: '神爱世人，甚至将他的独生子赐给他们。',
+    zho: '神愛世人，甚至將他的獨生子賜給他們。',
+    ja: '神はそのひとり子を賜わったほどに、この世を愛して下さった。',
+    ko: '하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니.',
+    hi: 'क्योंकि परमेश्वर ने जगत से ऐसा प्रेम रखा कि उसने अपना एकलौता पुत्र दे दिया।',
+    ben: 'কারণ ঈশ্বর জগতকে এতটাই ভালোবাসলেন যে তিনি তাঁর একমাত্র পুত্রকে দিলেন।',
+    mr: 'कारण देवाने जगावर एवढी प्रीती केली की त्याने आपला एकुलता एक पुत्र दिला.',
+    pa: 'ਕਿਉਂਕਿ ਪਰਮੇਸ਼ੁਰ ਨੇ ਜਗਤ ਨੂੰ ਇੰਨਾ ਪਿਆਰ ਕੀਤਾ ਕਿ ਉਸਨੇ ਆਪਣਾ ਇਕਲੌਤਾ ਪੁੱਤਰ ਦੇ ਦਿੱਤਾ।',
+    ta: 'ஏனென்றால் தேவன் உலகத்தை இவ்வளவாக நேசித்தார், அவர் தம்முடைய ஒரே பேரான குமாரனை கொடுத்தார்.',
+    te: 'దేవుడు లోకమును ఎంతగానో ప్రేమించెను, తన అద్వితీయకుమారుని అనుగ్రహించెను.',
+    ml: 'ദൈവം ലോകത്തെ ഇത്രമേൽ സ്നേഹിച്ചു, തന്റെ ഏകജാതനായ പുത്രനെ നൽകി.',
+    id: 'Karena Allah begitu mengasihi dunia ini sehingga Ia telah mengaruniakan Anak-Nya yang tunggal.',
+    tl: "Sapagka't gayon na lamang ang pagmamahal ng Dios sa sanglibutan, na ibinigay niya ang kaniyang bugtong na Anak.",
+    vi: 'Vì Đức Chúa Trời yêu thương thế gian đến nỗi đã ban Con một của Ngài.',
+    sw: 'Kwa maana Mungu aliupenda ulimwengu kiasi kwamba alimtoa Mwanawe wa pekee.',
+    ln: 'Pamba te, Nzambe alingaki mokili mingi, apesaki Mwana na ye se moko.',
+    rw: "Kuko Imana yakunze isi cyane bigatuma itanga Umwana wayo w'ikinege.",
+    run: 'Kuko Imana yakunze isi cane, bigatuma itanga Umwana wayo we gusa.',
+    amh: 'እግዚአብሔር ዓለሙን እንዲህ ወዶታልና፤ አንድያ ልጁን ሰጠ።',
+    ro: 'Fiindcă atât de mult a iubit Dumnezeu lumea, că a dat pe singurul Lui Fiu.',
+    pl: 'Albowiem tak Bóg umiłował świat, że Syna swego jednorodzonego dał.',
+    cs: 'Neboť Bůh tak miloval svět, že dal svého jednorozeného Syna.',
+    sk: 'Lebo tak Boh miloval svet, že dal svojho jednorodeného Syna.',
+    hu: 'Mert úgy szerette Isten e világot, hogy az ő egyszülött Fiát adta.',
+    hr: 'Jer Bog je tako ljubio svijet te je dao svoga Sina jedinorođenca.',
+    sr: 'Јер Бог тако заволе свет да је дао Сина свога јединородног.',
+    uk: 'Бо так полюбив Бог світ, що дав Сина Свого Єдинородного.',
+    ua: 'Бо так полюбив Бог світ, що дав Сина Свого Єдинородного.',
+    bg: 'Защото Бог толкова възлюби света, че даде Своя единороден Син.',
+    sv: 'Ty så älskade Gud världen, att han utgav sin enfödde Son.',
+    nn: 'For så høyt har Gud elsket verden at han ga sin Sønn, den enbårne.',
+    fin: 'Sillä niin on Jumala rakastanut maailmaa, että hän antoi ainoan Poikansa.',
+    lv: 'Jo tā Dievs ir mīlējis pasauli, ka Viņš devis Savu vienpiedzimušo Dēlu.',
+    lit: 'Nes Dievas taip pamilo pasaulį, jog atidavė savo viengimį Sūnų.',
+    tr: 'Çünkü Tanrı dünyayı o kadar çok sevdi ki biricik Oğlunu verdi.',
+    tur: 'Çünkü Tanrı dünyayı o kadar çok sevdi ki biricik Oğlunu verdi.',
+    af: 'Want so lief het God die wêreld gehad, dat Hy sy eniggebore Seun gegeven het.',
+    mg: 'Fa Andriamanitra tsy nitsitsy ny Zanani-lahy Tokana, fa natolony hamonjy izao tontolo izao.',
+    ne: 'किनकि परमेश्वरले संसारलाई यतिसम्म प्रेम गर्नुभयो कि उहाँले आफ्नो एकमात्र पुत्र दिनुभयो।',
+    khm: 'ព្រោះ​ថា​ព្រះ​ជាម្ចាស់​ទ្រង់​ស្រលាញ់​លោក​យ៉ាង​ខ្លាំង​ណាស់​ ដល់​ថ្នាក់​ប្រទាន​ព្រះ​រាជ​បុត្រា​តែ​មួយ​របស់​ទ្រង់',
+    lug: 'Kubanga Katonda yayagala ensi ennyo, nga aawa Omwana we omu yekka.',
+};
+
+export function getTtsDemoText(langCode: string): string {
+    return TTS_DEMO_TEXTS[langCode] ?? TTS_DEMO_TEXTS['en'];
+}

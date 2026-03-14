@@ -1,6 +1,7 @@
 import { DocumentChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as tabsRepo from '@main/database/repositories/tabs.repository';
+import * as readingPositionsRepo from '@main/database/repositories/reading-positions.repository';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as referenceDataService from '@main/services/reference-data.service';
 import { getInstalledLanguages } from '@main/services/tantivy.service';
@@ -54,4 +55,15 @@ export function registerDocumentsHandlers(): void {
     registerHandler(DocumentChannels.saveTabs, async (_event, langCode, datas) => {
         tabsRepo.saveTabs(langCode, datas);
     });
+
+    registerHandler(DocumentChannels.getReadingPosition, async (_event, documentKey) => {
+        return readingPositionsRepo.getReadingPosition(documentKey);
+    });
+
+    registerHandler(
+        DocumentChannels.saveReadingPosition,
+        async (_event, documentKey, scrollY, scrollX) => {
+            return readingPositionsRepo.saveReadingPosition(documentKey, scrollY, scrollX);
+        },
+    );
 }

@@ -1,22 +1,28 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import DocumentTabs from '../../components/document-tabs';
 import {
     useSermonStore,
     useSearchStore,
-    selectActiveTabTitle,
+    useAppStore,
+    selectActiveTab,
+    selectActiveTabKey,
     selectActiveTabType,
 } from '@renderer/stores';
 import SermonDocumentView from './sermon-document-view';
 import CustomDocumentView from './custom-document-view';
 import BibleDocumentView from './bible-document-view';
+import { HISTORY_EVENT } from '@renderer/utils/events';
 
 export default function DocumentView() {
     const tabType = useSermonStore(selectActiveTabType);
+    const activeTab = useSermonStore(selectActiveTab);
+    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
-    const searchBarOpen = useSearchStore((s) => s.searchBarOpen);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
-    const clearSearch = useSearchStore((s) => s.clearSearch);
+    const searchBarOpen = useSearchStore((s) =>
+        activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
+    );
 
     const tabs = useSermonStore((s) => s.tabs);
     const sermons = useSermonStore((s) => s.sermons);
@@ -28,19 +34,36 @@ export default function DocumentView() {
         }
     }, [tabs.length, sermons, addTab]);
 
+    // Record history when the active document changes (works for all document types)
+    const prevTabKeyRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (!activeLanguage || !activeTab || !activeTabKey) return;
+        if (activeTabKey === prevTabKeyRef.current) return;
+        prevTabKeyRef.current = activeTabKey;
+        window.api.app
+            .addHistoryEntry(
+                activeLanguage,
+                activeTab.title,
+                activeTab.sermonId,
+                activeTab.type ?? 'sermon',
+            )
+            .then(() => {
+                window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
+            });
+    }, [activeTabKey, activeTab, activeLanguage]);
+
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                 e.preventDefault();
-                openSearchBar();
+                if (activeTabKey) openSearchBar(activeTabKey);
             } else if (e.key === 'Escape' && searchBarOpen) {
-                if (activeTitle) clearSearch(activeTitle);
-                closeSearchBar();
+                if (activeTabKey) closeSearchBar(activeTabKey);
             }
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTitle, clearSearch]);
+    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTabKey]);
 
     return (
         <div

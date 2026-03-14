@@ -5,7 +5,9 @@ import {
     CloudSyncOutlined,
     GlobalOutlined,
     InfoCircleOutlined,
+    ReadOutlined,
     ReloadOutlined,
+    RobotOutlined,
     SettingOutlined,
     SoundOutlined,
 } from '@ant-design/icons';
@@ -15,13 +17,17 @@ import LanguagesTab from './languages-tab';
 import BackupTab from './backup-tab';
 import UpdateTab from './update-tab';
 import TtsTab from './tts-tab';
+import DocumentViewTab from './document-view-tab';
+import AiTab from './ai-tab';
 
 const { Title, Text } = Typography;
 
 const TAB_KEYS = {
     general: 'general',
+    documentView: 'documentView',
     languages: 'languages',
     tts: 'tts',
+    ai: 'ai',
     backup: 'backup',
     update: 'update',
 } as const;
@@ -72,6 +78,15 @@ export default function Settings() {
                 children: <GeneralTab />,
             },
             {
+                key: TAB_KEYS.documentView,
+                label: (
+                    <span>
+                        <ReadOutlined /> {t('Vue document')}
+                    </span>
+                ),
+                children: <DocumentViewTab />,
+            },
+            {
                 key: TAB_KEYS.languages,
                 label: (
                     <span>
@@ -88,6 +103,15 @@ export default function Settings() {
                     </span>
                 ),
                 children: <TtsTab />,
+            },
+            {
+                key: TAB_KEYS.ai,
+                label: (
+                    <span>
+                        <RobotOutlined /> {t('Assistant')}
+                    </span>
+                ),
+                children: <AiTab />,
             },
             {
                 key: TAB_KEYS.backup,

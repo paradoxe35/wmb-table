@@ -5,6 +5,7 @@ import {
     GroupOutlined,
     SearchOutlined,
     EditOutlined,
+    RobotOutlined,
     SettingOutlined,
 } from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
@@ -43,6 +44,7 @@ export default function SidebarMenu({
     const { t } = useTranslation();
     const optionView = useAppStore((s) => s.optionView);
     const showOptions = useAppStore((s) => s.showOptions);
+    const [aiEnabled, setAiEnabled] = React.useState(false);
     const optionViewRef = useRef(optionView);
     optionViewRef.current = optionView;
 
@@ -56,13 +58,35 @@ export default function SidebarMenu({
         [showOptions, t],
     );
 
+    useEffect(() => {
+        const refreshAiEnabled = () => {
+            window.api.ai
+                .getSettings()
+                .then((settings) => setAiEnabled(settings.enabled))
+                .catch(() => setAiEnabled(false));
+        };
+        refreshAiEnabled();
+        window.addEventListener('ai-settings-updated', refreshAiEnabled);
+        return () => window.removeEventListener('ai-settings-updated', refreshAiEnabled);
+    }, []);
+
     const menuItems: MenuProps['items'] = useMemo(
         () => [
             ...mainOptions.map(toItem),
             { type: 'divider' as const },
+            ...(aiEnabled
+                ? [
+                      {
+                          key: 'ai-chat',
+                          icon: <RobotOutlined />,
+                          label: t('Assistant'),
+                          onClick: () => showOptions('ai-chat'),
+                      },
+                  ]
+                : []),
             ...secondaryOptions.map(toItem),
         ],
-        [toItem],
+        [aiEnabled, showOptions, t, toItem],
     );
 
     const bottomMenuItems: MenuProps['items'] = useMemo(
@@ -88,9 +112,19 @@ export default function SidebarMenu({
         >
             <div className="full-item-separated">
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    <Menu mode="inline" selectedKeys={[optionView]} items={menuItems} />
+                    <Menu
+                        mode="inline"
+                        style={{ borderInlineEnd: 'none' }}
+                        selectedKeys={[optionView]}
+                        items={menuItems}
+                    />
                     <div style={{ flex: 1 }} />
-                    <Menu mode="inline" selectedKeys={[optionView]} items={bottomMenuItems} />
+                    <Menu
+                        mode="inline"
+                        style={{ borderInlineEnd: 'none' }}
+                        selectedKeys={[optionView]}
+                        items={bottomMenuItems}
+                    />
                 </div>
                 <AudioDocumentPlayerIndicator />
             </div>

@@ -1,0 +1,264 @@
+import { useEffect, useState } from 'react';
+import {
+    Button,
+    Card,
+    Divider,
+    message,
+    Progress,
+    Select,
+    Space,
+    Switch,
+    Tag,
+    Tooltip,
+    Typography,
+} from 'antd';
+import {
+    CheckCircleOutlined,
+    DownloadOutlined,
+    LaptopOutlined,
+    ReloadOutlined,
+    StarFilled,
+} from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
+import type {
+    AiLocalModelInfo,
+    AiModelDownloadProgress,
+    AiSettings,
+    AiSupportedLocalModel,
+} from '@shared/ai.types';
+import { useAiChatStore } from '@renderer/stores';
+
+const { Text } = Typography;
+
+function ModelRow({
+    model,
+    downloading,
+    downloadPct,
+    onSelect,
+    onDownload,
+}: {
+    model: AiSupportedLocalModel;
+    downloading: boolean;
+    downloadPct: number;
+    onSelect: (modelId: string) => void;
+    onDownload: (modelId: string) => void;
+}) {
+    const { t } = useTranslation();
+
+    return (
+        <div
+            style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '6px 0',
+                gap: 8,
+            }}
+        >
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Text style={{ fontSize: '0.85em' }}>{model.name}</Text>
+                    {model.recommended ? (
+                        <Tooltip title={t('Recommandé')}>
+                            <StarFilled
+                                style={{ color: 'var(--ant-color-primary)', fontSize: 12 }}
+                            />
+                        </Tooltip>
+                    ) : null}
+                    {model.installed ? (
+                        <Tooltip title={t('Installé')}>
+                            <CheckCircleOutlined
+                                style={{ color: 'var(--ant-color-success)', fontSize: 12 }}
+                            />
+                        </Tooltip>
+                    ) : null}
+                </div>
+                <Text type="secondary" style={{ fontSize: '0.75em', display: 'block' }}>
+                    {t(model.description)}
+                    {!model.installed && model.approximateSizeMb > 0
+                        ? ` (${t('~{{size}} Mo', { size: model.approximateSizeMb })})`
+                        : null}
+                </Text>
+            </div>
+            {downloading ? (
+                <Progress
+                    percent={downloadPct}
+                    size="small"
+                    style={{ width: 100, flexShrink: 0 }}
+                />
+            ) : model.installed ? (
+                <Button size="small" type="link" onClick={() => onSelect(model.id)}>
+                    {t('Utiliser')}
+                </Button>
+            ) : (
+                <Button
+                    size="small"
+                    icon={<DownloadOutlined />}
+                    onClick={() => onDownload(model.id)}
+                >
+                    {t('Télécharger')}
+                </Button>
+            )}
+        </div>
+    );
+}
+
+export default function AiLocalModels({
+    settings,
+    models,
+    supportedModels,
+    onRefresh,
+    onUpdate,
+}: {
+    settings: AiSettings;
+    models: AiLocalModelInfo[];
+    supportedModels: AiSupportedLocalModel[];
+    onRefresh: () => void;
+    onUpdate: (partial: Partial<AiSettings>) => void;
+}) {
+    const { t } = useTranslation();
+    const downloadModel = useAiChatStore((s) => s.downloadModel);
+    const scanLocalModels = useAiChatStore((s) => s.scanLocalModels);
+    const [downloads, setDownloads] = useState<Record<string, number>>({});
+
+    useEffect(() => {
+        return window.api.on.aiModelDownloadProgress((event: AiModelDownloadProgress) => {
+            if (event.status === 'complete') {
+                setDownloads((prev) => {
+                    const next = { ...prev };
+                    delete next[event.modelId];
+                    return next;
+                });
+                message.success(t('Modèle téléchargé'));
+                void scanLocalModels();
+            } else if (event.status === 'error') {
+                setDownloads((prev) => {
+                    const next = { ...prev };
+                    delete next[event.modelId];
+                    return next;
+                });
+                message.error(event.error ?? t('Le téléchargement a échoué.'));
+            } else {
+                setDownloads((prev) => ({ ...prev, [event.modelId]: event.percentage }));
+            }
+        });
+    }, [t, scanLocalModels]);
+
+    function selectModel(modelId: string) {
+        onUpdate({
+            activeProvider: 'local',
+            activeModel: modelId,
+            providers: {
+                ...settings.providers,
+                local: { ...settings.providers.local, enabled: true, model: modelId },
+            },
+        });
+    }
+
+    function handleDownload(modelId: string) {
+        setDownloads((prev) => ({ ...prev, [modelId]: 0 }));
+        void downloadModel(modelId).catch(() => {
+            setDownloads((prev) => {
+                const next = { ...prev };
+                delete next[modelId];
+                return next;
+            });
+        });
+    }
+
+    const modelOptions = models.map((m) => ({
+        label: (
+            <span>
+                {m.name}
+                {m.recommended ? (
+                    <StarFilled
+                        style={{
+                            color: 'var(--ant-color-primary)',
+                            fontSize: 11,
+                            marginInlineStart: 4,
+                        }}
+                    />
+                ) : null}
+            </span>
+        ),
+        value: m.id,
+    }));
+
+    return (
+        <Card
+            size="small"
+            title={
+                <span>
+                    {t('Modèle local')}{' '}
+                    <Tag color="green" icon={<LaptopOutlined />}>
+                        {t('Local')}
+                    </Tag>
+                </span>
+            }
+            extra={
+                <Button size="small" icon={<ReloadOutlined />} onClick={onRefresh}>
+                    {t('Actualiser')}
+                </Button>
+            }
+        >
+            <Space orientation="vertical" style={{ width: '100%' }} size="small">
+                <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                    {t(
+                        'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.',
+                    )}
+                </Text>
+
+                {models.length > 0 ? (
+                    <Select
+                        style={{ width: '100%' }}
+                        value={settings.providers.local.model ?? undefined}
+                        options={modelOptions}
+                        onChange={selectModel}
+                        placeholder={t('Choisir un modèle')}
+                    />
+                ) : null}
+
+                {supportedModels.map((m) => (
+                    <ModelRow
+                        key={m.id}
+                        model={m}
+                        downloading={m.id in downloads}
+                        downloadPct={downloads[m.id] ?? 0}
+                        onSelect={selectModel}
+                        onDownload={handleDownload}
+                    />
+                ))}
+
+                <Divider style={{ margin: '4px 0' }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Switch
+                        size="small"
+                        checked={settings.providers.local.gpuEnabled ?? false}
+                        onChange={(checked) => {
+                            onUpdate({
+                                providers: {
+                                    ...settings.providers,
+                                    local: { ...settings.providers.local, gpuEnabled: checked },
+                                },
+                            });
+                        }}
+                    />
+                    <div>
+                        <Text style={{ fontSize: '0.85em' }}>
+                            {t('Utiliser la carte graphique (GPU)')}
+                        </Text>
+                        <Text
+                            type="secondary"
+                            style={{ fontSize: '0.75em', display: 'block', marginTop: 2 }}
+                        >
+                            {t(
+                                'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.',
+                            )}
+                        </Text>
+                    </div>
+                </div>
+            </Space>
+        </Card>
+    );
+}

@@ -4,6 +4,9 @@ import { readFileSync, existsSync, createWriteStream, mkdirSync, writeFileSync }
 import Database from 'better-sqlite3';
 import log from 'electron-log';
 import { getDatabaseDir } from '@main/lib/app-paths';
+import { githubDownload } from '@main/lib/github';
+
+const BIBLE_INDEX_FILE = 'bible-index.json';
 
 export interface BibleVersion {
     langCode: string;
@@ -12,9 +15,6 @@ export interface BibleVersion {
     fileName: string;
     type: 'local' | 'remote';
 }
-
-const GITHUB_RELEASE_BASE = 'https://github.com/paradoxe35/wmb-table/releases/download/v1.0.0';
-const REMOTE_INDEX_URL = `${GITHUB_RELEASE_BASE}/bible-index.json`;
 
 let bibleIndex: BibleVersion[] | null = null;
 let activeBibleDb: Database.Database | null = null;
@@ -39,7 +39,7 @@ function getCachedRemoteIndexPath(): string {
  * Load the local (bundled) bible-index.json.
  */
 function loadLocalIndex(): BibleVersion[] {
-    const indexPath = join(getResourceDir(), 'bible-index.json');
+    const indexPath = join(getResourceDir(), BIBLE_INDEX_FILE);
     if (!existsSync(indexPath)) {
         log.warn('bible-index.json not found at', indexPath);
         return [];
@@ -93,8 +93,8 @@ export function loadBibleIndex(): BibleVersion[] {
  */
 export async function refreshRemoteIndex(): Promise<BibleVersion[]> {
     try {
-        log.info(`Fetching remote bible index: ${REMOTE_INDEX_URL}`);
-        const response = await fetch(REMOTE_INDEX_URL);
+        log.info(`Fetching remote bible index: ${BIBLE_INDEX_FILE}`);
+        const response = await githubDownload(BIBLE_INDEX_FILE);
         if (!response.ok) {
             log.warn(`Failed to fetch remote bible index: ${response.status}`);
             return loadBibleIndex();
@@ -233,14 +233,20 @@ export async function downloadBibleVersion(
     if (version.type !== 'remote')
         throw new Error(`Bible version '${abbreviation}' is local, not remote`);
 
+    // Skip download if already available on disk
+    if (isBibleAvailable(version)) {
+        log.info(`Bible already downloaded: ${version.fileName}, skipping download`);
+        onProgress?.(100);
+        return;
+    }
+
     const targetDir = getBibleDataDir();
     mkdirSync(targetDir, { recursive: true });
     const targetPath = join(targetDir, version.fileName);
 
-    const url = `${GITHUB_RELEASE_BASE}/${version.fileName}`;
-    log.info(`Downloading Bible: ${url}`);
+    log.info(`Downloading Bible: ${version.fileName}`);
 
-    const response = await fetch(url);
+    const response = await githubDownload(version.fileName);
     if (!response.ok)
         throw new Error(`Failed to download Bible: ${response.status} ${response.statusText}`);
 

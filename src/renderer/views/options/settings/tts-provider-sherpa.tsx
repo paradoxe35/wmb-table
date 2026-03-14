@@ -1,20 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Input, List, message, Progress, Select, Space, Typography } from 'antd';
-import { DeleteOutlined, DownloadOutlined, SearchOutlined } from '@ant-design/icons';
+import { DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
-import {
-    Field,
-    groupVoicesByLanguage,
-    providerUpdate,
-    type ProviderConfigProps,
-} from './tts-shared';
+import { getErrorMessage } from '@renderer/utils/functions';
+import { strNormalize } from '@shared/searchable';
+import { DeleteBtn } from '@renderer/components/delete-btn';
+import { Field, groupVoicesByLanguage, type ProviderConfigProps } from './tts-shared';
 
 const { Text } = Typography;
 
 const BROWSE_PAGE_SIZE = 10;
+const MIN_QUALITY_SIZE_MB = 30;
+const INSTALLED_LIST_MAX_HEIGHT = 200;
 
 interface SherpaConfigProps extends ProviderConfigProps {
     info?: TtsProviderInfo;
@@ -27,8 +27,8 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     const langCode = activeLanguage?.split('-')[0].toLowerCase() ?? '';
 
     const [models, setModels] = useState<TtsModelInfo[]>([]);
-    const [downloading, setDownloading] = useState<string | null>(null);
-    const [downloadPct, setDownloadPct] = useState(0);
+    // Per-model download progress: modelName → percentage
+    const [downloads, setDownloads] = useState<Map<string, number>>(new Map());
     const [search, setSearch] = useState('');
     const [browsePage, setBrowsePage] = useState(1);
 
@@ -47,33 +47,53 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
     useEffect(() => {
         return window.api.on.ttsModelDownloadProgress((p) => {
-            if (p.provider !== 'sherpa') return;
-            setDownloadPct(p.percentage);
+            if (p.provider !== 'sherpa' || !p.modelName) {
+                return;
+            }
+            const model = p.modelName;
+
             if (p.status === 'complete') {
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.delete(model);
+                    return next;
+                });
                 message.success(t('Voix installée'));
-                setDownloading(null);
-                setDownloadPct(0);
                 loadModels();
                 window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
-            }
-            if (p.status === 'error') {
+            } else if (p.status === 'error') {
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.delete(model);
+                    return next;
+                });
                 message.error(t('Erreur: {{error}}', { error: p.error }));
-                setDownloading(null);
-                setDownloadPct(0);
+            } else {
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.set(model, p.percentage);
+                    return next;
+                });
             }
         });
     }, [loadModels, t]);
 
     // ── Actions ──
 
-    const handleDownload = useCallback((modelName: string) => {
-        setDownloading(modelName);
-        setDownloadPct(0);
-        window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
-            message.error(t('Erreur: {{error}}', { error: err.message }));
-            setDownloading(null);
-        });
-    }, []);
+    const handleDownload = useCallback(
+        (modelName: string) => {
+            setDownloads((prev) => new Map(prev).set(modelName, 0));
+            window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
+                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+                setDownloads((prev) => {
+                    const next = new Map(prev);
+                    next.delete(modelName);
+                    return next;
+                });
+            });
+        },
+        [t],
+    );
 
     const handleDelete = useCallback(
         async (modelName: string) => {
@@ -82,14 +102,25 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 message.success(t('Voix supprimée'));
                 loadModels();
                 window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
-                if (cfg.model === modelName) {
-                    onUpdate(providerUpdate(settings, 'sherpa', 'model', undefined));
+                if (cfg.model === modelName || cfg.voiceId?.startsWith(`${modelName}:`)) {
+                    onUpdate({
+                        providers: {
+                            ...settings.providers,
+                            sherpa: {
+                                ...settings.providers.sherpa,
+                                model: cfg.model === modelName ? undefined : cfg.model,
+                                voiceId: cfg.voiceId?.startsWith(`${modelName}:`)
+                                    ? undefined
+                                    : cfg.voiceId,
+                            },
+                        },
+                    });
                 }
             } catch (err) {
-                message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
+                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
             }
         },
-        [loadModels, cfg.model, settings, onUpdate],
+        [loadModels, cfg.model, cfg.voiceId, onUpdate, settings, t],
     );
 
     // ── Derived data ──
@@ -97,23 +128,35 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     const installed = useMemo(() => models.filter((m) => m.installed), [models]);
     const allVoices = info?.voices ?? [];
 
-    // Best available model for active language (not yet installed), lightest first
+    // Best available model for active language: prefer quality (≥30MB), fallback to largest
+    // Skip if the language already has an installed model
     const suggestedModel = useMemo(() => {
-        const candidates = models
-            .filter((m) => m.langCode === langCode && !m.installed)
-            .sort((a, b) => (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity));
-        return candidates[0];
+        const hasInstalled = models.some((m) => m.langCode === langCode && m.installed);
+        if (hasInstalled) return undefined;
+
+        const candidates = models.filter((m) => m.langCode === langCode && !m.installed);
+        if (candidates.length === 0) return undefined;
+
+        const quality = candidates
+            .filter((m) => (m.filesizeMb ?? 0) >= MIN_QUALITY_SIZE_MB)
+            .sort((a, b) => (a.filesizeMb ?? 0) - (b.filesizeMb ?? 0));
+        if (quality.length > 0) return quality[0];
+
+        // Only small models available — pick the largest one
+        return candidates.sort((a, b) => (b.filesizeMb ?? 0) - (a.filesizeMb ?? 0))[0];
     }, [models, langCode]);
 
-    // Browse: search-filtered, sorted by installed first then lightest
+    // Browse: accent-insensitive search, sorted by installed first then lightest
     const browseResults = useMemo(() => {
         if (!search) return [];
-        const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+
+        const terms = strNormalize(search).split(/\s+/).filter(Boolean);
         return models
             .filter((m) => {
-                const haystack =
-                    `${m.voiceName} ${m.langLabel} ${m.langName ?? ''} ${m.langCode} ${m.engine ?? ''}`.toLowerCase();
-                return terms.every((t) => haystack.includes(t));
+                const haystack = strNormalize(
+                    `${m.voiceName} ${m.langLabel} ${m.langName ?? ''} ${m.langCode} ${m.engine ?? ''}`,
+                );
+                return terms.every((term) => haystack.includes(term));
             })
             .sort((a, b) => {
                 if (a.installed !== b.installed) return a.installed ? -1 : 1;
@@ -121,30 +164,43 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             });
     }, [models, search]);
 
-    // Auto-select voice matching active language
-    useEffect(() => {
-        if (!langCode || allVoices.length === 0) return;
-        const langVoices = allVoices.filter((v) => v.languageCodes.some((lc) => lc === langCode));
-        if (langVoices.length === 0) return;
-        const currentVoice = cfg.voiceId;
-        const currentMatchesLang = currentVoice && langVoices.some((v) => v.id === currentVoice);
-        if (!currentMatchesLang) {
-            onUpdate(providerUpdate(settings, 'sherpa', 'voiceId', langVoices[0].id));
+    // ── Render helpers ──
+
+    function renderModelAction(m: TtsModelInfo) {
+        const pct = downloads.get(m.modelName);
+        if (pct !== undefined) {
+            return <Progress key="progress" percent={pct} size="small" style={{ width: 80 }} />;
         }
-    }, [langCode]); // eslint-disable-line react-hooks/exhaustive-deps
+        if (m.installed) {
+            return <DeleteBtn key="delete" confirm={() => handleDelete(m.modelName)} />;
+        }
+        return (
+            <Button
+                key="download"
+                size="small"
+                icon={<DownloadOutlined />}
+                onClick={() => handleDownload(m.modelName)}
+            >
+                {t('Télécharger')}
+            </Button>
+        );
+    }
 
     // ── Render ──
 
     return (
-        <Space direction="vertical" style={{ width: '100%' }} size="small">
+        <Space orientation="vertical" style={{ width: '100%' }} size="small">
             {/* 1. Suggested download for active language */}
             {suggestedModel && (
                 <Field
                     label={t('Voix disponible — {{lang}}', { lang: suggestedModel.langLabel })}
                     hint={t('Téléchargez une voix pour la langue active du document.')}
                 >
-                    {downloading === suggestedModel.modelName ? (
-                        <Progress percent={downloadPct} size="small" />
+                    {downloads.has(suggestedModel.modelName) ? (
+                        <Progress
+                            percent={downloads.get(suggestedModel.modelName) ?? 0}
+                            size="small"
+                        />
                     ) : (
                         <Space size="small" align="center">
                             <Button
@@ -172,7 +228,18 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                         value={cfg.voiceId ?? allVoices[0]?.id}
                         showSearch
                         optionFilterProp="label"
-                        onChange={(v) => onUpdate(providerUpdate(settings, 'sherpa', 'voiceId', v))}
+                        onChange={(v) => {
+                            onUpdate({
+                                providers: {
+                                    ...settings.providers,
+                                    sherpa: {
+                                        ...settings.providers.sherpa,
+                                        voiceId: v,
+                                        model: v.split(':')[0] || undefined,
+                                    },
+                                },
+                            });
+                        }}
                         options={groupVoicesByLanguage(allVoices)}
                     />
                 </Field>
@@ -181,7 +248,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             {/* 3. Installed voices with delete */}
             {installed.length > 0 && (
                 <Field label={t('Voix installées ({{count}})', { count: installed.length })}>
-                    <div>
+                    <div style={{ maxHeight: INSTALLED_LIST_MAX_HEIGHT, overflowY: 'auto' }}>
                         {installed.map((m) => (
                             <div
                                 key={m.modelName}
@@ -201,13 +268,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                         </Text>
                                     )}
                                 </Text>
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    danger
-                                    icon={<DeleteOutlined />}
-                                    onClick={() => handleDelete(m.modelName)}
-                                />
+                                <DeleteBtn confirm={() => handleDelete(m.modelName)} />
                             </div>
                         ))}
                     </div>
@@ -246,36 +307,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                         onChange: setBrowsePage,
                     }}
                     renderItem={(m) => (
-                        <List.Item
-                            actions={[
-                                downloading === m.modelName ? (
-                                    <Progress
-                                        key="progress"
-                                        percent={downloadPct}
-                                        size="small"
-                                        style={{ width: 80 }}
-                                    />
-                                ) : m.installed ? (
-                                    <Button
-                                        key="delete"
-                                        type="text"
-                                        size="small"
-                                        danger
-                                        icon={<DeleteOutlined />}
-                                        onClick={() => handleDelete(m.modelName)}
-                                    />
-                                ) : (
-                                    <Button
-                                        key="download"
-                                        size="small"
-                                        icon={<DownloadOutlined />}
-                                        onClick={() => handleDownload(m.modelName)}
-                                    >
-                                        {t('Télécharger')}
-                                    </Button>
-                                ),
-                            ]}
-                        >
+                        <List.Item actions={[renderModelAction(m)]}>
                             <List.Item.Meta
                                 title={
                                     <Text style={{ fontSize: '0.9em' }}>

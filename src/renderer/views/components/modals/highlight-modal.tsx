@@ -88,7 +88,7 @@ export default function HighlightModal() {
                 <div
                     style={{
                         padding: '8px 12px',
-                        background: '#f5f5f5',
+                        background: 'var(--ant-color-fill-quaternary)',
                         borderRadius: 6,
                         fontSize: '0.9em',
                         maxHeight: 80,
@@ -112,8 +112,11 @@ export default function HighlightModal() {
                                 borderRadius: '50%',
                                 backgroundColor: c.value,
                                 cursor: 'pointer',
-                                border: '2px solid #d9d9d9',
-                                boxShadow: color === c.value ? '0 0 0 2px #1677ff' : 'none',
+                                border: '2px solid var(--ant-color-border)',
+                                boxShadow:
+                                    color === c.value
+                                        ? '0 0 0 2px var(--ant-color-primary)'
+                                        : 'none',
                                 transition: 'box-shadow 0.2s',
                             }}
                         />

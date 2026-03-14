@@ -85,6 +85,12 @@ export interface SermonTranslation {
 
 export type DocumentType = 'sermon' | 'custom' | 'bible';
 
+export interface ReadingPosition {
+    documentKey: string;
+    scrollY: number;
+    scrollX: number;
+}
+
 export type DocumentTab = {
     title: string;
     sermonId: string;
@@ -123,12 +129,21 @@ export type DocumentHtmlTree = {
     ranges?: DocumentTreeRanges;
 };
 
+export type StoredDocumentReference = {
+    documentType?: DocumentType;
+    sermonId?: string;
+    customDocumentId?: string;
+    bibleBook?: string;
+    bibleChapter?: string;
+    bibleVersionAbbreviation?: string;
+};
+
 export type ParagraphReference = {
     paragraphIndex: number;
     translationId: number;
     languageCode: string;
     textSnippet?: string;
-};
+} & StoredDocumentReference;
 
 export function isParagraphReference(
     ref: DocumentHtmlTree | ParagraphReference,
@@ -157,6 +172,7 @@ export interface Suggestions extends Readonly<BaseEntity> {
 export type DocumentViewQuery = {
     term: string;
     mode: SearchMode;
+    documentKey: string;
     documentTitle: string;
     textContentLength: number;
     searchForParagraph?: boolean;
@@ -367,6 +383,7 @@ export interface HistoryDataItem extends Readonly<BaseEntity> {
     time: string;
     documentTitle: string;
     sermonId: string;
+    documentType: DocumentType;
 }
 
 export type HistoryDateUpload = {
@@ -467,6 +484,7 @@ export interface LanguageInstalledEvent {
 export interface SearchSnippet {
     paragraphIndex: number;
     snippet: string;
+    matchIndex: number;
 }
 
 export interface TantivySearchHit {
@@ -516,6 +534,7 @@ export interface AppSettingsStatus {
     initialized: boolean;
     lastCheckBackupStatus: Date;
     activeLanguage: string | null;
+    rememberReadingPosition: boolean;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {

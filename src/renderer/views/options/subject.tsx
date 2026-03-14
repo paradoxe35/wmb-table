@@ -20,12 +20,15 @@ import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
 import { BookOutlined } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
-import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import { SUBJECT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
-import { useSermonLookup, useFormatSermonDate } from '@renderer/hooks';
-import ContainerScrollY from '@renderer/components/container-scroll-y';
+import {
+    buildReferenceOpenRequest,
+    useOpenDocumentRequest,
+    useSermonLookup,
+    useFormatSermonDate,
+} from '@renderer/hooks';
 
 const { Text } = Typography;
 
@@ -195,10 +198,13 @@ export default function Subject() {
                 }}
                 className="layout__sidebar"
             >
-                <Card style={{ width: '100%', flexShrink: 0 }}>
+                <Card style={{ width: '100%', flexShrink: 0, borderRadius: 0 }}>
                     <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
                 </Card>
-                <ContainerScrollY className="mt-2" style={{ padding: '22px', overflowX: 'hidden' }}>
+                <div
+                    className="container-y mt-2"
+                    style={{ flex: 1, minHeight: 0, padding: '22px', overflowX: 'hidden' }}
+                >
                     {datas.map((item) => (
                         <ItemSubject
                             key={item.name}
@@ -207,9 +213,9 @@ export default function Subject() {
                             onDeleteSubject={handleSubjectDeletion}
                         />
                     ))}
-                </ContainerScrollY>
+                </div>
             </div>
-            <ContainerScrollY susDiff={10} style={{ flex: 1, padding: '0 10px' }}>
+            <div className="container-y" style={{ flex: 1, minHeight: 0, padding: '0 10px' }}>
                 {activeDocument && (
                     <ShowActiveDocuments
                         subject={activeDocument}
@@ -217,7 +223,7 @@ export default function Subject() {
                         setDocuments={setSubjectItemData}
                     />
                 )}
-            </ContainerScrollY>
+            </div>
         </div>
     );
 }
@@ -232,6 +238,7 @@ function ItemFromSelectedSubject({
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const openDocumentRequest = useOpenDocumentRequest();
 
     const sermon = getSermonById(item.sermonId);
     const displayTitle = sermon?.title ?? item.documentTitle;
@@ -239,13 +246,14 @@ function ItemFromSelectedSubject({
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
 
     const onNavigate = () => {
+        openDocumentRequest(
+            buildReferenceOpenRequest(item.documentTitle, item.sermonId, item.documentHtmlTree),
+        );
         setPendingNavigation({
             documentTitle: item.documentTitle,
             documentHtmlTree: item.documentHtmlTree,
         });
     };
-
-    const refTranslationId = paragraphRef?.translationId;
 
     if (item.bible) {
         return (
@@ -267,14 +275,7 @@ function ItemFromSelectedSubject({
             <div className="subject-ref-card__header">
                 <BookOutlined style={{ fontSize: 14 }} />
                 <a className="underline" style={{ flex: 1, fontSize: '0.95em' }}>
-                    <DocumentViewer
-                        onItemClick={onNavigate}
-                        name={item.documentTitle}
-                        sermonId={item.sermonId}
-                        translationId={refTranslationId}
-                    >
-                        {displayTitle}
-                    </DocumentViewer>
+                    <span onClick={onNavigate}>{displayTitle}</span>
                 </a>
                 <DeleteBtn confirm={() => confirm(item)} />
             </div>

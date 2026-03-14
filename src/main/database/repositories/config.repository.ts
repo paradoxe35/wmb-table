@@ -13,6 +13,7 @@ export function getConfig(): AppSettingsStatus | null {
         initialized: row.initialized,
         lastCheckBackupStatus: new Date(row.lastCheckBackupStatus ?? Date.now()),
         activeLanguage: row.activeLanguage ?? null,
+        rememberReadingPosition: row.rememberReadingPosition,
     };
 }
 
@@ -54,6 +55,19 @@ export function updateLastCheckBackupStatus(): void {
     getDb()
         .update(configurations)
         .set({ lastCheckBackupStatus: new Date().toISOString() })
+        .where(eq(configurations.id, config.id))
+        .run();
+}
+
+export function getRememberReadingPosition(): boolean {
+    return getConfig()?.rememberReadingPosition ?? true;
+}
+
+export function setRememberReadingPosition(value: boolean): void {
+    const config = ensureConfig();
+    getDb()
+        .update(configurations)
+        .set({ rememberReadingPosition: value })
         .where(eq(configurations.id, config.id))
         .run();
 }

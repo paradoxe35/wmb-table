@@ -1,100 +1,209 @@
-import { useEffect, useState, useRef } from 'react';
-import { Empty, Collapse, List } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button, Card, Empty, Tag, Timeline, Typography } from 'antd';
+import {
+    LeftOutlined,
+    RightOutlined,
+    HistoryOutlined,
+    BookOutlined,
+    FileTextOutlined,
+    ClockCircleOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { HistoryData, HistoryDataItem } from '@shared/types';
-import { HistoryOutlined } from '@ant-design/icons';
-import DocumentViewer from '@renderer/components/viewer/document-viewer';
-import { useSermonLookup, useActiveTabTitle } from '@renderer/hooks';
-import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
+import type { DocumentType, HistoryData, HistoryDataItem } from '@shared/types';
+import { useAppStore } from '@renderer/stores';
+import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
+import { HISTORY_EVENT } from '@renderer/utils/events';
+
+const { Text } = Typography;
+
+// ---------------------------------------------------------------------------
+// Open history item by document type
+// ---------------------------------------------------------------------------
+
+function useHistoryItemOpen() {
+    const openDocument = useOpenDocument();
+    const openCustomDocument = useOpenCustomDocument();
+    const openBibleChapter = useOpenBibleChapter();
+
+    return useCallback(
+        (item: HistoryDataItem) => {
+            const docType: DocumentType = item.documentType ?? 'sermon';
+
+            if (docType === 'custom') {
+                openCustomDocument(item.documentTitle, item.sermonId);
+                return;
+            }
+
+            if (docType === 'bible') {
+                const [bookCode, chapter] = item.sermonId.split(':');
+                const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
+                openBibleChapter(bookName, bookCode, chapter);
+                return;
+            }
+
+            openDocument(item.documentTitle, item.sermonId);
+        },
+        [openDocument, openCustomDocument, openBibleChapter],
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Document type metadata
+// ---------------------------------------------------------------------------
+
+const DOC_TYPE_META: Record<DocumentType, { icon: React.ReactNode; color: string; label: string }> =
+    {
+        sermon: { icon: <HistoryOutlined />, color: 'blue', label: 'Prédication' },
+        bible: { icon: <BookOutlined />, color: 'green', label: 'Bible' },
+        custom: { icon: <FileTextOutlined />, color: 'orange', label: 'Document' },
+    };
+
+// ---------------------------------------------------------------------------
+// History component
+// ---------------------------------------------------------------------------
 
 export default function History() {
     const { t } = useTranslation();
-    const title = useActiveTabTitle();
     const activeLanguage = useAppStore((s) => s.activeLanguage);
     const [histories, setHistories] = useState<HistoryData[]>([]);
-    const [key, setKey] = useState<string | null>(null);
+    const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
-    const { getSermonById } = useSermonLookup();
-    const activeTab = useSermonStore(selectActiveTab);
-    const prevTitle = useRef<string | null>(null);
+    const openHistoryItem = useHistoryItemOpen();
 
-    const onChange = (key: string | string[]) => {
-        const activeKey = Array.isArray(key) ? (key[0] ?? null) : key;
-        setKey(activeKey);
-    };
-
-    // Record history when active tab changes
-    useEffect(() => {
-        if (activeLanguage && title && title !== prevTitle.current && activeTab?.sermonId) {
-            window.api.app.addHistoryEntry(activeLanguage, title, activeTab.sermonId);
-            // Refresh histories to include the new entry
-            window.api.app.getHistory(activeLanguage).then((data) => {
-                setHistories(data);
-            });
-        }
-        prevTitle.current = title;
-    }, [title, activeLanguage, activeTab?.sermonId]);
-
-    useEffect(() => {
-        if (key) {
-            const history = histories.find((k) => k.id === key);
-            if (history) {
-                window.api.app.getHistoryItems(history.id).then(setHistoryItems);
-            }
-        }
-    }, [key, histories]);
-
-    // Load histories on language change (initial load)
-    useEffect(() => {
+    const loadHistories = useCallback(() => {
         if (activeLanguage) {
             window.api.app.getHistory(activeLanguage).then((data) => {
                 setHistories(data);
-                if (data.length > 0) {
-                    setKey(data[0].id);
-                }
+                setSelectedIndex(0);
             });
         }
     }, [activeLanguage]);
 
+    // Load on mount / language change
+    useEffect(() => {
+        loadHistories();
+    }, [loadHistories]);
+
+    // Refresh when new history entries are added
+    useEffect(() => {
+        const handler = () => loadHistories();
+        window.addEventListener(HISTORY_EVENT.historyUpdated, handler);
+        return () => window.removeEventListener(HISTORY_EVENT.historyUpdated, handler);
+    }, [loadHistories]);
+
+    // Load items when selected day changes
+    const selectedHistory = histories[selectedIndex] ?? null;
+    useEffect(() => {
+        if (selectedHistory) {
+            window.api.app.getHistoryItems(selectedHistory.id).then(setHistoryItems);
+        } else {
+            setHistoryItems([]);
+        }
+    }, [selectedHistory]);
+
+    const canGoPrev = selectedIndex < histories.length - 1;
+    const canGoNext = selectedIndex > 0;
+
+    const isToday = useMemo(() => {
+        if (!selectedHistory) return false;
+        const todayMs = new Date(
+            new Date().getFullYear(),
+            new Date().getMonth(),
+            new Date().getDate(),
+        ).getTime();
+        return selectedHistory.milliseconds === todayMs;
+    }, [selectedHistory]);
+
+    if (histories.length === 0) {
+        return (
+            <div className="history-empty">
+                <Empty
+                    image={<ClockCircleOutlined style={{ fontSize: 48, opacity: 0.2 }} />}
+                    description={t('Aucune historique')}
+                />
+            </div>
+        );
+    }
+
     return (
-        <>
-            {histories.length === 0 && <Empty description={t('Aucune historique')} />}
-            <Collapse
-                activeKey={key || undefined}
-                accordion
-                onChange={onChange}
-                style={{ margin: '20px 0' }}
-                items={histories.map((h) => ({
-                    key: h.id,
-                    label: h.date,
-                    children:
-                        key === h.id ? (
-                            <List
-                                itemLayout="horizontal"
-                                dataSource={historyItems.filter((i) => getSermonById(i.sermonId))}
-                                renderItem={(item) => (
-                                    <List.Item key={item.id}>
-                                        <List.Item.Meta
-                                            avatar={<HistoryOutlined />}
-                                            title={
-                                                <a>
-                                                    <DocumentViewer
-                                                        name={item.documentTitle}
-                                                        sermonId={item.sermonId}
-                                                    >
-                                                        {getSermonById(item.sermonId)?.title ??
-                                                            item.documentTitle}
-                                                    </DocumentViewer>
-                                                </a>
-                                            }
-                                            description={`${item.date} - ${item.time}`}
-                                        />
-                                    </List.Item>
-                                )}
-                            />
-                        ) : null,
-                }))}
-            />
-        </>
+        <div className="history-view">
+            <Card className="history-card">
+                {/* Date navigator */}
+                <div className="history-date-nav">
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<LeftOutlined />}
+                        disabled={!canGoPrev}
+                        onClick={() => setSelectedIndex((i) => i + 1)}
+                    />
+                    <div className="history-date-label">
+                        <Text strong>{isToday ? t("Aujourd'hui") : selectedHistory?.date}</Text>
+                        {isToday && (
+                            <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                {selectedHistory?.date}
+                            </Text>
+                        )}
+                    </div>
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<RightOutlined />}
+                        disabled={!canGoNext}
+                        onClick={() => setSelectedIndex((i) => i - 1)}
+                    />
+                </div>
+
+                {/* Timeline items */}
+                {historyItems.length === 0 ? (
+                    <div className="history-empty-day">
+                        <Text type="secondary">{t('Aucun document consulté ce jour')}</Text>
+                    </div>
+                ) : (
+                    <div className="history-timeline">
+                        <Timeline
+                            items={historyItems.map((item) => {
+                                const meta = DOC_TYPE_META[item.documentType ?? 'sermon'];
+                                return {
+                                    key: item.id,
+                                    dot: meta.icon,
+                                    children: (
+                                        <div
+                                            className="history-item"
+                                            onClick={() => openHistoryItem(item)}
+                                        >
+                                            <div className="history-item__header">
+                                                <Text className="history-item__title">
+                                                    {item.documentTitle}
+                                                </Text>
+                                                <Tag
+                                                    color={meta.color}
+                                                    bordered={false}
+                                                    className="history-item__tag"
+                                                >
+                                                    {t(meta.label)}
+                                                </Tag>
+                                            </div>
+                                            <Text type="secondary" className="history-item__time">
+                                                {item.time}
+                                            </Text>
+                                        </div>
+                                    ),
+                                };
+                            })}
+                        />
+                    </div>
+                )}
+
+                {/* Page indicator */}
+                {histories.length > 1 && (
+                    <div className="history-page-indicator">
+                        <Text type="secondary" style={{ fontSize: '0.75em' }}>
+                            {selectedIndex + 1} / {histories.length}
+                        </Text>
+                    </div>
+                )}
+            </Card>
+        </div>
     );
 }

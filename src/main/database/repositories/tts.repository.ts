@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '../index';
 import { ttsSettings } from '../schema';
 import type { TtsHighlightMode, TtsSettings, TtsProviderType } from '@shared/tts.types';
-import { createDefaultTtsSettings } from '@shared/tts.types';
+import { createDefaultTtsSettings, SEGMENT_GAP_MS } from '@shared/tts.types';
 
 // Fixed ID so that all devices share the same row via Google Drive sync.
 // Using a deterministic ID ensures INSERT OR REPLACE merges correctly.
@@ -15,7 +15,12 @@ const TTS_SETTINGS_ID = 'tts_settings';
 
 function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
     const defaults = createDefaultTtsSettings();
-    const storedProviders = JSON.parse(row.providerConfigs || '{}');
+    let storedProviders: Record<string, Record<string, unknown>> = {};
+    try {
+        storedProviders = JSON.parse(row.providerConfigs || '{}');
+    } catch {
+        // Corrupted config — fall back to defaults
+    }
     const providers = { ...defaults.providers };
     for (const key of Object.keys(storedProviders) as TtsProviderType[]) {
         providers[key] = { ...providers[key], ...storedProviders[key] };
@@ -23,11 +28,11 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
 
     return {
         activeProvider: row.activeProvider as TtsProviderType,
-        fallbackOrder: JSON.parse(row.fallbackOrder),
         highlightMode: row.highlightMode as TtsHighlightMode,
         autoPlay: row.autoPlay,
+        autoSwitchVoice: row.autoSwitchVoice ?? true,
         rate: row.rate,
-        segmentGapMs: row.segmentGapMs ?? 700,
+        segmentGapMs: row.segmentGapMs ?? SEGMENT_GAP_MS,
         cacheMaxSizeMb: row.cacheMaxSizeMb,
         providers,
     };
@@ -49,9 +54,9 @@ export function ensureSettings(): TtsSettings {
         .values({
             id: TTS_SETTINGS_ID,
             activeProvider: defaults.activeProvider,
-            fallbackOrder: JSON.stringify(defaults.fallbackOrder),
             highlightMode: defaults.highlightMode,
             autoPlay: defaults.autoPlay,
+            autoSwitchVoice: defaults.autoSwitchVoice,
             rate: defaults.rate,
             segmentGapMs: defaults.segmentGapMs,
             cacheMaxSizeMb: defaults.cacheMaxSizeMb,
@@ -66,10 +71,9 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
     const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     if (partial.activeProvider !== undefined) update.activeProvider = partial.activeProvider;
-    if (partial.fallbackOrder !== undefined)
-        update.fallbackOrder = JSON.stringify(partial.fallbackOrder);
     if (partial.highlightMode !== undefined) update.highlightMode = partial.highlightMode;
     if (partial.autoPlay !== undefined) update.autoPlay = partial.autoPlay;
+    if (partial.autoSwitchVoice !== undefined) update.autoSwitchVoice = partial.autoSwitchVoice;
     if (partial.rate !== undefined) update.rate = partial.rate;
     if (partial.segmentGapMs !== undefined) update.segmentGapMs = partial.segmentGapMs;
     if (partial.cacheMaxSizeMb !== undefined) update.cacheMaxSizeMb = partial.cacheMaxSizeMb;

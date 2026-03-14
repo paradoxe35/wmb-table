@@ -1,8 +1,11 @@
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import log from 'electron-log';
 import { getMainWindow } from '@main/lib/window';
 import { sendToRenderer } from '@main/ipc/register';
 import { PushChannels } from '@shared/ipc.types';
+import { getTtsDemoText } from '@shared/tts-demo-texts';
 import type { TtsProvider } from './provider';
 import { TtsCache } from './tts-cache';
 import type { CacheHit } from './tts-cache';
@@ -10,21 +13,25 @@ import { OpenAiProvider } from './openai.provider';
 import { KokoroProvider } from './kokoro.provider';
 import { SherpaProvider } from './sherpa.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
+import { EdgeProvider } from './edge.provider';
+import { getTtsResourceDir } from '@main/lib/app-paths';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
-import { TTS_PROVIDER_TYPES } from '@shared/tts.types';
-import type {
-    TtsProviderType,
-    TtsProviderInfo,
-    TtsSettings,
-    TtsSegment,
-    TtsSynthesizeRequest,
-    TtsSynthesizeResult,
-    TtsPlaybackStatus,
-    TtsCacheKey,
-    TtsModelInfo,
-    TtsVoice,
-    TtsVoiceCloneRequest,
-    TtsVoiceCloneResult,
+import {
+    type TtsProviderType,
+    type TtsProviderInfo,
+    type TtsSettings,
+    type TtsSegment,
+    type TtsSynthesizeRequest,
+    type TtsSynthesizeResult,
+    type TtsPlaybackStatus,
+    type TtsCacheKey,
+    type TtsModelInfo,
+    type TtsVoice,
+    type TtsVoiceCloneRequest,
+    type TtsVoiceCloneResult,
+    type TtsCompatibilityResult,
+    TTS_REFERENCE_VOICES,
+    SEGMENT_GAP_MS,
 } from '@shared/tts.types';
 
 /**
@@ -60,11 +67,13 @@ export class TtsService {
         const sherpa = new SherpaProvider();
         const elevenlabs = new ElevenLabsProvider();
         const openai = new OpenAiProvider();
+        const edge = new EdgeProvider();
 
         this.providers.set('kokoro', kokoro);
         this.providers.set('sherpa', sherpa);
         this.providers.set('elevenlabs', elevenlabs);
         this.providers.set('openai', openai);
+        this.providers.set('edge', edge);
 
         for (const [type, provider] of this.providers) {
             const cfg = this.settings.providers[type];
@@ -128,6 +137,8 @@ export class TtsService {
     }
 
     async startPlayback(segments: TtsSegment[], language: string, startIndex = 0): Promise<void> {
+        await this.reloadSettings();
+
         this.playbackGeneration++;
         this.segments = segments;
         this.currentIndex = startIndex;
@@ -182,7 +193,7 @@ export class TtsService {
                 this.stop();
                 return;
             }
-            const gapMs = this.settings.segmentGapMs ?? 700;
+            const gapMs = this.settings.segmentGapMs ?? SEGMENT_GAP_MS;
             const gapStart = Date.now();
 
             // Prepare next segment (synthesis/cache lookup) — may take time
@@ -202,12 +213,34 @@ export class TtsService {
         }
     }
 
-    checkLanguageSupport(langCode: string): Record<TtsProviderType, boolean> {
-        const result = Object.fromEntries(
-            TTS_PROVIDER_TYPES.map((t) => [t, t === 'browser']),
-        ) as Record<TtsProviderType, boolean>;
+    async resolveConfigForLanguage(language: string): Promise<TtsSettings | null> {
+        await this.reloadSettings();
+        const activeProvider = this.settings.activeProvider;
+        const provider = this.providers.get(activeProvider);
+        if (!provider?.resolveConfigForLanguage) return null;
+
+        const cfg = this.settings.providers[activeProvider];
+        const resolved = provider.resolveConfigForLanguage(language, cfg);
+        if (!resolved) return null;
+
+        ttsRepo.updateSettings({
+            providers: {
+                ...this.settings.providers,
+                [activeProvider]: { ...cfg, ...resolved },
+            },
+        });
+        await this.reloadSettings();
+        return this.settings;
+    }
+
+    async checkLanguageSupport(
+        langCode: string,
+    ): Promise<Record<TtsProviderType, TtsCompatibilityResult>> {
+        await this.reloadSettings();
+        const result = {} as Record<TtsProviderType, TtsCompatibilityResult>;
         for (const [type, provider] of this.providers) {
-            result[type] = provider.supportsLanguage(langCode);
+            const cfg = this.settings.providers[type];
+            result[type] = await provider.checkCompatibility(langCode, cfg);
         }
         return result;
     }
@@ -223,6 +256,7 @@ export class TtsService {
                 if (win) {
                     sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
                         provider: providerType,
+                        modelName,
                         percentage,
                         status: percentage >= 100 ? 'complete' : 'downloading',
                     });
@@ -232,6 +266,7 @@ export class TtsService {
             if (win) {
                 sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
                     provider: providerType,
+                    modelName,
                     percentage: 0,
                     status: 'error',
                     error: err instanceof Error ? err.message : String(err),
@@ -254,16 +289,6 @@ export class TtsService {
         await provider.deleteModel(modelName);
     }
 
-    async getModelStatus(
-        providerType: TtsProviderType,
-    ): Promise<{ downloaded: boolean; sizeBytes: number }> {
-        const provider = this.providers.get(providerType);
-        return {
-            downloaded: (await provider?.isModelReady?.()) ?? false,
-            sizeBytes: 0,
-        };
-    }
-
     async clearCache(): Promise<void> {
         await this.cache.clear();
     }
@@ -272,22 +297,60 @@ export class TtsService {
         return this.cache.getSize();
     }
 
-    async cloneVoice(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult> {
-        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
-        if (!elevenlabs) throw new Error('ElevenLabs provider not available');
-        return elevenlabs.cloneVoice(request);
+    async cloneVoice(
+        providerType: TtsProviderType,
+        request: TtsVoiceCloneRequest,
+    ): Promise<TtsVoiceCloneResult> {
+        const provider = this.providers.get(providerType);
+        if (!provider?.cloneVoice) {
+            throw new Error(`Provider ${providerType} does not support voice cloning`);
+        }
+        return provider.cloneVoice(request);
     }
 
-    async listClonedVoices(): Promise<TtsVoice[]> {
-        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
-        if (!elevenlabs) return [];
-        return elevenlabs.listClonedVoices();
+    async listClonedVoices(providerType: TtsProviderType): Promise<TtsVoice[]> {
+        const provider = this.providers.get(providerType);
+        if (!provider?.listClonedVoices) {
+            return [];
+        }
+        return provider.listClonedVoices();
     }
 
-    async deleteClonedVoice(voiceId: string): Promise<void> {
-        const elevenlabs = this.providers.get('elevenlabs') as ElevenLabsProvider | undefined;
-        if (!elevenlabs) throw new Error('ElevenLabs provider not available');
-        return elevenlabs.deleteClonedVoice(voiceId);
+    async previewVoice(language: string): Promise<TtsSynthesizeResult> {
+        await this.reloadSettings();
+        const providerType = this.settings.activeProvider;
+        if (providerType === 'browser') {
+            throw new Error('Browser TTS preview is handled in the renderer process');
+        }
+        const provider = this.providers.get(providerType);
+        if (!provider) throw new Error(`Unknown TTS provider: ${providerType}`);
+
+        const cfg = this.settings.providers[providerType];
+        const text = getTtsDemoText(language);
+        return provider.previewVoice({
+            text,
+            language,
+            voiceId: cfg?.voiceId,
+            model: cfg?.model,
+            rate: this.settings.rate,
+        });
+    }
+
+    async deleteClonedVoice(providerType: TtsProviderType, voiceId: string): Promise<void> {
+        const provider = this.providers.get(providerType);
+        if (!provider?.deleteClonedVoice) {
+            throw new Error(`Provider ${providerType} does not support voice cloning`);
+        }
+        return provider.deleteClonedVoice(voiceId);
+    }
+
+    getReferenceVoiceAudio(referenceId: string): string {
+        const ref = TTS_REFERENCE_VOICES.find((v) => v.id === referenceId);
+        if (!ref) {
+            throw new Error(`Unknown reference voice: ${referenceId}`);
+        }
+        const filePath = join(getTtsResourceDir(), ref.fileName);
+        return readFileSync(filePath).toString('base64');
     }
 
     async dispose(): Promise<void> {
@@ -364,52 +427,33 @@ export class TtsService {
             }
         }
 
-        const providerOrder = [this.settings.activeProvider, ...this.settings.fallbackOrder];
-        const tried = new Set<TtsProviderType>();
+        const providerType = this.settings.activeProvider;
+        const provider = this.providers.get(providerType);
+        if (!provider) throw new Error(`Provider not found: ${providerType}`);
 
-        for (const providerType of providerOrder) {
-            if (tried.has(providerType) || providerType === 'browser') continue;
-            tried.add(providerType);
+        const cfg = this.settings.providers[providerType];
+        const cacheKey = this.buildCacheKey(
+            providerType,
+            segment.text,
+            this.currentLanguage,
+            cfg?.voiceId ?? '',
+            cfg?.model ?? '',
+            this.settings.rate,
+        );
 
-            const provider = this.providers.get(providerType);
-            if (!provider || !provider.supportsLanguage(this.currentLanguage)) continue;
+        const hit = await this.cache.lookup(cacheKey);
+        if (hit) return hit;
 
-            const cfg = this.settings.providers[providerType];
-            if (!cfg?.enabled && providerType !== this.settings.activeProvider) continue;
-
-            const cacheKey = this.buildCacheKey(
-                providerType,
-                segment.text,
-                this.currentLanguage,
-                cfg?.voiceId ?? '',
-                cfg?.model ?? '',
-                this.settings.rate,
-            );
-
-            // Check disk cache — returns a file reference, no audio loaded into RAM
-            const hit = await this.cache.lookup(cacheKey);
-            if (hit) return hit;
-
-            try {
-                const result = await provider.synthesize({
-                    text: segment.text,
-                    language: this.currentLanguage,
-                    voiceId: cfg?.voiceId,
-                    model: cfg?.model,
-                    rate: this.settings.rate,
-                });
-                // Write to disk cache immediately, so future lookups return disk refs
-                await this.cache.set(cacheKey, result);
-                // Return a disk reference instead of keeping result in memory
-                const freshHit = await this.cache.lookup(cacheKey);
-                if (freshHit) return freshHit;
-                return result;
-            } catch (err) {
-                log.error(`TTS provider ${providerType} failed:`, err);
-                continue;
-            }
-        }
-        throw new Error('All TTS providers failed');
+        const result = await provider.synthesize({
+            text: segment.text,
+            language: this.currentLanguage,
+            voiceId: cfg?.voiceId,
+            model: cfg?.model,
+            rate: this.settings.rate,
+        });
+        await this.cache.set(cacheKey, result);
+        const freshHit = await this.cache.lookup(cacheKey);
+        return freshHit ?? result;
     }
 
     /**
@@ -418,9 +462,16 @@ export class TtsService {
      */
     private async prefetchAhead(fromIndex: number): Promise<void> {
         const MAX_PREFETCH = 3;
+        const MAX_QUEUE_SIZE = 6;
         let queued = 0;
 
+        // Evict stale entries that are behind the current playback position
+        for (const key of this.prefetchQueue.keys()) {
+            if (key < fromIndex) this.prefetchQueue.delete(key);
+        }
+
         for (let i = fromIndex; i < this.segments.length && queued < MAX_PREFETCH; i++) {
+            if (this.prefetchQueue.size >= MAX_QUEUE_SIZE) break;
             if (this.prefetchQueue.has(i)) continue;
 
             // Quick cache check — cheap disk-metadata lookup, no audio loaded
@@ -467,7 +518,7 @@ export class TtsService {
         const hash = createHash('sha256').update(text).digest('hex').substring(0, 16);
         return {
             provider,
-            model: model || 'default',
+            model,
             voiceId: voiceId || 'default',
             language,
             rate,

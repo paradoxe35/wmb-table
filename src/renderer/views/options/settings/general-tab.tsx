@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Card, Space, Tag, Typography } from 'antd';
+import { Button, Card, Segmented, Space, Tag, Typography, message } from 'antd';
 import {
+    BookOutlined,
     CheckCircleOutlined,
     CloudSyncOutlined,
+    DesktopOutlined,
     GlobalOutlined,
     PauseCircleOutlined,
     ReloadOutlined,
     TranslationOutlined,
 } from '@ant-design/icons';
+import { MoonIcon, SunIcon } from '@renderer/components/icons';
 import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
+import { useThemeStore } from '@renderer/stores/theme.store';
+import { DOCS_LINK } from '@renderer/utils/constants';
 
 const { Text } = Typography;
 
@@ -21,6 +26,9 @@ export default function GeneralTab() {
     const [installedCount, setInstalledCount] = useState(0);
     const [updateInfo, setUpdateInfo] = useState<UpdaterNotification | null>(null);
     const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
+
+    const themeMode = useThemeStore((s) => s.themeMode);
+    const setThemeMode = useThemeStore((s) => s.setThemeMode);
 
     const refreshBackup = useCallback(() => {
         window.api.backup.getStatus().then((s) => {
@@ -55,6 +63,12 @@ export default function GeneralTab() {
     useEffect(() => {
         return window.api.on.notifyForNewUpdate(setUpdateInfo);
     }, []);
+
+    const openDocs = useCallback(() => {
+        window.api.app.openExternal(DOCS_LINK).catch(() => {
+            message.error(t("Impossible d'ouvrir la documentation"));
+        });
+    }, [t]);
 
     const backupValue = backupStatus?.active ? (
         <Tag color="green" icon={<CheckCircleOutlined />}>
@@ -92,9 +106,57 @@ export default function GeneralTab() {
         { icon: <ReloadOutlined />, label: t('Mise à jour'), value: updateValue },
     ];
 
+    const themeOptions = [
+        {
+            value: 'light',
+            icon: <SunIcon style={{ fontSize: 14 }} />,
+            label: t('Clair'),
+        },
+        {
+            value: 'dark',
+            icon: <MoonIcon style={{ fontSize: 14 }} />,
+            label: t('Sombre'),
+        },
+        {
+            value: 'system',
+            icon: <DesktopOutlined style={{ fontSize: 14 }} />,
+            label: t('Système'),
+        },
+    ];
+
     return (
         <Card size="small" variant="borderless">
-            <Space orientation="vertical" style={{ width: '100%' }} size="middle">
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                {/* Theme switcher */}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Space size="small">
+                        <Text type="secondary">
+                            <SunIcon style={{ fontSize: 14 }} />
+                        </Text>
+                        <Text type="secondary">{t('Apparence')}</Text>
+                    </Space>
+                    <Segmented
+                        size="small"
+                        value={themeMode}
+                        onChange={(val) => setThemeMode(val as 'system' | 'light' | 'dark')}
+                        options={themeOptions.map((o) => ({
+                            value: o.value,
+                            label: (
+                                <Space size={4}>
+                                    {o.icon}
+                                    <span>{o.label}</span>
+                                </Space>
+                            ),
+                        }))}
+                    />
+                </div>
+
                 {items.map((item) => (
                     <div
                         key={item.label}
@@ -111,6 +173,23 @@ export default function GeneralTab() {
                         {item.value}
                     </div>
                 ))}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Space size="small">
+                        <Text type="secondary">
+                            <BookOutlined />
+                        </Text>
+                        <Text type="secondary">{t("Documentation d'utilisation")}</Text>
+                    </Space>
+                    <Button size="small" onClick={openDocs}>
+                        {t('Ouvrir')}
+                    </Button>
+                </div>
             </Space>
         </Card>
     );

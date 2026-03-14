@@ -2,7 +2,7 @@ import { eq, and, desc, asc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { history, historyItems } from '../schema';
-import type { HistoryData, HistoryDataItem } from '@shared/types';
+import type { DocumentType, HistoryData, HistoryDataItem } from '@shared/types';
 
 const MAX_HISTORY = 30;
 const MAX_ITEMS_PER_HISTORY = 50;
@@ -25,6 +25,7 @@ function toHistoryItem(row: typeof historyItems.$inferSelect): HistoryDataItem {
         time: row.time,
         documentTitle: row.documentTitle,
         sermonId: row.sermonId,
+        documentType: (row.documentType as DocumentType) ?? 'sermon',
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -57,6 +58,7 @@ export function addHistoryEntry(
     documentTitle: string,
     languageCode: string,
     sermonId: string,
+    documentType: DocumentType,
 ): void {
     const db = getDb();
 
@@ -126,6 +128,7 @@ export function addHistoryEntry(
             time,
             documentTitle,
             sermonId,
+            documentType,
             createdAt: now,
             updatedAt: now,
         })

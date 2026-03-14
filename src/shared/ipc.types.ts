@@ -1,5 +1,6 @@
 import type {
     DocumentTab,
+    ReadingPosition,
     HighlightItem,
     Suggestions,
     SidebarStatus,
@@ -16,6 +17,7 @@ import type {
     SubjectRefTree,
     CustomDocument,
     CustomDocumentContent,
+    DocumentType,
     HistoryData,
     HistoryDataItem,
     AudioTimeAndDownload,
@@ -47,7 +49,6 @@ import type {
     TtsProviderInfo,
     TtsProviderType,
     TtsSettings,
-    TtsSynthesizeRequest,
     TtsSynthesizeResult,
     TtsSegment,
     TtsPlaybackState,
@@ -57,7 +58,23 @@ import type {
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
     TtsModelInfo,
+    TtsCompatibilityResult,
 } from './tts.types';
+import type {
+    AiConversation,
+    AiMessage,
+    AiModelDownloadProgress,
+    AiModelScanResult,
+    AiProviderTestResult,
+    AiProviderDefinition,
+    AiSendMessageRequest,
+    AiSendMessageResult,
+    AiSettings,
+    AiStreamChunkEvent,
+    AiStreamCompleteEvent,
+    AiStreamErrorEvent,
+    AiToolEvent,
+} from './ai.types';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -72,6 +89,8 @@ export const DocumentChannels = {
     getTraductionsForSermon: 'documents:getTraductionsForSermon',
     getTabs: 'documents:getTabs',
     saveTabs: 'documents:saveTabs',
+    getReadingPosition: 'documents:getReadingPosition',
+    saveReadingPosition: 'documents:saveReadingPosition',
 } as const;
 
 export const LanguageChannels = {
@@ -163,6 +182,9 @@ export const AppChannels = {
     initialize: 'app:initialize',
     getActiveLanguage: 'app:getActiveLanguage',
     setActiveLanguage: 'app:setActiveLanguage',
+    getRememberReadingPosition: 'app:getRememberReadingPosition',
+    setRememberReadingPosition: 'app:setRememberReadingPosition',
+    openExternal: 'app:openExternal',
     restart: 'app:restart',
     getUpdateStatus: 'app:getUpdateStatus',
     startDownloadUpdate: 'app:startDownloadUpdate',
@@ -184,7 +206,6 @@ export const TtsChannels = {
     getProviders: 'tts:getProviders',
     getSettings: 'tts:getSettings',
     updateSettings: 'tts:updateSettings',
-    synthesize: 'tts:synthesize',
     startPlayback: 'tts:startPlayback',
     pausePlayback: 'tts:pausePlayback',
     resumePlayback: 'tts:resumePlayback',
@@ -193,14 +214,33 @@ export const TtsChannels = {
     segmentComplete: 'tts:segmentComplete',
     checkLanguageSupport: 'tts:checkLanguageSupport',
     downloadModel: 'tts:downloadModel',
-    getModelStatus: 'tts:getModelStatus',
     clearCache: 'tts:clearCache',
     getCacheSize: 'tts:getCacheSize',
     cloneVoice: 'tts:cloneVoice',
     listClonedVoices: 'tts:listClonedVoices',
     deleteClonedVoice: 'tts:deleteClonedVoice',
+    getReferenceVoiceAudio: 'tts:getReferenceVoiceAudio',
     getProviderModels: 'tts:getProviderModels',
     deleteProviderModel: 'tts:deleteProviderModel',
+    segmentParagraphs: 'tts:segmentParagraphs',
+    previewVoice: 'tts:previewVoice',
+    resolveConfigForLanguage: 'tts:resolveConfigForLanguage',
+} as const;
+
+export const AiChannels = {
+    getSettings: 'ai:getSettings',
+    getProviderCatalog: 'ai:getProviderCatalog',
+    updateSettings: 'ai:updateSettings',
+    getConversations: 'ai:getConversations',
+    createConversation: 'ai:createConversation',
+    deleteConversation: 'ai:deleteConversation',
+    clearConversations: 'ai:clearConversations',
+    getMessages: 'ai:getMessages',
+    sendMessage: 'ai:sendMessage',
+    stopGeneration: 'ai:stopGeneration',
+    scanLocalModels: 'ai:scanLocalModels',
+    testProvider: 'ai:testProvider',
+    downloadModel: 'ai:downloadModel',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -230,6 +270,12 @@ export const PushChannels = {
     ttsPlaybackState: 'push:ttsPlaybackState',
     ttsModelDownloadProgress: 'push:ttsModelDownloadProgress',
     ttsSegmentAudio: 'push:ttsSegmentAudio',
+    aiStreamChunk: 'push:aiStreamChunk',
+    aiStreamComplete: 'push:aiStreamComplete',
+    aiStreamError: 'push:aiStreamError',
+    aiToolCallStart: 'push:aiToolCallStart',
+    aiToolCallComplete: 'push:aiToolCallComplete',
+    aiModelDownloadProgress: 'push:aiModelDownloadProgress',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -256,6 +302,11 @@ export interface InvokeChannelMap {
     };
     [DocumentChannels.getTabs]: { args: [string]; return: DocumentTab[] };
     [DocumentChannels.saveTabs]: { args: [string, DocumentTab[]]; return: void };
+    [DocumentChannels.getReadingPosition]: { args: [string]; return: ReadingPosition | null };
+    [DocumentChannels.saveReadingPosition]: {
+        args: [string, number, number?];
+        return: ReadingPosition;
+    };
 
     // Languages
     [LanguageChannels.getInstalled]: { args: []; return: InstalledLanguage[] };
@@ -385,6 +436,9 @@ export interface InvokeChannelMap {
     [AppChannels.initialize]: { args: []; return: void };
     [AppChannels.getActiveLanguage]: { args: []; return: string | null };
     [AppChannels.setActiveLanguage]: { args: [string]; return: void };
+    [AppChannels.getRememberReadingPosition]: { args: []; return: boolean };
+    [AppChannels.setRememberReadingPosition]: { args: [boolean]; return: void };
+    [AppChannels.openExternal]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
     [AppChannels.startDownloadUpdate]: { args: []; return: void };
@@ -400,7 +454,7 @@ export interface InvokeChannelMap {
         return: CustomDocumentContent | null;
     };
     [AppChannels.getHistory]: { args: [string]; return: HistoryData[] };
-    [AppChannels.addHistoryEntry]: { args: [string, string, string]; return: void };
+    [AppChannels.addHistoryEntry]: { args: [string, string, string, DocumentType]; return: void };
     [AppChannels.getHistoryItems]: {
         args: [string];
         return: HistoryDataItem[];
@@ -411,8 +465,10 @@ export interface InvokeChannelMap {
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
     [TtsChannels.getSettings]: { args: []; return: TtsSettings };
     [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
-    [TtsChannels.synthesize]: { args: [TtsSynthesizeRequest]; return: TtsSynthesizeResult };
-    [TtsChannels.startPlayback]: { args: [TtsSegment[], string, number?]; return: void };
+    [TtsChannels.startPlayback]: {
+        args: [TtsSegment[], string, number?];
+        return: void;
+    };
     [TtsChannels.pausePlayback]: { args: []; return: void };
     [TtsChannels.resumePlayback]: { args: []; return: void };
     [TtsChannels.stopPlayback]: { args: []; return: void };
@@ -420,20 +476,47 @@ export interface InvokeChannelMap {
     [TtsChannels.segmentComplete]: { args: []; return: void };
     [TtsChannels.checkLanguageSupport]: {
         args: [string];
-        return: Record<TtsProviderType, boolean>;
+        return: Record<TtsProviderType, TtsCompatibilityResult>;
     };
     [TtsChannels.downloadModel]: { args: [TtsProviderType, string?]; return: void };
-    [TtsChannels.getModelStatus]: {
-        args: [TtsProviderType];
-        return: { downloaded: boolean; sizeBytes: number };
-    };
     [TtsChannels.clearCache]: { args: []; return: void };
     [TtsChannels.getCacheSize]: { args: []; return: number };
-    [TtsChannels.cloneVoice]: { args: [TtsVoiceCloneRequest]; return: TtsVoiceCloneResult };
-    [TtsChannels.listClonedVoices]: { args: []; return: TtsVoice[] };
-    [TtsChannels.deleteClonedVoice]: { args: [string]; return: void };
+    [TtsChannels.cloneVoice]: {
+        args: [TtsProviderType, TtsVoiceCloneRequest];
+        return: TtsVoiceCloneResult;
+    };
+    [TtsChannels.listClonedVoices]: { args: [TtsProviderType]; return: TtsVoice[] };
+    [TtsChannels.deleteClonedVoice]: { args: [TtsProviderType, string]; return: void };
+    [TtsChannels.getReferenceVoiceAudio]: { args: [string]; return: string };
     [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
     [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
+    [TtsChannels.segmentParagraphs]: {
+        args: [{ paragraphIndex: number; content: string }[], string];
+        return: TtsSegment[];
+    };
+    [TtsChannels.previewVoice]: { args: [string]; return: TtsSynthesizeResult };
+    [TtsChannels.resolveConfigForLanguage]: { args: [string]; return: TtsSettings | null };
+
+    // AI assistant
+    [AiChannels.getSettings]: { args: []; return: AiSettings };
+    [AiChannels.getProviderCatalog]: { args: []; return: AiProviderDefinition[] };
+    [AiChannels.updateSettings]: { args: [Partial<AiSettings>]; return: AiSettings };
+    [AiChannels.getConversations]: { args: []; return: AiConversation[] };
+    [AiChannels.createConversation]: {
+        args: [{ title?: string; languageCode?: string }?];
+        return: AiConversation;
+    };
+    [AiChannels.deleteConversation]: { args: [string]; return: void };
+    [AiChannels.clearConversations]: { args: []; return: void };
+    [AiChannels.getMessages]: { args: [string]; return: AiMessage[] };
+    [AiChannels.sendMessage]: { args: [AiSendMessageRequest]; return: AiSendMessageResult };
+    [AiChannels.stopGeneration]: { args: [string]; return: void };
+    [AiChannels.scanLocalModels]: { args: []; return: AiModelScanResult };
+    [AiChannels.testProvider]: {
+        args: [{ providerId: string; model: string; apiKey?: string; baseUrl?: string }];
+        return: AiProviderTestResult;
+    };
+    [AiChannels.downloadModel]: { args: [string]; return: void };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */
@@ -460,6 +543,12 @@ export interface PushEventMap {
     [PushChannels.ttsPlaybackState]: TtsPlaybackState;
     [PushChannels.ttsModelDownloadProgress]: TtsModelDownloadProgress;
     [PushChannels.ttsSegmentAudio]: TtsSegmentAudio;
+    [PushChannels.aiStreamChunk]: AiStreamChunkEvent;
+    [PushChannels.aiStreamComplete]: AiStreamCompleteEvent;
+    [PushChannels.aiStreamError]: AiStreamErrorEvent;
+    [PushChannels.aiToolCallStart]: AiToolEvent;
+    [PushChannels.aiToolCallComplete]: AiToolEvent;
+    [PushChannels.aiModelDownloadProgress]: AiModelDownloadProgress;
 }
 
 // ---------------------------------------------------------------------------

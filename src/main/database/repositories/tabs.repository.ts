@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import log from 'electron-log';
 import { getDb } from '../index';
 import { tabs } from '../schema';
 import type { DocumentTab } from '@shared/types';
@@ -6,7 +7,12 @@ import type { DocumentTab } from '@shared/types';
 export function getTabs(languageCode: string): DocumentTab[] {
     const row = getDb().select().from(tabs).where(eq(tabs.languageCode, languageCode)).get();
     if (!row) return [];
-    return JSON.parse(row.datas);
+    try {
+        return JSON.parse(row.datas);
+    } catch (err) {
+        log.warn('JSON parse failed in tabs repository:', err);
+        return [];
+    }
 }
 
 export function saveTabs(languageCode: string, datas: DocumentTab[]): void {

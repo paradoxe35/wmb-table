@@ -14,22 +14,50 @@ const { Text } = Typography;
 
 // ── Constants ──
 
-export const PROVIDER_LABELS: Record<TtsProviderType, string> = {
-    browser: 'Navigateur (SpeechSynthesis)',
-    sherpa: 'Sherpa-ONNX TTS (local)',
-    kokoro: 'Kokoro TTS (local)',
-    elevenlabs: 'ElevenLabs TTS',
-    openai: 'OpenAI TTS',
-};
+interface ProviderMeta {
+    label: string;
+    locality: TtsProviderLocality;
+    hint: string;
+    free: boolean;
+}
 
-export const PROVIDER_HINTS: Record<TtsProviderType, string> = {
-    browser:
-        'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.',
-    sherpa: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
-    kokoro: 'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.',
-    elevenlabs:
-        'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
-    openai: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
+export const PROVIDER_CATALOG: Record<TtsProviderType, ProviderMeta> = {
+    browser: {
+        label: 'Voix du système',
+        locality: 'local',
+        hint: 'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.',
+        free: true,
+    },
+    sherpa: {
+        label: 'Sherpa-ONNX TTS',
+        locality: 'local',
+        hint: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
+        free: true,
+    },
+    kokoro: {
+        label: 'Kokoro TTS',
+        locality: 'local',
+        hint: 'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.',
+        free: true,
+    },
+    elevenlabs: {
+        label: 'ElevenLabs TTS',
+        locality: 'remote',
+        hint: 'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
+        free: false,
+    },
+    openai: {
+        label: 'OpenAI TTS',
+        locality: 'remote',
+        hint: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
+        free: false,
+    },
+    edge: {
+        label: 'Edge TTS (Microsoft)',
+        locality: 'remote',
+        hint: 'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.',
+        free: true,
+    },
 };
 
 // ── Shared props ──
@@ -124,4 +152,9 @@ export function LocalityTag({ type }: LocalityTagProps) {
             {t('Cloud')}
         </Tag>
     );
+}
+
+export function FreeTag() {
+    const { t } = useTranslation();
+    return <Tag color="green">{t('Gratuit')}</Tag>;
 }

@@ -2,9 +2,11 @@ import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
 import { App as AntApp, type MenuProps } from 'antd';
-import { useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
+import { useSermonStore, useSearchStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useTabPersistence } from '@renderer/hooks';
-import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
+import { CUSTOM_DOCUMENT_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { getTabKey } from '@shared/types';
 import TabItem from './tab-item';
 
@@ -17,11 +19,68 @@ export default function DocumentTabs() {
     const removeOtherTabs = useSermonStore((s) => s.removeOtherTabs);
     const removeTabsToRight = useSermonStore((s) => s.removeTabsToRight);
     const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
+    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
     const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const { modal } = AntApp.useApp();
 
     useTabPersistence(tabs, activeLanguage);
+
+    const stopTtsIfPlaying = useCallback((closedTabTitle: string) => {
+        const tts = useTtsStore.getState();
+        if (tts.documentId === closedTabTitle && tts.status !== 'idle') {
+            stopAllTtsPlayback();
+            tts.reset();
+        }
+    }, []);
+
+    const handleRemoveTab = useCallback(
+        (key: string) => {
+            const tab = tabs.find((t) => getTabKey(t) === key);
+            if (tab) stopTtsIfPlaying(tab.title);
+            cleanupTabs([key]);
+            removeTab(key);
+        },
+        [tabs, removeTab, stopTtsIfPlaying, cleanupTabs],
+    );
+
+    const handleRemoveOtherTabs = useCallback(
+        (key: string) => {
+            const removedKeys: string[] = [];
+            for (const tab of tabs) {
+                const tabKey = getTabKey(tab);
+                if (tabKey !== key) {
+                    stopTtsIfPlaying(tab.title);
+                    removedKeys.push(tabKey);
+                }
+            }
+            cleanupTabs(removedKeys);
+            removeOtherTabs(key);
+        },
+        [tabs, removeOtherTabs, stopTtsIfPlaying, cleanupTabs],
+    );
+
+    const handleRemoveTabsToRight = useCallback(
+        (key: string) => {
+            const idx = tabs.findIndex((t) => getTabKey(t) === key);
+            const removedKeys: string[] = [];
+            for (const tab of tabs.slice(idx + 1)) {
+                stopTtsIfPlaying(tab.title);
+                removedKeys.push(getTabKey(tab));
+            }
+            cleanupTabs(removedKeys);
+            removeTabsToRight(key);
+        },
+        [tabs, removeTabsToRight, stopTtsIfPlaying, cleanupTabs],
+    );
+
+    const handleRemoveAllTabs = useCallback(() => {
+        const allKeys = tabs.map((t) => getTabKey(t));
+        for (const tab of tabs) stopTtsIfPlaying(tab.title);
+        cleanupTabs(allKeys);
+        removeAllTabs();
+    }, [tabs, removeAllTabs, stopTtsIfPlaying, cleanupTabs]);
 
     const confirmRemoveAll = useCallback(() => {
         modal.confirm({
@@ -29,27 +88,27 @@ export default function DocumentTabs() {
             content: t('Voulez-vous vraiment fermer tous les onglets ?'),
             okText: t('Tout fermer'),
             cancelText: t('Annuler'),
-            onOk: () => removeAllTabs(),
+            onOk: () => handleRemoveAllTabs(),
         });
-    }, [modal, removeAllTabs]);
+    }, [modal, handleRemoveAllTabs]);
 
     const getContextMenuItems = useCallback(
         (key: string): MenuProps['items'] => [
-            { key: 'close', label: t('Fermer'), onClick: () => removeTab(key) },
+            { key: 'close', label: t('Fermer'), onClick: () => handleRemoveTab(key) },
             {
                 key: 'close-others',
                 label: t('Fermer les autres'),
-                onClick: () => removeOtherTabs(key),
+                onClick: () => handleRemoveOtherTabs(key),
             },
             {
                 key: 'close-right',
                 label: t('Fermer à droite'),
-                onClick: () => removeTabsToRight(key),
+                onClick: () => handleRemoveTabsToRight(key),
             },
             { type: 'divider' },
             { key: 'close-all', label: t('Tout fermer'), onClick: () => confirmRemoveAll() },
         ],
-        [removeTab, removeOtherTabs, removeTabsToRight, confirmRemoveAll],
+        [handleRemoveTab, handleRemoveOtherTabs, handleRemoveTabsToRight, confirmRemoveAll],
     );
 
     // Listen for custom document removal events
@@ -57,7 +116,9 @@ export default function DocumentTabs() {
         const handleCustomDocRemoved = (e: Event) => {
             const detail = (e as CustomEvent)?.detail;
             if (detail?.title) {
-                removeTab(getTabKey({ title: detail.title, sermonId: detail.sermonId ?? '' }));
+                handleRemoveTab(
+                    getTabKey({ title: detail.title, sermonId: detail.sermonId ?? '' }),
+                );
             }
         };
 
@@ -71,7 +132,7 @@ export default function DocumentTabs() {
                 handleCustomDocRemoved,
             );
         };
-    }, [removeTab]);
+    }, [handleRemoveTab]);
 
     return (
         <>
@@ -89,8 +150,17 @@ export default function DocumentTabs() {
                             key={key}
                             tab={tab}
                             isActive={key === activeTabKey}
-                            onActivate={() => activateTab(key)}
-                            onRemove={() => removeTab(key)}
+                            onActivate={() => {
+                                const currentActive = tabs.find(
+                                    (t) => getTabKey(t) === activeTabKey,
+                                );
+                                const container = document.getElementById(DOCUMENT_CONTAINER_ID);
+                                if (currentActive && container) {
+                                    updateTabScroll(activeTabKey!, container.scrollTop);
+                                }
+                                activateTab(key);
+                            }}
+                            onRemove={() => handleRemoveTab(key)}
                             contextMenuItems={getContextMenuItems(key)}
                         />
                     );

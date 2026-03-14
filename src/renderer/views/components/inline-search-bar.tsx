@@ -1,75 +1,103 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Input, Button } from 'antd';
+import type { InputRef } from 'antd';
 import { UpOutlined, DownOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useSearchStore } from '@renderer/stores';
-import { selectActiveTabTitle, useSermonStore } from '@renderer/stores';
+import {
+    useSearchStore,
+    selectActiveTabKey,
+    selectActiveTabTitle,
+    useSermonStore,
+} from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
     const { t } = useTranslation();
+    const activeTabKey = useSermonStore(selectActiveTabKey);
     const activeTitle = useSermonStore(selectActiveTabTitle);
-    const setDocumentViewQueries = useSearchStore((s) => s.setDocumentViewQueries);
+    const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQuery);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
     const clearSearch = useSearchStore((s) => s.clearSearch);
+    const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
     const nextMatch = useSearchStore((s) => s.nextMatch);
     const prevMatch = useSearchStore((s) => s.prevMatch);
-    const currentMatchIndex = useSearchStore((s) => s.currentMatchIndex);
-    const totalMatches = useSearchStore((s) => s.totalMatches);
-    const navOnly = useSearchStore((s) => s.searchBarNavOnly);
-
-    const documentViewQueries = useSearchStore((s) => s.documentViewQueries);
+    const searchUi = useSearchStore((s) =>
+        activeTabKey ? s.searchUiByTab[activeTabKey] : undefined,
+    );
+    const currentMatchIndex = searchUi?.currentMatchIndex ?? 0;
+    const totalMatches = searchUi?.totalMatches ?? 0;
+    const navOnly = searchUi?.searchBarNavOnly ?? false;
+    const existingQuery = useSearchStore((s) =>
+        activeTabKey ? s.documentViewQueries[activeTabKey] : null,
+    );
     const searchMode = useSearchStore((s) => s.searchMode);
 
-    const inputRef = useRef<any>(null);
+    const inputRef = useRef<InputRef>(null);
     const searchTermRef = useRef('');
 
-    useEffect(() => {
-        const existing = documentViewQueries.find((q) => q.documentTitle === activeTitle);
-        if (existing?.term && inputRef.current) {
-            inputRef.current.input.value = existing.term;
-            searchTermRef.current = existing.term;
-        }
-        if (!navOnly) inputRef.current?.focus();
-    }, []);
+    // Keep latest values in refs so the debounced callback never captures stale closures
+    const latestRef = useRef({ activeTitle, activeTabKey, searchMode });
+    latestRef.current = { activeTitle, activeTabKey, searchMode };
 
-    const updateSearch = useCallback(
+    // Stable debounced function — never recreated, reads latest values from refs
+    const debouncedSearch = useRef(
         debounce((value: string) => {
-            if (!activeTitle) return;
+            const {
+                activeTitle: title,
+                activeTabKey: tabKey,
+                searchMode: mode,
+            } = latestRef.current;
+            if (!title || !tabKey) return;
             if (value.trim().length < 3) {
-                clearSearch(activeTitle);
+                useSearchStore.getState().clearSearch(tabKey);
                 return;
             }
-            setDocumentViewQueries((docs) => {
-                const filtered = docs.filter((d) => d.documentTitle !== activeTitle);
-                return [
-                    ...filtered,
-                    {
-                        documentTitle: activeTitle,
-                        matches: [],
-                        textContentLength: 0,
-                        searchForParagraph: false,
-                        term: value.trim(),
-                        mode: searchMode,
-                    },
-                ];
+            setDocumentViewQuery(tabKey, {
+                documentKey: tabKey,
+                documentTitle: title,
+                matches: [],
+                textContentLength: 0,
+                searchForParagraph: false,
+                term: value.trim(),
+                mode,
             });
+            requestScrollToMatch(tabKey, 0);
         }, 300),
-        [activeTitle, setDocumentViewQueries, clearSearch, searchMode],
-    );
+    ).current;
+
+    // Sync input value with the active tab's query (handles tab switches and external query changes)
+    useEffect(() => {
+        const term = existingQuery?.term ?? '';
+        if (inputRef.current?.input) {
+            inputRef.current.input.value = term;
+        }
+        searchTermRef.current = term;
+        if (!navOnly) inputRef.current?.focus();
+    }, [existingQuery, navOnly, activeTabKey]);
+
+    // Cancel pending debounced search on tab change to prevent cross-tab contamination
+    useEffect(() => {
+        return () => debouncedSearch.cancel();
+    }, [activeTabKey, debouncedSearch]);
 
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
-            searchTermRef.current = e.target.value;
-            updateSearch(e.target.value);
+            const value = e.target.value;
+            searchTermRef.current = value;
+            // Clear immediately when input is empty (allowClear X button or manual delete)
+            if (value.trim().length < 3) {
+                debouncedSearch.cancel();
+                if (activeTabKey) clearSearch(activeTabKey);
+                return;
+            }
+            debouncedSearch(value);
         },
-        [updateSearch],
+        [debouncedSearch, activeTabKey, clearSearch],
     );
 
     const handleClose = useCallback(() => {
-        if (activeTitle) clearSearch(activeTitle);
-        closeSearchBar();
-    }, [activeTitle, clearSearch, closeSearchBar]);
+        if (activeTabKey) closeSearchBar(activeTabKey);
+    }, [activeTabKey, closeSearchBar]);
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -77,13 +105,13 @@ export default function InlineSearchBar() {
                 handleClose();
             } else if (e.key === 'Enter') {
                 if (e.shiftKey) {
-                    prevMatch();
+                    if (activeTabKey) prevMatch(activeTabKey);
                 } else {
-                    nextMatch();
+                    if (activeTabKey) nextMatch(activeTabKey);
                 }
             }
         },
-        [handleClose, nextMatch, prevMatch],
+        [activeTabKey, handleClose, nextMatch, prevMatch],
     );
 
     const handleParagraphJump = useCallback(() => {
@@ -121,14 +149,14 @@ export default function InlineSearchBar() {
                 type="text"
                 size="small"
                 icon={<UpOutlined />}
-                onClick={prevMatch}
+                onClick={() => activeTabKey && prevMatch(activeTabKey)}
                 disabled={totalMatches === 0}
             />
             <Button
                 type="text"
                 size="small"
                 icon={<DownOutlined />}
-                onClick={nextMatch}
+                onClick={() => activeTabKey && nextMatch(activeTabKey)}
                 disabled={totalMatches === 0}
             />
             {!navOnly && (

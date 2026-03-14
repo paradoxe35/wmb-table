@@ -1,7 +1,22 @@
+import { get_sentence_boundaries } from 'sentencex';
 import { TtsChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import { getTtsService } from '@main/services/tts';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
+import { hasSpeakableContent, type TtsSegment } from '@shared/tts.types';
+
+function stripMarkers(content: string): { clean: string; posMap: number[] } {
+    const posMap: number[] = [];
+    let clean = '';
+    for (let i = 0; i < content.length; i++) {
+        const c = content[i];
+        if (c !== '*' && c !== '^') {
+            posMap.push(i);
+            clean += c;
+        }
+    }
+    return { clean, posMap };
+}
 
 export function registerTtsHandlers(): void {
     registerHandler(TtsChannels.getProviders, async () => {
@@ -14,11 +29,7 @@ export function registerTtsHandlers(): void {
 
     registerHandler(TtsChannels.updateSettings, async (_event, settings) => {
         ttsRepo.updateSettings(settings);
-        getTtsService().reloadSettings();
-    });
-
-    registerHandler(TtsChannels.synthesize, async (_event, request) => {
-        return getTtsService().synthesize(request);
+        await getTtsService().reloadSettings();
     });
 
     registerHandler(TtsChannels.startPlayback, async (_event, segments, language, startIndex) => {
@@ -53,10 +64,6 @@ export function registerTtsHandlers(): void {
         await getTtsService().downloadModel(provider, modelName);
     });
 
-    registerHandler(TtsChannels.getModelStatus, async (_event, provider) => {
-        return getTtsService().getModelStatus(provider);
-    });
-
     registerHandler(TtsChannels.clearCache, async () => {
         await getTtsService().clearCache();
     });
@@ -65,16 +72,20 @@ export function registerTtsHandlers(): void {
         return getTtsService().getCacheSize();
     });
 
-    registerHandler(TtsChannels.cloneVoice, async (_event, request) => {
-        return getTtsService().cloneVoice(request);
+    registerHandler(TtsChannels.cloneVoice, async (_event, providerType, request) => {
+        return getTtsService().cloneVoice(providerType, request);
     });
 
-    registerHandler(TtsChannels.listClonedVoices, async () => {
-        return getTtsService().listClonedVoices();
+    registerHandler(TtsChannels.listClonedVoices, async (_event, providerType) => {
+        return getTtsService().listClonedVoices(providerType);
     });
 
-    registerHandler(TtsChannels.deleteClonedVoice, async (_event, voiceId) => {
-        await getTtsService().deleteClonedVoice(voiceId);
+    registerHandler(TtsChannels.deleteClonedVoice, async (_event, providerType, voiceId) => {
+        await getTtsService().deleteClonedVoice(providerType, voiceId);
+    });
+
+    registerHandler(TtsChannels.getReferenceVoiceAudio, async (_event, referenceId) => {
+        return getTtsService().getReferenceVoiceAudio(referenceId);
     });
 
     registerHandler(TtsChannels.getProviderModels, async (_event, provider) => {
@@ -83,5 +94,43 @@ export function registerTtsHandlers(): void {
 
     registerHandler(TtsChannels.deleteProviderModel, async (_event, provider, modelName) => {
         await getTtsService().deleteProviderModel(provider, modelName);
+    });
+
+    registerHandler(TtsChannels.previewVoice, async (_event, language) => {
+        return getTtsService().previewVoice(language);
+    });
+
+    registerHandler(TtsChannels.resolveConfigForLanguage, async (_event, language) => {
+        return getTtsService().resolveConfigForLanguage(language);
+    });
+
+    registerHandler(TtsChannels.segmentParagraphs, (_event, paragraphs, language) => {
+        let index = 0;
+        const segments: TtsSegment[] = [];
+        for (const p of paragraphs) {
+            if (!p.content.trim()) continue;
+            const { clean, posMap } = stripMarkers(p.content);
+            const text = clean.trim();
+            if (!text) continue;
+            const boundaries: { start_index: number; end_index: number; text: string }[] =
+                get_sentence_boundaries(language, clean);
+            for (const b of boundaries) {
+                const sentenceText = b.text.trim();
+                if (!sentenceText || !hasSpeakableContent(sentenceText)) continue;
+                const startOffset = posMap[b.start_index] ?? 0;
+                const endOffset =
+                    b.end_index > 0
+                        ? (posMap[b.end_index - 1] ?? p.content.length - 1) + 1
+                        : p.content.length;
+                segments.push({
+                    index: index++,
+                    text: sentenceText,
+                    paragraphIndex: p.paragraphIndex,
+                    startOffset,
+                    endOffset,
+                });
+            }
+        }
+        return segments;
     });
 }

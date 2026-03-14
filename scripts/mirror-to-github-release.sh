@@ -152,7 +152,22 @@ echo ""
 echo "=== Bible database files ==="
 
 if [ -d "$BIBLE_DIR" ]; then
-    for bible_file in "$BIBLE_DIR"/bible-index.json "$BIBLE_DIR"/*.sqlite; do
+    # Always re-upload bible-index.json (it changes when versions are added/removed)
+    INDEX_FILE="$BIBLE_DIR/bible-index.json"
+    if [ -f "$INDEX_FILE" ]; then
+        INDEX_ASSET_ID=$(curl --silent \
+            -H "$AUTH_HEADER" \
+            "$API/repos/$REPO/releases/$RELEASE_ID/assets?per_page=200" \
+            | jq -r '.[] | select(.name == "bible-index.json") | .id // empty')
+        if [ -n "$INDEX_ASSET_ID" ]; then
+            echo "  Replacing existing bible-index.json (asset $INDEX_ASSET_ID)..."
+            curl --silent -X DELETE -H "$AUTH_HEADER" \
+                "$API/repos/$REPO/releases/assets/$INDEX_ASSET_ID" >/dev/null
+        fi
+        upload_file "$INDEX_FILE" "application/json"
+    fi
+
+    for bible_file in "$BIBLE_DIR"/*.sqlite; do
         [ -f "$bible_file" ] || continue
         upload_file "$bible_file"
     done

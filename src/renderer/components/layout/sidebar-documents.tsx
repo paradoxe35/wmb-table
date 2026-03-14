@@ -402,8 +402,7 @@ const ItemOutline = React.memo<{
     formatDate: (dateMs: number) => string;
     onClick: () => void;
 }>(({ sermon, active, isEnglish, formatDate, onClick }) => {
-    const hasMultipleTraductions =
-        sermon.availableTraductions && sermon.availableTraductions.length > 1;
+    const hasTraductions = sermon.availableTraductions && sermon.availableTraductions.length > 0;
 
     return (
         <div
@@ -417,7 +416,7 @@ const ItemOutline = React.memo<{
                     <div className="sidebar-item__en-title">{sermon.enTitle}</div>
                 )}
                 <div className="sidebar-item__date">{formatDate(sermon.dateMs)}</div>
-                {hasMultipleTraductions && (
+                {hasTraductions && (
                     <div className="sidebar-item__tags">
                         {sermon.availableTraductions.map((t) => (
                             <Tag key={t.translationId} color="blue" className="translation-tag">

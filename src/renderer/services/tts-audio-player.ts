@@ -116,3 +116,13 @@ export class TtsAudioPlayer {
 }
 
 export const ttsAudioPlayer = new TtsAudioPlayer();
+
+/**
+ * Stop all TTS playback (audio player, browser TTS, and main process).
+ * Call this before starting sermon audio to ensure mutual exclusion.
+ */
+export function stopAllTtsPlayback(): void {
+    ttsAudioPlayer.stop();
+    window.speechSynthesis?.cancel();
+    window.api.tts.stopPlayback();
+}

@@ -54,14 +54,14 @@ function LanguageRow({
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '10px 12px',
-                borderBottom: '1px solid #f0f0f0',
+                borderBottom: '1px solid var(--ant-color-border-secondary)',
                 cursor: lang.installed && !isActive ? 'pointer' : 'default',
-                background: isActive ? 'rgba(24, 143, 255, 0.06)' : undefined,
+                background: isActive ? 'var(--ant-color-primary-bg)' : undefined,
                 transition: 'background 0.15s',
             }}
             onMouseEnter={(e) => {
                 if (lang.installed && !isActive) {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.02)';
+                    e.currentTarget.style.background = 'var(--ant-color-fill-quaternary)';
                 }
             }}
             onMouseLeave={(e) => {
@@ -80,7 +80,7 @@ function LanguageRow({
                         </Tag>
                     )}
                     {lang.installed && !isActive && (
-                        <CheckCircleOutlined style={{ color: '#52c41a' }} />
+                        <CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />
                     )}
                 </div>
                 <Text type="secondary" style={{ fontSize: '0.85em' }}>

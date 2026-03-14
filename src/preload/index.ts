@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, shell } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import {
     DocumentChannels,
     SearchChannels,
@@ -12,6 +12,7 @@ import {
     AppChannels,
     LanguageChannels,
     TtsChannels,
+    AiChannels,
     PushChannels,
     type InvokeChannel,
     type InvokeChannelMap,
@@ -23,6 +24,8 @@ import type {
     BookRequest,
     DocumentHtmlTree,
     DocumentTab,
+    DocumentType,
+    ReadingPosition,
     HighlightCreateData,
     HighlightUpdateData,
     ParagraphReference,
@@ -32,10 +35,10 @@ import type {
 import type {
     TtsProviderType,
     TtsSettings,
-    TtsSynthesizeRequest,
     TtsSegment,
     TtsVoiceCloneRequest,
 } from '@shared/tts.types';
+import type { AiSendMessageRequest, AiSettings } from '@shared/ai.types';
 
 function invoke<C extends InvokeChannel>(
     channel: C,
@@ -71,6 +74,10 @@ const api = {
         getTabs: (langCode: string) => invoke(DocumentChannels.getTabs, langCode),
         saveTabs: (langCode: string, tabs: DocumentTab[]) =>
             invoke(DocumentChannels.saveTabs, langCode, tabs),
+        getReadingPosition: (documentKey: string): Promise<ReadingPosition | null> =>
+            invoke(DocumentChannels.getReadingPosition, documentKey),
+        saveReadingPosition: (documentKey: string, scrollY: number, scrollX?: number) =>
+            invoke(DocumentChannels.saveReadingPosition, documentKey, scrollY, scrollX),
     },
 
     languages: {
@@ -199,6 +206,9 @@ const api = {
         initialize: () => invoke(AppChannels.initialize),
         getActiveLanguage: () => invoke(AppChannels.getActiveLanguage),
         setActiveLanguage: (langCode: string) => invoke(AppChannels.setActiveLanguage, langCode),
+        getRememberReadingPosition: () => invoke(AppChannels.getRememberReadingPosition),
+        setRememberReadingPosition: (value: boolean) =>
+            invoke(AppChannels.setRememberReadingPosition, value),
         restart: () => invoke(AppChannels.restart),
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
         startDownloadUpdate: () => invoke(AppChannels.startDownloadUpdate),
@@ -212,18 +222,21 @@ const api = {
             invoke(AppChannels.createCustomDocument, title, pdfBytes),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
         getHistory: (langCode: string) => invoke(AppChannels.getHistory, langCode),
-        addHistoryEntry: (langCode: string, documentTitle: string, sermonId: string) =>
-            invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId),
+        addHistoryEntry: (
+            langCode: string,
+            documentTitle: string,
+            sermonId: string,
+            documentType: DocumentType,
+        ) => invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId, documentType),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         setUiLanguage: (langCode: string) => invoke(AppChannels.setUiLanguage, langCode),
-        openExternal: (url: string) => shell.openExternal(url),
+        openExternal: (url: string) => invoke(AppChannels.openExternal, url),
     },
 
     tts: {
         getProviders: () => invoke(TtsChannels.getProviders),
         getSettings: () => invoke(TtsChannels.getSettings),
         updateSettings: (s: Partial<TtsSettings>) => invoke(TtsChannels.updateSettings, s),
-        synthesize: (req: TtsSynthesizeRequest) => invoke(TtsChannels.synthesize, req),
         startPlayback: (segs: TtsSegment[], lang: string, startIndex?: number) =>
             invoke(TtsChannels.startPlayback, segs, lang, startIndex),
         pausePlayback: () => invoke(TtsChannels.pausePlayback),
@@ -234,15 +247,51 @@ const api = {
         checkLanguageSupport: (lang: string) => invoke(TtsChannels.checkLanguageSupport, lang),
         downloadModel: (p: TtsProviderType, modelName?: string) =>
             invoke(TtsChannels.downloadModel, p, modelName),
-        getModelStatus: (p: TtsProviderType) => invoke(TtsChannels.getModelStatus, p),
         clearCache: () => invoke(TtsChannels.clearCache),
         getCacheSize: () => invoke(TtsChannels.getCacheSize),
-        cloneVoice: (req: TtsVoiceCloneRequest) => invoke(TtsChannels.cloneVoice, req),
-        listClonedVoices: () => invoke(TtsChannels.listClonedVoices),
-        deleteClonedVoice: (id: string) => invoke(TtsChannels.deleteClonedVoice, id),
+        cloneVoice: (provider: TtsProviderType, req: TtsVoiceCloneRequest) =>
+            invoke(TtsChannels.cloneVoice, provider, req),
+        listClonedVoices: (provider: TtsProviderType) =>
+            invoke(TtsChannels.listClonedVoices, provider),
+        deleteClonedVoice: (provider: TtsProviderType, id: string) =>
+            invoke(TtsChannels.deleteClonedVoice, provider, id),
+        getReferenceVoiceAudio: (referenceId: string) =>
+            invoke(TtsChannels.getReferenceVoiceAudio, referenceId),
         getProviderModels: (p: TtsProviderType) => invoke(TtsChannels.getProviderModels, p),
         deleteProviderModel: (p: TtsProviderType, modelName: string) =>
             invoke(TtsChannels.deleteProviderModel, p, modelName),
+        segmentParagraphs: (
+            paragraphs: { paragraphIndex: number; content: string }[],
+            language: string,
+        ) => invoke(TtsChannels.segmentParagraphs, paragraphs, language),
+        previewVoice: (language: string) => invoke(TtsChannels.previewVoice, language),
+        resolveConfigForLanguage: (language: string) =>
+            invoke(TtsChannels.resolveConfigForLanguage, language),
+    },
+
+    ai: {
+        getSettings: () => invoke(AiChannels.getSettings),
+        getProviderCatalog: () => invoke(AiChannels.getProviderCatalog),
+        updateSettings: (settings: Partial<AiSettings>) =>
+            invoke(AiChannels.updateSettings, settings),
+        getConversations: () => invoke(AiChannels.getConversations),
+        createConversation: (input?: { title?: string; languageCode?: string }) =>
+            invoke(AiChannels.createConversation, input),
+        deleteConversation: (conversationId: string) =>
+            invoke(AiChannels.deleteConversation, conversationId),
+        clearConversations: () => invoke(AiChannels.clearConversations),
+        getMessages: (conversationId: string) => invoke(AiChannels.getMessages, conversationId),
+        sendMessage: (request: AiSendMessageRequest) => invoke(AiChannels.sendMessage, request),
+        stopGeneration: (conversationId: string) =>
+            invoke(AiChannels.stopGeneration, conversationId),
+        scanLocalModels: () => invoke(AiChannels.scanLocalModels),
+        testProvider: (input: {
+            providerId: string;
+            model: string;
+            apiKey?: string;
+            baseUrl?: string;
+        }) => invoke(AiChannels.testProvider, input),
+        downloadModel: (modelId: string) => invoke(AiChannels.downloadModel, modelId),
     },
 
     on: {
@@ -300,6 +349,20 @@ const api = {
         ) => onPush(PushChannels.ttsModelDownloadProgress, cb),
         ttsSegmentAudio: (cb: (p: PushEventMap[typeof PushChannels.ttsSegmentAudio]) => void) =>
             onPush(PushChannels.ttsSegmentAudio, cb),
+        aiStreamChunk: (cb: (p: PushEventMap[typeof PushChannels.aiStreamChunk]) => void) =>
+            onPush(PushChannels.aiStreamChunk, cb),
+        aiStreamComplete: (cb: (p: PushEventMap[typeof PushChannels.aiStreamComplete]) => void) =>
+            onPush(PushChannels.aiStreamComplete, cb),
+        aiStreamError: (cb: (p: PushEventMap[typeof PushChannels.aiStreamError]) => void) =>
+            onPush(PushChannels.aiStreamError, cb),
+        aiToolCallStart: (cb: (p: PushEventMap[typeof PushChannels.aiToolCallStart]) => void) =>
+            onPush(PushChannels.aiToolCallStart, cb),
+        aiToolCallComplete: (
+            cb: (p: PushEventMap[typeof PushChannels.aiToolCallComplete]) => void,
+        ) => onPush(PushChannels.aiToolCallComplete, cb),
+        aiModelDownloadProgress: (
+            cb: (p: PushEventMap[typeof PushChannels.aiModelDownloadProgress]) => void,
+        ) => onPush(PushChannels.aiModelDownloadProgress, cb),
     },
 } as const;
 

@@ -11,6 +11,9 @@ release/
 .env
 .env.local
 .env.*.local
+docs/.env
+docs/.env.local
+docs/.env.*.local
 
 # Logs
 *.log
@@ -43,3 +46,10 @@ resources/credentials/google/*
 
 # Runtime data
 assets/datas/
+
+# Docs
+docs/.vitepress/dist
+docs/.vitepress/cache
+
+# PNPM
+.pnpm-store

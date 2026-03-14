@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { Button, Slider, Dropdown, Tooltip } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, SoundOutlined } from '@ant-design/icons';
-import { useAudioStore } from '@renderer/stores';
+import { useTranslation } from 'react-i18next';
+import { useAppStore, useAudioStore } from '@renderer/stores';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useAudioRef } from './audio-context';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { throttle, formatTime } from '@renderer/utils/functions';
 import { AUDIO_SPEEDS, THROTTLE_MS } from '@renderer/utils/constants';
 
 export default function MiniPlayerBar() {
+    const { t } = useTranslation();
     const audioRef = useAudioRef();
     const audioSrc = useAudioStore((s) => s.audioSrc);
     const title = useAudioStore((s) => s.title);
@@ -43,7 +47,9 @@ export default function MiniPlayerBar() {
     // Audio event listeners
     useEffect(() => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         const onTimeUpdate = () => {
             setCurrentTime(el.currentTime);
@@ -53,6 +59,12 @@ export default function MiniPlayerBar() {
         };
         const onLoadedMetadata = () => setDuration(el.duration);
         const onPlay = () => {
+            // Stop TTS when sermon audio starts
+            if (useTtsStore.getState().status !== 'idle') {
+                stopAllTtsPlayback();
+                useTtsStore.getState().reset();
+            }
+
             setCurrentPlay({
                 documentTitle: titleRef.current ?? '',
                 status: 'play',
@@ -86,13 +98,31 @@ export default function MiniPlayerBar() {
         };
     }, [audioRef, setCurrentTime, setDuration, setCurrentPlay, saveTime]);
 
+    // Pause sermon audio when TTS starts
+    useEffect(() => {
+        return useTtsStore.subscribe((state, prev) => {
+            const ttsActive = state.status === 'playing' || state.status === 'loading';
+            const wasActive = prev.status === 'playing' || prev.status === 'loading';
+            if (ttsActive && !wasActive) {
+                const el = audioRef.current;
+                if (el && !el.paused) {
+                    el.pause();
+                }
+            }
+        });
+    }, [audioRef]);
+
     // Handle audio play events from document header
     useEffect(() => {
         const handleAudioPlay = async (event: CustomEventInit<any>) => {
             const detail = event.detail;
-            if (!detail?.audio_link) return;
+            if (!detail?.audio_link) {
+                return;
+            }
             const el = audioRef.current;
-            if (!el) return;
+            if (!el) {
+                return;
+            }
 
             // Same title → toggle play/pause
             if (titleRef.current === detail.title) {
@@ -154,6 +184,17 @@ export default function MiniPlayerBar() {
         };
     }, [audioRef, loadAudio, setCurrentPlay, openModal]);
 
+    // Stop sermon audio when the active language changes
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const prevLangRef = useRef(activeLanguage);
+    useEffect(() => {
+        if (prevLangRef.current !== activeLanguage) {
+            prevLangRef.current = activeLanguage;
+            const el = audioRef.current;
+            if (el && !el.paused) el.pause();
+        }
+    }, [activeLanguage, audioRef]);
+
     // Restore last played on mount
     useEffect(() => {
         window.api.audio.getLastPlay().then((data) => {
@@ -174,7 +215,9 @@ export default function MiniPlayerBar() {
 
     const handlePlayPause = () => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         if (el.paused) {
             el.play().catch(() => {});
         } else {
@@ -184,21 +227,27 @@ export default function MiniPlayerBar() {
 
     const handleSeek = (value: number) => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         el.currentTime = value;
         setCurrentTime(value);
     };
 
     const handleSpeedChange = (rate: number) => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         el.playbackRate = rate;
         setPlaybackRate(rate);
     };
 
     const handleVolumeChange = (value: number) => {
         const el = audioRef.current;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
         el.volume = value;
         setVolume(value);
     };
@@ -253,7 +302,8 @@ export default function MiniPlayerBar() {
                             padding: '8px 12px',
                             background: 'var(--ant-color-bg-container)',
                             borderRadius: 6,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            boxShadow:
+                                'var(--ant-box-shadow-secondary, 0 2px 8px rgba(0,0,0,0.15))',
                         }}
                     >
                         <Slider
@@ -269,8 +319,13 @@ export default function MiniPlayerBar() {
                     </div>
                 )}
             >
-                <Tooltip title="Volume">
-                    <Button type="text" size="small" icon={<SoundOutlined />} aria-label="Volume" />
+                <Tooltip title={t('Volume')}>
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<SoundOutlined />}
+                        aria-label={t('Volume')}
+                    />
                 </Tooltip>
             </Dropdown>
         </div>

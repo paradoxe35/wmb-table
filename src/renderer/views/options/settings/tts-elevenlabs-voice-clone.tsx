@@ -1,13 +1,16 @@
 import { useCallback, useRef, useState } from 'react';
 import { Button, Input, message, Space, Typography } from 'antd';
-import { DeleteOutlined, UploadOutlined } from '@ant-design/icons';
+import { UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { TtsVoice } from '@shared/tts.types';
+import type { TtsProviderType, TtsVoice } from '@shared/tts.types';
+import { getErrorMessage } from '@renderer/utils/functions';
+import { DeleteBtn } from '@renderer/components/delete-btn';
 import { Field } from './tts-shared';
 
 const { Text } = Typography;
 
 interface VoiceCloneFormProps {
+    providerType: TtsProviderType;
     onCloned: (voiceId: string) => void;
 }
 
@@ -18,7 +21,9 @@ interface ClonedVoicesListProps {
 
 export function ClonedVoicesList({ voices, onDelete }: ClonedVoicesListProps) {
     const { t } = useTranslation();
-    if (voices.length === 0) return null;
+    if (voices.length === 0) {
+        return null;
+    }
 
     return (
         <Field label={t('Voix clonées')} hint={t('Vos voix personnalisées.')}>
@@ -34,13 +39,7 @@ export function ClonedVoicesList({ voices, onDelete }: ClonedVoicesListProps) {
                         }}
                     >
                         <Text style={{ fontSize: '0.9em' }}>{v.name}</Text>
-                        <Button
-                            type="text"
-                            size="small"
-                            danger
-                            icon={<DeleteOutlined />}
-                            onClick={() => onDelete(v.id)}
-                        />
+                        <DeleteBtn confirm={() => onDelete(v.id)} />
                     </div>
                 ))}
             </div>
@@ -48,7 +47,7 @@ export function ClonedVoicesList({ voices, onDelete }: ClonedVoicesListProps) {
     );
 }
 
-export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
+export function VoiceCloneForm({ providerType, onCloned }: VoiceCloneFormProps) {
     const { t } = useTranslation();
     const [name, setName] = useState('');
     const [file, setFile] = useState<File | null>(null);
@@ -56,24 +55,26 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleClone = useCallback(async () => {
-        if (!name || !file) return;
+        if (!name || !file) {
+            return;
+        }
         setCloning(true);
         try {
             const arrayBuf = await file.arrayBuffer();
             const audioBase64 = btoa(
                 new Uint8Array(arrayBuf).reduce((s, b) => s + String.fromCharCode(b), ''),
             );
-            const result = await window.api.tts.cloneVoice({ name, audioBase64 });
+            const result = await window.api.tts.cloneVoice(providerType, { name, audioBase64 });
             message.success(t('Voix clonée avec succès'));
             setName('');
             setFile(null);
             onCloned(result.voiceId);
         } catch (err) {
-            message.error(t('Erreur: {{error}}', { error: (err as Error).message }));
+            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
         } finally {
             setCloning(false);
         }
-    }, [name, file, onCloned]);
+    }, [name, file, providerType, onCloned, t]);
 
     return (
         <Field
@@ -82,19 +83,23 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
                 'Enregistrez un audio WAV ou MP3 de 10 à 60 secondes pour créer votre propre voix.',
             )}
         >
-            <Space direction="vertical" size="small" style={{ width: '100%' }}>
+            <Space orientation="vertical" size="small" style={{ width: '100%' }}>
                 <Input
                     placeholder={t('Nom de la voix (ex: MaVoix)')}
                     size="small"
                     value={name}
                     maxLength={16}
-                    onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))}
+                    onChange={(e) => {
+                        setName(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''));
+                    }}
                 />
                 <Space size="small">
                     <Button
                         icon={<UploadOutlined />}
                         size="small"
-                        onClick={() => fileInputRef.current?.click()}
+                        onClick={() => {
+                            fileInputRef.current?.click();
+                        }}
                     >
                         {file ? file.name : t('Choisir un fichier audio')}
                     </Button>
@@ -103,7 +108,9 @@ export function VoiceCloneForm({ onCloned }: VoiceCloneFormProps) {
                         type="file"
                         accept=".wav,.mp3,.m4a"
                         style={{ display: 'none' }}
-                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                        onChange={(e) => {
+                            setFile(e.target.files?.[0] ?? null);
+                        }}
                     />
                     <Button
                         type="primary"

@@ -24,19 +24,122 @@ const es: Record<string, string> = {
 
     // ── Settings index ──
     Général: 'General',
+    'Vue document': 'Vista del documento',
     Langues: 'Idiomas',
     'Lecture audio': 'Texto a voz',
     Sauvegarde: 'Copia de seguridad',
     'Mise à jour': 'Actualización',
     'Gérez les préférences de votre application.': 'Gestione las preferencias de su aplicación.',
+    Assistant: 'Asistente',
+    'Assistant IA': 'Asistente IA',
+    "Activer l'assistant IA": 'Activar el asistente IA',
+    "Une fois activé, l'assistant apparaît dans la barre latérale.":
+        'Una vez activado, el asistente aparece en la barra lateral.',
+    'Clé API': 'Clave API',
+    'URL de base': 'URL base',
+    Modèle: 'Modelo',
+    Identifiant: 'Identificador',
+    'Nom affiché': 'Nombre visible',
+    Optionnel: 'Opcional',
+    'Modèle par défaut': 'Modelo predeterminado',
+    Recommandé: 'Recomendado',
+    Installé: 'Instalado',
+    Nouveau: 'Nuevo',
+
+    // ── AI settings ──
+    'Choisissez le service à utiliser pour le chat IA.':
+        'Elija el servicio a usar para el chat de IA.',
+    'Choisir un fournisseur': 'Elegir un proveedor',
+    Personnalisé: 'Personalizado',
+    'Comportement des langues': 'Comportamiento de idiomas',
+    "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
+        'El asistente sigue el idioma activo, salvo que pida explícitamente otro idioma.',
+    'Suivre la langue active': 'Seguir el idioma activo',
+    'Changer uniquement sur demande': 'Cambiar solo a petición',
+    "Utilisez l'identifiant exact du modèle fourni par ce service.":
+        'Use el identificador exacto del modelo proporcionado por este servicio.',
+
+    // ── AI provider descriptions ──
+    'Fonctionne sans connexion internet, directement sur votre ordinateur.':
+        'Funciona sin conexión a internet, directamente en su ordenador.',
+    'Accédez à plusieurs modèles avec une seule clé API.':
+        'Acceda a varios modelos con una sola clave API.',
+    'ChatGPT et autres modèles OpenAI.': 'ChatGPT y otros modelos de OpenAI.',
+    'Les modèles Gemini de Google.': 'Los modelos Gemini de Google.',
+    "Les modèles Claude d'Anthropic.": 'Los modelos Claude de Anthropic.',
+
+    // ── AI local models ──
+    'Modèle local': 'Modelo local',
+    Actualiser: 'Actualizar',
+    'Choisir un modèle': 'Elegir un modelo',
+    Utiliser: 'Usar',
+    'Modèle téléchargé': 'Modelo descargado',
+    'Le téléchargement a échoué.': 'La descarga ha fallado.',
+    '~{{size}} Mo': '~{{size}} MB',
+    'Léger et rapide. Idéal pour un usage quotidien sur la plupart des ordinateurs.':
+        'Ligero y rápido. Ideal para uso diario en la mayoría de los ordenadores.',
+    'Plus complet, meilleure compréhension. Nécessite un peu plus de mémoire.':
+        'Más completo, mejor comprensión. Requiere un poco más de memoria.',
+    'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
+        'Funciona sin conexión a internet, directamente en su ordenador. Descargue un modelo para comenzar.',
+    'Utiliser la carte graphique (GPU)': 'Usar tarjeta gráfica (GPU)',
+    'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
+        'Acelera las respuestas si su ordenador tiene una tarjeta gráfica compatible. Desactive esta opción en caso de problemas.',
+
+    // ── AI custom providers ──
+    'Ajouter un fournisseur': 'Añadir un proveedor',
+    'Ajouter un fournisseur personnalisé': 'Añadir un proveedor personalizado',
+    'Supprimer ce fournisseur ?': '¿Eliminar este proveedor?',
+    'ex: Mon Service IA': 'ej.: Mi Servicio IA',
+    'ex: gpt-4o-mini': 'ej.: gpt-4o-mini',
+
+    // ── AI provider test ──
+    'Tester la connexion': 'Probar conexión',
+    Connecté: 'Conectado',
+    Échec: 'Error',
+    'La connexion a échoué.': 'La conexión ha fallado.',
+
+    // ── AI chat ──
+    "L'assistant IA est désactivé.": 'El asistente IA está desactivado.',
+    'Ouvrir les paramètres': 'Abrir configuración',
+    'Posez votre question...': 'Haga su pregunta...',
+    Envoyer: 'Enviar',
+    Arrêter: 'Detener',
+    Conversations: 'Conversaciones',
+    'Aucune conversation': 'Sin conversaciones',
+    Conversation: 'Conversación',
+    maintenant: 'ahora',
+    'Supprimer toutes les conversations ?': '¿Eliminar todas las conversaciones?',
+    "Vider l'historique": 'Vaciar historial',
+
+    // ── AI tool results ──
+    'Recherche de sermons': 'Búsqueda de predicaciones',
+    'Lecture du sermon': 'Lectura de predicación',
+    'Recherche dans le contenu': 'Búsqueda en el contenido',
+    'Versions de la Bible': 'Versiones de la Biblia',
+    'Passage biblique': 'Pasaje bíblico',
+    'Liste des sujets': 'Lista de temas',
+    'Création de sujet': 'Creación de tema',
+    'Ajout au sujet': 'Añadido al tema',
+    'Liste des notes': 'Lista de notas',
+    'Lecture de la note': 'Lectura de nota',
+    'Création de note': 'Creación de nota',
+    'Mise à jour de la note': 'Actualización de nota',
+    'Ajout à la note': 'Añadido a la nota',
+    'Langues disponibles': 'Idiomas disponibles',
+    'Documents personnalisés': 'Documentos personalizados',
+    'Lecture du document': 'Lectura del documento',
 
     // ── General tab ──
     'Langue active': 'Idioma activo',
     'Langues installées': 'Idiomas instalados',
+    "Documentation d'utilisation": 'Documentación de uso',
+    "Impossible d'ouvrir la documentation": 'No se puede abrir la documentación',
     Actif: 'Activo',
     'En pause': 'En pausa',
     'Non connecté': 'No conectado',
     'À jour': 'Actualizado',
+    Ouvrir: 'Abrir',
 
     // ── Languages tab ──
     'Changer la langue': 'Cambiar idioma',
@@ -44,8 +147,10 @@ const es: Record<string, string> = {
 
     // ── TTS tab ──
     'Fournisseur actif': 'Proveedor activo',
-    'Le service qui lira le texte à voix haute. Si celui-ci ne fonctionne pas, un autre sera utilisé automatiquement.':
-        'El servicio que leerá el texto en voz alta. Si falla, se usará otro automáticamente.',
+    'Le service qui lira le texte à voix haute.': 'El servicio que leerá el texto en voz alta.',
+    'Changer la voix automatiquement': 'Cambiar la voz automáticamente',
+    'Choisir automatiquement une voix adaptée à la langue du document.':
+        'Elegir automáticamente una voz adaptada al idioma del documento.',
     'Mode de surlignage': 'Modo de resaltado',
     'Choisissez comment le texte est mis en évidence pendant la lecture.':
         'Elija cómo se resalta el texto durante la lectura.',
@@ -64,15 +169,16 @@ const es: Record<string, string> = {
     Utilisé: 'Usado',
     Limite: 'Límite',
     Vider: 'Vaciar',
-    'Cache TTS vidé': 'Caché TTS vaciado',
+    'Cache audio vidé': 'Caché de audio vaciado',
     'Taille maximale du cache': 'Tamaño máximo del caché',
 
     // ── TTS shared ──
-    'Navigateur (SpeechSynthesis)': 'Navegador (SpeechSynthesis)',
-    'Sherpa-ONNX TTS (local)': 'Sherpa-ONNX TTS (local)',
-    'Kokoro TTS (local)': 'Kokoro TTS (local)',
+    'Voix du système': 'Voces del sistema',
+    'Sherpa-ONNX TTS': 'Sherpa-ONNX TTS',
+    'Kokoro TTS': 'Kokoro TTS',
     'ElevenLabs TTS': 'ElevenLabs TTS',
     'OpenAI TTS': 'OpenAI TTS',
+    'Edge TTS (Microsoft)': 'Edge TTS (Microsoft)',
     'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.':
         'Gratis, funciona sin conexión a internet. Usa las voces instaladas en su ordenador.',
     'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.':
@@ -83,6 +189,9 @@ const es: Record<string, string> = {
         'Excelente calidad. Permite clonar su voz. Requiere una cuenta y conexión a internet.',
     'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.':
         'Excelente calidad, muchos idiomas disponibles. Requiere una cuenta y conexión a internet.',
+    'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.':
+        'Gratis, buena calidad, muchos idiomas. Requiere conexión a internet. No se necesita cuenta.',
+    Gratuit: 'Gratis',
     Local: 'Local',
     Cloud: 'Nube',
     o: 'B',
@@ -91,6 +200,9 @@ const es: Record<string, string> = {
 
     // ── TTS provider browser ──
     Voix: 'Voz',
+    Volume: 'Volumen',
+    Version: 'Versión',
+    'Tester la voix': 'Probar la voz',
     'Les voix disponibles dépendent de celles installées sur votre ordinateur.':
         'Las voces disponibles dependen de las instaladas en su ordenador.',
     'Voix par défaut du système': 'Voz predeterminada del sistema',
@@ -99,7 +211,6 @@ const es: Record<string, string> = {
     'Volume: {{value}}%': 'Volumen: {{value}}%',
 
     // ── TTS provider Kokoro ──
-    Modèle: 'Modelo',
     'À télécharger une seule fois. Environ 160 Mo.':
         'Descargar una sola vez. Aproximadamente 160 MB.',
     'Télécharger le modèle': 'Descargar modelo',
@@ -107,6 +218,7 @@ const es: Record<string, string> = {
         'Todas las voces están disponibles. La voz predeterminada corresponde al idioma activo.',
     'Modèle Kokoro téléchargé': 'Modelo Kokoro descargado',
     'Erreur: {{error}}': 'Error: {{error}}',
+    'Erreur lors de la prévisualisation de la voix': 'Error al probar la voz',
 
     // ── TTS provider Sherpa ──
     'Voix disponible — {{lang}}': 'Voz disponible — {{lang}}',
@@ -144,6 +256,15 @@ const es: Record<string, string> = {
     Cloner: 'Clonar',
     'Voix clonée avec succès': 'Voz clonada con éxito',
     'Voix clonée supprimée': 'Voz clonada eliminada',
+    'Voix de référence': 'Voces de referencia',
+    'Voix intégrées pour le clonage vocal. Clonez-les pour les utiliser.':
+        'Voces integradas para la clonación vocal. Clónalas para usarlas.',
+    Cloné: 'Clonado',
+    'Erreur lors de la lecture': 'Error de reproducción',
+
+    // ── TTS provider Edge ──
+    'Sélectionnez une voix parmi les centaines disponibles, classées par langue.':
+        'Seleccione una voz entre las cientos disponibles, organizadas por idioma.',
 
     // ── TTS provider OpenAI ──
     'Clé API OpenAI': 'Clave API OpenAI',
@@ -158,10 +279,29 @@ const es: Record<string, string> = {
     'Pause lecture': 'Pausar lectura',
     'Reprendre la lecture': 'Reanudar lectura',
     'Démarrer la lecture': 'Iniciar lectura',
-    'Lecture audio TTS': 'Reproducción de audio TTS',
+    'Lire à voix haute': 'Leer en voz alta',
+    'Lecture audio indisponible': 'Audio no disponible',
     'Zoom arrière': 'Alejar',
     'Zoom avant': 'Acercar',
     "Lire à partir d'ici": 'Leer desde aquí',
+    'Aucune voix disponible pour cette langue.': 'No hay voz disponible para este idioma.',
+
+    // ── TTS compatibility messages ──
+    "Ce fournisseur n'est pas configuré. Ajoutez une clé API dans les paramètres de Lecture audio.":
+        'Este proveedor no está configurado. Añada una clave API en los ajustes de Lectura en voz alta.',
+    "Le modèle vocal n'est pas téléchargé. Téléchargez-le dans les paramètres de Lecture audio.":
+        'El modelo de voz no está descargado. Descárguelo en los ajustes de Lectura en voz alta.',
+    'Le modèle sélectionné ne prend pas en charge cette langue. Changez de modèle dans les paramètres de Lecture audio.':
+        'El modelo seleccionado no es compatible con este idioma. Cambie el modelo en los ajustes de Lectura en voz alta.',
+    'Ce fournisseur ne prend pas en charge cette langue.':
+        'Este proveedor no es compatible con este idioma.',
+    'Ce fournisseur ne peut pas lire cette langue.': 'Este proveedor no puede leer este idioma.',
+    'Le navigateur ne dispose pas de voix pour cette langue.':
+        'El navegador no tiene voz para este idioma.',
+    'Impossible de vérifier la compatibilité du fournisseur.':
+        'No se puede verificar la compatibilidad del proveedor.',
+    'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
+        'La reproducción de audio falló. Verifique la configuración del proveedor.',
 
     // ── History ──
     'Aucune historique': 'Sin historial',
@@ -367,7 +507,6 @@ const es: Record<string, string> = {
 
     // ── Bible content ──
     'Aucune Bible disponible pour cette langue': 'No hay Biblia disponible para este idioma',
-    Nouveau: 'Nuevo',
     Ancien: 'Antiguo',
     Testament: 'Testamento',
     'Ajouter à un sujet': 'Añadir a un tema',
@@ -459,13 +598,36 @@ const es: Record<string, string> = {
     Aide: 'Ayuda',
     Documentation: 'Documentación',
     'À propos': 'Acerca de',
+    "Aujourd'hui": 'Hoy',
+    'Aucun document consulté ce jour': 'Ningún documento consultado este día',
+    Renommer: 'Renombrar',
+    Traduction: 'Traducción',
+    'Texte copié': 'Texto copiado',
+    'Sélectionnez du texte à souligner': 'Seleccione texto para resaltar',
+    'Ajouter au sujet': 'Añadir al tema',
+    'Ajouter à la note': 'Añadir a la nota',
+    Prédication: 'Predicación',
+    Document: 'Documento',
+    'Sauvegarde de données': 'Guardando datos',
+    'Restauration de données': 'Restaurando datos',
 
     // ── General ──
     sermons: 'sermones',
     disponible: 'disponible',
     "Erreur lors de l'initialisation de l'application": 'Error de inicialización de la aplicación',
+    'Une erreur inattendue est survenue.': 'Se produjo un error inesperado.',
+    'Mémoriser la position de lecture': 'Recordar la posición de lectura',
+    "Rouvrez un document là où vous l'aviez laissé la dernière fois.":
+        'Reabra un documento donde lo dejó la última vez.',
+    "Impossible d'enregistrer le paramètre": 'No se pudo guardar la configuración',
     chapitres: 'capítulos',
     chapitre: 'capítulo',
+
+    // ── Theme ──
+    Apparence: 'Apariencia',
+    Clair: 'Claro',
+    Sombre: 'Oscuro',
+    Système: 'Sistema',
 };
 
 export default es;

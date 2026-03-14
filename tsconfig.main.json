@@ -23,5 +23,10 @@
             "@shared/*": ["./src/shared/*"]
         }
     },
-    "include": ["src/main/**/*", "src/shared/**/*", "node_modules/electron-vite/node.d.ts"]
+    "include": [
+        "src/main/**/*",
+        "src/shared/**/*",
+        "src/env.d.ts",
+        "node_modules/electron-vite/node.d.ts"
+    ]
 }

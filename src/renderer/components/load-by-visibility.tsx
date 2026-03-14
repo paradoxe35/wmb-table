@@ -31,6 +31,13 @@ const LoadByVisibility: React.FC<{ children?: React.ReactNode }> = function ({ c
         };
     }, []);
 
-    return <div ref={containerRef}>{load ? children : null}</div>;
+    return (
+        <div
+            ref={containerRef}
+            style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+        >
+            {load ? children : null}
+        </div>
+    );
 };
 export default LoadByVisibility;

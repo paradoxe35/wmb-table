@@ -1,4 +1,5 @@
-import { Worker } from 'node:worker_threads';
+import { mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import log from 'electron-log';
 import type { TtsProvider } from './provider';
 import type {
@@ -8,8 +9,10 @@ import type {
     TtsSynthesizeRequest,
     TtsSynthesizeResult,
     TtsVoice,
+    TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { getTtsModelsDir } from '@main/lib/app-paths';
+import { WorkerRpc } from './worker-rpc';
 import workerPath from './kokoro.worker?modulePath';
 
 const MODEL_ID = 'onnx-community/Kokoro-82M-v1.0-ONNX';
@@ -39,61 +42,17 @@ const VOICE_LANG_MAP: Record<string, string[]> = {
 };
 
 function getVoiceLanguage(voiceId: string): string[] {
-    const prefix = voiceId.substring(0, 2);
-    return VOICE_LANG_MAP[prefix] ?? ['en'];
+    return VOICE_LANG_MAP[voiceId.substring(0, 2)] ?? ['en'];
 }
 
 function getVoiceGender(voiceId: string): 'male' | 'female' {
     return voiceId[1] === 'm' ? 'male' : 'female';
 }
 
-// ---------------------------------------------------------------------------
-// Worker RPC
-// ---------------------------------------------------------------------------
-
-let worker: Worker | null = null;
-let requestId = 0;
-const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
-let progressCallback: ((pct: number) => void) | null = null;
-
-function getWorker(): Worker {
-    if (!worker) {
-        worker = new Worker(workerPath);
-        worker.on('message', (msg: { id: number; result?: unknown; error?: string }) => {
-            // Handle progress broadcasts (id === -1)
-            if (msg.id === -1 && msg.result && typeof msg.result === 'object') {
-                const r = msg.result as { type?: string; percentage?: number };
-                if (r.type === 'progress' && progressCallback) {
-                    progressCallback(r.percentage ?? 0);
-                }
-                return;
-            }
-
-            const p = pending.get(msg.id);
-            if (!p) return;
-            pending.delete(msg.id);
-            if (msg.error) {
-                p.reject(new Error(msg.error));
-            } else {
-                p.resolve(msg.result);
-            }
-        });
-        worker.on('error', (err) => {
-            log.error('[tts-worker] Worker error:', err);
-        });
-    }
-    return worker;
-}
-
-function call<T>(method: string, ...args: unknown[]): Promise<T> {
-    const id = ++requestId;
-    return new Promise<T>((resolve, reject) => {
-        pending.set(id, {
-            resolve: resolve as (v: unknown) => void,
-            reject,
-        });
-        getWorker().postMessage({ id, method, args });
-    });
+function getKokoroModelsDir(): string {
+    const dir = join(getTtsModelsDir(), 'kokoro');
+    mkdirSync(dir, { recursive: true });
+    return dir;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +63,14 @@ export class KokoroProvider implements TtsProvider {
     readonly type: TtsProviderType = 'kokoro';
     private voiceId = 'af_heart';
     private cachedVoices: string[] = [];
+    private readonly rpc = new WorkerRpc(workerPath, 'kokoro');
+    private workerInitialized = false;
+
+    private async ensureWorkerInitialized(): Promise<void> {
+        if (this.workerInitialized) return;
+        await this.rpc.call<void>('initialize', getKokoroModelsDir());
+        this.workerInitialized = true;
+    }
 
     async getInfo(): Promise<TtsProviderInfo> {
         const voices = this.getVoiceList();
@@ -123,54 +90,85 @@ export class KokoroProvider implements TtsProvider {
         };
     }
 
-    supportsLanguage(langCode: string): boolean {
+    async checkCompatibility(
+        langCode: string,
+        _cfg?: TtsProviderSettings,
+    ): Promise<TtsCompatibilityResult> {
         const code = langCode.split('-')[0].toLowerCase();
-        return SUPPORTED_LANGUAGES.includes(code);
+        if (!SUPPORTED_LANGUAGES.includes(code)) {
+            return { supported: false, reason: 'unsupported_language' };
+        }
+        if (!(await this.isModelReady())) {
+            return { supported: false, reason: 'model_not_downloaded' };
+        }
+        // Any Kokoro voice can speak any supported language
+        return { supported: true };
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+        await this.ensureWorkerInitialized();
         const voice = request.voiceId ?? this.voiceId;
-        const modelsDir = getTtsModelsDir();
+        const audioBase64 = await this.rpc.call<string>('synthesize', request.text, voice);
 
-        const audioBase64 = await call<string>('synthesize', request.text, voice, modelsDir);
-
-        // Refresh cached voices after first synthesis
+        // Refresh voice list after first synthesis if not yet populated
         if (this.cachedVoices.length === 0) {
-            this.cachedVoices = await call<string[]>('listVoices');
+            this.cachedVoices = await this.rpc.call<string[]>('listVoices');
         }
 
         return { audioBase64, mimeType: 'audio/wav' };
     }
 
-    async downloadModel(onProgress: (pct: number) => void, _modelName?: string): Promise<void> {
+    async downloadModel(onProgress: (pct: number) => void): Promise<void> {
+        await this.ensureWorkerInitialized();
         onProgress(0);
-        progressCallback = onProgress;
-
+        this.rpc.onProgress = onProgress;
         try {
-            await call<void>('downloadModel');
-            this.cachedVoices = await call<string[]>('listVoices');
-        } catch (err) {
-            throw err;
+            await this.rpc.call<void>('downloadModel');
+            this.cachedVoices = await this.rpc.call<string[]>('listVoices');
         } finally {
-            progressCallback = null;
+            this.rpc.onProgress = null;
         }
     }
 
     async isModelReady(): Promise<boolean> {
-        return call<boolean>('isModelReady');
+        await this.ensureWorkerInitialized();
+        return this.rpc.call<boolean>('isModelReady');
     }
 
     setConfig(settings: TtsProviderSettings): void {
         if (settings.voiceId) this.voiceId = settings.voiceId;
     }
 
-    dispose(): void {
-        call('dispose').catch(() => {});
-        if (worker) {
-            worker.terminate().catch(() => {});
-            worker = null;
-            pending.clear();
+    resolveConfigForLanguage(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Partial<TtsProviderSettings> | null {
+        const code = langCode.split('-')[0].toLowerCase();
+        if (!SUPPORTED_LANGUAGES.includes(code)) {
+            return null;
         }
+
+        const currentVoice = cfg?.voiceId ?? this.voiceId;
+        if (getVoiceLanguage(currentVoice).includes(code)) {
+            return null;
+        }
+
+        // Try to find a voice whose default language matches, otherwise keep current voice
+        // (any Kokoro voice can speak any supported language)
+        const compatibleVoice = this.getVoiceList().find((voice) =>
+            voice.languageCodes.includes(code),
+        );
+        return compatibleVoice ? { voiceId: compatibleVoice.id } : null;
+    }
+
+    async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+        return this.synthesize(request);
+    }
+
+    dispose(): void {
+        this.rpc.call('dispose').catch(() => {});
+        this.rpc.dispose();
+        this.workerInitialized = false;
         log.info('Kokoro TTS provider disposed');
     }
 

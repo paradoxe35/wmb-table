@@ -154,7 +154,7 @@ export default function SermonHeader({
                         type="text"
                         size="small"
                         icon={<SearchOutlined />}
-                        onClick={() => openSearchBar()}
+                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
                         aria-label={t('Rechercher')}
                     />
                 </Tooltip>

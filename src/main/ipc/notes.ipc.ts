@@ -1,6 +1,12 @@
+import { BrowserWindow, dialog } from 'electron';
+import { writeFile, unlink } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
 import { NotesChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as notesRepo from '@main/database/repositories/notes.repository';
+import { getMainWindow } from '@main/lib/window';
 
 export function registerNotesHandlers(): void {
     registerHandler(NotesChannels.getAll, async () => {
@@ -78,7 +84,64 @@ export function registerNotesHandlers(): void {
         notesRepo.deleteReference(id);
     });
 
-    registerHandler(NotesChannels.exportPdf, async () => {
-        throw new Error('Not implemented: notes:exportPdf');
+    registerHandler(NotesChannels.exportPdf, async (_event, noteId) => {
+        const note = notesRepo.getById(noteId);
+        if (!note?.content) {
+            throw new Error('Note introuvable ou vide');
+        }
+
+        const parentWindow = getMainWindow();
+        const defaultName = (note.name || 'note').replace(/\s+/g, '-').toLowerCase();
+
+        const { canceled, filePath } = await dialog.showSaveDialog(
+            parentWindow ?? BrowserWindow.getFocusedWindow()!,
+            {
+                title: 'Exporter PDF',
+                defaultPath: `${defaultName}.pdf`,
+                filters: [{ name: 'PDF', extensions: ['pdf'] }],
+            },
+        );
+
+        if (canceled || !filePath) {
+            return '';
+        }
+
+        const html = `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>${note.name}</title>
+<style>
+  body { font-family: serif; font-size: 14px; padding: 20px; color: #333; }
+  h1, h2, h3 { font-family: sans-serif; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #ccc; padding: 6px; }
+  blockquote { border-left: 3px solid #ccc; margin-left: 0; padding-left: 12px; color: #555; }
+</style>
+</head><body>
+${note.content}
+</body></html>`;
+
+        const tmpFile = join(tmpdir(), `wmb-note-${randomUUID()}.html`);
+        await writeFile(tmpFile, html, 'utf-8');
+
+        const hiddenWindow = new BrowserWindow({
+            show: false,
+            width: 800,
+            height: 600,
+            webPreferences: { offscreen: true },
+        });
+
+        try {
+            await hiddenWindow.loadFile(tmpFile);
+            const pdfBuffer = await hiddenWindow.webContents.printToPDF({
+                printBackground: true,
+                margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
+            });
+            await writeFile(filePath, pdfBuffer);
+            return filePath;
+        } finally {
+            hiddenWindow.destroy();
+            unlink(tmpFile).catch(() => {});
+        }
     });
 }
