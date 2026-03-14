@@ -37,32 +37,8 @@ importers:
             '@googleapis/oauth2':
                 specifier: ^5.0.1
                 version: 5.0.1
-            '@node-llama-cpp/linux-x64':
-                specifier: 3.17.1
-                version: 3.17.1
-            '@node-llama-cpp/mac-arm64-metal':
-                specifier: 3.17.1
-                version: 3.17.1
-            '@node-llama-cpp/mac-x64':
-                specifier: 3.17.1
-                version: 3.17.1
-            '@node-llama-cpp/win-x64':
-                specifier: 3.17.1
-                version: 3.17.1
             '@oxdev03/node-tantivy-binding':
                 specifier: ^0.2.0
-                version: 0.2.1
-            '@oxdev03/node-tantivy-binding-darwin-arm64':
-                specifier: 0.2.1
-                version: 0.2.1
-            '@oxdev03/node-tantivy-binding-darwin-x64':
-                specifier: 0.2.1
-                version: 0.2.1
-            '@oxdev03/node-tantivy-binding-linux-x64-gnu':
-                specifier: 0.2.1
-                version: 0.2.1
-            '@oxdev03/node-tantivy-binding-win32-x64-msvc':
-                specifier: 0.2.1
                 version: 0.2.1
             '@sentry/electron':
                 specifier: ^7.10.0
@@ -126,18 +102,6 @@ importers:
                 version: 4.18.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
             sentencex:
                 specifier: ^1.0.17
-                version: 1.0.17
-            sentencex-darwin-arm64:
-                specifier: 1.0.17
-                version: 1.0.17
-            sentencex-darwin-x64:
-                specifier: 1.0.17
-                version: 1.0.17
-            sentencex-linux-x64:
-                specifier: 1.0.17
-                version: 1.0.17
-            sentencex-win32-x64:
-                specifier: 1.0.17
                 version: 1.0.17
             sherpa-onnx:
                 specifier: ^1.12.29
@@ -1667,6 +1631,7 @@ packages:
         engines: { node: '>=20.0.0' }
         cpu: [x64]
         os: [linux]
+        libc: [glibc]
 
     '@node-llama-cpp/mac-arm64-metal@3.17.1':
         resolution:
@@ -2092,6 +2057,7 @@ packages:
         engines: { node: '>= 22.15.1' }
         cpu: [x64]
         os: [linux]
+        libc: [glibc]
 
     '@oxdev03/node-tantivy-binding-win32-x64-msvc@0.2.1':
         resolution:
@@ -10055,11 +10021,14 @@ snapshots:
     '@node-llama-cpp/linux-x64-vulkan@3.17.1':
         optional: true
 
-    '@node-llama-cpp/linux-x64@3.17.1': {}
+    '@node-llama-cpp/linux-x64@3.17.1':
+        optional: true
 
-    '@node-llama-cpp/mac-arm64-metal@3.17.1': {}
+    '@node-llama-cpp/mac-arm64-metal@3.17.1':
+        optional: true
 
-    '@node-llama-cpp/mac-x64@3.17.1': {}
+    '@node-llama-cpp/mac-x64@3.17.1':
+        optional: true
 
     '@node-llama-cpp/win-arm64@3.17.1':
         optional: true
@@ -10073,7 +10042,8 @@ snapshots:
     '@node-llama-cpp/win-x64-vulkan@3.17.1':
         optional: true
 
-    '@node-llama-cpp/win-x64@3.17.1': {}
+    '@node-llama-cpp/win-x64@3.17.1':
+        optional: true
 
     '@npmcli/agent@3.0.0':
         dependencies:
@@ -10357,13 +10327,17 @@ snapshots:
             '@opentelemetry/api': 1.9.0
             '@opentelemetry/core': 2.6.0(@opentelemetry/api@1.9.0)
 
-    '@oxdev03/node-tantivy-binding-darwin-arm64@0.2.1': {}
+    '@oxdev03/node-tantivy-binding-darwin-arm64@0.2.1':
+        optional: true
 
-    '@oxdev03/node-tantivy-binding-darwin-x64@0.2.1': {}
+    '@oxdev03/node-tantivy-binding-darwin-x64@0.2.1':
+        optional: true
 
-    '@oxdev03/node-tantivy-binding-linux-x64-gnu@0.2.1': {}
+    '@oxdev03/node-tantivy-binding-linux-x64-gnu@0.2.1':
+        optional: true
 
-    '@oxdev03/node-tantivy-binding-win32-x64-msvc@0.2.1': {}
+    '@oxdev03/node-tantivy-binding-win32-x64-msvc@0.2.1':
+        optional: true
 
     '@oxdev03/node-tantivy-binding@0.2.1':
         optionalDependencies:
@@ -14486,16 +14460,20 @@ snapshots:
 
     semver@7.7.4: {}
 
-    sentencex-darwin-arm64@1.0.17: {}
+    sentencex-darwin-arm64@1.0.17:
+        optional: true
 
-    sentencex-darwin-x64@1.0.17: {}
+    sentencex-darwin-x64@1.0.17:
+        optional: true
 
     sentencex-linux-arm64@1.0.17:
         optional: true
 
-    sentencex-linux-x64@1.0.17: {}
+    sentencex-linux-x64@1.0.17:
+        optional: true
 
-    sentencex-win32-x64@1.0.17: {}
+    sentencex-win32-x64@1.0.17:
+        optional: true
 
     sentencex@1.0.17:
         optionalDependencies:
