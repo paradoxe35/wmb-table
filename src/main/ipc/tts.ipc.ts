@@ -1,18 +1,9 @@
-import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { createRequire } from 'node:module';
-import { get_sentence_boundaries, initSync } from 'sentencex-wasm';
+import { get_sentence_boundaries } from 'sentencex';
 import { TtsChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import { getTtsService } from '@main/services/tts';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
 import { hasSpeakableContent, type TtsSegment } from '@shared/tts.types';
-
-// Initialize WASM module — sentencex-wasm is externalized by Vite,
-// so it loads from node_modules at runtime where resolve works correctly.
-const _require = createRequire(import.meta.url);
-const wasmPath = join(dirname(_require.resolve('sentencex-wasm')), 'sentencex_wasm_bg.wasm');
-initSync({ module: readFileSync(wasmPath) });
 
 function stripMarkers(content: string): { clean: string; posMap: number[] } {
     const posMap: number[] = [];
