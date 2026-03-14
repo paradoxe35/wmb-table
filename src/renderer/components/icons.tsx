@@ -1,4 +1,25 @@
 import Icon from '@ant-design/icons';
+import type { CSSProperties } from 'react';
+
+const Sun = () => (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor">
+        <path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0-4a1 1 0 011 1v1a1 1 0 01-2 0V4a1 1 0 011-1zm0 16a1 1 0 011 1v1a1 1 0 01-2 0v-1a1 1 0 011-1zm9-8a1 1 0 01-1 1h-1a1 1 0 010-2h1a1 1 0 011 1zM5 12a1 1 0 01-1 1H3a1 1 0 010-2h1a1 1 0 011 1zm13.07-5.07a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41-1.41l.71-.71a1 1 0 011.41 0zM7.05 16.95a1 1 0 010 1.41l-.71.71a1 1 0 01-1.41-1.41l.71-.71a1 1 0 011.41 0zm11.9 0l.71.71a1 1 0 01-1.41 1.41l-.71-.71a1 1 0 011.41-1.41zM7.05 7.05l-.71.71a1 1 0 01-1.41-1.41l.71-.71a1 1 0 011.41 1.41z" />
+    </svg>
+);
+
+const Moon = () => (
+    <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor">
+        <path d="M12.1 22c-5.5 0-10-4.5-10-10 0-4.8 3.4-8.8 8.1-9.8.4-.1.8 0 1.1.3.3.3.3.7.2 1.1-.5 1.2-.7 2.5-.7 3.9 0 5 4 9 9 9 .7 0 1.4-.1 2.1-.2.4-.1.8 0 1.1.3.3.3.3.7.2 1.1-1.1 2.6-3.7 4.3-11.1 4.3z" />
+    </svg>
+);
+
+export function SunIcon({ style }: { style?: CSSProperties }) {
+    return <Icon component={Sun} style={style} />;
+}
+
+export function MoonIcon({ style }: { style?: CSSProperties }) {
+    return <Icon component={Moon} style={style} />;
+}
 
 const Bible = () => {
     const style = {

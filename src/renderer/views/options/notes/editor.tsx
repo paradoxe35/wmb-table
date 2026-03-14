@@ -521,7 +521,7 @@ function Editor({
                     {
                         text: t('Supprimer la référence'),
                         onclick: () => deleteReference(),
-                        color: '#ff4d4f',
+                        color: 'var(--ant-color-error)',
                     },
                 ],
             );

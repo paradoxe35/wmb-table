@@ -112,7 +112,11 @@ export default function BackupTab() {
                         padding: '16px 0',
                     }}
                 >
-                    <Avatar size={48} icon={<CloudOutlined />} style={{ background: '#1677ff' }} />
+                    <Avatar
+                        size={48}
+                        icon={<CloudOutlined />}
+                        style={{ background: 'var(--ant-color-primary)' }}
+                    />
                     <div style={{ textAlign: 'center' }}>
                         <Paragraph style={{ marginBottom: 4 }}>
                             {t(
@@ -146,7 +150,7 @@ export default function BackupTab() {
                     <Avatar
                         size={40}
                         icon={<UserOutlined />}
-                        style={{ background: '#1677ff', flexShrink: 0 }}
+                        style={{ background: 'var(--ant-color-primary)', flexShrink: 0 }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
                         <Text strong style={{ display: 'block' }}>

@@ -6,7 +6,7 @@
     font-size: 12px;
     height: 46px;
     padding: 8px 3px 4px 3px;
-    background: #dee1e6;
+    background: var(--chrome-tabs-bg);
     border-radius: 5px 5px 0 0;
     overflow: hidden;
     display: flex;
@@ -58,7 +58,7 @@
     top: 0;
     bottom: 0;
     width: 1px;
-    background: #a9adb0;
+    background: var(--chrome-tab-divider);
     opacity: 1;
     transition: opacity var(--transition-normal);
 }
@@ -97,7 +97,7 @@
 }
 
 .chrome-tabs .chrome-tab .chrome-tab-background > svg .chrome-tab-geometry {
-    fill: #f4f5f6;
+    fill: var(--chrome-tab-geometry);
 }
 
 .chrome-tabs .chrome-tab[data-active='true'] {
@@ -105,7 +105,7 @@
 }
 
 .chrome-tabs .chrome-tab[data-active='true'] .chrome-tab-background > svg .chrome-tab-geometry {
-    fill: #fff;
+    fill: var(--ant-color-bg-container);
 }
 
 .chrome-tabs .chrome-tab:not([data-active='true']) .chrome-tab-background {
@@ -153,7 +153,7 @@
     overflow: hidden;
     white-space: nowrap;
     margin-left: 4px;
-    color: #5f6368;
+    color: var(--chrome-tab-title);
     -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 24px), transparent);
     mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 24px), transparent);
 }
@@ -163,7 +163,7 @@
 }
 
 .chrome-tabs .chrome-tab[data-active='true'] .chrome-tab-title {
-    color: #45474a;
+    color: var(--chrome-tab-title-active);
 }
 
 .chrome-tabs .chrome-tab .chrome-tab-drag-handle {
@@ -192,10 +192,10 @@
 
 @media (hover: hover) {
     .chrome-tabs .chrome-tab .chrome-tab-close:hover {
-        background-color: #e8eaed;
+        background-color: var(--chrome-tab-close-hover);
     }
     .chrome-tabs .chrome-tab .chrome-tab-close:hover:active {
-        background-color: #dadce0;
+        background-color: var(--chrome-tab-close-active);
     }
     .chrome-tabs .chrome-tab:not([data-active='true']) .chrome-tab-close:not(:hover):not(:active) {
         opacity: 0.8;
@@ -204,7 +204,7 @@
 
 @media not all and (hover: hover) {
     .chrome-tabs .chrome-tab .chrome-tab-close:active {
-        background-color: #dadce0;
+        background-color: var(--chrome-tab-close-active);
     }
 }
 
@@ -214,8 +214,13 @@
     height: 6px;
     left: 0;
     width: 100%;
-    background: #fff;
+    background: var(--ant-color-bg-container);
     z-index: 10;
+}
+
+// Dark mode: invert the close icon
+[data-theme='dark'] .chrome-tabs .chrome-tab .chrome-tab-close {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'><path stroke='rgba(255, 255, 255, .65)' stroke-linecap='square' stroke-width='1.5' d='M0 0 L8 8 M8 0 L0 8'></path></svg>");
 }
 
 .chrome-tabs-optional-shadow-below-bottom-bar {

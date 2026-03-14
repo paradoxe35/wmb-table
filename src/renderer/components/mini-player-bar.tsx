@@ -302,7 +302,8 @@ export default function MiniPlayerBar() {
                             padding: '8px 12px',
                             background: 'var(--ant-color-bg-container)',
                             borderRadius: 6,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                            boxShadow:
+                                'var(--ant-box-shadow-secondary, 0 2px 8px rgba(0,0,0,0.15))',
                         }}
                     >
                         <Slider

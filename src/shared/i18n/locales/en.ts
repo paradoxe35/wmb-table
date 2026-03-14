@@ -617,6 +617,12 @@ const en: Record<string, string> = {
     "Impossible d'enregistrer le paramètre": 'Unable to save the setting',
     chapitres: 'chapters',
     chapitre: 'chapter',
+
+    // ── Theme ──
+    Apparence: 'Appearance',
+    Clair: 'Light',
+    Sombre: 'Dark',
+    Système: 'System',
 };
 
 export default en;

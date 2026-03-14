@@ -112,9 +112,19 @@ export default function SidebarMenu({
         >
             <div className="full-item-separated">
                 <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                    <Menu mode="inline" selectedKeys={[optionView]} items={menuItems} />
+                    <Menu
+                        mode="inline"
+                        style={{ borderInlineEnd: 'none' }}
+                        selectedKeys={[optionView]}
+                        items={menuItems}
+                    />
                     <div style={{ flex: 1 }} />
-                    <Menu mode="inline" selectedKeys={[optionView]} items={bottomMenuItems} />
+                    <Menu
+                        mode="inline"
+                        style={{ borderInlineEnd: 'none' }}
+                        selectedKeys={[optionView]}
+                        items={bottomMenuItems}
+                    />
                 </div>
                 <AudioDocumentPlayerIndicator />
             </div>

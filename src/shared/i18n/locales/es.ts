@@ -622,6 +622,12 @@ const es: Record<string, string> = {
     "Impossible d'enregistrer le paramètre": 'No se pudo guardar la configuración',
     chapitres: 'capítulos',
     chapitre: 'capítulo',
+
+    // ── Theme ──
+    Apparence: 'Apariencia',
+    Clair: 'Claro',
+    Sombre: 'Oscuro',
+    Système: 'Sistema',
 };
 
 export default es;

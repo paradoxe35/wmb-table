@@ -198,7 +198,7 @@ export default function Subject() {
                 }}
                 className="layout__sidebar"
             >
-                <Card style={{ width: '100%', flexShrink: 0 }}>
+                <Card style={{ width: '100%', flexShrink: 0, borderRadius: 0 }}>
                     <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
                 </Card>
                 <div

@@ -60,12 +60,16 @@ function ModelRow({
                     <Text style={{ fontSize: '0.85em' }}>{model.name}</Text>
                     {model.recommended ? (
                         <Tooltip title={t('Recommandé')}>
-                            <StarFilled style={{ color: '#1677ff', fontSize: 12 }} />
+                            <StarFilled
+                                style={{ color: 'var(--ant-color-primary)', fontSize: 12 }}
+                            />
                         </Tooltip>
                     ) : null}
                     {model.installed ? (
                         <Tooltip title={t('Installé')}>
-                            <CheckCircleOutlined style={{ color: '#52c41a', fontSize: 12 }} />
+                            <CheckCircleOutlined
+                                style={{ color: 'var(--ant-color-success)', fontSize: 12 }}
+                            />
                         </Tooltip>
                     ) : null}
                 </div>
@@ -167,7 +171,13 @@ export default function AiLocalModels({
             <span>
                 {m.name}
                 {m.recommended ? (
-                    <StarFilled style={{ color: '#1677ff', fontSize: 11, marginInlineStart: 4 }} />
+                    <StarFilled
+                        style={{
+                            color: 'var(--ant-color-primary)',
+                            fontSize: 11,
+                            marginInlineStart: 4,
+                        }}
+                    />
                 ) : null}
             </span>
         ),

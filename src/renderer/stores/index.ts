@@ -13,3 +13,4 @@ export { useAudioStore } from './audio.store';
 export { useCustomDocumentsStore } from './custom-documents.store';
 export { useTtsStore, selectCurrentTtsSegment, selectIsTtsPlaying } from './tts.store';
 export { useAiChatStore } from './ai-chat.store';
+export { useThemeStore } from './theme.store';
