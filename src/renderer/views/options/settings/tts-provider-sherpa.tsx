@@ -240,7 +240,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 },
                             });
                         }}
-                        options={groupVoicesByLanguage(allVoices)}
+                        options={groupVoicesByLanguage(allVoices, activeLanguage ?? undefined)}
                     />
                 </Field>
             )}

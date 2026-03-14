@@ -45,10 +45,6 @@ These are the voices already installed on your computer.
 
 Local voices with an initial download.
 
-### Kokoro TTS
-
-Local voices with an initial download.
-
 ### Edge TTS (Microsoft)
 
 This provider is now available in the app.
@@ -73,7 +69,7 @@ High-quality online voices. Account required.
 <ScreenshotPlaceholder
   file="en-settings-tts-provider-list.png"
   label="List of audio providers"
-  hint="Show System voices, Sherpa, Kokoro, Edge TTS, ElevenLabs, and OpenAI in the provider list."
+  hint="Show System voices, Sherpa, Edge TTS, ElevenLabs, and OpenAI in the provider list."
 />
 
 ## Choosing a voice

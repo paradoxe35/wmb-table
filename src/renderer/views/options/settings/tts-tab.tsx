@@ -21,10 +21,10 @@ import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
 import { SEGMENT_GAP_MS, type TtsProviderType, type TtsSettings } from '@shared/tts.types';
-import { PROVIDER_CATALOG, LocalityTag, FreeTag, Field, Hint, formatBytes } from './tts-shared';
+import { PROVIDER_CATALOG } from '@shared/tts.types';
+import { LocalityTag, FreeTag, Field, Hint, formatBytes } from './tts-shared';
 import { debounce, getErrorMessage } from '@renderer/utils/functions';
 import BrowserConfig from './tts-provider-browser';
-import KokoroConfig from './tts-provider-kokoro';
 import SherpaConfig from './tts-provider-sherpa';
 import ElevenLabsConfig from './tts-provider-elevenlabs';
 import OpenAIConfig from './tts-provider-openai';
@@ -48,10 +48,6 @@ function ActiveProviderConfig({
     switch (settings.activeProvider) {
         case 'browser':
             return <BrowserConfig settings={settings} onUpdate={onUpdate} />;
-        case 'kokoro':
-            return (
-                <KokoroConfig settings={settings} info={getInfo('kokoro')} onUpdate={onUpdate} />
-            );
         case 'sherpa':
             return (
                 <SherpaConfig settings={settings} info={getInfo('sherpa')} onUpdate={onUpdate} />
