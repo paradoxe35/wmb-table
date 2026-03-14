@@ -22,6 +22,11 @@ function langCodeToString(langCode: string | string[]): string {
     return Array.isArray(langCode) ? langCode.join(', ') : langCode;
 }
 
+function langLabels(langCode: string | string[]): string[] {
+    const codes = Array.isArray(langCode) ? langCode : [langCode];
+    return codes.map((c) => LANG_LABELS_FR[c] ?? c);
+}
+
 const QUALITY_META: Record<string, { label: string; color: string }> = {
     high: { label: 'Haute qualité', color: 'green' },
     medium: { label: 'Qualité moyenne', color: 'blue' },
@@ -29,7 +34,6 @@ const QUALITY_META: Record<string, { label: string; color: string }> = {
     fp16: { label: 'Qualité moyenne', color: 'blue' },
     fp32: { label: 'Haute qualité', color: 'green' },
     int8: { label: 'Qualité légère', color: 'default' },
-    multi: { label: 'Multilingue', color: 'purple' },
 };
 
 function QualityTag({ quality }: { quality?: string }) {
@@ -276,7 +280,11 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 },
                             });
                         }}
-                        options={groupVoicesByLanguage(allVoices, activeLanguage ?? undefined)}
+                        options={groupVoicesByLanguage(
+                            allVoices,
+                            activeLanguage ?? undefined,
+                            installed,
+                        )}
                     />
                 </Field>
             )}
@@ -290,20 +298,36 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 key={m.modelName}
                                 style={{
                                     display: 'flex',
-                                    alignItems: 'center',
+                                    alignItems: 'start',
                                     justifyContent: 'space-between',
-                                    padding: '3px 0',
+                                    padding: '4px 0',
                                 }}
                             >
-                                <Text style={{ fontSize: '0.9em' }}>
-                                    {m.voiceName} <Text type="secondary">({m.langLabel})</Text>
-                                    {m.filesizeMb != null && (
-                                        <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                                            {' '}
-                                            · ~{Math.round(m.filesizeMb)} {t('Mo')}
-                                        </Text>
+                                <div>
+                                    <Text style={{ fontSize: '0.9em' }}>
+                                        {m.voiceName} <Text type="secondary">({m.langLabel})</Text>
+                                        {m.engine && (
+                                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                                                {' '}
+                                                · {m.engine}
+                                            </Text>
+                                        )}
+                                        {m.filesizeMb != null && (
+                                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                                                {' '}
+                                                · ~{Math.round(m.filesizeMb)} {t('Mo')}
+                                            </Text>
+                                        )}{' '}
+                                        <QualityTag quality={m.quality} />
+                                    </Text>
+                                    {Array.isArray(m.langCode) && m.langCode.length > 1 && (
+                                        <div>
+                                            <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                                {t('Langues')}: {langLabels(m.langCode).join(', ')}
+                                            </Text>
+                                        </div>
                                     )}
-                                </Text>
+                                </div>
                                 <DeleteBtn confirm={() => handleDelete(m.modelName)} />
                             </div>
                         ))}
@@ -360,6 +384,17 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                                 ` · ~${Math.round(m.filesizeMb)} ${t('Mo')}`}
                                         </Text>{' '}
                                         <QualityTag quality={m.quality} />
+                                        {Array.isArray(m.langCode) && m.langCode.length > 1 && (
+                                            <div style={{ marginTop: 2 }}>
+                                                <Text
+                                                    type="secondary"
+                                                    style={{ fontSize: '0.9em' }}
+                                                >
+                                                    {t('Langues')}:{' '}
+                                                    {langLabels(m.langCode).join(', ')}
+                                                </Text>
+                                            </div>
+                                        )}
                                     </span>
                                 }
                             />
