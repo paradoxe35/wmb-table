@@ -129,7 +129,10 @@
             "output": "release"
         },
         "files": [
-            "out/**/*"
+            "out/**/*",
+            "!node_modules/**/*.map",
+            "!node_modules/**/*.ts",
+            "!node_modules/**/*.md"
         ],
         "extraResources": [
             {
