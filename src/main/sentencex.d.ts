@@ -1,4 +1,4 @@
-declare module 'sentencex' {
+declare module 'sentencex-wasm' {
     interface SentenceBoundary {
         start_index: number;
         end_index: number;
@@ -7,6 +7,7 @@ declare module 'sentencex' {
         is_paragraph_break: boolean;
     }
 
+    export function initSync(options: { module: BufferSource }): void;
     export function segment(language: string, text: string): string[];
     export function get_sentence_boundaries(language: string, text: string): SentenceBoundary[];
 }

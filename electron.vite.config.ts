@@ -4,6 +4,11 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
     main: {
+        build: {
+            rollupOptions: {
+                external: ['sentencex-wasm'],
+            },
+        },
         resolve: {
             alias: {
                 '@main': resolve('src/main'),
