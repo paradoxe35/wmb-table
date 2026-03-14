@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Button, Input, List, message, Progress, Select, Space, Typography } from 'antd';
+import { Button, Input, List, message, Progress, Select, Space, Tag, Typography } from 'antd';
 import { DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
+import { LANG_LABELS_FR } from '@shared/tts.types';
 import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
 import { getErrorMessage } from '@renderer/utils/functions';
 import { strNormalize } from '@shared/searchable';
@@ -11,6 +12,39 @@ import { DeleteBtn } from '@renderer/components/delete-btn';
 import { Field, groupVoicesByLanguage, type ProviderConfigProps } from './tts-shared';
 
 const { Text } = Typography;
+
+function matchesLang(langCode: string | string[], target: string): boolean {
+    if (Array.isArray(langCode)) return langCode.includes(target);
+    return langCode === target;
+}
+
+function langCodeToString(langCode: string | string[]): string {
+    return Array.isArray(langCode) ? langCode.join(', ') : langCode;
+}
+
+const QUALITY_META: Record<string, { label: string; color: string }> = {
+    high: { label: 'Haute qualité', color: 'green' },
+    medium: { label: 'Qualité moyenne', color: 'blue' },
+    low: { label: 'Qualité légère', color: 'default' },
+    fp16: { label: 'Qualité moyenne', color: 'blue' },
+    fp32: { label: 'Haute qualité', color: 'green' },
+    int8: { label: 'Qualité légère', color: 'default' },
+    multi: { label: 'Multilingue', color: 'purple' },
+};
+
+function QualityTag({ quality }: { quality?: string }) {
+    const { t } = useTranslation();
+    const meta = quality ? QUALITY_META[quality] : undefined;
+    if (!meta) return null;
+    return (
+        <Tag
+            color={meta.color}
+            style={{ fontSize: '0.75em', lineHeight: '16px', padding: '0 4px' }}
+        >
+            {t(meta.label)}
+        </Tag>
+    );
+}
 
 const BROWSE_PAGE_SIZE = 10;
 const MIN_QUALITY_SIZE_MB = 30;
@@ -131,10 +165,10 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     // Best available model for active language: prefer quality (≥30MB), fallback to largest
     // Skip if the language already has an installed model
     const suggestedModel = useMemo(() => {
-        const hasInstalled = models.some((m) => m.langCode === langCode && m.installed);
+        const hasInstalled = models.some((m) => matchesLang(m.langCode, langCode) && m.installed);
         if (hasInstalled) return undefined;
 
-        const candidates = models.filter((m) => m.langCode === langCode && !m.installed);
+        const candidates = models.filter((m) => matchesLang(m.langCode, langCode) && !m.installed);
         if (candidates.length === 0) return undefined;
 
         const quality = candidates
@@ -153,8 +187,10 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
         const terms = strNormalize(search).split(/\s+/).filter(Boolean);
         return models
             .filter((m) => {
+                const codes = Array.isArray(m.langCode) ? m.langCode : [m.langCode];
+                const allLabels = codes.map((c) => LANG_LABELS_FR[c] ?? '').join(' ');
                 const haystack = strNormalize(
-                    `${m.voiceName} ${m.langLabel} ${m.langName ?? ''} ${m.langCode} ${m.engine ?? ''}`,
+                    `${m.voiceName} ${m.langLabel} ${allLabels} ${m.langName ?? ''} ${langCodeToString(m.langCode)} ${m.engine ?? ''} ${m.quality ?? ''}`,
                 );
                 return terms.every((term) => haystack.includes(term));
             })
@@ -316,12 +352,15 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                     </Text>
                                 }
                                 description={
-                                    <Text type="secondary" style={{ fontSize: '0.8em' }}>
-                                        {m.voiceName}
-                                        {m.engine && ` · ${m.engine}`}
-                                        {m.filesizeMb != null &&
-                                            ` · ~${Math.round(m.filesizeMb)} ${t('Mo')}`}
-                                    </Text>
+                                    <span style={{ fontSize: '0.8em' }}>
+                                        <Text type="secondary" style={{ fontSize: '1em' }}>
+                                            {m.voiceName}
+                                            {m.engine && ` · ${m.engine}`}
+                                            {m.filesizeMb != null &&
+                                                ` · ~${Math.round(m.filesizeMb)} ${t('Mo')}`}
+                                        </Text>{' '}
+                                        <QualityTag quality={m.quality} />
+                                    </span>
                                 }
                             />
                         </List.Item>

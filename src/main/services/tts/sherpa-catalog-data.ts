@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { SherpaCatalogEntry } from './sherpa-catalog';
-import { normalizeLangCode } from './sherpa-catalog';
+import { normalizeLangCode, entrySupportsLang } from './sherpa-catalog';
 import { getTtsResourceDir } from '@main/lib/app-paths';
 
 // ── Lazy-loaded catalog (single source of truth) ──
@@ -28,5 +28,5 @@ export function findCatalogModelByModelName(modelName: string): SherpaCatalogEnt
 
 export function findCatalogModelsByLangCode(langCode: string): SherpaCatalogEntry[] {
     const code = normalizeLangCode(langCode);
-    return loadCatalog().filter((m) => normalizeLangCode(m.langCode) === code);
+    return loadCatalog().filter((m) => entrySupportsLang(m, code));
 }

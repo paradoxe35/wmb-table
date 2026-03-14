@@ -237,6 +237,12 @@ const es: Record<string, string> = {
     'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
         'No hay voces disponibles para el idioma activo. Use la búsqueda anterior para encontrar una voz en otro idioma.',
 
+    // quality tags
+    'Haute qualité': 'Alta calidad',
+    'Qualité moyenne': 'Calidad media',
+    'Qualité légère': 'Calidad ligera',
+    Multilingue: 'Multilingüe',
+
     // ── TTS provider ElevenLabs ──
     'Clé API ElevenLabs': 'Clave API ElevenLabs',
     'Votre clé secrète ElevenLabs. Elle est stockée en toute sécurité sur votre ordinateur.':

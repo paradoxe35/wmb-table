@@ -234,6 +234,11 @@ const en: Record<string, string> = {
     Télécharger: 'Download',
     'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
         'No voice available for the active language. Use the search above to find a voice in another language.',
+    // quality tags
+    'Haute qualité': 'High quality',
+    'Qualité moyenne': 'Medium quality',
+    'Qualité légère': 'Light quality',
+    Multilingue: 'Multilingual',
 
     // ── TTS provider ElevenLabs ──
     'Clé API ElevenLabs': 'ElevenLabs API Key',
