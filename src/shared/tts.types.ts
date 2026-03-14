@@ -1,9 +1,50 @@
 // ── Provider identification ──
-export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'elevenlabs', 'openai', 'edge'] as const;
-export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
-export const DEFAULT_TTS_PROVIDER: TtsProviderType = 'sherpa';
 export const SEGMENT_GAP_MS = 500;
 export type TtsProviderLocality = 'local' | 'remote';
+
+export interface TtsProviderMeta {
+    label: string;
+    locality: TtsProviderLocality;
+    hint: string;
+    free: boolean;
+}
+
+export const PROVIDER_CATALOG = {
+    browser: {
+        label: 'Voix du système',
+        locality: 'local',
+        hint: 'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.',
+        free: true,
+    },
+    sherpa: {
+        label: 'Sherpa-ONNX TTS',
+        locality: 'local',
+        hint: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
+        free: true,
+    },
+    elevenlabs: {
+        label: 'ElevenLabs TTS',
+        locality: 'remote',
+        hint: 'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
+        free: false,
+    },
+    openai: {
+        label: 'OpenAI TTS',
+        locality: 'remote',
+        hint: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
+        free: false,
+    },
+    edge: {
+        label: 'Edge TTS (Microsoft)',
+        locality: 'remote',
+        hint: 'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.',
+        free: true,
+    },
+} as const satisfies Record<string, TtsProviderMeta>;
+
+export type TtsProviderType = keyof typeof PROVIDER_CATALOG;
+export const TTS_PROVIDER_TYPES = Object.keys(PROVIDER_CATALOG) as TtsProviderType[];
+export const DEFAULT_TTS_PROVIDER: TtsProviderType = 'sherpa';
 
 // ── Voice definition ──
 export interface TtsVoice {
@@ -253,6 +294,46 @@ export const LANG_LABELS_FR: Record<string, string> = {
     uz: 'Ouzbek',
     zu: 'Zoulou',
     wuu: 'Chinois wu',
+    // Additional languages
+    hy: 'Arménien',
+    kk: 'Kazakh',
+    ky: 'Kirghize',
+    tg: 'Tadjik',
+    tk: 'Turkmène',
+    tt: 'Tatar',
+    yo: 'Yoruba',
+    ig: 'Igbo',
+    xh: 'Xhosa',
+    sn: 'Shona',
+    rw: 'Kinyarwanda',
+    mg: 'Malgache',
+    eo: 'Espéranto',
+    la: 'Latin',
+    tl: 'Tagalog',
+    ht: 'Créole haïtien',
+    ku: 'Kurde',
+    sd: 'Sindhi',
+    or: 'Odia',
+    as: 'Assamais',
+    fy: 'Frison',
+    gd: 'Gaélique écossais',
+    mi: 'Maori',
+    sm: 'Samoan',
+    to: 'Tongien',
+    haw: 'Hawaïen',
+    ceb: 'Cebuano',
+    ny: 'Chichewa',
+    co: 'Corse',
+    hmn: 'Hmong',
+    st: 'Sotho',
+    ts: 'Tsonga',
+    tn: 'Tswana',
+    ak: 'Akan',
+    ln: 'Lingala',
+    om: 'Oromo',
+    ti: 'Tigrinya',
+    wo: 'Wolof',
+    ii: 'Yi',
 };
 
 // ── Text helpers ──

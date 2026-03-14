@@ -12,48 +12,6 @@ import type {
 
 const { Text } = Typography;
 
-// ── Constants ──
-
-interface ProviderMeta {
-    label: string;
-    locality: TtsProviderLocality;
-    hint: string;
-    free: boolean;
-}
-
-export const PROVIDER_CATALOG: Record<TtsProviderType, ProviderMeta> = {
-    browser: {
-        label: 'Voix du système',
-        locality: 'local',
-        hint: 'Gratuit, fonctionne sans connexion internet. Utilise les voix déjà installées sur votre ordinateur.',
-        free: true,
-    },
-    sherpa: {
-        label: 'Sherpa-ONNX TTS',
-        locality: 'local',
-        hint: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
-        free: true,
-    },
-    elevenlabs: {
-        label: 'ElevenLabs TTS',
-        locality: 'remote',
-        hint: 'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
-        free: false,
-    },
-    openai: {
-        label: 'OpenAI TTS',
-        locality: 'remote',
-        hint: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
-        free: false,
-    },
-    edge: {
-        label: 'Edge TTS (Microsoft)',
-        locality: 'remote',
-        hint: 'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.',
-        free: true,
-    },
-};
-
 // ── Shared props ──
 
 export interface ProviderConfigProps {
@@ -97,13 +55,20 @@ export function providerUpdate(
     };
 }
 
-export function groupVoicesByLanguage(voices: TtsVoice[]) {
+export function groupVoicesByLanguage(voices: TtsVoice[], activeLanguage?: string) {
+    const langPrefix = activeLanguage?.split('-')[0].toLowerCase() ?? '';
+    const filtered = langPrefix
+        ? voices.filter((v) => (v.languageCodes[0] ?? '').startsWith(langPrefix))
+        : voices;
+    const list = filtered.length > 0 ? filtered : voices;
+
     const groups = new Map<string, TtsVoice[]>();
-    for (const v of voices) {
+    for (const v of list) {
         const lang = v.languageCodes[0] ?? 'other';
         if (!groups.has(lang)) groups.set(lang, []);
         groups.get(lang)!.push(v);
     }
+
     return Array.from(groups.entries()).map(([lang, items]) => ({
         label: LANG_LABELS_FR[lang] ?? lang,
         options: items.map((v) => ({
