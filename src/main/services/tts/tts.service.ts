@@ -10,7 +10,6 @@ import type { TtsProvider } from './provider';
 import { TtsCache } from './tts-cache';
 import type { CacheHit } from './tts-cache';
 import { OpenAiProvider } from './openai.provider';
-import { KokoroProvider } from './kokoro.provider';
 import { SherpaProvider } from './sherpa.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
 import { EdgeProvider } from './edge.provider';
@@ -63,13 +62,11 @@ export class TtsService {
     }
 
     private initProviders(): void {
-        const kokoro = new KokoroProvider();
         const sherpa = new SherpaProvider();
         const elevenlabs = new ElevenLabsProvider();
         const openai = new OpenAiProvider();
         const edge = new EdgeProvider();
 
-        this.providers.set('kokoro', kokoro);
         this.providers.set('sherpa', sherpa);
         this.providers.set('elevenlabs', elevenlabs);
         this.providers.set('openai', openai);

@@ -53,10 +53,6 @@ Avantages :
 
 Voix locales avec téléchargement initial.
 
-### Kokoro TTS
-
-Voix locales avec téléchargement initial.
-
 ### Edge TTS (Microsoft)
 
 Ce fournisseur est maintenant disponible dans l’application.
@@ -81,7 +77,7 @@ Voix en ligne de très bonne qualité. Compte nécessaire.
 <ScreenshotPlaceholder
   file="fr-settings-tts-provider-list.png"
   label="Liste des fournisseurs de lecture audio"
-  hint="Montrer la liste avec Voix du système, Sherpa, Kokoro, Edge TTS, ElevenLabs et OpenAI."
+  hint="Montrer la liste avec Voix du système, Sherpa, Edge TTS, ElevenLabs et OpenAI."
 />
 
 ## Choisir une voix

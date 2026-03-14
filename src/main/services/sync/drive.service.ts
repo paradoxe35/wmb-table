@@ -1,4 +1,4 @@
-import { google, type drive_v3 } from 'googleapis';
+import { drive, type drive_v3 } from '@googleapis/drive';
 import type { OAuth2Client } from 'google-auth-library';
 import { Readable } from 'node:stream';
 import log from 'electron-log';
@@ -19,7 +19,7 @@ export class GoogleDriveService {
     private drive: drive_v3.Drive;
 
     constructor(authClient: OAuth2Client) {
-        this.drive = google.drive({
+        this.drive = drive({
             version: 'v3',
             auth: authClient,
             timeout: 30_000,

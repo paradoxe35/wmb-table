@@ -1,12 +1,5 @@
 // ── Provider identification ──
-export const TTS_PROVIDER_TYPES = [
-    'browser',
-    'sherpa',
-    'kokoro',
-    'elevenlabs',
-    'openai',
-    'edge',
-] as const;
+export const TTS_PROVIDER_TYPES = ['browser', 'sherpa', 'elevenlabs', 'openai', 'edge'] as const;
 export type TtsProviderType = (typeof TTS_PROVIDER_TYPES)[number];
 export const DEFAULT_TTS_PROVIDER: TtsProviderType = 'sherpa';
 export const SEGMENT_GAP_MS = 500;
@@ -168,7 +161,7 @@ export interface TtsModelInfo {
 // ── Language compatibility ──
 export type TtsIncompatibilityReason =
     | 'not_configured' // API key missing (ElevenLabs, OpenAI)
-    | 'model_not_downloaded' // local model not installed (Kokoro, Sherpa)
+    | 'model_not_downloaded' // local model not installed
     | 'no_model_for_language' // selected model doesn't support the document language
     | 'unsupported_language'; // provider doesn't support this language at all
 
@@ -282,7 +275,6 @@ export function createDefaultTtsSettings(): TtsSettings {
         providers: {
             browser: {},
             sherpa: {},
-            kokoro: {},
             elevenlabs: {},
             openai: {},
             edge: {},

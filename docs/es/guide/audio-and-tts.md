@@ -30,7 +30,6 @@ La aplicación puede usar:
 
 - voces del sistema
 - Sherpa-ONNX TTS
-- Kokoro TTS
 - Edge TTS (Microsoft)
 - ElevenLabs TTS
 - OpenAI TTS
@@ -40,7 +39,7 @@ La aplicación puede usar:
 <ScreenshotPlaceholder
   file="es-settings-tts-provider-list.png"
   label="Lista de proveedores de audio"
-  hint="Mostrar Voces del sistema, Sherpa, Kokoro, Edge TTS, ElevenLabs y OpenAI en la lista."
+  hint="Mostrar Voces del sistema, Sherpa, Edge TTS, ElevenLabs y OpenAI en la lista."
 />
 
 ## Dónde funciona

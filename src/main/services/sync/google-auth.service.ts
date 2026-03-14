@@ -3,8 +3,8 @@ import { join } from 'node:path';
 import { createServer, type Server } from 'node:http';
 import { app, shell } from 'electron';
 import { getAppDataDir } from '@main/lib/app-paths';
-import { google } from 'googleapis';
-import type { OAuth2Client } from 'google-auth-library';
+import { OAuth2Client } from 'google-auth-library';
+import { oauth2 } from '@googleapis/oauth2';
 import log from 'electron-log';
 
 const SCOPES = [
@@ -42,7 +42,7 @@ function createOAuth2Client(
     credentials: ReturnType<typeof loadCredentials>,
     redirectUri: string,
 ): OAuth2Client {
-    return new google.auth.OAuth2(credentials.client_id, credentials.client_secret, redirectUri);
+    return new OAuth2Client(credentials.client_id, credentials.client_secret, redirectUri);
 }
 
 /**
@@ -151,8 +151,8 @@ export async function authenticateWithGoogle(): Promise<{
         writeFileSync(getTokenPath(), JSON.stringify(tokens));
 
         // Fetch user info
-        const oauth2 = google.oauth2({ auth: client, version: 'v2' });
-        const { data } = await oauth2.userinfo.get();
+        const oauth2Client = oauth2({ auth: client, version: 'v2' });
+        const { data } = await oauth2Client.userinfo.get();
 
         return {
             client,

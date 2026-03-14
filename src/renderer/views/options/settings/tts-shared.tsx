@@ -34,12 +34,6 @@ export const PROVIDER_CATALOG: Record<TtsProviderType, ProviderMeta> = {
         hint: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
         free: true,
     },
-    kokoro: {
-        label: 'Kokoro TTS',
-        locality: 'local',
-        hint: 'Gratuit, fonctionne sans connexion internet. Bonne qualité, nécessite un premier téléchargement.',
-        free: true,
-    },
     elevenlabs: {
         label: 'ElevenLabs TTS',
         locality: 'remote',
