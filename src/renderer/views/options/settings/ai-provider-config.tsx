@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button, Card, Divider, Input, Popconfirm, Space, Tag } from 'antd';
+import { useCallback, useEffect, useState } from 'react';
+import { Button, Card, Divider, Input, Popconfirm, Select, Space, Tag } from 'antd';
 import {
     CheckCircleOutlined,
     CloudOutlined,
@@ -81,6 +81,96 @@ function TestButton({
     );
 }
 
+// ── Model select with fetch + custom entry ──
+
+function ModelSelect({
+    providerId,
+    value,
+    apiKey,
+    baseUrl,
+    onChange,
+}: {
+    providerId: string;
+    value: string | null | undefined;
+    apiKey?: string;
+    baseUrl?: string;
+    onChange: (model: string) => void;
+}) {
+    const { t } = useTranslation();
+    const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [fetched, setFetched] = useState(false);
+
+    const fetchModels = useCallback(async () => {
+        if (providerId === 'local') return;
+        setLoading(true);
+        try {
+            const models = await window.api.ai.fetchProviderModels({
+                providerId,
+                apiKey,
+                baseUrl,
+            });
+            const opts = models.map((m) => ({
+                value: m.id,
+                label: m.name !== m.id ? `${m.name} (${m.id})` : m.id,
+            }));
+            setOptions(opts);
+            setFetched(true);
+        } catch {
+            // Fetch failed — user can still type a custom model
+        } finally {
+            setLoading(false);
+        }
+    }, [providerId, apiKey, baseUrl]);
+
+    // Fetch once when API key is available
+    useEffect(() => {
+        if (apiKey && !fetched) {
+            fetchModels();
+        }
+    }, [apiKey, fetched, fetchModels]);
+
+    // Reset when provider/apiKey changes
+    useEffect(() => {
+        setFetched(false);
+        setOptions([]);
+    }, [providerId, apiKey]);
+
+    // Ensure the current value is always in the options list
+    const allOptions = [...options];
+    if (value && !allOptions.some((o) => o.value === value)) {
+        allOptions.unshift({ value, label: value });
+    }
+
+    return (
+        <Select
+            showSearch
+            value={value || undefined}
+            placeholder={t('Sélectionner ou saisir un modèle')}
+            onChange={onChange}
+            loading={loading}
+            options={allOptions}
+            filterOption={(input, option) =>
+                (option?.label ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+            }
+            onDropdownVisibleChange={(open) => {
+                if (open && !fetched && apiKey) fetchModels();
+            }}
+            notFoundContent={
+                loading
+                    ? t('Chargement...')
+                    : !apiKey
+                      ? t('Saisissez une clé API pour charger les modèles')
+                      : t('Aucun modèle trouvé — saisissez un identifiant')
+            }
+            style={{ width: '100%' }}
+        />
+    );
+}
+
+// ── Provider configs ──
+
 export function BuiltinProviderConfig({
     provider,
     settings,
@@ -141,17 +231,13 @@ export function BuiltinProviderConfig({
                         );
                     }
                     return (
-                        <Field
-                            key={field.key}
-                            label={t('Modèle')}
-                            hint={t(
-                                "Utilisez l'identifiant exact du modèle fourni par ce service.",
-                            )}
-                        >
-                            <Input
-                                value={config?.model ?? ''}
-                                onChange={(e) => updateField('model', e.target.value)}
-                                placeholder={t('Modèle')}
+                        <Field key={field.key} label={t('Modèle')}>
+                            <ModelSelect
+                                providerId={provider.id}
+                                value={config?.model}
+                                apiKey={config?.apiKey}
+                                baseUrl={config?.baseUrl}
+                                onChange={(model) => updateField('model', model)}
                             />
                         </Field>
                     );
@@ -224,9 +310,12 @@ export function CustomProviderConfig({
                     />
                 </Field>
                 <Field label={t('Modèle par défaut')}>
-                    <Input
-                        value={provider.defaultModel ?? ''}
-                        onChange={(e) => updateCustom({ defaultModel: e.target.value })}
+                    <ModelSelect
+                        providerId={provider.id}
+                        value={provider.defaultModel}
+                        apiKey={provider.apiKey}
+                        baseUrl={provider.baseUrl}
+                        onChange={(model) => updateCustom({ defaultModel: model })}
                     />
                 </Field>
                 <TestButton

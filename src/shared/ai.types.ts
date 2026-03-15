@@ -128,6 +128,11 @@ export interface AiProviderDefinition {
     configurableFields: AiProviderFieldDefinition[];
 }
 
+export interface AiRemoteModel {
+    id: string;
+    name: string;
+}
+
 export interface AiModelScanResult {
     models: AiLocalModelInfo[];
     supportedModels: AiSupportedLocalModel[];

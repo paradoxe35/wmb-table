@@ -293,6 +293,8 @@ const api = {
             baseUrl?: string;
         }) => invoke(AiChannels.testProvider, input),
         downloadModel: (modelId: string) => invoke(AiChannels.downloadModel, modelId),
+        fetchProviderModels: (input: { providerId: string; apiKey?: string; baseUrl?: string }) =>
+            invoke(AiChannels.fetchProviderModels, input),
     },
 
     on: {

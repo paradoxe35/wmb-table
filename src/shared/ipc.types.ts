@@ -66,6 +66,7 @@ import type {
     AiModelDownloadProgress,
     AiModelScanResult,
     AiProviderTestResult,
+    AiRemoteModel,
     AiProviderDefinition,
     AiSendMessageRequest,
     AiSendMessageResult,
@@ -241,6 +242,7 @@ export const AiChannels = {
     scanLocalModels: 'ai:scanLocalModels',
     testProvider: 'ai:testProvider',
     downloadModel: 'ai:downloadModel',
+    fetchProviderModels: 'ai:fetchProviderModels',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -517,6 +519,10 @@ export interface InvokeChannelMap {
         return: AiProviderTestResult;
     };
     [AiChannels.downloadModel]: { args: [string]; return: void };
+    [AiChannels.fetchProviderModels]: {
+        args: [{ providerId: string; apiKey?: string; baseUrl?: string }];
+        return: AiRemoteModel[];
+    };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */

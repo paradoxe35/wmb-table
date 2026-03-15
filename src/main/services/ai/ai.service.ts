@@ -14,6 +14,7 @@ import type {
     AiSettings,
     AiToolCall,
     AiToolResult,
+    AiRemoteModel,
 } from '@shared/ai.types';
 import { buildSystemPrompt } from './system-prompt';
 import { scanLocalModels } from './local/local-model.service';
@@ -24,6 +25,7 @@ import { sendToRenderer } from '@main/ipc/register';
 import { buildConversationContext } from './context-memory';
 import { resolveDefaultModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
+import { SimpleCache } from '@main/lib/simple-cache';
 
 export class AiService {
     private controllers = new Map<string, AbortController>();
@@ -103,7 +105,7 @@ export class AiService {
             await generateText({
                 model,
                 prompt: 'Reply with the single word OK.',
-                maxOutputTokens: 5,
+                maxOutputTokens: 20,
             });
             return { valid: true };
         } catch (error) {
@@ -111,6 +113,106 @@ export class AiService {
                 valid: false,
                 error: error instanceof Error ? error.message : 'Provider validation failed.',
             };
+        }
+    }
+
+    async fetchProviderModels(input: {
+        providerId: string;
+        apiKey?: string;
+        baseUrl?: string;
+    }): Promise<AiRemoteModel[]> {
+        const settings = this.getSettings();
+        const { providerId } = input;
+
+        if (providerId === 'local') return [];
+
+        // Determine the base URL and API key
+        let baseUrl: string | undefined;
+        let apiKey: string | undefined;
+
+        const builtinConfig = settings.providers[providerId as keyof AiSettings['providers']];
+        if (builtinConfig) {
+            apiKey = input.apiKey ?? builtinConfig.apiKey;
+        }
+
+        const customProvider = settings.customProviders.find((p) => p.id === providerId);
+        if (customProvider) {
+            apiKey = input.apiKey ?? customProvider.apiKey;
+            baseUrl = input.baseUrl ?? customProvider.baseUrl;
+        }
+
+        if (!apiKey && providerId !== 'local') return [];
+
+        // Check cache first (1 hour TTL per provider)
+        const cacheKey = `ai-models:${providerId}`;
+        const cache = new SimpleCache<AiRemoteModel[]>(cacheKey, 60 * 60 * 1000);
+        const cached = cache.get();
+        if (cached) return cached;
+
+        // Resolve the models endpoint
+        const PROVIDER_BASE_URLS: Record<string, string> = {
+            openai: 'https://api.openai.com/v1',
+            openrouter: 'https://openrouter.ai/api/v1',
+            gemini: 'https://generativelanguage.googleapis.com/v1beta',
+            claude: 'https://api.anthropic.com/v1',
+        };
+
+        const base = baseUrl ?? PROVIDER_BASE_URLS[providerId];
+        if (!base) return [];
+
+        try {
+            let models: AiRemoteModel[] = [];
+
+            // Gemini uses a different endpoint format
+            if (providerId === 'gemini') {
+                const url = `${base}/models?key=${apiKey ?? ''}`;
+                const res = await fetch(url);
+                if (!res.ok) return cache.getStale() ?? [];
+                const data = (await res.json()) as {
+                    models?: { name: string; displayName: string }[];
+                };
+                models = (data.models ?? [])
+                    .filter((m) => m.name.startsWith('models/gemini'))
+                    .map((m) => ({
+                        id: m.name.replace('models/', ''),
+                        name: m.displayName,
+                    }));
+            } else if (providerId === 'claude') {
+                // Claude uses a different endpoint
+                const res = await fetch(`${base}/models`, {
+                    headers: {
+                        'x-api-key': apiKey ?? '',
+                        'anthropic-version': '2023-06-01',
+                    },
+                });
+                if (!res.ok) return cache.getStale() ?? [];
+                const data = (await res.json()) as {
+                    data?: { id: string; display_name?: string }[];
+                };
+                models = (data.data ?? []).map((m) => ({
+                    id: m.id,
+                    name: m.display_name ?? m.id,
+                }));
+            } else {
+                // OpenAI-compatible (OpenAI, OpenRouter, custom providers)
+                const headers: Record<string, string> = {};
+                if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+                const res = await fetch(`${base}/models`, { headers });
+                if (!res.ok) return cache.getStale() ?? [];
+                const data = (await res.json()) as {
+                    data?: { id: string; name?: string }[];
+                };
+                models = (data.data ?? [])
+                    .map((m) => ({ id: m.id, name: m.name ?? m.id }))
+                    .sort((a, b) => a.id.localeCompare(b.id));
+            }
+
+            if (models.length > 0) cache.set(models);
+            return models;
+        } catch (err) {
+            log.warn(`Failed to fetch models for provider ${providerId}:`, err);
+            return cache.getStale() ?? [];
         }
     }
 

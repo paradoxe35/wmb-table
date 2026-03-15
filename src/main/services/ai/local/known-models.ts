@@ -12,36 +12,37 @@ type KnownLocalModelSeed = Omit<AiLocalModelInfo, 'downloaded' | 'localPath' | '
 
 export const KNOWN_LOCAL_MODELS: KnownLocalModelSeed[] = [
     {
-        id: 'qwen3.5-0.8b',
-        name: 'Qwen 3.5',
+        id: 'qwen3.5-2b',
+        name: 'Qwen 3.5 — Recommandé',
         family: 'qwen',
-        fileName: 'qwen3.5-0.8b',
+        fileName: 'qwen3.5-2b',
         quantization: 'Q4_K_M',
         recommended: true,
         description:
-            'Léger et rapide. Idéal pour un usage quotidien sur la plupart des ordinateurs.',
+            'Bonne qualité de réponse, rapide et léger (~1,3 Go). Fonctionne sur la plupart des ordinateurs.',
+        downloadUrl: 'https://huggingface.co/unsloth/Qwen3.5-2B-GGUF',
+        directDownloadUrl:
+            'https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/main/Qwen3.5-2B-Q4_K_M.gguf',
+        expectedFileName: 'Qwen3.5-2B-Q4_K_M.gguf',
+        approximateSizeMb: 1280,
+        contextSize: 8192,
+        aliases: ['qwen3.5-2b', 'qwen3.5', 'qwen'],
+    },
+    {
+        id: 'qwen3.5-0.8b',
+        name: 'Qwen 3.5 — Léger',
+        family: 'qwen',
+        fileName: 'qwen3.5-0.8b',
+        quantization: 'Q4_K_M',
+        recommended: false,
+        description:
+            'Très rapide et très léger (~550 Mo). Pour les ordinateurs anciens ou avec peu de mémoire.',
         downloadUrl: 'https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF',
         directDownloadUrl:
             'https://huggingface.co/AaryanK/Qwen3.5-0.8B-GGUF/resolve/main/Qwen3.5-0.8B.q4_k_m.gguf',
         expectedFileName: 'Qwen3.5-0.8B.q4_k_m.gguf',
         approximateSizeMb: 550,
-        contextSize: 4096,
-        aliases: ['qwen3.5-0.8b', 'qwen3.5', 'qwen'],
-    },
-    {
-        id: 'gemma3-1b',
-        name: 'Gemma 3',
-        family: 'gemma',
-        fileName: 'gemma3-1b',
-        quantization: 'Q4_K_M',
-        recommended: false,
-        description: 'Plus complet, meilleure compréhension. Nécessite un peu plus de mémoire.',
-        downloadUrl: 'https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF',
-        directDownloadUrl:
-            'https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF/resolve/main/gemma-3-1b-it-Q4_K_M.gguf',
-        expectedFileName: 'gemma-3-1b-it-Q4_K_M.gguf',
-        approximateSizeMb: 750,
-        contextSize: 4096,
-        aliases: ['gemma3-1b', 'gemma-3-1b', 'gemma'],
+        contextSize: 8192,
+        aliases: ['qwen3.5-0.8b'],
     },
 ];
