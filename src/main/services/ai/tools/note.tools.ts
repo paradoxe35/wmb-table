@@ -31,8 +31,12 @@ export function buildNoteTools(defaultLanguageCode: string): Record<string, AiTo
             execute: async ({ name, content }) => {
                 const note = notesRepo.create(name.trim());
                 if (content) {
-                    const htmlContent = await marked.parse(content);
-                    notesRepo.updateContent(note.id, `<h1>${name}</h1>\n${htmlContent}`);
+                    let htmlContent = await marked.parse(content);
+                    if (!htmlContent.includes('<h1>')) {
+                        htmlContent = `<h1>${name}</h1>\n${htmlContent}`;
+                    }
+
+                    notesRepo.updateContent(note.id, htmlContent);
                 }
                 const created = notesRepo.getById(note.id);
                 if (!created) throw new Error('Failed to retrieve created note');
