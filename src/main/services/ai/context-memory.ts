@@ -260,6 +260,21 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             }
             break;
 
+        case 'researchTopic':
+            if (output && typeof output === 'object') {
+                const summary = normalizeWhitespace(String(output.summary ?? ''));
+                return `Research: ${truncateText(summary, charLimit)}`;
+            }
+            break;
+
+        case 'readSermon':
+            if (output && typeof output === 'object') {
+                const sermonId = String(output.sermonId ?? 'sermon');
+                const summary = normalizeWhitespace(String(output.summary ?? ''));
+                return `Read ${sermonId}: ${truncateText(summary, charLimit)}`;
+            }
+            break;
+
         default:
             break;
     }

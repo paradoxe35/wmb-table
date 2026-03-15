@@ -1,0 +1,80 @@
+import { generateText, tool, stepCountIs } from 'ai';
+import { z } from 'zod';
+import log from '@main/lib/logger';
+import { buildSermonTools } from '../tools/sermon.tools';
+import type { AiToolDefinition } from '../tools/types';
+import type { AgentContext } from './types';
+import { buildSermonReaderAgentPrompt } from './agent-prompts';
+
+function buildSermonReaderToolSubset(languageCode: string): Record<string, AiToolDefinition> {
+    const sermonTools = buildSermonTools(languageCode);
+
+    return {
+        getSermonContent: sermonTools.getSermonContent,
+        searchContent: sermonTools.searchContent,
+    };
+}
+
+export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, AiToolDefinition> {
+    return {
+        readSermon: {
+            description:
+                'Delegate sermon reading to a specialized subagent that paginates through sermon content ' +
+                'and answers a specific question. Use this when the user asks to summarize, explain, or ' +
+                'analyze a specific sermon. Returns a concise summary with paragraph citations.',
+            inputSchema: z.object({
+                sermonId: z.string().describe('The sermon ID to read'),
+                translationId: z
+                    .number()
+                    .int()
+                    .optional()
+                    .describe('Translation ID from search results'),
+                question: z.string().describe('The question to answer about this sermon'),
+                languageCode: z
+                    .string()
+                    .optional()
+                    .describe('Language code for content (defaults to active language)'),
+            }),
+            execute: async ({ sermonId, translationId, question, languageCode }) => {
+                const lang = languageCode ?? ctx.languageCode;
+                const executors = buildSermonReaderToolSubset(lang);
+                const agentTools = Object.fromEntries(
+                    Object.entries(executors).map(([name, def]) => [name, tool(def)]),
+                );
+
+                const prompt = translationId
+                    ? `Read sermon "${sermonId}" (translationId: ${translationId}) and answer: ${question}`
+                    : `Read sermon "${sermonId}" and answer: ${question}`;
+
+                log.info('Sermon reader agent starting', { sermonId, question, languageCode: lang });
+
+                try {
+                    const result = await generateText({
+                        model: ctx.model,
+                        system: buildSermonReaderAgentPrompt(lang),
+                        prompt,
+                        tools: agentTools,
+                        stopWhen: stepCountIs(8),
+                        maxOutputTokens: 2000,
+                        abortSignal: ctx.abortSignal,
+                    });
+
+                    log.info('Sermon reader agent completed', {
+                        sermonId,
+                        steps: result.steps.length,
+                    });
+
+                    return {
+                        summary: result.text,
+                        sermonId,
+                    };
+                } catch (error) {
+                    const message =
+                        error instanceof Error ? error.message : 'Sermon reader agent failed';
+                    log.error('Sermon reader agent failed', { sermonId, error: message });
+                    return { summary: `Sermon reading failed: ${message}`, sermonId };
+                }
+            },
+        },
+    };
+}

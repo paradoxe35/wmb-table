@@ -8,6 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Card, Input, Space, App as AntApp, Button, Empty, message, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import {
@@ -205,14 +206,24 @@ export default function Subject() {
                     className="container-y mt-2"
                     style={{ flex: 1, minHeight: 0, padding: '22px', overflowX: 'hidden' }}
                 >
-                    {datas.map((item) => (
-                        <ItemSubject
-                            key={item.name}
-                            item={item}
-                            onSelectItem={onSelectItem}
-                            onDeleteSubject={handleSubjectDeletion}
-                        />
-                    ))}
+                    <AnimatePresence mode="popLayout">
+                        {datas.map((item) => (
+                            <motion.div
+                                key={item.name}
+                                layout
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <ItemSubject
+                                    item={item}
+                                    onSelectItem={onSelectItem}
+                                    onDeleteSubject={handleSubjectDeletion}
+                                />
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
                 </div>
             </div>
             <div className="container-y" style={{ flex: 1, minHeight: 0, padding: '0 10px' }}>
@@ -321,9 +332,20 @@ function ShowActiveDocuments({
                         </Text>
                     </div>
                     <div className="subject-ref-list">
-                        {documents.map((item) => (
-                            <ItemFromSelectedSubject key={item.id} item={item} confirm={confirm} />
-                        ))}
+                        <AnimatePresence mode="popLayout">
+                            {documents.map((item) => (
+                                <motion.div
+                                    key={item.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, x: -100 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <ItemFromSelectedSubject item={item} confirm={confirm} />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
                 </>
             ) : (

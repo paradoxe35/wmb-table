@@ -41,7 +41,7 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 'Retrieve the text content (paragraphs) of a sermon. ' +
                 'You MUST pass sermonId (and translationId if available from searchSermons results). ' +
                 'Use startParagraph and maxParagraphs to paginate through long sermons. ' +
-                'To get a general overview, read the first 30 paragraphs.',
+                'To get a general overview, read the first 15 paragraphs.',
             inputSchema: z.object({
                 sermonId: z.string(),
                 languageCode: z.string().optional(),
@@ -54,7 +54,7 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 languageCode,
                 translationId,
                 startParagraph = 0,
-                maxParagraphs = 30,
+                maxParagraphs = 15,
             }) => {
                 const lang = languageCode ?? defaultLanguageCode;
 

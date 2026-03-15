@@ -12,6 +12,7 @@ import { NoteItem } from '@shared/types';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export function Notes({
     setWorkingNote,
@@ -92,27 +93,37 @@ export function Notes({
 
                 {notes.length > 0 && (
                     <div className="notes-grid">
-                        {notes.map((note) => (
-                            <Card
-                                key={note.id}
-                                className="note-card"
-                                onClick={() => editDocument(note)}
-                                actions={[
-                                    <EditOutlined key="edit" />,
-                                    <span key="delete" onClick={(e) => e.stopPropagation()}>
-                                        <DeleteBtn confirm={() => handleDeletion(note)} />
-                                    </span>,
-                                ]}
-                            >
-                                <Card.Meta
-                                    title={
-                                        <Typography.Text title={note.name}>
-                                            {note.name}
-                                        </Typography.Text>
-                                    }
-                                />
-                            </Card>
-                        ))}
+                        <AnimatePresence mode="popLayout">
+                            {notes.map((note) => (
+                                <motion.div
+                                    key={note.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <Card
+                                        className="note-card"
+                                        onClick={() => editDocument(note)}
+                                        actions={[
+                                            <EditOutlined key="edit" />,
+                                            <span key="delete" onClick={(e) => e.stopPropagation()}>
+                                                <DeleteBtn confirm={() => handleDeletion(note)} />
+                                            </span>,
+                                        ]}
+                                    >
+                                        <Card.Meta
+                                            title={
+                                                <Typography.Text title={note.name}>
+                                                    {note.name}
+                                                </Typography.Text>
+                                            }
+                                        />
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
                 )}
             </Space>

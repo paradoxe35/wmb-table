@@ -25,6 +25,7 @@ import {
     useSermonLookup,
     useValueStateRef,
 } from '@renderer/hooks';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
@@ -239,27 +240,34 @@ export function ReferenceBibleModal({
                                 {t('Aucun verset sélectionné')}
                             </Typography.Text>
                         )}
-                        {verses.map((ref) => (
-                            <div
-                                key={ref.id}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 8,
-                                    padding: '10px 0',
-                                    borderBottom: '1px solid var(--ant-color-border)',
-                                }}
-                            >
-                                <DeleteBtn confirm={() => handleDeletionRef(ref)} />
-                                <div>
-                                    <span style={{ color: 'var(--ant-color-text-secondary)' }}>
-                                        {ref.bookName} {ref.chapter}:{ref.verse}
-                                    </span>
-                                    {' — '}
-                                    <span>{ref.content}</span>
-                                </div>
-                            </div>
-                        ))}
+                        <AnimatePresence mode="popLayout">
+                            {verses.map((ref) => (
+                                <motion.div
+                                    key={ref.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, x: -50 }}
+                                    transition={{ duration: 0.2 }}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: 8,
+                                        padding: '10px 0',
+                                        borderBottom: '1px solid var(--ant-color-border)',
+                                    }}
+                                >
+                                    <DeleteBtn confirm={() => handleDeletionRef(ref)} />
+                                    <div>
+                                        <span style={{ color: 'var(--ant-color-text-secondary)' }}>
+                                            {ref.bookName} {ref.chapter}:{ref.verse}
+                                        </span>
+                                        {' — '}
+                                        <span>{ref.content}</span>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
                     {!showBible && (
                         <Button

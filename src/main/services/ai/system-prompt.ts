@@ -5,6 +5,7 @@ export function buildSystemPrompt(input: {
     installedLanguages: InstalledLanguage[];
     languagePreference: 'active' | 'explicit-only';
     overrideLanguageCode?: string;
+    hasAgents?: boolean;
 }): string {
     const installedLanguages = input.installedLanguages
         .map((lang) => {
@@ -37,6 +38,23 @@ export function buildSystemPrompt(input: {
         '4. If the user wants more, use startParagraph to paginate through the rest.',
         '',
         'If there is uncertainty, say so plainly and ask a short follow-up question.',
+        '',
+        ...(input.hasAgents
+            ? [
+                  '## Delegation to subagents',
+                  'You have two specialized subagent tools that handle research-heavy tasks in their own context:',
+                  '- **researchTopic**: Use for broad topic exploration, cross-referencing multiple sermons/Bible passages/documents. Example: "explore the topic of Divinity", "what does the message say about faith and healing?"',
+                  '- **readSermon**: Use when the user asks to summarize, explain, or analyze a specific sermon. Example: "summarize sermon Paradoxe", "what is the main theme of sermon 65-0429B?"',
+                  '',
+                  'Use direct tools (not subagents) for:',
+                  '- Creating/updating notes and subjects',
+                  '- Adding references to notes or subjects',
+                  '- Simple lookups (list languages, list documents, get Bible versions)',
+                  '- Quick Bible passage retrieval',
+                  '',
+                  'The subagents return concise summaries — present their findings to the user directly.',
+              ]
+            : []),
         'Available installed languages:',
         installedLanguages || '- none',
     ].join('\n');

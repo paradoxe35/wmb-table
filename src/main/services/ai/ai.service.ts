@@ -271,9 +271,9 @@ export class AiService {
             overrideLanguageCode: request.overrideLanguageCode,
             installedLanguages,
             languagePreference: settings.languagePreference,
+            hasAgents: !isLocal,
         });
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
-        const tools = buildAiTools(activeLanguageCode);
         const model = resolveLanguageModel({
             settings,
             providerId,
@@ -285,6 +285,12 @@ export class AiService {
         this.stopGeneration(conversation.id);
         const controller = new AbortController();
         this.controllers.set(conversation.id, controller);
+
+        const tools = buildAiTools(activeLanguageCode, {
+            model,
+            isLocal,
+            abortSignal: controller.signal,
+        });
 
         const runner = this.getRunner(providerId);
 
