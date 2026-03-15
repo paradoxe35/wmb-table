@@ -374,6 +374,14 @@ const en: Record<string, string> = {
     'Vérification des mises à jour...': 'Checking for updates...',
     'Mettre à jour': 'Update',
     'Installer la mise à jour': 'Install update',
+    'Mise à jour disponible': 'Update available',
+    'La version {{version}} est disponible.': 'Version {{version}} is available.',
+    'Une nouvelle version est disponible.': 'A new version is available.',
+    'Voir la mise à jour': 'View update',
+    'Mise à jour prête': 'Update ready',
+    "La mise à jour a été téléchargée. Elle sera installée au prochain redémarrage, ou vous pouvez l'installer maintenant.":
+        'The update has been downloaded. It will be installed on the next restart, or you can install it now.',
+    'Redémarrer et installer': 'Restart and install',
 
     // ── Language manager modal ──
     'Supprimer cette langue ?': 'Delete this language?',
