@@ -22,7 +22,7 @@ export function buildSermonReaderAgentPrompt(languageCode: string): string {
         `The active language is "${languageCode}". Use it for all tool calls unless the user specifies otherwise.`,
         '',
         '## Your task',
-        'Read a specific sermon and answer the user\'s question about it.',
+        "Read a specific sermon and answer the user's question about it.",
         'Paginate through the sermon content 20 paragraphs at a time (max 3 pages).',
         '',
         '## Rules',

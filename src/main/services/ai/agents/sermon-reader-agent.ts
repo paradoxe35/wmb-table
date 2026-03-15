@@ -49,7 +49,11 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                     ? `Read sermon "${sermonId}" (translationId: ${translationId}) and answer: ${question}`
                     : `Read sermon "${sermonId}" and answer: ${question}`;
 
-                log.info('Sermon reader agent starting', { sermonId, question, languageCode: lang });
+                log.info('Sermon reader agent starting', {
+                    sermonId,
+                    question,
+                    languageCode: lang,
+                });
 
                 try {
                     const result = await generateText({
