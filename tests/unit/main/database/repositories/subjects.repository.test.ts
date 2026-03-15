@@ -43,10 +43,10 @@ describe('subjects.repository', () => {
     });
 
     it('deleteSubject removes subject and items', () => {
-        subjectsRepo.create('ToDelete');
+        const subject = subjectsRepo.create('ToDelete');
         subjectsRepo.createItem('ToDelete', 'Doc', { tree: [] }, 'text');
 
-        subjectsRepo.deleteSubject('ToDelete');
+        subjectsRepo.deleteSubject(subject.id);
         expect(subjectsRepo.getAll()).toHaveLength(0);
         expect(subjectsRepo.getItems('ToDelete')).toHaveLength(0);
     });
