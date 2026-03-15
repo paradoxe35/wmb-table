@@ -378,6 +378,14 @@ const es: Record<string, string> = {
     'Vérification des mises à jour...': 'Verificando actualizaciones...',
     'Mettre à jour': 'Actualizar',
     'Installer la mise à jour': 'Instalar actualización',
+    'Mise à jour disponible': 'Actualización disponible',
+    'La version {{version}} est disponible.': 'La versión {{version}} está disponible.',
+    'Une nouvelle version est disponible.': 'Una nueva versión está disponible.',
+    'Voir la mise à jour': 'Ver actualización',
+    'Mise à jour prête': 'Actualización lista',
+    "La mise à jour a été téléchargée. Elle sera installée au prochain redémarrage, ou vous pouvez l'installer maintenant.":
+        'La actualización se ha descargado. Se instalará en el próximo reinicio, o puede instalarla ahora.',
+    'Redémarrer et installer': 'Reiniciar e instalar',
 
     // ── Language manager modal ──
     'Supprimer cette langue ?': '¿Eliminar este idioma?',

@@ -3,6 +3,7 @@ import type { BrowserWindow } from 'electron';
 import { PushChannels } from '@shared/ipc.types';
 import { sendToRenderer } from '@main/ipc/register';
 import type { UpdaterNotification } from '@shared/types';
+import { GITHUB_TOKEN } from './github';
 import log from './logger';
 
 const { autoUpdater } = updater;
@@ -21,6 +22,11 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     autoUpdater.logger = log;
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
+
+    // Support private GitHub repos — pass token if available
+    if (GITHUB_TOKEN) {
+        autoUpdater.requestHeaders = { Authorization: `token ${GITHUB_TOKEN}` };
+    }
 
     autoUpdater.on('checking-for-update', () => {
         log.info('Updater: checking for update...');
@@ -73,12 +79,15 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
         }
     });
 
-    // Check for updates after a short delay
-    setTimeout(() => {
+    const check = () => {
         autoUpdater.checkForUpdates().catch((err) => {
             log.error('Updater: failed to check for updates', err);
         });
-    }, 3000);
+    };
+
+    // Check after a short delay, then every 30 minutes
+    setTimeout(check, 3000);
+    setInterval(check, 30 * 60 * 1000);
 }
 
 export function getUpdateStatus(): UpdaterNotification {

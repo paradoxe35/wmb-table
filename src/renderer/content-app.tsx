@@ -11,6 +11,7 @@ import DocumentAudioPlayer from './views/components/modals/document-audio-player
 import LanguageManagerModal from './views/components/modals/language-manager-modal';
 import HighlightModal from './views/components/modals/highlight-modal';
 import SyncListener from './components/sync-listener';
+import UpdateNotifier from './components/update-notifier';
 
 import Search from './views/options/search';
 import History from './views/options/history';
@@ -135,6 +136,7 @@ export function ContentApp() {
             <LanguageManagerModal />
             <HighlightModal />
             <SyncListener />
+            <UpdateNotifier />
         </>
     );
 }
