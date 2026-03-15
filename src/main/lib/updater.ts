@@ -25,7 +25,7 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
 
     // Support private GitHub repos — pass token if available
     if (GITHUB_TOKEN) {
-        autoUpdater.requestHeaders = { Authorization: `token ${GITHUB_TOKEN}` };
+        autoUpdater.requestHeaders = { Authorization: `Bearer ${GITHUB_TOKEN}` };
     }
 
     autoUpdater.on('checking-for-update', () => {
