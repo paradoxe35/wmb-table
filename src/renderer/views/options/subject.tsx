@@ -133,9 +133,16 @@ export default function Subject() {
         loadSubjects();
     }, [loadSubjects]);
 
+    // Bump this to force subject items to reload (e.g. after sync)
+    const [itemsRefreshKey, setItemsRefreshKey] = useState(0);
+
     useEffect(() => {
-        window.addEventListener(AI_DATA_EVENT.subjectsChanged, loadSubjects);
-        return () => window.removeEventListener(AI_DATA_EVENT.subjectsChanged, loadSubjects);
+        const onChanged = () => {
+            loadSubjects();
+            setItemsRefreshKey((k) => k + 1);
+        };
+        window.addEventListener(AI_DATA_EVENT.subjectsChanged, onChanged);
+        return () => window.removeEventListener(AI_DATA_EVENT.subjectsChanged, onChanged);
     }, [loadSubjects]);
 
     useEffect(() => {
@@ -166,7 +173,7 @@ export default function Subject() {
                     message.error(t('Erreur lors du chargement des éléments du sujet'));
                 });
         }
-    }, [datas, activeSubject]);
+    }, [datas, activeSubject, itemsRefreshKey]);
 
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
 

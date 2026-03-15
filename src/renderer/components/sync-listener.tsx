@@ -28,6 +28,7 @@ export default function SyncListener() {
             }
             if (tables.includes('subjects') || tables.includes('subject_items')) {
                 window.api.subjects.getAll().then(setSubjects);
+                window.dispatchEvent(new Event(AI_DATA_EVENT.subjectsChanged));
             }
             if (tables.includes('custom_documents')) {
                 window.api.app.getCustomDocuments().then(setCustomDocuments);
