@@ -12,6 +12,7 @@ import {
     getUnsyncedChanges,
     markSyncedIfNotChanged,
     deleteOldChangeLogs,
+    invalidateStaleChangeLogs,
 } from './change-log.service';
 import {
     GoogleDriveService,
@@ -156,6 +157,12 @@ async function schedulerWorker(): Promise<void> {
 
     try {
         await applyRemoteChanges();
+        // After pull: invalidate any local unsynced change logs that conflict
+        // with the pulled data. This prevents stale local DELETEs from being
+        // pushed back and erasing records that were just restored by the pull.
+        if (Object.keys(affectedTables).length > 0) {
+            invalidateStaleChangeLogs(affectedTables);
+        }
     } catch (err) {
         failure = err instanceof Error ? err : new Error(String(err));
     }
@@ -195,8 +202,11 @@ async function schedulerWorker(): Promise<void> {
         pushToRenderer(PushChannels.newSynchronizedDatas, Object.keys(affectedTables));
     }
 
-    // Push always runs last, regardless of pull result
-    await syncChangesToDrive();
+    // Push only if pull succeeded — prevents pushing stale/partial data
+    // that could overwrite valid data on Drive
+    if (!failure) {
+        await syncChangesToDrive();
+    }
 
     isSyncRunning = false;
 }

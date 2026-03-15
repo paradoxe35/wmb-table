@@ -1,4 +1,4 @@
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, inArray } from 'drizzle-orm';
 import { getSyncDb } from '@main/database';
 import { changeLogs } from '@main/database/sync-schema';
 import { toSqlColumnNames } from '@main/database/sync-tables';
@@ -113,4 +113,36 @@ export function deleteOldChangeLogs(before: string): void {
 
 export function getAllChangeLogs(): ChangeLogRecord[] {
     return getSyncDb().select().from(changeLogs).all() as ChangeLogRecord[];
+}
+
+/**
+ * Invalidate (mark as synced) any unsynced local change logs that conflict
+ * with remotely-pulled data. This prevents stale local DELETE/SAVE operations
+ * from being pushed back to Drive after a pull overwrites them.
+ *
+ * For example: if Machine B deleted note X locally, then a pull restores X
+ * from a remote snapshot, the old local DELETE change log must NOT be pushed —
+ * otherwise it would delete note X on all other machines.
+ */
+export function invalidateStaleChangeLogs(affectedTables: Record<string, string[]>): void {
+    const db = getSyncDb();
+    for (const [tableName, rowIds] of Object.entries(affectedTables)) {
+        if (rowIds.length === 0) continue;
+
+        // Process in batches to avoid SQLite variable limits
+        const BATCH = 500;
+        for (let i = 0; i < rowIds.length; i += BATCH) {
+            const batch = rowIds.slice(i, i + BATCH);
+            db.update(changeLogs)
+                .set({ synced: true })
+                .where(
+                    and(
+                        eq(changeLogs.tableName, tableName),
+                        eq(changeLogs.synced, false),
+                        inArray(changeLogs.rowId, batch),
+                    ),
+                )
+                .run();
+        }
+    }
 }
