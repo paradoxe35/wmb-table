@@ -86,7 +86,7 @@ jobs:
         runs-on: ${{ matrix.os }}
         env:
             GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
-            MAIN_VITE_GITHUB_TOKEN: ${{ MAIN_VITE_GITHUB_TOKEN }}
+            MAIN_VITE_GITHUB_TOKEN: ${{ secrets.MAIN_VITE_GITHUB_TOKEN }}
         steps:
             - uses: actions/checkout@v4
 
