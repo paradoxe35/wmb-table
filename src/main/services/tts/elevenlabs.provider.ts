@@ -1,4 +1,5 @@
 import log from 'electron-log';
+import { SimpleCache } from '@main/lib/simple-cache';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -214,6 +215,8 @@ interface ElevenLabsVoiceResponse {
     next_page_token?: string;
 }
 
+const voiceCache = new SimpleCache<TtsVoice[]>('elevenlabs-voices', 60 * 60 * 1000); // 1 hour
+
 export class ElevenLabsProvider implements TtsProvider {
     readonly type: TtsProviderType = 'elevenlabs';
     private apiKey = '';
@@ -377,7 +380,20 @@ export class ElevenLabsProvider implements TtsProvider {
     }
 
     private async fetchVoices(): Promise<TtsVoice[]> {
-        if (!this.apiKey) return this.cachedVoices;
+        if (!this.apiKey) {
+            // No API key — try returning memory cache or stale DB cache
+            if (this.cachedVoices.length) {
+                return this.cachedVoices;
+            }
+            return voiceCache.getStale() ?? [];
+        }
+
+        // Check fresh DB cache first
+        const cached = voiceCache.get();
+        if (cached) {
+            this.cachedVoices = cached;
+            return cached;
+        }
 
         try {
             const all: ElevenLabsVoiceEntry[] = [];
@@ -405,9 +421,13 @@ export class ElevenLabsProvider implements TtsProvider {
                 languageCodes: ALL_SUPPORTED_LANGUAGES,
                 isCloned: v.category === 'cloned',
             }));
+            voiceCache.set(this.cachedVoices);
             return this.cachedVoices;
         } catch (err) {
             log.warn('Failed to fetch ElevenLabs voices:', err);
+            // Fall back to stale DB cache
+            const stale = voiceCache.getStale();
+            if (stale) this.cachedVoices = stale;
             return this.cachedVoices;
         }
     }

@@ -133,6 +133,12 @@ CREATE TABLE `history_items` (
 	FOREIGN KEY (`history_id`) REFERENCES `history`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE TABLE `kv_cache` (
+	`key` text PRIMARY KEY NOT NULL,
+	`value` text NOT NULL,
+	`expires_at` integer
+);
+--> statement-breakpoint
 CREATE TABLE `notes` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
