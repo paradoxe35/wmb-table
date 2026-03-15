@@ -13,6 +13,7 @@ import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { AnimatePresence, motion } from 'framer-motion';
+import { AI_DATA_EVENT } from '@renderer/utils/events';
 
 export function Notes({
     setWorkingNote,
@@ -25,7 +26,7 @@ export function Notes({
     const [notes, setNotes] = useState<NoteItem[]>([]);
     const odatas = useRef<NoteItem[]>([]);
 
-    useEffect(() => {
+    const loadNotes = useCallback(() => {
         window.api.notes
             .getAll()
             .then((notes) => {
@@ -37,6 +38,15 @@ export function Notes({
             })
             .finally(() => setLoaded(true));
     }, []);
+
+    useEffect(() => {
+        loadNotes();
+    }, [loadNotes]);
+
+    useEffect(() => {
+        window.addEventListener(AI_DATA_EVENT.notesChanged, loadNotes);
+        return () => window.removeEventListener(AI_DATA_EVENT.notesChanged, loadNotes);
+    }, [loadNotes]);
 
     const handleDeletion = (note: NoteItem) => {
         window.api.notes

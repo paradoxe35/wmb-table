@@ -8,6 +8,15 @@ import type {
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
+import { AI_DATA_EVENT } from '@renderer/utils/events';
+
+const TOOL_TO_EVENT: Record<string, string> = {
+    createNote: AI_DATA_EVENT.notesChanged,
+    updateNoteContent: AI_DATA_EVENT.notesChanged,
+    addSermonReferenceToNote: AI_DATA_EVENT.notesChanged,
+    createSubject: AI_DATA_EVENT.subjectsChanged,
+    addSermonReferenceToSubject: AI_DATA_EVENT.subjectsChanged,
+};
 
 type MessageMap = Record<string, AiMessage[]>;
 
@@ -134,6 +143,8 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
                             ),
                         },
                     }));
+                    const event = TOOL_TO_EVENT[toolName];
+                    if (event) window.dispatchEvent(new Event(event));
                 },
             );
             window.api.on.aiStreamComplete(() => {

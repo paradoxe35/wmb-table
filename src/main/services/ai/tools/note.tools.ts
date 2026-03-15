@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { marked } from 'marked';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
@@ -25,12 +26,13 @@ export function buildNoteTools(defaultLanguageCode: string): Record<string, AiTo
             description: 'Create a new note.',
             inputSchema: z.object({
                 name: z.string().min(2),
-                content: z.string().optional(),
+                content: z.string().optional().describe('content in markdown'),
             }),
             execute: async ({ name, content }) => {
                 const note = notesRepo.create(name.trim());
                 if (content) {
-                    notesRepo.updateContent(note.id, content);
+                    const htmlContent = await marked.parse(content);
+                    notesRepo.updateContent(note.id, `<h1>${name}</h1>\n${htmlContent}`);
                 }
                 return notesRepo.getById(note.id);
             },

@@ -21,7 +21,7 @@ import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
 import { BookOutlined } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
-import { SUBJECT_EVENT } from '@renderer/utils/events';
+import { SUBJECT_EVENT, AI_DATA_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
@@ -116,7 +116,7 @@ export default function Subject() {
     const activeSubject = useSubjectsStore((s) => s.activeSubject);
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
 
-    useEffect(() => {
+    const loadSubjects = useCallback(() => {
         window.api.subjects
             .getAll()
             .then((subjects) => {
@@ -128,6 +128,15 @@ export default function Subject() {
                 message.error(t('Erreur lors du chargement des sujets'));
             });
     }, [setSubjects]);
+
+    useEffect(() => {
+        loadSubjects();
+    }, [loadSubjects]);
+
+    useEffect(() => {
+        window.addEventListener(AI_DATA_EVENT.subjectsChanged, loadSubjects);
+        return () => window.removeEventListener(AI_DATA_EVENT.subjectsChanged, loadSubjects);
+    }, [loadSubjects]);
 
     useEffect(() => {
         if (datas.length > 0) {
