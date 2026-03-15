@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AutoComplete, Button, Card, Divider, Input, Popconfirm, Space, Tag } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AutoComplete, Button, Card, Divider, Popconfirm, Space, Tag } from 'antd';
 import {
     CheckCircleOutlined,
     CloudOutlined,
@@ -14,6 +14,8 @@ import type {
     AiSettings,
 } from '@shared/ai.types';
 import { useAiChatStore } from '@renderer/stores';
+import { debounce } from '@renderer/utils/functions';
+import DebouncedInput from '@renderer/components/debounced-input';
 import { Field, Hint } from './ai-shared';
 
 type TestStatus = 'idle' | 'testing' | 'success' | 'error';
@@ -97,8 +99,35 @@ function ModelSelect({
     onChange: (model: string) => void;
 }) {
     const { t } = useTranslation();
+    const [localValue, setLocalValue] = useState(value ?? '');
     const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
     const [fetched, setFetched] = useState(false);
+
+    // Sync local state when external value changes (e.g. settings reload)
+    useEffect(() => {
+        setLocalValue(value ?? '');
+    }, [value]);
+
+    // Debounced save — lets the user type freely without cursor jumps
+    const debouncedOnChange = useMemo(() => debounce(onChange, 500), [onChange]);
+    useEffect(() => () => debouncedOnChange.cancel(), [debouncedOnChange]);
+
+    const handleChange = useCallback(
+        (val: string) => {
+            setLocalValue(val);
+            debouncedOnChange(val);
+        },
+        [debouncedOnChange],
+    );
+
+    const handleSelect = useCallback(
+        (val: string) => {
+            setLocalValue(val);
+            debouncedOnChange.cancel();
+            onChange(val);
+        },
+        [onChange, debouncedOnChange],
+    );
 
     const fetchModels = useCallback(async () => {
         if (providerId === 'local') return;
@@ -134,20 +163,23 @@ function ModelSelect({
 
     // Ensure the current value is always in the options list
     const allOptions = [...options];
-    if (value && !allOptions.some((o) => o.value === value)) {
-        allOptions.unshift({ value, label: value });
+    if (localValue && !allOptions.some((o) => o.value === localValue)) {
+        allOptions.unshift({ value: localValue, label: localValue });
     }
 
     return (
         <AutoComplete
-            value={value ?? ''}
+            value={localValue}
             placeholder={t('Sélectionner ou saisir un modèle')}
-            onChange={onChange}
+            onChange={handleChange}
+            onSelect={handleSelect}
             options={allOptions}
-            filterOption={(input, option) =>
-                ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase()) ||
-                (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
-            }
+            filterOption={(input, option) => {
+                return (
+                    ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                    (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+                );
+            }}
             onDropdownVisibleChange={(open) => {
                 if (open && !fetched && apiKey) fetchModels();
             }}
@@ -198,9 +230,10 @@ export function BuiltinProviderConfig({
                     if (field.key === 'apiKey') {
                         return (
                             <Field key={field.key} label={t('Clé API')}>
-                                <Input.Password
+                                <DebouncedInput
+                                    password
                                     value={config?.apiKey ?? ''}
-                                    onChange={(e) => updateField('apiKey', e.target.value)}
+                                    onChange={(val) => updateField('apiKey', val)}
                                     placeholder={t('Clé API')}
                                 />
                             </Field>
@@ -209,9 +242,9 @@ export function BuiltinProviderConfig({
                     if (field.key === 'baseUrl') {
                         return (
                             <Field key={field.key} label={t('URL de base')}>
-                                <Input
+                                <DebouncedInput
                                     value={config?.baseUrl ?? ''}
-                                    onChange={(e) => updateField('baseUrl', e.target.value)}
+                                    onChange={(val) => updateField('baseUrl', val)}
                                     placeholder="https://..."
                                 />
                             </Field>
@@ -283,16 +316,17 @@ export function CustomProviderConfig({
         >
             <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 <Field label={t('URL de base')}>
-                    <Input
+                    <DebouncedInput
                         value={provider.baseUrl}
-                        onChange={(e) => updateCustom({ baseUrl: e.target.value })}
+                        onChange={(val) => updateCustom({ baseUrl: val })}
                         placeholder="http://127.0.0.1:1234/v1"
                     />
                 </Field>
                 <Field label={t('Clé API')}>
-                    <Input.Password
+                    <DebouncedInput
+                        password
                         value={provider.apiKey ?? ''}
-                        onChange={(e) => updateCustom({ apiKey: e.target.value })}
+                        onChange={(val) => updateCustom({ apiKey: val })}
                         placeholder={t('Optionnel')}
                     />
                 </Field>
