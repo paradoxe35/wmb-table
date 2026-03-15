@@ -2,6 +2,7 @@ import { Button, Popconfirm, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { AiConversation } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const { Text } = Typography;
 
@@ -60,54 +61,61 @@ export default function ChatConversationList({
                         {t('Aucune conversation')}
                     </Text>
                 ) : (
-                    conversations.map((conversation) => {
-                        const isActive = conversation.id === activeConversationId;
-                        return (
-                            <div
-                                key={conversation.id}
-                                role="button"
-                                tabIndex={0}
-                                className={`ai-chat__conv-item ${isActive ? 'ai-chat__conv-item--active' : ''}`}
-                                onClick={() => onSelectConversation(conversation.id)}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        onSelectConversation(conversation.id);
-                                    }
-                                }}
-                            >
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <Text
-                                        ellipsis
-                                        style={{
-                                            fontSize: '0.8em',
-                                            display: 'block',
-                                            fontWeight: isActive ? 500 : 400,
-                                        }}
-                                    >
-                                        {conversation.title || t('Conversation')}
-                                    </Text>
-                                    <Text
-                                        type="secondary"
-                                        style={{ fontSize: '0.68em', display: 'block' }}
-                                    >
-                                        {formatRelativeDate(conversation.updatedAt, t)}
-                                    </Text>
-                                </div>
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    danger
-                                    className="ai-chat__conv-delete"
-                                    icon={<DeleteOutlined style={{ fontSize: 11 }} />}
-                                    style={{ flexShrink: 0 }}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDeleteConversation(conversation.id);
+                    <AnimatePresence mode="popLayout">
+                        {conversations.map((conversation) => {
+                            const isActive = conversation.id === activeConversationId;
+                            return (
+                                <motion.div
+                                    key={conversation.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ duration: 0.2 }}
+                                    role="button"
+                                    tabIndex={0}
+                                    className={`ai-chat__conv-item ${isActive ? 'ai-chat__conv-item--active' : ''}`}
+                                    onClick={() => onSelectConversation(conversation.id)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            onSelectConversation(conversation.id);
+                                        }
                                     }}
-                                />
-                            </div>
-                        );
-                    })
+                                >
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <Text
+                                            ellipsis
+                                            style={{
+                                                fontSize: '0.8em',
+                                                display: 'block',
+                                                fontWeight: isActive ? 500 : 400,
+                                            }}
+                                        >
+                                            {conversation.title || t('Conversation')}
+                                        </Text>
+                                        <Text
+                                            type="secondary"
+                                            style={{ fontSize: '0.68em', display: 'block' }}
+                                        >
+                                            {formatRelativeDate(conversation.updatedAt, t)}
+                                        </Text>
+                                    </div>
+                                    <Button
+                                        type="text"
+                                        size="small"
+                                        danger
+                                        className="ai-chat__conv-delete"
+                                        icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                                        style={{ flexShrink: 0 }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onDeleteConversation(conversation.id);
+                                        }}
+                                    />
+                                </motion.div>
+                            );
+                        })}
+                    </AnimatePresence>
                 )}
             </div>
 

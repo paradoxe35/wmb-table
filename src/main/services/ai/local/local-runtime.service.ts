@@ -9,8 +9,8 @@ import log from '@main/lib/logger';
 import { compactLocalHistory } from '../context-memory';
 import { resolveAutoSelectedLocalModel } from './local-model.service';
 
-const DEFAULT_CONTEXT_SIZE = 4096;
-const MAX_TOKENS = 768;
+const DEFAULT_CONTEXT_SIZE = 8192;
+const MAX_TOKENS = 1024;
 
 export class LocalRuntimeService {
     private static readonly IDLE_DISPOSE_MS = 5 * 60 * 1000;

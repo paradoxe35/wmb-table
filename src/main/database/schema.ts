@@ -294,6 +294,16 @@ export const aiMessages = sqliteTable(
 );
 
 // ---------------------------------------------------------------------------
+// Key-value cache (local only, not synced)
+// ---------------------------------------------------------------------------
+
+export const kvCache = sqliteTable('kv_cache', {
+    key: text('key').primaryKey(),
+    value: text('value').notNull(), // JSON-encoded
+    expiresAt: integer('expires_at'), // Unix timestamp (ms), null = never expires
+});
+
+// ---------------------------------------------------------------------------
 // Synced tables — add a table here to include it in sync
 // ---------------------------------------------------------------------------
 
@@ -308,4 +318,6 @@ export const syncedTables = [
     suggestions,
     highlights,
     ttsSettings,
+    aiConversations,
+    aiMessages,
 ] as const;

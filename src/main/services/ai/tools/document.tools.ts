@@ -12,10 +12,42 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
             },
         },
         getCustomDocumentContent: {
-            description: 'Retrieve the full text content of a custom document by its id.',
-            inputSchema: z.object({ documentId: z.string() }),
-            execute: async ({ documentId }) => {
-                return customDocsRepo.getCustomDocumentContent(documentId);
+            description:
+                'Retrieve the text content of a custom document by its id. ' +
+                'Supports pagination via startLine and maxLines to avoid loading the entire document at once.',
+            inputSchema: z.object({
+                documentId: z.string(),
+                startLine: z
+                    .number()
+                    .int()
+                    .min(0)
+                    .optional()
+                    .describe('Line offset to start from (default 0)'),
+                maxLines: z
+                    .number()
+                    .int()
+                    .min(1)
+                    .max(100)
+                    .optional()
+                    .describe('Maximum number of lines to return (default 50, max 100)'),
+            }),
+            execute: async ({ documentId, startLine = 0, maxLines = 50 }) => {
+                const doc = await customDocsRepo.getCustomDocumentContent(documentId);
+                if (!doc || typeof doc.content !== 'string') {
+                    return doc;
+                }
+
+                const lines = doc.content.split('\n');
+                const totalLines = lines.length;
+                const slice = lines.slice(startLine, startLine + maxLines).join('\n');
+
+                return {
+                    ...doc,
+                    content: slice,
+                    totalLines,
+                    startLine,
+                    returnedLines: Math.max(0, Math.min(maxLines, totalLines - startLine)),
+                };
             },
         },
     };

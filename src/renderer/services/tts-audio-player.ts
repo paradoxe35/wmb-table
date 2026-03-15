@@ -1,3 +1,8 @@
+interface PreloadedEntry {
+    buffer: AudioBuffer;
+    segmentIndex: number;
+}
+
 export class TtsAudioPlayer {
     private audioContext: AudioContext | null = null;
     private sourceNode: AudioBufferSourceNode | null = null;
@@ -9,6 +14,9 @@ export class TtsAudioPlayer {
     private startedAt = 0;
     private currentBuffer: AudioBuffer | null = null;
     private currentRate = 1;
+
+    // Queue of pre-decoded upcoming segments (ordered by segment index)
+    private preloadedQueue: PreloadedEntry[] = [];
 
     private getContext(): AudioContext {
         if (!this.audioContext) {
@@ -35,6 +43,52 @@ export class TtsAudioPlayer {
         }
     }
 
+    /**
+     * Pre-decode a segment's audio and add it to the queue so it's ready
+     * to play instantly when the current (and any earlier queued) segments finish.
+     */
+    async preload(audioBase64: string, _mimeType: string, segmentIndex: number): Promise<void> {
+        const ctx = this.getContext();
+        if (ctx.state === 'suspended') await ctx.resume();
+
+        const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+        try {
+            const buffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+            // Avoid duplicates and insert in order
+            if (!this.preloadedQueue.some((e) => e.segmentIndex === segmentIndex)) {
+                this.preloadedQueue.push({ buffer, segmentIndex });
+                this.preloadedQueue.sort((a, b) => a.segmentIndex - b.segmentIndex);
+            }
+        } catch (err) {
+            console.error('TTS preload decode failed:', err);
+        }
+    }
+
+    /** Returns true if at least one preloaded buffer is ready. */
+    hasPreloaded(): boolean {
+        return this.preloadedQueue.length > 0;
+    }
+
+    /**
+     * Play the next preloaded buffer from the queue.
+     * Returns the segment index that was played, or -1 if the queue is empty.
+     */
+    playPreloaded(rate: number): number {
+        if (this.preloadedQueue.length === 0) return -1;
+        const entry = this.preloadedQueue.shift()!;
+
+        this.stopSource();
+        this.currentBuffer = entry.buffer;
+        this.currentRate = rate;
+        this.pausedAt = 0;
+        this.playBuffer(entry.buffer, 0, rate);
+        return entry.segmentIndex;
+    }
+
+    clearPreloaded(): void {
+        this.preloadedQueue = [];
+    }
+
     private playBuffer(buffer: AudioBuffer, offset: number, rate: number): void {
         const ctx = this.getContext();
 
@@ -43,8 +97,6 @@ export class TtsAudioPlayer {
         source.playbackRate.value = rate;
 
         const gain = ctx.createGain();
-        // Start at full volume — no fade-in needed since decodeAudioData ensures
-        // the buffer is fully decoded before playback begins
         gain.gain.setValueAtTime(1, ctx.currentTime);
 
         source.connect(gain);
@@ -85,6 +137,7 @@ export class TtsAudioPlayer {
         this.isPaused = false;
         this.pausedAt = 0;
         this.currentBuffer = null;
+        this.clearPreloaded();
     }
 
     setOnEnded(cb: () => void): void {

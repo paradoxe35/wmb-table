@@ -12,6 +12,7 @@ import {
     getUnsyncedChanges,
     markSyncedIfNotChanged,
     deleteOldChangeLogs,
+    invalidateStaleChangeLogs,
 } from './change-log.service';
 import {
     GoogleDriveService,
@@ -26,7 +27,7 @@ import { hasInternet } from '@main/lib/network';
 import { pushToRenderer } from '@main/lib/push';
 import { PushChannels } from '@shared/ipc.types';
 
-const SYNC_INTERVAL_MS = 10_000;
+const SYNC_INTERVAL_MS = 30_000;
 const MAX_CONSECUTIVE_AUTH_FAILURES = 4;
 const MAX_CHANGE_RETRIES = 5;
 const MAX_SNAPSHOT_RETRIES = 10;
@@ -156,6 +157,12 @@ async function schedulerWorker(): Promise<void> {
 
     try {
         await applyRemoteChanges();
+        // After pull: invalidate any local unsynced change logs that conflict
+        // with the pulled data. This prevents stale local DELETEs from being
+        // pushed back and erasing records that were just restored by the pull.
+        if (Object.keys(affectedTables).length > 0) {
+            invalidateStaleChangeLogs(affectedTables);
+        }
     } catch (err) {
         failure = err instanceof Error ? err : new Error(String(err));
     }
@@ -195,8 +202,11 @@ async function schedulerWorker(): Promise<void> {
         pushToRenderer(PushChannels.newSynchronizedDatas, Object.keys(affectedTables));
     }
 
-    // Push always runs last, regardless of pull result
-    await syncChangesToDrive();
+    // Push only if pull succeeded — prevents pushing stale/partial data
+    // that could overwrite valid data on Drive
+    if (!failure) {
+        await syncChangesToDrive();
+    }
 
     isSyncRunning = false;
 }
@@ -217,23 +227,23 @@ async function applyRemoteChanges(): Promise<void> {
 
     if (files.length === 0) return;
 
-    const applicable = files.filter((f) => canBeApplied(f) && f.createdTime > timeOffset);
-    if (applicable.length > 0) {
-        log.info(`[Sync] Applying ${applicable.length} remote file(s)`);
+    // Filter to actionable files: correct prefix, after offset, not already processed
+    const applicable = files.filter(
+        (f) => canBeApplied(f) && f.createdTime > timeOffset && !isAlreadyProcessed(f.id),
+    );
+
+    // Advance offset past already-processed files without re-downloading them
+    for (const file of files) {
+        if (canBeApplied(file) && file.createdTime > timeOffset && isAlreadyProcessed(file.id)) {
+            updateSyncTimeOffset(file.createdTime);
+        }
     }
+
+    if (applicable.length === 0) return;
+    log.info(`[Sync] Applying ${applicable.length} remote file(s)`);
     let processed = 0;
 
-    for (const file of files) {
-        // Skip files we can't process (not a snapshot or change file)
-        if (!canBeApplied(file)) continue;
-        if (file.createdTime <= timeOffset) continue;
-
-        // Skip if already processed
-        if (isAlreadyProcessed(file.id)) {
-            updateSyncTimeOffset(file.createdTime);
-            continue;
-        }
-
+    for (const file of applicable) {
         let error: Error | null = null;
 
         try {

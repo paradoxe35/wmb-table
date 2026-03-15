@@ -206,6 +206,8 @@ Do this:
 
 The comment is optional. You can use it to remind yourself why the passage matters.
 
+All your highlights can then be found on the **Highlights** page in the left menu. You can search, browse, and jump back to the original document from there. The full guide is in [Managing Your Highlights](/en/guide/highlights).
+
 <ScreenshotPlaceholder
   file="en-document-view-highlight-modal.png"
   label="Window for highlighting a passage"
@@ -293,6 +295,7 @@ You may see:
 ## See also
 
 - [Reading Sermons](/en/guide/sermons)
+- [Managing Your Highlights](/en/guide/highlights)
 - [Taking Notes](/en/guide/notes)
 - [Creating Subjects](/en/guide/subjects)
 - [Audio Reading and Voices](/en/guide/audio-and-tts)

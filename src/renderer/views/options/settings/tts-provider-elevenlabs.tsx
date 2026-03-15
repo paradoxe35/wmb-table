@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Collapse, Input, message, Select, Space, Typography } from 'antd';
+import { Collapse, message, Select, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { getErrorMessage } from '@renderer/utils/functions';
+import DebouncedInput from '@renderer/components/debounced-input';
 import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 import { ClonedVoicesList, VoiceCloneForm } from './tts-elevenlabs-voice-clone';
 import TtsReferenceVoices from './tts-reference-voices';
@@ -75,11 +76,12 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                     'Votre clé secrète ElevenLabs. Elle est stockée en toute sécurité sur votre ordinateur.',
                 )}
             >
-                <Input.Password
+                <DebouncedInput
+                    password
                     value={cfg.apiKey ?? ''}
                     placeholder="xi_..."
-                    onChange={(e) => {
-                        onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'apiKey', e.target.value));
+                    onChange={(val) => {
+                        onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'apiKey', val));
                     }}
                 />
             </Field>

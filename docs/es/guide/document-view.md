@@ -206,6 +206,8 @@ Haga esto:
 
 El comentario es opcional. Puede servir para recordar por qué ese pasaje es importante.
 
+Todos sus subrayados se pueden consultar en la página **Subrayados** del menú de la izquierda. Puede buscarlos, recorrerlos y volver directamente al documento original. La guía completa se encuentra en [Gestionar sus subrayados](/es/guide/highlights).
+
 <ScreenshotPlaceholder
   file="es-document-view-highlight-modal.png"
   label="Ventana para resaltar un pasaje"
@@ -293,6 +295,7 @@ Puede ver:
 ## Ver también
 
 - [Leer predicaciones](/es/guide/sermons)
+- [Gestionar sus subrayados](/es/guide/highlights)
 - [Tomar notas](/es/guide/notes)
 - [Crear temas](/es/guide/subjects)
 - [Lectura en audio y voces](/es/guide/audio-and-tts)

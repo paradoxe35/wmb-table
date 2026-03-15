@@ -5,7 +5,11 @@ import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
-import { DEFAULT_TTS_PROVIDER, type TtsIncompatibilityReason } from '@shared/tts.types';
+import {
+    DEFAULT_TTS_PROVIDER,
+    SEGMENT_GAP_MS,
+    type TtsIncompatibilityReason,
+} from '@shared/tts.types';
 
 function getIncompatibilityMessage(
     reason: TtsIncompatibilityReason | undefined,
@@ -177,27 +181,98 @@ export function useTtsSetup(): void {
         });
     }, [t]);
 
-    // Segment audio playback — skip if TTS was stopped while audio was in transit
-    useEffect(() => {
-        return window.api.on.ttsSegmentAudio((data) => {
-            const state = useTtsStore.getState();
-            if (state.status === 'idle') return;
-            const rate = state.settings?.rate ?? 1;
-            ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
-        });
-    }, []);
-
-    // Signal segment completion to main process
+    // Segment audio playback + segment completion (merged so they share gap-timer state)
     useEffect(() => {
         let pending = false;
-        ttsAudioPlayer.setOnEnded(() => {
-            if (pending || useTtsStore.getState().status === 'idle') {
-                return;
+        let gapTimeout: ReturnType<typeof setTimeout> | null = null;
+        let pausedDuringGap = false;
+
+        const clearGap = () => {
+            if (gapTimeout) {
+                clearTimeout(gapTimeout);
+                gapTimeout = null;
             }
-            pending = true;
-            window.api.tts.segmentComplete().finally(() => {
-                pending = false;
-            });
+        };
+
+        const playPreloadedAndNotify = () => {
+            const current = useTtsStore.getState();
+            if (current.status === 'idle' || current.status === 'paused') return;
+            const rate = current.settings?.rate ?? 1;
+            ttsAudioPlayer.playPreloaded(rate);
+            if (!pending) {
+                pending = true;
+                window.api.tts.segmentComplete(true).finally(() => {
+                    pending = false;
+                });
+            }
+        };
+
+        // Listen for stop/pause/resume to manage the gap timer
+        const unsubStore = useTtsStore.subscribe((state) => {
+            if (state.status === 'idle' || state.status === 'paused') {
+                if (gapTimeout) {
+                    clearGap();
+                    pausedDuringGap = true;
+                }
+            }
+            // Resume after pausing during the gap — play the preloaded buffer now
+            if (state.status === 'playing' && pausedDuringGap) {
+                pausedDuringGap = false;
+                if (ttsAudioPlayer.hasPreloaded()) {
+                    playPreloadedAndNotify();
+                }
+            }
         });
+
+        // Receive audio from main — either play immediately or preload for later
+        const unsubAudio = window.api.on.ttsSegmentAudio((data) => {
+            const state = useTtsStore.getState();
+            if (state.status === 'idle') return;
+
+            if (data.queued) {
+                ttsAudioPlayer.preload(data.audioBase64, data.mimeType, data.segmentIndex);
+            } else {
+                // A new non-queued segment means a fresh playback (start or seek).
+                // Cancel any pending gap timer from the previous segment transition.
+                clearGap();
+                pausedDuringGap = false;
+                ttsAudioPlayer.clearPreloaded();
+                const rate = state.settings?.rate ?? 1;
+                ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
+            }
+        });
+
+        // When a segment finishes playing, transition to the next one
+        ttsAudioPlayer.setOnEnded(() => {
+            const state = useTtsStore.getState();
+            if (state.status === 'idle') return;
+
+            const gapMs = state.settings?.segmentGapMs ?? SEGMENT_GAP_MS;
+
+            if (ttsAudioPlayer.hasPreloaded()) {
+                const onGapElapsed = () => {
+                    gapTimeout = null;
+                    playPreloadedAndNotify();
+                };
+                if (gapMs > 0) {
+                    gapTimeout = setTimeout(onGapElapsed, gapMs);
+                } else {
+                    playPreloadedAndNotify();
+                }
+            } else {
+                // No preloaded buffer — fall back to the original round-trip
+                if (pending) return;
+                pending = true;
+                window.api.tts.segmentComplete().finally(() => {
+                    pending = false;
+                });
+            }
+        });
+
+        return () => {
+            unsubStore();
+            unsubAudio();
+            clearGap();
+        };
     }, []);
 }

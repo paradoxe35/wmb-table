@@ -8,18 +8,18 @@ import type { HighlightCreateData } from '@shared/types';
 type HighlightModalData = Omit<HighlightCreateData, 'color' | 'comment'>;
 
 const PRESET_COLORS = [
-    { label: 'Jaune', value: '#FFFF00' },
-    { label: 'Vert clair', value: '#90EE90' },
-    { label: 'Bleu ciel', value: '#87CEEB' },
-    { label: 'Rose', value: '#FFB6C1' },
-    { label: 'Orange', value: '#FFD700' },
-    { label: 'Violet', value: '#DDA0DD' },
-    { label: 'Menthe', value: '#98FFD6' },
-    { label: 'Pêche', value: '#FFDAB9' },
-    { label: 'Lavande', value: '#E6E6FA' },
-    { label: 'Corail', value: '#FF7F7F' },
-    { label: 'Cyan', value: '#B0E0E6' },
-    { label: 'Lime', value: '#D4FF00' },
+    { label: 'Jaune', value: '#FDE68A' },
+    { label: 'Vert clair', value: '#A7F3D0' },
+    { label: 'Bleu ciel', value: '#BFDBFE' },
+    { label: 'Rose', value: '#FECDD3' },
+    { label: 'Orange', value: '#FED7AA' },
+    { label: 'Violet', value: '#DDD6FE' },
+    { label: 'Menthe', value: '#A7F3D0' },
+    { label: 'Pêche', value: '#FECACA' },
+    { label: 'Lavande', value: '#E9D5FF' },
+    { label: 'Corail', value: '#FCA5A5' },
+    { label: 'Cyan', value: '#A5F3FC' },
+    { label: 'Lime', value: '#D9F99D' },
 ];
 
 export default function HighlightModal() {

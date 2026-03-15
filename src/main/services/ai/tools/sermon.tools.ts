@@ -4,15 +4,14 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import { strNormalize } from '@shared/searchable';
 import type { AiToolDefinition } from './types';
-import { inferTranslationId } from './shared';
 
 export function buildSermonTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
     return {
         searchSermons: {
             description:
                 'Search sermons by title, date, sermon id, town/city, state, or location. ' +
-                'Use this to find sermons by metadata (not by content inside the sermon). ' +
-                'Returns sermon metadata including sermonId which can be used with getSermonContent.',
+                'Returns sermon metadata. Each result includes a sermonId and translationId — ' +
+                'pass both to getSermonContent to retrieve the text.',
             inputSchema: z.object({
                 query: z.string().min(1),
                 languageCode: z.string().optional(),
@@ -39,8 +38,10 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
         },
         getSermonContent: {
             description:
-                'Retrieve the text content (paragraphs) of a sermon by its sermonId. ' +
-                'Use startParagraph and maxParagraphs to paginate through long sermons.',
+                'Retrieve the text content (paragraphs) of a sermon. ' +
+                'You MUST pass sermonId (and translationId if available from searchSermons results). ' +
+                'Use startParagraph and maxParagraphs to paginate through long sermons. ' +
+                'To get a general overview, read the first 15 paragraphs.',
             inputSchema: z.object({
                 sermonId: z.string(),
                 languageCode: z.string().optional(),
@@ -53,25 +54,50 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 languageCode,
                 translationId,
                 startParagraph = 0,
-                maxParagraphs = 20,
+                maxParagraphs = 15,
             }) => {
                 const lang = languageCode ?? defaultLanguageCode;
-                const meta =
-                    referenceDataService.getSermonMeta(
-                        translationId ?? inferTranslationId(sermonId, lang),
-                        lang,
+
+                // Try exact match with translationId first
+                let meta = translationId
+                    ? referenceDataService.getSermonMeta(translationId, lang, sermonId)
+                    : null;
+
+                // Fallback: find any translation for this sermonId
+                if (!meta) {
+                    const allForSermon = referenceDataService.getTraductionsForSermon(
                         sermonId,
-                    ) ??
-                    referenceDataService.getSermonListForLanguage(lang).find((sermon) => {
-                        return sermon.sermonId === sermonId;
-                    });
-                if (!meta) return null;
+                        lang,
+                    );
+                    meta = allForSermon[0] ?? null;
+                }
+
+                // Last resort: scan full list
+                if (!meta) {
+                    meta =
+                        referenceDataService
+                            .getSermonListForLanguage(lang)
+                            .find((sermon) => sermon.sermonId === sermonId) ?? null;
+                }
+
+                if (!meta) {
+                    return { error: `Sermon "${sermonId}" not found for language "${lang}".` };
+                }
 
                 const paragraphs = await tantivyService.getSermonParagraphs(
                     lang,
                     meta.translationId,
                     meta.dateMs,
                 );
+
+                if (paragraphs.length === 0) {
+                    return {
+                        meta,
+                        error: 'No paragraphs found. The sermon content may not be indexed yet.',
+                        totalParagraphs: 0,
+                    };
+                }
+
                 return {
                     meta,
                     paragraphs: paragraphs.slice(startParagraph, startParagraph + maxParagraphs),

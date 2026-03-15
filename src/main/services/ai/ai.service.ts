@@ -1,4 +1,4 @@
-import { generateText, stepCountIs, streamText, type LanguageModel } from 'ai';
+import { generateText } from 'ai';
 import { BrowserWindow } from 'electron';
 import log from '@main/lib/logger';
 import * as aiRepo from '@main/database/repositories/ai.repository';
@@ -12,8 +12,7 @@ import type {
     AiSendMessageRequest,
     AiSendMessageResult,
     AiSettings,
-    AiToolCall,
-    AiToolResult,
+    AiRemoteModel,
 } from '@shared/ai.types';
 import { buildSystemPrompt } from './system-prompt';
 import { scanLocalModels } from './local/local-model.service';
@@ -24,10 +23,14 @@ import { sendToRenderer } from '@main/ipc/register';
 import { buildConversationContext } from './context-memory';
 import { resolveDefaultModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
+import { SimpleCache } from '@main/lib/simple-cache';
+import { GenerationRunnerImpl } from './runners';
 
 export class AiService {
     private controllers = new Map<string, AbortController>();
     private localRuntime = new LocalRuntimeService();
+
+    // ── Settings & catalog ──
 
     getSettings(): AiSettings {
         const settings = aiRepo.ensureSettings();
@@ -45,6 +48,8 @@ export class AiService {
         this.localRuntime.setGpuEnabled(settings.providers.local.gpuEnabled ?? false);
         return settings;
     }
+
+    // ── Conversations ──
 
     getConversations(): AiConversation[] {
         return aiRepo.getConversations();
@@ -71,6 +76,8 @@ export class AiService {
         return aiRepo.getMessages(conversationId);
     }
 
+    // ── Local models ──
+
     async scanLocalModels() {
         return scanLocalModels();
     }
@@ -79,10 +86,14 @@ export class AiService {
         await downloadLocalModel(browserWindow, modelId);
     }
 
+    // ── Generation control ──
+
     stopGeneration(conversationId: string): void {
         this.controllers.get(conversationId)?.abort();
         this.controllers.delete(conversationId);
     }
+
+    // ── Provider testing ──
 
     async testProvider(input: {
         providerId: string;
@@ -103,7 +114,7 @@ export class AiService {
             await generateText({
                 model,
                 prompt: 'Reply with the single word OK.',
-                maxOutputTokens: 5,
+                maxOutputTokens: 20,
             });
             return { valid: true };
         } catch (error) {
@@ -113,6 +124,104 @@ export class AiService {
             };
         }
     }
+
+    // ── Model listing ──
+
+    async fetchProviderModels(input: {
+        providerId: string;
+        apiKey?: string;
+        baseUrl?: string;
+    }): Promise<AiRemoteModel[]> {
+        const settings = this.getSettings();
+        const { providerId } = input;
+
+        if (providerId === 'local') return [];
+
+        let baseUrl: string | undefined;
+        let apiKey: string | undefined;
+
+        const builtinConfig = settings.providers[providerId as keyof AiSettings['providers']];
+        if (builtinConfig) {
+            apiKey = input.apiKey ?? builtinConfig.apiKey;
+        }
+
+        const customProvider = settings.customProviders.find((p) => p.id === providerId);
+        if (customProvider) {
+            apiKey = input.apiKey ?? customProvider.apiKey;
+            baseUrl = input.baseUrl ?? customProvider.baseUrl;
+        }
+
+        if (!apiKey) return [];
+
+        const cacheKey = `ai-models:${providerId}`;
+        const cache = new SimpleCache<AiRemoteModel[]>(cacheKey, 60 * 60 * 1000);
+        const cached = cache.get();
+        if (cached) return cached;
+
+        const PROVIDER_BASE_URLS: Record<string, string> = {
+            openai: 'https://api.openai.com/v1',
+            openrouter: 'https://openrouter.ai/api/v1',
+            gemini: 'https://generativelanguage.googleapis.com/v1beta',
+            claude: 'https://api.anthropic.com/v1',
+        };
+
+        const base = baseUrl ?? PROVIDER_BASE_URLS[providerId];
+        if (!base) return [];
+
+        try {
+            let models: AiRemoteModel[] = [];
+
+            if (providerId === 'gemini') {
+                const url = `${base}/models?key=${apiKey ?? ''}`;
+                const res = await fetch(url);
+                if (!res.ok) return cache.getStale() ?? [];
+                const data = (await res.json()) as {
+                    models?: { name: string; displayName: string }[];
+                };
+                models = (data.models ?? [])
+                    .filter((m) => m.name.startsWith('models/gemini'))
+                    .map((m) => ({
+                        id: m.name.replace('models/', ''),
+                        name: m.displayName,
+                    }));
+            } else if (providerId === 'claude') {
+                const res = await fetch(`${base}/models`, {
+                    headers: {
+                        'x-api-key': apiKey ?? '',
+                        'anthropic-version': '2023-06-01',
+                    },
+                });
+                if (!res.ok) return cache.getStale() ?? [];
+                const data = (await res.json()) as {
+                    data?: { id: string; display_name?: string }[];
+                };
+                models = (data.data ?? []).map((m) => ({
+                    id: m.id,
+                    name: m.display_name ?? m.id,
+                }));
+            } else {
+                const headers: Record<string, string> = {};
+                if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
+
+                const res = await fetch(`${base}/models`, { headers });
+                if (!res.ok) return cache.getStale() ?? [];
+                const data = (await res.json()) as {
+                    data?: { id: string; name?: string }[];
+                };
+                models = (data.data ?? [])
+                    .map((m) => ({ id: m.id, name: m.name ?? m.id }))
+                    .sort((a, b) => a.id.localeCompare(b.id));
+            }
+
+            if (models.length > 0) cache.set(models);
+            return models;
+        } catch (err) {
+            log.warn(`Failed to fetch models for provider ${providerId}:`, err);
+            return cache.getStale() ?? [];
+        }
+    }
+
+    // ── Message sending ──
 
     async sendMessage(
         browserWindow: BrowserWindow,
@@ -126,7 +235,7 @@ export class AiService {
         const providerId = settings.activeProvider;
         const modelId = settings.activeModel ?? resolveDefaultModel(settings, providerId);
         if (!providerId || !modelId) {
-            throw new Error('Aucun fournisseur IA ou modèle actif n’a été configuré.');
+            throw new Error('Aucun fournisseur IA ou modèle actif n\u2019a été configuré.');
         }
 
         const conversation =
@@ -151,18 +260,20 @@ export class AiService {
 
         const activeLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
         const installedLanguages = await languagePackService.getInstalledLanguages();
+        const isLocal = providerId === 'local';
         const { recentMessages, summary } = buildConversationContext(
             conversation.id,
             settings.maxContextMessages,
+            isLocal,
         );
         const system = buildSystemPrompt({
             activeLanguageCode,
             overrideLanguageCode: request.overrideLanguageCode,
             installedLanguages,
             languagePreference: settings.languagePreference,
+            hasAgents: !isLocal,
         });
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
-        const tools = buildAiTools(activeLanguageCode);
         const model = resolveLanguageModel({
             settings,
             providerId,
@@ -175,6 +286,17 @@ export class AiService {
         const controller = new AbortController();
         this.controllers.set(conversation.id, controller);
 
+        const tools = buildAiTools(activeLanguageCode, {
+            model,
+            isLocal,
+            abortSignal: controller.signal,
+            browserWindow,
+            conversationId: conversation.id,
+            assistantMessageId: assistantMessage.id,
+        });
+
+        const runner = this.getRunner(providerId);
+
         log.info('AI generation starting', {
             providerId,
             modelId,
@@ -183,7 +305,7 @@ export class AiService {
 
         void (async () => {
             try {
-                await this.runGeneration({
+                await runner.run({
                     browserWindow,
                     conversationId: conversation.id,
                     assistantMessageId: assistantMessage.id,
@@ -191,7 +313,7 @@ export class AiService {
                     systemPrompt,
                     history: recentMessages,
                     tools,
-                    controller,
+                    abortSignal: controller.signal,
                 });
 
                 const nextContext = buildConversationContext(
@@ -220,6 +342,8 @@ export class AiService {
                     error: message,
                 });
             } finally {
+                // Ensure partial assistant content is synced even on error/abort
+                aiRepo.syncMessage(assistantMessage.id);
                 this.controllers.delete(conversation.id);
             }
         })();
@@ -231,6 +355,8 @@ export class AiService {
         };
     }
 
+    // ── Lifecycle ──
+
     dispose(): void {
         for (const conversationId of this.controllers.keys()) {
             this.stopGeneration(conversationId);
@@ -238,120 +364,9 @@ export class AiService {
         void this.localRuntime.dispose();
     }
 
-    private async runGeneration(input: {
-        browserWindow: BrowserWindow;
-        conversationId: string;
-        assistantMessageId: string;
-        model: LanguageModel;
-        systemPrompt: string;
-        history: Array<{ role: 'user' | 'assistant'; content: string }>;
-        tools: ReturnType<typeof buildAiTools>;
-        controller: AbortController;
-    }): Promise<void> {
-        const result = streamText({
-            model: input.model,
-            system: input.systemPrompt,
-            messages: input.history,
-            tools: input.tools,
-            stopWhen: stepCountIs(6),
-            abortSignal: input.controller.signal,
-        });
+    // ── Private ──
 
-        for await (const part of result.fullStream) {
-            switch (part.type) {
-                case 'text-delta':
-                    this.handleTextDelta(
-                        input.browserWindow,
-                        input.conversationId,
-                        input.assistantMessageId,
-                        part.text,
-                    );
-                    break;
-                case 'tool-call':
-                    this.handleToolCall(
-                        input.browserWindow,
-                        input.conversationId,
-                        input.assistantMessageId,
-                        {
-                            id: part.toolCallId,
-                            name: part.toolName,
-                            input: (part.input as Record<string, unknown>) ?? {},
-                        },
-                    );
-                    break;
-                case 'tool-result':
-                    this.handleToolResult(
-                        input.browserWindow,
-                        input.conversationId,
-                        input.assistantMessageId,
-                        {
-                            toolCallId: part.toolCallId,
-                            name: part.toolName,
-                            output: part.output,
-                        },
-                    );
-                    break;
-                case 'error':
-                    throw new Error(
-                        typeof part.error === 'string'
-                            ? part.error
-                            : part.error instanceof Error
-                              ? part.error.message
-                              : 'AI stream failed.',
-                    );
-                default:
-                    break;
-            }
-        }
-    }
-
-    private handleTextDelta(
-        browserWindow: BrowserWindow,
-        conversationId: string,
-        assistantMessageId: string,
-        delta: string,
-    ): void {
-        aiRepo.appendAssistantContent(assistantMessageId, delta);
-        sendToRenderer(browserWindow, PushChannels.aiStreamChunk, {
-            conversationId,
-            messageId: assistantMessageId,
-            delta,
-        });
-    }
-
-    private handleToolCall(
-        browserWindow: BrowserWindow,
-        conversationId: string,
-        assistantMessageId: string,
-        toolCall: AiToolCall,
-    ): void {
-        const existing = aiRepo.getMessage(assistantMessageId);
-        aiRepo.setAssistantToolCalls(assistantMessageId, [
-            ...(existing?.toolCalls ?? []),
-            toolCall,
-        ]);
-        sendToRenderer(browserWindow, PushChannels.aiToolCallStart, {
-            conversationId,
-            messageId: assistantMessageId,
-            toolName: toolCall.name,
-            toolCallId: toolCall.id,
-            payload: toolCall.input,
-        });
-    }
-
-    private handleToolResult(
-        browserWindow: BrowserWindow,
-        conversationId: string,
-        assistantMessageId: string,
-        toolResult: AiToolResult,
-    ): void {
-        aiRepo.addAssistantToolResult(assistantMessageId, toolResult);
-        sendToRenderer(browserWindow, PushChannels.aiToolCallComplete, {
-            conversationId,
-            messageId: assistantMessageId,
-            toolName: toolResult.name,
-            toolCallId: toolResult.toolCallId,
-            payload: toolResult.output,
-        });
+    private getRunner(providerId: string): GenerationRunnerImpl {
+        return new GenerationRunnerImpl(providerId === 'local');
     }
 }

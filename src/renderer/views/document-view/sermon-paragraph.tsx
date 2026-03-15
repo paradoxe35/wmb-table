@@ -4,6 +4,7 @@ import { Dropdown, message, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
+import { hexToRgba } from '@renderer/utils/functions';
 import type {
     SermonParagraph as SermonParagraphType,
     SearchMode,
@@ -90,8 +91,17 @@ function PersistentHighlight({
         e.stopPropagation();
     }, []);
 
+    const bgColor = hexToRgba(color, 0.4);
+
     const markEl = (
-        <mark key={reactKey} style={{ backgroundColor: color, borderRadius: 2, cursor: 'pointer' }}>
+        <mark
+            key={reactKey}
+            style={{
+                backgroundColor: bgColor,
+                borderRadius: 2,
+                cursor: 'pointer',
+            }}
+        >
             {text}
         </mark>
     );

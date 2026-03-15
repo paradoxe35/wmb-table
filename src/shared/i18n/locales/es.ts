@@ -4,6 +4,12 @@ const es: Record<string, string> = {
     Recherche: 'Búsqueda',
     Sujets: 'Temas',
     Notes: 'Notas',
+    Soulignages: 'Subrayados',
+    'Aucun soulignage': 'Sin subrayados',
+    'Supprimer ce soulignage ?': '¿Eliminar este subrayado?',
+    'Soulignage supprimé': 'Subrayado eliminado',
+    'Erreur lors du chargement des soulignages': 'Error al cargar los subrayados',
+    'Charger plus': 'Cargar más',
     Paramètres: 'Configuración',
 
     // ── Viewer menu ──
@@ -604,6 +610,10 @@ const es: Record<string, string> = {
     Aide: 'Ayuda',
     Documentation: 'Documentación',
     'À propos': 'Acerca de',
+    Produit: 'Producto',
+    'Site web': 'Sitio web',
+    Auteur: 'Autor',
+    Licence: 'Licencia',
     "Aujourd'hui": 'Hoy',
     'Aucun document consulté ce jour': 'Ningún documento consultado este día',
     Renommer: 'Renombrar',

@@ -100,25 +100,51 @@
 
     mark {
         background-color: var(--ant-color-warning-bg, #ffe58f);
+        color: var(--ant-color-text, inherit);
         padding: 0 1px;
         border-radius: 2px;
 
         &.mark-current {
             background-color: var(--ant-color-warning, #fa8c16);
+            color: var(--ant-color-text, inherit);
         }
     }
 }
 
 .tts-active-paragraph {
     background-color: var(--ant-color-primary-bg, #e6f4ff);
+    color: var(--ant-color-text, inherit);
     transition: background-color 0.3s ease;
     border-radius: 4px;
 }
 
 .tts-active-sentence {
     background-color: var(--ant-color-warning-bg, #fff7e6);
+    color: var(--ant-color-text, inherit);
     border-radius: 2px;
     padding: 0 2px;
+}
+
+[data-theme='dark'] {
+    .sermon-paragraph mark {
+        background-color: rgba(250, 173, 20, 0.25);
+        color: #e8e8e8;
+
+        &.mark-current {
+            background-color: rgba(250, 140, 22, 0.55);
+            color: #fff;
+        }
+    }
+
+    .tts-active-paragraph {
+        background-color: rgba(22, 119, 255, 0.18);
+        color: #e8e8e8;
+    }
+
+    .tts-active-sentence {
+        background-color: rgba(250, 173, 20, 0.3);
+        color: #fff;
+    }
 }
 
 .inline-search-bar {

@@ -5,7 +5,8 @@ import {
     GroupOutlined,
     SearchOutlined,
     EditOutlined,
-    RobotOutlined,
+    BgColorsOutlined,
+    CommentOutlined,
     SettingOutlined,
 } from '@ant-design/icons';
 import { Menu, Layout } from 'antd';
@@ -23,6 +24,7 @@ const mainOptions: OptionDef[] = [
     { key: 'search', name: 'Recherche', icon: <SearchOutlined /> },
     { key: 'subject', name: 'Sujets', icon: <GroupOutlined /> },
     { key: 'editor', name: 'Notes', icon: <EditOutlined /> },
+    { key: 'highlights', name: 'Soulignages', icon: <BgColorsOutlined /> },
 ];
 
 const secondaryOptions: OptionDef[] = [{ key: 'bible', name: 'Bible', icon: <BibleIcons /> }];
@@ -78,7 +80,7 @@ export default function SidebarMenu({
                 ? [
                       {
                           key: 'ai-chat',
-                          icon: <RobotOutlined />,
+                          icon: <CommentOutlined />,
                           label: t('Assistant'),
                           onClick: () => showOptions('ai-chat'),
                       },

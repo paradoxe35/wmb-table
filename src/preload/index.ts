@@ -171,6 +171,9 @@ const api = {
     },
 
     highlights: {
+        getAll: () => invoke(HighlightChannels.getAll),
+        search: (query: string, page: number, pageSize?: number) =>
+            invoke(HighlightChannels.search, query, page, pageSize),
         getByDocument: (documentTitle: string, sermonId: string) =>
             invoke(HighlightChannels.getByDocument, documentTitle, sermonId),
         create: (data: HighlightCreateData) => invoke(HighlightChannels.create, data),
@@ -243,7 +246,8 @@ const api = {
         resumePlayback: () => invoke(TtsChannels.resumePlayback),
         stopPlayback: () => invoke(TtsChannels.stopPlayback),
         seekToSegment: (i: number) => invoke(TtsChannels.seekToSegment, i),
-        segmentComplete: () => invoke(TtsChannels.segmentComplete),
+        segmentComplete: (rendererPlayedQueued?: boolean) =>
+            invoke(TtsChannels.segmentComplete, rendererPlayedQueued),
         checkLanguageSupport: (lang: string) => invoke(TtsChannels.checkLanguageSupport, lang),
         downloadModel: (p: TtsProviderType, modelName?: string) =>
             invoke(TtsChannels.downloadModel, p, modelName),
@@ -292,6 +296,8 @@ const api = {
             baseUrl?: string;
         }) => invoke(AiChannels.testProvider, input),
         downloadModel: (modelId: string) => invoke(AiChannels.downloadModel, modelId),
+        fetchProviderModels: (input: { providerId: string; apiKey?: string; baseUrl?: string }) =>
+            invoke(AiChannels.fetchProviderModels, input),
     },
 
     on: {

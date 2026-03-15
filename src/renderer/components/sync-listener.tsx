@@ -1,9 +1,15 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { message } from 'antd';
-import { useAppStore, useSubjectsStore, useCustomDocumentsStore } from '@renderer/stores';
+import {
+    useAppStore,
+    useSubjectsStore,
+    useCustomDocumentsStore,
+    useNotesStore,
+    useAiChatStore,
+} from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import { HIGHLIGHT_EVENT, SYNC_EVENT } from '@renderer/utils/events';
+import { AI_DATA_EVENT, HIGHLIGHT_EVENT, SYNC_EVENT } from '@renderer/utils/events';
 
 const AUTH_FAILURE_THRESHOLD = 4;
 
@@ -11,6 +17,7 @@ export default function SyncListener() {
     const { t } = useTranslation();
     const setSubjects = useSubjectsStore((s) => s.setSubjects);
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
+    const setNotes = useNotesStore((s) => s.setNotes);
     const setSyncing = useAppStore((s) => s.setSyncing);
 
     useEffect(() => {
@@ -21,12 +28,28 @@ export default function SyncListener() {
             }
             if (tables.includes('subjects') || tables.includes('subject_items')) {
                 window.api.subjects.getAll().then(setSubjects);
+                window.dispatchEvent(new Event(AI_DATA_EVENT.subjectsChanged));
             }
             if (tables.includes('custom_documents')) {
                 window.api.app.getCustomDocuments().then(setCustomDocuments);
             }
+            if (
+                tables.includes('notes') ||
+                tables.includes('notes_references') ||
+                tables.includes('notes_bible_references')
+            ) {
+                window.api.notes.getAll().then(setNotes);
+                window.dispatchEvent(new Event(AI_DATA_EVENT.notesChanged));
+            }
             if (tables.includes('tts_settings')) {
                 window.api.tts.getSettings().then((s) => useTtsStore.getState().setSettings(s));
+            }
+            if (tables.includes('ai_conversations') || tables.includes('ai_messages')) {
+                const aiStore = useAiChatStore.getState();
+                if (aiStore.initialized) {
+                    aiStore.loadConversations();
+                }
+                window.dispatchEvent(new Event(AI_DATA_EVENT.conversationsChanged));
             }
             window.dispatchEvent(new Event(SYNC_EVENT.syncCompleted));
         });
@@ -54,7 +77,7 @@ export default function SyncListener() {
             cleanupFailure();
             window.removeEventListener('online', onOnline);
         };
-    }, [setSubjects, setCustomDocuments, setSyncing]);
+    }, [setSubjects, setCustomDocuments, setNotes, setSyncing]);
 
     return null;
 }

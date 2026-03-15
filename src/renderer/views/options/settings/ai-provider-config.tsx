@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Button, Card, Divider, Input, Popconfirm, Space, Tag } from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AutoComplete, Button, Card, Divider, Popconfirm, Space, Tag } from 'antd';
 import {
     CheckCircleOutlined,
     CloudOutlined,
@@ -14,6 +14,8 @@ import type {
     AiSettings,
 } from '@shared/ai.types';
 import { useAiChatStore } from '@renderer/stores';
+import { debounce } from '@renderer/utils/functions';
+import DebouncedInput from '@renderer/components/debounced-input';
 import { Field, Hint } from './ai-shared';
 
 type TestStatus = 'idle' | 'testing' | 'success' | 'error';
@@ -81,6 +83,113 @@ function TestButton({
     );
 }
 
+// ── Model select with fetch + custom entry ──
+
+function ModelSelect({
+    providerId,
+    value,
+    apiKey,
+    baseUrl,
+    onChange,
+}: {
+    providerId: string;
+    value: string | null | undefined;
+    apiKey?: string;
+    baseUrl?: string;
+    onChange: (model: string) => void;
+}) {
+    const { t } = useTranslation();
+    const [localValue, setLocalValue] = useState(value ?? '');
+    const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
+    const [fetched, setFetched] = useState(false);
+
+    // Sync local state when external value changes (e.g. settings reload)
+    useEffect(() => {
+        setLocalValue(value ?? '');
+    }, [value]);
+
+    // Debounced save — lets the user type freely without cursor jumps
+    const debouncedOnChange = useMemo(() => debounce(onChange, 500), [onChange]);
+    useEffect(() => () => debouncedOnChange.cancel(), [debouncedOnChange]);
+
+    const handleChange = useCallback(
+        (val: string) => {
+            setLocalValue(val);
+            debouncedOnChange(val);
+        },
+        [debouncedOnChange],
+    );
+
+    const handleSelect = useCallback(
+        (val: string) => {
+            setLocalValue(val);
+            debouncedOnChange.cancel();
+            onChange(val);
+        },
+        [onChange, debouncedOnChange],
+    );
+
+    const fetchModels = useCallback(async () => {
+        if (providerId === 'local') return;
+        try {
+            const models = await window.api.ai.fetchProviderModels({
+                providerId,
+                apiKey,
+                baseUrl,
+            });
+            const opts = models.map((m) => ({
+                value: m.id,
+                label: m.name !== m.id ? `${m.name} (${m.id})` : m.id,
+            }));
+            setOptions(opts);
+            setFetched(true);
+        } catch {
+            // Fetch failed — user can still type a custom model
+        }
+    }, [providerId, apiKey, baseUrl]);
+
+    // Fetch once when API key is available
+    useEffect(() => {
+        if (apiKey && !fetched) {
+            fetchModels();
+        }
+    }, [apiKey, fetched, fetchModels]);
+
+    // Reset when provider/apiKey changes
+    useEffect(() => {
+        setFetched(false);
+        setOptions([]);
+    }, [providerId, apiKey]);
+
+    // Ensure the current value is always in the options list
+    const allOptions = [...options];
+    if (localValue && !allOptions.some((o) => o.value === localValue)) {
+        allOptions.unshift({ value: localValue, label: localValue });
+    }
+
+    return (
+        <AutoComplete
+            value={localValue}
+            placeholder={t('Sélectionner ou saisir un modèle')}
+            onChange={handleChange}
+            onSelect={handleSelect}
+            options={allOptions}
+            filterOption={(input, option) => {
+                return (
+                    ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                    (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
+                );
+            }}
+            onDropdownVisibleChange={(open) => {
+                if (open && !fetched && apiKey) fetchModels();
+            }}
+            style={{ width: '100%' }}
+        />
+    );
+}
+
+// ── Provider configs ──
+
 export function BuiltinProviderConfig({
     provider,
     settings,
@@ -121,9 +230,10 @@ export function BuiltinProviderConfig({
                     if (field.key === 'apiKey') {
                         return (
                             <Field key={field.key} label={t('Clé API')}>
-                                <Input.Password
+                                <DebouncedInput
+                                    password
                                     value={config?.apiKey ?? ''}
-                                    onChange={(e) => updateField('apiKey', e.target.value)}
+                                    onChange={(val) => updateField('apiKey', val)}
                                     placeholder={t('Clé API')}
                                 />
                             </Field>
@@ -132,26 +242,22 @@ export function BuiltinProviderConfig({
                     if (field.key === 'baseUrl') {
                         return (
                             <Field key={field.key} label={t('URL de base')}>
-                                <Input
+                                <DebouncedInput
                                     value={config?.baseUrl ?? ''}
-                                    onChange={(e) => updateField('baseUrl', e.target.value)}
+                                    onChange={(val) => updateField('baseUrl', val)}
                                     placeholder="https://..."
                                 />
                             </Field>
                         );
                     }
                     return (
-                        <Field
-                            key={field.key}
-                            label={t('Modèle')}
-                            hint={t(
-                                "Utilisez l'identifiant exact du modèle fourni par ce service.",
-                            )}
-                        >
-                            <Input
-                                value={config?.model ?? ''}
-                                onChange={(e) => updateField('model', e.target.value)}
-                                placeholder={t('Modèle')}
+                        <Field key={field.key} label={t('Modèle')}>
+                            <ModelSelect
+                                providerId={provider.id}
+                                value={config?.model}
+                                apiKey={config?.apiKey}
+                                baseUrl={config?.baseUrl}
+                                onChange={(model) => updateField('model', model)}
                             />
                         </Field>
                     );
@@ -210,23 +316,27 @@ export function CustomProviderConfig({
         >
             <Space orientation="vertical" style={{ width: '100%' }} size="small">
                 <Field label={t('URL de base')}>
-                    <Input
+                    <DebouncedInput
                         value={provider.baseUrl}
-                        onChange={(e) => updateCustom({ baseUrl: e.target.value })}
+                        onChange={(val) => updateCustom({ baseUrl: val })}
                         placeholder="http://127.0.0.1:1234/v1"
                     />
                 </Field>
                 <Field label={t('Clé API')}>
-                    <Input.Password
+                    <DebouncedInput
+                        password
                         value={provider.apiKey ?? ''}
-                        onChange={(e) => updateCustom({ apiKey: e.target.value })}
+                        onChange={(val) => updateCustom({ apiKey: val })}
                         placeholder={t('Optionnel')}
                     />
                 </Field>
                 <Field label={t('Modèle par défaut')}>
-                    <Input
-                        value={provider.defaultModel ?? ''}
-                        onChange={(e) => updateCustom({ defaultModel: e.target.value })}
+                    <ModelSelect
+                        providerId={provider.id}
+                        value={provider.defaultModel}
+                        apiKey={provider.apiKey}
+                        baseUrl={provider.baseUrl}
+                        onChange={(model) => updateCustom({ defaultModel: model })}
                     />
                 </Field>
                 <TestButton

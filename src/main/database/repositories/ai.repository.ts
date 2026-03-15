@@ -2,6 +2,7 @@ import { asc, desc, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
+import { logChange } from '@main/services/sync/change-log.service';
 import {
     BUILTIN_PROVIDER_IDS,
     createDefaultAiSettings,
@@ -163,6 +164,8 @@ export function createConversation(languageCode: string, title?: string): AiConv
             updatedAt: now,
         })
         .run();
+    const row = getDb().select().from(aiConversations).where(eq(aiConversations.id, id)).get();
+    if (row) logChange('ai_conversations', id, 'SAVE', row);
     return getConversation(id)!;
 }
 
@@ -175,6 +178,12 @@ export function updateConversation(
         .set({ ...partial, updatedAt: new Date().toISOString() })
         .where(eq(aiConversations.id, conversationId))
         .run();
+    const row = getDb()
+        .select()
+        .from(aiConversations)
+        .where(eq(aiConversations.id, conversationId))
+        .get();
+    if (row) logChange('ai_conversations', conversationId, 'SAVE', row);
     return getConversation(conversationId)!;
 }
 
@@ -187,10 +196,29 @@ export function touchConversation(conversationId: string): void {
 }
 
 export function deleteConversation(conversationId: string): void {
+    // Log message deletions before cascade removes them
+    const messages = getDb()
+        .select({ id: aiMessages.id })
+        .from(aiMessages)
+        .where(eq(aiMessages.conversationId, conversationId))
+        .all();
+    for (const msg of messages) {
+        logChange('ai_messages', msg.id, 'DELETE', { id: msg.id });
+    }
     getDb().delete(aiConversations).where(eq(aiConversations.id, conversationId)).run();
+    logChange('ai_conversations', conversationId, 'DELETE', { id: conversationId });
 }
 
 export function clearAllConversations(): void {
+    // Log all deletions before wiping
+    const conversations = getDb().select({ id: aiConversations.id }).from(aiConversations).all();
+    const messages = getDb().select({ id: aiMessages.id }).from(aiMessages).all();
+    for (const msg of messages) {
+        logChange('ai_messages', msg.id, 'DELETE', { id: msg.id });
+    }
+    for (const conv of conversations) {
+        logChange('ai_conversations', conv.id, 'DELETE', { id: conv.id });
+    }
     getDb().delete(aiConversations).run();
 }
 
@@ -244,6 +272,11 @@ export function createMessage(input: {
         })
         .run();
     touchConversation(input.conversationId);
+    // Only log user messages immediately; assistant messages are logged via syncMessage() after streaming
+    if (input.role === 'user') {
+        const row = getDb().select().from(aiMessages).where(eq(aiMessages.id, id)).get();
+        if (row) logChange('ai_messages', id, 'SAVE', row);
+    }
     return getMessage(id)!;
 }
 
@@ -288,4 +321,13 @@ export function addAssistantToolResult(messageId: string, toolResult: AiToolResu
         throw new Error(`AI message not found: ${messageId}`);
     }
     return updateMessage(messageId, { toolResults: [...current.toolResults, toolResult] });
+}
+
+/**
+ * Log the final state of an assistant message for sync.
+ * Call once after streaming is complete to avoid flooding the change log during generation.
+ */
+export function syncMessage(messageId: string): void {
+    const row = getDb().select().from(aiMessages).where(eq(aiMessages.id, messageId)).get();
+    if (row) logChange('ai_messages', messageId, 'SAVE', row);
 }

@@ -11,7 +11,10 @@ import {
 import { NoteItem } from '@shared/types';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
+import { useNotesStore } from '@renderer/stores';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { AnimatePresence, motion } from 'framer-motion';
+import { AI_DATA_EVENT } from '@renderer/utils/events';
 
 export function Notes({
     setWorkingNote,
@@ -21,21 +24,32 @@ export function Notes({
     const { t } = useTranslation();
     const [loaded, setLoaded] = useState<boolean>(false);
 
+    const setStoreNotes = useNotesStore((s) => s.setNotes);
     const [notes, setNotes] = useState<NoteItem[]>([]);
     const odatas = useRef<NoteItem[]>([]);
 
-    useEffect(() => {
+    const loadNotes = useCallback(() => {
         window.api.notes
             .getAll()
             .then((notes) => {
                 odatas.current = notes;
                 setNotes(notes);
+                setStoreNotes(notes);
             })
             .catch(() => {
                 message.error(t('Erreur lors du chargement des notes'));
             })
             .finally(() => setLoaded(true));
     }, []);
+
+    useEffect(() => {
+        loadNotes();
+    }, [loadNotes]);
+
+    useEffect(() => {
+        window.addEventListener(AI_DATA_EVENT.notesChanged, loadNotes);
+        return () => window.removeEventListener(AI_DATA_EVENT.notesChanged, loadNotes);
+    }, [loadNotes]);
 
     const handleDeletion = (note: NoteItem) => {
         window.api.notes
@@ -92,27 +106,37 @@ export function Notes({
 
                 {notes.length > 0 && (
                     <div className="notes-grid">
-                        {notes.map((note) => (
-                            <Card
-                                key={note.id}
-                                className="note-card"
-                                onClick={() => editDocument(note)}
-                                actions={[
-                                    <EditOutlined key="edit" />,
-                                    <span key="delete" onClick={(e) => e.stopPropagation()}>
-                                        <DeleteBtn confirm={() => handleDeletion(note)} />
-                                    </span>,
-                                ]}
-                            >
-                                <Card.Meta
-                                    title={
-                                        <Typography.Text title={note.name}>
-                                            {note.name}
-                                        </Typography.Text>
-                                    }
-                                />
-                            </Card>
-                        ))}
+                        <AnimatePresence mode="popLayout">
+                            {notes.map((note) => (
+                                <motion.div
+                                    key={note.id}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <Card
+                                        className="note-card"
+                                        onClick={() => editDocument(note)}
+                                        actions={[
+                                            <EditOutlined key="edit" />,
+                                            <span key="delete" onClick={(e) => e.stopPropagation()}>
+                                                <DeleteBtn confirm={() => handleDeletion(note)} />
+                                            </span>,
+                                        ]}
+                                    >
+                                        <Card.Meta
+                                            title={
+                                                <Typography.Text title={note.name}>
+                                                    {note.name}
+                                                </Typography.Text>
+                                            }
+                                        />
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
                 )}
             </Space>

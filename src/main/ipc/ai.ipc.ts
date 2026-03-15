@@ -47,6 +47,10 @@ export function registerAiHandlers(): void {
         getAiService().testProvider(input),
     );
 
+    registerHandler(AiChannels.fetchProviderModels, async (_event, input) =>
+        getAiService().fetchProviderModels(input),
+    );
+
     registerHandler(AiChannels.downloadModel, async (event, modelId) => {
         const browserWindow = BrowserWindow.fromWebContents(event.sender);
         if (!browserWindow) {

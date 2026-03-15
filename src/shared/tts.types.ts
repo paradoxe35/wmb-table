@@ -1,5 +1,5 @@
 // ── Provider identification ──
-export const SEGMENT_GAP_MS = 500;
+export const SEGMENT_GAP_MS = 300;
 export type TtsProviderLocality = 'local' | 'remote';
 
 export interface TtsProviderMeta {
@@ -22,6 +22,12 @@ export const PROVIDER_CATALOG = {
         hint: 'Gratuit, fonctionne sans connexion internet. Supporte de nombreuses langues et voix. Nécessite un premier téléchargement.',
         free: true,
     },
+    edge: {
+        label: 'Edge TTS (Microsoft)',
+        locality: 'remote',
+        hint: 'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.',
+        free: true,
+    },
     elevenlabs: {
         label: 'ElevenLabs TTS',
         locality: 'remote',
@@ -33,12 +39,6 @@ export const PROVIDER_CATALOG = {
         locality: 'remote',
         hint: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
         free: false,
-    },
-    edge: {
-        label: 'Edge TTS (Microsoft)',
-        locality: 'remote',
-        hint: 'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.',
-        free: true,
     },
 } as const satisfies Record<string, TtsProviderMeta>;
 
@@ -158,6 +158,8 @@ export interface TtsSegmentAudio {
     audioBase64: string;
     mimeType: string;
     duration?: number;
+    /** When true, the renderer should pre-decode this audio but not play it yet. */
+    queued?: boolean;
 }
 
 // ── Voice cloning ──

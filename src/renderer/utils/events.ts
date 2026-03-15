@@ -44,4 +44,10 @@ export const TTS_EVENT = {
     stateChanged: 'tts-state-changed',
 } as const;
 
+export const AI_DATA_EVENT = {
+    notesChanged: 'ai-data-notes-changed',
+    subjectsChanged: 'ai-data-subjects-changed',
+    conversationsChanged: 'ai-data-conversations-changed',
+} as const;
+
 export const DOCUMENT_CONTAINER_ID = 'page-container';

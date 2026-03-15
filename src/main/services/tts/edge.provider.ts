@@ -4,6 +4,7 @@ import { readFile, unlink } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import log from 'electron-log';
 import { EdgeTTS } from 'node-edge-tts';
+import { SimpleCache } from '@main/lib/simple-cache';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -15,7 +16,7 @@ import type {
     TtsVoice,
 } from '@shared/tts.types';
 
-// ── Voice listing (HTTP, cached) ──
+// ── Voice listing (cached in DB via SimpleCache) ──
 
 interface EdgeVoiceEntry {
     ShortName: string;
@@ -27,14 +28,21 @@ interface EdgeVoiceEntry {
 const VOICES_URL =
     'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 
-let cachedVoices: EdgeVoiceEntry[] | null = null;
+const voiceCache = new SimpleCache<EdgeVoiceEntry[]>('edge-tts-voices', 24 * 60 * 60 * 1000);
 
-async function getVoiceList(): Promise<EdgeVoiceEntry[]> {
-    if (cachedVoices) return cachedVoices;
+let memoryCache: EdgeVoiceEntry[] | null = null;
+
+async function fetchVoicesFromNetwork(): Promise<EdgeVoiceEntry[]> {
     const res = await fetch(VOICES_URL);
     if (!res.ok) throw new Error(`Edge TTS voice list failed: ${res.status}`);
-    cachedVoices = (await res.json()) as EdgeVoiceEntry[];
-    return cachedVoices;
+    return (await res.json()) as EdgeVoiceEntry[];
+}
+
+async function getVoiceList(): Promise<EdgeVoiceEntry[]> {
+    if (memoryCache) return memoryCache;
+
+    memoryCache = await voiceCache.getOrFetch(fetchVoicesFromNetwork);
+    return memoryCache;
 }
 
 function edgeVoiceToTtsVoice(v: EdgeVoiceEntry): TtsVoice {
@@ -145,8 +153,8 @@ export class EdgeProvider implements TtsProvider {
         }
 
         const code = langCode.split('-')[0].toLowerCase();
-        if (!cachedVoices) return null;
-        const matches = cachedVoices.filter((v) => v.Locale.split('-')[0].toLowerCase() === code);
+        if (!memoryCache) return null;
+        const matches = memoryCache.filter((v) => v.Locale.split('-')[0].toLowerCase() === code);
         if (matches.length === 0) return null;
 
         const female = matches.find((v) => v.Gender.toLowerCase() === 'female');

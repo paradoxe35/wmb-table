@@ -2,6 +2,7 @@ import type {
     DocumentTab,
     ReadingPosition,
     HighlightItem,
+    HighlightSearchResult,
     Suggestions,
     SidebarStatus,
     NoteItem,
@@ -66,6 +67,7 @@ import type {
     AiModelDownloadProgress,
     AiModelScanResult,
     AiProviderTestResult,
+    AiRemoteModel,
     AiProviderDefinition,
     AiSendMessageRequest,
     AiSendMessageResult,
@@ -151,6 +153,8 @@ export const SubjectChannels = {
 } as const;
 
 export const HighlightChannels = {
+    getAll: 'highlights:getAll',
+    search: 'highlights:search',
     getByDocument: 'highlights:getByDocument',
     create: 'highlights:create',
     update: 'highlights:update',
@@ -241,6 +245,7 @@ export const AiChannels = {
     scanLocalModels: 'ai:scanLocalModels',
     testProvider: 'ai:testProvider',
     downloadModel: 'ai:downloadModel',
+    fetchProviderModels: 'ai:fetchProviderModels',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -397,6 +402,8 @@ export interface InvokeChannelMap {
     };
 
     // Highlights
+    [HighlightChannels.getAll]: { args: []; return: HighlightItem[] };
+    [HighlightChannels.search]: { args: [string, number, number?]; return: HighlightSearchResult };
     [HighlightChannels.getByDocument]: {
         args: [string, string];
         return: HighlightItem[];
@@ -473,7 +480,7 @@ export interface InvokeChannelMap {
     [TtsChannels.resumePlayback]: { args: []; return: void };
     [TtsChannels.stopPlayback]: { args: []; return: void };
     [TtsChannels.seekToSegment]: { args: [number]; return: void };
-    [TtsChannels.segmentComplete]: { args: []; return: void };
+    [TtsChannels.segmentComplete]: { args: [boolean?]; return: void };
     [TtsChannels.checkLanguageSupport]: {
         args: [string];
         return: Record<TtsProviderType, TtsCompatibilityResult>;
@@ -517,6 +524,10 @@ export interface InvokeChannelMap {
         return: AiProviderTestResult;
     };
     [AiChannels.downloadModel]: { args: [string]; return: void };
+    [AiChannels.fetchProviderModels]: {
+        args: [{ providerId: string; apiKey?: string; baseUrl?: string }];
+        return: AiRemoteModel[];
+    };
 }
 
 /** Maps each push channel to the payload type sent from main → renderer. */

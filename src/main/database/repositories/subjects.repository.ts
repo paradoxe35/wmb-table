@@ -83,17 +83,22 @@ export function create(name: string): SubjectDocument {
     };
 }
 
-export function deleteSubject(name: string): void {
+export function deleteSubject(id: string): void {
     const db = getDb();
+    const subject = db.select().from(subjects).where(eq(subjects.id, id)).get();
+    if (!subject) return;
     // Log item deletes before removing
-    const items = db.select().from(subjectItems).where(eq(subjectItems.subjectName, name)).all();
+    const items = db
+        .select()
+        .from(subjectItems)
+        .where(eq(subjectItems.subjectName, subject.name))
+        .all();
     for (const item of items) {
         logChange('subject_items', item.id, 'DELETE', { id: item.id });
     }
-    db.delete(subjectItems).where(eq(subjectItems.subjectName, name)).run();
-    const subject = db.select().from(subjects).where(eq(subjects.name, name)).get();
-    if (subject) logChange('subjects', subject.id, 'DELETE', { id: subject.id });
-    db.delete(subjects).where(eq(subjects.name, name)).run();
+    db.delete(subjectItems).where(eq(subjectItems.subjectName, subject.name)).run();
+    logChange('subjects', subject.id, 'DELETE', { id: subject.id });
+    db.delete(subjects).where(eq(subjects.id, id)).run();
 }
 
 export function getItems(subjectName: string): SubjectDocumentItem[] {

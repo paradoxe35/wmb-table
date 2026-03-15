@@ -30,7 +30,6 @@ import {
     type TtsVoiceCloneResult,
     type TtsCompatibilityResult,
     TTS_REFERENCE_VOICES,
-    SEGMENT_GAP_MS,
 } from '@shared/tts.types';
 
 /**
@@ -183,27 +182,29 @@ export class TtsService {
         });
     }
 
-    async onSegmentComplete(): Promise<void> {
-        if (this.status === 'playing') {
-            const nextIndex = this.currentIndex + 1;
-            if (nextIndex >= this.segments.length) {
-                this.stop();
-                return;
-            }
-            const gapMs = this.settings.segmentGapMs ?? SEGMENT_GAP_MS;
-            const gapStart = Date.now();
+    async onSegmentComplete(rendererPlayedQueued?: boolean): Promise<void> {
+        if (this.status !== 'playing') return;
 
-            // Prepare next segment (synthesis/cache lookup) — may take time
-            const generation = this.playbackGeneration;
+        const nextIndex = this.currentIndex + 1;
+        if (nextIndex >= this.segments.length) {
+            this.stop();
+            return;
+        }
+
+        const generation = this.playbackGeneration;
+
+        if (rendererPlayedQueued) {
+            // The renderer already played the preloaded audio — just update state
+            this.currentIndex = nextIndex;
+            this.status = 'playing';
+            this.pushState();
+            this.prefetchAhead(nextIndex + 1);
+
+            // Replenish: renderer consumed 1 from its queue, send 1 new one at the tail
+            this.sendQueuedSegments(nextIndex + TtsService.RENDERER_QUEUE_SIZE, generation, 1);
+        } else {
+            // Fallback: renderer had no preloaded buffer, prepare and send now
             const prepared = await this.prepareSegment(this.segments[nextIndex]);
-            if (generation !== this.playbackGeneration) return;
-
-            // If synthesis was faster than the gap, wait the remaining time
-            const elapsed = Date.now() - gapStart;
-            const remaining = gapMs - elapsed;
-            if (remaining > 0) {
-                await new Promise((r) => setTimeout(r, remaining));
-            }
             if (generation !== this.playbackGeneration) return;
 
             await this.playPreparedSegment(nextIndex, prepared, generation);
@@ -406,6 +407,51 @@ export class TtsService {
         this.pushState();
 
         this.prefetchAhead(index + 1);
+
+        // Proactively prepare and send upcoming segments so the renderer
+        // can pre-decode them while the current one plays
+        this.sendQueuedSegments(index + 1, generation);
+    }
+
+    /** How many segments to pre-send to the renderer for decoding. */
+    private static readonly RENDERER_QUEUE_SIZE = 3;
+
+    /**
+     * Prepare up to `count` segments starting from `fromIndex` and send them
+     * to the renderer as queued (pre-decoded but not yet played).
+     * Segments are sent sequentially so earlier ones arrive first.
+     */
+    private async sendQueuedSegments(
+        fromIndex: number,
+        generation: number,
+        count = TtsService.RENDERER_QUEUE_SIZE,
+    ): Promise<void> {
+        const end = Math.min(fromIndex + count, this.segments.length);
+        for (let i = fromIndex; i < end; i++) {
+            if (generation !== this.playbackGeneration) return;
+            try {
+                const prepared = await this.prepareSegment(this.segments[i]);
+                if (generation !== this.playbackGeneration) return;
+
+                const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
+                if (generation !== this.playbackGeneration) return;
+
+                const win = getMainWindow();
+                if (win) {
+                    sendToRenderer(win, PushChannels.ttsSegmentAudio, {
+                        segmentIndex: i,
+                        audioBase64: result.audioBase64,
+                        mimeType: result.mimeType,
+                        duration: result.duration,
+                        queued: true,
+                    });
+                }
+            } catch (err) {
+                // Non-fatal: if one segment fails, continue with the rest.
+                // The renderer will fall back to the round-trip for any missing segment.
+                log.warn(`TTS queued segment ${i} failed:`, err);
+            }
+        }
     }
 
     /**

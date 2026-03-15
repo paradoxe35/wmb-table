@@ -21,6 +21,7 @@ import DocumentView from './views/document-view';
 import AiChatView from './views/options/ai-chat';
 
 const Notes = lazy(() => import('./views/options/notes'));
+const Highlights = lazy(() => import('./views/options/highlights'));
 
 const Loader: FC<{ children?: ReactNode }> = ({ children }) => {
     return (
@@ -60,6 +61,11 @@ const AppOptions = memo(function AppOptions(): ReactElement {
             editor: (
                 <Loader>
                     <Notes />
+                </Loader>
+            ),
+            highlights: (
+                <Loader>
+                    <Highlights />
                 </Loader>
             ),
             bible: (

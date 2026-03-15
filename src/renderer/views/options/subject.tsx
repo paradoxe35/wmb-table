@@ -8,6 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Card, Input, Space, App as AntApp, Button, Empty, message, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,7 +21,7 @@ import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
 import { BookOutlined } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
-import { SUBJECT_EVENT } from '@renderer/utils/events';
+import { SUBJECT_EVENT, AI_DATA_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
@@ -115,7 +116,7 @@ export default function Subject() {
     const activeSubject = useSubjectsStore((s) => s.activeSubject);
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
 
-    useEffect(() => {
+    const loadSubjects = useCallback(() => {
         window.api.subjects
             .getAll()
             .then((subjects) => {
@@ -127,6 +128,22 @@ export default function Subject() {
                 message.error(t('Erreur lors du chargement des sujets'));
             });
     }, [setSubjects]);
+
+    useEffect(() => {
+        loadSubjects();
+    }, [loadSubjects]);
+
+    // Bump this to force subject items to reload (e.g. after sync)
+    const [itemsRefreshKey, setItemsRefreshKey] = useState(0);
+
+    useEffect(() => {
+        const onChanged = () => {
+            loadSubjects();
+            setItemsRefreshKey((k) => k + 1);
+        };
+        window.addEventListener(AI_DATA_EVENT.subjectsChanged, onChanged);
+        return () => window.removeEventListener(AI_DATA_EVENT.subjectsChanged, onChanged);
+    }, [loadSubjects]);
 
     useEffect(() => {
         if (datas.length > 0) {
@@ -156,7 +173,7 @@ export default function Subject() {
                     message.error(t('Erreur lors du chargement des éléments du sujet'));
                 });
         }
-    }, [datas, activeSubject]);
+    }, [datas, activeSubject, itemsRefreshKey]);
 
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
 
@@ -205,14 +222,24 @@ export default function Subject() {
                     className="container-y mt-2"
                     style={{ flex: 1, minHeight: 0, padding: '22px', overflowX: 'hidden' }}
                 >
-                    {datas.map((item) => (
-                        <ItemSubject
-                            key={item.name}
-                            item={item}
-                            onSelectItem={onSelectItem}
-                            onDeleteSubject={handleSubjectDeletion}
-                        />
-                    ))}
+                    <AnimatePresence mode="popLayout">
+                        {datas.map((item) => (
+                            <motion.div
+                                key={item.name}
+                                layout
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                            >
+                                <ItemSubject
+                                    item={item}
+                                    onSelectItem={onSelectItem}
+                                    onDeleteSubject={handleSubjectDeletion}
+                                />
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
                 </div>
             </div>
             <div className="container-y" style={{ flex: 1, minHeight: 0, padding: '0 10px' }}>
@@ -321,9 +348,20 @@ function ShowActiveDocuments({
                         </Text>
                     </div>
                     <div className="subject-ref-list">
-                        {documents.map((item) => (
-                            <ItemFromSelectedSubject key={item.id} item={item} confirm={confirm} />
-                        ))}
+                        <AnimatePresence mode="popLayout">
+                            {documents.map((item) => (
+                                <motion.div
+                                    key={item.id}
+                                    layout
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, x: -100 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <ItemFromSelectedSubject item={item} confirm={confirm} />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
                 </>
             ) : (
@@ -356,7 +394,9 @@ const ItemSubject: FC<{
                 <BookOutlined style={{ fontSize: 14, flexShrink: 0 }} />
                 <span className="subject-item__name">{item.name}</span>
             </div>
-            <DeleteBtn confirm={() => onDeleteSubject(item)} />
+            <span onClick={(e) => e.stopPropagation()}>
+                <DeleteBtn confirm={() => onDeleteSubject(item)} />
+            </span>
         </div>
     );
 };

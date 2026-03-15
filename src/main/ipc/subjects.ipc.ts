@@ -11,8 +11,8 @@ export function registerSubjectsHandlers(): void {
         return subjectsRepo.create(name);
     });
 
-    registerHandler(SubjectChannels.delete, async (_event, name) => {
-        subjectsRepo.deleteSubject(name);
+    registerHandler(SubjectChannels.delete, async (_event, id) => {
+        subjectsRepo.deleteSubject(id);
     });
 
     registerHandler(SubjectChannels.getItems, async (_event, subjectName) => {

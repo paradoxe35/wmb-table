@@ -85,9 +85,9 @@ describe('repository change tracking', () => {
         });
 
         it('deleteSubject logs DELETE changes for subject and items', () => {
-            subjectsRepo.create('Test Subject');
+            const subject = subjectsRepo.create('Test Subject');
             subjectsRepo.createItem('Test Subject', 'Doc', { tree: [1] }, 'text');
-            subjectsRepo.deleteSubject('Test Subject');
+            subjectsRepo.deleteSubject(subject.id);
             const changes = getAllChangeLogs();
             const subjectDelete = changes.find(
                 (c) => c.tableName === 'subjects' && c.operation === 'DELETE',
