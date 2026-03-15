@@ -34,7 +34,9 @@ export function buildNoteTools(defaultLanguageCode: string): Record<string, AiTo
                     const htmlContent = await marked.parse(content);
                     notesRepo.updateContent(note.id, `<h1>${name}</h1>\n${htmlContent}`);
                 }
-                return notesRepo.getById(note.id);
+                const created = notesRepo.getById(note.id);
+                if (!created) throw new Error('Failed to retrieve created note');
+                return created;
             },
         },
         updateNoteContent: {
@@ -42,7 +44,9 @@ export function buildNoteTools(defaultLanguageCode: string): Record<string, AiTo
             inputSchema: z.object({ noteId: z.string(), content: z.string() }),
             execute: async ({ noteId, content }) => {
                 notesRepo.updateContent(noteId, content);
-                return notesRepo.getById(noteId);
+                const updated = notesRepo.getById(noteId);
+                if (!updated) throw new Error('Note not found');
+                return updated;
             },
         },
         addSermonReferenceToNote: {
@@ -99,7 +103,9 @@ export function buildNoteTools(defaultLanguageCode: string): Record<string, AiTo
                     meta.title,
                     meta.sermonId,
                 );
-                return notesRepo.getReference(reference.id);
+                const ref = notesRepo.getReference(reference.id);
+                if (!ref) throw new Error('Failed to retrieve created reference');
+                return ref;
             },
         },
     };

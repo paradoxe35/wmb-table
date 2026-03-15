@@ -46,7 +46,7 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                     content: slice,
                     totalLines,
                     startLine,
-                    returnedLines: Math.min(maxLines, totalLines - startLine),
+                    returnedLines: Math.max(0, Math.min(maxLines, totalLines - startLine)),
                 };
             },
         },

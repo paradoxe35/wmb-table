@@ -11,6 +11,7 @@ import {
 import { NoteItem } from '@shared/types';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
+import { useNotesStore } from '@renderer/stores';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AI_DATA_EVENT } from '@renderer/utils/events';
@@ -23,6 +24,7 @@ export function Notes({
     const { t } = useTranslation();
     const [loaded, setLoaded] = useState<boolean>(false);
 
+    const setStoreNotes = useNotesStore((s) => s.setNotes);
     const [notes, setNotes] = useState<NoteItem[]>([]);
     const odatas = useRef<NoteItem[]>([]);
 
@@ -32,6 +34,7 @@ export function Notes({
             .then((notes) => {
                 odatas.current = notes;
                 setNotes(notes);
+                setStoreNotes(notes);
             })
             .catch(() => {
                 message.error(t('Erreur lors du chargement des notes'));
