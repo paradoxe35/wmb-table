@@ -5,7 +5,11 @@ import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
-import { DEFAULT_TTS_PROVIDER, type TtsIncompatibilityReason } from '@shared/tts.types';
+import {
+    DEFAULT_TTS_PROVIDER,
+    SEGMENT_GAP_MS,
+    type TtsIncompatibilityReason,
+} from '@shared/tts.types';
 
 function getIncompatibilityMessage(
     reason: TtsIncompatibilityReason | undefined,
@@ -182,22 +186,72 @@ export function useTtsSetup(): void {
         return window.api.on.ttsSegmentAudio((data) => {
             const state = useTtsStore.getState();
             if (state.status === 'idle') return;
-            const rate = state.settings?.rate ?? 1;
-            ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
+
+            if (data.queued) {
+                // Pre-decode the next segment so it's ready to play instantly
+                ttsAudioPlayer.preload(data.audioBase64, data.mimeType, data.segmentIndex);
+            } else {
+                const rate = state.settings?.rate ?? 1;
+                ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
+            }
         });
     }, []);
 
     // Signal segment completion to main process
     useEffect(() => {
         let pending = false;
-        ttsAudioPlayer.setOnEnded(() => {
-            if (pending || useTtsStore.getState().status === 'idle') {
-                return;
+        let gapTimeout: ReturnType<typeof setTimeout> | null = null;
+
+        // Listen for stop/pause to cancel any pending gap timer
+        const unsubStore = useTtsStore.subscribe((state) => {
+            if (state.status === 'idle' || state.status === 'paused') {
+                if (gapTimeout) {
+                    clearTimeout(gapTimeout);
+                    gapTimeout = null;
+                }
             }
-            pending = true;
-            window.api.tts.segmentComplete().finally(() => {
-                pending = false;
-            });
         });
+
+        ttsAudioPlayer.setOnEnded(() => {
+            const state = useTtsStore.getState();
+            if (state.status === 'idle') return;
+
+            const gapMs = state.settings?.segmentGapMs ?? SEGMENT_GAP_MS;
+
+            if (ttsAudioPlayer.hasPreloaded()) {
+                // Play the pre-decoded buffer after the configured gap
+                const playAndNotify = () => {
+                    gapTimeout = null;
+                    const current = useTtsStore.getState();
+                    if (current.status === 'idle' || current.status === 'paused') return;
+                    const rate = current.settings?.rate ?? 1;
+                    ttsAudioPlayer.playPreloaded(rate);
+                    // Notify main to update state and queue the next segment
+                    if (!pending) {
+                        pending = true;
+                        window.api.tts.segmentComplete(true).finally(() => {
+                            pending = false;
+                        });
+                    }
+                };
+                if (gapMs > 0) {
+                    gapTimeout = setTimeout(playAndNotify, gapMs);
+                } else {
+                    playAndNotify();
+                }
+            } else {
+                // No preloaded buffer — fall back to the original round-trip
+                if (pending) return;
+                pending = true;
+                window.api.tts.segmentComplete().finally(() => {
+                    pending = false;
+                });
+            }
+        });
+
+        return () => {
+            unsubStore();
+            if (gapTimeout) clearTimeout(gapTimeout);
+        };
     }, []);
 }

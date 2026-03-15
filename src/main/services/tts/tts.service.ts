@@ -30,7 +30,6 @@ import {
     type TtsVoiceCloneResult,
     type TtsCompatibilityResult,
     TTS_REFERENCE_VOICES,
-    SEGMENT_GAP_MS,
 } from '@shared/tts.types';
 
 /**
@@ -183,27 +182,29 @@ export class TtsService {
         });
     }
 
-    async onSegmentComplete(): Promise<void> {
-        if (this.status === 'playing') {
-            const nextIndex = this.currentIndex + 1;
-            if (nextIndex >= this.segments.length) {
-                this.stop();
-                return;
-            }
-            const gapMs = this.settings.segmentGapMs ?? SEGMENT_GAP_MS;
-            const gapStart = Date.now();
+    async onSegmentComplete(rendererPlayedQueued?: boolean): Promise<void> {
+        if (this.status !== 'playing') return;
 
-            // Prepare next segment (synthesis/cache lookup) — may take time
-            const generation = this.playbackGeneration;
+        const nextIndex = this.currentIndex + 1;
+        if (nextIndex >= this.segments.length) {
+            this.stop();
+            return;
+        }
+
+        const generation = this.playbackGeneration;
+
+        if (rendererPlayedQueued) {
+            // The renderer already played the preloaded audio — just update state
+            this.currentIndex = nextIndex;
+            this.status = 'playing';
+            this.pushState();
+            this.prefetchAhead(nextIndex + 1);
+
+            // Queue the next-next segment for the renderer to preload
+            this.sendQueuedSegment(nextIndex + 1, generation);
+        } else {
+            // Fallback: renderer had no preloaded buffer, prepare and send now
             const prepared = await this.prepareSegment(this.segments[nextIndex]);
-            if (generation !== this.playbackGeneration) return;
-
-            // If synthesis was faster than the gap, wait the remaining time
-            const elapsed = Date.now() - gapStart;
-            const remaining = gapMs - elapsed;
-            if (remaining > 0) {
-                await new Promise((r) => setTimeout(r, remaining));
-            }
             if (generation !== this.playbackGeneration) return;
 
             await this.playPreparedSegment(nextIndex, prepared, generation);
@@ -406,6 +407,42 @@ export class TtsService {
         this.pushState();
 
         this.prefetchAhead(index + 1);
+
+        // Proactively prepare and send the next segment so the renderer
+        // can pre-decode it while the current one plays
+        this.sendQueuedSegment(index + 1, generation);
+    }
+
+    /**
+     * Prepare the segment at `index` and send it to the renderer as queued
+     * (pre-decoded but not yet played). This eliminates the IPC round-trip
+     * and decode latency between segments.
+     */
+    private async sendQueuedSegment(index: number, generation: number): Promise<void> {
+        if (index >= this.segments.length) return;
+
+        try {
+            const prepared = await this.prepareSegment(this.segments[index]);
+            if (generation !== this.playbackGeneration) return;
+
+            const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
+            if (generation !== this.playbackGeneration) return;
+
+            const win = getMainWindow();
+            if (win) {
+                sendToRenderer(win, PushChannels.ttsSegmentAudio, {
+                    segmentIndex: index,
+                    audioBase64: result.audioBase64,
+                    mimeType: result.mimeType,
+                    duration: result.duration,
+                    queued: true,
+                });
+            }
+        } catch (err) {
+            // Non-fatal: if queuing fails, the renderer will fall back to
+            // the original round-trip via segmentComplete
+            log.warn(`TTS queued segment ${index} failed:`, err);
+        }
     }
 
     /**

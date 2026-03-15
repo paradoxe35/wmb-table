@@ -243,7 +243,8 @@ const api = {
         resumePlayback: () => invoke(TtsChannels.resumePlayback),
         stopPlayback: () => invoke(TtsChannels.stopPlayback),
         seekToSegment: (i: number) => invoke(TtsChannels.seekToSegment, i),
-        segmentComplete: () => invoke(TtsChannels.segmentComplete),
+        segmentComplete: (rendererPlayedQueued?: boolean) =>
+            invoke(TtsChannels.segmentComplete, rendererPlayedQueued),
         checkLanguageSupport: (lang: string) => invoke(TtsChannels.checkLanguageSupport, lang),
         downloadModel: (p: TtsProviderType, modelName?: string) =>
             invoke(TtsChannels.downloadModel, p, modelName),

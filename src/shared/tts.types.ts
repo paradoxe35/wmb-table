@@ -158,6 +158,8 @@ export interface TtsSegmentAudio {
     audioBase64: string;
     mimeType: string;
     duration?: number;
+    /** When true, the renderer should pre-decode this audio but not play it yet. */
+    queued?: boolean;
 }
 
 // ── Voice cloning ──

@@ -10,6 +10,10 @@ export class TtsAudioPlayer {
     private currentBuffer: AudioBuffer | null = null;
     private currentRate = 1;
 
+    // Pre-decoded next segment
+    private preloadedBuffer: AudioBuffer | null = null;
+    private preloadedSegmentIndex = -1;
+
     private getContext(): AudioContext {
         if (!this.audioContext) {
             this.audioContext = new AudioContext();
@@ -35,6 +39,54 @@ export class TtsAudioPlayer {
         }
     }
 
+    /**
+     * Pre-decode the next segment's audio so it's ready to play instantly
+     * when the current segment finishes.
+     */
+    async preload(audioBase64: string, _mimeType: string, segmentIndex: number): Promise<void> {
+        const ctx = this.getContext();
+        if (ctx.state === 'suspended') await ctx.resume();
+
+        const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+        try {
+            this.preloadedBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+            this.preloadedSegmentIndex = segmentIndex;
+        } catch (err) {
+            console.error('TTS preload decode failed:', err);
+            this.preloadedBuffer = null;
+            this.preloadedSegmentIndex = -1;
+        }
+    }
+
+    /** Returns true if a preloaded buffer is ready. */
+    hasPreloaded(): boolean {
+        return this.preloadedBuffer !== null;
+    }
+
+    /**
+     * Play the preloaded buffer immediately (after the configured gap).
+     * Returns the segment index that was played, or -1 if nothing was preloaded.
+     */
+    playPreloaded(rate: number): number {
+        if (!this.preloadedBuffer) return -1;
+        const buffer = this.preloadedBuffer;
+        const index = this.preloadedSegmentIndex;
+        this.preloadedBuffer = null;
+        this.preloadedSegmentIndex = -1;
+
+        this.stopSource();
+        this.currentBuffer = buffer;
+        this.currentRate = rate;
+        this.pausedAt = 0;
+        this.playBuffer(buffer, 0, rate);
+        return index;
+    }
+
+    clearPreloaded(): void {
+        this.preloadedBuffer = null;
+        this.preloadedSegmentIndex = -1;
+    }
+
     private playBuffer(buffer: AudioBuffer, offset: number, rate: number): void {
         const ctx = this.getContext();
 
@@ -43,8 +95,6 @@ export class TtsAudioPlayer {
         source.playbackRate.value = rate;
 
         const gain = ctx.createGain();
-        // Start at full volume — no fade-in needed since decodeAudioData ensures
-        // the buffer is fully decoded before playback begins
         gain.gain.setValueAtTime(1, ctx.currentTime);
 
         source.connect(gain);
@@ -85,6 +135,7 @@ export class TtsAudioPlayer {
         this.isPaused = false;
         this.pausedAt = 0;
         this.currentBuffer = null;
+        this.clearPreloaded();
     }
 
     setOnEnded(cb: () => void): void {
