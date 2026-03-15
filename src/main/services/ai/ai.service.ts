@@ -342,6 +342,8 @@ export class AiService {
                     error: message,
                 });
             } finally {
+                // Ensure partial assistant content is synced even on error/abort
+                aiRepo.syncMessage(assistantMessage.id);
                 this.controllers.delete(conversation.id);
             }
         })();

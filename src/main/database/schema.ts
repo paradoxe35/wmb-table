@@ -318,4 +318,6 @@ export const syncedTables = [
     suggestions,
     highlights,
     ttsSettings,
+    aiConversations,
+    aiMessages,
 ] as const;
