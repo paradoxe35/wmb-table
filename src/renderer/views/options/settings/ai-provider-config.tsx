@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Button, Card, Divider, Input, Popconfirm, Select, Space, Tag } from 'antd';
+import { AutoComplete, Button, Card, Divider, Input, Popconfirm, Space, Tag } from 'antd';
 import {
     CheckCircleOutlined,
     CloudOutlined,
@@ -98,12 +98,10 @@ function ModelSelect({
 }) {
     const { t } = useTranslation();
     const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
-    const [loading, setLoading] = useState(false);
     const [fetched, setFetched] = useState(false);
 
     const fetchModels = useCallback(async () => {
         if (providerId === 'local') return;
-        setLoading(true);
         try {
             const models = await window.api.ai.fetchProviderModels({
                 providerId,
@@ -118,8 +116,6 @@ function ModelSelect({
             setFetched(true);
         } catch {
             // Fetch failed — user can still type a custom model
-        } finally {
-            setLoading(false);
         }
     }, [providerId, apiKey, baseUrl]);
 
@@ -143,27 +139,18 @@ function ModelSelect({
     }
 
     return (
-        <Select
-            showSearch
-            value={value || undefined}
+        <AutoComplete
+            value={value ?? ''}
             placeholder={t('Sélectionner ou saisir un modèle')}
             onChange={onChange}
-            loading={loading}
             options={allOptions}
             filterOption={(input, option) =>
-                (option?.label ?? '').toLowerCase().includes(input.toLowerCase()) ||
+                ((option?.label as string) ?? '').toLowerCase().includes(input.toLowerCase()) ||
                 (option?.value ?? '').toLowerCase().includes(input.toLowerCase())
             }
             onDropdownVisibleChange={(open) => {
                 if (open && !fetched && apiKey) fetchModels();
             }}
-            notFoundContent={
-                loading
-                    ? t('Chargement...')
-                    : !apiKey
-                      ? t('Saisissez une clé API pour charger les modèles')
-                      : t('Aucun modèle trouvé — saisissez un identifiant')
-            }
             style={{ width: '100%' }}
         />
     );

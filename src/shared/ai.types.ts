@@ -173,10 +173,10 @@ export interface AiToolEvent {
 
 const DEFAULT_MODELS: Record<AiBuiltinProviderId, string | null> = {
     local: null,
-    openrouter: 'openai/gpt-4.1-mini',
-    openai: 'gpt-4.1-mini',
-    gemini: 'gemini-2.0-flash',
-    claude: 'claude-sonnet-4-5-20250514',
+    openrouter: 'openai/gpt-5-mini',
+    openai: 'gpt-5-mini',
+    gemini: 'gemini-2.5-flash',
+    claude: 'claude-haiku-4-5',
 };
 
 export function createDefaultAiSettings(): AiSettings {

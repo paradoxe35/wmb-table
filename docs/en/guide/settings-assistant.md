@@ -75,12 +75,61 @@ You can also add a compatible provider if you have its address and model name.
 
 ## Step 3: if you choose an online service
 
-For an online service, you normally:
+For an online service, you need to:
 
 1. choose the provider
-2. enter your key
-3. enter the model name
+2. enter your API key
+3. choose the model from the list (or type its name)
 4. test the connection
+
+### How to get an API key
+
+An API key is a personal code that each service gives you so it knows who you are. Here is how to get one:
+
+**OpenRouter**
+
+1. Go to [openrouter.ai](https://openrouter.ai)
+2. Create a free account
+3. Open the `Keys` page in your profile
+4. Click `Create Key`
+5. Copy the key shown
+6. Paste it in the `API Key` field in Wmb Table
+
+**OpenAI**
+
+1. Go to [platform.openai.com](https://platform.openai.com)
+2. Create an account
+3. Open `API keys` in the settings
+4. Click `Create new secret key`
+5. Copy the key shown
+6. Paste it in the `API Key` field in Wmb Table
+
+**Gemini**
+
+1. Go to [aistudio.google.com](https://aistudio.google.com)
+2. Sign in with your Google account
+3. Click `Get API Key`
+4. Copy the key
+5. Paste it in the `API Key` field in Wmb Table
+
+**Claude**
+
+1. Go to [console.anthropic.com](https://console.anthropic.com)
+2. Create an account
+3. Open `API Keys`
+4. Click `Create Key`
+5. Copy the key
+6. Paste it in the `API Key` field in Wmb Table
+
+### Choosing a model
+
+Once your API key is entered, click on the `Model` field. A list of available models will appear. You can:
+
+- search for a model by typing part of its name
+- choose a model from the list
+- type a model name directly if you know it
+
+If the test succeeds, the app will show that the connection is working.
 
 <ScreenshotPlaceholder
   file="en-settings-assistant-cloud-provider.png"
@@ -92,15 +141,15 @@ For an online service, you normally:
 
 Local mode lets you download a model to your computer.
 
-At the moment, the app offers lightweight models such as:
+At the moment, the app offers two models:
 
-- `Qwen 3.5`
-- `Gemma 3`
+- **Qwen 3.5 — Recommended**: good answer quality, fast and lightweight (~1.3 GB). Works on most computers.
+- **Qwen 3.5 — Lightweight**: very fast and very small (~550 MB). For older computers or those with limited memory.
 
 The simple path is:
 
 1. choose `Local`
-2. download a model
+2. download a model (the recommended model is the best choice)
 3. select that model
 4. use the assistant
 
@@ -122,6 +171,26 @@ Two choices are available:
 - `Change only when asked`
 
 For most users, `Follow the active language` is the best choice.
+
+## Simple recommended setup
+
+To get started without complication:
+
+1. enable the assistant
+2. choose the service you want to use
+3. enter the needed information
+4. keep `Follow the active language`
+5. open the `AI Chat` page
+
+## When to come back to this tab
+
+Come back here if:
+
+- the assistant does not respond
+- you want to switch services
+- you want to use local mode
+- you want to use a different model
+- you want to change how the assistant handles languages
 
 ## See also
 
