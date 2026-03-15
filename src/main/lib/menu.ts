@@ -1,7 +1,13 @@
-import { Menu, shell, app, type BrowserWindow } from 'electron';
+import { Menu, shell, app, dialog, type BrowserWindow } from 'electron';
 import { is } from '@electron-toolkit/utils';
 import { PushChannels } from '@shared/ipc.types';
-import { DOCS_LINK } from '@shared/constants';
+import {
+    APP_AUTHOR,
+    APP_AUTHOR_EMAIL,
+    APP_LICENSE,
+    DOCS_LINK,
+    WEBSITE_LINK,
+} from '@shared/constants';
 import { sendToRenderer } from '@main/ipc/register';
 import i18n from '@main/lib/i18n';
 
@@ -194,7 +200,21 @@ export default class MenuBuilder {
                     {
                         label: t('À propos'),
                         click: () => {
-                            // About dialog will be ported in a later phase
+                            dialog.showMessageBox(this.mainWindow, {
+                                title: t('À propos'),
+                                type: 'info',
+                                message: [
+                                    `${t('Produit')}: ${app.getName()}`,
+                                    `${t('Version')}: ${app.getVersion()}`,
+                                    `${t('Site web')}: ${WEBSITE_LINK}`,
+                                    '',
+                                    `${t('Auteur')}: ${APP_AUTHOR}`,
+                                    `Email: ${APP_AUTHOR_EMAIL}`,
+                                    `${t('Licence')}: ${APP_LICENSE}`,
+                                ].join('\n'),
+                                buttons: ['Ok'],
+                                cancelId: 0,
+                            });
                         },
                     },
                 ],
