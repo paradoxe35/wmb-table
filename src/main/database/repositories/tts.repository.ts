@@ -3,6 +3,7 @@ import { getDb } from '../index';
 import { ttsSettings } from '../schema';
 import type { TtsHighlightMode, TtsSettings, TtsProviderType } from '@shared/tts.types';
 import { createDefaultTtsSettings, SEGMENT_GAP_MS } from '@shared/tts.types';
+import { logChange } from '@main/services/sync/change-log.service';
 
 // Fixed ID so that all devices share the same row via Google Drive sync.
 // Using a deterministic ID ensures INSERT OR REPLACE merges correctly.
@@ -63,6 +64,8 @@ export function ensureSettings(): TtsSettings {
             providerConfigs: JSON.stringify(defaults.providers),
         })
         .run();
+    const row = getDb().select().from(ttsSettings).where(eq(ttsSettings.id, TTS_SETTINGS_ID)).get();
+    if (row) logChange('tts_settings', TTS_SETTINGS_ID, 'SAVE', row);
     return getSettings()!;
 }
 
@@ -88,5 +91,7 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
     const row = getDb().select().from(ttsSettings).get();
     if (row) {
         getDb().update(ttsSettings).set(update).where(eq(ttsSettings.id, row.id)).run();
+        const updated = getDb().select().from(ttsSettings).where(eq(ttsSettings.id, row.id)).get();
+        if (updated) logChange('tts_settings', row.id, 'SAVE', updated);
     }
 }
