@@ -12,6 +12,13 @@ import type {
 
 type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'>;
 
+function hexToRgba(hex: string, alpha: number): string {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 interface HighlightRange {
     start: number;
     end: number;
@@ -90,8 +97,17 @@ function PersistentHighlight({
         e.stopPropagation();
     }, []);
 
+    const bgColor = hexToRgba(color, 0.3);
+
     const markEl = (
-        <mark key={reactKey} style={{ backgroundColor: color, borderRadius: 2, cursor: 'pointer' }}>
+        <mark
+            key={reactKey}
+            style={{
+                backgroundColor: bgColor,
+                borderRadius: 2,
+                cursor: 'pointer',
+            }}
+        >
             {text}
         </mark>
     );
