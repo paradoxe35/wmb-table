@@ -227,23 +227,23 @@ async function applyRemoteChanges(): Promise<void> {
 
     if (files.length === 0) return;
 
-    const applicable = files.filter((f) => canBeApplied(f) && f.createdTime > timeOffset);
-    if (applicable.length > 0) {
-        log.info(`[Sync] Applying ${applicable.length} remote file(s)`);
+    // Filter to actionable files: correct prefix, after offset, not already processed
+    const applicable = files.filter(
+        (f) => canBeApplied(f) && f.createdTime > timeOffset && !isAlreadyProcessed(f.id),
+    );
+
+    // Advance offset past already-processed files without re-downloading them
+    for (const file of files) {
+        if (canBeApplied(file) && file.createdTime > timeOffset && isAlreadyProcessed(file.id)) {
+            updateSyncTimeOffset(file.createdTime);
+        }
     }
+
+    if (applicable.length === 0) return;
+    log.info(`[Sync] Applying ${applicable.length} remote file(s)`);
     let processed = 0;
 
-    for (const file of files) {
-        // Skip files we can't process (not a snapshot or change file)
-        if (!canBeApplied(file)) continue;
-        if (file.createdTime <= timeOffset) continue;
-
-        // Skip if already processed
-        if (isAlreadyProcessed(file.id)) {
-            updateSyncTimeOffset(file.createdTime);
-            continue;
-        }
-
+    for (const file of applicable) {
         let error: Error | null = null;
 
         try {
