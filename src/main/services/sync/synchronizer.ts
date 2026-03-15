@@ -27,7 +27,7 @@ import { hasInternet } from '@main/lib/network';
 import { pushToRenderer } from '@main/lib/push';
 import { PushChannels } from '@shared/ipc.types';
 
-const SYNC_INTERVAL_MS = 10_000;
+const SYNC_INTERVAL_MS = 30_000;
 const MAX_CONSECUTIVE_AUTH_FAILURES = 4;
 const MAX_CHANGE_RETRIES = 5;
 const MAX_SNAPSHOT_RETRIES = 10;
