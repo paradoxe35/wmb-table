@@ -324,6 +324,14 @@ export interface HighlightItem extends Readonly<BaseEntity> {
     languageCode: string;
 }
 
+export interface HighlightSearchResult {
+    items: HighlightItem[];
+    total: number;
+    page: number;
+    pageSize: number;
+    hasMore: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Audio
 // ---------------------------------------------------------------------------

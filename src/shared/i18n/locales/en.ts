@@ -4,6 +4,12 @@ const en: Record<string, string> = {
     Recherche: 'Search',
     Sujets: 'Subjects',
     Notes: 'Notes',
+    Soulignages: 'Highlights',
+    'Aucun soulignage': 'No highlights',
+    'Supprimer ce soulignage ?': 'Delete this highlight?',
+    'Soulignage supprimé': 'Highlight deleted',
+    'Erreur lors du chargement des soulignages': 'Error loading highlights',
+    'Charger plus': 'Load more',
     Paramètres: 'Settings',
 
     // ── Viewer menu ──

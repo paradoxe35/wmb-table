@@ -171,6 +171,9 @@ const api = {
     },
 
     highlights: {
+        getAll: () => invoke(HighlightChannels.getAll),
+        search: (query: string, page: number, pageSize?: number) =>
+            invoke(HighlightChannels.search, query, page, pageSize),
         getByDocument: (documentTitle: string, sermonId: string) =>
             invoke(HighlightChannels.getByDocument, documentTitle, sermonId),
         create: (data: HighlightCreateData) => invoke(HighlightChannels.create, data),

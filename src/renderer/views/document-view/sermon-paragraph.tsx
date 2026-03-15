@@ -4,6 +4,7 @@ import { Dropdown, message, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
 import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
+import { hexToRgba } from '@renderer/utils/functions';
 import type {
     SermonParagraph as SermonParagraphType,
     SearchMode,
@@ -11,13 +12,6 @@ import type {
 } from '@shared/types';
 
 type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'>;
-
-function hexToRgba(hex: string, alpha: number): string {
-    const r = parseInt(hex.slice(1, 3), 16);
-    const g = parseInt(hex.slice(3, 5), 16);
-    const b = parseInt(hex.slice(5, 7), 16);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
 
 interface HighlightRange {
     start: number;
@@ -97,7 +91,7 @@ function PersistentHighlight({
         e.stopPropagation();
     }, []);
 
-    const bgColor = hexToRgba(color, 0.3);
+    const bgColor = hexToRgba(color, 0.4);
 
     const markEl = (
         <mark

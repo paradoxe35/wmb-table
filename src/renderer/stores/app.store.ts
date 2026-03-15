@@ -6,6 +6,7 @@ type OptionViewValue =
     | 'subject'
     | 'history'
     | 'editor'
+    | 'highlights'
     | 'bible'
     | 'settings'
     | 'ai-chat';

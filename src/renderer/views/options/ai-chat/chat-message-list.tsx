@@ -61,9 +61,19 @@ export default function ChatMessageList({
 }) {
     const { t } = useTranslation();
     const bottomRef = useRef<HTMLDivElement>(null);
+    const prevCountRef = useRef(0);
 
     useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        const prevCount = prevCountRef.current;
+        const currCount = messages.length;
+        prevCountRef.current = currCount;
+
+        // Jump instantly when loading a conversation (many messages at once or switching)
+        // Smooth scroll only for incremental updates (new message while chatting)
+        const isConversationSwitch = Math.abs(currCount - prevCount) > 1 || prevCount === 0;
+        bottomRef.current?.scrollIntoView(
+            isConversationSwitch ? undefined : { behavior: 'smooth' },
+        );
     }, [messages, sending]);
 
     return (

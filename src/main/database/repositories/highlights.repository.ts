@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc, or, like, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { highlights } from '../schema';
@@ -7,6 +7,7 @@ import type {
     DocumentType,
     HighlightCreateData,
     HighlightItem,
+    HighlightSearchResult,
     HighlightUpdateData,
 } from '@shared/types';
 
@@ -27,6 +28,81 @@ function toHighlightItem(row: typeof highlights.$inferSelect): HighlightItem {
         languageCode: row.languageCode,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
+    };
+}
+
+export function getAll(): HighlightItem[] {
+    return getDb()
+        .select()
+        .from(highlights)
+        .orderBy(desc(highlights.createdAt))
+        .all()
+        .map(toHighlightItem);
+}
+
+const DEFAULT_PAGE_SIZE = 20;
+
+export function search(
+    query: string,
+    page: number,
+    pageSize: number = DEFAULT_PAGE_SIZE,
+): HighlightSearchResult {
+    const db = getDb();
+    const offset = page * pageSize;
+
+    const conditions = query.trim()
+        ? or(
+              like(highlights.documentTitle, `%${query}%`),
+              like(highlights.textSnippet, `%${query}%`),
+              like(highlights.comment, `%${query}%`),
+          )
+        : undefined;
+
+    const totalRow = db
+        .select({ count: sql<number>`count(distinct ${highlights.groupId})` })
+        .from(highlights)
+        .where(conditions)
+        .get();
+    const total = totalRow?.count ?? 0;
+
+    // Get distinct groupIds with pagination
+    const groupRows = db
+        .selectDistinct({ groupId: highlights.groupId, createdAt: highlights.createdAt })
+        .from(highlights)
+        .where(conditions)
+        .orderBy(desc(highlights.createdAt))
+        .limit(pageSize)
+        .offset(offset)
+        .all();
+
+    if (groupRows.length === 0) {
+        return { items: [], total, page, pageSize, hasMore: false };
+    }
+
+    // Fetch all rows for the matched groups
+    const groupIds = groupRows.map((r) => r.groupId);
+    const items = db
+        .select()
+        .from(highlights)
+        .where(
+            and(
+                sql`${highlights.groupId} IN (${sql.join(
+                    groupIds.map((id) => sql`${id}`),
+                    sql`, `,
+                )})`,
+                conditions,
+            ),
+        )
+        .orderBy(desc(highlights.createdAt))
+        .all()
+        .map(toHighlightItem);
+
+    return {
+        items,
+        total,
+        page,
+        pageSize,
+        hasMore: offset + pageSize < total,
     };
 }
 
