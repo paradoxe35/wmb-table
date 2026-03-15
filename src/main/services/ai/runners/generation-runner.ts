@@ -8,8 +8,8 @@ import {
 } from './stream-dispatcher';
 
 /** Maximum number of tool-calling steps before the model must stop. */
-const REMOTE_MAX_STEPS = 10;
-const LOCAL_MAX_STEPS = 6;
+const REMOTE_MAX_STEPS = 30;
+const LOCAL_MAX_STEPS = 10;
 
 /**
  * Unified generation runner for both local and remote providers.
