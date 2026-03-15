@@ -8,7 +8,6 @@ import {
     useNotesStore,
     useAiChatStore,
 } from '@renderer/stores';
-import { useTtsStore } from '@renderer/stores/tts.store';
 import { AI_DATA_EVENT, HIGHLIGHT_EVENT, SYNC_EVENT } from '@renderer/utils/events';
 
 const AUTH_FAILURE_THRESHOLD = 4;
@@ -40,9 +39,6 @@ export default function SyncListener() {
             ) {
                 window.api.notes.getAll().then(setNotes);
                 window.dispatchEvent(new Event(AI_DATA_EVENT.notesChanged));
-            }
-            if (tables.includes('tts_settings')) {
-                window.api.tts.getSettings().then((s) => useTtsStore.getState().setSettings(s));
             }
             if (tables.includes('ai_conversations') || tables.includes('ai_messages')) {
                 const aiStore = useAiChatStore.getState();

@@ -297,6 +297,14 @@ function canIgnoreRemoteApplyFailure(file: DriveFile, error: Error | null): bool
         return true;
     }
 
+    // File was deleted from Drive (e.g., pruned by another machine's snapshot cycle)
+    // — safe to skip since the data is already in the snapshot
+    const msg = error.message?.toLowerCase() ?? '';
+    if (msg.includes('404') || msg.includes('not found')) {
+        log.warn(`Remote file no longer exists (skipped): ${file.name}`);
+        return true;
+    }
+
     const failureCount = getFailureCount(file.id);
     if (failureCount > maxFailures) {
         log.error(`Failed to apply remote file (ignored, too many failures): ${file.name}`, error);

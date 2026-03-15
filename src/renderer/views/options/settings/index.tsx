@@ -7,7 +7,7 @@ import {
     InfoCircleOutlined,
     ReadOutlined,
     ReloadOutlined,
-    RobotOutlined,
+    CommentOutlined,
     SettingOutlined,
     SoundOutlined,
 } from '@ant-design/icons';
@@ -108,7 +108,7 @@ export default function Settings() {
                 key: TAB_KEYS.ai,
                 label: (
                     <span>
-                        <RobotOutlined /> {t('Assistant')}
+                        <CommentOutlined /> {t('Assistant')}
                     </span>
                 ),
                 children: <AiTab />,

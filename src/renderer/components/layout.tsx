@@ -36,15 +36,17 @@ function Title() {
             <span>{APP_NAME}</span>
             {showSpinner && (
                 <Tooltip title={hint}>
-                    <Spin
-                        indicator={
-                            syncing && appLoaded ? (
-                                <CloudSyncOutlined style={{ fontSize: 18 }} spin />
-                            ) : (
-                                <LoadingOutlined style={{ fontSize: 20 }} spin />
-                            )
-                        }
-                    />
+                    {syncing && appLoaded ? (
+                        <CloudSyncOutlined
+                            style={{
+                                fontSize: 14,
+                                color: 'var(--ant-color-primary)',
+                                opacity: 0.7,
+                            }}
+                        />
+                    ) : (
+                        <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
+                    )}
                 </Tooltip>
             )}
         </Space>

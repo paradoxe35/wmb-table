@@ -52,6 +52,7 @@ function createWindow(): void {
         minWidth: 933,
         minHeight: 572,
         title: 'Wmb Table',
+        backgroundColor: '#001529',
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             nodeIntegration: false,

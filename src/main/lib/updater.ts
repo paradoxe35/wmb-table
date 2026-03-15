@@ -63,7 +63,14 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     });
 
     autoUpdater.on('error', (err) => {
-        notify({ type: 'error', message: err.message });
+        const msg = err.message?.toLowerCase() ?? '';
+        // Treat "no published release" / 404 as "no update" instead of error
+        if (msg.includes('404') || msg.includes('no published') || msg.includes('not found')) {
+            log.info('Updater: no published release found');
+            notify({ type: 'noUpdate' });
+        } else {
+            notify({ type: 'error', message: err.message });
+        }
     });
 
     // Check for updates after a short delay
@@ -79,17 +86,25 @@ export function getUpdateStatus(): UpdaterNotification {
 }
 
 export function checkForUpdates(): void {
+    if (!mainWindowRef) {
+        notify({ type: 'noUpdate' });
+        return;
+    }
     autoUpdater.checkForUpdates().catch((err) => {
         log.error('Updater: failed to check for updates', err);
+        notify({ type: 'error', message: err.message });
     });
 }
 
 export function startDownload(): void {
+    if (!mainWindowRef) return;
     autoUpdater.downloadUpdate().catch((err) => {
         log.error('Updater: failed to start download', err);
+        notify({ type: 'error', message: err.message });
     });
 }
 
 export function quitAndInstall(): void {
+    if (!mainWindowRef) return;
     autoUpdater.quitAndInstall(false, true);
 }

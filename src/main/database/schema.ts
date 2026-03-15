@@ -317,7 +317,6 @@ export const syncedTables = [
     readingPositions,
     suggestions,
     highlights,
-    ttsSettings,
     aiConversations,
     aiMessages,
 ] as const;
