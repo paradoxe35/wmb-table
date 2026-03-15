@@ -1,3 +1,8 @@
+interface PreloadedEntry {
+    buffer: AudioBuffer;
+    segmentIndex: number;
+}
+
 export class TtsAudioPlayer {
     private audioContext: AudioContext | null = null;
     private sourceNode: AudioBufferSourceNode | null = null;
@@ -10,9 +15,8 @@ export class TtsAudioPlayer {
     private currentBuffer: AudioBuffer | null = null;
     private currentRate = 1;
 
-    // Pre-decoded next segment
-    private preloadedBuffer: AudioBuffer | null = null;
-    private preloadedSegmentIndex = -1;
+    // Queue of pre-decoded upcoming segments (ordered by segment index)
+    private preloadedQueue: PreloadedEntry[] = [];
 
     private getContext(): AudioContext {
         if (!this.audioContext) {
@@ -40,8 +44,8 @@ export class TtsAudioPlayer {
     }
 
     /**
-     * Pre-decode the next segment's audio so it's ready to play instantly
-     * when the current segment finishes.
+     * Pre-decode a segment's audio and add it to the queue so it's ready
+     * to play instantly when the current (and any earlier queued) segments finish.
      */
     async preload(audioBase64: string, _mimeType: string, segmentIndex: number): Promise<void> {
         const ctx = this.getContext();
@@ -49,42 +53,40 @@ export class TtsAudioPlayer {
 
         const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
         try {
-            this.preloadedBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
-            this.preloadedSegmentIndex = segmentIndex;
+            const buffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
+            // Avoid duplicates and insert in order
+            if (!this.preloadedQueue.some((e) => e.segmentIndex === segmentIndex)) {
+                this.preloadedQueue.push({ buffer, segmentIndex });
+                this.preloadedQueue.sort((a, b) => a.segmentIndex - b.segmentIndex);
+            }
         } catch (err) {
             console.error('TTS preload decode failed:', err);
-            this.preloadedBuffer = null;
-            this.preloadedSegmentIndex = -1;
         }
     }
 
-    /** Returns true if a preloaded buffer is ready. */
+    /** Returns true if at least one preloaded buffer is ready. */
     hasPreloaded(): boolean {
-        return this.preloadedBuffer !== null;
+        return this.preloadedQueue.length > 0;
     }
 
     /**
-     * Play the preloaded buffer immediately (after the configured gap).
-     * Returns the segment index that was played, or -1 if nothing was preloaded.
+     * Play the next preloaded buffer from the queue.
+     * Returns the segment index that was played, or -1 if the queue is empty.
      */
     playPreloaded(rate: number): number {
-        if (!this.preloadedBuffer) return -1;
-        const buffer = this.preloadedBuffer;
-        const index = this.preloadedSegmentIndex;
-        this.preloadedBuffer = null;
-        this.preloadedSegmentIndex = -1;
+        if (this.preloadedQueue.length === 0) return -1;
+        const entry = this.preloadedQueue.shift()!;
 
         this.stopSource();
-        this.currentBuffer = buffer;
+        this.currentBuffer = entry.buffer;
         this.currentRate = rate;
         this.pausedAt = 0;
-        this.playBuffer(buffer, 0, rate);
-        return index;
+        this.playBuffer(entry.buffer, 0, rate);
+        return entry.segmentIndex;
     }
 
     clearPreloaded(): void {
-        this.preloadedBuffer = null;
-        this.preloadedSegmentIndex = -1;
+        this.preloadedQueue = [];
     }
 
     private playBuffer(buffer: AudioBuffer, offset: number, rate: number): void {

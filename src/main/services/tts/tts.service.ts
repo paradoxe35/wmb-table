@@ -200,8 +200,8 @@ export class TtsService {
             this.pushState();
             this.prefetchAhead(nextIndex + 1);
 
-            // Queue the next-next segment for the renderer to preload
-            this.sendQueuedSegment(nextIndex + 1, generation);
+            // Replenish: renderer consumed 1 from its queue, send 1 new one at the tail
+            this.sendQueuedSegments(nextIndex + TtsService.RENDERER_QUEUE_SIZE, generation, 1);
         } else {
             // Fallback: renderer had no preloaded buffer, prepare and send now
             const prepared = await this.prepareSegment(this.segments[nextIndex]);
@@ -408,40 +408,49 @@ export class TtsService {
 
         this.prefetchAhead(index + 1);
 
-        // Proactively prepare and send the next segment so the renderer
-        // can pre-decode it while the current one plays
-        this.sendQueuedSegment(index + 1, generation);
+        // Proactively prepare and send upcoming segments so the renderer
+        // can pre-decode them while the current one plays
+        this.sendQueuedSegments(index + 1, generation);
     }
 
+    /** How many segments to pre-send to the renderer for decoding. */
+    private static readonly RENDERER_QUEUE_SIZE = 3;
+
     /**
-     * Prepare the segment at `index` and send it to the renderer as queued
-     * (pre-decoded but not yet played). This eliminates the IPC round-trip
-     * and decode latency between segments.
+     * Prepare up to `count` segments starting from `fromIndex` and send them
+     * to the renderer as queued (pre-decoded but not yet played).
+     * Segments are sent sequentially so earlier ones arrive first.
      */
-    private async sendQueuedSegment(index: number, generation: number): Promise<void> {
-        if (index >= this.segments.length) return;
-
-        try {
-            const prepared = await this.prepareSegment(this.segments[index]);
+    private async sendQueuedSegments(
+        fromIndex: number,
+        generation: number,
+        count = TtsService.RENDERER_QUEUE_SIZE,
+    ): Promise<void> {
+        const end = Math.min(fromIndex + count, this.segments.length);
+        for (let i = fromIndex; i < end; i++) {
             if (generation !== this.playbackGeneration) return;
+            try {
+                const prepared = await this.prepareSegment(this.segments[i]);
+                if (generation !== this.playbackGeneration) return;
 
-            const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
-            if (generation !== this.playbackGeneration) return;
+                const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
+                if (generation !== this.playbackGeneration) return;
 
-            const win = getMainWindow();
-            if (win) {
-                sendToRenderer(win, PushChannels.ttsSegmentAudio, {
-                    segmentIndex: index,
-                    audioBase64: result.audioBase64,
-                    mimeType: result.mimeType,
-                    duration: result.duration,
-                    queued: true,
-                });
+                const win = getMainWindow();
+                if (win) {
+                    sendToRenderer(win, PushChannels.ttsSegmentAudio, {
+                        segmentIndex: i,
+                        audioBase64: result.audioBase64,
+                        mimeType: result.mimeType,
+                        duration: result.duration,
+                        queued: true,
+                    });
+                }
+            } catch (err) {
+                // Non-fatal: if one segment fails, continue with the rest.
+                // The renderer will fall back to the round-trip for any missing segment.
+                log.warn(`TTS queued segment ${i} failed:`, err);
             }
-        } catch (err) {
-            // Non-fatal: if queuing fails, the renderer will fall back to
-            // the original round-trip via segmentComplete
-            log.warn(`TTS queued segment ${index} failed:`, err);
         }
     }
 
