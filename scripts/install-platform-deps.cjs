@@ -41,26 +41,32 @@ const EXCLUDED_VARIANTS = ['cuda', 'cuda-ext', 'vulkan']
 
 // ── Matching logic ───────────────────────────────────────────────────────────
 
+/**
+ * Split a package name into segments for matching.
+ * e.g. "@node-llama-cpp/mac-arm64-metal" -> ["node", "llama", "cpp", "mac", "arm64", "metal"]
+ */
+function getSegments(pkgName) {
+  return pkgName.toLowerCase().replace(/@/g, '').split(/[-/]+/)
+}
+
 function matchesPlatform(pkgName) {
-  const lower = pkgName.toLowerCase()
+  const segments = getSegments(pkgName)
 
   // Exclude CUDA/Vulkan variants
-  for (const variant of EXCLUDED_VARIANTS) {
-    if (lower.includes(variant)) return false
-  }
+  if (segments.some((s) => EXCLUDED_VARIANTS.includes(s))) return false
 
   const osAliases = OS_ALIASES[TARGET_OS] || [TARGET_OS]
   const archAliases = ARCH_ALIASES[TARGET_ARCH] || [TARGET_ARCH]
 
-  // Must match the target OS
-  const matchesOs = osAliases.some((p) => lower.includes(p))
+  // Must match the target OS (exact segment match — prevents "win" matching "darwin")
+  const matchesOs = segments.some((s) => osAliases.includes(s))
   if (!matchesOs) return false
 
-  // If the package name contains any arch string, it must match ours
+  // If the package name contains any arch segment, it must match ours
   const allArchStrings = Object.values(ARCH_ALIASES).flat()
-  const hasArch = allArchStrings.some((a) => lower.includes(a))
+  const hasArch = segments.some((s) => allArchStrings.includes(s))
   if (hasArch) {
-    const matchesArch = archAliases.some((a) => lower.includes(a))
+    const matchesArch = segments.some((s) => archAliases.includes(s))
     if (!matchesArch) return false
   }
 
