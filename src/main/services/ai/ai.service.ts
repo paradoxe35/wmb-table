@@ -1,4 +1,4 @@
-import { generateText, stepCountIs, streamText, type LanguageModel } from 'ai';
+import { generateText } from 'ai';
 import { BrowserWindow } from 'electron';
 import log from '@main/lib/logger';
 import * as aiRepo from '@main/database/repositories/ai.repository';
@@ -12,8 +12,6 @@ import type {
     AiSendMessageRequest,
     AiSendMessageResult,
     AiSettings,
-    AiToolCall,
-    AiToolResult,
     AiRemoteModel,
 } from '@shared/ai.types';
 import { buildSystemPrompt } from './system-prompt';
@@ -26,10 +24,13 @@ import { buildConversationContext } from './context-memory';
 import { resolveDefaultModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { SimpleCache } from '@main/lib/simple-cache';
+import { GenerationRunnerImpl } from './runners';
 
 export class AiService {
     private controllers = new Map<string, AbortController>();
     private localRuntime = new LocalRuntimeService();
+
+    // ── Settings & catalog ──
 
     getSettings(): AiSettings {
         const settings = aiRepo.ensureSettings();
@@ -47,6 +48,8 @@ export class AiService {
         this.localRuntime.setGpuEnabled(settings.providers.local.gpuEnabled ?? false);
         return settings;
     }
+
+    // ── Conversations ──
 
     getConversations(): AiConversation[] {
         return aiRepo.getConversations();
@@ -73,6 +76,8 @@ export class AiService {
         return aiRepo.getMessages(conversationId);
     }
 
+    // ── Local models ──
+
     async scanLocalModels() {
         return scanLocalModels();
     }
@@ -81,10 +86,14 @@ export class AiService {
         await downloadLocalModel(browserWindow, modelId);
     }
 
+    // ── Generation control ──
+
     stopGeneration(conversationId: string): void {
         this.controllers.get(conversationId)?.abort();
         this.controllers.delete(conversationId);
     }
+
+    // ── Provider testing ──
 
     async testProvider(input: {
         providerId: string;
@@ -116,6 +125,8 @@ export class AiService {
         }
     }
 
+    // ── Model listing ──
+
     async fetchProviderModels(input: {
         providerId: string;
         apiKey?: string;
@@ -126,7 +137,6 @@ export class AiService {
 
         if (providerId === 'local') return [];
 
-        // Determine the base URL and API key
         let baseUrl: string | undefined;
         let apiKey: string | undefined;
 
@@ -141,15 +151,13 @@ export class AiService {
             baseUrl = input.baseUrl ?? customProvider.baseUrl;
         }
 
-        if (!apiKey && providerId !== 'local') return [];
+        if (!apiKey) return [];
 
-        // Check cache first (1 hour TTL per provider)
         const cacheKey = `ai-models:${providerId}`;
         const cache = new SimpleCache<AiRemoteModel[]>(cacheKey, 60 * 60 * 1000);
         const cached = cache.get();
         if (cached) return cached;
 
-        // Resolve the models endpoint
         const PROVIDER_BASE_URLS: Record<string, string> = {
             openai: 'https://api.openai.com/v1',
             openrouter: 'https://openrouter.ai/api/v1',
@@ -163,7 +171,6 @@ export class AiService {
         try {
             let models: AiRemoteModel[] = [];
 
-            // Gemini uses a different endpoint format
             if (providerId === 'gemini') {
                 const url = `${base}/models?key=${apiKey ?? ''}`;
                 const res = await fetch(url);
@@ -178,7 +185,6 @@ export class AiService {
                         name: m.displayName,
                     }));
             } else if (providerId === 'claude') {
-                // Claude uses a different endpoint
                 const res = await fetch(`${base}/models`, {
                     headers: {
                         'x-api-key': apiKey ?? '',
@@ -194,7 +200,6 @@ export class AiService {
                     name: m.display_name ?? m.id,
                 }));
             } else {
-                // OpenAI-compatible (OpenAI, OpenRouter, custom providers)
                 const headers: Record<string, string> = {};
                 if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
 
@@ -216,6 +221,8 @@ export class AiService {
         }
     }
 
+    // ── Message sending ──
+
     async sendMessage(
         browserWindow: BrowserWindow,
         request: AiSendMessageRequest,
@@ -228,7 +235,7 @@ export class AiService {
         const providerId = settings.activeProvider;
         const modelId = settings.activeModel ?? resolveDefaultModel(settings, providerId);
         if (!providerId || !modelId) {
-            throw new Error('Aucun fournisseur IA ou modèle actif n’a été configuré.');
+            throw new Error('Aucun fournisseur IA ou modèle actif n\u2019a été configuré.');
         }
 
         const conversation =
@@ -279,6 +286,8 @@ export class AiService {
         const controller = new AbortController();
         this.controllers.set(conversation.id, controller);
 
+        const runner = this.getRunner(providerId);
+
         log.info('AI generation starting', {
             providerId,
             modelId,
@@ -287,7 +296,7 @@ export class AiService {
 
         void (async () => {
             try {
-                await this.runGeneration({
+                await runner.run({
                     browserWindow,
                     conversationId: conversation.id,
                     assistantMessageId: assistantMessage.id,
@@ -295,7 +304,7 @@ export class AiService {
                     systemPrompt,
                     history: recentMessages,
                     tools,
-                    controller,
+                    abortSignal: controller.signal,
                 });
 
                 const nextContext = buildConversationContext(
@@ -335,6 +344,8 @@ export class AiService {
         };
     }
 
+    // ── Lifecycle ──
+
     dispose(): void {
         for (const conversationId of this.controllers.keys()) {
             this.stopGeneration(conversationId);
@@ -342,127 +353,9 @@ export class AiService {
         void this.localRuntime.dispose();
     }
 
-    private async runGeneration(input: {
-        browserWindow: BrowserWindow;
-        conversationId: string;
-        assistantMessageId: string;
-        model: LanguageModel;
-        systemPrompt: string;
-        history: Array<{ role: 'user' | 'assistant'; content: string }>;
-        tools: ReturnType<typeof buildAiTools>;
-        controller: AbortController;
-    }): Promise<void> {
-        const result = streamText({
-            model: input.model,
-            system: input.systemPrompt,
-            messages: input.history,
-            tools: input.tools,
-            stopWhen: stepCountIs(6),
-            abortSignal: input.controller.signal,
-        });
+    // ── Private ──
 
-        for await (const part of result.fullStream) {
-            switch (part.type) {
-                case 'text-delta':
-                    this.handleTextDelta(
-                        input.browserWindow,
-                        input.conversationId,
-                        input.assistantMessageId,
-                        part.text,
-                    );
-                    break;
-                case 'tool-call':
-                    this.handleToolCall(
-                        input.browserWindow,
-                        input.conversationId,
-                        input.assistantMessageId,
-                        {
-                            id: part.toolCallId,
-                            name: part.toolName,
-                            input: (part.input as Record<string, unknown>) ?? {},
-                        },
-                    );
-                    break;
-                case 'tool-result':
-                    this.handleToolResult(
-                        input.browserWindow,
-                        input.conversationId,
-                        input.assistantMessageId,
-                        {
-                            toolCallId: part.toolCallId,
-                            name: part.toolName,
-                            output: part.output,
-                        },
-                    );
-                    break;
-                case 'tool-error':
-                    log.warn('AI tool error', {
-                        conversationId: input.conversationId,
-                        toolName: part.toolName,
-                        error: part.error,
-                    });
-                    break;
-                case 'error':
-                    throw new Error(
-                        typeof part.error === 'string'
-                            ? part.error
-                            : part.error instanceof Error
-                              ? part.error.message
-                              : 'AI stream failed.',
-                    );
-                default:
-                    break;
-            }
-        }
-    }
-
-    private handleTextDelta(
-        browserWindow: BrowserWindow,
-        conversationId: string,
-        assistantMessageId: string,
-        delta: string,
-    ): void {
-        aiRepo.appendAssistantContent(assistantMessageId, delta);
-        sendToRenderer(browserWindow, PushChannels.aiStreamChunk, {
-            conversationId,
-            messageId: assistantMessageId,
-            delta,
-        });
-    }
-
-    private handleToolCall(
-        browserWindow: BrowserWindow,
-        conversationId: string,
-        assistantMessageId: string,
-        toolCall: AiToolCall,
-    ): void {
-        const existing = aiRepo.getMessage(assistantMessageId);
-        aiRepo.setAssistantToolCalls(assistantMessageId, [
-            ...(existing?.toolCalls ?? []),
-            toolCall,
-        ]);
-        sendToRenderer(browserWindow, PushChannels.aiToolCallStart, {
-            conversationId,
-            messageId: assistantMessageId,
-            toolName: toolCall.name,
-            toolCallId: toolCall.id,
-            payload: toolCall.input,
-        });
-    }
-
-    private handleToolResult(
-        browserWindow: BrowserWindow,
-        conversationId: string,
-        assistantMessageId: string,
-        toolResult: AiToolResult,
-    ): void {
-        aiRepo.addAssistantToolResult(assistantMessageId, toolResult);
-        sendToRenderer(browserWindow, PushChannels.aiToolCallComplete, {
-            conversationId,
-            messageId: assistantMessageId,
-            toolName: toolResult.name,
-            toolCallId: toolResult.toolCallId,
-            payload: toolResult.output,
-        });
+    private getRunner(providerId: string): GenerationRunnerImpl {
+        return new GenerationRunnerImpl(providerId === 'local');
     }
 }
