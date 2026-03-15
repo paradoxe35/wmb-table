@@ -9,17 +9,58 @@ export type PromptHistoryMessage = {
     content: string;
 };
 
-const LOCAL_MAX_TOKENS = 768;
+const LOCAL_MAX_TOKENS = 1024;
 const LOCAL_CONTEXT_BUFFER = 128;
 
-const SUMMARY_CHAR_BUDGET = 6000;
-const USER_MESSAGE_CHAR_LIMIT = 320;
-const ASSISTANT_MESSAGE_CHAR_LIMIT = 460;
-const COMPACTED_USER_MESSAGE_CHAR_LIMIT = 180;
-const COMPACTED_ASSISTANT_MESSAGE_CHAR_LIMIT = 220;
-const TOOL_RESULT_CHAR_LIMIT = 220;
-const TOOL_RESULT_COUNT_LIMIT = 3;
+// Remote providers have large context windows — keep more detail
+const REMOTE_SUMMARY_CHAR_BUDGET = 12000;
+const REMOTE_USER_MESSAGE_CHAR_LIMIT = 1200;
+const REMOTE_ASSISTANT_MESSAGE_CHAR_LIMIT = 1600;
+const REMOTE_COMPACTED_USER_MESSAGE_CHAR_LIMIT = 400;
+const REMOTE_COMPACTED_ASSISTANT_MESSAGE_CHAR_LIMIT = 500;
+const REMOTE_TOOL_RESULT_CHAR_LIMIT = 600;
+const REMOTE_TOOL_RESULT_COUNT_LIMIT = 6;
+
+// Local models have tight context — be more aggressive
+const LOCAL_SUMMARY_CHAR_BUDGET = 4000;
+const LOCAL_USER_MESSAGE_CHAR_LIMIT = 280;
+const LOCAL_ASSISTANT_MESSAGE_CHAR_LIMIT = 400;
+const LOCAL_COMPACTED_USER_MESSAGE_CHAR_LIMIT = 150;
+const LOCAL_COMPACTED_ASSISTANT_MESSAGE_CHAR_LIMIT = 200;
+const LOCAL_TOOL_RESULT_CHAR_LIMIT = 180;
+const LOCAL_TOOL_RESULT_COUNT_LIMIT = 3;
+
 const TOOL_LIST_PREVIEW_LIMIT = 3;
+
+export interface ContextLimits {
+    summaryCharBudget: number;
+    userMessageCharLimit: number;
+    assistantMessageCharLimit: number;
+    compactedUserMessageCharLimit: number;
+    compactedAssistantMessageCharLimit: number;
+    toolResultCharLimit: number;
+    toolResultCountLimit: number;
+}
+
+export const REMOTE_LIMITS: ContextLimits = {
+    summaryCharBudget: REMOTE_SUMMARY_CHAR_BUDGET,
+    userMessageCharLimit: REMOTE_USER_MESSAGE_CHAR_LIMIT,
+    assistantMessageCharLimit: REMOTE_ASSISTANT_MESSAGE_CHAR_LIMIT,
+    compactedUserMessageCharLimit: REMOTE_COMPACTED_USER_MESSAGE_CHAR_LIMIT,
+    compactedAssistantMessageCharLimit: REMOTE_COMPACTED_ASSISTANT_MESSAGE_CHAR_LIMIT,
+    toolResultCharLimit: REMOTE_TOOL_RESULT_CHAR_LIMIT,
+    toolResultCountLimit: REMOTE_TOOL_RESULT_COUNT_LIMIT,
+};
+
+export const LOCAL_LIMITS: ContextLimits = {
+    summaryCharBudget: LOCAL_SUMMARY_CHAR_BUDGET,
+    userMessageCharLimit: LOCAL_USER_MESSAGE_CHAR_LIMIT,
+    assistantMessageCharLimit: LOCAL_ASSISTANT_MESSAGE_CHAR_LIMIT,
+    compactedUserMessageCharLimit: LOCAL_COMPACTED_USER_MESSAGE_CHAR_LIMIT,
+    compactedAssistantMessageCharLimit: LOCAL_COMPACTED_ASSISTANT_MESSAGE_CHAR_LIMIT,
+    toolResultCharLimit: LOCAL_TOOL_RESULT_CHAR_LIMIT,
+    toolResultCountLimit: LOCAL_TOOL_RESULT_COUNT_LIMIT,
+};
 
 function normalizeWhitespace(value: string): string {
     return value.replace(/\s+/g, ' ').trim();
@@ -62,7 +103,7 @@ function summarizeNamedList(values: string[], label: string): string {
     return `${label}: ${preview} +${values.length - TOOL_LIST_PREVIEW_LIMIT} more`;
 }
 
-function summarizeToolResult(result: AiToolResult): string {
+function summarizeToolResult(result: AiToolResult, charLimit: number): string {
     const output = result.output as any;
 
     switch (result.name) {
@@ -136,7 +177,7 @@ function summarizeToolResult(result: AiToolResult): string {
             if (output && typeof output === 'object') {
                 const title = String(output.title ?? output.documentId ?? 'document');
                 const content = normalizeWhitespace(String(output.content ?? ''));
-                return `${title}: ${truncateText(content, TOOL_RESULT_CHAR_LIMIT)}`;
+                return `${title}: ${truncateText(content, charLimit)}`;
             }
             break;
 
@@ -201,7 +242,7 @@ function summarizeToolResult(result: AiToolResult): string {
             if (output && typeof output === 'object') {
                 const title = String(output.name ?? output.id ?? 'note');
                 const content = normalizeWhitespace(String(output.content ?? ''));
-                return `${title}: ${truncateText(content, TOOL_RESULT_CHAR_LIMIT)}`;
+                return `${title}: ${truncateText(content, charLimit)}`;
             }
             break;
 
@@ -228,27 +269,25 @@ function summarizeToolResult(result: AiToolResult): string {
         return result.name;
     }
 
-    return `${result.name}: ${truncateText(rawOutput, TOOL_RESULT_CHAR_LIMIT)}`;
+    return `${result.name}: ${truncateText(rawOutput, charLimit)}`;
 }
 
 function formatMessageForPrompt(
     message: AiMessage,
     contentLimit: number,
-    includeToolSummaries: boolean,
+    limits: ContextLimits,
 ): PromptHistoryMessage | null {
     if (message.role !== 'user' && message.role !== 'assistant') {
         return null;
     }
 
     const mainText = normalizeWhitespace(message.content);
-    const toolSummary = includeToolSummaries
-        ? message.toolResults
-              .slice(0, TOOL_RESULT_COUNT_LIMIT)
-              .map((result) => {
-                  return summarizeToolResult(result);
-              })
-              .filter(Boolean)
-        : [];
+    const toolSummary = message.toolResults
+        .slice(0, limits.toolResultCountLimit)
+        .map((result) => {
+            return summarizeToolResult(result, limits.toolResultCharLimit);
+        })
+        .filter(Boolean);
 
     const combined = [
         mainText,
@@ -269,7 +308,7 @@ function formatMessageForPrompt(
     };
 }
 
-function buildSummary(messages: PromptHistoryMessage[]): string | null {
+function buildSummary(messages: PromptHistoryMessage[], charBudget: number): string | null {
     if (messages.length === 0) {
         return null;
     }
@@ -280,7 +319,7 @@ function buildSummary(messages: PromptHistoryMessage[]): string | null {
     });
 
     const summary = lines.join('\n');
-    if (summary.length <= SUMMARY_CHAR_BUDGET) {
+    if (summary.length <= charBudget) {
         return summary;
     }
 
@@ -291,7 +330,7 @@ function buildSummary(messages: PromptHistoryMessage[]): string | null {
     for (let index = lines.length - 1; index >= 0; index -= 1) {
         const line = lines[index];
         const nextSize = usedChars + line.length + (trimmedLines.length > 0 ? 1 : 0);
-        if (nextSize > SUMMARY_CHAR_BUDGET) {
+        if (nextSize > charBudget) {
             droppedCount = index + 1;
             break;
         }
@@ -371,10 +410,12 @@ export function compactLocalHistory(
 export function buildConversationContext(
     conversationId: string,
     maxContextMessages: number,
+    isLocal = false,
 ): {
     summary: string | null;
     recentMessages: PromptHistoryMessage[];
 } {
+    const limits = isLocal ? LOCAL_LIMITS : REMOTE_LIMITS;
     const sourceMessages = aiRepo.getMessages(conversationId);
     const recentBoundary = Math.max(0, sourceMessages.length - maxContextMessages);
 
@@ -383,9 +424,9 @@ export function buildConversationContext(
         .map((message) => {
             const contentLimit =
                 message.role === 'user'
-                    ? COMPACTED_USER_MESSAGE_CHAR_LIMIT
-                    : COMPACTED_ASSISTANT_MESSAGE_CHAR_LIMIT;
-            return formatMessageForPrompt(message, contentLimit, true);
+                    ? limits.compactedUserMessageCharLimit
+                    : limits.compactedAssistantMessageCharLimit;
+            return formatMessageForPrompt(message, contentLimit, limits);
         })
         .filter((message): message is PromptHistoryMessage => {
             return message != null;
@@ -395,15 +436,17 @@ export function buildConversationContext(
         .slice(recentBoundary)
         .map((message) => {
             const contentLimit =
-                message.role === 'user' ? USER_MESSAGE_CHAR_LIMIT : ASSISTANT_MESSAGE_CHAR_LIMIT;
-            return formatMessageForPrompt(message, contentLimit, true);
+                message.role === 'user'
+                    ? limits.userMessageCharLimit
+                    : limits.assistantMessageCharLimit;
+            return formatMessageForPrompt(message, contentLimit, limits);
         })
         .filter((message): message is PromptHistoryMessage => {
             return message != null;
         });
 
     return {
-        summary: buildSummary(olderMessages),
+        summary: buildSummary(olderMessages, limits.summaryCharBudget),
         recentMessages,
     };
 }

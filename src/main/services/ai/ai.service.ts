@@ -253,9 +253,11 @@ export class AiService {
 
         const activeLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
         const installedLanguages = await languagePackService.getInstalledLanguages();
+        const isLocal = providerId === 'local';
         const { recentMessages, summary } = buildConversationContext(
             conversation.id,
             settings.maxContextMessages,
+            isLocal,
         );
         const system = buildSystemPrompt({
             activeLanguageCode,
@@ -392,6 +394,13 @@ export class AiService {
                             output: part.output,
                         },
                     );
+                    break;
+                case 'tool-error':
+                    log.warn('AI tool error', {
+                        conversationId: input.conversationId,
+                        toolName: part.toolName,
+                        error: part.error,
+                    });
                     break;
                 case 'error':
                     throw new Error(
