@@ -290,6 +290,9 @@ export class AiService {
             model,
             isLocal,
             abortSignal: controller.signal,
+            browserWindow,
+            conversationId: conversation.id,
+            assistantMessageId: assistantMessage.id,
         });
 
         const runner = this.getRunner(providerId);

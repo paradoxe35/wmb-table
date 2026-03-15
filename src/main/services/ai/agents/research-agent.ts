@@ -7,6 +7,9 @@ import { buildSermonTools } from '../tools/sermon.tools';
 import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
 import { buildResearchAgentPrompt } from './agent-prompts';
+import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
+
+const AGENT_NAME = 'researchTopic';
 
 function buildResearchToolSubset(languageCode: string): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
@@ -55,6 +58,27 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                         stopWhen: stepCountIs(8),
                         maxOutputTokens: 2000,
                         abortSignal: ctx.abortSignal,
+                        experimental_onToolCallStart(event) {
+                            if (ctx.dispatch) {
+                                dispatchAgentToolStart(
+                                    ctx.dispatch,
+                                    AGENT_NAME,
+                                    event.toolCall.toolName,
+                                    event.toolCall.toolCallId,
+                                    (event.toolCall.input as Record<string, unknown>) ?? {},
+                                );
+                            }
+                        },
+                        experimental_onToolCallFinish(event) {
+                            if (ctx.dispatch) {
+                                dispatchAgentToolComplete(
+                                    ctx.dispatch,
+                                    AGENT_NAME,
+                                    event.toolCall.toolName,
+                                    event.toolCall.toolCallId,
+                                );
+                            }
+                        },
                     });
 
                     log.info('Research agent completed', {

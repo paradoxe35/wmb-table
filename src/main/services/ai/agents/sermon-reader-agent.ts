@@ -5,6 +5,9 @@ import { buildSermonTools } from '../tools/sermon.tools';
 import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
 import { buildSermonReaderAgentPrompt } from './agent-prompts';
+import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
+
+const AGENT_NAME = 'readSermon';
 
 function buildSermonReaderToolSubset(languageCode: string): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
@@ -57,6 +60,27 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         stopWhen: stepCountIs(8),
                         maxOutputTokens: 2000,
                         abortSignal: ctx.abortSignal,
+                        experimental_onToolCallStart(event) {
+                            if (ctx.dispatch) {
+                                dispatchAgentToolStart(
+                                    ctx.dispatch,
+                                    AGENT_NAME,
+                                    event.toolCall.toolName,
+                                    event.toolCall.toolCallId,
+                                    (event.toolCall.input as Record<string, unknown>) ?? {},
+                                );
+                            }
+                        },
+                        experimental_onToolCallFinish(event) {
+                            if (ctx.dispatch) {
+                                dispatchAgentToolComplete(
+                                    ctx.dispatch,
+                                    AGENT_NAME,
+                                    event.toolCall.toolName,
+                                    event.toolCall.toolCallId,
+                                );
+                            }
+                        },
                     });
 
                     log.info('Sermon reader agent completed', {

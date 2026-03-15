@@ -378,7 +378,9 @@ const ItemSubject: FC<{
                 <BookOutlined style={{ fontSize: 14, flexShrink: 0 }} />
                 <span className="subject-item__name">{item.name}</span>
             </div>
-            <DeleteBtn confirm={() => onDeleteSubject(item)} />
+            <span onClick={(e) => e.stopPropagation()}>
+                <DeleteBtn confirm={() => onDeleteSubject(item)} />
+            </span>
         </div>
     );
 };
