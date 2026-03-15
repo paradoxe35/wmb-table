@@ -110,6 +110,9 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
+            - name: Install platform-specific native dependencies
+              run: node scripts/install-platform-deps.cjs
+
             - name: Build and package
               run: pnpm build && npx electron-builder ${{ matrix.args }} --publish never
               env:
