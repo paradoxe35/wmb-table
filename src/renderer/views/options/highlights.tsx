@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Empty, Input, List, Pagination, Popconfirm, Spin, Tag, Typography, message } from 'antd';
+import { Empty, Input, Pagination, Popconfirm, Spin, Tag, Typography, message } from 'antd';
 import {
     BgColorsOutlined,
     BookOutlined,
@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import type { DocumentType, HighlightItem, HighlightSearchResult } from '@shared/types';
 import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
-import { hexToRgba } from '@renderer/utils/functions';
 
 const { Text } = Typography;
 
@@ -149,70 +148,70 @@ function HighlightListItem({
 }) {
     const { t } = useTranslation();
     const snippet =
-        group.textSnippet.length > 120
-            ? group.textSnippet.slice(0, 120) + '...'
-            : group.textSnippet;
+        group.textSnippet.length > 80 ? group.textSnippet.slice(0, 80) + '...' : group.textSnippet;
 
     return (
-        <List.Item
-            style={{ cursor: 'pointer', padding: '10px 12px' }}
+        <div
             onClick={() => onOpen(group)}
-            actions={[
-                <Popconfirm
-                    key="del"
-                    title={t('Supprimer ce soulignage ?')}
-                    onConfirm={(e) => {
-                        e?.stopPropagation();
-                        onDelete(group);
-                    }}
-                    onCancel={(e) => e?.stopPropagation()}
-                    okText={t('Supprimer')}
-                    cancelText={t('Annuler')}
-                >
-                    <DeleteOutlined
-                        onClick={(e) => e.stopPropagation()}
-                        style={{ color: 'var(--ant-color-text-tertiary)' }}
-                    />
-                </Popconfirm>,
-            ]}
+            style={{
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                padding: '8px 12px',
+                cursor: 'pointer',
+                borderBottom: '1px solid var(--ant-color-split)',
+                transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) =>
+                (e.currentTarget.style.background = 'var(--ant-color-fill-quaternary)')
+            }
+            onMouseLeave={(e) => (e.currentTarget.style.background = '')}
         >
-            <List.Item.Meta
-                avatar={<ColorDot color={group.color} />}
-                title={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Text ellipsis style={{ fontSize: '0.9em', flex: 1 }}>
-                            {group.documentTitle}
-                        </Text>
-                        <DocumentTypeTag documentType={group.documentType} />
-                    </div>
-                }
-                description={
-                    <div>
-                        <div
-                            style={{
-                                padding: '2px 6px',
-                                borderRadius: 4,
-                                backgroundColor: hexToRgba(group.color, 0.15),
-                                fontSize: '0.85em',
-                                lineHeight: 1.4,
-                                marginBottom: group.comment ? 4 : 0,
-                            }}
-                        >
-                            {snippet}
-                        </div>
-                        {group.comment && (
-                            <Text
-                                type="secondary"
-                                italic
-                                style={{ fontSize: '0.8em', display: 'block' }}
-                            >
-                                {group.comment}
-                            </Text>
-                        )}
-                    </div>
-                }
-            />
-        </List.Item>
+            <ColorDot color={group.color} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                    <Text
+                        ellipsis
+                        style={{ fontSize: '0.85em', fontWeight: 500, flex: 1, lineHeight: 1.3 }}
+                    >
+                        {group.documentTitle}
+                    </Text>
+                    <DocumentTypeTag documentType={group.documentType} />
+                </div>
+                <Text type="secondary" style={{ fontSize: '0.8em', lineHeight: 1.3 }}>
+                    {snippet}
+                </Text>
+                {group.comment && (
+                    <Text
+                        type="secondary"
+                        italic
+                        style={{ fontSize: '0.75em', display: 'block', marginTop: 1 }}
+                    >
+                        {group.comment}
+                    </Text>
+                )}
+            </div>
+            <Popconfirm
+                title={t('Supprimer ce soulignage ?')}
+                onConfirm={(e) => {
+                    e?.stopPropagation();
+                    onDelete(group);
+                }}
+                onCancel={(e) => e?.stopPropagation()}
+                okText={t('Supprimer')}
+                cancelText={t('Annuler')}
+            >
+                <DeleteOutlined
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                        color: 'var(--ant-color-text-quaternary)',
+                        fontSize: 12,
+                        marginTop: 3,
+                        flexShrink: 0,
+                    }}
+                />
+            </Popconfirm>
+        </div>
     );
 }
 

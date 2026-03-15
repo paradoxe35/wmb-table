@@ -45,6 +45,7 @@ const frSidebar = [
         items: [
             { text: 'Prendre des notes', link: '/guide/notes' },
             { text: 'Créer des sujets', link: '/guide/subjects' },
+            { text: 'Gérer vos soulignages', link: '/guide/highlights' },
             { text: 'Ajouter vos documents PDF', link: '/guide/custom-documents' },
             { text: 'Voir votre historique', link: '/guide/history' },
         ],
@@ -93,6 +94,7 @@ const enSidebar = [
         items: [
             { text: 'Taking Notes', link: '/en/guide/notes' },
             { text: 'Creating Subjects', link: '/en/guide/subjects' },
+            { text: 'Managing Your Highlights', link: '/en/guide/highlights' },
             { text: 'Adding PDF Documents', link: '/en/guide/custom-documents' },
             { text: 'Viewing History', link: '/en/guide/history' },
         ],
@@ -141,6 +143,7 @@ const esSidebar = [
         items: [
             { text: 'Tomar notas', link: '/es/guide/notes' },
             { text: 'Crear temas', link: '/es/guide/subjects' },
+            { text: 'Gestionar sus subrayados', link: '/es/guide/highlights' },
             { text: 'Agregar documentos PDF', link: '/es/guide/custom-documents' },
             { text: 'Ver historial', link: '/es/guide/history' },
         ],

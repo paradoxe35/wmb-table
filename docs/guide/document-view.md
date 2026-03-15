@@ -206,6 +206,8 @@ Faites simplement ceci :
 
 Le commentaire est facultatif. Il peut servir à vous rappeler pourquoi vous avez gardé ce passage.
 
+Tous vos soulignages sont ensuite consultables dans la page **Soulignages** du menu de gauche. Vous pouvez y rechercher, parcourir et revenir directement au document d'origine. Le guide complet se trouve dans [Gérer vos soulignages](/guide/highlights).
+
 <ScreenshotPlaceholder
   file="fr-document-view-highlight-modal.png"
   label="Fenêtre pour souligner un passage"
@@ -293,6 +295,7 @@ Vous pouvez voir :
 ## Voir aussi
 
 - [Lire les prédications](/guide/sermons)
+- [Gérer vos soulignages](/guide/highlights)
 - [Prendre des notes](/guide/notes)
 - [Créer des sujets](/guide/subjects)
 - [Lecture audio et voix](/guide/audio-and-tts)
