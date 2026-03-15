@@ -6,6 +6,7 @@ import {
     useSubjectsStore,
     useCustomDocumentsStore,
     useNotesStore,
+    useAiChatStore,
 } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { AI_DATA_EVENT, HIGHLIGHT_EVENT, SYNC_EVENT } from '@renderer/utils/events';
@@ -31,12 +32,23 @@ export default function SyncListener() {
             if (tables.includes('custom_documents')) {
                 window.api.app.getCustomDocuments().then(setCustomDocuments);
             }
-            if (tables.includes('notes') || tables.includes('notes_references')) {
+            if (
+                tables.includes('notes') ||
+                tables.includes('notes_references') ||
+                tables.includes('notes_bible_references')
+            ) {
                 window.api.notes.getAll().then(setNotes);
                 window.dispatchEvent(new Event(AI_DATA_EVENT.notesChanged));
             }
             if (tables.includes('tts_settings')) {
                 window.api.tts.getSettings().then((s) => useTtsStore.getState().setSettings(s));
+            }
+            if (tables.includes('ai_conversations') || tables.includes('ai_messages')) {
+                const aiStore = useAiChatStore.getState();
+                if (aiStore.initialized) {
+                    aiStore.loadConversations();
+                }
+                window.dispatchEvent(new Event(AI_DATA_EVENT.conversationsChanged));
             }
             window.dispatchEvent(new Event(SYNC_EVENT.syncCompleted));
         });
