@@ -14,6 +14,8 @@ function getRefDbPath(): string {
 export function initializeReferenceDb(): void {
     const dbPath = getRefDbPath();
     refSqlite = new Database(dbPath, { readonly: true, fileMustExist: true });
+    refSqlite.pragma('mmap_size = 268435456'); // 256MB mmap for fast reads
+    refSqlite.pragma('cache_size = -10000');
 }
 
 export function getRefDb(): Database.Database {
