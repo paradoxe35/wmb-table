@@ -98,6 +98,7 @@ const en: Record<string, string> = {
     'Un fournisseur avec ce nom existe déjà.': 'A provider with this name already exists.',
     'ex: Mon Service IA': 'e.g. My AI Service',
     'ex: gpt-4o-mini': 'e.g. gpt-4o-mini',
+    'Taille du contexte (tokens)': 'Context size (tokens)',
 
     // ── AI provider test ──
     'Tester la connexion': 'Test connection',

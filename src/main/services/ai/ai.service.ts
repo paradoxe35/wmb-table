@@ -187,11 +187,7 @@ export class AiService {
         const isLocal = providerId === 'local';
 
         const installedLanguages = await languagePackService.getInstalledLanguages();
-        const { recentMessages, summary } = buildConversationContext(
-            conversation.id,
-            settings.maxContextMessages,
-            isLocal,
-        );
+        const { recentMessages, summary } = buildConversationContext(conversation.id, isLocal);
         const system = buildSystemPrompt({
             activeLanguageCode,
             overrideLanguageCode: request.overrideLanguageCode,
@@ -239,7 +235,7 @@ export class AiService {
             recentMessages,
             tools,
             controller.signal,
-            settings,
+            isLocal,
             activeLanguageCode,
         );
 
@@ -287,7 +283,7 @@ export class AiService {
         history: ReturnType<typeof buildConversationContext>['recentMessages'],
         tools: ReturnType<typeof buildAiTools>,
         abortSignal: AbortSignal,
-        settings: AiSettings,
+        isLocal: boolean,
         activeLanguageCode: string,
     ): Promise<void> {
         try {
@@ -302,10 +298,7 @@ export class AiService {
                 abortSignal,
             });
 
-            const nextContext = buildConversationContext(
-                conversation.id,
-                settings.maxContextMessages,
-            );
+            const nextContext = buildConversationContext(conversation.id, isLocal);
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
                 languageCode: activeLanguageCode,

@@ -99,6 +99,7 @@ const es: Record<string, string> = {
     'Un fournisseur avec ce nom existe déjà.': 'Ya existe un proveedor con este nombre.',
     'ex: Mon Service IA': 'ej.: Mi Servicio IA',
     'ex: gpt-4o-mini': 'ej.: gpt-4o-mini',
+    'Taille du contexte (tokens)': 'Tamaño del contexto (tokens)',
 
     // ── AI provider test ──
     'Tester la connexion': 'Probar conexión',

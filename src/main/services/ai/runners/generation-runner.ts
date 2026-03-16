@@ -7,9 +7,8 @@ import {
     dispatchToolCallComplete,
 } from './stream-dispatcher';
 
-/** Maximum number of tool-calling steps before the model must stop. */
-const REMOTE_MAX_STEPS = 30;
-const LOCAL_MAX_STEPS = 10;
+const REMOTE_MAX_STEPS = 40;
+const LOCAL_MAX_STEPS = 15;
 
 /**
  * Unified generation runner for both local and remote providers.
