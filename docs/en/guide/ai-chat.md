@@ -127,6 +127,24 @@ By default, the assistant follows the active language of the app. That means it 
 
 This helps keep the answers consistent with your real working language.
 
+## Clickable references
+
+When the assistant gives you results, references to sermons, Bible passages, and documents appear as small colored tags.
+
+By clicking a tag, you open the document directly at the right place:
+
+- a blue tag opens the sermon at the right paragraph
+- a green tag opens the Bible chapter
+- an orange tag opens the custom document
+
+This saves you from searching through the sermon list or the Bible yourself.
+
+<ScreenshotPlaceholder
+  file="en-ai-chat-reference-links.png"
+  label="Clickable references in AI chat"
+  hint="Show an AI response containing blue (sermon), green (Bible) and orange (document) clickable tags."
+/>
+
 ## What AI chat does not replace
 
 Even if it can find many things, it does not replace your judgment.
