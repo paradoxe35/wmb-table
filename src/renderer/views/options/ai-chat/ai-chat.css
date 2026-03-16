@@ -186,6 +186,8 @@
     padding: 10px 14px;
     min-width: 36px;
     line-height: 1.5;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .ai-chat__bubble-content--user {

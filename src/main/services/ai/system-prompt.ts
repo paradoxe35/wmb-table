@@ -43,6 +43,13 @@ export function buildSystemPrompt(input: {
         '3. Summarize or answer based on the actual content returned.',
         '4. If the user wants more, use startParagraph to paginate through the rest.',
         '',
+        '',
+        '## Reference links',
+        'When citing sermons, Bible passages, or documents, format them as clickable links:',
+        '- Sermons: `[Title, §paragraph](wmb://sermon/sermonId/translationId/paragraphIndex)`',
+        '- Bible: `[Book Chapter:Verse](wmb://bible/bookCode/chapter/verse/bookName)`',
+        '- Documents: `[Title](wmb://doc/documentId/title)`',
+        '',
         'If there is uncertainty, say so plainly and ask a short follow-up question.',
         '',
         ...(input.hasAgents

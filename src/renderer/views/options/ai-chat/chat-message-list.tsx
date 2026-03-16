@@ -1,12 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { Empty, Spin, Typography } from 'antd';
 import { LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import Markdown from 'react-markdown';
+import Markdown, { defaultUrlTransform } from 'react-markdown';
 import type { AiMessage } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
 import ChatToolResult from './chat-tool-result';
+import AiReferenceLink from './ai-reference-link';
 
 const { Text } = Typography;
+
+function urlTransform(url: string): string {
+    if (url.startsWith('wmb://')) return url;
+    return defaultUrlTransform(url);
+}
 
 function MessageBubble({
     message,
@@ -41,7 +47,9 @@ function MessageBubble({
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                 ) : (
                     <div className="ai-markdown">
-                        <Markdown>{message.content}</Markdown>
+                        <Markdown components={{ a: AiReferenceLink }} urlTransform={urlTransform}>
+                            {message.content}
+                        </Markdown>
                     </div>
                 )}
                 {isActive && !isWaiting ? (
