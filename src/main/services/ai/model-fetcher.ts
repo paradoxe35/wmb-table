@@ -26,9 +26,9 @@ function resolveCredentials(
     providerId: string,
     input: { apiKey?: string; baseUrl?: string },
 ): ResolvedCredentials {
-    const builtinConfig = settings.providers[providerId as keyof AiSettings['providers']];
-    if (builtinConfig) {
-        return { apiKey: input.apiKey ?? builtinConfig.apiKey, baseUrl: undefined };
+    if ((BUILTIN_PROVIDER_IDS as readonly string[]).includes(providerId)) {
+        const config = settings.providers[providerId as keyof AiSettings['providers']];
+        return { apiKey: input.apiKey ?? config?.apiKey, baseUrl: undefined };
     }
 
     const custom = settings.customProviders.find((p) => p.id === providerId);
