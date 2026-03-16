@@ -34,6 +34,14 @@ export function buildDocsGuideLink(slug: string, languageCode?: string | null): 
     return `${base}${prefix}/guide/${slug}`;
 }
 
+export function buildDocsLink(path: string, languageCode?: string | null): string {
+    const locale = normalizeDocsLocale(languageCode);
+    const base = DOCS_LINK.replace(/\/$/, '');
+    const prefix = locale === 'fr' ? '' : `/${locale}`;
+    return `${base}${prefix}/${path}`;
+}
+
+export const DOCS_CONTACT_LINK = buildDocsLink('contact');
 export const DOCS_SUBJECT_LINK = buildDocsGuideLink('subjects');
 export const DOCS_NOTE_LINK = buildDocsGuideLink('notes');
 export const DOCS_CUSTOM_DOCUMENT_LINK = buildDocsGuideLink('custom-documents');

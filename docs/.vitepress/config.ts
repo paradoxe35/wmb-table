@@ -6,20 +6,20 @@ const docsGitHubRepoUrl = `https://github.com/${docsGitHubOwner}/${docsGitHubRep
 
 const frNav = [
     { text: 'Accueil', link: '/' },
-    { text: 'Commencer', link: '/guide/getting-started' },
     { text: 'Documentation', link: '/guide/interface-overview' },
+    { text: 'Contact', link: '/contact' },
 ];
 
 const enNav = [
     { text: 'Home', link: '/en/' },
-    { text: 'Start Here', link: '/en/guide/getting-started' },
     { text: 'Documentation', link: '/en/guide/interface-overview' },
+    { text: 'Contact', link: '/en/contact' },
 ];
 
 const esNav = [
     { text: 'Inicio', link: '/es/' },
-    { text: 'Empezar', link: '/es/guide/getting-started' },
     { text: 'Documentación', link: '/es/guide/interface-overview' },
+    { text: 'Contacto', link: '/es/contact' },
 ];
 
 const frSidebar = [
@@ -67,6 +67,7 @@ const frSidebar = [
         items: [
             { text: 'Discussion IA', link: '/guide/ai-chat' },
             { text: 'Questions et dépannage', link: '/guide/troubleshooting' },
+            { text: 'Nous contacter', link: '/contact' },
         ],
     },
 ];
@@ -116,6 +117,7 @@ const enSidebar = [
         items: [
             { text: 'AI Chat', link: '/en/guide/ai-chat' },
             { text: 'Questions and Troubleshooting', link: '/en/guide/troubleshooting' },
+            { text: 'Contact Us', link: '/en/contact' },
         ],
     },
 ];
@@ -165,6 +167,7 @@ const esSidebar = [
         items: [
             { text: 'Chat con IA', link: '/es/guide/ai-chat' },
             { text: 'Preguntas y solución de problemas', link: '/es/guide/troubleshooting' },
+            { text: 'Contáctenos', link: '/es/contact' },
         ],
     },
 ];
