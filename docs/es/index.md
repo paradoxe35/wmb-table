@@ -17,12 +17,33 @@ hero:
           link: /es/guide/interface-overview
 
 features:
-    - title: Lectura sencilla
-      details: Abra predicaciones, capítulos de la Biblia y sus propios documentos PDF en pestañas fáciles de retomar.
-    - title: Hecho para preparar mensajes
-      details: Guarde notas, reúna referencias por tema y trabaje en un solo lugar sin confusión.
-    - title: Fácil de volver a encontrar
-      details: Use la búsqueda, el historial y los idiomas instalados para regresar rápidamente a lo que necesita.
+    - title: Predicaciones en pestañas
+      details: Abra varias predicaciones a la vez en pestañas, con navegación por párrafo y resaltado de texto.
+      link: /es/guide/sermons
+    - title: Biblia integrada
+      details: Consulte varias versiones de la Biblia directamente en la aplicación, con búsqueda por libro, capítulo y versículo.
+      link: /es/guide/bible
+    - title: Notas y temas
+      details: Tome notas, organice pasajes por tema y agregue referencias de predicaciones o de la Biblia.
+      link: /es/guide/notes
+    - title: Búsqueda completa
+      details: Busque dentro del contenido de las predicaciones, la Biblia, sus notas y sus temas en segundos.
+      link: /es/guide/search
+    - title: Lectura en audio
+      details: Escuche las predicaciones con varias voces disponibles, incluyendo voces locales sin conexión a internet.
+      link: /es/guide/audio-and-tts
+    - title: Asistente IA
+      details: Haga preguntas sobre las predicaciones y obtenga respuestas con referencias clicables hacia los pasajes.
+      link: /es/guide/ai-chat
+    - title: Resaltado y anotaciones
+      details: Resalte pasajes importantes con colores, agregue comentarios y encuéntrelos fácilmente después.
+      link: /es/guide/highlights
+    - title: Copia de seguridad y sincronización
+      details: Guarde sus datos en Google Drive y sincronice entre sus dispositivos.
+      link: /es/guide/backup-and-sync
+    - title: Multilingüe
+      details: Disponible en francés, inglés, español y otros idiomas, con la posibilidad de cambiar en cualquier momento.
+      link: /es/guide/languages
 ---
 
 <HomeFeatureCards

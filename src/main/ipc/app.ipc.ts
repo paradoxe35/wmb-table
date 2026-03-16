@@ -19,6 +19,10 @@ const langToLocale: Record<string, string> = {
 };
 
 export function registerAppHandlers(): void {
+    registerHandler(AppChannels.isInitialized, async () => {
+        return configRepo.ensureConfig().initialized;
+    });
+
     registerHandler(AppChannels.initialize, async () => {
         configRepo.markInitialized();
     });

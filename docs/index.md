@@ -17,12 +17,33 @@ hero:
           link: /guide/interface-overview
 
 features:
-    - title: Lire sans complication
-      details: Ouvrez les prédications, la Bible et vos documents PDF dans des onglets simples à retrouver.
-    - title: Préparer vos messages
-      details: Prenez des notes, classez vos passages par sujets et gardez vos références au même endroit.
-    - title: Retrouver rapidement
-      details: Utilisez la recherche, l'historique et les langues installées pour revenir vite à ce dont vous avez besoin.
+    - title: Prédications en onglets
+      details: Ouvrez plusieurs prédications côte à côte dans des onglets, avec navigation par paragraphe et surlignage.
+      link: /guide/sermons
+    - title: Bible intégrée
+      details: Consultez plusieurs versions de la Bible directement dans l'application, avec recherche par livre, chapitre et verset.
+      link: /guide/bible
+    - title: Notes et sujets
+      details: Prenez des notes, classez vos passages par sujets et ajoutez des références de prédications ou de la Bible.
+      link: /guide/notes
+    - title: Recherche complète
+      details: Recherchez dans le contenu des prédications, la Bible, vos notes et vos sujets en quelques secondes.
+      link: /guide/search
+    - title: Lecture audio
+      details: Écoutez les prédications avec plusieurs voix disponibles, y compris des voix locales sans connexion internet.
+      link: /guide/audio-and-tts
+    - title: Assistant IA
+      details: Posez des questions sur les prédications et obtenez des réponses avec des références cliquables vers les passages.
+      link: /guide/ai-chat
+    - title: Surlignage et annotations
+      details: Surlignez les passages importants avec des couleurs, ajoutez des commentaires et retrouvez-les facilement.
+      link: /guide/highlights
+    - title: Sauvegarde et synchronisation
+      details: Sauvegardez vos données sur Google Drive et synchronisez entre vos appareils.
+      link: /guide/backup-and-sync
+    - title: Multilingue
+      details: Disponible en français, anglais, espagnol et d'autres langues, avec possibilité de basculer à tout moment.
+      link: /guide/languages
 ---
 
 <HomeFeatureCards

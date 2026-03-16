@@ -182,6 +182,7 @@ export const SyncChannels = {
 } as const;
 
 export const AppChannels = {
+    isInitialized: 'app:isInitialized',
     initialize: 'app:initialize',
     getActiveLanguage: 'app:getActiveLanguage',
     setActiveLanguage: 'app:setActiveLanguage',
@@ -441,6 +442,7 @@ export interface InvokeChannelMap {
     [SyncChannels.syncNow]: { args: []; return: void };
 
     // App
+    [AppChannels.isInitialized]: { args: []; return: boolean };
     [AppChannels.initialize]: { args: []; return: void };
     [AppChannels.getActiveLanguage]: { args: []; return: string | null };
     [AppChannels.setActiveLanguage]: { args: [string]; return: void };

@@ -658,6 +658,26 @@ const es: Record<string, string> = {
     chapitres: 'capítulos',
     chapitre: 'capítulo',
 
+    // ── Welcome ──
+    Commencer: 'Comenzar',
+    'Bienvenue dans Wmb Table': 'Bienvenido a Wmb Table',
+    'Votre espace pour lire, étudier et préparer vos prédications.':
+        'Su espacio para leer, estudiar y preparar sus predicaciones.',
+    'Prédications et Bible': 'Predicaciones y Biblia',
+    'Ouvrez les prédications et la Bible dans des onglets, naviguez par paragraphe.':
+        'Abra las predicaciones y la Biblia en pestañas, navegue por párrafo.',
+    'Prenez des notes, classez vos passages par sujets avec des références.':
+        'Tome notas, organice sus pasajes por tema con referencias.',
+    'Recherche complète': 'Búsqueda completa',
+    'Recherchez dans le contenu des prédications, la Bible et vos documents.':
+        'Busque dentro del contenido de las predicaciones, la Biblia y sus documentos.',
+    'Surlignez les passages importants avec des couleurs et retrouvez-les facilement.':
+        'Resalte los pasajes importantes con colores y encuéntrelos fácilmente.',
+    'Écoutez les prédications avec plusieurs voix disponibles.':
+        'Escuche las predicaciones con varias voces disponibles.',
+    'Posez des questions et obtenez des réponses avec des références cliquables.':
+        'Haga preguntas y obtenga respuestas con referencias clicables.',
+
     // ── Theme ──
     Apparence: 'Apariencia',
     Clair: 'Claro',

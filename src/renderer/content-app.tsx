@@ -10,6 +10,7 @@ import { NoteReferencesModal } from './views/components/modals/note-references-m
 import DocumentAudioPlayer from './views/components/modals/document-audio-player';
 import LanguageManagerModal from './views/components/modals/language-manager-modal';
 import HighlightModal from './views/components/modals/highlight-modal';
+import WelcomeModal from './views/components/modals/welcome-modal';
 import SyncListener from './components/sync-listener';
 import UpdateNotifier from './components/update-notifier';
 
@@ -135,6 +136,7 @@ export function ContentApp() {
             <DocumentAudioPlayer />
             <LanguageManagerModal />
             <HighlightModal />
+            <WelcomeModal />
             <SyncListener />
             <UpdateNotifier />
         </>

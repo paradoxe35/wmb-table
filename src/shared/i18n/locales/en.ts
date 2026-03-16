@@ -652,6 +652,26 @@ const en: Record<string, string> = {
     chapitres: 'chapters',
     chapitre: 'chapter',
 
+    // ── Welcome ──
+    Commencer: 'Get started',
+    'Bienvenue dans Wmb Table': 'Welcome to Wmb Table',
+    'Votre espace pour lire, étudier et préparer vos prédications.':
+        'Your workspace for reading, studying, and preparing your sermons.',
+    'Prédications et Bible': 'Sermons and Bible',
+    'Ouvrez les prédications et la Bible dans des onglets, naviguez par paragraphe.':
+        'Open sermons and the Bible in tabs, navigate by paragraph.',
+    'Prenez des notes, classez vos passages par sujets avec des références.':
+        'Take notes, organize your passages by subject with references.',
+    'Recherche complète': 'Full search',
+    'Recherchez dans le contenu des prédications, la Bible et vos documents.':
+        'Search inside sermon content, the Bible, and your documents.',
+    'Surlignez les passages importants avec des couleurs et retrouvez-les facilement.':
+        'Highlight important passages with colors and find them easily.',
+    'Écoutez les prédications avec plusieurs voix disponibles.':
+        'Listen to sermons with multiple voices available.',
+    'Posez des questions et obtenez des réponses avec des références cliquables.':
+        'Ask questions and get answers with clickable references.',
+
     // ── Theme ──
     Apparence: 'Appearance',
     Clair: 'Light',
