@@ -214,7 +214,7 @@ export class SherpaProvider implements TtsProvider {
                 );
             }
 
-            onProgress(100);
+            // Worker already sends 100% progress via RPC — no need to call again
         } finally {
             this.rpc.onProgress = null;
         }

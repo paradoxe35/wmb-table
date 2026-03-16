@@ -23,9 +23,10 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
 
-    // Support private GitHub repos — pass token if available
-    if (GITHUB_TOKEN) {
-        autoUpdater.requestHeaders = { Authorization: `Bearer ${GITHUB_TOKEN}` };
+    // For private GitHub repos, electron-updater needs the token passed via
+    // GH_TOKEN env var so it uses PrivateGitHubProvider instead of the public one.
+    if (GITHUB_TOKEN && !process.env.GH_TOKEN) {
+        process.env.GH_TOKEN = GITHUB_TOKEN;
     }
 
     autoUpdater.on('checking-for-update', () => {
@@ -80,8 +81,8 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     });
 
     const check = () => {
-        autoUpdater.checkForUpdates().catch((err) => {
-            log.error('Updater: failed to check for updates', err);
+        autoUpdater.checkForUpdates().catch(() => {
+            // Errors are already handled by the 'error' event above
         });
     };
 
@@ -99,9 +100,8 @@ export function checkForUpdates(): void {
         notify({ type: 'noUpdate' });
         return;
     }
-    autoUpdater.checkForUpdates().catch((err) => {
-        log.error('Updater: failed to check for updates', err);
-        notify({ type: 'error', message: err.message });
+    autoUpdater.checkForUpdates().catch(() => {
+        // Errors are already handled by the 'error' event listener
     });
 }
 

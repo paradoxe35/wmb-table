@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { DocumentType, HighlightItem, HighlightSearchResult } from '@shared/types';
 import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
+import { useSermonStore } from '@renderer/stores/sermon.store';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
@@ -26,6 +27,7 @@ interface HighlightGroup {
     groupId: string;
     documentTitle: string;
     sermonId: string;
+    paragraphIndex: number;
     textSnippet: string;
     color: string;
     comment?: string;
@@ -52,6 +54,7 @@ function groupHighlights(items: HighlightItem[]): HighlightGroup[] {
                 groupId: item.groupId,
                 documentTitle: item.documentTitle,
                 sermonId: item.sermonId,
+                paragraphIndex: item.paragraphIndex,
                 textSnippet: item.textSnippet,
                 color: item.color,
                 comment: item.comment,
@@ -82,22 +85,33 @@ function useHighlightOpen() {
     const openDocument = useOpenDocument();
     const openCustomDocument = useOpenCustomDocument();
     const openBibleChapter = useOpenBibleChapter();
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
     return useCallback(
         (item: HighlightGroup) => {
             if (item.documentType === 'custom') {
                 openCustomDocument(item.documentTitle, item.sermonId);
-                return;
-            }
-            if (item.documentType === 'bible') {
+            } else if (item.documentType === 'bible') {
                 const [bookCode, chapter] = item.sermonId.split(':');
                 const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
                 openBibleChapter(bookName, bookCode, chapter);
-                return;
+            } else {
+                openDocument(item.documentTitle, item.sermonId, item.translationId);
             }
-            openDocument(item.documentTitle, item.sermonId, item.translationId);
+
+            setPendingNavigation({
+                documentTitle: item.documentTitle,
+                documentHtmlTree: {
+                    paragraphIndex: item.paragraphIndex,
+                    translationId: item.translationId,
+                    languageCode: item.languageCode,
+                    sermonId: item.sermonId,
+                    documentType: item.documentType,
+                    textSnippet: item.textSnippet,
+                },
+            });
         },
-        [openDocument, openCustomDocument, openBibleChapter],
+        [openDocument, openCustomDocument, openBibleChapter, setPendingNavigation],
     );
 }
 
