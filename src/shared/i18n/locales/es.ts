@@ -96,6 +96,7 @@ const es: Record<string, string> = {
     'Ajouter un fournisseur': 'Añadir un proveedor',
     'Ajouter un fournisseur personnalisé': 'Añadir un proveedor personalizado',
     'Supprimer ce fournisseur ?': '¿Eliminar este proveedor?',
+    'Un fournisseur avec ce nom existe déjà.': 'Ya existe un proveedor con este nombre.',
     'ex: Mon Service IA': 'ej.: Mi Servicio IA',
     'ex: gpt-4o-mini': 'ej.: gpt-4o-mini',
 

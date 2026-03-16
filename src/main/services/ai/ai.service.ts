@@ -5,6 +5,7 @@ import * as aiRepo from '@main/database/repositories/ai.repository';
 import * as configRepo from '@main/database/repositories/config.repository';
 import * as languagePackService from '@main/services/language-pack.service';
 import { PushChannels } from '@shared/ipc.types';
+import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import type {
     AiConversation,
     AiMessage,
@@ -23,7 +24,7 @@ import { sendToRenderer } from '@main/ipc/register';
 import { buildConversationContext } from './context-memory';
 import { resolveDefaultModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
-import { SimpleCache } from '@main/lib/simple-cache';
+import { fetchProviderModels } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 
 export class AiService {
@@ -43,6 +44,9 @@ export class AiService {
     }
 
     updateSettings(partial: Partial<AiSettings>): AiSettings {
+        if (partial.customProviders) {
+            this.validateCustomProviders(partial.customProviders);
+        }
         const settings = aiRepo.updateSettings(partial);
         aiRepo.trimConversationHistory(settings.maxHistoryConversations);
         this.localRuntime.setGpuEnabled(settings.providers.local.gpuEnabled ?? false);
@@ -132,93 +136,7 @@ export class AiService {
         apiKey?: string;
         baseUrl?: string;
     }): Promise<AiRemoteModel[]> {
-        const settings = this.getSettings();
-        const { providerId } = input;
-
-        if (providerId === 'local') return [];
-
-        let baseUrl: string | undefined;
-        let apiKey: string | undefined;
-
-        const builtinConfig = settings.providers[providerId as keyof AiSettings['providers']];
-        if (builtinConfig) {
-            apiKey = input.apiKey ?? builtinConfig.apiKey;
-        }
-
-        const customProvider = settings.customProviders.find((p) => p.id === providerId);
-        if (customProvider) {
-            apiKey = input.apiKey ?? customProvider.apiKey;
-            baseUrl = input.baseUrl ?? customProvider.baseUrl;
-        }
-
-        if (!apiKey) return [];
-
-        const cacheKey = `ai-models:${providerId}`;
-        const cache = new SimpleCache<AiRemoteModel[]>(cacheKey, 60 * 60 * 1000);
-        const cached = cache.get();
-        if (cached) return cached;
-
-        const PROVIDER_BASE_URLS: Record<string, string> = {
-            openai: 'https://api.openai.com/v1',
-            openrouter: 'https://openrouter.ai/api/v1',
-            gemini: 'https://generativelanguage.googleapis.com/v1beta',
-            claude: 'https://api.anthropic.com/v1',
-        };
-
-        const base = baseUrl ?? PROVIDER_BASE_URLS[providerId];
-        if (!base) return [];
-
-        try {
-            let models: AiRemoteModel[] = [];
-
-            if (providerId === 'gemini') {
-                const url = `${base}/models?key=${apiKey ?? ''}`;
-                const res = await fetch(url);
-                if (!res.ok) return cache.getStale() ?? [];
-                const data = (await res.json()) as {
-                    models?: { name: string; displayName: string }[];
-                };
-                models = (data.models ?? [])
-                    .filter((m) => m.name.startsWith('models/gemini'))
-                    .map((m) => ({
-                        id: m.name.replace('models/', ''),
-                        name: m.displayName,
-                    }));
-            } else if (providerId === 'claude') {
-                const res = await fetch(`${base}/models`, {
-                    headers: {
-                        'x-api-key': apiKey ?? '',
-                        'anthropic-version': '2023-06-01',
-                    },
-                });
-                if (!res.ok) return cache.getStale() ?? [];
-                const data = (await res.json()) as {
-                    data?: { id: string; display_name?: string }[];
-                };
-                models = (data.data ?? []).map((m) => ({
-                    id: m.id,
-                    name: m.display_name ?? m.id,
-                }));
-            } else {
-                const headers: Record<string, string> = {};
-                if (apiKey) headers['Authorization'] = `Bearer ${apiKey}`;
-
-                const res = await fetch(`${base}/models`, { headers });
-                if (!res.ok) return cache.getStale() ?? [];
-                const data = (await res.json()) as {
-                    data?: { id: string; name?: string }[];
-                };
-                models = (data.data ?? [])
-                    .map((m) => ({ id: m.id, name: m.name ?? m.id }))
-                    .sort((a, b) => a.id.localeCompare(b.id));
-            }
-
-            if (models.length > 0) cache.set(models);
-            return models;
-        } catch (err) {
-            log.warn(`Failed to fetch models for provider ${providerId}:`, err);
-            return cache.getStale() ?? [];
-        }
+        return fetchProviderModels(this.getSettings(), input);
     }
 
     // ── Message sending ──
@@ -259,8 +177,9 @@ export class AiService {
         }
 
         const activeLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
-        const installedLanguages = await languagePackService.getInstalledLanguages();
         const isLocal = providerId === 'local';
+
+        const installedLanguages = await languagePackService.getInstalledLanguages();
         const { recentMessages, summary } = buildConversationContext(
             conversation.id,
             settings.maxContextMessages,
@@ -295,7 +214,7 @@ export class AiService {
             assistantMessageId: assistantMessage.id,
         });
 
-        const runner = this.getRunner(providerId);
+        const runner = new GenerationRunnerImpl(isLocal);
 
         log.info('AI generation starting', {
             providerId,
@@ -303,50 +222,19 @@ export class AiService {
             conversationId: conversation.id,
         });
 
-        void (async () => {
-            try {
-                await runner.run({
-                    browserWindow,
-                    conversationId: conversation.id,
-                    assistantMessageId: assistantMessage.id,
-                    model,
-                    systemPrompt,
-                    history: recentMessages,
-                    tools,
-                    abortSignal: controller.signal,
-                });
-
-                const nextContext = buildConversationContext(
-                    conversation.id,
-                    settings.maxContextMessages,
-                );
-                aiRepo.updateConversation(conversation.id, {
-                    summary: nextContext.summary,
-                    languageCode: activeLanguageCode,
-                });
-                sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
-                    conversationId: conversation.id,
-                    messageId: assistantMessage.id,
-                });
-            } catch (error) {
-                const message = error instanceof Error ? error.message : 'AI generation failed.';
-                log.error('AI generation failed', {
-                    conversationId: conversation.id,
-                    providerId,
-                    modelId,
-                    message,
-                });
-                sendToRenderer(browserWindow, PushChannels.aiStreamError, {
-                    conversationId: conversation.id,
-                    messageId: assistantMessage.id,
-                    error: message,
-                });
-            } finally {
-                // Ensure partial assistant content is synced even on error/abort
-                aiRepo.syncMessage(assistantMessage.id);
-                this.controllers.delete(conversation.id);
-            }
-        })();
+        void this.runGeneration(
+            runner,
+            browserWindow,
+            conversation,
+            assistantMessage,
+            model,
+            systemPrompt,
+            recentMessages,
+            tools,
+            controller.signal,
+            settings,
+            activeLanguageCode,
+        );
 
         return {
             conversation: aiRepo.getConversation(conversation.id)!,
@@ -366,7 +254,73 @@ export class AiService {
 
     // ── Private ──
 
-    private getRunner(providerId: string): GenerationRunnerImpl {
-        return new GenerationRunnerImpl(providerId === 'local');
+    private validateCustomProviders(providers: AiSettings['customProviders']): void {
+        const reservedIds = new Set<string>(BUILTIN_PROVIDER_IDS as readonly string[]);
+        const seen = new Set<string>();
+        for (const provider of providers) {
+            if (reservedIds.has(provider.id)) {
+                throw new Error(
+                    `Custom provider id "${provider.id}" conflicts with a builtin provider.`,
+                );
+            }
+            if (seen.has(provider.id)) {
+                throw new Error(`Duplicate custom provider id: "${provider.id}".`);
+            }
+            seen.add(provider.id);
+        }
+    }
+
+    private async runGeneration(
+        runner: GenerationRunnerImpl,
+        browserWindow: BrowserWindow,
+        conversation: AiConversation,
+        assistantMessage: AiMessage,
+        model: ReturnType<typeof resolveLanguageModel>,
+        systemPrompt: string,
+        history: ReturnType<typeof buildConversationContext>['recentMessages'],
+        tools: ReturnType<typeof buildAiTools>,
+        abortSignal: AbortSignal,
+        settings: AiSettings,
+        activeLanguageCode: string,
+    ): Promise<void> {
+        try {
+            await runner.run({
+                browserWindow,
+                conversationId: conversation.id,
+                assistantMessageId: assistantMessage.id,
+                model,
+                systemPrompt,
+                history,
+                tools,
+                abortSignal,
+            });
+
+            const nextContext = buildConversationContext(
+                conversation.id,
+                settings.maxContextMessages,
+            );
+            aiRepo.updateConversation(conversation.id, {
+                summary: nextContext.summary,
+                languageCode: activeLanguageCode,
+            });
+            sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
+                conversationId: conversation.id,
+                messageId: assistantMessage.id,
+            });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'AI generation failed.';
+            log.error('AI generation failed', {
+                conversationId: conversation.id,
+                message,
+            });
+            sendToRenderer(browserWindow, PushChannels.aiStreamError, {
+                conversationId: conversation.id,
+                messageId: assistantMessage.id,
+                error: message,
+            });
+        } finally {
+            aiRepo.syncMessage(assistantMessage.id);
+            this.controllers.delete(conversation.id);
+        }
     }
 }

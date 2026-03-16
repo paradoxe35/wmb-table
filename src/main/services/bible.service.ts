@@ -5,8 +5,12 @@ import Database from 'better-sqlite3';
 import log from 'electron-log';
 import { getDatabaseDir } from '@main/lib/app-paths';
 import { githubDownload } from '@main/lib/github';
+import { SimpleCache } from '@main/lib/simple-cache';
 
 const BIBLE_INDEX_FILE = 'bible-index.json';
+
+// Cache the remote index fetch for 24 hours to avoid unnecessary network requests
+const remoteIndexCache = new SimpleCache<BibleVersion[]>('bible-remote-index', 24 * 60 * 60 * 1000);
 
 export interface BibleVersion {
     langCode: string;
@@ -92,6 +96,14 @@ export function loadBibleIndex(): BibleVersion[] {
  * Returns the updated merged index. Non-blocking — call and forget on startup if desired.
  */
 export async function refreshRemoteIndex(): Promise<BibleVersion[]> {
+    // Return cached if still fresh
+    const cached = remoteIndexCache.get();
+    if (cached) {
+        const local = loadLocalIndex();
+        bibleIndex = mergeIndexes(local, cached);
+        return bibleIndex;
+    }
+
     try {
         log.info(`Fetching remote bible index: ${BIBLE_INDEX_FILE}`);
         const response = await githubDownload(BIBLE_INDEX_FILE);
@@ -102,10 +114,11 @@ export async function refreshRemoteIndex(): Promise<BibleVersion[]> {
 
         const remoteVersions = (await response.json()) as BibleVersion[];
 
-        // Cache to disk
+        // Cache to disk (for offline startup) and to DB (for TTL)
         const cacheDir = getBibleDataDir();
         mkdirSync(cacheDir, { recursive: true });
         writeFileSync(getCachedRemoteIndexPath(), JSON.stringify(remoteVersions, null, 2));
+        remoteIndexCache.set(remoteVersions);
         log.info(`Cached remote bible index (${remoteVersions.length} versions)`);
 
         // Re-merge

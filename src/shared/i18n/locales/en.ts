@@ -95,6 +95,7 @@ const en: Record<string, string> = {
     'Ajouter un fournisseur': 'Add a provider',
     'Ajouter un fournisseur personnalisé': 'Add a custom provider',
     'Supprimer ce fournisseur ?': 'Delete this provider?',
+    'Un fournisseur avec ce nom existe déjà.': 'A provider with this name already exists.',
     'ex: Mon Service IA': 'e.g. My AI Service',
     'ex: gpt-4o-mini': 'e.g. gpt-4o-mini',
 

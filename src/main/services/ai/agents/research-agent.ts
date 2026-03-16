@@ -19,6 +19,7 @@ function buildResearchToolSubset(languageCode: string): Record<string, AiToolDef
     return {
         searchSermons: sermonTools.searchSermons,
         searchContent: sermonTools.searchContent,
+        getSermonContent: sermonTools.getSermonContent,
         getBiblePassage: bibleTools.getBiblePassage,
         getBibleVersions: bibleTools.getBibleVersions,
         getCustomDocuments: documentTools.getCustomDocuments,
