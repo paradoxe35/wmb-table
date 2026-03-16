@@ -617,6 +617,7 @@ const es: Record<string, string> = {
     'Basculer en plein écran': 'Pantalla completa',
     Aide: 'Ayuda',
     Documentation: 'Documentación',
+    'Nous contacter': 'Contáctenos',
     'À propos': 'Acerca de',
     Produit: 'Producto',
     'Site web': 'Sitio web',

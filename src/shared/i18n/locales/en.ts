@@ -611,6 +611,7 @@ const en: Record<string, string> = {
     'Basculer en plein écran': 'Toggle fullscreen',
     Aide: 'Help',
     Documentation: 'Documentation',
+    'Nous contacter': 'Contact Us',
     'À propos': 'About',
     Produit: 'Product',
     'Site web': 'Website',

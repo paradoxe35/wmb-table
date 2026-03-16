@@ -5,6 +5,7 @@ import ScreenshotPlaceholder from './components/ScreenshotPlaceholder.vue';
 import HomeFeatureCards from './components/HomeFeatureCards.vue';
 import HomeQuickSteps from './components/HomeQuickSteps.vue';
 import ReleaseDownloadPanel from './components/ReleaseDownloadPanel.vue';
+import ContactForm from './components/ContactForm.vue';
 import './style.css';
 
 export default {
@@ -17,5 +18,6 @@ export default {
         app.component('HomeFeatureCards', HomeFeatureCards);
         app.component('HomeQuickSteps', HomeQuickSteps);
         app.component('ReleaseDownloadPanel', ReleaseDownloadPanel);
+        app.component('ContactForm', ContactForm);
     },
 } satisfies Theme;

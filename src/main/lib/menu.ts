@@ -5,6 +5,7 @@ import {
     APP_AUTHOR,
     APP_AUTHOR_EMAIL,
     APP_LICENSE,
+    DOCS_CONTACT_LINK,
     DOCS_LINK,
     WEBSITE_LINK,
 } from '@shared/constants';
@@ -197,6 +198,13 @@ export default class MenuBuilder {
                             shell.openExternal(DOCS_LINK);
                         },
                     },
+                    {
+                        label: t('Nous contacter'),
+                        click: () => {
+                            shell.openExternal(DOCS_CONTACT_LINK);
+                        },
+                    },
+                    { type: 'separator' },
                     {
                         label: t('À propos'),
                         click: () => {
