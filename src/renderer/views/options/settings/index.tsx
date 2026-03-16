@@ -12,6 +12,7 @@ import {
     SoundOutlined,
 } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
+import { UPDATE_TAB_EVENT } from '@renderer/components/update-notifier';
 import GeneralTab from './general-tab';
 import LanguagesTab from './languages-tab';
 import BackupTab from './backup-tab';
@@ -63,6 +64,12 @@ export default function Settings() {
             setActiveTab(TAB_KEYS.update);
         });
     }, [showOptions]);
+
+    useEffect(() => {
+        const handler = () => setActiveTab(TAB_KEYS.update);
+        window.addEventListener(UPDATE_TAB_EVENT, handler);
+        return () => window.removeEventListener(UPDATE_TAB_EVENT, handler);
+    }, []);
 
     const onTabChange = useCallback((key: string) => setActiveTab(key), []);
 

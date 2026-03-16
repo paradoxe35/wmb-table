@@ -2,6 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { notification, Button } from 'antd';
 import { useAppStore } from '@renderer/stores';
+import { buildDownloadPageLink } from '@shared/constants';
+
+export const UPDATE_TAB_EVENT = 'go-to-update-tab';
 
 /**
  * Global listener for update notifications.
@@ -13,11 +16,18 @@ export default function UpdateNotifier() {
     const showOptions = useAppStore((s) => s.showOptions);
     const shownRef = useRef<Set<string>>(new Set());
 
+    const goToUpdateTab = () => {
+        showOptions('settings');
+        window.dispatchEvent(new Event(UPDATE_TAB_EVENT));
+    };
+
     useEffect(() => {
         return window.api.on.notifyForNewUpdate((data) => {
             if (data.type === 'hasUpdate' && !shownRef.current.has('hasUpdate')) {
                 shownRef.current.add('hasUpdate');
                 const key = 'update-available';
+                const canAuto = data.canAutoUpdate !== false;
+
                 notification.info({
                     key,
                     message: t('Mise à jour disponible'),
@@ -27,16 +37,28 @@ export default function UpdateNotifier() {
                           })
                         : t('Une nouvelle version est disponible.'),
                     duration: 15,
-                    btn: (
+                    btn: canAuto ? (
                         <Button
                             type="primary"
                             size="small"
                             onClick={() => {
-                                showOptions('settings');
+                                goToUpdateTab();
                                 notification.destroy(key);
                             }}
                         >
                             {t('Voir la mise à jour')}
+                        </Button>
+                    ) : (
+                        <Button
+                            type="primary"
+                            size="small"
+                            onClick={() => {
+                                const lang = useAppStore.getState().activeLanguage;
+                                window.api.app.openExternal(buildDownloadPageLink(lang));
+                                notification.destroy(key);
+                            }}
+                        >
+                            {t('Télécharger')}
                         </Button>
                     ),
                 });
@@ -51,7 +73,7 @@ export default function UpdateNotifier() {
                     description: t(
                         "La mise à jour a été téléchargée. Elle sera installée au prochain redémarrage, ou vous pouvez l'installer maintenant.",
                     ),
-                    duration: 0, // Persist until dismissed
+                    duration: 0,
                     btn: (
                         <Button
                             type="primary"

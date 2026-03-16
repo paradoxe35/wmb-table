@@ -10,10 +10,16 @@ const { autoUpdater } = updater;
 let lastNotification: UpdaterNotification = { type: 'none' };
 let mainWindowRef: BrowserWindow | null = null;
 
+/** Auto-update is supported on Windows, macOS, and Linux AppImage only */
+function canAutoUpdate(): boolean {
+    if (process.platform !== 'linux') return true;
+    return !!process.env.APPIMAGE;
+}
+
 function notify(notification: UpdaterNotification): void {
-    lastNotification = notification;
+    lastNotification = { ...notification, canAutoUpdate: canAutoUpdate() };
     if (mainWindowRef) {
-        sendToRenderer(mainWindowRef, PushChannels.notifyForNewUpdate, notification);
+        sendToRenderer(mainWindowRef, PushChannels.notifyForNewUpdate, lastNotification);
     }
 }
 

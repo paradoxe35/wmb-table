@@ -41,6 +41,13 @@ export function buildDocsLink(path: string, languageCode?: string | null): strin
     return `${base}${prefix}/${path}`;
 }
 
+export function buildDownloadPageLink(languageCode?: string | null): string {
+    const locale = normalizeDocsLocale(languageCode);
+    const base = WEBSITE_LINK.replace(/\/$/, '');
+    const prefix = locale === 'fr' ? '' : `/${locale}`;
+    return `${base}${prefix}/#download`;
+}
+
 export const DOCS_CONTACT_LINK = buildDocsLink('contact');
 export const DOCS_SUBJECT_LINK = buildDocsGuideLink('subjects');
 export const DOCS_NOTE_LINK = buildDocsGuideLink('notes');
