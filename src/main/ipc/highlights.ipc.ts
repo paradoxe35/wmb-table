@@ -3,13 +3,12 @@ import { registerHandler } from './register';
 import * as highlightsRepo from '@main/database/repositories/highlights.repository';
 
 export function registerHighlightsHandlers(): void {
-    registerHandler(HighlightChannels.getAll, async () => {
-        return highlightsRepo.getAll();
-    });
-
-    registerHandler(HighlightChannels.search, async (_event, query, page, pageSize) => {
-        return highlightsRepo.search(query, page, pageSize);
-    });
+    registerHandler(
+        HighlightChannels.search,
+        async (_event, query, page, pageSize, languageCode) => {
+            return highlightsRepo.search(query, page, pageSize, languageCode);
+        },
+    );
 
     registerHandler(HighlightChannels.getByDocument, async (_event, documentTitle, sermonId) => {
         return highlightsRepo.getByDocument(documentTitle, sermonId);

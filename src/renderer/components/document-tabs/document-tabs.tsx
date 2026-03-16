@@ -35,6 +35,33 @@ export default function DocumentTabs() {
         }
     }, []);
 
+    // Close the active tab with Ctrl+W / Cmd+W (only when document view is active)
+    const mainView = useAppStore((s) => s.mainView);
+    useEffect(() => {
+        if (mainView !== 'document') {
+            return;
+        }
+
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'w' && (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                if (!activeTabKey) {
+                    return;
+                }
+
+                const tab = tabs.find((t) => getTabKey(t) === activeTabKey);
+                if (tab) {
+                    stopTtsIfPlaying(tab.title);
+                }
+
+                cleanupTabs([activeTabKey]);
+                removeTab(activeTabKey);
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [mainView, activeTabKey, tabs, removeTab, stopTtsIfPlaying, cleanupTabs]);
+
     const handleRemoveTab = useCallback(
         (key: string) => {
             const tab = tabs.find((t) => getTabKey(t) === key);

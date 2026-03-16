@@ -67,7 +67,7 @@ export default class MenuBuilder {
                     },
                     {
                         label: t('&Fermer'),
-                        accelerator: process.platform === 'darwin' ? 'Command+Q' : 'Ctrl+W',
+                        accelerator: process.platform === 'darwin' ? 'Command+Q' : 'Ctrl+Q',
                         click: () => {
                             app.quit();
                         },

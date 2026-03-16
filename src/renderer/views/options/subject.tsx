@@ -273,13 +273,13 @@ function ItemFromSelectedSubject({
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
 
     const onNavigate = () => {
-        openDocumentRequest(
-            buildReferenceOpenRequest(item.documentTitle, item.sermonId, item.documentHtmlTree),
-        );
         setPendingNavigation({
             documentTitle: item.documentTitle,
             documentHtmlTree: item.documentHtmlTree,
         });
+        openDocumentRequest(
+            buildReferenceOpenRequest(item.documentTitle, item.sermonId, item.documentHtmlTree),
+        );
     };
 
     if (item.bible) {

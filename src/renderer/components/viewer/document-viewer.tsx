@@ -13,8 +13,8 @@ export const useDocumentViewOpen = () => {
         translationId?: number,
     ) => {
         const id = sermonId ?? sermonsById[name]?.sermonId ?? '';
-        openDocument(name, id, translationId);
         onItemClick?.();
+        openDocument(name, id, translationId);
     };
 
     return onClick;

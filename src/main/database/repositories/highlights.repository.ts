@@ -31,32 +31,31 @@ function toHighlightItem(row: typeof highlights.$inferSelect): HighlightItem {
     };
 }
 
-export function getAll(): HighlightItem[] {
-    return getDb()
-        .select()
-        .from(highlights)
-        .orderBy(desc(highlights.createdAt))
-        .all()
-        .map(toHighlightItem);
-}
-
 const DEFAULT_PAGE_SIZE = 20;
 
 export function search(
     query: string,
     page: number,
     pageSize: number = DEFAULT_PAGE_SIZE,
+    languageCode?: string,
 ): HighlightSearchResult {
     const db = getDb();
     const offset = page * pageSize;
 
-    const conditions = query.trim()
+    const searchFilter = query.trim()
         ? or(
               like(highlights.documentTitle, `%${query}%`),
               like(highlights.textSnippet, `%${query}%`),
               like(highlights.comment, `%${query}%`),
           )
         : undefined;
+
+    // Filter by language for sermon/bible, but keep custom documents (language-independent)
+    const langFilter = languageCode
+        ? or(eq(highlights.documentType, 'custom'), eq(highlights.languageCode, languageCode))
+        : undefined;
+
+    const conditions = and(searchFilter, langFilter);
 
     const totalRow = db
         .select({ count: sql<number>`count(distinct ${highlights.groupId})` })

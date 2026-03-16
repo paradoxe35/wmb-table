@@ -148,9 +148,21 @@ export function useScrollAndZoom(
     }, [activeTabKey]);
 
     useLayoutEffect(() => {
-        if (!restoreToken || !containerRef.current || !activeTab) return;
-        if (lastRestoredKeyRef.current === restoreToken) return;
+        if (!restoreToken || !containerRef.current || !activeTab) {
+            return;
+        }
+        if (lastRestoredKeyRef.current === restoreToken) {
+            return;
+        }
+
         lastRestoredKeyRef.current = restoreToken;
+
+        // Skip scroll restoration when a pending navigation will handle scrolling.
+        // Read as snapshot to avoid re-running this effect when pendingNavigation clears.
+        const pending = useSermonStore.getState().pendingNavigation;
+        if (pending && pending.documentTitle === activeTab.title) {
+            return;
+        }
         const el = containerRef.current;
         const targetScrollTop = restoreScrollTop;
         let frameId = 0;
