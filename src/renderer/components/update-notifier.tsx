@@ -2,9 +2,9 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { notification, Button } from 'antd';
 import { useAppStore } from '@renderer/stores';
+import { buildDownloadPageLink } from '@shared/constants';
 
 export const UPDATE_TAB_EVENT = 'go-to-update-tab';
-const DOWNLOAD_PAGE = 'https://wmb-table.web.app/#download';
 
 /**
  * Global listener for update notifications.
@@ -53,7 +53,8 @@ export default function UpdateNotifier() {
                             type="primary"
                             size="small"
                             onClick={() => {
-                                window.api.app.openExternal(DOWNLOAD_PAGE);
+                                const lang = useAppStore.getState().activeLanguage;
+                                window.api.app.openExternal(buildDownloadPageLink(lang));
                                 notification.destroy(key);
                             }}
                         >

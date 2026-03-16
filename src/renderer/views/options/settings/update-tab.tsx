@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Button, Card, Progress, Space, Spin, Typography } from 'antd';
 import { DownloadOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { UpdaterNotification } from '@shared/types';
+import { useAppStore } from '@renderer/stores';
+import { buildDownloadPageLink } from '@shared/constants';
 
 const { Text } = Typography;
-
-const DOWNLOAD_PAGE = 'https://wmb-table.web.app/#download';
 
 type ProgressType = {
     title: string;
@@ -71,9 +71,10 @@ export default function UpdateTab() {
         window.api.app.quitAndInstallUpdate();
     }, []);
 
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
     const openDownloadPage = useCallback(() => {
-        window.api.app.openExternal(DOWNLOAD_PAGE);
-    }, []);
+        window.api.app.openExternal(buildDownloadPageLink(activeLanguage));
+    }, [activeLanguage]);
 
     const canAuto = info?.canAutoUpdate !== false;
 
