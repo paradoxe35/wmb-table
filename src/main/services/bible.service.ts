@@ -152,8 +152,7 @@ function openBibleDb(version: BibleVersion): Database.Database {
     if (!existsSync(dbPath)) {
         throw new Error(`Bible database file not found: ${dbPath}`);
     }
-    const db = new Database(dbPath, { readonly: true });
-    db.pragma('mmap_size = 268435456');
+    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
     db.pragma('cache_size = -10000');
     return db;
 }
