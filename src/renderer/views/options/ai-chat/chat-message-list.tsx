@@ -18,17 +18,24 @@ function MessageBubble({
     sending: boolean;
 }) {
     const isUser = message.role === 'user';
-    const isStreaming = sending && isLastAssistant && !message.content;
+    const isActive = sending && isLastAssistant;
+    const isWaiting = isActive && !message.content;
+
+    const avatarClass = [
+        'ai-chat__avatar',
+        `ai-chat__avatar--${isUser ? 'user' : 'assistant'}`,
+        isActive ? 'ai-chat__avatar--active' : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
         <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
-            <div className={`ai-chat__avatar ai-chat__avatar--${isUser ? 'user' : 'assistant'}`}>
-                {isUser ? <UserOutlined /> : <RobotOutlined />}
-            </div>
+            <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
             <div
                 className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
-                {isStreaming ? (
+                {isWaiting ? (
                     <Spin indicator={<LoadingOutlined spin />} size="small" />
                 ) : isUser ? (
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
@@ -37,6 +44,11 @@ function MessageBubble({
                         <Markdown>{message.content}</Markdown>
                     </div>
                 )}
+                {isActive && !isWaiting ? (
+                    <div className="ai-chat__typing-indicator">
+                        <LoadingOutlined spin style={{ fontSize: 12 }} />
+                    </div>
+                ) : null}
                 {message.toolResults.length > 0 ? (
                     <div className="ai-chat__tool-results">
                         {message.toolResults.map((result) => (

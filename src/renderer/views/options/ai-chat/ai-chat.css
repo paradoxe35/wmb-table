@@ -168,6 +168,20 @@
     color: var(--ant-color-text-secondary);
 }
 
+.ai-chat__avatar--active {
+    animation: ai-avatar-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes ai-avatar-pulse {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 var(--ant-color-primary-bg);
+    }
+    50% {
+        box-shadow: 0 0 0 5px transparent;
+    }
+}
+
 .ai-chat__bubble-content {
     padding: 10px 14px;
     min-width: 36px;
@@ -189,6 +203,11 @@
     background: var(--ant-color-bg-elevated);
     border: 1px solid var(--ant-color-split);
     border-radius: 16px 16px 16px 4px;
+}
+
+.ai-chat__typing-indicator {
+    margin-top: 6px;
+    color: var(--ant-color-text-quaternary);
 }
 
 .ai-chat__tool-results {
