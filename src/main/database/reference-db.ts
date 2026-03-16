@@ -14,7 +14,6 @@ function getRefDbPath(): string {
 export function initializeReferenceDb(): void {
     const dbPath = getRefDbPath();
     refSqlite = new Database(dbPath, { readonly: true, fileMustExist: true });
-    refSqlite.pragma('cache_size = -10000');
 }
 
 export function getRefDb(): Database.Database {

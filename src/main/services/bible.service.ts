@@ -153,7 +153,6 @@ function openBibleDb(version: BibleVersion): Database.Database {
         throw new Error(`Bible database file not found: ${dbPath}`);
     }
     const db = new Database(dbPath, { readonly: true, fileMustExist: true });
-    db.pragma('cache_size = -10000');
     return db;
 }
 
