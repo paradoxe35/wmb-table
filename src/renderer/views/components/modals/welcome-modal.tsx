@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
+import appIcon from '@renderer/assets/app-icon.png';
 
 const { Title, Text } = Typography;
 
@@ -77,7 +78,7 @@ export default function WelcomeModal() {
         >
             <div style={{ textAlign: 'center', marginBottom: 20, paddingTop: 8 }}>
                 <img
-                    src="icon.png"
+                    src={appIcon}
                     alt="Wmb Table"
                     style={{ width: 64, height: 64, marginBottom: 12 }}
                 />
