@@ -3,7 +3,7 @@ import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import type { AiToolDefinition } from './types';
-import { inferTranslationId } from './shared';
+import { inferTranslationId, validateLanguage } from './shared';
 
 export function buildSubjectTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
     return {
@@ -50,11 +50,21 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                     });
                 if (!meta) throw new Error('Sermon introuvable');
 
-                const paragraphs = await tantivyService.getSermonParagraphs(
-                    lang,
-                    meta.translationId,
-                    meta.dateMs,
-                );
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
+
+                let paragraphs;
+                try {
+                    paragraphs = await tantivyService.getSermonParagraphs(
+                        lang,
+                        meta.translationId,
+                        meta.dateMs,
+                    );
+                } catch (err) {
+                    return {
+                        error: `Failed to retrieve sermon paragraphs: ${err instanceof Error ? err.message : String(err)}`,
+                    };
+                }
                 const paragraph = paragraphs[paragraphIndex];
                 if (!paragraph) throw new Error('Paragraphe introuvable');
 

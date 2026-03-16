@@ -1,12 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { Empty, Spin, Typography } from 'antd';
 import { LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
-import Markdown from 'react-markdown';
+import Markdown, { defaultUrlTransform } from 'react-markdown';
 import type { AiMessage } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
 import ChatToolResult from './chat-tool-result';
+import AiReferenceLink from './ai-reference-link';
 
 const { Text } = Typography;
+
+function urlTransform(url: string): string {
+    if (url.startsWith('wmb://')) return url;
+    return defaultUrlTransform(url);
+}
 
 function MessageBubble({
     message,
@@ -18,25 +24,39 @@ function MessageBubble({
     sending: boolean;
 }) {
     const isUser = message.role === 'user';
-    const isStreaming = sending && isLastAssistant && !message.content;
+    const isActive = sending && isLastAssistant;
+    const isWaiting = isActive && !message.content;
+
+    const avatarClass = [
+        'ai-chat__avatar',
+        `ai-chat__avatar--${isUser ? 'user' : 'assistant'}`,
+        isActive ? 'ai-chat__avatar--active' : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
         <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
-            <div className={`ai-chat__avatar ai-chat__avatar--${isUser ? 'user' : 'assistant'}`}>
-                {isUser ? <UserOutlined /> : <RobotOutlined />}
-            </div>
+            <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
             <div
                 className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
-                {isStreaming ? (
+                {isWaiting ? (
                     <Spin indicator={<LoadingOutlined spin />} size="small" />
                 ) : isUser ? (
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                 ) : (
                     <div className="ai-markdown">
-                        <Markdown>{message.content}</Markdown>
+                        <Markdown components={{ a: AiReferenceLink }} urlTransform={urlTransform}>
+                            {message.content}
+                        </Markdown>
                     </div>
                 )}
+                {isActive && !isWaiting ? (
+                    <div className="ai-chat__typing-indicator">
+                        <LoadingOutlined spin style={{ fontSize: 12 }} />
+                    </div>
+                ) : null}
                 {message.toolResults.length > 0 ? (
                     <div className="ai-chat__tool-results">
                         {message.toolResults.map((result) => (

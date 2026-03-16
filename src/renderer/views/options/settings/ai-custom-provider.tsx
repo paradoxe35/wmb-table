@@ -2,6 +2,7 @@ import { Form, Input, Modal } from 'antd';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AiCustomProviderConfig } from '@shared/ai.types';
+import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 
 function slugify(value: string): string {
     return value
@@ -16,6 +17,7 @@ interface AiCustomProviderModalProps {
     open: boolean;
     onClose: () => void;
     onAdd: (provider: AiCustomProviderConfig) => void;
+    existingIds: string[];
 }
 
 const EMPTY_DRAFT = {
@@ -29,13 +31,17 @@ export default function AiCustomProviderModal({
     open,
     onClose,
     onAdd,
+    existingIds,
 }: AiCustomProviderModalProps) {
     const { t } = useTranslation();
     const [draft, setDraft] = useState(EMPTY_DRAFT);
 
+    const id = slugify(draft.name);
+    const allReservedIds = [...(BUILTIN_PROVIDER_IDS as readonly string[]), ...existingIds];
+    const isDuplicate = id.length > 0 && allReservedIds.includes(id);
+
     function handleSave() {
-        const id = slugify(draft.name);
-        if (!id || !draft.name || !draft.baseUrl) {
+        if (!id || !draft.name || !draft.baseUrl || isDuplicate) {
             return;
         }
         onAdd({
@@ -56,7 +62,7 @@ export default function AiCustomProviderModal({
         onClose();
     }
 
-    const canSave = draft.name.trim().length > 0 && draft.baseUrl.trim().length > 0;
+    const canSave = draft.name.trim().length > 0 && draft.baseUrl.trim().length > 0 && !isDuplicate;
 
     return (
         <Modal
@@ -71,7 +77,12 @@ export default function AiCustomProviderModal({
             width={420}
         >
             <Form layout="vertical" style={{ marginTop: 16 }}>
-                <Form.Item label={t('Nom affiché')} style={{ marginBottom: 12 }}>
+                <Form.Item
+                    label={t('Nom affiché')}
+                    style={{ marginBottom: 12 }}
+                    validateStatus={isDuplicate ? 'error' : undefined}
+                    help={isDuplicate ? t('Un fournisseur avec ce nom existe déjà.') : undefined}
+                >
                     <Input
                         value={draft.name}
                         onChange={(e) => setDraft((d) => ({ ...d, name: e.target.value }))}

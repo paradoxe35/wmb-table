@@ -10,6 +10,8 @@ import { buildResearchAgentPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
 
 const AGENT_NAME = 'researchTopic';
+const MAX_STEPS = 12;
+const MAX_OUTPUT_TOKENS = 2000;
 
 function buildResearchToolSubset(languageCode: string): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
@@ -19,6 +21,7 @@ function buildResearchToolSubset(languageCode: string): Record<string, AiToolDef
     return {
         searchSermons: sermonTools.searchSermons,
         searchContent: sermonTools.searchContent,
+        getSermonContent: sermonTools.getSermonContent,
         getBiblePassage: bibleTools.getBiblePassage,
         getBibleVersions: bibleTools.getBibleVersions,
         getCustomDocuments: documentTools.getCustomDocuments,
@@ -55,8 +58,8 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                         system: buildResearchAgentPrompt(lang),
                         prompt: topic,
                         tools: agentTools,
-                        stopWhen: stepCountIs(8),
-                        maxOutputTokens: 2000,
+                        stopWhen: stepCountIs(MAX_STEPS),
+                        maxOutputTokens: MAX_OUTPUT_TOKENS,
                         abortSignal: ctx.abortSignal,
                         experimental_onToolCallStart(event) {
                             if (ctx.dispatch) {

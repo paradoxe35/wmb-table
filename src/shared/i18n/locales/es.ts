@@ -96,14 +96,24 @@ const es: Record<string, string> = {
     'Ajouter un fournisseur': 'Añadir un proveedor',
     'Ajouter un fournisseur personnalisé': 'Añadir un proveedor personalizado',
     'Supprimer ce fournisseur ?': '¿Eliminar este proveedor?',
+    'Un fournisseur avec ce nom existe déjà.': 'Ya existe un proveedor con este nombre.',
     'ex: Mon Service IA': 'ej.: Mi Servicio IA',
     'ex: gpt-4o-mini': 'ej.: gpt-4o-mini',
+    'Taille du contexte (tokens)': 'Tamaño del contexto (tokens)',
 
     // ── AI provider test ──
     'Tester la connexion': 'Probar conexión',
     Connecté: 'Conectado',
     Échec: 'Error',
     'La connexion a échoué.': 'La conexión ha fallado.',
+
+    // ── AI errors ──
+    "L'assistant IA est désactivé dans les paramètres.":
+        'El asistente IA está desactivado en la configuración.',
+    'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
+        'Ningún proveedor IA configurado. Seleccione un proveedor en la configuración.',
+    'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':
+        'Ningún modelo configurado para este proveedor. Defina un modelo en la configuración.',
 
     // ── AI chat ──
     "L'assistant IA est désactivé.": 'El asistente IA está desactivado.',
@@ -647,6 +657,26 @@ const es: Record<string, string> = {
     "Impossible d'enregistrer le paramètre": 'No se pudo guardar la configuración',
     chapitres: 'capítulos',
     chapitre: 'capítulo',
+
+    // ── Welcome ──
+    Commencer: 'Comenzar',
+    'Bienvenue dans Wmb Table': 'Bienvenido a Wmb Table',
+    'Votre espace pour lire, étudier et préparer vos prédications.':
+        'Su espacio para leer, estudiar y preparar sus predicaciones.',
+    'Prédications et Bible': 'Predicaciones y Biblia',
+    'Ouvrez les prédications et la Bible dans des onglets, naviguez par paragraphe.':
+        'Abra las predicaciones y la Biblia en pestañas, navegue por párrafo.',
+    'Prenez des notes, classez vos passages par sujets avec des références.':
+        'Tome notas, organice sus pasajes por tema con referencias.',
+    'Recherche complète': 'Búsqueda completa',
+    'Recherchez dans le contenu des prédications, la Bible et vos documents.':
+        'Busque dentro del contenido de las predicaciones, la Biblia y sus documentos.',
+    'Surlignez les passages importants avec des couleurs et retrouvez-les facilement.':
+        'Resalte los pasajes importantes con colores y encuéntrelos fácilmente.',
+    'Écoutez les prédications avec plusieurs voix disponibles.':
+        'Escuche las predicaciones con varias voces disponibles.',
+    'Posez des questions et obtenez des réponses avec des références cliquables.':
+        'Haga preguntas y obtenga respuestas con referencias clicables.',
 
     // ── Theme ──
     Apparence: 'Apariencia',

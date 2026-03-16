@@ -17,12 +17,33 @@ hero:
           link: /en/guide/interface-overview
 
 features:
-    - title: Simple reading
-      details: Open sermons, Bible chapters, and your own PDF documents in tabs that are easy to return to.
-    - title: Built for message preparation
-      details: Keep notes, group references by subject, and work in one place without confusion.
-    - title: Easy to find again
-      details: Use search, history, and installed languages to quickly return to what you need.
+    - title: Sermons in tabs
+      details: Open multiple sermons side by side in tabs, with paragraph navigation and text highlighting.
+      link: /en/guide/sermons
+    - title: Built-in Bible
+      details: Browse multiple Bible versions directly in the app, with search by book, chapter, and verse.
+      link: /en/guide/bible
+    - title: Notes and subjects
+      details: Take notes, organize passages by subject, and add references from sermons or the Bible.
+      link: /en/guide/notes
+    - title: Full-text search
+      details: Search inside sermon content, the Bible, your notes, and your subjects in seconds.
+      link: /en/guide/search
+    - title: Audio reading
+      details: Listen to sermons with multiple voices available, including local voices that work offline.
+      link: /en/guide/audio-and-tts
+    - title: AI assistant
+      details: Ask questions about sermons and get answers with clickable references to the exact passages.
+      link: /en/guide/ai-chat
+    - title: Highlights and annotations
+      details: Highlight important passages with colors, add comments, and find them easily later.
+      link: /en/guide/highlights
+    - title: Backup and sync
+      details: Save your data to Google Drive and synchronize between your devices.
+      link: /en/guide/backup-and-sync
+    - title: Multilingual
+      details: Available in French, English, Spanish, and more languages, with the ability to switch at any time.
+      link: /en/guide/languages
 ---
 
 <HomeFeatureCards

@@ -8,6 +8,8 @@ import { buildSermonReaderAgentPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
 
 const AGENT_NAME = 'readSermon';
+const MAX_STEPS = 12;
+const MAX_OUTPUT_TOKENS = 2000;
 
 function buildSermonReaderToolSubset(languageCode: string): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
@@ -61,8 +63,8 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         system: buildSermonReaderAgentPrompt(lang),
                         prompt,
                         tools: agentTools,
-                        stopWhen: stepCountIs(8),
-                        maxOutputTokens: 2000,
+                        stopWhen: stepCountIs(MAX_STEPS),
+                        maxOutputTokens: MAX_OUTPUT_TOKENS,
                         abortSignal: ctx.abortSignal,
                         experimental_onToolCallStart(event) {
                             if (ctx.dispatch) {

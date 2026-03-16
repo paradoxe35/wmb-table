@@ -43,7 +43,7 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
             execute: async ({ subjectName, ...rest }) => {
                 const verses = aiBibleRepo.getPassage(rest);
                 const verse = verses[0];
-                if (!verse) throw new Error('Passage biblique introuvable');
+                if (!verse) return { error: 'Passage biblique introuvable.' };
 
                 return subjectsRepo.createItem(
                     subjectName,
@@ -82,7 +82,7 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
             }),
             execute: async ({ noteId, label, ...rest }) => {
                 const verses = aiBibleRepo.getPassage(rest);
-                if (verses.length === 0) throw new Error('Passage biblique introuvable');
+                if (verses.length === 0) return { error: 'Passage biblique introuvable.' };
                 const ref = notesRepo.createBibleReference(noteId, label);
                 for (const verse of verses) {
                     notesRepo.addBibleVerse(ref.id, verse.id);

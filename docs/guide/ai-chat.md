@@ -134,6 +134,24 @@ Par exemple :
 
 Cela rend les réponses plus cohérentes avec ce que vous lisez réellement.
 
+## Références cliquables
+
+Quand l'assistant vous donne des résultats, les références aux prédications, passages bibliques et documents apparaissent sous forme de petites étiquettes colorées.
+
+En cliquant sur une étiquette, vous ouvrez directement le document au bon endroit :
+
+- une étiquette bleue ouvre la prédication au bon paragraphe
+- une étiquette verte ouvre le chapitre biblique
+- une étiquette orange ouvre le document personnel
+
+Cela vous évite de chercher vous-même dans la liste des prédications ou dans la Bible.
+
+<ScreenshotPlaceholder
+  file="fr-ai-chat-reference-links.png"
+  label="Références cliquables dans la discussion IA"
+  hint="Montrer une réponse IA contenant des étiquettes bleues (prédication), vertes (Bible) et oranges (document) cliquables."
+/>
+
 ## Ce que la discussion IA ne remplace pas
 
 Même si elle peut retrouver beaucoup de choses, elle ne remplace pas votre jugement.

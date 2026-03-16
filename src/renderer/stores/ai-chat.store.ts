@@ -58,12 +58,18 @@ function upsertMessage(messages: AiMessage[], message: AiMessage): AiMessage[] {
     return messages.map((item, itemIndex) => (itemIndex === index ? message : item));
 }
 
+function stripIpcPrefix(message: string): string {
+    // Electron wraps IPC errors as: "Error invoking remote method '<channel>': Error: <actual message>"
+    const match = message.match(/^Error invoking remote method '[^']+': (?:Error: )?(.+)$/s);
+    return match ? match[1] : message;
+}
+
 function toErrorMessage(error: unknown, fallback: string): string {
     if (error instanceof Error && error.message.trim()) {
-        return error.message;
+        return stripIpcPrefix(error.message);
     }
     if (typeof error === 'string' && error.trim()) {
-        return error;
+        return stripIpcPrefix(error);
     }
     return fallback;
 }

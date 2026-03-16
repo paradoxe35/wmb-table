@@ -213,6 +213,7 @@ export default function AiTab() {
                 open={customModalOpen}
                 onClose={() => setCustomModalOpen(false)}
                 onAdd={handleAddCustomProvider}
+                existingIds={settings.customProviders.map((p) => p.id)}
             />
         </Space>
     );

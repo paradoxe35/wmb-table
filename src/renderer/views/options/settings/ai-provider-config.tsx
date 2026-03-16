@@ -148,18 +148,18 @@ function ModelSelect({
         }
     }, [providerId, apiKey, baseUrl]);
 
-    // Fetch once when API key is available
+    // Fetch once when ready (API key available, or custom provider with baseUrl)
     useEffect(() => {
-        if (apiKey && !fetched) {
+        if (!fetched && (apiKey || baseUrl)) {
             fetchModels();
         }
-    }, [apiKey, fetched, fetchModels]);
+    }, [apiKey, baseUrl, fetched, fetchModels]);
 
-    // Reset when provider/apiKey changes
+    // Reset when provider/apiKey/baseUrl changes
     useEffect(() => {
         setFetched(false);
         setOptions([]);
-    }, [providerId, apiKey]);
+    }, [providerId, apiKey, baseUrl]);
 
     // Ensure the current value is always in the options list
     const allOptions = [...options];
@@ -181,7 +181,7 @@ function ModelSelect({
                 );
             }}
             onDropdownVisibleChange={(open) => {
-                if (open && !fetched && apiKey) fetchModels();
+                if (open && !fetched && (apiKey || baseUrl)) fetchModels();
             }}
             style={{ width: '100%' }}
         />

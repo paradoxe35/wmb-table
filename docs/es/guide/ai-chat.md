@@ -67,6 +67,24 @@ Esto ayuda a que las respuestas correspondan mejor a lo que usted está usando r
   hint="Mostrar una respuesta de IA con pequeñas etiquetas para búsqueda de sermones, pasaje bíblico, agregar al tema o agregar a la nota."
 />
 
+## Referencias clicables
+
+Cuando el asistente le da resultados, las referencias a predicaciones, pasajes bíblicos y documentos aparecen como pequeñas etiquetas de color.
+
+Al hacer clic en una etiqueta, se abre directamente el documento en el lugar correcto:
+
+- una etiqueta azul abre la predicación en el párrafo correcto
+- una etiqueta verde abre el capítulo bíblico
+- una etiqueta naranja abre el documento personal
+
+Esto le ahorra buscar usted mismo en la lista de predicaciones o en la Biblia.
+
+<ScreenshotPlaceholder
+  file="es-ai-chat-reference-links.png"
+  label="Referencias clicables en el chat con IA"
+  hint="Mostrar una respuesta de IA con etiquetas azules (predicación), verdes (Biblia) y naranjas (documento) clicables."
+/>
+
 ## Ver también
 
 - [Ajustes de Assistant](/es/guide/settings-assistant)

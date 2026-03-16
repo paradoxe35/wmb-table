@@ -245,6 +245,18 @@ export function getMessages(conversationId: string): AiMessage[] {
         .map(toMessage);
 }
 
+/** Load only the most recent N messages (ordered oldest→newest). */
+export function getRecentMessages(conversationId: string, limit: number): AiMessage[] {
+    const rows = getDb()
+        .select()
+        .from(aiMessages)
+        .where(eq(aiMessages.conversationId, conversationId))
+        .orderBy(desc(aiMessages.createdAt))
+        .limit(limit)
+        .all();
+    return rows.reverse().map(toMessage);
+}
+
 export function getMessage(messageId: string): AiMessage | null {
     const row = getDb().select().from(aiMessages).where(eq(aiMessages.id, messageId)).get();
     return row ? toMessage(row) : null;

@@ -28,15 +28,20 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
             execute: async ({ name, content }) => {
                 const note = notesRepo.create(name.trim());
                 if (content) {
-                    let htmlContent = await marked.parse(content);
-                    if (!htmlContent.includes('<h1>')) {
-                        htmlContent = `<h1>${name}</h1>\n${htmlContent}`;
+                    try {
+                        let htmlContent = await marked.parse(content);
+                        if (!htmlContent.includes('<h1>')) {
+                            htmlContent = `<h1>${name}</h1>\n${htmlContent}`;
+                        }
+                        notesRepo.updateContent(note.id, htmlContent);
+                    } catch (err) {
+                        return {
+                            error: `Failed to parse markdown: ${err instanceof Error ? err.message : String(err)}`,
+                        };
                     }
-
-                    notesRepo.updateContent(note.id, htmlContent);
                 }
                 const created = notesRepo.getById(note.id);
-                if (!created) throw new Error('Failed to retrieve created note');
+                if (!created) return { error: 'Failed to retrieve created note.' };
                 return created;
             },
         },
@@ -45,14 +50,19 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
             inputSchema: z.object({ noteId: z.string(), content: z.string() }),
             execute: async ({ noteId, content }) => {
                 const note = notesRepo.getById(noteId);
-                if (!note) throw new Error('Note not found');
+                if (!note) return { error: 'Note not found.' };
 
-                let htmlContent = await marked.parse(content);
-                if (!htmlContent.includes('<h1>')) {
-                    htmlContent = `<h1>${note.name}</h1>\n${htmlContent}`;
+                try {
+                    let htmlContent = await marked.parse(content);
+                    if (!htmlContent.includes('<h1>')) {
+                        htmlContent = `<h1>${note.name}</h1>\n${htmlContent}`;
+                    }
+                    notesRepo.updateContent(noteId, htmlContent);
+                } catch (err) {
+                    return {
+                        error: `Failed to parse markdown: ${err instanceof Error ? err.message : String(err)}`,
+                    };
                 }
-
-                notesRepo.updateContent(noteId, content);
                 return notesRepo.getById(noteId);
             },
         },

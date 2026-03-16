@@ -1,13 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Empty, Input, Pagination, Popconfirm, Spin, Tag, Typography, message } from 'antd';
-import {
-    BgColorsOutlined,
-    BookOutlined,
-    DeleteOutlined,
-    FileTextOutlined,
-    LoadingOutlined,
-    SoundOutlined,
-} from '@ant-design/icons';
+import { BgColorsOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { DocumentType, HighlightItem, HighlightSearchResult } from '@shared/types';
@@ -71,12 +64,11 @@ function groupHighlights(items: HighlightItem[]): HighlightGroup[] {
     return [...map.values()];
 }
 
-const DOC_TYPE_META: Record<DocumentType, { icon: React.ReactNode; color: string; label: string }> =
-    {
-        sermon: { icon: <SoundOutlined />, color: 'blue', label: 'Prédication' },
-        bible: { icon: <BookOutlined />, color: 'green', label: 'Bible' },
-        custom: { icon: <FileTextOutlined />, color: 'orange', label: 'Document' },
-    };
+const DOC_TYPE_META: Record<DocumentType, { color: string; label: string }> = {
+    sermon: { color: 'blue', label: 'Prédication' },
+    bible: { color: 'green', label: 'Bible' },
+    custom: { color: 'orange', label: 'Document' },
+};
 
 // ---------------------------------------------------------------------------
 // Hooks
@@ -141,12 +133,7 @@ function DocumentTypeTag({ documentType }: { documentType: DocumentType }) {
     const meta = DOC_TYPE_META[documentType] ?? DOC_TYPE_META.sermon;
 
     return (
-        <Tag
-            color={meta.color}
-            bordered={false}
-            icon={meta.icon}
-            style={{ fontSize: '0.75em', marginInlineEnd: 0 }}
-        >
+        <Tag color={meta.color} bordered={false} style={{ fontSize: '0.75em', marginInlineEnd: 0 }}>
             {t(meta.label)}
         </Tag>
     );

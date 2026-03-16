@@ -95,14 +95,24 @@ const en: Record<string, string> = {
     'Ajouter un fournisseur': 'Add a provider',
     'Ajouter un fournisseur personnalisé': 'Add a custom provider',
     'Supprimer ce fournisseur ?': 'Delete this provider?',
+    'Un fournisseur avec ce nom existe déjà.': 'A provider with this name already exists.',
     'ex: Mon Service IA': 'e.g. My AI Service',
     'ex: gpt-4o-mini': 'e.g. gpt-4o-mini',
+    'Taille du contexte (tokens)': 'Context size (tokens)',
 
     // ── AI provider test ──
     'Tester la connexion': 'Test connection',
     Connecté: 'Connected',
     Échec: 'Failed',
     'La connexion a échoué.': 'Connection failed.',
+
+    // ── AI errors ──
+    "L'assistant IA est désactivé dans les paramètres.":
+        'The AI assistant is disabled in settings.',
+    'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
+        'No AI provider configured. Select a provider in settings.',
+    'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':
+        'No model configured for this provider. Set a model in settings.',
 
     // ── AI chat ──
     "L'assistant IA est désactivé.": 'The AI assistant is disabled.',
@@ -641,6 +651,26 @@ const en: Record<string, string> = {
     "Impossible d'enregistrer le paramètre": 'Unable to save the setting',
     chapitres: 'chapters',
     chapitre: 'chapter',
+
+    // ── Welcome ──
+    Commencer: 'Get started',
+    'Bienvenue dans Wmb Table': 'Welcome to Wmb Table',
+    'Votre espace pour lire, étudier et préparer vos prédications.':
+        'Your workspace for reading, studying, and preparing your sermons.',
+    'Prédications et Bible': 'Sermons and Bible',
+    'Ouvrez les prédications et la Bible dans des onglets, naviguez par paragraphe.':
+        'Open sermons and the Bible in tabs, navigate by paragraph.',
+    'Prenez des notes, classez vos passages par sujets avec des références.':
+        'Take notes, organize your passages by subject with references.',
+    'Recherche complète': 'Full search',
+    'Recherchez dans le contenu des prédications, la Bible et vos documents.':
+        'Search inside sermon content, the Bible, and your documents.',
+    'Surlignez les passages importants avec des couleurs et retrouvez-les facilement.':
+        'Highlight important passages with colors and find them easily.',
+    'Écoutez les prédications avec plusieurs voix disponibles.':
+        'Listen to sermons with multiple voices available.',
+    'Posez des questions et obtenez des réponses avec des références cliquables.':
+        'Ask questions and get answers with clickable references.',
 
     // ── Theme ──
     Apparence: 'Appearance',

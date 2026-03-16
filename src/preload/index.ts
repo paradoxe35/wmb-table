@@ -205,6 +205,7 @@ const api = {
     },
 
     app: {
+        isInitialized: () => invoke(AppChannels.isInitialized),
         initialize: () => invoke(AppChannels.initialize),
         getActiveLanguage: () => invoke(AppChannels.getActiveLanguage),
         setActiveLanguage: (langCode: string) => invoke(AppChannels.setActiveLanguage, langCode),
