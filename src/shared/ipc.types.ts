@@ -153,7 +153,6 @@ export const SubjectChannels = {
 } as const;
 
 export const HighlightChannels = {
-    getAll: 'highlights:getAll',
     search: 'highlights:search',
     getByDocument: 'highlights:getByDocument',
     create: 'highlights:create',
@@ -402,8 +401,10 @@ export interface InvokeChannelMap {
     };
 
     // Highlights
-    [HighlightChannels.getAll]: { args: []; return: HighlightItem[] };
-    [HighlightChannels.search]: { args: [string, number, number?]; return: HighlightSearchResult };
+    [HighlightChannels.search]: {
+        args: [string, number, number?, string?];
+        return: HighlightSearchResult;
+    };
     [HighlightChannels.getByDocument]: {
         args: [string, string];
         return: HighlightItem[];

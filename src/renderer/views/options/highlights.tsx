@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { DocumentType, HighlightItem, HighlightSearchResult } from '@shared/types';
 import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
+import { useAppStore } from '@renderer/stores';
 import { useSermonStore } from '@renderer/stores/sermon.store';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
 
@@ -89,16 +90,6 @@ function useHighlightOpen() {
 
     return useCallback(
         (item: HighlightGroup) => {
-            if (item.documentType === 'custom') {
-                openCustomDocument(item.documentTitle, item.sermonId);
-            } else if (item.documentType === 'bible') {
-                const [bookCode, chapter] = item.sermonId.split(':');
-                const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
-                openBibleChapter(bookName, bookCode, chapter);
-            } else {
-                openDocument(item.documentTitle, item.sermonId, item.translationId);
-            }
-
             setPendingNavigation({
                 documentTitle: item.documentTitle,
                 documentHtmlTree: {
@@ -110,6 +101,16 @@ function useHighlightOpen() {
                     textSnippet: item.textSnippet,
                 },
             });
+
+            if (item.documentType === 'custom') {
+                openCustomDocument(item.documentTitle, item.sermonId);
+            } else if (item.documentType === 'bible') {
+                const [bookCode, chapter] = item.sermonId.split(':');
+                const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
+                openBibleChapter(bookName, bookCode, chapter);
+            } else {
+                openDocument(item.documentTitle, item.sermonId, item.translationId);
+            }
         },
         [openDocument, openCustomDocument, openBibleChapter, setPendingNavigation],
     );
@@ -279,24 +280,30 @@ export default function Highlights() {
     const [loading, setLoading] = useState(false);
     const openHighlight = useHighlightOpen();
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const activeLanguage = useAppStore((s) => s.activeLanguage);
 
-    const fetchPage = useCallback(async (searchQuery: string, pageNum: number) => {
-        setLoading(true);
-        try {
-            const result: HighlightSearchResult = await window.api.highlights.search(
-                searchQuery,
-                pageNum,
-                PAGE_SIZE,
-            );
-            setGroups(groupHighlights(result.items));
-            setTotal(result.total);
-            setPage(pageNum);
-        } catch {
-            message.error(t('Erreur lors du chargement des soulignages'));
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+    const fetchPage = useCallback(
+        async (searchQuery: string, pageNum: number) => {
+            setLoading(true);
+            try {
+                const langCode = activeLanguage?.split('-')[0].toLowerCase();
+                const result: HighlightSearchResult = await window.api.highlights.search(
+                    searchQuery,
+                    pageNum,
+                    PAGE_SIZE,
+                    langCode,
+                );
+                setGroups(groupHighlights(result.items));
+                setTotal(result.total);
+                setPage(pageNum);
+            } catch {
+                message.error(t('Erreur lors du chargement des soulignages'));
+            } finally {
+                setLoading(false);
+            }
+        },
+        [activeLanguage],
+    );
 
     // Initial load
     useEffect(() => {
