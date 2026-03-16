@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Button, Card, Progress, Space, Spin, Typography } from 'antd';
-import { LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
+import { DownloadOutlined, LoadingOutlined, ReloadOutlined } from '@ant-design/icons';
 import type { UpdaterNotification } from '@shared/types';
 
 const { Text } = Typography;
+
+const DOWNLOAD_PAGE = 'https://wmb-table.web.app/#download';
 
 type ProgressType = {
     title: string;
@@ -69,22 +71,47 @@ export default function UpdateTab() {
         window.api.app.quitAndInstallUpdate();
     }, []);
 
+    const openDownloadPage = useCallback(() => {
+        window.api.app.openExternal(DOWNLOAD_PAGE);
+    }, []);
+
+    const canAuto = info?.canAutoUpdate !== false;
+
     let content = <></>;
-    let action: { label: string; onClick: () => void } | null = null;
+    let action: { label: string; onClick: () => void; icon?: React.ReactNode } | null = null;
 
     switch (info?.type) {
         case 'hasUpdate':
-            action = { label: t('Mettre à jour'), onClick: startDownload };
-            content = (
-                <Alert
-                    title={t("Mise à jour de l'application")}
-                    description={t(
-                        'Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour.',
-                    )}
-                    type="info"
-                    showIcon
-                />
-            );
+            if (canAuto) {
+                action = { label: t('Mettre à jour'), onClick: startDownload };
+                content = (
+                    <Alert
+                        title={t("Mise à jour de l'application")}
+                        description={t(
+                            'Une nouvelle version est disponible. Cliquez sur le bouton ci-dessous pour démarrer le processus de mise à jour.',
+                        )}
+                        type="info"
+                        showIcon
+                    />
+                );
+            } else {
+                action = {
+                    label: t('Télécharger depuis le site'),
+                    onClick: openDownloadPage,
+                    icon: <DownloadOutlined />,
+                };
+                content = (
+                    <Alert
+                        title={t("Mise à jour de l'application")}
+                        description={t(
+                            "La version {{version}} est disponible. La mise à jour automatique n'est pas prise en charge pour votre type d'installation. Veuillez télécharger la nouvelle version depuis le site.",
+                            { version: info.updateInfo?.version ?? '' },
+                        )}
+                        type="info"
+                        showIcon
+                    />
+                );
+            }
             break;
         case 'downloading':
             content = (
@@ -162,7 +189,12 @@ export default function UpdateTab() {
                         )}
                         {content}
                         {action && (
-                            <Button type="primary" size="small" onClick={action.onClick}>
+                            <Button
+                                type="primary"
+                                size="small"
+                                icon={action.icon}
+                                onClick={action.onClick}
+                            >
                                 {action.label}
                             </Button>
                         )}

@@ -592,4 +592,6 @@ export type UpdaterNotification = {
     updateInfo?: UpdateInfo;
     progress?: UpdaterProgress;
     message?: string;
+    /** False on Linux deb/tar.gz where auto-update is not supported */
+    canAutoUpdate?: boolean;
 };
