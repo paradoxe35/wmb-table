@@ -22,7 +22,7 @@ import { LocalRuntimeService } from './local/local-runtime.service';
 import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
 import { buildConversationContext } from './context-memory';
-import { resolveDefaultModel, resolveLanguageModel } from './provider-resolver';
+import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
@@ -151,9 +151,16 @@ export class AiService {
         }
 
         const providerId = settings.activeProvider;
-        const modelId = settings.activeModel ?? resolveDefaultModel(settings, providerId);
-        if (!providerId || !modelId) {
-            throw new Error('Aucun fournisseur IA ou modèle actif n\u2019a été configuré.');
+        if (!providerId) {
+            throw new Error(
+                'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.',
+            );
+        }
+        const modelId = resolveActiveModel(settings);
+        if (!modelId) {
+            throw new Error(
+                'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.',
+            );
         }
 
         const conversation =

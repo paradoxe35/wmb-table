@@ -106,6 +106,14 @@ const es: Record<string, string> = {
     Échec: 'Error',
     'La connexion a échoué.': 'La conexión ha fallado.',
 
+    // ── AI errors ──
+    "L'assistant IA est désactivé dans les paramètres.":
+        'El asistente IA está desactivado en la configuración.',
+    'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.':
+        'Ningún proveedor IA configurado. Seleccione un proveedor en la configuración.',
+    'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.':
+        'Ningún modelo configurado para este proveedor. Defina un modelo en la configuración.',
+
     // ── AI chat ──
     "L'assistant IA est désactivé.": 'El asistente IA está desactivado.',
     'Ouvrir les paramètres': 'Abrir configuración',
