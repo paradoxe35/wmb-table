@@ -1,3 +1,5 @@
+export const APP_NAME = 'Wmb Table';
+
 export const GITHUB_OWNER = 'paradoxe35';
 export const GITHUB_REPO = 'wmb-table';
 export const GITHUB_RELEASE_TAG = 'v1.0.0';

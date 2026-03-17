@@ -1,5 +1,5 @@
-export const APP_NAME = 'Wmb Table';
 export {
+    APP_NAME,
     WEBSITE_LINK,
     DOCS_LINK,
     DOCS_SUBJECT_LINK,

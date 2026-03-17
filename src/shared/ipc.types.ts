@@ -176,6 +176,7 @@ export const BackupChannels = {
     toggleStatus: 'backup:toggleStatus',
     getReminder: 'backup:getReminder',
     login: 'backup:login',
+    logout: 'backup:logout',
 } as const;
 
 export const SyncChannels = {
@@ -443,6 +444,7 @@ export interface InvokeChannelMap {
     [BackupChannels.toggleStatus]: { args: [boolean]; return: void };
     [BackupChannels.getReminder]: { args: []; return: boolean };
     [BackupChannels.login]: { args: []; return: BackupStatus | null };
+    [BackupChannels.logout]: { args: []; return: void };
 
     // Sync
     [SyncChannels.getStatus]: { args: []; return: SyncStatus };

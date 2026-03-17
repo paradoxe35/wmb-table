@@ -2,6 +2,7 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as bibleRepo from '@main/database/repositories/bible.repository';
 import * as customDocRepo from '@main/database/repositories/custom-documents.repository';
+import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
 import type { HighlightItem } from '@shared/types';
 
@@ -63,7 +64,7 @@ function deduplicateByGroup(items: HighlightItem[]): DeduplicatedHighlight[] {
 // ---------------------------------------------------------------------------
 
 function formatDate(dateMs: number): string {
-    return new Date(dateMs).toLocaleDateString('fr-FR', {
+    return new Date(dateMs).toLocaleDateString(i18n.language, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -86,7 +87,8 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
     const parts: string[] = [];
     if (sermon.dateMs) parts.push(formatDate(sermon.dateMs));
     if (sermon.location) parts.push(escapeHtml(sermon.location));
-    if (sermon.traductionName) parts.push(`Traduction: ${escapeHtml(sermon.traductionName)}`);
+    if (sermon.traductionName)
+        parts.push(`${i18n.t('Traduction:')} ${escapeHtml(sermon.traductionName)}`);
     if (parts.length > 0) meta = parts.join(' — ');
 
     try {
@@ -162,7 +164,7 @@ function renderParagraphWithMark(fullContent: string, snippet: string, color: st
     const before = escapeHtml(fullContent.slice(0, idx));
     const marked = escapeHtml(fullContent.slice(idx, idx + snippet.length));
     const after = escapeHtml(fullContent.slice(idx + snippet.length));
-    return `${before}<mark style="background:${escapeHtml(color)}40;">${marked}</mark>${after}`;
+    return `${before}<mark style="background:${escapeHtml(color)}30;">${marked}</mark>${after}`;
 }
 
 function renderHighlightCard(
@@ -172,13 +174,15 @@ function renderHighlightCard(
     const fullContent = paragraphContents.get(h.paragraphIndex);
     const lines: string[] = [`<div class="highlight-card">`];
 
-    // Header: color dot + paragraph number
-    lines.push(
-        `<div class="highlight-header">` +
-            `<span class="color-dot" style="background:${escapeHtml(h.color)};"></span>` +
-            (h.paragraphIndex > 0 ? `<span class="paragraph-num">${h.paragraphIndex}</span>` : '') +
-            `</div>`,
-    );
+    // Left color accent is handled by border-left in CSS via inline style
+    lines[0] = `<div class="highlight-card" style="border-left: 3px solid ${escapeHtml(h.color)};">`;
+
+    // Header: paragraph number
+    if (h.paragraphIndex > 0) {
+        lines.push(
+            `<div class="highlight-header"><span class="paragraph-num">&sect;${h.paragraphIndex}</span></div>`,
+        );
+    }
 
     // Content: full paragraph with mark, or just the snippet
     if (fullContent) {
@@ -187,12 +191,12 @@ function renderHighlightCard(
         );
     } else {
         lines.push(
-            `<p class="highlight-snippet"><mark style="background:${escapeHtml(h.color)}40;">${escapeHtml(h.textSnippet)}</mark></p>`,
+            `<p class="highlight-snippet"><mark style="background:${escapeHtml(h.color)}30;">${escapeHtml(h.textSnippet)}</mark></p>`,
         );
     }
 
     if (h.comment) {
-        lines.push(`<p class="highlight-comment">${escapeHtml(h.comment)}</p>`);
+        lines.push(`<div class="highlight-comment">${escapeHtml(h.comment)}</div>`);
     }
 
     lines.push(`</div>`);
@@ -229,30 +233,35 @@ export async function buildHighlightsExportHtml(items: HighlightItem[]): Promise
         sections.push({ context, highlights });
     }
 
+    const title = i18n.t('Soulignages');
     const sectionHtml = sections.map(renderSection).join('\n');
 
     return `<!DOCTYPE html>
 <html><head>
 <meta charset="utf-8">
-<title>Soulignages</title>
+<title>${escapeHtml(title)}</title>
 <style>
-  body { font-family: sans-serif; font-size: 14px; padding: 20px; color: #333; line-height: 1.6; }
-  h1 { border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 24px; }
-  .doc-section { margin-bottom: 32px; }
-  .doc-header { text-align: center; padding: 12px 0 8px; border-bottom: 1px solid #ddd; margin-bottom: 12px; }
-  .doc-header h2 { font-size: 1.3em; font-weight: 600; margin: 0 0 4px; }
-  .doc-meta { font-size: 0.9em; color: #6b7280; margin: 2px 0; }
-  .highlight-card { padding: 10px 12px; margin: 8px 0; border: 1px solid #e6e6e6; border-radius: 4px; page-break-inside: avoid; }
-  .highlight-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-  .color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; border: 1px solid #ccc; }
-  .paragraph-num { font-family: monospace; font-size: 0.85em; color: #6b7280; font-weight: 600; }
-  .paragraph-content { margin: 0; line-height: 1.8; white-space: pre-wrap; }
-  .highlight-snippet { margin: 0; line-height: 1.8; }
-  .highlight-comment { margin: 6px 0 0; font-size: 0.85em; color: #666; font-style: italic; }
-  mark { padding: 1px 2px; border-radius: 2px; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; padding: 32px 24px; color: #1a1a1a; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+  h1 { font-size: 1.5em; font-weight: 700; padding-bottom: 10px; margin-bottom: 28px; border-bottom: 2px solid #e5e7eb; }
+  .doc-section { margin-bottom: 36px; }
+  .doc-header { padding: 10px 16px; margin-bottom: 14px; background: #f8f9fa; border-radius: 6px; }
+  .doc-header h2 { font-size: 1.1em; font-weight: 600; margin: 0 0 2px; }
+  .doc-meta { font-size: 0.85em; color: #6b7280; }
+  .highlight-card { padding: 12px 16px; margin: 10px 0; background: #fff; border: 1px solid #f0f0f0; border-radius: 6px; page-break-inside: avoid; }
+  .highlight-header { margin-bottom: 6px; }
+  .paragraph-num { font-size: 0.8em; color: #9ca3af; font-weight: 600; letter-spacing: 0.02em; }
+  .paragraph-content { margin: 0; line-height: 1.8; white-space: pre-wrap; color: #374151; }
+  .highlight-snippet { margin: 0; line-height: 1.8; color: #374151; }
+  .highlight-comment { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f3f4f6; font-size: 0.85em; color: #6b7280; font-style: italic; }
+  mark { padding: 1px 3px; border-radius: 3px; }
+  @media print {
+    body { padding: 16px; }
+    .highlight-card { break-inside: avoid; }
+  }
 </style>
 </head><body>
-<h1>Soulignages</h1>
+<h1>${escapeHtml(title)}</h1>
 ${sectionHtml}
 </body></html>`;
 }

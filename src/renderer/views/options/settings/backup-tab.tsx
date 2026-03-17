@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Avatar, Button, Card, Progress, Space, Spin, Switch, Tag, Typography } from 'antd';
+import {
+    Alert,
+    Avatar,
+    Button,
+    Card,
+    Popconfirm,
+    Progress,
+    Space,
+    Spin,
+    Switch,
+    Tag,
+    Typography,
+} from 'antd';
 import {
     CheckCircleOutlined,
     CloudOutlined,
     LoadingOutlined,
     LoginOutlined,
+    LogoutOutlined,
     PauseCircleOutlined,
     UserOutlined,
 } from '@ant-design/icons';
@@ -92,6 +105,24 @@ export default function BackupTab() {
         });
     }, [status]);
 
+    const handleLogout = useCallback(() => {
+        setLoading(true);
+        window.api.backup
+            .logout()
+            .then(() => {
+                setStatus(undefined);
+                setSyncing(false);
+                setSyncError(null);
+                message.success(t('Déconnexion réussie'));
+            })
+            .catch(() => {
+                message.error(
+                    t("Une erreur s'est produite lors de la déconnexion, réessayez plus tard"),
+                );
+            })
+            .finally(() => setLoading(false));
+    }, [setSyncing]);
+
     if (!fetchedStatus) {
         return (
             <div style={{ padding: 24, textAlign: 'center' }}>
@@ -169,6 +200,21 @@ export default function BackupTab() {
                     ) : (
                         <Tag icon={<PauseCircleOutlined />}>{t('En pause')}</Tag>
                     )}
+                </div>
+                <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Popconfirm
+                        title={t('Se déconnecter de Google ?')}
+                        description={t(
+                            'La synchronisation sera arrêtée et les données de connexion supprimées. Vos données locales seront conservées.',
+                        )}
+                        onConfirm={handleLogout}
+                        okText={t('Oui')}
+                        cancelText={t('Annuler')}
+                    >
+                        <Button danger size="small" icon={<LogoutOutlined />} loading={loading}>
+                            {t('Déconnexion')}
+                        </Button>
+                    </Popconfirm>
                 </div>
             </Card>
 

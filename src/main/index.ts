@@ -3,6 +3,7 @@ import '@main/lib/sentry';
 import { app, BrowserWindow, session, shell } from 'electron';
 import { join } from 'node:path';
 import { is } from '@electron-toolkit/utils';
+import { APP_NAME } from '@shared/constants';
 import { initializeIpc } from '@main/ipc/register';
 import { setMainWindow } from '@main/lib/window';
 import MenuBuilder from '@main/lib/menu';
@@ -51,7 +52,7 @@ function createWindow(): void {
         height: 800,
         minWidth: 933,
         minHeight: 572,
-        title: 'Wmb Table',
+        title: APP_NAME,
         backgroundColor: '#001529',
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),

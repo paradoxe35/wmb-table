@@ -370,6 +370,17 @@ const en: Record<string, string> = {
     "Une erreur s'est produite lors de la connexion, réessayez plus tard":
         'An error occurred during sign-in, please try again later',
     'Synchronisation activée': 'Sync enabled',
+    Déconnexion: 'Sign out',
+    'Se déconnecter de Google ?': 'Sign out from Google?',
+    'La synchronisation sera arrêtée et les données de connexion supprimées. Vos données locales seront conservées.':
+        'Sync will be stopped and sign-in data deleted. Your local data will be kept.',
+    'Déconnexion réussie': 'Successfully signed out',
+    "Une erreur s'est produite lors de la déconnexion, réessayez plus tard":
+        'An error occurred during sign-out, please try again later',
+    'Vous êtes connecté maintenant et pouvez fermer cette page.':
+        'You are now connected and can close this page.',
+    "L'autorisation a échoué. Veuillez réessayer depuis l'application.":
+        'Authorization failed. Please try again from the application.',
     'Début de la récupération des données': 'Starting data recovery',
     'Préparation de la restauration des données': 'Preparing data restoration',
     "Une erreur s'est produite lors de la restauration, veuillez réessayer plus tard":

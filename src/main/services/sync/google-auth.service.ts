@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { createServer, type Server } from 'node:http';
 import { app, shell } from 'electron';
@@ -6,6 +6,7 @@ import { getAppDataDir } from '@main/lib/app-paths';
 import { OAuth2Client } from 'google-auth-library';
 import { oauth2 } from '@googleapis/oauth2';
 import log from 'electron-log';
+import { authResultPage } from './auth-result-page';
 
 const SCOPES = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -89,6 +90,42 @@ export async function getExistingClient(): Promise<OAuth2Client | null> {
 }
 
 /**
+ * Revoke the Google OAuth token and delete the saved token file.
+ * Best-effort: token revocation failure does not prevent local cleanup.
+ */
+export async function revokeAndDeleteToken(): Promise<void> {
+    const tokenPath = getTokenPath();
+
+    // Try to revoke the token with Google
+    try {
+        if (existsSync(tokenPath)) {
+            const credentials = loadCredentials();
+            const client = createOAuth2Client(credentials, 'http://localhost');
+            const token = JSON.parse(readFileSync(tokenPath, 'utf-8'));
+            client.setCredentials(token);
+
+            const revokeToken = token.access_token || token.refresh_token;
+            if (revokeToken) {
+                await client.revokeToken(revokeToken);
+                log.info('Google OAuth token revoked');
+            }
+        }
+    } catch (err) {
+        log.warn('Failed to revoke Google token (continuing with local cleanup):', err);
+    }
+
+    // Always delete the local token file
+    try {
+        if (existsSync(tokenPath)) {
+            unlinkSync(tokenPath);
+            log.info('Google token file deleted');
+        }
+    } catch (err) {
+        log.warn('Failed to delete token file:', err);
+    }
+}
+
+/**
  * Verify that the token includes all required scopes.
  * Ensures no required scopes were denied by the user.
  */
@@ -164,52 +201,6 @@ export async function authenticateWithGoogle(): Promise<{
     } finally {
         server.close();
     }
-}
-
-function authResultPage(success: boolean): string {
-    const title = success ? 'Connexion réussie' : 'Échec de la connexion';
-    const message = success
-        ? "Vous pouvez fermer cette fenêtre et retourner à l'application."
-        : "L'autorisation a échoué. Veuillez réessayer depuis l'application.";
-    const color = success ? '#52c41a' : '#ff4d4f';
-    const icon = success ? '✓' : '✗';
-
-    return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>${title}</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            display: flex; align-items: center; justify-content: center;
-            min-height: 100vh; background: #f5f5f5; color: #333;
-        }
-        .card {
-            background: #fff; border-radius: 12px; padding: 48px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center;
-            max-width: 420px;
-        }
-        .icon {
-            width: 64px; height: 64px; border-radius: 50%;
-            background: ${color}; color: #fff; font-size: 32px;
-            display: inline-flex; align-items: center; justify-content: center;
-            margin-bottom: 24px;
-        }
-        h1 { font-size: 22px; margin-bottom: 12px; }
-        p { font-size: 15px; color: #666; line-height: 1.5; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="icon">${icon}</div>
-        <h1>${title}</h1>
-        <p>${message}</p>
-    </div>
-</body>
-</html>`;
 }
 
 function startAuthServer(): Promise<{

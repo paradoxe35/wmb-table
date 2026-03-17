@@ -65,6 +65,10 @@ export function upsertStatus(data: Omit<BackupStatus, 'id'>): BackupStatus {
     }
 }
 
+export function deleteStatus(): void {
+    getDb().delete(backupStatus).run();
+}
+
 export function getReminder(): boolean {
     const status = getStatus();
     if (!status || !status.active) return false;

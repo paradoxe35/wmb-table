@@ -7,7 +7,7 @@ import type { OAuth2Client } from 'google-auth-library';
 import log from 'electron-log';
 
 import { getSyncDb, getMainSqlite } from '@main/database';
-import { syncState, processedChanges, applyFailures } from '@main/database/sync-schema';
+import { changeLogs, syncState, processedChanges, applyFailures } from '@main/database/sync-schema';
 import {
     getUnsyncedChanges,
     markSyncedIfNotChanged,
@@ -48,6 +48,19 @@ let affectedTables: AffectedTables = {};
 // -----------------------------------------------------------------------
 // Public API
 // -----------------------------------------------------------------------
+
+/**
+ * Clear all sync tracking data (change logs, sync state, processed changes, failures).
+ * Called during logout to ensure a clean slate.
+ */
+export function clearSyncData(): void {
+    const db = getSyncDb();
+    db.delete(changeLogs).run();
+    db.delete(syncState).run();
+    db.delete(processedChanges).run();
+    db.delete(applyFailures).run();
+    log.info('Sync data cleared');
+}
 
 export function startSynchronizer(authClient: OAuth2Client): void {
     if (syncTimer) return;
