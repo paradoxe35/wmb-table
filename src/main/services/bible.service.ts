@@ -149,7 +149,7 @@ export function getDefaultBibleVersion(langCode: string): BibleVersion | null {
  * Local: bundled in resources/database/
  * Remote: downloaded to ~/.wmb-table/databases/bibles/
  */
-function resolveBiblePath(version: BibleVersion): string {
+export function resolveBiblePath(version: BibleVersion): string {
     if (version.type === 'local') {
         return join(getResourceDir(), version.fileName);
     }

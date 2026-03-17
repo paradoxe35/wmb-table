@@ -33,12 +33,14 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                 paragraphIndex: z.number().int().min(0),
             }),
             execute: async ({
-                subjectId,
-                sermonId,
+                subjectId: rawSubjectId,
+                sermonId: rawSermonId,
                 languageCode,
                 translationId,
                 paragraphIndex,
             }) => {
+                const subjectId = rawSubjectId.trim();
+                const sermonId = rawSermonId.trim();
                 const lang = languageCode ?? defaultLanguageCode;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;

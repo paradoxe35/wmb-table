@@ -33,7 +33,8 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                     .optional()
                     .describe('Maximum number of lines to return (default 50, max 100)'),
             }),
-            execute: async ({ documentId, startLine = 0, maxLines = 50 }) => {
+            execute: async ({ documentId: rawDocumentId, startLine = 0, maxLines = 50 }) => {
+                const documentId = rawDocumentId.trim();
                 const doc = await customDocsRepo.getCustomDocumentContent(documentId);
                 if (!doc) return { error: `Document "${documentId}" not found.` };
                 if (!doc.content) return { error: 'Document has no text content.' };

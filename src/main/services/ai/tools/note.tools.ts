@@ -15,7 +15,8 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
         getNoteById: {
             description: 'Get a note with its full content and references by id.',
             inputSchema: z.object({ noteId: z.string() }),
-            execute: async ({ noteId }) => {
+            execute: async ({ noteId: rawNoteId }) => {
+                const noteId = rawNoteId.trim();
                 const note = notesRepo.getById(noteId);
                 if (!note) return { error: `Note "${noteId}" not found.` };
                 return note;
@@ -45,7 +46,8 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
         updateNoteContent: {
             description: 'Replace the content of a note.',
             inputSchema: z.object({ noteId: z.string(), content: z.string() }),
-            execute: async ({ noteId, content }) => {
+            execute: async ({ noteId: rawNoteId, content }) => {
+                const noteId = rawNoteId.trim();
                 const note = notesRepo.getById(noteId);
                 if (!note) return { error: `Note "${noteId}" not found.` };
 

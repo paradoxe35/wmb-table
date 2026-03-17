@@ -1,32 +1,26 @@
 import Database from 'better-sqlite3';
-import { app } from 'electron';
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-import { getDatabaseDir } from '@main/lib/app-paths';
 import * as bibleService from '@main/services/bible.service';
+import { strNormalize } from '@shared/searchable';
 import type { BibleBook, BibleSearchResult } from '@shared/types';
 
-function resolveBiblePath(abbreviation?: string, languageCode?: string): string | null {
+function resolveVersionDbPath(abbreviation?: string, languageCode?: string): string | null {
+    const abbr = abbreviation?.trim().toLowerCase();
     const versions = bibleService.getAllBibleVersions();
+
     const version =
-        (abbreviation
-            ? versions.find((item) => item.abbreviation === abbreviation)
+        (abbr
+            ? versions.find((v) => v.abbreviation.toLowerCase() === abbr)
             : languageCode
               ? versions.find(
-                    (item) => item.langCode === languageCode && bibleService.isBibleAvailable(item),
+                    (v) => v.langCode === languageCode && bibleService.isBibleAvailable(v),
                 )
               : bibleService.getActiveVersion()) ?? null;
 
     if (!version) return null;
 
-    if (version.type === 'local') {
-        const resourceBase = app.isPackaged
-            ? join(process.resourcesPath, 'database')
-            : join(__dirname, '../../../../resources/database');
-        return join(resourceBase, version.fileName);
-    }
-
-    return join(getDatabaseDir(), 'bibles', version.fileName);
+    const dbPath = bibleService.resolveBiblePath(version);
+    return existsSync(dbPath) ? dbPath : null;
 }
 
 export function getAvailableVersions(languageCode: string) {
@@ -53,8 +47,8 @@ export function getPassage(input: {
     abbreviation?: string;
     languageCode?: string;
 }): BibleBook[] | { error: string } {
-    const dbPath = resolveBiblePath(input.abbreviation, input.languageCode);
-    if (!dbPath || !existsSync(dbPath)) {
+    const dbPath = resolveVersionDbPath(input.abbreviation, input.languageCode);
+    if (!dbPath) {
         return {
             error: `No Bible found${input.abbreviation ? ` for abbreviation "${input.abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
         };
@@ -75,7 +69,6 @@ export function getPassage(input: {
 
     const db = new Database(dbPath, { readonly: true });
     try {
-        // Resolve book: try book_name (case-insensitive) first, then book code
         const bookCode = resolveBookCode(db, input.book);
         if (!bookCode) {
             const available = db
@@ -90,13 +83,14 @@ export function getPassage(input: {
         }
 
         if (!fromVerse) {
-            const stmt = db.prepare(
-                `SELECT id, book_name as bookName, book, testament, chapter, verse, content
-                 FROM bible_verses
-                 WHERE book = ? AND chapter = ?
-                 ORDER BY CAST(verse as integer)`,
-            );
-            const rows = stmt.all(bookCode, chapter) as BibleBook[];
+            const rows = db
+                .prepare(
+                    `SELECT id, book_name as bookName, book, testament, chapter, verse, content
+                     FROM bible_verses
+                     WHERE book = ? AND chapter = ?
+                     ORDER BY CAST(verse as integer)`,
+                )
+                .all(bookCode, chapter) as BibleBook[];
             if (rows.length === 0) {
                 return {
                     error: `No verses found for chapter ${chapter}. The book may have fewer chapters.`,
@@ -105,18 +99,14 @@ export function getPassage(input: {
             return rows;
         }
 
-        const stmt = db.prepare(
-            `SELECT id, book_name as bookName, book, testament, chapter, verse, content
-             FROM bible_verses
-             WHERE book = ? AND chapter = ? AND CAST(verse as integer) BETWEEN ? AND ?
-             ORDER BY CAST(verse as integer)`,
-        );
-        const rows = stmt.all(
-            bookCode,
-            chapter,
-            Number(fromVerse),
-            Number(toVerse ?? fromVerse),
-        ) as BibleBook[];
+        const rows = db
+            .prepare(
+                `SELECT id, book_name as bookName, book, testament, chapter, verse, content
+                 FROM bible_verses
+                 WHERE book = ? AND chapter = ? AND CAST(verse as integer) BETWEEN ? AND ?
+                 ORDER BY CAST(verse as integer)`,
+            )
+            .all(bookCode, chapter, Number(fromVerse), Number(toVerse ?? fromVerse)) as BibleBook[];
         if (rows.length === 0) {
             return {
                 error: `No verses found for chapter ${chapter}, verses ${fromVerse}-${toVerse ?? fromVerse}.`,
@@ -130,23 +120,30 @@ export function getPassage(input: {
 
 /** Resolve a book name or code to the internal book code used in the DB. */
 function resolveBookCode(db: Database.Database, book: string): string | null {
+    const trimmed = book.trim();
+
     // Try exact match on book code first (e.g. "01O", "43N")
-    const byCode = db.prepare('SELECT book FROM bible_verses WHERE book = ? LIMIT 1').get(book) as
-        | { book: string }
-        | undefined;
+    const byCode = db
+        .prepare('SELECT book FROM bible_verses WHERE book = ? LIMIT 1')
+        .get(trimmed) as { book: string } | undefined;
     if (byCode) return byCode.book;
 
-    // Try case-insensitive match on book_name (e.g. "Genesis", "Jean", "Matthieu")
-    const byName = db
-        .prepare('SELECT book FROM bible_verses WHERE book_name = ? COLLATE NOCASE LIMIT 1')
-        .get(book) as { book: string } | undefined;
-    if (byName) return byName.book;
+    // Normalize input the same way we do for sermon search (strips accents + lowercases)
+    const normalized = strNormalize(trimmed);
 
-    // Try partial match (e.g. "Rev" matches "Revelation", "Apo" matches "Apocalypse")
-    const byPartial = db
-        .prepare('SELECT book FROM bible_verses WHERE book_name LIKE ? COLLATE NOCASE LIMIT 1')
-        .get(`${book}%`) as { book: string } | undefined;
-    if (byPartial) return byPartial.book;
+    // Load all distinct book names and match with normalization
+    const allBooks = db.prepare('SELECT DISTINCT book, book_name FROM bible_verses').all() as {
+        book: string;
+        book_name: string;
+    }[];
+
+    // Exact normalized match (e.g. "revelation" matches "Révélation", "apocalypse" matches "Apocalypse")
+    const exactMatch = allBooks.find((r) => strNormalize(r.book_name) === normalized);
+    if (exactMatch) return exactMatch.book;
+
+    // Prefix normalized match (e.g. "rev" matches "Révélation", "apo" matches "Apocalypse")
+    const prefixMatch = allBooks.find((r) => strNormalize(r.book_name).startsWith(normalized));
+    if (prefixMatch) return prefixMatch.book;
 
     return null;
 }
@@ -160,8 +157,8 @@ export function searchVerses(input: {
 }): BibleSearchResult | { error: string } {
     const maxResults = Math.min(input.limit ?? 20, 40);
 
-    const dbPath = resolveBiblePath(input.abbreviation, input.languageCode);
-    if (!dbPath || !existsSync(dbPath)) {
+    const dbPath = resolveVersionDbPath(input.abbreviation, input.languageCode);
+    if (!dbPath) {
         return {
             error: `No Bible found${input.abbreviation ? ` for abbreviation "${input.abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
         };

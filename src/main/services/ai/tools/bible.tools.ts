@@ -81,7 +81,8 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                 fromVerse: z.string(),
                 toVerse: z.string().optional(),
             }),
-            execute: async ({ subjectId, languageCode, ...rest }) => {
+            execute: async ({ subjectId: rawSubjectId, languageCode, ...rest }) => {
+                const subjectId = rawSubjectId.trim();
                 const lang = languageCode ?? defaultLanguageCode;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;

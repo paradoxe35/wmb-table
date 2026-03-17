@@ -66,12 +66,13 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 maxParagraphs: z.number().int().min(1).max(50).optional(),
             }),
             execute: async ({
-                sermonId,
+                sermonId: rawSermonId,
                 languageCode,
                 translationId,
                 startParagraph = 0,
                 maxParagraphs = 15,
             }) => {
+                const sermonId = rawSermonId.trim();
                 const lang = languageCode ?? defaultLanguageCode;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
