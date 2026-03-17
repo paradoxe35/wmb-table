@@ -198,6 +198,7 @@ const api = {
         toggleStatus: (active: boolean) => invoke(BackupChannels.toggleStatus, active),
         getReminder: () => invoke(BackupChannels.getReminder),
         login: () => invoke(BackupChannels.login),
+        logout: () => invoke(BackupChannels.logout),
     },
 
     sync: {

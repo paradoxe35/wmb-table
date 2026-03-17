@@ -1,4 +1,5 @@
 import * as referenceDataService from '@main/services/reference-data.service';
+import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
 import { isParagraphReference, type SubjectDocumentItem } from '@shared/types';
 
@@ -7,7 +8,7 @@ import { isParagraphReference, type SubjectDocumentItem } from '@shared/types';
 // ---------------------------------------------------------------------------
 
 function formatDate(dateMs: number): string {
-    return new Date(dateMs).toLocaleDateString('fr-FR', {
+    return new Date(dateMs).toLocaleDateString(i18n.language, {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
@@ -73,14 +74,14 @@ export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[
 
     if (sermonRefs.length > 0) {
         if (hasBothTypes) {
-            body += `<h2>Prédications</h2>\n`;
+            body += `<h2>${escapeHtml(i18n.t('Prédications'))}</h2>\n`;
         }
         body += sermonRefs.map(renderSermonRef).join('\n');
     }
 
     if (bibleRefs.length > 0) {
         if (hasBothTypes) {
-            body += `<h2>Bible</h2>\n`;
+            body += `<h2>${escapeHtml(i18n.t('Bible'))}</h2>\n`;
         }
         body += bibleRefs.map(renderBibleRef).join('\n');
     }

@@ -1,10 +1,14 @@
 import { BackupChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as backupRepo from '@main/database/repositories/backup.repository';
-import { authenticateWithGoogle } from '@main/services/sync/google-auth.service';
+import {
+    authenticateWithGoogle,
+    revokeAndDeleteToken,
+} from '@main/services/sync/google-auth.service';
 import {
     initializeSynchronizer,
     stopSynchronizer,
+    clearSyncData,
     tryStartSynchronizer,
 } from '@main/services/sync/synchronizer';
 
@@ -41,5 +45,12 @@ export function registerBackupHandlers(): void {
         initializeSynchronizer(result.client);
 
         return backupRepo.getStatus();
+    });
+
+    registerHandler(BackupChannels.logout, async () => {
+        stopSynchronizer();
+        await revokeAndDeleteToken();
+        clearSyncData();
+        backupRepo.deleteStatus();
     });
 }

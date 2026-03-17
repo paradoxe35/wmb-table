@@ -8,7 +8,9 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
             description: 'List user-imported custom documents (PDF, text files, etc.).',
             inputSchema: z.object({}),
             execute: async () => {
-                return customDocsRepo.getCustomDocuments();
+                const docs = customDocsRepo.getCustomDocuments();
+                if (docs.length === 0) return { error: 'No custom documents found.' };
+                return docs;
             },
         },
         getCustomDocumentContent: {
@@ -33,8 +35,8 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
             }),
             execute: async ({ documentId, startLine = 0, maxLines = 50 }) => {
                 const doc = await customDocsRepo.getCustomDocumentContent(documentId);
-                if (!doc) return { error: 'Document introuvable.' };
-                if (typeof doc.content !== 'string') return doc;
+                if (!doc) return { error: `Document "${documentId}" not found.` };
+                if (!doc.content) return { error: 'Document has no text content.' };
 
                 const lines = doc.content.split('\n');
                 const totalLines = lines.length;

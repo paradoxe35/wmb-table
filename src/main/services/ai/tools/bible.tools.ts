@@ -2,6 +2,7 @@ import { z } from 'zod';
 import * as aiBibleRepo from '@main/database/repositories/ai-bible.repository';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import type { AiToolDefinition } from './types';
+import { validateLanguage } from './shared';
 
 export function buildBibleTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
     return {
@@ -9,23 +10,36 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
             description:
                 'List Bible versions available for a language or the current active version.',
             inputSchema: z.object({ languageCode: z.string().optional() }),
-            execute: async ({ languageCode }) =>
-                aiBibleRepo.getAvailableVersions(languageCode ?? defaultLanguageCode),
+            execute: async ({ languageCode }) => {
+                const lang = languageCode ?? defaultLanguageCode;
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
+                return aiBibleRepo.getAvailableVersions(lang);
+            },
         },
         getBiblePassage: {
             description:
-                'Retrieve Bible verses. Provide book name, chapter number, and optionally a verse range. ' +
+                'Retrieve Bible verses. Provide the book name as it appears in the Bible ' +
+                '(e.g. "Genesis", "Revelation", "Jean", "Matthieu", "Apocalypse"). ' +
+                'Provide chapter and verse numbers as digits. ' +
                 'Use getBibleVersions first to find available abbreviations if needed.',
             inputSchema: z.object({
-                book: z.string().describe('Book name (e.g. "Genesis", "Jean", "Matthieu")'),
-                chapter: z.string().describe('Chapter number'),
-                fromVerse: z.string().optional().describe('Starting verse number'),
-                toVerse: z.string().optional().describe('Ending verse number'),
+                book: z
+                    .string()
+                    .describe(
+                        'Book name as written in the Bible (e.g. "Genesis", "Jean", "Matthieu", "Apocalypse")',
+                    ),
+                chapter: z.string().describe('Chapter number (e.g. "3")'),
+                fromVerse: z.string().optional().describe('Starting verse number (e.g. "16")'),
+                toVerse: z.string().optional().describe('Ending verse number (e.g. "18")'),
                 abbreviation: z.string().optional().describe('Bible version abbreviation'),
                 languageCode: z.string().optional(),
             }),
-            execute: async (input) => {
-                return aiBibleRepo.getPassage(input);
+            execute: async ({ languageCode, ...rest }) => {
+                const lang = languageCode ?? defaultLanguageCode;
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
+                return aiBibleRepo.getPassage({ ...rest, languageCode: lang });
             },
         },
         searchBible: {
@@ -48,8 +62,11 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                     .optional()
                     .describe('Max results (default 20)'),
             }),
-            execute: async (input) => {
-                return aiBibleRepo.searchVerses(input);
+            execute: async ({ languageCode, ...rest }) => {
+                const lang = languageCode ?? defaultLanguageCode;
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
+                return aiBibleRepo.searchVerses({ ...rest, languageCode: lang });
             },
         },
         addBibleReferenceToSubject: {
@@ -64,9 +81,15 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                 fromVerse: z.string(),
                 toVerse: z.string().optional(),
             }),
-            execute: async ({ subjectId, ...rest }) => {
-                const verses = aiBibleRepo.getPassage(rest);
-                const verse = verses[0];
+            execute: async ({ subjectId, languageCode, ...rest }) => {
+                const lang = languageCode ?? defaultLanguageCode;
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
+
+                const result = aiBibleRepo.getPassage({ ...rest, languageCode: lang });
+                if ('error' in result) return result;
+
+                const verse = result[0];
                 if (!verse) return { error: 'Passage biblique introuvable.' };
 
                 return subjectsRepo.createItem(
@@ -75,13 +98,13 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                     {
                         paragraphIndex: 0,
                         translationId: 0,
-                        languageCode: rest.languageCode ?? defaultLanguageCode,
+                        languageCode: lang,
                         documentType: 'bible',
                         bibleBook: verse.book,
                         bibleChapter: verse.chapter,
                         bibleVersionAbbreviation: rest.abbreviation,
                     },
-                    verses
+                    result
                         .map(
                             (item) =>
                                 `${item.bookName} ${item.chapter}:${item.verse} ${item.content}`,

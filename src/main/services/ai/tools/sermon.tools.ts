@@ -20,13 +20,17 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 limit: z.number().int().min(1).max(20).optional(),
             }),
             execute: async ({ query, languageCode, limit = 10 }) => {
+                const lang = languageCode ?? defaultLanguageCode;
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
+
                 const words = query
                     .trim()
                     .split(/\s+/)
                     .filter((w: string) => w.length >= 2);
                 const patterns = words.map((w: string) => simpleRegExp(w));
                 const sermons = referenceDataService
-                    .getSermonListForLanguage(languageCode ?? defaultLanguageCode)
+                    .getSermonListForLanguage(lang)
                     .filter((sermon) => {
                         const fields = strNormalize(
                             [
@@ -69,6 +73,8 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 maxParagraphs = 15,
             }) => {
                 const lang = languageCode ?? defaultLanguageCode;
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
 
                 // Try exact match with translationId first
                 let meta = translationId
@@ -95,9 +101,6 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 if (!meta) {
                     return { error: `Sermon "${sermonId}" not found for language "${lang}".` };
                 }
-
-                const langError = validateLanguage(lang);
-                if (langError) return langError;
 
                 try {
                     const paragraphs = await tantivyService.getSermonParagraphs(

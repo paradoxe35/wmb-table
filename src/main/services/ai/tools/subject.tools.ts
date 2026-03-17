@@ -40,6 +40,9 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                 paragraphIndex,
             }) => {
                 const lang = languageCode ?? defaultLanguageCode;
+                const langError = validateLanguage(lang);
+                if (langError) return langError;
+
                 const meta =
                     referenceDataService.getSermonMeta(
                         translationId ?? inferTranslationId(sermonId, lang),
@@ -50,9 +53,6 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                         return sermon.sermonId === sermonId;
                     });
                 if (!meta) return { error: 'Sermon introuvable.' };
-
-                const langError = validateLanguage(lang);
-                if (langError) return langError;
 
                 let paragraphs;
                 try {

@@ -19,7 +19,7 @@ function urlTransform(url: string): string {
 
 const MAX_REASONING_LINES = 50;
 
-function ReasoningBlock({ messageId, isActive }: { messageId: string; isActive: boolean }) {
+function ReasoningBlock({ messageId }: { messageId: string; isActive: boolean }) {
     const { t } = useTranslation();
     const reasoning = useAiChatStore((s) => s.reasoningByMessage[messageId]);
     const [collapsed, setCollapsed] = useState(true);
@@ -39,7 +39,6 @@ function ReasoningBlock({ messageId, isActive }: { messageId: string; isActive: 
                 <Text type="secondary" style={{ fontSize: '0.8em' }}>
                     {collapsed ? t('Voir le raisonnement') : t('Masquer le raisonnement')}
                 </Text>
-                {isActive && <LoadingOutlined spin style={{ fontSize: 10 }} />}
             </div>
             {!collapsed && (
                 <div className="ai-reasoning__content">
@@ -77,30 +76,14 @@ function ToolResultsList({ results, isActive }: { results: AiToolResult[]; isAct
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
 
-    if (isActive) {
-        const reversed = [...results].reverse();
-        const visible =
-            results.length > VISIBLE_TOOL_RESULTS
-                ? reversed.slice(0, VISIBLE_TOOL_RESULTS)
-                : reversed;
-
-        return (
-            <div className="ai-chat__tool-results">
-                {visible.map((result) => (
-                    <ChatToolResult
-                        key={`${result.toolCallId}-${result.name}`}
-                        name={result.name}
-                    />
-                ))}
-                <LoadingOutlined spin style={{ fontSize: 10, opacity: 0.5 }} />
-            </div>
-        );
-    }
-
-    const grouped = groupToolResults(results);
+    const grouped = groupToolResults([...results].reverse());
     const shouldCollapse = grouped.length > VISIBLE_TOOL_RESULTS;
     const visible = shouldCollapse && !expanded ? grouped.slice(0, VISIBLE_TOOL_RESULTS) : grouped;
     const hiddenCount = grouped.length - VISIBLE_TOOL_RESULTS;
+
+    if (!isActive) {
+        return null;
+    }
 
     return (
         <div className="ai-chat__tool-results">
@@ -149,6 +132,7 @@ function MessageBubble({
             <Tooltip title={providerTooltip} placement="top">
                 <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
             </Tooltip>
+
             <div
                 className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
@@ -164,11 +148,13 @@ function MessageBubble({
                         </Markdown>
                     </div>
                 )}
+
                 {isActive && !isWaiting ? (
                     <div className="ai-chat__typing-indicator">
                         <LoadingOutlined spin style={{ fontSize: 12 }} />
                     </div>
                 ) : null}
+
                 {isActive && message.toolResults.length > 0 ? (
                     <ToolResultsList results={message.toolResults} isActive={isActive} />
                 ) : null}
