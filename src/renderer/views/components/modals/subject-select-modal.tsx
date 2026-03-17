@@ -1,7 +1,7 @@
-import { Divider, Input, Modal, Space, message } from 'antd';
+import { Empty, Input, Modal, message } from 'antd';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { SubjectDocument, SubjectRefTree } from '@shared/types';
+import type { SubjectDocument, SubjectRefTree } from '@shared/types';
 import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
@@ -13,56 +13,63 @@ export function SubjectSelectModal() {
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
     const activeTab = useSermonStore(selectActiveTab);
-
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
-
     const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
-
     const { visible, hide, setVisible } = useModalVisible();
-
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
     const subjects = useSubjectsStore((s) => s.subjects);
 
-    const onSelectItem = (name: string) => {
-        if (!documentRefTree.current) return;
+    const onSelectItem = useCallback(
+        (subjectId: string) => {
+            if (!documentRefTree.current) {
+                return;
+            }
 
-        const subject = subjects.find((s) => s.name === name);
-        if (!subject) return;
+            const subject = subjects.find((s) => s.id === subjectId);
+            if (!subject) {
+                return;
+            }
 
-        const ref = documentRefTree.current;
-        const documentHtmlTree = ref.documentHtmlTree ?? { tree: [] };
-        const textContent = ref.textContent ?? '';
+            const ref = documentRefTree.current;
+            const documentHtmlTree = ref.documentHtmlTree ?? { tree: [] };
+            const textContent = ref.textContent ?? '';
 
-        window.api.subjects
-            .createItem(
-                subject.id,
-                titleRef.current || '',
-                documentHtmlTree,
-                textContent,
-                ref.bible,
-                activeTab?.sermonId,
-            )
-            .then((item) => {
-                setPendingNavigation({
-                    documentTitle: item.documentTitle,
-                    documentHtmlTree: item.documentHtmlTree,
+            window.api.subjects
+                .createItem(
+                    subject.id,
+                    titleRef.current || '',
+                    documentHtmlTree,
+                    textContent,
+                    ref.bible,
+                    activeTab?.sermonId,
+                )
+                .then((item) => {
+                    setPendingNavigation({
+                        documentTitle: item.documentTitle,
+                        documentHtmlTree: item.documentHtmlTree,
+                    });
+                    window.dispatchEvent(
+                        new CustomEvent(SUBJECT_EVENT.focusSubject, {
+                            detail: { id: subject.id },
+                        }),
+                    );
+                    message.success(t('Ajouté au sujet'));
+                })
+                .catch(() => {
+                    message.error(t("Erreur lors de l'ajout au sujet"));
                 });
-                window.dispatchEvent(
-                    new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
-                );
-                message.success(t('Ajouté au sujet'));
-            })
-            .catch(() => {
-                message.error(t("Erreur lors de l'ajout au sujet"));
-            });
-        setVisible(false);
-    };
+            setVisible(false);
+        },
+        [subjects, titleRef, activeTab, setPendingNavigation, setVisible, t],
+    );
 
     const onSearch = useCallback(
         (value: string) => {
-            if (subjects.length) {
-                setDatas(subjects.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
+            if (!value.trim()) {
+                setDatas(subjects);
+                return;
             }
+            setDatas(subjects.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
         },
         [subjects],
     );
@@ -76,75 +83,52 @@ export function SubjectSelectModal() {
             documentRefTree.current = e.detail ?? undefined;
             setVisible(true);
         };
-
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);
         return () => {
             window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);
         };
     }, []);
+
     return (
         <Modal
-            title={
-                <Space orientation="horizontal">
-                    <span>{t('Choisir un sujet')}</span>
-                    <Search onSearch={onSearch} />
-                </Space>
-            }
-            footer={[]}
+            title={t('Ajouter au sujet')}
+            footer={null}
             open={visible}
-            onOk={hide}
             onCancel={hide}
+            width={420}
         >
-            <div style={{ overflow: 'auto', height: '300px' }}>
-                <ContentModal onSelectItem={onSelectItem} datas={datas} />
+            <Input.Search
+                placeholder={t('Rechercher...')}
+                allowClear
+                onSearch={onSearch}
+                onChange={(e) => onSearch(e.target.value)}
+                style={{ marginBottom: 12 }}
+            />
+            <div className="subject-select-list">
+                {datas.length === 0 ? (
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={t('Aucun sujet')}
+                        style={{ padding: '24px 0' }}
+                    />
+                ) : (
+                    datas.map((item) => (
+                        <SubjectSelectItem key={item.id} item={item} onSelect={onSelectItem} />
+                    ))
+                )}
             </div>
         </Modal>
     );
 }
 
-function ContentModal({
-    onSelectItem,
-    datas,
-}: {
-    onSelectItem: (name: string) => void;
-    datas: SubjectDocument[];
-}) {
-    return (
-        <>
-            {datas.map((item) => (
-                <ItemSubject key={item.name} item={item} onSelectItem={onSelectItem} />
-            ))}
-        </>
-    );
-}
-
-const ItemSubject: React.FC<{
+const SubjectSelectItem: React.FC<{
     item: SubjectDocument;
-    onSelectItem: (name: string) => void;
-    children?: React.ReactNode;
-}> = ({ item, onSelectItem }) => {
+    onSelect: (id: string) => void;
+}> = ({ item, onSelect }) => {
     return (
-        <>
-            <span
-                className={`smart-editable big`}
-                onClick={() => onSelectItem(item.name)}
-                title={item.name}
-            >
-                <div className="o-icon">
-                    <BookOutlined />
-                </div>
-                <b>{item.name}</b>
-            </span>
-            <Divider style={{ margin: '7px 0' }} />
-        </>
+        <div className="subject-select-item" onClick={() => onSelect(item.id)} title={item.name}>
+            <BookOutlined className="subject-select-item__icon" />
+            <span className="subject-select-item__name">{item.name}</span>
+        </div>
     );
 };
-
-function Search({ onSearch }: { onSearch: (value: string) => void }) {
-    const { t } = useTranslation();
-    return (
-        <Space orientation="horizontal">
-            <Input.Search placeholder={t('Recherche')} allowClear onSearch={onSearch} />
-        </Space>
-    );
-}

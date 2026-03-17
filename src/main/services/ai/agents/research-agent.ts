@@ -24,6 +24,7 @@ function buildResearchToolSubset(languageCode: string): Record<string, AiToolDef
         getSermonContent: sermonTools.getSermonContent,
         getBiblePassage: bibleTools.getBiblePassage,
         getBibleVersions: bibleTools.getBibleVersions,
+        searchBible: bibleTools.searchBible,
         getCustomDocuments: documentTools.getCustomDocuments,
         getCustomDocumentContent: documentTools.getCustomDocumentContent,
     };

@@ -1,6 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Empty, Input, Pagination, Popconfirm, Spin, Tag, Typography, message } from 'antd';
-import { BgColorsOutlined, DeleteOutlined, LoadingOutlined } from '@ant-design/icons';
+import {
+    Button,
+    Empty,
+    Input,
+    Pagination,
+    Popconfirm,
+    Spin,
+    Tag,
+    Tooltip,
+    Typography,
+    message,
+} from 'antd';
+import {
+    BgColorsOutlined,
+    DeleteOutlined,
+    FilePdfOutlined,
+    LoadingOutlined,
+} from '@ant-design/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type { DocumentType, HighlightItem, HighlightSearchResult } from '@shared/types';
@@ -217,7 +233,7 @@ function HighlightListItem({
     );
 }
 
-function HighlightsHeader({ total }: { total: number }) {
+function HighlightsHeader({ total, onExportPdf }: { total: number; onExportPdf: () => void }) {
     const { t } = useTranslation();
 
     return (
@@ -227,9 +243,20 @@ function HighlightsHeader({ total }: { total: number }) {
                 {t('Soulignages')}
             </Text>
             {total > 0 && (
-                <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                    ({total})
-                </Text>
+                <>
+                    <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                        ({total})
+                    </Text>
+                    <Tooltip title={t('Exporter en PDF')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<FilePdfOutlined />}
+                            onClick={onExportPdf}
+                            aria-label={t('Exporter en PDF')}
+                        />
+                    </Tooltip>
+                </>
             )}
         </div>
     );
@@ -345,10 +372,20 @@ export default function Highlights() {
         }
     }, []);
 
+    const handleExportPdf = useCallback(async () => {
+        try {
+            const langCode = activeLanguage?.split('-')[0].toLowerCase();
+            const filePath = await window.api.highlights.exportPdf(langCode);
+            if (filePath) message.success(t('PDF exporté avec succès'));
+        } catch {
+            message.error(t("Erreur lors de l'export PDF"));
+        }
+    }, [activeLanguage]);
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
             <div style={{ padding: '16px 12px 8px', flexShrink: 0 }}>
-                <HighlightsHeader total={total} />
+                <HighlightsHeader total={total} onExportPdf={handleExportPdf} />
                 <Input.Search
                     placeholder={t('Rechercher...')}
                     allowClear

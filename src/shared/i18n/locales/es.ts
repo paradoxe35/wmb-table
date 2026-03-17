@@ -142,6 +142,8 @@ const es: Record<string, string> = {
     'Création de note': 'Creación de nota',
     'Mise à jour de la note': 'Actualización de nota',
     'Ajout à la note': 'Añadido a la nota',
+    'Recherche biblique': 'Búsqueda bíblica',
+    'Recherche approfondie': 'Investigación profunda',
     'Langues disponibles': 'Idiomas disponibles',
     'Documents personnalisés': 'Documentos personalizados',
     'Lecture du document': 'Lectura del documento',
@@ -340,6 +342,10 @@ const es: Record<string, string> = {
     'Erreur lors du chargement des sujets': 'Error al cargar los temas',
     'Erreur lors du chargement des éléments du sujet': 'Error al cargar los elementos del tema',
     'Sujet créé': 'Tema creado',
+    'Un sujet avec ce nom existe déjà.': 'Ya existe un tema con este nombre.',
+    'Sujet introuvable': 'Tema no encontrado',
+    'Renommer le sujet': 'Renombrar tema',
+    'Sujet renommé': 'Tema renombrado',
     Supprimé: 'Eliminado',
     'Aucune référence trouvée dans le sujet: {{name}}':
         'Ninguna referencia encontrada en el tema: {{name}}',
@@ -469,6 +475,7 @@ const es: Record<string, string> = {
     'Aucun document attribué': 'Ningún documento asignado',
     'Ajouter à cette référence': 'Añadir a esta referencia',
     'Ajouté à la note': 'Añadido a la nota',
+    "Erreur lors de l'ajout à la note": 'Error al añadir a la nota',
 
     // ── Other traductions modal ──
     'Traductions du document: {{title}}': 'Traducciones del documento: {{title}}',
@@ -544,6 +551,11 @@ const es: Record<string, string> = {
     // ── Notes ──
     'Erreur lors du chargement des notes': 'Error al cargar las notas',
     'Note supprimée': 'Nota eliminada',
+    'Note introuvable ou vide': 'Nota no encontrada o vacía',
+    'Aucun modèle Sherpa-ONNX installé': 'Ningún modelo Sherpa-ONNX instalado',
+    'Aucun modèle local GGUF trouvé dans ~/.wmb-table/ai-models.':
+        'No se encontró ningún modelo local GGUF en ~/.wmb-table/ai-models.',
+    'Le modèle local n\u2019est pas chargé.': 'El modelo local no está cargado.',
     'Erreur lors de la création de la note': 'Error al crear la nota',
     'Nouvelle note': 'Nueva nota',
     'Aucune note': 'Sin notas',
@@ -581,6 +593,9 @@ const es: Record<string, string> = {
     'Activer le mode lecture': 'Activar modo lectura',
     'Désactiver le mode lecture': 'Desactivar modo lectura',
     'Exporter au format PDF': 'Exportar a PDF',
+    'Exporter en PDF': 'Exportar a PDF',
+    "Erreur lors de l'export PDF": 'Error al exportar PDF',
+    'PDF exporté avec succès': 'PDF exportado con éxito',
     'La référence est invalide': 'La referencia no es válida',
     'La référence biblique est invalide': 'La referencia bíblica no es válida',
     'Référence supprimée': 'Referencia eliminada',
@@ -624,6 +639,8 @@ const es: Record<string, string> = {
     'Basculer la barre latérale': 'Alternar barra lateral',
     'Changer de menu': 'Cambiar menú',
     "Changer d'option": 'Cambiar opción',
+    'Mode lecture': 'Modo lectura',
+    'Quitter le mode lecture': 'Salir del modo lectura',
     'Basculer en plein écran': 'Pantalla completa',
     Aide: 'Ayuda',
     Documentation: 'Documentación',

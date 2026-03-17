@@ -20,6 +20,7 @@ interface AppState {
     activeLanguage: string | null;
     rememberReadingPosition: boolean;
     error: string | null;
+    readingMode: boolean;
 
     setLoaded(v: boolean): void;
     setSyncing(v: boolean): void;
@@ -31,6 +32,8 @@ interface AppState {
     setError(error: string | null): void;
     showOptions(option: OptionViewValue): void;
     toggleSidebar(): void;
+    setReadingMode(v: boolean): void;
+    toggleReadingMode(): void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -42,6 +45,7 @@ export const useAppStore = create<AppState>((set) => ({
     activeLanguage: null,
     rememberReadingPosition: true,
     error: null,
+    readingMode: false,
 
     setLoaded: (v) => set({ loaded: v }),
     setSyncing: (v) => set({ syncing: v }),
@@ -53,4 +57,6 @@ export const useAppStore = create<AppState>((set) => ({
     setError: (error) => set({ error }),
     showOptions: (option) => set({ mainView: 'options', optionView: option }),
     toggleSidebar: () => set((s) => ({ sidebarHidden: !s.sidebarHidden })),
+    setReadingMode: (v) => set({ readingMode: v }),
+    toggleReadingMode: () => set((s) => ({ readingMode: !s.readingMode })),
 }));

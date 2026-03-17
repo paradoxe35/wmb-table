@@ -146,10 +146,12 @@ export const BibleChannels = {
 export const SubjectChannels = {
     getAll: 'subjects:getAll',
     create: 'subjects:create',
+    rename: 'subjects:rename',
     delete: 'subjects:delete',
     getItems: 'subjects:getItems',
     deleteItem: 'subjects:deleteItem',
     createItem: 'subjects:createItem',
+    exportPdf: 'subjects:exportPdf',
 } as const;
 
 export const HighlightChannels = {
@@ -158,6 +160,7 @@ export const HighlightChannels = {
     create: 'highlights:create',
     update: 'highlights:update',
     delete: 'highlights:delete',
+    exportPdf: 'highlights:exportPdf',
 } as const;
 
 export const AudioChannels = {
@@ -281,6 +284,7 @@ export const PushChannels = {
     aiToolCallStart: 'push:aiToolCallStart',
     aiToolCallComplete: 'push:aiToolCallComplete',
     aiModelDownloadProgress: 'push:aiModelDownloadProgress',
+    toggleReadingMode: 'push:toggleReadingMode',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -393,6 +397,7 @@ export interface InvokeChannelMap {
     // Subjects
     [SubjectChannels.getAll]: { args: []; return: SubjectDocument[] };
     [SubjectChannels.create]: { args: [string]; return: SubjectDocument };
+    [SubjectChannels.rename]: { args: [string, string]; return: void };
     [SubjectChannels.delete]: { args: [string]; return: void };
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
@@ -400,6 +405,7 @@ export interface InvokeChannelMap {
         args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?, string?];
         return: SubjectDocumentItem;
     };
+    [SubjectChannels.exportPdf]: { args: [string]; return: string };
 
     // Highlights
     [HighlightChannels.search]: {
@@ -419,6 +425,7 @@ export interface InvokeChannelMap {
         return: HighlightItem | null;
     };
     [HighlightChannels.delete]: { args: [string]; return: void };
+    [HighlightChannels.exportPdf]: { args: [string?]; return: string };
 
     // Audio
     [AudioChannels.getTimeAndLocalFile]: {
@@ -563,6 +570,7 @@ export interface PushEventMap {
     [PushChannels.aiToolCallStart]: AiToolEvent;
     [PushChannels.aiToolCallComplete]: AiToolEvent;
     [PushChannels.aiModelDownloadProgress]: AiModelDownloadProgress;
+    [PushChannels.toggleReadingMode]: void;
 }
 
 // ---------------------------------------------------------------------------

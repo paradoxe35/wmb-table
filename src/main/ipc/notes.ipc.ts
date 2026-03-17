@@ -1,12 +1,7 @@
-import { BrowserWindow, dialog } from 'electron';
-import { writeFile, unlink } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
 import { NotesChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as notesRepo from '@main/database/repositories/notes.repository';
-import { getMainWindow } from '@main/lib/window';
+import { exportHtmlToPdf } from '@main/lib/pdf-export';
 
 export function registerNotesHandlers(): void {
     registerHandler(NotesChannels.getAll, async () => {
@@ -90,21 +85,7 @@ export function registerNotesHandlers(): void {
             throw new Error('Note introuvable ou vide');
         }
 
-        const parentWindow = getMainWindow();
         const defaultName = (note.name || 'note').replace(/\s+/g, '-').toLowerCase();
-
-        const { canceled, filePath } = await dialog.showSaveDialog(
-            parentWindow ?? BrowserWindow.getFocusedWindow()!,
-            {
-                title: 'Exporter PDF',
-                defaultPath: `${defaultName}.pdf`,
-                filters: [{ name: 'PDF', extensions: ['pdf'] }],
-            },
-        );
-
-        if (canceled || !filePath) {
-            return '';
-        }
 
         const html = `<!DOCTYPE html>
 <html><head>
@@ -121,27 +102,6 @@ export function registerNotesHandlers(): void {
 ${note.content}
 </body></html>`;
 
-        const tmpFile = join(tmpdir(), `wmb-note-${randomUUID()}.html`);
-        await writeFile(tmpFile, html, 'utf-8');
-
-        const hiddenWindow = new BrowserWindow({
-            show: false,
-            width: 800,
-            height: 600,
-            webPreferences: { offscreen: true },
-        });
-
-        try {
-            await hiddenWindow.loadFile(tmpFile);
-            const pdfBuffer = await hiddenWindow.webContents.printToPDF({
-                printBackground: true,
-                margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
-            });
-            await writeFile(filePath, pdfBuffer);
-            return filePath;
-        } finally {
-            hiddenWindow.destroy();
-            unlink(tmpFile).catch(() => {});
-        }
+        return exportHtmlToPdf({ html, defaultName });
     });
 }

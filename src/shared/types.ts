@@ -261,7 +261,7 @@ export interface BibleSearchResult {
 // ---------------------------------------------------------------------------
 
 export interface SubjectDocumentItem extends Readonly<BaseEntity> {
-    subject: string;
+    subjectId: string;
     documentTitle: string;
     documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     textContent: string;

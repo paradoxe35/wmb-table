@@ -1,6 +1,8 @@
 import { SubjectChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
+import { exportHtmlToPdf } from '@main/lib/pdf-export';
+import { buildSubjectExportHtml } from '@main/lib/subjects-export';
 
 export function registerSubjectsHandlers(): void {
     registerHandler(SubjectChannels.getAll, async () => {
@@ -11,12 +13,16 @@ export function registerSubjectsHandlers(): void {
         return subjectsRepo.create(name);
     });
 
+    registerHandler(SubjectChannels.rename, async (_event, id, newName) => {
+        subjectsRepo.rename(id, newName);
+    });
+
     registerHandler(SubjectChannels.delete, async (_event, id) => {
         subjectsRepo.deleteSubject(id);
     });
 
-    registerHandler(SubjectChannels.getItems, async (_event, subjectName) => {
-        return subjectsRepo.getItems(subjectName);
+    registerHandler(SubjectChannels.getItems, async (_event, subjectId) => {
+        return subjectsRepo.getItems(subjectId);
     });
 
     registerHandler(SubjectChannels.deleteItem, async (_event, id) => {
@@ -27,7 +33,7 @@ export function registerSubjectsHandlers(): void {
         SubjectChannels.createItem,
         async (
             _event,
-            subjectName,
+            subjectId,
             documentTitle,
             documentHtmlTree,
             textContent,
@@ -35,7 +41,7 @@ export function registerSubjectsHandlers(): void {
             sermonId,
         ) => {
             return subjectsRepo.createItem(
-                subjectName,
+                subjectId,
                 documentTitle,
                 documentHtmlTree,
                 textContent,
@@ -44,4 +50,18 @@ export function registerSubjectsHandlers(): void {
             );
         },
     );
+
+    registerHandler(SubjectChannels.exportPdf, async (_event, subjectId) => {
+        const subject = subjectsRepo.getById(subjectId);
+        if (!subject) {
+            throw new Error('Sujet introuvable');
+        }
+        if (subject.documents.length === 0) {
+            return '';
+        }
+
+        const html = buildSubjectExportHtml(subject.name, subject.documents);
+        const defaultName = subject.name.replace(/\s+/g, '-').toLowerCase();
+        return exportHtmlToPdf({ html, defaultName });
+    });
 }

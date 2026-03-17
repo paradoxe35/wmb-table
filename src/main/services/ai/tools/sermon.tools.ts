@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as referenceRepo from '@main/database/repositories/reference.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
-import { strNormalize, matchesQuery, strNormalizeNoLower } from '@shared/searchable';
+import { matchesQuery, strNormalizeNoLower, simpleRegExp } from '@shared/searchable';
 import type { SearchMode } from '@shared/types';
 import type { AiToolDefinition } from './types';
 import { validateLanguage } from './shared';
@@ -20,11 +20,15 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 limit: z.number().int().min(1).max(20).optional(),
             }),
             execute: async ({ query, languageCode, limit = 10 }) => {
-                const normalized = strNormalize(query);
+                const words = query
+                    .trim()
+                    .split(/\s+/)
+                    .filter((w: string) => w.length >= 2);
+                const patterns = words.map((w: string) => simpleRegExp(w));
                 const sermons = referenceDataService
                     .getSermonListForLanguage(languageCode ?? defaultLanguageCode)
                     .filter((sermon) => {
-                        return [
+                        const fields = [
                             sermon.title,
                             sermon.enTitle,
                             sermon.location,
@@ -33,7 +37,11 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                             new Date(sermon.dateMs).toISOString().slice(0, 10),
                         ]
                             .filter(Boolean)
-                            .some((value) => strNormalize(value!).includes(normalized));
+                            .join(' ');
+                        return patterns.every((re: RegExp) => {
+                            re.lastIndex = 0;
+                            return re.test(fields);
+                        });
                     });
                 return { results: sermons.slice(0, limit), total: sermons.length };
             },

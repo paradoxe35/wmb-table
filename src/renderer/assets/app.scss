@@ -711,6 +711,7 @@ body {
     flex-direction: column;
     gap: 8px;
     margin-top: 12px;
+    margin-bottom: 12px;
 }
 
 .subject-ref-card {
@@ -745,6 +746,98 @@ body {
         font-size: 0.95em;
         color: var(--ant-color-text-secondary);
         line-height: 1.5;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Subject select modal
+// ---------------------------------------------------------------------------
+.subject-select-list {
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.subject-select-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: var(--ant-border-radius, 6px);
+    transition: background-color var(--transition-fast);
+
+    &:hover {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.1));
+    }
+
+    &:active {
+        background-color: color-mix(in srgb, var(--ant-color-primary, #1990ff) 12%, transparent);
+    }
+
+    &__icon {
+        font-size: 16px;
+        color: var(--ant-color-text-tertiary, #999);
+        flex-shrink: 0;
+    }
+
+    &__name {
+        font-weight: 500;
+        font-size: 0.95em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Note reference select modal
+// ---------------------------------------------------------------------------
+.note-ref-select-list {
+    max-height: 360px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+.note-ref-select-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: var(--ant-border-radius, 6px);
+    transition: background-color var(--transition-fast);
+
+    &:hover {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.1));
+    }
+
+    &__icon {
+        font-size: 16px;
+        color: var(--ant-color-text-tertiary, #999);
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    &__content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    &__label {
+        display: block;
+        font-weight: 500;
+        font-size: 0.95em;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    &__meta {
+        display: block;
+        font-size: 0.8em;
     }
 }
 
@@ -1030,4 +1123,21 @@ body {
     border-top: 1px solid var(--ant-color-border-secondary, #f0f0f0);
     margin-top: auto;
     flex-shrink: 0;
+}
+
+// ---------------------------------------------------------------------------
+// Reading mode (zen mode)
+// ---------------------------------------------------------------------------
+.reading-mode {
+    .ant-layout {
+        transition: all var(--transition-normal);
+    }
+}
+
+.reading-mode-content {
+    .sermon-body {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1em 1.5em;
+    }
 }

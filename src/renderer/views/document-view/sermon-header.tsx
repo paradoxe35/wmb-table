@@ -14,6 +14,7 @@ import {
     useAudioStore,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
@@ -158,6 +159,7 @@ export default function SermonHeader({
                         aria-label={t('Rechercher')}
                     />
                 </Tooltip>
+                <ReadingModeToggle />
             </Space>
             <ParagraphNavigatorModal
                 open={paragraphModalOpen}

@@ -32,6 +32,16 @@ export default class MenuBuilder {
             this.setupDevelopmentEnvironment();
         }
 
+        this.mainWindow.webContents.on('before-input-event', (_event, input) => {
+            if (
+                input.key === 'Escape' &&
+                input.type === 'keyDown' &&
+                this.mainWindow.isFullScreen()
+            ) {
+                this.mainWindow.setFullScreen(false);
+            }
+        });
+
         const template = this.buildDefaultTemplate();
         const menu = Menu.buildFromTemplate(template);
         Menu.setApplicationMenu(menu);
@@ -148,6 +158,14 @@ export default class MenuBuilder {
                         accelerator: this.isD('Ctrl+L'),
                         click: () => {
                             sendToRenderer(this.mainWindow, PushChannels.openLanguageManager);
+                        },
+                    },
+                    { type: 'separator' },
+                    {
+                        label: t('Mode lecture'),
+                        accelerator: this.isD('Ctrl+Shift+R'),
+                        click: () => {
+                            sendToRenderer(this.mainWindow, PushChannels.toggleReadingMode);
                         },
                     },
                     ...(is.dev

@@ -9,7 +9,18 @@ import {
     useState,
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Card, Input, Space, App as AntApp, Button, Empty, message, Typography } from 'antd';
+import {
+    Card,
+    Input,
+    Space,
+    App as AntApp,
+    Button,
+    Dropdown,
+    Empty,
+    Tooltip,
+    message,
+    Typography,
+} from 'antd';
 import { useTranslation } from 'react-i18next';
 import {
     type SubjectDocument,
@@ -19,7 +30,13 @@ import {
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
-import { BookOutlined } from '@ant-design/icons';
+import {
+    BookOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    FilePdfOutlined,
+    MoreOutlined,
+} from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
 import { SUBJECT_EVENT, AI_DATA_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
@@ -156,8 +173,8 @@ export default function Subject() {
 
     useEffect(() => {
         const focusSubject = (event: Event) => {
-            const name = (event as CustomEvent<{ name: string }>).detail?.name;
-            setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
+            const id = (event as CustomEvent<{ id: string }>).detail?.id;
+            if (id) setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
@@ -177,31 +194,80 @@ export default function Subject() {
 
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
 
-    const onSelectItem = useCallback((name: string) => {
-        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
+    const onSelectItem = useCallback((id: string) => {
+        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
     }, []);
 
     const saveNewSubject = (searchValue: string) => {
         const value = searchValue.trim();
         if (value.length < 2 || odatas.current.some((d) => d.name === value)) return;
 
-        window.api.subjects.create(value).then((subject) => {
-            const active = { ...subject, active: true };
-            odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
-            setDatas(odatas.current);
-            setSubjects(odatas.current);
-            message.success(t('Sujet créé'));
-        });
+        window.api.subjects
+            .create(value)
+            .then((subject) => {
+                const active = { ...subject, active: true };
+                odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
+                setDatas(odatas.current);
+                setSubjects(odatas.current);
+                message.success(t('Sujet créé'));
+            })
+            .catch(() => {
+                message.error(t('Un sujet avec ce nom existe déjà.'));
+            });
     };
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
         window.api.subjects.delete(item.id).then(() => {
-            odatas.current = odatas.current.filter((d) => d.name !== item.name);
+            odatas.current = odatas.current.filter((d) => d.id !== item.id);
             setDatas(odatas.current);
             setSubjects(odatas.current);
             message.success(t('Supprimé'));
         });
     };
+
+    const { modal } = AntApp.useApp();
+
+    const handleSubjectRename = useCallback(
+        (item: SubjectDocument) => {
+            const nameRef = { value: item.name };
+            modal.info({
+                closable: true,
+                icon: null,
+                okText: t('Enregistrer'),
+                title: t('Renommer le sujet'),
+                content: (
+                    <Input
+                        autoFocus
+                        size="large"
+                        minLength={2}
+                        defaultValue={item.name}
+                        onChange={(e) => {
+                            nameRef.value = e.target.value;
+                        }}
+                    />
+                ),
+                onOk: () => {
+                    const newName = nameRef.value.trim();
+                    if (
+                        newName.length < 2 ||
+                        newName === item.name ||
+                        odatas.current.some((d) => d.name === newName)
+                    )
+                        return;
+
+                    window.api.subjects.rename(item.id, newName).then(() => {
+                        odatas.current = odatas.current.map((d) =>
+                            d.id === item.id ? { ...d, name: newName } : d,
+                        );
+                        setDatas([...odatas.current]);
+                        setSubjects(odatas.current);
+                        message.success(t('Sujet renommé'));
+                    });
+                },
+            });
+        },
+        [modal, t, odatas, setDatas, setSubjects],
+    );
 
     return (
         <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 4 }}>
@@ -236,6 +302,7 @@ export default function Subject() {
                                     item={item}
                                     onSelectItem={onSelectItem}
                                     onDeleteSubject={handleSubjectDeletion}
+                                    onRenameSubject={handleSubjectRename}
                                 />
                             </motion.div>
                         ))}
@@ -338,14 +405,33 @@ function ShowActiveDocuments({
         });
     }
 
+    const handleExportPdf = useCallback(async () => {
+        try {
+            const filePath = await window.api.subjects.exportPdf(subject.id);
+            if (filePath) message.success(t('PDF exporté avec succès'));
+        } catch (err) {
+            console.error('Subject PDF export failed:', err);
+            message.error(t("Erreur lors de l'export PDF"));
+        }
+    }, [subject.id, t]);
+
     return (
         <>
             {documents.length > 0 ? (
                 <>
-                    <div className="flex flex-center">
+                    <div className="flex flex-center" style={{ gap: 8 }}>
                         <Text type="secondary">
                             {subject.name} ({documents.length})
                         </Text>
+                        <Tooltip title={t('Exporter en PDF')}>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<FilePdfOutlined />}
+                                onClick={handleExportPdf}
+                                aria-label={t('Exporter en PDF')}
+                            />
+                        </Tooltip>
                     </div>
                     <div className="subject-ref-list">
                         <AnimatePresence mode="popLayout">
@@ -377,12 +463,44 @@ function ShowActiveDocuments({
 
 const ItemSubject: FC<{
     item: SubjectDocument;
-    onSelectItem: (name: string) => void;
+    onSelectItem: (id: string) => void;
     onDeleteSubject: (item: SubjectDocument) => void;
-}> = ({ item, onSelectItem, onDeleteSubject }) => {
+    onRenameSubject: (item: SubjectDocument) => void;
+}> = ({ item, onSelectItem, onDeleteSubject, onRenameSubject }) => {
+    const { t } = useTranslation();
+    const { modal } = AntApp.useApp();
+
     const onSelect = useCallback(() => {
-        if (!item.active) onSelectItem(item.name);
+        if (!item.active) onSelectItem(item.id);
     }, [item, onSelectItem]);
+
+    const confirmDelete = useCallback(() => {
+        modal.confirm({
+            title: t('Confirmer la suppression?'),
+            okText: t('Oui'),
+            cancelText: t('Non'),
+            onOk: () => onDeleteSubject(item),
+        });
+    }, [item, onDeleteSubject, modal, t]);
+
+    const menuItems = useMemo(
+        () => [
+            {
+                key: 'rename',
+                label: t('Renommer'),
+                icon: <EditOutlined />,
+                onClick: () => onRenameSubject(item),
+            },
+            {
+                key: 'delete',
+                label: t('Supprimer'),
+                icon: <DeleteOutlined />,
+                danger: true,
+                onClick: confirmDelete,
+            },
+        ],
+        [item, onRenameSubject, confirmDelete, t],
+    );
 
     return (
         <div
@@ -395,7 +513,9 @@ const ItemSubject: FC<{
                 <span className="subject-item__name">{item.name}</span>
             </div>
             <span onClick={(e) => e.stopPropagation()}>
-                <DeleteBtn confirm={() => onDeleteSubject(item)} />
+                <Dropdown menu={{ items: menuItems }} trigger={['click']}>
+                    <Button shape="circle" icon={<MoreOutlined />} />
+                </Dropdown>
             </span>
         </div>
     );

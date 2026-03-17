@@ -141,6 +141,8 @@ const en: Record<string, string> = {
     'Création de note': 'Note creation',
     'Mise à jour de la note': 'Note update',
     'Ajout à la note': 'Added to note',
+    'Recherche biblique': 'Bible search',
+    'Recherche approfondie': 'In-depth research',
     'Langues disponibles': 'Available languages',
     'Documents personnalisés': 'Custom documents',
     'Lecture du document': 'Reading document',
@@ -337,6 +339,10 @@ const en: Record<string, string> = {
     'Erreur lors du chargement des sujets': 'Error loading subjects',
     'Erreur lors du chargement des éléments du sujet': 'Error loading subject items',
     'Sujet créé': 'Subject created',
+    'Un sujet avec ce nom existe déjà.': 'A subject with this name already exists.',
+    'Sujet introuvable': 'Subject not found',
+    'Renommer le sujet': 'Rename subject',
+    'Sujet renommé': 'Subject renamed',
     Supprimé: 'Deleted',
     'Aucune référence trouvée dans le sujet: {{name}}': 'No references found in subject: {{name}}',
 
@@ -464,6 +470,7 @@ const en: Record<string, string> = {
     'Aucun document attribué': 'No document assigned',
     'Ajouter à cette référence': 'Add to this reference',
     'Ajouté à la note': 'Added to note',
+    "Erreur lors de l'ajout à la note": 'Error adding to note',
 
     // ── Other traductions modal ──
     'Traductions du document: {{title}}': 'Document translations: {{title}}',
@@ -539,6 +546,11 @@ const en: Record<string, string> = {
     // ── Notes ──
     'Erreur lors du chargement des notes': 'Error loading notes',
     'Note supprimée': 'Note deleted',
+    'Note introuvable ou vide': 'Note not found or empty',
+    'Aucun modèle Sherpa-ONNX installé': 'No Sherpa-ONNX model installed',
+    'Aucun modèle local GGUF trouvé dans ~/.wmb-table/ai-models.':
+        'No local GGUF model found in ~/.wmb-table/ai-models.',
+    'Le modèle local n\u2019est pas chargé.': 'The local model is not loaded.',
     'Erreur lors de la création de la note': 'Error creating note',
     'Nouvelle note': 'New note',
     'Aucune note': 'No notes',
@@ -576,6 +588,9 @@ const en: Record<string, string> = {
     'Activer le mode lecture': 'Enable reading mode',
     'Désactiver le mode lecture': 'Disable reading mode',
     'Exporter au format PDF': 'Export to PDF',
+    'Exporter en PDF': 'Export to PDF',
+    "Erreur lors de l'export PDF": 'Error exporting PDF',
+    'PDF exporté avec succès': 'PDF exported successfully',
     'La référence est invalide': 'The reference is invalid',
     'La référence biblique est invalide': 'The biblical reference is invalid',
     'Référence supprimée': 'Reference deleted',
@@ -618,6 +633,8 @@ const en: Record<string, string> = {
     'Basculer la barre latérale': 'Toggle sidebar',
     'Changer de menu': 'Switch menu',
     "Changer d'option": 'Switch option',
+    'Mode lecture': 'Reading mode',
+    'Quitter le mode lecture': 'Exit reading mode',
     'Basculer en plein écran': 'Toggle fullscreen',
     Aide: 'Help',
     Documentation: 'Documentation',

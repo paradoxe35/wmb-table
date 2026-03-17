@@ -33,9 +33,8 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
             }),
             execute: async ({ documentId, startLine = 0, maxLines = 50 }) => {
                 const doc = await customDocsRepo.getCustomDocumentContent(documentId);
-                if (!doc || typeof doc.content !== 'string') {
-                    return doc;
-                }
+                if (!doc) return { error: 'Document introuvable.' };
+                if (typeof doc.content !== 'string') return doc;
 
                 const lines = doc.content.split('\n');
                 const totalLines = lines.length;

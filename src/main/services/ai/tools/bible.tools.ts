@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import * as aiBibleRepo from '@main/database/repositories/ai-bible.repository';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
-import * as notesRepo from '@main/database/repositories/notes.repository';
 import type { AiToolDefinition } from './types';
 
 export function buildBibleTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
@@ -29,10 +28,35 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                 return aiBibleRepo.getPassage(input);
             },
         },
-        addBibleReferenceToSubject: {
-            description: 'Add a Bible verse range to a subject.',
+        searchBible: {
+            description:
+                'Full-text search across Bible verses. Returns matching verses ranked by relevance. ' +
+                'Use this to find verses containing specific words or phrases.',
             inputSchema: z.object({
-                subjectName: z.string(),
+                query: z.string().min(3).describe('Search query (min 3 characters)'),
+                testament: z
+                    .enum(['O', 'N'])
+                    .optional()
+                    .describe('Filter by testament: "O" (Old) or "N" (New)'),
+                abbreviation: z.string().optional().describe('Bible version abbreviation'),
+                languageCode: z.string().optional(),
+                limit: z
+                    .number()
+                    .int()
+                    .min(1)
+                    .max(40)
+                    .optional()
+                    .describe('Max results (default 20)'),
+            }),
+            execute: async (input) => {
+                return aiBibleRepo.searchVerses(input);
+            },
+        },
+        addBibleReferenceToSubject: {
+            description:
+                'Add a Bible verse range to a subject. Use the subject ID from getSubjects.',
+            inputSchema: z.object({
+                subjectId: z.string().describe('The subject ID (from getSubjects)'),
                 abbreviation: z.string().optional(),
                 languageCode: z.string().optional(),
                 book: z.string(),
@@ -40,13 +64,13 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                 fromVerse: z.string(),
                 toVerse: z.string().optional(),
             }),
-            execute: async ({ subjectName, ...rest }) => {
+            execute: async ({ subjectId, ...rest }) => {
                 const verses = aiBibleRepo.getPassage(rest);
                 const verse = verses[0];
                 if (!verse) return { error: 'Passage biblique introuvable.' };
 
                 return subjectsRepo.createItem(
-                    subjectName,
+                    subjectId,
                     `${verse.bookName} ${verse.chapter}`,
                     {
                         paragraphIndex: 0,
@@ -66,28 +90,6 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                     verse,
                     '',
                 );
-            },
-        },
-        addBibleReferenceToNote: {
-            description: 'Add Bible verses to a note.',
-            inputSchema: z.object({
-                noteId: z.string(),
-                label: z.string().min(1),
-                abbreviation: z.string().optional(),
-                languageCode: z.string().optional(),
-                book: z.string(),
-                chapter: z.string(),
-                fromVerse: z.string(),
-                toVerse: z.string().optional(),
-            }),
-            execute: async ({ noteId, label, ...rest }) => {
-                const verses = aiBibleRepo.getPassage(rest);
-                if (verses.length === 0) return { error: 'Passage biblique introuvable.' };
-                const ref = notesRepo.createBibleReference(noteId, label);
-                for (const verse of verses) {
-                    notesRepo.addBibleVerse(ref.id, verse.id);
-                }
-                return notesRepo.getBibleReference(ref.id);
             },
         },
     };
