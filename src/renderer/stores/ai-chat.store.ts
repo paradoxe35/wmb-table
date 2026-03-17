@@ -8,6 +8,7 @@ import type {
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
+import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
 import { AI_DATA_EVENT } from '@renderer/utils/events';
 
 const TOOL_TO_EVENT: Record<string, string> = {
@@ -342,3 +343,14 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
         await window.api.ai.downloadModel(modelId);
     },
 }));
+
+/** Selector: returns "ProviderName — model" for the active provider. */
+export function selectActiveProviderLabel(state: AiChatState): string {
+    const { settings, providerCatalog } = state;
+    if (!settings?.activeProvider) {
+        return '';
+    }
+    const providerName = resolveProviderName(settings, providerCatalog) ?? '';
+    const model = resolveActiveModel(settings) ?? '';
+    return model ? `${providerName} — ${model}` : providerName;
+}

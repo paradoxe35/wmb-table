@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Empty, Spin, Typography } from 'antd';
+import { Empty, Spin, Tooltip, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
-import { useAiChatStore } from '@renderer/stores/ai-chat.store';
+import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
 import ChatToolResult from './chat-tool-result';
 import AiReferenceLink from './ai-reference-link';
 
@@ -141,9 +141,14 @@ function MessageBubble({
         .filter(Boolean)
         .join(' ');
 
+    const providerLabel = useAiChatStore(selectActiveProviderLabel);
+    const providerTooltip = isUser ? '' : providerLabel;
+
     return (
         <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
-            <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
+            <Tooltip title={providerTooltip} placement="top">
+                <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
+            </Tooltip>
             <div
                 className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
