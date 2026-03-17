@@ -151,6 +151,7 @@ export const SubjectChannels = {
     getItems: 'subjects:getItems',
     deleteItem: 'subjects:deleteItem',
     createItem: 'subjects:createItem',
+    exportPdf: 'subjects:exportPdf',
 } as const;
 
 export const HighlightChannels = {
@@ -159,6 +160,7 @@ export const HighlightChannels = {
     create: 'highlights:create',
     update: 'highlights:update',
     delete: 'highlights:delete',
+    exportPdf: 'highlights:exportPdf',
 } as const;
 
 export const AudioChannels = {
@@ -282,6 +284,7 @@ export const PushChannels = {
     aiToolCallStart: 'push:aiToolCallStart',
     aiToolCallComplete: 'push:aiToolCallComplete',
     aiModelDownloadProgress: 'push:aiModelDownloadProgress',
+    toggleReadingMode: 'push:toggleReadingMode',
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -402,6 +405,7 @@ export interface InvokeChannelMap {
         args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?, string?];
         return: SubjectDocumentItem;
     };
+    [SubjectChannels.exportPdf]: { args: [string]; return: string };
 
     // Highlights
     [HighlightChannels.search]: {
@@ -421,6 +425,7 @@ export interface InvokeChannelMap {
         return: HighlightItem | null;
     };
     [HighlightChannels.delete]: { args: [string]; return: void };
+    [HighlightChannels.exportPdf]: { args: [string?]; return: string };
 
     // Audio
     [AudioChannels.getTimeAndLocalFile]: {
@@ -565,6 +570,7 @@ export interface PushEventMap {
     [PushChannels.aiToolCallStart]: AiToolEvent;
     [PushChannels.aiToolCallComplete]: AiToolEvent;
     [PushChannels.aiModelDownloadProgress]: AiModelDownloadProgress;
+    [PushChannels.toggleReadingMode]: void;
 }
 
 // ---------------------------------------------------------------------------

@@ -52,9 +52,19 @@ export default function DocumentView() {
             });
     }, [activeTabKey, activeTab, activeLanguage]);
 
+    const readingMode = useAppStore((s) => s.readingMode);
+    const setReadingMode = useAppStore((s) => s.setReadingMode);
+    const toggleReadingMode = useAppStore((s) => s.toggleReadingMode);
+
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'R') {
+                e.preventDefault();
+                toggleReadingMode();
+            } else if (e.key === 'Escape' && readingMode) {
+                e.preventDefault();
+                setReadingMode(false);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
                 e.preventDefault();
                 if (activeTabKey) openSearchBar(activeTabKey);
             } else if (e.key === 'Escape' && searchBarOpen) {
@@ -63,13 +73,21 @@ export default function DocumentView() {
         };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
-    }, [openSearchBar, closeSearchBar, searchBarOpen, activeTabKey]);
+    }, [
+        openSearchBar,
+        closeSearchBar,
+        searchBarOpen,
+        activeTabKey,
+        readingMode,
+        setReadingMode,
+        toggleReadingMode,
+    ]);
 
     return (
         <div
             style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
         >
-            <DocumentTabs />
+            {!readingMode && <DocumentTabs />}
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {tabType === 'bible' ? (
                     <BibleDocumentView />

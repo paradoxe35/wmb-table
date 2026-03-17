@@ -10,6 +10,7 @@ import {
     selectActiveTabKey,
     selectActiveTabTitle,
 } from '@renderer/stores';
+import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { SermonContent } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
 import DocumentBody from './document-body';
@@ -77,6 +78,7 @@ function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof u
                         aria-label={t('Rechercher')}
                     />
                 </Tooltip>
+                <ReadingModeToggle />
             </Space>
         </div>
     );

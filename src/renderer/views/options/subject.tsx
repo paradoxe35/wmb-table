@@ -17,6 +17,7 @@ import {
     Button,
     Dropdown,
     Empty,
+    Tooltip,
     message,
     Typography,
 } from 'antd';
@@ -29,7 +30,13 @@ import {
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { useSermonStore, useSubjectsStore } from '@renderer/stores';
-import { BookOutlined, DeleteOutlined, EditOutlined, MoreOutlined } from '@ant-design/icons';
+import {
+    BookOutlined,
+    DeleteOutlined,
+    EditOutlined,
+    FilePdfOutlined,
+    MoreOutlined,
+} from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
 import { SUBJECT_EVENT, AI_DATA_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
@@ -393,14 +400,32 @@ function ShowActiveDocuments({
         });
     }
 
+    const handleExportPdf = useCallback(async () => {
+        try {
+            const filePath = await window.api.subjects.exportPdf(subject.id);
+            if (filePath) message.success(t('PDF exporté avec succès'));
+        } catch {
+            message.error(t("Erreur lors de l'export PDF"));
+        }
+    }, [subject.id, t]);
+
     return (
         <>
             {documents.length > 0 ? (
                 <>
-                    <div className="flex flex-center">
+                    <div className="flex flex-center" style={{ gap: 8 }}>
                         <Text type="secondary">
                             {subject.name} ({documents.length})
                         </Text>
+                        <Tooltip title={t('Exporter en PDF')}>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<FilePdfOutlined />}
+                                onClick={handleExportPdf}
+                                aria-label={t('Exporter en PDF')}
+                            />
+                        </Tooltip>
                     </div>
                     <div className="subject-ref-list">
                         <AnimatePresence mode="popLayout">

@@ -1032,3 +1032,20 @@ body {
     margin-top: auto;
     flex-shrink: 0;
 }
+
+// ---------------------------------------------------------------------------
+// Reading mode (zen mode)
+// ---------------------------------------------------------------------------
+.reading-mode {
+    .ant-layout {
+        transition: all var(--transition-normal);
+    }
+}
+
+.reading-mode-content {
+    .sermon-body {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1em 1.5em;
+    }
+}

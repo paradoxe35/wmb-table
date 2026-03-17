@@ -169,6 +169,7 @@ const api = {
                 bible,
                 sermonId,
             ),
+        exportPdf: (subjectId: string) => invoke(SubjectChannels.exportPdf, subjectId),
     },
 
     highlights: {
@@ -180,6 +181,7 @@ const api = {
         update: (id: string, data: HighlightUpdateData) =>
             invoke(HighlightChannels.update, id, data),
         delete: (id: string) => invoke(HighlightChannels.delete, id),
+        exportPdf: (languageCode?: string) => invoke(HighlightChannels.exportPdf, languageCode),
     },
 
     audio: {
@@ -370,6 +372,8 @@ const api = {
         aiModelDownloadProgress: (
             cb: (p: PushEventMap[typeof PushChannels.aiModelDownloadProgress]) => void,
         ) => onPush(PushChannels.aiModelDownloadProgress, cb),
+        toggleReadingMode: (cb: (p: PushEventMap[typeof PushChannels.toggleReadingMode]) => void) =>
+            onPush(PushChannels.toggleReadingMode, cb),
     },
 } as const;
 

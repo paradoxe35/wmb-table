@@ -8,6 +8,7 @@ import {
     selectActiveTab,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { BibleBook, BibleIndex, SermonContent } from '@shared/types';
 import { getTabKey } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
@@ -221,6 +222,7 @@ function BibleHeader({
                         aria-label={t('Rechercher')}
                     />
                 </Tooltip>
+                <ReadingModeToggle />
             </Space>
         </div>
     );

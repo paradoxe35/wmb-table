@@ -85,8 +85,19 @@ const SidebarStatusHandler = () => {
     );
 };
 
+const ReadingModeHandler = () => {
+    const toggleReadingMode = useAppStore((s) => s.toggleReadingMode);
+
+    useEffect(() => {
+        return window.api.on.toggleReadingMode(toggleReadingMode);
+    }, [toggleReadingMode]);
+
+    return null;
+};
+
 const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const [collapsed, setCollapsed] = useState(true);
+    const readingMode = useAppStore((s) => s.readingMode);
 
     const toggle = (collapsed?: boolean | unknown) => {
         return typeof collapsed === 'boolean' ? setCollapsed(collapsed) : setCollapsed((c) => !c);
@@ -96,25 +107,27 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
     return (
         <AudioProvider>
-            <Layout>
-                <Header className="app-header">
-                    <div className="logo" onClick={() => toggle()}>
-                        <Title />
-                    </div>
-                    <div style={{ flexGrow: 1 }}>
-                        <ViewerMenu />
-                    </div>
-                    <div className="logo">
-                        <SidebarStatusHandler />
-                    </div>
-                </Header>
+            <Layout className={readingMode ? 'reading-mode' : ''}>
+                {!readingMode && (
+                    <Header className="app-header">
+                        <div className="logo" onClick={() => toggle()}>
+                            <Title />
+                        </div>
+                        <div style={{ flexGrow: 1 }}>
+                            <ViewerMenu />
+                        </div>
+                        <div className="logo">
+                            <SidebarStatusHandler />
+                        </div>
+                    </Header>
+                )}
                 <Layout style={{ overflow: 'hidden' }}>
-                    <SidebarMenu onCollapse={toggle} collapsed={collapsed} />
+                    {!readingMode && <SidebarMenu onCollapse={toggle} collapsed={collapsed} />}
                     <Layout>
                         <div ref={containerScroll} className="site-layout-content">
                             <Content
                                 style={{
-                                    padding: 24,
+                                    padding: readingMode ? 0 : 24,
                                     paddingBottom: 0,
                                     flex: 1,
                                     overflow: 'hidden',
@@ -126,12 +139,13 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                             </Content>
                         </div>
                     </Layout>
-                    <SidebarDocuments />
+                    {!readingMode && <SidebarDocuments />}
                 </Layout>
             </Layout>
             <div style={{ display: 'none' }}>
                 <MiniPlayerBar />
             </div>
+            <ReadingModeHandler />
         </AudioProvider>
     );
 };

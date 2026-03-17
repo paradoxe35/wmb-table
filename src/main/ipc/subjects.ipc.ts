@@ -1,6 +1,8 @@
 import { SubjectChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
+import { exportHtmlToPdf } from '@main/lib/pdf-export';
+import { buildSubjectExportHtml } from '@main/lib/subjects-export';
 
 export function registerSubjectsHandlers(): void {
     registerHandler(SubjectChannels.getAll, async () => {
@@ -48,4 +50,15 @@ export function registerSubjectsHandlers(): void {
             );
         },
     );
+
+    registerHandler(SubjectChannels.exportPdf, async (_event, subjectId) => {
+        const allSubjects = subjectsRepo.getAll();
+        const subject = allSubjects.find((s) => s.id === subjectId);
+        if (!subject) throw new Error('Sujet introuvable');
+        if (subject.documents.length === 0) return '';
+
+        const html = buildSubjectExportHtml(subject.name, subject.documents);
+        const defaultName = subject.name.replace(/\s+/g, '-').toLowerCase();
+        return exportHtmlToPdf({ html, defaultName });
+    });
 }

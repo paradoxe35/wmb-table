@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
-import { useSearchStore, useSermonStore, selectActiveTabKey } from '@renderer/stores';
+import { useSearchStore, useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 
@@ -30,6 +30,7 @@ export default function DocumentBody({
     const searchBarOpen = useSearchStore((s) =>
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );
+    const readingMode = useAppStore((s) => s.readingMode);
 
     const onContextMenu = useCallback(
         (e: React.MouseEvent) => {
@@ -39,7 +40,7 @@ export default function DocumentBody({
     );
 
     return (
-        <div className="mock-browser-content">
+        <div className={`mock-browser-content${readingMode ? ' reading-mode-content' : ''}`}>
             {loading && (
                 <div className="flex flex-center" style={{ marginTop: '2rem' }}>
                     <Spin />
