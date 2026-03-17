@@ -121,6 +121,9 @@ importers:
             unpdf:
                 specifier: ^1.4.0
                 version: 1.4.0
+            yauzl:
+                specifier: ^3.2.1
+                version: 3.2.1
             zod:
                 specifier: ^4.3.6
                 version: 4.3.6
@@ -161,6 +164,9 @@ importers:
             '@types/unbzip2-stream':
                 specifier: ^1.4.3
                 version: 1.4.3
+            '@types/yauzl':
+                specifier: ^2.10.3
+                version: 2.10.3
             '@typescript-eslint/eslint-plugin':
                 specifier: ^8.57.0
                 version: 8.57.0(@typescript-eslint/parser@8.57.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
@@ -9225,6 +9231,13 @@ packages:
                 integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==,
             }
 
+    yauzl@3.2.1:
+        resolution:
+            {
+                integrity: sha512-k1isifdbpNSFEHFJ1ZY4YDewv0IH9FR61lDetaRMD3j2ae3bIXGV+7c+LHCqtQGofSd8PIyV4X6+dHMAnSr60A==,
+            }
+        engines: { node: '>=12' }
+
     yocto-queue@0.1.0:
         resolution:
             {
@@ -11218,7 +11231,6 @@ snapshots:
     '@types/yauzl@2.10.3':
         dependencies:
             '@types/node': 22.19.15
-        optional: true
 
     '@typescript-eslint/eslint-plugin@8.57.0(@typescript-eslint/parser@8.57.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3))(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)':
         dependencies:
@@ -15277,6 +15289,11 @@ snapshots:
         dependencies:
             buffer-crc32: 0.2.13
             fd-slicer: 1.1.0
+
+    yauzl@3.2.1:
+        dependencies:
+            buffer-crc32: 0.2.13
+            pend: 1.2.0
 
     yocto-queue@0.1.0: {}
 

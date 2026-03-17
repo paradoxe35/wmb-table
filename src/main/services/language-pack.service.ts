@@ -1,16 +1,14 @@
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { createWriteStream, existsSync, statSync, readdirSync } from 'node:fs';
 import { mkdir, rm, rename } from 'node:fs/promises';
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
+import { pipeline } from 'node:stream/promises';
+import * as yauzl from 'yauzl';
 import log from 'electron-log';
 import type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 import * as tantivyService from './tantivy.service';
 import * as refRepo from '../database/repositories/reference.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
 import { githubDownload } from '@main/lib/github';
-
-const execFileAsync = promisify(execFile);
 
 export type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 
@@ -40,16 +38,48 @@ function getDirectorySize(dirPath: string): number {
     return total;
 }
 
-async function extractZip(zipPath: string, destDir: string): Promise<void> {
-    if (process.platform === 'win32') {
-        await execFileAsync('powershell', [
-            '-NoProfile',
-            '-Command',
-            `Expand-Archive -Path "${zipPath}" -DestinationPath "${destDir}" -Force`,
-        ]);
-    } else {
-        await execFileAsync('unzip', ['-o', zipPath, '-d', destDir]);
-    }
+function extractZip(zipPath: string, destDir: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        yauzl.open(zipPath, { lazyEntries: true }, (err, zipFile) => {
+            if (err || !zipFile) {
+                return reject(err ?? new Error('Failed to open zip'));
+            }
+
+            zipFile.on('error', reject);
+            zipFile.on('end', () => {
+                zipFile.close();
+                resolve();
+            });
+
+            zipFile.readEntry();
+            zipFile.on('entry', (entry: yauzl.Entry) => {
+                const outPath = join(destDir, entry.fileName);
+
+                if (/\/$/.test(entry.fileName)) {
+                    mkdir(outPath, { recursive: true })
+                        .then(() => zipFile.readEntry())
+                        .catch(reject);
+                    return;
+                }
+
+                mkdir(dirname(outPath), { recursive: true })
+                    .then(() => {
+                        zipFile.openReadStream(entry, (streamErr, readStream) => {
+                            if (streamErr || !readStream) {
+                                return reject(
+                                    streamErr ?? new Error('Failed to open entry stream'),
+                                );
+                            }
+                            const writeStream = createWriteStream(outPath);
+                            pipeline(readStream, writeStream)
+                                .then(() => zipFile.readEntry())
+                                .catch(reject);
+                        });
+                    })
+                    .catch(reject);
+            });
+        });
+    });
 }
 
 // ---------------------------------------------------------------------------
