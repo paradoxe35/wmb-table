@@ -3,6 +3,7 @@ import log from '@main/lib/logger';
 import type { GenerationContext, GenerationRunner } from './types';
 import {
     dispatchTextDelta,
+    dispatchReasoningDelta,
     dispatchToolCallStart,
     dispatchToolCallComplete,
 } from './stream-dispatcher';
@@ -33,6 +34,14 @@ export class GenerationRunnerImpl implements GenerationRunner {
             switch (part.type) {
                 case 'text-delta':
                     dispatchTextDelta(
+                        ctx.browserWindow,
+                        ctx.conversationId,
+                        ctx.assistantMessageId,
+                        part.text,
+                    );
+                    break;
+                case 'reasoning-delta':
+                    dispatchReasoningDelta(
                         ctx.browserWindow,
                         ctx.conversationId,
                         ctx.assistantMessageId,

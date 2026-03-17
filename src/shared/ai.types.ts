@@ -171,6 +171,12 @@ export interface AiToolEvent {
     payload?: unknown;
 }
 
+export interface AiReasoningEvent {
+    conversationId: string;
+    messageId: string;
+    delta: string;
+}
+
 const DEFAULT_MODELS: Record<AiBuiltinProviderId, string | null> = {
     local: null,
     openrouter: 'openai/gpt-5-mini',

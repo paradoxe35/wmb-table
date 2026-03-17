@@ -62,18 +62,20 @@ function resolveToolMeta(name: string): { meta: ToolMeta | undefined; isAgent: b
     return { meta: undefined, isAgent: false };
 }
 
-export default function ChatToolResult({ name }: { name: string }) {
+export default function ChatToolResult({ name, count }: { name: string; count?: number }) {
     const { t } = useTranslation();
     const { meta, isAgent } = resolveToolMeta(name);
     const label = meta?.label ?? name;
     const icon = meta?.icon ?? <SearchOutlined />;
     const color = meta?.color ?? 'processing';
     const prefix = isAgent ? '↳ ' : '';
+    const suffix = count && count > 1 ? ` x${count}` : '';
 
     return (
         <Tag icon={icon} color={color} style={{ fontSize: '0.8em' }}>
             {prefix}
             {t(label)}
+            {suffix}
         </Tag>
     );
 }

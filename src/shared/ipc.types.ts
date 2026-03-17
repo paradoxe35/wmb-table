@@ -76,6 +76,7 @@ import type {
     AiStreamCompleteEvent,
     AiStreamErrorEvent,
     AiToolEvent,
+    AiReasoningEvent,
 } from './ai.types';
 
 // ---------------------------------------------------------------------------
@@ -284,6 +285,7 @@ export const PushChannels = {
     aiToolCallStart: 'push:aiToolCallStart',
     aiToolCallComplete: 'push:aiToolCallComplete',
     aiModelDownloadProgress: 'push:aiModelDownloadProgress',
+    aiReasoningDelta: 'push:aiReasoningDelta',
     toggleReadingMode: 'push:toggleReadingMode',
 } as const;
 
@@ -570,6 +572,7 @@ export interface PushEventMap {
     [PushChannels.aiToolCallStart]: AiToolEvent;
     [PushChannels.aiToolCallComplete]: AiToolEvent;
     [PushChannels.aiModelDownloadProgress]: AiModelDownloadProgress;
+    [PushChannels.aiReasoningDelta]: AiReasoningEvent;
     [PushChannels.toggleReadingMode]: void;
 }
 
