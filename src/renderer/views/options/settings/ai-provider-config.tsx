@@ -9,6 +9,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import {
     resolveActiveModel,
+    DEFAULT_MODELS,
     type AiBuiltinProviderId,
     type AiCustomProviderConfig,
     type AiProviderDefinition,
@@ -189,6 +190,13 @@ function ModelSelect({
     );
 }
 
+function defaultModelHint(
+    t: (k: string) => string,
+    defaultModel?: string | null,
+): string | undefined {
+    return defaultModel ? `${t('Modèle par défaut')}: ${defaultModel}` : undefined;
+}
+
 // ── Provider configs ──
 
 export function BuiltinProviderConfig({
@@ -253,7 +261,14 @@ export function BuiltinProviderConfig({
                         );
                     }
                     return (
-                        <Field key={field.key} label={t('Modèle')}>
+                        <Field
+                            key={field.key}
+                            label={t('Modèle')}
+                            hint={defaultModelHint(
+                                t,
+                                DEFAULT_MODELS[provider.id as AiBuiltinProviderId],
+                            )}
+                        >
                             <ModelSelect
                                 providerId={provider.id}
                                 value={activeModel}
@@ -332,14 +347,7 @@ export function CustomProviderConfig({
                         placeholder={t('Optionnel')}
                     />
                 </Field>
-                <Field
-                    label={t('Modèle')}
-                    hint={
-                        provider.defaultModel
-                            ? t('Modèle par défaut') + ': ' + provider.defaultModel
-                            : undefined
-                    }
-                >
+                <Field label={t('Modèle')} hint={defaultModelHint(t, provider.defaultModel)}>
                     <ModelSelect
                         providerId={provider.id}
                         value={activeModel}

@@ -67,7 +67,7 @@ export interface AiSettings {
     customProviders: AiCustomProviderConfig[];
 }
 
-const DEFAULT_MODELS: Record<AiBuiltinProviderId, string | null> = {
+export const DEFAULT_MODELS: Record<AiBuiltinProviderId, string | null> = {
     local: null,
     openrouter: 'openai/gpt-5-mini',
     openai: 'gpt-5-mini',

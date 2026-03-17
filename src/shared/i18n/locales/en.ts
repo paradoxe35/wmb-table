@@ -122,6 +122,8 @@ const en: Record<string, string> = {
     Arrêter: 'Stop',
     Conversations: 'Conversations',
     'Aucune conversation': 'No conversations',
+    'Aucun sujet': 'No subjects',
+    'Sélectionner ou saisir un modèle': 'Select or type a model',
     'Voir le raisonnement': 'Show reasoning',
     'Masquer le raisonnement': 'Hide reasoning',
     '{{count}} dernières lignes': 'last {{count}} lines',

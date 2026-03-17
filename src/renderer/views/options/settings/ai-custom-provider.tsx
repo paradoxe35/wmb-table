@@ -82,6 +82,7 @@ export default function AiCustomProviderModal({
                 <Form.Item
                     label={t('Nom affiché')}
                     style={{ marginBottom: 12 }}
+                    required
                     validateStatus={isDuplicate ? 'error' : undefined}
                     help={isDuplicate ? t('Un fournisseur avec ce nom existe déjà.') : undefined}
                 >
@@ -91,7 +92,7 @@ export default function AiCustomProviderModal({
                         placeholder={t('ex: Mon Service IA')}
                     />
                 </Form.Item>
-                <Form.Item label={t('URL de base')} style={{ marginBottom: 12 }}>
+                <Form.Item label={t('URL de base')} style={{ marginBottom: 12 }} required>
                     <Input
                         value={draft.baseUrl}
                         onChange={(e) => setDraft((d) => ({ ...d, baseUrl: e.target.value }))}
@@ -105,7 +106,7 @@ export default function AiCustomProviderModal({
                         placeholder={t('Optionnel')}
                     />
                 </Form.Item>
-                <Form.Item label={t('Modèle')} style={{ marginBottom: 0 }} required>
+                <Form.Item label={t('Modèle par défaut')} style={{ marginBottom: 0 }} required>
                     <Input
                         value={draft.defaultModel}
                         onChange={(e) => setDraft((d) => ({ ...d, defaultModel: e.target.value }))}

@@ -123,6 +123,8 @@ const es: Record<string, string> = {
     Arrêter: 'Detener',
     Conversations: 'Conversaciones',
     'Aucune conversation': 'Sin conversaciones',
+    'Aucun sujet': 'Sin temas',
+    'Sélectionner ou saisir un modèle': 'Seleccionar o escribir un modelo',
     'Voir le raisonnement': 'Ver razonamiento',
     'Masquer le raisonnement': 'Ocultar razonamiento',
     '{{count}} dernières lignes': 'últimas {{count}} líneas',
