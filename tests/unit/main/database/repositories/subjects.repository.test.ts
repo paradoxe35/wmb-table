@@ -25,7 +25,7 @@ describe('subjects.repository', () => {
             { tree: [1] },
             'text content',
         );
-        expect(item.subject).toBe(subject.id);
+        expect(item.subjectId).toBe(subject.id);
         expect(item.documentHtmlTree).toEqual({ tree: [1] });
 
         const items = subjectsRepo.getItems(subject.id);
