@@ -3,7 +3,7 @@ import type { BrowserWindow } from 'electron';
 import { PushChannels } from '@shared/ipc.types';
 import { sendToRenderer } from '@main/ipc/register';
 import type { UpdaterNotification } from '@shared/types';
-import { GITHUB_TOKEN } from './github';
+import { GITHUB_OWNER, GITHUB_REPO, GITHUB_TOKEN } from './github';
 import log from './logger';
 
 const { autoUpdater } = updater;
@@ -29,10 +29,18 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     autoUpdater.autoDownload = false;
     autoUpdater.autoInstallOnAppQuit = true;
 
-    // For private GitHub repos, electron-updater needs the token passed via
-    // GH_TOKEN env var so it uses PrivateGitHubProvider instead of the public one.
-    if (GITHUB_TOKEN && !process.env.GH_TOKEN) {
+    // When a GitHub token is available, use PrivateGitHubProvider (works for
+    // both private and public repos via the GitHub API). Without a token,
+    // electron-updater falls back to the public releases feed automatically.
+    if (GITHUB_TOKEN) {
         process.env.GH_TOKEN = GITHUB_TOKEN;
+        autoUpdater.setFeedURL({
+            provider: 'github',
+            owner: GITHUB_OWNER,
+            repo: GITHUB_REPO,
+            private: true,
+            token: GITHUB_TOKEN,
+        });
     }
 
     autoUpdater.on('checking-for-update', () => {
