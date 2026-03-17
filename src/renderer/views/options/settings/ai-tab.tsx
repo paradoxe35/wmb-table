@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Divider, Select, Space, Switch, Tag, Typography } from 'antd';
 import { BookOutlined, CloudOutlined, LaptopOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { AiBuiltinProviderId, AiCustomProviderConfig } from '@shared/ai.types';
+import type { AiCustomProviderConfig } from '@shared/ai.types';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
 import { buildDocsGuideLink } from '@renderer/utils/constants';
 import { Field, Hint } from './ai-shared';
@@ -78,17 +78,13 @@ export default function AiTab() {
     }
 
     function handleProviderChange(value: string) {
-        const customProv = settings!.customProviders.find((p) => p.id === value);
-        const builtinConfig = settings!.providers[value as AiBuiltinProviderId];
-        const activeModel = customProv?.defaultModel ?? builtinConfig?.model ?? null;
-        void saveSettings({ activeProvider: value, activeModel });
+        void saveSettings({ activeProvider: value });
     }
 
     function handleAddCustomProvider(provider: AiCustomProviderConfig) {
         void saveSettings({
             customProviders: [...settings!.customProviders, provider],
             activeProvider: provider.id,
-            activeModel: provider.defaultModel ?? null,
         });
     }
 

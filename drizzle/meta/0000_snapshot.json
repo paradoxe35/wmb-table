@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "0ab8a78a-b9cc-4293-aa18-77e7fff8c215",
+    "id": "cc53a376-bf5d-49ac-ae88-13e487b03adf",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -160,13 +160,6 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "active_model": {
-                    "name": "active_model",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
                 "language_preference": {
                     "name": "language_preference",
                     "type": "text",
@@ -182,14 +175,6 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": 50
-                },
-                "max_context_messages": {
-                    "name": "max_context_messages",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 18
                 },
                 "providers": {
                     "name": "providers",

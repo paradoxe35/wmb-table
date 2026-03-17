@@ -7,11 +7,13 @@ import {
     DeleteOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type {
-    AiBuiltinProviderId,
-    AiCustomProviderConfig,
-    AiProviderDefinition,
-    AiSettings,
+import {
+    resolveActiveModel,
+    DEFAULT_MODELS,
+    type AiBuiltinProviderId,
+    type AiCustomProviderConfig,
+    type AiProviderDefinition,
+    type AiSettings,
 } from '@shared/ai.types';
 import { useAiChatStore } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
@@ -188,6 +190,13 @@ function ModelSelect({
     );
 }
 
+function defaultModelHint(
+    t: (k: string) => string,
+    defaultModel?: string | null,
+): string | undefined {
+    return defaultModel ? `${t('Modèle par défaut')}: ${defaultModel}` : undefined;
+}
+
 // ── Provider configs ──
 
 export function BuiltinProviderConfig({
@@ -201,6 +210,7 @@ export function BuiltinProviderConfig({
 }) {
     const { t } = useTranslation();
     const config = settings.providers[provider.id as AiBuiltinProviderId];
+    const activeModel = resolveActiveModel(settings);
 
     function updateField(key: string, value: string) {
         onSave({
@@ -251,10 +261,17 @@ export function BuiltinProviderConfig({
                         );
                     }
                     return (
-                        <Field key={field.key} label={t('Modèle')}>
+                        <Field
+                            key={field.key}
+                            label={t('Modèle')}
+                            hint={defaultModelHint(
+                                t,
+                                DEFAULT_MODELS[provider.id as AiBuiltinProviderId],
+                            )}
+                        >
                             <ModelSelect
                                 providerId={provider.id}
-                                value={config?.model}
+                                value={activeModel}
                                 apiKey={config?.apiKey}
                                 baseUrl={config?.baseUrl}
                                 onChange={(model) => updateField('model', model)}
@@ -264,7 +281,7 @@ export function BuiltinProviderConfig({
                 })}
                 <TestButton
                     providerId={provider.id}
-                    model={config?.model}
+                    model={activeModel}
                     apiKey={config?.apiKey}
                     baseUrl={config?.baseUrl}
                 />
@@ -283,6 +300,7 @@ export function CustomProviderConfig({
     onSave: (partial: Partial<AiSettings>) => void;
 }) {
     const { t } = useTranslation();
+    const activeModel = resolveActiveModel(settings);
 
     function updateCustom(partial: Partial<AiCustomProviderConfig>) {
         onSave({
@@ -296,7 +314,6 @@ export function CustomProviderConfig({
         onSave({
             customProviders: settings.customProviders.filter((p) => p.id !== provider.id),
             activeProvider: null,
-            activeModel: null,
         });
     }
 
@@ -330,18 +347,18 @@ export function CustomProviderConfig({
                         placeholder={t('Optionnel')}
                     />
                 </Field>
-                <Field label={t('Modèle par défaut')}>
+                <Field label={t('Modèle')} hint={defaultModelHint(t, provider.defaultModel)}>
                     <ModelSelect
                         providerId={provider.id}
-                        value={provider.defaultModel}
+                        value={activeModel}
                         apiKey={provider.apiKey}
                         baseUrl={provider.baseUrl}
-                        onChange={(model) => updateCustom({ defaultModel: model })}
+                        onChange={(model) => updateCustom({ model })}
                     />
                 </Field>
                 <TestButton
                     providerId={provider.id}
-                    model={provider.defaultModel}
+                    model={activeModel}
                     apiKey={provider.apiKey}
                     baseUrl={provider.baseUrl}
                 />

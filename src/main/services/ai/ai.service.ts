@@ -269,6 +269,11 @@ export class AiService {
             if (seen.has(provider.id)) {
                 throw new Error(`Duplicate custom provider id: "${provider.id}".`);
             }
+            if (!provider.defaultModel?.trim()) {
+                throw new Error(
+                    `Le modèle par défaut est requis pour le fournisseur "${provider.name}".`,
+                );
+            }
             seen.add(provider.id);
         }
     }

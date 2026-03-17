@@ -4,7 +4,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
 import type { AiProviderConfig, AiSettings } from '@shared/ai.types';
-import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import type { LocalRuntimeService } from './local/local-runtime.service';
 import { createLocalProvider } from './local/local-provider';
 import { wrapReasoningFilteredModel } from './model-wrapper';
@@ -38,25 +37,8 @@ const BUILTIN_PROVIDERS: Record<string, ProviderFactory> = {
     },
 };
 
-/**
- * Resolve the active model for a provider.
- * Checks activeModel first, then falls back to the provider's own config.
- */
-export function resolveActiveModel(settings: AiSettings): string | null {
-    const providerId = settings.activeProvider;
-    if (!providerId) return null;
-
-    // 1. Explicit activeModel (if set and non-empty)
-    if (settings.activeModel) return settings.activeModel;
-
-    // 2. Builtin provider config
-    if ((BUILTIN_PROVIDER_IDS as readonly string[]).includes(providerId)) {
-        return settings.providers[providerId as keyof AiSettings['providers']]?.model || null;
-    }
-
-    // 3. Custom provider config
-    return settings.customProviders.find((p) => p.id === providerId)?.defaultModel || null;
-}
+// Re-export from shared for backward compat
+export { resolveActiveModel } from '@shared/ai.types';
 
 export function resolveLanguageModel(input: {
     settings: AiSettings;

@@ -147,7 +147,6 @@ export default function AiLocalModels({
     function selectModel(modelId: string) {
         onUpdate({
             activeProvider: 'local',
-            activeModel: modelId,
             providers: {
                 ...settings.providers,
                 local: { ...settings.providers.local, enabled: true, model: modelId },

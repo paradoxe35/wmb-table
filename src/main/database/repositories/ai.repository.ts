@@ -54,10 +54,8 @@ function rowToSettings(row: typeof aiSettings.$inferSelect): AiSettings {
     return {
         enabled: row.enabled,
         activeProvider: row.activeProvider,
-        activeModel: row.activeModel,
         languagePreference: row.languagePreference as AiSettings['languagePreference'],
         maxHistoryConversations: row.maxHistoryConversations,
-        maxContextMessages: row.maxContextMessages,
         providers: {
             ...defaults.providers,
             ...parseJson<AiProviders>(row.providers, defaults.providers),
@@ -84,10 +82,8 @@ export function ensureSettings(): AiSettings {
             id: AI_SETTINGS_ID,
             enabled: defaults.enabled,
             activeProvider: defaults.activeProvider,
-            activeModel: defaults.activeModel,
             languagePreference: defaults.languagePreference,
             maxHistoryConversations: defaults.maxHistoryConversations,
-            maxContextMessages: defaults.maxContextMessages,
             providers: JSON.stringify(defaults.providers),
             customProviders: JSON.stringify(defaults.customProviders),
         })
@@ -114,12 +110,11 @@ export function updateSettings(partial: Partial<AiSettings>): AiSettings {
         .update(aiSettings)
         .set({
             enabled: partial.enabled ?? current.enabled,
-            activeProvider: partial.activeProvider ?? current.activeProvider,
-            activeModel: partial.activeModel ?? current.activeModel,
+            activeProvider:
+                'activeProvider' in partial ? partial.activeProvider : current.activeProvider,
             languagePreference: partial.languagePreference ?? current.languagePreference,
             maxHistoryConversations:
                 partial.maxHistoryConversations ?? current.maxHistoryConversations,
-            maxContextMessages: partial.maxContextMessages ?? current.maxContextMessages,
             providers: JSON.stringify(mergedProviders),
             customProviders: JSON.stringify(partial.customProviders ?? current.customProviders),
             updatedAt: new Date().toISOString(),

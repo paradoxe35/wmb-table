@@ -217,6 +217,20 @@
     flex-wrap: wrap;
     gap: 4px;
     margin-top: 8px;
+    align-items: center;
+}
+
+.ai-chat__tool-results-more {
+    font-size: 0.75em;
+    color: var(--ant-color-primary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+}
+
+.ai-chat__tool-results-more:hover {
+    background: var(--ant-color-primary-bg);
 }
 
 /* ── Input area ──────────────────────────────────────────────── */
@@ -257,4 +271,43 @@
     align-items: center;
     padding: 0 7px 0 2px;
     flex-shrink: 0;
+}
+
+/* ── Reasoning block ────────────────────────────────────────── */
+.ai-reasoning {
+    margin-bottom: 8px;
+}
+
+.ai-reasoning__toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 4px 0;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.ai-reasoning__toggle:hover {
+    opacity: 1;
+}
+
+.ai-reasoning__content {
+    margin-top: 6px;
+    padding: 8px 10px;
+    background: var(--ant-color-fill-quaternary);
+    border-radius: 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.ai-reasoning__content pre {
+    margin: 0;
+    font-size: 0.78em;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--ant-color-text-secondary);
+    font-family: inherit;
 }

@@ -35,6 +35,19 @@ export function dispatchToolCallStart(
     });
 }
 
+export function dispatchReasoningDelta(
+    browserWindow: BrowserWindow,
+    conversationId: string,
+    assistantMessageId: string,
+    delta: string,
+): void {
+    sendToRenderer(browserWindow, PushChannels.aiReasoningDelta, {
+        conversationId,
+        messageId: assistantMessageId,
+        delta,
+    });
+}
+
 export function dispatchToolCallComplete(
     browserWindow: BrowserWindow,
     conversationId: string,

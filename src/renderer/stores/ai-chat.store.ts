@@ -8,6 +8,7 @@ import type {
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
+import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
 import { AI_DATA_EVENT } from '@renderer/utils/events';
 
 const TOOL_TO_EVENT: Record<string, string> = {
@@ -20,6 +21,7 @@ const TOOL_TO_EVENT: Record<string, string> = {
 };
 
 type MessageMap = Record<string, AiMessage[]>;
+type ReasoningMap = Record<string, string>;
 
 interface AiChatState {
     initialized: boolean;
@@ -28,6 +30,7 @@ interface AiChatState {
     conversations: AiConversation[];
     activeConversationId: string | null;
     messagesByConversation: MessageMap;
+    reasoningByMessage: ReasoningMap;
     localModels: AiModelScanResult | null;
     sending: boolean;
     error: string | null;
@@ -84,6 +87,7 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
     conversations: [],
     activeConversationId: null,
     messagesByConversation: {},
+    reasoningByMessage: {},
     localModels: null,
     sending: false,
     error: null,
@@ -101,6 +105,14 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
                                     ? { ...message, content: `${message.content}${delta}` }
                                     : message,
                         ),
+                    },
+                }));
+            });
+            window.api.on.aiReasoningDelta(({ messageId, delta }) => {
+                set((state) => ({
+                    reasoningByMessage: {
+                        ...state.reasoningByMessage,
+                        [messageId]: (state.reasoningByMessage[messageId] ?? '') + delta,
                     },
                 }));
             });
@@ -331,3 +343,14 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
         await window.api.ai.downloadModel(modelId);
     },
 }));
+
+/** Selector: returns "ProviderName — model" for the active provider. */
+export function selectActiveProviderLabel(state: AiChatState): string {
+    const { settings, providerCatalog } = state;
+    if (!settings?.activeProvider) {
+        return '';
+    }
+    const providerName = resolveProviderName(settings, providerCatalog) ?? '';
+    const model = resolveActiveModel(settings) ?? '';
+    return model ? `${providerName} — ${model}` : providerName;
+}

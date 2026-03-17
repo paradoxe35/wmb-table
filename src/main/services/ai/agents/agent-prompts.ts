@@ -40,6 +40,8 @@ export function buildResearchAgentPrompt(languageCode: string): string {
         '- Keep your final answer under 800 words.',
         '- Be concise and structured: use headings or bullet points.',
         '- If you cannot find enough information, say so honestly.',
+        '- Never ask the user to choose a method — pick the best one and execute it.',
+        '- When multiple translations exist, use the first available one.',
     ].join('\n');
 }
 
@@ -60,5 +62,7 @@ export function buildSermonReaderAgentPrompt(languageCode: string): string {
         '- Keep your final answer under 600 words.',
         '- Use searchContent to find specific phrases if needed.',
         '- If the sermon is not found, say so honestly.',
+        '- Never ask the user to choose a method — pick the best one and execute it.',
+        '- When multiple translations exist, use the first available one.',
     ].join('\n');
 }

@@ -1,17 +1,123 @@
-import { useEffect, useRef } from 'react';
-import { Empty, Spin, Typography } from 'antd';
-import { LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
+import { useEffect, useRef, useState } from 'react';
+import { Empty, Spin, Tooltip, Typography } from 'antd';
+import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
-import type { AiMessage } from '@shared/ai.types';
+import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
+import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
 import ChatToolResult from './chat-tool-result';
 import AiReferenceLink from './ai-reference-link';
 
 const { Text } = Typography;
 
 function urlTransform(url: string): string {
-    if (url.startsWith('wmb://')) return url;
+    if (url.startsWith('wmb://')) {
+        return url;
+    }
     return defaultUrlTransform(url);
+}
+
+const MAX_REASONING_LINES = 50;
+
+function ReasoningBlock({ messageId, isActive }: { messageId: string; isActive: boolean }) {
+    const { t } = useTranslation();
+    const reasoning = useAiChatStore((s) => s.reasoningByMessage[messageId]);
+    const [collapsed, setCollapsed] = useState(true);
+
+    if (!reasoning) {
+        return null;
+    }
+
+    const lines = reasoning.split('\n');
+    const truncated = lines.slice(-MAX_REASONING_LINES).join('\n');
+    const wasTruncated = lines.length > MAX_REASONING_LINES;
+
+    return (
+        <div className="ai-reasoning">
+            <div className="ai-reasoning__toggle" onClick={() => setCollapsed((c) => !c)}>
+                <BulbOutlined />
+                <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                    {collapsed ? t('Voir le raisonnement') : t('Masquer le raisonnement')}
+                </Text>
+                {isActive && <LoadingOutlined spin style={{ fontSize: 10 }} />}
+            </div>
+            {!collapsed && (
+                <div className="ai-reasoning__content">
+                    {wasTruncated && (
+                        <Text
+                            type="secondary"
+                            style={{ fontSize: '0.75em', display: 'block', marginBottom: 4 }}
+                        >
+                            ({t('{{count}} dernières lignes', { count: MAX_REASONING_LINES })})
+                        </Text>
+                    )}
+                    <pre>{truncated}</pre>
+                </div>
+            )}
+        </div>
+    );
+}
+
+const VISIBLE_TOOL_RESULTS = 3;
+
+interface GroupedToolResult {
+    name: string;
+    count: number;
+}
+
+function groupToolResults(results: AiToolResult[]): GroupedToolResult[] {
+    const map = new Map<string, number>();
+    for (const r of results) {
+        map.set(r.name, (map.get(r.name) ?? 0) + 1);
+    }
+    return [...map.entries()].map(([name, count]) => ({ name, count }));
+}
+
+function ToolResultsList({ results, isActive }: { results: AiToolResult[]; isActive: boolean }) {
+    const { t } = useTranslation();
+    const [expanded, setExpanded] = useState(false);
+
+    if (isActive) {
+        const reversed = [...results].reverse();
+        const visible =
+            results.length > VISIBLE_TOOL_RESULTS
+                ? reversed.slice(0, VISIBLE_TOOL_RESULTS)
+                : reversed;
+
+        return (
+            <div className="ai-chat__tool-results">
+                {visible.map((result) => (
+                    <ChatToolResult
+                        key={`${result.toolCallId}-${result.name}`}
+                        name={result.name}
+                    />
+                ))}
+                <LoadingOutlined spin style={{ fontSize: 10, opacity: 0.5 }} />
+            </div>
+        );
+    }
+
+    const grouped = groupToolResults(results);
+    const shouldCollapse = grouped.length > VISIBLE_TOOL_RESULTS;
+    const visible = shouldCollapse && !expanded ? grouped.slice(0, VISIBLE_TOOL_RESULTS) : grouped;
+    const hiddenCount = grouped.length - VISIBLE_TOOL_RESULTS;
+
+    return (
+        <div className="ai-chat__tool-results">
+            {visible.map((g) => (
+                <ChatToolResult key={g.name} name={g.name} count={g.count} />
+            ))}
+            {shouldCollapse && (
+                <span className="ai-chat__tool-results-more" onClick={() => setExpanded((e) => !e)}>
+                    {expanded
+                        ? t('Voir moins')
+                        : t(hiddenCount === 1 ? '+{{count}} autre' : '+{{count}} autres', {
+                              count: hiddenCount,
+                          })}
+                </span>
+            )}
+        </div>
+    );
 }
 
 function MessageBubble({
@@ -35,12 +141,18 @@ function MessageBubble({
         .filter(Boolean)
         .join(' ');
 
+    const providerLabel = useAiChatStore(selectActiveProviderLabel);
+    const providerTooltip = isUser ? '' : providerLabel;
+
     return (
         <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
-            <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
+            <Tooltip title={providerTooltip} placement="top">
+                <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
+            </Tooltip>
             <div
                 className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
+                {!isUser && <ReasoningBlock messageId={message.id} isActive={isActive} />}
                 {isWaiting ? (
                     <Spin indicator={<LoadingOutlined spin />} size="small" />
                 ) : isUser ? (
@@ -57,15 +169,8 @@ function MessageBubble({
                         <LoadingOutlined spin style={{ fontSize: 12 }} />
                     </div>
                 ) : null}
-                {message.toolResults.length > 0 ? (
-                    <div className="ai-chat__tool-results">
-                        {message.toolResults.map((result) => (
-                            <ChatToolResult
-                                key={`${result.toolCallId}-${result.name}`}
-                                name={result.name}
-                            />
-                        ))}
-                    </div>
+                {isActive && message.toolResults.length > 0 ? (
+                    <ToolResultsList results={message.toolResults} isActive={isActive} />
                 ) : null}
             </div>
         </div>
