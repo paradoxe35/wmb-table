@@ -168,6 +168,11 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             }
             break;
 
+        case 'searchBible':
+            if (output && typeof output === 'object' && 'total' in output)
+                return `Bible search: ${output.total} verse(s) found for "${output.query}"`;
+            break;
+
         case 'getSubjects':
             if (Array.isArray(output))
                 return summarizeList(extractNames(output, 'name'), `${output.length} subject(s)`);
@@ -199,7 +204,6 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'addSermonReferenceToNote':
-        case 'addBibleReferenceToNote':
             if (output && typeof output === 'object')
                 return `Note updated: ${String(output.label ?? output.noteId ?? 'reference added')}`;
             break;

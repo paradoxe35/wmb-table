@@ -141,6 +141,8 @@ const en: Record<string, string> = {
     'Création de note': 'Note creation',
     'Mise à jour de la note': 'Note update',
     'Ajout à la note': 'Added to note',
+    'Recherche biblique': 'Bible search',
+    'Recherche approfondie': 'In-depth research',
     'Langues disponibles': 'Available languages',
     'Documents personnalisés': 'Custom documents',
     'Lecture du document': 'Reading document',
@@ -337,6 +339,8 @@ const en: Record<string, string> = {
     'Erreur lors du chargement des sujets': 'Error loading subjects',
     'Erreur lors du chargement des éléments du sujet': 'Error loading subject items',
     'Sujet créé': 'Subject created',
+    'Renommer le sujet': 'Rename subject',
+    'Sujet renommé': 'Subject renamed',
     Supprimé: 'Deleted',
     'Aucune référence trouvée dans le sujet: {{name}}': 'No references found in subject: {{name}}',
 

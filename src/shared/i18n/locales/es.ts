@@ -142,6 +142,8 @@ const es: Record<string, string> = {
     'Création de note': 'Creación de nota',
     'Mise à jour de la note': 'Actualización de nota',
     'Ajout à la note': 'Añadido a la nota',
+    'Recherche biblique': 'Búsqueda bíblica',
+    'Recherche approfondie': 'Investigación profunda',
     'Langues disponibles': 'Idiomas disponibles',
     'Documents personnalisés': 'Documentos personalizados',
     'Lecture du document': 'Lectura del documento',
@@ -340,6 +342,8 @@ const es: Record<string, string> = {
     'Erreur lors du chargement des sujets': 'Error al cargar los temas',
     'Erreur lors du chargement des éléments du sujet': 'Error al cargar los elementos del tema',
     'Sujet créé': 'Tema creado',
+    'Renommer le sujet': 'Renombrar tema',
+    'Sujet renommé': 'Tema renombrado',
     Supprimé: 'Eliminado',
     'Aucune référence trouvée dans le sujet: {{name}}':
         'Ninguna referencia encontrada en el tema: {{name}}',

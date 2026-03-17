@@ -146,6 +146,7 @@ export const BibleChannels = {
 export const SubjectChannels = {
     getAll: 'subjects:getAll',
     create: 'subjects:create',
+    rename: 'subjects:rename',
     delete: 'subjects:delete',
     getItems: 'subjects:getItems',
     deleteItem: 'subjects:deleteItem',
@@ -393,6 +394,7 @@ export interface InvokeChannelMap {
     // Subjects
     [SubjectChannels.getAll]: { args: []; return: SubjectDocument[] };
     [SubjectChannels.create]: { args: [string]; return: SubjectDocument };
+    [SubjectChannels.rename]: { args: [string, string]; return: void };
     [SubjectChannels.delete]: { args: [string]; return: void };
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };

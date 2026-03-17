@@ -83,6 +83,20 @@ export function create(name: string): SubjectDocument {
     };
 }
 
+export function rename(id: string, newName: string): void {
+    const db = getDb();
+    const subject = db.select().from(subjects).where(eq(subjects.id, id)).get();
+    if (!subject) return;
+
+    const now = new Date().toISOString();
+    db.update(subjectItems)
+        .set({ subjectName: newName, updatedAt: now })
+        .where(eq(subjectItems.subjectName, subject.name))
+        .run();
+    db.update(subjects).set({ name: newName, updatedAt: now }).where(eq(subjects.id, id)).run();
+    logChange('subjects', id, 'SAVE', { id, name: newName, updatedAt: now });
+}
+
 export function deleteSubject(id: string): void {
     const db = getDb();
     const subject = db.select().from(subjects).where(eq(subjects.id, id)).get();

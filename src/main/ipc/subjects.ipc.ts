@@ -11,6 +11,10 @@ export function registerSubjectsHandlers(): void {
         return subjectsRepo.create(name);
     });
 
+    registerHandler(SubjectChannels.rename, async (_event, id, newName) => {
+        subjectsRepo.rename(id, newName);
+    });
+
     registerHandler(SubjectChannels.delete, async (_event, id) => {
         subjectsRepo.deleteSubject(id);
     });

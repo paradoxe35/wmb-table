@@ -48,7 +48,7 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                     referenceDataService.getSermonListForLanguage(lang).find((sermon) => {
                         return sermon.sermonId === sermonId;
                     });
-                if (!meta) throw new Error('Sermon introuvable');
+                if (!meta) return { error: 'Sermon introuvable.' };
 
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
@@ -66,7 +66,7 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                     };
                 }
                 const paragraph = paragraphs[paragraphIndex];
-                if (!paragraph) throw new Error('Paragraphe introuvable');
+                if (!paragraph) return { error: 'Paragraphe introuvable.' };
 
                 return subjectsRepo.createItem(
                     subjectName,
