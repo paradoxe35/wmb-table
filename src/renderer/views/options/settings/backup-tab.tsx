@@ -204,9 +204,15 @@ export default function BackupTab() {
                 <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end' }}>
                     <Popconfirm
                         title={t('Se déconnecter de Google ?')}
-                        description={t(
-                            'La synchronisation sera arrêtée et les données de connexion supprimées. Vos données locales seront conservées.',
-                        )}
+                        description={
+                            <>
+                                {t(
+                                    'La synchronisation sera arrêtée et les données de connexion supprimées.',
+                                )}
+                                <br />
+                                {t('Vos données locales seront conservées.')}
+                            </>
+                        }
                         onConfirm={handleLogout}
                         okText={t('Oui')}
                         cancelText={t('Annuler')}

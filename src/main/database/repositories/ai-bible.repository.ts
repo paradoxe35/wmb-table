@@ -30,7 +30,7 @@ function resolveBiblePath(abbreviation?: string, languageCode?: string): string 
 }
 
 export function getAvailableVersions(languageCode: string) {
-    return bibleService
+    const versions = bibleService
         .getBibleVersionsForLanguage(languageCode)
         .filter((version) => bibleService.isBibleAvailable(version))
         .map((version) => ({
@@ -38,6 +38,11 @@ export function getAvailableVersions(languageCode: string) {
             languageCode: version.langCode,
             name: version.name,
         }));
+
+    if (versions.length === 0) {
+        return { error: `No Bible versions available for language "${languageCode}".` };
+    }
+    return versions;
 }
 
 export function getPassage(input: {
@@ -47,20 +52,57 @@ export function getPassage(input: {
     toVerse?: string;
     abbreviation?: string;
     languageCode?: string;
-}): BibleBook[] {
+}): BibleBook[] | { error: string } {
     const dbPath = resolveBiblePath(input.abbreviation, input.languageCode);
-    if (!dbPath || !existsSync(dbPath)) return [];
+    if (!dbPath || !existsSync(dbPath)) {
+        return {
+            error: `No Bible found${input.abbreviation ? ` for abbreviation "${input.abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
+        };
+    }
+
+    const chapter = input.chapter.replace(/\D/g, '');
+    if (!chapter) {
+        return { error: `Invalid chapter: "${input.chapter}". Provide a number (e.g. "3").` };
+    }
+
+    const fromVerse = input.fromVerse?.replace(/\D/g, '');
+    const toVerse = input.toVerse?.replace(/\D/g, '');
+    if (input.fromVerse && !fromVerse) {
+        return {
+            error: `Invalid verse number: "${input.fromVerse}". Provide a number (e.g. "16").`,
+        };
+    }
 
     const db = new Database(dbPath, { readonly: true });
     try {
-        if (!input.fromVerse) {
+        // Resolve book: try book_name (case-insensitive) first, then book code
+        const bookCode = resolveBookCode(db, input.book);
+        if (!bookCode) {
+            const available = db
+                .prepare(
+                    'SELECT DISTINCT book_name FROM bible_verses ORDER BY CAST(book AS integer)',
+                )
+                .all() as { book_name: string }[];
+            const names = available.map((r) => r.book_name);
+            return {
+                error: `Book "${input.book}" not found. Available books: ${names.slice(0, 10).join(', ')}${names.length > 10 ? `, ... (${names.length} total)` : ''}.`,
+            };
+        }
+
+        if (!fromVerse) {
             const stmt = db.prepare(
                 `SELECT id, book_name as bookName, book, testament, chapter, verse, content
                  FROM bible_verses
                  WHERE book = ? AND chapter = ?
                  ORDER BY CAST(verse as integer)`,
             );
-            return stmt.all(input.book, input.chapter) as BibleBook[];
+            const rows = stmt.all(bookCode, chapter) as BibleBook[];
+            if (rows.length === 0) {
+                return {
+                    error: `No verses found for chapter ${chapter}. The book may have fewer chapters.`,
+                };
+            }
+            return rows;
         }
 
         const stmt = db.prepare(
@@ -69,15 +111,44 @@ export function getPassage(input: {
              WHERE book = ? AND chapter = ? AND CAST(verse as integer) BETWEEN ? AND ?
              ORDER BY CAST(verse as integer)`,
         );
-        return stmt.all(
-            input.book,
-            input.chapter,
-            Number(input.fromVerse),
-            Number(input.toVerse ?? input.fromVerse),
+        const rows = stmt.all(
+            bookCode,
+            chapter,
+            Number(fromVerse),
+            Number(toVerse ?? fromVerse),
         ) as BibleBook[];
+        if (rows.length === 0) {
+            return {
+                error: `No verses found for chapter ${chapter}, verses ${fromVerse}-${toVerse ?? fromVerse}.`,
+            };
+        }
+        return rows;
     } finally {
         db.close();
     }
+}
+
+/** Resolve a book name or code to the internal book code used in the DB. */
+function resolveBookCode(db: Database.Database, book: string): string | null {
+    // Try exact match on book code first (e.g. "01O", "43N")
+    const byCode = db.prepare('SELECT book FROM bible_verses WHERE book = ? LIMIT 1').get(book) as
+        | { book: string }
+        | undefined;
+    if (byCode) return byCode.book;
+
+    // Try case-insensitive match on book_name (e.g. "Genesis", "Jean", "Matthieu")
+    const byName = db
+        .prepare('SELECT book FROM bible_verses WHERE book_name = ? COLLATE NOCASE LIMIT 1')
+        .get(book) as { book: string } | undefined;
+    if (byName) return byName.book;
+
+    // Try partial match (e.g. "Rev" matches "Revelation", "Apo" matches "Apocalypse")
+    const byPartial = db
+        .prepare('SELECT book FROM bible_verses WHERE book_name LIKE ? COLLATE NOCASE LIMIT 1')
+        .get(`${book}%`) as { book: string } | undefined;
+    if (byPartial) return byPartial.book;
+
+    return null;
 }
 
 export function searchVerses(input: {
@@ -86,20 +157,15 @@ export function searchVerses(input: {
     languageCode?: string;
     testament?: string;
     limit?: number;
-}): BibleSearchResult {
+}): BibleSearchResult | { error: string } {
     const maxResults = Math.min(input.limit ?? 20, 40);
 
-    const emptyResult: BibleSearchResult = {
-        end: true,
-        itemsPerPage: maxResults,
-        query: input.query,
-        pageNumber: 1,
-        total: 0,
-        data: [],
-    };
-
     const dbPath = resolveBiblePath(input.abbreviation, input.languageCode);
-    if (!dbPath || !existsSync(dbPath)) return emptyResult;
+    if (!dbPath || !existsSync(dbPath)) {
+        return {
+            error: `No Bible found${input.abbreviation ? ` for abbreviation "${input.abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
+        };
+    }
 
     const db = new Database(dbPath, { readonly: true });
     try {
@@ -135,6 +201,10 @@ export function searchVerses(input: {
             pageNumber: 1,
             total,
             data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
+        };
+    } catch (err) {
+        return {
+            error: `Bible search failed: ${err instanceof Error ? err.message : String(err)}. Try simplifying your query.`,
         };
     } finally {
         db.close();

@@ -16,7 +16,9 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
             description: 'Get a note with its full content and references by id.',
             inputSchema: z.object({ noteId: z.string() }),
             execute: async ({ noteId }) => {
-                return notesRepo.getById(noteId);
+                const note = notesRepo.getById(noteId);
+                if (!note) return { error: `Note "${noteId}" not found.` };
+                return note;
             },
         },
         createNote: {
@@ -27,22 +29,17 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
             }),
             execute: async ({ name, content }) => {
                 const note = notesRepo.create(name.trim());
-                if (content) {
-                    try {
-                        let htmlContent = await marked.parse(content);
-                        if (!htmlContent.includes('<h1>')) {
-                            htmlContent = `<h1>${name}</h1>\n${htmlContent}`;
-                        }
-                        notesRepo.updateContent(note.id, htmlContent);
-                    } catch (err) {
-                        return {
-                            error: `Failed to parse markdown: ${err instanceof Error ? err.message : String(err)}`,
-                        };
-                    }
+                if (!content) return note;
+
+                try {
+                    const htmlContent = await parseNoteMarkdown(content, name);
+                    notesRepo.updateContent(note.id, htmlContent);
+                } catch (err) {
+                    return {
+                        error: `Note created but content failed: ${err instanceof Error ? err.message : String(err)}`,
+                    };
                 }
-                const created = notesRepo.getById(note.id);
-                if (!created) return { error: 'Failed to retrieve created note.' };
-                return created;
+                return notesRepo.getById(note.id) ?? note;
             },
         },
         updateNoteContent: {
@@ -50,21 +47,26 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
             inputSchema: z.object({ noteId: z.string(), content: z.string() }),
             execute: async ({ noteId, content }) => {
                 const note = notesRepo.getById(noteId);
-                if (!note) return { error: 'Note not found.' };
+                if (!note) return { error: `Note "${noteId}" not found.` };
 
                 try {
-                    let htmlContent = await marked.parse(content);
-                    if (!htmlContent.includes('<h1>')) {
-                        htmlContent = `<h1>${note.name}</h1>\n${htmlContent}`;
-                    }
+                    const htmlContent = await parseNoteMarkdown(content, note.name);
                     notesRepo.updateContent(noteId, htmlContent);
                 } catch (err) {
                     return {
-                        error: `Failed to parse markdown: ${err instanceof Error ? err.message : String(err)}`,
+                        error: `Failed to update note: ${err instanceof Error ? err.message : String(err)}`,
                     };
                 }
-                return notesRepo.getById(noteId);
+                return notesRepo.getById(noteId) ?? note;
             },
         },
     };
+}
+
+async function parseNoteMarkdown(content: string, title: string): Promise<string> {
+    let html = await marked.parse(content);
+    if (!html.includes('<h1>')) {
+        html = `<h1>${title}</h1>\n${html}`;
+    }
+    return html;
 }

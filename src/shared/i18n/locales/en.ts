@@ -372,8 +372,9 @@ const en: Record<string, string> = {
     'Synchronisation activée': 'Sync enabled',
     Déconnexion: 'Sign out',
     'Se déconnecter de Google ?': 'Sign out from Google?',
-    'La synchronisation sera arrêtée et les données de connexion supprimées. Vos données locales seront conservées.':
-        'Sync will be stopped and sign-in data deleted. Your local data will be kept.',
+    'La synchronisation sera arrêtée et les données de connexion supprimées.':
+        'Sync will be stopped and sign-in data deleted.',
+    'Vos données locales seront conservées.': 'Your local data will be kept.',
     'Déconnexion réussie': 'Successfully signed out',
     "Une erreur s'est produite lors de la déconnexion, réessayez plus tard":
         'An error occurred during sign-out, please try again later',

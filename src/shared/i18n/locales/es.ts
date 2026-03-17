@@ -376,8 +376,9 @@ const es: Record<string, string> = {
     'Synchronisation activée': 'Sincronización activada',
     Déconnexion: 'Cerrar sesión',
     'Se déconnecter de Google ?': '¿Cerrar sesión de Google?',
-    'La synchronisation sera arrêtée et les données de connexion supprimées. Vos données locales seront conservées.':
-        'La sincronización se detendrá y los datos de inicio de sesión se eliminarán. Tus datos locales se conservarán.',
+    'La synchronisation sera arrêtée et les données de connexion supprimées.':
+        'La sincronización se detendrá y los datos de inicio de sesión se eliminarán.',
+    'Vos données locales seront conservées.': 'Tus datos locales se conservarán.',
     'Déconnexion réussie': 'Sesión cerrada correctamente',
     "Une erreur s'est produite lors de la déconnexion, réessayez plus tard":
         'Ocurrió un error al cerrar sesión, intenta más tarde',
