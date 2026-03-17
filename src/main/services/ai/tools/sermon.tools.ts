@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as referenceRepo from '@main/database/repositories/reference.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
-import { matchesQuery, strNormalizeNoLower, simpleRegExp } from '@shared/searchable';
+import { matchesQuery, strNormalize, strNormalizeNoLower, simpleRegExp } from '@shared/searchable';
 import type { SearchMode } from '@shared/types';
 import type { AiToolDefinition } from './types';
 import { validateLanguage } from './shared';
@@ -28,16 +28,18 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 const sermons = referenceDataService
                     .getSermonListForLanguage(languageCode ?? defaultLanguageCode)
                     .filter((sermon) => {
-                        const fields = [
-                            sermon.title,
-                            sermon.enTitle,
-                            sermon.location,
-                            sermon.cityState,
-                            sermon.sermonId,
-                            new Date(sermon.dateMs).toISOString().slice(0, 10),
-                        ]
-                            .filter(Boolean)
-                            .join(' ');
+                        const fields = strNormalize(
+                            [
+                                sermon.title,
+                                sermon.enTitle,
+                                sermon.location,
+                                sermon.cityState,
+                                sermon.sermonId,
+                                new Date(sermon.dateMs).toISOString().slice(0, 10),
+                            ]
+                                .filter(Boolean)
+                                .join(' '),
+                        );
                         return patterns.every((re: RegExp) => {
                             re.lastIndex = 0;
                             return re.test(fields);
