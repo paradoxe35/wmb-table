@@ -339,6 +339,8 @@ const en: Record<string, string> = {
     'Erreur lors du chargement des sujets': 'Error loading subjects',
     'Erreur lors du chargement des éléments du sujet': 'Error loading subject items',
     'Sujet créé': 'Subject created',
+    'Un sujet avec ce nom existe déjà.': 'A subject with this name already exists.',
+    'Sujet introuvable': 'Subject not found',
     'Renommer le sujet': 'Rename subject',
     'Sujet renommé': 'Subject renamed',
     Supprimé: 'Deleted',
@@ -543,6 +545,11 @@ const en: Record<string, string> = {
     // ── Notes ──
     'Erreur lors du chargement des notes': 'Error loading notes',
     'Note supprimée': 'Note deleted',
+    'Note introuvable ou vide': 'Note not found or empty',
+    'Aucun modèle Sherpa-ONNX installé': 'No Sherpa-ONNX model installed',
+    'Aucun modèle local GGUF trouvé dans ~/.wmb-table/ai-models.':
+        'No local GGUF model found in ~/.wmb-table/ai-models.',
+    'Le modèle local n\u2019est pas chargé.': 'The local model is not loaded.',
     'Erreur lors de la création de la note': 'Error creating note',
     'Nouvelle note': 'New note',
     'Aucune note': 'No notes',

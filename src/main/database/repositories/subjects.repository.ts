@@ -59,7 +59,9 @@ export function getAll(): SubjectDocument[] {
 export function getById(id: string): SubjectDocument | null {
     const db = getDb();
     const row = db.select().from(subjects).where(eq(subjects.id, id)).get();
-    if (!row) return null;
+    if (!row) {
+        return null;
+    }
     const items = db.select().from(subjectItems).where(eq(subjectItems.subjectId, row.id)).all();
     return {
         id: row.id,

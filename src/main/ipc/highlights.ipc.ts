@@ -30,7 +30,9 @@ export function registerHighlightsHandlers(): void {
 
     registerHandler(HighlightChannels.exportPdf, async (_event, languageCode) => {
         const result = highlightsRepo.search('', 0, 99999, languageCode);
-        if (result.items.length === 0) return '';
+        if (result.items.length === 0) {
+            return '';
+        }
 
         const html = await buildHighlightsExportHtml(result.items);
         return exportHtmlToPdf({ html, defaultName: 'soulignages' });

@@ -79,7 +79,9 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
         first.languageCode,
         first.sermonId,
     );
-    if (!sermon) return { paragraphContents };
+    if (!sermon) {
+        return { paragraphContents };
+    }
 
     const parts: string[] = [];
     if (sermon.dateMs) parts.push(formatDate(sermon.dateMs));
@@ -153,7 +155,9 @@ async function fetchDocumentContext(items: HighlightItem[]): Promise<DocumentCon
 
 function renderParagraphWithMark(fullContent: string, snippet: string, color: string): string {
     const idx = fullContent.indexOf(snippet);
-    if (idx < 0) return escapeHtml(fullContent);
+    if (idx < 0) {
+        return escapeHtml(fullContent);
+    }
 
     const before = escapeHtml(fullContent.slice(0, idx));
     const marked = escapeHtml(fullContent.slice(idx, idx + snippet.length));

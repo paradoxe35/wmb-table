@@ -53,8 +53,12 @@ export function registerSubjectsHandlers(): void {
 
     registerHandler(SubjectChannels.exportPdf, async (_event, subjectId) => {
         const subject = subjectsRepo.getById(subjectId);
-        if (!subject) throw new Error('Sujet introuvable');
-        if (subject.documents.length === 0) return '';
+        if (!subject) {
+            throw new Error('Sujet introuvable');
+        }
+        if (subject.documents.length === 0) {
+            return '';
+        }
 
         const html = buildSubjectExportHtml(subject.name, subject.documents);
         const defaultName = subject.name.replace(/\s+/g, '-').toLowerCase();

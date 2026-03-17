@@ -342,6 +342,8 @@ const es: Record<string, string> = {
     'Erreur lors du chargement des sujets': 'Error al cargar los temas',
     'Erreur lors du chargement des éléments du sujet': 'Error al cargar los elementos del tema',
     'Sujet créé': 'Tema creado',
+    'Un sujet avec ce nom existe déjà.': 'Ya existe un tema con este nombre.',
+    'Sujet introuvable': 'Tema no encontrado',
     'Renommer le sujet': 'Renombrar tema',
     'Sujet renommé': 'Tema renombrado',
     Supprimé: 'Eliminado',
@@ -548,6 +550,11 @@ const es: Record<string, string> = {
     // ── Notes ──
     'Erreur lors du chargement des notes': 'Error al cargar las notas',
     'Note supprimée': 'Nota eliminada',
+    'Note introuvable ou vide': 'Nota no encontrada o vacía',
+    'Aucun modèle Sherpa-ONNX installé': 'Ningún modelo Sherpa-ONNX instalado',
+    'Aucun modèle local GGUF trouvé dans ~/.wmb-table/ai-models.':
+        'No se encontró ningún modelo local GGUF en ~/.wmb-table/ai-models.',
+    'Le modèle local n\u2019est pas chargé.': 'El modelo local no está cargado.',
     'Erreur lors de la création de la note': 'Error al crear la nota',
     'Nouvelle note': 'Nueva nota',
     'Aucune note': 'Sin notas',

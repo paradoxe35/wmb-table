@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "277e2cc6-f40f-4674-8a9c-a2ab88ae3338",
+    "id": "0ab8a78a-b9cc-4293-aa18-77e7fff8c215",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -565,13 +565,7 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {
-                "custom_documents_title_unique": {
-                    "name": "custom_documents_title_unique",
-                    "columns": ["title"],
-                    "isUnique": true
-                }
-            },
+            "indexes": {},
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},

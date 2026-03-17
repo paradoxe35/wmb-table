@@ -26,11 +26,20 @@ export function getCustomDocuments(): CustomDocument[] {
 }
 
 export function createCustomDocument(title: string, content: string): CustomDocument {
+    const db = getDb();
+    const existing = db
+        .select()
+        .from(customDocuments)
+        .where(eq(customDocuments.title, title))
+        .get();
+    if (existing) {
+        throw new Error('Un document avec ce nom existe déjà.');
+    }
+
     const id = randomUUID();
     const now = new Date().toISOString();
     const sermonId = now.slice(0, 10);
-    getDb()
-        .insert(customDocuments)
+    db.insert(customDocuments)
         .values({ id, title, content, sermonId, createdAt: now, updatedAt: now })
         .run();
     logChange('custom_documents', id, 'SAVE', {

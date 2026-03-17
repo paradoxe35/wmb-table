@@ -91,7 +91,6 @@ CREATE TABLE `custom_documents` (
 	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `custom_documents_title_unique` ON `custom_documents` (`title`);--> statement-breakpoint
 CREATE TABLE `highlights` (
 	`id` text PRIMARY KEY NOT NULL,
 	`group_id` text DEFAULT '' NOT NULL,

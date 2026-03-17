@@ -117,7 +117,7 @@ export const sidebarStatus = sqliteTable('sidebar_status', {
 
 export const customDocuments = sqliteTable('custom_documents', {
     id: text('id').primaryKey(),
-    title: text('title').notNull().unique(),
+    title: text('title').notNull(),
     content: text('content').notNull().default(''),
     sermonId: text('sermon_id').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),

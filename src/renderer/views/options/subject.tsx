@@ -202,13 +202,18 @@ export default function Subject() {
         const value = searchValue.trim();
         if (value.length < 2 || odatas.current.some((d) => d.name === value)) return;
 
-        window.api.subjects.create(value).then((subject) => {
-            const active = { ...subject, active: true };
-            odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
-            setDatas(odatas.current);
-            setSubjects(odatas.current);
-            message.success(t('Sujet créé'));
-        });
+        window.api.subjects
+            .create(value)
+            .then((subject) => {
+                const active = { ...subject, active: true };
+                odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
+                setDatas(odatas.current);
+                setSubjects(odatas.current);
+                message.success(t('Sujet créé'));
+            })
+            .catch(() => {
+                message.error(t('Un sujet avec ce nom existe déjà.'));
+            });
     };
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
