@@ -49,7 +49,7 @@ export const historyItems = sqliteTable('history_items', {
 
 export const subjects = sqliteTable('subjects', {
     id: text('id').primaryKey(),
-    name: text('name').notNull().unique(),
+    name: text('name').notNull(),
     date: text('date').notNull(),
     active: integer('active', { mode: 'boolean' }).default(false),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
@@ -58,7 +58,9 @@ export const subjects = sqliteTable('subjects', {
 
 export const subjectItems = sqliteTable('subject_items', {
     id: text('id').primaryKey(),
-    subjectName: text('subject_name').notNull(),
+    subjectId: text('subject_id')
+        .notNull()
+        .references(() => subjects.id, { onDelete: 'cascade' }),
     documentTitle: text('document_title').notNull(),
     documentHtmlTree: text('document_html_tree').notNull(), // JSON
     textContent: text('text_content').notNull(),
@@ -115,7 +117,6 @@ export const sidebarStatus = sqliteTable('sidebar_status', {
 
 export const customDocuments = sqliteTable('custom_documents', {
     id: text('id').primaryKey(),
-    documentId: text('document_id').notNull(),
     title: text('title').notNull().unique(),
     content: text('content').notNull().default(''),
     sermonId: text('sermon_id').notNull().default(''),

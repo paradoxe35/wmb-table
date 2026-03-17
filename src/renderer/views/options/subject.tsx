@@ -173,8 +173,8 @@ export default function Subject() {
 
     useEffect(() => {
         const focusSubject = (event: Event) => {
-            const name = (event as CustomEvent<{ name: string }>).detail?.name;
-            setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
+            const id = (event as CustomEvent<{ id: string }>).detail?.id;
+            if (id) setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
@@ -194,8 +194,8 @@ export default function Subject() {
 
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
 
-    const onSelectItem = useCallback((name: string) => {
-        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.name === name })));
+    const onSelectItem = useCallback((id: string) => {
+        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
     }, []);
 
     const saveNewSubject = (searchValue: string) => {
@@ -213,7 +213,7 @@ export default function Subject() {
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
         window.api.subjects.delete(item.id).then(() => {
-            odatas.current = odatas.current.filter((d) => d.name !== item.name);
+            odatas.current = odatas.current.filter((d) => d.id !== item.id);
             setDatas(odatas.current);
             setSubjects(odatas.current);
             message.success(t('Supprimé'));
@@ -404,7 +404,8 @@ function ShowActiveDocuments({
         try {
             const filePath = await window.api.subjects.exportPdf(subject.id);
             if (filePath) message.success(t('PDF exporté avec succès'));
-        } catch {
+        } catch (err) {
+            console.error('Subject PDF export failed:', err);
             message.error(t("Erreur lors de l'export PDF"));
         }
     }, [subject.id, t]);
@@ -457,7 +458,7 @@ function ShowActiveDocuments({
 
 const ItemSubject: FC<{
     item: SubjectDocument;
-    onSelectItem: (name: string) => void;
+    onSelectItem: (id: string) => void;
     onDeleteSubject: (item: SubjectDocument) => void;
     onRenameSubject: (item: SubjectDocument) => void;
 }> = ({ item, onSelectItem, onDeleteSubject, onRenameSubject }) => {
@@ -465,7 +466,7 @@ const ItemSubject: FC<{
     const { modal } = AntApp.useApp();
 
     const onSelect = useCallback(() => {
-        if (!item.active) onSelectItem(item.name);
+        if (!item.active) onSelectItem(item.id);
     }, [item, onSelectItem]);
 
     const confirmDelete = useCallback(() => {

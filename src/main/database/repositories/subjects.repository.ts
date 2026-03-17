@@ -24,7 +24,7 @@ function safeJsonParse<T>(raw: string, fallback: T): T {
 function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentItem {
     return {
         id: row.id,
-        subject: row.subjectName,
+        subjectId: row.subjectId,
         documentTitle: row.documentTitle,
         documentHtmlTree: safeJsonParse(row.documentHtmlTree, { tree: [] }),
         textContent: row.textContent,
@@ -42,7 +42,7 @@ export function getAll(): SubjectDocument[] {
         const items = db
             .select()
             .from(subjectItems)
-            .where(eq(subjectItems.subjectName, row.name))
+            .where(eq(subjectItems.subjectId, row.id))
             .all();
         return {
             id: row.id,
@@ -56,12 +56,33 @@ export function getAll(): SubjectDocument[] {
     });
 }
 
+export function getById(id: string): SubjectDocument | null {
+    const db = getDb();
+    const row = db.select().from(subjects).where(eq(subjects.id, id)).get();
+    if (!row) return null;
+    const items = db.select().from(subjectItems).where(eq(subjectItems.subjectId, row.id)).all();
+    return {
+        id: row.id,
+        name: row.name,
+        date: row.date,
+        active: false,
+        documents: items.map(toSubjectItem),
+        createdAt: new Date(row.createdAt ?? Date.now()),
+        updatedAt: new Date(row.updatedAt ?? Date.now()),
+    };
+}
+
 export function create(name: string): SubjectDocument {
+    const db = getDb();
+    const existing = db.select().from(subjects).where(eq(subjects.name, name)).get();
+    if (existing) {
+        throw new Error('Un sujet avec ce nom existe déjà.');
+    }
+
     const id = randomUUID();
     const now = new Date().toISOString();
     const date = new Date().toLocaleDateString();
-    getDb()
-        .insert(subjects)
+    db.insert(subjects)
         .values({ id, name, date, active: true, createdAt: now, updatedAt: now })
         .run();
     logChange('subjects', id, 'SAVE', {
@@ -85,41 +106,32 @@ export function create(name: string): SubjectDocument {
 
 export function rename(id: string, newName: string): void {
     const db = getDb();
-    const subject = db.select().from(subjects).where(eq(subjects.id, id)).get();
-    if (!subject) return;
+    const existing = db.select().from(subjects).where(eq(subjects.name, newName)).get();
+    if (existing && existing.id !== id) {
+        throw new Error('Un sujet avec ce nom existe déjà.');
+    }
 
     const now = new Date().toISOString();
-    db.update(subjectItems)
-        .set({ subjectName: newName, updatedAt: now })
-        .where(eq(subjectItems.subjectName, subject.name))
-        .run();
     db.update(subjects).set({ name: newName, updatedAt: now }).where(eq(subjects.id, id)).run();
     logChange('subjects', id, 'SAVE', { id, name: newName, updatedAt: now });
 }
 
 export function deleteSubject(id: string): void {
     const db = getDb();
-    const subject = db.select().from(subjects).where(eq(subjects.id, id)).get();
-    if (!subject) return;
-    // Log item deletes before removing
-    const items = db
-        .select()
-        .from(subjectItems)
-        .where(eq(subjectItems.subjectName, subject.name))
-        .all();
+    const items = db.select().from(subjectItems).where(eq(subjectItems.subjectId, id)).all();
     for (const item of items) {
         logChange('subject_items', item.id, 'DELETE', { id: item.id });
     }
-    db.delete(subjectItems).where(eq(subjectItems.subjectName, subject.name)).run();
-    logChange('subjects', subject.id, 'DELETE', { id: subject.id });
+    db.delete(subjectItems).where(eq(subjectItems.subjectId, id)).run();
+    logChange('subjects', id, 'DELETE', { id });
     db.delete(subjects).where(eq(subjects.id, id)).run();
 }
 
-export function getItems(subjectName: string): SubjectDocumentItem[] {
+export function getItems(subjectId: string): SubjectDocumentItem[] {
     const rows = getDb()
         .select()
         .from(subjectItems)
-        .where(eq(subjectItems.subjectName, subjectName))
+        .where(eq(subjectItems.subjectId, subjectId))
         .all();
     return rows.map(toSubjectItem);
 }
@@ -130,7 +142,7 @@ export function deleteItem(id: string): void {
 }
 
 export function createItem(
-    subjectName: string,
+    subjectId: string,
     documentTitle: string,
     documentHtmlTree: DocumentHtmlTree | ParagraphReference,
     textContent: string,
@@ -143,7 +155,7 @@ export function createItem(
         .insert(subjectItems)
         .values({
             id,
-            subjectName,
+            subjectId,
             documentTitle,
             documentHtmlTree: JSON.stringify(documentHtmlTree),
             textContent,
@@ -155,7 +167,7 @@ export function createItem(
         .run();
     logChange('subject_items', id, 'SAVE', {
         id,
-        subjectName,
+        subjectId,
         documentTitle,
         documentHtmlTree: JSON.stringify(documentHtmlTree),
         textContent,
@@ -166,7 +178,7 @@ export function createItem(
     });
     return {
         id,
-        subject: subjectName,
+        subjectId,
         documentTitle,
         documentHtmlTree,
         textContent,

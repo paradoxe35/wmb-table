@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "99ba4fee-7734-4521-b5fd-8404e33d256c",
+    "id": "277e2cc6-f40f-4674-8a9c-a2ab88ae3338",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -522,13 +522,6 @@
                     "name": "id",
                     "type": "text",
                     "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "document_id": {
-                    "name": "document_id",
-                    "type": "text",
-                    "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
                 },
@@ -1185,8 +1178,8 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "subject_name": {
-                    "name": "subject_name",
+                "subject_id": {
+                    "name": "subject_id",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
@@ -1246,7 +1239,17 @@
                 }
             },
             "indexes": {},
-            "foreignKeys": {},
+            "foreignKeys": {
+                "subject_items_subject_id_subjects_id_fk": {
+                    "name": "subject_items_subject_id_subjects_id_fk",
+                    "tableFrom": "subject_items",
+                    "tableTo": "subjects",
+                    "columnsFrom": ["subject_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}
@@ -1300,13 +1303,7 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {
-                "subjects_name_unique": {
-                    "name": "subjects_name_unique",
-                    "columns": ["name"],
-                    "isUnique": true
-                }
-            },
+            "indexes": {},
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},

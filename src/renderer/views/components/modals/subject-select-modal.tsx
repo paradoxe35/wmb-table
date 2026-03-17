@@ -23,10 +23,10 @@ export function SubjectSelectModal() {
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
     const subjects = useSubjectsStore((s) => s.subjects);
 
-    const onSelectItem = (name: string) => {
+    const onSelectItem = (subjectId: string) => {
         if (!documentRefTree.current) return;
 
-        const subject = subjects.find((s) => s.name === name);
+        const subject = subjects.find((s) => s.id === subjectId);
         if (!subject) return;
 
         const ref = documentRefTree.current;
@@ -48,7 +48,9 @@ export function SubjectSelectModal() {
                     documentHtmlTree: item.documentHtmlTree,
                 });
                 window.dispatchEvent(
-                    new CustomEvent(SUBJECT_EVENT.focusSubject, { detail: { name } }),
+                    new CustomEvent(SUBJECT_EVENT.focusSubject, {
+                        detail: { id: subject.id },
+                    }),
                 );
                 message.success(t('Ajouté au sujet'));
             })
@@ -106,13 +108,13 @@ function ContentModal({
     onSelectItem,
     datas,
 }: {
-    onSelectItem: (name: string) => void;
+    onSelectItem: (id: string) => void;
     datas: SubjectDocument[];
 }) {
     return (
         <>
             {datas.map((item) => (
-                <ItemSubject key={item.name} item={item} onSelectItem={onSelectItem} />
+                <ItemSubject key={item.id} item={item} onSelectItem={onSelectItem} />
             ))}
         </>
     );
@@ -120,14 +122,14 @@ function ContentModal({
 
 const ItemSubject: React.FC<{
     item: SubjectDocument;
-    onSelectItem: (name: string) => void;
+    onSelectItem: (id: string) => void;
     children?: React.ReactNode;
 }> = ({ item, onSelectItem }) => {
     return (
         <>
             <span
                 className={`smart-editable big`}
-                onClick={() => onSelectItem(item.name)}
+                onClick={() => onSelectItem(item.id)}
                 title={item.name}
             >
                 <div className="o-icon">

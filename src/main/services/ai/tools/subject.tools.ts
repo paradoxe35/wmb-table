@@ -23,16 +23,17 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
             },
         },
         addSermonReferenceToSubject: {
-            description: 'Add a sermon paragraph reference to a subject.',
+            description:
+                'Add a sermon paragraph reference to a subject. Use the subject ID from getSubjects.',
             inputSchema: z.object({
-                subjectName: z.string(),
+                subjectId: z.string().describe('The subject ID (from getSubjects)'),
                 sermonId: z.string(),
                 languageCode: z.string().optional(),
                 translationId: z.number().int().optional(),
                 paragraphIndex: z.number().int().min(0),
             }),
             execute: async ({
-                subjectName,
+                subjectId,
                 sermonId,
                 languageCode,
                 translationId,
@@ -69,7 +70,7 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                 if (!paragraph) return { error: 'Paragraphe introuvable.' };
 
                 return subjectsRepo.createItem(
-                    subjectName,
+                    subjectId,
                     meta.title,
                     {
                         paragraphIndex,

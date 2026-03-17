@@ -200,7 +200,7 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
         case 'addSermonReferenceToSubject':
         case 'addBibleReferenceToSubject':
             if (output && typeof output === 'object')
-                return `Subject updated: ${String(output.subjectName ?? output.documentTitle ?? 'reference added')}`;
+                return `Subject updated: ${String(output.documentTitle ?? output.subjectId ?? 'reference added')}`;
             break;
 
         case 'addSermonReferenceToNote':

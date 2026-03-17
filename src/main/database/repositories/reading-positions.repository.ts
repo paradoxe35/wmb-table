@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 import { getDb } from '../index';
 import { readingPositions } from '../schema';
 import type { ReadingPosition } from '@shared/types';
-import { logChange } from '@main/services/sync/change-log.service';
 
 export function getReadingPosition(documentKey: string): ReadingPosition | null {
     const row = getDb()
@@ -48,13 +47,6 @@ export function saveReadingPosition(
             })
             .run();
     }
-
-    logChange('reading_positions', documentKey, 'SAVE', {
-        documentKey,
-        scrollY,
-        scrollX,
-        updatedAt,
-    });
 
     return { documentKey, scrollY, scrollX };
 }

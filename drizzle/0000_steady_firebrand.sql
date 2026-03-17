@@ -84,7 +84,6 @@ CREATE TABLE `configurations` (
 --> statement-breakpoint
 CREATE TABLE `custom_documents` (
 	`id` text PRIMARY KEY NOT NULL,
-	`document_id` text NOT NULL,
 	`title` text NOT NULL,
 	`content` text DEFAULT '' NOT NULL,
 	`sermon_id` text DEFAULT '' NOT NULL,
@@ -188,14 +187,15 @@ CREATE TABLE `sidebar_status` (
 --> statement-breakpoint
 CREATE TABLE `subject_items` (
 	`id` text PRIMARY KEY NOT NULL,
-	`subject_name` text NOT NULL,
+	`subject_id` text NOT NULL,
 	`document_title` text NOT NULL,
 	`document_html_tree` text NOT NULL,
 	`text_content` text NOT NULL,
 	`bible` text,
 	`sermon_id` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
-	`updated_at` text DEFAULT (datetime('now'))
+	`updated_at` text DEFAULT (datetime('now')),
+	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `subjects` (
@@ -207,7 +207,6 @@ CREATE TABLE `subjects` (
 	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `subjects_name_unique` ON `subjects` (`name`);--> statement-breakpoint
 CREATE TABLE `suggestions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`search_text` text NOT NULL,

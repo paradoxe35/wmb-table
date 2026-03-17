@@ -53,9 +53,10 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
             },
         },
         addBibleReferenceToSubject: {
-            description: 'Add a Bible verse range to a subject.',
+            description:
+                'Add a Bible verse range to a subject. Use the subject ID from getSubjects.',
             inputSchema: z.object({
-                subjectName: z.string(),
+                subjectId: z.string().describe('The subject ID (from getSubjects)'),
                 abbreviation: z.string().optional(),
                 languageCode: z.string().optional(),
                 book: z.string(),
@@ -63,13 +64,13 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                 fromVerse: z.string(),
                 toVerse: z.string().optional(),
             }),
-            execute: async ({ subjectName, ...rest }) => {
+            execute: async ({ subjectId, ...rest }) => {
                 const verses = aiBibleRepo.getPassage(rest);
                 const verse = verses[0];
                 if (!verse) return { error: 'Passage biblique introuvable.' };
 
                 return subjectsRepo.createItem(
-                    subjectName,
+                    subjectId,
                     `${verse.bookName} ${verse.chapter}`,
                     {
                         paragraphIndex: 0,

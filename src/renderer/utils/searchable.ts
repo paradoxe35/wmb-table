@@ -1,11 +1,7 @@
-// Re-export all shared searchable utilities
+// Re-export shared searchable utilities used by renderer
 export {
-    regexpMatcher,
     strNormalizeNoLower,
     simpleRegExp,
-    escapeRegExp,
-    toSearchableTerms,
-    performSearch,
     strNormalize,
     matchesQuery,
     buildHighlightRegex,
