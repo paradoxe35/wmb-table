@@ -67,16 +67,21 @@ function renderBibleRef(item: SubjectDocumentItem): string {
 export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[]): string {
     const bibleRefs = items.filter((i) => i.bible);
     const sermonRefs = items.filter((i) => !i.bible);
+    const hasBothTypes = bibleRefs.length > 0 && sermonRefs.length > 0;
 
     let body = '';
 
     if (sermonRefs.length > 0) {
-        body += `<h2>Références</h2>\n`;
+        if (hasBothTypes) {
+            body += `<h2>Prédications</h2>\n`;
+        }
         body += sermonRefs.map(renderSermonRef).join('\n');
     }
 
     if (bibleRefs.length > 0) {
-        body += `<h2>Références bibliques</h2>\n`;
+        if (hasBothTypes) {
+            body += `<h2>Bible</h2>\n`;
+        }
         body += bibleRefs.map(renderBibleRef).join('\n');
     }
 
@@ -95,7 +100,6 @@ export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[
 </style>
 </head><body>
 <h1>${escapeHtml(name)}</h1>
-<p style="color:#888;font-size:0.9em;">${items.length} référence(s)</p>
 ${body}
 </body></html>`;
 }

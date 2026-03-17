@@ -18,17 +18,22 @@ describe('subjects.repository', () => {
     });
 
     it('createItem adds item to subject', () => {
-        subjectsRepo.create('Topic');
-        const item = subjectsRepo.createItem('Topic', 'Doc Title', { tree: [1] }, 'text content');
-        expect(item.subject).toBe('Topic');
+        const subject = subjectsRepo.create('Topic');
+        const item = subjectsRepo.createItem(
+            subject.id,
+            'Doc Title',
+            { tree: [1] },
+            'text content',
+        );
+        expect(item.subject).toBe(subject.id);
         expect(item.documentHtmlTree).toEqual({ tree: [1] });
 
-        const items = subjectsRepo.getItems('Topic');
+        const items = subjectsRepo.getItems(subject.id);
         expect(items).toHaveLength(1);
     });
 
     it('createItem with bible', () => {
-        subjectsRepo.create('Topic');
+        const subject = subjectsRepo.create('Topic');
         const bible = {
             id: 'b1',
             bookName: 'Genesis',
@@ -38,23 +43,23 @@ describe('subjects.repository', () => {
             verse: '1',
             content: 'In the beginning...',
         };
-        const item = subjectsRepo.createItem('Topic', 'Doc', { tree: [] }, 'text', bible);
+        const item = subjectsRepo.createItem(subject.id, 'Doc', { tree: [] }, 'text', bible);
         expect(item.bible?.bookName).toBe('Genesis');
     });
 
     it('deleteSubject removes subject and items', () => {
         const subject = subjectsRepo.create('ToDelete');
-        subjectsRepo.createItem('ToDelete', 'Doc', { tree: [] }, 'text');
+        subjectsRepo.createItem(subject.id, 'Doc', { tree: [] }, 'text');
 
         subjectsRepo.deleteSubject(subject.id);
         expect(subjectsRepo.getAll()).toHaveLength(0);
-        expect(subjectsRepo.getItems('ToDelete')).toHaveLength(0);
+        expect(subjectsRepo.getItems(subject.id)).toHaveLength(0);
     });
 
     it('deleteItem removes single item', () => {
-        subjectsRepo.create('Topic');
-        const item = subjectsRepo.createItem('Topic', 'Doc', { tree: [] }, 'text');
+        const subject = subjectsRepo.create('Topic');
+        const item = subjectsRepo.createItem(subject.id, 'Doc', { tree: [] }, 'text');
         subjectsRepo.deleteItem(item.id);
-        expect(subjectsRepo.getItems('Topic')).toHaveLength(0);
+        expect(subjectsRepo.getItems(subject.id)).toHaveLength(0);
     });
 });

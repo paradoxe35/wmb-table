@@ -475,6 +475,7 @@ const es: Record<string, string> = {
     'Aucun document attribué': 'Ningún documento asignado',
     'Ajouter à cette référence': 'Añadir a esta referencia',
     'Ajouté à la note': 'Añadido a la nota',
+    "Erreur lors de l'ajout à la note": 'Error al añadir a la nota',
 
     // ── Other traductions modal ──
     'Traductions du document: {{title}}': 'Traducciones del documento: {{title}}',

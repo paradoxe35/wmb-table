@@ -1,5 +1,5 @@
-import { Button, Empty, Modal, Tooltip, message } from 'antd';
-import { useEffect, useRef, useState } from 'react';
+import { Button, Empty, Modal, Tooltip, Typography, message } from 'antd';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     type NoteItem,
@@ -17,16 +17,15 @@ import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useNotesStore, useSermonStore, selectActiveTab } from '@renderer/stores';
 
+const { Text } = Typography;
+
 export function NoteReferencesModal() {
     const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
     const activeTab = useSermonStore(selectActiveTab);
-
     const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
-
     const { visible, hide, setVisible } = useModalVisible();
-
     const [datas, setDatas] = useState<NoteItemReference[]>([]);
     const workingNote = useRef<NoteItem | null>(null);
     const workingNoteId = useNotesStore((s) => s.workingNoteId);
@@ -47,144 +46,112 @@ export function NoteReferencesModal() {
         })();
     }, [workingNoteId, visible]);
 
-    const onSelectItem = (item: NoteItemReference) => {
-        if (!documentRefTree.current) return;
+    const onSelectItem = useCallback(
+        (item: NoteItemReference) => {
+            if (!documentRefTree.current) {
+                return;
+            }
 
-        const referenceItem: SubjectRefTree = {
-            documentHtmlTree: documentRefTree.current.documentHtmlTree,
-            textContent: documentRefTree.current.textContent ?? '',
-        };
+            const referenceItem: SubjectRefTree = {
+                documentHtmlTree: documentRefTree.current.documentHtmlTree,
+                textContent: documentRefTree.current.textContent ?? '',
+            };
 
-        window.api.notes.updateReference(
-            item.id,
-            referenceItem,
-            titleRef.current || '',
-            activeTab?.sermonId ?? '',
-        );
-        message.success(t('Ajouté à la note'));
-
-        setVisible(false);
-    };
+            window.api.notes
+                .updateReference(
+                    item.id,
+                    referenceItem,
+                    titleRef.current || '',
+                    activeTab?.sermonId ?? '',
+                )
+                .then(() => {
+                    message.success(t('Ajouté à la note'));
+                })
+                .catch(() => {
+                    message.error(t("Erreur lors de l'ajout à la note"));
+                });
+            setVisible(false);
+        },
+        [titleRef, activeTab, setVisible, t],
+    );
 
     useEffect(() => {
         const showModal = (e: CustomEventInit<SubjectRefTree>) => {
             documentRefTree.current = e.detail ?? undefined;
             setVisible(true);
         };
-
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, showModal);
         return () => {
             window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, showModal);
         };
     }, []);
 
+    const modalTitle = workingNote.current ? (
+        <div>
+            <Text type="secondary" style={{ fontSize: '0.85em', fontWeight: 400 }}>
+                {t('Lier ce paragraphe à une référence de la note :')}
+            </Text>
+            <div>{workingNote.current.name}</div>
+        </div>
+    ) : (
+        <span>{t("Aucune note n'est actuellement sélectionnée")}</span>
+    );
+
     return (
-        <Modal
-            title={
-                <div className="mr-2">
-                    {workingNote.current ? (
-                        <div>
-                            <div
-                                style={{
-                                    fontSize: 12,
-                                    fontWeight: 400,
-                                    color: 'var(--ant-color-text-secondary)',
-                                }}
-                            >
-                                {t('Lier ce paragraphe à une référence de la note :')}
-                            </div>
-                            <div>{workingNote.current.name}</div>
-                        </div>
-                    ) : (
-                        <span>{t("Aucune note n'est actuellement sélectionnée")}</span>
-                    )}
-                </div>
-            }
-            footer={[]}
-            open={visible}
-            onOk={hide}
-            onCancel={hide}
-        >
-            <div style={{ overflow: 'auto', height: '300px' }}>
-                <ContentModal onSelectItem={onSelectItem} datas={datas} />
+        <Modal title={modalTitle} footer={null} open={visible} onCancel={hide} width={480}>
+            <div className="note-ref-select-list">
+                {datas.length === 0 ? (
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={t('Aucune référence disponible')}
+                        style={{ padding: '24px 0' }}
+                    />
+                ) : (
+                    datas.map((item) => (
+                        <NoteReferenceItem key={item.id} item={item} onSelect={onSelectItem} />
+                    ))
+                )}
             </div>
         </Modal>
     );
 }
 
-function ContentModal({
-    onSelectItem,
-    datas,
+function NoteReferenceItem({
+    item,
+    onSelect,
 }: {
-    onSelectItem: (item: NoteItemReference) => void;
-    datas: NoteItemReference[];
+    item: NoteItemReference;
+    onSelect: (item: NoteItemReference) => void;
 }) {
     const { t } = useTranslation();
     const { getSermonById } = useSermonLookup();
 
-    if (datas.length === 0) {
-        return <Empty description={t('Aucune référence disponible')} />;
-    }
+    const ref = item.documentHtmlTree;
+    const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
+    const linkedTitle = getSermonById(item.sermonId)?.title || item.documentTitle;
 
     return (
-        <>
-            {datas.map((item, i) => {
-                const ref = item.documentHtmlTree;
-                const assigned = ref
-                    ? isParagraphReference(ref) || (ref.tree || []).length > 0
-                    : false;
-                return (
-                    <div
-                        key={item.id || i}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '8px 0',
-                            borderBottom: '1px solid var(--ant-color-border)',
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 8,
-                                cursor: 'pointer',
-                                flex: 1,
-                            }}
-                            onClick={() => onSelectItem(item)}
-                        >
-                            <BookOutlined />
-                            <div>
-                                <div>
-                                    <a>{item.label}</a>
-                                </div>
-                                <div
-                                    style={{
-                                        fontSize: '0.85em',
-                                        color: 'var(--ant-color-text-secondary)',
-                                    }}
-                                >
-                                    {assigned
-                                        ? t('Lié à : {{title}}', {
-                                              title:
-                                                  getSermonById(item.sermonId)?.title ||
-                                                  item.documentTitle,
-                                          })
-                                        : t('Aucun document attribué')}
-                                </div>
-                            </div>
-                        </div>
-                        <Tooltip title={t('Ajouter à cette référence')}>
-                            <Button
-                                onClick={() => onSelectItem(item)}
-                                shape="circle"
-                                icon={<SelectOutlined />}
-                            />
-                        </Tooltip>
-                    </div>
-                );
-            })}
-        </>
+        <div className="note-ref-select-item" onClick={() => onSelect(item)}>
+            <BookOutlined className="note-ref-select-item__icon" />
+            <div className="note-ref-select-item__content">
+                <Text className="note-ref-select-item__label">{item.label}</Text>
+                <Text type="secondary" className="note-ref-select-item__meta">
+                    {assigned
+                        ? t('Lié à : {{title}}', { title: linkedTitle })
+                        : t('Aucun document attribué')}
+                </Text>
+            </div>
+            <Tooltip title={t('Ajouter à cette référence')}>
+                <Button
+                    type="text"
+                    size="small"
+                    icon={<SelectOutlined />}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onSelect(item);
+                    }}
+                />
+            </Tooltip>
+        </div>
     );
 }

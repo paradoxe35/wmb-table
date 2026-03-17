@@ -86,7 +86,7 @@ describe('repository change tracking', () => {
 
         it('deleteSubject logs DELETE changes for subject and items', () => {
             const subject = subjectsRepo.create('Test Subject');
-            subjectsRepo.createItem('Test Subject', 'Doc', { tree: [1] }, 'text');
+            subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text');
             subjectsRepo.deleteSubject(subject.id);
             const changes = getAllChangeLogs();
             const subjectDelete = changes.find(
@@ -100,8 +100,8 @@ describe('repository change tracking', () => {
         });
 
         it('createItem logs a SAVE change', () => {
-            subjectsRepo.create('Test');
-            subjectsRepo.createItem('Test', 'Doc', { tree: [1] }, 'text');
+            const subject = subjectsRepo.create('Test');
+            subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text');
             const changes = getAllChangeLogs();
             const itemChange = changes.find(
                 (c) => c.tableName === 'subject_items' && c.operation === 'SAVE',
@@ -110,8 +110,8 @@ describe('repository change tracking', () => {
         });
 
         it('deleteItem logs a DELETE change', () => {
-            subjectsRepo.create('Test');
-            const item = subjectsRepo.createItem('Test', 'Doc', { tree: [1] }, 'text');
+            const subject = subjectsRepo.create('Test');
+            const item = subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text');
             subjectsRepo.deleteItem(item.id);
             const changes = getAllChangeLogs();
             const deleteChange = changes.find(
@@ -160,16 +160,11 @@ describe('repository change tracking', () => {
     });
 
     describe('reading positions', () => {
-        it('saveReadingPosition logs a SAVE change', () => {
+        it('saveReadingPosition does not log a change (local only)', () => {
             readingPositionsRepo.saveReadingPosition('sermon:en:1:abc', 320, 0);
             const changes = getAllChangeLogs();
-            const readingPositionChange = changes.find(
-                (c) =>
-                    c.tableName === 'reading_positions' &&
-                    c.operation === 'SAVE' &&
-                    c.rowId === 'sermon:en:1:abc',
-            );
-            expect(readingPositionChange).toBeDefined();
+            const readingPositionChange = changes.find((c) => c.tableName === 'reading_positions');
+            expect(readingPositionChange).toBeUndefined();
         });
     });
 });

@@ -470,6 +470,7 @@ const en: Record<string, string> = {
     'Aucun document attribué': 'No document assigned',
     'Ajouter à cette référence': 'Add to this reference',
     'Ajouté à la note': 'Added to note',
+    "Erreur lors de l'ajout à la note": 'Error adding to note',
 
     // ── Other traductions modal ──
     'Traductions du document: {{title}}': 'Document translations: {{title}}',
