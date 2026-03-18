@@ -7,6 +7,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useStickToBottom } from 'use-stick-to-bottom';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
+import { useAppStore } from '@renderer/stores';
 import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
 import ChatToolResult from './chat-tool-result';
 import AiReferenceLink from './ai-reference-link';
@@ -203,16 +204,41 @@ export default function ChatMessageList({
     messages: AiMessage[];
     sending: boolean;
 }) {
-    const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useStickToBottom({
+    const mainView = useAppStore((s) => s.mainView);
+    const optionView = useAppStore((s) => s.optionView);
+
+    const { scrollRef, contentRef, isAtBottom, scrollToBottom, stopScroll } = useStickToBottom({
         resize: 'smooth',
     });
 
     // Scroll to bottom instantly before paint on conversation switch
     const conversationKey = messages[0]?.id ?? 'empty';
+
+    // When leaving options view, break the sticky lock so the ResizeObserver
+    // doesn't auto-scroll to bottom when the chat becomes visible again.
+    const prevMainView = useRef(mainView);
+    const prevOptionView = useRef(optionView);
+
     useLayoutEffect(() => {
-        const el = scrollRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
-    }, [conversationKey]);
+        if (sending) {
+            return;
+        }
+
+        if (prevMainView.current !== 'options' && mainView === 'options') {
+            stopScroll();
+        } else if (mainView === 'options' && prevOptionView.current !== 'ai-chat') {
+            stopScroll();
+        } else {
+            stopScroll();
+            const el = scrollRef.current;
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            }
+        }
+
+        prevOptionView.current = optionView;
+        prevMainView.current = mainView;
+    }, [mainView, stopScroll, conversationKey, sending, optionView]);
 
     // Scroll to bottom when user sends a new message
     const prevSending = useRef(sending);
