@@ -314,18 +314,25 @@ export default function EditorContent({
             if (!href) return;
 
             const wmbBrandLink = 'http://w.t/#wmb/';
+            const isReference =
+                href.startsWith(referenceDocumentBrandLink) ||
+                href.startsWith(referenceBibleBrandLink) ||
+                href.startsWith(wmbBrandLink) ||
+                href.startsWith('wmb://');
+
+            if (isReference) {
+                e.preventDefault();
+                e.stopPropagation();
+                dismissEditorBalloon(editorRef.current);
+            }
 
             if (href.startsWith(referenceDocumentBrandLink)) {
-                dismissEditorBalloon(editorRef.current);
                 handleEditorLinksClick(substrAfter(href, referenceDocumentBrandLink));
             } else if (href.startsWith(referenceBibleBrandLink)) {
-                dismissEditorBalloon(editorRef.current);
                 handleEditorLinksBibleClick(substrAfter(href, referenceBibleBrandLink));
             } else if (href.startsWith(wmbBrandLink)) {
-                dismissEditorBalloon(editorRef.current);
                 navigateWmbLinkRef.current('wmb://' + substrAfter(href, wmbBrandLink));
             } else if (href.startsWith('wmb://')) {
-                dismissEditorBalloon(editorRef.current);
                 navigateWmbLinkRef.current(href);
             }
         };

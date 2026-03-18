@@ -439,9 +439,9 @@ function ShowActiveDocuments({
                                 <motion.div
                                     key={item.id}
                                     layout
-                                    initial={{ opacity: 0, y: 20 }}
+                                    initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -100 }}
+                                    exit={{ opacity: 0 }}
                                     transition={{ duration: 0.2 }}
                                 >
                                     <ItemFromSelectedSubject item={item} confirm={confirm} />
