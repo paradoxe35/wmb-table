@@ -117,8 +117,9 @@
     .chrome-tabs .chrome-tab:not([data-active='true']):hover {
         z-index: 2;
     }
-    .chrome-tabs .chrome-tab:not([data-active='true']):hover .chrome-tab-background {
-        opacity: 1;
+    .chrome-tabs .chrome-tab:not([data-active='true']):hover .chrome-tab-content {
+        background: var(--chrome-tab-geometry);
+        border-bottom-left-radius: 24%;
     }
 }
 
