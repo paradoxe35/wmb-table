@@ -9,7 +9,9 @@ import {
 } from './stream-dispatcher';
 
 const REMOTE_MAX_STEPS = 40;
+const REMOTE_MAX_OUTPUT_TOKENS = 4096;
 const LOCAL_MAX_STEPS = 15;
+const LOCAL_MAX_OUTPUT_TOKENS = 1024;
 
 /**
  * Unified generation runner for both local and remote providers.
@@ -20,12 +22,14 @@ export class GenerationRunnerImpl implements GenerationRunner {
 
     async run(ctx: GenerationContext): Promise<void> {
         const maxSteps = this.isLocal ? LOCAL_MAX_STEPS : REMOTE_MAX_STEPS;
+        const maxOutputTokens = this.isLocal ? LOCAL_MAX_OUTPUT_TOKENS : REMOTE_MAX_OUTPUT_TOKENS;
 
         const result = streamText({
             model: ctx.model,
             system: ctx.systemPrompt,
             messages: ctx.history,
             tools: ctx.tools,
+            maxOutputTokens,
             stopWhen: stepCountIs(maxSteps),
             abortSignal: ctx.abortSignal,
         });
