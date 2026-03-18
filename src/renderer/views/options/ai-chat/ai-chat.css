@@ -5,6 +5,8 @@
 
 /* ── Root layout ─────────────────────────────────────────────── */
 .ai-chat {
+    --max-width: 90%;
+    container-type: inline-size;
     display: flex;
     flex: 1;
     min-height: 0;
@@ -123,6 +125,9 @@
     flex-direction: column;
     gap: 14px;
     padding: 20px 28px;
+    max-width: var(--max-width);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .ai-chat__scroll-bottom {
@@ -164,7 +169,8 @@
 .ai-chat__bubble {
     display: flex;
     gap: 10px;
-    max-width: 80%;
+    max-width: 99%;
+    font-size: 0.9rem;
 }
 
 .ai-chat__bubble--user {
@@ -277,6 +283,9 @@
     transition:
         border-color 0.2s,
         box-shadow 0.2s;
+    max-width: calc(var(--max-width) - 70px);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .ai-chat__input-box:focus-within {
@@ -340,4 +349,18 @@
     word-break: break-word;
     color: var(--ant-color-text-secondary);
     font-family: inherit;
+}
+
+/* ── Responsive: full width on small chat containers ────────── */
+@container (max-width: 900px) {
+    .ai-chat__messages-content {
+        max-width: 100%;
+    }
+    .ai-chat__input-box {
+        max-width: calc(100% - 70px);
+    }
+
+    .ai-chat__bubble {
+        max-width: 100%;
+    }
 }

@@ -138,7 +138,13 @@ function MessageBubble({
     const providerTooltip = isUser ? '' : providerLabel;
 
     return (
-        <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
+        <motion.div
+            key={message.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}
+        >
             <Tooltip title={providerTooltip} placement="top">
                 <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
             </Tooltip>
@@ -169,7 +175,7 @@ function MessageBubble({
                     <ToolResultsList results={message.toolResults} />
                 ) : null}
             </div>
-        </div>
+        </motion.div>
     );
 }
 
@@ -203,19 +209,14 @@ export default function ChatMessageList({
                             const isLastAssistant =
                                 msg.role === 'assistant' &&
                                 !messages.slice(i + 1).some((m) => m.role === 'assistant');
+
                             return (
-                                <motion.div
+                                <MessageBubble
                                     key={msg.id}
-                                    initial={{ opacity: 0, y: 12 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.25, ease: 'easeOut' }}
-                                >
-                                    <MessageBubble
-                                        message={msg}
-                                        isLastAssistant={isLastAssistant}
-                                        sending={sending}
-                                    />
-                                </motion.div>
+                                    message={msg}
+                                    isLastAssistant={isLastAssistant}
+                                    sending={sending}
+                                />
                             );
                         })}
                     </AnimatePresence>
