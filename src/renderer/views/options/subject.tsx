@@ -193,6 +193,16 @@ export default function Subject() {
     }, [datas, activeSubject, itemsRefreshKey]);
 
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
+    const refPanelRef = useRef<HTMLDivElement>(null);
+
+    // Reset reference panel scroll when switching subjects
+    useEffect(() => {
+        requestAnimationFrame(() => {
+            if (refPanelRef.current) {
+                refPanelRef.current.scrollTop = 0;
+            }
+        });
+    }, [activeDocument?.id]);
 
     const onSelectItem = useCallback((id: string) => {
         setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
@@ -309,7 +319,11 @@ export default function Subject() {
                     </AnimatePresence>
                 </div>
             </div>
-            <div className="container-y" style={{ flex: 1, minHeight: 0, padding: '0 10px' }}>
+            <div
+                ref={refPanelRef}
+                className="container-y"
+                style={{ flex: 1, minHeight: 0, padding: '0 10px' }}
+            >
                 {activeDocument && (
                     <ShowActiveDocuments
                         subject={activeDocument}
