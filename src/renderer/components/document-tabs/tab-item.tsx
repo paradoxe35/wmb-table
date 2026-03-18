@@ -83,6 +83,7 @@ export default function TabItem({
                 className="chrome-tab"
                 data-active={isActive}
                 onClick={onActivate}
+                title={tab.title}
                 onMouseDown={(e) => {
                     if (e.button === 1) {
                         e.preventDefault();
