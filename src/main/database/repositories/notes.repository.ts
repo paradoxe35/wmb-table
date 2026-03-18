@@ -61,6 +61,11 @@ function toBibleRef(row: typeof notesBibleReferences.$inferSelect): NoteItemRefe
     };
 }
 
+/** List notes without content (lightweight). */
+export function getAllSummary(): { id: string; name: string }[] {
+    return getDb().select({ id: notes.id, name: notes.name }).from(notes).all();
+}
+
 export function getAll(): NoteItem[] {
     const rows = getDb().select().from(notes).all();
     return rows.map(toNoteItem);

@@ -4,8 +4,8 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     'The URL MUST start with `wmb://` followed by the type (`sermon`, `bible`, or `doc`), then the parameters separated by `/`.',
     '',
     '### Sermon references',
-    'Format: `[Title, §paragraphIndex](wmb://sermon/{sermonId}/{translationId}/{paragraphIndex})`',
-    'Example: if meta.sermonId="56-0805", meta.translationId=3, paragraph 45:',
+    'Format: `[Title, §N](wmb://sermon/{sermonId}/{translationId}/{paragraphNumber})`',
+    'Example: if meta.sermonId="56-0805", meta.translationId=3, paragraphNumber=45:',
     "→ `[L'Église et sa condition, §45](wmb://sermon/56-0805/3/45)`",
     '',
     '### Bible references',
@@ -18,6 +18,7 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     'CRITICAL RULES:',
     '- The URL MUST always include the type segment: `wmb://sermon/...`, `wmb://bible/...`, or `wmb://doc/...`',
     '- The translationId MUST be the exact numeric value from `meta.translationId` returned by tool results. Never invent or guess it.',
+    '- The paragraph number MUST be the exact `paragraphNumber` field from the paragraph object. Never guess or compute it.',
     '- Do NOT put the sermon title in the URL. The title goes only in the link text `[Title, §N](...)`.',
 ].join('\n');
 

@@ -9,10 +9,22 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
     return {
         getSubjects: {
             description:
-                'List all subjects (topics/themes) created by the user with their references.',
+                'List all subjects (topics/themes) with their IDs and names. ' +
+                'Use getSubjectById to get references for a specific subject.',
             inputSchema: z.object({}),
             execute: async () => {
-                return subjectsRepo.getAll();
+                return subjectsRepo.getAllSummary();
+            },
+        },
+        getSubjectById: {
+            description: 'Get a single subject with all its references by ID.',
+            inputSchema: z.object({
+                subjectId: z.string().describe('The subject ID (from getSubjects)'),
+            }),
+            execute: async ({ subjectId }) => {
+                const subject = subjectsRepo.getById(subjectId.trim());
+                if (!subject) return { error: `Subject "${subjectId}" not found.` };
+                return subject;
             },
         },
         createSubject: {
@@ -68,7 +80,7 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                         error: `Failed to retrieve sermon paragraphs: ${err instanceof Error ? err.message : String(err)}`,
                     };
                 }
-                const paragraph = paragraphs[paragraphIndex];
+                const paragraph = paragraphs.find((p) => p.paragraphIndex === paragraphIndex);
                 if (!paragraph) return { error: 'Paragraphe introuvable.' };
 
                 return subjectsRepo.createItem(
@@ -85,6 +97,27 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
                     undefined,
                     meta.sermonId,
                 );
+            },
+        },
+        removeSubjectReference: {
+            description:
+                'Remove a reference from a subject by its reference ID. ' +
+                'Use getSubjectById to find reference IDs. To modify a reference, remove it and add a new one.',
+            inputSchema: z.object({
+                referenceId: z
+                    .string()
+                    .describe('The reference item ID (from from getSubjectById documents)'),
+            }),
+            execute: async ({ referenceId }) => {
+                const id = referenceId.trim();
+                try {
+                    subjectsRepo.deleteItem(id);
+                    return { success: true, deletedId: id };
+                } catch (err) {
+                    return {
+                        error: `Failed to remove reference: ${err instanceof Error ? err.message : String(err)}`,
+                    };
+                }
             },
         },
     };
