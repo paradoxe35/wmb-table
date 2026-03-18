@@ -149,7 +149,11 @@ function DocumentTypeTag({ documentType }: { documentType: DocumentType }) {
     const meta = DOC_TYPE_META[documentType] ?? DOC_TYPE_META.sermon;
 
     return (
-        <Tag color={meta.color} bordered={false} style={{ fontSize: '0.75em', marginInlineEnd: 0 }}>
+        <Tag
+            color={meta.color}
+            bordered={false}
+            style={{ fontSize: 'var(--fs-rel-md)', marginInlineEnd: 0 }}
+        >
             {t(meta.label)}
         </Tag>
     );
@@ -190,20 +194,25 @@ function HighlightListItem({
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                     <Text
                         ellipsis
-                        style={{ fontSize: '0.85em', fontWeight: 500, flex: 1, lineHeight: 1.3 }}
+                        style={{
+                            fontSize: 'var(--fs-rel-xl)',
+                            fontWeight: 500,
+                            flex: 1,
+                            lineHeight: 1.3,
+                        }}
                     >
                         {group.documentTitle}
                     </Text>
                     <DocumentTypeTag documentType={group.documentType} />
                 </div>
-                <Text type="secondary" style={{ fontSize: '0.8em', lineHeight: 1.3 }}>
+                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)', lineHeight: 1.3 }}>
                     {snippet}
                 </Text>
                 {group.comment && (
                     <Text
                         type="secondary"
                         italic
-                        style={{ fontSize: '0.75em', display: 'block', marginTop: 1 }}
+                        style={{ fontSize: 'var(--fs-rel-md)', display: 'block', marginTop: 1 }}
                     >
                         {group.comment}
                     </Text>
@@ -223,7 +232,7 @@ function HighlightListItem({
                     onClick={(e) => e.stopPropagation()}
                     style={{
                         color: 'var(--ant-color-text-quaternary)',
-                        fontSize: 12,
+                        fontSize: 'var(--fs-sm)',
                         marginTop: 3,
                         flexShrink: 0,
                     }}
@@ -238,13 +247,13 @@ function HighlightsHeader({ total, onExportPdf }: { total: number; onExportPdf: 
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <BgColorsOutlined style={{ fontSize: 18 }} />
-            <Text strong style={{ fontSize: '1.05em' }}>
+            <BgColorsOutlined style={{ fontSize: 'var(--fs-2xl)' }} />
+            <Text strong style={{ fontSize: 'var(--fs-base)' }}>
                 {t('Soulignages')}
             </Text>
             {total > 0 && (
                 <>
-                    <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                    <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                         ({total})
                     </Text>
                     <Tooltip title={t('Exporter en PDF')}>
@@ -270,7 +279,10 @@ function EmptyState({ query }: { query: string }) {
             <Empty
                 image={
                     <BgColorsOutlined
-                        style={{ fontSize: 48, color: 'var(--ant-color-text-quaternary)' }}
+                        style={{
+                            fontSize: 'var(--fs-11xl)',
+                            color: 'var(--ant-color-text-quaternary)',
+                        }}
                     />
                 }
                 description={

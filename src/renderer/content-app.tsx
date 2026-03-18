@@ -121,7 +121,11 @@ export function ContentApp() {
                 <Suspense
                     fallback={
                         <div className="flex flex-center" style={{ marginTop: '2rem' }}>
-                            <Spin indicator={<LoadingOutlined style={{ fontSize: 30 }} spin />} />
+                            <Spin
+                                indicator={
+                                    <LoadingOutlined style={{ fontSize: 'var(--fs-8xl)' }} spin />
+                                }
+                            />
                         </div>
                     }
                 >

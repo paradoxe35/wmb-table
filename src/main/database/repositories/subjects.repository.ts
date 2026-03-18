@@ -35,6 +35,15 @@ function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentIt
     };
 }
 
+/** List subjects without loading their references (lightweight). */
+export function getAllSummary(): { id: string; name: string; date: string }[] {
+    return getDb()
+        .select({ id: subjects.id, name: subjects.name, date: subjects.date })
+        .from(subjects)
+        .orderBy(desc(subjects.createdAt))
+        .all();
+}
+
 export function getAll(): SubjectDocument[] {
     const db = getDb();
     const rows = db.select().from(subjects).orderBy(desc(subjects.createdAt)).all();

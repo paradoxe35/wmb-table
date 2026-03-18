@@ -9,7 +9,7 @@ import { useInitApp } from './hooks/index';
 import { useTtsSetup } from './hooks/use-tts-setup';
 import { useThemeSync } from './hooks/use-theme';
 import { useAppStore } from './stores';
-import { useThemeStore } from './stores/theme.store';
+import { useThemeStore, FONT_SIZE_MAP } from './stores/theme.store';
 import AppLayout from './components/layout';
 import { ContentApp } from './content-app';
 import { ErrorBoundary } from './components/error-boundary';
@@ -39,6 +39,7 @@ export default function App() {
     useThemeSync();
     const antdLocale = useAntdLocale();
     const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
+    const fontSizeOption = useThemeStore((s) => s.fontSizeOption);
 
     const appTheme = useMemo(() => {
         const isDark = resolvedTheme === 'dark';
@@ -47,6 +48,7 @@ export default function App() {
             cssVar: { prefix: 'ant' },
             token: {
                 colorPrimary: '#1990ff',
+                fontSize: FONT_SIZE_MAP[fontSizeOption],
             },
             components: {
                 Layout: {
@@ -60,7 +62,7 @@ export default function App() {
                 },
             },
         };
-    }, [resolvedTheme]);
+    }, [resolvedTheme, fontSizeOption]);
 
     return (
         <ErrorBoundary>

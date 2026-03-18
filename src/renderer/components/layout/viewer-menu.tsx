@@ -34,7 +34,11 @@ export default function ViewerMenu() {
                 title: t('Outils'),
                 icon: (
                     <ProfileOutlined
-                        style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
+                        style={{
+                            fontSize: 'var(--fs-3xl)',
+                            verticalAlign: 'middle',
+                            marginLeft: '15%',
+                        }}
                     />
                 ),
                 onClick: showOptions,
@@ -44,7 +48,11 @@ export default function ViewerMenu() {
                 title: t('Lecture'),
                 icon: (
                     <FundViewOutlined
-                        style={{ fontSize: '20px', verticalAlign: 'middle', marginLeft: '15%' }}
+                        style={{
+                            fontSize: 'var(--fs-3xl)',
+                            verticalAlign: 'middle',
+                            marginLeft: '15%',
+                        }}
                     />
                 ),
                 onClick: showDocument,

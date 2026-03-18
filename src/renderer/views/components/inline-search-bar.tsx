@@ -137,7 +137,7 @@ export default function InlineSearchBar() {
             )}
             <span
                 style={{
-                    fontSize: '0.8em',
+                    fontSize: 'var(--fs-rel-lg)',
                     color: 'var(--ant-color-text-secondary)',
                     minWidth: 50,
                     textAlign: 'center',
@@ -165,7 +165,7 @@ export default function InlineSearchBar() {
                     size="small"
                     title={t('Aller au paragraphe')}
                     onClick={handleParagraphJump}
-                    style={{ fontSize: '0.75em' }}
+                    style={{ fontSize: 'var(--fs-rel-md)' }}
                 >
                     &para;
                 </Button>

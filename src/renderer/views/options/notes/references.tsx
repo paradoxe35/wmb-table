@@ -68,17 +68,19 @@ export const useShowReferenceDetail = () => {
             onOk: assigned ? openDocument : undefined,
             okText: assigned ? t('Ouvrir le document') : t('Fermer'),
             title: (
-                <span style={{ fontSize: 13, fontWeight: 500 }}>
+                <span style={{ fontSize: 'var(--fs-md)', fontWeight: 500 }}>
                     {t('Référence: {{label}}', { label: reference.label })}
                 </span>
             ),
             content: assigned ? (
                 <div>
-                    <span style={{ fontWeight: 600, fontSize: 17 }}>{displayTitle}</span>
+                    <span style={{ fontWeight: 600, fontSize: 'var(--fs-xl)' }}>
+                        {displayTitle}
+                    </span>
                     {sermon && (
                         <p
                             style={{
-                                fontSize: '0.85em',
+                                fontSize: 'var(--fs-rel-xl)',
                                 color: 'var(--ant-color-text-secondary)',
                                 marginTop: 5,
                             }}
@@ -213,7 +215,7 @@ export function ReferenceBibleModal({
                 <div>
                     <div
                         style={{
-                            fontSize: 12,
+                            fontSize: 'var(--fs-sm)',
                             fontWeight: 400,
                             color: 'var(--ant-color-text-secondary)',
                         }}

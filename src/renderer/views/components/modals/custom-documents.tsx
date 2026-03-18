@@ -155,7 +155,7 @@ function DocumentList({
                             gap: 8,
                         }}
                     >
-                        <FileTextOutlined style={{ fontSize: 28, opacity: 0.25 }} />
+                        <FileTextOutlined style={{ fontSize: 'var(--fs-7xl)', opacity: 0.25 }} />
                         <Typography.Text type="secondary">
                             {customDocuments.length === 0
                                 ? t('Aucun document ajouté')
@@ -194,7 +194,7 @@ const DocumentItem = React.memo<{
             gap: 10,
         }}
     >
-        <FileTextOutlined style={{ fontSize: 16, opacity: 0.45, flexShrink: 0 }} />
+        <FileTextOutlined style={{ fontSize: 'var(--fs-xl)', opacity: 0.45, flexShrink: 0 }} />
         <div
             style={{
                 flex: 1,
@@ -274,7 +274,7 @@ function UploadForm({
             <div>
                 <Typography.Text
                     strong
-                    style={{ fontSize: '0.85em', display: 'block', marginBottom: 4 }}
+                    style={{ fontSize: 'var(--fs-rel-xl)', display: 'block', marginBottom: 4 }}
                 >
                     {t('Nom du document')}
                 </Typography.Text>
@@ -285,7 +285,7 @@ function UploadForm({
                     status={nameExists ? 'error' : undefined}
                 />
                 {nameExists && (
-                    <Typography.Text type="danger" style={{ fontSize: '0.8em' }}>
+                    <Typography.Text type="danger" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                         {t('Ce nom existe déjà')}
                     </Typography.Text>
                 )}

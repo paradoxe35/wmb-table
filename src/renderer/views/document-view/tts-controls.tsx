@@ -98,7 +98,9 @@ export function ZoomControls({
                     aria-label={t('Zoom arrière')}
                 />
             </Tooltip>
-            <span style={{ fontSize: '0.8em', minWidth: 50, textAlign: 'center' }}>{zoom}%</span>
+            <span style={{ fontSize: 'var(--fs-rel-lg)', minWidth: 50, textAlign: 'center' }}>
+                {zoom}%
+            </span>
             <Tooltip title={t('Zoom avant')}>
                 <Button
                     type="text"

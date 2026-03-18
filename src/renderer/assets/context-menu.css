@@ -8,7 +8,7 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     color: #fff;
     background: #262933;
-    font-size: 9pt;
+    font-size: var(--fs-sm);
     border: 1px solid #333333;
     border-radius: 6px;
     box-shadow: 2px 2px 2px -1px rgba(0, 0, 0, 0.5);

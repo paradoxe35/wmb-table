@@ -57,23 +57,29 @@ function ModelRow({
         >
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Text style={{ fontSize: '0.85em' }}>{model.name}</Text>
+                    <Text style={{ fontSize: 'var(--fs-rel-xl)' }}>{model.name}</Text>
                     {model.recommended ? (
                         <Tooltip title={t('Recommandé')}>
                             <StarFilled
-                                style={{ color: 'var(--ant-color-primary)', fontSize: 12 }}
+                                style={{
+                                    color: 'var(--ant-color-primary)',
+                                    fontSize: 'var(--fs-sm)',
+                                }}
                             />
                         </Tooltip>
                     ) : null}
                     {model.installed ? (
                         <Tooltip title={t('Installé')}>
                             <CheckCircleOutlined
-                                style={{ color: 'var(--ant-color-success)', fontSize: 12 }}
+                                style={{
+                                    color: 'var(--ant-color-success)',
+                                    fontSize: 'var(--fs-sm)',
+                                }}
                             />
                         </Tooltip>
                     ) : null}
                 </div>
-                <Text type="secondary" style={{ fontSize: '0.75em', display: 'block' }}>
+                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-md)', display: 'block' }}>
                     {t(model.description)}
                     {!model.installed && model.approximateSizeMb > 0
                         ? ` (${t('~{{size}} Mo', { size: model.approximateSizeMb })})`
@@ -173,7 +179,7 @@ export default function AiLocalModels({
                     <StarFilled
                         style={{
                             color: 'var(--ant-color-primary)',
-                            fontSize: 11,
+                            fontSize: 'var(--fs-xs)',
                             marginInlineStart: 4,
                         }}
                     />
@@ -201,7 +207,7 @@ export default function AiLocalModels({
             }
         >
             <Space orientation="vertical" style={{ width: '100%' }} size="small">
-                <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                     {t(
                         'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.',
                     )}
@@ -244,12 +250,12 @@ export default function AiLocalModels({
                         }}
                     />
                     <div>
-                        <Text style={{ fontSize: '0.85em' }}>
+                        <Text style={{ fontSize: 'var(--fs-rel-xl)' }}>
                             {t('Utiliser la carte graphique (GPU)')}
                         </Text>
                         <Text
                             type="secondary"
-                            style={{ fontSize: '0.75em', display: 'block', marginTop: 2 }}
+                            style={{ fontSize: 'var(--fs-rel-md)', display: 'block', marginTop: 2 }}
                         >
                             {t(
                                 'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.',

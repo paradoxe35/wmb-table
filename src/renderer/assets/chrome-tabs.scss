@@ -3,7 +3,7 @@
     --tab-content-margin: 9px;
     box-sizing: border-box;
     position: relative;
-    font-size: 12px;
+    font-size: var(--fs-sm);
     height: 46px;
     padding: 8px 3px 4px 3px;
     background: var(--chrome-tabs-bg);
@@ -142,8 +142,7 @@
     position: relative;
     flex-shrink: 0;
     flex-grow: 0;
-    height: 16px;
-    width: 16px;
+    max-width: 16px;
     background-size: 16px;
     margin-left: 4px;
 }

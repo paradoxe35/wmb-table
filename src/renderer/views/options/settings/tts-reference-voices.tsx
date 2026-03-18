@@ -122,7 +122,7 @@ export default function TtsReferenceVoices({
                                 padding: '4px 0',
                             }}
                         >
-                            <Text style={{ fontSize: '0.9em' }}>{ref.name}</Text>
+                            <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>{ref.name}</Text>
                             <Space size="small">
                                 <Button
                                     type="text"

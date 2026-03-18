@@ -77,7 +77,7 @@ export function BibleVersionSelector() {
     return (
         <div className="bible-version-bar">
             <Space wrap size="small" style={{ alignItems: 'center' }}>
-                <Typography.Text type="secondary" style={{ fontSize: '0.85em' }}>
+                <Typography.Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                     {t('Version:')}
                 </Typography.Text>
 

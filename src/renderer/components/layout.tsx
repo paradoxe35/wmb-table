@@ -39,13 +39,17 @@ function Title() {
                     {syncing && appLoaded ? (
                         <CloudSyncOutlined
                             style={{
-                                fontSize: 14,
+                                fontSize: 'var(--fs-base)',
                                 color: 'var(--ant-color-primary)',
                                 opacity: 0.7,
                             }}
                         />
                     ) : (
-                        <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
+                        <Spin
+                            indicator={
+                                <LoadingOutlined style={{ fontSize: 'var(--fs-xl)' }} spin />
+                            }
+                        />
                     )}
                 </Tooltip>
             )}
@@ -77,9 +81,9 @@ const SidebarStatusHandler = () => {
     return (
         <Button type="link" onClick={handleToggle}>
             {sidebarHidden ? (
-                <LeftCircleOutlined style={{ fontSize: '1.2em' }} />
+                <LeftCircleOutlined style={{ fontSize: 'var(--fs-rel-6xl)' }} />
             ) : (
-                <RightCircleOutlined style={{ fontSize: '1.2em' }} />
+                <RightCircleOutlined style={{ fontSize: 'var(--fs-rel-6xl)' }} />
             )}
         </Button>
     );

@@ -260,7 +260,7 @@ const VerseList = memo(function VerseList({
     if (loading) {
         return (
             <div className="flex flex-center">
-                <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                <Spin indicator={<LoadingOutlined style={{ fontSize: 'var(--fs-6xl)' }} spin />} />
             </div>
         );
     }

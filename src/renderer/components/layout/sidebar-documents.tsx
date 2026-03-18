@@ -93,7 +93,7 @@ const DocumentsAdded = () => {
                     flex: 1,
                 }}
             >
-                <FileTextOutlined style={{ fontSize: 32, opacity: 0.3 }} />
+                <FileTextOutlined style={{ fontSize: 'var(--fs-9xl)', opacity: 0.3 }} />
                 <Typography.Text type="secondary" style={{ textAlign: 'center' }}>
                     {t('Aucun document ajouté')}
                 </Typography.Text>
@@ -269,7 +269,7 @@ const ActiveLanguageBar = () => {
                 marginTop: 6,
             }}
         >
-            <Typography.Text type="secondary" style={{ fontSize: '0.8em' }}>
+            <Typography.Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                 {langName}
             </Typography.Text>
             <Button
@@ -277,7 +277,7 @@ const ActiveLanguageBar = () => {
                 size="small"
                 icon={<GlobalOutlined />}
                 onClick={openManager}
-                style={{ fontSize: '0.8em' }}
+                style={{ fontSize: 'var(--fs-rel-lg)' }}
             />
         </div>
     );

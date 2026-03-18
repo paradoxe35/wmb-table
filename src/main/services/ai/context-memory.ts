@@ -11,7 +11,7 @@ export type PromptHistoryMessage = {
 
 // ── Token budgets ──
 
-const REMOTE_TOKEN_BUDGET = 30_000;
+const REMOTE_TOKEN_BUDGET = 32_000;
 const LOCAL_TOKEN_BUDGET = 3000;
 const MAX_LOADED_MESSAGES = 40;
 const LOCAL_GENERATION_RESERVE = 1024;

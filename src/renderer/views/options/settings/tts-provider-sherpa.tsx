@@ -43,7 +43,7 @@ function QualityTag({ quality }: { quality?: string }) {
     return (
         <Tag
             color={meta.color}
-            style={{ fontSize: '0.75em', lineHeight: '16px', padding: '0 4px' }}
+            style={{ fontSize: 'var(--fs-rel-md)', lineHeight: '16px', padding: '0 4px' }}
         >
             {t(meta.label)}
         </Tag>
@@ -251,7 +251,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 {t('Télécharger « {{name}} »', { name: suggestedModel.voiceName })}
                             </Button>
                             {suggestedModel.filesizeMb != null && (
-                                <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                                     ~{Math.round(suggestedModel.filesizeMb)} {t('Mo')}
                                 </Text>
                             )}
@@ -304,16 +304,22 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 }}
                             >
                                 <div>
-                                    <Text style={{ fontSize: '0.9em' }}>
+                                    <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                                         {m.voiceName} <Text type="secondary">({m.langLabel})</Text>
                                         {m.engine && (
-                                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                                            <Text
+                                                type="secondary"
+                                                style={{ fontSize: 'var(--fs-rel-xl)' }}
+                                            >
                                                 {' '}
                                                 · {m.engine}
                                             </Text>
                                         )}
                                         {m.filesizeMb != null && (
-                                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                                            <Text
+                                                type="secondary"
+                                                style={{ fontSize: 'var(--fs-rel-xl)' }}
+                                            >
                                                 {' '}
                                                 · ~{Math.round(m.filesizeMb)} {t('Mo')}
                                             </Text>
@@ -322,7 +328,10 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                     </Text>
                                     {Array.isArray(m.langCode) && m.langCode.length > 1 && (
                                         <div>
-                                            <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                                            <Text
+                                                type="secondary"
+                                                style={{ fontSize: 'var(--fs-rel-lg)' }}
+                                            >
                                                 {t('Langues')}: {langLabels(m.langCode).join(', ')}
                                             </Text>
                                         </div>
@@ -370,14 +379,17 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                         <List.Item actions={[renderModelAction(m)]}>
                             <List.Item.Meta
                                 title={
-                                    <Text style={{ fontSize: '0.9em' }}>
+                                    <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                                         {m.langLabel}
                                         {m.installed && <Text type="success"> ✓</Text>}
                                     </Text>
                                 }
                                 description={
-                                    <span style={{ fontSize: '0.8em' }}>
-                                        <Text type="secondary" style={{ fontSize: '1em' }}>
+                                    <span style={{ fontSize: 'var(--fs-rel-lg)' }}>
+                                        <Text
+                                            type="secondary"
+                                            style={{ fontSize: 'var(--fs-base)' }}
+                                        >
                                             {m.voiceName}
                                             {m.engine && ` · ${m.engine}`}
                                             {m.filesizeMb != null &&
@@ -388,7 +400,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                             <div style={{ marginTop: 2 }}>
                                                 <Text
                                                     type="secondary"
-                                                    style={{ fontSize: '0.9em' }}
+                                                    style={{ fontSize: 'var(--fs-rel-3xl)' }}
                                                 >
                                                     {t('Langues')}:{' '}
                                                     {langLabels(m.langCode).join(', ')}
@@ -405,7 +417,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
             {/* Empty state */}
             {installed.length === 0 && !suggestedModel && !search && (
-                <Text type="secondary" style={{ fontSize: '0.9em' }}>
+                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                     {t(
                         'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.',
                     )}

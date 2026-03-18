@@ -40,7 +40,7 @@ export default function ChatConversationList({
     return (
         <div className="ai-chat__sidebar">
             <div className="ai-chat__sidebar-header">
-                <Text strong style={{ fontSize: '0.85em' }}>
+                <Text strong style={{ fontSize: 'var(--fs-rel-xl)' }}>
                     {t('Conversations')}
                 </Text>
                 <Button
@@ -56,7 +56,11 @@ export default function ChatConversationList({
                 {conversations.length === 0 ? (
                     <Text
                         type="secondary"
-                        style={{ fontSize: '0.78em', display: 'block', padding: '16px 10px' }}
+                        style={{
+                            fontSize: 'var(--fs-rel-base)',
+                            display: 'block',
+                            padding: '16px 10px',
+                        }}
                     >
                         {t('Aucune conversation')}
                     </Text>
@@ -74,6 +78,7 @@ export default function ChatConversationList({
                                     transition={{ duration: 0.2 }}
                                     role="button"
                                     tabIndex={0}
+                                    title={conversation.title || undefined}
                                     className={`ai-chat__conv-item ${isActive ? 'ai-chat__conv-item--active' : ''}`}
                                     onClick={() => onSelectConversation(conversation.id)}
                                     onKeyDown={(e) => {
@@ -86,7 +91,7 @@ export default function ChatConversationList({
                                         <Text
                                             ellipsis
                                             style={{
-                                                fontSize: '0.8em',
+                                                fontSize: 'var(--fs-rel-lg)',
                                                 display: 'block',
                                                 fontWeight: isActive ? 500 : 400,
                                             }}
@@ -95,7 +100,10 @@ export default function ChatConversationList({
                                         </Text>
                                         <Text
                                             type="secondary"
-                                            style={{ fontSize: '0.68em', display: 'block' }}
+                                            style={{
+                                                fontSize: 'var(--fs-rel-xs)',
+                                                display: 'block',
+                                            }}
                                         >
                                             {formatRelativeDate(conversation.updatedAt, t)}
                                         </Text>
@@ -113,7 +121,11 @@ export default function ChatConversationList({
                                             size="small"
                                             danger
                                             className="ai-chat__conv-delete"
-                                            icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                                            icon={
+                                                <DeleteOutlined
+                                                    style={{ fontSize: 'var(--fs-xs)' }}
+                                                />
+                                            }
                                             style={{ flexShrink: 0 }}
                                             onClick={(e) => e.stopPropagation()}
                                         />
@@ -136,7 +148,7 @@ export default function ChatConversationList({
                             type="text"
                             danger
                             block
-                            style={{ fontSize: '0.78em' }}
+                            style={{ fontSize: 'var(--fs-rel-base)' }}
                         >
                             {t("Vider l'historique")}
                         </Button>

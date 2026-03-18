@@ -147,12 +147,12 @@ export default function Settings() {
             style={{ padding: '16px 12px', maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <SettingOutlined style={{ fontSize: 18 }} />
+                <SettingOutlined style={{ fontSize: 'var(--fs-2xl)' }} />
                 <Title level={5} style={{ margin: 0 }}>
                     {t('Paramètres')}
                 </Title>
             </div>
-            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+            <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                 {t('Gérez les préférences de votre application.')}
             </Text>
             <Divider style={{ margin: '12px 0' }} />

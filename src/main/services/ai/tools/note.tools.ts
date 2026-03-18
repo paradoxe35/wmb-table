@@ -6,10 +6,12 @@ import type { AiToolDefinition } from './types';
 export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiToolDefinition> {
     return {
         getNotes: {
-            description: 'List all user notes with their names and ids.',
+            description:
+                'List all user notes with their IDs and names. ' +
+                'Use getNoteById to get the full content of a specific note.',
             inputSchema: z.object({}),
             execute: async () => {
-                return notesRepo.getAll();
+                return notesRepo.getAllSummary();
             },
         },
         getNoteById: {

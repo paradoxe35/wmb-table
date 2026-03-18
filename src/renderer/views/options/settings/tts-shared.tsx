@@ -98,7 +98,10 @@ export function groupVoicesByLanguage(
 
 export function Hint({ children }: HintProps) {
     return (
-        <Text type="secondary" style={{ fontSize: '0.8em', display: 'block', marginTop: 2 }}>
+        <Text
+            type="secondary"
+            style={{ fontSize: 'var(--fs-rel-lg)', display: 'block', marginTop: 2 }}
+        >
             {children}
         </Text>
     );
@@ -107,7 +110,7 @@ export function Hint({ children }: HintProps) {
 export function Field({ label, hint, children }: FieldProps) {
     return (
         <div>
-            <Text strong style={{ fontSize: '0.9em' }}>
+            <Text strong style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                 {label}
             </Text>
             {hint && <Hint>{hint}</Hint>}

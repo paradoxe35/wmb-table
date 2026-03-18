@@ -714,6 +714,11 @@ const en: Record<string, string> = {
 
     // ── Theme ──
     Apparence: 'Appearance',
+    'Taille du texte': 'Text size',
+    Petit: 'Small',
+    Normal: 'Normal',
+    Grand: 'Large',
+    'Très grand': 'Extra large',
     Clair: 'Light',
     Sombre: 'Dark',
     Système: 'System',

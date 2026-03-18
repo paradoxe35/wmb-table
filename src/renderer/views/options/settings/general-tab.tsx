@@ -13,8 +13,9 @@ import {
 } from '@ant-design/icons';
 import { MoonIcon, SunIcon } from '@renderer/components/icons';
 import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shared/types';
+import { FontSizeOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
-import { useThemeStore } from '@renderer/stores/theme.store';
+import { useThemeStore, type FontSizeOption } from '@renderer/stores/theme.store';
 import { DOCS_LINK } from '@renderer/utils/constants';
 
 const { Text } = Typography;
@@ -29,6 +30,8 @@ export default function GeneralTab() {
 
     const themeMode = useThemeStore((s) => s.themeMode);
     const setThemeMode = useThemeStore((s) => s.setThemeMode);
+    const fontSizeOption = useThemeStore((s) => s.fontSizeOption);
+    const setFontSizeOption = useThemeStore((s) => s.setFontSizeOption);
 
     const refreshBackup = useCallback(() => {
         window.api.backup.getStatus().then((s) => {
@@ -109,17 +112,17 @@ export default function GeneralTab() {
     const themeOptions = [
         {
             value: 'light',
-            icon: <SunIcon style={{ fontSize: 14 }} />,
+            icon: <SunIcon style={{ fontSize: 'var(--fs-base)' }} />,
             label: t('Clair'),
         },
         {
             value: 'dark',
-            icon: <MoonIcon style={{ fontSize: 14 }} />,
+            icon: <MoonIcon style={{ fontSize: 'var(--fs-base)' }} />,
             label: t('Sombre'),
         },
         {
             value: 'system',
-            icon: <DesktopOutlined style={{ fontSize: 14 }} />,
+            icon: <DesktopOutlined style={{ fontSize: 'var(--fs-base)' }} />,
             label: t('Système'),
         },
     ];
@@ -137,7 +140,7 @@ export default function GeneralTab() {
                 >
                     <Space size="small">
                         <Text type="secondary">
-                            <SunIcon style={{ fontSize: 14 }} />
+                            <SunIcon style={{ fontSize: 'var(--fs-base)' }} />
                         </Text>
                         <Text type="secondary">{t('Apparence')}</Text>
                     </Space>
@@ -154,6 +157,33 @@ export default function GeneralTab() {
                                 </Space>
                             ),
                         }))}
+                    />
+                </div>
+
+                {/* Font size */}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Space size="small">
+                        <Text type="secondary">
+                            <FontSizeOutlined />
+                        </Text>
+                        <Text type="secondary">{t('Taille du texte')}</Text>
+                    </Space>
+                    <Segmented
+                        size="small"
+                        value={fontSizeOption}
+                        onChange={(val) => setFontSizeOption(val as FontSizeOption)}
+                        options={[
+                            { value: 'small', label: t('Petit') },
+                            { value: 'default', label: t('Normal') },
+                            { value: 'large', label: t('Grand') },
+                            { value: 'x-large', label: t('Très grand') },
+                        ]}
                     />
                 </div>
 

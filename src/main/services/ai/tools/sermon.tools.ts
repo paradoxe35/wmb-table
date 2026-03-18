@@ -4,7 +4,14 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import { matchesQuery, strNormalize, strNormalizeNoLower, simpleRegExp } from '@shared/searchable';
 import type { SearchMode } from '@shared/types';
-import type { AiToolDefinition } from './types';
+import type {
+    AiToolDefinition,
+    SermonSearchResult,
+    SermonContentMeta,
+    SermonContentResponse,
+    SermonParagraphResult,
+    SearchContentHit,
+} from './types';
 import { validateLanguage } from './shared';
 
 export function buildSermonTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
@@ -49,7 +56,15 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                             return re.test(fields);
                         });
                     });
-                return { results: sermons.slice(0, limit), total: sermons.length };
+                const results: SermonSearchResult[] = sermons.slice(0, limit).map((s) => ({
+                    sermonId: s.sermonId,
+                    translationId: s.translationId,
+                    title: s.title,
+                    enTitle: s.enTitle || undefined,
+                    dateMs: s.dateMs,
+                    location: s.location || undefined,
+                }));
+                return { results, total: sermons.length };
             },
         },
         getSermonContent: {
@@ -57,7 +72,8 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 'Retrieve the text content (paragraphs) of a sermon. ' +
                 'You MUST pass sermonId (and translationId if available from searchSermons results). ' +
                 'Use startParagraph and maxParagraphs to paginate through long sermons. ' +
-                'To get a general overview, read the first 15 paragraphs.',
+                'To get a general overview, read the first 15 paragraphs. ' +
+                'Each paragraph has a paragraphNumber field — always use that value when building wmb:// reference links.',
             inputSchema: z.object({
                 sermonId: z.string(),
                 languageCode: z.string().optional(),
@@ -104,29 +120,41 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 }
 
                 try {
-                    const paragraphs = await tantivyService.getSermonParagraphs(
+                    const rawParagraphs = await tantivyService.getSermonParagraphs(
                         lang,
                         meta.translationId,
                         meta.dateMs,
                     );
 
-                    if (paragraphs.length === 0) {
+                    const slimMeta: SermonContentMeta = {
+                        sermonId: meta.sermonId,
+                        translationId: meta.translationId,
+                        title: meta.title,
+                        dateMs: meta.dateMs,
+                    };
+
+                    if (rawParagraphs.length === 0) {
                         return {
-                            meta,
+                            meta: slimMeta,
                             error: 'No paragraphs found. The sermon content may not be indexed yet.',
                             totalParagraphs: 0,
                         };
                     }
 
-                    return {
-                        meta,
-                        paragraphs: paragraphs.slice(
-                            startParagraph,
-                            startParagraph + maxParagraphs,
-                        ),
-                        totalParagraphs: paragraphs.length,
+                    const paragraphs: SermonParagraphResult[] = rawParagraphs
+                        .slice(startParagraph, startParagraph + maxParagraphs)
+                        .map((p) => ({
+                            paragraphNumber: p.paragraphIndex,
+                            content: p.content,
+                        }));
+
+                    const response: SermonContentResponse = {
+                        meta: slimMeta,
+                        paragraphs,
+                        totalParagraphs: rawParagraphs.length,
                         startParagraph,
                     };
+                    return response;
                 } catch (err) {
                     return {
                         error: `Failed to retrieve sermon content: ${err instanceof Error ? err.message : String(err)}`,
@@ -138,7 +166,8 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
             description:
                 'Full-text search inside sermon content. Use this when searching for specific words, ' +
                 'phrases, or quotes within the text of sermons (not titles). ' +
-                'Returns matching sermons with relevant paragraph snippets.',
+                'Returns matching sermons with relevant paragraph snippets. ' +
+                'Each match has a paragraphNumber — use it for wmb:// reference links.',
             inputSchema: z.object({
                 query: z.string().min(2),
                 languageCode: z.string().optional(),
@@ -158,12 +187,16 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
 
                 try {
                     const result = await tantivyService.searchSermons(lang, query, limit, 0);
-                    const items = [];
+                    const items: SearchContentHit[] = [];
                     for (const hit of result.hits.slice(0, limit)) {
                         const sermonId = referenceRepo.tantivyDateToSermonIds(
                             hit.tantivySermonDate,
                         )[0];
-                        if (!sermonId) continue;
+
+                        if (!sermonId) {
+                            continue;
+                        }
+
                         const meta = referenceDataService.getSermonMeta(
                             hit.translationId,
                             lang,
@@ -178,14 +211,18 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                         const filtered = rawParagraphs.filter((p) =>
                             matchesQuery(strNormalizeNoLower(p.snippet), query, mode),
                         );
-                        if (filtered.length === 0) continue;
+
+                        if (filtered.length === 0) {
+                            continue;
+                        }
+
                         items.push({
                             sermonId,
+                            translationId: hit.translationId,
                             title: meta?.title ?? meta?.enTitle ?? sermonId,
-                            enTitle: meta?.enTitle ?? undefined,
-                            dateMs: meta?.dateMs ?? undefined,
+                            location: meta?.location || undefined,
                             matches: filtered.slice(0, 5).map((p) => ({
-                                paragraphIndex: p.paragraphIndex,
+                                paragraphNumber: p.paragraphIndex,
                                 snippet: p.snippet,
                             })),
                             totalMatches: filtered.length,

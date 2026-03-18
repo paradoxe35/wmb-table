@@ -118,7 +118,9 @@ export default function History() {
         return (
             <div className="history-empty">
                 <Empty
-                    image={<ClockCircleOutlined style={{ fontSize: 48, opacity: 0.2 }} />}
+                    image={
+                        <ClockCircleOutlined style={{ fontSize: 'var(--fs-11xl)', opacity: 0.2 }} />
+                    }
                     description={t('Aucune historique')}
                 />
             </div>
@@ -140,7 +142,7 @@ export default function History() {
                     <div className="history-date-label">
                         <Text strong>{isToday ? t("Aujourd'hui") : selectedHistory?.date}</Text>
                         {isToday && (
-                            <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                            <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                                 {selectedHistory?.date}
                             </Text>
                         )}
@@ -198,7 +200,7 @@ export default function History() {
                 {/* Page indicator */}
                 {histories.length > 1 && (
                     <div className="history-page-indicator">
-                        <Text type="secondary" style={{ fontSize: '0.75em' }}>
+                        <Text type="secondary" style={{ fontSize: 'var(--fs-rel-md)' }}>
                             {selectedIndex + 1} / {histories.length}
                         </Text>
                     </div>

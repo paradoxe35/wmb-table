@@ -198,7 +198,7 @@ export default function TtsTab() {
                         size="small"
                         icon={<BookOutlined />}
                         onClick={openDocs}
-                        style={{ fontSize: '0.78em', paddingInline: 6 }}
+                        style={{ fontSize: 'var(--fs-rel-base)', paddingInline: 6 }}
                     >
                         {t('Documentation')}
                     </Button>
@@ -233,7 +233,7 @@ export default function TtsTab() {
                     showIcon={false}
                     style={{ marginTop: 8 }}
                     title={
-                        <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                        <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                             {t(activeMeta.hint)}
                         </Text>
                     }
@@ -247,7 +247,7 @@ export default function TtsTab() {
                         onChange={(v) => handleUpdate({ autoSwitchVoice: v })}
                     />
                     <div>
-                        <Text style={{ fontSize: '0.9em' }}>
+                        <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                             {t('Changer la voix automatiquement')}
                         </Text>
                         <Hint>
@@ -335,7 +335,9 @@ export default function TtsTab() {
                             onChange={(v) => handleUpdate({ autoPlay: v })}
                         />
                         <div>
-                            <Text style={{ fontSize: '0.9em' }}>{t('Lecture automatique')}</Text>
+                            <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
+                                {t('Lecture automatique')}
+                            </Text>
                             <Hint>
                                 {t(
                                     "Démarrer la lecture automatiquement à l'ouverture d'un document.",
@@ -363,12 +365,12 @@ export default function TtsTab() {
                         <Statistic
                             title={t('Utilisé')}
                             value={formatBytes(cacheSize, t)}
-                            valueStyle={{ fontSize: '1em' }}
+                            valueStyle={{ fontSize: 'var(--fs-base)' }}
                         />
                         <Statistic
                             title={t('Limite')}
                             value={`${settings.cacheMaxSizeMb} ${t('Mo')}`}
-                            valueStyle={{ fontSize: '1em' }}
+                            valueStyle={{ fontSize: 'var(--fs-base)' }}
                         />
                         <Button size="small" danger onClick={handleClearCache}>
                             {t('Vider')}
@@ -376,7 +378,7 @@ export default function TtsTab() {
                     </div>
                 </Field>
                 <div style={{ marginTop: 8 }}>
-                    <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                    <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                         {t('Taille maximale du cache')}
                     </Text>
                     <Slider

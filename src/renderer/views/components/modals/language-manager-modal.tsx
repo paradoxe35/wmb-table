@@ -83,7 +83,7 @@ function LanguageRow({
                         <CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />
                     )}
                 </div>
-                <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                     {lang.sermonsCount} {t('sermons')}
                     {lang.installed
                         ? ` — ${formatSize(lang.sizeOnDisk)}`
@@ -345,7 +345,7 @@ export default function LanguageManagerModal() {
                                                 <Text
                                                     type="secondary"
                                                     style={{
-                                                        fontSize: '0.8em',
+                                                        fontSize: 'var(--fs-rel-lg)',
                                                         padding: '8px 12px 4px',
                                                         display: 'block',
                                                     }}
@@ -377,7 +377,7 @@ export default function LanguageManagerModal() {
                                                 <Text
                                                     type="secondary"
                                                     style={{
-                                                        fontSize: '0.8em',
+                                                        fontSize: 'var(--fs-rel-lg)',
                                                         padding: '8px 12px 4px',
                                                         display: 'block',
                                                     }}

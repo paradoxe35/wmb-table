@@ -19,7 +19,10 @@ function DisabledState() {
             <Empty
                 image={
                     <RobotOutlined
-                        style={{ fontSize: 48, color: 'var(--ant-color-text-quaternary)' }}
+                        style={{
+                            fontSize: 'var(--fs-11xl)',
+                            color: 'var(--ant-color-text-quaternary)',
+                        }}
                     />
                 }
                 description={<Text type="secondary">{t("L'assistant IA est désactivé.")}</Text>}

@@ -70,7 +70,7 @@ function PersistentHighlight({
                       label: comment,
                       disabled: true,
                       style: {
-                          fontSize: '0.85em',
+                          fontSize: 'var(--fs-rel-xl)',
                           fontStyle: 'italic',
                           whiteSpace: 'normal' as const,
                           maxWidth: 250,

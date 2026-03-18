@@ -319,6 +319,7 @@ export class AiService {
             if (shouldGenerateTitle(allMessages.length)) {
                 const title = await generateConversationTitle(
                     model,
+                    activeLanguageCode,
                     allMessages.map((m) => ({ role: m.role, content: m.content })),
                 );
                 if (title) {
