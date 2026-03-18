@@ -111,17 +111,20 @@ export default function AiReferenceLink(
             case 'sermon': {
                 const sermon = sermonsById[ref.sermonId];
                 const title = sermon?.title ?? ref.sermonId;
+                // Always prefer the translationId from our local data over the AI-provided one,
+                // which may be hallucinated. Only use ref.translationId as last resort.
+                const translationId = sermon?.translationId || ref.translationId || 0;
                 setPendingNavigation({
                     documentTitle: title,
                     documentHtmlTree: {
                         paragraphIndex: ref.paragraphIndex,
-                        translationId: ref.translationId || sermon?.translationId || 0,
+                        translationId,
                         languageCode: '',
                         sermonId: ref.sermonId,
                         documentType: 'sermon',
                     },
                 });
-                openDocument(title, ref.sermonId, ref.translationId || sermon?.translationId);
+                openDocument(title, ref.sermonId, translationId);
                 break;
             }
 
@@ -137,6 +140,7 @@ export default function AiReferenceLink(
 
     return (
         <Tag
+            data-href={href}
             color={REF_COLORS[ref.type]}
             onClick={handleClick}
             style={{ cursor: 'pointer', fontSize: '0.85em' }}

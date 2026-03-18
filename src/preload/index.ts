@@ -375,6 +375,9 @@ const api = {
         ) => onPush(PushChannels.aiModelDownloadProgress, cb),
         aiReasoningDelta: (cb: (p: PushEventMap[typeof PushChannels.aiReasoningDelta]) => void) =>
             onPush(PushChannels.aiReasoningDelta, cb),
+        aiConversationUpdated: (
+            cb: (p: PushEventMap[typeof PushChannels.aiConversationUpdated]) => void,
+        ) => onPush(PushChannels.aiConversationUpdated, cb),
         toggleReadingMode: (cb: (p: PushEventMap[typeof PushChannels.toggleReadingMode]) => void) =>
             onPush(PushChannels.toggleReadingMode, cb),
     },

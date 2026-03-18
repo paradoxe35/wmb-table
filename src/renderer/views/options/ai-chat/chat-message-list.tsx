@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Empty, Spin, Tooltip, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { AnimatePresence, motion } from 'framer-motion';
-import { StickToBottom, useStickToBottomContext } from 'use-stick-to-bottom';
+import { useStickToBottom } from 'use-stick-to-bottom';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
 import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
@@ -159,7 +160,11 @@ function MessageBubble({
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                 ) : (
                     <div className="ai-markdown">
-                        <Markdown components={{ a: AiReferenceLink }} urlTransform={urlTransform}>
+                        <Markdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{ a: AiReferenceLink }}
+                            urlTransform={urlTransform}
+                        >
                             {message.content}
                         </Markdown>
                     </div>
@@ -179,18 +184,6 @@ function MessageBubble({
     );
 }
 
-function ScrollToBottomButton() {
-    const { isAtBottom, scrollToBottom } = useStickToBottomContext();
-
-    if (isAtBottom) return null;
-
-    return (
-        <button className="ai-chat__scroll-bottom" onClick={() => scrollToBottom()}>
-            ↓
-        </button>
-    );
-}
-
 export default function ChatMessageList({
     messages,
     sending,
@@ -198,32 +191,58 @@ export default function ChatMessageList({
     messages: AiMessage[];
     sending: boolean;
 }) {
-    return (
-        <StickToBottom className="ai-chat__messages" resize="smooth" initial="instant">
-            <StickToBottom.Content className="ai-chat__messages-content">
-                {messages.length === 0 ? (
-                    <EmptyChat />
-                ) : (
-                    <AnimatePresence initial={false}>
-                        {messages.map((msg, i) => {
-                            const isLastAssistant =
-                                msg.role === 'assistant' &&
-                                !messages.slice(i + 1).some((m) => m.role === 'assistant');
+    const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useStickToBottom({
+        resize: 'smooth',
+    });
 
-                            return (
-                                <MessageBubble
-                                    key={msg.id}
-                                    message={msg}
-                                    isLastAssistant={isLastAssistant}
-                                    sending={sending}
-                                />
-                            );
-                        })}
-                    </AnimatePresence>
-                )}
-            </StickToBottom.Content>
-            <ScrollToBottomButton />
-        </StickToBottom>
+    // Scroll to bottom instantly before paint on conversation switch
+    const conversationKey = messages[0]?.id ?? 'empty';
+    useLayoutEffect(() => {
+        const el = scrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+    }, [conversationKey]);
+
+    // Scroll to bottom when user sends a new message
+    const prevSending = useRef(sending);
+    useEffect(() => {
+        if (sending && !prevSending.current) {
+            scrollToBottom();
+        }
+        prevSending.current = sending;
+    }, [sending, scrollToBottom]);
+
+    return (
+        <div className="ai-chat__messages-wrapper">
+            <div className="ai-chat__messages" ref={scrollRef}>
+                <div className="ai-chat__messages-content" ref={contentRef}>
+                    {messages.length === 0 ? (
+                        <EmptyChat />
+                    ) : (
+                        <AnimatePresence initial={false}>
+                            {messages.map((msg, i) => {
+                                const isLastAssistant =
+                                    msg.role === 'assistant' &&
+                                    !messages.slice(i + 1).some((m) => m.role === 'assistant');
+
+                                return (
+                                    <MessageBubble
+                                        key={msg.id}
+                                        message={msg}
+                                        isLastAssistant={isLastAssistant}
+                                        sending={sending}
+                                    />
+                                );
+                            })}
+                        </AnimatePresence>
+                    )}
+                </div>
+            </div>
+            {!isAtBottom && (
+                <button className="ai-chat__scroll-bottom" onClick={() => scrollToBottom()}>
+                    ↓
+                </button>
+            )}
+        </div>
     );
 }
 

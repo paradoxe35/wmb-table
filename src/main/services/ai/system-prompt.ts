@@ -49,6 +49,7 @@ export function buildSystemPrompt(input: {
         '- Sermons: `[Title, §paragraph](wmb://sermon/sermonId/translationId/paragraphIndex)`',
         '- Bible: `[Book Chapter:Verse](wmb://bible/bookCode/chapter/verse/bookName)`',
         '- Documents: `[Title](wmb://doc/documentId/title)`',
+        'CRITICAL: The translationId in sermon links MUST be the exact numeric value from `meta.translationId` returned by searchSermons or getSermonContent. Never invent or guess a translationId.',
         '',
         '## Behavior',
         'Always act immediately — never ask the user to choose between approaches (A/B). Pick the best approach yourself and execute it.',

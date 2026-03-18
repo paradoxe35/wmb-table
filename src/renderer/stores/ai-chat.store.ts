@@ -172,6 +172,13 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
             window.api.on.aiStreamError(({ error }) => {
                 set({ sending: false, error });
             });
+            window.api.on.aiConversationUpdated(({ conversation }) => {
+                set((state) => ({
+                    conversations: state.conversations.map((c) =>
+                        c.id === conversation.id ? conversation : c,
+                    ),
+                }));
+            });
         }
 
         await Promise.all([

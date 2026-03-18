@@ -131,6 +131,7 @@ const en: Record<string, string> = {
     '+{{count}} autres': '+{{count}} others',
     Conversation: 'Conversation',
     maintenant: 'now',
+    'Supprimer cette conversation ?': 'Delete this conversation?',
     'Supprimer toutes les conversations ?': 'Delete all conversations?',
     "Vider l'historique": 'Clear history',
 

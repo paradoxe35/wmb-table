@@ -132,6 +132,7 @@ const es: Record<string, string> = {
     '+{{count}} autres': '+{{count}} otros',
     Conversation: 'Conversación',
     maintenant: 'ahora',
+    'Supprimer cette conversation ?': '¿Eliminar esta conversación?',
     'Supprimer toutes les conversations ?': '¿Eliminar todas las conversaciones?',
     "Vider l'historique": 'Vaciar historial',
 
