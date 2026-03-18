@@ -100,18 +100,24 @@ export default function ChatConversationList({
                                             {formatRelativeDate(conversation.updatedAt, t)}
                                         </Text>
                                     </div>
-                                    <Button
-                                        type="text"
-                                        size="small"
-                                        danger
-                                        className="ai-chat__conv-delete"
-                                        icon={<DeleteOutlined style={{ fontSize: 11 }} />}
-                                        style={{ flexShrink: 0 }}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
+                                    <Popconfirm
+                                        title={t('Supprimer cette conversation ?')}
+                                        onConfirm={(e) => {
+                                            e?.stopPropagation();
                                             onDeleteConversation(conversation.id);
                                         }}
-                                    />
+                                        onCancel={(e) => e?.stopPropagation()}
+                                    >
+                                        <Button
+                                            type="text"
+                                            size="small"
+                                            danger
+                                            className="ai-chat__conv-delete"
+                                            icon={<DeleteOutlined style={{ fontSize: 11 }} />}
+                                            style={{ flexShrink: 0 }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </Popconfirm>
                                 </motion.div>
                             );
                         })}

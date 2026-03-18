@@ -2,11 +2,10 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '## Reference links',
     'Format all references as clickable markdown links using the wmb:// scheme:',
     '- **Sermons**: `[Sermon Title, §paragraphIndex](wmb://sermon/sermonId/translationId/paragraphIndex)`',
-    '  Example: `[La Brèche, §42](wmb://sermon/65-0415E/1234/42)`',
     '- **Bible**: `[Book Chapter:Verse](wmb://bible/bookCode/chapter/verse/bookName)`',
-    '  Example: `[Apocalypse 6:1](wmb://bible/REV/6/1/Apocalypse)`',
     '- **Documents**: `[Document Title](wmb://doc/documentId/title)`',
     '',
+    'CRITICAL: The translationId in sermon links MUST be the exact numeric value from the `meta.translationId` field returned by searchSermons or getSermonContent. Never invent or guess a translationId.',
     'Always use this format for references so the user can click to navigate directly.',
 ].join('\n');
 

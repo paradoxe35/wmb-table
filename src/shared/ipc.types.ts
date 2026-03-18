@@ -77,6 +77,7 @@ import type {
     AiStreamErrorEvent,
     AiToolEvent,
     AiReasoningEvent,
+    AiConversationUpdatedEvent,
 } from './ai.types';
 
 // ---------------------------------------------------------------------------
@@ -193,6 +194,8 @@ export const AppChannels = {
     setActiveLanguage: 'app:setActiveLanguage',
     getRememberReadingPosition: 'app:getRememberReadingPosition',
     setRememberReadingPosition: 'app:setRememberReadingPosition',
+    getMaxTabs: 'app:getMaxTabs',
+    setMaxTabs: 'app:setMaxTabs',
     openExternal: 'app:openExternal',
     restart: 'app:restart',
     getUpdateStatus: 'app:getUpdateStatus',
@@ -287,6 +290,7 @@ export const PushChannels = {
     aiToolCallComplete: 'push:aiToolCallComplete',
     aiModelDownloadProgress: 'push:aiModelDownloadProgress',
     aiReasoningDelta: 'push:aiReasoningDelta',
+    aiConversationUpdated: 'push:aiConversationUpdated',
     toggleReadingMode: 'push:toggleReadingMode',
 } as const;
 
@@ -459,6 +463,8 @@ export interface InvokeChannelMap {
     [AppChannels.setActiveLanguage]: { args: [string]; return: void };
     [AppChannels.getRememberReadingPosition]: { args: []; return: boolean };
     [AppChannels.setRememberReadingPosition]: { args: [boolean]; return: void };
+    [AppChannels.getMaxTabs]: { args: []; return: number };
+    [AppChannels.setMaxTabs]: { args: [number]; return: void };
     [AppChannels.openExternal]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
@@ -575,6 +581,7 @@ export interface PushEventMap {
     [PushChannels.aiToolCallComplete]: AiToolEvent;
     [PushChannels.aiModelDownloadProgress]: AiModelDownloadProgress;
     [PushChannels.aiReasoningDelta]: AiReasoningEvent;
+    [PushChannels.aiConversationUpdated]: AiConversationUpdatedEvent;
     [PushChannels.toggleReadingMode]: void;
 }
 

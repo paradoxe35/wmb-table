@@ -1,7 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Empty, Spin, Tooltip, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useStickToBottom } from 'use-stick-to-bottom';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
 import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
@@ -15,6 +18,14 @@ function urlTransform(url: string): string {
         return url;
     }
     return defaultUrlTransform(url);
+}
+
+/** Encode spaces in wmb:// URLs so the markdown parser doesn't break them. */
+function sanitizeWmbLinks(content: string): string {
+    return content.replace(
+        /\]\(wmb:\/\/([^)]+)\)/g,
+        (_, path: string) => `](wmb://${path.replace(/ /g, '%20')})`,
+    );
 }
 
 const MAX_REASONING_LINES = 50;
@@ -72,7 +83,7 @@ function groupToolResults(results: AiToolResult[]): GroupedToolResult[] {
     return [...map.entries()].map(([name, count]) => ({ name, count }));
 }
 
-function ToolResultsList({ results, isActive }: { results: AiToolResult[]; isActive: boolean }) {
+function ToolResultsList({ results }: { results: AiToolResult[] }) {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
 
@@ -80,10 +91,6 @@ function ToolResultsList({ results, isActive }: { results: AiToolResult[]; isAct
     const shouldCollapse = grouped.length > VISIBLE_TOOL_RESULTS;
     const visible = shouldCollapse && !expanded ? grouped.slice(0, VISIBLE_TOOL_RESULTS) : grouped;
     const hiddenCount = grouped.length - VISIBLE_TOOL_RESULTS;
-
-    if (!isActive) {
-        return null;
-    }
 
     return (
         <div className="ai-chat__tool-results">
@@ -113,7 +120,19 @@ function MessageBubble({
     sending: boolean;
 }) {
     const isUser = message.role === 'user';
-    const isActive = sending && isLastAssistant;
+    const rawActive = sending && isLastAssistant;
+
+    // Once a message completes (has content while not streaming), mark it done.
+    // This prevents all active-state UI (tools, typing indicator, avatar pulse)
+    // from flashing when sending a new message briefly re-activates old messages.
+    const hasCompleted = useRef(false);
+
+    if (!rawActive && message.content) {
+        hasCompleted.current = true;
+    }
+
+    const isActive = rawActive && !hasCompleted.current;
+
     const isWaiting = isActive && !message.content;
 
     const avatarClass = [
@@ -128,7 +147,13 @@ function MessageBubble({
     const providerTooltip = isUser ? '' : providerLabel;
 
     return (
-        <div className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}>
+        <motion.div
+            key={message.id}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
+            className={`ai-chat__bubble ai-chat__bubble--${isUser ? 'user' : 'assistant'}`}
+        >
             <Tooltip title={providerTooltip} placement="top">
                 <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
             </Tooltip>
@@ -143,8 +168,12 @@ function MessageBubble({
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                 ) : (
                     <div className="ai-markdown">
-                        <Markdown components={{ a: AiReferenceLink }} urlTransform={urlTransform}>
-                            {message.content}
+                        <Markdown
+                            remarkPlugins={[remarkGfm]}
+                            components={{ a: AiReferenceLink }}
+                            urlTransform={urlTransform}
+                        >
+                            {sanitizeWmbLinks(message.content)}
                         </Markdown>
                     </div>
                 )}
@@ -156,10 +185,10 @@ function MessageBubble({
                 ) : null}
 
                 {isActive && message.toolResults.length > 0 ? (
-                    <ToolResultsList results={message.toolResults} isActive={isActive} />
+                    <ToolResultsList results={message.toolResults} />
                 ) : null}
             </div>
-        </div>
+        </motion.div>
     );
 }
 
@@ -170,59 +199,80 @@ export default function ChatMessageList({
     messages: AiMessage[];
     sending: boolean;
 }) {
-    const { t } = useTranslation();
-    const bottomRef = useRef<HTMLDivElement>(null);
-    const prevCountRef = useRef(0);
+    const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useStickToBottom({
+        resize: 'smooth',
+    });
 
+    // Scroll to bottom instantly before paint on conversation switch
+    const conversationKey = messages[0]?.id ?? 'empty';
+    useLayoutEffect(() => {
+        const el = scrollRef.current;
+        if (el) el.scrollTop = el.scrollHeight;
+    }, [conversationKey]);
+
+    // Scroll to bottom when user sends a new message
+    const prevSending = useRef(sending);
     useEffect(() => {
-        const prevCount = prevCountRef.current;
-        const currCount = messages.length;
-        prevCountRef.current = currCount;
-
-        // Jump instantly when loading a conversation (many messages at once or switching)
-        // Smooth scroll only for incremental updates (new message while chatting)
-        const isConversationSwitch = Math.abs(currCount - prevCount) > 1 || prevCount === 0;
-        bottomRef.current?.scrollIntoView(
-            isConversationSwitch ? undefined : { behavior: 'smooth' },
-        );
-    }, [messages, sending]);
+        if (sending && !prevSending.current) {
+            scrollToBottom();
+        }
+        prevSending.current = sending;
+    }, [sending, scrollToBottom]);
 
     return (
-        <div className="ai-chat__messages">
-            {messages.length === 0 ? (
-                <div className="ai-chat__empty">
-                    <Empty
-                        image={
-                            <RobotOutlined
-                                style={{
-                                    fontSize: 40,
-                                    color: 'var(--ant-color-text-quaternary)',
-                                }}
-                            />
-                        }
-                        description={
-                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
-                                {t('Posez votre question...')}
-                            </Text>
-                        }
-                    />
+        <div className="ai-chat__messages-wrapper">
+            <div className="ai-chat__messages" ref={scrollRef}>
+                <div className="ai-chat__messages-content" ref={contentRef}>
+                    {messages.length === 0 ? (
+                        <EmptyChat />
+                    ) : (
+                        <AnimatePresence initial={false}>
+                            {messages.map((msg, i) => {
+                                const isLastAssistant =
+                                    msg.role === 'assistant' &&
+                                    !messages.slice(i + 1).some((m) => m.role === 'assistant');
+
+                                return (
+                                    <MessageBubble
+                                        key={msg.id}
+                                        message={msg}
+                                        isLastAssistant={isLastAssistant}
+                                        sending={sending}
+                                    />
+                                );
+                            })}
+                        </AnimatePresence>
+                    )}
                 </div>
-            ) : (
-                messages.map((msg, i) => {
-                    const isLastAssistant =
-                        msg.role === 'assistant' &&
-                        !messages.slice(i + 1).some((m) => m.role === 'assistant');
-                    return (
-                        <MessageBubble
-                            key={msg.id}
-                            message={msg}
-                            isLastAssistant={isLastAssistant}
-                            sending={sending}
-                        />
-                    );
-                })
+            </div>
+            {!isAtBottom && (
+                <button className="ai-chat__scroll-bottom" onClick={() => scrollToBottom()}>
+                    ↓
+                </button>
             )}
-            <div ref={bottomRef} />
+        </div>
+    );
+}
+
+function EmptyChat() {
+    const { t } = useTranslation();
+    return (
+        <div className="ai-chat__empty">
+            <Empty
+                image={
+                    <RobotOutlined
+                        style={{
+                            fontSize: 40,
+                            color: 'var(--ant-color-text-quaternary)',
+                        }}
+                    />
+                }
+                description={
+                    <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                        {t('Posez votre question...')}
+                    </Text>
+                }
+            />
         </div>
     );
 }

@@ -14,6 +14,7 @@ import {
     ExclamationCircleOutlined,
 } from '@ant-design/icons';
 import { debounce, substrAfter } from '@renderer/utils/functions';
+import { useWmbLinkNavigate } from '@renderer/hooks/use-wmb-link';
 import { NoteItem, NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { useIpcRequestWithLoader, useValueStateRef } from '@renderer/hooks';
 import {
@@ -30,6 +31,18 @@ import './ckeditor/ckeditor';
 
 // @ts-expect-error — CKEditor UMD attaches to window
 const DecoupledDocumentEditor: any = window.DecoupledDocumentEditor;
+
+/** Dismiss CKEditor's link balloon toolbar by clearing the selection. */
+function dismissEditorBalloon(editor: any): void {
+    if (!editor) return;
+    editor.model.change((writer: any) => {
+        writer.setSelection(
+            writer.createRange(writer.createPositionAt(editor.model.document.getRoot(), 0)),
+        );
+    });
+    // Also blur the editable to ensure balloon hides
+    editor.ui.getEditableElement()?.blur();
+}
 
 function styleProperty(color = 'var(--ant-color-bg-container)') {
     return {
@@ -218,6 +231,7 @@ export default function EditorContent({
 }) {
     const { t } = useTranslation();
     const modalRefence = useShowReferenceDetail();
+    const navigateWmbLink = useWmbLinkNavigate();
 
     const workingNoteIdRef = useValueStateRef(workingNoteId);
 
@@ -284,26 +298,35 @@ export default function EditorContent({
         });
     }, []);
 
+    const navigateWmbLinkRef = useValueStateRef(navigateWmbLink);
+
     useEffect(() => {
         const editor = editorRef.current;
         const handleEditorLinks = (e: MouseEvent) => {
             let target = e.target as HTMLElement;
-            target = target.tagName === 'A' ? target : (target.parentElement as HTMLElement);
+            // Walk up to find the <a> tag — CKEditor may wrap link text in nested elements
+            while (target && target.tagName !== 'A' && target !== e.currentTarget) {
+                target = target.parentElement as HTMLElement;
+            }
+            if (!target || target.tagName !== 'A') return;
 
-            if (
-                target.tagName === 'A' &&
-                target.getAttribute('href')?.startsWith(referenceDocumentBrandLink)
-            ) {
-                const str = target.getAttribute('href')!;
-                const substr = referenceDocumentBrandLink;
-                handleEditorLinksClick(substrAfter(str, substr));
-            } else if (
-                target.tagName === 'A' &&
-                target.getAttribute('href')?.startsWith(referenceBibleBrandLink)
-            ) {
-                const str = target.getAttribute('href')!;
-                const substr = referenceBibleBrandLink;
-                handleEditorLinksBibleClick(substrAfter(str, substr));
+            const href = target.getAttribute('href');
+            if (!href) return;
+
+            const wmbBrandLink = 'http://w.t/#wmb/';
+
+            if (href.startsWith(referenceDocumentBrandLink)) {
+                dismissEditorBalloon(editorRef.current);
+                handleEditorLinksClick(substrAfter(href, referenceDocumentBrandLink));
+            } else if (href.startsWith(referenceBibleBrandLink)) {
+                dismissEditorBalloon(editorRef.current);
+                handleEditorLinksBibleClick(substrAfter(href, referenceBibleBrandLink));
+            } else if (href.startsWith(wmbBrandLink)) {
+                dismissEditorBalloon(editorRef.current);
+                navigateWmbLinkRef.current('wmb://' + substrAfter(href, wmbBrandLink));
+            } else if (href.startsWith('wmb://')) {
+                dismissEditorBalloon(editorRef.current);
+                navigateWmbLinkRef.current(href);
             }
         };
         if (editor) {
@@ -604,6 +627,7 @@ function Editor({
                             },
                             link: {
                                 addTargetToExternalLinks: true,
+                                allowedProtocols: ['http', 'https', 'mailto', 'tel'],
                                 decorators: [
                                     {
                                         mode: 'automatic',
@@ -625,6 +649,17 @@ function Editor({
                                             title: t('Référence biblique'),
                                             reference: 'true',
                                             bible: 'true',
+                                            onclick: 'event.preventDefault()',
+                                        },
+                                    },
+                                    {
+                                        mode: 'automatic',
+                                        callback: (url: string) =>
+                                            typeof url === 'string' &&
+                                            url.startsWith('http://w.t/#wmb/'),
+                                        attributes: {
+                                            title: t('Référence'),
+                                            reference: 'true',
                                             onclick: 'event.preventDefault()',
                                         },
                                     },

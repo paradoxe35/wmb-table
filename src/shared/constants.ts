@@ -58,3 +58,8 @@ export const DOCS_AI_CHAT_LINK = buildDocsGuideLink('ai-chat');
 export const DOCS_SETTINGS_ASSISTANT_LINK = buildDocsGuideLink('settings-assistant');
 export const DOCS_TTS_LINK = buildDocsGuideLink('audio-and-tts');
 export const DOCS_BIBLE_LINK = buildDocsGuideLink('bible');
+
+// ── Document tabs ──
+export const DEFAULT_MAX_TABS = 12;
+export const MIN_MAX_TABS = 5;
+export const MAX_MAX_TABS = 50;

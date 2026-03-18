@@ -543,6 +543,7 @@ export interface AppSettingsStatus {
     lastCheckBackupStatus: Date;
     activeLanguage: string | null;
     rememberReadingPosition: boolean;
+    maxTabs: number;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {

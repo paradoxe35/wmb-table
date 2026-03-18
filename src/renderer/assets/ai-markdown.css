@@ -78,3 +78,10 @@
     background: var(--ant-color-fill-quaternary);
     font-weight: 600;
 }
+
+.ai-markdown hr {
+    border: none;
+    border-top: 1px solid var(--ant-color-border);
+    opacity: 0.6;
+    margin: 10px 0;
+}

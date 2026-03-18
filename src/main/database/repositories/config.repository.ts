@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { configurations } from '../schema';
 import type { AppSettingsStatus } from '@shared/types';
+import { DEFAULT_MAX_TABS, MIN_MAX_TABS, MAX_MAX_TABS } from '@shared/constants';
 
 export function getConfig(): AppSettingsStatus | null {
     const row = getDb().select().from(configurations).get();
@@ -14,6 +15,7 @@ export function getConfig(): AppSettingsStatus | null {
         lastCheckBackupStatus: new Date(row.lastCheckBackupStatus ?? Date.now()),
         activeLanguage: row.activeLanguage ?? null,
         rememberReadingPosition: row.rememberReadingPosition,
+        maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
     };
 }
 
@@ -68,6 +70,20 @@ export function setRememberReadingPosition(value: boolean): void {
     getDb()
         .update(configurations)
         .set({ rememberReadingPosition: value })
+        .where(eq(configurations.id, config.id))
+        .run();
+}
+
+export function getMaxTabs(): number {
+    return getConfig()?.maxTabs ?? DEFAULT_MAX_TABS;
+}
+
+export function setMaxTabs(value: number): void {
+    const clamped = Math.max(MIN_MAX_TABS, Math.min(MAX_MAX_TABS, value));
+    const config = ensureConfig();
+    getDb()
+        .update(configurations)
+        .set({ maxTabs: clamped })
         .where(eq(configurations.id, config.id))
         .run();
 }

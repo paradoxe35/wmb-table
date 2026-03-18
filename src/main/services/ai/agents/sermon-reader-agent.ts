@@ -99,8 +99,12 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         sermonId,
                     };
                 } catch (error) {
+                    // Re-throw abort errors so the outer runner stops
+                    if (ctx.abortSignal?.aborted) throw error;
+
                     const message =
                         error instanceof Error ? error.message : 'Sermon reader agent failed';
+
                     log.error('Sermon reader agent failed', { sermonId, error: message });
                     return { summary: `Sermon reading failed: ${message}`, sermonId };
                 }

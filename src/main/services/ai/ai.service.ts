@@ -26,6 +26,7 @@ import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
+import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
 
 export class AiService {
     private controllers = new Map<string, AbortController>();
@@ -312,6 +313,21 @@ export class AiService {
                 conversationId: conversation.id,
                 messageId: assistantMessage.id,
             });
+
+            // Generate an AI title after the first complete exchange
+            const allMessages = aiRepo.getMessages(conversation.id);
+            if (shouldGenerateTitle(allMessages.length)) {
+                const title = await generateConversationTitle(
+                    model,
+                    allMessages.map((m) => ({ role: m.role, content: m.content })),
+                );
+                if (title) {
+                    const updated = aiRepo.updateConversation(conversation.id, { title });
+                    sendToRenderer(browserWindow, PushChannels.aiConversationUpdated, {
+                        conversation: updated,
+                    });
+                }
+            }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'AI generation failed.';
             log.error('AI generation failed', {

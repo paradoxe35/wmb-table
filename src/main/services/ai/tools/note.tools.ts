@@ -23,7 +23,9 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
             },
         },
         createNote: {
-            description: 'Create a new note.',
+            description:
+                'Create a new note. Content is markdown. ' +
+                'You can include wmb:// reference links — they will be clickable in the note.',
             inputSchema: z.object({
                 name: z.string().min(2),
                 content: z.string().optional().describe('content in markdown'),
@@ -44,7 +46,9 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
             },
         },
         updateNoteContent: {
-            description: 'Replace the content of a note.',
+            description:
+                'Replace the content of a note. Content is markdown. ' +
+                'You can include wmb:// reference links — they will be clickable in the note.',
             inputSchema: z.object({ noteId: z.string(), content: z.string() }),
             execute: async ({ noteId: rawNoteId, content }) => {
                 const noteId = rawNoteId.trim();
@@ -65,8 +69,19 @@ export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiT
     };
 }
 
+/**
+ * Convert wmb:// URLs to http://w.t/#wmb/ format that CKEditor allows,
+ * and encode spaces so the markdown parser doesn't break them.
+ */
+function sanitizeWmbLinks(content: string): string {
+    return content.replace(
+        /\]\(wmb:\/\/([^)]+)\)/g,
+        (_, path: string) => `](http://w.t/#wmb/${path.replace(/ /g, '%20')})`,
+    );
+}
+
 async function parseNoteMarkdown(content: string, title: string): Promise<string> {
-    let html = await marked.parse(content);
+    let html = await marked.parse(sanitizeWmbLinks(content));
     if (!html.includes('<h1>')) {
         html = `<h1>${title}</h1>\n${html}`;
     }

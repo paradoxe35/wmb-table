@@ -259,3 +259,7 @@ export interface AiReasoningEvent {
     messageId: string;
     delta: string;
 }
+
+export interface AiConversationUpdatedEvent {
+    conversation: AiConversation;
+}

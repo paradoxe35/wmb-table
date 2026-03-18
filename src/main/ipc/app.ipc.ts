@@ -44,6 +44,14 @@ export function registerAppHandlers(): void {
         configRepo.setRememberReadingPosition(value);
     });
 
+    registerHandler(AppChannels.getMaxTabs, async () => {
+        return configRepo.getMaxTabs();
+    });
+
+    registerHandler(AppChannels.setMaxTabs, async (_event, value) => {
+        configRepo.setMaxTabs(value);
+    });
+
     registerHandler(AppChannels.openExternal, async (_event, url) => {
         await shell.openExternal(url);
     });

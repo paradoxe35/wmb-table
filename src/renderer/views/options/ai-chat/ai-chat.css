@@ -5,6 +5,8 @@
 
 /* ── Root layout ─────────────────────────────────────────────── */
 .ai-chat {
+    --max-width: 90%;
+    container-type: inline-size;
     display: flex;
     flex: 1;
     min-height: 0;
@@ -97,7 +99,7 @@
 }
 
 .ai-chat__conv-item:hover .ai-chat__conv-delete {
-    opacity: 0.6;
+    opacity: 0.8;
 }
 
 /* ── Main content area ───────────────────────────────────────── */
@@ -111,16 +113,54 @@
 }
 
 /* ── Message list ────────────────────────────────────────────── */
-.ai-chat__messages {
+.ai-chat__messages-wrapper {
     flex: 1;
     min-height: 0;
+    position: relative;
+}
+
+.ai-chat__messages {
+    height: 100%;
     overflow-y: auto;
-    overflow-x: hidden;
+    scrollbar-width: thin;
+}
+
+.ai-chat__messages-content {
     display: flex;
     flex-direction: column;
     gap: 14px;
     padding: 20px 28px;
-    scrollbar-width: thin;
+    max-width: var(--max-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.ai-chat__scroll-bottom {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ant-color-bg-elevated);
+    border: 1px solid var(--ant-color-border);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--ant-color-text-secondary);
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition:
+        background 0.15s,
+        color 0.15s;
+    z-index: 1;
+}
+
+.ai-chat__scroll-bottom:hover {
+    background: var(--ant-color-primary-bg);
+    color: var(--ant-color-primary);
 }
 
 .ai-chat__empty {
@@ -134,7 +174,8 @@
 .ai-chat__bubble {
     display: flex;
     gap: 10px;
-    max-width: 80%;
+    max-width: 99%;
+    font-size: 0.9rem;
 }
 
 .ai-chat__bubble--user {
@@ -247,6 +288,9 @@
     transition:
         border-color 0.2s,
         box-shadow 0.2s;
+    max-width: calc(var(--max-width) - 70px);
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .ai-chat__input-box:focus-within {
@@ -310,4 +354,18 @@
     word-break: break-word;
     color: var(--ant-color-text-secondary);
     font-family: inherit;
+}
+
+/* ── Responsive: full width on small chat containers ────────── */
+@container (max-width: 900px) {
+    .ai-chat__messages-content {
+        max-width: 100%;
+    }
+    .ai-chat__input-box {
+        max-width: calc(100% - 70px);
+    }
+
+    .ai-chat__bubble {
+        max-width: 100%;
+    }
 }
