@@ -179,6 +179,13 @@ export default defineConfig({
     head: [
         ['link', { rel: 'icon', href: '/icon.png' }],
         ['meta', { name: 'theme-color', content: '#1990ff' }],
+        [
+            'meta',
+            {
+                name: 'google-site-verification',
+                content: 'gn50R9DrNOEkbsv3UySO1OPIdR5WXxXPtNdyCF6Ln38',
+            },
+        ],
     ],
     themeConfig: {
         logo: '/icon.png',
