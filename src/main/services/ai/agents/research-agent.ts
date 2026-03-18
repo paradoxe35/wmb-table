@@ -92,8 +92,12 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
 
                     return { summary: result.text };
                 } catch (error) {
+                    // Re-throw abort errors so the outer runner stops
+                    if (ctx.abortSignal?.aborted) throw error;
+
                     const message =
                         error instanceof Error ? error.message : 'Research agent failed';
+
                     log.error('Research agent failed', { topic, error: message });
                     return { summary: `Research failed: ${message}` };
                 }
