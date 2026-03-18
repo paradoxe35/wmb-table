@@ -121,6 +121,9 @@ importers:
             unpdf:
                 specifier: ^1.4.0
                 version: 1.4.0
+            use-stick-to-bottom:
+                specifier: ^1.1.3
+                version: 1.1.3(react@19.2.4)
             yauzl:
                 specifier: ^3.2.1
                 version: 3.2.1
@@ -8829,6 +8832,14 @@ packages:
                 integrity: sha512-XdVKMF4SJ0nP/O7XIPB0JwAEuT9lDIYnNsK8yGVe43y0AWoKeJNdv3ZNWh7ksJ6KqQFjOO6ox/VEitLnaVNufw==,
             }
 
+    use-stick-to-bottom@1.1.3:
+        resolution:
+            {
+                integrity: sha512-GgRLdeGhxBxpcbrBbEIEoOKUQ9d46/eaSII+wyv1r9Du+NbCn1W/OE+VddefvRP4+5w/1kATN/6g2/BAC/yowQ==,
+            }
+        peerDependencies:
+            react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
     use-sync-external-store@1.6.0:
         resolution:
             {
@@ -15018,6 +15029,10 @@ snapshots:
     url-join@4.0.1: {}
 
     url-template@2.0.8: {}
+
+    use-stick-to-bottom@1.1.3(react@19.2.4):
+        dependencies:
+            react: 19.2.4
 
     use-sync-external-store@1.6.0(react@19.2.4):
         dependencies:
