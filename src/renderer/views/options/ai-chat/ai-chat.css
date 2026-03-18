@@ -276,6 +276,7 @@
 /* ── Input area ──────────────────────────────────────────────── */
 .ai-chat__input-wrapper {
     padding: 8px 16px 14px;
+    margin-left: 20px;
 }
 
 .ai-chat__input-box {
@@ -287,7 +288,7 @@
     transition:
         border-color 0.2s,
         box-shadow 0.2s;
-    max-width: var(--max-width);
+    max-width: calc(var(--max-width) - 7%);
     margin-left: auto;
     margin-right: auto;
 }
@@ -360,8 +361,13 @@
     .ai-chat__messages-content {
         max-width: 100%;
     }
+
+    .ai-chat__input-wrapper {
+        margin-left: 23px;
+    }
+
     .ai-chat__input-box {
-        max-width: 100%;
+        max-width: calc(100% - 7%);
     }
     .ai-chat__bubble {
         max-width: 100%;
