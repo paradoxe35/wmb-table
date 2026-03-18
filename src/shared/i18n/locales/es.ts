@@ -720,6 +720,11 @@ const es: Record<string, string> = {
 
     // ── Theme ──
     Apparence: 'Apariencia',
+    'Taille du texte': 'Tamaño del texto',
+    Petit: 'Pequeño',
+    Normal: 'Normal',
+    Grand: 'Grande',
+    'Très grand': 'Muy grande',
     Clair: 'Claro',
     Sombre: 'Oscuro',
     Système: 'Sistema',

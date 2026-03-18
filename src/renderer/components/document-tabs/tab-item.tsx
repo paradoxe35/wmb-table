@@ -10,8 +10,8 @@ import { BibleIcons } from '../icons';
 
 function getTabIcon(tab: DocumentTab) {
     if (tab.type === 'bible') return <BibleIcons />;
-    if (tab.type === 'custom') return <SnippetsOutlined style={{ fontSize: 'var(--fs-sm)' }} />;
-    return <FileOutlined style={{ fontSize: 'var(--fs-sm)' }} />;
+    if (tab.type === 'custom') return <SnippetsOutlined style={{ fontSize: 'var(--fs-base)' }} />;
+    return <FileOutlined style={{ fontSize: 'var(--fs-base)' }} />;
 }
 
 function useIsTabPlaying(tab: DocumentTab): boolean {

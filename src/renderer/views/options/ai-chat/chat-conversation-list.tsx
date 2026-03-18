@@ -78,6 +78,7 @@ export default function ChatConversationList({
                                     transition={{ duration: 0.2 }}
                                     role="button"
                                     tabIndex={0}
+                                    title={conversation.title || undefined}
                                     className={`ai-chat__conv-item ${isActive ? 'ai-chat__conv-item--active' : ''}`}
                                     onClick={() => onSelectConversation(conversation.id)}
                                     onKeyDown={(e) => {
