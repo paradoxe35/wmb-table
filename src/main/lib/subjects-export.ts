@@ -21,7 +21,7 @@ function formatDate(dateMs: number): string {
 
 function renderSermonRef(item: SubjectDocumentItem): string {
     const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
-    const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
+    const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
     const lang = paragraphRef?.languageCode ?? 'en';
     const translationId = paragraphRef?.translationId ?? 0;
     const sermon = item.sermonId

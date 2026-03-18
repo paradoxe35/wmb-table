@@ -337,7 +337,7 @@ function ItemFromSelectedSubject({
     const sermon = getSermonById(item.sermonId);
     const displayTitle = sermon?.title ?? item.documentTitle;
     const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
-    const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
+    const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
     const onNavigate = () => {
         setPendingNavigation({

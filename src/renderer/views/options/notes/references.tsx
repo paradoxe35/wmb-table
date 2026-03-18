@@ -61,7 +61,7 @@ export const useShowReferenceDetail = () => {
         const sermon = getSermonById(reference.sermonId);
         const displayTitle = sermon?.title ?? reference.documentTitle;
         const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
-        const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex + 1 : null;
+        const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
         Modal[assigned ? 'info' : 'warning']({
             closable: true,
