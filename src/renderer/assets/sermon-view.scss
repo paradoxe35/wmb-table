@@ -3,7 +3,7 @@
     padding: 1.5em 1em 1em;
 
     &__title {
-        font-size: 1.4em;
+        font-size: var(--fs-rel-7xl);
         font-weight: 600;
         margin: 0 0 0.3em;
         color: var(--ant-color-text, #45474a);
@@ -11,7 +11,7 @@
 
     &__date,
     &__traduction {
-        font-size: 0.9em;
+        font-size: var(--fs-rel-3xl);
         color: var(--ant-color-text-secondary, #6b7280);
         margin: 0.15em 0;
     }
@@ -24,7 +24,7 @@
     padding: 6px 16px;
     border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
     gap: 8px;
-    font-size: 21px;
+    font-size: var(--fs-4xl);
     color: var(--ant-color-text-secondary, #6b7280);
 }
 
@@ -38,7 +38,7 @@
     padding: 0 2px;
 
     &__title {
-        font-size: 0.62em;
+        font-size: var(--fs-rel-3xs);
         font-weight: 600;
         padding: 0 8px;
         white-space: nowrap;
@@ -64,7 +64,7 @@
         text-align: right;
         color: var(--ant-color-text-secondary, #6b7280);
         font-family: monospace;
-        font-size: 0.85em;
+        font-size: var(--fs-rel-xl);
         user-select: none;
 
         .tts-play-from-here {
@@ -81,7 +81,7 @@
             height: 18px;
             padding: 0;
             cursor: pointer;
-            font-size: 10px;
+            font-size: var(--fs-2xs);
             line-height: 1;
             align-items: center;
             justify-content: center;

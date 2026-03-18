@@ -10,8 +10,8 @@ import { BibleIcons } from '../icons';
 
 function getTabIcon(tab: DocumentTab) {
     if (tab.type === 'bible') return <BibleIcons />;
-    if (tab.type === 'custom') return <SnippetsOutlined style={{ fontSize: 12 }} />;
-    return <FileOutlined style={{ fontSize: 12 }} />;
+    if (tab.type === 'custom') return <SnippetsOutlined style={{ fontSize: 'var(--fs-sm)' }} />;
+    return <FileOutlined style={{ fontSize: 'var(--fs-sm)' }} />;
 }
 
 function useIsTabPlaying(tab: DocumentTab): boolean {
@@ -31,7 +31,9 @@ function useIsTabPlaying(tab: DocumentTab): boolean {
 
 function getTabLabel(tab: DocumentTab, isPlaying: boolean) {
     const speakerIcon = isPlaying ? (
-        <SoundOutlined style={{ fontSize: 11, marginLeft: 4, color: 'var(--ant-color-primary)' }} />
+        <SoundOutlined
+            style={{ fontSize: 'var(--fs-xs)', marginLeft: 4, color: 'var(--ant-color-primary)' }}
+        />
     ) : null;
 
     if (tab.type === 'bible') {

@@ -47,7 +47,7 @@ function ReasoningBlock({ messageId }: { messageId: string; isActive: boolean })
         <div className="ai-reasoning">
             <div className="ai-reasoning__toggle" onClick={() => setCollapsed((c) => !c)}>
                 <BulbOutlined />
-                <Text type="secondary" style={{ fontSize: '0.8em' }}>
+                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
                     {collapsed ? t('Voir le raisonnement') : t('Masquer le raisonnement')}
                 </Text>
             </div>
@@ -56,7 +56,11 @@ function ReasoningBlock({ messageId }: { messageId: string; isActive: boolean })
                     {wasTruncated && (
                         <Text
                             type="secondary"
-                            style={{ fontSize: '0.75em', display: 'block', marginBottom: 4 }}
+                            style={{
+                                fontSize: 'var(--fs-rel-md)',
+                                display: 'block',
+                                marginBottom: 4,
+                            }}
                         >
                             ({t('{{count}} dernières lignes', { count: MAX_REASONING_LINES })})
                         </Text>
@@ -180,7 +184,7 @@ function MessageBubble({
 
                 {isActive && !isWaiting ? (
                     <div className="ai-chat__typing-indicator">
-                        <LoadingOutlined spin style={{ fontSize: 12 }} />
+                        <LoadingOutlined spin style={{ fontSize: 'var(--fs-sm)' }} />
                     </div>
                 ) : null}
 
@@ -262,13 +266,13 @@ function EmptyChat() {
                 image={
                     <RobotOutlined
                         style={{
-                            fontSize: 40,
+                            fontSize: 'var(--fs-10xl)',
                             color: 'var(--ant-color-text-quaternary)',
                         }}
                     />
                 }
                 description={
-                    <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                    <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                         {t('Posez votre question...')}
                     </Text>
                 }

@@ -109,7 +109,7 @@ export default function DocumentAudioPlayer() {
                         <div
                             style={{
                                 color: 'var(--ant-color-text-secondary)',
-                                fontSize: '0.9em',
+                                fontSize: 'var(--fs-rel-3xl)',
                                 marginBottom: 16,
                             }}
                         >
@@ -130,7 +130,7 @@ export default function DocumentAudioPlayer() {
                         style={{
                             display: 'flex',
                             justifyContent: 'space-between',
-                            fontSize: '0.8em',
+                            fontSize: 'var(--fs-rel-lg)',
                             color: 'var(--ant-color-text-secondary)',
                         }}
                     >

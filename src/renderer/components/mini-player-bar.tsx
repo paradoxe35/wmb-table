@@ -265,7 +265,7 @@ export default function MiniPlayerBar() {
                 shape="circle"
                 icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
                 onClick={handlePlayPause}
-                style={{ fontSize: 22 }}
+                style={{ fontSize: 'var(--fs-5xl)' }}
             />
             <span className="mini-player-title" onClick={openModal} title={title ?? ''}>
                 {title}
@@ -281,7 +281,7 @@ export default function MiniPlayerBar() {
             />
             <span
                 style={{
-                    fontSize: '0.8em',
+                    fontSize: 'var(--fs-rel-lg)',
                     color: 'var(--ant-color-text-secondary)',
                     minWidth: 80,
                     textAlign: 'center',
@@ -290,7 +290,11 @@ export default function MiniPlayerBar() {
                 {formatTime(currentTime)} / {formatTime(duration)}
             </span>
             <Dropdown menu={{ items: speedMenuItems }} trigger={['click']}>
-                <Button type="text" size="small" style={{ fontSize: '0.8em', minWidth: 36 }}>
+                <Button
+                    type="text"
+                    size="small"
+                    style={{ fontSize: 'var(--fs-rel-lg)', minWidth: 36 }}
+                >
                     {playbackRate}x
                 </Button>
             </Dropdown>

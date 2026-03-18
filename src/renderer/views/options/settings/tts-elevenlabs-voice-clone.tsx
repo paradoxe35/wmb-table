@@ -38,7 +38,7 @@ export function ClonedVoicesList({ voices, onDelete }: ClonedVoicesListProps) {
                             padding: '4px 0',
                         }}
                     >
-                        <Text style={{ fontSize: '0.9em' }}>{v.name}</Text>
+                        <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>{v.name}</Text>
                         <DeleteBtn confirm={() => onDelete(v.id)} />
                     </div>
                 ))}

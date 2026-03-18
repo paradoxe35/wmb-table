@@ -154,7 +154,10 @@ export default function BackupTab() {
                                 'Connectez-vous avec Google pour sauvegarder vos données sur Google Drive.',
                             )}
                         </Paragraph>
-                        <Paragraph type="secondary" style={{ fontSize: '0.85em', marginBottom: 0 }}>
+                        <Paragraph
+                            type="secondary"
+                            style={{ fontSize: 'var(--fs-rel-xl)', marginBottom: 0 }}
+                        >
                             {t(
                                 'Vos données seront restaurées automatiquement lors de la connexion.',
                             )}
@@ -188,7 +191,7 @@ export default function BackupTab() {
                             {status.name || status.email}
                         </Text>
                         {status.name && (
-                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                            <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                                 {status.email}
                             </Text>
                         )}
@@ -235,7 +238,7 @@ export default function BackupTab() {
                 >
                     <div>
                         <Text style={{ display: 'block' }}>{t('Synchronisation automatique')}</Text>
-                        <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                        <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                             Google Drive
                         </Text>
                     </div>
@@ -244,7 +247,7 @@ export default function BackupTab() {
                 {status.lastUpdate && (
                     <Text
                         type="secondary"
-                        style={{ fontSize: '0.8em', display: 'block', marginTop: 8 }}
+                        style={{ fontSize: 'var(--fs-rel-lg)', display: 'block', marginTop: 8 }}
                     >
                         {t('Dernière synchronisation : {{time}}', {
                             time: status.lastUpdate.toLocaleTimeString('fr'),
@@ -359,7 +362,11 @@ function RestoreProgress({
                             : t('Restauration de données')}
                     </Text>
                     {isInProgress && (
-                        <Spin indicator={<LoadingOutlined style={{ fontSize: 16 }} spin />} />
+                        <Spin
+                            indicator={
+                                <LoadingOutlined style={{ fontSize: 'var(--fs-xl)' }} spin />
+                            }
+                        />
                     )}
                 </Space>
                 {renderContent(

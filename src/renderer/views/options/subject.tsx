@@ -354,7 +354,7 @@ function ItemFromSelectedSubject({
             <div className="subject-ref-card">
                 <div className="subject-ref-card__header">
                     <BibleIcons />
-                    <Text strong style={{ fontSize: '0.95em' }}>
+                    <Text strong style={{ fontSize: 'var(--fs-rel-4xl)' }}>
                         {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
                     </Text>
                     <DeleteBtn confirm={() => confirm(item)} />
@@ -367,8 +367,8 @@ function ItemFromSelectedSubject({
     return (
         <div className="subject-ref-card">
             <div className="subject-ref-card__header">
-                <BookOutlined style={{ fontSize: 14 }} />
-                <a className="underline" style={{ flex: 1, fontSize: '0.95em' }}>
+                <BookOutlined style={{ fontSize: 'var(--fs-base)' }} />
+                <a className="underline" style={{ flex: 1, fontSize: 'var(--fs-rel-4xl)' }}>
                     <span onClick={onNavigate}>{displayTitle}</span>
                 </a>
                 <DeleteBtn confirm={() => confirm(item)} />
@@ -509,7 +509,7 @@ const ItemSubject: FC<{
             title={item.name}
         >
             <div className="subject-item__left">
-                <BookOutlined style={{ fontSize: 14, flexShrink: 0 }} />
+                <BookOutlined style={{ fontSize: 'var(--fs-base)', flexShrink: 0 }} />
                 <span className="subject-item__name">{item.name}</span>
             </div>
             <span onClick={(e) => e.stopPropagation()}>

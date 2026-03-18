@@ -370,7 +370,7 @@ function BookSection({
     return (
         <>
             <div style={{ padding: '8px 10px 4px' }}>
-                <Typography.Text type="secondary" strong style={{ fontSize: '0.8em' }}>
+                <Typography.Text type="secondary" strong style={{ fontSize: 'var(--fs-rel-lg)' }}>
                     {label}
                 </Typography.Text>
             </div>

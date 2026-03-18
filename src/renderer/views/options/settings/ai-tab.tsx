@@ -105,7 +105,7 @@ export default function AiTab() {
                         size="small"
                         icon={<BookOutlined />}
                         onClick={openDocs}
-                        style={{ fontSize: '0.78em', paddingInline: 6 }}
+                        style={{ fontSize: 'var(--fs-rel-base)', paddingInline: 6 }}
                     >
                         {t('Documentation')}
                     </Button>
@@ -117,7 +117,9 @@ export default function AiTab() {
                         onChange={(enabled) => void saveSettings({ enabled })}
                     />
                     <div>
-                        <Text style={{ fontSize: '0.9em' }}>{t("Activer l'assistant IA")}</Text>
+                        <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
+                            {t("Activer l'assistant IA")}
+                        </Text>
                         <Hint>
                             {t("Une fois activé, l'assistant apparaît dans la barre latérale.")}
                         </Hint>

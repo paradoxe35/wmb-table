@@ -47,6 +47,7 @@ export default function App() {
             cssVar: { prefix: 'ant' },
             token: {
                 colorPrimary: '#1990ff',
+                fontSize: 14,
             },
             components: {
                 Layout: {

@@ -14,7 +14,9 @@ type ProgressType = {
     onlyPercent?: boolean;
 };
 
-const SpinIcon = () => <Spin indicator={<LoadingOutlined style={{ fontSize: 20 }} spin />} />;
+const SpinIcon = () => (
+    <Spin indicator={<LoadingOutlined style={{ fontSize: 'var(--fs-3xl)' }} spin />} />
+);
 
 const ShowProgress = ({ title, progress, onlyPercent = false }: ProgressType) => {
     const { percent, proceed, total } = progress;

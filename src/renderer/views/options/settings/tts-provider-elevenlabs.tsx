@@ -123,7 +123,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                     {
                         key: 'advanced',
                         label: (
-                            <Text strong style={{ fontSize: '0.9em' }}>
+                            <Text strong style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                                 {t('Paramètres avancés')}
                             </Text>
                         ),

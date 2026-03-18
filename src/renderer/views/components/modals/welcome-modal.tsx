@@ -25,7 +25,7 @@ function FeatureItem({ icon, title, description }: FeatureItemProps) {
         <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div
                 style={{
-                    fontSize: 20,
+                    fontSize: 'var(--fs-3xl)',
                     color: 'var(--ant-color-primary)',
                     flexShrink: 0,
                     marginTop: 2,
@@ -37,7 +37,7 @@ function FeatureItem({ icon, title, description }: FeatureItemProps) {
                 <Text strong style={{ display: 'block', marginBottom: 2 }}>
                     {title}
                 </Text>
-                <Text type="secondary" style={{ fontSize: '0.88em' }}>
+                <Text type="secondary" style={{ fontSize: 'var(--fs-rel-2xl)' }}>
                     {description}
                 </Text>
             </div>

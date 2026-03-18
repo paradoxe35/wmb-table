@@ -88,7 +88,7 @@ export function NoteReferencesModal() {
 
     const modalTitle = workingNote.current ? (
         <div>
-            <Text type="secondary" style={{ fontSize: '0.85em', fontWeight: 400 }}>
+            <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)', fontWeight: 400 }}>
                 {t('Lier ce paragraphe à une référence de la note :')}
             </Text>
             <div>{workingNote.current.name}</div>

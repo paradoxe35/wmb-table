@@ -1,5 +1,5 @@
 .ai-markdown {
-    font-size: 0.95em;
+    font-size: var(--fs-rel-4xl);
     line-height: 1.5;
     user-select: text;
 }
@@ -24,7 +24,7 @@
 
 .ai-markdown code {
     font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    font-size: 0.88em;
+    font-size: var(--fs-rel-2xl);
     padding: 1px 4px;
     border-radius: 4px;
     background: var(--ant-color-fill-tertiary);
@@ -55,7 +55,7 @@
 .ai-markdown h3,
 .ai-markdown h4 {
     margin: 8px 0 4px;
-    font-size: 1em;
+    font-size: var(--fs-base);
     font-weight: 600;
 }
 
@@ -66,7 +66,7 @@
 .ai-markdown table {
     border-collapse: collapse;
     margin: 6px 0;
-    font-size: 0.9em;
+    font-size: var(--fs-rel-3xl);
 }
 
 .ai-markdown th,

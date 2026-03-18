@@ -8,6 +8,42 @@
 // Transition tokens & theme variables
 // ---------------------------------------------------------------------------
 :root {
+    // Font-size scale — absolute sizes (relative to root font-size)
+    --fs-2xs: 0.714em; // ~10px @ 14px root
+    --fs-xs: 0.786em; // ~11px
+    --fs-sm: 0.857em; // ~12px
+    --fs-md: 0.929em; // ~13px
+    --fs-base: 1em; // 14px (root)
+    --fs-lg: 1.071em; // ~15px
+    --fs-xl: 1.143em; // ~16px
+    --fs-2xl: 1.286em; // ~18px
+    --fs-3xl: 1.429em; // ~20px
+    --fs-4xl: 1.5em; // ~21px
+    --fs-5xl: 1.571em; // ~22px
+    --fs-6xl: 1.714em; // ~24px
+    --fs-7xl: 2em; // ~28px
+    --fs-8xl: 2.143em; // ~30px
+    --fs-9xl: 2.286em; // ~32px
+    --fs-10xl: 2.857em; // ~40px
+    --fs-11xl: 3.429em; // ~48px
+
+    // Font-size scale — relative sizes (proportional to parent)
+    --fs-rel-3xs: 0.62em;
+    --fs-rel-2xs: 0.65em;
+    --fs-rel-xs: 0.68em;
+    --fs-rel-sm: 0.7em;
+    --fs-rel-md: 0.75em;
+    --fs-rel-base: 0.78em;
+    --fs-rel-lg: 0.8em;
+    --fs-rel-xl: 0.85em;
+    --fs-rel-2xl: 0.88em;
+    --fs-rel-3xl: 0.9em;
+    --fs-rel-4xl: 0.95em;
+    --fs-rel-5xl: 1.1em;
+    --fs-rel-6xl: 1.2em;
+    --fs-rel-7xl: 1.4em;
+    --fs-rel-8xl: 1.7em;
+
     --transition-fast: 0.15s ease;
     --transition-normal: 0.2s ease;
     --transition-slow: 0.25s ease;
@@ -73,6 +109,7 @@ body {
     overflow: hidden;
     height: 100%;
     user-select: none;
+    font-size: var(--ant-font-size, 14px);
     background: var(--ant-color-bg-layout, #f5f5f5);
     color: var(--ant-color-text, #1f1f1f);
     transition:
@@ -183,7 +220,7 @@ body {
     border-color: transparent;
     border-bottom: 0;
     color: var(--logo-text-color);
-    font-size: large;
+    font-size: var(--fs-2xl);
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
@@ -257,7 +294,7 @@ body {
     cursor: pointer;
 
     &.big {
-        font-size: 20px;
+        font-size: var(--fs-3xl);
         u {
             width: 15px;
             height: 17px;
@@ -270,7 +307,7 @@ body {
     }
 
     .o-icon {
-        font-size: 15px;
+        font-size: var(--fs-lg);
         vertical-align: middle;
         width: 16px;
         height: 18px;
@@ -282,7 +319,7 @@ body {
     }
 
     u {
-        font-size: 13px;
+        font-size: var(--fs-md);
         color: var(--ant-color-text-tertiary, #91999e);
         vertical-align: middle;
         background-color: var(--smart-editable-u-bg);
@@ -305,7 +342,7 @@ body {
 
     b {
         color: inherit;
-        font-size: 13px;
+        font-size: var(--fs-md);
         overflow: hidden;
         text-overflow: ellipsis;
         display: inline-block;
@@ -332,7 +369,7 @@ body {
         border: none;
         background: var(--tabs-background);
         flex-shrink: 0;
-        font-size: 12px;
+        font-size: var(--fs-sm);
     }
 
     .tab-squeeze {
@@ -456,11 +493,11 @@ body {
 // Content descriptions
 // ---------------------------------------------------------------------------
 .content-description {
-    font-size: 1.2em;
+    font-size: var(--fs-rel-6xl);
 }
 
 .content-description-2 {
-    font-size: 1.1em;
+    font-size: var(--fs-rel-5xl);
 }
 
 // ---------------------------------------------------------------------------
@@ -608,7 +645,7 @@ body {
     }
 
     &__title {
-        font-size: 0.9em;
+        font-size: var(--fs-rel-3xl);
         font-weight: 500;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -617,7 +654,7 @@ body {
     }
 
     &__en-title {
-        font-size: 0.8em;
+        font-size: var(--fs-rel-lg);
         color: var(--ant-color-text-secondary, #6b7280);
         overflow: hidden;
         text-overflow: ellipsis;
@@ -625,7 +662,7 @@ body {
     }
 
     &__date {
-        font-size: 0.78em;
+        font-size: var(--fs-rel-base);
         color: var(--ant-color-text-secondary, #6b7280);
         margin-top: 2px;
     }
@@ -638,18 +675,18 @@ body {
     }
 
     &__city {
-        font-size: 0.7em;
+        font-size: var(--fs-rel-sm);
         color: var(--ant-color-text-secondary, #6b7280);
     }
 
     &__audio {
-        font-size: 0.75em;
+        font-size: var(--fs-rel-md);
         color: var(--ant-color-primary, #1990ff);
     }
 }
 
 .translation-tag {
-    font-size: 0.65em;
+    font-size: var(--fs-rel-2xs);
     line-height: 14px;
     padding: 0 3px;
     margin-right: 2px;
@@ -737,13 +774,13 @@ body {
 
     &__meta {
         margin-top: 4px;
-        font-size: 0.85em;
+        font-size: var(--fs-rel-xl);
         color: var(--ant-color-text-tertiary, #999);
     }
 
     &__body {
         margin-top: 6px;
-        font-size: 0.95em;
+        font-size: var(--fs-rel-4xl);
         color: var(--ant-color-text-secondary);
         line-height: 1.5;
     }
@@ -777,14 +814,14 @@ body {
     }
 
     &__icon {
-        font-size: 16px;
+        font-size: var(--fs-xl);
         color: var(--ant-color-text-tertiary, #999);
         flex-shrink: 0;
     }
 
     &__name {
         font-weight: 500;
-        font-size: 0.95em;
+        font-size: var(--fs-rel-4xl);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -815,7 +852,7 @@ body {
     }
 
     &__icon {
-        font-size: 16px;
+        font-size: var(--fs-xl);
         color: var(--ant-color-text-tertiary, #999);
         flex-shrink: 0;
         margin-top: 2px;
@@ -829,7 +866,7 @@ body {
     &__label {
         display: block;
         font-weight: 500;
-        font-size: 0.95em;
+        font-size: var(--fs-rel-4xl);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -837,7 +874,7 @@ body {
 
     &__meta {
         display: block;
-        font-size: 0.8em;
+        font-size: var(--fs-rel-lg);
     }
 }
 
@@ -891,11 +928,11 @@ body {
 // CKEditor 5 custom styles
 // ---------------------------------------------------------------------------
 .cke5-decoupled-custom-document-editable {
-    font-size: 1.09rem;
+    font-size: var(--fs-lg);
     line-height: 1.6rem;
     h1 {
         display: block;
-        font-size: 1.7em;
+        font-size: var(--fs-rel-8xl);
         margin-block-start: 0.67em;
         margin-block-end: 0.67em;
         font-weight: bold;
@@ -905,7 +942,7 @@ body {
         background-color: var(--reference-link-bg);
         &::after {
             content: '🗎 ';
-            font-size: 18px;
+            font-size: var(--fs-2xl);
         }
     }
     a[reference='true'][bible='true'] {
@@ -944,13 +981,13 @@ body {
     align-items: baseline;
 
     a {
-        font-size: 1.1em;
+        font-size: var(--fs-rel-5xl);
         font-weight: 500;
     }
 }
 
 .search-result-hit-count {
-    font-size: 0.85em;
+    font-size: var(--fs-rel-xl);
     flex-shrink: 0;
     margin-left: 8px;
 }
@@ -964,7 +1001,7 @@ body {
     margin: 4px 0;
     border-bottom: 1px solid var(--ant-color-border-secondary, #f0f0f0);
     cursor: pointer;
-    font-size: 1em;
+    font-size: var(--fs-base);
     line-height: 1.6;
     color: var(--ant-color-text, #45474a);
     transition: background-color var(--transition-fast);
@@ -984,7 +1021,7 @@ body {
 
 .snippet-paragraph-badge {
     display: inline-block;
-    font-size: 0.85em;
+    font-size: var(--fs-rel-xl);
     color: var(--ant-color-text-tertiary, #91999e);
     background: var(--ant-color-fill-quaternary, rgba(0, 0, 0, 0.02));
     border-radius: 3px;
@@ -996,7 +1033,7 @@ body {
 
 .search-result-toggle {
     display: inline-block;
-    font-size: 0.85em;
+    font-size: var(--fs-rel-xl);
     margin-top: 4px;
     margin-left: 8px;
     cursor: pointer;
@@ -1011,7 +1048,7 @@ body {
 .ck.ck-editor__editable[role='textbox'] {
     width: 100%;
     background: var(--ant-color-bg-container, #fff);
-    font-size: 1em;
+    font-size: var(--fs-base);
     line-height: 1.6em;
     min-height: var(--ck-sample-editor-min-height);
     padding: 1.5em 2em;
@@ -1101,18 +1138,18 @@ body {
 
 .history-item__title {
     font-weight: 500;
-    font-size: 0.9em;
+    font-size: var(--fs-rel-3xl);
     transition: color 0.15s;
 }
 
 .history-item__tag {
-    font-size: 0.7em;
+    font-size: var(--fs-rel-sm);
     line-height: 1;
     padding: 1px 6px;
 }
 
 .history-item__time {
-    font-size: 0.78em;
+    font-size: var(--fs-rel-base);
 }
 
 .history-page-indicator {

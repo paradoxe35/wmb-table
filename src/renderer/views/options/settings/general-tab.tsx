@@ -109,17 +109,17 @@ export default function GeneralTab() {
     const themeOptions = [
         {
             value: 'light',
-            icon: <SunIcon style={{ fontSize: 14 }} />,
+            icon: <SunIcon style={{ fontSize: 'var(--fs-base)' }} />,
             label: t('Clair'),
         },
         {
             value: 'dark',
-            icon: <MoonIcon style={{ fontSize: 14 }} />,
+            icon: <MoonIcon style={{ fontSize: 'var(--fs-base)' }} />,
             label: t('Sombre'),
         },
         {
             value: 'system',
-            icon: <DesktopOutlined style={{ fontSize: 14 }} />,
+            icon: <DesktopOutlined style={{ fontSize: 'var(--fs-base)' }} />,
             label: t('Système'),
         },
     ];
@@ -137,7 +137,7 @@ export default function GeneralTab() {
                 >
                     <Space size="small">
                         <Text type="secondary">
-                            <SunIcon style={{ fontSize: 14 }} />
+                            <SunIcon style={{ fontSize: 'var(--fs-base)' }} />
                         </Text>
                         <Text type="secondary">{t('Apparence')}</Text>
                     </Space>

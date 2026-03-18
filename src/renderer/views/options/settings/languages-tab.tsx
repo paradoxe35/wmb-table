@@ -63,7 +63,7 @@ export default function LanguagesTab() {
                                     </Tag>
                                 )}
                             </Text>
-                            <Text type="secondary" style={{ fontSize: '0.85em' }}>
+                            <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
                                 {l.sermonsCount} {t('sermons')}
                             </Text>
                         </div>

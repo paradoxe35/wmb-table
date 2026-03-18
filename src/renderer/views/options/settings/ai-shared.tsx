@@ -4,7 +4,10 @@ const { Text } = Typography;
 
 export function Hint({ children }: { children: string }) {
     return (
-        <Text type="secondary" style={{ fontSize: '0.8em', display: 'block', marginTop: 2 }}>
+        <Text
+            type="secondary"
+            style={{ fontSize: 'var(--fs-rel-lg)', display: 'block', marginTop: 2 }}
+        >
             {children}
         </Text>
     );
@@ -21,7 +24,7 @@ export function Field({
 }) {
     return (
         <div>
-            <Text strong style={{ fontSize: '0.9em' }}>
+            <Text strong style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                 {label}
             </Text>
             {hint ? <Hint>{hint}</Hint> : null}

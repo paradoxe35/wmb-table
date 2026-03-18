@@ -72,7 +72,7 @@ export default function ChatToolResult({ name, count }: { name: string; count?: 
     const suffix = count && count > 1 ? ` x${count}` : '';
 
     return (
-        <Tag icon={icon} color={color} style={{ fontSize: '0.8em' }}>
+        <Tag icon={icon} color={color} style={{ fontSize: 'var(--fs-rel-lg)' }}>
             {prefix}
             {t(label)}
             {suffix}

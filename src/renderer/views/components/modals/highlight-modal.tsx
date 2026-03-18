@@ -90,7 +90,7 @@ export default function HighlightModal() {
                         padding: '8px 12px',
                         background: 'var(--ant-color-fill-quaternary)',
                         borderRadius: 6,
-                        fontSize: '0.9em',
+                        fontSize: 'var(--fs-rel-3xl)',
                         maxHeight: 80,
                         overflow: 'auto',
                     }}

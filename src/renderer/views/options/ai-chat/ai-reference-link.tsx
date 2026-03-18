@@ -36,7 +36,7 @@ export default function AiReferenceLink(
             data-href={href}
             color={REF_COLORS[ref.type]}
             onClick={handleClick}
-            style={{ cursor: 'pointer', fontSize: '0.85em' }}
+            style={{ cursor: 'pointer', fontSize: 'var(--fs-rel-xl)' }}
             bordered={false}
         >
             {children}

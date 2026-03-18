@@ -39,7 +39,7 @@ export default function ChatInput({
                         <Button
                             size="small"
                             shape="circle"
-                            icon={<StopOutlined style={{ fontSize: 12 }} />}
+                            icon={<StopOutlined style={{ fontSize: 'var(--fs-sm)' }} />}
                             onClick={onStop}
                             title={t('Arrêter')}
                         />
@@ -48,7 +48,11 @@ export default function ChatInput({
                             type="primary"
                             size="small"
                             shape="circle"
-                            icon={<ArrowUpOutlined style={{ fontSize: 13, fontWeight: 700 }} />}
+                            icon={
+                                <ArrowUpOutlined
+                                    style={{ fontSize: 'var(--fs-md)', fontWeight: 700 }}
+                                />
+                            }
                             onClick={onSend}
                             disabled={!draft.trim()}
                             title={t('Envoyer')}

@@ -136,7 +136,7 @@ export function OtherTraductionsModal() {
                                     </div>
                                     <div
                                         style={{
-                                            fontSize: '0.85em',
+                                            fontSize: 'var(--fs-rel-xl)',
                                             color: 'var(--ant-color-text-secondary)',
                                         }}
                                     >
