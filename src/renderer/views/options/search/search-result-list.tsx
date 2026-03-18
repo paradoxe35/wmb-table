@@ -55,7 +55,7 @@ export default memo(function SearchResultList({
                 )}
             />
             {results && totalPages > 1 && (
-                <div className="mt-2 flex flex-center mb-2">
+                <div className="mt-2 flex flex-center" style={{ paddingBottom: 20 }}>
                     <Pagination
                         key={results.query}
                         onChange={handlePageChange}
