@@ -9,6 +9,7 @@ import type {
 } from '@shared/types';
 import { getTabKey, tabMatches } from '@shared/types';
 import { getSermonYear } from '@renderer/utils/sermon-utils';
+import { useAppStore } from './app.store';
 
 export type PendingNavigation = {
     documentTitle: string;
@@ -114,7 +115,13 @@ export const useSermonStore = create<SermonState>((set) => ({
             if (bibleBook) newTab.bibleBook = bibleBook;
             if (bibleChapter) newTab.bibleChapter = bibleChapter;
 
-            const newTabs = [...deactivated, newTab];
+            let newTabs = [...deactivated, newTab];
+
+            // Enforce max tabs limit — remove oldest (first) tabs when over the limit
+            const maxTabs = useAppStore.getState().maxTabs;
+            if (newTabs.length > maxTabs) {
+                newTabs = newTabs.slice(newTabs.length - maxTabs);
+            }
 
             return { tabs: newTabs };
         }),

@@ -216,6 +216,8 @@ const api = {
         getRememberReadingPosition: () => invoke(AppChannels.getRememberReadingPosition),
         setRememberReadingPosition: (value: boolean) =>
             invoke(AppChannels.setRememberReadingPosition, value),
+        getMaxTabs: () => invoke(AppChannels.getMaxTabs),
+        setMaxTabs: (value: number) => invoke(AppChannels.setMaxTabs, value),
         restart: () => invoke(AppChannels.restart),
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
         startDownloadUpdate: () => invoke(AppChannels.startDownloadUpdate),

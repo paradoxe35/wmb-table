@@ -686,6 +686,9 @@ const en: Record<string, string> = {
     "Rouvrez un document là où vous l'aviez laissé la dernière fois.":
         'Reopen a document where you left off last time.',
     "Impossible d'enregistrer le paramètre": 'Unable to save the setting',
+    "Nombre maximum d'onglets": 'Maximum number of tabs',
+    'Les onglets les plus anciens seront fermés automatiquement lorsque la limite est atteinte ({{min}}-{{max}}).':
+        'The oldest tabs will be closed automatically when the limit is reached ({{min}}-{{max}}).',
     chapitres: 'chapters',
     chapitre: 'chapter',
 

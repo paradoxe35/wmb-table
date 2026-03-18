@@ -692,6 +692,9 @@ const es: Record<string, string> = {
     "Rouvrez un document là où vous l'aviez laissé la dernière fois.":
         'Reabra un documento donde lo dejó la última vez.',
     "Impossible d'enregistrer le paramètre": 'No se pudo guardar la configuración',
+    "Nombre maximum d'onglets": 'Número máximo de pestañas',
+    'Les onglets les plus anciens seront fermés automatiquement lorsque la limite est atteinte ({{min}}-{{max}}).':
+        'Las pestañas más antiguas se cerrarán automáticamente cuando se alcance el límite ({{min}}-{{max}}).',
     chapitres: 'capítulos',
     chapitre: 'capítulo',
 

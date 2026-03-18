@@ -123,10 +123,16 @@ export function useInitApp() {
                     window.api.app.getActiveLanguage(),
                     window.api.app.getSidebarStatus(),
                 ]);
-                const rememberReadingPosition = await window.api.app.getRememberReadingPosition();
+                const [rememberReadingPosition, maxTabs] = await Promise.all([
+                    window.api.app.getRememberReadingPosition(),
+                    window.api.app.getMaxTabs(),
+                ]);
 
-                if (sidebarStatus) setSidebarHidden(sidebarStatus.hidden);
+                if (sidebarStatus) {
+                    setSidebarHidden(sidebarStatus.hidden);
+                }
                 setRememberReadingPosition(rememberReadingPosition);
+                useAppStore.getState().setMaxTabs(maxTabs);
 
                 // Validate active language is still installed
                 const validLang = langCode && installed.some((l) => l.code === langCode);

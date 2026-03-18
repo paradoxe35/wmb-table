@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "cc53a376-bf5d-49ac-ae88-13e487b03adf",
+    "id": "7292f865-2152-460c-b0ff-b60a4a64c262",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -492,6 +492,14 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": true
+                },
+                "max_tabs": {
+                    "name": "max_tabs",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 12
                 }
             },
             "indexes": {},

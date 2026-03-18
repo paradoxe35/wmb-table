@@ -77,7 +77,8 @@ CREATE TABLE `configurations` (
 	`initialized` integer DEFAULT false NOT NULL,
 	`last_check_backup_status` text DEFAULT (datetime('now')),
 	`active_language` text,
-	`remember_reading_position` integer DEFAULT true NOT NULL
+	`remember_reading_position` integer DEFAULT true NOT NULL,
+	`max_tabs` integer DEFAULT 12 NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `custom_documents` (
