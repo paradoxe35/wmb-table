@@ -22,6 +22,7 @@ export function shouldGenerateTitle(messageCount: number): boolean {
  */
 export async function generateConversationTitle(
     model: LanguageModel,
+    languageCode: string,
     messages: { role: string; content: string }[],
     abortSignal?: AbortSignal,
 ): Promise<string | null> {
@@ -32,7 +33,11 @@ export async function generateConversationTitle(
 
         const { text } = await generateText({
             model,
-            prompt: `${TITLE_PROMPT}\n\nConversation:\n${conversationSnippet}`,
+            prompt: [
+                TITLE_PROMPT,
+                `The active application language is: ${languageCode}`,
+                `Conversation:\n${conversationSnippet}`,
+            ].join('\n'),
             maxOutputTokens: 30,
             abortSignal,
         });
