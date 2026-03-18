@@ -845,29 +845,28 @@ body {
 // Notes grid (used in notes.tsx)
 // ---------------------------------------------------------------------------
 .notes-grid {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
     margin-top: 12px;
     margin-bottom: 12px;
-
-    > * {
-        width: 250px;
-    }
 }
 
 .note-card {
     cursor: pointer;
     transition: border-color var(--transition-normal);
+    height: 100%;
 
     &:hover {
         border-color: color-mix(in srgb, var(--ant-color-primary, #1677ff) 40%, transparent);
     }
 
     .ant-card-meta-title {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
         white-space: normal;
-        overflow: visible;
-        text-overflow: unset;
     }
 }
 
