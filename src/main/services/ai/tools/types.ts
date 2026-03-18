@@ -47,6 +47,7 @@ export interface SearchContentHit {
     sermonId: string;
     translationId: number;
     title: string;
+    location?: string;
     matches: SearchContentMatch[];
     totalMatches: number;
 }

@@ -220,6 +220,7 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                             sermonId,
                             translationId: hit.translationId,
                             title: meta?.title ?? meta?.enTitle ?? sermonId,
+                            location: meta?.location || undefined,
                             matches: filtered.slice(0, 5).map((p) => ({
                                 paragraphNumber: p.paragraphIndex,
                                 snippet: p.snippet,
