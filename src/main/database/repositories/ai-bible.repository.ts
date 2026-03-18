@@ -166,39 +166,12 @@ export function searchVerses(input: {
 
     const db = new Database(dbPath, { readonly: true });
     try {
-        const testamentFilter = input.testament ? ` AND bv.testament = ?` : '';
-        const params: (string | number)[] = [input.query];
-        if (input.testament) params.push(input.testament);
+        // Try FTS first
+        const ftsResult = searchWithFts(db, input.query, input.testament, maxResults);
+        if (ftsResult.total > 0) return ftsResult;
 
-        const countResult = db
-            .prepare(
-                `SELECT COUNT(*) as total FROM bible_verses_fts
-                 JOIN bible_verses bv ON bv.rowid = bible_verses_fts.rowid
-                 WHERE bible_verses_fts MATCH ?${testamentFilter}`,
-            )
-            .get(...params) as { total: number } | undefined;
-        const total = countResult?.total ?? 0;
-
-        const rows = db
-            .prepare(
-                `SELECT bv.id, bv.book_name as bookName, bv.book, bv.testament,
-                        bv.chapter, bv.verse, bv.content
-                 FROM bible_verses_fts
-                 JOIN bible_verses bv ON bv.rowid = bible_verses_fts.rowid
-                 WHERE bible_verses_fts MATCH ?${testamentFilter}
-                 ORDER BY rank
-                 LIMIT ?`,
-            )
-            .all(...params, maxResults) as BibleBook[];
-
-        return {
-            end: rows.length >= total,
-            itemsPerPage: maxResults,
-            query: input.query,
-            pageNumber: 1,
-            total,
-            data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
-        };
+        // Fallback: normalize and filter with LIKE (accent-insensitive)
+        return searchWithNormalize(db, input.query, input.testament, maxResults);
     } catch (err) {
         return {
             error: `Bible search failed: ${err instanceof Error ? err.message : String(err)}. Try simplifying your query.`,
@@ -206,4 +179,100 @@ export function searchVerses(input: {
     } finally {
         db.close();
     }
+}
+
+function searchWithFts(
+    db: Database.Database,
+    query: string,
+    testament: string | undefined,
+    limit: number,
+): BibleSearchResult {
+    const testamentFilter = testament ? ` AND bv.testament = ?` : '';
+    const params: (string | number)[] = [query];
+    if (testament) params.push(testament);
+
+    const countResult = db
+        .prepare(
+            `SELECT COUNT(*) as total FROM bible_verses_fts
+             JOIN bible_verses bv ON bv.rowid = bible_verses_fts.rowid
+             WHERE bible_verses_fts MATCH ?${testamentFilter}`,
+        )
+        .get(...params) as { total: number } | undefined;
+    const total = countResult?.total ?? 0;
+
+    const rows = db
+        .prepare(
+            `SELECT bv.id, bv.book_name as bookName, bv.book, bv.testament,
+                    bv.chapter, bv.verse, bv.content
+             FROM bible_verses_fts
+             JOIN bible_verses bv ON bv.rowid = bible_verses_fts.rowid
+             WHERE bible_verses_fts MATCH ?${testamentFilter}
+             ORDER BY rank
+             LIMIT ?`,
+        )
+        .all(...params, limit) as BibleBook[];
+
+    return {
+        end: rows.length >= total,
+        itemsPerPage: limit,
+        query,
+        pageNumber: 1,
+        total,
+        data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
+    };
+}
+
+function searchWithNormalize(
+    db: Database.Database,
+    query: string,
+    testament: string | undefined,
+    limit: number,
+): BibleSearchResult {
+    const words = query
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length >= 2)
+        .map((w) => strNormalize(w));
+
+    if (words.length === 0) {
+        return { end: true, itemsPerPage: limit, query, pageNumber: 1, total: 0, data: [] };
+    }
+
+    // Build SQL LIKE conditions for each normalized word.
+    // We register a custom strNormalize function in SQLite so normalization
+    // happens in the DB engine, avoiding loading all rows into JS.
+    db.function('str_normalize', (val: unknown) =>
+        typeof val === 'string' ? strNormalize(val) : '',
+    );
+
+    const testamentFilter = testament ? ` AND testament = ?` : '';
+    const likeConditions = words.map(() => `str_normalize(content) LIKE ?`).join(' AND ');
+    const likeParams = words.map((w) => `%${w}%`);
+    const params = [...likeParams, ...(testament ? [testament] : [])];
+
+    const countResult = db
+        .prepare(
+            `SELECT COUNT(*) as total FROM bible_verses
+             WHERE ${likeConditions}${testamentFilter}`,
+        )
+        .get(...params) as { total: number } | undefined;
+    const total = countResult?.total ?? 0;
+
+    const rows = db
+        .prepare(
+            `SELECT id, book_name as bookName, book, testament, chapter, verse, content
+             FROM bible_verses
+             WHERE ${likeConditions}${testamentFilter}
+             LIMIT ?`,
+        )
+        .all(...params, limit) as BibleBook[];
+
+    return {
+        end: rows.length >= total,
+        itemsPerPage: limit,
+        query,
+        pageNumber: 1,
+        total,
+        data: rows.map((item, i) => ({ item, matches: [], refIndex: i })),
+    };
 }
