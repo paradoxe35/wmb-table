@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
+import { useThemeStore } from '@renderer/stores/theme.store';
+import type { UiLanguage } from '@shared/constants';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     DocumentType,
@@ -123,9 +125,10 @@ export function useInitApp() {
                     window.api.app.getActiveLanguage(),
                     window.api.app.getSidebarStatus(),
                 ]);
-                const [rememberReadingPosition, maxTabs] = await Promise.all([
+                const [rememberReadingPosition, maxTabs, dbUiLanguage] = await Promise.all([
                     window.api.app.getRememberReadingPosition(),
                     window.api.app.getMaxTabs(),
+                    window.api.app.getUiLanguage(),
                 ]);
 
                 if (sidebarStatus) {
@@ -133,6 +136,12 @@ export function useInitApp() {
                 }
                 setRememberReadingPosition(rememberReadingPosition);
                 useAppStore.getState().setMaxTabs(maxTabs);
+
+                // Sync UI language: localStorage is primary (instant), DB is fallback
+                const localUiLang = useThemeStore.getState().uiLanguage;
+                if (dbUiLanguage && dbUiLanguage !== localUiLang) {
+                    useThemeStore.getState().setUiLanguage(dbUiLanguage as UiLanguage);
+                }
 
                 // Validate active language is still installed
                 const validLang = langCode && installed.some((l) => l.code === langCode);

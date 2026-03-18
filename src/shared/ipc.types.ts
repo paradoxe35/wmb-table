@@ -211,6 +211,7 @@ export const AppChannels = {
     getHistory: 'app:getHistory',
     addHistoryEntry: 'app:addHistoryEntry',
     getHistoryItems: 'app:getHistoryItems',
+    getUiLanguage: 'app:getUiLanguage',
     setUiLanguage: 'app:setUiLanguage',
 } as const;
 
@@ -486,6 +487,7 @@ export interface InvokeChannelMap {
         args: [string];
         return: HistoryDataItem[];
     };
+    [AppChannels.getUiLanguage]: { args: []; return: string | null };
     [AppChannels.setUiLanguage]: { args: [string]; return: void };
 
     // TTS

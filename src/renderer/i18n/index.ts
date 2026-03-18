@@ -2,6 +2,7 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from '@shared/i18n/locales/en';
 import es from '@shared/i18n/locales/es';
+import { DEFAULT_UI_LANGUAGE } from '@shared/constants';
 
 // French keys ARE the French strings — map each key to itself so i18next
 // finds the translation and applies interpolation (e.g. {{rate}}, {{count}}).
@@ -13,8 +14,8 @@ i18n.use(initReactI18next).init({
         en: { translation: en },
         es: { translation: es },
     },
-    lng: 'fr',
-    fallbackLng: 'fr',
+    lng: DEFAULT_UI_LANGUAGE,
+    fallbackLng: DEFAULT_UI_LANGUAGE,
     interpolation: {
         escapeValue: false,
     },

@@ -142,7 +142,12 @@ export function registerAppHandlers(): void {
         return historyRepo.getHistoryItems(historyId);
     });
 
+    registerHandler(AppChannels.getUiLanguage, async () => {
+        return configRepo.getUiLanguage();
+    });
+
     registerHandler(AppChannels.setUiLanguage, async (_event, langCode) => {
+        configRepo.setUiLanguage(langCode);
         await i18n.changeLanguage(langCode);
         const win = getMainWindow();
         if (win) new MenuBuilder(win).buildMenu();

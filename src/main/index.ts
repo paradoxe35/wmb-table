@@ -14,12 +14,18 @@ import { initializeTantivy, terminateWorker } from '@main/services/tantivy.servi
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 import { disposeTtsService } from '@main/services/tts';
 import { disposeAiService } from '@main/services/ai';
+import * as configRepo from '@main/database/repositories/config.repository';
+import i18n from '@main/lib/i18n';
 
 // Initialize logger first
 initializeLogger();
 
 // Initialize database before IPC handlers
 initializeDatabase();
+
+// Set backend i18n language from DB before building menu
+const savedUiLanguage = configRepo.getUiLanguage();
+if (savedUiLanguage) i18n.changeLanguage(savedUiLanguage);
 
 // Register all IPC handlers before window creation
 initializeIpc();

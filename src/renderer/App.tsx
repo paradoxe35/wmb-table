@@ -1,36 +1,42 @@
 import { useEffect, useMemo } from 'react';
 import { App as AntApp, ConfigProvider, theme } from 'antd';
 import type { Locale } from 'antd/es/locale';
+import { DEFAULT_UI_LANGUAGE, type UiLanguage } from '@shared/constants';
 import frFR from 'antd/locale/fr_FR';
 import enUS from 'antd/locale/en_US';
 import esES from 'antd/locale/es_ES';
+
 import { useTranslation } from 'react-i18next';
 import { useInitApp } from './hooks/index';
 import { useTtsSetup } from './hooks/use-tts-setup';
 import { useThemeSync } from './hooks/use-theme';
-import { useAppStore } from './stores';
 import { useThemeStore, FONT_SIZE_MAP } from './stores/theme.store';
 import AppLayout from './components/layout';
 import { ContentApp } from './content-app';
 import { ErrorBoundary } from './components/error-boundary';
 
+const ANTD_LOCALES: Record<UiLanguage, Locale> = {
+    fr: frFR,
+    en: enUS,
+    es: esES,
+};
+
 function useAntdLocale(): Locale {
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const uiLanguage = useThemeStore((s) => s.uiLanguage);
     const { i18n } = useTranslation();
 
-    // Sync i18next language on startup (DB load) and on every language switch
+    // Sync i18next and main process UI language from the persisted preference
     useEffect(() => {
-        if (activeLanguage && i18n.language !== activeLanguage) {
-            i18n.changeLanguage(activeLanguage);
-            window.api.app.setUiLanguage(activeLanguage);
+        if (i18n.language !== uiLanguage) {
+            i18n.changeLanguage(uiLanguage);
         }
-    }, [activeLanguage, i18n]);
+        window.api.app.setUiLanguage(uiLanguage);
+    }, [uiLanguage, i18n]);
 
-    return useMemo((): Locale => {
-        if (activeLanguage === 'en') return enUS;
-        if (activeLanguage === 'es') return esES;
-        return frFR;
-    }, [activeLanguage]);
+    return useMemo(
+        (): Locale => ANTD_LOCALES[uiLanguage] ?? ANTD_LOCALES[DEFAULT_UI_LANGUAGE],
+        [uiLanguage],
+    );
 }
 
 export default function App() {

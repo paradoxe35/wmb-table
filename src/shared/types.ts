@@ -544,6 +544,7 @@ export interface AppSettingsStatus {
     activeLanguage: string | null;
     rememberReadingPosition: boolean;
     maxTabs: number;
+    uiLanguage: string | null;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {

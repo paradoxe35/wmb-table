@@ -63,3 +63,12 @@ export const DOCS_BIBLE_LINK = buildDocsGuideLink('bible');
 export const DEFAULT_MAX_TABS = 12;
 export const MIN_MAX_TABS = 5;
 export const MAX_MAX_TABS = 50;
+
+// ── UI language ──
+export type UiLanguage = 'fr' | 'en' | 'es';
+export const DEFAULT_UI_LANGUAGE: UiLanguage = 'fr';
+export const UI_LANGUAGES: { value: UiLanguage; label: string }[] = [
+    { value: 'fr', label: 'Français' },
+    { value: 'en', label: 'English' },
+    { value: 'es', label: 'Español' },
+];

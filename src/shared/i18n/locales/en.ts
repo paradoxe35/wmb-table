@@ -715,6 +715,7 @@ const en: Record<string, string> = {
     // ── Theme ──
     Apparence: 'Appearance',
     'Taille du texte': 'Text size',
+    "Langue de l'interface": 'Interface language',
     Petit: 'Small',
     Normal: 'Normal',
     Grand: 'Large',

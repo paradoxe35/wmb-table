@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "7292f865-2152-460c-b0ff-b60a4a64c262",
+    "id": "d0279068-9238-4b30-943a-4fee1ef69e35",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -500,6 +500,13 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": 12
+                },
+                "ui_language": {
+                    "name": "ui_language",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
                 }
             },
             "indexes": {},

@@ -15,6 +15,7 @@ export const configurations = sqliteTable('configurations', {
         .notNull()
         .default(true),
     maxTabs: integer('max_tabs').notNull().default(12),
+    uiLanguage: text('ui_language'),
 });
 
 // ---------------------------------------------------------------------------

@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { configurations } from '../schema';
 import type { AppSettingsStatus } from '@shared/types';
-import { DEFAULT_MAX_TABS, MIN_MAX_TABS, MAX_MAX_TABS } from '@shared/constants';
+import {
+    DEFAULT_MAX_TABS,
+    MIN_MAX_TABS,
+    MAX_MAX_TABS,
+    DEFAULT_UI_LANGUAGE,
+} from '@shared/constants';
 
 export function getConfig(): AppSettingsStatus | null {
     const row = getDb().select().from(configurations).get();
@@ -16,6 +21,7 @@ export function getConfig(): AppSettingsStatus | null {
         activeLanguage: row.activeLanguage ?? null,
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
+        uiLanguage: row.uiLanguage ?? DEFAULT_UI_LANGUAGE,
     };
 }
 
@@ -84,6 +90,19 @@ export function setMaxTabs(value: number): void {
     getDb()
         .update(configurations)
         .set({ maxTabs: clamped })
+        .where(eq(configurations.id, config.id))
+        .run();
+}
+
+export function getUiLanguage(): string {
+    return getConfig()?.uiLanguage ?? DEFAULT_UI_LANGUAGE;
+}
+
+export function setUiLanguage(value: string): void {
+    const config = ensureConfig();
+    getDb()
+        .update(configurations)
+        .set({ uiLanguage: value })
         .where(eq(configurations.id, config.id))
         .run();
 }

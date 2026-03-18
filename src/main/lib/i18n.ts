@@ -1,6 +1,7 @@
 import i18next, { type i18n as I18n } from 'i18next';
 import en from '@shared/i18n/locales/en';
 import es from '@shared/i18n/locales/es';
+import { DEFAULT_UI_LANGUAGE } from '@shared/constants';
 
 const fr = Object.fromEntries(Object.keys(en).map((k) => [k, k]));
 
@@ -12,8 +13,8 @@ i18n.init({
         en: { translation: en },
         es: { translation: es },
     },
-    lng: 'fr',
-    fallbackLng: 'fr',
+    lng: DEFAULT_UI_LANGUAGE,
+    fallbackLng: DEFAULT_UI_LANGUAGE,
     interpolation: { escapeValue: false },
     parseMissingKeyHandler: (key: string) => key,
 });

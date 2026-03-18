@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Segmented, Space, Tag, Typography, message } from 'antd';
+import { Button, Card, Segmented, Select, Space, Tag, Typography, message } from 'antd';
 import {
     BookOutlined,
     CheckCircleOutlined,
@@ -16,6 +16,7 @@ import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shar
 import { FontSizeOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
 import { useThemeStore, type FontSizeOption } from '@renderer/stores/theme.store';
+import { UI_LANGUAGES, type UiLanguage } from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
 
 const { Text } = Typography;
@@ -32,6 +33,8 @@ export default function GeneralTab() {
     const setThemeMode = useThemeStore((s) => s.setThemeMode);
     const fontSizeOption = useThemeStore((s) => s.fontSizeOption);
     const setFontSizeOption = useThemeStore((s) => s.setFontSizeOption);
+    const uiLanguage = useThemeStore((s) => s.uiLanguage);
+    const setUiLanguage = useThemeStore((s) => s.setUiLanguage);
 
     const refreshBackup = useCallback(() => {
         window.api.backup.getStatus().then((s) => {
@@ -184,6 +187,29 @@ export default function GeneralTab() {
                             { value: 'large', label: t('Grand') },
                             { value: 'x-large', label: t('Très grand') },
                         ]}
+                    />
+                </div>
+
+                {/* UI language */}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Space size="small">
+                        <Text type="secondary">
+                            <TranslationOutlined />
+                        </Text>
+                        <Text type="secondary">{t("Langue de l'interface")}</Text>
+                    </Space>
+                    <Select
+                        size="small"
+                        value={uiLanguage}
+                        onChange={(val) => setUiLanguage(val as UiLanguage)}
+                        options={UI_LANGUAGES}
+                        style={{ width: 130 }}
                     />
                 </div>
 

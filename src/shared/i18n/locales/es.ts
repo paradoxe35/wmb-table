@@ -721,6 +721,7 @@ const es: Record<string, string> = {
     // ── Theme ──
     Apparence: 'Apariencia',
     'Taille du texte': 'Tamaño del texto',
+    "Langue de l'interface": 'Idioma de la interfaz',
     Petit: 'Pequeño',
     Normal: 'Normal',
     Grand: 'Grande',
