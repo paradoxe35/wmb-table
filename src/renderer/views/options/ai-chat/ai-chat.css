@@ -288,7 +288,7 @@
     transition:
         border-color 0.2s,
         box-shadow 0.2s;
-    max-width: calc(var(--max-width) - 7%);
+    max-width: 100%;
     margin-left: auto;
     margin-right: auto;
 }
@@ -363,11 +363,11 @@
     }
 
     .ai-chat__input-wrapper {
-        margin-left: 23px;
+        margin-left: 0;
     }
 
     .ai-chat__input-box {
-        max-width: calc(100% - 7%);
+        max-width: 100%;
     }
     .ai-chat__bubble {
         max-width: 100%;
