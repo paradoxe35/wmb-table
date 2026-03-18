@@ -143,7 +143,9 @@ export default function Settings() {
     );
 
     return (
-        <div style={{ padding: '16px 12px', maxWidth: 600 }}>
+        <div
+            style={{ padding: '16px 12px', maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}
+        >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                 <SettingOutlined style={{ fontSize: 18 }} />
                 <Title level={5} style={{ margin: 0 }}>

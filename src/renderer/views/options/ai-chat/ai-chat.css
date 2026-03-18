@@ -175,7 +175,6 @@
     display: flex;
     gap: 10px;
     max-width: 99%;
-    font-size: 0.9rem;
 }
 
 .ai-chat__bubble--user {
@@ -288,7 +287,7 @@
     transition:
         border-color 0.2s,
         box-shadow 0.2s;
-    max-width: calc(var(--max-width) - 70px);
+    max-width: var(--max-width);
     margin-left: auto;
     margin-right: auto;
 }
@@ -357,14 +356,13 @@
 }
 
 /* ── Responsive: full width on small chat containers ────────── */
-@container (max-width: 900px) {
+@container (max-width: 950px) {
     .ai-chat__messages-content {
         max-width: 100%;
     }
     .ai-chat__input-box {
-        max-width: calc(100% - 70px);
+        max-width: 100%;
     }
-
     .ai-chat__bubble {
         max-width: 100%;
     }
