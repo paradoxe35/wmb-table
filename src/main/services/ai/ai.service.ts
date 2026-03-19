@@ -29,6 +29,21 @@ import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
 import { resolveUiLanguage } from '@shared/constants';
 
+interface RunGenerationOptions {
+    runner: GenerationRunnerImpl;
+    browserWindow: BrowserWindow;
+    conversation: AiConversation;
+    assistantMessage: AiMessage;
+    model: ReturnType<typeof resolveLanguageModel>;
+    systemPrompt: string;
+    history: ReturnType<typeof buildConversationContext>['recentMessages'];
+    tools: ReturnType<typeof buildAiTools>;
+    abortSignal: AbortSignal;
+    isLocal: boolean;
+    contentLanguageCode: string;
+    uiLanguageCode: string;
+}
+
 export class AiService {
     private controllers = new Map<string, AbortController>();
     private localRuntime = new LocalRuntimeService();
@@ -242,19 +257,20 @@ export class AiService {
             conversationId: conversation.id,
         });
 
-        void this.runGeneration(
+        void this.runGeneration({
             runner,
             browserWindow,
             conversation,
             assistantMessage,
             model,
             systemPrompt,
-            recentMessages,
+            history: recentMessages,
             tools,
-            controller.signal,
+            abortSignal: controller.signal,
             isLocal,
             contentLanguageCode,
-        );
+            uiLanguageCode,
+        });
 
         return {
             conversation: aiRepo.getConversation(conversation.id)!,
@@ -295,19 +311,22 @@ export class AiService {
         }
     }
 
-    private async runGeneration(
-        runner: GenerationRunnerImpl,
-        browserWindow: BrowserWindow,
-        conversation: AiConversation,
-        assistantMessage: AiMessage,
-        model: ReturnType<typeof resolveLanguageModel>,
-        systemPrompt: string,
-        history: ReturnType<typeof buildConversationContext>['recentMessages'],
-        tools: ReturnType<typeof buildAiTools>,
-        abortSignal: AbortSignal,
-        isLocal: boolean,
-        contentLanguageCode: string,
-    ): Promise<void> {
+    private async runGeneration(opts: RunGenerationOptions): Promise<void> {
+        const {
+            runner,
+            browserWindow,
+            conversation,
+            assistantMessage,
+            model,
+            systemPrompt,
+            history,
+            tools,
+            abortSignal,
+            isLocal,
+            contentLanguageCode,
+            uiLanguageCode,
+        } = opts;
+
         try {
             await runner.run({
                 browserWindow,
@@ -335,6 +354,7 @@ export class AiService {
             if (shouldGenerateTitle(allMessages.length)) {
                 const title = await generateConversationTitle(
                     model,
+                    uiLanguageCode,
                     contentLanguageCode,
                     allMessages.map((m) => ({ role: m.role, content: m.content })),
                 );

@@ -3,8 +3,7 @@ import log from '@main/lib/logger';
 
 const TITLE_PROMPT =
     'Generate a short conversation title (max 8 words) that captures the main topic. ' +
-    'Reply with ONLY the title, no quotes, no punctuation at the end. ' +
-    'Use the same language as the conversation.';
+    'Reply with ONLY the title, no quotes, no punctuation at the end.';
 
 /**
  * Title generation triggers after the second complete exchange
@@ -22,7 +21,8 @@ export function shouldGenerateTitle(messageCount: number): boolean {
  */
 export async function generateConversationTitle(
     model: LanguageModel,
-    languageCode: string,
+    uiLanguage: string,
+    contentLanguage: string,
     messages: { role: string; content: string }[],
     abortSignal?: AbortSignal,
 ): Promise<string | null> {
@@ -35,7 +35,8 @@ export async function generateConversationTitle(
             model,
             prompt: [
                 TITLE_PROMPT,
-                `The active application language is: ${languageCode}`,
+                `Write the title in "${uiLanguage}".`,
+                `The sermon content language is "${contentLanguage}".`,
                 `Conversation:\n${conversationSnippet}`,
             ].join('\n'),
             maxOutputTokens: 30,

@@ -46,7 +46,7 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
         options?.model && !options.isLocal
             ? buildAgentTools({
                   model: options.model,
-                  languageCode: defaultContentLanguage,
+                  contentLanguage: defaultContentLanguage,
                   abortSignal: options.abortSignal,
                   dispatch,
               })
