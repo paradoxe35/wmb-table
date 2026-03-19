@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
 import { useThemeStore } from '@renderer/stores/theme.store';
-import type { UiLanguagePreference } from '@shared/constants';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     DocumentType,
@@ -137,8 +136,8 @@ export function useInitApp() {
                 setRememberReadingPosition(rememberReadingPosition);
                 useAppStore.getState().setMaxTabs(maxTabs);
 
-                // Sync UI language preference from DB
-                const pref = (dbUiLanguage ?? 'auto') as UiLanguagePreference;
+                // Sync UI language preference from DB (null = auto)
+                const pref = dbUiLanguage ?? 'auto';
                 if (pref !== useThemeStore.getState().uiLanguagePreference) {
                     useThemeStore.getState().setUiLanguagePreference(pref);
                 }

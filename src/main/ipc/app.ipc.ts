@@ -151,7 +151,7 @@ export function registerAppHandlers(): void {
         configRepo.setUiLanguage(pref);
 
         const contentLang = configRepo.getContentLanguage();
-        const resolved = resolveUiLanguage(pref === 'auto' ? null : pref, contentLang);
+        const resolved = resolveUiLanguage(pref, contentLang);
 
         await i18n.changeLanguage(resolved);
 

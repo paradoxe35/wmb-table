@@ -21,7 +21,7 @@ export function getConfig(): AppSettingsStatus | null {
         contentLanguage: row.contentLanguage ?? null,
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
-        uiLanguage: row.uiLanguage ?? null,
+        uiLanguage: (row.uiLanguage as UiLanguagePreference) ?? null,
     };
 }
 
@@ -94,7 +94,7 @@ export function setMaxTabs(value: number): void {
         .run();
 }
 
-export function getUiLanguage(): string | null {
+export function getUiLanguage(): UiLanguagePreference | null {
     return getConfig()?.uiLanguage ?? null;
 }
 

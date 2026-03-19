@@ -488,7 +488,7 @@ export interface InvokeChannelMap {
         args: [string];
         return: HistoryDataItem[];
     };
-    [AppChannels.getUiLanguage]: { args: []; return: string | null };
+    [AppChannels.getUiLanguage]: { args: []; return: UiLanguagePreference | null };
     [AppChannels.setUiLanguage]: { args: [UiLanguagePreference]; return: void };
 
     // TTS

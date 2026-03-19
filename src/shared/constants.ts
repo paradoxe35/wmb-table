@@ -67,7 +67,7 @@ export const MAX_MAX_TABS = 50;
 // ── UI language ──
 export type UiLanguage = 'fr' | 'en' | 'es';
 export type UiLanguagePreference = 'auto' | UiLanguage;
-export const DEFAULT_UI_LANGUAGE: UiLanguage = 'fr';
+const FALLBACK_UI_LANGUAGE: UiLanguage = 'fr';
 
 export const UI_LANGUAGE_OPTIONS: { value: UiLanguagePreference; label: string }[] = [
     { value: 'auto', label: 'Automatique' },
@@ -84,15 +84,15 @@ const UI_LANGUAGE_CODES = new Set<string>(['fr', 'en', 'es']);
  * - explicit language (fr/en/es) → use it directly
  */
 export function resolveUiLanguage(
-    preference: string | null | undefined,
+    uiPreference: UiLanguagePreference | null | undefined,
     contentLanguage: string | null | undefined,
 ): UiLanguage {
-    if (preference && preference !== 'auto' && UI_LANGUAGE_CODES.has(preference)) {
-        return preference as UiLanguage;
+    if (uiPreference && uiPreference !== 'auto' && UI_LANGUAGE_CODES.has(uiPreference)) {
+        return uiPreference;
     }
     // Auto mode: follow content language if it's a supported UI language
     if (contentLanguage && UI_LANGUAGE_CODES.has(contentLanguage)) {
         return contentLanguage as UiLanguage;
     }
-    return DEFAULT_UI_LANGUAGE;
+    return FALLBACK_UI_LANGUAGE;
 }

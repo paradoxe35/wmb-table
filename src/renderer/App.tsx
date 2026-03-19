@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { App as AntApp, ConfigProvider, theme } from 'antd';
 import type { Locale } from 'antd/es/locale';
-import { DEFAULT_UI_LANGUAGE, resolveUiLanguage, type UiLanguage } from '@shared/constants';
+import { resolveUiLanguage, type UiLanguage } from '@shared/constants';
 import { useAppStore } from './stores';
 import frFR from 'antd/locale/fr_FR';
 import enUS from 'antd/locale/en_US';
@@ -29,11 +29,7 @@ function useAntdLocale(): Locale {
 
     // Resolve effective UI language from preference + content language
     const uiLanguage = useMemo(
-        () =>
-            resolveUiLanguage(
-                uiLanguagePreference === 'auto' ? null : uiLanguagePreference,
-                contentLanguage,
-            ),
+        () => resolveUiLanguage(uiLanguagePreference, contentLanguage),
         [uiLanguagePreference, contentLanguage],
     );
 
@@ -46,7 +42,7 @@ function useAntdLocale(): Locale {
     }, [uiLanguage, uiLanguagePreference, i18n]);
 
     return useMemo(
-        (): Locale => ANTD_LOCALES[uiLanguage] ?? ANTD_LOCALES[DEFAULT_UI_LANGUAGE],
+        (): Locale => ANTD_LOCALES[uiLanguage] ?? ANTD_LOCALES[resolveUiLanguage(null, null)],
         [uiLanguage],
     );
 }
