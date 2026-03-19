@@ -4,14 +4,14 @@ import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import type { AiToolDefinition } from './types';
 import { validateLanguage } from './shared';
 
-export function buildBibleTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
+export function buildBibleTools(defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
         getBibleVersions: {
             description:
                 'List Bible versions available for a language or the current active version.',
             inputSchema: z.object({ languageCode: z.string().optional() }),
             execute: async ({ languageCode }) => {
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
                 return aiBibleRepo.getAvailableVersions(lang);
@@ -36,7 +36,7 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                 languageCode: z.string().optional(),
             }),
             execute: async ({ languageCode, ...rest }) => {
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
                 return aiBibleRepo.getPassage({ ...rest, languageCode: lang });
@@ -63,7 +63,7 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
                     .describe('Max results (default 20)'),
             }),
             execute: async ({ languageCode, ...rest }) => {
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
                 return aiBibleRepo.searchVerses({ ...rest, languageCode: lang });
@@ -83,7 +83,7 @@ export function buildBibleTools(defaultLanguageCode: string): Record<string, AiT
             }),
             execute: async ({ subjectId: rawSubjectId, languageCode, ...rest }) => {
                 const subjectId = rawSubjectId.trim();
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 

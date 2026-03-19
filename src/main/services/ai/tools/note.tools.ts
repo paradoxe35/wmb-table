@@ -3,7 +3,7 @@ import { marked } from 'marked';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import type { AiToolDefinition } from './types';
 
-export function buildNoteTools(_defaultLanguageCode: string): Record<string, AiToolDefinition> {
+export function buildNoteTools(_defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
         getNotes: {
             description:

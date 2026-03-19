@@ -7,7 +7,6 @@ import {
     DEFAULT_MAX_TABS,
     MIN_MAX_TABS,
     MAX_MAX_TABS,
-    DEFAULT_UI_LANGUAGE,
     type UiLanguagePreference,
 } from '@shared/constants';
 
@@ -22,7 +21,7 @@ export function getConfig(): AppSettingsStatus | null {
         contentLanguage: row.contentLanguage ?? null,
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
-        uiLanguage: row.uiLanguage ?? DEFAULT_UI_LANGUAGE,
+        uiLanguage: row.uiLanguage ?? null,
     };
 }
 

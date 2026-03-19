@@ -27,7 +27,7 @@ import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
-import { resolveUiLanguage, DEFAULT_UI_LANGUAGE } from '@shared/constants';
+import { resolveUiLanguage } from '@shared/constants';
 
 export class AiService {
     private controllers = new Map<string, AbortController>();
@@ -62,8 +62,12 @@ export class AiService {
     }
 
     createConversation(input?: { title?: string; languageCode?: string }): AiConversation {
-        const languageCode =
-            input?.languageCode ?? configRepo.getContentLanguage() ?? DEFAULT_UI_LANGUAGE;
+        const languageCode = input?.languageCode ?? configRepo.getContentLanguage();
+        if (!languageCode) {
+            throw new Error(
+                'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
+            );
+        }
         return aiRepo.createConversation(languageCode, input?.title);
     }
 
@@ -109,11 +113,16 @@ export class AiService {
         baseUrl?: string;
     }): Promise<AiProviderTestResult> {
         try {
+            const defaultLanguage = configRepo.getContentLanguage();
+            if (!defaultLanguage) {
+                throw Error('');
+            }
+
             const model = resolveLanguageModel({
                 settings: this.getSettings(),
                 providerId: input.providerId,
                 modelId: input.model,
-                defaultLanguageCode: configRepo.getContentLanguage() ?? 'fr',
+                defaultContentLanguage: defaultLanguage,
                 localRuntime: this.localRuntime,
                 apiKey: input.apiKey,
                 baseUrl: input.baseUrl,
@@ -188,10 +197,12 @@ export class AiService {
 
         const contentLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
         const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
+
         const isLocal = providerId === 'local';
 
         const installedLanguages = await languagePackService.getInstalledLanguages();
         const { recentMessages, summary } = buildConversationContext(conversation.id, isLocal);
+
         const system = buildSystemPrompt({
             contentLanguageCode,
             uiLanguageCode,
@@ -201,11 +212,12 @@ export class AiService {
             hasAgents: !isLocal,
         });
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
+
         const model = resolveLanguageModel({
             settings,
             providerId,
             modelId,
-            defaultLanguageCode: contentLanguageCode,
+            defaultContentLanguage: contentLanguageCode,
             localRuntime: this.localRuntime,
         });
 

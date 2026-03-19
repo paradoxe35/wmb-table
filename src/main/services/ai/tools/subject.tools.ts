@@ -5,7 +5,9 @@ import * as tantivyService from '@main/services/tantivy.service';
 import type { AiToolDefinition } from './types';
 import { inferTranslationId, validateLanguage } from './shared';
 
-export function buildSubjectTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
+export function buildSubjectTools(
+    defaultContentLanguage: string,
+): Record<string, AiToolDefinition> {
     return {
         getSubjects: {
             description:
@@ -53,7 +55,7 @@ export function buildSubjectTools(defaultLanguageCode: string): Record<string, A
             }) => {
                 const subjectId = rawSubjectId.trim();
                 const sermonId = rawSermonId.trim();
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 

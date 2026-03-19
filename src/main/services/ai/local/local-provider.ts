@@ -15,14 +15,14 @@ function unsupportedModelError(
 
 export function createLocalProvider(input: {
     runtime: LocalRuntimeService;
-    defaultLanguageCode: string;
+    defaultContentLanguage: string;
 }): ProviderV3 {
     return {
         specificationVersion: 'v3',
         languageModel: (modelId: string) =>
             new LocalLanguageModel(modelId, {
                 runtime: input.runtime,
-                defaultLanguageCode: input.defaultLanguageCode,
+                defaultContentLanguage: input.defaultContentLanguage,
             }),
         embeddingModel: (modelId: string) => {
             throw unsupportedModelError(modelId, 'embeddingModel');
