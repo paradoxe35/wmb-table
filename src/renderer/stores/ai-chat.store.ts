@@ -44,7 +44,7 @@ interface AiChatState {
     createConversation(title?: string): Promise<void>;
     deleteConversation(conversationId: string): Promise<void>;
     clearConversations(): Promise<void>;
-    sendMessage(content: string, overrideLanguageCode?: string): Promise<void>;
+    sendMessage(content: string): Promise<void>;
     stopGeneration(): Promise<void>;
     scanLocalModels(): Promise<void>;
     testProvider(input: {
@@ -266,7 +266,7 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
         set({ conversations: [], activeConversationId: null, messagesByConversation: {} });
     },
 
-    sendMessage: async (content, overrideLanguageCode) => {
+    sendMessage: async (content) => {
         const trimmed = content.trim();
         if (!trimmed) return;
 
@@ -289,7 +289,6 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
             const result: AiSendMessageResult = await window.api.ai.sendMessage({
                 conversationId,
                 content: trimmed,
-                overrideLanguageCode,
             });
             set((state) => ({
                 conversations: state.conversations.some(

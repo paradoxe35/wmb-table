@@ -4,6 +4,7 @@ import type { LanguageModel } from 'ai';
 export interface AgentContext {
     model: LanguageModel;
     contentLanguage: string;
+    uiLanguage: string;
     abortSignal?: AbortSignal;
     /** When provided, subagent tool progress is dispatched to the renderer. */
     dispatch?: AgentDispatch;

@@ -136,7 +136,6 @@ export function resolveProviderName(
 export interface AiConversation {
     id: string;
     title: string | null;
-    languageCode: string;
     summary: string | null;
     createdAt: string;
     updatedAt: string;
@@ -168,7 +167,6 @@ export interface AiMessage {
 export interface AiSendMessageRequest {
     conversationId: string;
     content: string;
-    overrideLanguageCode?: string;
 }
 
 export interface AiSendMessageResult {
