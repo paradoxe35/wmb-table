@@ -19,19 +19,19 @@ export interface BuildAiToolsOptions {
     assistantMessageId?: string;
 }
 
-export function buildToolExecutors(defaultLanguageCode: string) {
+export function buildToolExecutors(defaultContentLanguage: string) {
     return {
         ...buildLanguageTools(),
         ...buildDocumentTools(),
-        ...buildBibleTools(defaultLanguageCode),
-        ...buildSermonTools(defaultLanguageCode),
-        ...buildSubjectTools(defaultLanguageCode),
-        ...buildNoteTools(defaultLanguageCode),
+        ...buildBibleTools(defaultContentLanguage),
+        ...buildSermonTools(defaultContentLanguage),
+        ...buildSubjectTools(defaultContentLanguage),
+        ...buildNoteTools(defaultContentLanguage),
     };
 }
 
-export function buildAiTools(defaultLanguageCode: string, options?: BuildAiToolsOptions) {
-    const executors = buildToolExecutors(defaultLanguageCode);
+export function buildAiTools(defaultContentLanguage: string, options?: BuildAiToolsOptions) {
+    const executors = buildToolExecutors(defaultContentLanguage);
 
     const dispatch =
         options?.browserWindow && options.conversationId && options.assistantMessageId
@@ -46,7 +46,7 @@ export function buildAiTools(defaultLanguageCode: string, options?: BuildAiTools
         options?.model && !options.isLocal
             ? buildAgentTools({
                   model: options.model,
-                  languageCode: defaultLanguageCode,
+                  contentLanguage: defaultContentLanguage,
                   abortSignal: options.abortSignal,
                   dispatch,
               })

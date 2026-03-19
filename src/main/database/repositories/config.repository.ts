@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { configurations } from '../schema';
 import type { AppSettingsStatus } from '@shared/types';
-import { DEFAULT_MAX_TABS, MIN_MAX_TABS, MAX_MAX_TABS } from '@shared/constants';
+import {
+    DEFAULT_MAX_TABS,
+    MIN_MAX_TABS,
+    MAX_MAX_TABS,
+    type UiLanguagePreference,
+} from '@shared/constants';
 
 export function getConfig(): AppSettingsStatus | null {
     const row = getDb().select().from(configurations).get();
@@ -13,9 +18,10 @@ export function getConfig(): AppSettingsStatus | null {
         app_id: row.appId,
         initialized: row.initialized,
         lastCheckBackupStatus: new Date(row.lastCheckBackupStatus ?? Date.now()),
-        activeLanguage: row.activeLanguage ?? null,
+        contentLanguage: row.contentLanguage ?? null,
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
+        uiLanguage: (row.uiLanguage as UiLanguagePreference) ?? null,
     };
 }
 
@@ -38,16 +44,16 @@ export function markInitialized(): void {
         .run();
 }
 
-export function getActiveLanguage(): string | null {
+export function getContentLanguage(): string | null {
     const config = getConfig();
-    return config?.activeLanguage ?? null;
+    return config?.contentLanguage ?? null;
 }
 
-export function setActiveLanguage(langCode: string): void {
+export function setContentLanguage(langCode: string): void {
     const config = ensureConfig();
     getDb()
         .update(configurations)
-        .set({ activeLanguage: langCode })
+        .set({ contentLanguage: langCode })
         .where(eq(configurations.id, config.id))
         .run();
 }
@@ -84,6 +90,19 @@ export function setMaxTabs(value: number): void {
     getDb()
         .update(configurations)
         .set({ maxTabs: clamped })
+        .where(eq(configurations.id, config.id))
+        .run();
+}
+
+export function getUiLanguage(): UiLanguagePreference | null {
+    return getConfig()?.uiLanguage ?? null;
+}
+
+export function setUiLanguage(value: UiLanguagePreference): void {
+    const config = ensureConfig();
+    getDb()
+        .update(configurations)
+        .set({ uiLanguage: value === 'auto' ? null : value })
         .where(eq(configurations.id, config.id))
         .run();
 }

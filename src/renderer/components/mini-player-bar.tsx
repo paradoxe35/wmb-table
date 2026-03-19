@@ -184,16 +184,17 @@ export default function MiniPlayerBar() {
         };
     }, [audioRef, loadAudio, setCurrentPlay, openModal]);
 
-    // Stop sermon audio when the active language changes
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
-    const prevLangRef = useRef(activeLanguage);
+    // Stop sermon audio when the content language changes
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const prevLangRef = useRef(contentLanguage);
+
     useEffect(() => {
-        if (prevLangRef.current !== activeLanguage) {
-            prevLangRef.current = activeLanguage;
+        if (prevLangRef.current !== contentLanguage) {
+            prevLangRef.current = contentLanguage;
             const el = audioRef.current;
             if (el && !el.paused) el.pause();
         }
-    }, [activeLanguage, audioRef]);
+    }, [contentLanguage, audioRef]);
 
     // Restore last played on mount
     useEffect(() => {

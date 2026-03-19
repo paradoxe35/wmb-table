@@ -16,8 +16,8 @@ interface EdgeConfigProps extends ProviderConfigProps {
 export default function EdgeConfig({ settings, info, onUpdate }: EdgeConfigProps) {
     const { t } = useTranslation();
     const cfg = settings.providers.edge;
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
-    const voiceGroups = groupVoicesByLanguage(info?.voices ?? [], activeLanguage ?? undefined);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const voiceGroups = groupVoicesByLanguage(info?.voices ?? [], contentLanguage ?? undefined);
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">

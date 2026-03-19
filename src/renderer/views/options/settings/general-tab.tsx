@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Segmented, Space, Tag, Typography, message } from 'antd';
+import { Button, Card, Segmented, Select, Space, Tag, Typography, message } from 'antd';
 import {
     BookOutlined,
     CheckCircleOutlined,
@@ -16,13 +16,14 @@ import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shar
 import { FontSizeOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
 import { useThemeStore, type FontSizeOption } from '@renderer/stores/theme.store';
+import { UI_LANGUAGE_OPTIONS, type UiLanguagePreference } from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
 
 const { Text } = Typography;
 
 export default function GeneralTab() {
     const { t } = useTranslation();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langName, setLangName] = useState('');
     const [installedCount, setInstalledCount] = useState(0);
     const [updateInfo, setUpdateInfo] = useState<UpdaterNotification | null>(null);
@@ -32,6 +33,16 @@ export default function GeneralTab() {
     const setThemeMode = useThemeStore((s) => s.setThemeMode);
     const fontSizeOption = useThemeStore((s) => s.fontSizeOption);
     const setFontSizeOption = useThemeStore((s) => s.setFontSizeOption);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    const setUiLanguagePreference = useThemeStore((s) => s.setUiLanguagePreference);
+
+    const handleUiLanguageChange = useCallback(
+        (pref: UiLanguagePreference) => {
+            setUiLanguagePreference(pref);
+            window.api.app.setUiLanguage(pref);
+        },
+        [setUiLanguagePreference],
+    );
 
     const refreshBackup = useCallback(() => {
         window.api.backup.getStatus().then((s) => {
@@ -42,14 +53,14 @@ export default function GeneralTab() {
     useEffect(() => {
         window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
             setInstalledCount(langs.length);
-            if (activeLanguage) {
-                const lang = langs.find((l) => l.code === activeLanguage);
+            if (contentLanguage) {
+                const lang = langs.find((l) => l.code === contentLanguage);
                 if (lang) setLangName(lang.language);
             }
         });
         window.api.app.getUpdateStatus().then(setUpdateInfo);
         refreshBackup();
-    }, [activeLanguage, refreshBackup]);
+    }, [contentLanguage, refreshBackup]);
 
     // Stay in sync when backup status changes
     useEffect(() => {
@@ -97,7 +108,7 @@ export default function GeneralTab() {
     const items: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
         {
             icon: <TranslationOutlined />,
-            label: t('Langue active'),
+            label: t('Langue des prédications'),
             value: <Text>{langName || '—'}</Text>,
         },
         {
@@ -184,6 +195,39 @@ export default function GeneralTab() {
                             { value: 'large', label: t('Grand') },
                             { value: 'x-large', label: t('Très grand') },
                         ]}
+                    />
+                </div>
+
+                {/* UI language */}
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Space orientation="vertical" size={2}>
+                        <Space size="small">
+                            <Text type="secondary">
+                                <TranslationOutlined />
+                            </Text>
+                            <Text>{t("Langue de l'interface")}</Text>
+                        </Space>
+                        <Text type="secondary">
+                            {t(
+                                "Détermine la langue des menus, boutons et messages de l'application.",
+                            )}
+                        </Text>
+                    </Space>
+                    <Select
+                        size="small"
+                        value={uiLanguagePreference}
+                        onChange={(val) => handleUiLanguageChange(val as UiLanguagePreference)}
+                        options={UI_LANGUAGE_OPTIONS.map((o) => ({
+                            value: o.value,
+                            label: o.value === 'auto' ? t(o.label) : o.label,
+                        }))}
+                        style={{ width: 140 }}
                     />
                 </div>
 

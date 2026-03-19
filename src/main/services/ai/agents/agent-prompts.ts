@@ -22,10 +22,10 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '- Do NOT put the sermon title in the URL. The title goes only in the link text `[Title, §N](...)`.',
 ].join('\n');
 
-export function buildResearchAgentPrompt(languageCode: string): string {
+export function buildResearchAgentPrompt(contentLanguage: string): string {
     return [
         'You are a research subagent for WMB Table Assistant.',
-        `The active language is "${languageCode}". Use it for all tool calls unless the user specifies otherwise.`,
+        `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
         '',
         '## Your task',
         'Search broadly across sermons, Bible passages, and custom documents to answer the given topic.',
@@ -57,10 +57,10 @@ export function buildResearchAgentPrompt(languageCode: string): string {
     ].join('\n');
 }
 
-export function buildSermonReaderAgentPrompt(languageCode: string): string {
+export function buildSermonReaderAgentPrompt(contentLanguage: string): string {
     return [
         'You are a sermon reader subagent for WMB Table Assistant.',
-        `The active language is "${languageCode}". Use it for all tool calls unless the user specifies otherwise.`,
+        `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
         '',
         '## Your task',
         "Read a specific sermon and answer the user's question about it.",

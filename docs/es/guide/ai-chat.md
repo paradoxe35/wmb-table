@@ -55,11 +55,16 @@ La página tiene tres zonas sencillas:
 4. lea la respuesta
 5. abra después la predicación, el pasaje, el tema o la nota si el resultado es correcto
 
-## Relación con el idioma activo
+## Relación con los idiomas
 
-Por defecto, el asistente sigue el idioma activo de la aplicación.
+El asistente utiliza dos idiomas:
 
-Esto ayuda a que las respuestas correspondan mejor a lo que usted está usando realmente.
+- **Idioma de su biblioteca**: el asistente busca los sermones, los pasajes bíblicos y las referencias en el idioma elegido para su biblioteca.
+- **Idioma de la interfaz**: el asistente le responde en el idioma elegido para los menús y botones de la aplicación.
+
+Por ejemplo, si su biblioteca está en inglés pero su interfaz está en español, el asistente buscará en las predicaciones en inglés y le responderá en español.
+
+Si usted pide claramente otro idioma en su mensaje, el asistente puede adaptarse.
 
 <ScreenshotPlaceholder
   file="es-ai-chat-tool-results.png"

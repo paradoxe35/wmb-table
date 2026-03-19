@@ -1,6 +1,13 @@
 # Languages
 
-<p class="lead">Languages in Wmb Table are not only for the screen. They also control the sermons and search data you work with.</p>
+<p class="lead">Wmb Table uses two separate language settings: your library language and the interface language.</p>
+
+## Two languages, two roles
+
+- **Library language** determines which sermons are shown, which search is used, and which Bible versions are available.
+- **Interface language** changes the menus, buttons, and labels of the application. You can choose between French, English, and Spanish, or leave it on **Automatic** so it follows your library language when possible.
+
+These two settings are independent. For example, you can read sermons in Swahili while keeping the interface in English.
 
 ## Important idea
 
@@ -9,8 +16,6 @@ Each installed language can bring:
 - a sermon library
 - search adapted to that language
 - different translations or available content
-
-French is the default app language, but English and Spanish can also be used when installed.
 
 Wmb Table supports a large number of languages. The bundled reference database contains 81 available languages. That is why the app uses a language manager: it helps users install only the languages they really need instead of loading everything at once.
 
@@ -45,7 +50,7 @@ Because there are many available languages, this window helps users:
 4. Wait for the download to finish.
 5. Click the language to make it active.
 
-## Changing the active language
+## Changing your library language
 
 When you switch language:
 

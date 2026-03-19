@@ -7,7 +7,7 @@
 Vérifiez d’abord :
 
 1. qu’une langue est bien installée
-2. qu’une langue active a bien été choisie
+2. qu’une langue a bien été choisie
 
 Si nécessaire, ouvrez la gestion des langues et téléchargez-en une.
 
@@ -15,7 +15,7 @@ Si nécessaire, ouvrez la gestion des langues et téléchargez-en une.
 
 Essayez ceci :
 
-1. vérifiez la langue active
+1. vérifiez votre langue
 2. entrez au moins trois caractères
 3. essayez un mot plus simple
 4. essayez une autre forme du mot

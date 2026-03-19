@@ -76,9 +76,10 @@ CREATE TABLE `configurations` (
 	`app_id` text NOT NULL,
 	`initialized` integer DEFAULT false NOT NULL,
 	`last_check_backup_status` text DEFAULT (datetime('now')),
-	`active_language` text,
+	`content_language` text,
 	`remember_reading_position` integer DEFAULT true NOT NULL,
-	`max_tabs` integer DEFAULT 12 NOT NULL
+	`max_tabs` integer DEFAULT 12 NOT NULL,
+	`ui_language` text
 );
 --> statement-breakpoint
 CREATE TABLE `custom_documents` (

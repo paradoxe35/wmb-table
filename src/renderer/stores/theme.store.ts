@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { UiLanguagePreference } from '@shared/constants';
 
 type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -16,10 +17,12 @@ interface ThemeState {
     themeMode: ThemeMode;
     resolvedTheme: 'light' | 'dark';
     fontSizeOption: FontSizeOption;
+    uiLanguagePreference: UiLanguagePreference;
 
     setThemeMode(mode: ThemeMode): void;
     setResolvedTheme(theme: 'light' | 'dark'): void;
     setFontSizeOption(option: FontSizeOption): void;
+    setUiLanguagePreference(pref: UiLanguagePreference): void;
 }
 
 function getSystemTheme(): 'light' | 'dark' {
@@ -37,20 +40,24 @@ export const useThemeStore = create<ThemeState>()(
             themeMode: 'light',
             resolvedTheme: 'light',
             fontSizeOption: 'default' as FontSizeOption,
+            uiLanguagePreference: 'auto' as UiLanguagePreference,
 
             setThemeMode: (mode) => set({ themeMode: mode, resolvedTheme: resolveTheme(mode) }),
             setResolvedTheme: (theme) => set({ resolvedTheme: theme }),
             setFontSizeOption: (option) => set({ fontSizeOption: option }),
+            setUiLanguagePreference: (pref) => set({ uiLanguagePreference: pref }),
         }),
         {
             name: 'wmb-theme',
             partialize: (state) => ({
                 themeMode: state.themeMode,
                 fontSizeOption: state.fontSizeOption,
+                uiLanguagePreference: state.uiLanguagePreference,
             }),
             onRehydrateStorage: () => (state) => {
                 if (state) {
                     state.resolvedTheme = resolveTheme(state.themeMode);
+                    state.uiLanguagePreference = state.uiLanguagePreference ?? 'auto';
                 }
             },
         },

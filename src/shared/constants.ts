@@ -63,3 +63,36 @@ export const DOCS_BIBLE_LINK = buildDocsGuideLink('bible');
 export const DEFAULT_MAX_TABS = 12;
 export const MIN_MAX_TABS = 5;
 export const MAX_MAX_TABS = 50;
+
+// ── UI language ──
+export type UiLanguage = 'fr' | 'en' | 'es';
+export type UiLanguagePreference = 'auto' | UiLanguage;
+const FALLBACK_UI_LANGUAGE: UiLanguage = 'fr';
+
+export const UI_LANGUAGE_OPTIONS: { value: UiLanguagePreference; label: string }[] = [
+    { value: 'auto', label: 'Automatique' },
+    { value: 'fr', label: 'Français' },
+    { value: 'en', label: 'English' },
+    { value: 'es', label: 'Español' },
+];
+
+const UI_LANGUAGE_CODES = new Set<string>(['fr', 'en', 'es']);
+
+/**
+ * Resolve the effective UI language.
+ * - "auto" or null → derive from content language if supported, else fallback
+ * - explicit language (fr/en/es) → use it directly
+ */
+export function resolveUiLanguage(
+    uiPreference: UiLanguagePreference | null | undefined,
+    contentLanguage: string | null | undefined,
+): UiLanguage {
+    if (uiPreference && uiPreference !== 'auto' && UI_LANGUAGE_CODES.has(uiPreference)) {
+        return uiPreference;
+    }
+    // Auto mode: follow content language if it's a supported UI language
+    if (contentLanguage && UI_LANGUAGE_CODES.has(contentLanguage)) {
+        return contentLanguage as UiLanguage;
+    }
+    return FALLBACK_UI_LANGUAGE;
+}

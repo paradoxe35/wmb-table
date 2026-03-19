@@ -14,7 +14,7 @@ import type {
 } from './types';
 import { validateLanguage } from './shared';
 
-export function buildSermonTools(defaultLanguageCode: string): Record<string, AiToolDefinition> {
+export function buildSermonTools(defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
         searchSermons: {
             description:
@@ -27,7 +27,7 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 limit: z.number().int().min(1).max(20).optional(),
             }),
             execute: async ({ query, languageCode, limit = 10 }) => {
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 
@@ -89,7 +89,7 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 maxParagraphs = 15,
             }) => {
                 const sermonId = rawSermonId.trim();
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 
@@ -180,7 +180,7 @@ export function buildSermonTools(defaultLanguageCode: string): Record<string, Ai
                 limit: z.number().int().min(1).max(20).optional(),
             }),
             execute: async ({ query, languageCode, searchMode: rawMode, limit = 10 }) => {
-                const lang = languageCode ?? defaultLanguageCode;
+                const lang = languageCode ?? defaultContentLanguage;
                 const mode: SearchMode = rawMode ?? 'any';
                 const langError = validateLanguage(lang);
                 if (langError) return langError;

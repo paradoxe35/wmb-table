@@ -22,7 +22,7 @@ In this tab, you can:
 - set up a local model if you want to work without internet
 - enter the information needed for an online service
 - test the connection of a service
-- choose how the assistant follows the active language
+- choose how the assistant follows your library language
 
 ## Step 1: enable the assistant
 
@@ -163,14 +163,14 @@ You can also turn on the graphics card option if your computer supports it.
 
 ## Step 5: language behavior
 
-The assistant follows the active language of the app.
+The assistant follows your library language.
 
 Two choices are available:
 
-- `Follow the active language`
+- `Follow the content language`
 - `Change only when asked`
 
-For most users, `Follow the active language` is the best choice.
+For most users, `Follow the content language` is the best choice.
 
 ## Simple recommended setup
 
@@ -179,7 +179,7 @@ To get started without complication:
 1. enable the assistant
 2. choose the service you want to use
 3. enter the needed information
-4. keep `Follow the active language`
+4. keep `Follow the content language`
 5. open the `AI Chat` page
 
 ## When to come back to this tab

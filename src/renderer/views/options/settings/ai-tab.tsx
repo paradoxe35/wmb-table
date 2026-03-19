@@ -20,7 +20,7 @@ export default function AiTab() {
     const localModels = useAiChatStore((s) => s.localModels);
     const saveSettings = useAiChatStore((s) => s.saveSettings);
     const scanLocalModels = useAiChatStore((s) => s.scanLocalModels);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [customModalOpen, setCustomModalOpen] = useState(false);
 
     useEffect(() => {
@@ -89,7 +89,7 @@ export default function AiTab() {
     }
 
     function openDocs() {
-        const url = buildDocsGuideLink('settings-assistant', activeLanguage);
+        const url = buildDocsGuideLink('settings-assistant', contentLanguage);
         void window.api.app.openExternal(url);
     }
 

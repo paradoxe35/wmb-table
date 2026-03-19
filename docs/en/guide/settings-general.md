@@ -11,7 +11,8 @@
 
 This page mainly gathers summary information:
 
-- the active language
+- your library language
+- the interface language
 - the number of installed languages
 - backup status
 - update status
@@ -19,14 +20,15 @@ This page mainly gathers summary information:
 <ScreenshotPlaceholder
   file="en-settings-general-tab.png"
   label="General settings tab"
-  hint="Take a screen showing the summary rows or cards for active language, installed languages, backup, and update."
+  hint="Take a screen showing the summary rows or cards for library language, interface language, installed languages, backup, and update."
 />
 
 ## What this page is for
 
 Use it when you want to:
 
-- confirm the active language
+- confirm your library language
+- check the interface language
 - check whether backup is working
 - see whether an update is available
 - review the overall application state without opening every other tab

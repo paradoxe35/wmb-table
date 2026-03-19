@@ -238,23 +238,24 @@ const DocumentByYears = () => {
     );
 };
 
-const ActiveLanguageBar = () => {
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+const ContentLanguageBar = () => {
+    const { t } = useTranslation();
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langName, setLangName] = useState<string>('');
 
     useEffect(() => {
-        if (!activeLanguage) return;
+        if (!contentLanguage) return;
         window.api.languages
             .getInstalled()
             .then((langs: InstalledLanguage[]) => {
-                const lang = langs.find((l) => l.code === activeLanguage);
+                const lang = langs.find((l) => l.code === contentLanguage);
                 if (lang) setLangName(lang.language);
             })
             .catch(() => {});
-    }, [activeLanguage]);
+    }, [contentLanguage]);
 
     const openManager = () => {
-        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));
     };
 
     if (!langName) return null;
@@ -270,7 +271,7 @@ const ActiveLanguageBar = () => {
             }}
         >
             <Typography.Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
-                {langName}
+                {t('Bibliothèque')}: {langName}
             </Typography.Text>
             <Button
                 type="text"
@@ -313,7 +314,7 @@ const DocumentSearch = () => {
                     allowClear
                     onSearch={onSearch}
                 />
-                <ActiveLanguageBar />
+                <ContentLanguageBar />
             </Card>
             <DocumentList datas={datas} />
         </>
@@ -363,7 +364,7 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
     const openDocument = useOpenDocument();
     const activeTab = useSermonStore(selectActiveTab);
     const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
-    const isEnglish = useAppStore((s) => s.activeLanguage) === 'en';
+    const isEnglish = useAppStore((s) => s.contentLanguage) === 'en';
     const formatDate = useFormatSermonDate();
 
     const sorted = useMemo(

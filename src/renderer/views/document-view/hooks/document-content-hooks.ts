@@ -35,14 +35,14 @@ type ScrollPersistenceState = {
 export function resolveSermonScrollPersistence(
     activeTab: DocumentTab | null,
     sermonInfo: SermonMetaWithTraductions | undefined,
-    activeLanguage: string | null,
+    contentLanguage: string | null,
     content: SermonContent | null,
 ): ScrollPersistenceState {
     if (!activeTab) {
         return { restoreIdentity: null, readingPositionKey: null };
     }
 
-    const languageCode = activeTab.languageCode ?? activeLanguage;
+    const languageCode = activeTab.languageCode ?? contentLanguage;
     if (!languageCode) {
         return { restoreIdentity: null, readingPositionKey: null };
     }
@@ -92,7 +92,7 @@ export function resolveBibleScrollPersistence(
 
 export function useSermonContent() {
     const activeTab = useSermonStore(selectActiveTab);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const setActiveContent = useSermonStore((s) => s.setActiveContent);
     const activeContent = useSermonStore((s) => s.activeContent);
@@ -100,7 +100,7 @@ export function useSermonContent() {
 
     const tabSermonId = activeTab?.sermonId;
     const tabTranslationId = activeTab?.translationId;
-    const tabLanguage = activeTab?.languageCode ?? activeLanguage;
+    const tabLanguage = activeTab?.languageCode ?? contentLanguage;
 
     useEffect(() => {
         if (!tabSermonId || !tabLanguage) {

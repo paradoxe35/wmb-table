@@ -306,13 +306,13 @@ export default function Highlights() {
     const [loading, setLoading] = useState(false);
     const openHighlight = useHighlightOpen();
     const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     const fetchPage = useCallback(
         async (searchQuery: string, pageNum: number) => {
             setLoading(true);
             try {
-                const langCode = activeLanguage?.split('-')[0].toLowerCase();
+                const langCode = contentLanguage?.split('-')[0].toLowerCase();
                 const result: HighlightSearchResult = await window.api.highlights.search(
                     searchQuery,
                     pageNum,
@@ -328,7 +328,7 @@ export default function Highlights() {
                 setLoading(false);
             }
         },
-        [activeLanguage],
+        [contentLanguage],
     );
 
     // Initial load
@@ -386,13 +386,13 @@ export default function Highlights() {
 
     const handleExportPdf = useCallback(async () => {
         try {
-            const langCode = activeLanguage?.split('-')[0].toLowerCase();
+            const langCode = contentLanguage?.split('-')[0].toLowerCase();
             const filePath = await window.api.highlights.exportPdf(langCode);
             if (filePath) message.success(t('PDF exporté avec succès'));
         } catch {
             message.error(t("Erreur lors de l'export PDF"));
         }
-    }, [activeLanguage]);
+    }, [contentLanguage]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>

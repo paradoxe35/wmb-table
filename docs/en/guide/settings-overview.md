@@ -9,7 +9,7 @@ In the left menu, click `Settings`.
 The settings page contains several simple tabs:
 
 - `General`
-- `Languages`
+- `Library`
 - `Assistant`
 - `Audio Reading`
 - `Backup`
@@ -29,18 +29,19 @@ This gives you a quick summary of the application state.
 
 You can see things like:
 
-- the active language
+- your library language
+- the interface language
 - the number of installed languages
 - backup status
 - update status
 
-### Languages
+### Library
 
 Use this section to:
 
 - see installed languages
 - open full language management
-- change your working language
+- change your library language
 
 ### Assistant
 
@@ -85,7 +86,7 @@ Use this section to:
 
 If you want to…
 
-- change language: open `Languages`
+- change your library language: open `Library`
 - use or enable AI chat: open `Assistant`
 - listen to a sermon or Bible chapter: open `Audio Reading`
 - protect your work: open `Backup`
@@ -96,7 +97,7 @@ If you want to…
 
 For a new user, the simplest order is:
 
-1. `Languages`
+1. `Library` to choose your language
 2. `Assistant` when you want to use the AI feature
 3. `Audio Reading` if you want voice reading
 4. `Backup` if you want to secure your work
@@ -105,7 +106,7 @@ For a new user, the simplest order is:
 ## Detailed pages
 
 - [General](/en/guide/settings-general)
-- [Languages](/en/guide/languages)
+- [Library](/en/guide/languages)
 - [Assistant](/en/guide/settings-assistant)
 - [AI Chat](/en/guide/ai-chat)
 - [Audio Reading and Voices](/en/guide/audio-and-tts)

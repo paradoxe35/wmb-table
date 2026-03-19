@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
+import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     DocumentType,
@@ -101,7 +102,7 @@ export const useIpcRequestWithLoader = () => {
 export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
-    const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
+    const setContentLanguage = useAppStore((s) => s.setContentLanguage);
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
@@ -119,13 +120,15 @@ export function useInitApp() {
                     return;
                 }
 
-                const [langCode, sidebarStatus] = await Promise.all([
-                    window.api.app.getActiveLanguage(),
-                    window.api.app.getSidebarStatus(),
+                const [dbContentLanguage, dbUiLanguage] = await Promise.all([
+                    window.api.app.getContentLanguage(),
+                    window.api.app.getUiLanguage(),
                 ]);
-                const [rememberReadingPosition, maxTabs] = await Promise.all([
+
+                const [rememberReadingPosition, maxTabs, sidebarStatus] = await Promise.all([
                     window.api.app.getRememberReadingPosition(),
                     window.api.app.getMaxTabs(),
+                    window.api.app.getSidebarStatus(),
                 ]);
 
                 if (sidebarStatus) {
@@ -134,8 +137,15 @@ export function useInitApp() {
                 setRememberReadingPosition(rememberReadingPosition);
                 useAppStore.getState().setMaxTabs(maxTabs);
 
-                // Validate active language is still installed
-                const validLang = langCode && installed.some((l) => l.code === langCode);
+                // Sync UI language preference from DB (null = auto)
+                const pref = dbUiLanguage ?? 'auto';
+                if (pref !== useThemeStore.getState().uiLanguagePreference) {
+                    useThemeStore.getState().setUiLanguagePreference(pref);
+                }
+
+                // Validate content language is still installed
+                const validLang =
+                    dbContentLanguage && installed.some((l) => l.code === dbContentLanguage);
 
                 if (!validLang) {
                     // No persisted language or it was uninstalled — language modal will open
@@ -143,13 +153,16 @@ export function useInitApp() {
                     return;
                 }
 
-                setActiveLanguage(langCode);
+                setContentLanguage(dbContentLanguage);
                 const [sermons, savedTabs] = await Promise.all([
-                    window.api.documents.getTitles(langCode),
-                    window.api.documents.getTabs(langCode),
+                    window.api.documents.getTitles(dbContentLanguage),
+                    window.api.documents.getTabs(dbContentLanguage),
                 ]);
+
                 setSermons(sermons);
-                if (savedTabs?.length) setTabs(savedTabs);
+                if (savedTabs?.length) {
+                    setTabs(savedTabs);
+                }
             } catch (err) {
                 console.error('[useInitApp] Initialization failed:', err);
                 setError(i18n.t("Erreur lors de l'initialisation de l'application"));
@@ -160,7 +173,7 @@ export function useInitApp() {
     }, [
         setLoaded,
         setSidebarHidden,
-        setActiveLanguage,
+        setContentLanguage,
         setRememberReadingPosition,
         setSermons,
         setTabs,
@@ -266,11 +279,11 @@ export function useSermonLookup() {
 }
 
 export function useFormatSermonDate() {
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     return useCallback(
-        (dateMs: number) => capitalize(formatSermonDate(dateMs, activeLanguage ?? 'en')),
-        [activeLanguage],
+        (dateMs: number) => capitalize(formatSermonDate(dateMs, contentLanguage ?? 'en')),
+        [contentLanguage],
     );
 }
 

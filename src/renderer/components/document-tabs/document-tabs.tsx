@@ -21,11 +21,11 @@ export default function DocumentTabs() {
     const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
     const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
     const activeTabKey = useSermonStore(selectActiveTabKey);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const { modal } = AntApp.useApp();
 
-    useTabPersistence(tabs, activeLanguage);
+    useTabPersistence(tabs, contentLanguage);
 
     const stopTtsIfPlaying = useCallback((closedTabTitle: string) => {
         const tts = useTtsStore.getState();

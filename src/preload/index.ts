@@ -19,6 +19,7 @@ import {
     type PushChannel,
     type PushEventMap,
 } from '@shared/ipc.types';
+import type { UiLanguagePreference } from '@shared/constants';
 import type {
     BibleBook,
     BookRequest,
@@ -211,8 +212,8 @@ const api = {
     app: {
         isInitialized: () => invoke(AppChannels.isInitialized),
         initialize: () => invoke(AppChannels.initialize),
-        getActiveLanguage: () => invoke(AppChannels.getActiveLanguage),
-        setActiveLanguage: (langCode: string) => invoke(AppChannels.setActiveLanguage, langCode),
+        getContentLanguage: () => invoke(AppChannels.getContentLanguage),
+        setContentLanguage: (langCode: string) => invoke(AppChannels.setContentLanguage, langCode),
         getRememberReadingPosition: () => invoke(AppChannels.getRememberReadingPosition),
         setRememberReadingPosition: (value: boolean) =>
             invoke(AppChannels.setRememberReadingPosition, value),
@@ -238,7 +239,8 @@ const api = {
             documentType: DocumentType,
         ) => invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId, documentType),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
-        setUiLanguage: (langCode: string) => invoke(AppChannels.setUiLanguage, langCode),
+        getUiLanguage: () => invoke(AppChannels.getUiLanguage),
+        setUiLanguage: (pref: UiLanguagePreference) => invoke(AppChannels.setUiLanguage, pref),
         openExternal: (url: string) => invoke(AppChannels.openExternal, url),
     },
 
@@ -339,9 +341,8 @@ const api = {
         ) => onPush(PushChannels.newSynchronizedDatas, cb),
         syncFailure: (cb: (p: PushEventMap[typeof PushChannels.syncFailure]) => void) =>
             onPush(PushChannels.syncFailure, cb),
-        openLanguageManager: (
-            cb: (p: PushEventMap[typeof PushChannels.openLanguageManager]) => void,
-        ) => onPush(PushChannels.openLanguageManager, cb),
+        openLibrary: (cb: (p: PushEventMap[typeof PushChannels.openLibrary]) => void) =>
+            onPush(PushChannels.openLibrary, cb),
         languageDownloadProgress: (
             cb: (p: PushEventMap[typeof PushChannels.languageDownloadProgress]) => void,
         ) => onPush(PushChannels.languageDownloadProgress, cb),

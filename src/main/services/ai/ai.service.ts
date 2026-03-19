@@ -27,6 +27,22 @@ import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
+import { resolveUiLanguage } from '@shared/constants';
+
+interface RunGenerationOptions {
+    runner: GenerationRunnerImpl;
+    browserWindow: BrowserWindow;
+    conversation: AiConversation;
+    assistantMessage: AiMessage;
+    model: ReturnType<typeof resolveLanguageModel>;
+    systemPrompt: string;
+    history: ReturnType<typeof buildConversationContext>['recentMessages'];
+    tools: ReturnType<typeof buildAiTools>;
+    abortSignal: AbortSignal;
+    isLocal: boolean;
+    contentLanguageCode: string;
+    uiLanguageCode: string;
+}
 
 export class AiService {
     private controllers = new Map<string, AbortController>();
@@ -61,7 +77,12 @@ export class AiService {
     }
 
     createConversation(input?: { title?: string; languageCode?: string }): AiConversation {
-        const languageCode = input?.languageCode ?? configRepo.getActiveLanguage() ?? 'fr';
+        const languageCode = input?.languageCode ?? configRepo.getContentLanguage();
+        if (!languageCode) {
+            throw new Error(
+                'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
+            );
+        }
         return aiRepo.createConversation(languageCode, input?.title);
     }
 
@@ -107,11 +128,16 @@ export class AiService {
         baseUrl?: string;
     }): Promise<AiProviderTestResult> {
         try {
+            const defaultLanguage = configRepo.getContentLanguage();
+            if (!defaultLanguage) {
+                throw Error('');
+            }
+
             const model = resolveLanguageModel({
                 settings: this.getSettings(),
                 providerId: input.providerId,
                 modelId: input.model,
-                defaultLanguageCode: configRepo.getActiveLanguage() ?? 'fr',
+                defaultContentLanguage: defaultLanguage,
                 localRuntime: this.localRuntime,
                 apiKey: input.apiKey,
                 baseUrl: input.baseUrl,
@@ -184,24 +210,29 @@ export class AiService {
             });
         }
 
-        const activeLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
+        const contentLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
+        const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
+
         const isLocal = providerId === 'local';
 
         const installedLanguages = await languagePackService.getInstalledLanguages();
         const { recentMessages, summary } = buildConversationContext(conversation.id, isLocal);
+
         const system = buildSystemPrompt({
-            activeLanguageCode,
+            contentLanguageCode,
+            uiLanguageCode,
             overrideLanguageCode: request.overrideLanguageCode,
             installedLanguages,
             languagePreference: settings.languagePreference,
             hasAgents: !isLocal,
         });
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
+
         const model = resolveLanguageModel({
             settings,
             providerId,
             modelId,
-            defaultLanguageCode: activeLanguageCode,
+            defaultContentLanguage: contentLanguageCode,
             localRuntime: this.localRuntime,
         });
 
@@ -209,7 +240,7 @@ export class AiService {
         const controller = new AbortController();
         this.controllers.set(conversation.id, controller);
 
-        const tools = buildAiTools(activeLanguageCode, {
+        const tools = buildAiTools(contentLanguageCode, {
             model,
             isLocal,
             abortSignal: controller.signal,
@@ -226,19 +257,20 @@ export class AiService {
             conversationId: conversation.id,
         });
 
-        void this.runGeneration(
+        void this.runGeneration({
             runner,
             browserWindow,
             conversation,
             assistantMessage,
             model,
             systemPrompt,
-            recentMessages,
+            history: recentMessages,
             tools,
-            controller.signal,
+            abortSignal: controller.signal,
             isLocal,
-            activeLanguageCode,
-        );
+            contentLanguageCode,
+            uiLanguageCode,
+        });
 
         return {
             conversation: aiRepo.getConversation(conversation.id)!,
@@ -279,19 +311,22 @@ export class AiService {
         }
     }
 
-    private async runGeneration(
-        runner: GenerationRunnerImpl,
-        browserWindow: BrowserWindow,
-        conversation: AiConversation,
-        assistantMessage: AiMessage,
-        model: ReturnType<typeof resolveLanguageModel>,
-        systemPrompt: string,
-        history: ReturnType<typeof buildConversationContext>['recentMessages'],
-        tools: ReturnType<typeof buildAiTools>,
-        abortSignal: AbortSignal,
-        isLocal: boolean,
-        activeLanguageCode: string,
-    ): Promise<void> {
+    private async runGeneration(opts: RunGenerationOptions): Promise<void> {
+        const {
+            runner,
+            browserWindow,
+            conversation,
+            assistantMessage,
+            model,
+            systemPrompt,
+            history,
+            tools,
+            abortSignal,
+            isLocal,
+            contentLanguageCode,
+            uiLanguageCode,
+        } = opts;
+
         try {
             await runner.run({
                 browserWindow,
@@ -307,7 +342,7 @@ export class AiService {
             const nextContext = buildConversationContext(conversation.id, isLocal);
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
-                languageCode: activeLanguageCode,
+                languageCode: contentLanguageCode,
             });
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,
@@ -319,7 +354,8 @@ export class AiService {
             if (shouldGenerateTitle(allMessages.length)) {
                 const title = await generateConversationTitle(
                     model,
-                    activeLanguageCode,
+                    uiLanguageCode,
+                    contentLanguageCode,
                     allMessages.map((m) => ({ role: m.role, content: m.content })),
                 );
                 if (title) {

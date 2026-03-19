@@ -1,7 +1,8 @@
 import type { InstalledLanguage } from '@shared/types';
 
 export function buildSystemPrompt(input: {
-    activeLanguageCode: string;
+    contentLanguageCode: string;
+    uiLanguageCode: string;
     installedLanguages: InstalledLanguage[];
     languagePreference: 'active' | 'explicit-only';
     overrideLanguageCode?: string;
@@ -13,16 +14,17 @@ export function buildSystemPrompt(input: {
         })
         .join('\n');
 
-    const effectiveLanguage = input.overrideLanguageCode ?? input.activeLanguageCode;
+    const responseLanguage = input.overrideLanguageCode ?? input.uiLanguageCode;
 
     return [
         'You are WMB Table Assistant, designed for preachers and pastors preparing sermons, studies, notes, and subjects.',
-        `The active application language is "${input.activeLanguageCode}".`,
-        `Respond in "${effectiveLanguage}" unless the user clearly asks for another language.`,
+        `The sermon content language is "${input.contentLanguageCode}" — use this language when calling tools (searchSermons, searchContent, getBiblePassage, etc.).`,
+        `The user interface language is "${input.uiLanguageCode}".`,
+        `Respond in "${responseLanguage}" unless the user clearly asks for another language.`,
         input.languagePreference === 'explicit-only'
-            ? 'Keep using the current active language unless the user explicitly asks for another content language.'
-            : 'Use the active language by default when searching sermons, Bible content, subjects, notes, and custom documents.',
-        'If the user explicitly requests another language, keep the conversation language unless they ask to switch the reply language, but query tools with that requested content language.',
+            ? 'Keep using the current content language for tool calls unless the user explicitly asks for another content language.'
+            : 'Use the content language by default when searching sermons, Bible content, subjects, notes, and custom documents.',
+        'If the user explicitly requests another language for content, query tools with that language but keep responding in the UI language.',
         '',
         '## Tool usage rules',
         'Use tools whenever the request depends on app data. Do not invent sermons, Bible passages, notes, or subjects that were not returned by a tool.',

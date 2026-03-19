@@ -8,9 +8,9 @@ import { LANGUAGE_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
 
-export default function LanguagesTab() {
+export default function LibraryTab() {
     const { t } = useTranslation();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langs, setLangs] = useState<InstalledLanguage[]>([]);
 
     useEffect(() => {
@@ -18,7 +18,7 @@ export default function LanguagesTab() {
     }, []);
 
     const openManager = useCallback(() => {
-        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));
     }, []);
 
     return (
@@ -35,11 +35,11 @@ export default function LanguagesTab() {
                         <GlobalOutlined /> {t('Langues installées')}
                     </Text>
                     <Button size="small" onClick={openManager}>
-                        {t('Changer la langue')}
+                        {t('Gérer la bibliothèque')}
                     </Button>
                 </div>
                 {langs.length === 0 ? (
-                    <Text type="secondary">{t('Aucune langue installée')}</Text>
+                    <Text type="secondary">{t('Bibliothèque vide')}</Text>
                 ) : (
                     langs.map((l) => (
                         <div
@@ -53,7 +53,7 @@ export default function LanguagesTab() {
                         >
                             <Text>
                                 {l.language}
-                                {l.code === activeLanguage && (
+                                {l.code === contentLanguage && (
                                     <Tag
                                         color="blue"
                                         icon={<CheckCircleOutlined />}

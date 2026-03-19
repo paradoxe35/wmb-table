@@ -22,7 +22,7 @@ Dans cet onglet, vous pouvez :
 - régler un modèle local si vous voulez travailler sans internet
 - entrer les informations nécessaires pour un service en ligne
 - tester la connexion d'un service
-- choisir comment l'assistant suit la langue active
+- choisir comment l'assistant suit la langue de votre bibliothèque
 
 ## Étape 1 : activer l'assistant
 
@@ -168,7 +168,7 @@ Vous pouvez aussi activer la carte graphique si votre ordinateur la supporte.
 
 ## Étape 5 : comportement de la langue
 
-L'assistant suit la langue active de l'application.
+L'assistant suit la langue de votre bibliothèque.
 
 Deux comportements sont proposés :
 
@@ -179,7 +179,7 @@ Pour la plupart des utilisateurs, gardez `Suivre la langue active`.
 
 Ainsi, l'assistant cherchera plus naturellement dans :
 
-- les prédications de votre langue active
+- les prédications de votre bibliothèque
 - les versions bibliques adaptées
 - vos sujets et vos notes dans le bon contexte
 

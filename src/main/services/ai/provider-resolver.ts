@@ -44,7 +44,7 @@ export function resolveLanguageModel(input: {
     settings: AiSettings;
     providerId: string;
     modelId: string;
-    defaultLanguageCode?: string;
+    defaultContentLanguage?: string;
     localRuntime?: LocalRuntimeService;
     apiKey?: string;
     baseUrl?: string;
@@ -52,12 +52,12 @@ export function resolveLanguageModel(input: {
     const { providerId, modelId, settings } = input;
 
     if (providerId === 'local') {
-        if (!input.localRuntime || !input.defaultLanguageCode) {
+        if (!input.localRuntime || !input.defaultContentLanguage) {
             throw new Error('Local provider requires a runtime service and default language.');
         }
         return createLocalProvider({
             runtime: input.localRuntime,
-            defaultLanguageCode: input.defaultLanguageCode,
+            defaultContentLanguage: input.defaultContentLanguage,
         }).languageModel(modelId);
     }
 

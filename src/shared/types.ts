@@ -2,6 +2,8 @@
 // Changes: removed NeDB TimeStampData base, _id → id, inlined updater types,
 // removed global augmentations and renderer-only types.
 
+import { UiLanguagePreference } from './constants';
+
 // ---------------------------------------------------------------------------
 // Base entity fields (replaces NeDB TimeStampData)
 // ---------------------------------------------------------------------------
@@ -541,9 +543,10 @@ export interface AppSettingsStatus {
     app_id: string;
     initialized: boolean;
     lastCheckBackupStatus: Date;
-    activeLanguage: string | null;
+    contentLanguage: string | null;
     rememberReadingPosition: boolean;
     maxTabs: number;
+    uiLanguage: UiLanguagePreference | null;
 }
 
 export interface SidebarStatus extends Readonly<BaseEntity> {

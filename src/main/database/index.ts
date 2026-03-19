@@ -65,8 +65,8 @@ export function initializeDatabase(): void {
     initializeReferenceDb();
 
     // Bible database (read-only, bundled per language)
-    const activeLanguage = configRepo.getActiveLanguage();
-    if (activeLanguage) switchBibleLanguage(activeLanguage);
+    const contentLanguage = configRepo.getContentLanguage();
+    if (contentLanguage) switchBibleLanguage(contentLanguage);
 }
 
 /**

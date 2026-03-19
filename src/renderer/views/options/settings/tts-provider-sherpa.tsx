@@ -61,8 +61,8 @@ interface SherpaConfigProps extends ProviderConfigProps {
 export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigProps) {
     const { t } = useTranslation();
     const cfg = settings.providers.sherpa;
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
-    const langCode = activeLanguage?.split('-')[0].toLowerCase() ?? '';
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const langCode = contentLanguage?.split('-')[0].toLowerCase() ?? '';
 
     const [models, setModels] = useState<TtsModelInfo[]>([]);
     // Per-model download progress: modelName → percentage
@@ -166,7 +166,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     const installed = useMemo(() => models.filter((m) => m.installed), [models]);
     const allVoices = info?.voices ?? [];
 
-    // Best available model for active language: prefer quality (≥30MB), fallback to largest
+    // Best available model for content language: prefer quality (≥30MB), fallback to largest
     // Skip if the language already has an installed model
     const suggestedModel = useMemo(() => {
         const hasInstalled = models.some((m) => matchesLang(m.langCode, langCode) && m.installed);
@@ -230,7 +230,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">
-            {/* 1. Suggested download for active language */}
+            {/* 1. Suggested download for content language */}
             {suggestedModel && (
                 <Field
                     label={t('Voix disponible — {{lang}}', { lang: suggestedModel.langLabel })}
@@ -282,7 +282,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                         }}
                         options={groupVoicesByLanguage(
                             allVoices,
-                            activeLanguage ?? undefined,
+                            contentLanguage ?? undefined,
                             installed,
                         )}
                     />

@@ -18,7 +18,7 @@ import { AsyncStreamQueue } from './stream-queue';
 
 type LocalLanguageModelConfig = {
     runtime: LocalRuntimeService;
-    defaultLanguageCode: string;
+    defaultContentLanguage: string;
 };
 
 type CollectedGeneration = {
@@ -89,7 +89,7 @@ export class LocalLanguageModel implements LanguageModelV3 {
         let textStarted = false;
         const promptInput = convertPromptToLocalInput(options.prompt);
         const executors = filterToolExecutors(
-            buildToolExecutors(this.config.defaultLanguageCode),
+            buildToolExecutors(this.config.defaultContentLanguage),
             options.tools?.filter((tool): tool is LanguageModelV3FunctionTool => {
                 return tool.type === 'function';
             }) ?? [],
@@ -167,7 +167,7 @@ export class LocalLanguageModel implements LanguageModelV3 {
         };
 
         const executors = filterToolExecutors(
-            buildToolExecutors(this.config.defaultLanguageCode),
+            buildToolExecutors(this.config.defaultContentLanguage),
             options.tools?.filter((tool): tool is LanguageModelV3FunctionTool => {
                 return tool.type === 'function';
             }) ?? [],

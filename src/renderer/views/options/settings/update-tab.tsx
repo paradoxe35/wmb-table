@@ -73,10 +73,10 @@ export default function UpdateTab() {
         window.api.app.quitAndInstallUpdate();
     }, []);
 
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const openDownloadPage = useCallback(() => {
-        window.api.app.openExternal(buildDownloadPageLink(activeLanguage));
-    }, [activeLanguage]);
+        window.api.app.openExternal(buildDownloadPageLink(contentLanguage));
+    }, [contentLanguage]);
 
     const canAuto = info?.canAutoUpdate !== false;
 

@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "7292f865-2152-460c-b0ff-b60a4a64c262",
+    "id": "c5943179-15d7-4133-a1ee-f470d1fc1dd7",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -478,8 +478,8 @@
                     "autoincrement": false,
                     "default": "(datetime('now'))"
                 },
-                "active_language": {
-                    "name": "active_language",
+                "content_language": {
+                    "name": "content_language",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
@@ -500,6 +500,13 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": 12
+                },
+                "ui_language": {
+                    "name": "ui_language",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
                 }
             },
             "indexes": {},

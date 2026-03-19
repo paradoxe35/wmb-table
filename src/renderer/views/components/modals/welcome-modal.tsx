@@ -48,15 +48,15 @@ function FeatureItem({ icon, title, description }: FeatureItemProps) {
 export default function WelcomeModal() {
     const { t } = useTranslation();
     const [visible, setVisible] = useState(false);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     useEffect(() => {
-        if (!activeLanguage) return;
+        if (!contentLanguage) return;
 
         window.api.app.isInitialized().then((initialized) => {
             if (!initialized) setVisible(true);
         });
-    }, [activeLanguage]);
+    }, [contentLanguage]);
 
     const handleClose = useCallback(() => {
         setVisible(false);

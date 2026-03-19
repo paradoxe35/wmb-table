@@ -10,7 +10,7 @@ You can browse the library:
 
 - by year
 - by alphabet
-- by the available list in the active language
+- by the available list in your language
 
 Click a title to open it in the center.
 

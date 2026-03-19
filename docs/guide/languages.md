@@ -1,6 +1,13 @@
 # Langues
 
-<p class="lead">Les langues dans Wmb Table ne servent pas seulement à l’affichage. Elles servent aussi à charger les prédications et la recherche correspondantes.</p>
+<p class="lead">Wmb Table fait la différence entre deux types de langues : la langue de votre bibliothèque et la langue de l’interface.</p>
+
+## Deux langues, deux rôles
+
+- **La langue de votre bibliothèque** détermine quelles prédications sont affichées, quelle recherche est utilisée et quelles versions bibliques sont proposées.
+- **La langue de l’interface** change les menus, les boutons et les textes de l’application. Vous pouvez choisir entre le français, l’anglais et l’espagnol, ou laisser sur **Automatique** pour qu’elle suive la langue de votre bibliothèque quand c’est possible.
+
+Ces deux réglages sont indépendants. Par exemple, vous pouvez lire des prédications en swahili tout en gardant l’interface en français.
 
 ## Ce qu’il faut retenir
 
@@ -9,8 +16,6 @@ Chaque langue installée peut apporter :
 - une bibliothèque de prédications
 - une recherche adaptée à cette langue
 - parfois des contenus et traductions différents
-
-Le français est la langue par défaut de l’application, mais vous pouvez aussi utiliser l’anglais et l’espagnol si ces langues sont installées.
 
 Wmb Table prend en charge un très grand nombre de langues. La base fournie avec l’application contient 81 langues disponibles. C’est pour cela que l’application utilise une fenêtre de gestion des langues : elle vous aide à choisir seulement les langues dont vous avez réellement besoin, au lieu de tout charger d’un seul coup.
 
@@ -25,7 +30,7 @@ Vous pouvez ouvrir cette fenêtre :
 <ScreenshotPlaceholder
   file="fr-languages-manager.png"
   label="Fenêtre de gestion des langues"
-  hint="Montrer les langues installées, les langues disponibles, le téléchargement et la langue active."
+  hint="Montrer les langues installées, les langues disponibles, le téléchargement et la langue de la bibliothèque."
 />
 
 ## Pourquoi cette fenêtre est importante
@@ -45,7 +50,7 @@ Comme il existe beaucoup de langues disponibles, cette fenêtre sert à :
 4. Attendez la fin du téléchargement.
 5. Cliquez sur la langue pour l’activer.
 
-## Changer de langue active
+## Changer la langue de votre bibliothèque
 
 Quand vous activez une autre langue :
 
@@ -70,7 +75,7 @@ Si vous n’avez plus besoin d’une langue :
 1. ouvrez la gestion des langues
 2. supprimez la langue voulue
 
-Si c’était la langue active, choisissez-en une autre.
+Si c’était votre langue en cours, choisissez-en une autre.
 
 ## Conseil important
 

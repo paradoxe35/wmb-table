@@ -9,15 +9,12 @@ function envOrDefault(value: string | undefined, fallback: string): string {
     return trimmed ? trimmed : fallback;
 }
 
-export const GITHUB_OWNER = envOrDefault(
-    import.meta.env.MAIN_VITE_GITHUB_OWNER,
-    DEFAULT_GITHUB_OWNER,
-);
+export const GITHUB_OWNER = envOrDefault(import.meta.env.VITE_GITHUB_OWNER, DEFAULT_GITHUB_OWNER);
 
-export const GITHUB_REPO = envOrDefault(import.meta.env.MAIN_VITE_GITHUB_REPO, DEFAULT_GITHUB_REPO);
+export const GITHUB_REPO = envOrDefault(import.meta.env.VITE_GITHUB_REPO, DEFAULT_GITHUB_REPO);
 
 export const GITHUB_RELEASE_TAG = envOrDefault(
-    import.meta.env.MAIN_VITE_GITHUB_RELEASE_TAG,
+    import.meta.env.VITE_GITHUB_RELEASE_TAG,
     DEFAULT_GITHUB_RELEASE_TAG,
 );
 

@@ -31,7 +31,7 @@ export function registerBibleHandlers(): void {
     });
 
     registerHandler(BibleChannels.getVersions, async () => {
-        const langCode = configRepo.getActiveLanguage();
+        const langCode = configRepo.getContentLanguage();
         if (!langCode) return [];
         return bibleService.getBibleVersionsForLanguage(langCode).map(toBibleVersionInfo);
     });

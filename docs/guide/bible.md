@@ -29,7 +29,7 @@ Le chapitre s’ouvre ensuite dans la lecture.
 
 Wmb Table peut afficher plusieurs versions bibliques.
 
-Selon votre langue active, vous pouvez :
+Selon la langue de votre bibliothèque, vous pouvez :
 
 - utiliser une version déjà installée
 - voir d’autres versions disponibles

@@ -53,7 +53,7 @@ export default function UpdateNotifier() {
                             type="primary"
                             size="small"
                             onClick={() => {
-                                const lang = useAppStore.getState().activeLanguage;
+                                const lang = useAppStore.getState().contentLanguage;
                                 window.api.app.openExternal(buildDownloadPageLink(lang));
                                 notification.destroy(key);
                             }}

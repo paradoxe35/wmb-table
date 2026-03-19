@@ -79,6 +79,7 @@ import type {
     AiReasoningEvent,
     AiConversationUpdatedEvent,
 } from './ai.types';
+import type { UiLanguagePreference } from './constants';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -190,8 +191,8 @@ export const SyncChannels = {
 export const AppChannels = {
     isInitialized: 'app:isInitialized',
     initialize: 'app:initialize',
-    getActiveLanguage: 'app:getActiveLanguage',
-    setActiveLanguage: 'app:setActiveLanguage',
+    getContentLanguage: 'app:getContentLanguage',
+    setContentLanguage: 'app:setContentLanguage',
     getRememberReadingPosition: 'app:getRememberReadingPosition',
     setRememberReadingPosition: 'app:setRememberReadingPosition',
     getMaxTabs: 'app:getMaxTabs',
@@ -211,6 +212,7 @@ export const AppChannels = {
     getHistory: 'app:getHistory',
     addHistoryEntry: 'app:addHistoryEntry',
     getHistoryItems: 'app:getHistoryItems',
+    getUiLanguage: 'app:getUiLanguage',
     setUiLanguage: 'app:setUiLanguage',
 } as const;
 
@@ -274,7 +276,7 @@ export const PushChannels = {
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
     syncFailure: 'push:syncFailure',
-    openLanguageManager: 'push:openLanguageManager',
+    openLibrary: 'push:openLibrary',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
     bibleDownloadProgress: 'push:bibleDownloadProgress',
@@ -459,8 +461,8 @@ export interface InvokeChannelMap {
     // App
     [AppChannels.isInitialized]: { args: []; return: boolean };
     [AppChannels.initialize]: { args: []; return: void };
-    [AppChannels.getActiveLanguage]: { args: []; return: string | null };
-    [AppChannels.setActiveLanguage]: { args: [string]; return: void };
+    [AppChannels.getContentLanguage]: { args: []; return: string | null };
+    [AppChannels.setContentLanguage]: { args: [string]; return: void };
     [AppChannels.getRememberReadingPosition]: { args: []; return: boolean };
     [AppChannels.setRememberReadingPosition]: { args: [boolean]; return: void };
     [AppChannels.getMaxTabs]: { args: []; return: number };
@@ -486,7 +488,8 @@ export interface InvokeChannelMap {
         args: [string];
         return: HistoryDataItem[];
     };
-    [AppChannels.setUiLanguage]: { args: [string]; return: void };
+    [AppChannels.getUiLanguage]: { args: []; return: UiLanguagePreference | null };
+    [AppChannels.setUiLanguage]: { args: [UiLanguagePreference]; return: void };
 
     // TTS
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
@@ -565,7 +568,7 @@ export interface PushEventMap {
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: string[];
     [PushChannels.syncFailure]: SyncFailureEvent;
-    [PushChannels.openLanguageManager]: void;
+    [PushChannels.openLibrary]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: LanguageInstalledEvent;
     [PushChannels.bibleDownloadProgress]: BibleDownloadProgress;

@@ -109,13 +109,15 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
                 return summarizeList(extractNames(output, 'code'), 'Languages');
             break;
 
-        case 'searchSermons':
-            if (Array.isArray(output))
+        case 'searchSermons': {
+            const results = output?.results ?? output;
+            if (Array.isArray(results))
                 return summarizeList(
-                    extractNames(output, 'title', 'sermonId'),
-                    `${output.length} sermon result(s)`,
+                    extractNames(results, 'title', 'sermonId'),
+                    `${results.length} sermon result(s)`,
                 );
             break;
+        }
 
         case 'getSermonContent':
             if (output && typeof output === 'object') {
@@ -127,13 +129,15 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             }
             break;
 
-        case 'searchContent':
-            if (Array.isArray(output))
+        case 'searchContent': {
+            const hits = output?.results ?? output;
+            if (Array.isArray(hits))
                 return summarizeList(
-                    extractNames(output, 'title', 'sermonId'),
-                    `${output.length} content hit(s)`,
+                    extractNames(hits, 'title', 'sermonId'),
+                    `${hits.length} content hit(s)`,
                 );
             break;
+        }
 
         case 'getCustomDocuments':
             if (Array.isArray(output))
@@ -197,10 +201,22 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             }
             break;
 
+        case 'getSubjectById':
+            if (output && typeof output === 'object') {
+                const docs = Array.isArray(output.documents) ? output.documents.length : 0;
+                return `Subject "${String(output.name ?? output.id ?? 'subject')}": ${docs} reference(s)`;
+            }
+            break;
+
         case 'addSermonReferenceToSubject':
         case 'addBibleReferenceToSubject':
             if (output && typeof output === 'object')
                 return `Subject updated: ${String(output.documentTitle ?? output.subjectId ?? 'reference added')}`;
+            break;
+
+        case 'removeSubjectReference':
+            if (output && typeof output === 'object' && output.success)
+                return `Reference removed: ${String(output.deletedId ?? 'done')}`;
             break;
 
         case 'addSermonReferenceToNote':

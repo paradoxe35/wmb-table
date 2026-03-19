@@ -11,6 +11,7 @@ import { getUpdateStatus, startDownload, quitAndInstall, checkForUpdates } from 
 import i18n from '@main/lib/i18n';
 import MenuBuilder from '@main/lib/menu';
 import { getMainWindow } from '@main/lib/window';
+import { resolveUiLanguage } from '@shared/constants';
 
 const langToLocale: Record<string, string> = {
     fr: 'fr-FR',
@@ -27,12 +28,12 @@ export function registerAppHandlers(): void {
         configRepo.markInitialized();
     });
 
-    registerHandler(AppChannels.getActiveLanguage, async () => {
-        return configRepo.getActiveLanguage();
+    registerHandler(AppChannels.getContentLanguage, async () => {
+        return configRepo.getContentLanguage();
     });
 
-    registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
-        configRepo.setActiveLanguage(langCode);
+    registerHandler(AppChannels.setContentLanguage, async (_event, langCode) => {
+        configRepo.setContentLanguage(langCode);
         switchBibleLanguage(langCode);
     });
 
@@ -142,9 +143,21 @@ export function registerAppHandlers(): void {
         return historyRepo.getHistoryItems(historyId);
     });
 
-    registerHandler(AppChannels.setUiLanguage, async (_event, langCode) => {
-        await i18n.changeLanguage(langCode);
+    registerHandler(AppChannels.getUiLanguage, async () => {
+        return configRepo.getUiLanguage();
+    });
+
+    registerHandler(AppChannels.setUiLanguage, async (_event, pref) => {
+        configRepo.setUiLanguage(pref);
+
+        const contentLang = configRepo.getContentLanguage();
+        const resolved = resolveUiLanguage(pref, contentLang);
+
+        await i18n.changeLanguage(resolved);
+
         const win = getMainWindow();
-        if (win) new MenuBuilder(win).buildMenu();
+        if (win) {
+            new MenuBuilder(win).buildMenu();
+        }
     });
 }

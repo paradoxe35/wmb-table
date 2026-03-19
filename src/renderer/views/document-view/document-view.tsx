@@ -17,7 +17,7 @@ export default function DocumentView() {
     const tabType = useSermonStore(selectActiveTabType);
     const activeTab = useSermonStore(selectActiveTab);
     const activeTabKey = useSermonStore(selectActiveTabKey);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
     const searchBarOpen = useSearchStore((s) =>
@@ -37,12 +37,12 @@ export default function DocumentView() {
     // Record history when the active document changes (works for all document types)
     const prevTabKeyRef = useRef<string | null>(null);
     useEffect(() => {
-        if (!activeLanguage || !activeTab || !activeTabKey) return;
+        if (!contentLanguage || !activeTab || !activeTabKey) return;
         if (activeTabKey === prevTabKeyRef.current) return;
         prevTabKeyRef.current = activeTabKey;
         window.api.app
             .addHistoryEntry(
-                activeLanguage,
+                contentLanguage,
                 activeTab.title,
                 activeTab.sermonId,
                 activeTab.type ?? 'sermon',
@@ -50,7 +50,7 @@ export default function DocumentView() {
             .then(() => {
                 window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
             });
-    }, [activeTabKey, activeTab, activeLanguage]);
+    }, [activeTabKey, activeTab, contentLanguage]);
 
     const readingMode = useAppStore((s) => s.readingMode);
     const setReadingMode = useAppStore((s) => s.setReadingMode);
