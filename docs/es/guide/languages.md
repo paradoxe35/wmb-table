@@ -5,9 +5,9 @@
 ## Dos idiomas, dos funciones
 
 - **Idioma de su biblioteca**: determina qué predicaciones se muestran, qué búsqueda se utiliza y qué versiones bíblicas están disponibles.
-- **Idioma de la interfaz**: cambia los menús, botones y textos de la aplicación. Puede elegir entre francés, inglés y español.
+- **Idioma de la interfaz**: cambia los menús, botones y textos de la aplicación. Puede elegir entre francés, inglés y español, o dejarlo en **Automático** para que siga el idioma de su biblioteca cuando sea posible.
 
-Estos dos ajustes son independientes. Por ejemplo, puede leer predicaciones en francés y mantener la interfaz en español.
+Estos dos ajustes son independientes. Por ejemplo, puede leer predicaciones en suajili y mantener la interfaz en español.
 
 ## Idea importante
 

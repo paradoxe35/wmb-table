@@ -5,9 +5,9 @@
 ## Deux langues, deux rôles
 
 - **La langue de votre bibliothèque** détermine quelles prédications sont affichées, quelle recherche est utilisée et quelles versions bibliques sont proposées.
-- **La langue de l’interface** change les menus, les boutons et les textes de l’application. Vous pouvez choisir entre le français, l’anglais et l’espagnol.
+- **La langue de l’interface** change les menus, les boutons et les textes de l’application. Vous pouvez choisir entre le français, l’anglais et l’espagnol, ou laisser sur **Automatique** pour qu’elle suive la langue de votre bibliothèque quand c’est possible.
 
-Ces deux réglages sont indépendants. Par exemple, vous pouvez lire des prédications en anglais tout en gardant l’interface en français.
+Ces deux réglages sont indépendants. Par exemple, vous pouvez lire des prédications en swahili tout en gardant l’interface en français.
 
 ## Ce qu’il faut retenir
 

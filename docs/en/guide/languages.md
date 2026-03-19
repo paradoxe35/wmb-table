@@ -5,9 +5,9 @@
 ## Two languages, two roles
 
 - **Library language** determines which sermons are shown, which search is used, and which Bible versions are available.
-- **Interface language** changes the menus, buttons, and labels of the application. You can choose between French, English, and Spanish.
+- **Interface language** changes the menus, buttons, and labels of the application. You can choose between French, English, and Spanish, or leave it on **Automatic** so it follows your library language when possible.
 
-These two settings are independent. For example, you can read sermons in French while keeping the interface in English.
+These two settings are independent. For example, you can read sermons in Swahili while keeping the interface in English.
 
 ## Important idea
 
