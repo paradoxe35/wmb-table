@@ -14,7 +14,7 @@ import {
 import { useAppStore } from '@renderer/stores';
 import { UPDATE_TAB_EVENT } from '@renderer/components/update-notifier';
 import GeneralTab from './general-tab';
-import LanguagesTab from './languages-tab';
+import LibraryTab from './library-tab';
 import BackupTab from './backup-tab';
 import UpdateTab from './update-tab';
 import TtsTab from './tts-tab';
@@ -100,7 +100,7 @@ export default function Settings() {
                         <GlobalOutlined /> {t('Bibliothèque')}
                     </span>
                 ),
-                children: <LanguagesTab />,
+                children: <LibraryTab />,
             },
             {
                 key: TAB_KEYS.tts,

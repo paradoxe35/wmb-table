@@ -276,7 +276,7 @@ export const PushChannels = {
     downloadAudioProgress: 'push:downloadAudioProgress',
     newSynchronizedDatas: 'push:newSynchronizedDatas',
     syncFailure: 'push:syncFailure',
-    openLanguageManager: 'push:openLanguageManager',
+    openLibrary: 'push:openLibrary',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
     bibleDownloadProgress: 'push:bibleDownloadProgress',
@@ -568,7 +568,7 @@ export interface PushEventMap {
     [PushChannels.downloadAudioProgress]: AudioDownloadProgress;
     [PushChannels.newSynchronizedDatas]: string[];
     [PushChannels.syncFailure]: SyncFailureEvent;
-    [PushChannels.openLanguageManager]: void;
+    [PushChannels.openLibrary]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: LanguageInstalledEvent;
     [PushChannels.bibleDownloadProgress]: BibleDownloadProgress;

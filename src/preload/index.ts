@@ -341,9 +341,8 @@ const api = {
         ) => onPush(PushChannels.newSynchronizedDatas, cb),
         syncFailure: (cb: (p: PushEventMap[typeof PushChannels.syncFailure]) => void) =>
             onPush(PushChannels.syncFailure, cb),
-        openLanguageManager: (
-            cb: (p: PushEventMap[typeof PushChannels.openLanguageManager]) => void,
-        ) => onPush(PushChannels.openLanguageManager, cb),
+        openLibrary: (cb: (p: PushEventMap[typeof PushChannels.openLibrary]) => void) =>
+            onPush(PushChannels.openLibrary, cb),
         languageDownloadProgress: (
             cb: (p: PushEventMap[typeof PushChannels.languageDownloadProgress]) => void,
         ) => onPush(PushChannels.languageDownloadProgress, cb),

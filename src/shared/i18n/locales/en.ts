@@ -168,9 +168,11 @@ const en: Record<string, string> = {
     'À jour': 'Up to date',
     Ouvrir: 'Open',
 
-    // ── Languages tab ──
+    // ── Library tab ──
     'Changer la langue': 'Change language',
+    'Gérer la bibliothèque': 'Manage library',
     'Aucune langue installée': 'No languages installed',
+    'Bibliothèque vide': 'Empty library',
 
     // ── TTS tab ──
     'Fournisseur actif': 'Active provider',

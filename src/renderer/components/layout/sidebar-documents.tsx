@@ -239,6 +239,7 @@ const DocumentByYears = () => {
 };
 
 const ContentLanguageBar = () => {
+    const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langName, setLangName] = useState<string>('');
 
@@ -254,7 +255,7 @@ const ContentLanguageBar = () => {
     }, [contentLanguage]);
 
     const openManager = () => {
-        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLanguageManager));
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));
     };
 
     if (!langName) return null;
@@ -270,7 +271,7 @@ const ContentLanguageBar = () => {
             }}
         >
             <Typography.Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
-                {langName}
+                {t('Bibliothèque')}: {langName}
             </Typography.Text>
             <Button
                 type="text"

@@ -8,7 +8,7 @@ import { OtherTraductionsModal } from './views/components/modals/other-traductio
 import { SubjectSelectModal } from './views/components/modals/subject-select-modal';
 import { NoteReferencesModal } from './views/components/modals/note-references-modal';
 import DocumentAudioPlayer from './views/components/modals/document-audio-player';
-import LanguageManagerModal from './views/components/modals/language-manager-modal';
+import LibraryModal from './views/components/modals/library-modal';
 import HighlightModal from './views/components/modals/highlight-modal';
 import WelcomeModal from './views/components/modals/welcome-modal';
 import SyncListener from './components/sync-listener';
@@ -138,7 +138,7 @@ export function ContentApp() {
             <SubjectSelectModal />
             <NoteReferencesModal />
             <DocumentAudioPlayer />
-            <LanguageManagerModal />
+            <LibraryModal />
             <HighlightModal />
             <WelcomeModal />
             <SyncListener />

@@ -36,7 +36,7 @@ export const HISTORY_EVENT = {
 } as const;
 
 export const LANGUAGE_EVENT = {
-    openLanguageManager: 'open-language-manager',
+    openLibrary: 'open-library',
 } as const;
 
 export const TTS_EVENT = {

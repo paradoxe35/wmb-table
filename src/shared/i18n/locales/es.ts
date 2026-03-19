@@ -169,9 +169,11 @@ const es: Record<string, string> = {
     'À jour': 'Actualizado',
     Ouvrir: 'Abrir',
 
-    // ── Languages tab ──
+    // ── Library tab ──
     'Changer la langue': 'Cambiar idioma',
+    'Gérer la bibliothèque': 'Gestionar biblioteca',
     'Aucune langue installée': 'Ningún idioma instalado',
+    'Bibliothèque vide': 'Biblioteca vacía',
 
     // ── TTS tab ──
     'Fournisseur actif': 'Proveedor activo',

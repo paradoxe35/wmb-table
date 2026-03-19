@@ -154,10 +154,10 @@ export default class MenuBuilder {
                         },
                     },
                     {
-                        label: t('Langues'),
+                        label: t('Bibliothèque'),
                         accelerator: this.isD('Ctrl+L'),
                         click: () => {
-                            sendToRenderer(this.mainWindow, PushChannels.openLanguageManager);
+                            sendToRenderer(this.mainWindow, PushChannels.openLibrary);
                         },
                     },
                     { type: 'separator' },

@@ -117,7 +117,7 @@ function LanguageRow({
     );
 }
 
-export default function LanguageManagerModal() {
+export default function LibraryModal() {
     const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
     const [languages, setLanguages] = useState<LanguageItem[]>([]);
@@ -188,10 +188,10 @@ export default function LanguageManagerModal() {
     // Listen for open events (DOM event + IPC push from menu)
     useEffect(() => {
         const show = () => setVisible(true);
-        window.addEventListener(LANGUAGE_EVENT.openLanguageManager, show);
-        const unsubPush = window.api.on.openLanguageManager(show);
+        window.addEventListener(LANGUAGE_EVENT.openLibrary, show);
+        const unsubPush = window.api.on.openLibrary(show);
         return () => {
-            window.removeEventListener(LANGUAGE_EVENT.openLanguageManager, show);
+            window.removeEventListener(LANGUAGE_EVENT.openLibrary, show);
             unsubPush();
         };
     }, [setVisible]);
@@ -260,7 +260,7 @@ export default function LanguageManagerModal() {
             });
             hide();
         } catch (err) {
-            console.error('[LanguageManager] Failed to select language:', err);
+            console.error('[LibraryModal] Failed to select language:', err);
             message.error(t('Échec de la sélection de la langue'));
         }
     };
@@ -290,7 +290,7 @@ export default function LanguageManagerModal() {
 
     return (
         <Modal
-            title={t('Langues')}
+            title={t('Bibliothèque')}
             open={visible}
             onCancel={canClose ? hide : undefined}
             closable={canClose}
