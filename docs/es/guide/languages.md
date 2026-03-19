@@ -1,6 +1,13 @@
 # Idiomas
 
-<p class="lead">Los idiomas en Wmb Table no sirven solo para la pantalla. También controlan las predicaciones y la búsqueda con las que usted trabaja.</p>
+<p class="lead">Wmb Table utiliza dos ajustes de idioma distintos: el idioma de su biblioteca y el idioma de la interfaz.</p>
+
+## Dos idiomas, dos funciones
+
+- **Idioma de su biblioteca**: determina qué predicaciones se muestran, qué búsqueda se utiliza y qué versiones bíblicas están disponibles.
+- **Idioma de la interfaz**: cambia los menús, botones y textos de la aplicación. Puede elegir entre francés, inglés y español.
+
+Estos dos ajustes son independientes. Por ejemplo, puede leer predicaciones en francés y mantener la interfaz en español.
 
 ## Idea importante
 
@@ -10,14 +17,12 @@ Cada idioma instalado puede traer:
 - búsqueda adaptada a ese idioma
 - diferentes traducciones o contenido disponible
 
-El francés es el idioma predeterminado de la aplicación, pero el inglés y el español también se pueden usar cuando estén instalados.
-
 Wmb Table admite una gran cantidad de idiomas. La base de referencia incluida en la aplicación contiene 81 idiomas disponibles. Por eso la aplicación usa una ventana de gestión de idiomas: ayuda al usuario a instalar solo los idiomas que realmente necesita, en lugar de cargar todo de una vez.
 
 <ScreenshotPlaceholder
   file="es-languages-manager.png"
   label="Ventana de gestión de idiomas"
-  hint="Mostrar idiomas instalados, idiomas disponibles, descargas y la etiqueta del idioma activo."
+  hint="Mostrar idiomas instalados, idiomas disponibles, descargas y la etiqueta del idioma de la biblioteca."
 />
 
 ## Por qué esta ventana es importante

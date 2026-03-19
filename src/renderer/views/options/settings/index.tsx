@@ -97,7 +97,7 @@ export default function Settings() {
                 key: TAB_KEYS.languages,
                 label: (
                     <span>
-                        <GlobalOutlined /> {t('Prédications')}
+                        <GlobalOutlined /> {t('Bibliothèque')}
                     </span>
                 ),
                 children: <LanguagesTab />,

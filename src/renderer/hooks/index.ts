@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
 import { useThemeStore } from '@renderer/stores/theme.store';
-import { resolveUiLanguage } from '@shared/constants';
+import { resolveUiLanguage, type UiLanguagePreference } from '@shared/constants';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     DocumentType,
@@ -137,10 +137,15 @@ export function useInitApp() {
                 setRememberReadingPosition(rememberReadingPosition);
                 useAppStore.getState().setMaxTabs(maxTabs);
 
-                // Resolve UI language: explicit DB preference > content language > default
+                // Sync UI language preference and resolve effective language
+                const themeState = useThemeStore.getState();
+                const pref = dbUiLanguage ?? 'auto';
+                if (pref !== themeState.uiLanguagePreference) {
+                    themeState.setUiLanguagePreference(pref as UiLanguagePreference);
+                }
                 const resolved = resolveUiLanguage(dbUiLanguage, langCode);
-                if (resolved !== useThemeStore.getState().uiLanguage) {
-                    useThemeStore.getState().setUiLanguage(resolved);
+                if (resolved !== themeState.uiLanguage) {
+                    themeState.setUiLanguage(resolved);
                 }
 
                 // Validate content language is still installed

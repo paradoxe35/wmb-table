@@ -8,6 +8,7 @@ import {
     MIN_MAX_TABS,
     MAX_MAX_TABS,
     DEFAULT_UI_LANGUAGE,
+    type UiLanguagePreference,
 } from '@shared/constants';
 
 export function getConfig(): AppSettingsStatus | null {
@@ -94,15 +95,15 @@ export function setMaxTabs(value: number): void {
         .run();
 }
 
-export function getUiLanguage(): string {
-    return getConfig()?.uiLanguage ?? DEFAULT_UI_LANGUAGE;
+export function getUiLanguage(): string | null {
+    return getConfig()?.uiLanguage ?? null;
 }
 
-export function setUiLanguage(value: string): void {
+export function setUiLanguage(value: UiLanguagePreference): void {
     const config = ensureConfig();
     getDb()
         .update(configurations)
-        .set({ uiLanguage: value })
+        .set({ uiLanguage: value === 'auto' ? null : value })
         .where(eq(configurations.id, config.id))
         .run();
 }

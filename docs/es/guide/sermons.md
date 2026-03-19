@@ -10,7 +10,7 @@ Puede recorrer la biblioteca:
 
 - por año
 - por orden alfabético
-- por la lista disponible en el idioma activo
+- por la lista disponible en su idioma
 
 <ScreenshotPlaceholder
   file="es-sermons-sidebar-list.png"

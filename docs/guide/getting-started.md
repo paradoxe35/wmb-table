@@ -25,7 +25,7 @@ Quand vous ouvrez Wmb Table pour la première fois, l’application vous demande
 <ScreenshotPlaceholder
   file="fr-first-start-language-manager.png"
   label="Fenêtre de choix des langues au premier démarrage"
-  hint="Prendre l’écran avec la liste des langues, le bouton de téléchargement et l’étiquette de langue active."
+  hint="Prendre l’écran avec la liste des langues, le bouton de téléchargement et l’étiquette de la langue choisie."
 />
 
 ## Ce que vous voyez ensuite

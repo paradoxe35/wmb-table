@@ -19,6 +19,7 @@ import {
     type PushChannel,
     type PushEventMap,
 } from '@shared/ipc.types';
+import type { UiLanguagePreference } from '@shared/constants';
 import type {
     BibleBook,
     BookRequest,
@@ -239,7 +240,7 @@ const api = {
         ) => invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId, documentType),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         getUiLanguage: () => invoke(AppChannels.getUiLanguage),
-        setUiLanguage: (langCode: string) => invoke(AppChannels.setUiLanguage, langCode),
+        setUiLanguage: (pref: UiLanguagePreference) => invoke(AppChannels.setUiLanguage, pref),
         openExternal: (url: string) => invoke(AppChannels.openExternal, url),
     },
 

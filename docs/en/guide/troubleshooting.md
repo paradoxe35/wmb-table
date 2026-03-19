@@ -13,7 +13,7 @@ Check:
 
 Try this:
 
-1. check the content language
+1. check your library language
 2. type at least three characters
 3. try a simpler word
 4. try another form of the same word

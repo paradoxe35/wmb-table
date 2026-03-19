@@ -22,7 +22,7 @@ In this tab, you can:
 - set up a local model if you want to work without internet
 - enter the information needed for an online service
 - test the connection of a service
-- choose how the assistant follows the content language
+- choose how the assistant follows your library language
 
 ## Step 1: enable the assistant
 
@@ -163,7 +163,7 @@ You can also turn on the graphics card option if your computer supports it.
 
 ## Step 5: language behavior
 
-The assistant follows the content language of the app.
+The assistant follows your library language.
 
 Two choices are available:
 

@@ -25,7 +25,7 @@ Puede abrir la Biblia:
 
 Wmb Table puede mostrar más de una versión bíblica.
 
-Según el idioma activo, usted puede:
+Según el idioma de su biblioteca, usted puede:
 
 - usar una versión ya instalada
 - ver otras versiones disponibles

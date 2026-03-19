@@ -20,7 +20,7 @@
 - configurar un modelo local si quiere trabajar sin internet
 - introducir los datos necesarios para un servicio en línea
 - probar la conexión
-- elegir cómo el asistente sigue el idioma activo
+- elegir cómo el asistente sigue el idioma de su biblioteca
 
 ## Paso 1: activar el asistente
 
@@ -138,7 +138,7 @@ También puede activar la tarjeta gráfica si su ordenador la soporta.
 
 ## Paso 5: comportamiento del idioma
 
-El asistente sigue el idioma activo de la aplicación.
+El asistente sigue el idioma de su biblioteca.
 
 Dos opciones están disponibles:
 

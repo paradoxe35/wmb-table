@@ -25,7 +25,7 @@ When you open Wmb Table for the first time, the application first asks you to ch
 <ScreenshotPlaceholder
   file="en-first-start-language-manager.png"
   label="Language window at first launch"
-  hint="Take the screen with the language list, the download button, and the content language tag."
+  hint="Take the screen with the language list, the download button, and the library language tag."
 />
 
 ## What you see next

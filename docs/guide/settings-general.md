@@ -11,7 +11,8 @@
 
 Cette page réunit surtout des informations de résumé :
 
-- la langue active
+- la langue de votre bibliothèque
+- la langue de l’interface
 - le nombre de langues installées
 - l’état de la sauvegarde
 - l’état de la mise à jour
@@ -19,14 +20,15 @@ Cette page réunit surtout des informations de résumé :
 <ScreenshotPlaceholder
   file="fr-settings-general-tab.png"
   label="Onglet Général des paramètres"
-  hint="Prendre l’écran montrant les cartes ou lignes de résumé avec langue active, langues installées, sauvegarde et mise à jour."
+  hint="Prendre l’écran montrant les cartes ou lignes de résumé avec langue de la bibliothèque, langue de l’interface, langues installées, sauvegarde et mise à jour."
 />
 
 ## À quoi sert cette page
 
 Cette page est utile si vous voulez :
 
-- vérifier que la bonne langue est active
+- vérifier que la bonne langue est sélectionnée pour votre bibliothèque
+- vérifier la langue de l'interface
 - voir rapidement si la sauvegarde fonctionne
 - savoir si une mise à jour est disponible
 - contrôler l’état général de l’application sans ouvrir tous les autres onglets
@@ -35,7 +37,7 @@ Cette page est utile si vous voulez :
 
 Revenez dans `Général` :
 
-- après avoir changé de langue
+- après avoir changé la langue de votre bibliothèque ou de l'interface
 - après avoir activé la sauvegarde
 - après avoir vérifié une mise à jour
 - quand vous voulez contrôler rapidement que tout va bien
@@ -44,7 +46,7 @@ Revenez dans `Général` :
 
 Si vous voyez qu’un point demande votre attention :
 
-- ouvrez [Langues](/guide/languages) pour gérer la langue active
+- ouvrez [Langues](/guide/languages) pour gérer la langue de votre bibliothèque
 - ouvrez [Sauvegarde et synchronisation](/guide/backup-and-sync) pour la protection des données
 - ouvrez [Mises à jour](/guide/updates) pour installer la dernière version
 

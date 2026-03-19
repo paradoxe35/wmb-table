@@ -66,23 +66,31 @@ export const MAX_MAX_TABS = 50;
 
 // ── UI language ──
 export type UiLanguage = 'fr' | 'en' | 'es';
+export type UiLanguagePreference = 'auto' | UiLanguage;
 export const DEFAULT_UI_LANGUAGE: UiLanguage = 'fr';
-export const UI_LANGUAGES: { value: UiLanguage; label: string }[] = [
+
+export const UI_LANGUAGE_OPTIONS: { value: UiLanguagePreference; label: string }[] = [
+    { value: 'auto', label: 'Automatique' },
     { value: 'fr', label: 'Français' },
     { value: 'en', label: 'English' },
     { value: 'es', label: 'Español' },
 ];
 
-const UI_LANGUAGE_CODES = new Set<string>(UI_LANGUAGES.map((l) => l.value));
+const UI_LANGUAGE_CODES = new Set<string>(['fr', 'en', 'es']);
 
-/** Resolve UI language: use explicit preference, or derive from content language, or fallback. */
+/**
+ * Resolve the effective UI language.
+ * - "auto" or null → derive from content language if supported, else fallback
+ * - explicit language (fr/en/es) → use it directly
+ */
 export function resolveUiLanguage(
-    explicitPreference: string | null | undefined,
+    preference: string | null | undefined,
     contentLanguage: string | null | undefined,
 ): UiLanguage {
-    if (explicitPreference && UI_LANGUAGE_CODES.has(explicitPreference)) {
-        return explicitPreference as UiLanguage;
+    if (preference && preference !== 'auto' && UI_LANGUAGE_CODES.has(preference)) {
+        return preference as UiLanguage;
     }
+    // Auto mode: follow content language if it's a supported UI language
     if (contentLanguage && UI_LANGUAGE_CODES.has(contentLanguage)) {
         return contentLanguage as UiLanguage;
     }

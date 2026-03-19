@@ -25,13 +25,15 @@ function useAntdLocale(): Locale {
     const uiLanguage = useThemeStore((s) => s.uiLanguage);
     const { i18n } = useTranslation();
 
-    // Sync i18next and main process UI language from the persisted preference
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+
+    // Sync i18next and backend when the resolved UI language changes
     useEffect(() => {
         if (i18n.language !== uiLanguage) {
             i18n.changeLanguage(uiLanguage);
         }
-        window.api.app.setUiLanguage(uiLanguage);
-    }, [uiLanguage, i18n]);
+        window.api.app.setUiLanguage(uiLanguagePreference);
+    }, [uiLanguage, uiLanguagePreference, i18n]);
 
     return useMemo(
         (): Locale => ANTD_LOCALES[uiLanguage] ?? ANTD_LOCALES[DEFAULT_UI_LANGUAGE],

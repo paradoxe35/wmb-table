@@ -27,7 +27,7 @@ The path is simple:
 
 Wmb Table can show more than one Bible version.
 
-Depending on your content language, you can:
+Depending on your library language, you can:
 
 - use a version already installed
 - see other available versions

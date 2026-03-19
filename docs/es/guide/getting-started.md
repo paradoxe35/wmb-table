@@ -25,7 +25,7 @@ Cuando abre Wmb Table por primera vez, la aplicación primero le pide elegir un 
 <ScreenshotPlaceholder
   file="es-first-start-language-manager.png"
   label="Ventana de idiomas en el primer inicio"
-  hint="Tomar la pantalla con la lista de idiomas, el botón de descarga y la etiqueta del idioma activo."
+  hint="Tomar la pantalla con la lista de idiomas, el botón de descarga y la etiqueta del idioma elegido."
 />
 
 ## Lo que verá después

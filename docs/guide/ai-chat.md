@@ -99,7 +99,7 @@ La discussion IA travaille avec les informations déjà présentes dans Wmb Tabl
 Elle sait utiliser :
 
 - les langues installées
-- les prédications disponibles dans la langue active
+- les prédications disponibles dans votre bibliothèque
 - la recherche dans le contenu des prédications
 - les versions bibliques disponibles
 - vos sujets
@@ -120,19 +120,16 @@ Quand elle agit, l’application peut aussi afficher de petits repères sous la 
   hint="Montrer une réponse IA avec les petites étiquettes indiquant recherche de sermons, passage biblique, ajout au sujet ou ajout à la note."
 />
 
-## Relation avec la langue active
+## Relation avec les langues
 
-La langue active est très importante.
+L’assistant utilise deux langues :
 
-Par défaut, l’assistant suit la langue active de l’application. Cela veut dire qu’il cherche d’abord dans ce que vous utilisez déjà.
+- **La langue de votre bibliothèque** : l’assistant cherche les sermons, les passages bibliques et les références dans la langue choisie pour votre bibliothèque.
+- **La langue de l’interface** : l’assistant vous répond dans la langue choisie pour les menus et les boutons de l’application.
 
-Par exemple :
+Par exemple, si votre bibliothèque est en anglais mais que votre interface est en français, l’assistant cherchera dans les prédications anglaises et vous répondra en français.
 
-- si vous travaillez en français, il cherchera d’abord dans ce contexte
-- si vous travaillez en espagnol, il suivra ce contexte
-- si une autre langue est demandée clairement, il peut s’y adapter
-
-Cela rend les réponses plus cohérentes avec ce que vous lisez réellement.
+Si une autre langue est demandée clairement dans votre message, il peut s’y adapter.
 
 ## Références cliquables
 

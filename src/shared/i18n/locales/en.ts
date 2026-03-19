@@ -158,6 +158,7 @@ const en: Record<string, string> = {
     // ── General tab ──
     'Langue active': 'content language',
     'Langue des prédications': 'Sermon language',
+    Bibliothèque: 'Library',
     'Langues installées': 'Installed languages',
     "Documentation d'utilisation": 'User documentation',
     "Impossible d'ouvrir la documentation": 'Unable to open the documentation',
@@ -717,6 +718,9 @@ const en: Record<string, string> = {
     Apparence: 'Appearance',
     'Taille du texte': 'Text size',
     "Langue de l'interface": 'Interface language',
+    "Détermine la langue des menus, boutons et messages de l'application.":
+        'Controls the language of menus, buttons, and messages in the app.',
+    Automatique: 'Automatic',
     Petit: 'Small',
     Normal: 'Normal',
     Grand: 'Large',

@@ -13,7 +13,7 @@ Revise:
 
 Pruebe esto:
 
-1. revise el idioma activo
+1. revise su idioma
 2. escriba al menos tres caracteres
 3. pruebe una palabra más simple
 4. pruebe otra forma de la misma palabra

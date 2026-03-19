@@ -79,6 +79,7 @@ import type {
     AiReasoningEvent,
     AiConversationUpdatedEvent,
 } from './ai.types';
+import type { UiLanguagePreference } from './constants';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -488,7 +489,7 @@ export interface InvokeChannelMap {
         return: HistoryDataItem[];
     };
     [AppChannels.getUiLanguage]: { args: []; return: string | null };
-    [AppChannels.setUiLanguage]: { args: [string]; return: void };
+    [AppChannels.setUiLanguage]: { args: [UiLanguagePreference]; return: void };
 
     // TTS
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };

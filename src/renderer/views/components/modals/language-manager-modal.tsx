@@ -7,6 +7,8 @@ import { useAppStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useThemeStore } from '@renderer/stores/theme.store';
+import { resolveUiLanguage } from '@shared/constants';
 
 const { Text } = Typography;
 
@@ -248,6 +250,15 @@ export default function LanguageManagerModal() {
 
             setContentLanguage(langCode);
             await window.api.app.setContentLanguage(langCode);
+
+            // Re-resolve UI language when in "auto" mode
+            const { uiLanguagePreference, setUiLanguage } = useThemeStore.getState();
+            const resolved = resolveUiLanguage(
+                uiLanguagePreference === 'auto' ? null : uiLanguagePreference,
+                langCode,
+            );
+            setUiLanguage(resolved);
+
             const [sermons, tabs] = await Promise.all([
                 window.api.documents.getTitles(langCode),
                 window.api.documents.getTabs(langCode),

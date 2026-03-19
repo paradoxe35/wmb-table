@@ -159,6 +159,7 @@ const es: Record<string, string> = {
     // ── General tab ──
     'Langue active': 'Idioma activo',
     'Langue des prédications': 'Idioma de las predicaciones',
+    Bibliothèque: 'Biblioteca',
     'Langues installées': 'Idiomas instalados',
     "Documentation d'utilisation": 'Documentación de uso',
     "Impossible d'ouvrir la documentation": 'No se puede abrir la documentación',
@@ -723,6 +724,9 @@ const es: Record<string, string> = {
     Apparence: 'Apariencia',
     'Taille du texte': 'Tamaño del texto',
     "Langue de l'interface": 'Idioma de la interfaz',
+    "Détermine la langue des menus, boutons et messages de l'application.":
+        'Controla el idioma de menús, botones y mensajes de la aplicación.',
+    Automatique: 'Automático',
     Petit: 'Pequeño',
     Normal: 'Normal',
     Grand: 'Grande',

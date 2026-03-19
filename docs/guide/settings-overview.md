@@ -9,7 +9,7 @@ Dans le menu de gauche, cliquez sur `Paramètres`.
 La page des paramètres contient plusieurs onglets simples :
 
 - `Général`
-- `Langues`
+- `Bibliothèque`
 - `Assistant`
 - `Lecture audio`
 - `Sauvegarde`
@@ -29,20 +29,21 @@ Cette partie vous donne une vue rapide de l’état de l’application.
 
 Vous y voyez par exemple :
 
-- la langue active
+- la langue de votre bibliothèque
+- la langue de l'interface
 - le nombre de langues installées
 - l’état de la sauvegarde
 - l’état des mises à jour
 
 Cette page est utile si vous voulez vérifier rapidement que tout est en ordre.
 
-### Langues
+### Bibliothèque
 
 Cette partie sert à :
 
 - voir les langues déjà installées
 - ouvrir la gestion complète des langues
-- changer de langue de travail
+- changer la langue de votre bibliothèque
 
 Si vous ne voyez pas les prédications attendues, c’est une des premières pages à vérifier.
 
@@ -93,7 +94,7 @@ Cette partie sert à :
 
 Si vous voulez…
 
-- changer de langue : ouvrez `Langues`
+- changer la langue de votre bibliothèque : ouvrez `Bibliothèque`
 - utiliser ou activer la discussion IA : ouvrez `Assistant`
 - écouter une prédication ou la Bible : ouvrez `Lecture audio`
 - protéger votre travail : ouvrez `Sauvegarde`
@@ -113,14 +114,14 @@ Pour quelqu’un qui débute, l’ordre le plus simple est :
 ## Conseils simples
 
 - N’essayez pas de tout régler le premier jour.
-- Commencez par la langue et la lecture.
+- Commencez par choisir votre langue et la lecture.
 - Activez la sauvegarde dès que vous commencez à créer des notes et des sujets.
 - Revenez dans les paramètres seulement quand vous avez un besoin précis.
 
 ## Pages détaillées
 
 - [Général](/guide/settings-general)
-- [Langues](/guide/languages)
+- [Bibliothèque](/guide/languages)
 - [Assistant](/guide/settings-assistant)
 - [Discussion IA](/guide/ai-chat)
 - [Lecture audio et voix](/guide/audio-and-tts)

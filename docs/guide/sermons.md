@@ -10,7 +10,7 @@ Vous pouvez parcourir la bibliothèque :
 
 - par année
 - par ordre alphabétique
-- par la liste disponible dans la langue active
+- par la liste disponible dans votre langue
 
 Cliquez sur un titre pour l’ouvrir au centre.
 

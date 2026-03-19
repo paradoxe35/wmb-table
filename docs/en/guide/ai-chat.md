@@ -98,7 +98,7 @@ AI chat works with information already inside Wmb Table.
 It can use:
 
 - installed languages
-- sermons available in the content language
+- sermons available in your library
 - sermon content search
 - available Bible versions
 - your subjects
@@ -119,13 +119,16 @@ The app can also show small action tags under a reply to indicate what the assis
   hint="Show an AI reply with the small tags for sermon search, Bible passage, add to subject, or add to note."
 />
 
-## Relation with the content language
+## Relation with languages
 
-The content language matters a lot.
+The assistant uses two languages:
 
-By default, the assistant follows the content language of the app. That means it first searches in the same context you are already using.
+- **Your library language**: the assistant searches sermons, Bible passages, and references in the language chosen for your library.
+- **Interface language**: the assistant replies in the language chosen for the application menus and buttons.
 
-This helps keep the answers consistent with your real working language.
+For example, if your library is in French but your interface is in English, the assistant will search French sermons and reply in English.
+
+If you clearly ask for a different language in your message, it can adapt.
 
 ## Clickable references
 

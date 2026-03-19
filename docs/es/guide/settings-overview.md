@@ -9,7 +9,7 @@ En el menú izquierdo, haga clic en `Ajustes`.
 La página de ajustes contiene varias pestañas sencillas:
 
 - `General`
-- `Idiomas`
+- `Biblioteca`
 - `Assistant`
 - `Lectura en audio`
 - `Copia de seguridad`
@@ -29,18 +29,19 @@ Ofrece un resumen rápido del estado de la aplicación.
 
 Puede mostrar:
 
-- el idioma activo
+- el idioma de su biblioteca
+- el idioma de la interfaz
 - el número de idiomas instalados
 - el estado de la copia de seguridad
 - el estado de las actualizaciones
 
-### Idiomas
+### Biblioteca
 
 Use esta sección para:
 
 - ver los idiomas instalados
 - abrir la gestión completa de idiomas
-- cambiar su idioma de trabajo
+- cambiar el idioma de su biblioteca
 
 ### Assistant
 
@@ -85,7 +86,7 @@ Use esta sección para:
 
 Si quiere…
 
-- cambiar de idioma: abra `Idiomas`
+- cambiar el idioma de su biblioteca: abra `Biblioteca`
 - usar o activar el chat con IA: abra `Assistant`
 - escuchar una predicación o un capítulo bíblico: abra `Lectura en audio`
 - proteger su trabajo: abra `Copia de seguridad`
@@ -95,7 +96,7 @@ Si quiere…
 ## Páginas detalladas
 
 - [General](/es/guide/settings-general)
-- [Idiomas](/es/guide/languages)
+- [Biblioteca](/es/guide/languages)
 - [Assistant](/es/guide/settings-assistant)
 - [Chat con IA](/es/guide/ai-chat)
 - [Lectura en audio y voces](/es/guide/audio-and-tts)
