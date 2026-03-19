@@ -120,14 +120,15 @@ export function useInitApp() {
                     return;
                 }
 
-                const [langCode, sidebarStatus] = await Promise.all([
+                const [dbContentLanguage, dbUiLanguage] = await Promise.all([
                     window.api.app.getContentLanguage(),
-                    window.api.app.getSidebarStatus(),
+                    window.api.app.getUiLanguage(),
                 ]);
-                const [rememberReadingPosition, maxTabs, dbUiLanguage] = await Promise.all([
+
+                const [rememberReadingPosition, maxTabs, sidebarStatus] = await Promise.all([
                     window.api.app.getRememberReadingPosition(),
                     window.api.app.getMaxTabs(),
-                    window.api.app.getUiLanguage(),
+                    window.api.app.getSidebarStatus(),
                 ]);
 
                 if (sidebarStatus) {
@@ -143,7 +144,8 @@ export function useInitApp() {
                 }
 
                 // Validate content language is still installed
-                const validLang = langCode && installed.some((l) => l.code === langCode);
+                const validLang =
+                    dbContentLanguage && installed.some((l) => l.code === dbContentLanguage);
 
                 if (!validLang) {
                     // No persisted language or it was uninstalled — language modal will open
@@ -151,13 +153,16 @@ export function useInitApp() {
                     return;
                 }
 
-                setContentLanguage(langCode);
+                setContentLanguage(dbContentLanguage);
                 const [sermons, savedTabs] = await Promise.all([
-                    window.api.documents.getTitles(langCode),
-                    window.api.documents.getTabs(langCode),
+                    window.api.documents.getTitles(dbContentLanguage),
+                    window.api.documents.getTabs(dbContentLanguage),
                 ]);
+
                 setSermons(sermons);
-                if (savedTabs?.length) setTabs(savedTabs);
+                if (savedTabs?.length) {
+                    setTabs(savedTabs);
+                }
             } catch (err) {
                 console.error('[useInitApp] Initialization failed:', err);
                 setError(i18n.t("Erreur lors de l'initialisation de l'application"));
