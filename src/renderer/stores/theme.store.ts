@@ -1,9 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { UiLanguagePreference } from '@shared/constants';
 
 type ThemeMode = 'system' | 'light' | 'dark';
-
-import { DEFAULT_UI_LANGUAGE, type UiLanguage, type UiLanguagePreference } from '@shared/constants';
 
 export type FontSizeOption = 'small' | 'default' | 'large' | 'x-large';
 
@@ -18,15 +17,11 @@ interface ThemeState {
     themeMode: ThemeMode;
     resolvedTheme: 'light' | 'dark';
     fontSizeOption: FontSizeOption;
-    /** The effective UI language (fr/en/es) used by i18n and Ant Design. */
-    uiLanguage: UiLanguage;
-    /** The user's preference (auto/fr/en/es) — drives the Select in settings. */
     uiLanguagePreference: UiLanguagePreference;
 
     setThemeMode(mode: ThemeMode): void;
     setResolvedTheme(theme: 'light' | 'dark'): void;
     setFontSizeOption(option: FontSizeOption): void;
-    setUiLanguage(lang: UiLanguage): void;
     setUiLanguagePreference(pref: UiLanguagePreference): void;
 }
 
@@ -45,13 +40,11 @@ export const useThemeStore = create<ThemeState>()(
             themeMode: 'light',
             resolvedTheme: 'light',
             fontSizeOption: 'default' as FontSizeOption,
-            uiLanguage: DEFAULT_UI_LANGUAGE,
             uiLanguagePreference: 'auto' as UiLanguagePreference,
 
             setThemeMode: (mode) => set({ themeMode: mode, resolvedTheme: resolveTheme(mode) }),
             setResolvedTheme: (theme) => set({ resolvedTheme: theme }),
             setFontSizeOption: (option) => set({ fontSizeOption: option }),
-            setUiLanguage: (lang) => set({ uiLanguage: lang }),
             setUiLanguagePreference: (pref) => set({ uiLanguagePreference: pref }),
         }),
         {
@@ -64,6 +57,7 @@ export const useThemeStore = create<ThemeState>()(
             onRehydrateStorage: () => (state) => {
                 if (state) {
                     state.resolvedTheme = resolveTheme(state.themeMode);
+                    state.uiLanguagePreference = state.uiLanguagePreference ?? 'auto';
                 }
             },
         },

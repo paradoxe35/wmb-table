@@ -1,7 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { App as AntApp, ConfigProvider, theme } from 'antd';
 import type { Locale } from 'antd/es/locale';
-import { DEFAULT_UI_LANGUAGE, type UiLanguage } from '@shared/constants';
+import { DEFAULT_UI_LANGUAGE, resolveUiLanguage, type UiLanguage } from '@shared/constants';
+import { useAppStore } from './stores';
 import frFR from 'antd/locale/fr_FR';
 import enUS from 'antd/locale/en_US';
 import esES from 'antd/locale/es_ES';
@@ -22,12 +23,21 @@ const ANTD_LOCALES: Record<UiLanguage, Locale> = {
 };
 
 function useAntdLocale(): Locale {
-    const uiLanguage = useThemeStore((s) => s.uiLanguage);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const { i18n } = useTranslation();
 
-    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    // Resolve effective UI language from preference + content language
+    const uiLanguage = useMemo(
+        () =>
+            resolveUiLanguage(
+                uiLanguagePreference === 'auto' ? null : uiLanguagePreference,
+                contentLanguage,
+            ),
+        [uiLanguagePreference, contentLanguage],
+    );
 
-    // Sync i18next and backend when the resolved UI language changes
+    // Sync i18next and backend
     useEffect(() => {
         if (i18n.language !== uiLanguage) {
             i18n.changeLanguage(uiLanguage);

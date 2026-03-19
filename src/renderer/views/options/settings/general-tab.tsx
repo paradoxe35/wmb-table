@@ -16,11 +16,7 @@ import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shar
 import { FontSizeOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
 import { useThemeStore, type FontSizeOption } from '@renderer/stores/theme.store';
-import {
-    UI_LANGUAGE_OPTIONS,
-    resolveUiLanguage,
-    type UiLanguagePreference,
-} from '@shared/constants';
+import { UI_LANGUAGE_OPTIONS, type UiLanguagePreference } from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
 
 const { Text } = Typography;
@@ -39,16 +35,13 @@ export default function GeneralTab() {
     const setFontSizeOption = useThemeStore((s) => s.setFontSizeOption);
     const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
     const setUiLanguagePreference = useThemeStore((s) => s.setUiLanguagePreference);
-    const setUiLanguage = useThemeStore((s) => s.setUiLanguage);
 
     const handleUiLanguageChange = useCallback(
         (pref: UiLanguagePreference) => {
             setUiLanguagePreference(pref);
-            const resolved = resolveUiLanguage(pref === 'auto' ? null : pref, contentLanguage);
-            setUiLanguage(resolved);
             window.api.app.setUiLanguage(pref);
         },
-        [contentLanguage, setUiLanguagePreference, setUiLanguage],
+        [setUiLanguagePreference],
     );
 
     const refreshBackup = useCallback(() => {
