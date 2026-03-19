@@ -23,7 +23,7 @@ const { Text } = Typography;
 
 export default function GeneralTab() {
     const { t } = useTranslation();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langName, setLangName] = useState('');
     const [installedCount, setInstalledCount] = useState(0);
     const [updateInfo, setUpdateInfo] = useState<UpdaterNotification | null>(null);
@@ -45,14 +45,14 @@ export default function GeneralTab() {
     useEffect(() => {
         window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
             setInstalledCount(langs.length);
-            if (activeLanguage) {
-                const lang = langs.find((l) => l.code === activeLanguage);
+            if (contentLanguage) {
+                const lang = langs.find((l) => l.code === contentLanguage);
                 if (lang) setLangName(lang.language);
             }
         });
         window.api.app.getUpdateStatus().then(setUpdateInfo);
         refreshBackup();
-    }, [activeLanguage, refreshBackup]);
+    }, [contentLanguage, refreshBackup]);
 
     // Stay in sync when backup status changes
     useEffect(() => {
@@ -100,7 +100,7 @@ export default function GeneralTab() {
     const items: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
         {
             icon: <TranslationOutlined />,
-            label: t('Langue active'),
+            label: t('Langue des prédications'),
             value: <Text>{langName || '—'}</Text>,
         },
         {

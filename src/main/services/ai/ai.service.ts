@@ -27,6 +27,7 @@ import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
+import { resolveUiLanguage, DEFAULT_UI_LANGUAGE } from '@shared/constants';
 
 export class AiService {
     private controllers = new Map<string, AbortController>();
@@ -61,7 +62,8 @@ export class AiService {
     }
 
     createConversation(input?: { title?: string; languageCode?: string }): AiConversation {
-        const languageCode = input?.languageCode ?? configRepo.getActiveLanguage() ?? 'fr';
+        const languageCode =
+            input?.languageCode ?? configRepo.getContentLanguage() ?? DEFAULT_UI_LANGUAGE;
         return aiRepo.createConversation(languageCode, input?.title);
     }
 
@@ -111,7 +113,7 @@ export class AiService {
                 settings: this.getSettings(),
                 providerId: input.providerId,
                 modelId: input.model,
-                defaultLanguageCode: configRepo.getActiveLanguage() ?? 'fr',
+                defaultLanguageCode: configRepo.getContentLanguage() ?? 'fr',
                 localRuntime: this.localRuntime,
                 apiKey: input.apiKey,
                 baseUrl: input.baseUrl,
@@ -184,13 +186,15 @@ export class AiService {
             });
         }
 
-        const activeLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
+        const contentLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
+        const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
         const isLocal = providerId === 'local';
 
         const installedLanguages = await languagePackService.getInstalledLanguages();
         const { recentMessages, summary } = buildConversationContext(conversation.id, isLocal);
         const system = buildSystemPrompt({
-            activeLanguageCode,
+            contentLanguageCode,
+            uiLanguageCode,
             overrideLanguageCode: request.overrideLanguageCode,
             installedLanguages,
             languagePreference: settings.languagePreference,
@@ -201,7 +205,7 @@ export class AiService {
             settings,
             providerId,
             modelId,
-            defaultLanguageCode: activeLanguageCode,
+            defaultLanguageCode: contentLanguageCode,
             localRuntime: this.localRuntime,
         });
 
@@ -209,7 +213,7 @@ export class AiService {
         const controller = new AbortController();
         this.controllers.set(conversation.id, controller);
 
-        const tools = buildAiTools(activeLanguageCode, {
+        const tools = buildAiTools(contentLanguageCode, {
             model,
             isLocal,
             abortSignal: controller.signal,
@@ -237,7 +241,7 @@ export class AiService {
             tools,
             controller.signal,
             isLocal,
-            activeLanguageCode,
+            contentLanguageCode,
         );
 
         return {
@@ -290,7 +294,7 @@ export class AiService {
         tools: ReturnType<typeof buildAiTools>,
         abortSignal: AbortSignal,
         isLocal: boolean,
-        activeLanguageCode: string,
+        contentLanguageCode: string,
     ): Promise<void> {
         try {
             await runner.run({
@@ -307,7 +311,7 @@ export class AiService {
             const nextContext = buildConversationContext(conversation.id, isLocal);
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
-                languageCode: activeLanguageCode,
+                languageCode: contentLanguageCode,
             });
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,
@@ -319,7 +323,7 @@ export class AiService {
             if (shouldGenerateTitle(allMessages.length)) {
                 const title = await generateConversationTitle(
                     model,
-                    activeLanguageCode,
+                    contentLanguageCode,
                     allMessages.map((m) => ({ role: m.role, content: m.content })),
                 );
                 if (title) {

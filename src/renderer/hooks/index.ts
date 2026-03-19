@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import { useAppStore, useSermonStore, selectActiveTabTitle } from '@renderer/stores';
 import { useThemeStore } from '@renderer/stores/theme.store';
-import type { UiLanguage } from '@shared/constants';
+import { resolveUiLanguage } from '@shared/constants';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     DocumentType,
@@ -103,7 +103,7 @@ export const useIpcRequestWithLoader = () => {
 export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
-    const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
+    const setContentLanguage = useAppStore((s) => s.setContentLanguage);
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
@@ -122,7 +122,7 @@ export function useInitApp() {
                 }
 
                 const [langCode, sidebarStatus] = await Promise.all([
-                    window.api.app.getActiveLanguage(),
+                    window.api.app.getContentLanguage(),
                     window.api.app.getSidebarStatus(),
                 ]);
                 const [rememberReadingPosition, maxTabs, dbUiLanguage] = await Promise.all([
@@ -137,13 +137,13 @@ export function useInitApp() {
                 setRememberReadingPosition(rememberReadingPosition);
                 useAppStore.getState().setMaxTabs(maxTabs);
 
-                // Sync UI language: localStorage is primary (instant), DB is fallback
-                const localUiLang = useThemeStore.getState().uiLanguage;
-                if (dbUiLanguage && dbUiLanguage !== localUiLang) {
-                    useThemeStore.getState().setUiLanguage(dbUiLanguage as UiLanguage);
+                // Resolve UI language: explicit DB preference > content language > default
+                const resolved = resolveUiLanguage(dbUiLanguage, langCode);
+                if (resolved !== useThemeStore.getState().uiLanguage) {
+                    useThemeStore.getState().setUiLanguage(resolved);
                 }
 
-                // Validate active language is still installed
+                // Validate content language is still installed
                 const validLang = langCode && installed.some((l) => l.code === langCode);
 
                 if (!validLang) {
@@ -152,7 +152,7 @@ export function useInitApp() {
                     return;
                 }
 
-                setActiveLanguage(langCode);
+                setContentLanguage(langCode);
                 const [sermons, savedTabs] = await Promise.all([
                     window.api.documents.getTitles(langCode),
                     window.api.documents.getTabs(langCode),
@@ -169,7 +169,7 @@ export function useInitApp() {
     }, [
         setLoaded,
         setSidebarHidden,
-        setActiveLanguage,
+        setContentLanguage,
         setRememberReadingPosition,
         setSermons,
         setTabs,
@@ -275,11 +275,11 @@ export function useSermonLookup() {
 }
 
 export function useFormatSermonDate() {
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     return useCallback(
-        (dateMs: number) => capitalize(formatSermonDate(dateMs, activeLanguage ?? 'en')),
-        [activeLanguage],
+        (dateMs: number) => capitalize(formatSermonDate(dateMs, contentLanguage ?? 'en')),
+        [contentLanguage],
     );
 }
 

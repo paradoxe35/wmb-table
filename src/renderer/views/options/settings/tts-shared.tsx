@@ -58,10 +58,10 @@ export function providerUpdate(
 
 export function groupVoicesByLanguage(
     voices: TtsVoice[],
-    activeLanguage?: string,
+    contentLanguage?: string,
     models?: TtsModelInfo[],
 ) {
-    const langPrefix = activeLanguage?.split('-')[0].toLowerCase() ?? '';
+    const langPrefix = contentLanguage?.split('-')[0].toLowerCase() ?? '';
     const filtered = langPrefix
         ? voices.filter((v) => (v.languageCodes[0] ?? '').startsWith(langPrefix))
         : voices;

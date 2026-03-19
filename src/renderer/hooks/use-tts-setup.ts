@@ -41,7 +41,7 @@ function getIncompatibilityMessage(
  */
 export function useTtsSetup(): void {
     const { t } = useTranslation();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const settings = useTtsStore((s) => s.settings);
     const settingsLoaded = useRef(false);
     const recheckTrigger = useTtsStore((s) => s.recheckTrigger);
@@ -61,19 +61,19 @@ export function useTtsSetup(): void {
     // Auto-switch voice on language change (provider switches handled in tts-tab)
     const prevLangRef = useRef<string | null>(null);
     useEffect(() => {
-        if (!activeLanguage || !settings?.autoSwitchVoice) {
+        if (!contentLanguage || !settings?.autoSwitchVoice) {
             return;
         }
         if (settings.activeProvider === 'browser') {
             return;
         }
-        if (prevLangRef.current === activeLanguage) {
+        if (prevLangRef.current === contentLanguage) {
             return;
         }
-        prevLangRef.current = activeLanguage;
+        prevLangRef.current = contentLanguage;
 
         let cancelled = false;
-        window.api.tts.resolveConfigForLanguage(activeLanguage).then((resolved) => {
+        window.api.tts.resolveConfigForLanguage(contentLanguage).then((resolved) => {
             if (cancelled || !resolved) {
                 return;
             }
@@ -82,11 +82,11 @@ export function useTtsSetup(): void {
         return () => {
             cancelled = true;
         };
-    }, [activeLanguage, settings?.activeProvider, settings?.autoSwitchVoice]);
+    }, [contentLanguage, settings?.activeProvider, settings?.autoSwitchVoice]);
 
     // Language compatibility check
     useEffect(() => {
-        if (!settings || !activeLanguage) {
+        if (!settings || !contentLanguage) {
             return;
         }
 
@@ -95,7 +95,7 @@ export function useTtsSetup(): void {
 
         const check = async () => {
             if (activeProvider === 'browser') {
-                const supported = browserTts.supportsLanguage(activeLanguage);
+                const supported = browserTts.supportsLanguage(contentLanguage);
                 if (cancelled) {
                     return;
                 }
@@ -110,7 +110,7 @@ export function useTtsSetup(): void {
             }
 
             try {
-                const results = await window.api.tts.checkLanguageSupport(activeLanguage);
+                const results = await window.api.tts.checkLanguageSupport(contentLanguage);
                 if (cancelled) {
                     return;
                 }
@@ -147,7 +147,7 @@ export function useTtsSetup(): void {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
-        activeLanguage,
+        contentLanguage,
         settings?.activeProvider,
         activeProviderCfg?.voiceId,
         activeProviderCfg?.model,

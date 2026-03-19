@@ -29,7 +29,7 @@ This gives you a quick summary of the application state.
 
 You can see things like:
 
-- the active language
+- the content language
 - the number of installed languages
 - backup status
 - update status

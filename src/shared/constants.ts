@@ -72,3 +72,19 @@ export const UI_LANGUAGES: { value: UiLanguage; label: string }[] = [
     { value: 'en', label: 'English' },
     { value: 'es', label: 'Español' },
 ];
+
+const UI_LANGUAGE_CODES = new Set<string>(UI_LANGUAGES.map((l) => l.value));
+
+/** Resolve UI language: use explicit preference, or derive from content language, or fallback. */
+export function resolveUiLanguage(
+    explicitPreference: string | null | undefined,
+    contentLanguage: string | null | undefined,
+): UiLanguage {
+    if (explicitPreference && UI_LANGUAGE_CODES.has(explicitPreference)) {
+        return explicitPreference as UiLanguage;
+    }
+    if (contentLanguage && UI_LANGUAGE_CODES.has(contentLanguage)) {
+        return contentLanguage as UiLanguage;
+    }
+    return DEFAULT_UI_LANGUAGE;
+}

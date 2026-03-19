@@ -38,7 +38,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 languageCode: z
                     .string()
                     .optional()
-                    .describe('Language code for content (defaults to active language)'),
+                    .describe('Language code for content (defaults to content language)'),
             }),
             execute: async ({ sermonId, translationId, question, languageCode }) => {
                 const lang = languageCode ?? ctx.languageCode;

@@ -97,7 +97,7 @@ export default function Settings() {
                 key: TAB_KEYS.languages,
                 label: (
                     <span>
-                        <GlobalOutlined /> {t('Langues')}
+                        <GlobalOutlined /> {t('Prédications')}
                     </span>
                 ),
                 children: <LanguagesTab />,

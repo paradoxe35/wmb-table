@@ -27,12 +27,12 @@ export function registerAppHandlers(): void {
         configRepo.markInitialized();
     });
 
-    registerHandler(AppChannels.getActiveLanguage, async () => {
-        return configRepo.getActiveLanguage();
+    registerHandler(AppChannels.getContentLanguage, async () => {
+        return configRepo.getContentLanguage();
     });
 
-    registerHandler(AppChannels.setActiveLanguage, async (_event, langCode) => {
-        configRepo.setActiveLanguage(langCode);
+    registerHandler(AppChannels.setContentLanguage, async (_event, langCode) => {
+        configRepo.setContentLanguage(langCode);
         switchBibleLanguage(langCode);
     });
 

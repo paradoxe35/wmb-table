@@ -78,13 +78,13 @@ export default function TtsTab() {
     const settings = useTtsStore((s) => s.settings);
     const setSettings = useTtsStore((s) => s.setSettings);
     const setProviders = useTtsStore((s) => s.setProviders);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [cacheSize, setCacheSize] = useState(0);
     const [previewing, setPreviewing] = useState(false);
 
     const handlePreview = useCallback(async () => {
         if (!settings || previewing) return;
-        const language = activeLanguage ?? 'fr';
+        const language = contentLanguage ?? 'fr';
         setPreviewing(true);
         try {
             if (settings.activeProvider === 'browser') {
@@ -109,7 +109,7 @@ export default function TtsTab() {
         } finally {
             setPreviewing(false);
         }
-    }, [settings, activeLanguage, previewing, setSettings, t]);
+    }, [settings, contentLanguage, previewing, setSettings, t]);
 
     useEffect(() => {
         window.api.tts.getSettings().then(setSettings);
@@ -157,7 +157,7 @@ export default function TtsTab() {
                     }
                     // Resolve voice for current language on provider switch
                     if ('activeProvider' in partial && updated.autoSwitchVoice) {
-                        const language = activeLanguage ?? 'fr';
+                        const language = contentLanguage ?? 'fr';
                         const resolved = await window.api.tts.resolveConfigForLanguage(language);
                         if (resolved) {
                             setSettings(resolved);
@@ -168,7 +168,7 @@ export default function TtsTab() {
                 debouncedSave(partial);
             }
         },
-        [settings, setSettings, setProviders, debouncedSave, activeLanguage],
+        [settings, setSettings, setProviders, debouncedSave, contentLanguage],
     );
 
     const handleClearCache = useCallback(async () => {
@@ -182,7 +182,7 @@ export default function TtsTab() {
     const activeMeta = PROVIDER_CATALOG[settings.activeProvider];
 
     function openDocs() {
-        const url = buildDocsGuideLink('audio-and-tts', activeLanguage);
+        const url = buildDocsGuideLink('audio-and-tts', contentLanguage);
         void window.api.app.openExternal(url);
     }
 

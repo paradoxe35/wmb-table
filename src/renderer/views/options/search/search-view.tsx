@@ -12,18 +12,18 @@ function useSearch() {
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<TantivySearchResult | null>(null);
     const hasNewResult = useRef(0);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const searchMode = useSearchStore((s) => s.searchMode);
     const isFirstRender = useRef(true);
     const generationRef = useRef(0);
 
     const fetchResults = useCallback(
         (term: string, page: number) => {
-            if (!activeLanguage || term.trim().length < 3) return;
+            if (!contentLanguage || term.trim().length < 3) return;
             const gen = ++generationRef.current;
             setLoading(true);
             window.api.search
-                .searchText(activeLanguage, term.trim(), page, searchMode)
+                .searchText(contentLanguage, term.trim(), page, searchMode)
                 .then((datas) => {
                     if (gen !== generationRef.current) return;
                     hasNewResult.current += 1;
@@ -37,7 +37,7 @@ function useSearch() {
                     if (gen === generationRef.current) setLoading(false);
                 });
         },
-        [activeLanguage, searchMode],
+        [contentLanguage, searchMode],
     );
 
     const onSearch = useCallback(
@@ -66,10 +66,10 @@ function useSearch() {
 
     const onPageChange = useCallback(
         (page: number) => {
-            if (!activeLanguage) return;
+            if (!contentLanguage) return;
             const gen = ++generationRef.current;
             window.api.search
-                .searchText(activeLanguage, lastSearch.current.trim(), page, searchMode)
+                .searchText(contentLanguage, lastSearch.current.trim(), page, searchMode)
                 .then((datas) => {
                     if (gen !== generationRef.current) return;
                     const lc = document.querySelector('.search__option__content');
@@ -81,7 +81,7 @@ function useSearch() {
                     message.error(t('Erreur lors de la recherche'));
                 });
         },
-        [activeLanguage, searchMode],
+        [contentLanguage, searchMode],
     );
 
     return { onSearch, loading, results, onPageChange, lastSearch, hasNewResult };
@@ -90,22 +90,24 @@ function useSearch() {
 export default function Search() {
     const suggestions = useRef<Suggestions[]>([]);
     const { loading, onSearch, results, lastSearch, hasNewResult, onPageChange } = useSearch();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     useEffect(() => {
         const can = lastSearch.current.trim().length > 0 && !!results && results.total > 0;
 
-        if (can && activeLanguage) {
+        if (can && contentLanguage) {
             window.api.search.addSuggestion(
                 lastSearch.current.trim(),
                 results!.total,
-                activeLanguage,
+                contentLanguage,
             );
         }
-        if (activeLanguage) {
-            window.api.search.getSuggestions(activeLanguage).then((s) => (suggestions.current = s));
+        if (contentLanguage) {
+            window.api.search
+                .getSuggestions(contentLanguage)
+                .then((s) => (suggestions.current = s));
         }
-    }, [hasNewResult.current, activeLanguage]);
+    }, [hasNewResult.current, contentLanguage]);
 
     return (
         <>

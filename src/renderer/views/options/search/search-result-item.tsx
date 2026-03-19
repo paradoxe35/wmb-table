@@ -58,7 +58,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const [expanded, setExpanded] = useState(false);
 
     const searchMode = useSearchStore((s) => s.searchMode);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
 
@@ -81,7 +81,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                     documentHtmlTree: {
                         paragraphIndex,
                         translationId: hit.translationId,
-                        languageCode: activeLanguage ?? '',
+                        languageCode: contentLanguage ?? '',
                     },
                 });
             }
@@ -94,7 +94,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             setPendingNavigation,
             query,
             searchMode,
-            activeLanguage,
+            contentLanguage,
         ],
     );
 

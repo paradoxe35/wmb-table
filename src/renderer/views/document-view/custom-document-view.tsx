@@ -167,8 +167,8 @@ export default function CustomDocumentView() {
         customDoc?.sermonId,
     );
 
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
-    const tts = useTts(paragraphs, activeLanguage ?? 'en', docContent?.title ?? '');
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const tts = useTts(paragraphs, contentLanguage ?? 'en', docContent?.title ?? '');
 
     return (
         <DocumentBody

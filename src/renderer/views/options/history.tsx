@@ -64,20 +64,20 @@ const DOC_TYPE_META: Record<DocumentType, { icon: React.ReactNode; color: string
 
 export default function History() {
     const { t } = useTranslation();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
     const openHistoryItem = useHistoryItemOpen();
 
     const loadHistories = useCallback(() => {
-        if (activeLanguage) {
-            window.api.app.getHistory(activeLanguage).then((data) => {
+        if (contentLanguage) {
+            window.api.app.getHistory(contentLanguage).then((data) => {
                 setHistories(data);
                 setSelectedIndex(0);
             });
         }
-    }, [activeLanguage]);
+    }, [contentLanguage]);
 
     // Load on mount / language change
     useEffect(() => {

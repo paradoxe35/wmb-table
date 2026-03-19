@@ -158,6 +158,7 @@ const es: Record<string, string> = {
 
     // ── General tab ──
     'Langue active': 'Idioma activo',
+    'Langue des prédications': 'Idioma de las predicaciones',
     'Langues installées': 'Idiomas instalados',
     "Documentation d'utilisation": 'Documentación de uso',
     "Impossible d'ouvrir la documentation": 'No se puede abrir la documentación',

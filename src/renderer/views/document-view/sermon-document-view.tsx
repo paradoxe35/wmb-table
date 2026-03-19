@@ -35,13 +35,13 @@ export default function SermonDocumentView() {
 
     const activeTab = useSermonStore(selectActiveTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const sermonInfo = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
     const tabTranslationId = activeTab?.translationId;
     const { restoreIdentity, readingPositionKey } = resolveSermonScrollPersistence(
         activeTab,
         sermonInfo,
-        activeLanguage,
+        contentLanguage,
         content,
     );
     useReferenceNavigation(containerRef, {

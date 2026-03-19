@@ -45,7 +45,7 @@ Because there are many available languages, this window helps users:
 4. Wait for the download to finish.
 5. Click the language to make it active.
 
-## Changing the active language
+## Changing the content language
 
 When you switch language:
 

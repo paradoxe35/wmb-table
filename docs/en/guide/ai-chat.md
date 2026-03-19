@@ -98,7 +98,7 @@ AI chat works with information already inside Wmb Table.
 It can use:
 
 - installed languages
-- sermons available in the active language
+- sermons available in the content language
 - sermon content search
 - available Bible versions
 - your subjects
@@ -119,11 +119,11 @@ The app can also show small action tags under a reply to indicate what the assis
   hint="Show an AI reply with the small tags for sermon search, Bible passage, add to subject, or add to note."
 />
 
-## Relation with the active language
+## Relation with the content language
 
-The active language matters a lot.
+The content language matters a lot.
 
-By default, the assistant follows the active language of the app. That means it first searches in the same context you are already using.
+By default, the assistant follows the content language of the app. That means it first searches in the same context you are already using.
 
 This helps keep the answers consistent with your real working language.
 

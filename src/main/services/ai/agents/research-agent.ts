@@ -42,7 +42,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                 languageCode: z
                     .string()
                     .optional()
-                    .describe('Language code for content search (defaults to active language)'),
+                    .describe('Language code for content search (defaults to content language)'),
             }),
             execute: async ({ topic, languageCode }) => {
                 const lang = languageCode ?? ctx.languageCode;

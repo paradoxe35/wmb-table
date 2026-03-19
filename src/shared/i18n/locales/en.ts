@@ -58,8 +58,8 @@ const en: Record<string, string> = {
     Personnalisé: 'Custom',
     'Comportement des langues': 'Language behavior',
     "L'assistant suit la langue active, sauf si vous demandez explicitement une autre langue.":
-        'The assistant follows the active language unless you explicitly ask for another one.',
-    'Suivre la langue active': 'Follow the active language',
+        'The assistant follows the content language unless you explicitly ask for another one.',
+    'Suivre la langue active': 'Follow the content language',
     'Changer uniquement sur demande': 'Switch only on request',
     "Utilisez l'identifiant exact du modèle fourni par ce service.":
         'Use the exact model identifier provided by this service.',
@@ -156,7 +156,8 @@ const en: Record<string, string> = {
     'Lecture du document': 'Reading document',
 
     // ── General tab ──
-    'Langue active': 'Active language',
+    'Langue active': 'content language',
+    'Langue des prédications': 'Sermon language',
     'Langues installées': 'Installed languages',
     "Documentation d'utilisation": 'User documentation',
     "Impossible d'ouvrir la documentation": 'Unable to open the documentation',
@@ -239,7 +240,7 @@ const en: Record<string, string> = {
     'À télécharger une seule fois. Environ 160 Mo.': 'Download once. Approximately 160 MB.',
     'Télécharger le modèle': 'Download model',
     'Toutes les voix sont disponibles. La voix par défaut correspond à la langue active.':
-        'All voices are available. The default voice matches the active language.',
+        'All voices are available. The default voice matches the content language.',
     'Modèle Kokoro téléchargé': 'Kokoro model downloaded',
     'Erreur: {{error}}': 'Error: {{error}}',
     'Erreur lors de la prévisualisation de la voix': 'Error previewing the voice',
@@ -259,7 +260,7 @@ const en: Record<string, string> = {
     'Voix supprimée': 'Voice removed',
     Télécharger: 'Download',
     'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
-        'No voice available for the active language. Use the search above to find a voice in another language.',
+        'No voice available for the content language. Use the search above to find a voice in another language.',
     // quality tags
     'Haute qualité': 'High quality',
     'Qualité moyenne': 'Medium quality',

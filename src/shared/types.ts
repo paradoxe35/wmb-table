@@ -541,7 +541,7 @@ export interface AppSettingsStatus {
     app_id: string;
     initialized: boolean;
     lastCheckBackupStatus: Date;
-    activeLanguage: string | null;
+    contentLanguage: string | null;
     rememberReadingPosition: boolean;
     maxTabs: number;
     uiLanguage: string | null;

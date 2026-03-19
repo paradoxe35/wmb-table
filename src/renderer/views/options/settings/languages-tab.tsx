@@ -10,7 +10,7 @@ const { Text } = Typography;
 
 export default function LanguagesTab() {
     const { t } = useTranslation();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langs, setLangs] = useState<InstalledLanguage[]>([]);
 
     useEffect(() => {
@@ -53,7 +53,7 @@ export default function LanguagesTab() {
                         >
                             <Text>
                                 {l.language}
-                                {l.code === activeLanguage && (
+                                {l.code === contentLanguage && (
                                     <Tag
                                         color="blue"
                                         icon={<CheckCircleOutlined />}

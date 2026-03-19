@@ -18,7 +18,7 @@ export function getConfig(): AppSettingsStatus | null {
         app_id: row.appId,
         initialized: row.initialized,
         lastCheckBackupStatus: new Date(row.lastCheckBackupStatus ?? Date.now()),
-        activeLanguage: row.activeLanguage ?? null,
+        contentLanguage: row.contentLanguage ?? null,
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
         uiLanguage: row.uiLanguage ?? DEFAULT_UI_LANGUAGE,
@@ -44,16 +44,16 @@ export function markInitialized(): void {
         .run();
 }
 
-export function getActiveLanguage(): string | null {
+export function getContentLanguage(): string | null {
     const config = getConfig();
-    return config?.activeLanguage ?? null;
+    return config?.contentLanguage ?? null;
 }
 
-export function setActiveLanguage(langCode: string): void {
+export function setContentLanguage(langCode: string): void {
     const config = ensureConfig();
     getDb()
         .update(configurations)
-        .set({ activeLanguage: langCode })
+        .set({ contentLanguage: langCode })
         .where(eq(configurations.id, config.id))
         .run();
 }

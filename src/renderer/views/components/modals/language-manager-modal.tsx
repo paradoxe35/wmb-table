@@ -124,8 +124,8 @@ export default function LanguageManagerModal() {
     const [loading, setLoading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
-    const setActiveLanguage = useAppStore((s) => s.setActiveLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const setContentLanguage = useAppStore((s) => s.setContentLanguage);
     const setSermons = useSermonStore((s) => s.setSermons);
     const [, startTransition] = useTransition();
 
@@ -196,15 +196,16 @@ export default function LanguageManagerModal() {
         };
     }, [setVisible]);
 
-    // Auto-open only when no languages installed or no active language persisted
+    // Auto-open only when no languages installed or no content language persisted
     useEffect(() => {
-        Promise.all([window.api.languages.getInstalled(), window.api.app.getActiveLanguage()]).then(
-            ([inst, activeLang]) => {
-                if (inst.length === 0 || !activeLang) {
-                    setVisible(true);
-                }
-            },
-        );
+        Promise.all([
+            window.api.languages.getInstalled(),
+            window.api.app.getContentLanguage(),
+        ]).then(([inst, contentLang]) => {
+            if (inst.length === 0 || !contentLang) {
+                setVisible(true);
+            }
+        });
     }, [setVisible]);
 
     useEffect(() => {
@@ -239,14 +240,14 @@ export default function LanguageManagerModal() {
     const handleSelectLanguage = async (langCode: string) => {
         try {
             // Save current tabs for the old language before switching
-            const previousLang = activeLanguage;
+            const previousLang = contentLanguage;
             if (previousLang) {
                 const currentTabs = useSermonStore.getState().tabs;
                 await window.api.documents.saveTabs(previousLang, currentTabs);
             }
 
-            setActiveLanguage(langCode);
-            await window.api.app.setActiveLanguage(langCode);
+            setContentLanguage(langCode);
+            await window.api.app.setContentLanguage(langCode);
             const [sermons, tabs] = await Promise.all([
                 window.api.documents.getTitles(langCode),
                 window.api.documents.getTabs(langCode),
@@ -270,12 +271,12 @@ export default function LanguageManagerModal() {
 
     const handleDelete = async (langCode: string) => {
         await window.api.languages.delete(langCode);
-        if (activeLanguage === langCode) {
+        if (contentLanguage === langCode) {
             const remaining = await window.api.languages.getInstalled();
             if (remaining.length > 0) {
                 await handleSelectLanguage(remaining[0].code);
             } else {
-                setActiveLanguage(null);
+                setContentLanguage(null);
                 setSermons([]);
             }
         }
@@ -284,7 +285,7 @@ export default function LanguageManagerModal() {
     };
 
     const hasInstalledLanguages = languages.some((l) => l.installed);
-    const canClose = hasInstalledLanguages && !!activeLanguage;
+    const canClose = hasInstalledLanguages && !!contentLanguage;
 
     return (
         <Modal
@@ -356,7 +357,7 @@ export default function LanguageManagerModal() {
                                                     <LanguageRow
                                                         key={lang.code}
                                                         lang={lang}
-                                                        isActive={lang.code === activeLanguage}
+                                                        isActive={lang.code === contentLanguage}
                                                         isDownloading={
                                                             downloadProgress[lang.code] != null
                                                         }

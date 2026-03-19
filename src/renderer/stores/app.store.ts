@@ -18,7 +18,7 @@ interface AppState {
     mainView: ViewMenuValue;
     optionView: OptionViewValue;
     sidebarHidden: boolean;
-    activeLanguage: string | null;
+    contentLanguage: string | null;
     rememberReadingPosition: boolean;
     maxTabs: number;
     error: string | null;
@@ -29,7 +29,7 @@ interface AppState {
     setMainView(v: ViewMenuValue): void;
     setOptionView(v: OptionViewValue): void;
     setSidebarHidden(v: boolean): void;
-    setActiveLanguage(code: string | null): void;
+    setContentLanguage(code: string | null): void;
     setRememberReadingPosition(value: boolean): void;
     setMaxTabs(value: number): void;
     setError(error: string | null): void;
@@ -45,7 +45,7 @@ export const useAppStore = create<AppState>((set) => ({
     mainView: 'document',
     optionView: 'search',
     sidebarHidden: false,
-    activeLanguage: null,
+    contentLanguage: null,
     rememberReadingPosition: true,
     maxTabs: DEFAULT_MAX_TABS,
     error: null,
@@ -56,7 +56,7 @@ export const useAppStore = create<AppState>((set) => ({
     setMainView: (v) => set({ mainView: v }),
     setOptionView: (v) => set({ optionView: v }),
     setSidebarHidden: (v) => set({ sidebarHidden: v }),
-    setActiveLanguage: (code) => set({ activeLanguage: code }),
+    setContentLanguage: (code) => set({ contentLanguage: code }),
     setRememberReadingPosition: (value) => set({ rememberReadingPosition: value }),
     setMaxTabs: (value) => set({ maxTabs: value }),
     setError: (error) => set({ error }),

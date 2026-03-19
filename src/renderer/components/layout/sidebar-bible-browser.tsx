@@ -37,7 +37,7 @@ function invalidateCache() {
 
 function CompactVersionSelector() {
     const { t } = useTranslation();
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
     const [activeVersion, setActiveVersion] = useState<string | undefined>(cachedActiveVersion);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
@@ -45,23 +45,23 @@ function CompactVersionSelector() {
     const refresh = useCallback(() => {
         Promise.all([window.api.bible.getVersions(), window.api.bible.getActiveVersion()]).then(
             async ([langVersions, active]) => {
-                // If no versions for the active language, show all available versions
+                // If no versions for the content language, show all available versions
                 const all =
                     langVersions.length > 0
                         ? langVersions
                         : await window.api.bible.getAllVersions();
                 cachedVersions = all;
                 cachedActiveVersion = active?.abbreviation;
-                cachedForLanguage = activeLanguage;
+                cachedForLanguage = contentLanguage;
                 setVersions(all);
                 setActiveVersion(active?.abbreviation);
             },
         );
-    }, [activeLanguage]);
+    }, [contentLanguage]);
 
     useEffect(() => {
         // Invalidate cache on language change
-        if (activeLanguage !== cachedForLanguage) {
+        if (contentLanguage !== cachedForLanguage) {
             invalidateCache();
             setVersions([]);
             setActiveVersion(undefined);
@@ -74,7 +74,7 @@ function CompactVersionSelector() {
             .refreshIndex()
             .then(() => refresh())
             .catch(() => refresh());
-    }, [refresh, activeLanguage]);
+    }, [refresh, contentLanguage]);
 
     useEffect(() => {
         const unsub1 = window.api.on.bibleDownloadProgress((p: BibleDownloadProgress) => {
@@ -259,7 +259,7 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
 // ---------------------------------------------------------------------------
 
 export default function SidebarBibleBrowser() {
-    const activeLanguage = useAppStore((s) => s.activeLanguage);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [books, setBooks] = useState<BookEntry[]>(cachedBooks);
     const [noBible, setNoBible] = useState(cachedNoBible);
     const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
@@ -299,7 +299,7 @@ export default function SidebarBibleBrowser() {
 
     useEffect(() => {
         // Reload when language changes or no cached data
-        if (cachedBooks.length === 0 || activeLanguage !== cachedForLanguage) {
+        if (cachedBooks.length === 0 || contentLanguage !== cachedForLanguage) {
             loadIndex();
             setSelectedBook(null);
         }
@@ -310,7 +310,7 @@ export default function SidebarBibleBrowser() {
         };
         window.addEventListener('bible-version-changed', handler);
         return () => window.removeEventListener('bible-version-changed', handler);
-    }, [loadIndex, activeLanguage]);
+    }, [loadIndex, contentLanguage]);
 
     const { t } = useTranslation();
 

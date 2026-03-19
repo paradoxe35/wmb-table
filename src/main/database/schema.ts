@@ -10,7 +10,7 @@ export const configurations = sqliteTable('configurations', {
     appId: text('app_id').notNull(),
     initialized: integer('initialized', { mode: 'boolean' }).notNull().default(false),
     lastCheckBackupStatus: text('last_check_backup_status').default(sql`(datetime('now'))`),
-    activeLanguage: text('active_language'),
+    contentLanguage: text('content_language'),
     rememberReadingPosition: integer('remember_reading_position', { mode: 'boolean' })
         .notNull()
         .default(true),
