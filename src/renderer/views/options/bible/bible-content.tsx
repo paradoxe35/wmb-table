@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Collapse, Empty, List, Space, Spin, Typography, Dropdown } from 'antd';
+import { Button, Collapse, Empty, List, Segmented, Space, Spin, Typography, Dropdown } from 'antd';
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
 import type { BibleBook, BibleIndex, BibleIndexValue, SubjectRefTree } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
@@ -60,10 +60,22 @@ export function BibleContent({
         );
     }
 
+    const testamentKeys = Object.keys(bibleIndex);
+
+    if (!compact && testamentKeys.length > 1) {
+        return (
+            <TestamentTabs
+                bibleIndex={bibleIndex}
+                onClick={onClick}
+                verseMetaContent={verseMetaContent}
+            />
+        );
+    }
+
     return (
         <>
             <Space orientation="vertical" style={{ width: '100%' }}>
-                {Object.keys(bibleIndex).map((key, i) => (
+                {testamentKeys.map((key, i) => (
                     <Space orientation="vertical" style={{ width: '100%' }} key={key}>
                         <Typography.Title
                             type="secondary"
@@ -82,6 +94,51 @@ export function BibleContent({
                 ))}
             </Space>
             <div className="mt-2 mb-2" />
+        </>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Testament tabs (Segmented toggle)
+// ---------------------------------------------------------------------------
+
+function TestamentTabs({
+    bibleIndex,
+    onClick,
+    verseMetaContent,
+}: {
+    bibleIndex: Record<string, BibleIndex>;
+    onClick?: (id: string) => void;
+    verseMetaContent?: boolean;
+}) {
+    const { t } = useTranslation();
+    const keys = Object.keys(bibleIndex);
+    const [active, setActive] = useState(keys[0]);
+
+    const options = useMemo(
+        () =>
+            keys.map((key) => ({
+                value: key,
+                label: key === 'N' ? t('Nouveau Testament') : t('Ancien Testament'),
+            })),
+        [keys, t],
+    );
+
+    return (
+        <>
+            <Segmented
+                block
+                options={options}
+                value={active}
+                onChange={(v) => setActive(v as string)}
+                style={{ marginBottom: 12 }}
+            />
+            <BibleTestamentContent
+                key={active}
+                verseMetaContent={verseMetaContent}
+                onClick={onClick}
+                bibleIndex={bibleIndex[active]}
+            />
         </>
     );
 }
@@ -184,6 +241,7 @@ function BookContent({
         <Collapse
             activeKey="1"
             accordion
+            expandIcon={() => null}
             items={[
                 {
                     key: '1',
