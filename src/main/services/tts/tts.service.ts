@@ -157,14 +157,9 @@ export class TtsService {
         this.prepared.clear();
         this.pushState();
 
-        // Synthesize and send the current segment as non-queued audio FIRST.
-        // The renderer's non-queued handler calls clearPreloaded(), so any queued
-        // audio that arrives before non-queued would be destroyed. We must await
-        // playSegment to guarantee the non-queued audio is sent before ensureWindow
-        // pushes queued audio for upcoming segments.
+        // Non-queued audio must be sent before queued audio (renderer calls
+        // clearPreloaded() on non-queued arrival), so await before prefetching.
         await this.playSegment(startIndex, this.playbackGeneration);
-
-        // Now prefetch upcoming segments — queued audio is safe to send.
         this.ensureWindow(startIndex + 1, this.playbackGeneration);
     }
 
@@ -198,8 +193,6 @@ export class TtsService {
         this.status = 'playing';
         this.pushState();
 
-        // Await playSegment so non-queued audio is sent before any queued audio.
-        // See startPlayback comment for why this ordering is critical.
         try {
             await this.playSegment(index, this.playbackGeneration);
         } catch (err) {
@@ -222,8 +215,6 @@ export class TtsService {
         this.status = 'playing';
         this.pushState();
 
-        // Advance the synthesis window: the renderer consumed one queued segment,
-        // so add the next one at the tail to keep LOOKAHEAD segments ahead.
         this.ensureWindow(nextIndex + 1, this.playbackGeneration);
     }
 
@@ -391,32 +382,37 @@ export class TtsService {
         }
     }
 
-    /**
-     * Synthesize a single segment and, when ready, push it to the renderer as a
-     * queued (preloaded) segment. Stale results (generation mismatch) are discarded.
-     */
+    /** Synthesize and queue a segment to the renderer. Retries once on failure. */
     private async prepareAndQueue(index: number, generation: number): Promise<void> {
-        try {
-            const segment = this.segments[index];
-            if (!segment) return;
-
-            const prepared = await this.prepareSegment(segment);
+        for (let attempt = 0; attempt < 2; attempt++) {
             if (generation !== this.playbackGeneration) return;
+            try {
+                const segment = this.segments[index];
+                if (!segment) return;
 
-            const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
-            if (generation !== this.playbackGeneration) return;
+                const prepared = await this.prepareSegment(segment);
+                if (generation !== this.playbackGeneration) return;
 
-            const win = getMainWindow();
-            if (win) {
-                sendToRenderer(win, PushChannels.ttsSegmentAudio, {
-                    segmentIndex: index,
-                    audioBase64: result.audioBase64,
-                    mimeType: result.mimeType,
-                    queued: true,
-                });
+                const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
+                if (generation !== this.playbackGeneration) return;
+
+                const win = getMainWindow();
+                if (win) {
+                    sendToRenderer(win, PushChannels.ttsSegmentAudio, {
+                        segmentIndex: index,
+                        audioBase64: result.audioBase64,
+                        mimeType: result.mimeType,
+                        queued: true,
+                    });
+                }
+                return; // success
+            } catch (err) {
+                if (attempt === 0) {
+                    log.warn(`TTS prefetch ${index} failed, retrying:`, err);
+                } else {
+                    log.error(`TTS prefetch ${index} failed after retry:`, err);
+                }
             }
-        } catch (err) {
-            log.warn(`TTS prefetch ${index} failed:`, err);
         }
     }
 
@@ -496,9 +492,10 @@ export class TtsService {
             model: cfg?.model,
             rate: this.settings.rate,
         });
-        await this.cache.set(cacheKey, result);
-        const freshHit = await this.cache.lookup(cacheKey);
-        return freshHit ?? result;
+        // Write to disk cache for future sessions, but return the in-memory
+        // result directly — avoids a redundant disk read-back.
+        this.cache.set(cacheKey, result).catch(() => {});
+        return result;
     }
 
     private buildCacheKey(
