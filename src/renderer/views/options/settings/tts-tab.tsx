@@ -322,7 +322,7 @@ export default function TtsTab() {
                         <Slider
                             min={0}
                             max={2000}
-                            step={100}
+                            step={50}
                             value={settings.segmentGapMs ?? SEGMENT_GAP_MS}
                             onChange={(v) => handleUpdate({ segmentGapMs: v })}
                         />
