@@ -201,6 +201,21 @@ const en: Record<string, string> = {
     'Cache audio vidé': 'Audio cache cleared',
     'Taille maximale du cache': 'Maximum cache size',
 
+    // ── TTS enhanced reading ──
+    'Lecture améliorée': 'Enhanced reading',
+    "Lire l'introduction": 'Read introduction',
+    'Annonce le titre, la date et le lieu avant de commencer la lecture.':
+        'Announces the title, date, and location before starting to read.',
+    'Annoncer les numéros': 'Announce numbers',
+    'Annonce le numéro du verset ou du paragraphe avant de le lire.':
+        'Announces the verse or paragraph number before reading it.',
+    'Lire tout le livre (Bible)': 'Read entire book (Bible)',
+    'Continue automatiquement au chapitre suivant après avoir terminé.':
+        'Automatically continues to the next chapter after finishing.',
+    'Défiler automatiquement': 'Auto-scroll',
+    'Fait défiler la page pour toujours voir le texte en cours de lecture.':
+        'Scrolls the page to always keep the currently read text visible.',
+
     // ── TTS shared ──
     'Voix du système': 'System voices',
     'Sherpa-ONNX TTS': 'Sherpa-ONNX TTS',

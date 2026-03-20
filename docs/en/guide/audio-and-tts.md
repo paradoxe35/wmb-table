@@ -97,6 +97,34 @@ You can also set:
 - the pause between sentences or paragraphs
 - automatic playback when a document opens
 
+## Enhanced reading
+
+These settings make the reading experience more natural and practical.
+
+### Read introduction
+
+Before reading the content, the app announces the document title. For a sermon, it can also say the date and location. For a Bible chapter, it says the book name and chapter number.
+
+You can turn this off if you prefer to jump straight to the text.
+
+### Announce numbers
+
+The app can say the verse or paragraph number before reading it. For example: "Verse 5", then the verse content.
+
+This is useful to follow along without looking at the screen.
+
+### Read entire book (Bible)
+
+When listening to a Bible chapter, the app can automatically move to the next chapter when reading finishes. It continues until the last chapter of the book.
+
+This setting only applies to the Bible.
+
+### Auto-scroll
+
+During reading, the page scrolls to keep the current text visible on screen.
+
+If you prefer to scroll yourself, you can turn this off.
+
 ## Where it works
 
 Read aloud can be used for:

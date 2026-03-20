@@ -503,7 +503,7 @@ export interface InvokeChannelMap {
     [TtsChannels.resumePlayback]: { args: []; return: void };
     [TtsChannels.stopPlayback]: { args: []; return: void };
     [TtsChannels.seekToSegment]: { args: [number]; return: void };
-    [TtsChannels.segmentComplete]: { args: [boolean?]; return: void };
+    [TtsChannels.segmentComplete]: { args: []; return: void };
     [TtsChannels.checkLanguageSupport]: {
         args: [string];
         return: Record<TtsProviderType, TtsCompatibilityResult>;

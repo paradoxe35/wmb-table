@@ -248,6 +248,8 @@ export default function LibraryModal() {
 
             setContentLanguage(langCode);
             await window.api.app.setContentLanguage(langCode);
+            const bibleVersion = await window.api.bible.getActiveVersion();
+            useAppStore.getState().setActiveBibleVersion(bibleVersion);
 
             const [sermons, tabs] = await Promise.all([
                 window.api.documents.getTitles(langCode),

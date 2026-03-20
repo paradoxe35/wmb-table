@@ -35,6 +35,10 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
         segmentGapMs: row.segmentGapMs ?? SEGMENT_GAP_MS,
         cacheMaxSizeMb: row.cacheMaxSizeMb,
         providers,
+        readIntroduction: row.readIntroduction ?? true,
+        announceSegmentNumbers: row.announceSegmentNumbers ?? false,
+        bibleReadEntireBook: row.bibleReadEntireBook ?? false,
+        autoScrollToHighlight: row.autoScrollToHighlight ?? true,
     };
 }
 
@@ -77,6 +81,13 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
     if (partial.rate !== undefined) update.rate = partial.rate;
     if (partial.segmentGapMs !== undefined) update.segmentGapMs = partial.segmentGapMs;
     if (partial.cacheMaxSizeMb !== undefined) update.cacheMaxSizeMb = partial.cacheMaxSizeMb;
+    if (partial.readIntroduction !== undefined) update.readIntroduction = partial.readIntroduction;
+    if (partial.announceSegmentNumbers !== undefined)
+        update.announceSegmentNumbers = partial.announceSegmentNumbers;
+    if (partial.bibleReadEntireBook !== undefined)
+        update.bibleReadEntireBook = partial.bibleReadEntireBook;
+    if (partial.autoScrollToHighlight !== undefined)
+        update.autoScrollToHighlight = partial.autoScrollToHighlight;
     if (partial.providers !== undefined) {
         const merged = { ...current.providers };
         for (const key of Object.keys(partial.providers) as TtsProviderType[]) {

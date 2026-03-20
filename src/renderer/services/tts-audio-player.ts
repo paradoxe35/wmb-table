@@ -1,169 +1,170 @@
 interface PreloadedEntry {
-    buffer: AudioBuffer;
+    audio: HTMLAudioElement;
+    blobUrl: string;
     segmentIndex: number;
 }
 
+/**
+ * TTS audio player using HTMLAudioElement for pitch-preserving speed control.
+ * AudioBufferSourceNode.playbackRate shifts pitch (chipmunk effect);
+ * HTMLMediaElement.preservesPitch avoids this.
+ */
 export class TtsAudioPlayer {
-    private audioContext: AudioContext | null = null;
-    private sourceNode: AudioBufferSourceNode | null = null;
-    private gainNode: GainNode | null = null;
-    private onEnded: (() => void) | null = null;
+    private audio: HTMLAudioElement | null = null;
+    private blobUrl: string | null = null;
+    private onEndedCb: (() => void) | null = null;
     private isPlaying = false;
     private isPaused = false;
-    private pausedAt = 0;
-    private startedAt = 0;
-    private currentBuffer: AudioBuffer | null = null;
     private currentRate = 1;
 
-    // Queue of pre-decoded upcoming segments (ordered by segment index)
     private preloadedQueue: PreloadedEntry[] = [];
 
-    private getContext(): AudioContext {
-        if (!this.audioContext) {
-            this.audioContext = new AudioContext();
-        }
-        return this.audioContext;
+    private static base64ToBlobUrl(base64: string, mimeType: string): string {
+        const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: mimeType || 'audio/mp3' });
+        return URL.createObjectURL(blob);
     }
 
-    async play(audioBase64: string, _mimeType: string, rate: number = 1): Promise<void> {
+    async play(audioBase64: string, mimeType: string, rate: number = 1): Promise<void> {
         this.stopSource();
 
-        const ctx = this.getContext();
-        if (ctx.state === 'suspended') await ctx.resume();
-
-        const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
-        try {
-            const audioBuffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
-            this.currentBuffer = audioBuffer;
-            this.currentRate = rate;
-            this.pausedAt = 0;
-            this.playBuffer(audioBuffer, 0, rate);
-        } catch (err) {
-            console.error('TTS audio decode failed:', err);
-        }
+        const url = TtsAudioPlayer.base64ToBlobUrl(audioBase64, mimeType);
+        this.currentRate = rate;
+        this.isPaused = false;
+        this.playUrl(url, rate);
     }
 
     /**
-     * Pre-decode a segment's audio and add it to the queue so it's ready
-     * to play instantly when the current (and any earlier queued) segments finish.
+     * Eagerly create an Audio element and pre-buffer the data so playback
+     * starts instantly when the segment's turn comes.
      */
-    async preload(audioBase64: string, _mimeType: string, segmentIndex: number): Promise<void> {
-        const ctx = this.getContext();
-        if (ctx.state === 'suspended') await ctx.resume();
+    async preload(audioBase64: string, mimeType: string, segmentIndex: number): Promise<void> {
+        if (this.preloadedQueue.some((e) => e.segmentIndex === segmentIndex)) return;
 
-        const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
-        try {
-            const buffer = await ctx.decodeAudioData(bytes.buffer.slice(0));
-            // Avoid duplicates and insert in order
-            if (!this.preloadedQueue.some((e) => e.segmentIndex === segmentIndex)) {
-                this.preloadedQueue.push({ buffer, segmentIndex });
-                this.preloadedQueue.sort((a, b) => a.segmentIndex - b.segmentIndex);
-            }
-        } catch (err) {
-            console.error('TTS preload decode failed:', err);
-        }
+        const blobUrl = TtsAudioPlayer.base64ToBlobUrl(audioBase64, mimeType);
+        const audio = new Audio(blobUrl);
+        audio.preload = 'auto';
+
+        // Wait for the browser to buffer enough data for instant playback
+        await new Promise<void>((resolve) => {
+            audio.oncanplaythrough = () => resolve();
+            audio.onerror = () => resolve(); // don't block queue on decode error
+            audio.load();
+        });
+
+        this.preloadedQueue.push({ audio, blobUrl, segmentIndex });
+        this.preloadedQueue.sort((a, b) => a.segmentIndex - b.segmentIndex);
     }
 
-    /** Returns true if at least one preloaded buffer is ready. */
     hasPreloaded(): boolean {
         return this.preloadedQueue.length > 0;
     }
 
+    hasPreloadedAtIndex(segmentIndex: number): boolean {
+        return (
+            this.preloadedQueue.length > 0 && this.preloadedQueue[0].segmentIndex === segmentIndex
+        );
+    }
+
     /**
-     * Play the next preloaded buffer from the queue.
-     * Returns the segment index that was played, or -1 if the queue is empty.
+     * Play the next preloaded segment. Returns its index, or -1 if empty.
      */
     playPreloaded(rate: number): number {
         if (this.preloadedQueue.length === 0) return -1;
         const entry = this.preloadedQueue.shift()!;
 
         this.stopSource();
-        this.currentBuffer = entry.buffer;
+        this.blobUrl = entry.blobUrl;
         this.currentRate = rate;
-        this.pausedAt = 0;
-        this.playBuffer(entry.buffer, 0, rate);
+        this.isPaused = false;
+        this.attachAndPlay(entry.audio, rate);
         return entry.segmentIndex;
     }
 
     clearPreloaded(): void {
+        for (const entry of this.preloadedQueue) {
+            URL.revokeObjectURL(entry.blobUrl);
+        }
         this.preloadedQueue = [];
     }
 
-    private playBuffer(buffer: AudioBuffer, offset: number, rate: number): void {
-        const ctx = this.getContext();
+    private playUrl(url: string, rate: number): void {
+        this.revokeBlobUrl();
+        this.blobUrl = url;
+        const audio = new Audio(url);
+        this.attachAndPlay(audio, rate);
+    }
 
-        const source = ctx.createBufferSource();
-        source.buffer = buffer;
-        source.playbackRate.value = rate;
+    private attachAndPlay(audio: HTMLAudioElement, rate: number): void {
+        audio.preservesPitch = true;
+        audio.playbackRate = rate;
 
-        const gain = ctx.createGain();
-        gain.gain.setValueAtTime(1, ctx.currentTime);
-
-        source.connect(gain);
-        gain.connect(ctx.destination);
-
-        source.onended = () => {
+        audio.onended = () => {
             if (this.isPlaying && !this.isPaused) {
                 this.isPlaying = false;
-                this.onEnded?.();
+                this.revokeBlobUrl();
+                this.onEndedCb?.();
             }
         };
 
-        this.sourceNode = source;
-        this.gainNode = gain;
+        audio.onerror = () => {
+            console.error('TTS audio playback failed');
+            this.isPlaying = false;
+        };
+
+        this.audio = audio;
         this.isPlaying = true;
-        this.isPaused = false;
-        this.startedAt = ctx.currentTime - offset;
-        source.start(0, offset);
+        audio.play().catch((err) => {
+            console.error('TTS audio play() failed:', err);
+            this.isPlaying = false;
+        });
     }
 
     pause(): void {
         if (!this.isPlaying || this.isPaused) return;
-        const ctx = this.getContext();
-        this.pausedAt = ctx.currentTime - this.startedAt;
         this.isPaused = true;
-        this.stopSource();
+        this.audio?.pause();
     }
 
     resume(): void {
-        if (!this.isPaused || !this.currentBuffer) return;
+        if (!this.isPaused || !this.audio) return;
         this.isPaused = false;
-        this.playBuffer(this.currentBuffer, this.pausedAt, this.currentRate);
+        this.audio.playbackRate = this.currentRate;
+        this.audio.play().catch((err) => {
+            console.error('TTS audio resume failed:', err);
+        });
     }
 
     stop(): void {
         this.stopSource();
         this.isPlaying = false;
         this.isPaused = false;
-        this.pausedAt = 0;
-        this.currentBuffer = null;
         this.clearPreloaded();
     }
 
     setOnEnded(cb: () => void): void {
-        this.onEnded = cb;
+        this.onEndedCb = cb;
     }
 
     dispose(): void {
         this.stop();
-        this.audioContext?.close();
-        this.audioContext = null;
     }
 
     private stopSource(): void {
-        if (this.sourceNode) {
-            this.sourceNode.onended = null;
-            try {
-                this.sourceNode.stop();
-            } catch {
-                // already stopped
-            }
-            this.sourceNode.disconnect();
-            this.sourceNode = null;
+        if (this.audio) {
+            this.audio.onended = null;
+            this.audio.onerror = null;
+            this.audio.pause();
+            this.audio.removeAttribute('src');
+            this.audio = null;
         }
-        if (this.gainNode) {
-            this.gainNode.disconnect();
-            this.gainNode = null;
+        this.revokeBlobUrl();
+    }
+
+    private revokeBlobUrl(): void {
+        if (this.blobUrl) {
+            URL.revokeObjectURL(this.blobUrl);
+            this.blobUrl = null;
         }
     }
 }

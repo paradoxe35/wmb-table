@@ -247,6 +247,10 @@ export const ttsSettings = sqliteTable('tts_settings', {
     segmentGapMs: integer('segment_gap_ms'),
     cacheMaxSizeMb: integer('cache_max_size_mb').notNull(),
     providerConfigs: text('provider_configs').notNull(), // JSON<Record<TtsProviderType, TtsProviderSettings>>
+    readIntroduction: integer('read_introduction', { mode: 'boolean' }).default(true),
+    announceSegmentNumbers: integer('announce_segment_numbers', { mode: 'boolean' }).default(false),
+    bibleReadEntireBook: integer('bible_read_entire_book', { mode: 'boolean' }).default(false),
+    autoScrollToHighlight: integer('auto_scroll_to_highlight', { mode: 'boolean' }).default(true),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

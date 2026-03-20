@@ -18,6 +18,65 @@ function stripMarkers(content: string): { clean: string; posMap: number[] } {
     return { clean, posMap };
 }
 
+// ── Sentence merge pass ──
+// sentencex splits aggressively on punctuation (e.g. "Merci, Frère...?..."
+// becomes its own segment). We merge short fragments with their neighbor
+// so TTS reads natural-sounding chunks, while keeping segments under a max
+// length to avoid synthesis latency.
+
+const MIN_SEGMENT_CHARS = 40;
+const MAX_SEGMENT_CHARS = 400;
+
+interface Boundary {
+    start_index: number;
+    end_index: number;
+    text: string;
+}
+
+/**
+ * Merge consecutive boundaries that are too short to sound natural on their own.
+ * Short fragments are appended to the previous boundary when possible,
+ * or prepended to the next one if they are the first in the paragraph.
+ */
+function mergeBoundaries(raw: Boundary[]): Boundary[] {
+    if (raw.length <= 1) return raw;
+
+    const merged: Boundary[] = [];
+    let acc: Boundary | null = null;
+
+    for (const b of raw) {
+        const trimmed = b.text.trim();
+        if (!trimmed || !hasSpeakableContent(trimmed)) continue;
+
+        if (!acc) {
+            acc = { ...b };
+            continue;
+        }
+
+        const accLen = acc.text.trim().length;
+        const bLen = trimmed.length;
+
+        // Merge into accumulator if either side is too short and combined
+        // length stays under the max.
+        if (
+            (accLen < MIN_SEGMENT_CHARS || bLen < MIN_SEGMENT_CHARS) &&
+            accLen + bLen + 1 <= MAX_SEGMENT_CHARS
+        ) {
+            acc = {
+                start_index: acc.start_index,
+                end_index: b.end_index,
+                text: acc.text + ' ' + b.text,
+            };
+        } else {
+            merged.push(acc);
+            acc = { ...b };
+        }
+    }
+
+    if (acc) merged.push(acc);
+    return merged;
+}
+
 export function registerTtsHandlers(): void {
     registerHandler(TtsChannels.getProviders, async () => {
         return getTtsService().getProviderInfos();
@@ -49,11 +108,11 @@ export function registerTtsHandlers(): void {
     });
 
     registerHandler(TtsChannels.seekToSegment, async (_event, index) => {
-        getTtsService().seekToSegment(index);
+        await getTtsService().seekToSegment(index);
     });
 
-    registerHandler(TtsChannels.segmentComplete, async (_event, rendererPlayedQueued) => {
-        await getTtsService().onSegmentComplete(rendererPlayedQueued);
+    registerHandler(TtsChannels.segmentComplete, async () => {
+        await getTtsService().onSegmentComplete();
     });
 
     registerHandler(TtsChannels.checkLanguageSupport, async (_event, langCode) => {
@@ -111,9 +170,27 @@ export function registerTtsHandlers(): void {
             if (!p.content.trim()) continue;
             const { clean, posMap } = stripMarkers(p.content);
             const text = clean.trim();
-            if (!text) continue;
-            const boundaries: { start_index: number; end_index: number; text: string }[] =
-                get_sentence_boundaries(language, clean);
+            if (!text || !hasSpeakableContent(text)) {
+                continue;
+            }
+
+            let rawBoundaries: Boundary[];
+            try {
+                rawBoundaries = get_sentence_boundaries(language, clean);
+            } catch {
+                // sentencex panics on some multi-byte UTF-8 — single-segment fallback
+                segments.push({
+                    index: index++,
+                    text: text.replace(/\s+/g, ' '),
+                    paragraphIndex: p.paragraphIndex,
+                    startOffset: 0,
+                    endOffset: p.content.length,
+                });
+                continue;
+            }
+
+            const boundaries = mergeBoundaries(rawBoundaries);
+
             for (const b of boundaries) {
                 const sentenceText = b.text.trim();
                 if (!sentenceText || !hasSpeakableContent(sentenceText)) continue;

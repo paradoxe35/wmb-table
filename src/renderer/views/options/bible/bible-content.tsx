@@ -4,6 +4,7 @@ import { Button, Collapse, Empty, List, Segmented, Space, Spin, Typography, Drop
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
 import type { BibleBook, BibleIndex, BibleIndexValue, SubjectRefTree } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { useAppStore } from '@renderer/stores';
 
 // ---------------------------------------------------------------------------
 // Bible content (book browsing)
@@ -44,12 +45,11 @@ export function BibleContent({
             });
     }, []);
 
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+
     useEffect(() => {
         loadIndex();
-        const handler = () => loadIndex();
-        window.addEventListener('bible-version-changed', handler);
-        return () => window.removeEventListener('bible-version-changed', handler);
-    }, [loadIndex]);
+    }, [loadIndex, activeBibleVersion]);
 
     if (noBible) {
         return (

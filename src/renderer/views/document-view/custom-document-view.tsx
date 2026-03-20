@@ -26,6 +26,7 @@ import {
     useDocumentZoom,
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
+import { buildSegmentAnnouncement } from '@shared/tts.types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -168,7 +169,10 @@ export default function CustomDocumentView() {
     );
 
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const tts = useTts(paragraphs, contentLanguage ?? 'en', docContent?.title ?? '');
+    const tts = useTts(paragraphs, contentLanguage ?? 'en', docContent?.title ?? '', {
+        introText: docContent?.title,
+        getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, contentLanguage ?? 'en'),
+    });
 
     return (
         <DocumentBody

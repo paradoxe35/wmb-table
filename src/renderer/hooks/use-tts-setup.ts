@@ -169,6 +169,15 @@ export function useTtsSetup(): void {
     useEffect(() => {
         return window.api.on.ttsPlaybackState((state) => {
             if (state.status === 'idle') {
+                if (state.completedNaturally) {
+                    // Natural end: signal consumers AND clear resume position
+                    // so the next play starts from the beginning with intro.
+                    useTtsStore.setState({
+                        completedNaturally: true,
+                        lastStoppedDocumentId: null,
+                        lastStoppedSegmentIndex: 0,
+                    });
+                }
                 useTtsStore.getState().reset();
             } else {
                 useTtsStore.getState().setPlaybackState(state);
@@ -181,11 +190,26 @@ export function useTtsSetup(): void {
         });
     }, [t]);
 
-    // Segment audio playback + segment completion (merged so they share gap-timer state)
+    // Segment audio playback + segment completion
     useEffect(() => {
-        let pending = false;
         let gapTimeout: ReturnType<typeof setTimeout> | null = null;
         let pausedDuringGap = false;
+
+        // The segment index we are waiting for when synthesis is still in flight.
+        // -1 = not waiting. Set in onEnded; cleared when that segment's audio
+        // arrives and playback is scheduled.
+        let waitingForSegmentIndex = -1;
+
+        // When onEnded fired — used to honour the gap even when audio arrives late.
+        let endedAt = 0;
+
+        // Locally tracked index of the segment that is currently (or was last) playing.
+        // We do NOT use state.currentSegmentIndex from the store here because that value
+        // is updated by an IPC round-trip (notifySegmentComplete → main → pushState →
+        // renderer). If onEnded fires before the push arrives the store is stale, causing
+        // `expected` to point to the segment that was just played instead of the next one,
+        // which produces a deadlock where we wait forever for audio that already played.
+        let lastPlayedSegmentIndex = -1;
 
         const clearGap = () => {
             if (gapTimeout) {
@@ -194,78 +218,134 @@ export function useTtsSetup(): void {
             }
         };
 
+        const notifySegmentComplete = () => {
+            window.api.tts.segmentComplete();
+        };
+
+        /**
+         * Play the front of the preloaded queue and notify the main process.
+         * This is the single place that calls notifySegmentComplete — called only
+         * after audio has actually started playing, so main state stays in sync.
+         */
         const playPreloadedAndNotify = () => {
+            gapTimeout = null;
             const current = useTtsStore.getState();
             if (current.status === 'idle' || current.status === 'paused') return;
             const rate = current.settings?.rate ?? 1;
-            ttsAudioPlayer.playPreloaded(rate);
-            if (!pending) {
-                pending = true;
-                window.api.tts.segmentComplete(true).finally(() => {
-                    pending = false;
-                });
+            const played = ttsAudioPlayer.playPreloaded(rate);
+            if (played < 0) return; // queue was empty — stop/seek raced the gap timer
+            lastPlayedSegmentIndex = played;
+            notifySegmentComplete();
+        };
+
+        /**
+         * Schedule playback of the next preloaded segment respecting the gap.
+         * `alreadyWaited` is how many ms have already elapsed since onEnded —
+         * used so the total silence is always segmentGapMs, not gapMs + synthesis time.
+         */
+        const schedulePlay = (alreadyWaited = 0) => {
+            const gapMs = useTtsStore.getState().settings?.segmentGapMs ?? SEGMENT_GAP_MS;
+            const remaining = Math.max(0, gapMs - alreadyWaited);
+            if (remaining > 0) {
+                gapTimeout = setTimeout(playPreloadedAndNotify, remaining);
+            } else {
+                playPreloadedAndNotify();
             }
         };
 
-        // Listen for stop/pause/resume to manage the gap timer
+        // Manage gap timer and waiting state on stop / pause / resume
         const unsubStore = useTtsStore.subscribe((state) => {
-            if (state.status === 'idle' || state.status === 'paused') {
+            if (state.status === 'idle') {
+                // Hard stop: reset everything
+                clearGap();
+                waitingForSegmentIndex = -1;
+                pausedDuringGap = false;
+                lastPlayedSegmentIndex = -1;
+            } else if (state.status === 'paused') {
                 if (gapTimeout) {
                     clearGap();
                     pausedDuringGap = true;
                 }
-            }
-            // Resume after pausing during the gap — play the preloaded buffer now
-            if (state.status === 'playing' && pausedDuringGap) {
+                // Paused while waiting for late audio — treat like a gap pause so
+                // the resume path re-checks (or re-enters waiting mode).
+                if (waitingForSegmentIndex >= 0) {
+                    pausedDuringGap = true;
+                    // Keep waitingForSegmentIndex so resume knows which segment to check.
+                }
+            } else if (state.status === 'playing' && pausedDuringGap) {
                 pausedDuringGap = false;
-                if (ttsAudioPlayer.hasPreloaded()) {
-                    playPreloadedAndNotify();
+                if (waitingForSegmentIndex >= 0) {
+                    // Resuming from a waiting-for-audio pause
+                    if (ttsAudioPlayer.hasPreloadedAtIndex(waitingForSegmentIndex)) {
+                        // Audio arrived while paused — play now
+                        waitingForSegmentIndex = -1;
+                        schedulePlay();
+                    }
+                    // else: audio still hasn't arrived; ttsSegmentAudio.then() will
+                    // trigger schedulePlay when it does (waitingForSegmentIndex stays set)
+                } else if (ttsAudioPlayer.hasPreloaded()) {
+                    // Resuming from a normal gap-timer pause
+                    schedulePlay();
                 }
             }
         });
 
-        // Receive audio from main — either play immediately or preload for later
+        // Receive audio from main — play immediately (non-queued) or preload (queued)
         const unsubAudio = window.api.on.ttsSegmentAudio((data) => {
             const state = useTtsStore.getState();
             if (state.status === 'idle') return;
 
             if (data.queued) {
-                ttsAudioPlayer.preload(data.audioBase64, data.mimeType, data.segmentIndex);
+                ttsAudioPlayer
+                    .preload(data.audioBase64, data.mimeType, data.segmentIndex)
+                    .then(() => {
+                        // Only act if we're waiting and the correct segment just arrived.
+                        if (waitingForSegmentIndex < 0) return;
+                        if (!ttsAudioPlayer.hasPreloadedAtIndex(waitingForSegmentIndex)) return;
+                        // Don't auto-play while paused — resume handler will do it.
+                        if (useTtsStore.getState().status === 'paused') return;
+
+                        const elapsed = Date.now() - endedAt;
+                        waitingForSegmentIndex = -1;
+                        schedulePlay(elapsed);
+                    });
             } else {
-                // A new non-queued segment means a fresh playback (start or seek).
-                // Cancel any pending gap timer from the previous segment transition.
+                // Non-queued = fresh playback (start or seek). Reset all state.
                 clearGap();
+                waitingForSegmentIndex = -1;
                 pausedDuringGap = false;
+                lastPlayedSegmentIndex = data.segmentIndex;
                 ttsAudioPlayer.clearPreloaded();
                 const rate = state.settings?.rate ?? 1;
                 ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
             }
         });
 
-        // When a segment finishes playing, transition to the next one
+        // When a segment finishes, transition to the next one
         ttsAudioPlayer.setOnEnded(() => {
             const state = useTtsStore.getState();
             if (state.status === 'idle') return;
 
-            const gapMs = state.settings?.segmentGapMs ?? SEGMENT_GAP_MS;
+            clearGap();
+            endedAt = Date.now();
 
-            if (ttsAudioPlayer.hasPreloaded()) {
-                const onGapElapsed = () => {
-                    gapTimeout = null;
-                    playPreloadedAndNotify();
-                };
-                if (gapMs > 0) {
-                    gapTimeout = setTimeout(onGapElapsed, gapMs);
-                } else {
-                    playPreloadedAndNotify();
-                }
+            const expected = lastPlayedSegmentIndex + 1;
+
+            if (ttsAudioPlayer.hasPreloadedAtIndex(expected)) {
+                // Happy path: next segment is already pre-decoded → play after gap.
+                // notifySegmentComplete is called inside playPreloadedAndNotify.
+                schedulePlay();
+            } else if (state.totalSegments > 0 && expected >= state.totalSegments) {
+                // All segments have been played. The main process is waiting for one
+                // final segmentComplete to advance its currentIndex past the end,
+                // which triggers stop(true) and the completedNaturally signal.
+                notifySegmentComplete();
             } else {
-                // No preloaded buffer — fall back to the original round-trip
-                if (pending) return;
-                pending = true;
-                window.api.tts.segmentComplete().finally(() => {
-                    pending = false;
-                });
+                // Synthesis still in flight. Save the expected index and wait.
+                // Do NOT call notifySegmentComplete here — that would advance the
+                // main process state before playback starts, causing a double-advance
+                // when playPreloadedAndNotify calls it again, which would skip a segment.
+                waitingForSegmentIndex = expected;
             }
         });
 

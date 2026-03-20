@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Divider, Empty, Progress, Select, Space, Typography } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -98,7 +98,8 @@ function CompactVersionSelector() {
         async (abbreviation: string) => {
             await window.api.bible.switchVersion(abbreviation);
             refresh();
-            window.dispatchEvent(new Event('bible-version-changed'));
+            const v = await window.api.bible.getActiveVersion();
+            useAppStore.getState().setActiveBibleVersion(v);
         },
         [refresh],
     );
@@ -260,9 +261,11 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
 
 export default function SidebarBibleBrowser() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const [books, setBooks] = useState<BookEntry[]>(cachedBooks);
     const [noBible, setNoBible] = useState(cachedNoBible);
     const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
+    const prevVersionRef = useRef(activeBibleVersion?.abbreviation);
 
     const loadIndex = useCallback(() => {
         window.api.bible
@@ -298,19 +301,17 @@ export default function SidebarBibleBrowser() {
     }, []);
 
     useEffect(() => {
-        // Reload when language changes or no cached data
-        if (cachedBooks.length === 0 || contentLanguage !== cachedForLanguage) {
+        const versionChanged = activeBibleVersion?.abbreviation !== prevVersionRef.current;
+        prevVersionRef.current = activeBibleVersion?.abbreviation;
+
+        if (versionChanged || cachedBooks.length === 0 || contentLanguage !== cachedForLanguage) {
+            if (versionChanged) {
+                invalidateCache();
+            }
             loadIndex();
             setSelectedBook(null);
         }
-
-        const handler = () => {
-            loadIndex();
-            setSelectedBook(null);
-        };
-        window.addEventListener('bible-version-changed', handler);
-        return () => window.removeEventListener('bible-version-changed', handler);
-    }, [loadIndex, contentLanguage]);
+    }, [loadIndex, contentLanguage, activeBibleVersion]);
 
     const { t } = useTranslation();
 

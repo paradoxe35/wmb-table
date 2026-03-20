@@ -13,22 +13,33 @@ import {
     hasSpeakableContent,
 } from '@shared/tts.types';
 
+// ── Per-document TTS options ──
+
+interface UseTtsOptions {
+    introText?: string;
+    getSegmentLabel?: (paragraphIndex: number) => string;
+}
+
 // ── Segmentation ──
 
 async function segmentText(
     paragraphs: { paragraphIndex: number; content: string }[],
     mode: TtsHighlightMode,
     language: string,
+    getSegmentLabel?: (paragraphIndex: number) => string,
+    announceEnabled?: boolean,
 ): Promise<TtsSegment[]> {
+    let contentSegments: TtsSegment[];
+
     if (mode === 'paragraph') {
         let index = 0;
-        const segments: TtsSegment[] = [];
+        contentSegments = [];
         for (const p of paragraphs) {
             const text = p.content.replace(/[*^]/g, '').replace(/\s+/g, ' ').trim();
             if (!text || !hasSpeakableContent(text)) {
                 continue;
             }
-            segments.push({
+            contentSegments.push({
                 index: index++,
                 text,
                 paragraphIndex: p.paragraphIndex,
@@ -36,9 +47,31 @@ async function segmentText(
                 endOffset: p.content.length,
             });
         }
-        return segments;
+    } else {
+        contentSegments = await window.api.tts.segmentParagraphs(paragraphs, language);
     }
-    return window.api.tts.segmentParagraphs(paragraphs, language);
+
+    if (!announceEnabled || !getSegmentLabel) {
+        return contentSegments;
+    }
+
+    // Insert announcement segment before the first content segment of each paragraph
+    const result: TtsSegment[] = [];
+    let lastAnnouncedParagraph: number | null = null;
+    for (const seg of contentSegments) {
+        if (seg.paragraphIndex !== lastAnnouncedParagraph) {
+            lastAnnouncedParagraph = seg.paragraphIndex;
+            result.push({
+                index: result.length,
+                text: getSegmentLabel(seg.paragraphIndex),
+                paragraphIndex: seg.paragraphIndex,
+                startOffset: 0,
+                endOffset: 0,
+            });
+        }
+        result.push({ ...seg, index: result.length });
+    }
+    return result;
 }
 
 // ── Browser TTS ──
@@ -56,6 +89,11 @@ function playBrowserSegment(segments: TtsSegment[], index: number, settings: Tts
     clearBrowserTtsTimer();
 
     if (index >= segments.length) {
+        useTtsStore.setState({
+            completedNaturally: true,
+            lastStoppedDocumentId: null,
+            lastStoppedSegmentIndex: 0,
+        });
         useTtsStore.getState().reset();
         return;
     }
@@ -128,6 +166,7 @@ export function useTts(
     paragraphs: { paragraphIndex: number; content: string }[],
     language: string,
     documentId: string,
+    options?: UseTtsOptions,
 ) {
     const settings = useTtsStore((s) => s.settings);
     const status = useTtsStore((s) => s.status);
@@ -156,24 +195,44 @@ export function useTts(
         if (!settings || !paragraphs.length) {
             return;
         }
-        const segments = await segmentText(paragraphs, settings.highlightMode, language);
-        if (!segments.length) {
+        const contentSegments = await segmentText(
+            paragraphs,
+            settings.highlightMode,
+            language,
+            options?.getSegmentLabel,
+            settings.announceSegmentNumbers,
+        );
+        if (!contentSegments.length) {
             return;
         }
 
-        // Resume from last position if same document
-        const store = useTtsStore.getState();
-        let startIndex = 0;
-        if (
-            store.lastStoppedDocumentId === documentId &&
-            store.lastStoppedSegmentIndex > 0 &&
-            store.lastStoppedSegmentIndex < segments.length
-        ) {
-            startIndex = store.lastStoppedSegmentIndex;
+        // Always build allSegments with intro at index 0 (when enabled).
+        // The startIndex will skip the intro naturally on resume — no need
+        // to conditionally omit it, which avoids an index offset bug.
+        const allSegments: TtsSegment[] = [];
+        if (options?.introText && settings.readIntroduction) {
+            allSegments.push({
+                index: 0,
+                text: options.introText,
+                paragraphIndex: -1,
+                startOffset: 0,
+                endOffset: 0,
+            });
+        }
+        for (const seg of contentSegments) {
+            allSegments.push({ ...seg, index: allSegments.length });
         }
 
-        startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
-    }, [paragraphs, language, documentId, settings]);
+        // Resume at saved position (skips intro naturally), clamp if stale
+        const store = useTtsStore.getState();
+        const savedIndex =
+            store.lastStoppedDocumentId === documentId && store.lastStoppedSegmentIndex > 0
+                ? store.lastStoppedSegmentIndex
+                : 0;
+        const startIndex = savedIndex < allSegments.length ? savedIndex : 0;
+
+        startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId);
+    }, [paragraphs, language, documentId, settings, options]);
 
     const pause = useCallback(() => {
         const state = useTtsStore.getState();
@@ -232,19 +291,41 @@ export function useTts(
             if (!settings || !paragraphs.length) {
                 return;
             }
-            const segments = await segmentText(paragraphs, settings.highlightMode, language);
-            if (!segments.length) {
+            const contentSegments = await segmentText(
+                paragraphs,
+                settings.highlightMode,
+                language,
+                options?.getSegmentLabel,
+                settings.announceSegmentNumbers,
+            );
+            if (!contentSegments.length) {
                 return;
             }
 
-            const startIndex = segments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
+            // Build same segment array as play() so indices are consistent
+            // across stop/resume cycles (intro is included but skipped).
+            const allSegments: TtsSegment[] = [];
+            if (options?.introText && settings.readIntroduction) {
+                allSegments.push({
+                    index: 0,
+                    text: options.introText,
+                    paragraphIndex: -1,
+                    startOffset: 0,
+                    endOffset: 0,
+                });
+            }
+            for (const seg of contentSegments) {
+                allSegments.push({ ...seg, index: allSegments.length });
+            }
+
+            const startIndex = allSegments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
             if (startIndex < 0) {
                 return;
             }
 
-            startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
+            startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId);
         },
-        [paragraphs, language, documentId, settings],
+        [paragraphs, language, documentId, settings, options],
     );
 
     const isThisDocument = currentDocId === documentId;

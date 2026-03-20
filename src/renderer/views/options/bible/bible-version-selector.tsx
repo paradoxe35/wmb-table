@@ -3,6 +3,7 @@ import { Button, Progress, Space, Tag, Tooltip, Typography } from 'antd';
 import { CheckCircleOutlined, CloudDownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
+import { useAppStore } from '@renderer/stores';
 
 export function BibleVersionSelector() {
     const { t } = useTranslation();
@@ -50,7 +51,8 @@ export function BibleVersionSelector() {
         async (abbreviation: string) => {
             await window.api.bible.switchVersion(abbreviation);
             refresh();
-            window.dispatchEvent(new Event('bible-version-changed'));
+            const v = await window.api.bible.getActiveVersion();
+            useAppStore.getState().setActiveBibleVersion(v);
         },
         [refresh],
     );

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Button, Tooltip } from 'antd';
 import {
     PauseCircleOutlined,
@@ -10,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import type { SearchMode, HighlightItem } from '@shared/types';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
+import { useTtsStore } from '@renderer/stores/tts.store';
 
 // ── Shared TTS controls interface ──
 
@@ -186,6 +188,14 @@ export function TtsParagraph({
 }: TtsParagraphProps) {
     const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentId);
+    const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (ttsHighlight.isActive && autoScroll) {
+            containerRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+        }
+    }, [ttsHighlight.isActive, autoScroll]);
 
     const readFromHereLabel = t("Lire à partir d'ici");
     const tooltip = canSpeak
@@ -193,35 +203,39 @@ export function TtsParagraph({
         : (incompatibleMessage ?? t('Aucune voix disponible pour cette langue.'));
 
     return (
-        <SermonParagraphView
-            paragraph={paragraph}
-            search={search}
-            currentMatchIndex={currentMatchIndex}
-            matchOffset={matchOffset}
-            highlights={highlights}
-            ttsHighlight={ttsHighlight}
-            playFromHereButton={
-                onPlayFromHere ? (
-                    <Tooltip title={tooltip}>
-                        <span>
-                            <button
-                                className="tts-play-from-here"
-                                disabled={!canSpeak}
-                                onClick={(e) => {
-                                    if (!canSpeak) return;
-                                    e.stopPropagation();
-                                    onPlayFromHere(paragraph.paragraphIndex);
-                                }}
-                                aria-label={
-                                    canSpeak ? readFromHereLabel : t('Lecture audio indisponible')
-                                }
-                            >
-                                <CaretRightOutlined />
-                            </button>
-                        </span>
-                    </Tooltip>
-                ) : undefined
-            }
-        />
+        <div ref={containerRef}>
+            <SermonParagraphView
+                paragraph={paragraph}
+                search={search}
+                currentMatchIndex={currentMatchIndex}
+                matchOffset={matchOffset}
+                highlights={highlights}
+                ttsHighlight={ttsHighlight}
+                playFromHereButton={
+                    onPlayFromHere ? (
+                        <Tooltip title={tooltip}>
+                            <span>
+                                <button
+                                    className="tts-play-from-here"
+                                    disabled={!canSpeak}
+                                    onClick={(e) => {
+                                        if (!canSpeak) return;
+                                        e.stopPropagation();
+                                        onPlayFromHere(paragraph.paragraphIndex);
+                                    }}
+                                    aria-label={
+                                        canSpeak
+                                            ? readFromHereLabel
+                                            : t('Lecture audio indisponible')
+                                    }
+                                >
+                                    <CaretRightOutlined />
+                                </button>
+                            </span>
+                        </Tooltip>
+                    ) : undefined
+                }
+            />
+        </div>
     );
 }

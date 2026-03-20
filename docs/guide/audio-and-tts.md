@@ -144,6 +144,34 @@ La lecture à voix haute peut être utilisée pour :
 
 Dans les prédications, si un audio réel existe déjà, vous pouvez aussi utiliser cet audio.
 
+## Lecture améliorée
+
+Ces réglages rendent la lecture plus naturelle et plus pratique.
+
+### Lire l'introduction
+
+Avant de commencer, l'application annonce le titre du document. Pour une prédication, elle peut aussi dire la date et le lieu. Pour un chapitre biblique, elle dit le nom du livre et le numéro du chapitre.
+
+Vous pouvez désactiver cette option si vous préférez aller directement au texte.
+
+### Annoncer les numéros
+
+L'application peut dire le numéro du verset ou du paragraphe avant de le lire. Par exemple : « Verset 5 », puis le contenu du verset.
+
+Cela est utile pour suivre la lecture sans regarder l'écran.
+
+### Lire tout le livre (Bible)
+
+Quand vous écoutez un chapitre biblique, l'application peut passer automatiquement au chapitre suivant quand la lecture est terminée. La lecture continue jusqu'au dernier chapitre du livre.
+
+Ce réglage ne s'applique qu'à la Bible.
+
+### Défiler automatiquement
+
+Pendant la lecture, la page défile pour garder le texte en cours de lecture visible à l'écran.
+
+Si vous préférez défiler vous-même, vous pouvez désactiver cette option.
+
 ## Commencer depuis un endroit précis
 
 Dans la vue de lecture, un petit bouton peut apparaître sur un paragraphe pour commencer la lecture à partir de cet endroit précis.
@@ -170,6 +198,8 @@ Si vous ne savez pas quoi faire, laissez ce réglage tel quel.
 - vitesse normale
 - surlignage par phrase
 - lecture automatique désactivée au début
+- introduction activée
+- défilement automatique activé
 
 ## Voir aussi
 
