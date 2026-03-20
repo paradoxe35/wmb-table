@@ -54,6 +54,9 @@ export class TtsService {
     private playbackGeneration = 0;
     private completedNaturally = false;
 
+    /** Frozen copy of settings at playback start — immune to mid-session provider switches. */
+    private playbackSettings: TtsSettings | null = null;
+
     /**
      * How many segments ahead to synthesize and queue in the renderer.
      * All start concurrently — the renderer receives each as soon as it's ready.
@@ -155,6 +158,7 @@ export class TtsService {
         this.status = 'playing';
         this.completedNaturally = false;
         this.prepared.clear();
+        this.playbackSettings = { ...this.settings };
         this.pushState();
 
         // Non-queued audio must be sent before queued audio (renderer calls
@@ -182,6 +186,7 @@ export class TtsService {
         this.segments = [];
         this.currentIndex = 0;
         this.prepared.clear();
+        this.playbackSettings = null;
         this.pushState();
     }
 
@@ -468,18 +473,19 @@ export class TtsService {
      * or a fresh TtsSynthesizeResult after network/local synthesis.
      */
     private async prepareSegment(segment: TtsSegment): Promise<PreparedSegment> {
-        const providerType = this.settings.activeProvider;
+        const s = this.playbackSettings ?? this.settings;
+        const providerType = s.activeProvider;
         const provider = this.providers.get(providerType);
         if (!provider) throw new Error(`Provider not found: ${providerType}`);
 
-        const cfg = this.settings.providers[providerType];
+        const cfg = s.providers[providerType];
         const cacheKey = this.buildCacheKey(
             providerType,
             segment.text,
             this.currentLanguage,
             cfg?.voiceId ?? '',
             cfg?.model ?? '',
-            this.settings.rate,
+            s.rate,
         );
 
         const hit = await this.cache.lookup(cacheKey);
@@ -490,10 +496,8 @@ export class TtsService {
             language: this.currentLanguage,
             voiceId: cfg?.voiceId,
             model: cfg?.model,
-            rate: this.settings.rate,
+            rate: s.rate,
         });
-        // Write to disk cache for future sessions, but return the in-memory
-        // result directly — avoids a redundant disk read-back.
         this.cache.set(cacheKey, result).catch(() => {});
         return result;
     }
@@ -524,7 +528,7 @@ export class TtsService {
             status: this.status,
             currentSegmentIndex: this.currentIndex,
             totalSegments: this.segments.length,
-            provider: this.settings.activeProvider,
+            provider: (this.playbackSettings ?? this.settings).activeProvider,
             error: this.status === 'error' ? this.lastError : undefined,
             completedNaturally: this.status === 'idle' ? this.completedNaturally : undefined,
         });
