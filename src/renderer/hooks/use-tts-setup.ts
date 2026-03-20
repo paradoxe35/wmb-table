@@ -238,9 +238,8 @@ export function useTtsSetup(): void {
             if (current.status === 'idle' || current.status === 'paused') return;
             const rate = current.settings?.rate ?? 1;
             const played = ttsAudioPlayer.playPreloaded(rate);
-            if (played >= 0) {
-                lastPlayedSegmentIndex = played;
-            }
+            if (played < 0) return; // queue was empty — stop/seek raced the gap timer
+            lastPlayedSegmentIndex = played;
             notifySegmentComplete();
         };
 
