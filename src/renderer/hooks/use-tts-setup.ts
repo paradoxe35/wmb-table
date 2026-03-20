@@ -169,6 +169,15 @@ export function useTtsSetup(): void {
     useEffect(() => {
         return window.api.on.ttsPlaybackState((state) => {
             if (state.status === 'idle') {
+                if (state.completedNaturally) {
+                    // Natural end: signal consumers AND clear resume position
+                    // so the next play starts from the beginning with intro.
+                    useTtsStore.setState({
+                        completedNaturally: true,
+                        lastStoppedDocumentId: null,
+                        lastStoppedSegmentIndex: 0,
+                    });
+                }
                 useTtsStore.getState().reset();
             } else {
                 useTtsStore.getState().setPlaybackState(state);

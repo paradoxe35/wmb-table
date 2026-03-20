@@ -348,6 +348,83 @@ export default function TtsTab() {
                 </Space>
             </Card>
 
+            {/* Enhanced reading */}
+            <Card size="small" title={t('Lecture améliorée')}>
+                <Space orientation="vertical" style={{ width: '100%' }} size="small">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Switch
+                            size="small"
+                            checked={settings.readIntroduction}
+                            onChange={(v) => handleUpdate({ readIntroduction: v })}
+                        />
+                        <div>
+                            <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
+                                {t("Lire l'introduction")}
+                            </Text>
+                            <Hint>
+                                {t(
+                                    'Annonce le titre, la date et le lieu avant de commencer la lecture.',
+                                )}
+                            </Hint>
+                        </div>
+                    </div>
+                    <Divider style={{ margin: '4px 0' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Switch
+                            size="small"
+                            checked={settings.announceSegmentNumbers}
+                            onChange={(v) => handleUpdate({ announceSegmentNumbers: v })}
+                        />
+                        <div>
+                            <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
+                                {t('Annoncer les numéros')}
+                            </Text>
+                            <Hint>
+                                {t(
+                                    'Annonce le numéro du verset ou du paragraphe avant de le lire.',
+                                )}
+                            </Hint>
+                        </div>
+                    </div>
+                    <Divider style={{ margin: '4px 0' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Switch
+                            size="small"
+                            checked={settings.bibleReadEntireBook}
+                            onChange={(v) => handleUpdate({ bibleReadEntireBook: v })}
+                        />
+                        <div>
+                            <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
+                                {t('Lire tout le livre (Bible)')}
+                            </Text>
+                            <Hint>
+                                {t(
+                                    'Continue automatiquement au chapitre suivant après avoir terminé.',
+                                )}
+                            </Hint>
+                        </div>
+                    </div>
+                    <Divider style={{ margin: '4px 0' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Switch
+                            size="small"
+                            checked={settings.autoScrollToHighlight}
+                            onChange={(v) => handleUpdate({ autoScrollToHighlight: v })}
+                        />
+                        <div>
+                            <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
+                                {t('Défiler automatiquement')}
+                            </Text>
+                            <Hint>
+                                {t(
+                                    'Fait défiler la page pour toujours voir le texte en cours de lecture.',
+                                )}
+                            </Hint>
+                        </div>
+                    </div>
+                </Space>
+            </Card>
+
             {/* Cache */}
             <Card size="small">
                 <Field

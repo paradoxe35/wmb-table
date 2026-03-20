@@ -202,6 +202,21 @@ const es: Record<string, string> = {
     'Cache audio vidé': 'Caché de audio vaciado',
     'Taille maximale du cache': 'Tamaño máximo del caché',
 
+    // ── TTS enhanced reading ──
+    'Lecture améliorée': 'Lectura mejorada',
+    "Lire l'introduction": 'Leer la introducción',
+    'Annonce le titre, la date et le lieu avant de commencer la lecture.':
+        'Anuncia el título, la fecha y el lugar antes de comenzar la lectura.',
+    'Annoncer les numéros': 'Anunciar números',
+    'Annonce le numéro du verset ou du paragraphe avant de le lire.':
+        'Anuncia el número del versículo o párrafo antes de leerlo.',
+    'Lire tout le livre (Bible)': 'Leer el libro completo (Biblia)',
+    'Continue automatiquement au chapitre suivant après avoir terminé.':
+        'Continúa automáticamente al siguiente capítulo al terminar.',
+    'Défiler automatiquement': 'Desplazamiento automático',
+    'Fait défiler la page pour toujours voir le texte en cours de lecture.':
+        'Desplaza la página para mantener siempre visible el texto que se está leyendo.',
+
     // ── TTS shared ──
     'Voix du système': 'Voces del sistema',
     'Sherpa-ONNX TTS': 'Sherpa-ONNX TTS',

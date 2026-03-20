@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "c5943179-15d7-4133-a1ee-f470d1fc1dd7",
+    "id": "8316da2d-1c8e-4cb7-a3af-f53f7e7551de",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -1457,6 +1457,38 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
+                },
+                "read_introduction": {
+                    "name": "read_introduction",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": true
+                },
+                "announce_segment_numbers": {
+                    "name": "announce_segment_numbers",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": false
+                },
+                "bible_read_entire_book": {
+                    "name": "bible_read_entire_book",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": false
+                },
+                "auto_scroll_to_highlight": {
+                    "name": "auto_scroll_to_highlight",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": true
                 },
                 "created_at": {
                     "name": "created_at",

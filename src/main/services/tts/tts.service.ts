@@ -52,6 +52,7 @@ export class TtsService {
     private status: TtsPlaybackStatus = 'idle';
     private lastError?: string;
     private playbackGeneration = 0;
+    private completedNaturally = false;
     private prefetchQueue = new Map<number, Promise<PreparedSegment>>();
 
     constructor() {
@@ -140,6 +141,7 @@ export class TtsService {
         this.currentIndex = startIndex;
         this.currentLanguage = language;
         this.status = 'playing';
+        this.completedNaturally = false;
         this.prefetchQueue.clear();
         this.pushState();
 
@@ -161,9 +163,10 @@ export class TtsService {
         }
     }
 
-    stop(): void {
+    stop(completedNaturally = false): void {
         this.playbackGeneration++;
         this.status = 'idle';
+        this.completedNaturally = completedNaturally;
         this.segments = [];
         this.currentIndex = 0;
         this.prefetchQueue.clear();
@@ -187,7 +190,7 @@ export class TtsService {
 
         const nextIndex = this.currentIndex + 1;
         if (nextIndex >= this.segments.length) {
-            this.stop();
+            this.stop(true);
             return;
         }
 
@@ -578,6 +581,7 @@ export class TtsService {
             totalSegments: this.segments.length,
             provider: this.settings.activeProvider,
             error: this.status === 'error' ? this.lastError : undefined,
+            completedNaturally: this.status === 'idle' ? this.completedNaturally : undefined,
         });
     }
 }

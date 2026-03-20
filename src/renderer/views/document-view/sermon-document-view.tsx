@@ -21,6 +21,8 @@ import {
     useDocumentHighlights,
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
+import { useFormatSermonDate } from '@renderer/hooks';
+import { buildSegmentAnnouncement, buildSermonIntroText } from '@shared/tts.types';
 
 export default function SermonDocumentView() {
     const { content, loading } = useSermonContent();
@@ -71,7 +73,20 @@ export default function SermonDocumentView() {
         [content?.paragraphs],
     );
 
-    const tts = useTts(ttsParagraphs, content?.meta.languageCode ?? '', content?.meta.title ?? '');
+    const formatDate = useFormatSermonDate();
+
+    const ttsIntroText = useMemo(() => {
+        if (!content?.meta) return undefined;
+        const { title, dateMs, location, languageCode } = content.meta;
+        const dateStr = dateMs ? formatDate(dateMs) : null;
+        return buildSermonIntroText(title, dateStr, location, languageCode);
+    }, [content?.meta, formatDate]);
+
+    const langCode = content?.meta.languageCode ?? '';
+    const tts = useTts(ttsParagraphs, langCode, content?.meta.title ?? '', {
+        introText: ttsIntroText,
+        getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
+    });
 
     const { matchOffsets } = useMatchNavigation(
         activeTabKey,

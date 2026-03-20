@@ -231,6 +231,10 @@ CREATE TABLE `tts_settings` (
 	`segment_gap_ms` integer,
 	`cache_max_size_mb` integer NOT NULL,
 	`provider_configs` text NOT NULL,
+	`read_introduction` integer DEFAULT true,
+	`announce_segment_numbers` integer DEFAULT false,
+	`bible_read_entire_book` integer DEFAULT false,
+	`auto_scroll_to_highlight` integer DEFAULT true,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
