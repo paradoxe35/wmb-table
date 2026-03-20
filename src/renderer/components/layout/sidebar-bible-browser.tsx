@@ -98,7 +98,8 @@ function CompactVersionSelector() {
         async (abbreviation: string) => {
             await window.api.bible.switchVersion(abbreviation);
             refresh();
-            window.dispatchEvent(new Event('bible-version-changed'));
+            const v = await window.api.bible.getActiveVersion();
+            useAppStore.getState().setActiveBibleVersion(v);
         },
         [refresh],
     );

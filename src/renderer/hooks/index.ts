@@ -103,6 +103,7 @@ export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
     const setContentLanguage = useAppStore((s) => s.setContentLanguage);
+    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
     const setSermons = useSermonStore((s) => s.setSermons);
     const setTabs = useSermonStore((s) => s.setTabs);
@@ -154,10 +155,12 @@ export function useInitApp() {
                 }
 
                 setContentLanguage(dbContentLanguage);
-                const [sermons, savedTabs] = await Promise.all([
+                const [sermons, savedTabs, bibleVersion] = await Promise.all([
                     window.api.documents.getTitles(dbContentLanguage),
                     window.api.documents.getTabs(dbContentLanguage),
+                    window.api.bible.getActiveVersion(),
                 ]);
+                setActiveBibleVersion(bibleVersion);
 
                 setSermons(sermons);
                 if (savedTabs?.length) {
@@ -174,6 +177,7 @@ export function useInitApp() {
         setLoaded,
         setSidebarHidden,
         setContentLanguage,
+        setActiveBibleVersion,
         setRememberReadingPosition,
         setSermons,
         setTabs,
@@ -243,6 +247,8 @@ export function useOpenDocumentRequest() {
             if (request.documentType === 'bible' && request.bibleBook && request.bibleChapter) {
                 if (request.bibleVersionAbbreviation) {
                     await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
+                    const v = await window.api.bible.getActiveVersion();
+                    useAppStore.getState().setActiveBibleVersion(v);
                 }
                 const bookName = request.title.replace(
                     new RegExp(`\\s+${request.bibleChapter}$`),

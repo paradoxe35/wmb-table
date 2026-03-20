@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ViewMenuValue } from '@shared/types';
+import type { BibleVersionInfo, ViewMenuValue } from '@shared/types';
 import { DEFAULT_MAX_TABS } from '@shared/constants';
 
 type OptionViewValue =
@@ -19,6 +19,7 @@ interface AppState {
     optionView: OptionViewValue;
     sidebarHidden: boolean;
     contentLanguage: string | null;
+    activeBibleVersion: BibleVersionInfo | null;
     rememberReadingPosition: boolean;
     maxTabs: number;
     error: string | null;
@@ -30,6 +31,7 @@ interface AppState {
     setOptionView(v: OptionViewValue): void;
     setSidebarHidden(v: boolean): void;
     setContentLanguage(code: string | null): void;
+    setActiveBibleVersion(v: BibleVersionInfo | null): void;
     setRememberReadingPosition(value: boolean): void;
     setMaxTabs(value: number): void;
     setError(error: string | null): void;
@@ -46,6 +48,7 @@ export const useAppStore = create<AppState>((set) => ({
     optionView: 'search',
     sidebarHidden: false,
     contentLanguage: null,
+    activeBibleVersion: null,
     rememberReadingPosition: true,
     maxTabs: DEFAULT_MAX_TABS,
     error: null,
@@ -57,6 +60,7 @@ export const useAppStore = create<AppState>((set) => ({
     setOptionView: (v) => set({ optionView: v }),
     setSidebarHidden: (v) => set({ sidebarHidden: v }),
     setContentLanguage: (code) => set({ contentLanguage: code }),
+    setActiveBibleVersion: (v) => set({ activeBibleVersion: v }),
     setRememberReadingPosition: (value) => set({ rememberReadingPosition: value }),
     setMaxTabs: (value) => set({ maxTabs: value }),
     setError: (error) => set({ error }),

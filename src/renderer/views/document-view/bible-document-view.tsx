@@ -31,6 +31,7 @@ import {
     buildBibleChapterIntro,
     getChapterLabel,
 } from '@shared/tts.types';
+import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 
 // ---------------------------------------------------------------------------
@@ -254,25 +255,13 @@ export default function BibleDocumentView() {
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
     );
 
-    const [bibleLang, setBibleLang] = useState('');
-    const [bibleVersionAbbreviation, setBibleVersionAbbreviation] = useState('');
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const bibleLang = activeBibleVersion?.langCode ?? '';
+    const bibleVersionAbbreviation = activeBibleVersion?.abbreviation ?? '';
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
     const { verses, loading } = useBibleChapterContent(bookCode, chapter);
-
-    useEffect(() => {
-        window.api.bible
-            .getActiveVersion()
-            .then((v) => {
-                setBibleLang(v?.langCode ?? '');
-                setBibleVersionAbbreviation(v?.abbreviation ?? '');
-            })
-            .catch(() => {
-                setBibleLang('');
-                setBibleVersionAbbreviation('');
-            });
-    }, []);
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
     const loadedChapterKey = verses[0]
