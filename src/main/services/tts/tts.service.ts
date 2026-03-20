@@ -342,7 +342,7 @@ export class TtsService {
             language,
             voiceId: cfg?.voiceId,
             model: cfg?.model,
-            rate: this.settings.rate,
+            rate: 1,
         });
     }
 
@@ -479,13 +479,15 @@ export class TtsService {
         if (!provider) throw new Error(`Provider not found: ${providerType}`);
 
         const cfg = s.providers[providerType];
+        // Synthesize at 1.0x — speed is applied in the renderer via playbackRate
+        // so the user gets instant live feedback when adjusting the slider.
         const cacheKey = this.buildCacheKey(
             providerType,
             segment.text,
             this.currentLanguage,
             cfg?.voiceId ?? '',
             cfg?.model ?? '',
-            s.rate,
+            1,
         );
 
         const hit = await this.cache.lookup(cacheKey);
@@ -496,7 +498,7 @@ export class TtsService {
             language: this.currentLanguage,
             voiceId: cfg?.voiceId,
             model: cfg?.model,
-            rate: s.rate,
+            rate: 1,
         });
         this.cache.set(cacheKey, result).catch(() => {});
         return result;
