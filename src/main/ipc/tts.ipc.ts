@@ -49,7 +49,7 @@ export function registerTtsHandlers(): void {
     });
 
     registerHandler(TtsChannels.seekToSegment, async (_event, index) => {
-        getTtsService().seekToSegment(index);
+        await getTtsService().seekToSegment(index);
     });
 
     registerHandler(TtsChannels.segmentComplete, async () => {
