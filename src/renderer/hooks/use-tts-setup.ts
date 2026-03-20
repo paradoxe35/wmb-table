@@ -199,14 +199,18 @@ export function useTtsSetup(): void {
         // The segment index we are waiting for when synthesis is still in flight.
         // -1 = not waiting. Set in onEnded; cleared when that segment's audio
         // arrives and playback is scheduled.
-        // Storing the index (not a boolean) avoids a stale-closure bug: calling
-        // notifySegmentComplete() in the waiting path would cause the main process
-        // to advance currentSegmentIndex before the audio plays, making
-        // `currentSegmentIndex + 1` point to the wrong segment.
         let waitingForSegmentIndex = -1;
 
         // When onEnded fired — used to honour the gap even when audio arrives late.
         let endedAt = 0;
+
+        // Locally tracked index of the segment that is currently (or was last) playing.
+        // We do NOT use state.currentSegmentIndex from the store here because that value
+        // is updated by an IPC round-trip (notifySegmentComplete → main → pushState →
+        // renderer). If onEnded fires before the push arrives the store is stale, causing
+        // `expected` to point to the segment that was just played instead of the next one,
+        // which produces a deadlock where we wait forever for audio that already played.
+        let lastPlayedSegmentIndex = -1;
 
         const clearGap = () => {
             if (gapTimeout) {
@@ -233,7 +237,10 @@ export function useTtsSetup(): void {
             const current = useTtsStore.getState();
             if (current.status === 'idle' || current.status === 'paused') return;
             const rate = current.settings?.rate ?? 1;
-            ttsAudioPlayer.playPreloaded(rate);
+            const played = ttsAudioPlayer.playPreloaded(rate);
+            if (played >= 0) {
+                lastPlayedSegmentIndex = played;
+            }
             notifySegmentComplete();
         };
 
@@ -259,6 +266,7 @@ export function useTtsSetup(): void {
                 clearGap();
                 waitingForSegmentIndex = -1;
                 pausedDuringGap = false;
+                lastPlayedSegmentIndex = -1;
             } else if (state.status === 'paused') {
                 if (gapTimeout) {
                     clearGap();
@@ -312,6 +320,7 @@ export function useTtsSetup(): void {
                 clearGap();
                 waitingForSegmentIndex = -1;
                 pausedDuringGap = false;
+                lastPlayedSegmentIndex = data.segmentIndex;
                 ttsAudioPlayer.clearPreloaded();
                 const rate = state.settings?.rate ?? 1;
                 ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
@@ -326,9 +335,7 @@ export function useTtsSetup(): void {
             clearGap();
             endedAt = Date.now();
 
-            // Capture the expected next index NOW, before any IPC call could cause
-            // the main process to advance currentSegmentIndex in the store.
-            const expected = state.currentSegmentIndex + 1;
+            const expected = lastPlayedSegmentIndex + 1;
 
             if (ttsAudioPlayer.hasPreloadedAtIndex(expected)) {
                 // Happy path: next segment is already pre-decoded → play after gap.
