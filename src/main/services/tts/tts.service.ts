@@ -157,19 +157,15 @@ export class TtsService {
         this.prepared.clear();
         this.pushState();
 
-        // Start the current segment synthesis FIRST so it enters the provider's
-        // queue before the prefetch segments. For local providers (Sherpa) this is
-        // critical: the worker processes requests FIFO, so segment 0 must be posted
-        // before segments 1-4 to avoid a 5× startup delay.
-        // For remote providers (Edge TTS) all requests are independent HTTP calls
-        // so order doesn't matter — they all run concurrently either way.
-        const playPromise = this.playSegment(startIndex, this.playbackGeneration);
+        // Synthesize and send the current segment as non-queued audio FIRST.
+        // The renderer's non-queued handler calls clearPreloaded(), so any queued
+        // audio that arrives before non-queued would be destroyed. We must await
+        // playSegment to guarantee the non-queued audio is sent before ensureWindow
+        // pushes queued audio for upcoming segments.
+        await this.playSegment(startIndex, this.playbackGeneration);
 
-        // Kick off concurrent synthesis for upcoming segments. Fires after segment 0
-        // is already queued, so segment 0 is always first in the worker.
+        // Now prefetch upcoming segments — queued audio is safe to send.
         this.ensureWindow(startIndex + 1, this.playbackGeneration);
-
-        await playPromise;
     }
 
     pause(): void {
@@ -194,7 +190,7 @@ export class TtsService {
         this.pushState();
     }
 
-    seekToSegment(index: number): void {
+    async seekToSegment(index: number): Promise<void> {
         if (index < 0 || index >= this.segments.length) return;
         this.playbackGeneration++;
         this.prepared.clear();
@@ -202,12 +198,15 @@ export class TtsService {
         this.status = 'playing';
         this.pushState();
 
-        // Post segment 0 to the worker queue first, then prefetch the rest.
-        const playPromise = this.playSegment(index, this.playbackGeneration);
-        this.ensureWindow(index + 1, this.playbackGeneration);
-        playPromise.catch((err) => {
+        // Await playSegment so non-queued audio is sent before any queued audio.
+        // See startPlayback comment for why this ordering is critical.
+        try {
+            await this.playSegment(index, this.playbackGeneration);
+        } catch (err) {
             log.error('TTS seekToSegment playback error:', err);
-        });
+            return;
+        }
+        this.ensureWindow(index + 1, this.playbackGeneration);
     }
 
     async onSegmentComplete(): Promise<void> {
