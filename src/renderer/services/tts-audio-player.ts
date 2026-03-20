@@ -102,6 +102,7 @@ export class TtsAudioPlayer {
         audio.onended = () => {
             if (this.isPlaying && !this.isPaused) {
                 this.isPlaying = false;
+                this.revokeBlobUrl();
                 this.onEndedCb?.();
             }
         };
