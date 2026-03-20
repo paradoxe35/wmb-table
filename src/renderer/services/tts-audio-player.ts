@@ -70,6 +70,16 @@ export class TtsAudioPlayer {
     }
 
     /**
+     * Returns true if the front of the preloaded queue is exactly `segmentIndex`.
+     * Use this to check whether the *correct* next segment is ready before playing.
+     */
+    hasPreloadedAtIndex(segmentIndex: number): boolean {
+        return (
+            this.preloadedQueue.length > 0 && this.preloadedQueue[0].segmentIndex === segmentIndex
+        );
+    }
+
+    /**
      * Play the next preloaded buffer from the queue.
      * Returns the segment index that was played, or -1 if the queue is empty.
      */

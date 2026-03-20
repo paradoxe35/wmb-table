@@ -52,8 +52,8 @@ export function registerTtsHandlers(): void {
         getTtsService().seekToSegment(index);
     });
 
-    registerHandler(TtsChannels.segmentComplete, async (_event, rendererPlayedQueued) => {
-        await getTtsService().onSegmentComplete(rendererPlayedQueued);
+    registerHandler(TtsChannels.segmentComplete, async () => {
+        await getTtsService().onSegmentComplete();
     });
 
     registerHandler(TtsChannels.checkLanguageSupport, async (_event, langCode) => {
