@@ -76,8 +76,8 @@ export class AiService {
         return aiRepo.getConversations();
     }
 
-    createConversation(input?: { title?: string; languageCode?: string }): AiConversation {
-        const languageCode = input?.languageCode ?? configRepo.getContentLanguage();
+    createConversation(input?: { title?: string }): AiConversation {
+        const languageCode = configRepo.getContentLanguage();
         if (!languageCode) {
             throw new Error(
                 'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
@@ -191,8 +191,7 @@ export class AiService {
         }
 
         const conversation =
-            aiRepo.getConversation(request.conversationId) ??
-            this.createConversation({ languageCode: request.overrideLanguageCode });
+            aiRepo.getConversation(request.conversationId) ?? this.createConversation();
         const userMessage = aiRepo.createMessage({
             conversationId: conversation.id,
             role: 'user',
@@ -210,7 +209,12 @@ export class AiService {
             });
         }
 
-        const contentLanguageCode = request.overrideLanguageCode ?? conversation.languageCode;
+        const contentLanguageCode = configRepo.getContentLanguage();
+        if (!contentLanguageCode) {
+            throw new Error(
+                'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
+            );
+        }
         const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
 
         const isLocal = providerId === 'local';
@@ -221,7 +225,6 @@ export class AiService {
         const system = buildSystemPrompt({
             contentLanguageCode,
             uiLanguageCode,
-            overrideLanguageCode: request.overrideLanguageCode,
             installedLanguages,
             languagePreference: settings.languagePreference,
             hasAgents: !isLocal,
@@ -243,6 +246,7 @@ export class AiService {
         const tools = buildAiTools(contentLanguageCode, {
             model,
             isLocal,
+            uiLanguage: uiLanguageCode,
             abortSignal: controller.signal,
             browserWindow,
             conversationId: conversation.id,
@@ -342,7 +346,6 @@ export class AiService {
             const nextContext = buildConversationContext(conversation.id, isLocal);
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
-                languageCode: contentLanguageCode,
             });
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,

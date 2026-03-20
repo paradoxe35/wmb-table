@@ -56,7 +56,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                 try {
                     const result = await generateText({
                         model: ctx.model,
-                        system: buildResearchAgentPrompt(lang),
+                        system: buildResearchAgentPrompt(lang, ctx.uiLanguage),
                         prompt: topic,
                         tools: agentTools,
                         stopWhen: stepCountIs(MAX_STEPS),

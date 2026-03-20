@@ -5,7 +5,6 @@ export function buildSystemPrompt(input: {
     uiLanguageCode: string;
     installedLanguages: InstalledLanguage[];
     languagePreference: 'active' | 'explicit-only';
-    overrideLanguageCode?: string;
     hasAgents?: boolean;
 }): string {
     const installedLanguages = input.installedLanguages
@@ -14,13 +13,11 @@ export function buildSystemPrompt(input: {
         })
         .join('\n');
 
-    const responseLanguage = input.overrideLanguageCode ?? input.uiLanguageCode;
-
     return [
         'You are WMB Table Assistant, designed for preachers and pastors preparing sermons, studies, notes, and subjects.',
         `The sermon content language is "${input.contentLanguageCode}" — use this language when calling tools (searchSermons, searchContent, getBiblePassage, etc.).`,
         `The user interface language is "${input.uiLanguageCode}".`,
-        `Respond in "${responseLanguage}" unless the user clearly asks for another language.`,
+        `Respond in "${input.uiLanguageCode}" unless the user clearly asks for another language.`,
         input.languagePreference === 'explicit-only'
             ? 'Keep using the current content language for tool calls unless the user explicitly asks for another content language.'
             : 'Use the content language by default when searching sermons, Bible content, subjects, notes, and custom documents.',

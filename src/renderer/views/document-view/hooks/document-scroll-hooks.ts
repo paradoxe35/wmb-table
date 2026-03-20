@@ -16,7 +16,7 @@ type ResolvedScrollRestoreOptions = {
 };
 
 type RestoreState = {
-    restoreScrollTop: number;
+    restoreScrollRatio: number;
     restoreToken: string | null;
     saveToken: string | null;
 };
@@ -51,7 +51,7 @@ function buildRestoreState({
     savedPosition: ReadingPosition | null;
     savedPositionLoaded: boolean;
 }): RestoreState {
-    const restoreScrollTop = rememberReadingPosition
+    const restoreScrollRatio = rememberReadingPosition
         ? (savedPosition?.scrollY ?? activeTabScrollY ?? 0)
         : (activeTabScrollY ?? 0);
     const hasImmediateScroll = activeTabScrollY != null;
@@ -60,7 +60,7 @@ function buildRestoreState({
         contentReady && !!restoreIdentity && (hasImmediateScroll || !waitingOnPersistedPosition);
 
     return {
-        restoreScrollTop,
+        restoreScrollRatio,
         restoreToken:
             canRestore && activeTabKey && restoreIdentity
                 ? `${activeTabKey}::${restoreIdentity}::${hasImmediateScroll ? 'tab' : 'saved'}`
@@ -102,7 +102,7 @@ export function useScrollAndZoom(
     const { contentReady, restoreIdentity, readingPositionKey } = resolvedOptions;
 
     const zoom = activeTab?.zoom ?? 100;
-    const { restoreScrollTop, restoreToken, saveToken } = buildRestoreState({
+    const { restoreScrollRatio, restoreToken, saveToken } = buildRestoreState({
         activeTabKey,
         activeTabScrollY: activeTab?.scrollY,
         contentReady,
@@ -164,14 +164,19 @@ export function useScrollAndZoom(
             return;
         }
         const el = containerRef.current;
-        const targetScrollTop = restoreScrollTop;
         let frameId = 0;
         let attemptsLeft = 12;
 
         const restoreScroll = () => {
+            const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+            const targetScrollTop = restoreScrollRatio * maxScroll;
             el.scrollTop = targetScrollTop;
 
-            if (Math.abs(el.scrollTop - targetScrollTop) <= 1 || attemptsLeft <= 0) {
+            if (
+                maxScroll === 0 ||
+                Math.abs(el.scrollTop - targetScrollTop) <= 1 ||
+                attemptsLeft <= 0
+            ) {
                 return;
             }
 
@@ -181,31 +186,35 @@ export function useScrollAndZoom(
 
         restoreScroll();
         return () => cancelAnimationFrame(frameId);
-    }, [activeTab, restoreScrollTop, restoreToken, containerRef]);
+    }, [activeTab, restoreScrollRatio, restoreToken, containerRef]);
 
     useLayoutEffect(() => {
         const el = containerRef.current;
         if (!el || !saveToken || !activeTabKey) return;
-        let lastScrollTop = el.scrollTop;
+        const getScrollRatio = () => {
+            const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
+            return maxScroll === 0 ? 0 : el.scrollTop / maxScroll;
+        };
+        let lastScrollRatio = getScrollRatio();
         const handler = debounce(() => {
             if (readingPositionKey) {
-                void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollTop);
+                void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollRatio);
             }
         }, 500);
         const onScroll = () => {
             // Ignore scroll resets caused by parent becoming display:none
             if (!el.offsetParent) return;
-            lastScrollTop = el.scrollTop;
-            updateTabScroll(activeTabKey, lastScrollTop);
+            lastScrollRatio = getScrollRatio();
+            updateTabScroll(activeTabKey, lastScrollRatio);
             handler();
         };
         el.addEventListener('scroll', onScroll);
         return () => {
             handler.cancel();
             el.removeEventListener('scroll', onScroll);
-            updateTabScroll(activeTabKey, lastScrollTop);
+            updateTabScroll(activeTabKey, lastScrollRatio);
             if (readingPositionKey) {
-                void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollTop);
+                void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollRatio);
             }
         };
     }, [activeTabKey, readingPositionKey, saveToken, updateTabScroll, containerRef]);

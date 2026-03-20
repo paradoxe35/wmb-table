@@ -12,6 +12,7 @@ import { buildAgentTools } from '../agents';
 export interface BuildAiToolsOptions {
     model?: LanguageModel;
     isLocal?: boolean;
+    uiLanguage?: string;
     abortSignal?: AbortSignal;
     /** Required for subagent progress dispatch to the renderer. */
     browserWindow?: BrowserWindow;
@@ -47,6 +48,7 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
             ? buildAgentTools({
                   model: options.model,
                   contentLanguage: defaultContentLanguage,
+                  uiLanguage: options.uiLanguage ?? defaultContentLanguage,
                   abortSignal: options.abortSignal,
                   dispatch,
               })

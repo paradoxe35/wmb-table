@@ -533,7 +533,7 @@ export interface InvokeChannelMap {
     [AiChannels.updateSettings]: { args: [Partial<AiSettings>]; return: AiSettings };
     [AiChannels.getConversations]: { args: []; return: AiConversation[] };
     [AiChannels.createConversation]: {
-        args: [{ title?: string; languageCode?: string }?];
+        args: [{ title?: string }?];
         return: AiConversation;
     };
     [AiChannels.deleteConversation]: { args: [string]; return: void };

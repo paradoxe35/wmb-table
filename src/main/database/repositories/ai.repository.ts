@@ -30,7 +30,6 @@ function toConversation(row: typeof aiConversations.$inferSelect): AiConversatio
     return {
         id: row.id,
         title: row.title,
-        languageCode: row.languageCode,
         summary: row.summary,
         createdAt: row.createdAt ?? new Date().toISOString(),
         updatedAt: row.updatedAt ?? new Date().toISOString(),
@@ -166,7 +165,7 @@ export function createConversation(languageCode: string, title?: string): AiConv
 
 export function updateConversation(
     conversationId: string,
-    partial: Pick<Partial<AiConversation>, 'title' | 'summary' | 'languageCode'>,
+    partial: Pick<Partial<AiConversation>, 'title' | 'summary'>,
 ): AiConversation {
     getDb()
         .update(aiConversations)
