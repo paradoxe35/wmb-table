@@ -291,23 +291,39 @@ export function useTts(
             if (!settings || !paragraphs.length) {
                 return;
             }
-            const segments = await segmentText(
+            const contentSegments = await segmentText(
                 paragraphs,
                 settings.highlightMode,
                 language,
                 options?.getSegmentLabel,
                 settings.announceSegmentNumbers,
             );
-            if (!segments.length) {
+            if (!contentSegments.length) {
                 return;
             }
 
-            const startIndex = segments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
+            // Build same segment array as play() so indices are consistent
+            // across stop/resume cycles (intro is included but skipped).
+            const allSegments: TtsSegment[] = [];
+            if (options?.introText && settings.readIntroduction) {
+                allSegments.push({
+                    index: 0,
+                    text: options.introText,
+                    paragraphIndex: -1,
+                    startOffset: 0,
+                    endOffset: 0,
+                });
+            }
+            for (const seg of contentSegments) {
+                allSegments.push({ ...seg, index: allSegments.length });
+            }
+
+            const startIndex = allSegments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
             if (startIndex < 0) {
                 return;
             }
 
-            startPlaybackAtIndex(segments, startIndex, settings, language, documentId);
+            startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId);
         },
         [paragraphs, language, documentId, settings, options],
     );

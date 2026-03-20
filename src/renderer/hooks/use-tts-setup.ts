@@ -192,7 +192,6 @@ export function useTtsSetup(): void {
 
     // Segment audio playback + segment completion
     useEffect(() => {
-        let pending = false;
         let gapTimeout: ReturnType<typeof setTimeout> | null = null;
         let pausedDuringGap = false;
 
@@ -220,11 +219,7 @@ export function useTtsSetup(): void {
         };
 
         const notifySegmentComplete = () => {
-            if (pending) return;
-            pending = true;
-            window.api.tts.segmentComplete().finally(() => {
-                pending = false;
-            });
+            window.api.tts.segmentComplete();
         };
 
         /**
@@ -340,6 +335,11 @@ export function useTtsSetup(): void {
                 // Happy path: next segment is already pre-decoded → play after gap.
                 // notifySegmentComplete is called inside playPreloadedAndNotify.
                 schedulePlay();
+            } else if (state.totalSegments > 0 && expected >= state.totalSegments) {
+                // All segments have been played. The main process is waiting for one
+                // final segmentComplete to advance its currentIndex past the end,
+                // which triggers stop(true) and the completedNaturally signal.
+                notifySegmentComplete();
             } else {
                 // Synthesis still in flight. Save the expected index and wait.
                 // Do NOT call notifySegmentComplete here — that would advance the
