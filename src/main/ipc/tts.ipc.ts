@@ -111,9 +111,26 @@ export function registerTtsHandlers(): void {
             if (!p.content.trim()) continue;
             const { clean, posMap } = stripMarkers(p.content);
             const text = clean.trim();
-            if (!text) continue;
-            const boundaries: { start_index: number; end_index: number; text: string }[] =
-                get_sentence_boundaries(language, clean);
+            if (!text || !hasSpeakableContent(text)) {
+                continue;
+            }
+
+            let boundaries: { start_index: number; end_index: number; text: string }[];
+            try {
+                boundaries = get_sentence_boundaries(language, clean);
+            } catch {
+                // sentencex panics on some multi-byte UTF-8 text — fall back to
+                // treating the whole paragraph as a single segment.
+                segments.push({
+                    index: index++,
+                    text: text.replace(/\s+/g, ' '),
+                    paragraphIndex: p.paragraphIndex,
+                    startOffset: 0,
+                    endOffset: p.content.length,
+                });
+                continue;
+            }
+
             for (const b of boundaries) {
                 const sentenceText = b.text.trim();
                 if (!sentenceText || !hasSpeakableContent(sentenceText)) continue;
