@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Typography, List, Pagination } from 'antd';
-import type { TantivySearchResult } from '@shared/types';
+import type { TantivySearchResult, SearchMode } from '@shared/types';
+import { useSearchStore } from '@renderer/stores';
 import SearchResultItem from './search-result-item';
 
 const { Text } = Typography;
@@ -16,6 +17,7 @@ export default memo(function SearchResultList({
     onPageChange?: (page: number) => void;
 }) {
     const { t } = useTranslation();
+    const searchMode = useSearchStore((s) => s.searchMode);
     const totalPages = results ? Math.ceil(results.total / ITEMS_PER_PAGE) : 0;
     const [currentPage, setCurrentPage] = useState(1);
 
@@ -27,9 +29,10 @@ export default memo(function SearchResultList({
         [onPageChange],
     );
 
+    // Reset to page 1 when query or mode changes
     useEffect(() => {
         setCurrentPage(1);
-    }, [results?.query]);
+    }, [results?.query, searchMode]);
 
     return (
         <>
@@ -57,7 +60,7 @@ export default memo(function SearchResultList({
             {results && totalPages > 1 && (
                 <div className="mt-2 flex flex-center" style={{ paddingBottom: 20 }}>
                     <Pagination
-                        key={results.query}
+                        key={`${results.query}::${searchMode}`}
                         onChange={handlePageChange}
                         defaultCurrent={1}
                         showSizeChanger={false}

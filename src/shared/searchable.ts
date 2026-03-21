@@ -117,22 +117,18 @@ export function matchesQuery(text: string, query: string, mode: SearchMode): boo
             return re.test(text);
         }
         case 'all':
-            return words
-                .filter((w) => w.length >= 3)
-                .every((w) => {
-                    const re = simpleRegExp(w);
-                    re.lastIndex = 0;
-                    return re.test(text);
-                });
+            return words.every((w) => {
+                const re = simpleRegExp(w);
+                re.lastIndex = 0;
+                return re.test(text);
+            });
 
         case 'any':
-            return words
-                .filter((w) => w.length >= 3)
-                .some((w) => {
-                    const re = simpleRegExp(w);
-                    re.lastIndex = 0;
-                    return re.test(text);
-                });
+            return words.some((w) => {
+                const re = simpleRegExp(w);
+                re.lastIndex = 0;
+                return re.test(text);
+            });
     }
 }
 
@@ -152,11 +148,8 @@ export function buildHighlightRegex(query: string, mode: SearchMode, stem = true
         return new RegExp(stem ? phrasePattern(query) : phrasePatternExact(query), 'gi');
     }
 
-    // For 'all' and 'any': highlight each significant word independently
-    const significant = words.filter((w) => w.length >= 3);
-    if (significant.length === 0) return null;
-
+    // For 'all' and 'any': highlight each word independently
     const suffix = stem ? '[a-zA-Z]*' : '';
-    const patterns = significant.map((w) => wordPattern(w) + suffix);
+    const patterns = words.map((w) => wordPattern(w) + suffix);
     return new RegExp(patterns.join('|'), 'gi');
 }

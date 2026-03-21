@@ -46,7 +46,6 @@ function useSearch() {
                 message.warning(t('Votre recherche doit comporter au moins trois caractères'));
                 return;
             }
-            if (lastSearch.current === value) return;
             lastSearch.current = value;
             fetchResults(value, 1);
         },

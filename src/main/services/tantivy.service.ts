@@ -121,8 +121,9 @@ export async function searchSermons(
     queryText: string,
     limit: number,
     offset: number,
+    mode: 'any' | 'all' | 'exact' = 'all',
 ): Promise<SearchSermonResult> {
-    return call<SearchSermonResult>('searchSermons', langCode, queryText, limit, offset);
+    return call<SearchSermonResult>('searchSermons', langCode, queryText, limit, offset, mode);
 }
 
 export async function getSearchSnippet(
@@ -138,6 +139,7 @@ export async function getMatchingParagraphs(
     queryText: string,
     translationId: number,
     sermonDate: number,
+    mode: 'any' | 'all' | 'exact' = 'all',
 ): Promise<{ paragraphIndex: number; snippet: string; matchIndex: number }[]> {
     return call<{ paragraphIndex: number; snippet: string; matchIndex: number }[]>(
         'getMatchingParagraphs',
@@ -145,6 +147,7 @@ export async function getMatchingParagraphs(
         queryText,
         translationId,
         sermonDate,
+        mode,
     );
 }
 

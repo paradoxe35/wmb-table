@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import * as referenceRepo from '@main/database/repositories/reference.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
-import { matchesQuery, strNormalize, strNormalizeNoLower, simpleRegExp } from '@shared/searchable';
+import * as searchService from '@main/services/search.service';
+import { strNormalize, simpleRegExp } from '@shared/searchable';
 import type { SearchMode } from '@shared/types';
 import type {
     AiToolDefinition,
@@ -175,60 +175,40 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     .enum(['any', 'all', 'exact'])
                     .optional()
                     .describe(
-                        'Search mode: "any" matches any word, "all" requires all words, "exact" matches the phrase. Defaults to "any".',
+                        'Search mode: "any" matches any word, "all" requires all words, "exact" matches the exact phrase. Defaults to "all".',
                     ),
                 limit: z.number().int().min(1).max(20).optional(),
             }),
             execute: async ({ query, languageCode, searchMode: rawMode, limit = 10 }) => {
                 const lang = languageCode ?? defaultContentLanguage;
-                const mode: SearchMode = rawMode ?? 'any';
+                const mode: SearchMode = rawMode ?? 'all';
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 
                 try {
-                    const result = await tantivyService.searchSermons(lang, query, limit, 0);
-                    const items: SearchContentHit[] = [];
-                    for (const hit of result.hits.slice(0, limit)) {
-                        const sermonId = referenceRepo.tantivyDateToSermonIds(
-                            hit.tantivySermonDate,
-                        )[0];
+                    const { matches, total } = await searchService.searchSermons({
+                        langCode: lang,
+                        query,
+                        mode,
+                        limit,
+                        offset: 0,
+                    });
 
-                        if (!sermonId) {
-                            continue;
-                        }
+                    const items: SearchContentHit[] = matches.map((m) => ({
+                        sermonId: m.sermonId,
+                        translationId: m.translationId,
+                        title: m.title,
+                        location:
+                            referenceDataService.getSermonMeta(m.translationId, lang, m.sermonId)
+                                ?.location || undefined,
+                        matches: m.snippets.slice(0, 5).map((p) => ({
+                            paragraphNumber: p.paragraphIndex,
+                            snippet: p.snippet,
+                        })),
+                        totalMatches: m.snippets.length,
+                    }));
 
-                        const meta = referenceDataService.getSermonMeta(
-                            hit.translationId,
-                            lang,
-                            sermonId,
-                        );
-                        const rawParagraphs = await tantivyService.getMatchingParagraphs(
-                            lang,
-                            query,
-                            hit.translationId,
-                            hit.tantivySermonDate,
-                        );
-                        const filtered = rawParagraphs.filter((p) =>
-                            matchesQuery(strNormalizeNoLower(p.snippet), query, mode),
-                        );
-
-                        if (filtered.length === 0) {
-                            continue;
-                        }
-
-                        items.push({
-                            sermonId,
-                            translationId: hit.translationId,
-                            title: meta?.title ?? meta?.enTitle ?? sermonId,
-                            location: meta?.location || undefined,
-                            matches: filtered.slice(0, 5).map((p) => ({
-                                paragraphNumber: p.paragraphIndex,
-                                snippet: p.snippet,
-                            })),
-                            totalMatches: filtered.length,
-                        });
-                    }
-                    return { results: items, totalSermons: result.total };
+                    return { results: items, totalSermons: total };
                 } catch (err) {
                     return {
                         error: `Full-text search failed: ${err instanceof Error ? err.message : String(err)}`,

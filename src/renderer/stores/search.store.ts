@@ -50,7 +50,7 @@ function getUiState(state: SearchStateData, tabKey: string): SearchUiState {
 export const useSearchStore = create<SearchState>((set, get) => ({
     documentViewQueries: {},
     searchUiByTab: {},
-    searchMode: 'any',
+    searchMode: 'all',
     error: null,
 
     setDocumentViewQuery: (tabKey, query) =>

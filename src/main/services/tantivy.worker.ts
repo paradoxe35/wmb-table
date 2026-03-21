@@ -112,28 +112,72 @@ function getIndex(langCode: string): Index {
     return idx;
 }
 
-function buildQuery(index: Index, queryText: string): Query {
+/** ~25 word slop ≈ 150-character proximity for phrase matching. */
+const PHRASE_SLOP = 25;
+
+/**
+ * Build a query using native Tantivy APIs based on search mode.
+ * Bypasses parseQueryLenient entirely — no string formatting issues
+ * with numbers, special characters, or AND/OR syntax.
+ */
+function buildModeQuery(index: Index, queryText: string, mode: 'any' | 'all' | 'exact'): Query {
+    const schema = index.schema;
+    const words = queryText.trim().split(/\s+/).filter(Boolean);
     const textFields = getTextFieldNames(index);
-    const fieldSet = new Set(textFields);
+
+    if (words.length === 0) return Query.allQuery();
+
+    // Build a term query for a single word across all text fields
+    function wordQuery(word: string): Query {
+        const queries = textFields.map((field) =>
+            Query.termQuery(schema, field, word.toLowerCase()),
+        );
+        return queries.length === 1 ? queries[0] : Query.disjunctionMaxQuery(queries, 0.1);
+    }
+
+    switch (mode) {
+        case 'exact': {
+            // Native phrase query with slop — Tantivy handles proximity
+            const lowered = words.map((w) => w.toLowerCase());
+            const phraseQueries = textFields.map((field) =>
+                Query.phraseQuery(schema, field, lowered, PHRASE_SLOP),
+            );
+            return phraseQueries.length === 1
+                ? phraseQueries[0]
+                : Query.disjunctionMaxQuery(phraseQueries, 0.1);
+        }
+        case 'all':
+            // All words required (boolean AND)
+            return Query.booleanQuery(words.map((w) => ({ occur: 'must', query: wordQuery(w) })));
+        case 'any':
+            // Any word matches — disjunctionMax picks the best-scoring match
+            return Query.disjunctionMaxQuery(
+                words.map((w) => wordQuery(w)),
+                0.1,
+            );
+    }
+}
+
+/**
+ * Legacy query builder using parseQueryLenient.
+ * Only used by getSearchSnippet (SnippetGenerator requires a parsed query).
+ */
+function buildLegacyQuery(index: Index, queryText: string): Query {
+    const textFields = getTextFieldNames(index);
     const fieldBoosts: Record<string, number> = {};
     const fuzzyFields: Record<string, [boolean, number, boolean]> = {};
-    if (fieldSet.has('unstemmed_content')) {
-        fieldBoosts.unstemmed_content = 2.0;
-        fuzzyFields.unstemmed_content = [true, 1, true];
+    for (const field of textFields) {
+        fieldBoosts[field] = field === 'unstemmed_content' ? 2.0 : 1.0;
+        fuzzyFields[field] = [true, 1, true];
     }
-    if (fieldSet.has('stemmed_content')) {
-        fieldBoosts.stemmed_content = 1.0;
-        fuzzyFields.stemmed_content = [true, 1, true];
-    }
-    const [query, errors] = index.parseQueryLenient(
-        queryText,
-        textFields,
-        fieldBoosts,
-        fuzzyFields,
-    );
-    if (errors.length > 0) {
-        console.warn('[tantivy] Query parse warnings:', errors);
-    }
+    // Quote each term to prevent number parsing issues
+    const sanitized = queryText
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((t) => `"${t.replace(/"/g, '')}"`)
+        .join(' ');
+    const [query] = index.parseQueryLenient(sanitized, textFields, fieldBoosts, fuzzyFields);
     return query;
 }
 
@@ -282,12 +326,19 @@ function searchSermons(
     queryText: string,
     limit: number,
     offset: number,
+    mode: 'any' | 'all' | 'exact' = 'all',
 ): { hits: GroupedSearchHitResult[]; total: number } {
     const index = getIndex(langCode);
-    const query = buildQuery(index, queryText);
+    const query = buildModeQuery(index, queryText, mode);
     const searcher = index.searcher();
 
-    const fetchLimit = Math.min((offset + limit) * 20, 10000);
+    // Two-pass: count matching lines first, then fetch up to that (capped)
+    // to discover all unique sermons for stable pagination.
+    const countOnly = searcher.search(query, 1, true);
+    const totalLines = countOnly.count ?? 0;
+    if (totalLines === 0) return { hits: [], total: 0 };
+
+    const fetchLimit = Math.min(totalLines, 10000);
     const result = searcher.search(query, fetchLimit, true);
 
     // Group by sermon_date (per sermon), not by translationId (per translator)
@@ -357,7 +408,7 @@ function getSearchSnippet(
     docAddress: { segmentOrd: number; doc: number },
 ): string {
     const index = getIndex(langCode);
-    const query = buildQuery(index, queryText);
+    const query = buildLegacyQuery(index, queryText);
     const searcher = index.searcher();
     const schema = index.schema;
 
@@ -378,10 +429,11 @@ function getMatchingParagraphs(
     queryText: string,
     translationId: number,
     sermonDate: number,
+    mode: 'any' | 'all' | 'exact' = 'all',
 ): MatchingParagraphSnippet[] {
     const index = getIndex(langCode);
     const schema = index.schema;
-    const textQuery = buildQuery(index, queryText);
+    const textQuery = buildModeQuery(index, queryText, mode);
 
     const boolQuery = Query.booleanQuery([
         { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
