@@ -87,7 +87,9 @@ export default function DocumentView() {
         <div
             style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}
         >
-            {!readingMode && <DocumentTabs />}
+            <div style={{ display: readingMode ? 'none' : undefined }}>
+                <DocumentTabs />
+            </div>
             <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 {tabType === 'bible' ? (
                     <BibleDocumentView />
