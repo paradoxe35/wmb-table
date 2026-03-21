@@ -11,7 +11,10 @@ const ITEMS_PER_PAGE = 20;
 
 function countSnippetMatches(text: string, query: string, mode: SearchMode): number {
     const highlightRegex = buildHighlightRegex(query, mode);
-    if (!highlightRegex) return 0;
+    if (!highlightRegex) {
+        return 0;
+    }
+
     highlightRegex.lastIndex = 0;
     return [...strNormalizeNoLower(text).matchAll(highlightRegex)].length;
 }
