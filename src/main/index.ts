@@ -45,6 +45,7 @@ function setupCSP(): void {
                         "style-src 'self' 'unsafe-inline'",
                         "img-src 'self' data: https:",
                         "font-src 'self' data:",
+                        "media-src 'self' blob:",
                         "connect-src 'self' https:",
                     ].join('; '),
                 ],
