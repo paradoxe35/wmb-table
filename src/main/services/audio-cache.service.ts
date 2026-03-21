@@ -34,14 +34,14 @@ export async function cacheAudio(audioLink: string): Promise<void> {
     if (inProgress.has(audioLink)) return;
 
     const existing = audioRepo.getDownloadByAudioLink(audioLink);
-    if (existing?.local_file && existsSync(existing.local_file)) return;
+    if (existing?.local_file) return; // repo already verified file exists on disk
 
     inProgress.add(audioLink);
     const fileName = deriveFileName(audioLink);
     const filePath = join(getAudioCacheDir(), fileName);
 
     // Clean up orphaned partial file (no DB record = never fully downloaded)
-    if (!existing?.local_file && existsSync(filePath)) {
+    if (existsSync(filePath)) {
         try {
             unlinkSync(filePath);
         } catch {
