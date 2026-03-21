@@ -60,7 +60,7 @@ export const DOCS_TTS_LINK = buildDocsGuideLink('audio-and-tts');
 export const DOCS_BIBLE_LINK = buildDocsGuideLink('bible');
 
 // ── Document tabs ──
-export const DEFAULT_MAX_TABS = 12;
+export const DEFAULT_MAX_TABS = 10;
 export const MIN_MAX_TABS = 5;
 export const MAX_MAX_TABS = 50;
 
