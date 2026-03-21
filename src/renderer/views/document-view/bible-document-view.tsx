@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Space, Tooltip } from 'antd';
-import { LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
+import { LeftOutlined, LoadingOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import {
     useSermonStore,
     useSearchStore,
@@ -182,6 +182,7 @@ function BibleHeader({
     hasNext,
     onPrev,
     onNext,
+    navigating,
     tts,
 }: {
     title: string;
@@ -190,6 +191,7 @@ function BibleHeader({
     hasNext: boolean;
     onPrev: () => void;
     onNext: () => void;
+    navigating?: boolean;
     tts?: TtsControls;
 }) {
     const { t } = useTranslation();
@@ -204,8 +206,8 @@ function BibleHeader({
                     <Button
                         type="text"
                         size="small"
-                        icon={<LeftOutlined />}
-                        disabled={!hasPrev}
+                        icon={navigating ? <LoadingOutlined /> : <LeftOutlined />}
+                        disabled={!hasPrev || navigating}
                         onClick={onPrev}
                         aria-label={t('Chapitre précédent')}
                     />
@@ -215,8 +217,8 @@ function BibleHeader({
                     <Button
                         type="text"
                         size="small"
-                        icon={<RightOutlined />}
-                        disabled={!hasNext}
+                        icon={navigating ? <LoadingOutlined /> : <RightOutlined />}
+                        disabled={!hasNext || navigating}
                         onClick={onNext}
                         aria-label={t('Chapitre suivant')}
                     />
@@ -261,7 +263,9 @@ export default function BibleDocumentView() {
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
-    const { verses, loading } = useBibleChapterContent(bookCode, chapter);
+    const { verses, loading: chapterLoading } = useBibleChapterContent(bookCode, chapter);
+    const hasContent = verses.length > 0;
+    const loading = chapterLoading && !hasContent;
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
     const loadedChapterKey = verses[0]
@@ -363,6 +367,7 @@ export default function BibleDocumentView() {
                     hasNext={hasNext}
                     onPrev={goPrev}
                     onNext={goNext}
+                    navigating={chapterLoading && hasContent}
                     tts={tts}
                 />
             }

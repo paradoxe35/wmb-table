@@ -195,7 +195,6 @@ export function useBibleChapterContent(book?: string, chapter?: string) {
 
         let cancelled = false;
         setLoading(true);
-        setVerses([]);
 
         window.api.bible
             .getBooks({ book, chapter })
