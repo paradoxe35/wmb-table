@@ -1,4 +1,4 @@
-import { asc, desc, eq } from 'drizzle-orm';
+import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
@@ -222,9 +222,27 @@ export function trimConversationHistory(limit: number): void {
         .from(aiConversations)
         .orderBy(desc(aiConversations.updatedAt))
         .all();
-    for (const row of rows.slice(limit)) {
-        deleteConversation(row.id);
+
+    const toRemove = rows.slice(limit);
+    if (toRemove.length === 0) return;
+
+    const convIds = toRemove.map((r) => r.id);
+
+    // Batch fetch message IDs for logging
+    const messages = getDb()
+        .select({ id: aiMessages.id })
+        .from(aiMessages)
+        .where(inArray(aiMessages.conversationId, convIds))
+        .all();
+    for (const msg of messages) {
+        logChange('ai_messages', msg.id, 'DELETE', { id: msg.id });
     }
+    for (const conv of toRemove) {
+        logChange('ai_conversations', conv.id, 'DELETE', { id: conv.id });
+    }
+
+    // Cascade delete handles messages automatically
+    getDb().delete(aiConversations).where(inArray(aiConversations.id, convIds)).run();
 }
 
 // ── Messages ──

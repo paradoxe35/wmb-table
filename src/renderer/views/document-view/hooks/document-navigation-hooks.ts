@@ -176,6 +176,17 @@ export function useMatchNavigation(
         }
 
         const tryScrollToMatch = () => {
+            // Wait for paragraph navigation to finish before scrolling to the
+            // match — two competing smooth scrolls cancel each other.
+            const pending = useSermonStore.getState().pendingNavigation;
+            if (pending) {
+                if (attemptsLeft > 0) {
+                    attemptsLeft -= 1;
+                    raf = requestAnimationFrame(tryScrollToMatch);
+                }
+                return;
+            }
+
             const el = document.querySelector(`[data-match-index="${targetMatchIndex}"]`);
             if (el) {
                 clearScrollToMatchRequest(tabKey);

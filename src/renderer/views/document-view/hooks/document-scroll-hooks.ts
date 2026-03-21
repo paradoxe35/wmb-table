@@ -213,6 +213,7 @@ export function useScrollAndZoom(
             handler.cancel();
             el.removeEventListener('scroll', onScroll);
             updateTabScroll(activeTabKey, lastScrollRatio);
+            setSavedPosition((prev) => (prev ? { ...prev, scrollY: lastScrollRatio } : prev));
             if (readingPositionKey) {
                 void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollRatio);
             }

@@ -45,18 +45,18 @@ function wordPattern(word: string): string {
 
 /**
  * Build a phrase pattern: all words must appear in the same order,
- * with any characters allowed between them (lazy).
+ * within 150 characters of each other (lazy).
  * Each word gets [a-zA-Z]* suffix for stem matching.
  */
 function phrasePattern(query: string): string {
     const words = query.trim().split(/\s+/).filter(Boolean);
-    return words.map((w) => wordPattern(w) + '[a-zA-Z]*').join('[\\s\\S]*?');
+    return words.map((w) => '\\b' + wordPattern(w) + '[a-zA-Z]*').join('[\\s\\S]{0,150}?');
 }
 
 /** Like phrasePattern but without stem-matching suffixes (exact substring). */
 function phrasePatternExact(query: string): string {
     const words = query.trim().split(/\s+/).filter(Boolean);
-    return words.map((w) => wordPattern(w)).join('[\\s\\S]*?');
+    return words.map((w) => '\\b' + wordPattern(w)).join('[\\s\\S]{0,150}?');
 }
 
 /**

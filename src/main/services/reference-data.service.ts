@@ -163,9 +163,13 @@ export function getTraductionsForSermon(sermonId: string, langCode: string): Ser
     }
 
     const translations = refRepo.getTranslationsForSermonAndLanguage(sermonId, langCode);
-    return translations.map((t) =>
-        translationToMeta(t, langCode, refRepo.getAudioForSermonByIds(t.sermon_id, langCode)),
-    );
+    if (translations.length === 0) {
+        return [];
+    }
+
+    // All translations share the same sermon_id — audio URL is identical, query once
+    const audioLink = refRepo.getAudioForSermonByIds(sermonId, langCode);
+    return translations.map((t) => translationToMeta(t, langCode, audioLink));
 }
 
 /**

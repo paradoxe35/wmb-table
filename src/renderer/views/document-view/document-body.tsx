@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useLayoutEffect, useRef } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import { useSearchStore, useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
@@ -31,6 +31,37 @@ export default function DocumentBody({
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );
     const readingMode = useAppStore((s) => s.readingMode);
+
+    // Preserve visible paragraph across reading mode toggles.
+    // Ratio drifts due to line-wrapping changes; anchoring to a paragraph is exact.
+    const anchorRef = useRef<{ index: string; offset: number } | null>(null);
+    if (containerRef.current) {
+        const el = containerRef.current;
+        const containerTop = el.getBoundingClientRect().top;
+        const paragraphs = el.querySelectorAll<HTMLElement>('[data-paragraph-index]');
+        for (const p of paragraphs) {
+            if (p.getBoundingClientRect().bottom > containerTop) {
+                anchorRef.current = {
+                    index: p.dataset.paragraphIndex!,
+                    offset: p.getBoundingClientRect().top - containerTop,
+                };
+                break;
+            }
+        }
+    }
+    useLayoutEffect(() => {
+        const el = containerRef.current;
+        if (!el || !anchorRef.current) return;
+        const target = el.querySelector<HTMLElement>(
+            `[data-paragraph-index="${anchorRef.current.index}"]`,
+        );
+        if (target) {
+            const containerTop = el.getBoundingClientRect().top;
+            const targetTop = target.getBoundingClientRect().top;
+            el.scrollTop += targetTop - containerTop - anchorRef.current.offset;
+        }
+        anchorRef.current = null;
+    }, [readingMode]);
 
     const onContextMenu = useCallback(
         (e: React.MouseEvent) => {

@@ -11,7 +11,10 @@ const ITEMS_PER_PAGE = 20;
 
 function countSnippetMatches(text: string, query: string, mode: SearchMode): number {
     const highlightRegex = buildHighlightRegex(query, mode);
-    if (!highlightRegex) return 0;
+    if (!highlightRegex) {
+        return 0;
+    }
+
     highlightRegex.lastIndex = 0;
     return [...strNormalizeNoLower(text).matchAll(highlightRegex)].length;
 }
@@ -65,9 +68,13 @@ export function registerSearchHandlers(): void {
         const result = await tantivyService.searchSermons(langCode, query, ITEMS_PER_PAGE, offset);
 
         const highlightRegex = buildHighlightRegex(query, searchMode);
+        // Batch resolve all sermon dates in one query
+        const allDates = result.hits.map((h) => h.tantivySermonDate);
+        const dateToSermonIds = refRepo.tantivyDatesToSermonIds(allDates);
+
         const hits: TantivySearchHit[] = [];
         for (const hit of result.hits) {
-            const sermonIds = refRepo.tantivyDateToSermonIds(hit.tantivySermonDate);
+            const sermonIds = dateToSermonIds.get(hit.tantivySermonDate) ?? [];
             const sermonId = sermonIds[0];
             if (!sermonId) continue;
 
