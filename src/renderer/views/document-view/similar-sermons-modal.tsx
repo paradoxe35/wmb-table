@@ -1,17 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Empty, List, Modal, Spin, Typography } from 'antd';
+import { Empty, List, Modal, Pagination, Spin, Typography, message } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useSermonStore } from '@renderer/stores';
 import { useOpenDocument, useSermonLookup, useFormatSermonDate } from '@renderer/hooks';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import type { SimilarSermonHit } from '@shared/types';
 
 const { Text } = Typography;
+const PAGE_SIZE = 10;
 
 interface SimilarSermonsRequest {
     paragraphIndex: number;
     translationId: number;
-    sermonId: string;
+    sermonDate: number;
     languageCode: string;
     textSnippet: string;
 }
@@ -20,10 +21,12 @@ export default function SimilarSermonsModal() {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [hits, setHits] = useState<SimilarSermonHit[]>([]);
+    const [allHits, setAllHits] = useState<SimilarSermonHit[]>([]);
+    const [page, setPage] = useState(1);
     const [snippet, setSnippet] = useState('');
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const openDocument = useOpenDocument();
+    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
 
@@ -34,87 +37,172 @@ export default function SimilarSermonsModal() {
 
             setOpen(true);
             setLoading(true);
-            setHits([]);
+            setAllHits([]);
+            setPage(1);
             setSnippet(detail.textSnippet);
-
-            // Convert sermonId string (e.g. "61-1210") to numeric sermon_date
-            const sermonDate = Number(detail.sermonId.replace(/[^0-9]/g, ''));
 
             window.api.search
                 .findSimilarSermons(
                     contentLanguage,
                     detail.translationId,
-                    sermonDate,
+                    detail.sermonDate,
                     detail.paragraphIndex,
-                    15,
+                    50,
                 )
-                .then((result) => setHits(result.hits as SimilarSermonHit[]))
-                .catch(() => setHits([]))
+                .then((result) => setAllHits(result.hits as SimilarSermonHit[]))
+                .catch(() => {
+                    setAllHits([]);
+                    message.error(t('Erreur lors de la recherche'));
+                })
                 .finally(() => setLoading(false));
         };
 
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, handler);
         return () =>
             window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, handler);
-    }, [contentLanguage]);
+    }, [contentLanguage, t]);
 
-    const handleClick = useCallback(
-        (hit: SimilarSermonHit) => {
+    const handleNavigate = useCallback(
+        (hit: SimilarSermonHit, paragraphIndex: number) => {
+            setPendingNavigation({
+                documentTitle: hit.title,
+                documentHtmlTree: {
+                    paragraphIndex,
+                    translationId: hit.translationId,
+                    languageCode: contentLanguage ?? '',
+                },
+            });
             openDocument(hit.title, hit.sermonId, hit.translationId);
             setOpen(false);
         },
-        [openDocument],
+        [openDocument, setPendingNavigation, contentLanguage],
     );
+
+    const handleClose = useCallback(() => {
+        setOpen(false);
+        setAllHits([]);
+        setSnippet('');
+    }, []);
+
+    const pagedHits = allHits.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
     return (
         <Modal
             title={t('Prédications similaires')}
             open={open}
-            onCancel={() => setOpen(false)}
+            onCancel={handleClose}
             footer={null}
-            width={600}
+            width={650}
+            destroyOnClose
         >
             {snippet && (
-                <Text type="secondary" italic style={{ display: 'block', marginBottom: 12 }}>
-                    "{snippet}..."
-                </Text>
+                <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, background: 'var(--ant-color-fill-quaternary)' }}>
+                    <Text type="secondary" italic>
+                        &ldquo;{snippet}&rdquo;
+                    </Text>
+                </div>
             )}
 
             {loading ? (
                 <div style={{ textAlign: 'center', padding: 40 }}>
                     <Spin />
                 </div>
-            ) : hits.length === 0 ? (
+            ) : allHits.length === 0 ? (
                 <Empty description={t('Aucune prédication similaire trouvée')} />
             ) : (
-                <List
-                    dataSource={hits}
-                    renderItem={(hit) => {
-                        const sermon = getSermonById(hit.sermonId);
-                        const displayTitle = sermon?.title ?? hit.title;
-                        const dateStr = sermon?.dateMs ? formatDate(sermon.dateMs) : '';
+                <>
+                    <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+                        {t('Trouvé dans {{count}} documents', { count: allHits.length })}
+                    </Text>
 
-                        return (
-                            <List.Item
-                                style={{ cursor: 'pointer' }}
-                                onClick={() => handleClick(hit)}
-                            >
-                                <List.Item.Meta
-                                    title={<a className="underline">{displayTitle}</a>}
-                                    description={
-                                        dateStr
-                                            ? `${dateStr}${sermon?.location ? ` — ${sermon.location}` : ''}`
-                                            : undefined
-                                    }
-                                />
-                                <Text type="secondary">
-                                    {hit.hitCount}{' '}
-                                    {hit.hitCount > 1 ? t('correspondances') : t('correspondance')}
-                                </Text>
-                            </List.Item>
-                        );
-                    }}
-                />
+                    <div style={{ maxHeight: 450, overflowY: 'auto' }}>
+                        <List
+                            dataSource={pagedHits}
+                            renderItem={(hit) => {
+                                const sermon = getSermonById(hit.sermonId);
+                                const displayTitle = sermon?.title ?? hit.title;
+                                const dateStr = sermon?.dateMs ? formatDate(sermon.dateMs) : '';
+                                const subtitle = dateStr
+                                    ? `${dateStr}${sermon?.location ? ` — ${sermon.location}` : ''}`
+                                    : undefined;
+
+                                return (
+                                    <List.Item
+                                        style={{
+                                            flexDirection: 'column',
+                                            alignItems: 'stretch',
+                                            padding: '8px 0',
+                                        }}
+                                    >
+                                        <div style={{ marginBottom: 4 }}>
+                                            <Text strong style={{ fontSize: '1em' }}>
+                                                {displayTitle}
+                                            </Text>
+                                            {subtitle && (
+                                                <Text
+                                                    type="secondary"
+                                                    style={{ fontSize: '0.85em', marginLeft: 8 }}
+                                                >
+                                                    {subtitle}
+                                                </Text>
+                                            )}
+                                        </div>
+                                        {hit.paragraphs.map((p) => (
+                                            <div
+                                                key={p.paragraphIndex}
+                                                onClick={() =>
+                                                    handleNavigate(hit, p.paragraphIndex)
+                                                }
+                                                className="similar-paragraph-row"
+                                                style={{
+                                                    cursor: 'pointer',
+                                                    padding: '4px 8px',
+                                                    marginBottom: 2,
+                                                    borderRadius: 4,
+                                                    borderLeft: '3px solid var(--ant-color-primary)',
+                                                    transition: 'background 0.15s',
+                                                }}
+                                                onMouseEnter={(e) =>
+                                                    (e.currentTarget.style.background =
+                                                        'var(--ant-color-fill-quaternary)')
+                                                }
+                                                onMouseLeave={(e) =>
+                                                    (e.currentTarget.style.background = '')
+                                                }
+                                            >
+                                                <Text
+                                                    type="secondary"
+                                                    strong
+                                                    style={{ fontSize: '0.8em' }}
+                                                >
+                                                    §{p.paragraphIndex}
+                                                </Text>{' '}
+                                                <Text
+                                                    type="secondary"
+                                                    style={{ fontSize: '0.85em' }}
+                                                >
+                                                    {p.snippet.replace(/\n/g, ' ')}
+                                                </Text>
+                                            </div>
+                                        ))}
+                                    </List.Item>
+                                );
+                            }}
+                        />
+                    </div>
+
+                    {allHits.length > PAGE_SIZE && (
+                        <div style={{ textAlign: 'center', marginTop: 12 }}>
+                            <Pagination
+                                current={page}
+                                pageSize={PAGE_SIZE}
+                                total={allHits.length}
+                                showSizeChanger={false}
+                                onChange={setPage}
+                            />
+                        </div>
+                    )}
+                </>
             )}
         </Modal>
     );

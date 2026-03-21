@@ -230,9 +230,9 @@ export function useContextMenuItems(
                                       detail: {
                                           paragraphIndex: result.ref.paragraphIndex,
                                           translationId: content.meta.translationId,
-                                          sermonId: content.meta.sermonId,
+                                          sermonDate: content.meta.dateMs,
                                           languageCode: content.meta.languageCode,
-                                          textSnippet: result.text.slice(0, 100),
+                                          textSnippet: result.text.slice(0, 200),
                                       },
                                   }),
                               );

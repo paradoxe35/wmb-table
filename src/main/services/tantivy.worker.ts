@@ -561,49 +561,63 @@ function getSermonParagraphCount(
 // More Like This — find sermons with similar content
 // ---------------------------------------------------------------------------
 
+interface SimilarParagraphResult {
+    paragraphIndex: number;
+    snippet: string;
+    score: number;
+}
+
+interface SimilarSermonResult {
+    translationId: number;
+    tantivySermonDate: number;
+    score: number;
+    paragraphs: SimilarParagraphResult[];
+}
+
 function findSimilarSermons(
     langCode: string,
     translationId: number,
     sermonDate: number,
     paragraphIndex: number,
     limit: number = 10,
-): { hits: GroupedSearchHitResult[]; total: number } {
+): { hits: SimilarSermonResult[]; total: number } {
     const index = getIndex(langCode);
     const schema = index.schema;
     const searcher = index.searcher();
 
-    // 1. Resolve the DocAddress for the target paragraph
+    // 1. Find ALL lines of the source paragraph to build a richer term profile
     const findQuery = Query.booleanQuery([
         { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
         { occur: 'must', query: Query.termQuery(schema, 'sermon_date', sermonDate) },
         { occur: 'must', query: Query.termQuery(schema, 'paragraph_index', paragraphIndex) },
     ]);
-    const findResult = searcher.search(findQuery, 1, false);
+    const findResult = searcher.search(findQuery, 100, false);
     if (findResult.hits.length === 0) return { hits: [], total: 0 };
 
-    // 2. Find similar documents using TF-IDF term extraction
+    // Use the first line's DocAddress for moreLikeThisQuery
     const mltQuery = Query.moreLikeThisQuery(
         findResult.hits[0].docAddress,
-        2, // minDocFrequency — term must appear in at least 2 docs
+        2, // minDocFrequency
         null, // maxDocFrequency
-        1, // minTermFrequency — term appears at least once in source
-        25, // maxQueryTerms — top 25 terms for similarity
-        3, // minWordLength — skip short words (le, la, un)
+        1, // minTermFrequency
+        25, // maxQueryTerms
+        3, // minWordLength — skip short words
         null, // maxWordLength
         1.0, // boostFactor
         null, // stopWords
     );
-    const result = searcher.search(mltQuery, limit * 20, true);
+    const result = searcher.search(mltQuery, limit * 30, true);
 
-    // 3. Group by sermon_date, exclude the source sermon
-    const groups = new Map<
-        number,
+    // 2. Group by (sermon_date, paragraph_index) — unique paragraphs
+    type ParagraphKey = string; // "sermonDate:paragraphIndex"
+    const paragraphGroups = new Map<
+        ParagraphKey,
         {
+            sermonDate: number;
             translationId: number;
+            paragraphIndex: number;
             score: number;
-            bestDocAddress: { segmentOrd: number; doc: number };
-            bestParagraphIndex: number;
-            hitCount: number;
+            docAddress: DocAddress;
         }
     >();
 
@@ -613,45 +627,99 @@ function findSimilarSermons(
         const hitSermonDate = extractNumeric(dict, 'sermon_date');
         if (hitSermonDate === sermonDate) continue; // skip source sermon
 
+        const pIdx = extractNumeric(dict, 'paragraph_index');
         const score = hit.score ?? 0;
-        const existing = groups.get(hitSermonDate);
-        if (!existing) {
-            groups.set(hitSermonDate, {
+        const key: ParagraphKey = `${hitSermonDate}:${pIdx}`;
+
+        const existing = paragraphGroups.get(key);
+        if (!existing || score > existing.score) {
+            paragraphGroups.set(key, {
+                sermonDate: hitSermonDate,
                 translationId: extractNumeric(dict, 'translation_id'),
+                paragraphIndex: pIdx,
                 score,
-                bestDocAddress: {
-                    segmentOrd: hit.docAddress.segmentOrd,
-                    doc: hit.docAddress.doc,
-                },
-                bestParagraphIndex: extractNumeric(dict, 'paragraph_index'),
-                hitCount: 1,
+                docAddress: hit.docAddress,
             });
-        } else {
-            existing.hitCount++;
-            if (score > existing.score) {
-                existing.score = score;
-                existing.translationId = extractNumeric(dict, 'translation_id');
-                existing.bestDocAddress = {
-                    segmentOrd: hit.docAddress.segmentOrd,
-                    doc: hit.docAddress.doc,
-                };
-                existing.bestParagraphIndex = extractNumeric(dict, 'paragraph_index');
-            }
         }
     }
 
-    const sorted = Array.from(groups.entries())
-        .map(([sd, g]) => ({
-            translationId: g.translationId,
-            tantivySermonDate: sd,
-            score: g.score,
-            bestDocAddress: g.bestDocAddress,
-            bestParagraphIndex: g.bestParagraphIndex,
-            hitCount: g.hitCount,
-        }))
-        .sort((a, b) => b.score - a.score);
+    // 3. Fetch full paragraph content for each matching paragraph
+    const paragraphsBySermon = new Map<number, SimilarParagraphResult[]>();
+    const sermonScores = new Map<number, { score: number; translationId: number }>();
 
-    return { hits: sorted.slice(0, limit), total: sorted.length };
+    // Sort paragraphs by score, take top ones
+    const topParagraphs = Array.from(paragraphGroups.values())
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit * 3);
+
+    for (const pg of topParagraphs) {
+        // Get all lines for this paragraph to build full content
+        const linesQuery = Query.booleanQuery([
+            { occur: 'must', query: Query.termQuery(schema, 'translation_id', pg.translationId) },
+            { occur: 'must', query: Query.termQuery(schema, 'sermon_date', pg.sermonDate) },
+        ]);
+        // Check if we already fetched lines for this sermon
+        if (!paragraphsBySermon.has(pg.sermonDate)) {
+            const linesResult = searcher.search(
+                linesQuery,
+                100000,
+                false,
+                'line_index',
+                0,
+                ORDER_ASC,
+            );
+            const sermonLines = new Map<number, string[]>();
+            for (const lineHit of linesResult.hits) {
+                const lineDoc = searcher.doc(lineHit.docAddress);
+                const lineDict = lineDoc.toDict() as Record<string, unknown[]>;
+                const linePIdx = extractNumeric(lineDict, 'paragraph_index');
+                const content = extractString(lineDict, 'unstemmed_content');
+                let lines = sermonLines.get(linePIdx);
+                if (!lines) {
+                    lines = [];
+                    sermonLines.set(linePIdx, lines);
+                }
+                lines.push(content);
+            }
+            // Store all paragraph texts for this sermon
+            for (const [pIdx, lines] of sermonLines) {
+                const existing = paragraphsBySermon.get(pg.sermonDate) ?? [];
+                // Only add paragraphs that are in our top matches
+                const match = topParagraphs.find(
+                    (tp) => tp.sermonDate === pg.sermonDate && tp.paragraphIndex === pIdx,
+                );
+                if (match) {
+                    existing.push({
+                        paragraphIndex: pIdx,
+                        snippet: lines.join('\n'),
+                        score: match.score,
+                    });
+                    paragraphsBySermon.set(pg.sermonDate, existing);
+                }
+            }
+        }
+
+        const sermonScore = sermonScores.get(pg.sermonDate);
+        if (!sermonScore || pg.score > sermonScore.score) {
+            sermonScores.set(pg.sermonDate, { score: pg.score, translationId: pg.translationId });
+        }
+    }
+
+    // 4. Build final results grouped by sermon, sorted by best paragraph score
+    const hits: SimilarSermonResult[] = [];
+    for (const [sd, info] of sermonScores) {
+        const paragraphs = (paragraphsBySermon.get(sd) ?? []).sort((a, b) => b.score - a.score);
+        if (paragraphs.length === 0) continue;
+        hits.push({
+            translationId: info.translationId,
+            tantivySermonDate: sd,
+            score: info.score,
+            paragraphs,
+        });
+    }
+
+    hits.sort((a, b) => b.score - a.score);
+    return { hits: hits.slice(0, limit), total: hits.length };
 }
 
 // ---------------------------------------------------------------------------

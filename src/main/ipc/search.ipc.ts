@@ -114,7 +114,7 @@ export function registerSearchHandlers(): void {
                 translationId,
                 sermonDate,
                 paragraphIndex,
-                limit ?? 10,
+                limit ?? 20,
             );
 
             const allDates = result.hits.map((h) => h.tantivySermonDate);
@@ -133,10 +133,12 @@ export function registerSearchHandlers(): void {
                     sermonId,
                     title: meta?.title ?? meta?.enTitle ?? sermonId,
                     translationId: hit.translationId,
-                    tantivySermonDate: hit.tantivySermonDate,
+                    paragraphs: hit.paragraphs.map((p) => ({
+                        paragraphIndex: p.paragraphIndex,
+                        snippet: p.snippet.slice(0, 300),
+                        score: p.score,
+                    })),
                     score: hit.score,
-                    bestParagraphIndex: hit.bestParagraphIndex,
-                    hitCount: hit.hitCount,
                 });
             }
 

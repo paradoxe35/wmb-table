@@ -525,14 +525,18 @@ export interface TantivySearchResult {
     query: string;
 }
 
+export interface SimilarParagraph {
+    paragraphIndex: number;
+    snippet: string;
+    score: number;
+}
+
 export interface SimilarSermonHit {
     sermonId: string;
     title: string;
     translationId: number;
-    tantivySermonDate: number;
+    paragraphs: SimilarParagraph[];
     score: number;
-    bestParagraphIndex: number;
-    hitCount: number;
 }
 
 export interface SimilarSermonsResult {

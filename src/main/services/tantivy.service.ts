@@ -1,6 +1,6 @@
 import { Worker } from 'node:worker_threads';
 import log from 'electron-log';
-import type { SermonParagraph, MatchingParagraphSnippet } from '@shared/types';
+import type { SermonParagraph, MatchingParagraphSnippet, SimilarParagraph } from '@shared/types';
 import * as refRepo from '@main/database/repositories/reference.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
 import workerPath from './tantivy.worker?modulePath';
@@ -22,6 +22,17 @@ export interface GroupedSearchHit {
 
 export interface SearchSermonResult {
     hits: GroupedSearchHit[];
+    total: number;
+}
+
+/** Raw result from the worker before sermon ID/title resolution. */
+export interface FindSimilarRawResult {
+    hits: Array<{
+        translationId: number;
+        tantivySermonDate: number;
+        score: number;
+        paragraphs: SimilarParagraph[];
+    }>;
     total: number;
 }
 
@@ -165,8 +176,8 @@ export async function findSimilarSermons(
     sermonDate: number,
     paragraphIndex: number,
     limit?: number,
-): Promise<SearchSermonResult> {
-    return call<SearchSermonResult>(
+): Promise<FindSimilarRawResult> {
+    return call<FindSimilarRawResult>(
         'findSimilarSermons',
         langCode,
         translationId,
