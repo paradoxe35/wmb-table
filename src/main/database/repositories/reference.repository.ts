@@ -312,6 +312,14 @@ export function getTranslatorsForLanguage(langCode: string): RefTranslator[] {
 // Audio queries
 // ---------------------------------------------------------------------------
 
+function buildAudioUrl(row: AudioRow): string {
+    const encodedPath = row.path
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+    return `https://s3.eu-central-1.wasabisys.com/${row.storage_bucket}/${row.audio_path}${encodedPath}`;
+}
+
 export function getAudioForSermon(sermonIsarId: number, langIsarId: number): AudioRow[] {
     const stmt = getRefDb().prepare(`
         SELECT a.path, lang.audio_path, lang.storage_bucket
@@ -333,7 +341,7 @@ export function getAudioForSermonByIds(sermonId: string, langCode: string): stri
     `);
     const row = stmt.get(sermonId, langCode) as AudioRow | undefined;
     if (!row) return null;
-    return `https://s3.eu-central-1.wasabisys.com/${row.storage_bucket}/${row.audio_path}${row.path}`;
+    return buildAudioUrl(row);
 }
 
 /**
@@ -353,10 +361,7 @@ export function getAudioMapForLanguage(langCode: string): Map<string, string> {
     for (const row of rows) {
         // Keep first match per sermon (same as LIMIT 1 behavior in single lookup)
         if (!map.has(row.sermon_id)) {
-            map.set(
-                row.sermon_id,
-                `https://s3.eu-central-1.wasabisys.com/${row.storage_bucket}/${row.audio_path}${row.path}`,
-            );
+            map.set(row.sermon_id, buildAudioUrl(row));
         }
     }
     return map;
