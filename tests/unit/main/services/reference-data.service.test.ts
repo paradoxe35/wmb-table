@@ -114,5 +114,119 @@ describe('reference-data.service', () => {
             const withTranslator = list.filter((m) => m.translationId > 0);
             expect(withTranslator.length).toBe(list.length);
         });
+
+        it('English sermons include audioLink when audio exists', { timeout: 30000 }, () => {
+            const list = refDataService.getSermonListForLanguage('en');
+            const withAudio = list.filter((m) => m.audioLink !== null);
+            // English should have many sermons with audio
+            expect(withAudio.length).toBeGreaterThan(100);
+            // audioLink should be a valid URL
+            for (const meta of withAudio.slice(0, 5)) {
+                expect(meta.audioLink).toMatch(/^https:\/\//);
+            }
+        });
+
+        it('audioLink matches individual lookup', { timeout: 30000 }, () => {
+            const list = refDataService.getSermonListForLanguage('en');
+            const withAudio = list.filter((m) => m.audioLink !== null).slice(0, 10);
+            for (const meta of withAudio) {
+                const individual = refRepo.getAudioForSermonByIds(meta.sermonId, 'en');
+                expect(meta.audioLink).toBe(individual);
+            }
+        });
+
+        it('French sermons include audioLink when audio exists', { timeout: 30000 }, () => {
+            const list = refDataService.getSermonListForLanguage('fr');
+            const withAudio = list.filter((m) => m.audioLink !== null);
+            expect(withAudio.length).toBeGreaterThan(0);
+            for (const meta of withAudio.slice(0, 5)) {
+                expect(meta.audioLink).toMatch(/^https:\/\//);
+            }
+        });
+    });
+
+    describe('getTraductionsForSermon', () => {
+        it('returns traductions for a known French sermon', { timeout: 30000 }, () => {
+            const translations = refRepo.getTranslationsForLanguage('fr');
+            const sample = translations[0];
+            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
+            expect(traductions.length).toBeGreaterThanOrEqual(1);
+            expect(traductions[0].sermonId).toBe(sample.sermon_id);
+        });
+
+        it('returns sorted by translationId', { timeout: 30000 }, () => {
+            const translations = refRepo.getTranslationsForLanguage('fr');
+            const sample = translations[0];
+            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
+            for (let i = 1; i < traductions.length; i++) {
+                expect(traductions[i].translationId).toBeGreaterThanOrEqual(
+                    traductions[i - 1].translationId,
+                );
+            }
+        });
+
+        it('all returned entries share the same sermonId', { timeout: 30000 }, () => {
+            const translations = refRepo.getTranslationsForLanguage('fr');
+            const sample = translations[0];
+            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
+            for (const t of traductions) {
+                expect(t.sermonId).toBe(sample.sermon_id);
+                expect(t.languageCode).toBe('fr');
+            }
+        });
+
+        it('includes audioLink, title, and traductionName', { timeout: 30000 }, () => {
+            const translations = refRepo.getTranslationsForLanguage('fr');
+            const sample = translations[0];
+            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
+            const t = traductions[0];
+            expect(t.title).toBeTruthy();
+            expect(t.traductionName).toBeTruthy();
+            expect(typeof t.dateMs).toBe('number');
+            // audioLink can be null if no audio exists
+            if (t.audioLink !== null) {
+                expect(t.audioLink).toMatch(/^https:\/\//);
+            }
+        });
+
+        it('matches getSermonListForLanguage filtered result', { timeout: 30000 }, () => {
+            const translations = refRepo.getTranslationsForLanguage('fr');
+            const sample = translations[0];
+            // Get from targeted function
+            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
+            // Get from full list and filter (old approach)
+            const fullList = refDataService.getSermonListForLanguage('fr');
+            const fromFullList = fullList
+                .filter((m) => m.sermonId === sample.sermon_id)
+                .sort((a, b) => a.translationId - b.translationId);
+            // Should be identical
+            expect(traductions).toEqual(fromFullList);
+        });
+
+        it('returns empty for non-existent sermon', { timeout: 30000 }, () => {
+            const traductions = refDataService.getTraductionsForSermon('XX-XXXX', 'fr');
+            expect(traductions).toEqual([]);
+        });
+
+        it('returns single entry for English sermon', { timeout: 30000 }, () => {
+            const traductions = refDataService.getTraductionsForSermon('53-0403', 'en');
+            expect(traductions).toHaveLength(1);
+            expect(traductions[0].translationId).toBe(0);
+            expect(traductions[0].sermonId).toBe('53-0403');
+        });
+    });
+
+    describe('getSermonsByYear', () => {
+        it('groups sermons by year prefix', { timeout: 30000 }, () => {
+            const byYear = refDataService.getSermonsByYear('en');
+            const years = Object.keys(byYear);
+            expect(years.length).toBeGreaterThan(10);
+            // Each sermon in a year group should have matching prefix
+            for (const [year, sermons] of Object.entries(byYear)) {
+                for (const s of sermons) {
+                    expect(s.sermonId.split('-')[0]).toBe(year);
+                }
+            }
+        });
     });
 });

@@ -49,4 +49,53 @@ describe('history.repository', () => {
         const all = historyRepo.getHistory(LANG);
         expect(all.length).toBeLessThanOrEqual(30);
     });
+
+    it('keeps most recent entries when enforcing cap', () => {
+        for (let i = 0; i < 32; i++) {
+            historyRepo.addHistoryEntry(`date-${i}`, i, '10:00', `Doc ${i}`, LANG, `sermon-${i}`);
+        }
+        const all = historyRepo.getHistory(LANG);
+        // Most recent (highest milliseconds) should survive
+        const msValues = all.map((h) => h.milliseconds);
+        expect(msValues).toContain(31);
+        expect(msValues).toContain(30);
+        // Oldest should be deleted
+        expect(msValues).not.toContain(0);
+        expect(msValues).not.toContain(1);
+    });
+
+    it('enforces 50-item cap per history entry', () => {
+        // Create a single history entry
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'Doc 0', LANG, 'sermon-0');
+        // Add 51 more items to the same date (different sermonIds so they don't dedup)
+        for (let i = 1; i <= 51; i++) {
+            historyRepo.addHistoryEntry(
+                '2024-01-01',
+                1000,
+                '10:00',
+                `Doc ${i}`,
+                LANG,
+                `sermon-${i}`,
+            );
+        }
+        const all = historyRepo.getHistory(LANG);
+        expect(all).toHaveLength(1);
+        const items = historyRepo.getHistoryItems(all[0].id);
+        expect(items.length).toBeLessThanOrEqual(50);
+    });
+
+    it('skips duplicate consecutive entries', () => {
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'Doc', LANG, 'sermon-1');
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:05', 'Doc', LANG, 'sermon-1');
+        const all = historyRepo.getHistory(LANG);
+        const items = historyRepo.getHistoryItems(all[0].id);
+        expect(items).toHaveLength(1);
+    });
+
+    it('separates history by language', () => {
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'Doc EN', 'en', 'sermon-1');
+        historyRepo.addHistoryEntry('2024-01-01', 2000, '10:00', 'Doc FR', 'fr', 'sermon-2');
+        expect(historyRepo.getHistory('en')).toHaveLength(1);
+        expect(historyRepo.getHistory('fr')).toHaveLength(1);
+    });
 });

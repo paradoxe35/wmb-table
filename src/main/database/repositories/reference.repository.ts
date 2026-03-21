@@ -39,7 +39,7 @@ interface TranslatorRow {
     long_name: string;
 }
 
-interface TranslationRow {
+export interface TranslationRow {
     translation_isar_id: number;
     title: string;
     title_formatted: string;
@@ -229,6 +229,43 @@ export function getTranslationsForLanguage(langCode: string): TranslationRow[] {
     return stmt.all(langCode) as TranslationRow[];
 }
 
+export function getTranslationsForSermonAndLanguage(
+    sermonId: string,
+    langCode: string,
+): TranslationRow[] {
+    const stmt = getRefDb().prepare(`
+        SELECT
+            t.isar_id as translation_isar_id,
+            t.title,
+            t.title_formatted,
+            s.isar_id as sermon_isar_id,
+            s.id as sermon_id,
+            s.title as sermon_title,
+            s.date_ms as sermon_date_ms,
+            s.minutes as sermon_minutes,
+            l2.name as location_name,
+            c.name as city_name,
+            st.idx as state_abbr,
+            tr.isar_id as translator_isar_id,
+            tr.translator_id,
+            tr.name as translator_name,
+            tr.long_name as translator_long_name,
+            lang.code as lang_code,
+            lang.audio_path,
+            lang.storage_bucket
+        FROM translation t
+        JOIN sermon s ON t.sermon_id = s.isar_id
+        JOIN translator tr ON t.translator_id = tr.isar_id
+        JOIN language lang ON t.language_id = lang.isar_id
+        LEFT JOIN location l2 ON s.location_id = l2.isar_id
+        LEFT JOIN city c ON l2.city_id = c.isar_id
+        LEFT JOIN state st ON c.state_id = st.isar_id
+        WHERE s.id = ? AND lang.code = ?
+        ORDER BY tr.translator_id
+    `);
+    return stmt.all(sermonId, langCode) as TranslationRow[];
+}
+
 export function getTranslationsForSermon(sermonId: string): CrossLangTranslationRow[] {
     const stmt = getRefDb().prepare(`
         SELECT
@@ -275,6 +312,14 @@ export function getTranslatorsForLanguage(langCode: string): RefTranslator[] {
 // Audio queries
 // ---------------------------------------------------------------------------
 
+function buildAudioUrl(row: AudioRow): string {
+    const encodedPath = row.path
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+    return `https://s3.eu-central-1.wasabisys.com/${row.storage_bucket}/${row.audio_path}${encodedPath}`;
+}
+
 export function getAudioForSermon(sermonIsarId: number, langIsarId: number): AudioRow[] {
     const stmt = getRefDb().prepare(`
         SELECT a.path, lang.audio_path, lang.storage_bucket
@@ -296,7 +341,30 @@ export function getAudioForSermonByIds(sermonId: string, langCode: string): stri
     `);
     const row = stmt.get(sermonId, langCode) as AudioRow | undefined;
     if (!row) return null;
-    return `https://s3.eu-central-1.wasabisys.com/${row.storage_bucket}/${row.audio_path}${row.path}`;
+    return buildAudioUrl(row);
+}
+
+/**
+ * Batch lookup: returns a Map of sermonId → audio URL for all sermons in a language.
+ * Single query replaces N individual getAudioForSermonByIds calls.
+ */
+export function getAudioMapForLanguage(langCode: string): Map<string, string> {
+    const stmt = getRefDb().prepare(`
+        SELECT s.id as sermon_id, a.path, lang.audio_path, lang.storage_bucket
+        FROM audio a
+        JOIN sermon s ON a.sermon_id = s.isar_id
+        JOIN language lang ON a.language_id = lang.isar_id
+        WHERE lang.code = ?
+    `);
+    const rows = stmt.all(langCode) as (AudioRow & { sermon_id: string })[];
+    const map = new Map<string, string>();
+    for (const row of rows) {
+        // Keep first match per sermon (same as LIMIT 1 behavior in single lookup)
+        if (!map.has(row.sermon_id)) {
+            map.set(row.sermon_id, buildAudioUrl(row));
+        }
+    }
+    return map;
 }
 
 export function getAudioCountForLanguage(langCode: string): number {

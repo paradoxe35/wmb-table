@@ -1,11 +1,73 @@
 import * as refRepo from '../database/repositories/reference.repository';
-import type { SermonMeta, SermonMetaWithTraductions, SermonTranslation } from '@shared/types';
+import type { TranslationRow } from '../database/repositories/reference.repository';
+import type {
+    RefSermon,
+    SermonMeta,
+    SermonMetaWithTraductions,
+    SermonTranslation,
+} from '@shared/types';
+
+type TranslationMeta = Pick<
+    TranslationRow,
+    | 'translator_id'
+    | 'sermon_id'
+    | 'title'
+    | 'sermon_title'
+    | 'translator_name'
+    | 'sermon_date_ms'
+    | 'sermon_minutes'
+    | 'location_name'
+    | 'city_name'
+    | 'state_abbr'
+>;
 
 /**
  * Build a unique SermonMeta id from components.
  */
 function makeId(langCode: string, translatorId: number, sermonId: string): string {
     return `${langCode}:${translatorId}:${sermonId}`;
+}
+
+function sermonToMeta(s: RefSermon, langCode: string, audioLink: string | null): SermonMeta {
+    return {
+        id: makeId(langCode, 0, s.id),
+        translationId: 0,
+        languageCode: langCode,
+        sermonId: s.id,
+        title: s.title,
+        enTitle: s.title,
+        audioLink,
+        traductionName: null,
+        dateMs: s.dateMs,
+        minutes: s.minutes,
+        location: s.location,
+        cityState: s.cityState,
+    };
+}
+
+function translationToMeta(
+    t: TranslationMeta,
+    langCode: string,
+    audioLink: string | null,
+): SermonMeta {
+    return {
+        id: makeId(langCode, t.translator_id, t.sermon_id),
+        translationId: t.translator_id,
+        languageCode: langCode,
+        sermonId: t.sermon_id,
+        title: t.title,
+        enTitle: t.sermon_title,
+        audioLink,
+        traductionName: t.translator_name,
+        dateMs: t.sermon_date_ms,
+        minutes: t.sermon_minutes,
+        location: t.location_name,
+        cityState: t.city_name
+            ? t.state_abbr
+                ? `${t.city_name}, ${t.state_abbr}`
+                : t.city_name
+            : null,
+    };
 }
 
 /**
@@ -17,52 +79,18 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
     const lang = refRepo.getLanguageByCode(langCode);
     if (!lang) return [];
 
+    // Single batch query for all audio links in this language
+    const audioMap = refRepo.getAudioMapForLanguage(langCode);
+
     if (!lang.translationsSupport) {
-        // English or non-translated language: direct from sermon table
         const sermons = refRepo.getAllSermons();
-        return sermons.map((s) => {
-            const audioLink = refRepo.getAudioForSermonByIds(s.id, langCode);
-            return {
-                id: makeId(langCode, 0, s.id),
-                translationId: 0,
-                languageCode: langCode,
-                sermonId: s.id,
-                title: s.title,
-                enTitle: s.title,
-                audioLink,
-                traductionName: null,
-                dateMs: s.dateMs,
-                minutes: s.minutes,
-                location: s.location,
-                cityState: s.cityState,
-            };
-        });
+        return sermons.map((s) => sermonToMeta(s, langCode, audioMap.get(s.id) ?? null));
     }
 
-    // Translated language: from translation table with translator info
     const translations = refRepo.getTranslationsForLanguage(langCode);
-    // Also get English sermons for enTitle lookup
-    return translations.map((t) => {
-        const audioLink = refRepo.getAudioForSermonByIds(t.sermon_id, langCode);
-        return {
-            id: makeId(langCode, t.translator_id, t.sermon_id),
-            translationId: t.translator_id,
-            languageCode: langCode,
-            sermonId: t.sermon_id,
-            title: t.title,
-            enTitle: t.sermon_title, // sermon.title is always English
-            audioLink,
-            traductionName: t.translator_name,
-            dateMs: t.sermon_date_ms,
-            minutes: t.sermon_minutes,
-            location: t.location_name,
-            cityState: t.city_name
-                ? t.state_abbr
-                    ? `${t.city_name}, ${t.state_abbr}`
-                    : t.city_name
-                : null,
-        };
-    });
+    return translations.map((t) =>
+        translationToMeta(t, langCode, audioMap.get(t.sermon_id) ?? null),
+    );
 }
 
 /**
@@ -71,7 +99,6 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
 export function getSermonListDeduplicated(langCode: string): SermonMetaWithTraductions[] {
     const allMeta = getSermonListForLanguage(langCode);
 
-    // Group by sermonId (= sermon.id like "53-0403")
     const groups = new Map<string, SermonMeta[]>();
     for (const meta of allMeta) {
         const existing = groups.get(meta.sermonId);
@@ -84,7 +111,6 @@ export function getSermonListDeduplicated(langCode: string): SermonMetaWithTradu
 
     const result: SermonMetaWithTraductions[] = [];
     for (const [, rows] of groups) {
-        // Sort by translationId to pick primary consistently (lowest first)
         rows.sort((a, b) => a.translationId - b.translationId);
         const primary = rows[0];
         const availableTraductions = rows.map((r) => ({
@@ -94,14 +120,12 @@ export function getSermonListDeduplicated(langCode: string): SermonMetaWithTradu
         result.push({ ...primary, availableTraductions });
     }
 
-    // Sort by dateMs desc (most recent first)
     result.sort((a, b) => b.dateMs - a.dateMs);
     return result;
 }
 
 /**
  * Get a specific sermon meta by translator ID and language.
- * If sermonId is provided, match exactly; otherwise return first match.
  */
 export function getSermonMeta(
     translatorId: number,
@@ -112,64 +136,36 @@ export function getSermonMeta(
     if (!lang) return null;
 
     if (!lang.translationsSupport) {
-        // English: tid=0
-        if (sermonId) {
-            const sermon = refRepo.getSermonById(sermonId);
-            if (!sermon) return null;
-            const audioLink = refRepo.getAudioForSermonByIds(sermon.id, langCode);
-            return {
-                id: makeId(langCode, 0, sermon.id),
-                translationId: 0,
-                languageCode: langCode,
-                sermonId: sermon.id,
-                title: sermon.title,
-                enTitle: sermon.title,
-                audioLink,
-                traductionName: null,
-                dateMs: sermon.dateMs,
-                minutes: sermon.minutes,
-                location: sermon.location,
-                cityState: sermon.cityState,
-            };
-        }
-        return null;
+        if (!sermonId) return null;
+        const sermon = refRepo.getSermonById(sermonId);
+        if (!sermon) return null;
+        return sermonToMeta(sermon, langCode, refRepo.getAudioForSermonByIds(sermon.id, langCode));
     }
 
-    // Direct single-sermon lookup for translated languages
-    if (sermonId) {
-        const row = refRepo.getTranslationByIds(translatorId, sermonId, langCode);
-        if (!row) return null;
-        const audioLink = refRepo.getAudioForSermonByIds(sermonId, langCode);
-        return {
-            id: makeId(langCode, row.translator_id, row.sermon_id),
-            translationId: row.translator_id,
-            languageCode: langCode,
-            sermonId: row.sermon_id,
-            title: row.title,
-            enTitle: row.sermon_title,
-            audioLink,
-            traductionName: row.translator_name,
-            dateMs: row.sermon_date_ms,
-            minutes: row.sermon_minutes,
-            location: row.location_name,
-            cityState: row.city_name
-                ? row.state_abbr
-                    ? `${row.city_name}, ${row.state_abbr}`
-                    : row.city_name
-                : null,
-        };
-    }
-    return null;
+    if (!sermonId) return null;
+    const row = refRepo.getTranslationByIds(translatorId, sermonId, langCode);
+    if (!row) return null;
+    return translationToMeta(row, langCode, refRepo.getAudioForSermonByIds(sermonId, langCode));
 }
 
 /**
- * Get all sermon list entries for a specific sermon date and language.
+ * Get all sermon list entries for a specific sermon and language.
+ * Uses a targeted query instead of loading the full sermon list.
  */
 export function getTraductionsForSermon(sermonId: string, langCode: string): SermonMeta[] {
-    const allForLang = getSermonListForLanguage(langCode);
-    return allForLang
-        .filter((m) => m.sermonId === sermonId)
-        .sort((a, b) => a.translationId - b.translationId);
+    const lang = refRepo.getLanguageByCode(langCode);
+    if (!lang) return [];
+
+    if (!lang.translationsSupport) {
+        const sermon = refRepo.getSermonById(sermonId);
+        if (!sermon) return [];
+        return [sermonToMeta(sermon, langCode, refRepo.getAudioForSermonByIds(sermonId, langCode))];
+    }
+
+    const translations = refRepo.getTranslationsForSermonAndLanguage(sermonId, langCode);
+    return translations.map((t) =>
+        translationToMeta(t, langCode, refRepo.getAudioForSermonByIds(t.sermon_id, langCode)),
+    );
 }
 
 /**
@@ -197,7 +193,6 @@ export function getSermonsByYear(langCode: string): Record<string, SermonMeta[]>
     const all = getSermonListForLanguage(langCode);
     const grouped: Record<string, SermonMeta[]> = {};
     for (const sermon of all) {
-        // sermon.sermonId is like "53-0403" — extract 2-digit year prefix
         const year = sermon.sermonId.split('-')[0];
         if (!grouped[year]) grouped[year] = [];
         grouped[year].push(sermon);

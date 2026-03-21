@@ -1,4 +1,4 @@
-import { eq, and, desc, asc } from 'drizzle-orm';
+import { eq, and, desc, asc, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { history, historyItems } from '../schema';
@@ -78,10 +78,8 @@ export function addHistoryEntry(
             .orderBy(asc(history.milliseconds))
             .all();
         if (all.length >= MAX_HISTORY) {
-            const toDelete = all.slice(0, all.length - MAX_HISTORY + 1);
-            for (const old of toDelete) {
-                db.delete(history).where(eq(history.id, old.id)).run();
-            }
+            const idsToDelete = all.slice(0, all.length - MAX_HISTORY + 1).map((r) => r.id);
+            db.delete(history).where(inArray(history.id, idsToDelete)).run();
         }
 
         const id = randomUUID();
@@ -112,10 +110,10 @@ export function addHistoryEntry(
         .all();
 
     if (items.length >= MAX_ITEMS_PER_HISTORY) {
-        const toDelete = items.slice(0, items.length - MAX_ITEMS_PER_HISTORY + 1);
-        for (const old of toDelete) {
-            db.delete(historyItems).where(eq(historyItems.id, old.id)).run();
-        }
+        const idsToDelete = items
+            .slice(0, items.length - MAX_ITEMS_PER_HISTORY + 1)
+            .map((r) => r.id);
+        db.delete(historyItems).where(inArray(historyItems.id, idsToDelete)).run();
     }
 
     const itemId = randomUUID();

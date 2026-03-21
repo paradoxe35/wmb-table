@@ -1,6 +1,7 @@
 import { join } from 'node:path';
-import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
-import { gzipSync, gunzipSync } from 'node:zlib';
+import { readFile, writeFile, unlink } from 'node:fs/promises';
+import { gzip as gzipCb, gunzip as gunzipCb } from 'node:zlib';
+import { promisify } from 'node:util';
 import { app } from 'electron';
 import { eq, lt } from 'drizzle-orm';
 import type { OAuth2Client } from 'google-auth-library';
@@ -26,6 +27,9 @@ import * as backupRepo from '@main/database/repositories/backup.repository';
 import { hasInternet } from '@main/lib/network';
 import { pushToRenderer } from '@main/lib/push';
 import { PushChannels } from '@shared/ipc.types';
+
+const gzipAsync = promisify(gzipCb);
+const gunzipAsync = promisify(gunzipCb);
 
 const SYNC_INTERVAL_MS = 30_000;
 const MAX_CONSECUTIVE_AUTH_FAILURES = 4;
@@ -331,10 +335,10 @@ function canIgnoreRemoteApplyFailure(file: DriveFile, error: Error | null): bool
 
 async function applyRemoteSnapshotFile(file: DriveFile): Promise<AffectedTables> {
     const content = await driveService!.getFileContent(file.id);
-    const decompressed = gunzipSync(content);
+    const decompressed = await gunzipAsync(content);
 
     const tmpPath = join(app.getPath('temp'), `wmb-snapshot-${Date.now()}.sqlite`);
-    writeFileSync(tmpPath, decompressed);
+    await writeFile(tmpPath, decompressed);
 
     try {
         const tables = applySnapshot(tmpPath);
@@ -342,7 +346,7 @@ async function applyRemoteSnapshotFile(file: DriveFile): Promise<AffectedTables>
         return tables;
     } finally {
         try {
-            unlinkSync(tmpPath);
+            await unlink(tmpPath);
         } catch {
             // ignore cleanup errors
         }
@@ -437,8 +441,8 @@ async function createDbSnapshotIfNeeded(): Promise<void> {
     // Checkpoint WAL to ensure all data is in the main file
     mainDb.pragma('wal_checkpoint(TRUNCATE)');
 
-    const dbContent = readFileSync(mainDb.name);
-    const compressed = gzipSync(dbContent);
+    const dbContent = await readFile(mainDb.name);
+    const compressed = await gzipAsync(dbContent);
 
     const newSnapshot = await driveService.saveSnapshot(compressed);
     lastSnapshotTime = now;

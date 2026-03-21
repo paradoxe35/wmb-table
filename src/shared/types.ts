@@ -1,11 +1,10 @@
 // Domain model types — ported from legacy src/types/index.d.ts
-// Changes: removed NeDB TimeStampData base, _id → id, inlined updater types,
 // removed global augmentations and renderer-only types.
 
 import { UiLanguagePreference } from './constants';
 
 // ---------------------------------------------------------------------------
-// Base entity fields (replaces NeDB TimeStampData)
+// Base entity fields
 // ---------------------------------------------------------------------------
 
 export interface BaseEntity {

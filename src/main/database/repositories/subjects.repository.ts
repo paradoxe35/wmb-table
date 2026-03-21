@@ -46,23 +46,32 @@ export function getAllSummary(): { id: string; name: string; date: string }[] {
 
 export function getAll(): SubjectDocument[] {
     const db = getDb();
-    const rows = db.select().from(subjects).orderBy(desc(subjects.createdAt)).all();
-    return rows.map((row) => {
-        const items = db
-            .select()
-            .from(subjectItems)
-            .where(eq(subjectItems.subjectId, row.id))
-            .all();
-        return {
-            id: row.id,
-            name: row.name,
-            date: row.date,
-            active: false,
-            documents: items.map(toSubjectItem),
-            createdAt: new Date(row.createdAt ?? Date.now()),
-            updatedAt: new Date(row.updatedAt ?? Date.now()),
-        };
-    });
+    const subjectRows = db.select().from(subjects).orderBy(desc(subjects.createdAt)).all();
+    if (subjectRows.length === 0) {
+        return [];
+    }
+
+    // Single query for ALL items, then group by subjectId in JS
+    const allItems = db.select().from(subjectItems).all();
+    const itemsBySubject = new Map<string, (typeof subjectItems.$inferSelect)[]>();
+    for (const item of allItems) {
+        const list = itemsBySubject.get(item.subjectId);
+        if (list) {
+            list.push(item);
+        } else {
+            itemsBySubject.set(item.subjectId, [item]);
+        }
+    }
+
+    return subjectRows.map((row) => ({
+        id: row.id,
+        name: row.name,
+        date: row.date,
+        active: false,
+        documents: (itemsBySubject.get(row.id) ?? []).map(toSubjectItem),
+        createdAt: new Date(row.createdAt ?? Date.now()),
+        updatedAt: new Date(row.updatedAt ?? Date.now()),
+    }));
 }
 
 export function getById(id: string): SubjectDocument | null {

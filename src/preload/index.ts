@@ -192,6 +192,7 @@ const api = {
             invoke(AudioChannels.setTime, audioLink, time),
         getLastPlay: () => invoke(AudioChannels.getLastPlay),
         setLastPlay: (title: string) => invoke(AudioChannels.setLastPlay, title),
+        cacheAudio: (audioLink: string) => invoke(AudioChannels.cacheAudio, audioLink),
     },
 
     backup: {
