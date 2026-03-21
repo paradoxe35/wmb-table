@@ -33,7 +33,7 @@ export default function AudioDocumentPlayerIndicator() {
         <Button
             ref={buttonRef}
             onClick={openModal}
-            style={{ alignSelf: 'center' }}
+            style={{ alignSelf: 'center', marginBottom: '6px' }}
             type={currentPlay.status === 'play' ? 'primary' : 'default'}
             shape="circle"
             ghost={currentPlay.status === 'play'}
