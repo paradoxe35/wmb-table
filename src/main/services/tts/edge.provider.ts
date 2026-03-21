@@ -153,9 +153,14 @@ export class EdgeProvider implements TtsProvider {
         }
 
         const code = langCode.split('-')[0].toLowerCase();
-        if (!memoryCache) return null;
+        if (!memoryCache) {
+            return { voiceId: '' };
+        }
+
         const matches = memoryCache.filter((v) => v.Locale.split('-')[0].toLowerCase() === code);
-        if (matches.length === 0) return null;
+        if (matches.length === 0) {
+            return { voiceId: '' };
+        }
 
         const female = matches.find((v) => v.Gender.toLowerCase() === 'female');
         const chosen = female ?? matches[0];
