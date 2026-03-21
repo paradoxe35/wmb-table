@@ -121,6 +121,7 @@ export default function SidebarMenu({
                         items={menuItems}
                     />
                     <div style={{ flex: 1 }} />
+                    <AudioDocumentPlayerIndicator />
                     <Menu
                         mode="inline"
                         style={{ borderInlineEnd: 'none' }}
@@ -128,7 +129,6 @@ export default function SidebarMenu({
                         items={bottomMenuItems}
                     />
                 </div>
-                <AudioDocumentPlayerIndicator />
             </div>
         </Sider>
     );

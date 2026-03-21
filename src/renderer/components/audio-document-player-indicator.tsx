@@ -38,7 +38,7 @@ export default function AudioDocumentPlayerIndicator() {
             shape="circle"
             ghost={currentPlay.status === 'play'}
             icon={currentPlay.status === 'play' ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-            size="large"
+            size="medium"
         />
     );
 }
