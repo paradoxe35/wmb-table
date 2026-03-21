@@ -11,6 +11,7 @@ import {
 import SermonDocumentView from './sermon-document-view';
 import CustomDocumentView from './custom-document-view';
 import BibleDocumentView from './bible-document-view';
+import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
 
 export default function DocumentView() {
@@ -99,6 +100,7 @@ export default function DocumentView() {
                     <SermonDocumentView />
                 )}
             </div>
+            <SimilarSermonsModal />
         </div>
     );
 }

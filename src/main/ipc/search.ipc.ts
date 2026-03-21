@@ -2,8 +2,11 @@ import { SearchChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as suggestionsRepo from '@main/database/repositories/suggestions.repository';
 import * as tantivyService from '@main/services/tantivy.service';
+import * as referenceDataService from '@main/services/reference-data.service';
+import * as refRepo from '@main/database/repositories/reference.repository';
 import { searchSermons } from '@main/services/search.service';
-import type { TantivySearchHit, SearchMode } from '@shared/types';
+import { DEFAULT_SEARCH_MODE } from '@shared/constants';
+import type { TantivySearchHit, SearchMode, SimilarSermonHit } from '@shared/types';
 import { strNormalizeNoLower, buildHighlightRegex } from '@shared/searchable';
 
 const ITEMS_PER_PAGE = 20;
@@ -62,7 +65,7 @@ export function registerSearchHandlers(): void {
     });
 
     registerHandler(SearchChannels.searchText, async (_event, langCode, query, page, mode) => {
-        const searchMode: SearchMode = mode ?? 'any';
+        const searchMode: SearchMode = mode ?? DEFAULT_SEARCH_MODE;
         const offset = (page - 1) * ITEMS_PER_PAGE;
 
         const { matches, total } = await searchSermons({
@@ -114,4 +117,43 @@ export function registerSearchHandlers(): void {
         if (!hit) return '';
         return await tantivyService.getSearchSnippet(langCode, query, hit.bestDocAddress);
     });
+
+    registerHandler(
+        SearchChannels.findSimilarSermons,
+        async (_event, langCode, translationId, sermonDate, paragraphIndex, limit) => {
+            const result = await tantivyService.findSimilarSermons(
+                langCode,
+                translationId,
+                sermonDate,
+                paragraphIndex,
+                limit ?? 10,
+            );
+
+            // Resolve sermon IDs and titles for the frontend
+            const allDates = result.hits.map((h) => h.tantivySermonDate);
+            const dateToSermonIds = refRepo.tantivyDatesToSermonIds(allDates);
+
+            const hits: SimilarSermonHit[] = [];
+            for (const hit of result.hits) {
+                const sermonId = (dateToSermonIds.get(hit.tantivySermonDate) ?? [])[0];
+                if (!sermonId) continue;
+                const meta = referenceDataService.getSermonMeta(
+                    hit.translationId,
+                    langCode,
+                    sermonId,
+                );
+                hits.push({
+                    sermonId,
+                    title: meta?.title ?? meta?.enTitle ?? sermonId,
+                    translationId: hit.translationId,
+                    tantivySermonDate: hit.tantivySermonDate,
+                    score: hit.score,
+                    bestParagraphIndex: hit.bestParagraphIndex,
+                    hitCount: hit.hitCount,
+                });
+            }
+
+            return { hits, total: result.total };
+        },
+    );
 }

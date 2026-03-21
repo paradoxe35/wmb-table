@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { DEFAULT_SEARCH_MODE } from '@shared/constants';
 import type { DocumentViewQuery, SearchMode } from '@shared/types';
 
 type SearchUiState = {
@@ -50,7 +51,7 @@ function getUiState(state: SearchStateData, tabKey: string): SearchUiState {
 export const useSearchStore = create<SearchState>((set, get) => ({
     documentViewQueries: {},
     searchUiByTab: {},
-    searchMode: 'all',
+    searchMode: DEFAULT_SEARCH_MODE,
     error: null,
 
     setDocumentViewQuery: (tabKey, query) =>

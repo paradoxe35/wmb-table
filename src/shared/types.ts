@@ -512,6 +512,21 @@ export interface TantivySearchResult {
     query: string;
 }
 
+export interface SimilarSermonHit {
+    sermonId: string;
+    title: string;
+    translationId: number;
+    tantivySermonDate: number;
+    score: number;
+    bestParagraphIndex: number;
+    hitCount: number;
+}
+
+export interface SimilarSermonsResult {
+    hits: SimilarSermonHit[];
+    total: number;
+}
+
 // ---------------------------------------------------------------------------
 // Bible Versions
 // ---------------------------------------------------------------------------

@@ -20,6 +20,7 @@ export const CHILD_PARENT_WINDOW_EVENT = {
     audioDocumentPlay: 'audio-document-play',
     noSelectableDocumentText: 'no-selectable-document-text',
     openHighlightModal: 'open-highlight-modal',
+    showSimilarSermons: 'show-similar-sermons',
 } as const;
 
 export const HIGHLIGHT_EVENT = {

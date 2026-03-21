@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Typography, List, Pagination } from 'antd';
-import type { TantivySearchResult, SearchMode } from '@shared/types';
+import type { TantivySearchResult } from '@shared/types';
 import { useSearchStore } from '@renderer/stores';
 import SearchResultItem from './search-result-item';
 

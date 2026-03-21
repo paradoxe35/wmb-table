@@ -159,6 +159,23 @@ export async function getSermonParagraphCount(
     return call<number>('getSermonParagraphCount', langCode, translationId, sermonId);
 }
 
+export async function findSimilarSermons(
+    langCode: string,
+    translationId: number,
+    sermonDate: number,
+    paragraphIndex: number,
+    limit?: number,
+): Promise<SearchSermonResult> {
+    return call<SearchSermonResult>(
+        'findSimilarSermons',
+        langCode,
+        translationId,
+        sermonDate,
+        paragraphIndex,
+        limit,
+    );
+}
+
 export async function terminateWorker(): Promise<void> {
     if (worker) {
         await worker.terminate();

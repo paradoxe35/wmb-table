@@ -19,7 +19,7 @@ import {
     type PushChannel,
     type PushEventMap,
 } from '@shared/ipc.types';
-import type { UiLanguagePreference } from '@shared/constants';
+import { DEFAULT_SEARCH_MODE, type UiLanguagePreference } from '@shared/constants';
 import type {
     BibleBook,
     BookRequest,
@@ -93,9 +93,24 @@ const api = {
         addSuggestion: (text: string, found: number, langCode: string) =>
             invoke(SearchChannels.addSuggestion, text, found, langCode),
         searchText: (langCode: string, query: string, page: number, mode?: SearchMode) =>
-            invoke(SearchChannels.searchText, langCode, query, page, mode ?? 'any'),
+            invoke(SearchChannels.searchText, langCode, query, page, mode ?? DEFAULT_SEARCH_MODE),
         searchContent: (langCode: string, query: string, translationId: number) =>
             invoke(SearchChannels.searchContent, langCode, query, translationId),
+        findSimilarSermons: (
+            langCode: string,
+            translationId: number,
+            sermonDate: number,
+            paragraphIndex: number,
+            limit?: number,
+        ) =>
+            invoke(
+                SearchChannels.findSimilarSermons,
+                langCode,
+                translationId,
+                sermonDate,
+                paragraphIndex,
+                limit,
+            ),
     },
 
     notes: {

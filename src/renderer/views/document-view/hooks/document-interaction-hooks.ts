@@ -216,6 +216,30 @@ export function useContextMenuItems(
                       },
                   ]
                 : []),
+            ...(documentType === 'sermon'
+                ? [
+                      { type: 'divider' as const, key: 'divider-3' },
+                      {
+                          key: 'find-similar',
+                          label: t('Trouver des prédications similaires'),
+                          onClick: () => {
+                              const result = getRef();
+                              if (!result) return;
+                              window.dispatchEvent(
+                                  new CustomEvent(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, {
+                                      detail: {
+                                          paragraphIndex: result.ref.paragraphIndex,
+                                          translationId: content.meta.translationId,
+                                          sermonId: content.meta.sermonId,
+                                          languageCode: content.meta.languageCode,
+                                          textSnippet: result.text.slice(0, 100),
+                                      },
+                                  }),
+                              );
+                          },
+                      },
+                  ]
+                : []),
         ];
     }, [content, contextTargetRef, documentType, bibleVerses, bibleVersionAbbreviation, t]);
 }

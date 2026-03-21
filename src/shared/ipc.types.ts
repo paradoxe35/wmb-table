@@ -45,6 +45,7 @@ import type {
     BibleDownloadProgress,
     BibleDownloadedEvent,
     LanguageInstalledEvent,
+    SimilarSermonsResult,
 } from './types';
 import type {
     TtsProviderInfo,
@@ -110,6 +111,7 @@ export const SearchChannels = {
     addSuggestion: 'search:addSuggestion',
     searchText: 'search:searchText',
     searchContent: 'search:searchContent',
+    findSimilarSermons: 'search:findSimilarSermons',
 } as const;
 
 export const NotesChannels = {
@@ -343,6 +345,10 @@ export interface InvokeChannelMap {
     [SearchChannels.searchContent]: {
         args: [string, string, number];
         return: string;
+    };
+    [SearchChannels.findSimilarSermons]: {
+        args: [string, number, number, number, number?];
+        return: SimilarSermonsResult;
     };
 
     // Notes

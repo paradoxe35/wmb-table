@@ -59,6 +59,9 @@ export const DOCS_SETTINGS_ASSISTANT_LINK = buildDocsGuideLink('settings-assista
 export const DOCS_TTS_LINK = buildDocsGuideLink('audio-and-tts');
 export const DOCS_BIBLE_LINK = buildDocsGuideLink('bible');
 
+// ── Search ──
+export const DEFAULT_SEARCH_MODE = 'all' as const;
+
 // ── Document tabs ──
 export const DEFAULT_MAX_TABS = 10;
 export const MIN_MAX_TABS = 5;

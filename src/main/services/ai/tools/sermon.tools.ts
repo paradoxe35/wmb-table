@@ -3,6 +3,7 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as searchService from '@main/services/search.service';
 import { strNormalize, simpleRegExp } from '@shared/searchable';
+import { DEFAULT_SEARCH_MODE } from '@shared/constants';
 import type { SearchMode } from '@shared/types';
 import type {
     AiToolDefinition,
@@ -175,15 +176,17 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     .enum(['any', 'all', 'exact'])
                     .optional()
                     .describe(
-                        'Search mode: "any" matches any word, "all" requires all words, "exact" matches the exact phrase. Defaults to "all".',
+                        `Search mode: "any" matches any word, "all" requires all words, "exact" matches the exact phrase. Defaults to "${DEFAULT_SEARCH_MODE}".`,
                     ),
                 limit: z.number().int().min(1).max(20).optional(),
             }),
             execute: async ({ query, languageCode, searchMode: rawMode, limit = 10 }) => {
                 const lang = languageCode ?? defaultContentLanguage;
-                const mode: SearchMode = rawMode ?? 'all';
+                const mode: SearchMode = rawMode ?? DEFAULT_SEARCH_MODE;
                 const langError = validateLanguage(lang);
-                if (langError) return langError;
+                if (langError) {
+                    return langError;
+                }
 
                 try {
                     const { matches, total } = await searchService.searchSermons({

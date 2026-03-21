@@ -546,6 +546,103 @@ function getSermonParagraphCount(
 }
 
 // ---------------------------------------------------------------------------
+// More Like This — find sermons with similar content
+// ---------------------------------------------------------------------------
+
+function findSimilarSermons(
+    langCode: string,
+    translationId: number,
+    sermonDate: number,
+    paragraphIndex: number,
+    limit: number = 10,
+): { hits: GroupedSearchHitResult[]; total: number } {
+    const index = getIndex(langCode);
+    const schema = index.schema;
+    const searcher = index.searcher();
+
+    // 1. Resolve the DocAddress for the target paragraph
+    const findQuery = Query.booleanQuery([
+        { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
+        { occur: 'must', query: Query.termQuery(schema, 'sermon_date', sermonDate) },
+        { occur: 'must', query: Query.termQuery(schema, 'paragraph_index', paragraphIndex) },
+    ]);
+    const findResult = searcher.search(findQuery, 1, false);
+    if (findResult.hits.length === 0) return { hits: [], total: 0 };
+
+    // 2. Find similar documents using TF-IDF term extraction
+    const mltQuery = Query.moreLikeThisQuery(
+        findResult.hits[0].docAddress,
+        2, // minDocFrequency — term must appear in at least 2 docs
+        null, // maxDocFrequency
+        1, // minTermFrequency — term appears at least once in source
+        25, // maxQueryTerms — top 25 terms for similarity
+        3, // minWordLength — skip short words (le, la, un)
+        null, // maxWordLength
+        1.0, // boostFactor
+        null, // stopWords
+    );
+    const result = searcher.search(mltQuery, limit * 20, true);
+
+    // 3. Group by sermon_date, exclude the source sermon
+    const groups = new Map<
+        number,
+        {
+            translationId: number;
+            score: number;
+            bestDocAddress: { segmentOrd: number; doc: number };
+            bestParagraphIndex: number;
+            hitCount: number;
+        }
+    >();
+
+    for (const hit of result.hits) {
+        const doc = searcher.doc(hit.docAddress);
+        const dict = doc.toDict() as Record<string, unknown[]>;
+        const hitSermonDate = extractNumeric(dict, 'sermon_date');
+        if (hitSermonDate === sermonDate) continue; // skip source sermon
+
+        const score = hit.score ?? 0;
+        const existing = groups.get(hitSermonDate);
+        if (!existing) {
+            groups.set(hitSermonDate, {
+                translationId: extractNumeric(dict, 'translation_id'),
+                score,
+                bestDocAddress: {
+                    segmentOrd: hit.docAddress.segmentOrd,
+                    doc: hit.docAddress.doc,
+                },
+                bestParagraphIndex: extractNumeric(dict, 'paragraph_index'),
+                hitCount: 1,
+            });
+        } else {
+            existing.hitCount++;
+            if (score > existing.score) {
+                existing.score = score;
+                existing.translationId = extractNumeric(dict, 'translation_id');
+                existing.bestDocAddress = {
+                    segmentOrd: hit.docAddress.segmentOrd,
+                    doc: hit.docAddress.doc,
+                };
+                existing.bestParagraphIndex = extractNumeric(dict, 'paragraph_index');
+            }
+        }
+    }
+
+    const sorted = Array.from(groups.entries())
+        .map(([sd, g]) => ({
+            translationId: g.translationId,
+            tantivySermonDate: sd,
+            score: g.score,
+            bestDocAddress: g.bestDocAddress,
+            bestParagraphIndex: g.bestParagraphIndex,
+            hitCount: g.hitCount,
+        }))
+        .sort((a, b) => b.score - a.score);
+
+    return { hits: sorted.slice(0, limit), total: sorted.length };
+}
+
+// ---------------------------------------------------------------------------
 // Method dispatch
 // ---------------------------------------------------------------------------
 
@@ -559,6 +656,7 @@ const methods: Record<string, (...args: never[]) => unknown> = {
     getSearchSnippet,
     getMatchingParagraphs,
     getSermonParagraphCount,
+    findSimilarSermons,
 };
 
 parentPort?.on('message', (msg: WorkerRequest) => {
