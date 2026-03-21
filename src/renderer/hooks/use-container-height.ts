@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
+import { useAppStore } from '@renderer/stores';
 
 export function useContainerHeight<T extends HTMLElement>(susDiff = 0) {
     const containerRef = useRef<T | null>(null);
+    const readingMode = useAppStore((s) => s.readingMode);
 
     useEffect(() => {
         const el = containerRef.current;
@@ -22,7 +24,7 @@ export function useContainerHeight<T extends HTMLElement>(susDiff = 0) {
         return () => {
             window.removeEventListener('resize', rebuild);
         };
-    }, [susDiff]);
+    }, [susDiff, readingMode]);
 
     return containerRef;
 }

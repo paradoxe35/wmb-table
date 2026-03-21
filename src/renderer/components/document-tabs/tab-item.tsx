@@ -84,6 +84,9 @@ export default function TabItem({
                 as="div"
                 className="chrome-tab"
                 data-active={isActive}
+                initial={false}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 onClick={onActivate}
                 title={tab.title}
                 onMouseDown={(e) => {
