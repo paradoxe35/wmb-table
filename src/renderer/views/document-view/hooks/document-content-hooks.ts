@@ -129,14 +129,13 @@ export function useSermonContent() {
                 if (cancelled) return;
                 contentCache.set(cacheKey, content);
                 setActiveContent(content);
+                setLoading(false);
             })
             .catch((err) => {
                 if (cancelled) return;
                 console.error('[useSermonContent] Failed to load:', err);
                 setActiveContent(null);
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
+                setLoading(false);
             });
 
         return () => {

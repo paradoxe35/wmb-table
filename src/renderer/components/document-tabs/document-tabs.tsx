@@ -178,12 +178,15 @@ export default function DocumentTabs() {
                             tab={tab}
                             isActive={key === activeTabKey}
                             onActivate={() => {
-                                const currentActive = tabs.find(
-                                    (t) => getTabKey(t) === activeTabKey,
-                                );
                                 const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-                                if (currentActive && container) {
-                                    updateTabScroll(activeTabKey!, container.scrollTop);
+                                if (activeTabKey && container) {
+                                    const maxScroll = Math.max(
+                                        0,
+                                        container.scrollHeight - container.clientHeight,
+                                    );
+                                    const ratio =
+                                        maxScroll === 0 ? 0 : container.scrollTop / maxScroll;
+                                    updateTabScroll(activeTabKey, ratio);
                                 }
                                 activateTab(key);
                             }}
