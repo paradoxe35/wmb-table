@@ -4,9 +4,6 @@ import { gzip as gzipCb, gunzip as gunzipCb } from 'node:zlib';
 import { promisify } from 'node:util';
 import { app } from 'electron';
 import { eq, lt } from 'drizzle-orm';
-
-const gzipAsync = promisify(gzipCb);
-const gunzipAsync = promisify(gunzipCb);
 import type { OAuth2Client } from 'google-auth-library';
 import log from 'electron-log';
 
@@ -30,6 +27,9 @@ import * as backupRepo from '@main/database/repositories/backup.repository';
 import { hasInternet } from '@main/lib/network';
 import { pushToRenderer } from '@main/lib/push';
 import { PushChannels } from '@shared/ipc.types';
+
+const gzipAsync = promisify(gzipCb);
+const gunzipAsync = promisify(gunzipCb);
 
 const SYNC_INTERVAL_MS = 30_000;
 const MAX_CONSECUTIVE_AUTH_FAILURES = 4;
