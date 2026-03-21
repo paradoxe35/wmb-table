@@ -1,4 +1,4 @@
-import { eq, and, desc, or, like, sql } from 'drizzle-orm';
+import { eq, and, desc, or, like, sql, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { highlights } from '../schema';
@@ -119,27 +119,27 @@ export function create(data: HighlightCreateData): HighlightItem[] {
     const now = new Date().toISOString();
     const results: HighlightItem[] = [];
 
-    for (const p of data.paragraphs) {
-        const id = randomUUID();
-        const values = {
-            id,
-            groupId,
-            documentTitle: data.documentTitle,
-            sermonId: data.sermonId,
-            paragraphIndex: p.paragraphIndex,
-            startOffset: p.startOffset,
-            endOffset: p.endOffset,
-            textSnippet: data.textSnippet,
-            color: data.color,
-            comment: data.comment ?? null,
-            documentType: data.documentType,
-            translationId: data.translationId,
-            languageCode: data.languageCode,
-            createdAt: now,
-            updatedAt: now,
-        };
-        getDb().insert(highlights).values(values).run();
-        logChange('highlights', id, 'SAVE', values);
+    const allValues = data.paragraphs.map((p) => ({
+        id: randomUUID(),
+        groupId,
+        documentTitle: data.documentTitle,
+        sermonId: data.sermonId,
+        paragraphIndex: p.paragraphIndex,
+        startOffset: p.startOffset,
+        endOffset: p.endOffset,
+        textSnippet: data.textSnippet,
+        color: data.color,
+        comment: data.comment ?? null,
+        documentType: data.documentType,
+        translationId: data.translationId,
+        languageCode: data.languageCode,
+        createdAt: now,
+        updatedAt: now,
+    }));
+
+    getDb().insert(highlights).values(allValues).run();
+    for (const values of allValues) {
+        logChange('highlights', values.id, 'SAVE', values);
         results.push(toHighlightItem({ ...values, comment: values.comment }));
     }
 
@@ -177,8 +177,11 @@ export function deleteHighlight(id: string): void {
             .from(highlights)
             .where(eq(highlights.groupId, existing.groupId))
             .all();
+
+        const idsToDelete = group.map((row) => row.id);
+        db.delete(highlights).where(inArray(highlights.id, idsToDelete)).run();
+
         for (const row of group) {
-            db.delete(highlights).where(eq(highlights.id, row.id)).run();
             logChange('highlights', row.id, 'DELETE', { id: row.id });
         }
     } else {

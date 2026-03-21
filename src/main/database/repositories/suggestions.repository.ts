@@ -1,4 +1,4 @@
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { suggestions } from '../schema';
@@ -64,8 +64,9 @@ export function addSuggestion(
         .all();
     if (all.length > MAX_SUGGESTIONS) {
         const toDelete = all.slice(0, all.length - MAX_SUGGESTIONS);
+        const idsToDelete = toDelete.map((old) => old.id);
+        db.delete(suggestions).where(inArray(suggestions.id, idsToDelete)).run();
         for (const old of toDelete) {
-            db.delete(suggestions).where(eq(suggestions.id, old.id)).run();
             logChange('suggestions', old.id, 'DELETE', old);
         }
     }

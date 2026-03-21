@@ -59,6 +59,38 @@ describe('notes.repository', () => {
         expect(refs).toHaveLength(1);
     });
 
+    it('syncReferences removes orphaned refs', () => {
+        const note = notesRepo.create('Test');
+        const ref1 = notesRepo.createReference(note.id, 'Keep');
+        notesRepo.createReference(note.id, 'Remove');
+
+        notesRepo.syncReferences(note.id, [ref1.id]);
+        const refs = notesRepo.getReferences(note.id);
+        expect(refs).toHaveLength(1);
+        expect(refs[0].id).toBe(ref1.id);
+    });
+
+    it('syncReferences with empty list removes all', () => {
+        const note = notesRepo.create('Test');
+        notesRepo.createReference(note.id, 'A');
+        notesRepo.createReference(note.id, 'B');
+        notesRepo.createReference(note.id, 'C');
+
+        notesRepo.syncReferences(note.id, []);
+        expect(notesRepo.getReferences(note.id)).toHaveLength(0);
+    });
+
+    it('syncBibleReferences removes orphaned refs', () => {
+        const note = notesRepo.create('Test');
+        const ref1 = notesRepo.createBibleReference(note.id, 'Gen 1:1');
+        notesRepo.createBibleReference(note.id, 'Ex 2:3');
+
+        notesRepo.syncBibleReferences(note.id, [ref1.id]);
+        const refs = notesRepo.getBibleReferences(note.id);
+        expect(refs).toHaveLength(1);
+        expect(refs[0].id).toBe(ref1.id);
+    });
+
     it('addBibleVerse and removeBibleVerse', () => {
         const { sqlite: bibleSqlite } = createTestBibleDb();
         // Insert a test verse into the Bible DB

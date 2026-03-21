@@ -456,3 +456,26 @@ export function tantivyDateToSermonIds(dateMs: number): string[] {
     const rows = stmt.all(dateMs) as { id: string }[];
     return rows.map((r) => r.id);
 }
+
+/**
+ * Batch reverse lookup: multiple Tantivy dates → Map<dateMs, sermonIds>.
+ * Single query replaces N individual tantivyDateToSermonIds calls.
+ */
+export function tantivyDatesToSermonIds(dateMsArray: number[]): Map<number, string[]> {
+    if (dateMsArray.length === 0) return new Map();
+    const placeholders = dateMsArray.map(() => '?').join(',');
+    const stmt = getRefDb().prepare(
+        `SELECT id, date_ms FROM sermon WHERE date_ms IN (${placeholders})`,
+    );
+    const rows = stmt.all(...dateMsArray) as { id: string; date_ms: number }[];
+    const map = new Map<number, string[]>();
+    for (const row of rows) {
+        const existing = map.get(row.date_ms);
+        if (existing) {
+            existing.push(row.id);
+        } else {
+            map.set(row.date_ms, [row.id]);
+        }
+    }
+    return map;
+}

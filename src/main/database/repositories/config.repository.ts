@@ -35,12 +35,18 @@ export function ensureConfig(): AppSettingsStatus {
     return getConfig()!;
 }
 
+/** Get the single config row's ID, creating it if needed. */
+function getConfigId(): string {
+    const row = getDb().select({ id: configurations.id }).from(configurations).get();
+    if (row) return row.id;
+    return ensureConfig().id;
+}
+
 export function markInitialized(): void {
-    const config = ensureConfig();
     getDb()
         .update(configurations)
         .set({ initialized: true })
-        .where(eq(configurations.id, config.id))
+        .where(eq(configurations.id, getConfigId()))
         .run();
 }
 
@@ -50,20 +56,18 @@ export function getContentLanguage(): string | null {
 }
 
 export function setContentLanguage(langCode: string): void {
-    const config = ensureConfig();
     getDb()
         .update(configurations)
         .set({ contentLanguage: langCode })
-        .where(eq(configurations.id, config.id))
+        .where(eq(configurations.id, getConfigId()))
         .run();
 }
 
 export function updateLastCheckBackupStatus(): void {
-    const config = ensureConfig();
     getDb()
         .update(configurations)
         .set({ lastCheckBackupStatus: new Date().toISOString() })
-        .where(eq(configurations.id, config.id))
+        .where(eq(configurations.id, getConfigId()))
         .run();
 }
 
@@ -72,11 +76,10 @@ export function getRememberReadingPosition(): boolean {
 }
 
 export function setRememberReadingPosition(value: boolean): void {
-    const config = ensureConfig();
     getDb()
         .update(configurations)
         .set({ rememberReadingPosition: value })
-        .where(eq(configurations.id, config.id))
+        .where(eq(configurations.id, getConfigId()))
         .run();
 }
 
@@ -86,11 +89,10 @@ export function getMaxTabs(): number {
 
 export function setMaxTabs(value: number): void {
     const clamped = Math.max(MIN_MAX_TABS, Math.min(MAX_MAX_TABS, value));
-    const config = ensureConfig();
     getDb()
         .update(configurations)
         .set({ maxTabs: clamped })
-        .where(eq(configurations.id, config.id))
+        .where(eq(configurations.id, getConfigId()))
         .run();
 }
 
@@ -99,10 +101,9 @@ export function getUiLanguage(): UiLanguagePreference | null {
 }
 
 export function setUiLanguage(value: UiLanguagePreference): void {
-    const config = ensureConfig();
     getDb()
         .update(configurations)
         .set({ uiLanguage: value === 'auto' ? null : value })
-        .where(eq(configurations.id, config.id))
+        .where(eq(configurations.id, getConfigId()))
         .run();
 }

@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import * as bibleService from '@main/services/bible.service';
@@ -172,9 +172,11 @@ export function syncReferences(noteId: string, refIds: string[]): void {
         .all();
     // Delete references whose IDs are not in the provided list
     const keepSet = new Set(refIds);
-    for (const row of existing) {
-        if (!keepSet.has(row.id)) {
-            db.delete(notesReferences).where(eq(notesReferences.id, row.id)).run();
+    const toDelete = existing.filter((row) => !keepSet.has(row.id));
+    if (toDelete.length > 0) {
+        const idsToDelete = toDelete.map((row) => row.id);
+        db.delete(notesReferences).where(inArray(notesReferences.id, idsToDelete)).run();
+        for (const row of toDelete) {
             logChange('notes_references', row.id, 'DELETE', { id: row.id });
         }
     }
@@ -254,9 +256,11 @@ export function syncBibleReferences(noteId: string, refIds: string[]): void {
         .all();
     // Only delete rows whose IDs are no longer present in the editor
     const keepSet = new Set(refIds);
-    for (const row of existing) {
-        if (!keepSet.has(row.id)) {
-            db.delete(notesBibleReferences).where(eq(notesBibleReferences.id, row.id)).run();
+    const toDelete = existing.filter((row) => !keepSet.has(row.id));
+    if (toDelete.length > 0) {
+        const idsToDelete = toDelete.map((row) => row.id);
+        db.delete(notesBibleReferences).where(inArray(notesBibleReferences.id, idsToDelete)).run();
+        for (const row of toDelete) {
             logChange('notes_bible_references', row.id, 'DELETE', { id: row.id });
         }
     }

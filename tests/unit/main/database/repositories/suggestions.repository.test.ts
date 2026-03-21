@@ -34,4 +34,24 @@ describe('suggestions.repository', () => {
         const all = suggestionsRepo.getSuggestions(LANG);
         expect(all.length).toBeLessThanOrEqual(20);
     });
+
+    it('cap enforcement does not affect other languages', () => {
+        for (let i = 0; i < 25; i++) {
+            suggestionsRepo.addSuggestion(`query-${i}`, i, LANG);
+        }
+        suggestionsRepo.addSuggestion('bonjour', 1, 'fr');
+
+        const fr = suggestionsRepo.getSuggestions('fr');
+        expect(fr).toHaveLength(1);
+        expect(suggestionsRepo.getSuggestions(LANG).length).toBeLessThanOrEqual(20);
+    });
+
+    it('getSuggestions filters by language', () => {
+        suggestionsRepo.addSuggestion('hello', 1, 'en');
+        suggestionsRepo.addSuggestion('bonjour', 1, 'fr');
+
+        expect(suggestionsRepo.getSuggestions('en')).toHaveLength(1);
+        expect(suggestionsRepo.getSuggestions('fr')).toHaveLength(1);
+        expect(suggestionsRepo.getSuggestions('de')).toHaveLength(0);
+    });
 });
