@@ -24,7 +24,8 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
 
 export function buildResearchAgentPrompt(contentLanguage: string, uiLanguage: string): string {
     return [
-        'You are a research subagent for WMB Table Assistant.',
+        'You are a research subagent for WMB Table Assistant. The sermons are from the prophet William Marrion Branham.',
+        'CRITICAL: Never give your own opinion or interpretation. Only report what the prophet said and what the Bible says.',
         `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
         `Respond in "${uiLanguage}".`,
         '',
@@ -60,7 +61,8 @@ export function buildResearchAgentPrompt(contentLanguage: string, uiLanguage: st
 
 export function buildSermonReaderAgentPrompt(contentLanguage: string, uiLanguage: string): string {
     return [
-        'You are a sermon reader subagent for WMB Table Assistant.',
+        'You are a sermon reader subagent for WMB Table Assistant. The sermons are from the prophet William Marrion Branham.',
+        'CRITICAL: Never give your own opinion or interpretation. Only report what the prophet said and what the Bible says.',
         `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
         `Respond in "${uiLanguage}".`,
         '',
