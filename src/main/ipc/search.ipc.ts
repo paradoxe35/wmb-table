@@ -6,51 +6,48 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as refRepo from '@main/database/repositories/reference.repository';
 import { searchSermons } from '@main/services/search.service';
 import { DEFAULT_SEARCH_MODE } from '@shared/constants';
-import type { TantivySearchHit, SearchMode, SimilarSermonHit } from '@shared/types';
-import { strNormalizeNoLower, buildHighlightRegex } from '@shared/searchable';
+import type {
+    TantivySearchHit,
+    SearchMode,
+    SimilarSermonHit,
+    SearchSnippet,
+    MatchingParagraphSnippet,
+} from '@shared/types';
 
 const ITEMS_PER_PAGE = 20;
 
-function countSnippetMatches(text: string, query: string, mode: SearchMode): number {
-    const highlightRegex = buildHighlightRegex(query, mode);
-    if (!highlightRegex) {
-        return 0;
-    }
-
-    highlightRegex.lastIndex = 0;
-    return [...strNormalizeNoLower(text).matchAll(highlightRegex)].length;
-}
-
+/**
+ * Assign cumulative match indices to snippets for Ctrl+F navigation.
+ * Uses Tantivy highlight counts (fuzzy-aware) instead of regex counting.
+ */
 async function attachSnippetMatchIndices(
     langCode: string,
-    query: string,
-    mode: SearchMode,
     translationId: number,
     sermonDate: number,
-    snippets: { paragraphIndex: number; snippet: string }[],
-) {
+    snippets: MatchingParagraphSnippet[],
+): Promise<SearchSnippet[]> {
     const paragraphs = await tantivyService.getSermonParagraphs(
         langCode,
         translationId,
         sermonDate,
     );
-    const snippetByParagraph = new Map(
-        snippets.map((snippet) => [snippet.paragraphIndex, snippet]),
-    );
+    const snippetByParagraph = new Map(snippets.map((s) => [s.paragraphIndex, s]));
     let cumulativeMatchIndex = 0;
 
     return paragraphs.flatMap((paragraph) => {
-        const paragraphMatchCount = countSnippetMatches(paragraph.content, query, mode);
         const snippet = snippetByParagraph.get(paragraph.paragraphIndex);
-        const result = snippet
-            ? [
-                  {
-                      ...snippet,
-                      matchIndex: cumulativeMatchIndex,
-                  },
-              ]
-            : [];
-        cumulativeMatchIndex += paragraphMatchCount;
+        if (!snippet) return [];
+
+        const matchCount = snippet.highlights.length;
+        const result: SearchSnippet[] = [
+            {
+                paragraphIndex: snippet.paragraphIndex,
+                snippet: snippet.snippet,
+                matchIndex: cumulativeMatchIndex,
+                highlights: snippet.highlights,
+            },
+        ];
+        cumulativeMatchIndex += matchCount;
         return result;
     });
 }
@@ -76,26 +73,17 @@ export function registerSearchHandlers(): void {
             offset,
         });
 
-        const highlightRegex = buildHighlightRegex(query, searchMode);
-
         const hits: TantivySearchHit[] = [];
         for (const match of matches) {
             const snippets = await attachSnippetMatchIndices(
                 langCode,
-                query,
-                searchMode,
                 match.translationId,
                 match.tantivySermonDate,
                 match.snippets,
             );
             if (snippets.length === 0) continue;
 
-            const hitCount = highlightRegex
-                ? snippets.reduce(
-                      (count, s) => count + countSnippetMatches(s.snippet, query, searchMode),
-                      0,
-                  )
-                : snippets.length;
+            const hitCount = snippets.reduce((count, s) => count + (s.highlights?.length ?? 0), 0);
 
             hits.push({
                 translationId: match.translationId,
@@ -129,7 +117,6 @@ export function registerSearchHandlers(): void {
                 limit ?? 10,
             );
 
-            // Resolve sermon IDs and titles for the frontend
             const allDates = result.hits.map((h) => h.tantivySermonDate);
             const dateToSermonIds = refRepo.tantivyDatesToSermonIds(allDates);
 

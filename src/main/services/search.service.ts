@@ -8,7 +8,7 @@
 import * as tantivyService from '@main/services/tantivy.service';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as refRepo from '@main/database/repositories/reference.repository';
-import type { SearchMode } from '@shared/types';
+import type { SearchMode, MatchingParagraphSnippet } from '@shared/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,7 +21,7 @@ export interface MatchedSermon {
     score: number;
     bestParagraphIndex: number;
     title: string;
-    snippets: { paragraphIndex: number; snippet: string }[];
+    snippets: MatchingParagraphSnippet[];
 }
 
 export interface SearchSermonsOptions {

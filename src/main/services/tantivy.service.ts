@@ -1,6 +1,6 @@
 import { Worker } from 'node:worker_threads';
 import log from 'electron-log';
-import type { SermonParagraph } from '@shared/types';
+import type { SermonParagraph, MatchingParagraphSnippet } from '@shared/types';
 import * as refRepo from '@main/database/repositories/reference.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
 import workerPath from './tantivy.worker?modulePath';
@@ -140,8 +140,8 @@ export async function getMatchingParagraphs(
     translationId: number,
     sermonDate: number,
     mode: 'any' | 'all' | 'exact' = 'all',
-): Promise<{ paragraphIndex: number; snippet: string; matchIndex: number }[]> {
-    return call<{ paragraphIndex: number; snippet: string; matchIndex: number }[]>(
+): Promise<MatchingParagraphSnippet[]> {
+    return call<MatchingParagraphSnippet[]>(
         'getMatchingParagraphs',
         langCode,
         queryText,

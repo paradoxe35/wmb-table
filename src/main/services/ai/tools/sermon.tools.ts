@@ -36,7 +36,9 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     .trim()
                     .split(/\s+/)
                     .filter((w: string) => w.length >= 2);
+
                 const patterns = words.map((w: string) => simpleRegExp(w));
+
                 const sermons = referenceDataService
                     .getSermonListForLanguage(lang)
                     .filter((sermon) => {

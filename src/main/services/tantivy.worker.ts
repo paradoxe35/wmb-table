@@ -454,6 +454,7 @@ function getSearchSnippet(
 interface MatchingParagraphSnippet {
     paragraphIndex: number;
     snippet: string;
+    highlights: Array<{ start: number; end: number }>;
 }
 
 function getMatchingParagraphs(
@@ -518,12 +519,23 @@ function getMatchingParagraphs(
         lines.push(content);
     }
 
-    // Build full paragraph content for matching paragraphs
+    // Build full paragraph content with highlight ranges from Tantivy
+    const generator = SnippetGenerator.create(searcher, textQuery, schema, 'unstemmed_content');
+    generator.setMaxNumChars(10000);
+
     const snippets: MatchingParagraphSnippet[] = [];
-    for (const [paragraphIndex] of sorted) {
+    for (const [paragraphIndex, entry] of sorted) {
         const lines = allLines.get(paragraphIndex);
         if (!lines || lines.length === 0) continue;
-        snippets.push({ paragraphIndex, snippet: lines.join('\n') });
+
+        const content = lines.join('\n');
+
+        // Get highlight positions from Tantivy (fuzzy-aware)
+        const doc = searcher.doc(entry.docAddress);
+        const tanSnippet = generator.snippetFromDoc(doc);
+        const highlights = tanSnippet.highlighted();
+
+        snippets.push({ paragraphIndex, snippet: content, highlights });
     }
 
     return snippets;

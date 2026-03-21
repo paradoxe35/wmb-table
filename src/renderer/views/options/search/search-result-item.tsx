@@ -43,6 +43,7 @@ function SnippetRow({
                     query={query}
                     mode={searchMode}
                     className="search-highlight-mark"
+                    highlights={snippet.highlights}
                 />
             </div>
         </DocumentViewer>

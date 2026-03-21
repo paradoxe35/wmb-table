@@ -490,10 +490,23 @@ export interface LanguageInstalledEvent {
 // Tantivy Search
 // ---------------------------------------------------------------------------
 
+export interface HighlightRange {
+    start: number;
+    end: number;
+}
+
+/** Raw paragraph snippet from Tantivy with highlight positions. */
+export interface MatchingParagraphSnippet {
+    paragraphIndex: number;
+    snippet: string;
+    highlights: HighlightRange[];
+}
+
 export interface SearchSnippet {
     paragraphIndex: number;
     snippet: string;
     matchIndex: number;
+    highlights?: HighlightRange[];
 }
 
 export interface TantivySearchHit {
