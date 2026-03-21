@@ -1,6 +1,7 @@
 import { AudioChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as audioRepo from '@main/database/repositories/audio.repository';
+import { cacheAudio } from '@main/services/audio-cache.service';
 
 export function registerAudioHandlers(): void {
     registerHandler(AudioChannels.getTimeAndLocalFile, async (_event, audioLink) => {
@@ -19,5 +20,9 @@ export function registerAudioHandlers(): void {
 
     registerHandler(AudioChannels.setLastPlay, async (_event, docJson) => {
         audioRepo.setLastPlay(docJson);
+    });
+
+    registerHandler(AudioChannels.cacheAudio, async (_event, audioLink) => {
+        cacheAudio(audioLink).catch(() => {});
     });
 }

@@ -149,6 +149,11 @@ export default function MiniPlayerBar() {
             const localFile = result.download?.local_file;
             const src = localFile?.replaceAll('#', '%23') || detail.audio_link;
 
+            // Cache the audio file in the background for next time
+            if (!localFile) {
+                window.api.audio.cacheAudio(detail.audio_link);
+            }
+
             loadAudio(
                 src,
                 detail.audio_link,

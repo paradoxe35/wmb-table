@@ -171,6 +171,7 @@ export const AudioChannels = {
     setTime: 'audio:setTime',
     getLastPlay: 'audio:getLastPlay',
     setLastPlay: 'audio:setLastPlay',
+    cacheAudio: 'audio:cacheAudio',
 } as const;
 
 export const BackupChannels = {
@@ -444,6 +445,7 @@ export interface InvokeChannelMap {
     [AudioChannels.setTime]: { args: [string, number]; return: void };
     [AudioChannels.getLastPlay]: { args: []; return: string | null };
     [AudioChannels.setLastPlay]: { args: [string]; return: void };
+    [AudioChannels.cacheAudio]: { args: [string]; return: void };
 
     // Backup
     [BackupChannels.getStatus]: { args: []; return: BackupStatus | null };

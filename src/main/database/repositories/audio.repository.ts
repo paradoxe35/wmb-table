@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { getDb } from '../index';
 import { audioDocumentTimes, audioDownloads, audioDocumentLastPlay } from '../schema';
 import type { AudioDocumentTime, AudioDocumentDownload } from '@shared/types';
@@ -42,6 +43,13 @@ export function getDownloadByAudioLink(audioLink: string): AudioDocumentDownload
         .where(eq(audioDownloads.audioLink, audioLink))
         .get();
     if (!row) return null;
+
+    // Verify the cached file still exists on disk
+    if (row.localFile && !existsSync(row.localFile)) {
+        getDb().delete(audioDownloads).where(eq(audioDownloads.audioLink, audioLink)).run();
+        return null;
+    }
+
     return {
         id: row.id,
         local_file: row.localFile ?? undefined,
@@ -49,6 +57,19 @@ export function getDownloadByAudioLink(audioLink: string): AudioDocumentDownload
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
+}
+
+export function setDownload(audioLink: string, localFile: string): void {
+    const db = getDb();
+    const now = new Date().toISOString();
+    const id = randomUUID();
+    db.insert(audioDownloads)
+        .values({ id, audioLink, localFile, createdAt: now, updatedAt: now })
+        .onConflictDoUpdate({
+            target: audioDownloads.audioLink,
+            set: { localFile, updatedAt: now },
+        })
+        .run();
 }
 
 export function getLastPlay(): string | null {
