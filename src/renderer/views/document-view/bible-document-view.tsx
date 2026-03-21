@@ -261,7 +261,8 @@ export default function BibleDocumentView() {
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
-    const { verses, loading } = useBibleChapterContent(bookCode, chapter);
+    const { verses, loading: chapterLoading } = useBibleChapterContent(bookCode, chapter);
+    const loading = chapterLoading && verses.length === 0;
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
     const loadedChapterKey = verses[0]
