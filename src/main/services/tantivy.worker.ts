@@ -116,41 +116,73 @@ function getIndex(langCode: string): Index {
 const PHRASE_SLOP = 25;
 
 /**
+ * Resolve the primary text field to search.
+ *
+ * We use `unstemmed_content` because termQuery/phraseQuery need raw indexed
+ * tokens. The `stemmed_content` field has stemmed tokens (e.g., "apocalyps")
+ * that we can't produce without the Rust stemmer — so termQuery("apocalypse")
+ * would silently fail on it. Instead, we use fuzzyTermQuery on unstemmed to
+ * handle plurals, typos, and conjugations.
+ */
+function getSearchField(index: Index): string {
+    const fields = getTextFieldNames(index);
+    return fields.includes('unstemmed_content') ? 'unstemmed_content' : fields[0];
+}
+
+/**
  * Build a query using native Tantivy APIs based on search mode.
- * Bypasses parseQueryLenient entirely — no string formatting issues
- * with numbers, special characters, or AND/OR syntax.
+ *
+ * Uses termQuery + fuzzyTermQuery on unstemmed_content for:
+ *   - Exact token matching (boosted 2×)
+ *   - Typo/plural tolerance via edit distance 1 with prefix matching
+ *
+ * Available query types used:
+ *   - `termQuery`          — exact indexed token match
+ *   - `fuzzyTermQuery`     — edit distance + prefix matching (typos, plurals)
+ *   - `phraseQuery`        — words in sequence with slop (proximity)
+ *   - `booleanQuery`       — AND (must) combinations
+ *   - `disjunctionMaxQuery`— OR with best-score selection
+ *   - `boostQuery`         — score weighting
  */
 function buildModeQuery(index: Index, queryText: string, mode: 'any' | 'all' | 'exact'): Query {
     const schema = index.schema;
     const words = queryText.trim().split(/\s+/).filter(Boolean);
-    const textFields = getTextFieldNames(index);
+    const field = getSearchField(index);
 
     if (words.length === 0) return Query.allQuery();
 
-    // Build a term query for a single word across all text fields
+    // Build a word query: exact match (boosted) + fuzzy for typo tolerance
     function wordQuery(word: string): Query {
-        const queries = textFields.map((field) =>
-            Query.termQuery(schema, field, word.toLowerCase()),
-        );
-        return queries.length === 1 ? queries[0] : Query.disjunctionMaxQuery(queries, 0.1);
+        const lowered = word.toLowerCase();
+        const exact = Query.boostQuery(Query.termQuery(schema, field, lowered), 2.0);
+        const fuzzy = Query.fuzzyTermQuery(schema, field, lowered, 1, true, true);
+        return Query.disjunctionMaxQuery([exact, fuzzy], 0.1);
     }
 
     switch (mode) {
         case 'exact': {
-            // Native phrase query with slop — Tantivy handles proximity
-            const lowered = words.map((w) => w.toLowerCase());
-            const phraseQueries = textFields.map((field) =>
-                Query.phraseQuery(schema, field, lowered, PHRASE_SLOP),
+            // Primary: exact phrase with slop (words in order, proximity)
+            const phrase = Query.boostQuery(
+                Query.phraseQuery(
+                    schema,
+                    field,
+                    words.map((w) => w.toLowerCase()),
+                    PHRASE_SLOP,
+                ),
+                3.0,
             );
-            return phraseQueries.length === 1
-                ? phraseQueries[0]
-                : Query.disjunctionMaxQuery(phraseQueries, 0.1);
+            // Secondary: fuzzy all-words fallback (handles typos like
+            // "apocalipse 10" → finds "apocalypse 10", lower score)
+            const fuzzyAll = Query.booleanQuery(
+                words.map((w) => ({ occur: 'must', query: wordQuery(w) })),
+            );
+            return Query.disjunctionMaxQuery([phrase, fuzzyAll], 0.0);
         }
         case 'all':
-            // All words required (boolean AND)
+            // All words required (boolean AND with fuzzy tolerance)
             return Query.booleanQuery(words.map((w) => ({ occur: 'must', query: wordQuery(w) })));
         case 'any':
-            // Any word matches — disjunctionMax picks the best-scoring match
+            // Any word matches — best score wins
             return Query.disjunctionMaxQuery(
                 words.map((w) => wordQuery(w)),
                 0.1,
