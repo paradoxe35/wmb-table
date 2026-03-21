@@ -14,9 +14,12 @@ const INITIAL_DELAY_MS = 5_000;
 const CHUNK_DELAY_MS = 50;
 
 function deriveFileName(audioLink: string): string {
-    const hash = createHash('sha256').update(audioLink).digest('hex').slice(0, 16);
+    const hash = createHash('sha256').update(audioLink).digest('hex');
     try {
-        const ext = new URL(audioLink).pathname.split('.').pop() || 'mp3';
+        const pathname = new URL(audioLink).pathname;
+        const lastSegment = pathname.split('/').pop() || '';
+        const dotIndex = lastSegment.lastIndexOf('.');
+        const ext = dotIndex > 0 ? lastSegment.slice(dotIndex + 1) : 'mp3';
         return `${hash}.${ext}`;
     } catch {
         return `${hash}.mp3`;
@@ -59,26 +62,38 @@ export async function cacheAudio(audioLink: string): Promise<void> {
         const fileStream = createWriteStream(filePath);
         const reader = (body as ReadableStream<Uint8Array>).getReader();
 
+        // Attach listeners immediately to prevent unhandled 'error' crashes.
+        // .catch(noop) prevents unhandled rejection if streamDone rejects before
+        // it is awaited (e.g. reader.read() throws at the same time as a disk error).
+        const streamDone = new Promise<void>((resolve, reject) => {
+            fileStream.on('finish', resolve);
+            fileStream.on('error', reject);
+        });
+        streamDone.catch(() => {});
+
         try {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
+                if (fileStream.errored) break;
                 const canContinue = fileStream.write(value);
-                // Respect backpressure — wait for drain before reading more
-                if (!canContinue) {
-                    await new Promise<void>((r) => fileStream.once('drain', r));
+                // Respect backpressure — wait for drain before reading more.
+                // Race with error to avoid hanging if the stream breaks.
+                if (!canContinue && !fileStream.errored) {
+                    await new Promise<void>((resolve) => {
+                        fileStream.once('drain', resolve);
+                        fileStream.once('error', () => resolve());
+                    });
                 }
                 // Throttle to avoid competing with the streaming player
                 await new Promise((r) => setTimeout(r, CHUNK_DELAY_MS));
             }
         } finally {
+            reader.cancel().catch(() => {});
             fileStream.end();
         }
 
-        await new Promise<void>((resolve, reject) => {
-            fileStream.on('finish', resolve);
-            fileStream.on('error', reject);
-        });
+        await streamDone;
 
         audioRepo.setDownload(audioLink, filePath);
         log.info(`Audio cached: ${fileName}`);
