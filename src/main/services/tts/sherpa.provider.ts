@@ -290,7 +290,8 @@ export class SherpaProvider implements TtsProvider {
         );
 
         if (!compatibleModel) {
-            return null;
+            // No installed model for this language — clear voice so UI reflects incompatibility
+            return { voiceId: '', model: '' };
         }
 
         return { voiceId: `${compatibleModel}:0`, model: compatibleModel };
