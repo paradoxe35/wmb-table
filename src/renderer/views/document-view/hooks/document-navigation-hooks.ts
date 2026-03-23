@@ -143,7 +143,7 @@ export function useMatchNavigation(
     const { matchOffsets, total } = useMemo(() => {
         if (!enabled) return { matchOffsets: [] as number[], total: 0 };
         if (!search) return { matchOffsets: [] as number[], total: 0 };
-        const regex = buildHighlightRegex(search.term, search.mode, false);
+        const regex = buildHighlightRegex(search.term, search.mode);
         if (!regex) return { matchOffsets: [] as number[], total: 0 };
         let cumulative = 0;
         const offsets: number[] = [];
@@ -176,8 +176,7 @@ export function useMatchNavigation(
         }
 
         const tryScrollToMatch = () => {
-            // Wait for paragraph navigation to finish before scrolling to the
-            // match — two competing smooth scrolls cancel each other.
+            // Wait for paragraph navigation to finish first.
             const pending = useSermonStore.getState().pendingNavigation;
             if (pending) {
                 if (attemptsLeft > 0) {

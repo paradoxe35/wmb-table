@@ -44,20 +44,17 @@ function wordPattern(word: string): string {
 }
 
 /**
- * Build a phrase pattern: all words must appear in the same order,
- * within 150 characters of each other (lazy).
- * Each word gets [a-zA-Z]* suffix for stem matching.
+ * Max character gap between phrase words.
+ * Aligned with Tantivy's PHRASE_SLOP (25 words × ~10 chars/word = 250 chars).
  */
+const PHRASE_CHAR_GAP = 250;
+
+/** Phrase pattern: words in order, within PHRASE_CHAR_GAP chars, whole-word boundaries. */
 function phrasePattern(query: string): string {
     const words = query.trim().split(/\s+/).filter(Boolean);
-    return words.map((w) => '\\b' + wordPattern(w) + '[a-zA-Z]*').join('[\\s\\S]{0,150}?');
+    return words.map((w) => '\\b' + wordPattern(w) + '\\b').join(`[\\s\\S]{0,${PHRASE_CHAR_GAP}}?`);
 }
 
-/** Like phrasePattern but without stem-matching suffixes (exact substring). */
-function phrasePatternExact(query: string): string {
-    const words = query.trim().split(/\s+/).filter(Boolean);
-    return words.map((w) => '\\b' + wordPattern(w)).join('[\\s\\S]{0,150}?');
-}
 
 /**
  * Legacy: sequential terms with flexible gaps between words.
@@ -133,23 +130,16 @@ export function matchesQuery(text: string, query: string, mode: SearchMode): boo
 }
 
 /**
- * Build a global regex for highlighting matches in text.
- * Returns null when no pattern can be built.
- *
- * @param stem — when true, each word gets a `[a-zA-Z]*` suffix so "eter"
- *   matches "eternel".  Use `true` for global document search and `false`
- *   for inline (Ctrl+F) highlighting where only exact substrings should match.
+ * Build a regex for highlighting matches in text.
+ * Used by Ctrl+F inline search and as fallback when Tantivy highlights are unavailable.
+ * @param stem — true: whole-word matching. false: substring matching (Ctrl+F).
  */
-export function buildHighlightRegex(query: string, mode: SearchMode, stem = true): RegExp | null {
+export function buildHighlightRegex(query: string, _mode: SearchMode, stem = true): RegExp | null {
     const words = query.trim().split(/\s+/).filter(Boolean);
     if (words.length === 0) return null;
 
-    if (mode === 'exact') {
-        return new RegExp(stem ? phrasePattern(query) : phrasePatternExact(query), 'gi');
-    }
-
-    // For 'all' and 'any': highlight each word independently
-    const suffix = stem ? '[a-zA-Z]*' : '';
-    const patterns = words.map((w) => wordPattern(w) + suffix);
+    const patterns = stem
+        ? words.map((w) => '\\b' + wordPattern(w) + '\\b')
+        : words.map((w) => wordPattern(w));
     return new RegExp(patterns.join('|'), 'gi');
 }

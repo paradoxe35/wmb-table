@@ -96,7 +96,14 @@ export default function SimilarSermonsModal() {
             destroyOnClose
         >
             {snippet && (
-                <div style={{ marginBottom: 12, padding: '8px 12px', borderRadius: 6, background: 'var(--ant-color-fill-quaternary)' }}>
+                <div
+                    style={{
+                        marginBottom: 12,
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        background: 'var(--ant-color-fill-quaternary)',
+                    }}
+                >
                     <Text type="secondary" italic>
                         &ldquo;{snippet}&rdquo;
                     </Text>
@@ -159,7 +166,8 @@ export default function SimilarSermonsModal() {
                                                     padding: '4px 8px',
                                                     marginBottom: 2,
                                                     borderRadius: 4,
-                                                    borderLeft: '3px solid var(--ant-color-primary)',
+                                                    borderLeft:
+                                                        '3px solid var(--ant-color-primary)',
                                                     transition: 'background 0.15s',
                                                 }}
                                                 onMouseEnter={(e) =>

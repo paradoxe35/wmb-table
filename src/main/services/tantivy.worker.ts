@@ -151,38 +151,27 @@ function buildModeQuery(index: Index, queryText: string, mode: 'any' | 'all' | '
 
     if (words.length === 0) return Query.allQuery();
 
-    // Build a word query: exact match (boosted) + fuzzy for typo tolerance
     function wordQuery(word: string): Query {
-        const lowered = word.toLowerCase();
-        const exact = Query.boostQuery(Query.termQuery(schema, field, lowered), 2.0);
-        const fuzzy = Query.fuzzyTermQuery(schema, field, lowered, 1, true, true);
-        return Query.disjunctionMaxQuery([exact, fuzzy], 0.1);
+        return Query.termQuery(schema, field, word.toLowerCase());
+    }
+
+    // Single word: all modes behave the same (no phrase/order to enforce)
+    // Also prevents phraseQuery crash (requires strictly > 1 term)
+    if (words.length === 1) {
+        return wordQuery(words[0]);
     }
 
     switch (mode) {
-        case 'exact': {
-            // Primary: exact phrase with slop (words in order, proximity)
-            const phrase = Query.boostQuery(
-                Query.phraseQuery(
-                    schema,
-                    field,
-                    words.map((w) => w.toLowerCase()),
-                    PHRASE_SLOP,
-                ),
-                3.0,
+        case 'exact':
+            return Query.phraseQuery(
+                schema,
+                field,
+                words.map((w) => w.toLowerCase()),
+                PHRASE_SLOP,
             );
-            // Secondary: fuzzy all-words fallback (handles typos like
-            // "apocalipse 10" → finds "apocalypse 10", lower score)
-            const fuzzyAll = Query.booleanQuery(
-                words.map((w) => ({ occur: 'must', query: wordQuery(w) })),
-            );
-            return Query.disjunctionMaxQuery([phrase, fuzzyAll], 0.0);
-        }
         case 'all':
-            // All words required (boolean AND with fuzzy tolerance)
             return Query.booleanQuery(words.map((w) => ({ occur: 'must', query: wordQuery(w) })));
         case 'any':
-            // Any word matches — best score wins
             return Query.disjunctionMaxQuery(
                 words.map((w) => wordQuery(w)),
                 0.1,
@@ -504,36 +493,59 @@ function getMatchingParagraphs(
     ]);
     const allResult = searcher.search(allLinesQuery, 100000, false, 'line_index', 0, ORDER_ASC);
 
-    const allLines = new Map<number, string[]>();
+    // Collect lines AND their DocAddresses for SnippetGenerator
+    const lineData = new Map<number, { content: string; docAddress: DocAddress }[]>();
     for (const hit of allResult.hits) {
         const doc = searcher.doc(hit.docAddress);
         const dict = doc.toDict() as Record<string, unknown[]>;
         const pIdx = extractNumeric(dict, 'paragraph_index');
         if (!matchingIndices.has(pIdx)) continue;
         const content = extractString(dict, 'unstemmed_content');
-        let lines = allLines.get(pIdx);
+        let lines = lineData.get(pIdx);
         if (!lines) {
             lines = [];
-            allLines.set(pIdx, lines);
+            lineData.set(pIdx, lines);
         }
-        lines.push(content);
+        lines.push({ content, docAddress: hit.docAddress });
     }
 
-    // Build full paragraph content with highlight ranges from Tantivy
+    // Build paragraph content with highlights extracted from toHtml().
+    // highlighted() returns wrong positions, but toHtml() is accurate.
     const generator = SnippetGenerator.create(searcher, textQuery, schema, 'unstemmed_content');
     generator.setMaxNumChars(10000);
 
     const snippets: MatchingParagraphSnippet[] = [];
-    for (const [paragraphIndex, entry] of sorted) {
-        const lines = allLines.get(paragraphIndex);
+    for (const [paragraphIndex] of sorted) {
+        const lines = lineData.get(paragraphIndex);
         if (!lines || lines.length === 0) continue;
 
-        const content = lines.join('\n');
+        const content = lines.map((l) => l.content).join('\n');
+        const highlights: Array<{ start: number; end: number }> = [];
+        let offset = 0;
 
-        // Get highlight positions from Tantivy (fuzzy-aware)
-        const doc = searcher.doc(entry.docAddress);
-        const tanSnippet = generator.snippetFromDoc(doc);
-        const highlights = tanSnippet.highlighted();
+        for (const line of lines) {
+            const doc = searcher.doc(line.docAddress);
+            const html = generator.snippetFromDoc(doc).toHtml();
+            // Parse <b> tags from toHtml to get accurate highlight positions
+            let pos = 0;
+            let i = 0;
+            while (i < html.length) {
+                if (html.startsWith('<b>', i)) {
+                    const start = pos;
+                    i += 3;
+                    while (i < html.length && !html.startsWith('</b>', i)) {
+                        pos++;
+                        i++;
+                    }
+                    highlights.push({ start: offset + start, end: offset + pos });
+                    if (html.startsWith('</b>', i)) i += 4;
+                } else {
+                    pos++;
+                    i++;
+                }
+            }
+            offset += line.content.length + 1; // +1 for \n
+        }
 
         snippets.push({ paragraphIndex, snippet: content, highlights });
     }
@@ -585,18 +597,27 @@ function findSimilarSermons(
     const schema = index.schema;
     const searcher = index.searcher();
 
-    // 1. Find ALL lines of the source paragraph to build a richer term profile
-    const findQuery = Query.booleanQuery([
+    // 1. Find a line from the source paragraph.
+    //    paragraph_index is not indexed, so we fetch all sermon lines and filter in-memory.
+    const sermonQuery = Query.booleanQuery([
         { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
         { occur: 'must', query: Query.termQuery(schema, 'sermon_date', sermonDate) },
-        { occur: 'must', query: Query.termQuery(schema, 'paragraph_index', paragraphIndex) },
     ]);
-    const findResult = searcher.search(findQuery, 100, false);
-    if (findResult.hits.length === 0) return { hits: [], total: 0 };
+    const allLines = searcher.search(sermonQuery, 100000, false);
+    let sourceDocAddress: DocAddress | null = null;
+    for (const hit of allLines.hits) {
+        const doc = searcher.doc(hit.docAddress);
+        const dict = doc.toDict() as Record<string, unknown[]>;
+        if (extractNumeric(dict, 'paragraph_index') === paragraphIndex) {
+            sourceDocAddress = hit.docAddress;
+            break;
+        }
+    }
+    if (!sourceDocAddress) return { hits: [], total: 0 };
 
-    // Use the first line's DocAddress for moreLikeThisQuery
+    // 2. Find similar documents using TF-IDF term extraction
     const mltQuery = Query.moreLikeThisQuery(
-        findResult.hits[0].docAddress,
+        sourceDocAddress,
         2, // minDocFrequency
         null, // maxDocFrequency
         1, // minTermFrequency

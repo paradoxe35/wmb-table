@@ -174,6 +174,7 @@ Las opciones más importantes son:
 - `Souligner`
 - `Ajouter au sujet`
 - `Ajouter à la note`
+- `Trouver des prédications similaires` (solo para predicaciones)
 
 <ScreenshotPlaceholder
   file="es-document-view-right-click-menu.png"
@@ -251,6 +252,36 @@ La explicación completa está en [Tomar notas](/es/guide/notes).
   file="es-document-view-note-reference-select.png"
   label="Elegir la referencia de nota para vincular"
   hint="Mostrar la ventana que enseña la nota actual y la lista de referencias disponibles."
+/>
+
+## Buscar predicaciones similares
+
+Cuando lea un párrafo interesante en una predicación, puede descubrir otras predicaciones que hablan del mismo tema.
+
+Haga lo siguiente:
+
+1. haga clic derecho sobre el párrafo que le interesa
+2. elija `Trouver des prédications similaires`
+3. se abre una ventana con los resultados
+
+Cada resultado muestra:
+
+- el título de la predicación
+- la fecha y el lugar
+- los párrafos similares con un extracto del texto
+
+Haga clic en un párrafo para abrir esa predicación directamente en el lugar correcto.
+
+Esto es útil cuando quiere:
+
+- comparar lo que el profeta dijo sobre un tema en diferentes predicaciones
+- preparar un estudio encontrando pasajes relacionados
+- descubrir predicaciones que aún no había leído sobre un tema
+
+<ScreenshotPlaceholder
+  file="es-document-view-similar-sermons.png"
+  label="Ventana de predicaciones similares"
+  hint="Mostrar la ventana modal con el extracto fuente, una lista de predicaciones con párrafos clicables."
 />
 
 ## Diferencia entre predicación, Biblia y documento personal

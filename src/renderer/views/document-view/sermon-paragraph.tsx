@@ -217,7 +217,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
 
         // Build search ranges
         if (search) {
-            const regex = buildHighlightRegex(search.term, search.mode, false);
+            const regex = buildHighlightRegex(search.term, search.mode);
             if (regex) {
                 const normalized = strNormalizeNoLower(paragraph.content);
                 const matches = [...normalized.matchAll(regex)];

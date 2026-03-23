@@ -13,15 +13,31 @@ import type {
     SearchSnippet,
     MatchingParagraphSnippet,
 } from '@shared/types';
+import { strNormalizeNoLower, buildHighlightRegex } from '@shared/searchable';
 
 const ITEMS_PER_PAGE = 20;
 
 /**
- * Assign cumulative match indices to snippets for Ctrl+F navigation.
- * Uses Tantivy highlight counts (fuzzy-aware) instead of regex counting.
+ * Count regex matches — MUST use the same regex as the frontend's
+ * sermon-paragraph.tsx so matchIndex aligns with data-match-index.
+ */
+function countMatches(text: string, query: string, mode: SearchMode): number {
+    const regex = buildHighlightRegex(query, mode);
+    if (!regex) return 0;
+    regex.lastIndex = 0;
+    return [...strNormalizeNoLower(text).matchAll(regex)].length;
+}
+
+/**
+ * Assign cumulative match indices to snippets for scroll-to-match navigation.
+ * Match counting uses the SAME regex as the frontend renderer to ensure
+ * matchIndex aligns with the rendered data-match-index attributes.
+ * Tantivy highlights are passed through for search result snippet display.
  */
 async function attachSnippetMatchIndices(
     langCode: string,
+    query: string,
+    mode: SearchMode,
     translationId: number,
     sermonDate: number,
     snippets: MatchingParagraphSnippet[],
@@ -35,19 +51,19 @@ async function attachSnippetMatchIndices(
     let cumulativeMatchIndex = 0;
 
     return paragraphs.flatMap((paragraph) => {
+        const paragraphMatchCount = countMatches(paragraph.content, query, mode);
         const snippet = snippetByParagraph.get(paragraph.paragraphIndex);
-        if (!snippet) return [];
-
-        const matchCount = snippet.highlights.length;
-        const result: SearchSnippet[] = [
-            {
-                paragraphIndex: snippet.paragraphIndex,
-                snippet: snippet.snippet,
-                matchIndex: cumulativeMatchIndex,
-                highlights: snippet.highlights,
-            },
-        ];
-        cumulativeMatchIndex += matchCount;
+        const result: SearchSnippet[] = snippet
+            ? [
+                  {
+                      paragraphIndex: snippet.paragraphIndex,
+                      snippet: snippet.snippet,
+                      matchIndex: cumulativeMatchIndex,
+                      highlights: snippet.highlights,
+                  },
+              ]
+            : [];
+        cumulativeMatchIndex += paragraphMatchCount;
         return result;
     });
 }
@@ -77,13 +93,18 @@ export function registerSearchHandlers(): void {
         for (const match of matches) {
             const snippets = await attachSnippetMatchIndices(
                 langCode,
+                query,
+                searchMode,
                 match.translationId,
                 match.tantivySermonDate,
                 match.snippets,
             );
             if (snippets.length === 0) continue;
 
-            const hitCount = snippets.reduce((count, s) => count + (s.highlights?.length ?? 0), 0);
+            const hitCount = snippets.reduce(
+                (count, s) => count + countMatches(s.snippet, query, searchMode),
+                0,
+            );
 
             hits.push({
                 translationId: match.translationId,
