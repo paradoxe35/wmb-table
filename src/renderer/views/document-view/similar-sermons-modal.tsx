@@ -85,6 +85,18 @@ export default function SimilarSermonsModal() {
     }, []);
 
     const pagedHits = allHits.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+    const modalBodyStyle = {
+        display: 'flex',
+        flexDirection: 'column' as const,
+        maxHeight: 'min(78vh, 760px)',
+        overflow: 'hidden',
+    };
+    const scrollAreaStyle = {
+        flex: 1,
+        minHeight: 0,
+        overflowY: 'auto' as const,
+        paddingRight: 4,
+    };
 
     return (
         <Modal
@@ -93,7 +105,10 @@ export default function SimilarSermonsModal() {
             onCancel={handleClose}
             footer={null}
             width={650}
+            centered
             destroyOnClose
+            style={{ maxWidth: 'calc(100vw - 32px)' }}
+            styles={{ body: modalBodyStyle }}
         >
             {snippet && (
                 <div
@@ -122,7 +137,7 @@ export default function SimilarSermonsModal() {
                         {t('Trouvé dans {{count}} documents', { count: allHits.length })}
                     </Text>
 
-                    <div style={{ maxHeight: 450, overflowY: 'auto' }}>
+                    <div style={scrollAreaStyle}>
                         <List
                             dataSource={pagedHits}
                             renderItem={(hit) => {

@@ -144,7 +144,7 @@ export function useMatchNavigation(
     const requestedParagraphIndex = uiState?.requestedParagraphIndex ?? null;
     const requestedMatchIndex = uiState?.requestedMatchIndex ?? null;
 
-    const pendingMatchIndex = useMemo(() => {
+    const resolvedMatchIndex = useMemo(() => {
         if (requestedParagraphIndex != null) {
             const paragraphMatchIndex = matchingParagraphIndices.indexOf(requestedParagraphIndex);
             return paragraphMatchIndex >= 0 ? paragraphMatchIndex : null;
@@ -155,7 +155,7 @@ export function useMatchNavigation(
         return null;
     }, [requestedParagraphIndex, requestedMatchIndex, matchingParagraphIndices, total]);
 
-    const pendingParagraphIndex = useMemo(() => {
+    const requestedTargetParagraphIndex = useMemo(() => {
         if (requestedParagraphIndex != null) return requestedParagraphIndex;
         if (requestedMatchIndex == null || total === 0) return null;
         return matchingParagraphIndices[Math.min(requestedMatchIndex, total - 1)] ?? null;
@@ -167,19 +167,19 @@ export function useMatchNavigation(
     }, [enabled, tabKey, total, setTotalMatches]);
 
     useEffect(() => {
-        if (!enabled || !tabKey || total === 0 || pendingMatchIndex == null) return;
-        if (currentMatchIndex !== pendingMatchIndex) {
-            setCurrentMatchIndex(tabKey, pendingMatchIndex);
+        if (!enabled || !tabKey || total === 0 || resolvedMatchIndex == null) return;
+        if (currentMatchIndex !== resolvedMatchIndex) {
+            setCurrentMatchIndex(tabKey, resolvedMatchIndex);
         }
-    }, [enabled, tabKey, total, pendingMatchIndex, currentMatchIndex, setCurrentMatchIndex]);
+    }, [enabled, tabKey, total, resolvedMatchIndex, currentMatchIndex, setCurrentMatchIndex]);
 
     useEffect(() => {
         if (
             !enabled ||
             !tabKey ||
             total === 0 ||
-            pendingMatchIndex == null ||
-            pendingParagraphIndex == null
+            resolvedMatchIndex == null ||
+            requestedTargetParagraphIndex == null
         ) {
             return;
         }
@@ -190,7 +190,7 @@ export function useMatchNavigation(
 
         const tryScroll = () => {
             if (cancelled) return;
-            if (scrollToParagraph(containerRef.current, pendingParagraphIndex)) {
+            if (scrollToParagraph(containerRef.current, requestedTargetParagraphIndex)) {
                 clearScrollToMatchRequest(tabKey);
                 return;
             }
@@ -208,14 +208,14 @@ export function useMatchNavigation(
         enabled,
         tabKey,
         total,
-        pendingMatchIndex,
-        pendingParagraphIndex,
+        resolvedMatchIndex,
+        requestedTargetParagraphIndex,
         clearScrollToMatchRequest,
         containerRef,
     ]);
 
     const activeParagraphIndex =
-        pendingParagraphIndex ?? matchingParagraphIndices[currentMatchIndex] ?? -1;
+        requestedTargetParagraphIndex ?? matchingParagraphIndices[currentMatchIndex] ?? -1;
 
     useEffect(() => {
         if (!enabled || !tabKey) return;
