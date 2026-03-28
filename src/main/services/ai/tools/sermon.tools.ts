@@ -3,7 +3,6 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as searchService from '@main/services/search.service';
 import { strNormalize, simpleRegExp } from '@shared/searchable';
-import { DEFAULT_SEARCH_MODE } from '@shared/constants';
 import type { SearchMode } from '@shared/types';
 import type {
     AiToolDefinition,
@@ -170,15 +169,18 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 'Full-text search inside sermon content. Use this when searching for specific words, ' +
                 'phrases, or quotes within the text of sermons (not titles). ' +
                 'Returns matching sermons with relevant paragraph snippets. ' +
-                'Each match has a paragraphNumber — use it for wmb:// reference links.',
+                'Each match has a paragraphNumber — use it for wmb:// reference links. ' +
+                'Mode controls precision: "exact" (default) finds words in order as a phrase, ' +
+                '"all" requires all words present in any order, "any" matches at least one word.',
             inputSchema: z.object({
                 query: z.string().min(2),
                 languageCode: z.string().optional(),
+                mode: z.enum(['exact', 'all', 'any']).optional(),
                 limit: z.number().int().min(1).max(20).optional(),
             }),
-            execute: async ({ query, languageCode, limit = 10 }) => {
+            execute: async ({ query, languageCode, mode: searchMode, limit = 10 }) => {
                 const lang = languageCode ?? defaultContentLanguage;
-                const mode: SearchMode = DEFAULT_SEARCH_MODE;
+                const mode: SearchMode = searchMode ?? 'exact';
 
                 const langError = validateLanguage(lang);
                 if (langError) {
