@@ -149,7 +149,16 @@ export function useContextMenuItems(
                 const verse = getBibleVerse(result.ref.paragraphIndex);
                 if (verse) return { bible: verse, textContent: result.text };
             }
-            return { documentHtmlTree: result.ref, textContent: result.text };
+            // Include full paragraph content so the subject view can detect
+            // whether the textContent is a mid-paragraph selection (show "...")
+            const fullParagraph =
+                paragraphs.find((p) => p.paragraphIndex === result.ref.paragraphIndex)?.content ??
+                '';
+            const isPartialSelection = fullParagraph !== result.text && result.text.length > 0;
+            const displayText = isPartialSelection
+                ? (fullParagraph.startsWith(result.text) ? '' : '...') + result.text
+                : result.text;
+            return { documentHtmlTree: result.ref, textContent: displayText };
         };
 
         // ----- Menu items -----
