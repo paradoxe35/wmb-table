@@ -35,6 +35,7 @@ export interface SearchSermonsOptions {
 export interface SearchSermonsResult {
     matches: MatchedSermon[];
     total: number;
+    totalIsExact: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -84,5 +85,5 @@ export async function searchSermons(opts: SearchSermonsOptions): Promise<SearchS
         });
     }
 
-    return { matches, total: result.total };
+    return { matches, total: result.total, totalIsExact: result.totalIsExact };
 }

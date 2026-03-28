@@ -23,6 +23,7 @@ export interface GroupedSearchHit {
 export interface SearchSermonResult {
     hits: GroupedSearchHit[];
     total: number;
+    totalIsExact: boolean;
 }
 
 /** Raw result from the worker before sermon ID/title resolution. */

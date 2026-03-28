@@ -58,9 +58,17 @@ export function pendingNavigationMatchesDocument(
     switch (current.documentType) {
         case 'custom': {
             if (target.documentType !== 'custom') return false;
-            const targetId = target.customDocumentId ?? target.sermonId;
-            const currentId = current.customDocumentId ?? current.sermonId;
-            return !!targetId && !!currentId && targetId === currentId;
+            if (
+                target.customDocumentId &&
+                current.customDocumentId &&
+                target.customDocumentId === current.customDocumentId
+            ) {
+                return true;
+            }
+            if (target.sermonId && current.sermonId && target.sermonId === current.sermonId) {
+                return true;
+            }
+            return false;
         }
         case 'bible': {
             if (target.documentType !== 'bible') return false;

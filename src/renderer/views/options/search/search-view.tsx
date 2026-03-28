@@ -92,7 +92,11 @@ export default function Search() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     useEffect(() => {
-        const can = lastSearch.current.trim().length > 0 && !!results && results.total > 0;
+        const can =
+            lastSearch.current.trim().length > 0 &&
+            !!results &&
+            results.total > 0 &&
+            results.totalIsExact;
 
         if (can && contentLanguage) {
             window.api.search.addSuggestion(

@@ -91,11 +91,12 @@ export function buildReferenceOpenRequest(
     reference: SubjectDocumentItem['documentHtmlTree'] | NoteItemReference['documentHtmlTree'],
 ): OpenDocumentRequest {
     const documentType = resolveReferenceDocumentType(reference);
-    if (documentType === 'custom') {
+    if (documentType === 'custom' && isParagraphReference(reference)) {
         return {
             title,
             sermonId,
             documentType,
+            customDocumentId: reference.customDocumentId,
         };
     }
     if (documentType === 'bible' && isParagraphReference(reference)) {
@@ -106,6 +107,13 @@ export function buildReferenceOpenRequest(
             bibleBook: reference.bibleBook,
             bibleChapter: reference.bibleChapter,
             bibleVersionAbbreviation: reference.bibleVersionAbbreviation,
+        };
+    }
+    if (documentType === 'custom') {
+        return {
+            title,
+            sermonId,
+            documentType,
         };
     }
     return {

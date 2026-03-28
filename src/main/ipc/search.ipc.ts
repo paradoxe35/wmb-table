@@ -86,7 +86,7 @@ export function registerSearchHandlers(): void {
         const searchMode: SearchMode = mode ?? DEFAULT_SEARCH_MODE;
         const offset = (page - 1) * ITEMS_PER_PAGE;
 
-        const { matches, total } = await searchSermons({
+        const { matches, total, totalIsExact } = await searchSermons({
             langCode,
             query,
             mode: searchMode,
@@ -117,7 +117,7 @@ export function registerSearchHandlers(): void {
             });
         }
 
-        return { hits, total, query };
+        return { hits, total, totalIsExact, query };
     });
 
     registerHandler(SearchChannels.searchContent, async (_event, langCode, query, sermonDateMs) => {

@@ -522,6 +522,7 @@ export interface TantivySearchHit {
 export interface TantivySearchResult {
     hits: TantivySearchHit[];
     total: number;
+    totalIsExact: boolean;
     query: string;
 }
 

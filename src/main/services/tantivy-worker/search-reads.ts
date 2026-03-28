@@ -28,6 +28,12 @@ export interface GroupedSearchHitResult {
     hitCount: number;
 }
 
+export interface SearchSermonsReadResult {
+    hits: GroupedSearchHitResult[];
+    total: number;
+    totalIsExact: boolean;
+}
+
 export interface MatchingParagraphSnippet {
     paragraphIndex: number;
     snippet: string;
@@ -203,12 +209,12 @@ export function searchSermons(
     limit: number,
     offset: number,
     mode: 'any' | 'all' | 'exact' = 'all',
-): { hits: GroupedSearchHitResult[]; total: number } {
+): SearchSermonsReadResult {
     const index = getIndex(langCode);
     const query = buildModeQuery(index, queryText, mode);
     const searcher = index.searcher();
     const totalLines = searcher.search(query, 1, true).count ?? 0;
-    if (totalLines === 0) return { hits: [], total: 0 };
+    if (totalLines === 0) return { hits: [], total: 0, totalIsExact: true };
 
     const requiredGroups = offset + limit;
     let fetchLimit = Math.min(
@@ -235,9 +241,11 @@ export function searchSermons(
         );
     }
 
+    const totalIsExact = fetchLimit >= totalLines;
     return {
         hits: grouped.slice(offset, offset + limit),
         total: grouped.length,
+        totalIsExact,
     };
 }
 
