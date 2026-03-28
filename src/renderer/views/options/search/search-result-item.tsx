@@ -44,7 +44,7 @@ function SnippetRow({
                     mode={searchMode}
                     className="search-highlight-mark"
                     highlights={snippet.highlights}
-                    maxChars={250}
+                    maxChars={350}
                 />
             </div>
         </DocumentViewer>
@@ -71,13 +71,17 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 documentTitle: hit.title,
                 textContentLength: 0,
                 matches: [],
+                matchedParagraphs: hit.snippets.map((snippet) => ({
+                    paragraphIndex: snippet.paragraphIndex,
+                    highlights: snippet.highlights,
+                })),
                 term: query,
                 mode: searchMode,
             });
             openSearchBar(tabKey, true);
             setCurrentMatchIndex(tabKey, matchIndex);
             setCurrentParagraphIndex(tabKey, paragraphIndex);
-            requestScrollToMatch(tabKey, undefined, paragraphIndex);
+            requestScrollToMatch(tabKey, matchIndex, paragraphIndex);
         },
         [
             hit,

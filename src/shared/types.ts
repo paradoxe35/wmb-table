@@ -178,6 +178,7 @@ export type DocumentViewQuery = {
     textContentLength: number;
     searchForParagraph?: boolean;
     matches: SearchMatchersValue[];
+    matchedParagraphs?: DocumentSearchParagraphMatch[];
 };
 
 export type DocumentSearchEvent = {
@@ -493,6 +494,11 @@ export interface LanguageInstalledEvent {
 export interface HighlightRange {
     start: number;
     end: number;
+}
+
+export interface DocumentSearchParagraphMatch {
+    paragraphIndex: number;
+    highlights?: HighlightRange[];
 }
 
 /** Raw paragraph snippet from Tantivy with highlight positions. */

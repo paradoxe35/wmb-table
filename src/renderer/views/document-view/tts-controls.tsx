@@ -8,7 +8,8 @@ import {
     ZoomOutOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { SearchMode, HighlightItem } from '@shared/types';
+import type { HighlightItem } from '@shared/types';
+import type { SearchHighlightState } from './hooks';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
 import { useTtsStore } from '@renderer/stores/tts.store';
@@ -121,7 +122,7 @@ export function ZoomControls({
 interface ParagraphListProps {
     paragraphs: { paragraphIndex: number; content: string }[];
     documentId: string;
-    search: { term: string; mode: SearchMode } | null;
+    search: SearchHighlightState | null;
     activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
     onPlayFromHere?: (paragraphIndex: number) => void;
@@ -163,7 +164,7 @@ export function ParagraphList({
 interface TtsParagraphProps {
     paragraph: { paragraphIndex: number; content: string };
     documentId: string;
-    search: { term: string; mode: SearchMode } | null;
+    search: SearchHighlightState | null;
     isActiveMatch?: boolean;
     highlights?: HighlightItem[];
     onPlayFromHere?: (paragraphIndex: number) => void;

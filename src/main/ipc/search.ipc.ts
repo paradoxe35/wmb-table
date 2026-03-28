@@ -6,72 +6,9 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as refRepo from '@main/database/repositories/reference.repository';
 import { searchSermons } from '@main/services/search.service';
 import { DEFAULT_SEARCH_MODE } from '@shared/constants';
-import type {
-    TantivySearchHit,
-    SearchMode,
-    SimilarSermonHit,
-    SearchSnippet,
-    MatchingParagraphSnippet,
-} from '@shared/types';
-import { getHighlightRanges, paragraphHasMatch } from '@shared/searchable';
+import type { TantivySearchHit, SearchMode, SimilarSermonHit } from '@shared/types';
 
 const ITEMS_PER_PAGE = 20;
-
-function mergeOverlappingRanges(
-    ranges: Array<{ start: number; end: number }>,
-): Array<{ start: number; end: number }> {
-    if (ranges.length === 0) return [];
-    const sorted = [...ranges].sort((a, b) => a.start - b.start);
-    const merged = [{ ...sorted[0] }];
-    for (let i = 1; i < sorted.length; i++) {
-        const prev = merged[merged.length - 1];
-        if (sorted[i].start <= prev.end) {
-            prev.end = Math.max(prev.end, sorted[i].end);
-        } else {
-            merged.push({ ...sorted[i] });
-        }
-    }
-    return merged;
-}
-
-/** Build search snippets with sequential paragraph indices for navigation. */
-async function buildSearchSnippets(
-    langCode: string,
-    query: string,
-    mode: SearchMode,
-    translationId: number,
-    sermonDate: number,
-    rawSnippets: MatchingParagraphSnippet[],
-): Promise<SearchSnippet[]> {
-    const paragraphs = await tantivyService.getSermonParagraphs(
-        langCode,
-        translationId,
-        sermonDate,
-    );
-    const snippetByParagraph = new Map(rawSnippets.map((s) => [s.paragraphIndex, s]));
-
-    // Build snippets with sequential matchIndex (index among matching paragraphs)
-    let matchIdx = 0;
-    return paragraphs.flatMap((paragraph) => {
-        const snippet = snippetByParagraph.get(paragraph.paragraphIndex);
-        if (!snippet) return [];
-        if (!paragraphHasMatch(paragraph.content, query, mode)) return [];
-
-        // Merge regex + Tantivy highlights (Tantivy catches fuzzy matches for all/any)
-        const regexHl = getHighlightRanges(snippet.snippet, query, mode);
-        const tantivyHl = mode !== 'exact' ? (snippet.highlights ?? []) : [];
-        const highlights = mergeOverlappingRanges([...regexHl, ...tantivyHl]);
-
-        return [
-            {
-                paragraphIndex: snippet.paragraphIndex,
-                snippet: snippet.snippet,
-                matchIndex: matchIdx++,
-                highlights,
-            },
-        ];
-    });
-}
 
 export function registerSearchHandlers(): void {
     registerHandler(SearchChannels.getSuggestions, async (_event, langCode) => {
@@ -96,23 +33,15 @@ export function registerSearchHandlers(): void {
 
         const hits: TantivySearchHit[] = [];
         for (const match of matches) {
-            const snippets = await buildSearchSnippets(
-                langCode,
-                query,
-                searchMode,
-                match.translationId,
-                match.tantivySermonDate,
-                match.snippets,
-            );
-            if (snippets.length === 0) continue;
+            if (match.snippets.length === 0) continue;
 
             hits.push({
                 translationId: match.translationId,
                 sermonId: match.sermonId,
                 title: match.title,
-                snippets,
+                snippets: match.snippets,
                 score: match.score,
-                hitCount: snippets.length,
+                hitCount: match.snippets.length,
                 paragraphIndex: match.bestParagraphIndex,
             });
         }

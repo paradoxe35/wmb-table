@@ -8,7 +8,8 @@
 import * as tantivyService from '@main/services/tantivy.service';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as refRepo from '@main/database/repositories/reference.repository';
-import type { SearchMode, MatchingParagraphSnippet } from '@shared/types';
+import { getHighlightRanges } from '@shared/searchable';
+import type { SearchMode, SearchSnippet } from '@shared/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -21,7 +22,7 @@ export interface MatchedSermon {
     score: number;
     bestParagraphIndex: number;
     title: string;
-    snippets: MatchingParagraphSnippet[];
+    snippets: SearchSnippet[];
 }
 
 export interface SearchSermonsOptions {
@@ -42,6 +43,27 @@ export interface SearchSermonsResult {
 // Public
 // ---------------------------------------------------------------------------
 
+function mergeOverlappingRanges(
+    ranges: Array<{ start: number; end: number }>,
+): Array<{ start: number; end: number }> {
+    if (ranges.length === 0) return [];
+
+    const sorted = [...ranges].sort((a, b) => a.start - b.start);
+    const merged = [{ ...sorted[0] }];
+
+    for (let i = 1; i < sorted.length; i++) {
+        const prev = merged[merged.length - 1];
+        const current = sorted[i];
+        if (current.start <= prev.end) {
+            prev.end = Math.max(prev.end, current.end);
+        } else {
+            merged.push({ ...current });
+        }
+    }
+
+    return merged;
+}
+
 /**
  * Search sermons using Tantivy's native query APIs.
  *
@@ -58,32 +80,52 @@ export async function searchSermons(opts: SearchSermonsOptions): Promise<SearchS
     const result = await tantivyService.searchSermons(langCode, query, limit, offset, mode);
     const allDates = result.hits.map((h) => h.tantivySermonDate);
     const dateToSermonIds = refRepo.tantivyDatesToSermonIds(allDates);
+    const matchCandidates = await Promise.all(
+        result.hits.map(async (hit): Promise<MatchedSermon | null> => {
+            const sermonId = (dateToSermonIds.get(hit.tantivySermonDate) ?? [])[0];
+            if (!sermonId) return null;
 
-    const matches: MatchedSermon[] = [];
-    for (const hit of result.hits) {
-        const sermonId = (dateToSermonIds.get(hit.tantivySermonDate) ?? [])[0];
-        if (!sermonId) continue;
+            const rawSnippets = await tantivyService.getMatchingParagraphs(
+                langCode,
+                query,
+                hit.translationId,
+                hit.tantivySermonDate,
+                mode,
+            );
+            if (rawSnippets.length === 0) return null;
 
-        const rawSnippets = await tantivyService.getMatchingParagraphs(
-            langCode,
-            query,
-            hit.translationId,
-            hit.tantivySermonDate,
-            mode,
-        );
-        if (rawSnippets.length === 0) continue;
+            const snippets = rawSnippets
+                .slice()
+                .sort((a, b) => a.paragraphIndex - b.paragraphIndex)
+                .map((snippet, matchIndex) => {
+                    const regexHighlights = getHighlightRanges(snippet.snippet, query, mode);
+                    const tantivyHighlights = snippet.highlights ?? [];
 
-        const meta = referenceDataService.getSermonMeta(hit.translationId, langCode, sermonId);
-        matches.push({
-            sermonId,
-            translationId: hit.translationId,
-            tantivySermonDate: hit.tantivySermonDate,
-            score: hit.score,
-            bestParagraphIndex: hit.bestParagraphIndex,
-            title: meta?.title ?? meta?.enTitle ?? sermonId,
-            snippets: rawSnippets,
-        });
-    }
+                    return {
+                        paragraphIndex: snippet.paragraphIndex,
+                        snippet: snippet.snippet,
+                        matchIndex,
+                        highlights: mergeOverlappingRanges([
+                            ...regexHighlights,
+                            ...tantivyHighlights,
+                        ]),
+                    };
+                });
+
+            const meta = referenceDataService.getSermonMeta(hit.translationId, langCode, sermonId);
+            return {
+                sermonId,
+                translationId: hit.translationId,
+                tantivySermonDate: hit.tantivySermonDate,
+                score: hit.score,
+                bestParagraphIndex: hit.bestParagraphIndex,
+                title: meta?.title ?? meta?.enTitle ?? sermonId,
+                snippets,
+            };
+        }),
+    );
+
+    const matches = matchCandidates.filter((match): match is MatchedSermon => match != null);
 
     return { matches, total: result.total, totalIsExact: result.totalIsExact };
 }

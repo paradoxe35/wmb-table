@@ -5,11 +5,8 @@ import type { MenuProps } from 'antd';
 import { getHighlightRanges } from '@renderer/utils/searchable';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
 import { hexToRgba } from '@renderer/utils/functions';
-import type {
-    SermonParagraph as SermonParagraphType,
-    SearchMode,
-    HighlightItem,
-} from '@shared/types';
+import type { SearchHighlightState } from './hooks';
+import type { SermonParagraph as SermonParagraphType, HighlightItem } from '@shared/types';
 
 type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'>;
 
@@ -58,7 +55,7 @@ function PersistentHighlight({
         } catch {
             message.error(t('Erreur lors de la suppression'));
         }
-    }, [highlightId]);
+    }, [highlightId, t]);
 
     const menuItems: MenuProps['items'] = [
         ...(comment
@@ -187,7 +184,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
     playFromHereButton,
 }: {
     paragraph: ParagraphProp;
-    search: { term: string; mode: SearchMode } | null;
+    search: SearchHighlightState | null;
     isActiveMatch?: boolean;
     highlights?: HighlightItem[];
     ttsHighlight?: { isActive: boolean; highlightRange: { start: number; end: number } | null };
@@ -208,7 +205,11 @@ const SermonParagraphView = memo(function SermonParagraphView({
         }
 
         if (search) {
-            for (const r of getHighlightRanges(paragraph.content, search.term, search.mode)) {
+            const paragraphSearchRanges =
+                search.highlightsByParagraph.get(paragraph.paragraphIndex) ??
+                getHighlightRanges(paragraph.content, search.term, search.mode);
+
+            for (const r of paragraphSearchRanges) {
                 searchRanges.push({ start: r.start, end: r.end, color: '', type: 'search' });
             }
         }

@@ -4,21 +4,52 @@ import type { CurrentDocumentIdentity } from '@renderer/utils/pending-navigation
 import { pendingNavigationMatchesDocument } from '@renderer/utils/pending-navigation';
 import { paragraphHasMatch } from '@renderer/utils/searchable';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
-import type { SearchMode } from '@shared/types';
+import type { DocumentSearchParagraphMatch, HighlightRange, SearchMode } from '@shared/types';
 import { isParagraphReference } from '@shared/types';
 
 // ---------------------------------------------------------------------------
 // Search highlight query
 // ---------------------------------------------------------------------------
 
-export function useSearchHighlight(): { term: string; mode: SearchMode } | null {
+export interface SearchHighlightState {
+    term: string;
+    mode: SearchMode;
+    matchedParagraphIndices: number[] | null;
+    highlightsByParagraph: Map<number, HighlightRange[]>;
+}
+
+function buildSearchHighlightMaps(matches: DocumentSearchParagraphMatch[] | undefined) {
+    if (!matches || matches.length === 0) {
+        return {
+            matchedParagraphIndices: null,
+            highlightsByParagraph: new Map<number, HighlightRange[]>(),
+        };
+    }
+
+    return {
+        matchedParagraphIndices: matches.map((match) => match.paragraphIndex),
+        highlightsByParagraph: new Map(
+            matches.map((match) => [match.paragraphIndex, match.highlights ?? []]),
+        ),
+    };
+}
+
+export function useSearchHighlight(): SearchHighlightState | null {
     const activeTabKey = useSermonStore(selectActiveTabKey);
     const query = useSearchStore((s) =>
         activeTabKey ? s.documentViewQueries[activeTabKey] : null,
     );
     return useMemo(() => {
         if (!query?.term) return null;
-        return { term: query.term, mode: query.mode };
+        const { matchedParagraphIndices, highlightsByParagraph } = buildSearchHighlightMaps(
+            query.matchedParagraphs,
+        );
+        return {
+            term: query.term,
+            mode: query.mode,
+            matchedParagraphIndices,
+            highlightsByParagraph,
+        };
     }, [query]);
 }
 
@@ -74,7 +105,7 @@ export function useReferenceNavigation(
 export function useMatchNavigation(
     containerRef: React.RefObject<HTMLDivElement | null>,
     tabKey: string | null,
-    search: { term: string; mode: SearchMode } | null,
+    search: SearchHighlightState | null,
     paragraphs: { paragraphIndex: number; content: string }[],
     enabled = true,
 ) {
@@ -86,6 +117,7 @@ export function useMatchNavigation(
 
     const matchingParagraphIndices = useMemo(() => {
         if (!enabled || !search || paragraphs.length === 0) return [] as number[];
+        if (search.matchedParagraphIndices) return search.matchedParagraphIndices;
         return paragraphs
             .filter((p) => paragraphHasMatch(p.content, search.term, search.mode))
             .map((p) => p.paragraphIndex);

@@ -77,8 +77,9 @@ function groupSermonHits(index: Index, query: Query, fetchLimit: number): Groupe
     const searcher = index.searcher();
     const result = searcher.search(query, fetchLimit, true);
     const groups = new Map<
-        number,
+        string,
         {
+            tantivySermonDate: number;
             translationId: number;
             score: number;
             bestDocAddress: { segmentOrd: number; doc: number };
@@ -91,12 +92,15 @@ function groupSermonHits(index: Index, query: Query, fetchLimit: number): Groupe
         const doc = searcher.doc(hit.docAddress);
         const dict = doc.toDict() as Record<string, unknown[]>;
         const sermonDate = extractNumeric(dict, 'sermon_date');
+        const translationId = extractNumeric(dict, 'translation_id');
         const score = hit.score ?? 0;
+        const groupKey = `${translationId}:${sermonDate}`;
 
-        const existing = groups.get(sermonDate);
+        const existing = groups.get(groupKey);
         if (!existing) {
-            groups.set(sermonDate, {
-                translationId: extractNumeric(dict, 'translation_id'),
+            groups.set(groupKey, {
+                tantivySermonDate: sermonDate,
+                translationId,
                 score,
                 bestDocAddress: {
                     segmentOrd: hit.docAddress.segmentOrd,
@@ -111,7 +115,7 @@ function groupSermonHits(index: Index, query: Query, fetchLimit: number): Groupe
         existing.hitCount++;
         if (score > existing.score) {
             existing.score = score;
-            existing.translationId = extractNumeric(dict, 'translation_id');
+            existing.translationId = translationId;
             existing.bestDocAddress = {
                 segmentOrd: hit.docAddress.segmentOrd,
                 doc: hit.docAddress.doc,
@@ -120,10 +124,10 @@ function groupSermonHits(index: Index, query: Query, fetchLimit: number): Groupe
         }
     }
 
-    return Array.from(groups.entries())
-        .map(([sermonDate, group]) => ({
+    return Array.from(groups.values())
+        .map((group) => ({
             translationId: group.translationId,
-            tantivySermonDate: sermonDate,
+            tantivySermonDate: group.tantivySermonDate,
             score: group.score,
             bestDocAddress: group.bestDocAddress,
             bestParagraphIndex: group.bestParagraphIndex,
