@@ -60,7 +60,7 @@ export const DOCS_TTS_LINK = buildDocsGuideLink('audio-and-tts');
 export const DOCS_BIBLE_LINK = buildDocsGuideLink('bible');
 
 // ── Search ──
-export const DEFAULT_SEARCH_MODE = 'all' as const;
+export const DEFAULT_SEARCH_MODE = 'exact' as const;
 
 // ── Document tabs ──
 export const DEFAULT_MAX_TABS = 10;

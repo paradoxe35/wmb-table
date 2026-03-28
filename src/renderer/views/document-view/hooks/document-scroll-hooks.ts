@@ -6,6 +6,7 @@ import {
     selectActiveTab,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { pendingNavigationMatchesTab } from '@renderer/utils/pending-navigation';
 import { debounce } from '@renderer/utils/functions';
 import type { ReadingPosition } from '@shared/types';
 
@@ -166,7 +167,7 @@ export function useScrollAndZoom(
         // Skip scroll restoration when a pending navigation will handle scrolling.
         // Read as snapshot to avoid re-running this effect when pending state clears.
         const pending = useSermonStore.getState().pendingNavigation;
-        if (pending && pending.documentTitle === activeTab.title) {
+        if (pendingNavigationMatchesTab(pending, activeTab)) {
             return;
         }
         const pendingSearch = activeTabKey

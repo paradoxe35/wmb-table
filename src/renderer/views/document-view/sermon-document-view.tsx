@@ -40,7 +40,6 @@ export default function SermonDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: !!content,
         documentType: 'sermon',
-        title: activeTab?.title,
         sermonId: activeTab?.sermonId,
         translationId: tabTranslationId ?? content?.meta.translationId,
     });

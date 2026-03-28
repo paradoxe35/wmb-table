@@ -2,7 +2,12 @@ import { useCallback, useEffect, useState } from 'react';
 import { Empty, List, Modal, Pagination, Spin, Typography, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useAppStore, useSermonStore } from '@renderer/stores';
-import { useOpenDocument, useSermonLookup, useFormatSermonDate } from '@renderer/hooks';
+import {
+    buildPendingNavigation,
+    useOpenDocumentRequest,
+    useSermonLookup,
+    useFormatSermonDate,
+} from '@renderer/hooks';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import type { SimilarSermonHit } from '@shared/types';
 
@@ -25,7 +30,7 @@ export default function SimilarSermonsModal() {
     const [page, setPage] = useState(1);
     const [snippet, setSnippet] = useState('');
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const openDocument = useOpenDocument();
+    const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
@@ -64,18 +69,25 @@ export default function SimilarSermonsModal() {
 
     const handleNavigate = useCallback(
         (hit: SimilarSermonHit, paragraphIndex: number) => {
-            setPendingNavigation({
-                documentTitle: hit.title,
-                documentHtmlTree: {
+            const request = {
+                title: hit.title,
+                sermonId: hit.sermonId,
+                documentType: 'sermon' as const,
+                translationId: hit.translationId,
+            };
+            setPendingNavigation(
+                buildPendingNavigation(request, {
                     paragraphIndex,
                     translationId: hit.translationId,
                     languageCode: contentLanguage ?? '',
-                },
-            });
-            openDocument(hit.title, hit.sermonId, hit.translationId);
+                    sermonId: hit.sermonId,
+                    documentType: 'sermon',
+                }),
+            );
+            openDocumentRequest(request);
             setOpen(false);
         },
-        [openDocument, setPendingNavigation, contentLanguage],
+        [openDocumentRequest, setPendingNavigation, contentLanguage],
     );
 
     const handleClose = useCallback(() => {

@@ -1,13 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import {
-    useSearchStore,
-    useSermonStore,
-    selectActiveTab,
-    selectActiveTabKey,
-} from '@renderer/stores';
+import { useSearchStore, useSermonStore, selectActiveTabKey } from '@renderer/stores';
+import type { CurrentDocumentIdentity } from '@renderer/utils/pending-navigation';
+import { pendingNavigationMatchesDocument } from '@renderer/utils/pending-navigation';
 import { paragraphHasMatch } from '@renderer/utils/searchable';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
-import type { DocumentType, ParagraphReference, SearchMode } from '@shared/types';
+import type { SearchMode } from '@shared/types';
 import { isParagraphReference } from '@shared/types';
 
 // ---------------------------------------------------------------------------
@@ -29,73 +26,28 @@ export function useSearchHighlight(): { term: string; mode: SearchMode } | null 
 // Reference navigation (highlights, notes, subjects, links)
 // ---------------------------------------------------------------------------
 
-function referenceMatchesCurrentDocument(
-    documentType: DocumentType,
-    ref: ParagraphReference,
-    current: {
-        title?: string;
-        sermonId?: string;
-        translationId?: number;
-        languageCode?: string;
-        bibleVersionAbbreviation?: string;
-        customDocumentId?: string;
-    },
-): boolean {
-    if (ref.documentType && ref.documentType !== documentType) return false;
-    if (documentType === 'custom') {
-        return !ref.customDocumentId || ref.customDocumentId === current.customDocumentId;
-    }
-    if (documentType === 'sermon') {
-        if (ref.sermonId && current.sermonId && ref.sermonId !== current.sermonId) return false;
-        return current.translationId == null || ref.translationId === current.translationId;
-    }
-    if (documentType === 'bible') {
-        if (current.languageCode && ref.languageCode !== current.languageCode) return false;
-        if (
-            ref.bibleVersionAbbreviation &&
-            current.bibleVersionAbbreviation &&
-            ref.bibleVersionAbbreviation !== current.bibleVersionAbbreviation
-        )
-            return false;
-        return true;
-    }
-    return true;
-}
+export type ReferenceNavigationOptions = { contentReady: boolean } & CurrentDocumentIdentity;
 
 export function useReferenceNavigation(
     containerRef: React.RefObject<HTMLDivElement | null>,
-    options: {
-        contentReady: boolean;
-        documentType: DocumentType;
-        title?: string;
-        sermonId?: string;
-        translationId?: number;
-        languageCode?: string;
-        bibleVersionAbbreviation?: string;
-        customDocumentId?: string;
-    },
+    options: ReferenceNavigationOptions,
 ) {
     const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
-    const activeTab = useSermonStore(selectActiveTab);
+    const clearPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
     useEffect(() => {
-        if (!pendingNavigation || !activeTab || !options.contentReady) return;
-        if (pendingNavigation.documentTitle !== activeTab.title) return;
+        if (!pendingNavigation || !options.contentReady) return;
+        if (!pendingNavigationMatchesDocument(pendingNavigation, options)) return;
         if (!containerRef.current) return;
 
         const ref = pendingNavigation.documentHtmlTree;
-        if (isParagraphReference(ref)) {
-            if (!referenceMatchesCurrentDocument(options.documentType, ref, options)) return;
-        }
-
         const paragraphIndex = ref
             ? isParagraphReference(ref)
                 ? ref.paragraphIndex
                 : ref.tree?.[0]
             : undefined;
         if (paragraphIndex == null) {
-            setPendingNavigation(null);
+            clearPendingNavigation(null);
             return;
         }
 
@@ -103,7 +55,7 @@ export function useReferenceNavigation(
         let attemptsLeft = 120;
         const tryScroll = () => {
             if (scrollToParagraph(containerRef.current, paragraphIndex)) {
-                setPendingNavigation(null);
+                clearPendingNavigation(null);
                 return;
             }
             if (attemptsLeft <= 0) return;
@@ -112,7 +64,7 @@ export function useReferenceNavigation(
         };
         raf = requestAnimationFrame(tryScroll);
         return () => cancelAnimationFrame(raf);
-    }, [pendingNavigation, activeTab, options, setPendingNavigation, containerRef]);
+    }, [pendingNavigation, options, clearPendingNavigation, containerRef]);
 }
 
 // ---------------------------------------------------------------------------

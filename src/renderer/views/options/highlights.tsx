@@ -19,8 +19,17 @@ import {
 } from '@ant-design/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import type { DocumentType, HighlightItem, HighlightSearchResult } from '@shared/types';
-import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
+import type {
+    DocumentType,
+    HighlightItem,
+    HighlightSearchResult,
+    ParagraphReference,
+} from '@shared/types';
+import {
+    buildPendingNavigation,
+    buildReferenceOpenRequest,
+    useOpenDocumentRequest,
+} from '@renderer/hooks';
 import { useAppStore } from '@renderer/stores';
 import { useSermonStore } from '@renderer/stores/sermon.store';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
@@ -90,37 +99,39 @@ const DOC_TYPE_META: Record<DocumentType, { color: string; label: string }> = {
 // Hooks
 // ---------------------------------------------------------------------------
 
+function toHighlightReference(item: HighlightGroup): ParagraphReference {
+    const bibleReference =
+        item.documentType === 'bible'
+            ? {
+                  bibleBook: item.sermonId.split(':')[0],
+                  bibleChapter: item.sermonId.split(':')[1],
+              }
+            : {};
+
+    return {
+        paragraphIndex: item.paragraphIndex,
+        translationId: item.translationId,
+        languageCode: item.languageCode,
+        sermonId: item.sermonId,
+        documentType: item.documentType,
+        textSnippet: item.textSnippet,
+        customDocumentId: item.documentType === 'custom' ? item.sermonId : undefined,
+        ...bibleReference,
+    };
+}
+
 function useHighlightOpen() {
-    const openDocument = useOpenDocument();
-    const openCustomDocument = useOpenCustomDocument();
-    const openBibleChapter = useOpenBibleChapter();
+    const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
     return useCallback(
         (item: HighlightGroup) => {
-            setPendingNavigation({
-                documentTitle: item.documentTitle,
-                documentHtmlTree: {
-                    paragraphIndex: item.paragraphIndex,
-                    translationId: item.translationId,
-                    languageCode: item.languageCode,
-                    sermonId: item.sermonId,
-                    documentType: item.documentType,
-                    textSnippet: item.textSnippet,
-                },
-            });
-
-            if (item.documentType === 'custom') {
-                openCustomDocument(item.documentTitle, item.sermonId);
-            } else if (item.documentType === 'bible') {
-                const [bookCode, chapter] = item.sermonId.split(':');
-                const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
-                openBibleChapter(bookName, bookCode, chapter);
-            } else {
-                openDocument(item.documentTitle, item.sermonId, item.translationId);
-            }
+            const reference = toHighlightReference(item);
+            const request = buildReferenceOpenRequest(item.documentTitle, item.sermonId, reference);
+            setPendingNavigation(buildPendingNavigation(request, reference));
+            openDocumentRequest(request);
         },
-        [openDocument, openCustomDocument, openBibleChapter, setPendingNavigation],
+        [openDocumentRequest, setPendingNavigation],
     );
 }
 

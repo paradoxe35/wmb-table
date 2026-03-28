@@ -272,9 +272,9 @@ export default function BibleDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
         documentType: 'bible',
-        title: activeTab?.title,
         sermonId: activeTab?.sermonId,
-        languageCode: bibleLang,
+        bibleBook: bookCode,
+        bibleChapter: chapter,
         bibleVersionAbbreviation,
     });
 

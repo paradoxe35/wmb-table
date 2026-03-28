@@ -13,7 +13,6 @@ export function SubjectSelectModal() {
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
     const activeTab = useSermonStore(selectActiveTab);
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
@@ -43,11 +42,7 @@ export function SubjectSelectModal() {
                     ref.bible,
                     activeTab?.sermonId,
                 )
-                .then((item) => {
-                    setPendingNavigation({
-                        documentTitle: item.documentTitle,
-                        documentHtmlTree: item.documentHtmlTree,
-                    });
+                .then(() => {
                     window.dispatchEvent(
                         new CustomEvent(SUBJECT_EVENT.focusSubject, {
                             detail: { id: subject.id },
@@ -60,7 +55,7 @@ export function SubjectSelectModal() {
                 });
             setVisible(false);
         },
-        [subjects, titleRef, activeTab, setPendingNavigation, setVisible, t],
+        [subjects, titleRef, activeTab, setVisible, t],
     );
 
     const onSearch = useCallback(
@@ -87,7 +82,7 @@ export function SubjectSelectModal() {
         return () => {
             window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);
         };
-    }, []);
+    }, [setVisible]);
 
     return (
         <Modal

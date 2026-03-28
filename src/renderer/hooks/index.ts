@@ -5,27 +5,66 @@ import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     DocumentType,
+    DocumentHtmlTree,
     NoteItemReference,
     ParagraphReference,
     SermonMetaWithTraductions,
     SubjectDocumentItem,
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
+import { buildPendingNavigationTarget } from '@renderer/utils/pending-navigation';
 import { capitalize } from 'lodash';
 import { isParagraphReference } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
 
-type OpenDocumentRequest = {
+type BaseOpenDocumentRequest = {
     title: string;
     sermonId: string;
-    documentType: DocumentType;
+};
+
+type SermonOpenDocumentRequest = BaseOpenDocumentRequest & {
+    documentType: 'sermon';
     translationId?: number;
+    bibleBook?: never;
+    bibleChapter?: never;
+    bibleVersionAbbreviation?: never;
+    customDocumentId?: never;
+};
+
+type BibleOpenDocumentRequest = BaseOpenDocumentRequest & {
+    documentType: 'bible';
     bibleBook?: string;
     bibleChapter?: string;
     bibleVersionAbbreviation?: string;
+    translationId?: never;
+    customDocumentId?: never;
 };
+
+type CustomOpenDocumentRequest = BaseOpenDocumentRequest & {
+    documentType: 'custom';
+    customDocumentId?: string;
+    translationId?: never;
+    bibleBook?: never;
+    bibleChapter?: never;
+    bibleVersionAbbreviation?: never;
+};
+
+export type OpenDocumentRequest =
+    | SermonOpenDocumentRequest
+    | BibleOpenDocumentRequest
+    | CustomOpenDocumentRequest;
+
+export function buildPendingNavigation(
+    request: OpenDocumentRequest,
+    documentHtmlTree: DocumentHtmlTree | ParagraphReference,
+) {
+    return {
+        target: buildPendingNavigationTarget(request),
+        documentHtmlTree,
+    };
+}
 
 function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: number) => void) {
     const currentTab = useSermonStore.getState().tabs.find((tab) => tab.active);

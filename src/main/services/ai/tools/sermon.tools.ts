@@ -174,17 +174,12 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
             inputSchema: z.object({
                 query: z.string().min(2),
                 languageCode: z.string().optional(),
-                searchMode: z
-                    .enum(['any', 'all', 'exact'])
-                    .optional()
-                    .describe(
-                        `Search mode: "any" matches any word, "all" requires all words, "exact" matches the exact phrase. Defaults to "${DEFAULT_SEARCH_MODE}".`,
-                    ),
                 limit: z.number().int().min(1).max(20).optional(),
             }),
-            execute: async ({ query, languageCode, searchMode: rawMode, limit = 10 }) => {
+            execute: async ({ query, languageCode, limit = 10 }) => {
                 const lang = languageCode ?? defaultContentLanguage;
-                const mode: SearchMode = rawMode ?? DEFAULT_SEARCH_MODE;
+                const mode: SearchMode = DEFAULT_SEARCH_MODE;
+
                 const langError = validateLanguage(lang);
                 if (langError) {
                     return langError;

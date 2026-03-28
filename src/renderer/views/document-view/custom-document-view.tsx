@@ -108,7 +108,6 @@ export default function CustomDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: !!docContent,
         documentType: 'custom',
-        title: customDoc?.title,
         sermonId: customDoc?.sermonId,
         customDocumentId: customDoc?.id,
     });
