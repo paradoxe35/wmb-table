@@ -251,10 +251,6 @@ export default function BibleDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
-    const currentMatchIndex = useSearchStore((s) =>
-        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
-    );
-
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const bibleLang = activeBibleVersion?.langCode ?? '';
     const bibleVersionAbbreviation = activeBibleVersion?.abbreviation ?? '';
@@ -288,11 +284,11 @@ export default function BibleDocumentView() {
         readingPositionKey,
     });
 
-    const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
-    const { matchOffsets } = useMatchNavigation(
+    const { activeParagraphIndex } = useMatchNavigation(
+        containerRef,
         activeTabKey,
         search,
-        paragraphTexts,
+        paragraphs,
         !!restoreIdentity,
     );
 
@@ -373,8 +369,7 @@ export default function BibleDocumentView() {
                 paragraphs={paragraphs}
                 documentId={activeTab?.title ?? ''}
                 search={search}
-                currentMatchIndex={currentMatchIndex}
-                matchOffsets={matchOffsets}
+                activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
                 onPlayFromHere={tts.playFromParagraph}
                 canSpeak={tts.canSpeak}

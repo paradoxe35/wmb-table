@@ -9,7 +9,7 @@ import {
     TokenizerStatic,
     FilterStatic,
     type DocAddress,
-} from '@oxdev03/node-tantivy-binding';
+} from '@pngwasi/node-tantivy-binding';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -112,51 +112,46 @@ function getIndex(langCode: string): Index {
     return idx;
 }
 
-/** ~25 word slop ≈ 150-character proximity for phrase matching. */
 const PHRASE_SLOP = 25;
 
-/**
- * Resolve the primary text field to search.
- *
- * We use `unstemmed_content` because termQuery/phraseQuery need raw indexed
- * tokens. The `stemmed_content` field has stemmed tokens (e.g., "apocalyps")
- * that we can't produce without the Rust stemmer — so termQuery("apocalypse")
- * would silently fail on it. Instead, we use fuzzyTermQuery on unstemmed to
- * handle plurals, typos, and conjugations.
- */
+/** Typo tolerance: <5 chars = 0, 5-8 = 1, ≥9 = 2. */
+const MIN_WORD_LENGTH_ONE_TYPO = 5;
+const MIN_WORD_LENGTH_TWO_TYPOS = 9;
+
+function getAllowedTypoDistance(word: string): number {
+    if (word.length >= MIN_WORD_LENGTH_TWO_TYPOS) return 2;
+    if (word.length >= MIN_WORD_LENGTH_ONE_TYPO) return 1;
+    return 0;
+}
+
 function getSearchField(index: Index): string {
     const fields = getTextFieldNames(index);
     return fields.includes('unstemmed_content') ? 'unstemmed_content' : fields[0];
 }
 
-/**
- * Build a query using native Tantivy APIs based on search mode.
- *
- * Uses termQuery + fuzzyTermQuery on unstemmed_content for:
- *   - Exact token matching (boosted 2×)
- *   - Typo/plural tolerance via edit distance 1 with prefix matching
- *
- * Available query types used:
- *   - `termQuery`          — exact indexed token match
- *   - `fuzzyTermQuery`     — edit distance + prefix matching (typos, plurals)
- *   - `phraseQuery`        — words in sequence with slop (proximity)
- *   - `booleanQuery`       — AND (must) combinations
- *   - `disjunctionMaxQuery`— OR with best-score selection
- *   - `boostQuery`         — score weighting
- */
+/** Must match tokenizeQuery() in shared/searchable.ts. */
 function buildModeQuery(index: Index, queryText: string, mode: 'any' | 'all' | 'exact'): Query {
     const schema = index.schema;
-    const words = queryText.trim().split(/\s+/).filter(Boolean);
+    const allTokens = queryText
+        .trim()
+        .split(/[^a-zA-Z0-9\u00C0-\u024F]+/)
+        .filter(Boolean);
+    const words = mode === 'exact' ? allTokens : allTokens.filter((w) => w.length > 1);
     const field = getSearchField(index);
 
     if (words.length === 0) return Query.allQuery();
 
     function wordQuery(word: string): Query {
-        return Query.termQuery(schema, field, word.toLowerCase());
+        const lowered = word.toLowerCase();
+        const distance = getAllowedTypoDistance(lowered);
+        if (distance === 0) {
+            return Query.termQuery(schema, field, lowered);
+        }
+        const exact = Query.boostQuery(Query.termQuery(schema, field, lowered), 2.0);
+        const fuzzy = Query.fuzzyTermQuery(schema, field, lowered, distance, true, true);
+        return Query.disjunctionMaxQuery([exact, fuzzy], 0.1);
     }
 
-    // Single word: all modes behave the same (no phrase/order to enforce)
-    // Also prevents phraseQuery crash (requires strictly > 1 term)
     if (words.length === 1) {
         return wordQuery(words[0]);
     }
@@ -493,30 +488,31 @@ function getMatchingParagraphs(
     ]);
     const allResult = searcher.search(allLinesQuery, 100000, false, 'line_index', 0, ORDER_ASC);
 
-    // Collect lines AND their DocAddresses for SnippetGenerator
-    const lineData = new Map<number, { content: string; docAddress: DocAddress }[]>();
+    // Collect lines with their DocAddresses for highlight generation
+    const linesByParagraph = new Map<number, { content: string; docAddress: DocAddress }[]>();
     for (const hit of allResult.hits) {
         const doc = searcher.doc(hit.docAddress);
         const dict = doc.toDict() as Record<string, unknown[]>;
         const pIdx = extractNumeric(dict, 'paragraph_index');
         if (!matchingIndices.has(pIdx)) continue;
-        const content = extractString(dict, 'unstemmed_content');
-        let lines = lineData.get(pIdx);
+        let lines = linesByParagraph.get(pIdx);
         if (!lines) {
             lines = [];
-            lineData.set(pIdx, lines);
+            linesByParagraph.set(pIdx, lines);
         }
-        lines.push({ content, docAddress: hit.docAddress });
+        lines.push({
+            content: extractString(dict, 'unstemmed_content'),
+            docAddress: hit.docAddress,
+        });
     }
 
-    // Build paragraph content with highlights extracted from toHtml().
-    // highlighted() returns wrong positions, but toHtml() is accurate.
+    // Tantivy highlights: fuzzy-aware per-word positions (char offsets from 0.3.4+)
     const generator = SnippetGenerator.create(searcher, textQuery, schema, 'unstemmed_content');
     generator.setMaxNumChars(10000);
 
     const snippets: MatchingParagraphSnippet[] = [];
     for (const [paragraphIndex] of sorted) {
-        const lines = lineData.get(paragraphIndex);
+        const lines = linesByParagraph.get(paragraphIndex);
         if (!lines || lines.length === 0) continue;
 
         const content = lines.map((l) => l.content).join('\n');
@@ -525,26 +521,10 @@ function getMatchingParagraphs(
 
         for (const line of lines) {
             const doc = searcher.doc(line.docAddress);
-            const html = generator.snippetFromDoc(doc).toHtml();
-            // Parse <b> tags from toHtml to get accurate highlight positions
-            let pos = 0;
-            let i = 0;
-            while (i < html.length) {
-                if (html.startsWith('<b>', i)) {
-                    const start = pos;
-                    i += 3;
-                    while (i < html.length && !html.startsWith('</b>', i)) {
-                        pos++;
-                        i++;
-                    }
-                    highlights.push({ start: offset + start, end: offset + pos });
-                    if (html.startsWith('</b>', i)) i += 4;
-                } else {
-                    pos++;
-                    i++;
-                }
+            for (const h of generator.snippetFromDoc(doc).highlighted()) {
+                highlights.push({ start: offset + h.start, end: offset + h.end });
             }
-            offset += line.content.length + 1; // +1 for \n
+            offset += line.content.length + 1;
         }
 
         snippets.push({ paragraphIndex, snippet: content, highlights });

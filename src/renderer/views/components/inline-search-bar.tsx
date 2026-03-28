@@ -25,6 +25,7 @@ export default function InlineSearchBar() {
         activeTabKey ? s.searchUiByTab[activeTabKey] : undefined,
     );
     const currentMatchIndex = searchUi?.currentMatchIndex ?? 0;
+    const currentParagraphIndex = searchUi?.currentParagraphIndex ?? null;
     const totalMatches = searchUi?.totalMatches ?? 0;
     const navOnly = searchUi?.searchBarNavOnly ?? false;
     const existingQuery = useSearchStore((s) =>
@@ -139,10 +140,11 @@ export default function InlineSearchBar() {
                 style={{
                     fontSize: 'var(--fs-rel-lg)',
                     color: 'var(--ant-color-text-secondary)',
-                    minWidth: 50,
+                    minWidth: 110,
                     textAlign: 'center',
                 }}
             >
+                {currentParagraphIndex != null ? `¶${currentParagraphIndex} · ` : ''}
                 {totalMatches > 0 ? `${currentMatchIndex + 1} / ${totalMatches}` : '0 / 0'}
             </span>
             <Button

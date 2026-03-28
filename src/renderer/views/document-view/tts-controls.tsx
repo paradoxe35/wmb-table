@@ -122,8 +122,7 @@ interface ParagraphListProps {
     paragraphs: { paragraphIndex: number; content: string }[];
     documentId: string;
     search: { term: string; mode: SearchMode } | null;
-    currentMatchIndex: number;
-    matchOffsets: number[];
+    activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
@@ -134,8 +133,7 @@ export function ParagraphList({
     paragraphs,
     documentId,
     search,
-    currentMatchIndex,
-    matchOffsets,
+    activeParagraphIndex,
     highlightsByParagraph,
     onPlayFromHere,
     canSpeak,
@@ -143,14 +141,13 @@ export function ParagraphList({
 }: ParagraphListProps) {
     return (
         <>
-            {paragraphs.map((p, i) => (
+            {paragraphs.map((p) => (
                 <TtsParagraph
                     key={p.paragraphIndex}
                     paragraph={p}
                     documentId={documentId}
                     search={search}
-                    currentMatchIndex={currentMatchIndex}
-                    matchOffset={matchOffsets[i] ?? 0}
+                    isActiveMatch={p.paragraphIndex === activeParagraphIndex}
                     highlights={highlightsByParagraph.get(p.paragraphIndex)}
                     onPlayFromHere={onPlayFromHere}
                     canSpeak={canSpeak}
@@ -167,8 +164,7 @@ interface TtsParagraphProps {
     paragraph: { paragraphIndex: number; content: string };
     documentId: string;
     search: { term: string; mode: SearchMode } | null;
-    currentMatchIndex: number;
-    matchOffset: number;
+    isActiveMatch?: boolean;
     highlights?: HighlightItem[];
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
@@ -179,8 +175,7 @@ export function TtsParagraph({
     paragraph,
     documentId,
     search,
-    currentMatchIndex,
-    matchOffset,
+    isActiveMatch,
     highlights,
     onPlayFromHere,
     canSpeak,
@@ -207,8 +202,7 @@ export function TtsParagraph({
             <SermonParagraphView
                 paragraph={paragraph}
                 search={search}
-                currentMatchIndex={currentMatchIndex}
-                matchOffset={matchOffset}
+                isActiveMatch={isActiveMatch}
                 highlights={highlights}
                 ttsHighlight={ttsHighlight}
                 playFromHereButton={

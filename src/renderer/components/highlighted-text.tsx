@@ -1,11 +1,7 @@
 import React, { memo, useMemo } from 'react';
-import { strNormalizeNoLower, buildHighlightRegex } from '@shared/searchable';
+import { getHighlightRanges, extractSnippetWindow } from '@shared/searchable';
 import type { SearchMode, HighlightRange } from '@shared/types';
 
-/**
- * Build React elements from pre-computed highlight ranges (from Tantivy).
- * Used for search results where Tantivy provides fuzzy-aware positions.
- */
 function buildPartsFromRanges(
     text: string,
     ranges: HighlightRange[],
@@ -35,59 +31,101 @@ function buildPartsFromRanges(
     return parts;
 }
 
-/**
- * Build React elements from regex matching (for Ctrl+F, Bible search).
- * Accent-aware (NFD-normalized) while preserving original text for display.
- */
-function buildPartsFromRegex(
-    text: string,
-    query: string,
-    mode: SearchMode,
-    className?: string,
-): (string | React.ReactElement)[] {
-    const regex = buildHighlightRegex(query, mode);
-    if (!regex) return [text];
-
-    const normalized = strNormalizeNoLower(text);
-    const matches = [...normalized.matchAll(regex)];
-    if (matches.length === 0) return [text];
-
-    const ranges: HighlightRange[] = matches.map((m) => ({
-        start: m.index!,
-        end: m.index! + m[0].length,
-    }));
-
-    return buildPartsFromRanges(text, ranges, className);
+function mergeRanges(ranges: HighlightRange[]): HighlightRange[] {
+    if (ranges.length === 0) return [];
+    const sorted = [...ranges].sort((a, b) => a.start - b.start);
+    const merged: HighlightRange[] = [{ ...sorted[0] }];
+    for (let i = 1; i < sorted.length; i++) {
+        const prev = merged[merged.length - 1];
+        const curr = sorted[i];
+        if (curr.start <= prev.end) {
+            prev.end = Math.max(prev.end, curr.end);
+        } else {
+            merged.push({ ...curr });
+        }
+    }
+    return merged;
 }
 
-/**
- * Renders text with `<mark>` highlights.
- *
- * Two modes:
- * - **Tantivy highlights** (when `highlights` prop is provided): uses pre-computed
- *   ranges from Tantivy's SnippetGenerator — fuzzy-aware, handles edit distance matches.
- * - **Regex fallback** (when no `highlights`): uses `buildHighlightRegex` for exact
- *   matching — used by Ctrl+F inline search and Bible search.
- */
+/** Build a truncated window around the first range, adjusting positions. */
+function truncateAroundRanges(
+    text: string,
+    ranges: HighlightRange[],
+    maxChars: number,
+): { text: string; ranges: HighlightRange[] } {
+    if (text.length <= maxChars || ranges.length === 0) return { text, ranges };
+
+    const center = Math.floor((ranges[0].start + ranges[0].end) / 2);
+    let start = Math.max(0, center - 40);
+    let end = Math.min(text.length, start + maxChars);
+
+    if (start > 0) {
+        const sp = text.indexOf(' ', start);
+        if (sp !== -1 && sp < start + 20) start = sp + 1;
+    }
+    if (end < text.length) {
+        const sp = text.lastIndexOf(' ', end);
+        if (sp !== -1 && sp > end - 20) end = sp;
+    }
+
+    const prefix = start > 0 ? '...' : '';
+    const suffix = end < text.length ? '...' : '';
+    const windowText = prefix + text.slice(start, end) + suffix;
+    const prefixLen = prefix.length;
+
+    const adjusted = ranges
+        .filter((r) => r.start >= start && r.end <= end)
+        .map((r) => ({ start: r.start - start + prefixLen, end: r.end - start + prefixLen }));
+
+    return { text: windowText, ranges: adjusted };
+}
+
 const HighlightedText = memo(function HighlightedText({
     text,
     query,
     mode,
     className,
     highlights,
+    maxChars,
 }: {
     text: string;
     query: string;
     mode: SearchMode;
     className?: string;
     highlights?: HighlightRange[];
+    maxChars?: number;
 }) {
     const parts = useMemo(() => {
-        if (highlights && highlights.length > 0) {
-            return buildPartsFromRanges(text, highlights, className);
+        // 1. Mode-aware ranges (phrase spans for exact, individual words for all/any)
+        let ranges: HighlightRange[];
+
+        if (maxChars && text.length > maxChars) {
+            const window = extractSnippetWindow(text, query, mode, maxChars);
+            if (window.ranges.length > 0) {
+                return buildPartsFromRanges(window.text, window.ranges, className);
+            }
+            ranges = [];
+        } else {
+            ranges = getHighlightRanges(text, query, mode);
         }
-        return buildPartsFromRegex(text, query, mode, className);
-    }, [text, query, mode, className, highlights]);
+
+        // 2. Fallback to Tantivy highlights if our regex found nothing
+        if (ranges.length === 0 && highlights && highlights.length > 0) {
+            ranges = highlights;
+        }
+
+        if (ranges.length === 0) {
+            return maxChars && text.length > maxChars ? [text.slice(0, maxChars) + '...'] : [text];
+        }
+
+        // 3. Truncate if needed, render
+        if (maxChars && text.length > maxChars) {
+            const window = truncateAroundRanges(text, mergeRanges(ranges), maxChars);
+            return buildPartsFromRanges(window.text, window.ranges, className);
+        }
+
+        return buildPartsFromRanges(text, mergeRanges(ranges), className);
+    }, [text, query, mode, className, highlights, maxChars]);
 
     return <>{parts}</>;
 });

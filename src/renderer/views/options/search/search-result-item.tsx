@@ -5,7 +5,7 @@ import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types'
 import { getTabKey } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
-import { useSearchStore, useSermonStore, useAppStore } from '@renderer/stores';
+import { useSearchStore } from '@renderer/stores';
 import { useSermonLookup } from '@renderer/hooks';
 
 const { Text } = Typography;
@@ -44,6 +44,7 @@ function SnippetRow({
                     mode={searchMode}
                     className="search-highlight-mark"
                     highlights={snippet.highlights}
+                    maxChars={250}
                 />
             </div>
         </DocumentViewer>
@@ -53,14 +54,13 @@ function SnippetRow({
 export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit; query: string }) {
     const { t } = useTranslation();
     const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQuery);
+    const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
+    const setCurrentParagraphIndex = useSearchStore((s) => s.setCurrentParagraphIndex);
     const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
     const [expanded, setExpanded] = useState(false);
 
     const searchMode = useSearchStore((s) => s.searchMode);
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
-
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
 
     const navigateTo = useCallback(
@@ -75,33 +75,28 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 mode: searchMode,
             });
             openSearchBar(tabKey, true);
-            requestScrollToMatch(tabKey, matchIndex);
-            if (paragraphIndex > 0) {
-                setPendingNavigation({
-                    documentTitle: hit.title,
-                    documentHtmlTree: {
-                        paragraphIndex,
-                        translationId: hit.translationId,
-                        languageCode: contentLanguage ?? '',
-                    },
-                });
-            }
+            setCurrentMatchIndex(tabKey, matchIndex);
+            setCurrentParagraphIndex(tabKey, paragraphIndex);
+            requestScrollToMatch(tabKey, undefined, paragraphIndex);
         },
         [
             hit,
             openSearchBar,
             requestScrollToMatch,
+            setCurrentMatchIndex,
+            setCurrentParagraphIndex,
             setDocumentViewQuery,
-            setPendingNavigation,
             query,
             searchMode,
-            contentLanguage,
         ],
     );
 
     const handleTitleClick = useCallback(() => {
-        navigateTo(hit.paragraphIndex, 0);
-    }, [navigateTo, hit.paragraphIndex]);
+        const targetSnippet = hit.snippets.find(
+            (snippet) => snippet.paragraphIndex === hit.paragraphIndex,
+        );
+        navigateTo(hit.paragraphIndex, targetSnippet?.matchIndex ?? 0);
+    }, [navigateTo, hit.paragraphIndex, hit.snippets]);
 
     const displayTitle = getSermonById(hit.sermonId)?.title ?? hit.title;
     const snippets = hit.snippets ?? [];

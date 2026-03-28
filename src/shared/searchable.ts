@@ -27,40 +27,169 @@ export function strNormalizeNoLower(str: string | null): string {
     return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
 }
 
-/** Build an accent/ligature-aware regex for a single term. */
 export function simpleRegExp(term: string): RegExp {
     return new RegExp(wordPattern(term), 'gi');
+}
+
+/** Split query like Tantivy's SimpleTokenizer. Drops single-char noise tokens for all/any. */
+export function tokenizeQuery(query: string, mode: SearchMode = 'all'): string[] {
+    const words = query
+        .trim()
+        .split(/[^a-zA-Z0-9\u00C0-\u024F]+/)
+        .filter(Boolean);
+    if (mode === 'exact') return words;
+    return words.filter((w) => w.length > 1);
 }
 
 // ---------------------------------------------------------------------------
 // Pattern builders
 // ---------------------------------------------------------------------------
 
-/** Normalize a single word into a regex-safe pattern with ligature/quote handling. */
 function wordPattern(word: string): string {
     return strNormalize(escapeRegExp(word))
         .replace(/['|']/g, "[''']")
         .replace(/(œ|oe)/g, '(œ|oe)');
 }
 
-/**
- * Max character gap between phrase words.
- * Aligned with Tantivy's PHRASE_SLOP (25 words × ~10 chars/word = 250 chars).
- */
-const PHRASE_CHAR_GAP = 250;
-
-/** Phrase pattern: words in order, within PHRASE_CHAR_GAP chars, whole-word boundaries. */
-function phrasePattern(query: string): string {
-    const words = query.trim().split(/\s+/).filter(Boolean);
-    return words.map((w) => '\\b' + wordPattern(w) + '\\b').join(`[\\s\\S]{0,${PHRASE_CHAR_GAP}}?`);
+function buildWordRegex(word: string): RegExp {
+    return new RegExp('\\b' + wordPattern(word) + '\\b', 'gi');
 }
 
+/**
+ * Build a phrase span regex: matches the entire span from first to last word.
+ * Words must appear in order. Allows up to MAX_PHRASE_GAP chars between each pair.
+ */
+const MAX_PHRASE_GAP = 80;
+
+function buildPhraseSpanRegex(words: string[]): RegExp | null {
+    if (words.length === 0) return null;
+    if (words.length === 1) return buildWordRegex(words[0]);
+    const pattern = words
+        .map((w) => '\\b' + wordPattern(w) + '\\b')
+        .join(`[\\s\\S]{0,${MAX_PHRASE_GAP}}?`);
+    return new RegExp(pattern, 'gi');
+}
+
+// ---------------------------------------------------------------------------
+// Highlight ranges
+// ---------------------------------------------------------------------------
+
+interface HighlightMatch {
+    start: number;
+    end: number;
+}
+
+function findWordMatches(normalized: string, words: string[]): HighlightMatch[] {
+    const positions: HighlightMatch[] = [];
+    for (const w of words) {
+        for (const m of normalized.matchAll(buildWordRegex(w))) {
+            positions.push({ start: m.index!, end: m.index! + m[0].length });
+        }
+    }
+    return positions.sort((a, b) => a.start - b.start);
+}
 
 /**
- * Legacy: sequential terms with flexible gaps between words.
- * Note: uses [^s+] (not [^\s+]) to allow spaces — matches the original
- * template-literal behavior from the old codebase.
+ * Get highlight positions for text.
+ * - exact: phrase span first, falls back to individual words if no span found
+ * - all/any: individual word occurrences
+ *
+ * The fallback ensures every matched paragraph has visible highlights
+ * in both search results and document view.
  */
+export function getHighlightRanges(
+    text: string,
+    query: string,
+    mode: SearchMode,
+): HighlightMatch[] {
+    const words = tokenizeQuery(query, mode);
+    if (words.length === 0) return [];
+
+    const normalized = strNormalizeNoLower(text);
+
+    if (mode === 'exact' && words.length > 1) {
+        const regex = buildPhraseSpanRegex(words);
+        if (regex) {
+            const spans: HighlightMatch[] = [];
+            for (const m of normalized.matchAll(regex)) {
+                spans.push({ start: m.index!, end: m.index! + m[0].length });
+            }
+            if (spans.length > 0) return spans;
+        }
+        // Fallback: individual words so paragraph isn't blank
+        return findWordMatches(
+            normalized,
+            words.filter((w) => w.length > 1),
+        );
+    }
+
+    return findWordMatches(normalized, words);
+}
+
+export function paragraphHasMatch(text: string, query: string, mode: SearchMode): boolean {
+    return getHighlightRanges(text, query, mode).length > 0;
+}
+
+/**
+ * Extract a short text window centered on the first match.
+ */
+export function extractSnippetWindow(
+    text: string,
+    query: string,
+    mode: SearchMode,
+    maxChars: number = 250,
+): { text: string; ranges: HighlightMatch[] } {
+    if (text.length <= maxChars) {
+        return { text, ranges: getHighlightRanges(text, query, mode) };
+    }
+
+    // Find first match to center on
+    const allRanges = getHighlightRanges(text, query, mode);
+    const center = allRanges.length > 0 ? allRanges[0].start : 0;
+
+    // Build window
+    let start = Math.max(0, center - 40);
+    let end = Math.min(text.length, start + maxChars);
+
+    if (start > 0) {
+        const sp = text.indexOf(' ', start);
+        if (sp !== -1 && sp < start + 20) start = sp + 1;
+    }
+    if (end < text.length) {
+        const sp = text.lastIndexOf(' ', end);
+        if (sp !== -1 && sp > end - 20) end = sp;
+    }
+
+    const prefix = start > 0 ? '...' : '';
+    const suffix = end < text.length ? '...' : '';
+    const windowText = prefix + text.slice(start, end) + suffix;
+    const prefixLen = prefix.length;
+
+    // Recompute highlights on the window text (not the full text)
+    const windowContent = text.slice(start, end);
+    const windowRanges = getHighlightRanges(windowContent, query, mode);
+    const adjustedRanges = windowRanges.map((r) => ({
+        start: r.start + prefixLen,
+        end: r.end + prefixLen,
+    }));
+
+    return { text: windowText, ranges: adjustedRanges };
+}
+
+/** Regex for all/any modes and Ctrl+F. */
+export function buildHighlightRegex(query: string, _mode: SearchMode, stem = true): RegExp | null {
+    const words = tokenizeQuery(query, 'all');
+    if (words.length === 0) return null;
+    const patterns = stem
+        ? words.map((w) => '\\b' + wordPattern(w) + '\\b')
+        : words.map((w) => wordPattern(w));
+    return new RegExp(patterns.join('|'), 'gi');
+}
+
+// ---------------------------------------------------------------------------
+// Legacy helpers
+// ---------------------------------------------------------------------------
+
 export function toSearchableTerms(term: string): string {
     const terms = strNormalizeNoLower(escapeRegExp(term.trim()))
         .split(' ')
@@ -69,10 +198,6 @@ export function toSearchableTerms(term: string): string {
     return `${terms}[a-zA-Z]*`;
 }
 
-// ---------------------------------------------------------------------------
-// Regex matcher
-// ---------------------------------------------------------------------------
-
 export function regexpMatcher(pattern: string | RegExp, haystack: string): SearchMatchersValue[] {
     const regexp = new RegExp(
         typeof pattern === 'string'
@@ -80,9 +205,7 @@ export function regexpMatcher(pattern: string | RegExp, haystack: string): Searc
             : pattern,
         'gi',
     );
-    const matches = [...haystack.matchAll(regexp)];
-
-    return matches.map((match, i) => ({
+    return [...haystack.matchAll(regexp)].map((match, i) => ({
         term: match[0],
         index: i + 1,
         start: match.index,
@@ -90,28 +213,17 @@ export function regexpMatcher(pattern: string | RegExp, haystack: string): Searc
     }));
 }
 
-/** Legacy: exact phrase search using toSearchableTerms. */
 export function performSearch(needle: string, haystack: string): SearchMatchersValue[] {
-    const terms = toSearchableTerms(needle);
-    return regexpMatcher(terms, haystack);
+    return regexpMatcher(toSearchableTerms(needle), haystack);
 }
 
-// ---------------------------------------------------------------------------
-// Search mode API — single entry point for filtering & highlighting
-// ---------------------------------------------------------------------------
-
-/**
- * Test whether `text` matches `query` under the given search mode.
- * Text should already be normalized with strNormalizeNoLower.
- */
 export function matchesQuery(text: string, query: string, mode: SearchMode): boolean {
-    const words = query.trim().split(/\s+/).filter(Boolean);
+    const words = tokenizeQuery(query, mode);
     if (words.length === 0) return false;
-
     switch (mode) {
         case 'exact': {
-            const re = new RegExp(phrasePattern(query), 'gi');
-            return re.test(text);
+            const regex = buildPhraseSpanRegex(words);
+            return regex ? regex.test(strNormalizeNoLower(text)) : false;
         }
         case 'all':
             return words.every((w) => {
@@ -119,7 +231,6 @@ export function matchesQuery(text: string, query: string, mode: SearchMode): boo
                 re.lastIndex = 0;
                 return re.test(text);
             });
-
         case 'any':
             return words.some((w) => {
                 const re = simpleRegExp(w);
@@ -127,19 +238,4 @@ export function matchesQuery(text: string, query: string, mode: SearchMode): boo
                 return re.test(text);
             });
     }
-}
-
-/**
- * Build a regex for highlighting matches in text.
- * Used by Ctrl+F inline search and as fallback when Tantivy highlights are unavailable.
- * @param stem — true: whole-word matching. false: substring matching (Ctrl+F).
- */
-export function buildHighlightRegex(query: string, _mode: SearchMode, stem = true): RegExp | null {
-    const words = query.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return null;
-
-    const patterns = stem
-        ? words.map((w) => '\\b' + wordPattern(w) + '\\b')
-        : words.map((w) => wordPattern(w));
-    return new RegExp(patterns.join('|'), 'gi');
 }

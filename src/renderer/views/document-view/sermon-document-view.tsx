@@ -1,11 +1,5 @@
 import { useMemo, useRef } from 'react';
-import {
-    useAppStore,
-    useSermonStore,
-    useSearchStore,
-    selectActiveTab,
-    selectActiveTabKey,
-} from '@renderer/stores';
+import { useAppStore, useSermonStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
 import { ParagraphList } from './tts-controls';
@@ -30,9 +24,6 @@ export default function SermonDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
-    const currentMatchIndex = useSearchStore((s) =>
-        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
-    );
     const contextMenuItems = useContextMenuItems(content, contextTargetRef);
 
     const activeTab = useSermonStore(selectActiveTab);
@@ -59,11 +50,6 @@ export default function SermonDocumentView() {
         readingPositionKey,
     });
 
-    const paragraphTexts = useMemo(
-        () => (content?.paragraphs ?? []).map((p) => p.content),
-        [content?.paragraphs],
-    );
-
     const ttsParagraphs = useMemo(
         () =>
             (content?.paragraphs ?? []).map((p) => ({
@@ -88,10 +74,11 @@ export default function SermonDocumentView() {
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
     });
 
-    const { matchOffsets } = useMatchNavigation(
+    const { activeParagraphIndex } = useMatchNavigation(
+        containerRef,
         activeTabKey,
         search,
-        paragraphTexts,
+        ttsParagraphs,
         !!restoreIdentity,
     );
     const { highlightsByParagraph } = useDocumentHighlights(
@@ -126,8 +113,7 @@ export default function SermonDocumentView() {
                     paragraphs={ttsParagraphs}
                     documentId={content.meta.title}
                     search={search}
-                    currentMatchIndex={currentMatchIndex}
-                    matchOffsets={matchOffsets}
+                    activeParagraphIndex={activeParagraphIndex}
                     highlightsByParagraph={highlightsByParagraph}
                     onPlayFromHere={!content.meta.audioLink ? tts.playFromParagraph : undefined}
                     canSpeak={!content.meta.audioLink && tts.canSpeak}

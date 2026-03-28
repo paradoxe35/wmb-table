@@ -96,10 +96,6 @@ export default function CustomDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
-    const currentMatchIndex = useSearchStore((s) =>
-        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
-    );
-
     const customDoc = useMemo(
         () => customDocuments.find((d) => d.title === activeTitle),
         [customDocuments, activeTitle],
@@ -127,11 +123,11 @@ export default function CustomDocumentView() {
         [docContent?.content],
     );
 
-    const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
-    const { matchOffsets } = useMatchNavigation(
+    const { activeParagraphIndex } = useMatchNavigation(
+        containerRef,
         activeTabKey,
         search,
-        paragraphTexts,
+        paragraphs,
         !!restoreIdentity,
     );
 
@@ -191,8 +187,7 @@ export default function CustomDocumentView() {
                 paragraphs={paragraphs}
                 documentId={docContent?.title ?? ''}
                 search={search}
-                currentMatchIndex={currentMatchIndex}
-                matchOffsets={matchOffsets}
+                activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
                 onPlayFromHere={tts.playFromParagraph}
                 canSpeak={tts.canSpeak}

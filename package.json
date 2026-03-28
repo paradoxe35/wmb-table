@@ -57,7 +57,7 @@
         "@ckeditor/ckeditor5-react": "5.0.2",
         "@googleapis/drive": "^20.1.0",
         "@googleapis/oauth2": "^5.0.1",
-        "@oxdev03/node-tantivy-binding": "^0.2.1",
+        "@pngwasi/node-tantivy-binding": "^0.3.4",
         "@sentry/electron": "^7.10.0",
         "ai": "6.0.116",
         "antd": "^6.3.3",
@@ -219,7 +219,7 @@
     },
     "pnpm": {
         "onlyBuiltDependencies": [
-            "@oxdev03/node-tantivy-binding",
+            "@pngwasi/node-tantivy-binding",
             "@parcel/watcher",
             "better-sqlite3",
             "electron",

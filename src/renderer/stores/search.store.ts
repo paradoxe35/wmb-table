@@ -6,8 +6,10 @@ type SearchUiState = {
     searchBarOpen: boolean;
     searchBarNavOnly: boolean;
     currentMatchIndex: number;
+    currentParagraphIndex: number | null;
     totalMatches: number;
     requestedMatchIndex: number | null;
+    requestedParagraphIndex: number | null;
 };
 
 interface SearchStateData {
@@ -23,6 +25,7 @@ interface SearchStateActions {
     openSearchBar(tabKey: string, navOnly?: boolean): void;
     closeSearchBar(tabKey: string): void;
     setCurrentMatchIndex(tabKey: string, index: number): void;
+    setCurrentParagraphIndex(tabKey: string, index: number | null): void;
     setTotalMatches(tabKey: string, total: number): void;
     setSearchMode(mode: SearchMode): void;
     nextMatch(tabKey: string): void;
@@ -30,7 +33,7 @@ interface SearchStateActions {
     clearSearch(tabKey: string): void;
     cleanupTabs(removedKeys: string[]): void;
     setError(error: string | null): void;
-    requestScrollToMatch(tabKey: string, matchIndex?: number): void;
+    requestScrollToMatch(tabKey: string, matchIndex?: number, paragraphIndex?: number): void;
     clearScrollToMatchRequest(tabKey: string): void;
 }
 
@@ -40,8 +43,10 @@ const defaultUiState = (): SearchUiState => ({
     searchBarOpen: false,
     searchBarNavOnly: false,
     currentMatchIndex: 0,
+    currentParagraphIndex: null,
     totalMatches: 0,
     requestedMatchIndex: null,
+    requestedParagraphIndex: null,
 });
 
 function getUiState(state: SearchStateData, tabKey: string): SearchUiState {
@@ -57,8 +62,9 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     setDocumentViewQuery: (tabKey, query) =>
         set((state) => {
             if (!query) {
-                const { [tabKey]: _removed, ...rest } = state.documentViewQueries;
-                return { documentViewQueries: rest };
+                const documentViewQueries = { ...state.documentViewQueries };
+                delete documentViewQueries[tabKey];
+                return { documentViewQueries };
             }
 
             return {
@@ -87,7 +93,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
     closeSearchBar: (tabKey) =>
         set((state) => {
-            const { [tabKey]: _removed, ...remainingQueries } = state.documentViewQueries;
+            const remainingQueries = { ...state.documentViewQueries };
+            delete remainingQueries[tabKey];
             return {
                 documentViewQueries: remainingQueries,
                 searchUiByTab: {
@@ -108,17 +115,31 @@ export const useSearchStore = create<SearchState>((set, get) => ({
             },
         })),
 
+    setCurrentParagraphIndex: (tabKey, index) =>
+        set((state) => ({
+            searchUiByTab: {
+                ...state.searchUiByTab,
+                [tabKey]: {
+                    ...getUiState(state, tabKey),
+                    currentParagraphIndex: index,
+                },
+            },
+        })),
+
     setTotalMatches: (tabKey, total) =>
         set((state) => {
             const current = getUiState(state, tabKey);
+            const nextMatchIndex =
+                total > 0
+                    ? Math.min(current.requestedMatchIndex ?? current.currentMatchIndex, total - 1)
+                    : 0;
             return {
                 searchUiByTab: {
                     ...state.searchUiByTab,
                     [tabKey]: {
                         ...current,
                         totalMatches: total,
-                        currentMatchIndex:
-                            total > 0 ? Math.min(current.currentMatchIndex, total - 1) : 0,
+                        currentMatchIndex: nextMatchIndex,
                     },
                 },
             };
@@ -163,7 +184,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
     clearSearch: (tabKey) =>
         set((state) => {
-            const { [tabKey]: _removedQuery, ...remainingQueries } = state.documentViewQueries;
+            const remainingQueries = { ...state.documentViewQueries };
+            delete remainingQueries[tabKey];
             const current = getUiState(state, tabKey);
             return {
                 documentViewQueries: remainingQueries,
@@ -172,8 +194,10 @@ export const useSearchStore = create<SearchState>((set, get) => ({
                     [tabKey]: {
                         ...current,
                         currentMatchIndex: 0,
+                        currentParagraphIndex: null,
                         totalMatches: 0,
                         requestedMatchIndex: null,
+                        requestedParagraphIndex: null,
                     },
                 },
             };
@@ -190,7 +214,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
             return { documentViewQueries: queries, searchUiByTab: ui };
         }),
 
-    requestScrollToMatch: (tabKey, matchIndex) =>
+    requestScrollToMatch: (tabKey, matchIndex, paragraphIndex) =>
         set((state) => {
             const current = getUiState(state, tabKey);
             return {
@@ -198,8 +222,9 @@ export const useSearchStore = create<SearchState>((set, get) => ({
                     ...state.searchUiByTab,
                     [tabKey]: {
                         ...current,
-                        currentMatchIndex: matchIndex ?? current.currentMatchIndex,
-                        requestedMatchIndex: matchIndex ?? current.currentMatchIndex,
+                        currentParagraphIndex: paragraphIndex ?? current.currentParagraphIndex,
+                        requestedMatchIndex: matchIndex ?? null,
+                        requestedParagraphIndex: paragraphIndex ?? null,
                     },
                 },
             };
@@ -212,6 +237,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
                 [tabKey]: {
                     ...getUiState(state, tabKey),
                     requestedMatchIndex: null,
+                    requestedParagraphIndex: null,
                 },
             },
         })),

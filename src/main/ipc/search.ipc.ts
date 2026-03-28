@@ -13,58 +13,63 @@ import type {
     SearchSnippet,
     MatchingParagraphSnippet,
 } from '@shared/types';
-import { strNormalizeNoLower, buildHighlightRegex } from '@shared/searchable';
+import { getHighlightRanges, paragraphHasMatch } from '@shared/searchable';
 
 const ITEMS_PER_PAGE = 20;
 
-/**
- * Count regex matches — MUST use the same regex as the frontend's
- * sermon-paragraph.tsx so matchIndex aligns with data-match-index.
- */
-function countMatches(text: string, query: string, mode: SearchMode): number {
-    const regex = buildHighlightRegex(query, mode);
-    if (!regex) return 0;
-    regex.lastIndex = 0;
-    return [...strNormalizeNoLower(text).matchAll(regex)].length;
+function mergeOverlappingRanges(
+    ranges: Array<{ start: number; end: number }>,
+): Array<{ start: number; end: number }> {
+    if (ranges.length === 0) return [];
+    const sorted = [...ranges].sort((a, b) => a.start - b.start);
+    const merged = [{ ...sorted[0] }];
+    for (let i = 1; i < sorted.length; i++) {
+        const prev = merged[merged.length - 1];
+        if (sorted[i].start <= prev.end) {
+            prev.end = Math.max(prev.end, sorted[i].end);
+        } else {
+            merged.push({ ...sorted[i] });
+        }
+    }
+    return merged;
 }
 
-/**
- * Assign cumulative match indices to snippets for scroll-to-match navigation.
- * Match counting uses the SAME regex as the frontend renderer to ensure
- * matchIndex aligns with the rendered data-match-index attributes.
- * Tantivy highlights are passed through for search result snippet display.
- */
-async function attachSnippetMatchIndices(
+/** Build search snippets with sequential paragraph indices for navigation. */
+async function buildSearchSnippets(
     langCode: string,
     query: string,
     mode: SearchMode,
     translationId: number,
     sermonDate: number,
-    snippets: MatchingParagraphSnippet[],
+    rawSnippets: MatchingParagraphSnippet[],
 ): Promise<SearchSnippet[]> {
     const paragraphs = await tantivyService.getSermonParagraphs(
         langCode,
         translationId,
         sermonDate,
     );
-    const snippetByParagraph = new Map(snippets.map((s) => [s.paragraphIndex, s]));
-    let cumulativeMatchIndex = 0;
+    const snippetByParagraph = new Map(rawSnippets.map((s) => [s.paragraphIndex, s]));
 
+    // Build snippets with sequential matchIndex (index among matching paragraphs)
+    let matchIdx = 0;
     return paragraphs.flatMap((paragraph) => {
-        const paragraphMatchCount = countMatches(paragraph.content, query, mode);
         const snippet = snippetByParagraph.get(paragraph.paragraphIndex);
-        const result: SearchSnippet[] = snippet
-            ? [
-                  {
-                      paragraphIndex: snippet.paragraphIndex,
-                      snippet: snippet.snippet,
-                      matchIndex: cumulativeMatchIndex,
-                      highlights: snippet.highlights,
-                  },
-              ]
-            : [];
-        cumulativeMatchIndex += paragraphMatchCount;
-        return result;
+        if (!snippet) return [];
+        if (!paragraphHasMatch(paragraph.content, query, mode)) return [];
+
+        // Merge regex + Tantivy highlights (Tantivy catches fuzzy matches for all/any)
+        const regexHl = getHighlightRanges(snippet.snippet, query, mode);
+        const tantivyHl = mode !== 'exact' ? (snippet.highlights ?? []) : [];
+        const highlights = mergeOverlappingRanges([...regexHl, ...tantivyHl]);
+
+        return [
+            {
+                paragraphIndex: snippet.paragraphIndex,
+                snippet: snippet.snippet,
+                matchIndex: matchIdx++,
+                highlights,
+            },
+        ];
     });
 }
 
@@ -91,7 +96,7 @@ export function registerSearchHandlers(): void {
 
         const hits: TantivySearchHit[] = [];
         for (const match of matches) {
-            const snippets = await attachSnippetMatchIndices(
+            const snippets = await buildSearchSnippets(
                 langCode,
                 query,
                 searchMode,
@@ -101,18 +106,13 @@ export function registerSearchHandlers(): void {
             );
             if (snippets.length === 0) continue;
 
-            const hitCount = snippets.reduce(
-                (count, s) => count + countMatches(s.snippet, query, searchMode),
-                0,
-            );
-
             hits.push({
                 translationId: match.translationId,
                 sermonId: match.sermonId,
                 title: match.title,
                 snippets,
                 score: match.score,
-                hitCount,
+                hitCount: snippets.length,
                 paragraphIndex: match.bestParagraphIndex,
             });
         }
