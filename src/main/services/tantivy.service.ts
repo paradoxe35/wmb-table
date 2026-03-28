@@ -162,14 +162,6 @@ export async function getMatchingParagraphs(
     );
 }
 
-export async function getSermonParagraphCount(
-    langCode: string,
-    translationId: number,
-    sermonId?: number,
-): Promise<number> {
-    return call<number>('getSermonParagraphCount', langCode, translationId, sermonId);
-}
-
 export async function findSimilarSermons(
     langCode: string,
     translationId: number,
