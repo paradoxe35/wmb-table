@@ -22,9 +22,7 @@ const indexCache = new Map<string, Index>();
 const indexCapabilitiesCache = new Map<string, IndexCapabilities>();
 
 export const ORDER_ASC = 0 as const;
-export const MAX_SERMON_SEARCH_HITS = 50000;
 export const MAX_ORDERED_LINE_SCAN = 100000;
-export const INITIAL_SERMON_SEARCH_HITS = 2000;
 
 export interface IndexCapabilities {
     paragraphIndexIndexed: boolean;

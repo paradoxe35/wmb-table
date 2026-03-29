@@ -5,9 +5,7 @@ import {
     extractString,
     getIndex,
     getIndexCapabilities,
-    INITIAL_SERMON_SEARCH_HITS,
     MAX_ORDERED_LINE_SCAN,
-    MAX_SERMON_SEARCH_HITS,
     ORDER_ASC,
 } from './shared';
 
@@ -218,38 +216,14 @@ export function searchSermons(
     const query = buildModeQuery(index, queryText, mode);
     const searcher = index.searcher();
     const totalLines = searcher.search(query, 1, true).count ?? 0;
-    if (totalLines === 0) return { hits: [], total: 0, totalIsExact: true };
-
-    const requiredGroups = offset + limit;
-    let fetchLimit = Math.min(
-        Math.max(INITIAL_SERMON_SEARCH_HITS, requiredGroups * 20),
-        totalLines,
-        MAX_SERMON_SEARCH_HITS,
-    );
-    let grouped = groupSermonHits(index, query, fetchLimit);
-
-    while (
-        grouped.length < requiredGroups &&
-        fetchLimit < totalLines &&
-        fetchLimit < MAX_SERMON_SEARCH_HITS
-    ) {
-        const nextLimit = Math.min(fetchLimit * 2, totalLines, MAX_SERMON_SEARCH_HITS);
-        if (nextLimit === fetchLimit) break;
-        fetchLimit = nextLimit;
-        grouped = groupSermonHits(index, query, fetchLimit);
+    if (totalLines === 0) {
+        return { hits: [], total: 0, totalIsExact: true };
     }
-
-    if (fetchLimit < totalLines) {
-        console.warn(
-            `[tantivy-worker] searchSermons("${queryText}") truncated at ${fetchLimit}/${totalLines} matching lines`,
-        );
-    }
-
-    const totalIsExact = fetchLimit >= totalLines;
+    const grouped = groupSermonHits(index, query, totalLines);
     return {
         hits: grouped.slice(offset, offset + limit),
         total: grouped.length,
-        totalIsExact,
+        totalIsExact: true,
     };
 }
 
@@ -277,15 +251,18 @@ export function getMatchingParagraphs(
     const schema = index.schema;
     const searcher = index.searcher();
     const textQuery = buildModeQuery(index, queryText, mode);
-    const result = searcher.search(
-        Query.booleanQuery([
-            { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
-            { occur: 'must', query: Query.termQuery(schema, 'sermon_date', sermonDate) },
-            { occur: 'must', query: textQuery },
-        ]),
-        10000,
-        true,
-    );
+    const matchingParagraphQuery = Query.booleanQuery([
+        { occur: 'must', query: Query.termQuery(schema, 'translation_id', translationId) },
+        { occur: 'must', query: Query.termQuery(schema, 'sermon_date', sermonDate) },
+        { occur: 'must', query: textQuery },
+    ]);
+
+    const matchingLineCount = searcher.search(matchingParagraphQuery, 1, true).count ?? 0;
+    if (matchingLineCount === 0) {
+        return [];
+    }
+
+    const result = searcher.search(matchingParagraphQuery, matchingLineCount, true);
 
     const paragraphMap = new Map<number, { docAddress: DocAddress; score: number }>();
     for (const hit of result.hits) {
@@ -298,8 +275,6 @@ export function getMatchingParagraphs(
             paragraphMap.set(paragraphIndex, { docAddress: hit.docAddress, score });
         }
     }
-
-    if (paragraphMap.size === 0) return [];
 
     const sortedParagraphs = Array.from(paragraphMap.keys()).sort((a, b) => a - b);
     const matchingIndices = new Set(sortedParagraphs);
