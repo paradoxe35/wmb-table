@@ -1,17 +1,11 @@
 import { readFile, writeFile, unlink, rm, mkdir, access } from 'node:fs/promises';
 import { join } from 'node:path';
-import log from 'electron-log';
 import { getTtsCacheDir } from '@main/lib/app-paths';
-import { TTS_PROVIDER_TYPES } from '@shared/tts.types';
+import * as ttsCacheRepo from '@main/database/repositories/tts-cache.repository';
+import { DEFAULT_CACHE_MAX_SIZE_MB, TTS_PROVIDER_TYPES } from '@shared/tts.types';
 import type { TtsCacheKey, TtsSynthesizeResult } from '@shared/tts.types';
 
-interface CacheEntry {
-    path: string;
-    sizeBytes: number;
-    mimeType: string;
-    lastAccessed: number;
-    createdAt: number;
-}
+const EVICTION_BATCH_SIZE = 200;
 
 /** Reference to a cached file on disk — audio is read only when needed. */
 export interface CacheHit {
@@ -29,21 +23,15 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 export class TtsCache {
-    private entries = new Map<string, CacheEntry>();
-    private indexPath: string;
     private maxSizeMb: number;
-    private saveTimer: ReturnType<typeof setTimeout> | null = null;
-    private ready: Promise<void>;
 
-    constructor(maxSizeMb: number = 500) {
+    constructor(maxSizeMb: number = DEFAULT_CACHE_MAX_SIZE_MB) {
         this.maxSizeMb = maxSizeMb;
-        this.indexPath = join(getTtsCacheDir(), 'cache-index.json');
-        this.ready = this.loadIndex();
     }
 
-    /** Wait for the cache to be ready (index loaded). */
+    /** Metadata lives in SQLite, so there is no async warm-up phase. */
     async ensureReady(): Promise<void> {
-        await this.ready;
+        return;
     }
 
     async setMaxSize(mb: number): Promise<void> {
@@ -53,16 +41,16 @@ export class TtsCache {
 
     /** Check if a key exists in cache. Returns a file reference without loading audio into RAM. */
     async lookup(key: TtsCacheKey): Promise<CacheHit | null> {
-        await this.ready;
         const keyStr = this.keyToString(key);
-        const entry = this.entries.get(keyStr);
+        const entry = ttsCacheRepo.getEntry(keyStr);
         if (!entry) return null;
+
         if (!(await fileExists(entry.path))) {
-            this.entries.delete(keyStr);
-            this.scheduleSave();
+            ttsCacheRepo.deleteEntry(keyStr);
             return null;
         }
-        entry.lastAccessed = Date.now();
+
+        ttsCacheRepo.updateLastAccessed(keyStr, Date.now());
         return { path: entry.path, mimeType: entry.mimeType };
     }
 
@@ -74,111 +62,66 @@ export class TtsCache {
 
     /** Store a synthesis result to disk cache. */
     async set(key: TtsCacheKey, result: TtsSynthesizeResult): Promise<void> {
-        await this.ready;
         const dir = join(getTtsCacheDir(), key.provider, key.model, key.voiceId, key.language);
         await mkdir(dir, { recursive: true });
         const ext = result.mimeType.split('/')[1] || 'bin';
         const filePath = join(dir, `${key.textHash}.${ext}`);
         const buf = Buffer.from(result.audioBase64, 'base64');
         await writeFile(filePath, buf);
-        this.entries.set(this.keyToString(key), {
+        const now = Date.now();
+        ttsCacheRepo.upsertEntry({
+            cacheKey: this.keyToString(key),
             path: filePath,
             sizeBytes: buf.length,
             mimeType: result.mimeType,
-            lastAccessed: Date.now(),
-            createdAt: Date.now(),
+            lastAccessed: now,
+            createdAt: now,
         });
         await this.evictIfNeeded();
-        this.scheduleSave();
     }
 
     async clear(): Promise<void> {
-        await this.ready;
         const cacheDir = getTtsCacheDir();
         const deletePromises: Promise<void>[] = [];
-        for (const entry of this.entries.values()) {
+        for (const entry of ttsCacheRepo.getAllEntries()) {
             deletePromises.push(unlink(entry.path).catch(() => {}));
         }
         await Promise.all(deletePromises);
-        this.entries.clear();
         for (const sub of TTS_PROVIDER_TYPES) {
             const subDir = join(cacheDir, sub);
             if (await fileExists(subDir)) {
                 await rm(subDir, { recursive: true, force: true }).catch(() => {});
             }
         }
-        this.scheduleSave();
+        ttsCacheRepo.clearAllEntries();
     }
 
     getSize(): number {
-        let total = 0;
-        for (const entry of this.entries.values()) {
-            total += entry.sizeBytes;
-        }
-        return total;
+        return ttsCacheRepo.getTotalSizeBytes();
     }
 
+    /** Metadata writes are immediate, so flush is intentionally a no-op. */
     async flush(): Promise<void> {
-        if (this.saveTimer) {
-            clearTimeout(this.saveTimer);
-            this.saveTimer = null;
-        }
-        try {
-            await mkdir(join(this.indexPath, '..'), { recursive: true });
-            await writeFile(this.indexPath, JSON.stringify([...this.entries.entries()]));
-        } catch (err) {
-            log.warn('Failed to flush TTS cache index:', err);
-        }
+        return;
     }
 
     private async evictIfNeeded(): Promise<void> {
         const maxBytes = this.maxSizeMb * 1024 * 1024;
-        let total = this.getSize();
-        if (total <= maxBytes) return;
+        let total = ttsCacheRepo.getTotalSizeBytes();
+        while (total > maxBytes) {
+            const candidates = ttsCacheRepo.getOldestEntries(EVICTION_BATCH_SIZE);
+            if (candidates.length === 0) break;
 
-        const sorted = [...this.entries.entries()].sort(
-            (a, b) => a[1].lastAccessed - b[1].lastAccessed,
-        );
-        for (const [key, entry] of sorted) {
-            if (total <= maxBytes) break;
-            await unlink(entry.path).catch(() => {});
-            total -= entry.sizeBytes;
-            this.entries.delete(key);
+            for (const entry of candidates) {
+                if (total <= maxBytes) break;
+                await unlink(entry.path).catch(() => {});
+                total -= entry.sizeBytes;
+                ttsCacheRepo.deleteEntry(entry.cacheKey);
+            }
         }
     }
 
     private keyToString(key: TtsCacheKey): string {
         return `${key.provider}:${key.model}:${key.voiceId}:${key.language}:${key.rate}:${key.textHash}`;
-    }
-
-    private async loadIndex(): Promise<void> {
-        try {
-            if (await fileExists(this.indexPath)) {
-                const raw = await readFile(this.indexPath, 'utf-8');
-                if (!raw.trim()) return; // empty file — nothing to load
-                const data = JSON.parse(raw);
-                if (Array.isArray(data)) {
-                    for (const [k, v] of data) {
-                        this.entries.set(k, v);
-                    }
-                }
-            }
-        } catch (err) {
-            log.warn('Failed to load TTS cache index, starting fresh:', err);
-            this.entries.clear();
-        }
-    }
-
-    /** Debounced async save — avoids writing on every single cache operation. */
-    private scheduleSave(): void {
-        if (this.saveTimer) return;
-        this.saveTimer = setTimeout(async () => {
-            this.saveTimer = null;
-            try {
-                await writeFile(this.indexPath, JSON.stringify([...this.entries.entries()]));
-            } catch (err) {
-                log.warn('Failed to save TTS cache index:', err);
-            }
-        }, 500);
     }
 }

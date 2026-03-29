@@ -221,6 +221,17 @@ CREATE TABLE `tabs` (
 	`datas` text NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE `tts_cache_entries` (
+	`cache_key` text PRIMARY KEY NOT NULL,
+	`path` text NOT NULL,
+	`size_bytes` integer NOT NULL,
+	`mime_type` text NOT NULL,
+	`last_accessed` integer NOT NULL,
+	`created_at` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE INDEX `tts_cache_entries_last_accessed_idx` ON `tts_cache_entries` (`last_accessed`);--> statement-breakpoint
+CREATE INDEX `tts_cache_entries_path_idx` ON `tts_cache_entries` (`path`);--> statement-breakpoint
 CREATE TABLE `tts_settings` (
 	`id` text PRIMARY KEY NOT NULL,
 	`active_provider` text NOT NULL,

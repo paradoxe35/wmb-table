@@ -351,6 +351,7 @@ export function hasSpeakableContent(text: string): boolean {
 }
 
 // ── Default settings factory ──
+export const DEFAULT_CACHE_MAX_SIZE_MB = 1000;
 export function createDefaultTtsSettings(): TtsSettings {
     return {
         activeProvider: DEFAULT_TTS_PROVIDER,
@@ -359,7 +360,7 @@ export function createDefaultTtsSettings(): TtsSettings {
         autoPlay: false,
         autoSwitchVoice: true,
         rate: 1,
-        cacheMaxSizeMb: 1000,
+        cacheMaxSizeMb: DEFAULT_CACHE_MAX_SIZE_MB,
         providers: {
             browser: {},
             sherpa: {},

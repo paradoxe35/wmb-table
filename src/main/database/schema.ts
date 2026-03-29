@@ -308,6 +308,22 @@ export const kvCache = sqliteTable('kv_cache', {
     expiresAt: integer('expires_at'), // Unix timestamp (ms), null = never expires
 });
 
+export const ttsCacheEntries = sqliteTable(
+    'tts_cache_entries',
+    {
+        cacheKey: text('cache_key').primaryKey(),
+        path: text('path').notNull(),
+        sizeBytes: integer('size_bytes').notNull(),
+        mimeType: text('mime_type').notNull(),
+        lastAccessed: integer('last_accessed').notNull(),
+        createdAt: integer('created_at').notNull(),
+    },
+    (table) => [
+        index('tts_cache_entries_last_accessed_idx').on(table.lastAccessed),
+        index('tts_cache_entries_path_idx').on(table.path),
+    ],
+);
+
 // ---------------------------------------------------------------------------
 // Synced tables — add a table here to include it in sync
 // ---------------------------------------------------------------------------

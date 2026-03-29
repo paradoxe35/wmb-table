@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "8316da2d-1c8e-4cb7-a3af-f53f7e7551de",
+    "id": "bfabc665-6bc0-49ff-a530-98b84bd19a9a",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -1385,6 +1385,69 @@
                 }
             },
             "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "tts_cache_entries": {
+            "name": "tts_cache_entries",
+            "columns": {
+                "cache_key": {
+                    "name": "cache_key",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "path": {
+                    "name": "path",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "size_bytes": {
+                    "name": "size_bytes",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "mime_type": {
+                    "name": "mime_type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "last_accessed": {
+                    "name": "last_accessed",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                }
+            },
+            "indexes": {
+                "tts_cache_entries_last_accessed_idx": {
+                    "name": "tts_cache_entries_last_accessed_idx",
+                    "columns": ["last_accessed"],
+                    "isUnique": false
+                },
+                "tts_cache_entries_path_idx": {
+                    "name": "tts_cache_entries_path_idx",
+                    "columns": ["path"],
+                    "isUnique": false
+                }
+            },
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
