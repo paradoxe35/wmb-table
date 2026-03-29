@@ -119,7 +119,12 @@
     }
     .chrome-tabs .chrome-tab:not([data-active='true']):hover .chrome-tab-content {
         background: var(--chrome-tab-geometry);
-        border-bottom-left-radius: 24%;
+    }
+    .chrome-tabs
+        .chrome-tab[data-active='true']
+        + .chrome-tab:not([data-active='true']):hover
+        .chrome-tab-content {
+        border-bottom-left-radius: 17.5%;
     }
 }
 

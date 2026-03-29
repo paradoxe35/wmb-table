@@ -173,9 +173,15 @@ export function useScrollAndZoom(
         const pendingSearch = activeTabKey
             ? useSearchStore.getState().searchUiByTab[activeTabKey]
             : undefined;
+
+        const activeSearchQuery = activeTabKey
+            ? useSearchStore.getState().documentViewQueries[activeTabKey]
+            : undefined;
+
         if (
             pendingSearch?.requestedParagraphIndex != null ||
-            pendingSearch?.requestedMatchIndex != null
+            pendingSearch?.requestedMatchIndex != null ||
+            (pendingSearch?.searchBarNavOnly && !!activeSearchQuery?.term)
         ) {
             return;
         }
