@@ -1,8 +1,11 @@
 import type { ChatHistoryItem } from 'node-llama-cpp';
 import { estimateTokenCount } from 'tokenx';
+import lodash from 'lodash';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import log from '@main/lib/logger';
+
+const { omit, pick } = lodash;
 
 export type PromptHistoryMessage = {
     role: 'user' | 'assistant';
@@ -94,48 +97,14 @@ function summarizeList(values: string[], label: string): string {
     return `${label}: ${preview}${extra}`;
 }
 
-function asRecord(value: unknown): Record<string, unknown> | null {
-    return value != null && typeof value === 'object' && !Array.isArray(value)
-        ? (value as Record<string, unknown>)
-        : null;
-}
-
 function extractNames(items: unknown[], key: string, fallback?: string): string[] {
     return items
-        .map((item) => {
-            const record = asRecord(item);
-            return String(record?.[key] ?? (fallback ? record?.[fallback] : '') ?? '');
-        })
+        .map((item: any) => String(item?.[key] ?? (fallback ? item?.[fallback] : '') ?? ''))
         .filter(Boolean);
 }
 
-function formatSearchSummary(input: {
-    label: string;
-    items: unknown[];
-    total?: number;
-    totalIsExact?: boolean;
-    hasMore?: boolean;
-    titleKey?: string;
-    fallbackKey?: string;
-}): string {
-    const preview = summarizeList(
-        extractNames(input.items, input.titleKey ?? 'title', input.fallbackKey ?? 'sermonId'),
-        input.label,
-    );
-
-    if (typeof input.total !== 'number') {
-        return preview;
-    }
-
-    const extra = input.hasMore ? ', more available' : '';
-    const totalLabel =
-        input.totalIsExact === false ? `at least ${input.total}` : String(input.total);
-    return `${preview} (${input.items.length}/${totalLabel}${extra})`;
-}
-
 function summarizeToolResult(result: AiToolResult, charLimit: number): string {
-    const output = result.output;
-    const outputRecord = asRecord(output);
+    const output = result.output as any;
 
     switch (result.name) {
         case 'getLanguages':
@@ -144,49 +113,43 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'searchSermons': {
-            const results = outputRecord?.results ?? output;
+            const results = output?.results ?? output;
             if (Array.isArray(results))
-                return formatSearchSummary({
-                    label: `${results.length} sermon result(s)`,
-                    items: results,
-                    total: typeof outputRecord?.total === 'number' ? outputRecord.total : undefined,
-                    totalIsExact: true,
-                    hasMore: Boolean(outputRecord?.hasMore),
-                });
+                return summarizeList(
+                    extractNames(results, 'title', 'sermonId'),
+                    `${results.length} sermon result(s)`,
+                );
             break;
         }
 
         case 'getSermonContent':
-            if (outputRecord) {
-                const meta = asRecord(outputRecord.meta);
-                const title = String(meta?.title ?? meta?.sermonId ?? 'sermon');
-                const loaded = Array.isArray(outputRecord.paragraphs)
-                    ? outputRecord.paragraphs.length
-                    : 0;
+            if (output && typeof output === 'object') {
+                const title = String(output.meta?.title ?? output.meta?.sermonId ?? 'sermon');
+                const loaded = Array.isArray(output.paragraphs) ? output.paragraphs.length : 0;
                 const total =
-                    typeof outputRecord.totalParagraphs === 'number'
-                        ? outputRecord.totalParagraphs
-                        : loaded;
-                return `${title}: ${loaded}/${total} paragraph(s) loaded`;
+                    typeof output.totalParagraphs === 'number' ? output.totalParagraphs : loaded;
+                const start = typeof output.startParagraph === 'number' ? output.startParagraph : 0;
+                const range = loaded > 0 ? ` §${start}–${start + loaded - 1}` : '';
+                return `${title}: ${loaded}/${total} paragraph(s)${range}`;
             }
             break;
 
         case 'searchContent': {
-            const hits = outputRecord?.results ?? output;
-            if (Array.isArray(hits))
-                return formatSearchSummary({
-                    label: `${hits.length} content hit(s)`,
-                    items: hits,
-                    total:
-                        typeof outputRecord?.totalSermons === 'number'
-                            ? outputRecord.totalSermons
-                            : undefined,
-                    totalIsExact:
-                        typeof outputRecord?.totalIsExact === 'boolean'
-                            ? outputRecord.totalIsExact
-                            : undefined,
-                    hasMore: Boolean(outputRecord?.hasMore),
+            const hits = output?.results ?? output;
+            if (Array.isArray(hits)) {
+                const summaries = hits.slice(0, TOOL_LIST_PREVIEW_LIMIT).map((hit: any) => {
+                    const title = String(hit?.title ?? hit?.sermonId ?? '?');
+                    const paragraphs = (hit?.matches ?? [])
+                        .map((m: any) => m?.paragraphNumber)
+                        .filter((n: any) => typeof n === 'number');
+                    return paragraphs.length > 0 ? `${title} §${paragraphs.join(',')}` : title;
                 });
+                const extra =
+                    hits.length > TOOL_LIST_PREVIEW_LIMIT
+                        ? ` +${hits.length - TOOL_LIST_PREVIEW_LIMIT} more`
+                        : '';
+                return `${hits.length} content hit(s): ${summaries.join('; ')}${extra}`;
+            }
             break;
         }
 
@@ -199,9 +162,9 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'getCustomDocumentContent':
-            if (outputRecord) {
-                const title = String(outputRecord.title ?? outputRecord.documentId ?? 'document');
-                return `${title}: ${truncate(normalizeWhitespace(String(outputRecord.content ?? '')), charLimit)}`;
+            if (output && typeof output === 'object') {
+                const title = String(output.title ?? output.documentId ?? 'document');
+                return `${title}: ${truncate(normalizeWhitespace(String(output.content ?? '')), charLimit)}`;
             }
             break;
 
@@ -224,8 +187,20 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'searchBible':
-            if (outputRecord && 'total' in outputRecord)
-                return `Bible search: ${outputRecord.total} verse(s) found for "${outputRecord.query}"`;
+            if (output && typeof output === 'object' && 'total' in output) {
+                const verses = Array.isArray(output.results) ? output.results : [];
+                const refs = verses
+                    .slice(0, 3)
+                    .map((v: any) =>
+                        v?.bookName && v?.chapter && v?.verse
+                            ? `${v.bookName} ${v.chapter}:${v.verse}`
+                            : '',
+                    )
+                    .filter(Boolean);
+                const refsStr =
+                    refs.length > 0 ? `: ${refs.join(', ')}${verses.length > 3 ? ' …' : ''}` : '';
+                return `Bible search: ${output.total} verse(s) for "${output.query}"${refsStr}`;
+            }
             break;
 
         case 'getSubjects':
@@ -234,8 +209,8 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'createSubject':
-            if (outputRecord)
-                return `Created subject: ${String(outputRecord.name ?? outputRecord.id ?? 'subject')}`;
+            if (output && typeof output === 'object')
+                return `Created subject: ${String(output.name ?? output.id ?? 'subject')}`;
             break;
 
         case 'getNotes':
@@ -246,52 +221,139 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
         case 'getNoteById':
         case 'createNote':
         case 'updateNoteContent':
-            if (outputRecord) {
-                const title = String(outputRecord.name ?? outputRecord.id ?? 'note');
-                return `${title}: ${truncate(normalizeWhitespace(String(outputRecord.content ?? '')), charLimit)}`;
+            if (output && typeof output === 'object') {
+                const title = String(output.name ?? output.id ?? 'note');
+                return `${title}: ${truncate(normalizeWhitespace(String(output.content ?? '')), charLimit)}`;
             }
             break;
 
         case 'getSubjectById':
-            if (outputRecord) {
-                const docs = Array.isArray(outputRecord.documents)
-                    ? outputRecord.documents.length
-                    : 0;
-                return `Subject "${String(outputRecord.name ?? outputRecord.id ?? 'subject')}": ${docs} reference(s)`;
+            if (output && typeof output === 'object') {
+                const docs = Array.isArray(output.documents) ? output.documents.length : 0;
+                return `Subject "${String(output.name ?? output.id ?? 'subject')}": ${docs} reference(s)`;
             }
             break;
 
         case 'addSermonReferenceToSubject':
         case 'addBibleReferenceToSubject':
-            if (outputRecord)
-                return `Subject updated: ${String(outputRecord.documentTitle ?? outputRecord.subjectId ?? 'reference added')}`;
+            if (output && typeof output === 'object')
+                return `Subject updated: ${String(output.documentTitle ?? output.subjectId ?? 'reference added')}`;
             break;
 
         case 'removeSubjectReference':
-            if (outputRecord && outputRecord.success)
-                return `Reference removed: ${String(outputRecord.deletedId ?? 'done')}`;
+            if (output && typeof output === 'object' && output.success)
+                return `Reference removed: ${String(output.deletedId ?? 'done')}`;
             break;
 
         case 'addSermonReferenceToNote':
-            if (outputRecord)
-                return `Note updated: ${String(outputRecord.label ?? outputRecord.noteId ?? 'reference added')}`;
+            if (output && typeof output === 'object')
+                return `Note updated: ${String(output.label ?? output.noteId ?? 'reference added')}`;
             break;
 
         case 'researchTopic':
-            if (outputRecord)
-                return `Research: ${truncate(normalizeWhitespace(String(outputRecord.summary ?? '')), charLimit)}`;
+            if (output && typeof output === 'object')
+                return `Research: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
             break;
 
         case 'readSermon':
-            if (outputRecord) {
-                const id = String(outputRecord.sermonId ?? 'sermon');
-                return `Read ${id}: ${truncate(normalizeWhitespace(String(outputRecord.summary ?? '')), charLimit)}`;
+            if (output && typeof output === 'object') {
+                const id = String(output.sermonId ?? 'sermon');
+                return `Read ${id}: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
             }
             break;
     }
 
     const raw = normalizeWhitespace(stringify(result.output));
     return raw ? `${result.name}: ${truncate(raw, charLimit)}` : result.name;
+}
+
+// ── Tool result formatting (recent / non-compact) ──
+
+/**
+ * Strip internal/noisy fields from tool output for recent (non-compact) history.
+ * Keeps all reference data (IDs, paragraph numbers, titles, snippets)
+ * but removes full text content, pagination cursors, and redundant metadata.
+ */
+
+const SHORT_PREVIEW = 120;
+const LONG_PREVIEW = 300;
+
+function previewText(value: unknown, maxChars: number): string {
+    return truncate(normalizeWhitespace(String(value ?? '')), maxChars);
+}
+
+function cleanToolOutput(name: string, output: any): unknown {
+    if (output == null || typeof output !== 'object') return output;
+
+    switch (name) {
+        case 'getSermonContent':
+            if (!Array.isArray(output.paragraphs)) return output;
+            return {
+                ...output,
+                paragraphs: output.paragraphs.map((p: any) => ({
+                    paragraphNumber: p.paragraphNumber,
+                    content: previewText(p.content, SHORT_PREVIEW),
+                })),
+            };
+
+        case 'searchContent':
+        case 'searchSermons':
+            return omit(output, 'nextCursor');
+
+        case 'getBiblePassage':
+            if (!Array.isArray(output)) return output;
+            return output.map((v: any) => ({
+                ...pick(v, ['bookName', 'book', 'chapter', 'verse', 'testament']),
+                content: previewText(v.content, SHORT_PREVIEW),
+            }));
+
+        case 'searchBible':
+            if (!output.data) return output;
+            return {
+                query: output.query,
+                total: output.total,
+                results: output.data.map((d: any) => ({
+                    ...pick(d.item, ['bookName', 'book', 'chapter', 'verse']),
+                    content: previewText(d.item?.content, SHORT_PREVIEW),
+                })),
+            };
+
+        case 'getCustomDocumentContent':
+            return { ...output, content: previewText(output.content, LONG_PREVIEW) };
+
+        case 'getSubjectById':
+            if (!Array.isArray(output.documents)) return output;
+            return {
+                ...output,
+                documents: output.documents.map((doc: any) => ({
+                    ...omit(doc, ['documentHtmlTree', 'textContent']),
+                    textContent: previewText(doc.textContent, LONG_PREVIEW),
+                })),
+            };
+
+        case 'addBibleReferenceToSubject':
+        case 'addSermonReferenceToSubject':
+            return omit(output, ['documentHtmlTree', 'textContent', 'bible']);
+
+        case 'getNoteById':
+        case 'createNote':
+        case 'updateNoteContent':
+            if (typeof output.content !== 'string') return output;
+            return { ...output, content: previewText(output.content, LONG_PREVIEW) };
+
+        default:
+            return output;
+    }
+}
+
+function formatToolResultRaw(result: AiToolResult): string {
+    const cleaned = cleanToolOutput(result.name, result.output);
+    const json = stringify(cleaned);
+    return json ? `[Tool:${result.name}] ${json}` : `[Tool:${result.name}]`;
+}
+
+function formatToolResultCompact(result: AiToolResult, charLimit: number): string {
+    return `[Tool] ${summarizeToolResult(result, charLimit)}`;
 }
 
 // ── Message formatting ──
@@ -305,15 +367,18 @@ function formatMessage(
     if (message.role !== 'user' && message.role !== 'assistant') return null;
 
     const mainText = normalizeWhitespace(message.content);
-    const maxTools = compact ? limits.toolResultCountLimit : message.toolResults.length;
-    const toolCharLimit = compact ? limits.toolResultCharLimit : Infinity;
-    const toolSummary = message.toolResults
-        .slice(0, maxTools)
-        .map((r) => summarizeToolResult(r, toolCharLimit))
-        .filter(Boolean)
-        .map((s) => `[Tool] ${s}`);
 
-    const combined = [mainText, ...toolSummary].filter(Boolean).join('\n');
+    let toolLines: string[];
+    if (compact) {
+        toolLines = message.toolResults
+            .slice(0, limits.toolResultCountLimit)
+            .map((r) => formatToolResultCompact(r, limits.toolResultCharLimit))
+            .filter(Boolean);
+    } else {
+        toolLines = message.toolResults.map((r) => formatToolResultRaw(r)).filter(Boolean);
+    }
+
+    const combined = [mainText, ...toolLines].filter(Boolean).join('\n');
     if (!combined) return null;
 
     return { role: message.role, content: compact ? truncate(combined, contentLimit) : combined };
