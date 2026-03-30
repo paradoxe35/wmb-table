@@ -9,7 +9,19 @@ import type {
     SermonMetaWithTraductions,
 } from '@shared/types';
 
+const MAX_CACHE_ENTRIES = 50;
+
+function boundedSet<V>(cache: Map<string, V>, key: string, value: V): void {
+    cache.delete(key);
+    cache.set(key, value);
+    if (cache.size > MAX_CACHE_ENTRIES) {
+        cache.delete(cache.keys().next().value!);
+    }
+}
+
 const contentCache = new Map<string, SermonContent>();
+const bibleCache = new Map<string, BibleBook[]>();
+const customDocCache = new Map<string, CustomDocumentContent>();
 
 export function buildSermonContentKey(
     languageCode: string,
@@ -127,7 +139,7 @@ export function useSermonContent() {
             .getSermonContent(tabLanguage, translationId, tabSermonId)
             .then((content) => {
                 if (cancelled) return;
-                contentCache.set(cacheKey, content);
+                boundedSet(contentCache, cacheKey, content);
                 setActiveContent(content);
                 setLoading(false);
             })
@@ -157,6 +169,13 @@ export function useCustomDocumentContent(documentId?: string) {
             return;
         }
 
+        const cached = customDocCache.get(documentId);
+        if (cached) {
+            setContent(cached);
+            setLoading(false);
+            return;
+        }
+
         let cancelled = false;
         setLoading(true);
         setContent(null);
@@ -164,7 +183,11 @@ export function useCustomDocumentContent(documentId?: string) {
         window.api.app
             .getCustomDocumentContent(documentId)
             .then((nextContent) => {
-                if (!cancelled) setContent(nextContent);
+                if (cancelled) return;
+                if (nextContent) {
+                    boundedSet(customDocCache, documentId, nextContent);
+                }
+                setContent(nextContent);
             })
             .catch(() => {
                 if (!cancelled) setContent(null);
@@ -181,7 +204,11 @@ export function useCustomDocumentContent(documentId?: string) {
     return { content, loading };
 }
 
-export function useBibleChapterContent(book?: string, chapter?: string) {
+export function useBibleChapterContent(
+    book?: string,
+    chapter?: string,
+    versionAbbreviation?: string,
+) {
     const [verses, setVerses] = useState<BibleBook[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -192,13 +219,23 @@ export function useBibleChapterContent(book?: string, chapter?: string) {
             return;
         }
 
+        const cacheKey = `${versionAbbreviation ?? ''}:${buildBibleChapterKey(book, chapter)}`;
+        const cached = bibleCache.get(cacheKey);
+        if (cached) {
+            setVerses(cached);
+            setLoading(false);
+            return;
+        }
+
         let cancelled = false;
         setLoading(true);
 
         window.api.bible
             .getBooks({ book, chapter })
             .then((nextVerses) => {
-                if (!cancelled) setVerses(nextVerses);
+                if (cancelled) return;
+                boundedSet(bibleCache, cacheKey, nextVerses);
+                setVerses(nextVerses);
             })
             .catch(() => {
                 if (!cancelled) setVerses([]);
