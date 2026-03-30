@@ -60,6 +60,7 @@ export function buildSystemPrompt(input: {
         'Always act immediately — never ask the user to choose between approaches (A/B). Pick the best approach yourself and execute it.',
         'When multiple translations exist, use the first available one unless the user specifies.',
         'If there is uncertainty about the *question*, ask a short follow-up. But never ask for permission to proceed with a method.',
+        'Never expose internal IDs, UUIDs, or technical details unless the user explicitly asks. Keep responses concise and conversational.',
         '',
         ...(input.hasAgents
             ? [
