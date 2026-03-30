@@ -117,7 +117,7 @@ export function buildBibleTools(defaultContentLanguage: string): Record<string, 
                     '',
                 );
 
-                return { id: item.id, subjectId, documentTitle: title };
+                return { referenceId: item.id, subjectId, documentTitle: title };
             },
         },
     };

@@ -15,7 +15,8 @@ export function buildSubjectTools(
                 'Use getSubjectById to get references for a specific subject.',
             inputSchema: z.object({}),
             execute: async () => {
-                return subjectsRepo.getAllSummary();
+                const subjects = subjectsRepo.getAllSummary();
+                return subjects.map((s) => ({ subjectId: s.id, name: s.name, date: s.date }));
             },
         },
         getSubjectById: {
@@ -27,10 +28,10 @@ export function buildSubjectTools(
                 const subject = subjectsRepo.getById(subjectId.trim());
                 if (!subject) return { error: `Subject "${subjectId}" not found.` };
                 return {
-                    id: subject.id,
+                    subjectId: subject.id,
                     name: subject.name,
                     documents: subject.documents.map((doc) => ({
-                        id: doc.id,
+                        referenceId: doc.id,
                         documentTitle: doc.documentTitle,
                         sermonId: doc.sermonId,
                     })),
@@ -42,7 +43,7 @@ export function buildSubjectTools(
             inputSchema: z.object({ name: z.string().min(2) }),
             execute: async ({ name }) => {
                 const subject = subjectsRepo.create(name.trim());
-                return { id: subject.id, name: subject.name };
+                return { subjectId: subject.id, name: subject.name };
             },
         },
         addSermonReferenceToSubject: {
@@ -109,7 +110,7 @@ export function buildSubjectTools(
                     meta.sermonId,
                 );
                 return {
-                    id: item.id,
+                    referenceId: item.id,
                     subjectId,
                     documentTitle: meta.title,
                     sermonId: meta.sermonId,

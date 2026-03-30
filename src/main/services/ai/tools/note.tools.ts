@@ -11,7 +11,8 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
                 'Use getNoteById to get the full content of a specific note.',
             inputSchema: z.object({}),
             execute: async () => {
-                return notesRepo.getAllSummary();
+                const notes = notesRepo.getAllSummary();
+                return notes.map((n) => ({ noteId: n.id, name: n.name }));
             },
         },
         getNoteById: {
@@ -21,7 +22,7 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
                 const noteId = rawNoteId.trim();
                 const note = notesRepo.getById(noteId);
                 if (!note) return { error: `Note "${noteId}" not found.` };
-                return note;
+                return { noteId: note.id, name: note.name, content: note.content };
             },
         },
         createNote: {
@@ -50,7 +51,7 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
                     }
                 }
 
-                return { id: note.id, name: name.trim() };
+                return { noteId: note.id, name: name.trim() };
             },
         },
         updateNoteContent: {
@@ -74,7 +75,7 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
                         error: `Failed to update note: ${err instanceof Error ? err.message : String(err)}`,
                     };
                 }
-                return { id: note.id, name: note.name };
+                return { noteId: note.id, name: note.name };
             },
         },
     };

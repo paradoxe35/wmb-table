@@ -10,7 +10,7 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
             execute: async () => {
                 const docs = customDocsRepo.getCustomDocuments();
                 if (docs.length === 0) return { error: 'No custom documents found.' };
-                return docs;
+                return docs.map((d) => ({ documentId: d.id, title: d.title }));
             },
         },
         getCustomDocumentContent: {
