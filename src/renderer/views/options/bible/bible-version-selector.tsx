@@ -1,79 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button, Progress, Space, Tag, Tooltip, Typography } from 'antd';
 import { CheckCircleOutlined, CloudDownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
-import { useAppStore } from '@renderer/stores';
+import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 
 export function BibleVersionSelector() {
     const { t } = useTranslation();
-    const [versions, setVersions] = useState<BibleVersionInfo[]>([]);
-    const [activeVersion, setActiveVersion] = useState<BibleVersionInfo | null>(null);
-    const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+    const {
+        versions,
+        activeVersion,
+        installed,
+        downloadable,
+        downloadProgress,
+        handleSwitch,
+        handleDownload,
+    } = useBibleVersions();
 
-    const refresh = useCallback(() => {
-        Promise.all([window.api.bible.getVersions(), window.api.bible.getActiveVersion()]).then(
-            ([all, active]) => {
-                setVersions(all);
-                setActiveVersion(active);
-            },
-        );
-    }, []);
-
-    // On mount: fetch remote index (discovers new versions), then refresh UI
-    useEffect(() => {
-        window.api.bible
-            .refreshIndex()
-            .then(() => refresh())
-            .catch(() => refresh());
-    }, [refresh]);
-
-    useEffect(() => {
-        const unsub1 = window.api.on.bibleDownloadProgress((p: BibleDownloadProgress) => {
-            setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
-        });
-        const unsub2 = window.api.on.bibleDownloaded(({ abbreviation }: BibleDownloadedEvent) => {
-            setDownloadProgress((prev) => {
-                const next = { ...prev };
-                delete next[abbreviation];
-                return next;
-            });
-            // Auto-switch to the newly downloaded version
-            handleSwitch(abbreviation);
-        });
-        return () => {
-            unsub1();
-            unsub2();
-        };
-    }, [refresh]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const handleSwitch = useCallback(
-        async (abbreviation: string) => {
-            await window.api.bible.switchVersion(abbreviation);
-            refresh();
-            const v = await window.api.bible.getActiveVersion();
-            useAppStore.getState().setActiveBibleVersion(v);
-        },
-        [refresh],
-    );
-
-    const handleDownload = useCallback((abbreviation: string) => {
-        setDownloadProgress((prev) => ({ ...prev, [abbreviation]: 0 }));
-        window.api.bible.downloadVersion(abbreviation);
-    }, []);
-
-    const { installed, downloadable } = useMemo(() => {
-        const inst: BibleVersionInfo[] = [];
-        const dl: BibleVersionInfo[] = [];
-        for (const v of versions) {
-            if (v.available) inst.push(v);
-            else dl.push(v);
-        }
-        return { installed: inst, downloadable: dl };
-    }, [versions]);
-
-    // Nothing to show if only one version and it's active
-    if (versions.length <= 1 && activeVersion) return null;
+    if (versions.length <= 1 && installed.length === 1) return null;
     if (versions.length === 0) return null;
 
     return (
@@ -83,9 +25,8 @@ export function BibleVersionSelector() {
                     {t('Version:')}
                 </Typography.Text>
 
-                {/* Installed versions — clickable tags */}
                 {installed.map((v) => {
-                    const isActive = activeVersion?.abbreviation === v.abbreviation;
+                    const isActive = activeVersion === v.abbreviation;
                     return (
                         <Tag
                             key={v.abbreviation}
@@ -98,21 +39,23 @@ export function BibleVersionSelector() {
                     );
                 })}
 
-                {/* Downloadable versions — small download buttons */}
                 {downloadable.map((v) => {
                     const progress = downloadProgress[v.abbreviation];
                     const isDownloading = progress != null;
 
                     if (isDownloading) {
                         return (
-                            <Tag key={v.abbreviation} color="processing">
-                                {v.name}{' '}
+                            <Tag
+                                key={v.abbreviation}
+                                color="processing"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                                {v.name}
                                 <Progress
                                     type="circle"
-                                    size={16}
+                                    size={14}
                                     percent={progress}
                                     showInfo={false}
-                                    style={{ marginLeft: 4 }}
                                 />
                             </Tag>
                         );

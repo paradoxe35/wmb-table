@@ -1,35 +1,13 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Divider, Empty, Progress, Select, Space, Typography } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type {
-    BibleDownloadProgress,
-    BibleDownloadedEvent,
-    BibleIndex,
-    BibleIndexValue,
-    BibleVersionInfo,
-} from '@shared/types';
+import type { BibleIndex, BibleIndexValue } from '@shared/types';
 import { useOpenBibleChapter } from '@renderer/hooks';
+import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 import { useAppStore } from '@renderer/stores';
 import ContainerScrollY from '../container-scroll-y';
 import { interactiveProps } from '@renderer/utils/interactive';
-
-// ---------------------------------------------------------------------------
-// Module-level cache — survives unmount/remount across tab switches
-// ---------------------------------------------------------------------------
-
-let cachedVersions: BibleVersionInfo[] = [];
-let cachedActiveVersion: string | undefined;
-let cachedBooks: BookEntry[] = [];
-let cachedNoBible = false;
-let cachedForLanguage: string | null = null;
-
-function invalidateCache() {
-    cachedVersions = [];
-    cachedActiveVersion = undefined;
-    cachedBooks = [];
-    cachedNoBible = false;
-}
 
 // ---------------------------------------------------------------------------
 // Compact version selector (Select dropdown for sidebar)
@@ -37,89 +15,16 @@ function invalidateCache() {
 
 function CompactVersionSelector() {
     const { t } = useTranslation();
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
-    const [activeVersion, setActiveVersion] = useState<string | undefined>(cachedActiveVersion);
-    const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+    const {
+        versions,
+        activeVersion,
+        installed,
+        downloadable,
+        downloadProgress,
+        handleSwitch,
+        handleDownload,
+    } = useBibleVersions();
 
-    const refresh = useCallback(() => {
-        Promise.all([window.api.bible.getVersions(), window.api.bible.getActiveVersion()]).then(
-            async ([langVersions, active]) => {
-                // If no versions for the content language, show all available versions
-                const all =
-                    langVersions.length > 0
-                        ? langVersions
-                        : await window.api.bible.getAllVersions();
-                cachedVersions = all;
-                cachedActiveVersion = active?.abbreviation;
-                cachedForLanguage = contentLanguage;
-                setVersions(all);
-                setActiveVersion(active?.abbreviation);
-            },
-        );
-    }, [contentLanguage]);
-
-    useEffect(() => {
-        // Invalidate cache on language change
-        if (contentLanguage !== cachedForLanguage) {
-            invalidateCache();
-            setVersions([]);
-            setActiveVersion(undefined);
-        }
-        // If we already have cached data, skip the blocking refresh
-        if (cachedVersions.length > 0) {
-            return;
-        }
-        window.api.bible
-            .refreshIndex()
-            .then(() => refresh())
-            .catch(() => refresh());
-    }, [refresh, contentLanguage]);
-
-    useEffect(() => {
-        const unsub1 = window.api.on.bibleDownloadProgress((p: BibleDownloadProgress) => {
-            setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
-        });
-        const unsub2 = window.api.on.bibleDownloaded(({ abbreviation }: BibleDownloadedEvent) => {
-            setDownloadProgress((prev) => {
-                const next = { ...prev };
-                delete next[abbreviation];
-                return next;
-            });
-            handleSwitch(abbreviation);
-        });
-        return () => {
-            unsub1();
-            unsub2();
-        };
-    }, [refresh]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    const handleSwitch = useCallback(
-        async (abbreviation: string) => {
-            await window.api.bible.switchVersion(abbreviation);
-            refresh();
-            const v = await window.api.bible.getActiveVersion();
-            useAppStore.getState().setActiveBibleVersion(v);
-        },
-        [refresh],
-    );
-
-    const handleDownload = useCallback((abbreviation: string) => {
-        setDownloadProgress((prev) => ({ ...prev, [abbreviation]: 0 }));
-        window.api.bible.downloadVersion(abbreviation);
-    }, []);
-
-    const { installed, downloadable } = useMemo(() => {
-        const inst: BibleVersionInfo[] = [];
-        const dl: BibleVersionInfo[] = [];
-        for (const v of versions) {
-            if (v.available) inst.push(v);
-            else dl.push(v);
-        }
-        return { installed: inst, downloadable: dl };
-    }, [versions]);
-
-    // send resize event to help ContainerScrollY to get space available
     useEffect(() => {
         requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     }, [installed, downloadable]);
@@ -262,8 +167,8 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
 export default function SidebarBibleBrowser() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
-    const [books, setBooks] = useState<BookEntry[]>(cachedBooks);
-    const [noBible, setNoBible] = useState(cachedNoBible);
+    const [books, setBooks] = useState<BookEntry[]>([]);
+    const [noBible, setNoBible] = useState(false);
     const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
     const prevVersionRef = useRef(activeBibleVersion?.abbreviation);
 
@@ -272,9 +177,8 @@ export default function SidebarBibleBrowser() {
             .getIndexes()
             .then((flat: BibleIndex) => {
                 if (!flat || Object.keys(flat).length === 0) {
-                    cachedNoBible = true;
-                    cachedBooks = [];
                     setNoBible(true);
+                    setBooks([]);
                     return;
                 }
                 const entries: BookEntry[] = Object.entries(flat).map(
@@ -289,13 +193,10 @@ export default function SidebarBibleBrowser() {
                             .sort((a, b) => +a - +b),
                     }),
                 );
-                cachedBooks = entries;
-                cachedNoBible = false;
                 setBooks(entries);
                 setNoBible(false);
             })
             .catch(() => {
-                cachedNoBible = true;
                 setNoBible(true);
             });
     }, []);
@@ -304,10 +205,7 @@ export default function SidebarBibleBrowser() {
         const versionChanged = activeBibleVersion?.abbreviation !== prevVersionRef.current;
         prevVersionRef.current = activeBibleVersion?.abbreviation;
 
-        if (versionChanged || cachedBooks.length === 0 || contentLanguage !== cachedForLanguage) {
-            if (versionChanged) {
-                invalidateCache();
-            }
+        if (versionChanged || books.length === 0) {
             loadIndex();
             setSelectedBook(null);
         }
