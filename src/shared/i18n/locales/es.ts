@@ -574,6 +574,7 @@ const es: Record<string, string> = {
     'Aucun résultat trouvé': 'Ningún resultado encontrado',
 
     // ── Bible search ──
+    'Tous les testaments': 'Todos los testamentos',
     'Nouveau Testament': 'Nuevo Testamento',
     'Ancien Testament': 'Antiguo Testamento',
     'Faites vos recherches biblique ici': 'Busque en la Biblia aquí',

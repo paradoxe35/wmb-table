@@ -6,6 +6,7 @@ import HighlightedText from '@renderer/components/highlighted-text';
 import { debounce } from '@renderer/utils/functions';
 
 const TESTAMENTS = [
+    { name: 'Tous les testaments', value: '' },
     { name: 'Nouveau Testament', value: 'N' },
     { name: 'Ancien Testament', value: 'O' },
 ];
@@ -68,7 +69,7 @@ function InputSearchBible({
             lastSearch.current = value;
             setLoading(true);
             window.api.bible
-                .search(value, 1, testament.current?.value)
+                .search(value, 1, testament.current?.value || undefined)
                 .then(setResults)
                 .finally(() => setLoading(false));
         },
@@ -78,8 +79,15 @@ function InputSearchBible({
     const onTestamentChange = useCallback(
         (value: string | undefined) => {
             testament.current = TESTAMENTS.find((t) => t.value === value);
+            if (lastSearch.current && lastSearch.current.length >= 3) {
+                setLoading(true);
+                window.api.bible
+                    .search(lastSearch.current, 1, testament.current?.value || undefined)
+                    .then(setResults)
+                    .finally(() => setLoading(false));
+            }
         },
-        [testament],
+        [testament, lastSearch, setResults],
     );
 
     const testamentOptions = useMemo(
