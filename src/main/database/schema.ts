@@ -276,6 +276,7 @@ export const aiConversations = sqliteTable('ai_conversations', {
     title: text('title'),
     languageCode: text('language_code').notNull(),
     summary: text('summary'),
+    aiTitle: integer('ai_title').notNull().default(0),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

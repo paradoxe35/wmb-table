@@ -6,13 +6,13 @@ const TITLE_PROMPT =
     'Reply with ONLY the title, no quotes, no punctuation at the end.';
 
 /**
- * Title generation triggers after the second complete exchange
- * user message to capture the real intent.
+ * Title generation triggers once after the second complete exchange
+ * to capture the real intent. Skipped if an AI title was already generated.
  */
 const TITLE_TRIGGER_MESSAGE_COUNT = 4;
 
-export function shouldGenerateTitle(messageCount: number): boolean {
-    return messageCount === TITLE_TRIGGER_MESSAGE_COUNT;
+export function shouldGenerateTitle(messageCount: number, aiTitle: boolean): boolean {
+    return messageCount >= TITLE_TRIGGER_MESSAGE_COUNT && !aiTitle;
 }
 
 /**

@@ -26,6 +26,8 @@ export interface ContextLimits {
     assistantCharLimit: number;
     compactedUserCharLimit: number;
     compactedAssistantCharLimit: number;
+    recentToolResultCharLimit: number;
+    recentToolResultCountLimit: number;
     toolResultCharLimit: number;
     toolResultCountLimit: number;
 }
@@ -36,6 +38,8 @@ export const REMOTE_LIMITS: ContextLimits = {
     assistantCharLimit: 1600,
     compactedUserCharLimit: 400,
     compactedAssistantCharLimit: 500,
+    recentToolResultCharLimit: 900,
+    recentToolResultCountLimit: 8,
     toolResultCharLimit: 600,
     toolResultCountLimit: 6,
 };
@@ -46,6 +50,8 @@ export const LOCAL_LIMITS: ContextLimits = {
     assistantCharLimit: 400,
     compactedUserCharLimit: 150,
     compactedAssistantCharLimit: 200,
+    recentToolResultCharLimit: 240,
+    recentToolResultCountLimit: 4,
     toolResultCharLimit: 180,
     toolResultCountLimit: 3,
 };
@@ -94,14 +100,48 @@ function summarizeList(values: string[], label: string): string {
     return `${label}: ${preview}${extra}`;
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+    return value != null && typeof value === 'object' && !Array.isArray(value)
+        ? (value as Record<string, unknown>)
+        : null;
+}
+
 function extractNames(items: unknown[], key: string, fallback?: string): string[] {
     return items
-        .map((item: any) => String(item?.[key] ?? (fallback ? item?.[fallback] : '') ?? ''))
+        .map((item) => {
+            const record = asRecord(item);
+            return String(record?.[key] ?? (fallback ? record?.[fallback] : '') ?? '');
+        })
         .filter(Boolean);
 }
 
+function formatSearchSummary(input: {
+    label: string;
+    items: unknown[];
+    total?: number;
+    totalIsExact?: boolean;
+    hasMore?: boolean;
+    titleKey?: string;
+    fallbackKey?: string;
+}): string {
+    const preview = summarizeList(
+        extractNames(input.items, input.titleKey ?? 'title', input.fallbackKey ?? 'sermonId'),
+        input.label,
+    );
+
+    if (typeof input.total !== 'number') {
+        return preview;
+    }
+
+    const extra = input.hasMore ? ', more available' : '';
+    const totalLabel =
+        input.totalIsExact === false ? `at least ${input.total}` : String(input.total);
+    return `${preview} (${input.items.length}/${totalLabel}${extra})`;
+}
+
 function summarizeToolResult(result: AiToolResult, charLimit: number): string {
-    const output = result.output as any;
+    const output = result.output;
+    const outputRecord = asRecord(output);
 
     switch (result.name) {
         case 'getLanguages':
@@ -110,32 +150,49 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'searchSermons': {
-            const results = output?.results ?? output;
+            const results = outputRecord?.results ?? output;
             if (Array.isArray(results))
-                return summarizeList(
-                    extractNames(results, 'title', 'sermonId'),
-                    `${results.length} sermon result(s)`,
-                );
+                return formatSearchSummary({
+                    label: `${results.length} sermon result(s)`,
+                    items: results,
+                    total: typeof outputRecord?.total === 'number' ? outputRecord.total : undefined,
+                    totalIsExact: true,
+                    hasMore: Boolean(outputRecord?.hasMore),
+                });
             break;
         }
 
         case 'getSermonContent':
-            if (output && typeof output === 'object') {
-                const title = String(output.meta?.title ?? output.meta?.sermonId ?? 'sermon');
-                const loaded = Array.isArray(output.paragraphs) ? output.paragraphs.length : 0;
+            if (outputRecord) {
+                const meta = asRecord(outputRecord.meta);
+                const title = String(meta?.title ?? meta?.sermonId ?? 'sermon');
+                const loaded = Array.isArray(outputRecord.paragraphs)
+                    ? outputRecord.paragraphs.length
+                    : 0;
                 const total =
-                    typeof output.totalParagraphs === 'number' ? output.totalParagraphs : loaded;
+                    typeof outputRecord.totalParagraphs === 'number'
+                        ? outputRecord.totalParagraphs
+                        : loaded;
                 return `${title}: ${loaded}/${total} paragraph(s) loaded`;
             }
             break;
 
         case 'searchContent': {
-            const hits = output?.results ?? output;
+            const hits = outputRecord?.results ?? output;
             if (Array.isArray(hits))
-                return summarizeList(
-                    extractNames(hits, 'title', 'sermonId'),
-                    `${hits.length} content hit(s)`,
-                );
+                return formatSearchSummary({
+                    label: `${hits.length} content hit(s)`,
+                    items: hits,
+                    total:
+                        typeof outputRecord?.totalSermons === 'number'
+                            ? outputRecord.totalSermons
+                            : undefined,
+                    totalIsExact:
+                        typeof outputRecord?.totalIsExact === 'boolean'
+                            ? outputRecord.totalIsExact
+                            : undefined,
+                    hasMore: Boolean(outputRecord?.hasMore),
+                });
             break;
         }
 
@@ -148,9 +205,9 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'getCustomDocumentContent':
-            if (output && typeof output === 'object') {
-                const title = String(output.title ?? output.documentId ?? 'document');
-                return `${title}: ${truncate(normalizeWhitespace(String(output.content ?? '')), charLimit)}`;
+            if (outputRecord) {
+                const title = String(outputRecord.title ?? outputRecord.documentId ?? 'document');
+                return `${title}: ${truncate(normalizeWhitespace(String(outputRecord.content ?? '')), charLimit)}`;
             }
             break;
 
@@ -173,8 +230,8 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'searchBible':
-            if (output && typeof output === 'object' && 'total' in output)
-                return `Bible search: ${output.total} verse(s) found for "${output.query}"`;
+            if (outputRecord && 'total' in outputRecord)
+                return `Bible search: ${outputRecord.total} verse(s) found for "${outputRecord.query}"`;
             break;
 
         case 'getSubjects':
@@ -183,8 +240,8 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'createSubject':
-            if (output && typeof output === 'object')
-                return `Created subject: ${String(output.name ?? output.id ?? 'subject')}`;
+            if (outputRecord)
+                return `Created subject: ${String(outputRecord.name ?? outputRecord.id ?? 'subject')}`;
             break;
 
         case 'getNotes':
@@ -195,44 +252,46 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
         case 'getNoteById':
         case 'createNote':
         case 'updateNoteContent':
-            if (output && typeof output === 'object') {
-                const title = String(output.name ?? output.id ?? 'note');
-                return `${title}: ${truncate(normalizeWhitespace(String(output.content ?? '')), charLimit)}`;
+            if (outputRecord) {
+                const title = String(outputRecord.name ?? outputRecord.id ?? 'note');
+                return `${title}: ${truncate(normalizeWhitespace(String(outputRecord.content ?? '')), charLimit)}`;
             }
             break;
 
         case 'getSubjectById':
-            if (output && typeof output === 'object') {
-                const docs = Array.isArray(output.documents) ? output.documents.length : 0;
-                return `Subject "${String(output.name ?? output.id ?? 'subject')}": ${docs} reference(s)`;
+            if (outputRecord) {
+                const docs = Array.isArray(outputRecord.documents)
+                    ? outputRecord.documents.length
+                    : 0;
+                return `Subject "${String(outputRecord.name ?? outputRecord.id ?? 'subject')}": ${docs} reference(s)`;
             }
             break;
 
         case 'addSermonReferenceToSubject':
         case 'addBibleReferenceToSubject':
-            if (output && typeof output === 'object')
-                return `Subject updated: ${String(output.documentTitle ?? output.subjectId ?? 'reference added')}`;
+            if (outputRecord)
+                return `Subject updated: ${String(outputRecord.documentTitle ?? outputRecord.subjectId ?? 'reference added')}`;
             break;
 
         case 'removeSubjectReference':
-            if (output && typeof output === 'object' && output.success)
-                return `Reference removed: ${String(output.deletedId ?? 'done')}`;
+            if (outputRecord && outputRecord.success)
+                return `Reference removed: ${String(outputRecord.deletedId ?? 'done')}`;
             break;
 
         case 'addSermonReferenceToNote':
-            if (output && typeof output === 'object')
-                return `Note updated: ${String(output.label ?? output.noteId ?? 'reference added')}`;
+            if (outputRecord)
+                return `Note updated: ${String(outputRecord.label ?? outputRecord.noteId ?? 'reference added')}`;
             break;
 
         case 'researchTopic':
-            if (output && typeof output === 'object')
-                return `Research: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
+            if (outputRecord)
+                return `Research: ${truncate(normalizeWhitespace(String(outputRecord.summary ?? '')), charLimit)}`;
             break;
 
         case 'readSermon':
-            if (output && typeof output === 'object') {
-                const id = String(output.sermonId ?? 'sermon');
-                return `Read ${id}: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
+            if (outputRecord) {
+                const id = String(outputRecord.sermonId ?? 'sermon');
+                return `Read ${id}: ${truncate(normalizeWhitespace(String(outputRecord.summary ?? '')), charLimit)}`;
             }
             break;
     }
@@ -252,8 +311,8 @@ function formatMessage(
     if (message.role !== 'user' && message.role !== 'assistant') return null;
 
     const mainText = normalizeWhitespace(message.content);
-    const maxTools = compact ? limits.toolResultCountLimit : message.toolResults.length;
-    const toolCharLimit = compact ? limits.toolResultCharLimit : Infinity;
+    const maxTools = compact ? limits.toolResultCountLimit : limits.recentToolResultCountLimit;
+    const toolCharLimit = compact ? limits.toolResultCharLimit : limits.recentToolResultCharLimit;
     const toolSummary = message.toolResults
         .slice(0, maxTools)
         .map((r) => summarizeToolResult(r, toolCharLimit))

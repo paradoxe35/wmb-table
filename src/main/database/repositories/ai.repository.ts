@@ -31,6 +31,7 @@ function toConversation(row: typeof aiConversations.$inferSelect): AiConversatio
         id: row.id,
         title: row.title,
         summary: row.summary,
+        aiTitle: row.aiTitle === 1,
         createdAt: row.createdAt ?? new Date().toISOString(),
         updatedAt: row.updatedAt ?? new Date().toISOString(),
     };
@@ -165,11 +166,16 @@ export function createConversation(languageCode: string, title?: string): AiConv
 
 export function updateConversation(
     conversationId: string,
-    partial: Pick<Partial<AiConversation>, 'title' | 'summary'>,
+    partial: Pick<Partial<AiConversation>, 'title' | 'summary' | 'aiTitle'>,
 ): AiConversation {
+    const { aiTitle, ...rest } = partial;
     getDb()
         .update(aiConversations)
-        .set({ ...partial, updatedAt: new Date().toISOString() })
+        .set({
+            ...rest,
+            ...(aiTitle !== undefined ? { aiTitle: aiTitle ? 1 : 0 } : {}),
+            updatedAt: new Date().toISOString(),
+        })
         .where(eq(aiConversations.id, conversationId))
         .run();
     const row = getDb()

@@ -3,6 +3,7 @@ CREATE TABLE `ai_conversations` (
 	`title` text,
 	`language_code` text NOT NULL,
 	`summary` text,
+	`ai_title` integer DEFAULT 0 NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );

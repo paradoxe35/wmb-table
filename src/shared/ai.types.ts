@@ -137,6 +137,7 @@ export interface AiConversation {
     id: string;
     title: string | null;
     summary: string | null;
+    aiTitle: boolean;
     createdAt: string;
     updatedAt: string;
 }

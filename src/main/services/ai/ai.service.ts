@@ -353,16 +353,21 @@ export class AiService {
             });
 
             // Generate an AI title after the first complete exchange
+            const current = aiRepo.getConversation(conversation.id);
             const allMessages = aiRepo.getMessages(conversation.id);
-            if (shouldGenerateTitle(allMessages.length)) {
+            if (current && shouldGenerateTitle(allMessages.length, current.aiTitle)) {
                 const title = await generateConversationTitle(
                     model,
                     uiLanguageCode,
                     contentLanguageCode,
                     allMessages.map((m) => ({ role: m.role, content: m.content })),
+                    abortSignal,
                 );
                 if (title) {
-                    const updated = aiRepo.updateConversation(conversation.id, { title });
+                    const updated = aiRepo.updateConversation(conversation.id, {
+                        title,
+                        aiTitle: true,
+                    });
                     sendToRenderer(browserWindow, PushChannels.aiConversationUpdated, {
                         conversation: updated,
                     });
@@ -380,7 +385,11 @@ export class AiService {
                 error: message,
             });
         } finally {
-            aiRepo.syncMessage(assistantMessage.id);
+            try {
+                aiRepo.syncMessage(assistantMessage.id);
+            } catch {
+                // DB may already be closed during app shutdown
+            }
             this.controllers.delete(conversation.id);
         }
     }
