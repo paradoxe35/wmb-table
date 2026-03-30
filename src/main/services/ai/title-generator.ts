@@ -43,7 +43,10 @@ export async function generateConversationTitle(
             abortSignal,
         });
 
-        const title = text.trim().replace(/[."]+$/, '');
+        const title = text
+            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .trim()
+            .replace(/[."]+$/, '');
         return title.length >= 2 ? title.slice(0, 80) : null;
     } catch (error) {
         log.warn('AI title generation failed, keeping existing title', {
