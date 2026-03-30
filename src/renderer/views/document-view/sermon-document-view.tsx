@@ -114,8 +114,8 @@ export default function SermonDocumentView() {
                     search={search}
                     activeParagraphIndex={activeParagraphIndex}
                     highlightsByParagraph={highlightsByParagraph}
-                    onPlayFromHere={!content.meta.audioLink ? tts.playFromParagraph : undefined}
-                    canSpeak={!content.meta.audioLink && tts.canSpeak}
+                    onPlayFromHere={tts.playFromParagraph}
+                    canSpeak={tts.canSpeak}
                     incompatibleMessage={tts.incompatibleMessage}
                 />
             )}

@@ -1,6 +1,6 @@
 import '@main/lib/sentry';
 
-import { app, BrowserWindow, session, shell } from 'electron';
+import { app, BrowserWindow, protocol, session, shell } from 'electron';
 import { join } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import { APP_NAME } from '@shared/constants';
@@ -15,6 +15,7 @@ import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/sync
 import { disposeTtsService } from '@main/services/tts';
 import { disposeAiService } from '@main/services/ai';
 import * as configRepo from '@main/database/repositories/config.repository';
+import { getAudioCacheDir } from '@main/lib/app-paths';
 import i18n from '@main/lib/i18n';
 import { resolveUiLanguage } from '@shared/constants';
 
@@ -28,6 +29,15 @@ initializeDatabase();
 const config = configRepo.getConfig();
 const uiLang = resolveUiLanguage(config?.uiLanguage, config?.contentLanguage);
 i18n.changeLanguage(uiLang);
+
+// Register custom protocol for serving cached audio files.
+// Must be called before app.whenReady().
+protocol.registerSchemesAsPrivileged([
+    {
+        scheme: 'audio-cache',
+        privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+    },
+]);
 
 // Register all IPC handlers before window creation
 initializeIpc();
@@ -45,7 +55,7 @@ function setupCSP(): void {
                         "style-src 'self' 'unsafe-inline'",
                         "img-src 'self' data: https:",
                         "font-src 'self' data:",
-                        "media-src 'self' blob: https:",
+                        "media-src 'self' blob: https: audio-cache:",
                         "connect-src 'self' https:",
                     ].join('; '),
                 ],
@@ -112,6 +122,17 @@ function createWindow(): void {
 
 app.whenReady().then(async () => {
     setupCSP();
+
+    // Serve cached audio files via audio-cache://file/<filename>.
+    // registerFileProtocol delegates file serving to Chromium which handles
+    // range requests and seeking natively (protocol.handle has a known
+    // seeking bug: https://github.com/electron/electron/issues/38749).
+    protocol.registerFileProtocol('audio-cache', (request, callback) => {
+        const { pathname } = new URL(request.url);
+        const fileName = decodeURIComponent(pathname.substring(1));
+        callback(join(getAudioCacheDir(), fileName));
+    });
+
     await initializeTantivy();
     createWindow();
     tryStartSynchronizer();

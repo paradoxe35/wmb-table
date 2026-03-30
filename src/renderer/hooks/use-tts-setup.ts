@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
-import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
+import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import {
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
@@ -169,6 +169,16 @@ export function useTtsSetup(): void {
     useEffect(() => {
         return window.api.on.ttsPlaybackState((state) => {
             if (state.status === 'idle') {
+                const current = useTtsStore.getState();
+                // Guard against stale idle pushes: if the renderer has already
+                // started a new playback session (segments populated, status is
+                // loading/playing), this idle belongs to the previous stop — skip it.
+                if (
+                    current.segments.length > 0 &&
+                    (current.status === 'loading' || current.status === 'playing')
+                ) {
+                    return;
+                }
                 if (state.completedNaturally) {
                     // Natural end: signal consumers AND clear resume position
                     // so the next play starts from the beginning with intro.
@@ -178,7 +188,7 @@ export function useTtsSetup(): void {
                         lastStoppedSegmentIndex: 0,
                     });
                 }
-                useTtsStore.getState().reset();
+                current.reset();
             } else {
                 useTtsStore.getState().setPlaybackState(state);
             }
@@ -319,6 +329,12 @@ export function useTtsSetup(): void {
                 const rate = state.settings?.rate ?? 1;
                 ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
             }
+        });
+
+        // When audio playback fails, reset TTS to idle so the user isn't stuck
+        ttsAudioPlayer.setOnError(() => {
+            stopAllTtsPlayback();
+            useTtsStore.getState().reset();
         });
 
         // When a segment finishes, transition to the next one

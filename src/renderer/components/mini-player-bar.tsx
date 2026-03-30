@@ -147,7 +147,9 @@ export default function MiniPlayerBar() {
             const result = await window.api.audio.getTimeAndLocalFile(detail.audio_link);
             const ctime = typeof result.time?.time === 'number' ? result.time.time : 0;
             const localFile = result.download?.local_file;
-            const src = localFile?.replaceAll('#', '%23') || detail.audio_link;
+            const src = localFile
+                ? `audio-cache://file/${localFile.split('/').pop()}`
+                : detail.audio_link;
 
             // Cache the audio file in the background for next time
             if (!localFile) {

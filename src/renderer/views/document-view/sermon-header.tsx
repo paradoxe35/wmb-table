@@ -59,7 +59,8 @@ export default function SermonHeader({
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
 
-        if (!isCurrentDocument) {
+        // Open modal for new documents or when audio is paused
+        if (!isCurrentDocument || !isPlaying) {
             openAudioModal();
         }
 
@@ -77,7 +78,7 @@ export default function SermonHeader({
                 },
             }),
         );
-    }, [meta, isCurrentDocument, openAudioModal]);
+    }, [meta, isCurrentDocument, isPlaying, openAudioModal]);
 
     const handleOtherTraductions = useCallback(() => {
         window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
@@ -112,13 +113,13 @@ export default function SermonHeader({
             <div style={{ flex: 1 }} />
             <Space size="small">
                 {meta.audioLink && (
-                    <Tooltip title={isPlaying ? t('Pause') : t('Écouter')}>
+                    <Tooltip title={isPlaying ? t('Pause audio') : t("Écouter l'audio")}>
                         <Button
                             type="text"
                             size="small"
                             icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
                             onClick={handleAudioPlay}
-                            aria-label={isPlaying ? t('Pause') : t('Écouter')}
+                            aria-label={isPlaying ? t('Pause audio') : t("Écouter l'audio")}
                             style={
                                 isCurrentDocument
                                     ? {
@@ -130,7 +131,7 @@ export default function SermonHeader({
                         />
                     </Tooltip>
                 )}
-                {!meta.audioLink && tts && <TtsButton tts={tts} />}
+                {tts && <TtsButton tts={tts} />}
                 <Tooltip title={t('Traductions')}>
                     <Button
                         type="text"

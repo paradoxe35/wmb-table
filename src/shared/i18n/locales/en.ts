@@ -328,6 +328,8 @@ const en: Record<string, string> = {
     'Reprendre la lecture': 'Resume reading',
     'Démarrer la lecture': 'Start reading',
     'Lire à voix haute': 'Read aloud',
+    'Pause voix': 'Pause voice',
+    'Reprendre la voix': 'Resume voice',
     'Lecture audio indisponible': 'Audio playback unavailable',
     'Zoom arrière': 'Zoom out',
     'Zoom avant': 'Zoom in',
@@ -554,6 +556,8 @@ const en: Record<string, string> = {
     // ── Sermon header ──
     Pause: 'Pause',
     Écouter: 'Listen',
+    "Écouter l'audio": 'Listen to audio',
+    'Pause audio': 'Pause audio',
     Traductions: 'Translations',
     Rechercher: 'Search',
 

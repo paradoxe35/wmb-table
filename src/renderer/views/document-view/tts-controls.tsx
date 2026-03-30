@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Button, Tooltip } from 'antd';
 import {
-    PauseCircleOutlined,
+    PauseOutlined,
     SoundOutlined,
     CaretRightOutlined,
     ZoomInOutlined,
@@ -31,8 +31,8 @@ export interface TtsControls {
 // ── TTS play/pause button ──
 
 const ttsActiveStyle = {
-    color: 'var(--ant-color-primary)',
-    backgroundColor: 'var(--ant-color-primary-bg)',
+    color: 'var(--ant-color-warning)',
+    backgroundColor: 'var(--ant-color-warning-bg-hover)',
 };
 
 export function TtsButton({ tts }: { tts: TtsControls }) {
@@ -56,10 +56,10 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
     }
 
     const label = tts.isPlaying
-        ? t('Pause lecture')
+        ? t('Pause voix')
         : tts.isPaused
-          ? t('Reprendre la lecture')
-          : t('Démarrer la lecture');
+          ? t('Reprendre la voix')
+          : t('Lire à voix haute');
 
     const handler = tts.isPlaying ? tts.pause : tts.isPaused ? tts.resume : tts.play;
     const isActive = tts.isPlaying || tts.isPaused;
@@ -69,7 +69,7 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
             <Button
                 type="text"
                 size="small"
-                icon={tts.isPlaying ? <PauseCircleOutlined /> : <SoundOutlined />}
+                icon={tts.isPlaying ? <PauseOutlined /> : <SoundOutlined />}
                 onClick={handler}
                 aria-label={t('Lire à voix haute')}
                 style={isActive ? ttsActiveStyle : undefined}
