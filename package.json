@@ -39,7 +39,7 @@
         "db:studio": "drizzle-kit studio",
         "postinstall": "electron-builder install-app-deps",
         "rebuild:electron": "electron-rebuild -f",
-        "format": "prettier --write \"**/*.{ts,tsx,jsx,json,css,md}\"",
+        "format": "prettier --write \"**/*.{ts,tsx,jsx,json,css,md}\" --log-level warn",
         "format:check": "prettier --check \"**/*.{ts,tsx,jsx,json,css,md}\"",
         "mirror:release": "bash scripts/mirror-to-github-release.sh",
         "docs:dev": "vitepress dev docs",

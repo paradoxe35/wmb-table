@@ -93,9 +93,16 @@ export function buildBibleTools(defaultContentLanguage: string): Record<string, 
                 const verse = result[0];
                 if (!verse) return { error: 'Passage biblique introuvable.' };
 
-                return subjectsRepo.createItem(
+                const title = `${verse.bookName} ${verse.chapter}`;
+                const bibleContent = result
+                    .map((v) => {
+                        return `${v.bookName} ${v.chapter}:${v.verse} ${v.content}`;
+                    })
+                    .join(' ');
+
+                const item = subjectsRepo.createItem(
                     subjectId,
-                    `${verse.bookName} ${verse.chapter}`,
+                    title,
                     {
                         paragraphIndex: 0,
                         translationId: 0,
@@ -105,15 +112,12 @@ export function buildBibleTools(defaultContentLanguage: string): Record<string, 
                         bibleChapter: verse.chapter,
                         bibleVersionAbbreviation: rest.abbreviation,
                     },
-                    result
-                        .map(
-                            (item) =>
-                                `${item.bookName} ${item.chapter}:${item.verse} ${item.content}`,
-                        )
-                        .join(' '),
+                    bibleContent,
                     verse,
                     '',
                 );
+
+                return { id: item.id, subjectId, documentTitle: title };
             },
         },
     };

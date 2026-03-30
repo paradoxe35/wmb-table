@@ -34,17 +34,20 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
             }),
             execute: async ({ name, content }) => {
                 const note = notesRepo.create(name.trim());
-                if (!content) return note;
+                notesRepo.rename(note.id, name.trim());
 
-                try {
-                    const htmlContent = await parseNoteMarkdown(content, name);
-                    notesRepo.updateContent(note.id, htmlContent);
-                } catch (err) {
-                    return {
-                        error: `Note created but content failed: ${err instanceof Error ? err.message : String(err)}`,
-                    };
+                if (content) {
+                    try {
+                        const htmlContent = await parseNoteMarkdown(content, name);
+                        notesRepo.updateContent(note.id, htmlContent);
+                    } catch (err) {
+                        return {
+                            error: `Note created but content failed: ${err instanceof Error ? err.message : String(err)}`,
+                        };
+                    }
                 }
-                return notesRepo.getById(note.id) ?? note;
+
+                return { id: note.id, name: name.trim() };
             },
         },
         updateNoteContent: {
@@ -65,7 +68,7 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
                         error: `Failed to update note: ${err instanceof Error ? err.message : String(err)}`,
                     };
                 }
-                return notesRepo.getById(noteId) ?? note;
+                return { id: note.id, name: note.name };
             },
         },
     };

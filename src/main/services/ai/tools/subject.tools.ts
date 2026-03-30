@@ -26,14 +26,23 @@ export function buildSubjectTools(
             execute: async ({ subjectId }) => {
                 const subject = subjectsRepo.getById(subjectId.trim());
                 if (!subject) return { error: `Subject "${subjectId}" not found.` };
-                return subject;
+                return {
+                    id: subject.id,
+                    name: subject.name,
+                    documents: subject.documents.map((doc) => ({
+                        id: doc.id,
+                        documentTitle: doc.documentTitle,
+                        sermonId: doc.sermonId,
+                    })),
+                };
             },
         },
         createSubject: {
             description: 'Create a new subject.',
             inputSchema: z.object({ name: z.string().min(2) }),
             execute: async ({ name }) => {
-                return subjectsRepo.create(name.trim());
+                const subject = subjectsRepo.create(name.trim());
+                return { id: subject.id, name: subject.name };
             },
         },
         addSermonReferenceToSubject: {
@@ -85,7 +94,7 @@ export function buildSubjectTools(
                 const paragraph = paragraphs.find((p) => p.paragraphIndex === paragraphIndex);
                 if (!paragraph) return { error: 'Paragraphe introuvable.' };
 
-                return subjectsRepo.createItem(
+                const item = subjectsRepo.createItem(
                     subjectId,
                     meta.title,
                     {
@@ -99,6 +108,12 @@ export function buildSubjectTools(
                     undefined,
                     meta.sermonId,
                 );
+                return {
+                    id: item.id,
+                    subjectId,
+                    documentTitle: meta.title,
+                    sermonId: meta.sermonId,
+                };
             },
         },
         removeSubjectReference: {
