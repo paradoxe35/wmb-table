@@ -52,6 +52,7 @@ export interface AiProviderDefinition {
 export interface AiRemoteModel {
     id: string;
     name: string;
+    contextWindow?: number;
 }
 
 // ---------------------------------------------------------------------------

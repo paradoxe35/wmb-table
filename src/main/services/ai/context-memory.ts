@@ -14,12 +14,41 @@ export type PromptHistoryMessage = {
 
 // ── Token budgets ──
 
-const REMOTE_TOKEN_BUDGET = 32_000;
-const LOCAL_TOKEN_BUDGET = 3000;
+const DEFAULT_REMOTE_TOKEN_BUDGET = 32_000;
+const LOCAL_TOKEN_BUDGET = 3_000;
 const MAX_LOADED_MESSAGES = 40;
 const LOCAL_GENERATION_RESERVE = 1024;
 const LOCAL_CONTEXT_OVERHEAD = 128;
 const MIN_KEPT_TURNS = 4;
+
+// ── Dynamic budget calculation ──
+
+const SYSTEM_PROMPT_TOKEN_ESTIMATE = 2_000;
+const TOOL_DEFINITIONS_TOKEN_ESTIMATE = 4_000;
+const OUTPUT_TOKEN_RESERVE = 4_096;
+const BUDGET_SAFETY_MARGIN = 512;
+const MIN_HISTORY_BUDGET = 4_000;
+const MAX_HISTORY_BUDGET = 200_000;
+
+/**
+ * Calculate the conversation history token budget based on a model's context window.
+ * Subtracts estimated system prompt, tool definitions, output reserve, and safety margin.
+ * Returns a safe default when the context window is unknown.
+ */
+export function calculateRemoteTokenBudget(contextWindow?: number): number {
+    if (!contextWindow) {
+        return DEFAULT_REMOTE_TOKEN_BUDGET;
+    }
+
+    const budget =
+        contextWindow -
+        SYSTEM_PROMPT_TOKEN_ESTIMATE -
+        TOOL_DEFINITIONS_TOKEN_ESTIMATE -
+        OUTPUT_TOKEN_RESERVE -
+        BUDGET_SAFETY_MARGIN;
+
+    return Math.max(MIN_HISTORY_BUDGET, Math.min(budget, MAX_HISTORY_BUDGET));
+}
 
 // ── Per-message formatting limits ──
 
@@ -283,11 +312,15 @@ function previewText(value: unknown, maxChars: number): string {
 }
 
 function cleanToolOutput(name: string, output: any): unknown {
-    if (output == null || typeof output !== 'object') return output;
+    if (output == null || typeof output !== 'object') {
+        return output;
+    }
 
     switch (name) {
         case 'getSermonContent':
-            if (!Array.isArray(output.paragraphs)) return output;
+            if (!Array.isArray(output.paragraphs)) {
+                return output;
+            }
             return {
                 ...output,
                 paragraphs: output.paragraphs.map((p: any) => ({
@@ -301,14 +334,18 @@ function cleanToolOutput(name: string, output: any): unknown {
             return omit(output, 'nextCursor');
 
         case 'getBiblePassage':
-            if (!Array.isArray(output)) return output;
+            if (!Array.isArray(output)) {
+                return output;
+            }
             return output.map((v: any) => ({
                 ...pick(v, ['bookName', 'book', 'chapter', 'verse', 'testament']),
                 content: previewText(v.content, SHORT_PREVIEW),
             }));
 
         case 'searchBible':
-            if (!output.data) return output;
+            if (!output.data) {
+                return output;
+            }
             return {
                 query: output.query,
                 total: output.total,
@@ -322,7 +359,9 @@ function cleanToolOutput(name: string, output: any): unknown {
             return { ...output, content: previewText(output.content, LONG_PREVIEW) };
 
         case 'getSubjectById':
-            if (!Array.isArray(output.documents)) return output;
+            if (!Array.isArray(output.documents)) {
+                return output;
+            }
             return {
                 ...output,
                 documents: output.documents.map((doc: any) => ({
@@ -338,7 +377,9 @@ function cleanToolOutput(name: string, output: any): unknown {
         case 'getNoteById':
         case 'createNote':
         case 'updateNoteContent':
-            if (typeof output.content !== 'string') return output;
+            if (typeof output.content !== 'string') {
+                return output;
+            }
             return { ...output, content: previewText(output.content, LONG_PREVIEW) };
 
         default:
@@ -479,9 +520,12 @@ function splitByTokenBudget(
 export function buildConversationContext(
     conversationId: string,
     isLocal: boolean,
+    remoteTokenBudget?: number,
 ): { summary: string | null; recentMessages: PromptHistoryMessage[] } {
     const limits = isLocal ? LOCAL_LIMITS : REMOTE_LIMITS;
-    const tokenBudget = isLocal ? LOCAL_TOKEN_BUDGET : REMOTE_TOKEN_BUDGET;
+    const tokenBudget = isLocal
+        ? LOCAL_TOKEN_BUDGET
+        : (remoteTokenBudget ?? DEFAULT_REMOTE_TOKEN_BUDGET);
     const messages = aiRepo.getRecentMessages(conversationId, MAX_LOADED_MESSAGES);
     return splitByTokenBudget(messages, tokenBudget, limits);
 }

@@ -21,10 +21,10 @@ import { downloadLocalModel } from './local/model-download.service';
 import { LocalRuntimeService } from './local/local-runtime.service';
 import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
-import { buildConversationContext } from './context-memory';
+import { buildConversationContext, calculateRemoteTokenBudget } from './context-memory';
 import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
-import { fetchProviderModels } from './model-fetcher';
+import { fetchProviderModels, getModelContextWindow } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
 import { resolveUiLanguage } from '@shared/constants';
@@ -40,6 +40,7 @@ interface RunGenerationOptions {
     tools: ReturnType<typeof buildAiTools>;
     abortSignal: AbortSignal;
     isLocal: boolean;
+    remoteTokenBudget?: number;
     contentLanguageCode: string;
     uiLanguageCode: string;
 }
@@ -218,9 +219,17 @@ export class AiService {
         const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
 
         const isLocal = providerId === 'local';
+        const contextWindow = isLocal
+            ? undefined
+            : await getModelContextWindow(providerId, modelId);
+        const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow);
 
         const installedLanguages = await languagePackService.getInstalledLanguages();
-        const { recentMessages, summary } = buildConversationContext(conversation.id, isLocal);
+        const { recentMessages, summary } = buildConversationContext(
+            conversation.id,
+            isLocal,
+            remoteTokenBudget,
+        );
 
         const system = buildSystemPrompt({
             contentLanguageCode,
@@ -259,6 +268,8 @@ export class AiService {
             providerId,
             modelId,
             conversationId: conversation.id,
+            contextWindow: contextWindow ?? 'unknown',
+            tokenBudget: remoteTokenBudget,
         });
 
         void this.runGeneration({
@@ -272,6 +283,7 @@ export class AiService {
             tools,
             abortSignal: controller.signal,
             isLocal,
+            remoteTokenBudget,
             contentLanguageCode,
             uiLanguageCode,
         });
@@ -327,6 +339,7 @@ export class AiService {
             tools,
             abortSignal,
             isLocal,
+            remoteTokenBudget,
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
@@ -343,7 +356,11 @@ export class AiService {
                 abortSignal,
             });
 
-            const nextContext = buildConversationContext(conversation.id, isLocal);
+            const nextContext = buildConversationContext(
+                conversation.id,
+                isLocal,
+                remoteTokenBudget,
+            );
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
             });
