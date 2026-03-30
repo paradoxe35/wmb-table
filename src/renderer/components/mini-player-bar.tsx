@@ -132,7 +132,7 @@ export default function MiniPlayerBar() {
                     autoplayRef.current = true;
                 }
                 if (el.paused) {
-                    el.play();
+                    el.play().catch(() => {});
                 } else {
                     el.pause();
                 }
@@ -168,13 +168,28 @@ export default function MiniPlayerBar() {
 
             el.src = src;
             el.load();
-            el.currentTime = ctime;
             el.playbackRate = useAudioStore.getState().playbackRate;
             el.volume = useAudioStore.getState().volume;
 
             if (autoplayRef.current) {
-                el.play().catch(() => {});
+                // Wait for the element to be ready before playing
+                el.addEventListener(
+                    'canplay',
+                    () => {
+                        el.currentTime = ctime;
+                        el.play().catch(() => {});
+                    },
+                    { once: true },
+                );
                 openModal();
+            } else {
+                el.addEventListener(
+                    'canplay',
+                    () => {
+                        el.currentTime = ctime;
+                    },
+                    { once: true },
+                );
             }
 
             setCurrentPlay({
