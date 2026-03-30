@@ -76,10 +76,12 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
  * and encode spaces so the markdown parser doesn't break them.
  */
 function sanitizeWmbLinks(content: string): string {
-    return content.replace(
-        /\]\(wmb:\/\/([^)]+)\)/g,
-        (_, path: string) => `](http://w.t/#wmb/${path.replace(/ /g, '%20')})`,
-    );
+    return content
+        .replace(/`(\[[^\]]+\]\(wmb:\/\/[^)]+\))`/g, '$1')
+        .replace(
+            /\]\(wmb:\/\/([^)]+)\)/g,
+            (_, path: string) => `](http://w.t/#wmb/${path.replace(/ /g, '%20')})`,
+        );
 }
 
 async function parseNoteMarkdown(content: string, title: string): Promise<string> {
