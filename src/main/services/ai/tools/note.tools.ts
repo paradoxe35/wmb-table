@@ -26,11 +26,14 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
         },
         createNote: {
             description:
-                'Create a new note. Content is markdown. ' +
-                'You can include wmb:// reference links — they will be clickable in the note.',
+                'Create a new note. Content MUST be markdown (not HTML). ' +
+                'You can include wmb:// reference links',
             inputSchema: z.object({
                 name: z.string().min(2),
-                content: z.string().optional().describe('content in markdown'),
+                content: z
+                    .string()
+                    .optional()
+                    .describe('note content in markdown format, NOT HTML'),
             }),
             execute: async ({ name, content }) => {
                 const note = notesRepo.create(name.trim());
@@ -52,9 +55,12 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
         },
         updateNoteContent: {
             description:
-                'Replace the content of a note. Content is markdown. ' +
-                'You can include wmb:// reference links — they will be clickable in the note.',
-            inputSchema: z.object({ noteId: z.string(), content: z.string() }),
+                'Replace the content of a note. Content MUST be markdown (not HTML). ' +
+                'You can include wmb:// reference links.',
+            inputSchema: z.object({
+                noteId: z.string(),
+                content: z.string().describe('note content in markdown format, NOT HTML'),
+            }),
             execute: async ({ noteId: rawNoteId, content }) => {
                 const noteId = rawNoteId.trim();
                 const note = notesRepo.getById(noteId);
@@ -87,8 +93,17 @@ function sanitizeWmbLinks(content: string): string {
         );
 }
 
+function convertWmbHrefLinks(html: string): string {
+    return html.replace(
+        /href="wmb:\/\/([^"]+)"/g,
+        (_, path: string) => `href="http://w.t/#wmb/${path}"`,
+    );
+}
+
 async function parseNoteMarkdown(content: string, title: string): Promise<string> {
     let html = await marked.parse(sanitizeWmbLinks(content));
+    html = convertWmbHrefLinks(html);
+
     if (!html.includes('<h1>')) {
         html = `<h1>${title}</h1>\n${html}`;
     }
