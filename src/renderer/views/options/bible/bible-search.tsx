@@ -151,7 +151,7 @@ const SearchResult = memo(function SearchResult({
                     </Typography.Text>
                 </div>
             )}
-            <div className="mt-2" style={{ width: '100%' }}>
+            <div className="mt-2" style={{ width: '100%', userSelect: 'text' }}>
                 {(results?.data || []).map((result) => (
                     <div key={result.item.id} style={{ padding: '8px 0' }}>
                         <div style={{ fontWeight: 500 }}>
