@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import ContainerScrollY from '@renderer/components/container-scroll-y';
 // @ts-expect-error — no type declarations for CKEditor 5 React
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import { useTranslation } from 'react-i18next';
@@ -477,7 +476,7 @@ export default function EditorContent({
     };
 
     return (
-        <>
+        <div className="editor-layout">
             <ButtonsControllers
                 editorRef={editorRef}
                 workingNote={workingNote}
@@ -496,7 +495,7 @@ export default function EditorContent({
             />
 
             <ReferenceBibleModal {...bibleReferenceModal} />
-        </>
+        </div>
     );
 }
 
@@ -568,122 +567,120 @@ function Editor({
         };
     }, [ready]);
     return (
-        <div>
-            <ContainerScrollY susDiff={40} className="editor-container">
-                <div
-                    className="cke5-decoupled-custom-document-editable"
-                    style={{ ...styleProperty(), borderRadius: '5px' }}
-                >
-                    <CKEditor
-                        id={workingNoteId}
-                        onReady={(editor: any) => {
-                            editor.ui
-                                .getEditableElement()
-                                .parentElement.parentElement.parentElement.insertBefore(
-                                    editor.ui.view.toolbar.element,
-                                    editor.ui.getEditableElement().parentElement.parentElement,
-                                );
-                            editorRef.current = editor;
-                            setReady(true);
-                        }}
-                        onError={({ willEditorRestart }: { willEditorRestart: any }) => {
-                            if (willEditorRestart) {
-                                editorRef.current.editor.ui.view.toolbar.element.remove();
-                            }
-                        }}
-                        onChange={debounce(onChange, 1000)}
-                        editor={DecoupledDocumentEditor}
-                        data={data || ''}
-                        config={{
-                            toolbar: {
-                                items: [
-                                    'heading',
-                                    '|',
-                                    'fontSize',
-                                    'fontFamily',
-                                    '|',
-                                    'pageBreak',
-                                    'fontColor',
-                                    'fontBackgroundColor',
-                                    '|',
-                                    'bold',
-                                    'italic',
-                                    'underline',
-                                    'strikethrough',
-                                    '|',
-                                    'alignment',
-                                    '|',
-                                    'numberedList',
-                                    'bulletedList',
-                                    '|',
-                                    'outdent',
-                                    'indent',
-                                    '|',
-                                    'todoList',
-                                    'link',
-                                    'blockQuote',
-                                    'insertTable',
-                                    '|',
-                                    'undo',
-                                    'redo',
-                                    'subscript',
-                                    'superscript',
-                                    'horizontalLine',
-                                    'textPartLanguage',
-                                ],
-                            },
-                            link: {
-                                addTargetToExternalLinks: true,
-                                allowedProtocols: ['http', 'https', 'mailto', 'tel'],
-                                decorators: [
-                                    {
-                                        mode: 'automatic',
-                                        callback: (url: string) =>
-                                            typeof url === 'string' &&
-                                            url.includes(referenceDocumentBrandLink),
-                                        attributes: {
-                                            title: t('Référence document'),
-                                            reference: 'true',
-                                            onclick: 'event.preventDefault()',
-                                        },
+        <div className="editor-scroll">
+            <div
+                className="cke5-decoupled-custom-document-editable"
+                style={{ ...styleProperty(), borderRadius: '5px' }}
+            >
+                <CKEditor
+                    id={workingNoteId}
+                    onReady={(editor: any) => {
+                        editor.ui
+                            .getEditableElement()
+                            .parentElement.parentElement.parentElement.insertBefore(
+                                editor.ui.view.toolbar.element,
+                                editor.ui.getEditableElement().parentElement.parentElement,
+                            );
+                        editorRef.current = editor;
+                        setReady(true);
+                    }}
+                    onError={({ willEditorRestart }: { willEditorRestart: any }) => {
+                        if (willEditorRestart) {
+                            editorRef.current.editor.ui.view.toolbar.element.remove();
+                        }
+                    }}
+                    onChange={debounce(onChange, 1000)}
+                    editor={DecoupledDocumentEditor}
+                    data={data || ''}
+                    config={{
+                        toolbar: {
+                            items: [
+                                'heading',
+                                '|',
+                                'fontSize',
+                                'fontFamily',
+                                '|',
+                                'pageBreak',
+                                'fontColor',
+                                'fontBackgroundColor',
+                                '|',
+                                'bold',
+                                'italic',
+                                'underline',
+                                'strikethrough',
+                                '|',
+                                'alignment',
+                                '|',
+                                'numberedList',
+                                'bulletedList',
+                                '|',
+                                'outdent',
+                                'indent',
+                                '|',
+                                'todoList',
+                                'link',
+                                'blockQuote',
+                                'insertTable',
+                                '|',
+                                'undo',
+                                'redo',
+                                'subscript',
+                                'superscript',
+                                'horizontalLine',
+                                'textPartLanguage',
+                            ],
+                        },
+                        link: {
+                            addTargetToExternalLinks: true,
+                            allowedProtocols: ['http', 'https', 'mailto', 'tel'],
+                            decorators: [
+                                {
+                                    mode: 'automatic',
+                                    callback: (url: string) =>
+                                        typeof url === 'string' &&
+                                        url.includes(referenceDocumentBrandLink),
+                                    attributes: {
+                                        title: t('Référence document'),
+                                        reference: 'true',
+                                        onclick: 'event.preventDefault()',
                                     },
-                                    {
-                                        mode: 'automatic',
-                                        callback: (url: string) =>
-                                            typeof url === 'string' &&
-                                            url.includes(referenceBibleBrandLink),
-                                        attributes: {
-                                            title: t('Référence biblique'),
-                                            reference: 'true',
-                                            bible: 'true',
-                                            onclick: 'event.preventDefault()',
-                                        },
+                                },
+                                {
+                                    mode: 'automatic',
+                                    callback: (url: string) =>
+                                        typeof url === 'string' &&
+                                        url.includes(referenceBibleBrandLink),
+                                    attributes: {
+                                        title: t('Référence biblique'),
+                                        reference: 'true',
+                                        bible: 'true',
+                                        onclick: 'event.preventDefault()',
                                     },
-                                    {
-                                        mode: 'automatic',
-                                        callback: (url: string) =>
-                                            typeof url === 'string' &&
-                                            url.startsWith('http://w.t/#wmb/'),
-                                        attributes: {
-                                            title: t('Référence'),
-                                            reference: 'true',
-                                            onclick: 'event.preventDefault()',
-                                        },
+                                },
+                                {
+                                    mode: 'automatic',
+                                    callback: (url: string) =>
+                                        typeof url === 'string' &&
+                                        url.startsWith('http://w.t/#wmb/'),
+                                    attributes: {
+                                        title: t('Référence'),
+                                        reference: 'true',
+                                        onclick: 'event.preventDefault()',
                                     },
-                                ],
-                            },
-                            language: {
-                                ui: 'fr',
-                                content: 'fr',
-                                textPartLanguage: [
-                                    { title: t('Français'), languageCode: 'fr' },
-                                    { title: t('English'), languageCode: 'en' },
-                                ],
-                            },
-                        }}
-                    />
-                </div>
-            </ContainerScrollY>
+                                },
+                            ],
+                        },
+                        language: {
+                            ui: 'fr',
+                            content: 'fr',
+                            textPartLanguage: [
+                                { title: t('Français'), languageCode: 'fr' },
+                                { title: t('English'), languageCode: 'en' },
+                            ],
+                        },
+                    }}
+                />
+            </div>
         </div>
     );
 }
