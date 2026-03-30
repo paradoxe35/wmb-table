@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { useSearchStore, useSermonStore, selectActiveTabKey } from '@renderer/stores';
 import type { CurrentDocumentIdentity } from '@renderer/utils/pending-navigation';
 import { pendingNavigationMatchesDocument } from '@renderer/utils/pending-navigation';
@@ -66,7 +66,7 @@ export function useReferenceNavigation(
     const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
     const clearPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         if (!pendingNavigation || !options.contentReady) return;
         if (!pendingNavigationMatchesDocument(pendingNavigation, options)) return;
         if (!containerRef.current) return;
@@ -82,6 +82,12 @@ export function useReferenceNavigation(
             return;
         }
 
+        // Try immediate scroll (before paint)
+        if (scrollToParagraph(containerRef.current, paragraphIndex)) {
+            clearPendingNavigation(null);
+        }
+
+        // Fallback: retry with rAF if DOM isn't ready yet
         let raf = 0;
         let attemptsLeft = 120;
         const tryScroll = () => {
