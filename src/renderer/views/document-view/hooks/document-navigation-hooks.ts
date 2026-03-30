@@ -83,9 +83,7 @@ export function useReferenceNavigation(
         }
 
         // Try immediate scroll (before paint)
-        if (scrollToParagraph(containerRef.current, paragraphIndex)) {
-            clearPendingNavigation(null);
-        }
+        scrollToParagraph(containerRef.current, paragraphIndex);
 
         // Fallback: retry with rAF if DOM isn't ready yet
         let raf = 0;
