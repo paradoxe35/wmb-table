@@ -26,8 +26,6 @@ export interface ContextLimits {
     assistantCharLimit: number;
     compactedUserCharLimit: number;
     compactedAssistantCharLimit: number;
-    recentToolResultCharLimit: number;
-    recentToolResultCountLimit: number;
     toolResultCharLimit: number;
     toolResultCountLimit: number;
 }
@@ -38,8 +36,6 @@ export const REMOTE_LIMITS: ContextLimits = {
     assistantCharLimit: 1600,
     compactedUserCharLimit: 400,
     compactedAssistantCharLimit: 500,
-    recentToolResultCharLimit: 900,
-    recentToolResultCountLimit: 8,
     toolResultCharLimit: 600,
     toolResultCountLimit: 6,
 };
@@ -50,8 +46,6 @@ export const LOCAL_LIMITS: ContextLimits = {
     assistantCharLimit: 400,
     compactedUserCharLimit: 150,
     compactedAssistantCharLimit: 200,
-    recentToolResultCharLimit: 240,
-    recentToolResultCountLimit: 4,
     toolResultCharLimit: 180,
     toolResultCountLimit: 3,
 };
@@ -311,8 +305,8 @@ function formatMessage(
     if (message.role !== 'user' && message.role !== 'assistant') return null;
 
     const mainText = normalizeWhitespace(message.content);
-    const maxTools = compact ? limits.toolResultCountLimit : limits.recentToolResultCountLimit;
-    const toolCharLimit = compact ? limits.toolResultCharLimit : limits.recentToolResultCharLimit;
+    const maxTools = compact ? limits.toolResultCountLimit : message.toolResults.length;
+    const toolCharLimit = compact ? limits.toolResultCharLimit : Infinity;
     const toolSummary = message.toolResults
         .slice(0, maxTools)
         .map((r) => summarizeToolResult(r, toolCharLimit))
