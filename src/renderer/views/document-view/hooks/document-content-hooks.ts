@@ -247,7 +247,7 @@ export function useBibleChapterContent(
         return () => {
             cancelled = true;
         };
-    }, [book, chapter]);
+    }, [book, chapter, versionAbbreviation]);
 
     return { verses, loading };
 }

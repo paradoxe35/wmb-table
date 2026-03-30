@@ -13,41 +13,34 @@ export interface BibleVersionState {
 }
 
 let cachedVersions: BibleVersionInfo[] = [];
-let cachedActiveVersion: string | undefined;
 let cachedForLanguage: string | null = null;
 
 function invalidateCache() {
     cachedVersions = [];
-    cachedActiveVersion = undefined;
 }
 
 export function useBibleVersions(): BibleVersionState {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const activeVersion = activeBibleVersion?.abbreviation;
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
-    const [activeVersion, setActiveVersion] = useState<string | undefined>(cachedActiveVersion);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
 
     const refresh = useCallback(async () => {
-        const [langVersions, active] = await Promise.all([
-            window.api.bible.getVersions(),
-            window.api.bible.getActiveVersion(),
-        ]);
+        const langVersions = await window.api.bible.getVersions();
         const all =
             langVersions.length > 0 ? langVersions : await window.api.bible.getAllVersions();
 
         cachedVersions = all;
-        cachedActiveVersion = active?.abbreviation;
         cachedForLanguage = contentLanguage;
 
         setVersions(all);
-        setActiveVersion(active?.abbreviation);
     }, [contentLanguage]);
 
     useEffect(() => {
         if (contentLanguage !== cachedForLanguage) {
             invalidateCache();
             setVersions([]);
-            setActiveVersion(undefined);
         }
         if (cachedVersions.length > 0) {
             return;
@@ -61,9 +54,9 @@ export function useBibleVersions(): BibleVersionState {
     const handleSwitch = useCallback(
         async (abbreviation: string) => {
             await window.api.bible.switchVersion(abbreviation);
-            refresh();
             const v = await window.api.bible.getActiveVersion();
             useAppStore.getState().setActiveBibleVersion(v);
+            refresh();
         },
         [refresh],
     );

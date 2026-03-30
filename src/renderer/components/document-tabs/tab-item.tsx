@@ -29,20 +29,9 @@ function useIsTabPlaying(tab: DocumentTab): boolean {
     return ttsPlaying || audioPlaying;
 }
 
-function getTabLabel(tab: DocumentTab, isPlaying: boolean) {
-    const speakerIcon = isPlaying ? (
-        <SoundOutlined
-            style={{ fontSize: 'var(--fs-xs)', marginLeft: 4, color: 'var(--ant-color-primary)' }}
-        />
-    ) : null;
-
+function getTabLabel(tab: DocumentTab) {
     if (tab.type === 'bible') {
-        return (
-            <>
-                {tab.title}
-                {speakerIcon}
-            </>
-        );
+        return tab.title;
     }
 
     return (
@@ -51,7 +40,6 @@ function getTabLabel(tab: DocumentTab, isPlaying: boolean) {
             {tab.languageCode && (
                 <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
             )}
-            {speakerIcon}
         </>
     );
 }
@@ -129,9 +117,20 @@ export default function TabItem({
                     </svg>
                 </div>
                 <div className="chrome-tab-content">
-                    <div className="chrome-tab-favicon">{getTabIcon(tab)}</div>
+                    <div className="chrome-tab-favicon">
+                        {isPlaying ? (
+                            <SoundOutlined
+                                style={{
+                                    fontSize: 'var(--fs-base)',
+                                    color: 'var(--ant-color-primary)',
+                                }}
+                            />
+                        ) : (
+                            getTabIcon(tab)
+                        )}
+                    </div>
                     <div className="chrome-tab-title" title={getTabTooltip(tab)}>
-                        {getTabLabel(tab, isPlaying)}
+                        {getTabLabel(tab)}
                     </div>
                     <div className="chrome-tab-drag-handle" />
                     <div

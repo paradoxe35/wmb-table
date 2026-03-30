@@ -42,10 +42,12 @@ function BibleContentHeader({
     title,
     chapter,
     bibleLang,
+    versionName,
 }: {
     title?: string;
     chapter?: string;
     bibleLang: string;
+    versionName?: string;
 }) {
     if (!title) return null;
     const bookName = chapter ? title.replace(new RegExp(`\\s+${chapter}$`), '') : title;
@@ -55,6 +57,17 @@ function BibleContentHeader({
         <div className="sermon-content-header">
             <h2 className="sermon-content-header__title">{bookName}</h2>
             {chapterLabel && <div className="sermon-content-header__date">{chapterLabel}</div>}
+            {versionName && (
+                <div
+                    style={{
+                        color: 'var(--ant-color-text-quaternary)',
+                        fontSize: 'var(--fs-rel-lg)',
+                        marginTop: 2,
+                    }}
+                >
+                    {versionName}
+                </div>
+            )}
         </div>
     );
 }
@@ -369,7 +382,13 @@ export default function BibleDocumentView() {
                 />
             }
         >
-            <BibleContentHeader title={activeTab?.title} chapter={chapter} bibleLang={bibleLang} />
+            <BibleContentHeader
+                title={activeTab?.title}
+                chapter={chapter}
+                bibleLang={bibleLang}
+                versionName={activeBibleVersion?.name}
+            />
+
             <ParagraphList
                 paragraphs={paragraphs}
                 documentId={activeTab?.title ?? ''}
