@@ -1,26 +1,45 @@
-import { Button, Input } from 'antd';
+import { useEffect, useRef } from 'react';
+import { Button, Input, type InputRef } from 'antd';
 import { ArrowUpOutlined, StopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
 export default function ChatInput({
     draft,
     sending,
+    conversationId,
     onDraftChange,
     onSend,
     onStop,
 }: {
     draft: string;
     sending: boolean;
+    conversationId: string | null;
     onDraftChange: (value: string) => void;
     onSend: () => void;
     onStop: () => void;
 }) {
     const { t } = useTranslation();
+    const inputRef = useRef<InputRef>(null);
+    const wasSending = useRef(false);
+
+    // Focus on mount and when conversation changes (new conversation or switch)
+    useEffect(() => {
+        inputRef.current?.focus();
+    }, [conversationId]);
+
+    // Focus after AI reply finishes
+    useEffect(() => {
+        if (wasSending.current && !sending) {
+            inputRef.current?.focus();
+        }
+        wasSending.current = sending;
+    }, [sending]);
 
     return (
         <div className="ai-chat__input-wrapper">
             <div className="ai-chat__input-box">
                 <Input.TextArea
+                    ref={inputRef}
                     autoSize={{ minRows: 1, maxRows: 5 }}
                     value={draft}
                     onChange={(e) => onDraftChange(e.target.value)}

@@ -361,8 +361,8 @@ export class AiService {
                     uiLanguageCode,
                     contentLanguageCode,
                     allMessages.map((m) => ({ role: m.role, content: m.content })),
-                    abortSignal,
                 );
+
                 if (title) {
                     const updated = aiRepo.updateConversation(conversation.id, {
                         title,

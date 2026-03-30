@@ -59,7 +59,7 @@
         "@googleapis/oauth2": "^5.0.1",
         "@pngwasi/node-tantivy-binding": "^0.3.4",
         "@sentry/electron": "^7.10.0",
-        "ai": "6.0.116",
+        "ai": "6.0.141",
         "antd": "^6.3.3",
         "better-sqlite3": "^12.8.0",
         "chokidar": "^5.0.0",

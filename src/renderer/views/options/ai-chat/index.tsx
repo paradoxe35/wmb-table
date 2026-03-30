@@ -104,6 +104,7 @@ export default function AiChatView() {
                 <ChatInput
                     draft={draft}
                     sending={sending}
+                    conversationId={activeConversationId}
                     onDraftChange={setDraft}
                     onSend={handleSend}
                     onStop={() => void stopGeneration()}

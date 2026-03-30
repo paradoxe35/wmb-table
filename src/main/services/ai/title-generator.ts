@@ -39,7 +39,7 @@ export async function generateConversationTitle(
                 `The sermon content language is "${contentLanguage}".`,
                 `Conversation:\n${conversationSnippet}`,
             ].join('\n'),
-            maxOutputTokens: 30,
+            maxOutputTokens: 4096,
             abortSignal,
         });
 
