@@ -1,9 +1,5 @@
 /**
- * Model context window resolution.
- *
- * Resolves context window sizes from two remote registries (cached 24h):
- * 1. OpenRouter — 300+ models, public, no API key needed
- * 2. LiteLLM — 1000+ models, raw JSON on GitHub
+ * Model context window resolution via OpenRouter + LiteLLM registries (cached 24h).
  */
 
 import log from '@main/lib/logger';
@@ -41,10 +37,47 @@ const litellmCache = new SimpleCache<ContextWindowMap>('ctx-registry:litellm', C
 
 // ── Normalization ──
 
-function normalizeModelId(modelId: string): string {
+const QUANT_PATTERN = /[-_](?:q\d[_a-z0-9]*|fp16|fp32|bf16|f16|f32|gguf|iq\d[_a-z0-9]*)$/i;
+const PARAM_SIZE_PATTERN = /^(\d+\.?\d*[bm](?:-a\d+[bm])?)/i;
+
+/**
+ * Build candidate names ordered most-specific first.
+ *
+ * `"qwen3.5:9b"`                            → `["qwen3.5-9b", "qwen3.5"]`
+ * `"deepseek-coder-v2:16b-lite-instruct-q2_K"` → `["deepseek-coder-v2-16b-lite-instruct", "deepseek-coder-v2-16b", "deepseek-coder-v2"]`
+ * `"openai/gpt-5-mini"`                     → `["gpt-5-mini"]`
+ */
+function buildCandidates(modelId: string): string[] {
     const afterSlash = modelId.includes('/') ? modelId.split('/').pop()! : modelId;
-    const beforeColon = afterSlash.includes(':') ? afterSlash.split(':')[0] : afterSlash;
-    return beforeColon.toLowerCase();
+    const lower = afterSlash.toLowerCase();
+
+    if (!lower.includes(':')) {
+        return [lower];
+    }
+
+    const [base, tag] = lower.split(':', 2);
+    if (!tag || tag === 'latest') {
+        return [base];
+    }
+
+    const cleanTag = tag.replace(QUANT_PATTERN, '').replace(/-$/, '');
+    const paramMatch = cleanTag.match(PARAM_SIZE_PATTERN);
+    const candidates: string[] = [];
+
+    if (paramMatch) {
+        const paramSize = paramMatch[1];
+        const rest = cleanTag.slice(paramSize.length).replace(/^-/, '');
+
+        if (rest) {
+            candidates.push(`${base}-${paramSize}-${rest}`);
+        }
+        candidates.push(`${base}-${paramSize}`);
+    } else if (cleanTag) {
+        candidates.push(`${base}-${cleanTag}`);
+    }
+
+    candidates.push(base);
+    return candidates;
 }
 
 function extractBaseName(id: string): string {
@@ -96,8 +129,6 @@ async function fetchLiteLLMRegistry(): Promise<ContextWindowMap> {
     return result;
 }
 
-// ── Ensure registries are loaded ──
-
 async function ensureRegistries(): Promise<void> {
     const logError = (source: string) => (err: unknown) => {
         log.warn(`Context registry fetch failed: ${source}`, {
@@ -111,40 +142,41 @@ async function ensureRegistries(): Promise<void> {
     ]);
 }
 
-// ── Lookup ──
+// ── Matching ──
 
-function lookupOpenRouter(normalized: string): number | undefined {
-    const models = openRouterCache.get() ?? openRouterCache.getStale();
-    if (!models) {
-        return undefined;
+function isMatch(registryBaseName: string, candidate: string): boolean {
+    if (registryBaseName === candidate) {
+        return true;
     }
+    if (registryBaseName.startsWith(candidate)) {
+        const nextChar = registryBaseName[candidate.length];
+        return nextChar === '-' || nextChar === '.' || nextChar === undefined;
+    }
+    return false;
+}
 
-    const variants = [normalized, `${normalized}-instruct`, `${normalized}-thinking`];
-
-    for (const model of models) {
-        if (!model.context_length || model.context_length <= 0) {
-            continue;
-        }
-        if (variants.includes(extractBaseName(model.id))) {
-            return model.context_length;
+function findInModels(candidates: string[], models: OpenRouterModel[]): number | undefined {
+    for (const candidate of candidates) {
+        for (const model of models) {
+            if (!model.context_length || model.context_length <= 0) {
+                continue;
+            }
+            if (isMatch(extractBaseName(model.id), candidate)) {
+                return model.context_length;
+            }
         }
     }
-
     return undefined;
 }
 
-function lookupLiteLLM(normalized: string): number | undefined {
-    const registry = litellmCache.get() ?? litellmCache.getStale();
-    if (!registry) {
-        return undefined;
-    }
-
-    for (const [key, contextWindow] of Object.entries(registry)) {
-        if (extractBaseName(key) === normalized) {
-            return contextWindow;
+function findInRegistry(candidates: string[], registry: ContextWindowMap): number | undefined {
+    for (const candidate of candidates) {
+        for (const [key, contextWindow] of Object.entries(registry)) {
+            if (isMatch(extractBaseName(key), candidate)) {
+                return contextWindow;
+            }
         }
     }
-
     return undefined;
 }
 
@@ -152,6 +184,21 @@ function lookupLiteLLM(normalized: string): number | undefined {
 
 export async function lookupContextWindow(modelId: string): Promise<number | undefined> {
     await ensureRegistries();
-    const normalized = normalizeModelId(modelId);
-    return lookupOpenRouter(normalized) ?? lookupLiteLLM(normalized);
+
+    const candidates = buildCandidates(modelId);
+
+    const openRouterModels = openRouterCache.get() ?? openRouterCache.getStale();
+    if (openRouterModels) {
+        const result = findInModels(candidates, openRouterModels);
+        if (result) {
+            return result;
+        }
+    }
+
+    const litellmRegistry = litellmCache.get() ?? litellmCache.getStale();
+    if (litellmRegistry) {
+        return findInRegistry(candidates, litellmRegistry);
+    }
+
+    return undefined;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Empty, Typography } from 'antd';
 import { RobotOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -61,6 +61,37 @@ export default function AiChatView() {
         [activeConversationId, messagesByConversation],
     );
 
+    const handleSend = useCallback(() => {
+        const trimmed = draft.trim();
+        if (!trimmed) {
+            return;
+        }
+        void sendMessage(trimmed);
+        setDraft('');
+    }, [draft, sendMessage]);
+
+    const handleCreateConversation = useCallback(() => {
+        void createConversation();
+    }, [createConversation]);
+
+    const handleSelectConversation = useCallback(
+        (id: string) => void selectConversation(id),
+        [selectConversation],
+    );
+
+    const handleDeleteConversation = useCallback(
+        (id: string) => void deleteConversation(id),
+        [deleteConversation],
+    );
+
+    const handleClearConversations = useCallback(() => {
+        void clearConversations();
+    }, [clearConversations]);
+
+    const handleStop = useCallback(() => {
+        void stopGeneration();
+    }, [stopGeneration]);
+
     if (!settings) {
         return null;
     }
@@ -69,23 +100,15 @@ export default function AiChatView() {
         return <DisabledState />;
     }
 
-    function handleSend() {
-        if (!draft.trim()) {
-            return;
-        }
-        void sendMessage(draft);
-        setDraft('');
-    }
-
     return (
         <div className="ai-chat">
             <ChatConversationList
                 conversations={conversations}
                 activeConversationId={activeConversationId}
-                onCreateConversation={() => void createConversation()}
-                onSelectConversation={(id) => void selectConversation(id)}
-                onDeleteConversation={(id) => void deleteConversation(id)}
-                onClearConversations={() => void clearConversations()}
+                onCreateConversation={handleCreateConversation}
+                onSelectConversation={handleSelectConversation}
+                onDeleteConversation={handleDeleteConversation}
+                onClearConversations={handleClearConversations}
             />
 
             <div className="ai-chat__main">
@@ -107,7 +130,7 @@ export default function AiChatView() {
                     conversationId={activeConversationId}
                     onDraftChange={setDraft}
                     onSend={handleSend}
-                    onStop={() => void stopGeneration()}
+                    onStop={handleStop}
                 />
             </div>
         </div>

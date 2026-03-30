@@ -49,6 +49,12 @@ function toPositiveInt(value: unknown): number | undefined {
     return typeof value === 'number' && value > 0 ? Math.floor(value) : undefined;
 }
 
+const NON_CHAT_PATTERNS = /\b(embed|embedding|tts|whisper|dall-e|stable-diffusion|rerank)\b/i;
+
+function isChatModel(modelId: string): boolean {
+    return !NON_CHAT_PATTERNS.test(modelId);
+}
+
 // ── Provider API response types ──
 
 interface GeminiModelEntry {
@@ -91,7 +97,7 @@ async function fetchGeminiModels(baseUrl: string, apiKey: string): Promise<AiRem
 
     const data = (await res.json()) as GeminiModelsResponse;
     return (data.models ?? [])
-        .filter((m) => m.name.startsWith('models/gemini'))
+        .filter((m) => m.name.startsWith('models/gemini') && isChatModel(m.name))
         .map((m) => ({
             id: m.name.replace('models/', ''),
             name: m.displayName,
@@ -108,11 +114,13 @@ async function fetchClaudeModels(baseUrl: string, apiKey: string): Promise<AiRem
     }
 
     const data = (await res.json()) as ClaudeModelsResponse;
-    return (data.data ?? []).map((m) => ({
-        id: m.id,
-        name: m.display_name ?? m.id,
-        contextWindow: toPositiveInt(m.max_input_tokens),
-    }));
+    return (data.data ?? [])
+        .filter((m) => isChatModel(m.id))
+        .map((m) => ({
+            id: m.id,
+            name: m.display_name ?? m.id,
+            contextWindow: toPositiveInt(m.max_input_tokens),
+        }));
 }
 
 async function fetchOpenAICompatibleModels(
@@ -131,6 +139,7 @@ async function fetchOpenAICompatibleModels(
 
     const data = (await res.json()) as OpenAICompatibleModelsResponse;
     return (data.data ?? [])
+        .filter((m) => isChatModel(m.id))
         .map((m) => ({
             id: m.id,
             name: m.name ?? m.id,
