@@ -21,12 +21,13 @@ function urlTransform(url: string): string {
     return defaultUrlTransform(url);
 }
 
-/** Encode spaces in wmb:// URLs so the markdown parser doesn't break them. */
 function sanitizeWmbLinks(content: string): string {
-    return content.replace(
-        /\]\(wmb:\/\/([^)]+)\)/g,
-        (_, path: string) => `](wmb://${path.replace(/ /g, '%20')})`,
-    );
+    return content
+        .replace(/`(\[[^\]]+\]\(wmb:\/\/[^)]+\))`/g, '$1')
+        .replace(
+            /\]\(wmb:\/\/([^)]+)\)/g,
+            (_, path: string) => `](wmb://${path.replace(/ /g, '%20')})`,
+        );
 }
 
 const MAX_REASONING_LINES = 50;
