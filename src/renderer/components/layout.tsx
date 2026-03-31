@@ -102,12 +102,11 @@ const ReadingModeHandler = () => {
 const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     const [collapsed, setCollapsed] = useState(true);
     const readingMode = useAppStore((s) => s.readingMode);
+    const containerScroll = useContainerHeight<HTMLDivElement>();
 
     const toggle = (collapsed?: boolean | unknown) => {
         return typeof collapsed === 'boolean' ? setCollapsed(collapsed) : setCollapsed((c) => !c);
     };
-
-    const containerScroll = useContainerHeight<HTMLDivElement>();
 
     return (
         <AudioProvider>
@@ -132,7 +131,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                         <div ref={containerScroll} className="site-layout-content">
                             <Content
                                 style={{
-                                    padding: readingMode ? 0 : 24,
+                                    padding: readingMode ? 0 : '24px 24px 0px',
                                     paddingBottom: 0,
                                     flex: 1,
                                     overflow: 'hidden',
