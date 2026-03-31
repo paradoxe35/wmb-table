@@ -207,10 +207,6 @@ const DocumentItem = React.memo<{
     onDelete: () => void;
     onLanguageChange: (languageCode: string) => void;
 }>(({ document, installedLanguages, onView, onDelete, onLanguageChange }) => {
-    const langLabel =
-        installedLanguages.find((l) => l.code === document.languageCode)?.language ||
-        document.languageCode;
-
     return (
         <div
             style={{

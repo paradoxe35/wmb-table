@@ -486,6 +486,8 @@ const es: Record<string, string> = {
     'Document supprimé': 'Documento eliminado',
     'Langue du document': 'Idioma del documento',
     'Langue modifiée': 'Idioma cambiado',
+    'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.':
+        'El idioma del documento no coincide con el idioma activo. Cambie el idioma en los ajustes.',
     'Traitement...': 'Procesando...',
     Retour: 'Volver',
     "Erreur lors de l'extraction du document.": 'Error al extraer el documento.',

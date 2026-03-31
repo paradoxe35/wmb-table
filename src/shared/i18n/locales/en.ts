@@ -362,6 +362,8 @@ const en: Record<string, string> = {
     'Ce fournisseur ne peut pas lire cette langue.': 'This provider cannot read this language.',
     'Le navigateur ne dispose pas de voix pour cette langue.':
         'The browser has no voice for this language.',
+    'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.':
+        'The document language does not match the active language. Change the language in settings.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Unable to verify provider compatibility.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':

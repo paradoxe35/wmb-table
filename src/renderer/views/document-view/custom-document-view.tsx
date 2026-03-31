@@ -163,12 +163,29 @@ export default function CustomDocumentView() {
         customDoc?.sermonId,
     );
 
+    const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const docLang = docContent?.languageCode || contentLanguage || 'en';
     const tts = useTts(paragraphs, docLang, docContent?.title ?? '', {
         introText: docContent?.title,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
     });
+
+    // Disable TTS when document language doesn't match the active content language
+    const effectiveTts = useMemo(() => {
+        const langMismatch = docContent?.languageCode !== contentLanguage;
+        if (!langMismatch) {
+            return tts;
+        }
+
+        return {
+            ...tts,
+            canSpeak: false,
+            incompatibleMessage: t(
+                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+            ),
+        };
+    }, [tts, docContent?.languageCode, contentLanguage, t]);
 
     return (
         <DocumentBody
@@ -178,7 +195,7 @@ export default function CustomDocumentView() {
             contextTargetRef={contextTargetRef}
             zoom={zoom}
             contextMenuItems={contextMenuItems}
-            header={<CustomDocHeader zoom={zoom} tts={tts} />}
+            header={<CustomDocHeader zoom={zoom} tts={effectiveTts} />}
         >
             <div className="sermon-content-header">
                 <h2 className="sermon-content-header__title">{docContent?.title}</h2>
@@ -189,9 +206,9 @@ export default function CustomDocumentView() {
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
-                onPlayFromHere={tts.playFromParagraph}
-                canSpeak={tts.canSpeak}
-                incompatibleMessage={tts.incompatibleMessage}
+                onPlayFromHere={effectiveTts.playFromParagraph}
+                canSpeak={effectiveTts.canSpeak}
+                incompatibleMessage={effectiveTts.incompatibleMessage}
             />
         </DocumentBody>
     );
