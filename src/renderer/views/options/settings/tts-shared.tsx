@@ -2,10 +2,11 @@ import { Tag, Typography } from 'antd';
 import { CloudOutlined, LaptopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { LANG_LABELS_FR } from '@shared/tts.types';
+import { LANG_LABELS_FR, PROVIDER_CATALOG } from '@shared/tts.types';
 import type {
     TtsModelInfo,
     TtsProviderLocality,
+    TtsProviderMeta,
     TtsProviderType,
     TtsSettings,
     TtsVoice,
@@ -137,15 +138,10 @@ export function FreeTag() {
     return <Tag color="green">{t('Gratuit')}</Tag>;
 }
 
-const API_KEY_URLS: Record<string, string> = {
-    elevenlabs: 'https://elevenlabs.io/app/developers/api-keys',
-    openai: 'https://platform.openai.com/api-keys',
-    cartesia: 'https://play.cartesia.ai/keys',
-};
-
 export function ApiKeyLink({ provider }: { provider: TtsProviderType }) {
     const { t } = useTranslation();
-    const url = API_KEY_URLS[provider];
+    const meta = PROVIDER_CATALOG[provider] as TtsProviderMeta;
+    const url = meta.apiKeyUrl;
     if (!url) return null;
 
     return (

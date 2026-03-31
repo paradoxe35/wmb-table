@@ -7,6 +7,7 @@ export interface TtsProviderMeta {
     locality: TtsProviderLocality;
     hint: string;
     free: boolean;
+    apiKeyUrl?: string;
 }
 
 export const PROVIDER_CATALOG = {
@@ -33,18 +34,21 @@ export const PROVIDER_CATALOG = {
         locality: 'remote',
         hint: 'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
         free: false,
+        apiKeyUrl: 'https://play.cartesia.ai/keys',
     },
     elevenlabs: {
         label: 'ElevenLabs TTS',
         locality: 'remote',
         hint: 'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
         free: false,
+        apiKeyUrl: 'https://elevenlabs.io/app/developers/api-keys',
     },
     openai: {
         label: 'OpenAI TTS',
         locality: 'remote',
         hint: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
         free: false,
+        apiKeyUrl: 'https://platform.openai.com/api-keys',
     },
 } as const satisfies Record<string, TtsProviderMeta>;
 

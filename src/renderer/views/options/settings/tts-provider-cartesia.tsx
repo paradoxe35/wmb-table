@@ -19,51 +19,6 @@ const { Text } = Typography;
 
 const PROVIDER_TYPE = 'cartesia' as const;
 
-const CARTESIA_LANGUAGES = [
-    'en',
-    'fr',
-    'de',
-    'es',
-    'pt',
-    'zh',
-    'ja',
-    'hi',
-    'it',
-    'ko',
-    'nl',
-    'pl',
-    'ru',
-    'sv',
-    'tr',
-    'tl',
-    'bg',
-    'ro',
-    'ar',
-    'cs',
-    'el',
-    'fi',
-    'hr',
-    'ms',
-    'sk',
-    'da',
-    'ta',
-    'uk',
-    'hu',
-    'no',
-    'vi',
-    'bn',
-    'th',
-    'he',
-    'ka',
-    'id',
-    'te',
-    'gu',
-    'kn',
-    'ml',
-    'mr',
-    'pa',
-];
-
 interface CartesiaConfigProps extends ProviderConfigProps {
     info?: TtsProviderInfo;
 }
@@ -182,7 +137,7 @@ export default function CartesiaConfig({ settings, info, onUpdate }: CartesiaCon
                                 <VoiceCloneForm
                                     providerType={PROVIDER_TYPE}
                                     onCloned={handleVoiceCloned}
-                                    languages={CARTESIA_LANGUAGES}
+                                    languages={info?.supportedLanguages}
                                 />
                                 <Divider style={{ margin: '4px 0' }} />
                                 <Field
