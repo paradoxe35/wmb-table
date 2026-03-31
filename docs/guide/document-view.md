@@ -174,6 +174,7 @@ Les choix les plus importants sont :
 - `Souligner`
 - `Ajouter au sujet`
 - `Ajouter à la note`
+- `Trouver des prédications similaires` (uniquement pour les prédications)
 
 <ScreenshotPlaceholder
   file="fr-document-view-right-click-menu.png"
@@ -251,6 +252,36 @@ Le détail complet se trouve dans [Prendre des notes](/guide/notes).
   file="fr-document-view-note-reference-select.png"
   label="Choisir la référence de note à relier"
   hint="Montrer la fenêtre qui affiche la note en cours et la liste des références disponibles."
+/>
+
+## Trouver des prédications similaires
+
+Quand vous lisez un paragraphe intéressant dans une prédication, vous pouvez découvrir d'autres prédications qui parlent du même sujet.
+
+Faites ceci :
+
+1. faites un clic droit sur le paragraphe qui vous intéresse
+2. choisissez `Trouver des prédications similaires`
+3. une fenêtre s'ouvre avec les résultats
+
+Chaque résultat montre :
+
+- le titre de la prédication
+- la date et le lieu
+- les paragraphes similaires avec un extrait du texte
+
+Cliquez sur un paragraphe pour ouvrir cette prédication directement au bon endroit.
+
+Cette fonction est utile pour :
+
+- comparer ce que le prophète a dit sur un sujet dans différentes prédications
+- préparer une étude en trouvant des passages liés
+- découvrir des prédications que vous n'aviez pas encore lues sur un thème
+
+<ScreenshotPlaceholder
+  file="fr-document-view-similar-sermons.png"
+  label="Fenêtre des prédications similaires"
+  hint="Montrer la fenêtre modale avec l'extrait source, une liste de prédications avec paragraphes cliquables."
 />
 
 ## Différence entre prédication, Bible et document personnel

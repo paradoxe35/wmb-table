@@ -19,7 +19,7 @@ import {
     type PushChannel,
     type PushEventMap,
 } from '@shared/ipc.types';
-import type { UiLanguagePreference } from '@shared/constants';
+import { DEFAULT_SEARCH_MODE, type UiLanguagePreference } from '@shared/constants';
 import type {
     BibleBook,
     BookRequest,
@@ -93,9 +93,24 @@ const api = {
         addSuggestion: (text: string, found: number, langCode: string) =>
             invoke(SearchChannels.addSuggestion, text, found, langCode),
         searchText: (langCode: string, query: string, page: number, mode?: SearchMode) =>
-            invoke(SearchChannels.searchText, langCode, query, page, mode ?? 'any'),
+            invoke(SearchChannels.searchText, langCode, query, page, mode ?? DEFAULT_SEARCH_MODE),
         searchContent: (langCode: string, query: string, translationId: number) =>
             invoke(SearchChannels.searchContent, langCode, query, translationId),
+        findSimilarSermons: (
+            langCode: string,
+            translationId: number,
+            sermonDate: number,
+            paragraphIndex: number,
+            limit?: number,
+        ) =>
+            invoke(
+                SearchChannels.findSimilarSermons,
+                langCode,
+                translationId,
+                sermonDate,
+                paragraphIndex,
+                limit,
+            ),
     },
 
     notes: {
@@ -229,9 +244,11 @@ const api = {
         setSidebarStatus: (hidden: boolean) => invoke(AppChannels.setSidebarStatus, hidden),
         getCustomDocuments: () => invoke(AppChannels.getCustomDocuments),
         deleteCustomDocument: (id: string) => invoke(AppChannels.deleteCustomDocument, id),
-        createCustomDocument: (title: string, pdfBytes: Uint8Array) =>
-            invoke(AppChannels.createCustomDocument, title, pdfBytes),
+        createCustomDocument: (title: string, pdfBytes: Uint8Array, languageCode: string) =>
+            invoke(AppChannels.createCustomDocument, title, pdfBytes, languageCode),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
+        updateCustomDocumentLanguage: (id: string, languageCode: string) =>
+            invoke(AppChannels.updateCustomDocumentLanguage, id, languageCode),
         getHistory: (langCode: string) => invoke(AppChannels.getHistory, langCode),
         addHistoryEntry: (
             langCode: string,

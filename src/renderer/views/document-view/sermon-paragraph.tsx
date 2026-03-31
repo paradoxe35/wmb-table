@@ -2,14 +2,11 @@ import React, { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dropdown, message, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
-import { strNormalizeNoLower, buildHighlightRegex } from '@renderer/utils/searchable';
+import { getHighlightRanges } from '@renderer/utils/searchable';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
 import { hexToRgba } from '@renderer/utils/functions';
-import type {
-    SermonParagraph as SermonParagraphType,
-    SearchMode,
-    HighlightItem,
-} from '@shared/types';
+import type { SearchHighlightState } from './hooks';
+import type { SermonParagraph as SermonParagraphType, HighlightItem } from '@shared/types';
 
 type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'>;
 
@@ -20,8 +17,6 @@ interface HighlightRange {
     comment?: string;
     highlightId?: string;
     type: 'search' | 'persistent' | 'tts';
-    matchIndex?: number;
-    isCurrent?: boolean;
 }
 
 function mergeRanges(
@@ -60,7 +55,7 @@ function PersistentHighlight({
         } catch {
             message.error(t('Erreur lors de la suppression'));
         }
-    }, [highlightId]);
+    }, [highlightId, t]);
 
     const menuItems: MenuProps['items'] = [
         ...(comment
@@ -124,6 +119,7 @@ function PersistentHighlight({
 function renderWithRanges(
     content: string,
     ranges: HighlightRange[],
+    activeSearch = false,
 ): (string | React.ReactElement)[] {
     if (ranges.length === 0) return [content];
 
@@ -149,11 +145,7 @@ function renderWithRanges(
             );
         } else if (range.type === 'search') {
             result.push(
-                <mark
-                    key={`s-${i}`}
-                    data-match-index={range.matchIndex}
-                    className={range.isCurrent ? 'mark-current' : undefined}
-                >
+                <mark key={`s-${i}`} className={activeSearch ? 'mark-current' : undefined}>
                     {text}
                 </mark>,
             );
@@ -186,16 +178,14 @@ function renderWithRanges(
 const SermonParagraphView = memo(function SermonParagraphView({
     paragraph,
     search,
-    currentMatchIndex,
-    matchOffset,
+    isActiveMatch,
     highlights,
     ttsHighlight,
     playFromHereButton,
 }: {
     paragraph: ParagraphProp;
-    search: { term: string; mode: SearchMode } | null;
-    currentMatchIndex: number;
-    matchOffset: number;
+    search: SearchHighlightState | null;
+    isActiveMatch?: boolean;
     highlights?: HighlightItem[];
     ttsHighlight?: { isActive: boolean; highlightRange: { start: number; end: number } | null };
     playFromHereButton?: React.ReactNode;
@@ -205,7 +195,6 @@ const SermonParagraphView = memo(function SermonParagraphView({
         const persistentRanges: HighlightRange[] = [];
         const ttsRanges: HighlightRange[] = [];
 
-        // Build TTS highlight range
         if (ttsHighlight?.isActive && ttsHighlight.highlightRange) {
             ttsRanges.push({
                 start: ttsHighlight.highlightRange.start,
@@ -215,23 +204,13 @@ const SermonParagraphView = memo(function SermonParagraphView({
             });
         }
 
-        // Build search ranges
         if (search) {
-            const regex = buildHighlightRegex(search.term, search.mode, false);
-            if (regex) {
-                const normalized = strNormalizeNoLower(paragraph.content);
-                const matches = [...normalized.matchAll(regex)];
-                matches.forEach((m, i) => {
-                    const globalIdx = matchOffset + i;
-                    searchRanges.push({
-                        start: m.index!,
-                        end: m.index! + m[0].length,
-                        color: '',
-                        type: 'search',
-                        matchIndex: globalIdx,
-                        isCurrent: globalIdx === currentMatchIndex,
-                    });
-                });
+            const paragraphSearchRanges =
+                search.highlightsByParagraph.get(paragraph.paragraphIndex) ??
+                getHighlightRanges(paragraph.content, search.term, search.mode);
+
+            for (const r of paragraphSearchRanges) {
+                searchRanges.push({ start: r.start, end: r.end, color: '', type: 'search' });
             }
         }
 
@@ -252,7 +231,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
         const allRanges = mergeRanges(searchRanges, [...persistentRanges, ...ttsRanges]);
         if (allRanges.length === 0) return paragraph.content;
 
-        return renderWithRanges(paragraph.content, allRanges);
+        return renderWithRanges(paragraph.content, allRanges, isActiveMatch);
     };
 
     const className = ttsHighlight?.isActive

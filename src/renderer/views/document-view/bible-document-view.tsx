@@ -42,10 +42,12 @@ function BibleContentHeader({
     title,
     chapter,
     bibleLang,
+    versionName,
 }: {
     title?: string;
     chapter?: string;
     bibleLang: string;
+    versionName?: string;
 }) {
     if (!title) return null;
     const bookName = chapter ? title.replace(new RegExp(`\\s+${chapter}$`), '') : title;
@@ -55,6 +57,17 @@ function BibleContentHeader({
         <div className="sermon-content-header">
             <h2 className="sermon-content-header__title">{bookName}</h2>
             {chapterLabel && <div className="sermon-content-header__date">{chapterLabel}</div>}
+            {versionName && (
+                <div
+                    style={{
+                        color: 'var(--ant-color-text-quaternary)',
+                        fontSize: 'var(--fs-rel-lg)',
+                        marginTop: 2,
+                    }}
+                >
+                    {versionName}
+                </div>
+            )}
         </div>
     );
 }
@@ -251,17 +264,18 @@ export default function BibleDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
-    const currentMatchIndex = useSearchStore((s) =>
-        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
-    );
-
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const bibleLang = activeBibleVersion?.langCode ?? '';
     const bibleVersionAbbreviation = activeBibleVersion?.abbreviation ?? '';
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
-    const { verses, loading: chapterLoading } = useBibleChapterContent(bookCode, chapter);
+    const { verses, loading: chapterLoading } = useBibleChapterContent(
+        bookCode,
+        chapter,
+        bibleVersionAbbreviation,
+    );
+
     const loading = chapterLoading && verses.length === 0;
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
@@ -276,9 +290,9 @@ export default function BibleDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
         documentType: 'bible',
-        title: activeTab?.title,
         sermonId: activeTab?.sermonId,
-        languageCode: bibleLang,
+        bibleBook: bookCode,
+        bibleChapter: chapter,
         bibleVersionAbbreviation,
     });
 
@@ -288,11 +302,11 @@ export default function BibleDocumentView() {
         readingPositionKey,
     });
 
-    const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
-    const { matchOffsets } = useMatchNavigation(
+    const { activeParagraphIndex } = useMatchNavigation(
+        containerRef,
         activeTabKey,
         search,
-        paragraphTexts,
+        paragraphs,
         !!restoreIdentity,
     );
 
@@ -368,13 +382,18 @@ export default function BibleDocumentView() {
                 />
             }
         >
-            <BibleContentHeader title={activeTab?.title} chapter={chapter} bibleLang={bibleLang} />
+            <BibleContentHeader
+                title={activeTab?.title}
+                chapter={chapter}
+                bibleLang={bibleLang}
+                versionName={activeBibleVersion?.name}
+            />
+
             <ParagraphList
                 paragraphs={paragraphs}
                 documentId={activeTab?.title ?? ''}
                 search={search}
-                currentMatchIndex={currentMatchIndex}
-                matchOffsets={matchOffsets}
+                activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
                 onPlayFromHere={tts.playFromParagraph}
                 canSpeak={tts.canSpeak}

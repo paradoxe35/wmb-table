@@ -15,7 +15,8 @@ export function buildSubjectTools(
                 'Use getSubjectById to get references for a specific subject.',
             inputSchema: z.object({}),
             execute: async () => {
-                return subjectsRepo.getAllSummary();
+                const subjects = subjectsRepo.getAllSummary();
+                return subjects.map((s) => ({ subjectId: s.id, name: s.name, date: s.date }));
             },
         },
         getSubjectById: {
@@ -26,14 +27,23 @@ export function buildSubjectTools(
             execute: async ({ subjectId }) => {
                 const subject = subjectsRepo.getById(subjectId.trim());
                 if (!subject) return { error: `Subject "${subjectId}" not found.` };
-                return subject;
+                return {
+                    subjectId: subject.id,
+                    name: subject.name,
+                    documents: subject.documents.map((doc) => ({
+                        referenceId: doc.id,
+                        documentTitle: doc.documentTitle,
+                        sermonId: doc.sermonId,
+                    })),
+                };
             },
         },
         createSubject: {
             description: 'Create a new subject.',
             inputSchema: z.object({ name: z.string().min(2) }),
             execute: async ({ name }) => {
-                return subjectsRepo.create(name.trim());
+                const subject = subjectsRepo.create(name.trim());
+                return { subjectId: subject.id, name: subject.name };
             },
         },
         addSermonReferenceToSubject: {
@@ -85,7 +95,7 @@ export function buildSubjectTools(
                 const paragraph = paragraphs.find((p) => p.paragraphIndex === paragraphIndex);
                 if (!paragraph) return { error: 'Paragraphe introuvable.' };
 
-                return subjectsRepo.createItem(
+                const item = subjectsRepo.createItem(
                     subjectId,
                     meta.title,
                     {
@@ -99,6 +109,12 @@ export function buildSubjectTools(
                     undefined,
                     meta.sermonId,
                 );
+                return {
+                    referenceId: item.id,
+                    subjectId,
+                    documentTitle: meta.title,
+                    sermonId: meta.sermonId,
+                };
             },
         },
         removeSubjectReference: {

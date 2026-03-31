@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Collapse, message, Select, Space, Typography } from 'antd';
+import { Collapse, Divider, message, Select, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { getErrorMessage } from '@renderer/utils/functions';
 import DebouncedInput from '@renderer/components/debounced-input';
-import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
+import { ApiKeyLink, Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 import { ClonedVoicesList, VoiceCloneForm } from './tts-elevenlabs-voice-clone';
 import TtsReferenceVoices from './tts-reference-voices';
 
@@ -84,19 +84,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                         onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'apiKey', val));
                     }}
                 />
-            </Field>
-            <Field
-                label={t('Modèle')}
-                hint={t('Le choix par défaut convient pour la plupart des usages.')}
-            >
-                <Select
-                    style={{ width: '100%' }}
-                    value={cfg.model ?? 'eleven_flash_v2_5'}
-                    onChange={(v) => {
-                        onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'model', v));
-                    }}
-                    options={(info?.availableModels ?? []).map((m) => ({ label: m, value: m }))}
-                />
+                <ApiKeyLink provider={PROVIDER_TYPE} />
             </Field>
             <Field
                 label={t('Voix')}
@@ -134,14 +122,41 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                                     clonedVoices={clonedVoices}
                                     onVoiceCloned={handleVoiceCloned}
                                 />
-                                <ClonedVoicesList
-                                    voices={clonedVoices}
-                                    onDelete={handleDeleteVoice}
-                                />
+                                {clonedVoices.length > 0 && (
+                                    <>
+                                        <Divider style={{ margin: '4px 0' }} />
+                                        <ClonedVoicesList
+                                            voices={clonedVoices}
+                                            onDelete={handleDeleteVoice}
+                                        />
+                                    </>
+                                )}
+                                <Divider style={{ margin: '4px 0' }} />
                                 <VoiceCloneForm
                                     providerType={PROVIDER_TYPE}
                                     onCloned={handleVoiceCloned}
                                 />
+                                <Divider style={{ margin: '4px 0' }} />
+                                <Field
+                                    label={t('Modèle')}
+                                    hint={t(
+                                        'Le choix par défaut convient pour la plupart des usages.',
+                                    )}
+                                >
+                                    <Select
+                                        style={{ width: '100%' }}
+                                        value={cfg.model ?? info?.defaultModel ?? ''}
+                                        onChange={(v) => {
+                                            onUpdate(
+                                                providerUpdate(settings, PROVIDER_TYPE, 'model', v),
+                                            );
+                                        }}
+                                        options={(info?.availableModels ?? []).map((m) => ({
+                                            label: m,
+                                            value: m,
+                                        }))}
+                                    />
+                                </Field>
                             </Space>
                         ),
                     },

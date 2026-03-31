@@ -1,8 +1,11 @@
 import type { ChatHistoryItem } from 'node-llama-cpp';
 import { estimateTokenCount } from 'tokenx';
+import lodash from 'lodash';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import log from '@main/lib/logger';
+
+const { omit, pick } = lodash;
 
 export type PromptHistoryMessage = {
     role: 'user' | 'assistant';
@@ -11,12 +14,41 @@ export type PromptHistoryMessage = {
 
 // ── Token budgets ──
 
-const REMOTE_TOKEN_BUDGET = 32_000;
-const LOCAL_TOKEN_BUDGET = 3000;
+const DEFAULT_REMOTE_TOKEN_BUDGET = 32_000;
+const LOCAL_TOKEN_BUDGET = 3_000;
 const MAX_LOADED_MESSAGES = 40;
 const LOCAL_GENERATION_RESERVE = 1024;
 const LOCAL_CONTEXT_OVERHEAD = 128;
 const MIN_KEPT_TURNS = 4;
+
+// ── Dynamic budget calculation ──
+
+const SYSTEM_PROMPT_TOKEN_ESTIMATE = 2_000;
+const TOOL_DEFINITIONS_TOKEN_ESTIMATE = 4_000;
+const OUTPUT_TOKEN_RESERVE = 4_096;
+const BUDGET_SAFETY_MARGIN = 512;
+const MIN_HISTORY_BUDGET = 4_000;
+const MAX_HISTORY_BUDGET = 200_000;
+
+/**
+ * Calculate the conversation history token budget based on a model's context window.
+ * Subtracts estimated system prompt, tool definitions, output reserve, and safety margin.
+ * Returns a safe default when the context window is unknown.
+ */
+export function calculateRemoteTokenBudget(contextWindow?: number): number {
+    if (!contextWindow) {
+        return DEFAULT_REMOTE_TOKEN_BUDGET;
+    }
+
+    const budget =
+        contextWindow -
+        SYSTEM_PROMPT_TOKEN_ESTIMATE -
+        TOOL_DEFINITIONS_TOKEN_ESTIMATE -
+        OUTPUT_TOKEN_RESERVE -
+        BUDGET_SAFETY_MARGIN;
+
+    return Math.max(MIN_HISTORY_BUDGET, Math.min(budget, MAX_HISTORY_BUDGET));
+}
 
 // ── Per-message formatting limits ──
 
@@ -125,17 +157,28 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
                 const loaded = Array.isArray(output.paragraphs) ? output.paragraphs.length : 0;
                 const total =
                     typeof output.totalParagraphs === 'number' ? output.totalParagraphs : loaded;
-                return `${title}: ${loaded}/${total} paragraph(s) loaded`;
+                const start = typeof output.startParagraph === 'number' ? output.startParagraph : 0;
+                const range = loaded > 0 ? ` §${start}–${start + loaded - 1}` : '';
+                return `${title}: ${loaded}/${total} paragraph(s)${range}`;
             }
             break;
 
         case 'searchContent': {
             const hits = output?.results ?? output;
-            if (Array.isArray(hits))
-                return summarizeList(
-                    extractNames(hits, 'title', 'sermonId'),
-                    `${hits.length} content hit(s)`,
-                );
+            if (Array.isArray(hits)) {
+                const summaries = hits.slice(0, TOOL_LIST_PREVIEW_LIMIT).map((hit: any) => {
+                    const title = String(hit?.title ?? hit?.sermonId ?? '?');
+                    const paragraphs = (hit?.matches ?? [])
+                        .map((m: any) => m?.paragraphNumber)
+                        .filter((n: any) => typeof n === 'number');
+                    return paragraphs.length > 0 ? `${title} §${paragraphs.join(',')}` : title;
+                });
+                const extra =
+                    hits.length > TOOL_LIST_PREVIEW_LIMIT
+                        ? ` +${hits.length - TOOL_LIST_PREVIEW_LIMIT} more`
+                        : '';
+                return `${hits.length} content hit(s): ${summaries.join('; ')}${extra}`;
+            }
             break;
         }
 
@@ -173,8 +216,20 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'searchBible':
-            if (output && typeof output === 'object' && 'total' in output)
-                return `Bible search: ${output.total} verse(s) found for "${output.query}"`;
+            if (output && typeof output === 'object' && 'total' in output) {
+                const verses = Array.isArray(output.results) ? output.results : [];
+                const refs = verses
+                    .slice(0, 3)
+                    .map((v: any) =>
+                        v?.bookName && v?.chapter && v?.verse
+                            ? `${v.bookName} ${v.chapter}:${v.verse}`
+                            : '',
+                    )
+                    .filter(Boolean);
+                const refsStr =
+                    refs.length > 0 ? `: ${refs.join(', ')}${verses.length > 3 ? ' …' : ''}` : '';
+                return `Bible search: ${output.total} verse(s) for "${output.query}"${refsStr}`;
+            }
             break;
 
         case 'getSubjects':
@@ -241,6 +296,107 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
     return raw ? `${result.name}: ${truncate(raw, charLimit)}` : result.name;
 }
 
+// ── Tool result formatting (recent / non-compact) ──
+
+/**
+ * Strip internal/noisy fields from tool output for recent (non-compact) history.
+ * Keeps all reference data (IDs, paragraph numbers, titles, snippets)
+ * but removes full text content, pagination cursors, and redundant metadata.
+ */
+
+const SHORT_PREVIEW = 120;
+const LONG_PREVIEW = 300;
+
+function previewText(value: unknown, maxChars: number): string {
+    return truncate(normalizeWhitespace(String(value ?? '')), maxChars);
+}
+
+function cleanToolOutput(name: string, output: any): unknown {
+    if (output == null || typeof output !== 'object') {
+        return output;
+    }
+
+    switch (name) {
+        case 'getSermonContent':
+            if (!Array.isArray(output.paragraphs)) {
+                return output;
+            }
+            return {
+                ...output,
+                paragraphs: output.paragraphs.map((p: any) => ({
+                    paragraphNumber: p.paragraphNumber,
+                    content: previewText(p.content, SHORT_PREVIEW),
+                })),
+            };
+
+        case 'searchContent':
+        case 'searchSermons':
+            return omit(output, 'nextCursor');
+
+        case 'getBiblePassage':
+            if (!Array.isArray(output)) {
+                return output;
+            }
+            return output.map((v: any) => ({
+                ...pick(v, ['bookName', 'book', 'chapter', 'verse', 'testament']),
+                content: previewText(v.content, SHORT_PREVIEW),
+            }));
+
+        case 'searchBible':
+            if (!output.data) {
+                return output;
+            }
+            return {
+                query: output.query,
+                total: output.total,
+                results: output.data.map((d: any) => ({
+                    ...pick(d.item, ['bookName', 'book', 'chapter', 'verse']),
+                    content: previewText(d.item?.content, SHORT_PREVIEW),
+                })),
+            };
+
+        case 'getCustomDocumentContent':
+            return { ...output, content: previewText(output.content, LONG_PREVIEW) };
+
+        case 'getSubjectById':
+            if (!Array.isArray(output.documents)) {
+                return output;
+            }
+            return {
+                ...output,
+                documents: output.documents.map((doc: any) => ({
+                    ...omit(doc, ['documentHtmlTree', 'textContent']),
+                    textContent: previewText(doc.textContent, LONG_PREVIEW),
+                })),
+            };
+
+        case 'addBibleReferenceToSubject':
+        case 'addSermonReferenceToSubject':
+            return omit(output, ['documentHtmlTree', 'textContent', 'bible']);
+
+        case 'getNoteById':
+        case 'createNote':
+        case 'updateNoteContent':
+            if (typeof output.content !== 'string') {
+                return output;
+            }
+            return { ...output, content: previewText(output.content, LONG_PREVIEW) };
+
+        default:
+            return output;
+    }
+}
+
+function formatToolResultRaw(result: AiToolResult): string {
+    const cleaned = cleanToolOutput(result.name, result.output);
+    const json = stringify(cleaned);
+    return json ? `[Tool:${result.name}] ${json}` : `[Tool:${result.name}]`;
+}
+
+function formatToolResultCompact(result: AiToolResult, charLimit: number): string {
+    return `[Tool] ${summarizeToolResult(result, charLimit)}`;
+}
+
 // ── Message formatting ──
 
 function formatMessage(
@@ -252,15 +408,18 @@ function formatMessage(
     if (message.role !== 'user' && message.role !== 'assistant') return null;
 
     const mainText = normalizeWhitespace(message.content);
-    const maxTools = compact ? limits.toolResultCountLimit : message.toolResults.length;
-    const toolCharLimit = compact ? limits.toolResultCharLimit : Infinity;
-    const toolSummary = message.toolResults
-        .slice(0, maxTools)
-        .map((r) => summarizeToolResult(r, toolCharLimit))
-        .filter(Boolean)
-        .map((s) => `[Tool] ${s}`);
 
-    const combined = [mainText, ...toolSummary].filter(Boolean).join('\n');
+    let toolLines: string[];
+    if (compact) {
+        toolLines = message.toolResults
+            .slice(0, limits.toolResultCountLimit)
+            .map((r) => formatToolResultCompact(r, limits.toolResultCharLimit))
+            .filter(Boolean);
+    } else {
+        toolLines = message.toolResults.map((r) => formatToolResultRaw(r)).filter(Boolean);
+    }
+
+    const combined = [mainText, ...toolLines].filter(Boolean).join('\n');
     if (!combined) return null;
 
     return { role: message.role, content: compact ? truncate(combined, contentLimit) : combined };
@@ -361,9 +520,12 @@ function splitByTokenBudget(
 export function buildConversationContext(
     conversationId: string,
     isLocal: boolean,
+    remoteTokenBudget?: number,
 ): { summary: string | null; recentMessages: PromptHistoryMessage[] } {
     const limits = isLocal ? LOCAL_LIMITS : REMOTE_LIMITS;
-    const tokenBudget = isLocal ? LOCAL_TOKEN_BUDGET : REMOTE_TOKEN_BUDGET;
+    const tokenBudget = isLocal
+        ? LOCAL_TOKEN_BUDGET
+        : (remoteTokenBudget ?? DEFAULT_REMOTE_TOKEN_BUDGET);
     const messages = aiRepo.getRecentMessages(conversationId, MAX_LOADED_MESSAGES);
     return splitByTokenBudget(messages, tokenBudget, limits);
 }

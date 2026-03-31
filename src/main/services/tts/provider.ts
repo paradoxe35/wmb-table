@@ -28,7 +28,7 @@ export interface TtsProvider {
     resolveConfigForLanguage?(
         langCode: string,
         cfg?: TtsProviderSettings,
-    ): Partial<TtsProviderSettings> | null;
+    ): Partial<TtsProviderSettings> | null | Promise<Partial<TtsProviderSettings> | null>;
     // Voice cloning (optional — providers set supportsVoiceCloning: true)
     cloneVoice?(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult>;
     listClonedVoices?(): Promise<TtsVoice[]>;

@@ -127,6 +127,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                 )}
                 <Layout style={{ overflow: 'hidden' }}>
                     {!readingMode && <SidebarMenu onCollapse={toggle} collapsed={collapsed} />}
+
                     <Layout>
                         <div ref={containerScroll} className="site-layout-content">
                             <Content
@@ -143,6 +144,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                             </Content>
                         </div>
                     </Layout>
+
                     {!readingMode && <SidebarDocuments />}
                 </Layout>
             </Layout>

@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Empty, Spin, Tooltip, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
@@ -21,12 +21,13 @@ function urlTransform(url: string): string {
     return defaultUrlTransform(url);
 }
 
-/** Encode spaces in wmb:// URLs so the markdown parser doesn't break them. */
 function sanitizeWmbLinks(content: string): string {
-    return content.replace(
-        /\]\(wmb:\/\/([^)]+)\)/g,
-        (_, path: string) => `](wmb://${path.replace(/ /g, '%20')})`,
-    );
+    return content
+        .replace(/`(\[[^\]]+\]\(wmb:\/\/[^)]+\))`/g, '$1')
+        .replace(
+            /\]\(wmb:\/\/([^)]+)\)/g,
+            (_, path: string) => `](wmb://${path.replace(/ /g, '%20')})`,
+        );
 }
 
 const MAX_REASONING_LINES = 50;
@@ -115,7 +116,7 @@ function ToolResultsList({ results }: { results: AiToolResult[] }) {
     );
 }
 
-function MessageBubble({
+const MessageBubble = memo(function MessageBubble({
     message,
     isLastAssistant,
     sending,
@@ -195,7 +196,7 @@ function MessageBubble({
             </div>
         </motion.div>
     );
-}
+});
 
 export default function ChatMessageList({
     messages,
@@ -249,6 +250,15 @@ export default function ChatMessageList({
         prevSending.current = sending;
     }, [sending, scrollToBottom]);
 
+    const lastAssistantId = useMemo(() => {
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'assistant') {
+                return messages[i].id;
+            }
+        }
+        return null;
+    }, [messages]);
+
     return (
         <div className="ai-chat__messages-wrapper">
             <div className="ai-chat__messages" ref={scrollRef}>
@@ -257,20 +267,14 @@ export default function ChatMessageList({
                         <EmptyChat />
                     ) : (
                         <AnimatePresence initial={false}>
-                            {messages.map((msg, i) => {
-                                const isLastAssistant =
-                                    msg.role === 'assistant' &&
-                                    !messages.slice(i + 1).some((m) => m.role === 'assistant');
-
-                                return (
-                                    <MessageBubble
-                                        key={msg.id}
-                                        message={msg}
-                                        isLastAssistant={isLastAssistant}
-                                        sending={sending}
-                                    />
-                                );
-                            })}
+                            {messages.map((msg) => (
+                                <MessageBubble
+                                    key={msg.id}
+                                    message={msg}
+                                    isLastAssistant={msg.id === lastAssistantId}
+                                    sending={sending}
+                                />
+                            ))}
                         </AnimatePresence>
                     )}
                 </div>

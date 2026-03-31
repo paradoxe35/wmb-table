@@ -228,6 +228,7 @@
     line-height: 1.5;
     overflow-wrap: break-word;
     word-break: break-word;
+    user-select: text;
 }
 
 .ai-chat__bubble-content--user {

@@ -1,5 +1,5 @@
 // ── Provider identification ──
-export const SEGMENT_GAP_MS = 50;
+export const SEGMENT_GAP_MS = 150;
 export type TtsProviderLocality = 'local' | 'remote';
 
 export interface TtsProviderMeta {
@@ -7,6 +7,7 @@ export interface TtsProviderMeta {
     locality: TtsProviderLocality;
     hint: string;
     free: boolean;
+    apiKeyUrl?: string;
 }
 
 export const PROVIDER_CATALOG = {
@@ -28,17 +29,26 @@ export const PROVIDER_CATALOG = {
         hint: 'Gratuit, bonne qualité, nombreuses langues. Nécessite une connexion internet. Aucun compte requis.',
         free: true,
     },
+    cartesia: {
+        label: 'Cartesia TTS',
+        locality: 'remote',
+        hint: 'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
+        free: false,
+        apiKeyUrl: 'https://play.cartesia.ai/keys',
+    },
     elevenlabs: {
         label: 'ElevenLabs TTS',
         locality: 'remote',
         hint: 'Excellente qualité. Permet de cloner votre voix. Nécessite un compte et une connexion internet.',
         free: false,
+        apiKeyUrl: 'https://elevenlabs.io/app/developers/api-keys',
     },
     openai: {
         label: 'OpenAI TTS',
         locality: 'remote',
         hint: 'Excellente qualité, nombreuses langues disponibles. Nécessite un compte et une connexion internet.',
         free: false,
+        apiKeyUrl: 'https://platform.openai.com/api-keys',
     },
 } as const satisfies Record<string, TtsProviderMeta>;
 
@@ -171,6 +181,7 @@ export interface TtsSegmentAudio {
 export interface TtsVoiceCloneRequest {
     name: string; // up to 16 chars, [a-zA-Z0-9_]
     audioBase64: string; // base64-encoded audio (WAV/MP3/M4A, 10-60s, ≥24kHz mono)
+    language?: string; // BCP-47 code, required by some providers (e.g. Cartesia)
 }
 
 export interface TtsVoiceCloneResult {
@@ -343,6 +354,111 @@ export const LANG_LABELS_FR: Record<string, string> = {
     ii: 'Yi',
 };
 
+// ── Native language labels (each language name in its own script) ──
+export const LANG_LABELS_NATIVE: Record<string, string> = {
+    en: 'English',
+    fr: 'Français',
+    de: 'Deutsch',
+    es: 'Español',
+    it: 'Italiano',
+    pt: 'Português',
+    ru: 'Русский',
+    zh: '中文',
+    nl: 'Nederlands',
+    pl: 'Polski',
+    uk: 'Українська',
+    sv: 'Svenska',
+    da: 'Dansk',
+    no: 'Norsk',
+    fi: 'Suomi',
+    tr: 'Türkçe',
+    cs: 'Čeština',
+    ro: 'Română',
+    hu: 'Magyar',
+    el: 'Ελληνικά',
+    ar: 'العربية',
+    hi: 'हिन्दी',
+    vi: 'Tiếng Việt',
+    id: 'Bahasa Indonesia',
+    ka: 'ქართული',
+    sk: 'Slovenčina',
+    sr: 'Српски',
+    ca: 'Català',
+    sw: 'Kiswahili',
+    is: 'Íslenska',
+    bg: 'Български',
+    bn: 'বাংলা',
+    fa: 'فارسی',
+    ja: '日本語',
+    ko: '한국어',
+    th: 'ไทย',
+    he: 'עברית',
+    ms: 'Bahasa Melayu',
+    ta: 'தமிழ்',
+    te: 'తెలుగు',
+    ml: 'മലയാളം',
+    mr: 'मराठी',
+    ne: 'नेपाली',
+    si: 'සිංහල',
+    lb: 'Lëtzebuergesch',
+    mk: 'Македонски',
+    lt: 'Lietuvių',
+    lv: 'Latviešu',
+    et: 'Eesti',
+    gl: 'Galego',
+    eu: 'Euskara',
+    gu: 'ગુજરાતી',
+    kn: 'ಕನ್ನಡ',
+    ha: 'Hausa',
+    am: 'አማርኛ',
+    cy: 'Cymraeg',
+    be: 'Беларуская',
+    sl: 'Slovenščina',
+    hr: 'Hrvatski',
+    sq: 'Shqip',
+    yue: '粵語',
+    my: 'မြန်မာ',
+    ur: 'اردو',
+    pa: 'ਪੰਜਾਬੀ',
+    af: 'Afrikaans',
+    az: 'Azərbaycan',
+    bs: 'Bosanski',
+    fil: 'Filipino',
+    ga: 'Gaeilge',
+    jv: 'Basa Jawa',
+    km: 'ខ្មែរ',
+    lo: 'ລາວ',
+    mn: 'Монгол',
+    mt: 'Malti',
+    nb: 'Norsk bokmål',
+    ps: 'پښتو',
+    so: 'Soomaali',
+    su: 'Basa Sunda',
+    uz: 'Oʻzbek',
+    zu: 'isiZulu',
+    tl: 'Tagalog',
+    hy: 'Հայերեն',
+    kk: 'Қазақ',
+    ky: 'Кыргызча',
+    tg: 'Тоҷикӣ',
+    tk: 'Türkmen',
+    tt: 'Татар',
+    yo: 'Yorùbá',
+    ig: 'Igbo',
+    xh: 'isiXhosa',
+    sn: 'chiShona',
+    rw: 'Kinyarwanda',
+    mg: 'Malagasy',
+    eo: 'Esperanto',
+    la: 'Latina',
+    ln: 'Lingála',
+    or: 'ଓଡ଼ିଆ',
+    as: 'অসমীয়া',
+    fy: 'Frysk',
+    gd: 'Gàidhlig',
+    sd: 'سنڌي',
+};
+
 // ── Text helpers ──
 
 /** Returns true if the text contains at least one letter (any script). */
@@ -351,6 +467,7 @@ export function hasSpeakableContent(text: string): boolean {
 }
 
 // ── Default settings factory ──
+export const DEFAULT_CACHE_MAX_SIZE_MB = 1000;
 export function createDefaultTtsSettings(): TtsSettings {
     return {
         activeProvider: DEFAULT_TTS_PROVIDER,
@@ -359,13 +476,14 @@ export function createDefaultTtsSettings(): TtsSettings {
         autoPlay: false,
         autoSwitchVoice: true,
         rate: 1,
-        cacheMaxSizeMb: 1000,
+        cacheMaxSizeMb: DEFAULT_CACHE_MAX_SIZE_MB,
         providers: {
             browser: {},
             sherpa: {},
             elevenlabs: {},
             openai: {},
             edge: {},
+            cartesia: {},
         },
         readIntroduction: true,
         announceSegmentNumbers: false,

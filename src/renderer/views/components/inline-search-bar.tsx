@@ -9,6 +9,8 @@ import {
     selectActiveTabTitle,
     useSermonStore,
 } from '@renderer/stores';
+import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
+import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
@@ -25,6 +27,7 @@ export default function InlineSearchBar() {
         activeTabKey ? s.searchUiByTab[activeTabKey] : undefined,
     );
     const currentMatchIndex = searchUi?.currentMatchIndex ?? 0;
+    const currentParagraphIndex = searchUi?.currentParagraphIndex ?? null;
     const totalMatches = searchUi?.totalMatches ?? 0;
     const navOnly = searchUi?.searchBarNavOnly ?? false;
     const existingQuery = useSearchStore((s) =>
@@ -118,8 +121,8 @@ export default function InlineSearchBar() {
         const val = searchTermRef.current.trim();
         const num = parseInt(val, 10);
         if (isNaN(num)) return;
-        const el = document.querySelector(`[data-paragraph-index="${num}"]`);
-        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const container = document.getElementById(DOCUMENT_CONTAINER_ID);
+        scrollToParagraph(container, num);
     }, []);
 
     return (
@@ -139,10 +142,13 @@ export default function InlineSearchBar() {
                 style={{
                     fontSize: 'var(--fs-rel-lg)',
                     color: 'var(--ant-color-text-secondary)',
-                    minWidth: 50,
+                    minWidth: 140,
                     textAlign: 'center',
+                    whiteSpace: 'nowrap',
                 }}
             >
+                {currentParagraphIndex != null ? `¶${currentParagraphIndex}` : '¶-'}
+                {' · '}
                 {totalMatches > 0 ? `${currentMatchIndex + 1} / ${totalMatches}` : '0 / 0'}
             </span>
             <Button

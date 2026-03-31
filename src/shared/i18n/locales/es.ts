@@ -200,6 +200,9 @@ const es: Record<string, string> = {
     Limite: 'Límite',
     Vider: 'Vaciar',
     'Cache audio vidé': 'Caché de audio vaciado',
+    'Vider le cache audio ?': '¿Vaciar el caché de audio?',
+    'Toutes les lectures en mémoire seront supprimées.':
+        'Todas las lecturas en memoria serán eliminadas.',
     'Taille maximale du cache': 'Tamaño máximo del caché',
 
     // ── TTS enhanced reading ──
@@ -326,11 +329,24 @@ const es: Record<string, string> = {
     'Marin et Cedar sont recommandées pour la meilleure qualité.':
         'Marin y Cedar son recomendadas para la mejor calidad.',
 
+    // ── TTS provider Cartesia ──
+    'Cartesia TTS': 'Cartesia TTS',
+    'Clé API Cartesia': 'Clave API Cartesia',
+    'Votre clé secrète Cartesia. Elle est stockée en toute sécurité sur votre ordinateur.':
+        'Su clave secreta de Cartesia. Se almacena de forma segura en su ordenador.',
+    'Langue de la voix': 'Idioma de la voz',
+    "Sélectionnez la langue dans laquelle la voix clonée s'exprimera.":
+        'Seleccione el idioma en el que la voz clonada hablará.',
+    'Sélectionnez une voix': 'Seleccione una voz',
+    'Obtenir une clé API': 'Obtener clave API',
+
     // ── TTS controls ──
     'Pause lecture': 'Pausar lectura',
     'Reprendre la lecture': 'Reanudar lectura',
     'Démarrer la lecture': 'Iniciar lectura',
     'Lire à voix haute': 'Leer en voz alta',
+    'Pause voix': 'Pausar voz',
+    'Reprendre la voix': 'Reanudar voz',
     'Lecture audio indisponible': 'Audio no disponible',
     'Zoom arrière': 'Alejar',
     'Zoom avant': 'Acercar',
@@ -468,6 +484,10 @@ const es: Record<string, string> = {
     'Un document avec ce nom existe déjà.': 'Ya existe un documento con este nombre.',
     'Choisir un fichier PDF': 'Elegir un archivo PDF',
     'Document supprimé': 'Documento eliminado',
+    'Langue du document': 'Idioma del documento',
+    'Langue modifiée': 'Idioma cambiado',
+    'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.':
+        'El idioma del documento no coincide con el idioma activo. Cambie el idioma en los ajustes.',
     'Traitement...': 'Procesando...',
     Retour: 'Volver',
     "Erreur lors de l'extraction du document.": 'Error al extraer el documento.',
@@ -559,6 +579,8 @@ const es: Record<string, string> = {
     // ── Sermon header ──
     Pause: 'Pausa',
     Écouter: 'Escuchar',
+    "Écouter l'audio": 'Escuchar audio',
+    'Pause audio': 'Pausar audio',
     Traductions: 'Traducciones',
     Rechercher: 'Buscar',
 
@@ -574,6 +596,7 @@ const es: Record<string, string> = {
     'Aucun résultat trouvé': 'Ningún resultado encontrado',
 
     // ── Bible search ──
+    'Tous les testaments': 'Todos los testamentos',
     'Nouveau Testament': 'Nuevo Testamento',
     'Ancien Testament': 'Antiguo Testamento',
     'Faites vos recherches biblique ici': 'Busque en la Biblia aquí',
@@ -697,6 +720,9 @@ const es: Record<string, string> = {
     'Sélectionnez du texte à souligner': 'Seleccione texto para resaltar',
     'Ajouter au sujet': 'Añadir al tema',
     'Ajouter à la note': 'Añadir a la nota',
+    'Trouver des prédications similaires': 'Buscar predicaciones similares',
+    'Prédications similaires': 'Predicaciones similares',
+    'Aucune prédication similaire trouvée': 'No se encontraron predicaciones similares',
     Prédication: 'Predicación',
     Document: 'Documento',
     'Sauvegarde de données': 'Guardando datos',

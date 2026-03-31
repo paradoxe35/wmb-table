@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import * as referenceRepo from '@main/database/repositories/reference.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
-import { matchesQuery, strNormalize, strNormalizeNoLower, simpleRegExp } from '@shared/searchable';
-import type { SearchMode } from '@shared/types';
+import * as searchService from '@main/services/search.service';
+import { strNormalize, simpleRegExp } from '@shared/searchable';
 import type {
     AiToolDefinition,
     SermonSearchResult,
@@ -11,8 +10,18 @@ import type {
     SermonContentResponse,
     SermonParagraphResult,
     SearchContentHit,
+    SearchContentToolResponse,
+    SermonSearchToolResponse,
 } from './types';
 import { validateLanguage } from './shared';
+import {
+    buildNextContentSearchCursor,
+    buildNextSermonSearchCursor,
+    contentSearchToolInputSchema,
+    resolveContentSearchPage,
+    resolveSermonSearchPage,
+    sermonSearchToolInputSchema,
+} from './search-pagination';
 
 export function buildSermonTools(defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
@@ -20,22 +29,31 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
             description:
                 'Search sermons by title, date, sermon id, town/city, state, or location. ' +
                 'Returns sermon metadata. Each result includes a sermonId and translationId — ' +
-                'pass both to getSermonContent to retrieve the text.',
-            inputSchema: z.object({
-                query: z.string().min(1),
-                languageCode: z.string().optional(),
-                limit: z.number().int().min(1).max(20).optional(),
-            }),
-            execute: async ({ query, languageCode, limit = 10 }) => {
-                const lang = languageCode ?? defaultContentLanguage;
+                'pass both to getSermonContent to retrieve the text. ' +
+                'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one.',
+            inputSchema: sermonSearchToolInputSchema,
+            execute: async ({ query, languageCode, limit, cursor }) => {
+                const page = resolveSermonSearchPage({
+                    query,
+                    languageCode,
+                    limit,
+                    cursor,
+                    defaultLanguageCode: defaultContentLanguage,
+                    defaultLimit: 10,
+                });
+                if ('error' in page) return page;
+
+                const lang = page.languageCode;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 
-                const words = query
+                const words = page.query
                     .trim()
                     .split(/\s+/)
                     .filter((w: string) => w.length >= 2);
+
                 const patterns = words.map((w: string) => simpleRegExp(w));
+
                 const sermons = referenceDataService
                     .getSermonListForLanguage(lang)
                     .filter((sermon) => {
@@ -56,15 +74,27 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                             return re.test(fields);
                         });
                     });
-                const results: SermonSearchResult[] = sermons.slice(0, limit).map((s) => ({
-                    sermonId: s.sermonId,
-                    translationId: s.translationId,
-                    title: s.title,
-                    enTitle: s.enTitle || undefined,
-                    dateMs: s.dateMs,
-                    location: s.location || undefined,
-                }));
-                return { results, total: sermons.length };
+                const results: SermonSearchResult[] = sermons
+                    .slice(page.offset, page.offset + page.limit)
+                    .map((s) => ({
+                        sermonId: s.sermonId,
+                        translationId: s.translationId,
+                        title: s.title,
+                        enTitle: s.enTitle || undefined,
+                        dateMs: s.dateMs,
+                        location: s.location || undefined,
+                    }));
+
+                const returned = results.length;
+                const hasMore = page.offset + returned < sermons.length;
+                const response: SermonSearchToolResponse = {
+                    results,
+                    total: sermons.length,
+                    returned,
+                    hasMore,
+                    nextCursor: hasMore ? buildNextSermonSearchCursor(page, returned) : undefined,
+                };
+                return response;
             },
         },
         getSermonContent: {
@@ -167,68 +197,71 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 'Full-text search inside sermon content. Use this when searching for specific words, ' +
                 'phrases, or quotes within the text of sermons (not titles). ' +
                 'Returns matching sermons with relevant paragraph snippets. ' +
-                'Each match has a paragraphNumber — use it for wmb:// reference links.',
-            inputSchema: z.object({
-                query: z.string().min(2),
-                languageCode: z.string().optional(),
-                searchMode: z
-                    .enum(['any', 'all', 'exact'])
-                    .optional()
-                    .describe(
-                        'Search mode: "any" matches any word, "all" requires all words, "exact" matches the phrase. Defaults to "any".',
-                    ),
-                limit: z.number().int().min(1).max(20).optional(),
-            }),
-            execute: async ({ query, languageCode, searchMode: rawMode, limit = 10 }) => {
-                const lang = languageCode ?? defaultContentLanguage;
-                const mode: SearchMode = rawMode ?? 'any';
-                const langError = validateLanguage(lang);
-                if (langError) return langError;
+                'Each match has a paragraphNumber — use it for wmb:// reference links. ' +
+                'Mode controls precision: "exact" (default) finds words in order as a phrase, ' +
+                '"all" requires all words present in any order, "any" matches at least one word. ' +
+                'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one.',
+            inputSchema: contentSearchToolInputSchema,
+            execute: async ({ query, languageCode, mode: searchMode, limit, cursor }) => {
+                const page = resolveContentSearchPage({
+                    query,
+                    languageCode,
+                    mode: searchMode,
+                    limit,
+                    cursor,
+                    defaultLanguageCode: defaultContentLanguage,
+                    defaultLimit: 10,
+                    defaultMode: 'exact',
+                });
+                if ('error' in page) {
+                    return page;
+                }
+
+                const langError = validateLanguage(page.languageCode);
+                if (langError) {
+                    return langError;
+                }
 
                 try {
-                    const result = await tantivyService.searchSermons(lang, query, limit, 0);
-                    const items: SearchContentHit[] = [];
-                    for (const hit of result.hits.slice(0, limit)) {
-                        const sermonId = referenceRepo.tantivyDateToSermonIds(
-                            hit.tantivySermonDate,
-                        )[0];
+                    const { matches, total, totalIsExact } = await searchService.searchSermons({
+                        langCode: page.languageCode,
+                        query: page.query,
+                        mode: page.mode,
+                        limit: page.limit,
+                        offset: page.offset,
+                    });
 
-                        if (!sermonId) {
-                            continue;
-                        }
+                    const items: SearchContentHit[] = matches.map((m) => ({
+                        sermonId: m.sermonId,
+                        translationId: m.translationId,
+                        title: m.title,
+                        location:
+                            referenceDataService.getSermonMeta(
+                                m.translationId,
+                                page.languageCode,
+                                m.sermonId,
+                            )?.location || undefined,
+                        matches: m.snippets.slice(0, 5).map((p) => ({
+                            paragraphNumber: p.paragraphIndex,
+                            snippet: p.snippet,
+                        })),
+                        totalMatches: m.snippets.length,
+                    }));
 
-                        const meta = referenceDataService.getSermonMeta(
-                            hit.translationId,
-                            lang,
-                            sermonId,
-                        );
-                        const rawParagraphs = await tantivyService.getMatchingParagraphs(
-                            lang,
-                            query,
-                            hit.translationId,
-                            hit.tantivySermonDate,
-                        );
-                        const filtered = rawParagraphs.filter((p) =>
-                            matchesQuery(strNormalizeNoLower(p.snippet), query, mode),
-                        );
+                    const returned = items.length;
+                    const hasMore = page.offset + returned < total;
+                    const response: SearchContentToolResponse = {
+                        results: items,
+                        totalSermons: total,
+                        totalIsExact,
+                        returned,
+                        hasMore,
+                        nextCursor: hasMore
+                            ? buildNextContentSearchCursor(page, returned)
+                            : undefined,
+                    };
 
-                        if (filtered.length === 0) {
-                            continue;
-                        }
-
-                        items.push({
-                            sermonId,
-                            translationId: hit.translationId,
-                            title: meta?.title ?? meta?.enTitle ?? sermonId,
-                            location: meta?.location || undefined,
-                            matches: filtered.slice(0, 5).map((p) => ({
-                                paragraphNumber: p.paragraphIndex,
-                                snippet: p.snippet,
-                            })),
-                            totalMatches: filtered.length,
-                        });
-                    }
-                    return { results: items, totalSermons: result.total };
+                    return response;
                 } catch (err) {
                     return {
                         error: `Full-text search failed: ${err instanceof Error ? err.message : String(err)}`,

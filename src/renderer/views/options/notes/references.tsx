@@ -19,6 +19,7 @@ import {
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import {
+    buildPendingNavigation,
     buildReferenceOpenRequest,
     useFormatSermonDate,
     useOpenDocumentRequest,
@@ -44,18 +45,14 @@ export const useShowReferenceDetail = () => {
 
         const openDocument = () => {
             if (reference.documentHtmlTree) {
-                setPendingNavigation({
-                    documentTitle: reference.documentTitle,
-                    documentHtmlTree: reference.documentHtmlTree,
-                });
-            }
-            openDocumentRequest(
-                buildReferenceOpenRequest(
+                const request = buildReferenceOpenRequest(
                     reference.documentTitle,
                     reference.sermonId,
                     reference.documentHtmlTree,
-                ),
-            );
+                );
+                setPendingNavigation(buildPendingNavigation(request, reference.documentHtmlTree));
+                openDocumentRequest(request);
+            }
         };
 
         const sermon = getSermonById(reference.sermonId);

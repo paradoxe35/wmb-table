@@ -1,6 +1,6 @@
 import { Worker } from 'node:worker_threads';
 import log from 'electron-log';
-import type { SermonParagraph } from '@shared/types';
+import type { SermonParagraph, MatchingParagraphSnippet, SimilarParagraph } from '@shared/types';
 import * as refRepo from '@main/database/repositories/reference.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
 import workerPath from './tantivy.worker?modulePath';
@@ -22,6 +22,18 @@ export interface GroupedSearchHit {
 
 export interface SearchSermonResult {
     hits: GroupedSearchHit[];
+    total: number;
+    totalIsExact: boolean;
+}
+
+/** Raw result from the worker before sermon ID/title resolution. */
+export interface FindSimilarRawResult {
+    hits: Array<{
+        translationId: number;
+        tantivySermonDate: number;
+        score: number;
+        paragraphs: SimilarParagraph[];
+    }>;
     total: number;
 }
 
@@ -121,8 +133,9 @@ export async function searchSermons(
     queryText: string,
     limit: number,
     offset: number,
+    mode: 'any' | 'all' | 'exact' = 'all',
 ): Promise<SearchSermonResult> {
-    return call<SearchSermonResult>('searchSermons', langCode, queryText, limit, offset);
+    return call<SearchSermonResult>('searchSermons', langCode, queryText, limit, offset, mode);
 }
 
 export async function getSearchSnippet(
@@ -138,22 +151,33 @@ export async function getMatchingParagraphs(
     queryText: string,
     translationId: number,
     sermonDate: number,
-): Promise<{ paragraphIndex: number; snippet: string; matchIndex: number }[]> {
-    return call<{ paragraphIndex: number; snippet: string; matchIndex: number }[]>(
+    mode: 'any' | 'all' | 'exact' = 'all',
+): Promise<MatchingParagraphSnippet[]> {
+    return call<MatchingParagraphSnippet[]>(
         'getMatchingParagraphs',
         langCode,
         queryText,
         translationId,
         sermonDate,
+        mode,
     );
 }
 
-export async function getSermonParagraphCount(
+export async function findSimilarSermons(
     langCode: string,
     translationId: number,
-    sermonId?: number,
-): Promise<number> {
-    return call<number>('getSermonParagraphCount', langCode, translationId, sermonId);
+    sermonDate: number,
+    paragraphIndex: number,
+    limit?: number,
+): Promise<FindSimilarRawResult> {
+    return call<FindSimilarRawResult>(
+        'findSimilarSermons',
+        langCode,
+        translationId,
+        sermonDate,
+        paragraphIndex,
+        limit,
+    );
 }
 
 export async function terminateWorker(): Promise<void> {

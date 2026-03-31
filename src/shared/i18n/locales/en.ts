@@ -199,6 +199,9 @@ const en: Record<string, string> = {
     Limite: 'Limit',
     Vider: 'Clear',
     'Cache audio vidé': 'Audio cache cleared',
+    'Vider le cache audio ?': 'Clear audio cache?',
+    'Toutes les lectures en mémoire seront supprimées.':
+        'All cached audio readings will be deleted.',
     'Taille maximale du cache': 'Maximum cache size',
 
     // ── TTS enhanced reading ──
@@ -323,11 +326,24 @@ const en: Record<string, string> = {
     'Marin et Cedar sont recommandées pour la meilleure qualité.':
         'Marin and Cedar are recommended for the best quality.',
 
+    // ── TTS provider Cartesia ──
+    'Cartesia TTS': 'Cartesia TTS',
+    'Clé API Cartesia': 'Cartesia API Key',
+    'Votre clé secrète Cartesia. Elle est stockée en toute sécurité sur votre ordinateur.':
+        'Your secret Cartesia key. It is stored securely on your computer.',
+    'Langue de la voix': 'Voice language',
+    "Sélectionnez la langue dans laquelle la voix clonée s'exprimera.":
+        'Select the language in which the cloned voice will speak.',
+    'Sélectionnez une voix': 'Select a voice',
+    'Obtenir une clé API': 'Get API key',
+
     // ── TTS controls ──
     'Pause lecture': 'Pause reading',
     'Reprendre la lecture': 'Resume reading',
     'Démarrer la lecture': 'Start reading',
     'Lire à voix haute': 'Read aloud',
+    'Pause voix': 'Pause voice',
+    'Reprendre la voix': 'Resume voice',
     'Lecture audio indisponible': 'Audio playback unavailable',
     'Zoom arrière': 'Zoom out',
     'Zoom avant': 'Zoom in',
@@ -346,6 +362,8 @@ const en: Record<string, string> = {
     'Ce fournisseur ne peut pas lire cette langue.': 'This provider cannot read this language.',
     'Le navigateur ne dispose pas de voix pour cette langue.':
         'The browser has no voice for this language.',
+    'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.':
+        'The document language does not match the active language. Change the language in settings.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Unable to verify provider compatibility.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
@@ -464,6 +482,8 @@ const en: Record<string, string> = {
     'Un document avec ce nom existe déjà.': 'A document with this name already exists.',
     'Choisir un fichier PDF': 'Choose a PDF file',
     'Document supprimé': 'Document deleted',
+    'Langue du document': 'Document language',
+    'Langue modifiée': 'Language changed',
     'Traitement...': 'Processing...',
     Retour: 'Back',
     "Erreur lors de l'extraction du document.": 'Error extracting the document.',
@@ -554,6 +574,8 @@ const en: Record<string, string> = {
     // ── Sermon header ──
     Pause: 'Pause',
     Écouter: 'Listen',
+    "Écouter l'audio": 'Listen to audio',
+    'Pause audio': 'Pause audio',
     Traductions: 'Translations',
     Rechercher: 'Search',
 
@@ -569,6 +591,7 @@ const en: Record<string, string> = {
     'Aucun résultat trouvé': 'No results found',
 
     // ── Bible search ──
+    'Tous les testaments': 'All testaments',
     'Nouveau Testament': 'New Testament',
     'Ancien Testament': 'Old Testament',
     'Faites vos recherches biblique ici': 'Search the Bible here',
@@ -691,6 +714,9 @@ const en: Record<string, string> = {
     'Sélectionnez du texte à souligner': 'Select text to highlight',
     'Ajouter au sujet': 'Add to subject',
     'Ajouter à la note': 'Add to note',
+    'Trouver des prédications similaires': 'Find similar sermons',
+    'Prédications similaires': 'Similar sermons',
+    'Aucune prédication similaire trouvée': 'No similar sermons found',
     Prédication: 'Sermon',
     Document: 'Document',
     'Sauvegarde de données': 'Backing up data',

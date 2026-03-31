@@ -481,7 +481,7 @@ body {
     }
     25%,
     75% {
-        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.15));
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.251));
     }
 }
 
@@ -931,7 +931,20 @@ body {
     background: var(--ant-color-bg-container, #fff);
 }
 
-.editor-container {
+.editor-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.editor-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
     background: var(--ant-color-bg-container, #fff);
 }
 

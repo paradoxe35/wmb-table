@@ -66,18 +66,28 @@ Il est utile si vous voulez :
 
 Il a simplement besoin d’une connexion internet.
 
+### Cartesia TTS
+
+Voix en ligne de très bonne qualité avec clonage vocal. Compte nécessaire.
+
+Pour obtenir une clé API : [play.cartesia.ai/keys](https://play.cartesia.ai/keys)
+
 ### ElevenLabs TTS
 
-Voix en ligne de très bonne qualité. Compte nécessaire.
+Voix en ligne de très bonne qualité avec clonage vocal. Compte nécessaire.
+
+Pour obtenir une clé API : [elevenlabs.io/app/developers/api-keys](https://elevenlabs.io/app/developers/api-keys)
 
 ### OpenAI TTS
 
 Voix en ligne de très bonne qualité. Compte nécessaire.
 
+Pour obtenir une clé API : [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
 <ScreenshotPlaceholder
   file="fr-settings-tts-provider-list.png"
   label="Liste des fournisseurs de lecture audio"
-  hint="Montrer la liste avec Voix du système, Sherpa, Edge TTS, ElevenLabs et OpenAI."
+  hint="Montrer la liste avec Voix du système, Sherpa, Edge TTS, Cartesia, ElevenLabs et OpenAI."
 />
 
 ## Choisir une voix

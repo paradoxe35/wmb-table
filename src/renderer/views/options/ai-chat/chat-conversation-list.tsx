@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Button, Popconfirm, Typography } from 'antd';
 import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import type { AiConversation } from '@shared/ai.types';
@@ -20,7 +21,7 @@ function formatRelativeDate(isoDate: string, t: (key: string) => string): string
     return new Date(isoDate).toLocaleDateString();
 }
 
-export default function ChatConversationList({
+export default memo(function ChatConversationList({
     conversations,
     activeConversationId,
     onCreateConversation,
@@ -157,4 +158,4 @@ export default function ChatConversationList({
             ) : null}
         </div>
     );
-}
+});

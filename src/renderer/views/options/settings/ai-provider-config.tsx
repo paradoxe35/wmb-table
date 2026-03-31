@@ -62,12 +62,13 @@ function TestButton({
     }
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <Button
                 size="small"
                 onClick={handleTest}
                 disabled={!model || status === 'testing'}
                 loading={status === 'testing'}
+                style={{ flexShrink: 0 }}
             >
                 {t('Tester la connexion')}
             </Button>
@@ -77,7 +78,12 @@ function TestButton({
                 </Tag>
             ) : null}
             {status === 'error' ? (
-                <Tag icon={<CloseCircleOutlined />} color="error">
+                <Tag
+                    icon={<CloseCircleOutlined />}
+                    color="error"
+                    style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    title={errorMessage}
+                >
                     {errorMessage || t('Échec')}
                 </Tag>
             ) : null}

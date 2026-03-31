@@ -1,12 +1,15 @@
 import { create } from 'zustand';
+import { DEFAULT_SEARCH_MODE } from '@shared/constants';
 import type { DocumentViewQuery, SearchMode } from '@shared/types';
 
 type SearchUiState = {
     searchBarOpen: boolean;
     searchBarNavOnly: boolean;
     currentMatchIndex: number;
+    currentParagraphIndex: number | null;
     totalMatches: number;
     requestedMatchIndex: number | null;
+    requestedParagraphIndex: number | null;
 };
 
 interface SearchStateData {
@@ -22,6 +25,7 @@ interface SearchStateActions {
     openSearchBar(tabKey: string, navOnly?: boolean): void;
     closeSearchBar(tabKey: string): void;
     setCurrentMatchIndex(tabKey: string, index: number): void;
+    setCurrentParagraphIndex(tabKey: string, index: number | null): void;
     setTotalMatches(tabKey: string, total: number): void;
     setSearchMode(mode: SearchMode): void;
     nextMatch(tabKey: string): void;
@@ -29,7 +33,7 @@ interface SearchStateActions {
     clearSearch(tabKey: string): void;
     cleanupTabs(removedKeys: string[]): void;
     setError(error: string | null): void;
-    requestScrollToMatch(tabKey: string, matchIndex?: number): void;
+    requestScrollToMatch(tabKey: string, matchIndex?: number, paragraphIndex?: number): void;
     clearScrollToMatchRequest(tabKey: string): void;
 }
 
@@ -39,25 +43,45 @@ const defaultUiState = (): SearchUiState => ({
     searchBarOpen: false,
     searchBarNavOnly: false,
     currentMatchIndex: 0,
+    currentParagraphIndex: null,
     totalMatches: 0,
     requestedMatchIndex: null,
+    requestedParagraphIndex: null,
 });
 
 function getUiState(state: SearchStateData, tabKey: string): SearchUiState {
     return state.searchUiByTab[tabKey] ?? defaultUiState();
 }
 
+function removeTabEntry<T>(record: Record<string, T>, tabKey: string): Record<string, T> {
+    const next = { ...record };
+    delete next[tabKey];
+    return next;
+}
+
+function updateTabUiState(
+    state: SearchStateData,
+    tabKey: string,
+    patch: Partial<SearchUiState> | ((current: SearchUiState) => SearchUiState),
+): Record<string, SearchUiState> {
+    const current = getUiState(state, tabKey);
+    const next = typeof patch === 'function' ? patch(current) : { ...current, ...patch };
+    return {
+        ...state.searchUiByTab,
+        [tabKey]: next,
+    };
+}
+
 export const useSearchStore = create<SearchState>((set, get) => ({
     documentViewQueries: {},
     searchUiByTab: {},
-    searchMode: 'any',
+    searchMode: DEFAULT_SEARCH_MODE,
     error: null,
 
     setDocumentViewQuery: (tabKey, query) =>
         set((state) => {
             if (!query) {
-                const { [tabKey]: _removed, ...rest } = state.documentViewQueries;
-                return { documentViewQueries: rest };
+                return { documentViewQueries: removeTabEntry(state.documentViewQueries, tabKey) };
             }
 
             return {
@@ -74,50 +98,44 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
     openSearchBar: (tabKey, navOnly) =>
         set((state) => ({
-            searchUiByTab: {
-                ...state.searchUiByTab,
-                [tabKey]: {
-                    ...getUiState(state, tabKey),
-                    searchBarOpen: true,
-                    searchBarNavOnly: !!navOnly,
-                },
-            },
+            searchUiByTab: updateTabUiState(state, tabKey, {
+                searchBarOpen: true,
+                searchBarNavOnly: !!navOnly,
+            }),
         })),
 
     closeSearchBar: (tabKey) =>
         set((state) => {
-            const { [tabKey]: _removed, ...remainingQueries } = state.documentViewQueries;
             return {
-                documentViewQueries: remainingQueries,
-                searchUiByTab: {
-                    ...state.searchUiByTab,
-                    [tabKey]: defaultUiState(),
-                },
+                documentViewQueries: removeTabEntry(state.documentViewQueries, tabKey),
+                searchUiByTab: updateTabUiState(state, tabKey, defaultUiState()),
             };
         }),
 
     setCurrentMatchIndex: (tabKey, index) =>
         set((state) => ({
-            searchUiByTab: {
-                ...state.searchUiByTab,
-                [tabKey]: {
-                    ...getUiState(state, tabKey),
-                    currentMatchIndex: index,
-                },
-            },
+            searchUiByTab: updateTabUiState(state, tabKey, { currentMatchIndex: index }),
+        })),
+
+    setCurrentParagraphIndex: (tabKey, index) =>
+        set((state) => ({
+            searchUiByTab: updateTabUiState(state, tabKey, { currentParagraphIndex: index }),
         })),
 
     setTotalMatches: (tabKey, total) =>
         set((state) => {
             const current = getUiState(state, tabKey);
+            const nextMatchIndex =
+                total > 0
+                    ? Math.min(current.requestedMatchIndex ?? current.currentMatchIndex, total - 1)
+                    : 0;
             return {
                 searchUiByTab: {
                     ...state.searchUiByTab,
                     [tabKey]: {
                         ...current,
                         totalMatches: total,
-                        currentMatchIndex:
-                            total > 0 ? Math.min(current.currentMatchIndex, total - 1) : 0,
+                        currentMatchIndex: nextMatchIndex,
                     },
                 },
             };
@@ -130,14 +148,10 @@ export const useSearchStore = create<SearchState>((set, get) => ({
 
             const nextIndex = (current.currentMatchIndex + 1) % current.totalMatches;
             return {
-                searchUiByTab: {
-                    ...state.searchUiByTab,
-                    [tabKey]: {
-                        ...current,
-                        currentMatchIndex: nextIndex,
-                        requestedMatchIndex: nextIndex,
-                    },
-                },
+                searchUiByTab: updateTabUiState(state, tabKey, {
+                    currentMatchIndex: nextIndex,
+                    requestedMatchIndex: nextIndex,
+                }),
             };
         }),
 
@@ -149,32 +163,26 @@ export const useSearchStore = create<SearchState>((set, get) => ({
             const nextIndex =
                 (current.currentMatchIndex - 1 + current.totalMatches) % current.totalMatches;
             return {
-                searchUiByTab: {
-                    ...state.searchUiByTab,
-                    [tabKey]: {
-                        ...current,
-                        currentMatchIndex: nextIndex,
-                        requestedMatchIndex: nextIndex,
-                    },
-                },
+                searchUiByTab: updateTabUiState(state, tabKey, {
+                    currentMatchIndex: nextIndex,
+                    requestedMatchIndex: nextIndex,
+                }),
             };
         }),
 
     clearSearch: (tabKey) =>
         set((state) => {
-            const { [tabKey]: _removedQuery, ...remainingQueries } = state.documentViewQueries;
             const current = getUiState(state, tabKey);
             return {
-                documentViewQueries: remainingQueries,
-                searchUiByTab: {
-                    ...state.searchUiByTab,
-                    [tabKey]: {
-                        ...current,
-                        currentMatchIndex: 0,
-                        totalMatches: 0,
-                        requestedMatchIndex: null,
-                    },
-                },
+                documentViewQueries: removeTabEntry(state.documentViewQueries, tabKey),
+                searchUiByTab: updateTabUiState(state, tabKey, {
+                    ...current,
+                    currentMatchIndex: 0,
+                    currentParagraphIndex: null,
+                    totalMatches: 0,
+                    requestedMatchIndex: null,
+                    requestedParagraphIndex: null,
+                }),
             };
         }),
 
@@ -189,30 +197,25 @@ export const useSearchStore = create<SearchState>((set, get) => ({
             return { documentViewQueries: queries, searchUiByTab: ui };
         }),
 
-    requestScrollToMatch: (tabKey, matchIndex) =>
+    requestScrollToMatch: (tabKey, matchIndex, paragraphIndex) =>
         set((state) => {
             const current = getUiState(state, tabKey);
             return {
-                searchUiByTab: {
-                    ...state.searchUiByTab,
-                    [tabKey]: {
-                        ...current,
-                        currentMatchIndex: matchIndex ?? current.currentMatchIndex,
-                        requestedMatchIndex: matchIndex ?? current.currentMatchIndex,
-                    },
-                },
+                searchUiByTab: updateTabUiState(state, tabKey, {
+                    ...current,
+                    currentParagraphIndex: paragraphIndex ?? current.currentParagraphIndex,
+                    requestedMatchIndex: matchIndex ?? null,
+                    requestedParagraphIndex: paragraphIndex ?? null,
+                }),
             };
         }),
 
     clearScrollToMatchRequest: (tabKey) =>
         set((state) => ({
-            searchUiByTab: {
-                ...state.searchUiByTab,
-                [tabKey]: {
-                    ...getUiState(state, tabKey),
-                    requestedMatchIndex: null,
-                },
-            },
+            searchUiByTab: updateTabUiState(state, tabKey, {
+                requestedMatchIndex: null,
+                requestedParagraphIndex: null,
+            }),
         })),
 
     setError: (error) => set({ error }),

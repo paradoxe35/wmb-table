@@ -6,13 +6,13 @@ const TITLE_PROMPT =
     'Reply with ONLY the title, no quotes, no punctuation at the end.';
 
 /**
- * Title generation triggers after the second complete exchange
- * user message to capture the real intent.
+ * Title generation triggers once after the second complete exchange
+ * to capture the real intent. Skipped if an AI title was already generated.
  */
 const TITLE_TRIGGER_MESSAGE_COUNT = 4;
 
-export function shouldGenerateTitle(messageCount: number): boolean {
-    return messageCount === TITLE_TRIGGER_MESSAGE_COUNT;
+export function shouldGenerateTitle(messageCount: number, aiTitle: boolean): boolean {
+    return messageCount >= TITLE_TRIGGER_MESSAGE_COUNT && !aiTitle;
 }
 
 /**
@@ -39,11 +39,14 @@ export async function generateConversationTitle(
                 `The sermon content language is "${contentLanguage}".`,
                 `Conversation:\n${conversationSnippet}`,
             ].join('\n'),
-            maxOutputTokens: 30,
+            maxOutputTokens: 4096,
             abortSignal,
         });
 
-        const title = text.trim().replace(/[."]+$/, '');
+        const title = text
+            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .trim()
+            .replace(/[."]+$/, '');
         return title.length >= 2 ? title.slice(0, 80) : null;
     } catch (error) {
         log.warn('AI title generation failed, keeping existing title', {

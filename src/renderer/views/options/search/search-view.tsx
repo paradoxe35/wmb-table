@@ -46,7 +46,6 @@ function useSearch() {
                 message.warning(t('Votre recherche doit comporter au moins trois caractères'));
                 return;
             }
-            if (lastSearch.current === value) return;
             lastSearch.current = value;
             fetchResults(value, 1);
         },
@@ -93,7 +92,11 @@ export default function Search() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     useEffect(() => {
-        const can = lastSearch.current.trim().length > 0 && !!results && results.total > 0;
+        const can =
+            lastSearch.current.trim().length > 0 &&
+            !!results &&
+            results.total > 0 &&
+            results.totalIsExact;
 
         if (can && contentLanguage) {
             window.api.search.addSuggestion(

@@ -96,10 +96,6 @@ export default function CustomDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
-    const currentMatchIndex = useSearchStore((s) =>
-        activeTabKey ? (s.searchUiByTab[activeTabKey]?.currentMatchIndex ?? 0) : 0,
-    );
-
     const customDoc = useMemo(
         () => customDocuments.find((d) => d.title === activeTitle),
         [customDocuments, activeTitle],
@@ -112,7 +108,6 @@ export default function CustomDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: !!docContent,
         documentType: 'custom',
-        title: customDoc?.title,
         sermonId: customDoc?.sermonId,
         customDocumentId: customDoc?.id,
     });
@@ -127,11 +122,11 @@ export default function CustomDocumentView() {
         [docContent?.content],
     );
 
-    const paragraphTexts = useMemo(() => paragraphs.map((p) => p.content), [paragraphs]);
-    const { matchOffsets } = useMatchNavigation(
+    const { activeParagraphIndex } = useMatchNavigation(
+        containerRef,
         activeTabKey,
         search,
-        paragraphTexts,
+        paragraphs,
         !!restoreIdentity,
     );
 
@@ -168,11 +163,29 @@ export default function CustomDocumentView() {
         customDoc?.sermonId,
     );
 
+    const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const tts = useTts(paragraphs, contentLanguage ?? 'en', docContent?.title ?? '', {
+    const docLang = docContent?.languageCode || contentLanguage || 'en';
+    const tts = useTts(paragraphs, docLang, docContent?.title ?? '', {
         introText: docContent?.title,
-        getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, contentLanguage ?? 'en'),
+        getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
     });
+
+    // Disable TTS when document language doesn't match the active content language
+    const effectiveTts = useMemo(() => {
+        const langMismatch = docContent?.languageCode !== contentLanguage;
+        if (!langMismatch) {
+            return tts;
+        }
+
+        return {
+            ...tts,
+            canSpeak: false,
+            incompatibleMessage: t(
+                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+            ),
+        };
+    }, [tts, docContent?.languageCode, contentLanguage, t]);
 
     return (
         <DocumentBody
@@ -182,7 +195,7 @@ export default function CustomDocumentView() {
             contextTargetRef={contextTargetRef}
             zoom={zoom}
             contextMenuItems={contextMenuItems}
-            header={<CustomDocHeader zoom={zoom} tts={tts} />}
+            header={<CustomDocHeader zoom={zoom} tts={effectiveTts} />}
         >
             <div className="sermon-content-header">
                 <h2 className="sermon-content-header__title">{docContent?.title}</h2>
@@ -191,12 +204,11 @@ export default function CustomDocumentView() {
                 paragraphs={paragraphs}
                 documentId={docContent?.title ?? ''}
                 search={search}
-                currentMatchIndex={currentMatchIndex}
-                matchOffsets={matchOffsets}
+                activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
-                onPlayFromHere={tts.playFromParagraph}
-                canSpeak={tts.canSpeak}
-                incompatibleMessage={tts.incompatibleMessage}
+                onPlayFromHere={effectiveTts.playFromParagraph}
+                canSpeak={effectiveTts.canSpeak}
+                incompatibleMessage={effectiveTts.incompatibleMessage}
             />
         </DocumentBody>
     );

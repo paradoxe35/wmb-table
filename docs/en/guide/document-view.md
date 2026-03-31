@@ -174,6 +174,7 @@ The most important choices are:
 - `Highlight`
 - `Add to subject`
 - `Add to note`
+- `Find similar sermons` (sermons only)
 
 <ScreenshotPlaceholder
   file="en-document-view-right-click-menu.png"
@@ -251,6 +252,36 @@ The complete step-by-step guide is in [Taking Notes](/en/guide/notes).
   file="en-document-view-note-reference-select.png"
   label="Choosing the note reference to link"
   hint="Show the window that displays the current note and the list of available references."
+/>
+
+## Finding similar sermons
+
+When you read an interesting paragraph in a sermon, you can discover other sermons that discuss the same topic.
+
+Do this:
+
+1. right-click on the paragraph that interests you
+2. choose `Find similar sermons`
+3. a window opens with the results
+
+Each result shows:
+
+- the sermon title
+- the date and location
+- the similar paragraphs with a text excerpt
+
+Click a paragraph to open that sermon directly at the right place.
+
+This is useful when you want to:
+
+- compare what the prophet said on a topic across different sermons
+- prepare a study by finding related passages
+- discover sermons you had not yet read on a theme
+
+<ScreenshotPlaceholder
+  file="en-document-view-similar-sermons.png"
+  label="Similar sermons window"
+  hint="Show the modal window with the source excerpt, a list of sermons with clickable paragraphs."
 />
 
 ## Difference between sermon, Bible, and personal document

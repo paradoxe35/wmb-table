@@ -3,6 +3,9 @@ import type { z } from 'zod';
 export interface AiToolDefinition<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
     description: string;
     inputSchema: TSchema;
+    // Tool executors are invoked by the AI SDK after schema validation.
+    // Keeping `any` here preserves ergonomic destructuring across the tool registry.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     execute: (input: any) => Promise<unknown> | unknown;
 }
 
@@ -50,4 +53,21 @@ export interface SearchContentHit {
     location?: string;
     matches: SearchContentMatch[];
     totalMatches: number;
+}
+
+export interface PaginatedToolResult {
+    returned: number;
+    hasMore: boolean;
+    nextCursor?: string;
+}
+
+export interface SermonSearchToolResponse extends PaginatedToolResult {
+    results: SermonSearchResult[];
+    total: number;
+}
+
+export interface SearchContentToolResponse extends PaginatedToolResult {
+    results: SearchContentHit[];
+    totalSermons: number;
+    totalIsExact: boolean;
 }

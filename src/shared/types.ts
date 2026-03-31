@@ -178,6 +178,7 @@ export type DocumentViewQuery = {
     textContentLength: number;
     searchForParagraph?: boolean;
     matches: SearchMatchersValue[];
+    matchedParagraphs?: DocumentSearchParagraphMatch[];
 };
 
 export type DocumentSearchEvent = {
@@ -369,12 +370,14 @@ export type CurrentAudioDocumentPlay = {
 export interface CustomDocument extends Readonly<BaseEntity> {
     title: string;
     sermonId: string;
+    languageCode: string;
 }
 
 export interface CustomDocumentContent {
     id: string;
     title: string;
     content: string;
+    languageCode: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -490,10 +493,28 @@ export interface LanguageInstalledEvent {
 // Tantivy Search
 // ---------------------------------------------------------------------------
 
+export interface HighlightRange {
+    start: number;
+    end: number;
+}
+
+export interface DocumentSearchParagraphMatch {
+    paragraphIndex: number;
+    highlights?: HighlightRange[];
+}
+
+/** Raw paragraph snippet from Tantivy with highlight positions. */
+export interface MatchingParagraphSnippet {
+    paragraphIndex: number;
+    snippet: string;
+    highlights: HighlightRange[];
+}
+
 export interface SearchSnippet {
     paragraphIndex: number;
     snippet: string;
     matchIndex: number;
+    highlights?: HighlightRange[];
 }
 
 export interface TantivySearchHit {
@@ -509,7 +530,27 @@ export interface TantivySearchHit {
 export interface TantivySearchResult {
     hits: TantivySearchHit[];
     total: number;
+    totalIsExact: boolean;
     query: string;
+}
+
+export interface SimilarParagraph {
+    paragraphIndex: number;
+    snippet: string;
+    score: number;
+}
+
+export interface SimilarSermonHit {
+    sermonId: string;
+    title: string;
+    translationId: number;
+    paragraphs: SimilarParagraph[];
+    score: number;
+}
+
+export interface SimilarSermonsResult {
+    hits: SimilarSermonHit[];
+    total: number;
 }
 
 // ---------------------------------------------------------------------------

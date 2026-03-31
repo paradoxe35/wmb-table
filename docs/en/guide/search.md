@@ -32,10 +32,23 @@ When you click a result, the sermon opens and the app moves closer to the right 
 
 ## Search modes
 
-Search can work in different ways.
+Search offers three modes. You can change them with the selector next to the search box.
 
-- use a broader mode when you want to explore a theme
-- use a stricter mode when you want a more exact result
+### All words
+
+This is the default mode. All the words you type must appear in the same paragraph. For example, `Revelation 10` will find paragraphs that contain both "Revelation" and "10".
+
+### Any word
+
+At least one of the words must appear. This mode is broader and returns more results. Useful when you are exploring a theme without knowing the exact term the prophet used.
+
+### Exact phrase
+
+The words must appear in order and close to each other, like a phrase. For example, `the paradox` will find passages that contain this expression as it is.
+
+### Typo tolerance
+
+The search handles small typing mistakes. If you type `apocalipse` instead of `apocalypse`, results will still appear. Matched words are highlighted in the results.
 
 ## Search inside the current document
 

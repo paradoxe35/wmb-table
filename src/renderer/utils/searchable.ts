@@ -5,6 +5,8 @@ export {
     strNormalize,
     matchesQuery,
     buildHighlightRegex,
+    getHighlightRanges,
+    paragraphHasMatch,
 } from '@shared/searchable';
 
 // DOM-specific utility (cannot live in shared)

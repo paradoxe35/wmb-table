@@ -2,10 +2,11 @@ import { Tag, Typography } from 'antd';
 import { CloudOutlined, LaptopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { LANG_LABELS_FR } from '@shared/tts.types';
+import { LANG_LABELS_FR, PROVIDER_CATALOG } from '@shared/tts.types';
 import type {
     TtsModelInfo,
     TtsProviderLocality,
+    TtsProviderMeta,
     TtsProviderType,
     TtsSettings,
     TtsVoice,
@@ -135,4 +136,21 @@ export function LocalityTag({ type }: LocalityTagProps) {
 export function FreeTag() {
     const { t } = useTranslation();
     return <Tag color="green">{t('Gratuit')}</Tag>;
+}
+
+export function ApiKeyLink({ provider }: { provider: TtsProviderType }) {
+    const { t } = useTranslation();
+    const meta = PROVIDER_CATALOG[provider] as TtsProviderMeta;
+    const url = meta.apiKeyUrl;
+    if (!url) return null;
+
+    return (
+        <Text
+            type="secondary"
+            style={{ fontSize: 'var(--fs-rel-lg)', cursor: 'pointer' }}
+            onClick={() => window.api.app.openExternal(url)}
+        >
+            <a style={{ fontSize: 'inherit' }}>{t('Obtenir une clé API')}</a>
+        </Text>
+    );
 }

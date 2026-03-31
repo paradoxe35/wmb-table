@@ -6,6 +6,7 @@ import { useAppStore, useAudioStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useAudioRef } from './audio-context';
+import { useAudioControls } from '@renderer/hooks/use-audio-controls';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { throttle, formatTime } from '@renderer/utils/functions';
 import { AUDIO_SPEEDS, THROTTLE_MS } from '@renderer/utils/constants';
@@ -24,11 +25,11 @@ export default function MiniPlayerBar() {
 
     const setCurrentTime = useAudioStore((s) => s.setCurrentTime);
     const setDuration = useAudioStore((s) => s.setDuration);
-    const setPlaybackRate = useAudioStore((s) => s.setPlaybackRate);
-    const setVolume = useAudioStore((s) => s.setVolume);
     const setCurrentPlay = useAudioStore((s) => s.setCurrentPlay);
     const loadAudio = useAudioStore((s) => s.loadAudio);
     const openModal = useAudioStore((s) => s.openModal);
+
+    const controls = useAudioControls();
 
     const autoplayRef = useRef(true);
     const originAudioLinkRef = useRef(originAudioLink);
@@ -131,7 +132,7 @@ export default function MiniPlayerBar() {
                     autoplayRef.current = true;
                 }
                 if (el.paused) {
-                    el.play();
+                    el.play().catch(() => {});
                 } else {
                     el.pause();
                 }
@@ -147,7 +148,9 @@ export default function MiniPlayerBar() {
             const result = await window.api.audio.getTimeAndLocalFile(detail.audio_link);
             const ctime = typeof result.time?.time === 'number' ? result.time.time : 0;
             const localFile = result.download?.local_file;
-            const src = localFile?.replaceAll('#', '%23') || detail.audio_link;
+            const src = localFile
+                ? `audio-cache://file/${localFile.split('/').pop()}`
+                : detail.audio_link;
 
             // Cache the audio file in the background for next time
             if (!localFile) {
@@ -165,13 +168,28 @@ export default function MiniPlayerBar() {
 
             el.src = src;
             el.load();
-            el.currentTime = ctime;
             el.playbackRate = useAudioStore.getState().playbackRate;
             el.volume = useAudioStore.getState().volume;
 
             if (autoplayRef.current) {
-                el.play().catch(() => {});
+                // Wait for the element to be ready before playing
+                el.addEventListener(
+                    'canplay',
+                    () => {
+                        el.currentTime = ctime;
+                        el.play().catch(() => {});
+                    },
+                    { once: true },
+                );
                 openModal();
+            } else {
+                el.addEventListener(
+                    'canplay',
+                    () => {
+                        el.currentTime = ctime;
+                    },
+                    { once: true },
+                );
             }
 
             setCurrentPlay({
@@ -219,49 +237,10 @@ export default function MiniPlayerBar() {
 
     const isPlaying = currentPlay?.status === 'play';
 
-    const handlePlayPause = () => {
-        const el = audioRef.current;
-        if (!el) {
-            return;
-        }
-        if (el.paused) {
-            el.play().catch(() => {});
-        } else {
-            el.pause();
-        }
-    };
-
-    const handleSeek = (value: number) => {
-        const el = audioRef.current;
-        if (!el) {
-            return;
-        }
-        el.currentTime = value;
-        setCurrentTime(value);
-    };
-
-    const handleSpeedChange = (rate: number) => {
-        const el = audioRef.current;
-        if (!el) {
-            return;
-        }
-        el.playbackRate = rate;
-        setPlaybackRate(rate);
-    };
-
-    const handleVolumeChange = (value: number) => {
-        const el = audioRef.current;
-        if (!el) {
-            return;
-        }
-        el.volume = value;
-        setVolume(value);
-    };
-
     const speedMenuItems = AUDIO_SPEEDS.map((s) => ({
         key: String(s),
         label: `${s}x`,
-        onClick: () => handleSpeedChange(s),
+        onClick: () => controls.changeSpeed(s),
     }));
 
     return (
@@ -270,7 +249,7 @@ export default function MiniPlayerBar() {
                 type="text"
                 shape="circle"
                 icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
-                onClick={handlePlayPause}
+                onClick={controls.playPause}
                 style={{ fontSize: 'var(--fs-5xl)' }}
             />
             <span className="mini-player-title" onClick={openModal} title={title ?? ''}>
@@ -281,7 +260,7 @@ export default function MiniPlayerBar() {
                 max={duration || 1}
                 step={1}
                 value={currentTime}
-                onChange={handleSeek}
+                onChange={controls.seek}
                 tooltip={{ formatter: (v) => formatTime(v ?? 0) }}
                 style={{ flex: 1, margin: '0 8px' }}
             />
@@ -322,7 +301,7 @@ export default function MiniPlayerBar() {
                             max={1}
                             step={0.05}
                             value={volume}
-                            onChange={handleVolumeChange}
+                            onChange={controls.changeVolume}
                             style={{ height: 80 }}
                             tooltip={{ formatter: (v) => `${Math.round((v ?? 0) * 100)}%` }}
                         />

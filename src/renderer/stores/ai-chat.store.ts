@@ -18,6 +18,7 @@ const TOOL_TO_EVENT: Record<string, string> = {
     createSubject: AI_DATA_EVENT.subjectsChanged,
     addSermonReferenceToSubject: AI_DATA_EVENT.subjectsChanged,
     addBibleReferenceToSubject: AI_DATA_EVENT.subjectsChanged,
+    removeSubjectReference: AI_DATA_EVENT.subjectsChanged,
 };
 
 type MessageMap = Record<string, AiMessage[]>;

@@ -13,6 +13,7 @@ export class TtsAudioPlayer {
     private audio: HTMLAudioElement | null = null;
     private blobUrl: string | null = null;
     private onEndedCb: (() => void) | null = null;
+    private onErrorCb: ((err?: unknown) => void) | null = null;
     private isPlaying = false;
     private isPaused = false;
     private currentRate = 1;
@@ -108,15 +109,23 @@ export class TtsAudioPlayer {
         };
 
         audio.onerror = () => {
+            // Guard against stale errors from a replaced audio element
+            if (this.audio !== audio) return;
             console.error('TTS audio playback failed');
             this.isPlaying = false;
+            this.onErrorCb?.();
         };
 
         this.audio = audio;
         this.isPlaying = true;
         audio.play().catch((err) => {
+            // Guard: when a new play() replaces this element, stopSource() pauses
+            // the old one, causing its pending play() promise to reject. Ignore
+            // these stale rejections so they don't kill the new playback.
+            if (this.audio !== audio) return;
             console.error('TTS audio play() failed:', err);
             this.isPlaying = false;
+            this.onErrorCb?.(err);
         });
     }
 
@@ -144,6 +153,10 @@ export class TtsAudioPlayer {
 
     setOnEnded(cb: () => void): void {
         this.onEndedCb = cb;
+    }
+
+    setOnError(cb: (err?: unknown) => void): void {
+        this.onErrorCb = cb;
     }
 
     dispose(): void {

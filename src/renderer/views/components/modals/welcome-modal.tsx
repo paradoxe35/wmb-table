@@ -54,7 +54,11 @@ export default function WelcomeModal() {
         if (!contentLanguage) return;
 
         window.api.app.isInitialized().then((initialized) => {
-            if (!initialized) setVisible(true);
+            setTimeout(() => {
+                if (!initialized) {
+                    setVisible(true);
+                }
+            }, 1000);
         });
     }, [contentLanguage]);
 

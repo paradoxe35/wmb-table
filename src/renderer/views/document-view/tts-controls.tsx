@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react';
 import { Button, Tooltip } from 'antd';
 import {
-    PauseCircleOutlined,
+    PauseOutlined,
     SoundOutlined,
     CaretRightOutlined,
     ZoomInOutlined,
     ZoomOutOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { SearchMode, HighlightItem } from '@shared/types';
+import type { HighlightItem } from '@shared/types';
+import type { SearchHighlightState } from './hooks';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
 import { useTtsStore } from '@renderer/stores/tts.store';
@@ -30,8 +31,8 @@ export interface TtsControls {
 // ── TTS play/pause button ──
 
 const ttsActiveStyle = {
-    color: 'var(--ant-color-primary)',
-    backgroundColor: 'var(--ant-color-primary-bg)',
+    color: 'var(--ant-color-warning)',
+    backgroundColor: 'var(--ant-color-warning-bg-hover)',
 };
 
 export function TtsButton({ tts }: { tts: TtsControls }) {
@@ -55,10 +56,10 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
     }
 
     const label = tts.isPlaying
-        ? t('Pause lecture')
+        ? t('Pause voix')
         : tts.isPaused
-          ? t('Reprendre la lecture')
-          : t('Démarrer la lecture');
+          ? t('Reprendre la voix')
+          : t('Lire à voix haute');
 
     const handler = tts.isPlaying ? tts.pause : tts.isPaused ? tts.resume : tts.play;
     const isActive = tts.isPlaying || tts.isPaused;
@@ -68,7 +69,7 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
             <Button
                 type="text"
                 size="small"
-                icon={tts.isPlaying ? <PauseCircleOutlined /> : <SoundOutlined />}
+                icon={tts.isPlaying ? <PauseOutlined /> : <SoundOutlined />}
                 onClick={handler}
                 aria-label={t('Lire à voix haute')}
                 style={isActive ? ttsActiveStyle : undefined}
@@ -121,9 +122,8 @@ export function ZoomControls({
 interface ParagraphListProps {
     paragraphs: { paragraphIndex: number; content: string }[];
     documentId: string;
-    search: { term: string; mode: SearchMode } | null;
-    currentMatchIndex: number;
-    matchOffsets: number[];
+    search: SearchHighlightState | null;
+    activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
@@ -134,8 +134,7 @@ export function ParagraphList({
     paragraphs,
     documentId,
     search,
-    currentMatchIndex,
-    matchOffsets,
+    activeParagraphIndex,
     highlightsByParagraph,
     onPlayFromHere,
     canSpeak,
@@ -143,14 +142,13 @@ export function ParagraphList({
 }: ParagraphListProps) {
     return (
         <>
-            {paragraphs.map((p, i) => (
+            {paragraphs.map((p) => (
                 <TtsParagraph
                     key={p.paragraphIndex}
                     paragraph={p}
                     documentId={documentId}
                     search={search}
-                    currentMatchIndex={currentMatchIndex}
-                    matchOffset={matchOffsets[i] ?? 0}
+                    isActiveMatch={p.paragraphIndex === activeParagraphIndex}
                     highlights={highlightsByParagraph.get(p.paragraphIndex)}
                     onPlayFromHere={onPlayFromHere}
                     canSpeak={canSpeak}
@@ -166,9 +164,8 @@ export function ParagraphList({
 interface TtsParagraphProps {
     paragraph: { paragraphIndex: number; content: string };
     documentId: string;
-    search: { term: string; mode: SearchMode } | null;
-    currentMatchIndex: number;
-    matchOffset: number;
+    search: SearchHighlightState | null;
+    isActiveMatch?: boolean;
     highlights?: HighlightItem[];
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
@@ -179,8 +176,7 @@ export function TtsParagraph({
     paragraph,
     documentId,
     search,
-    currentMatchIndex,
-    matchOffset,
+    isActiveMatch,
     highlights,
     onPlayFromHere,
     canSpeak,
@@ -207,8 +203,7 @@ export function TtsParagraph({
             <SermonParagraphView
                 paragraph={paragraph}
                 search={search}
-                currentMatchIndex={currentMatchIndex}
-                matchOffset={matchOffset}
+                isActiveMatch={isActiveMatch}
                 highlights={highlights}
                 ttsHighlight={ttsHighlight}
                 playFromHereButton={

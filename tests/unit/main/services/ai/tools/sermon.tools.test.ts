@@ -1,0 +1,179 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const getInstalledLanguagesMock = vi.fn(() => ['fr']);
+const getSermonListForLanguageMock = vi.fn();
+const getSermonMetaMock = vi.fn();
+const searchSermonsMock = vi.fn();
+
+vi.mock('@main/services/tantivy.service', () => ({
+    getInstalledLanguages: getInstalledLanguagesMock,
+    getSermonParagraphs: vi.fn(),
+}));
+
+vi.mock('@main/services/reference-data.service', () => ({
+    getSermonListForLanguage: getSermonListForLanguageMock,
+    getSermonMeta: getSermonMetaMock,
+    getTraductionsForSermon: vi.fn(),
+}));
+
+vi.mock('@main/services/search.service', () => ({
+    searchSermons: searchSermonsMock,
+}));
+
+describe('sermon.tools', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        getInstalledLanguagesMock.mockReturnValue(['fr']);
+        getSermonMetaMock.mockImplementation(
+            (translationId: number, _lang: string, sermonId: string) => ({
+                sermonId,
+                translationId,
+                location: `Location ${translationId}`,
+            }),
+        );
+    });
+
+    it('paginates searchContent with nextCursor', async () => {
+        searchSermonsMock.mockImplementation(async ({ offset, limit, query, mode, langCode }) => {
+            expect(limit).toBe(2);
+            expect(query).toBe('Dieu a dit');
+            expect(mode).toBe('exact');
+            expect(langCode).toBe('fr');
+
+            if (offset === 0) {
+                return {
+                    matches: [
+                        {
+                            sermonId: '56-0101',
+                            translationId: 1,
+                            title: 'Premier',
+                            snippets: [
+                                { paragraphIndex: 11, snippet: 'Dieu a dit...' },
+                                { paragraphIndex: 14, snippet: 'Encore...' },
+                            ],
+                        },
+                        {
+                            sermonId: '56-0102',
+                            translationId: 2,
+                            title: 'Deuxieme',
+                            snippets: [{ paragraphIndex: 7, snippet: 'Dieu a dit encore...' }],
+                        },
+                    ],
+                    total: 3,
+                    totalIsExact: true,
+                };
+            }
+
+            expect(offset).toBe(2);
+            return {
+                matches: [
+                    {
+                        sermonId: '56-0103',
+                        translationId: 3,
+                        title: 'Troisieme',
+                        snippets: [{ paragraphIndex: 5, snippet: 'Fin...' }],
+                    },
+                ],
+                total: 3,
+                totalIsExact: true,
+            };
+        });
+
+        const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+        const tools = buildSermonTools('fr');
+
+        const first = (await tools.searchContent.execute({
+            query: 'Dieu a dit',
+            limit: 2,
+        })) as {
+            returned: number;
+            hasMore: boolean;
+            nextCursor?: string;
+            totalSermons: number;
+            results: Array<{ sermonId: string; translationId: number; location?: string }>;
+        };
+
+        expect(first.totalSermons).toBe(3);
+        expect(first.returned).toBe(2);
+        expect(first.hasMore).toBe(true);
+        expect(first.nextCursor).toBeTypeOf('string');
+        expect(first.results.map((item) => item.sermonId)).toEqual(['56-0101', '56-0102']);
+        expect(first.results[0].location).toBe('Location 1');
+
+        const second = (await tools.searchContent.execute({
+            cursor: first.nextCursor,
+        })) as {
+            returned: number;
+            hasMore: boolean;
+            results: Array<{ sermonId: string }>;
+        };
+
+        expect(second.returned).toBe(1);
+        expect(second.hasMore).toBe(false);
+        expect(second.results.map((item) => item.sermonId)).toEqual(['56-0103']);
+        expect(searchSermonsMock).toHaveBeenCalledTimes(2);
+    });
+
+    it('paginates searchSermons metadata results with nextCursor', async () => {
+        getSermonListForLanguageMock.mockReturnValue([
+            {
+                sermonId: '56-0101',
+                translationId: 1,
+                title: 'Message Alpha',
+                enTitle: 'Alpha',
+                location: 'Paris',
+                cityState: 'Paris',
+                dateMs: Date.UTC(1956, 0, 1),
+            },
+            {
+                sermonId: '56-0102',
+                translationId: 2,
+                title: 'Message Beta',
+                enTitle: 'Beta',
+                location: 'Lyon',
+                cityState: 'Lyon',
+                dateMs: Date.UTC(1956, 0, 2),
+            },
+            {
+                sermonId: '56-0103',
+                translationId: 3,
+                title: 'Message Gamma',
+                enTitle: 'Gamma',
+                location: 'Marseille',
+                cityState: 'Marseille',
+                dateMs: Date.UTC(1956, 0, 3),
+            },
+        ]);
+
+        const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+        const tools = buildSermonTools('fr');
+
+        const first = (await tools.searchSermons.execute({
+            query: 'Message',
+            limit: 2,
+        })) as {
+            total: number;
+            returned: number;
+            hasMore: boolean;
+            nextCursor?: string;
+            results: Array<{ sermonId: string }>;
+        };
+
+        expect(first.total).toBe(3);
+        expect(first.returned).toBe(2);
+        expect(first.hasMore).toBe(true);
+        expect(first.results.map((item) => item.sermonId)).toEqual(['56-0101', '56-0102']);
+
+        const second = (await tools.searchSermons.execute({
+            cursor: first.nextCursor,
+        })) as {
+            returned: number;
+            hasMore: boolean;
+            results: Array<{ sermonId: string }>;
+        };
+
+        expect(second.returned).toBe(1);
+        expect(second.hasMore).toBe(false);
+        expect(second.results.map((item) => item.sermonId)).toEqual(['56-0103']);
+    });
+});

@@ -4,6 +4,7 @@ import {
     Button,
     Card,
     Divider,
+    Popconfirm,
     Radio,
     Select,
     Slider,
@@ -13,7 +14,7 @@ import {
     Typography,
     message,
 } from 'antd';
-import { BookOutlined, SoundOutlined } from '@ant-design/icons';
+import { BookOutlined, ReloadOutlined, SoundOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAppStore } from '@renderer/stores/app.store';
@@ -29,6 +30,7 @@ import SherpaConfig from './tts-provider-sherpa';
 import ElevenLabsConfig from './tts-provider-elevenlabs';
 import OpenAIConfig from './tts-provider-openai';
 import EdgeConfig from './tts-provider-edge';
+import CartesiaConfig from './tts-provider-cartesia';
 import { buildDocsGuideLink } from '@renderer/utils/constants';
 
 const { Text } = Typography;
@@ -66,6 +68,14 @@ function ActiveProviderConfig({
             );
         case 'edge':
             return <EdgeConfig settings={settings} info={getInfo('edge')} onUpdate={onUpdate} />;
+        case 'cartesia':
+            return (
+                <CartesiaConfig
+                    settings={settings}
+                    info={getInfo('cartesia')}
+                    onUpdate={onUpdate}
+                />
+            );
         default:
             return null;
     }
@@ -152,11 +162,14 @@ export default function TtsTab() {
                 window.api.tts.updateSettings(partial).then(async () => {
                     // Refresh provider info and recheck compatibility after API key save
                     if (hasApiKeyChange) {
-                        window.api.tts.getProviders().then(setProviders);
+                        await window.api.tts.getProviders().then(setProviders);
                         useTtsStore.getState().triggerRecheck();
                     }
-                    // Resolve voice for current language on provider switch
-                    if ('activeProvider' in partial && updated.autoSwitchVoice) {
+                    // Resolve voice for current language on provider switch or API key change
+                    if (
+                        ('activeProvider' in partial || hasApiKeyChange) &&
+                        updated.autoSwitchVoice
+                    ) {
                         const language = contentLanguage ?? 'fr';
                         const resolved = await window.api.tts.resolveConfigForLanguage(language);
                         if (resolved) {
@@ -449,9 +462,22 @@ export default function TtsTab() {
                             value={`${settings.cacheMaxSizeMb} ${t('Mo')}`}
                             valueStyle={{ fontSize: 'var(--fs-base)' }}
                         />
-                        <Button size="small" danger onClick={handleClearCache}>
-                            {t('Vider')}
-                        </Button>
+                        <Button
+                            size="small"
+                            icon={<ReloadOutlined />}
+                            onClick={() => window.api.tts.getCacheSize().then(setCacheSize)}
+                        />
+                        <Popconfirm
+                            title={t('Vider le cache audio ?')}
+                            description={t('Toutes les lectures en mémoire seront supprimées.')}
+                            onConfirm={handleClearCache}
+                            okText={t('Vider')}
+                            cancelText={t('Annuler')}
+                        >
+                            <Button size="small" danger>
+                                {t('Vider')}
+                            </Button>
+                        </Popconfirm>
                     </div>
                 </Field>
                 <div style={{ marginTop: 8 }}>

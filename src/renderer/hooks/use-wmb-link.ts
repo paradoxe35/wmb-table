@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from './index';
+import { buildPendingNavigation, useOpenDocumentRequest } from './index';
 import { useSermonStore } from '@renderer/stores/sermon.store';
 
 /**
@@ -80,9 +80,7 @@ export function parseWmbLink(href: string): WmbRef | null {
  * Returns true if the link was handled, false otherwise.
  */
 export function useWmbLinkNavigate(): (href: string) => boolean {
-    const openDocument = useOpenDocument();
-    const openCustomDocument = useOpenCustomDocument();
-    const openBibleChapter = useOpenBibleChapter();
+    const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
     const sermonsById = useSermonStore((s) => s.sermonsById);
 
@@ -96,27 +94,42 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     const sermon = sermonsById[ref.sermonId];
                     const title = sermon?.title ?? ref.sermonId;
                     const translationId = sermon?.translationId || ref.translationId || 0;
-                    setPendingNavigation({
-                        documentTitle: title,
-                        documentHtmlTree: {
+                    const request = {
+                        title,
+                        sermonId: ref.sermonId,
+                        documentType: 'sermon' as const,
+                        translationId,
+                    };
+                    setPendingNavigation(
+                        buildPendingNavigation(request, {
                             paragraphIndex: ref.paragraphIndex,
                             translationId,
                             languageCode: '',
                             sermonId: ref.sermonId,
                             documentType: 'sermon',
-                        },
-                    });
-                    openDocument(title, ref.sermonId, translationId);
+                        }),
+                    );
+                    openDocumentRequest(request);
                     return true;
                 }
                 case 'bible':
-                    openBibleChapter(ref.bookName, ref.bookCode, ref.chapter);
+                    openDocumentRequest({
+                        title: `${ref.bookName} ${ref.chapter}`,
+                        sermonId: `${ref.bookCode}:${ref.chapter}`,
+                        documentType: 'bible',
+                        bibleBook: ref.bookCode,
+                        bibleChapter: ref.chapter,
+                    });
                     return true;
                 case 'doc':
-                    openCustomDocument(ref.title, ref.documentId);
+                    openDocumentRequest({
+                        title: ref.title,
+                        sermonId: ref.documentId,
+                        documentType: 'custom',
+                    });
                     return true;
             }
         },
-        [sermonsById, setPendingNavigation, openDocument, openCustomDocument, openBibleChapter],
+        [sermonsById, setPendingNavigation, openDocumentRequest],
     );
 }

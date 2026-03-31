@@ -45,6 +45,7 @@ import type {
     BibleDownloadProgress,
     BibleDownloadedEvent,
     LanguageInstalledEvent,
+    SimilarSermonsResult,
 } from './types';
 import type {
     TtsProviderInfo,
@@ -110,6 +111,7 @@ export const SearchChannels = {
     addSuggestion: 'search:addSuggestion',
     searchText: 'search:searchText',
     searchContent: 'search:searchContent',
+    findSimilarSermons: 'search:findSimilarSermons',
 } as const;
 
 export const NotesChannels = {
@@ -210,6 +212,7 @@ export const AppChannels = {
     deleteCustomDocument: 'app:deleteCustomDocument',
     createCustomDocument: 'app:createCustomDocument',
     getCustomDocumentContent: 'app:getCustomDocumentContent',
+    updateCustomDocumentLanguage: 'app:updateCustomDocumentLanguage',
     getHistory: 'app:getHistory',
     addHistoryEntry: 'app:addHistoryEntry',
     getHistoryItems: 'app:getHistoryItems',
@@ -343,6 +346,10 @@ export interface InvokeChannelMap {
     [SearchChannels.searchContent]: {
         args: [string, string, number];
         return: string;
+    };
+    [SearchChannels.findSimilarSermons]: {
+        args: [string, number, number, number, number?];
+        return: SimilarSermonsResult;
     };
 
     // Notes
@@ -479,11 +486,15 @@ export interface InvokeChannelMap {
     [AppChannels.setSidebarStatus]: { args: [boolean]; return: void };
     [AppChannels.getCustomDocuments]: { args: []; return: CustomDocument[] };
     [AppChannels.deleteCustomDocument]: { args: [string]; return: void };
-    [AppChannels.createCustomDocument]: { args: [string, Uint8Array]; return: CustomDocument };
+    [AppChannels.createCustomDocument]: {
+        args: [string, Uint8Array, string];
+        return: CustomDocument;
+    };
     [AppChannels.getCustomDocumentContent]: {
         args: [string];
         return: CustomDocumentContent | null;
     };
+    [AppChannels.updateCustomDocumentLanguage]: { args: [string, string]; return: void };
     [AppChannels.getHistory]: { args: [string]; return: HistoryData[] };
     [AppChannels.addHistoryEntry]: { args: [string, string, string, DocumentType]; return: void };
     [AppChannels.getHistoryItems]: {

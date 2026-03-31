@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useAppStore, useSermonStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
+import {
+    useAppStore,
+    useSearchStore,
+    useSermonStore,
+    selectActiveTab,
+    selectActiveTabKey,
+} from '@renderer/stores';
+import { pendingNavigationMatchesTab } from '@renderer/utils/pending-navigation';
 import { debounce } from '@renderer/utils/functions';
 import type { ReadingPosition } from '@shared/types';
 
@@ -158,9 +165,24 @@ export function useScrollAndZoom(
         lastRestoredKeyRef.current = restoreToken;
 
         // Skip scroll restoration when a pending navigation will handle scrolling.
-        // Read as snapshot to avoid re-running this effect when pendingNavigation clears.
+        // Read as snapshot to avoid re-running this effect when pending state clears.
         const pending = useSermonStore.getState().pendingNavigation;
-        if (pending && pending.documentTitle === activeTab.title) {
+        if (pendingNavigationMatchesTab(pending, activeTab)) {
+            return;
+        }
+        const pendingSearch = activeTabKey
+            ? useSearchStore.getState().searchUiByTab[activeTabKey]
+            : undefined;
+
+        const activeSearchQuery = activeTabKey
+            ? useSearchStore.getState().documentViewQueries[activeTabKey]
+            : undefined;
+
+        if (
+            pendingSearch?.requestedParagraphIndex != null ||
+            pendingSearch?.requestedMatchIndex != null ||
+            (pendingSearch?.searchBarNavOnly && !!activeSearchQuery?.term)
+        ) {
             return;
         }
         const el = containerRef.current;
@@ -186,7 +208,7 @@ export function useScrollAndZoom(
 
         restoreScroll();
         return () => cancelAnimationFrame(frameId);
-    }, [activeTab, restoreScrollRatio, restoreToken, containerRef]);
+    }, [activeTab, activeTabKey, restoreScrollRatio, restoreToken, containerRef]);
 
     useLayoutEffect(() => {
         const el = containerRef.current;

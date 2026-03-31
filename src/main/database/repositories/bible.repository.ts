@@ -79,6 +79,17 @@ export function getBooks(request: BookRequest): BibleBook[] {
     return rows.map(toBook);
 }
 
+function sanitizeFtsQuery(raw: string): string {
+    return raw
+        .replace(/[""(){}*:^~]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .split(' ')
+        .filter((w) => w.length >= 2)
+        .map((w) => `"${w}"`)
+        .join(' ');
+}
+
 export function search(query: string, pageNumber: number, testament?: string): BibleSearchResult {
     const itemsPerPage = 20;
     const offset = (pageNumber - 1) * itemsPerPage;
@@ -95,8 +106,11 @@ export function search(query: string, pageNumber: number, testament?: string): B
 
     if (!sqlite) return emptyResult;
 
+    const ftsQuery = sanitizeFtsQuery(query);
+    if (!ftsQuery) return emptyResult;
+
     const testamentFilter = testament ? ` AND bv.testament = ?` : '';
-    const params: (string | number)[] = [query];
+    const params: (string | number)[] = [ftsQuery];
     if (testament) params.push(testament);
 
     // Count total matches

@@ -42,6 +42,7 @@ import { SUBJECT_EVENT, AI_DATA_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
+    buildPendingNavigation,
     buildReferenceOpenRequest,
     useOpenDocumentRequest,
     useSermonLookup,
@@ -354,13 +355,13 @@ function ItemFromSelectedSubject({
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
     const onNavigate = () => {
-        setPendingNavigation({
-            documentTitle: item.documentTitle,
-            documentHtmlTree: item.documentHtmlTree,
-        });
-        openDocumentRequest(
-            buildReferenceOpenRequest(item.documentTitle, item.sermonId, item.documentHtmlTree),
+        const request = buildReferenceOpenRequest(
+            item.documentTitle,
+            item.sermonId,
+            item.documentHtmlTree,
         );
+        setPendingNavigation(buildPendingNavigation(request, item.documentHtmlTree));
+        openDocumentRequest(request);
     };
 
     if (item.bible) {

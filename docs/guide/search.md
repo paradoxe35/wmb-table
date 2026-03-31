@@ -34,20 +34,23 @@ En cliquant sur un résultat, la prédication s’ouvre et l’application vous 
 
 ## Les modes de recherche
 
-La recherche peut fonctionner de plusieurs manières.
+La recherche propose trois modes. Vous pouvez les changer avec le sélecteur à droite du champ de recherche.
 
-### Recherche large
+### Tous les mots
 
-Elle est utile si vous voulez retrouver un sujet général.
+C'est le mode par défaut. Tous les mots que vous tapez doivent apparaître dans le même paragraphe. Par exemple, `Apocalypse 10` trouvera les paragraphes qui contiennent à la fois « Apocalypse » et « 10 ».
 
-### Recherche plus précise
+### Au moins un mot
 
-Elle est utile si vous voulez être plus proche de votre expression exacte.
+Au moins un des mots doit apparaître. Ce mode est plus large et ramène plus de résultats. Utile quand vous explorez un thème sans savoir exactement quel terme le prophète a utilisé.
 
-### Quand choisir quel mode
+### Phrase exacte
 
-- si vous explorez un thème, choisissez un mode large
-- si vous cherchez une phrase bien précise, choisissez un mode plus strict
+Les mots doivent apparaître dans l'ordre et proches les uns des autres, comme une expression. Par exemple, `le paradoxe` trouvera les passages qui contiennent cette expression telle quelle.
+
+### Tolérance aux fautes
+
+La recherche accepte les petites fautes de frappe. Si vous tapez `apocalipse` au lieu de `apocalypse`, les résultats apparaîtront quand même. Les mots trouvés sont surlignés dans les résultats.
 
 ## Rechercher dans le document ouvert
 

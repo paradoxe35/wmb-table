@@ -16,6 +16,10 @@ import { HISTORY_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
 
+function titleCase(str: string): string {
+    return str.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // ---------------------------------------------------------------------------
 // Open history item by document type
 // ---------------------------------------------------------------------------
@@ -140,10 +144,12 @@ export default function History() {
                         onClick={() => setSelectedIndex((i) => i + 1)}
                     />
                     <div className="history-date-label">
-                        <Text strong>{isToday ? t("Aujourd'hui") : selectedHistory?.date}</Text>
+                        <Text strong>
+                            {isToday ? t("Aujourd'hui") : titleCase(selectedHistory?.date ?? '')}
+                        </Text>
                         {isToday && (
                             <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
-                                {selectedHistory?.date}
+                                {titleCase(selectedHistory?.date ?? '')}
                             </Text>
                         )}
                     </div>

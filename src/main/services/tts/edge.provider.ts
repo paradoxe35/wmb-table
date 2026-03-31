@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto';
 import log from 'electron-log';
 import { EdgeTTS } from 'node-edge-tts';
 import { SimpleCache } from '@main/lib/simple-cache';
+import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -16,7 +17,7 @@ import type {
     TtsVoice,
 } from '@shared/tts.types';
 
-// ── Voice listing (cached in DB via SimpleCache) ──
+// ── Voice listing ──
 
 interface EdgeVoiceEntry {
     ShortName: string;
@@ -29,21 +30,6 @@ const VOICES_URL =
     'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/voices/list?trustedclienttoken=6A5AA1D4EAFF4E9FB37E23D68491D6F4';
 
 const voiceCache = new SimpleCache<EdgeVoiceEntry[]>('edge-tts-voices', 24 * 60 * 60 * 1000);
-
-let memoryCache: EdgeVoiceEntry[] | null = null;
-
-async function fetchVoicesFromNetwork(): Promise<EdgeVoiceEntry[]> {
-    const res = await fetch(VOICES_URL);
-    if (!res.ok) throw new Error(`Edge TTS voice list failed: ${res.status}`);
-    return (await res.json()) as EdgeVoiceEntry[];
-}
-
-async function getVoiceList(): Promise<EdgeVoiceEntry[]> {
-    if (memoryCache) return memoryCache;
-
-    memoryCache = await voiceCache.getOrFetch(fetchVoicesFromNetwork);
-    return memoryCache;
-}
 
 function edgeVoiceToTtsVoice(v: EdgeVoiceEntry): TtsVoice {
     const langCode = v.Locale.split('-')[0].toLowerCase();
@@ -74,8 +60,16 @@ export class EdgeProvider implements TtsProvider {
     readonly type: TtsProviderType = 'edge';
     private voiceId = 'fr-FR-DeniseNeural';
 
+    private async fetchVoices(): Promise<EdgeVoiceEntry[]> {
+        return voiceCache.getOrFetch(async () => {
+            const res = await fetch(VOICES_URL);
+            if (!res.ok) throw new Error(`Edge TTS voice list failed: ${res.status}`);
+            return (await res.json()) as EdgeVoiceEntry[];
+        });
+    }
+
     async getInfo(): Promise<TtsProviderInfo> {
-        const allVoices = await getVoiceList();
+        const allVoices = await this.fetchVoices();
         const voices = allVoices.map(edgeVoiceToTtsVoice);
 
         const langSet = new Set<string>();
@@ -99,8 +93,8 @@ export class EdgeProvider implements TtsProvider {
     }
 
     async checkCompatibility(langCode: string): Promise<TtsCompatibilityResult> {
-        const code = langCode.split('-')[0].toLowerCase();
-        const voices = await getVoiceList();
+        const code = normalizeLangCode(langCode);
+        const voices = await this.fetchVoices();
         const hasMatch = voices.some((v) => v.Locale.split('-')[0].toLowerCase() === code);
         if (!hasMatch) {
             return { supported: false, reason: 'unsupported_language' };
@@ -142,28 +136,25 @@ export class EdgeProvider implements TtsProvider {
         return this.synthesize(request);
     }
 
-    resolveConfigForLanguage(
+    async resolveConfigForLanguage(
         langCode: string,
         cfg?: TtsProviderSettings,
-    ): Partial<TtsProviderSettings> | null {
+    ): Promise<Partial<TtsProviderSettings> | null> {
+        const code = normalizeLangCode(langCode);
+
         if (cfg?.voiceId) {
-            const code = langCode.split('-')[0].toLowerCase();
-            const voiceLocale = cfg.voiceId.split('-')[0].toLowerCase();
+            const voiceLocale = cfg.voiceId.split('-')[0].toLowerCase(); // Edge voice IDs are already ISO (e.g. fr-FR-DeniseNeural)
             if (voiceLocale === code) return null;
         }
 
-        const code = langCode.split('-')[0].toLowerCase();
-        if (!memoryCache) {
-            return { voiceId: '' };
-        }
-
-        const matches = memoryCache.filter((v) => v.Locale.split('-')[0].toLowerCase() === code);
+        const voices = await this.fetchVoices();
+        const matches = voices.filter((v) => v.Locale.split('-')[0].toLowerCase() === code);
         if (matches.length === 0) {
             return { voiceId: '' };
         }
 
-        const female = matches.find((v) => v.Gender.toLowerCase() === 'female');
-        const chosen = female ?? matches[0];
+        const male = matches.find((v) => v.Gender.toLowerCase() === 'male');
+        const chosen = male ?? matches[0];
         return { voiceId: chosen.ShortName };
     }
 

@@ -11,8 +11,43 @@ import { getTabKey, tabMatches } from '@shared/types';
 import { getSermonYear } from '@renderer/utils/sermon-utils';
 import { useAppStore } from './app.store';
 
+type SermonPendingNavigationTarget = {
+    documentType: 'sermon';
+    sermonId: string;
+    translationId?: number;
+    bibleBook?: never;
+    bibleChapter?: never;
+    bibleVersionAbbreviation?: never;
+    customDocumentId?: never;
+};
+
+type BiblePendingNavigationTarget = {
+    documentType: 'bible';
+    sermonId: string;
+    bibleBook?: string;
+    bibleChapter?: string;
+    bibleVersionAbbreviation?: string;
+    translationId?: never;
+    customDocumentId?: never;
+};
+
+type CustomPendingNavigationTarget = {
+    documentType: 'custom';
+    sermonId: string;
+    customDocumentId?: string;
+    translationId?: never;
+    bibleBook?: never;
+    bibleChapter?: never;
+    bibleVersionAbbreviation?: never;
+};
+
+export type PendingNavigationTarget =
+    | SermonPendingNavigationTarget
+    | BiblePendingNavigationTarget
+    | CustomPendingNavigationTarget;
+
 export type PendingNavigation = {
-    documentTitle: string;
+    target: PendingNavigationTarget;
     documentHtmlTree: DocumentHtmlTree | ParagraphReference;
 } | null;
 

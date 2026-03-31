@@ -1,5 +1,6 @@
 import { Reorder } from 'framer-motion';
 import { FileOutlined, SnippetsOutlined, SoundOutlined } from '@ant-design/icons';
+import Icon from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import type { DocumentTab } from '@shared/types';
@@ -8,41 +9,42 @@ import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAudioStore } from '@renderer/stores';
 import { BibleIcons } from '../icons';
 
+const SpeakerSvg = () => (
+    <svg viewBox="0 0 1024 1024" width="1em" height="1em" fill="currentColor">
+        <path d="M625.9 115c-5.9 0-11.9 1.6-17.4 5.3L254 352H90c-8.8 0-16 7.2-16 16v288c0 8.8 7.2 16 16 16h164l354.5 231.7c5.5 3.6 11.6 5.3 17.4 5.3 16.7 0 32.1-13.3 32.1-32.1V147.1c0-18.8-15.4-32.1-32.1-32.1z" />
+    </svg>
+);
+
+const SpeakerIcon = (props: Record<string, unknown>) => <Icon component={SpeakerSvg} {...props} />;
+
 function getTabIcon(tab: DocumentTab) {
     if (tab.type === 'bible') return <BibleIcons />;
     if (tab.type === 'custom') return <SnippetsOutlined style={{ fontSize: 'var(--fs-base)' }} />;
     return <FileOutlined style={{ fontSize: 'var(--fs-base)' }} />;
 }
 
-function useIsTabPlaying(tab: DocumentTab): boolean {
+function useTabAudioState(tab: DocumentTab) {
     const ttsDocId = useTtsStore((s) => s.documentId);
     const ttsStatus = useTtsStore((s) => s.status);
     const audioTitle = useAudioStore((s) => s.title);
     const audioStatus = useAudioStore((s) => s.currentPlay?.status);
 
     const ttsPlaying =
-        ttsDocId === tab.title &&
-        (ttsStatus === 'playing' || ttsStatus === 'loading' || ttsStatus === 'paused');
-    const audioPlaying =
-        audioTitle === tab.title && (audioStatus === 'play' || audioStatus === 'pause');
+        ttsDocId === tab.title && (ttsStatus === 'playing' || ttsStatus === 'loading');
+    const ttsPaused = ttsDocId === tab.title && ttsStatus === 'paused';
+    const audioPlaying = audioTitle === tab.title && audioStatus === 'play';
+    const audioPaused = audioTitle === tab.title && audioStatus === 'pause';
 
-    return ttsPlaying || audioPlaying;
+    const isPlaying = ttsPlaying || audioPlaying;
+    const isPaused = !isPlaying && (ttsPaused || audioPaused);
+    const isTts = ttsPlaying || ttsPaused;
+
+    return { isPlaying, isPaused, isTts };
 }
 
-function getTabLabel(tab: DocumentTab, isPlaying: boolean) {
-    const speakerIcon = isPlaying ? (
-        <SoundOutlined
-            style={{ fontSize: 'var(--fs-xs)', marginLeft: 4, color: 'var(--ant-color-primary)' }}
-        />
-    ) : null;
-
+function getTabLabel(tab: DocumentTab) {
     if (tab.type === 'bible') {
-        return (
-            <>
-                {tab.title}
-                {speakerIcon}
-            </>
-        );
+        return tab.title;
     }
 
     return (
@@ -51,7 +53,6 @@ function getTabLabel(tab: DocumentTab, isPlaying: boolean) {
             {tab.languageCode && (
                 <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
             )}
-            {speakerIcon}
         </>
     );
 }
@@ -75,7 +76,7 @@ export default function TabItem({
     onRemove: () => void;
     contextMenuItems: MenuProps['items'];
 }) {
-    const isPlaying = useIsTabPlaying(tab);
+    const { isPlaying, isPaused, isTts } = useTabAudioState(tab);
 
     return (
         <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
@@ -129,9 +130,24 @@ export default function TabItem({
                     </svg>
                 </div>
                 <div className="chrome-tab-content">
-                    <div className="chrome-tab-favicon">{getTabIcon(tab)}</div>
+                    <div className="chrome-tab-favicon">
+                        {isPlaying ? (
+                            <SoundOutlined
+                                style={{
+                                    fontSize: 'var(--fs-base)',
+                                    color: isTts
+                                        ? 'var(--ant-color-warning)'
+                                        : 'var(--ant-color-primary)',
+                                }}
+                            />
+                        ) : isPaused ? (
+                            <SpeakerIcon style={{ fontSize: 'var(--fs-base)' }} />
+                        ) : (
+                            getTabIcon(tab)
+                        )}
+                    </div>
                     <div className="chrome-tab-title" title={getTabTooltip(tab)}>
-                        {getTabLabel(tab, isPlaying)}
+                        {getTabLabel(tab)}
                     </div>
                     <div className="chrome-tab-drag-handle" />
                     <div

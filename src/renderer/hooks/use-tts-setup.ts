@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
-import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
+import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import {
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
@@ -57,6 +57,21 @@ export function useTtsSetup(): void {
     }, []);
 
     const activeProviderCfg = settings?.providers[settings.activeProvider ?? DEFAULT_TTS_PROVIDER];
+
+    // Stop playback when synthesis-affecting settings change (voice, model, provider)
+    // so the user doesn't hear stale audio from the old config on resume.
+    const synthesisKey = `${settings?.activeProvider}:${activeProviderCfg?.voiceId}:${activeProviderCfg?.model}`;
+    const synthesisKeyRef = useRef(synthesisKey);
+    useEffect(() => {
+        if (synthesisKeyRef.current !== synthesisKey) {
+            synthesisKeyRef.current = synthesisKey;
+            const { status } = useTtsStore.getState();
+            if (status === 'playing' || status === 'paused') {
+                stopAllTtsPlayback();
+                useTtsStore.getState().stopAndRemember();
+            }
+        }
+    }, [synthesisKey]);
 
     // Auto-switch voice on language change (provider switches handled in tts-tab)
     const prevLangRef = useRef<string | null>(null);
@@ -169,6 +184,19 @@ export function useTtsSetup(): void {
     useEffect(() => {
         return window.api.on.ttsPlaybackState((state) => {
             if (state.status === 'idle') {
+                const current = useTtsStore.getState();
+                // Guard against stale idle pushes: if the renderer has already
+                // started a new playback session (segments populated, status is
+                // loading/playing), this idle belongs to the previous stop — skip it.
+                // However, always honour completedNaturally — that's the legitimate
+                // end-of-playback signal from the current session.
+                if (
+                    !state.completedNaturally &&
+                    current.segments.length > 0 &&
+                    (current.status === 'loading' || current.status === 'playing')
+                ) {
+                    return;
+                }
                 if (state.completedNaturally) {
                     // Natural end: signal consumers AND clear resume position
                     // so the next play starts from the beginning with intro.
@@ -178,7 +206,7 @@ export function useTtsSetup(): void {
                         lastStoppedSegmentIndex: 0,
                     });
                 }
-                useTtsStore.getState().reset();
+                current.reset();
             } else {
                 useTtsStore.getState().setPlaybackState(state);
             }
@@ -319,6 +347,12 @@ export function useTtsSetup(): void {
                 const rate = state.settings?.rate ?? 1;
                 ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
             }
+        });
+
+        // When audio playback fails, reset TTS to idle so the user isn't stuck
+        ttsAudioPlayer.setOnError(() => {
+            stopAllTtsPlayback();
+            useTtsStore.getState().reset();
         });
 
         // When a segment finishes, transition to the next one
