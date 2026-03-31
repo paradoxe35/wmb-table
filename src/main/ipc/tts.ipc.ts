@@ -53,13 +53,16 @@ function mergeBoundaries(raw: Boundary[]): Boundary[] {
             continue;
         }
 
-        const accLen = acc.text.trim().length;
+        const accText = acc.text.trim();
+        const accLen = accText.length;
         const bLen = trimmed.length;
+        const endsWithEllipsis = accText.endsWith('...');
 
-        // Merge into accumulator if either side is too short and combined
-        // length stays under the max.
+        // Merge into accumulator if either side is too short, or the
+        // accumulator ends with an ellipsis (continuation, not a sentence end),
+        // and combined length stays under the max.
         if (
-            (accLen < MIN_SEGMENT_CHARS || bLen < MIN_SEGMENT_CHARS) &&
+            (accLen < MIN_SEGMENT_CHARS || bLen < MIN_SEGMENT_CHARS || endsWithEllipsis) &&
             accLen + bLen + 1 <= MAX_SEGMENT_CHARS
         ) {
             acc = {
