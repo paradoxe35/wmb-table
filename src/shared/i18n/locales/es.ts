@@ -200,6 +200,9 @@ const es: Record<string, string> = {
     Limite: 'Límite',
     Vider: 'Vaciar',
     'Cache audio vidé': 'Caché de audio vaciado',
+    'Vider le cache audio ?': '¿Vaciar el caché de audio?',
+    'Toutes les lectures en mémoire seront supprimées.':
+        'Todas las lecturas en memoria serán eliminadas.',
     'Taille maximale du cache': 'Tamaño máximo del caché',
 
     // ── TTS enhanced reading ──

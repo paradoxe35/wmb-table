@@ -199,6 +199,9 @@ const en: Record<string, string> = {
     Limite: 'Limit',
     Vider: 'Clear',
     'Cache audio vidé': 'Audio cache cleared',
+    'Vider le cache audio ?': 'Clear audio cache?',
+    'Toutes les lectures en mémoire seront supprimées.':
+        'All cached audio readings will be deleted.',
     'Taille maximale du cache': 'Maximum cache size',
 
     // ── TTS enhanced reading ──

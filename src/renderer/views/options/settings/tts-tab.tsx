@@ -4,6 +4,7 @@ import {
     Button,
     Card,
     Divider,
+    Popconfirm,
     Radio,
     Select,
     Slider,
@@ -13,7 +14,7 @@ import {
     Typography,
     message,
 } from 'antd';
-import { BookOutlined, SoundOutlined } from '@ant-design/icons';
+import { BookOutlined, ReloadOutlined, SoundOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAppStore } from '@renderer/stores/app.store';
@@ -458,9 +459,22 @@ export default function TtsTab() {
                             value={`${settings.cacheMaxSizeMb} ${t('Mo')}`}
                             valueStyle={{ fontSize: 'var(--fs-base)' }}
                         />
-                        <Button size="small" danger onClick={handleClearCache}>
-                            {t('Vider')}
-                        </Button>
+                        <Button
+                            size="small"
+                            icon={<ReloadOutlined />}
+                            onClick={() => window.api.tts.getCacheSize().then(setCacheSize)}
+                        />
+                        <Popconfirm
+                            title={t('Vider le cache audio ?')}
+                            description={t('Toutes les lectures en mémoire seront supprimées.')}
+                            onConfirm={handleClearCache}
+                            okText={t('Vider')}
+                            cancelText={t('Annuler')}
+                        >
+                            <Button size="small" danger>
+                                {t('Vider')}
+                            </Button>
+                        </Popconfirm>
                     </div>
                 </Field>
                 <div style={{ marginTop: 8 }}>
