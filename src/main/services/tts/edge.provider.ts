@@ -5,6 +5,7 @@ import { randomBytes } from 'node:crypto';
 import log from 'electron-log';
 import { EdgeTTS } from 'node-edge-tts';
 import { SimpleCache } from '@main/lib/simple-cache';
+import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -92,7 +93,7 @@ export class EdgeProvider implements TtsProvider {
     }
 
     async checkCompatibility(langCode: string): Promise<TtsCompatibilityResult> {
-        const code = langCode.split('-')[0].toLowerCase();
+        const code = normalizeLangCode(langCode);
         const voices = await this.fetchVoices();
         const hasMatch = voices.some((v) => v.Locale.split('-')[0].toLowerCase() === code);
         if (!hasMatch) {
@@ -139,10 +140,10 @@ export class EdgeProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Promise<Partial<TtsProviderSettings> | null> {
-        const code = langCode.split('-')[0].toLowerCase();
+        const code = normalizeLangCode(langCode);
 
         if (cfg?.voiceId) {
-            const voiceLocale = cfg.voiceId.split('-')[0].toLowerCase();
+            const voiceLocale = cfg.voiceId.split('-')[0].toLowerCase(); // Edge voice IDs are already ISO (e.g. fr-FR-DeniseNeural)
             if (voiceLocale === code) return null;
         }
 

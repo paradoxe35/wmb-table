@@ -1,6 +1,7 @@
 import log from 'electron-log';
 import pLimit from 'p-limit';
 import { SimpleCache } from '@main/lib/simple-cache';
+import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -128,7 +129,7 @@ export class CartesiaProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = langCode.split('-')[0].toLowerCase();
+        const code = normalizeLangCode(langCode);
         if (!SUPPORTED_LANGUAGES.includes(code)) {
             return { supported: false, reason: 'unsupported_language' };
         }
@@ -144,7 +145,7 @@ export class CartesiaProvider implements TtsProvider {
             throw new Error('No Cartesia voice selected');
         }
 
-        const language = request.language?.split('-')[0].toLowerCase() ?? 'en';
+        const language = normalizeLangCode(request.language ?? 'en');
 
         return synthesisLimit(() => this.doSynthesize(model, voiceId, language, request.text));
     }
@@ -274,7 +275,7 @@ export class CartesiaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Promise<Partial<TtsProviderSettings> | null> {
-        const code = langCode.split('-')[0].toLowerCase();
+        const code = normalizeLangCode(langCode);
         const voices = await this.fetchVoices();
 
         // If current voice already matches language, keep it

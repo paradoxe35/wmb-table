@@ -1,4 +1,5 @@
 import log from 'electron-log';
+import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -110,7 +111,7 @@ export class OpenAiProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = langCode.split('-')[0].toLowerCase();
+        const code = normalizeLangCode(langCode);
         if (!SUPPORTED_LANGUAGES.includes(code)) {
             return { supported: false, reason: 'unsupported_language' };
         }
