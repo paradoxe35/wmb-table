@@ -328,6 +328,24 @@ export function useTts(
         [paragraphs, language, documentId, settings, options],
     );
 
+    // Restart playback from current paragraph when content-shaping settings change
+    const contentKey = `${settings?.announceSegmentNumbers}:${settings?.readIntroduction}:${settings?.highlightMode}`;
+    const contentKeyRef = useRef(contentKey);
+    useEffect(() => {
+        if (contentKeyRef.current !== contentKey) {
+            contentKeyRef.current = contentKey;
+            const store = useTtsStore.getState();
+            if (
+                store.documentId === documentId &&
+                (store.status === 'playing' || store.status === 'paused')
+            ) {
+                const currentSeg = store.segments[store.currentSegmentIndex];
+                const paragraphIdx = currentSeg?.paragraphIndex ?? 0;
+                playFromParagraph(Math.max(1, paragraphIdx));
+            }
+        }
+    }, [contentKey, documentId, playFromParagraph]);
+
     const isThisDocument = currentDocId === documentId;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');
     const isPaused = isThisDocument && status === 'paused';
