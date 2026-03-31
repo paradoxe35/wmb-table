@@ -97,7 +97,7 @@ export class CartesiaProvider implements TtsProvider {
     readonly type: TtsProviderType = 'cartesia';
     private apiKey = '';
     private model = 'sonic-3';
-    private voiceId = '';
+    private voiceId = 'ab636c8b-9960-4fb3-bb0c-b7b655fb9745'; // Erwan (default)
 
     private authHeaders(): Record<string, string> {
         return {
@@ -140,7 +140,9 @@ export class CartesiaProvider implements TtsProvider {
 
         const model = request.model ?? this.model;
         const voiceId = request.voiceId ?? this.voiceId;
-        if (!voiceId) throw new Error('No Cartesia voice selected');
+        if (!voiceId) {
+            throw new Error('No Cartesia voice selected');
+        }
 
         const language = request.language?.split('-')[0].toLowerCase() ?? 'en';
 
