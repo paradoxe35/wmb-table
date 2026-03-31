@@ -188,7 +188,10 @@ export function useTtsSetup(): void {
                 // Guard against stale idle pushes: if the renderer has already
                 // started a new playback session (segments populated, status is
                 // loading/playing), this idle belongs to the previous stop — skip it.
+                // However, always honour completedNaturally — that's the legitimate
+                // end-of-playback signal from the current session.
                 if (
+                    !state.completedNaturally &&
                     current.segments.length > 0 &&
                     (current.status === 'loading' || current.status === 'playing')
                 ) {
