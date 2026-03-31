@@ -157,7 +157,12 @@ function DocumentList({
                     onChange={(e) => !e.target.value && setSearchTerm('')}
                     style={{ flex: 1 }}
                 />
-                <Button type="primary" icon={<PlusOutlined />} onClick={onAdd}>
+                <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={onAdd}
+                    disabled={installedLanguages.length === 0}
+                >
                     {t('Ajouter')}
                 </Button>
             </div>
