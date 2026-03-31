@@ -162,11 +162,14 @@ export default function TtsTab() {
                 window.api.tts.updateSettings(partial).then(async () => {
                     // Refresh provider info and recheck compatibility after API key save
                     if (hasApiKeyChange) {
-                        window.api.tts.getProviders().then(setProviders);
+                        await window.api.tts.getProviders().then(setProviders);
                         useTtsStore.getState().triggerRecheck();
                     }
-                    // Resolve voice for current language on provider switch
-                    if ('activeProvider' in partial && updated.autoSwitchVoice) {
+                    // Resolve voice for current language on provider switch or API key change
+                    if (
+                        ('activeProvider' in partial || hasApiKeyChange) &&
+                        updated.autoSwitchVoice
+                    ) {
                         const language = contentLanguage ?? 'fr';
                         const resolved = await window.api.tts.resolveConfigForLanguage(language);
                         if (resolved) {
