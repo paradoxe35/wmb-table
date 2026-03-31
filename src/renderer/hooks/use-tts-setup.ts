@@ -58,6 +58,21 @@ export function useTtsSetup(): void {
 
     const activeProviderCfg = settings?.providers[settings.activeProvider ?? DEFAULT_TTS_PROVIDER];
 
+    // Stop playback when synthesis-affecting settings change (voice, model, provider)
+    // so the user doesn't hear stale audio from the old config on resume.
+    const synthesisKey = `${settings?.activeProvider}:${activeProviderCfg?.voiceId}:${activeProviderCfg?.model}`;
+    const synthesisKeyRef = useRef(synthesisKey);
+    useEffect(() => {
+        if (synthesisKeyRef.current !== synthesisKey) {
+            synthesisKeyRef.current = synthesisKey;
+            const { status } = useTtsStore.getState();
+            if (status === 'playing' || status === 'paused') {
+                stopAllTtsPlayback();
+                useTtsStore.getState().stopAndRemember();
+            }
+        }
+    }, [synthesisKey]);
+
     // Auto-switch voice on language change (provider switches handled in tts-tab)
     const prevLangRef = useRef<string | null>(null);
     useEffect(() => {
