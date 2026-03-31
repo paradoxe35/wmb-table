@@ -335,6 +335,7 @@ const es: Record<string, string> = {
     "Sélectionnez la langue dans laquelle la voix clonée s'exprimera.":
         'Seleccione el idioma en el que la voz clonada hablará.',
     'Sélectionnez une voix': 'Seleccione una voz',
+    'Obtenir une clé API': 'Obtener clave API',
 
     // ── TTS controls ──
     'Pause lecture': 'Pausar lectura',

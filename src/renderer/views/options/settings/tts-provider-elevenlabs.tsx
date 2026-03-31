@@ -5,7 +5,7 @@ import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { getErrorMessage } from '@renderer/utils/functions';
 import DebouncedInput from '@renderer/components/debounced-input';
-import { Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
+import { ApiKeyLink, Field, providerUpdate, type ProviderConfigProps } from './tts-shared';
 import { ClonedVoicesList, VoiceCloneForm } from './tts-elevenlabs-voice-clone';
 import TtsReferenceVoices from './tts-reference-voices';
 
@@ -84,6 +84,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                         onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'apiKey', val));
                     }}
                 />
+                <ApiKeyLink provider={PROVIDER_TYPE} />
             </Field>
             <Field
                 label={t('Voix')}

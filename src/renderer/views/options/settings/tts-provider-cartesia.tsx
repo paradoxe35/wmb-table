@@ -6,6 +6,7 @@ import { useTtsStore } from '@renderer/stores/tts.store';
 import { getErrorMessage } from '@renderer/utils/functions';
 import DebouncedInput from '@renderer/components/debounced-input';
 import {
+    ApiKeyLink,
     Field,
     groupVoicesByLanguage,
     providerUpdate,
@@ -131,6 +132,7 @@ export default function CartesiaConfig({ settings, info, onUpdate }: CartesiaCon
                         onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'apiKey', val));
                     }}
                 />
+                <ApiKeyLink provider={PROVIDER_TYPE} />
             </Field>
             <Field
                 label={t('Voix')}

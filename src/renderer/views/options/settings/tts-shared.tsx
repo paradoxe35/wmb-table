@@ -136,3 +136,25 @@ export function FreeTag() {
     const { t } = useTranslation();
     return <Tag color="green">{t('Gratuit')}</Tag>;
 }
+
+const API_KEY_URLS: Record<string, string> = {
+    elevenlabs: 'https://elevenlabs.io/app/developers/api-keys',
+    openai: 'https://platform.openai.com/api-keys',
+    cartesia: 'https://play.cartesia.ai/keys',
+};
+
+export function ApiKeyLink({ provider }: { provider: TtsProviderType }) {
+    const { t } = useTranslation();
+    const url = API_KEY_URLS[provider];
+    if (!url) return null;
+
+    return (
+        <Text
+            type="secondary"
+            style={{ fontSize: 'var(--fs-rel-lg)', cursor: 'pointer' }}
+            onClick={() => window.api.app.openExternal(url)}
+        >
+            <a style={{ fontSize: 'inherit' }}>{t('Obtenir une clé API')}</a>
+        </Text>
+    );
+}

@@ -31,15 +31,22 @@ La aplicación puede usar:
 - voces del sistema
 - Sherpa-ONNX TTS
 - Edge TTS (Microsoft)
+- Cartesia TTS
 - ElevenLabs TTS
 - OpenAI TTS
 
 `Edge TTS (Microsoft)` ya está disponible y es útil si usted quiere muchas voces y muchos idiomas sin crear una cuenta.
 
+Para los proveedores de pago, puede obtener una clave API en:
+
+- Cartesia: [play.cartesia.ai/keys](https://play.cartesia.ai/keys)
+- ElevenLabs: [elevenlabs.io/app/developers/api-keys](https://elevenlabs.io/app/developers/api-keys)
+- OpenAI: [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+
 <ScreenshotPlaceholder
   file="es-settings-tts-provider-list.png"
   label="Lista de proveedores de audio"
-  hint="Mostrar Voces del sistema, Sherpa, Edge TTS, ElevenLabs y OpenAI en la lista."
+  hint="Mostrar Voces del sistema, Sherpa, Edge TTS, Cartesia, ElevenLabs y OpenAI en la lista."
 />
 
 ## Lectura mejorada

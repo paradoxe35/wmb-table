@@ -332,6 +332,7 @@ const en: Record<string, string> = {
     "Sélectionnez la langue dans laquelle la voix clonée s'exprimera.":
         'Select the language in which the cloned voice will speak.',
     'Sélectionnez une voix': 'Select a voice',
+    'Obtenir une clé API': 'Get API key',
 
     // ── TTS controls ──
     'Pause lecture': 'Pause reading',
