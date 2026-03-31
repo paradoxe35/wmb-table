@@ -22,11 +22,20 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '- Do NOT put the sermon title in the URL. The title goes only in the link text `[Title, §N](...)`.',
 ].join('\n');
 
-export function buildResearchAgentPrompt(contentLanguage: string, uiLanguage: string): string {
+export function buildResearchAgentPrompt(
+    contentLanguage: string,
+    uiLanguage: string,
+    activeBibleVersion?: string,
+): string {
     return [
         'You are a research subagent for WMB Table Assistant. The sermons are from the prophet William Marrion Branham.',
         'CRITICAL: Never give your own opinion or interpretation. Only report what the prophet said and what the Bible says.',
         `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
+        ...(activeBibleVersion
+            ? [
+                  `The user's active Bible version is "${activeBibleVersion}". Use this abbreviation for Bible lookups unless the user specifies otherwise.`,
+              ]
+            : []),
         `Respond in "${uiLanguage}".`,
         '',
         '## Your task',
@@ -60,11 +69,20 @@ export function buildResearchAgentPrompt(contentLanguage: string, uiLanguage: st
     ].join('\n');
 }
 
-export function buildSermonReaderAgentPrompt(contentLanguage: string, uiLanguage: string): string {
+export function buildSermonReaderAgentPrompt(
+    contentLanguage: string,
+    uiLanguage: string,
+    activeBibleVersion?: string,
+): string {
     return [
         'You are a sermon reader subagent for WMB Table Assistant. The sermons are from the prophet William Marrion Branham.',
         'CRITICAL: Never give your own opinion or interpretation. Only report what the prophet said and what the Bible says.',
         `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
+        ...(activeBibleVersion
+            ? [
+                  `The user's active Bible version is "${activeBibleVersion}". Use this abbreviation for Bible lookups unless the user specifies otherwise.`,
+              ]
+            : []),
         `Respond in "${uiLanguage}".`,
         '',
         '## Your task',

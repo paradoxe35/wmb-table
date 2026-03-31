@@ -60,7 +60,11 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 try {
                     const result = await generateText({
                         model: ctx.model,
-                        system: buildSermonReaderAgentPrompt(lang, ctx.uiLanguage),
+                        system: buildSermonReaderAgentPrompt(
+                            lang,
+                            ctx.uiLanguage,
+                            ctx.activeBibleVersion,
+                        ),
                         prompt,
                         tools: agentTools,
                         stopWhen: stepCountIs(MAX_STEPS),

@@ -13,9 +13,12 @@ const AGENT_NAME = 'researchTopic';
 const MAX_STEPS = 12;
 const MAX_OUTPUT_TOKENS = 2000;
 
-function buildResearchToolSubset(languageCode: string): Record<string, AiToolDefinition> {
+function buildResearchToolSubset(
+    languageCode: string,
+    bibleAbbreviation?: string,
+): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
-    const bibleTools = buildBibleTools(languageCode);
+    const bibleTools = buildBibleTools(languageCode, bibleAbbreviation);
     const documentTools = buildDocumentTools();
 
     return {
@@ -46,7 +49,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
             }),
             execute: async ({ topic, languageCode }) => {
                 const lang = languageCode ?? ctx.contentLanguage;
-                const executors = buildResearchToolSubset(lang);
+                const executors = buildResearchToolSubset(lang, ctx.activeBibleVersion);
                 const agentTools = Object.fromEntries(
                     Object.entries(executors).map(([name, def]) => [name, tool(def)]),
                 );
@@ -56,7 +59,11 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                 try {
                     const result = await generateText({
                         model: ctx.model,
-                        system: buildResearchAgentPrompt(lang, ctx.uiLanguage),
+                        system: buildResearchAgentPrompt(
+                            lang,
+                            ctx.uiLanguage,
+                            ctx.activeBibleVersion,
+                        ),
                         prompt: topic,
                         tools: agentTools,
                         stopWhen: stepCountIs(MAX_STEPS),

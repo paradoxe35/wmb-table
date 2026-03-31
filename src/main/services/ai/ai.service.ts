@@ -28,6 +28,7 @@ import { fetchProviderModels, getModelContextWindow } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
 import { resolveUiLanguage } from '@shared/constants';
+import * as bibleService from '@main/services/bible.service';
 
 interface RunGenerationOptions {
     runner: GenerationRunnerImpl;
@@ -224,6 +225,8 @@ export class AiService {
             : await getModelContextWindow(providerId, modelId);
         const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow);
 
+        const activeBibleVersion = bibleService.getActiveVersion()?.abbreviation;
+
         const installedLanguages = await languagePackService.getInstalledLanguages();
         const { recentMessages, summary } = buildConversationContext(
             conversation.id,
@@ -236,6 +239,7 @@ export class AiService {
             uiLanguageCode,
             installedLanguages,
             languagePreference: settings.languagePreference,
+            activeBibleVersion,
             hasAgents: !isLocal,
         });
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
@@ -256,6 +260,7 @@ export class AiService {
             model,
             isLocal,
             uiLanguage: uiLanguageCode,
+            activeBibleVersion,
             abortSignal: controller.signal,
             browserWindow,
             conversationId: conversation.id,

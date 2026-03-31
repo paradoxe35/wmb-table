@@ -5,6 +5,7 @@ export function buildSystemPrompt(input: {
     uiLanguageCode: string;
     installedLanguages: InstalledLanguage[];
     languagePreference: 'active' | 'explicit-only';
+    activeBibleVersion?: string;
     hasAgents?: boolean;
 }): string {
     const installedLanguages = input.installedLanguages
@@ -18,6 +19,11 @@ export function buildSystemPrompt(input: {
         'The sermons in this application are from the prophet William Marrion Branham.',
         "CRITICAL: You must NEVER give your own opinion or interpretation on spiritual matters. Always search and cite what the prophet William Marrion Branham said and what the Bible says. Your role is to help users find and reference the prophet's teachings and Scripture — not to teach or interpret yourself.",
         `The sermon content language is "${input.contentLanguageCode}" — use this language when calling tools (searchSermons, searchContent, getBiblePassage, etc.).`,
+        ...(input.activeBibleVersion
+            ? [
+                  `The user's active Bible version is "${input.activeBibleVersion}". Use this abbreviation for Bible lookups unless the user specifies otherwise.`,
+              ]
+            : []),
         `The user interface language is "${input.uiLanguageCode}".`,
         `Respond in "${input.uiLanguageCode}" unless the user clearly asks for another language.`,
         input.languagePreference === 'explicit-only'

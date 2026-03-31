@@ -4,7 +4,10 @@ import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import type { AiToolDefinition } from './types';
 import { validateLanguage } from './shared';
 
-export function buildBibleTools(defaultContentLanguage: string): Record<string, AiToolDefinition> {
+export function buildBibleTools(
+    defaultContentLanguage: string,
+    defaultAbbreviation?: string,
+): Record<string, AiToolDefinition> {
     return {
         getBibleVersions: {
             description:
@@ -35,11 +38,15 @@ export function buildBibleTools(defaultContentLanguage: string): Record<string, 
                 abbreviation: z.string().optional().describe('Bible version abbreviation'),
                 languageCode: z.string().optional(),
             }),
-            execute: async ({ languageCode, ...rest }) => {
+            execute: async ({ languageCode, abbreviation, ...rest }) => {
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
-                return aiBibleRepo.getPassage({ ...rest, languageCode: lang });
+                return aiBibleRepo.getPassage({
+                    ...rest,
+                    abbreviation: abbreviation ?? defaultAbbreviation,
+                    languageCode: lang,
+                });
             },
         },
         searchBible: {
@@ -62,11 +69,15 @@ export function buildBibleTools(defaultContentLanguage: string): Record<string, 
                     .optional()
                     .describe('Max results (default 20)'),
             }),
-            execute: async ({ languageCode, ...rest }) => {
+            execute: async ({ languageCode, abbreviation, ...rest }) => {
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
-                return aiBibleRepo.searchVerses({ ...rest, languageCode: lang });
+                return aiBibleRepo.searchVerses({
+                    ...rest,
+                    abbreviation: abbreviation ?? defaultAbbreviation,
+                    languageCode: lang,
+                });
             },
         },
         addBibleReferenceToSubject: {
@@ -81,13 +92,17 @@ export function buildBibleTools(defaultContentLanguage: string): Record<string, 
                 fromVerse: z.string(),
                 toVerse: z.string().optional(),
             }),
-            execute: async ({ subjectId: rawSubjectId, languageCode, ...rest }) => {
+            execute: async ({ subjectId: rawSubjectId, languageCode, abbreviation, ...rest }) => {
                 const subjectId = rawSubjectId.trim();
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 
-                const result = aiBibleRepo.getPassage({ ...rest, languageCode: lang });
+                const result = aiBibleRepo.getPassage({
+                    ...rest,
+                    abbreviation: abbreviation ?? defaultAbbreviation,
+                    languageCode: lang,
+                });
                 if ('error' in result) return result;
 
                 const verse = result[0];
@@ -110,7 +125,7 @@ export function buildBibleTools(defaultContentLanguage: string): Record<string, 
                         documentType: 'bible',
                         bibleBook: verse.book,
                         bibleChapter: verse.chapter,
-                        bibleVersionAbbreviation: rest.abbreviation,
+                        bibleVersionAbbreviation: abbreviation ?? defaultAbbreviation,
                     },
                     bibleContent,
                     verse,
