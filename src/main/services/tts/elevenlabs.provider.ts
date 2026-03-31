@@ -352,7 +352,8 @@ export class ElevenLabsProvider implements TtsProvider {
         const data = (await response.json()) as { voice_id: string };
         if (!data.voice_id) throw new Error('ElevenLabs voice clone: no voice ID in response');
 
-        // Refresh cached voices
+        // Invalidate cache so fetchVoices() hits the API
+        voiceCache.remove();
         await this.fetchVoices();
 
         return { voiceId: data.voice_id };
@@ -377,6 +378,7 @@ export class ElevenLabsProvider implements TtsProvider {
         }
 
         this.cachedVoices = this.cachedVoices.filter((v) => v.id !== voiceId);
+        voiceCache.remove();
     }
 
     private async fetchVoices(): Promise<TtsVoice[]> {
@@ -402,13 +404,17 @@ export class ElevenLabsProvider implements TtsProvider {
             do {
                 const url = new URL(`${ELEVENLABS_API_BASE.replace('/v1', '/v2')}/voices`);
                 url.searchParams.set('page_size', '100');
-                if (pageToken) url.searchParams.set('next_page_token', pageToken);
+                if (pageToken) {
+                    url.searchParams.set('next_page_token', pageToken);
+                }
 
                 const response = await fetch(url.toString(), {
                     headers: { 'xi-api-key': this.apiKey },
                 });
 
-                if (!response.ok) return this.cachedVoices;
+                if (!response.ok) {
+                    return this.cachedVoices;
+                }
 
                 const data = (await response.json()) as ElevenLabsVoiceResponse;
                 all.push(...data.voices);

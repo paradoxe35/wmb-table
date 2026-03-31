@@ -30,7 +30,7 @@ export default function OpenAIConfig({ settings, info, onUpdate }: OpenAIConfigP
             <Field label={t('Modèle')} hint={t('Le choix par défaut offre la meilleure qualité.')}>
                 <Select
                     style={{ width: '100%' }}
-                    value={cfg.model ?? 'gpt-4o-mini-tts'}
+                    value={cfg.model ?? info?.defaultModel ?? ''}
                     onChange={(v) => onUpdate(providerUpdate(settings, 'openai', 'model', v))}
                     options={(info?.availableModels ?? []).map((m) => ({ label: m, value: m }))}
                 />

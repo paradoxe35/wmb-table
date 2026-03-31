@@ -1,0 +1,354 @@
+import log from 'electron-log';
+import { SimpleCache } from '@main/lib/simple-cache';
+import type { TtsProvider } from './provider';
+import type {
+    TtsProviderType,
+    TtsProviderInfo,
+    TtsProviderSettings,
+    TtsSynthesizeRequest,
+    TtsSynthesizeResult,
+    TtsVoice,
+    TtsVoiceCloneRequest,
+    TtsVoiceCloneResult,
+    TtsCompatibilityResult,
+} from '@shared/tts.types';
+
+const CARTESIA_API_BASE = 'https://api.cartesia.ai';
+const CARTESIA_VERSION = '2024-06-10';
+
+const CARTESIA_MODELS = ['sonic-3', 'sonic-2', 'sonic-turbo', 'sonic'] as const;
+
+const SUPPORTED_LANGUAGES = [
+    'en',
+    'fr',
+    'de',
+    'es',
+    'pt',
+    'zh',
+    'ja',
+    'hi',
+    'it',
+    'ko',
+    'nl',
+    'pl',
+    'ru',
+    'sv',
+    'tr',
+    'tl',
+    'bg',
+    'ro',
+    'ar',
+    'cs',
+    'el',
+    'fi',
+    'hr',
+    'ms',
+    'sk',
+    'da',
+    'ta',
+    'uk',
+    'hu',
+    'no',
+    'vi',
+    'bn',
+    'th',
+    'he',
+    'ka',
+    'id',
+    'te',
+    'gu',
+    'kn',
+    'ml',
+    'mr',
+    'pa',
+];
+
+function parseCartesiaError(body: string): string | null {
+    try {
+        const json = JSON.parse(body);
+        return json?.message ?? json?.detail ?? null;
+    } catch {
+        return body || null;
+    }
+}
+
+function mapGender(gender: string | null): 'male' | 'female' | 'neutral' | undefined {
+    if (!gender) return undefined;
+    if (gender === 'masculine') return 'male';
+    if (gender === 'feminine') return 'female';
+    if (gender === 'gender_neutral') return 'neutral';
+    return undefined;
+}
+
+interface CartesiaVoiceEntry {
+    id: string;
+    name: string;
+    language: string;
+    gender: string | null;
+    is_owner: boolean;
+    description?: string;
+}
+
+interface CartesiaVoiceResponse {
+    data: CartesiaVoiceEntry[];
+    has_more: boolean;
+}
+
+const voiceCache = new SimpleCache<TtsVoice[]>('cartesia-voices', 60 * 60 * 1000);
+
+export class CartesiaProvider implements TtsProvider {
+    readonly type: TtsProviderType = 'cartesia';
+    private apiKey = '';
+    private model = 'sonic-3';
+    private voiceId = '';
+    private cachedVoices: TtsVoice[] = [];
+
+    private authHeaders(): Record<string, string> {
+        return {
+            Authorization: `Bearer ${this.apiKey}`,
+            'Cartesia-Version': CARTESIA_VERSION,
+        };
+    }
+
+    async getInfo(): Promise<TtsProviderInfo> {
+        const voices = await this.fetchVoices();
+
+        return {
+            type: 'cartesia',
+            locality: 'remote',
+            displayName: 'Cartesia TTS',
+            supportedLanguages: SUPPORTED_LANGUAGES,
+            supportsVoiceCloning: true,
+            supportsStreaming: false,
+            voices,
+            defaultModel: 'sonic-3',
+            availableModels: [...CARTESIA_MODELS],
+            requiresApiKey: true,
+            requiresModelDownload: false,
+        };
+    }
+
+    async checkCompatibility(langCode: string): Promise<TtsCompatibilityResult> {
+        if (!this.apiKey) {
+            return { supported: false, reason: 'not_configured' };
+        }
+        const code = langCode.split('-')[0].toLowerCase();
+        if (!SUPPORTED_LANGUAGES.includes(code)) {
+            return { supported: false, reason: 'unsupported_language' };
+        }
+        return { supported: true };
+    }
+
+    async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+        if (!this.apiKey) throw new Error('Cartesia API key not configured');
+
+        const model = request.model ?? this.model;
+        const voiceId = request.voiceId ?? this.voiceId;
+        if (!voiceId) throw new Error('No Cartesia voice selected');
+
+        const language = request.language?.split('-')[0].toLowerCase() ?? 'en';
+
+        const body = {
+            model_id: model,
+            transcript: request.text,
+            voice: { mode: 'id', id: voiceId },
+            language,
+            output_format: {
+                container: 'mp3',
+                sample_rate: 44100,
+                bit_rate: 128000,
+            },
+        };
+
+        const response = await fetch(`${CARTESIA_API_BASE}/tts/bytes`, {
+            method: 'POST',
+            headers: {
+                ...this.authHeaders(),
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) {
+            const errText = await response.text().catch(() => '');
+            const detail = parseCartesiaError(errText);
+            throw new Error(detail ?? `Cartesia TTS error ${response.status}`);
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBase64 = Buffer.from(arrayBuffer).toString('base64');
+
+        return { audioBase64, mimeType: 'audio/mpeg' };
+    }
+
+    async cloneVoice(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult> {
+        if (!this.apiKey) throw new Error('Cartesia API key not configured');
+        if (!request.language) throw new Error('Language is required for Cartesia voice cloning');
+
+        const audioBuffer = Buffer.from(request.audioBase64, 'base64');
+
+        const boundary = `----CartesiaBoundary${Date.now()}`;
+        const parts: Buffer[] = [];
+
+        // Name field
+        parts.push(
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="name"\r\n\r\n${request.name}\r\n`,
+            ),
+        );
+
+        // Language field
+        parts.push(
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="language"\r\n\r\n${request.language}\r\n`,
+            ),
+        );
+
+        // Audio clip field
+        parts.push(
+            Buffer.from(
+                `--${boundary}\r\nContent-Disposition: form-data; name="clip"; filename="voice.mp3"\r\nContent-Type: audio/mpeg\r\n\r\n`,
+            ),
+        );
+        parts.push(audioBuffer);
+        parts.push(Buffer.from('\r\n'));
+
+        // Closing boundary
+        parts.push(Buffer.from(`--${boundary}--\r\n`));
+
+        const body = Buffer.concat(parts);
+
+        const response = await fetch(`${CARTESIA_API_BASE}/voices/clone`, {
+            method: 'POST',
+            headers: {
+                ...this.authHeaders(),
+                'Content-Type': `multipart/form-data; boundary=${boundary}`,
+            },
+            body,
+        });
+
+        if (!response.ok) {
+            const errText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`Cartesia voice clone error ${response.status}: ${errText}`);
+        }
+
+        const data = (await response.json()) as { id: string };
+        if (!data.id) throw new Error('Cartesia voice clone: no voice ID in response');
+
+        // Invalidate cache and refresh
+        voiceCache.remove();
+        await this.fetchVoices();
+
+        return { voiceId: data.id };
+    }
+
+    async listClonedVoices(): Promise<TtsVoice[]> {
+        const voices = await this.fetchVoices();
+        return voices.filter((v) => v.isCloned);
+    }
+
+    async deleteClonedVoice(voiceId: string): Promise<void> {
+        if (!this.apiKey) throw new Error('Cartesia API key not configured');
+
+        const response = await fetch(`${CARTESIA_API_BASE}/voices/${voiceId}`, {
+            method: 'DELETE',
+            headers: this.authHeaders(),
+        });
+
+        if (!response.ok && response.status !== 204) {
+            const errText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`Cartesia delete voice error ${response.status}: ${errText}`);
+        }
+
+        this.cachedVoices = this.cachedVoices.filter((v) => v.id !== voiceId);
+        voiceCache.remove();
+    }
+
+    resolveConfigForLanguage(
+        langCode: string,
+        cfg?: TtsProviderSettings,
+    ): Partial<TtsProviderSettings> | null {
+        const code = langCode.split('-')[0].toLowerCase();
+
+        // If current voice already matches language, keep it
+        if (cfg?.voiceId) {
+            const currentVoice = this.cachedVoices.find((v) => v.id === cfg.voiceId);
+            if (currentVoice?.languageCodes[0] === code) return null;
+        }
+
+        const matches = this.cachedVoices.filter((v) => v.languageCodes[0] === code);
+        if (matches.length === 0) {
+            return { voiceId: '' };
+        }
+
+        const male = matches.find((v) => v.gender === 'male');
+        const chosen = male ?? matches[0];
+        return { voiceId: chosen.id };
+    }
+
+    private async fetchVoices(): Promise<TtsVoice[]> {
+        if (!this.apiKey) {
+            if (this.cachedVoices.length) return this.cachedVoices;
+            return voiceCache.getStale() ?? [];
+        }
+
+        const cached = voiceCache.get();
+        if (cached) {
+            this.cachedVoices = cached;
+            return cached;
+        }
+
+        try {
+            const all: CartesiaVoiceEntry[] = [];
+            let cursor: string | undefined;
+
+            do {
+                const url = new URL(`${CARTESIA_API_BASE}/voices`);
+                url.searchParams.set('limit', '100');
+                if (cursor) url.searchParams.set('starting_after', cursor);
+
+                const response = await fetch(url.toString(), {
+                    headers: this.authHeaders(),
+                });
+
+                if (!response.ok) return this.cachedVoices;
+
+                const data = (await response.json()) as CartesiaVoiceResponse;
+                all.push(...data.data);
+                cursor =
+                    data.has_more && data.data.length > 0
+                        ? data.data[data.data.length - 1].id
+                        : undefined;
+            } while (cursor);
+
+            this.cachedVoices = all.map((v) => ({
+                id: v.id,
+                name: v.name,
+                languageCodes: [v.language],
+                gender: mapGender(v.gender),
+                isCloned: v.is_owner,
+            }));
+            voiceCache.set(this.cachedVoices);
+            return this.cachedVoices;
+        } catch (err) {
+            log.warn('Failed to fetch Cartesia voices:', err);
+            const stale = voiceCache.getStale();
+            if (stale) this.cachedVoices = stale;
+            return this.cachedVoices;
+        }
+    }
+
+    setConfig(settings: TtsProviderSettings): void {
+        if (settings.apiKey !== undefined) this.apiKey = settings.apiKey;
+        if (settings.model) this.model = settings.model;
+        if (settings.voiceId) this.voiceId = settings.voiceId;
+    }
+
+    async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
+        return this.synthesize(request);
+    }
+
+    dispose(): void {
+        log.info('Cartesia TTS provider disposed');
+    }
+}

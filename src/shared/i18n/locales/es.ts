@@ -326,6 +326,16 @@ const es: Record<string, string> = {
     'Marin et Cedar sont recommandées pour la meilleure qualité.':
         'Marin y Cedar son recomendadas para la mejor calidad.',
 
+    // ── TTS provider Cartesia ──
+    'Cartesia TTS': 'Cartesia TTS',
+    'Clé API Cartesia': 'Clave API Cartesia',
+    'Votre clé secrète Cartesia. Elle est stockée en toute sécurité sur votre ordinateur.':
+        'Su clave secreta de Cartesia. Se almacena de forma segura en su ordenador.',
+    'Langue de la voix': 'Idioma de la voz',
+    "Sélectionnez la langue dans laquelle la voix clonée s'exprimera.":
+        'Seleccione el idioma en el que la voz clonada hablará.',
+    'Sélectionnez une voix': 'Seleccione una voz',
+
     // ── TTS controls ──
     'Pause lecture': 'Pausar lectura',
     'Reprendre la lecture': 'Reanudar lectura',

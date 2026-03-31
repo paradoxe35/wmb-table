@@ -162,8 +162,8 @@ export class EdgeProvider implements TtsProvider {
             return { voiceId: '' };
         }
 
-        const female = matches.find((v) => v.Gender.toLowerCase() === 'female');
-        const chosen = female ?? matches[0];
+        const male = matches.find((v) => v.Gender.toLowerCase() === 'male');
+        const chosen = male ?? matches[0];
         return { voiceId: chosen.ShortName };
     }
 

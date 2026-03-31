@@ -29,6 +29,7 @@ import SherpaConfig from './tts-provider-sherpa';
 import ElevenLabsConfig from './tts-provider-elevenlabs';
 import OpenAIConfig from './tts-provider-openai';
 import EdgeConfig from './tts-provider-edge';
+import CartesiaConfig from './tts-provider-cartesia';
 import { buildDocsGuideLink } from '@renderer/utils/constants';
 
 const { Text } = Typography;
@@ -66,6 +67,14 @@ function ActiveProviderConfig({
             );
         case 'edge':
             return <EdgeConfig settings={settings} info={getInfo('edge')} onUpdate={onUpdate} />;
+        case 'cartesia':
+            return (
+                <CartesiaConfig
+                    settings={settings}
+                    info={getInfo('cartesia')}
+                    onUpdate={onUpdate}
+                />
+            );
         default:
             return null;
     }

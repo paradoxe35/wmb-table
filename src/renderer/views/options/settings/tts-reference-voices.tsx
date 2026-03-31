@@ -12,6 +12,8 @@ interface TtsReferenceVoicesProps {
     providerType: TtsProviderType;
     clonedVoices: TtsVoice[];
     onVoiceCloned: (voiceId: string) => void;
+    /** Default language to pass when cloning (required by some providers like Cartesia). */
+    cloneLanguage?: string;
 }
 
 /** Checks if a reference voice has already been cloned for the provider */
@@ -25,6 +27,7 @@ export default function TtsReferenceVoices({
     providerType,
     clonedVoices,
     onVoiceCloned,
+    cloneLanguage,
 }: TtsReferenceVoicesProps) {
     const { t } = useTranslation();
     const [cloningId, setCloningId] = useState<string | null>(null);
@@ -85,6 +88,7 @@ export default function TtsReferenceVoices({
                 const result = await window.api.tts.cloneVoice(providerType, {
                     name: refId,
                     audioBase64: base64,
+                    ...(cloneLanguage ? { language: cloneLanguage } : {}),
                 });
                 message.success(t('Voix clonée avec succès'));
                 onVoiceCloned(result.voiceId);
