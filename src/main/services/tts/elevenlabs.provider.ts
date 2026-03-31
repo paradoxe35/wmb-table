@@ -222,7 +222,6 @@ export class ElevenLabsProvider implements TtsProvider {
     private apiKey = '';
     private model = 'eleven_flash_v2_5';
     private voiceId = 'JBFqnCBsd6RMkjVDRZzb'; // Rachel (default)
-    private cachedVoices: TtsVoice[] = [];
 
     async getInfo(): Promise<TtsProviderInfo> {
         const voices = await this.fetchVoices();
@@ -377,27 +376,15 @@ export class ElevenLabsProvider implements TtsProvider {
             throw new Error(`ElevenLabs delete voice error ${response.status}: ${errText}`);
         }
 
-        this.cachedVoices = this.cachedVoices.filter((v) => v.id !== voiceId);
         voiceCache.remove();
     }
 
     private async fetchVoices(): Promise<TtsVoice[]> {
         if (!this.apiKey) {
-            // No API key — try returning memory cache or stale DB cache
-            if (this.cachedVoices.length) {
-                return this.cachedVoices;
-            }
             return voiceCache.getStale() ?? [];
         }
 
-        // Check fresh DB cache first
-        const cached = voiceCache.get();
-        if (cached) {
-            this.cachedVoices = cached;
-            return cached;
-        }
-
-        try {
+        return voiceCache.getOrFetch(async () => {
             const all: ElevenLabsVoiceEntry[] = [];
             let pageToken: string | undefined;
 
@@ -413,7 +400,7 @@ export class ElevenLabsProvider implements TtsProvider {
                 });
 
                 if (!response.ok) {
-                    return this.cachedVoices;
+                    throw new Error(`ElevenLabs voices fetch failed: ${response.status}`);
                 }
 
                 const data = (await response.json()) as ElevenLabsVoiceResponse;
@@ -421,21 +408,13 @@ export class ElevenLabsProvider implements TtsProvider {
                 pageToken = data.has_more ? data.next_page_token : undefined;
             } while (pageToken);
 
-            this.cachedVoices = all.map((v) => ({
+            return all.map((v) => ({
                 id: v.voice_id,
                 name: v.name,
                 languageCodes: ALL_SUPPORTED_LANGUAGES,
                 isCloned: v.category === 'cloned',
             }));
-            voiceCache.set(this.cachedVoices);
-            return this.cachedVoices;
-        } catch (err) {
-            log.warn('Failed to fetch ElevenLabs voices:', err);
-            // Fall back to stale DB cache
-            const stale = voiceCache.getStale();
-            if (stale) this.cachedVoices = stale;
-            return this.cachedVoices;
-        }
+        });
     }
 
     setConfig(settings: TtsProviderSettings): void {

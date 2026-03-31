@@ -3,6 +3,7 @@ import { Collapse, Divider, message, Select, Space, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { useTtsStore } from '@renderer/stores/tts.store';
+import { useAppStore } from '@renderer/stores/app.store';
 import { getErrorMessage } from '@renderer/utils/functions';
 import DebouncedInput from '@renderer/components/debounced-input';
 import {
@@ -66,10 +67,12 @@ export default function CartesiaConfig({ settings, info, onUpdate }: CartesiaCon
         [settings, onUpdate],
     );
 
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const allVoices = [
         ...(info?.voices ?? []),
         ...clonedVoices.filter((c) => !info?.voices.some((v) => v.id === c.id)),
     ];
+    const voiceGroups = groupVoicesByLanguage(allVoices, contentLanguage ?? undefined);
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">
@@ -102,7 +105,10 @@ export default function CartesiaConfig({ settings, info, onUpdate }: CartesiaCon
                     onChange={(v) => {
                         onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'voiceId', v));
                     }}
-                    options={groupVoicesByLanguage(allVoices)}
+                    options={voiceGroups}
+                    filterOption={(input, option) => {
+                        return option?.label?.toLowerCase().includes(input.toLowerCase()) || false;
+                    }}
                 />
             </Field>
             <Collapse

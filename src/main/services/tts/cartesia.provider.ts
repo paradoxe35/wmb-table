@@ -1,4 +1,5 @@
 import log from 'electron-log';
+import pLimit from 'p-limit';
 import { SimpleCache } from '@main/lib/simple-cache';
 import type { TtsProvider } from './provider';
 import type {
@@ -14,7 +15,7 @@ import type {
 } from '@shared/tts.types';
 
 const CARTESIA_API_BASE = 'https://api.cartesia.ai';
-const CARTESIA_VERSION = '2024-06-10';
+const CARTESIA_VERSION = '2025-04-16';
 
 const CARTESIA_MODELS = ['sonic-3', 'sonic-2', 'sonic-turbo', 'sonic'] as const;
 
@@ -89,19 +90,14 @@ interface CartesiaVoiceEntry {
     description?: string;
 }
 
-interface CartesiaVoiceResponse {
-    data: CartesiaVoiceEntry[];
-    has_more: boolean;
-}
-
 const voiceCache = new SimpleCache<TtsVoice[]>('cartesia-voices', 60 * 60 * 1000);
+const synthesisLimit = pLimit(2);
 
 export class CartesiaProvider implements TtsProvider {
     readonly type: TtsProviderType = 'cartesia';
     private apiKey = '';
     private model = 'sonic-3';
     private voiceId = '';
-    private cachedVoices: TtsVoice[] = [];
 
     private authHeaders(): Record<string, string> {
         return {
@@ -148,9 +144,18 @@ export class CartesiaProvider implements TtsProvider {
 
         const language = request.language?.split('-')[0].toLowerCase() ?? 'en';
 
+        return synthesisLimit(() => this.doSynthesize(model, voiceId, language, request.text));
+    }
+
+    private async doSynthesize(
+        model: string,
+        voiceId: string,
+        language: string,
+        text: string,
+    ): Promise<TtsSynthesizeResult> {
         const body = {
             model_id: model,
-            transcript: request.text,
+            transcript: text,
             voice: { mode: 'id', id: voiceId },
             language,
             output_format: {
@@ -235,7 +240,7 @@ export class CartesiaProvider implements TtsProvider {
         const data = (await response.json()) as { id: string };
         if (!data.id) throw new Error('Cartesia voice clone: no voice ID in response');
 
-        // Invalidate cache and refresh
+        // Invalidate cache and refetch
         voiceCache.remove();
         await this.fetchVoices();
 
@@ -260,23 +265,23 @@ export class CartesiaProvider implements TtsProvider {
             throw new Error(`Cartesia delete voice error ${response.status}: ${errText}`);
         }
 
-        this.cachedVoices = this.cachedVoices.filter((v) => v.id !== voiceId);
         voiceCache.remove();
     }
 
-    resolveConfigForLanguage(
+    async resolveConfigForLanguage(
         langCode: string,
         cfg?: TtsProviderSettings,
-    ): Partial<TtsProviderSettings> | null {
+    ): Promise<Partial<TtsProviderSettings> | null> {
         const code = langCode.split('-')[0].toLowerCase();
+        const voices = await this.fetchVoices();
 
         // If current voice already matches language, keep it
         if (cfg?.voiceId) {
-            const currentVoice = this.cachedVoices.find((v) => v.id === cfg.voiceId);
+            const currentVoice = voices.find((v) => v.id === cfg.voiceId);
             if (currentVoice?.languageCodes[0] === code) return null;
         }
 
-        const matches = this.cachedVoices.filter((v) => v.languageCodes[0] === code);
+        const matches = voices.filter((v) => v.languageCodes[0] === code);
         if (matches.length === 0) {
             return { voiceId: '' };
         }
@@ -288,17 +293,10 @@ export class CartesiaProvider implements TtsProvider {
 
     private async fetchVoices(): Promise<TtsVoice[]> {
         if (!this.apiKey) {
-            if (this.cachedVoices.length) return this.cachedVoices;
             return voiceCache.getStale() ?? [];
         }
 
-        const cached = voiceCache.get();
-        if (cached) {
-            this.cachedVoices = cached;
-            return cached;
-        }
-
-        try {
+        return voiceCache.getOrFetch(async () => {
             const all: CartesiaVoiceEntry[] = [];
             let cursor: string | undefined;
 
@@ -311,31 +309,32 @@ export class CartesiaProvider implements TtsProvider {
                     headers: this.authHeaders(),
                 });
 
-                if (!response.ok) return this.cachedVoices;
+                if (!response.ok) {
+                    const errBody = await response.text().catch(() => '');
+                    throw new Error(
+                        `Cartesia voices fetch failed (${response.status}): ${errBody}`,
+                    );
+                }
 
-                const data = (await response.json()) as CartesiaVoiceResponse;
-                all.push(...data.data);
-                cursor =
-                    data.has_more && data.data.length > 0
-                        ? data.data[data.data.length - 1].id
-                        : undefined;
+                const json = (await response.json()) as
+                    | CartesiaVoiceEntry[]
+                    | { data?: CartesiaVoiceEntry[]; has_more?: boolean };
+
+                const voices: CartesiaVoiceEntry[] = Array.isArray(json) ? json : (json.data ?? []);
+                const hasMore = Array.isArray(json) ? false : (json.has_more ?? false);
+
+                all.push(...voices);
+                cursor = hasMore && voices.length > 0 ? voices[voices.length - 1].id : undefined;
             } while (cursor);
 
-            this.cachedVoices = all.map((v) => ({
+            return all.map((v) => ({
                 id: v.id,
                 name: v.name,
                 languageCodes: [v.language],
                 gender: mapGender(v.gender),
                 isCloned: v.is_owner,
             }));
-            voiceCache.set(this.cachedVoices);
-            return this.cachedVoices;
-        } catch (err) {
-            log.warn('Failed to fetch Cartesia voices:', err);
-            const stale = voiceCache.getStale();
-            if (stale) this.cachedVoices = stale;
-            return this.cachedVoices;
-        }
+        });
     }
 
     setConfig(settings: TtsProviderSettings): void {

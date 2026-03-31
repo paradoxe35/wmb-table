@@ -233,8 +233,10 @@ export class TtsService {
         if (!provider?.resolveConfigForLanguage) return null;
 
         const cfg = this.settings.providers[activeProvider];
-        const resolved = provider.resolveConfigForLanguage(language, cfg);
-        if (!resolved) return null;
+        const resolved = await provider.resolveConfigForLanguage(language, cfg);
+        if (!resolved) {
+            return null;
+        }
 
         ttsRepo.updateSettings({
             providers: {
