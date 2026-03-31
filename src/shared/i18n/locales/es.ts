@@ -484,6 +484,8 @@ const es: Record<string, string> = {
     'Un document avec ce nom existe déjà.': 'Ya existe un documento con este nombre.',
     'Choisir un fichier PDF': 'Elegir un archivo PDF',
     'Document supprimé': 'Documento eliminado',
+    'Langue du document': 'Idioma del documento',
+    'Langue modifiée': 'Idioma cambiado',
     'Traitement...': 'Procesando...',
     Retour: 'Volver',
     "Erreur lors de l'extraction du document.": 'Error al extraer el documento.',

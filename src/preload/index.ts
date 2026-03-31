@@ -244,9 +244,11 @@ const api = {
         setSidebarStatus: (hidden: boolean) => invoke(AppChannels.setSidebarStatus, hidden),
         getCustomDocuments: () => invoke(AppChannels.getCustomDocuments),
         deleteCustomDocument: (id: string) => invoke(AppChannels.deleteCustomDocument, id),
-        createCustomDocument: (title: string, pdfBytes: Uint8Array) =>
-            invoke(AppChannels.createCustomDocument, title, pdfBytes),
+        createCustomDocument: (title: string, pdfBytes: Uint8Array, languageCode: string) =>
+            invoke(AppChannels.createCustomDocument, title, pdfBytes, languageCode),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
+        updateCustomDocumentLanguage: (id: string, languageCode: string) =>
+            invoke(AppChannels.updateCustomDocumentLanguage, id, languageCode),
         getHistory: (langCode: string) => invoke(AppChannels.getHistory, langCode),
         addHistoryEntry: (
             langCode: string,

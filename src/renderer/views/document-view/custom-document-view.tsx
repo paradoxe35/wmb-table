@@ -164,9 +164,10 @@ export default function CustomDocumentView() {
     );
 
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const tts = useTts(paragraphs, contentLanguage ?? 'en', docContent?.title ?? '', {
+    const docLang = docContent?.languageCode || contentLanguage || 'en';
+    const tts = useTts(paragraphs, docLang, docContent?.title ?? '', {
         introText: docContent?.title,
-        getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, contentLanguage ?? 'en'),
+        getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
     });
 
     return (

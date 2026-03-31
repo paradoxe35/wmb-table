@@ -480,6 +480,8 @@ const en: Record<string, string> = {
     'Un document avec ce nom existe déjà.': 'A document with this name already exists.',
     'Choisir un fichier PDF': 'Choose a PDF file',
     'Document supprimé': 'Document deleted',
+    'Langue du document': 'Document language',
+    'Langue modifiée': 'Language changed',
     'Traitement...': 'Processing...',
     Retour: 'Back',
     "Erreur lors de l'extraction du document.": 'Error extracting the document.',

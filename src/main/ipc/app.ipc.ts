@@ -94,13 +94,20 @@ export function registerAppHandlers(): void {
         customDocsRepo.deleteCustomDocument(id);
     });
 
-    registerHandler(AppChannels.createCustomDocument, async (_event, title, pdfBytes) => {
-        const content = await extractTextFromPdf(pdfBytes);
-        return customDocsRepo.createCustomDocument(title, content);
-    });
+    registerHandler(
+        AppChannels.createCustomDocument,
+        async (_event, title, pdfBytes, languageCode) => {
+            const content = await extractTextFromPdf(pdfBytes);
+            return customDocsRepo.createCustomDocument(title, content, languageCode);
+        },
+    );
 
     registerHandler(AppChannels.getCustomDocumentContent, async (_event, id) => {
         return customDocsRepo.getCustomDocumentContent(id);
+    });
+
+    registerHandler(AppChannels.updateCustomDocumentLanguage, async (_event, id, languageCode) => {
+        customDocsRepo.updateCustomDocumentLanguage(id, languageCode);
     });
 
     registerHandler(AppChannels.getHistory, async (_event, langCode) => {

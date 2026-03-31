@@ -11,6 +11,7 @@ export function getCustomDocuments(): CustomDocument[] {
             id: customDocuments.id,
             title: customDocuments.title,
             sermonId: customDocuments.sermonId,
+            languageCode: customDocuments.languageCode,
             createdAt: customDocuments.createdAt,
             updatedAt: customDocuments.updatedAt,
         })
@@ -20,12 +21,17 @@ export function getCustomDocuments(): CustomDocument[] {
         id: row.id,
         title: row.title,
         sermonId: row.sermonId || new Date().toISOString().slice(0, 10),
+        languageCode: row.languageCode ?? '',
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     }));
 }
 
-export function createCustomDocument(title: string, content: string): CustomDocument {
+export function createCustomDocument(
+    title: string,
+    content: string,
+    languageCode: string,
+): CustomDocument {
     const db = getDb();
     const existing = db
         .select()
@@ -40,13 +46,14 @@ export function createCustomDocument(title: string, content: string): CustomDocu
     const now = new Date().toISOString();
     const sermonId = now.slice(0, 10);
     db.insert(customDocuments)
-        .values({ id, title, content, sermonId, createdAt: now, updatedAt: now })
+        .values({ id, title, content, sermonId, languageCode, createdAt: now, updatedAt: now })
         .run();
     logChange('custom_documents', id, 'SAVE', {
         id,
         title,
         content,
         sermonId,
+        languageCode,
         createdAt: now,
         updatedAt: now,
     });
@@ -54,6 +61,7 @@ export function createCustomDocument(title: string, content: string): CustomDocu
         id,
         title,
         sermonId,
+        languageCode,
         createdAt: new Date(now),
         updatedAt: new Date(now),
     };
@@ -65,12 +73,28 @@ export function getCustomDocumentContent(id: string): CustomDocumentContent | nu
             id: customDocuments.id,
             title: customDocuments.title,
             content: customDocuments.content,
+            languageCode: customDocuments.languageCode,
         })
         .from(customDocuments)
         .where(eq(customDocuments.id, id))
         .get();
     if (!row) return null;
-    return { id: row.id, title: row.title, content: row.content };
+    return {
+        id: row.id,
+        title: row.title,
+        content: row.content,
+        languageCode: row.languageCode ?? '',
+    };
+}
+
+export function updateCustomDocumentLanguage(id: string, languageCode: string): void {
+    const now = new Date().toISOString();
+    getDb()
+        .update(customDocuments)
+        .set({ languageCode, updatedAt: now })
+        .where(eq(customDocuments.id, id))
+        .run();
+    logChange('custom_documents', id, 'SAVE', { id, languageCode, updatedAt: now });
 }
 
 export function deleteCustomDocument(id: string): void {

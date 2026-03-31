@@ -370,12 +370,14 @@ export type CurrentAudioDocumentPlay = {
 export interface CustomDocument extends Readonly<BaseEntity> {
     title: string;
     sermonId: string;
+    languageCode: string;
 }
 
 export interface CustomDocumentContent {
     id: string;
     title: string;
     content: string;
+    languageCode: string;
 }
 
 // ---------------------------------------------------------------------------

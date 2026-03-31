@@ -122,6 +122,7 @@ export const customDocuments = sqliteTable('custom_documents', {
     title: text('title').notNull(),
     content: text('content').notNull().default(''),
     sermonId: text('sermon_id').notNull().default(''),
+    languageCode: text('language_code').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Input, Modal, Space, Typography, message, Spin } from 'antd';
+import { Button, Input, Modal, Select, Space, Typography, message, Spin } from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { CustomDocument } from '@shared/types';
+import type { CustomDocument, InstalledLanguage } from '@shared/types';
 import {
     EyeOutlined,
     FileTextOutlined,
@@ -20,6 +20,7 @@ export default function CustomDocuments() {
     const { t } = useTranslation();
     const { visible, show, hide } = useModalVisible();
     const [showUploadForm, setShowUploadForm] = useState(false);
+    const [installedLanguages, setInstalledLanguages] = useState<InstalledLanguage[]>([]);
 
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
@@ -35,6 +36,10 @@ export default function CustomDocuments() {
             .catch(() => {
                 message.error(t('Erreur lors du chargement des documents'));
             });
+        window.api.languages
+            .getInstalled()
+            .then(setInstalledLanguages)
+            .catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -68,12 +73,14 @@ export default function CustomDocuments() {
             {showUploadForm ? (
                 <UploadForm
                     customDocuments={customDocuments}
+                    installedLanguages={installedLanguages}
                     onAdded={handleDocumentAdded}
                     onCancel={() => setShowUploadForm(false)}
                 />
             ) : (
                 <DocumentList
                     customDocuments={customDocuments}
+                    installedLanguages={installedLanguages}
                     removeCustomDocument={removeCustomDocument}
                     onClose={handleClose}
                     onAdd={() => setShowUploadForm(true)}
@@ -98,11 +105,13 @@ const ModalTitle = ({ count }: { count: number }) => {
 
 function DocumentList({
     customDocuments,
+    installedLanguages,
     removeCustomDocument,
     onClose,
     onAdd,
 }: {
     customDocuments: CustomDocument[];
+    installedLanguages: InstalledLanguage[];
     removeCustomDocument: (id: string) => void;
     onClose: () => void;
     onAdd: () => void;
@@ -111,6 +120,7 @@ function DocumentList({
     const openCustomDocument = useOpenCustomDocument();
     const [searchTerm, setSearchTerm] = useState('');
     const ipcRequestWithLoader = useIpcRequestWithLoader();
+    const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
 
     const filtered = searchTerm
         ? customDocuments.filter((d) => simpleRegExp(searchTerm).test(strNormalize(d.title)))
@@ -127,6 +137,14 @@ function DocumentList({
             );
             message.success(t('Document supprimé'));
         });
+    };
+
+    const handleLanguageChange = async (doc: CustomDocument, languageCode: string) => {
+        await window.api.app.updateCustomDocumentLanguage(doc.id, languageCode);
+        setCustomDocuments(
+            customDocuments.map((d) => (d.id === doc.id ? { ...d, languageCode } : d)),
+        );
+        message.success(t('Langue modifiée'));
     };
 
     return (
@@ -168,11 +186,13 @@ function DocumentList({
                     <DocumentItem
                         key={doc.id}
                         document={doc}
+                        installedLanguages={installedLanguages}
                         onView={() => {
                             openCustomDocument(doc.title, doc.sermonId);
                             onClose();
                         }}
                         onDelete={() => handleDeletion(doc)}
+                        onLanguageChange={(lang) => handleLanguageChange(doc, lang)}
                     />
                 ))}
             </div>
@@ -182,50 +202,76 @@ function DocumentList({
 
 const DocumentItem = React.memo<{
     document: CustomDocument;
+    installedLanguages: InstalledLanguage[];
     onView: () => void;
     onDelete: () => void;
-}>(({ document, onView, onDelete }) => (
-    <div
-        style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '8px 4px',
-            borderBottom: '1px solid var(--ant-color-border-secondary, var(--ant-color-border))',
-            gap: 10,
-        }}
-    >
-        <FileTextOutlined style={{ fontSize: 'var(--fs-xl)', opacity: 0.45, flexShrink: 0 }} />
+    onLanguageChange: (languageCode: string) => void;
+}>(({ document, installedLanguages, onView, onDelete, onLanguageChange }) => {
+    const langLabel =
+        installedLanguages.find((l) => l.code === document.languageCode)?.language ||
+        document.languageCode;
+
+    return (
         <div
             style={{
-                flex: 1,
-                minWidth: 0,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '8px 4px',
+                borderBottom:
+                    '1px solid var(--ant-color-border-secondary, var(--ant-color-border))',
+                gap: 10,
             }}
-            title={document.title}
         >
-            {document.title}
+            <FileTextOutlined style={{ fontSize: 'var(--fs-xl)', opacity: 0.45, flexShrink: 0 }} />
+            <div
+                style={{
+                    flex: 1,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                }}
+                title={document.title}
+            >
+                {document.title}
+            </div>
+            <Select
+                size="small"
+                variant="borderless"
+                value={document.languageCode || undefined}
+                placeholder="—"
+                onChange={onLanguageChange}
+                style={{ minWidth: 60, maxWidth: 100 }}
+                options={installedLanguages.map((l) => ({
+                    label: l.language,
+                    value: l.code,
+                }))}
+                popupMatchSelectWidth={false}
+            />
+            <Space size={4} style={{ flexShrink: 0 }}>
+                <Button type="text" size="small" icon={<EyeOutlined />} onClick={onView} />
+                <DeleteBtn confirm={onDelete} />
+            </Space>
         </div>
-        <Space size={4} style={{ flexShrink: 0 }}>
-            <Button type="text" size="small" icon={<EyeOutlined />} onClick={onView} />
-            <DeleteBtn confirm={onDelete} />
-        </Space>
-    </div>
-));
+    );
+});
 DocumentItem.displayName = 'DocumentItem';
 
 function UploadForm({
     customDocuments,
+    installedLanguages,
     onAdded,
     onCancel,
 }: {
     customDocuments: CustomDocument[];
+    installedLanguages: InstalledLanguage[];
     onAdded: (doc: CustomDocument) => void;
     onCancel: () => void;
 }) {
     const { t } = useTranslation();
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [name, setName] = useState('');
+    const [languageCode, setLanguageCode] = useState(contentLanguage ?? 'fr');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -259,7 +305,11 @@ function UploadForm({
         try {
             const buffer = await selectedFile.arrayBuffer();
             const pdfBytes = new Uint8Array(buffer);
-            const doc = await window.api.app.createCustomDocument(trimmedName, pdfBytes);
+            const doc = await window.api.app.createCustomDocument(
+                trimmedName,
+                pdfBytes,
+                languageCode,
+            );
             onAdded(doc);
             message.success(t('Document ajouté'));
         } catch {
@@ -289,6 +339,26 @@ function UploadForm({
                         {t('Ce nom existe déjà')}
                     </Typography.Text>
                 )}
+            </div>
+
+            <div>
+                <Typography.Text
+                    strong
+                    style={{ fontSize: 'var(--fs-rel-xl)', display: 'block', marginBottom: 4 }}
+                >
+                    {t('Langue du document')}
+                </Typography.Text>
+                <Select
+                    style={{ width: '100%' }}
+                    value={languageCode}
+                    showSearch
+                    optionFilterProp="label"
+                    onChange={setLanguageCode}
+                    options={installedLanguages.map((l) => ({
+                        label: l.language,
+                        value: l.code,
+                    }))}
+                />
             </div>
 
             <div>
