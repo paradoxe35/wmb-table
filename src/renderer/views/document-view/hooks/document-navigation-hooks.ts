@@ -3,7 +3,8 @@ import { useSearchStore, useSermonStore, selectActiveTabKey } from '@renderer/st
 import type { CurrentDocumentIdentity } from '@renderer/utils/pending-navigation';
 import { pendingNavigationMatchesDocument } from '@renderer/utils/pending-navigation';
 import { paragraphHasMatch } from '@renderer/utils/searchable';
-import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
+import { scrollToParagraph as scrollToParagraphDom } from '@renderer/utils/scroll-to-paragraph';
+import type { ParagraphListHandle } from '../tts-controls';
 import type { DocumentSearchParagraphMatch, HighlightRange, SearchMode } from '@shared/types';
 import { isParagraphReference } from '@shared/types';
 
@@ -62,6 +63,7 @@ export type ReferenceNavigationOptions = { contentReady: boolean } & CurrentDocu
 export function useReferenceNavigation(
     containerRef: React.RefObject<HTMLDivElement | null>,
     options: ReferenceNavigationOptions,
+    paragraphListRef?: React.RefObject<ParagraphListHandle | null>,
 ) {
     const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
     const clearPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
@@ -69,7 +71,6 @@ export function useReferenceNavigation(
     useLayoutEffect(() => {
         if (!pendingNavigation || !options.contentReady) return;
         if (!pendingNavigationMatchesDocument(pendingNavigation, options)) return;
-        if (!containerRef.current) return;
 
         const ref = pendingNavigation.documentHtmlTree;
         const paragraphIndex = ref
@@ -82,14 +83,18 @@ export function useReferenceNavigation(
             return;
         }
 
-        // Try immediate scroll (before paint)
-        scrollToParagraph(containerRef.current, paragraphIndex);
+        if (paragraphListRef?.current) {
+            paragraphListRef.current.scrollToParagraph(paragraphIndex);
+            clearPendingNavigation(null);
+            return;
+        }
 
-        // Fallback: retry with rAF if DOM isn't ready yet
+        scrollToParagraphDom(containerRef.current, paragraphIndex);
+
         let raf = 0;
         let attemptsLeft = 120;
         const tryScroll = () => {
-            if (scrollToParagraph(containerRef.current, paragraphIndex)) {
+            if (scrollToParagraphDom(containerRef.current, paragraphIndex)) {
                 clearPendingNavigation(null);
                 return;
             }
@@ -99,7 +104,7 @@ export function useReferenceNavigation(
         };
         raf = requestAnimationFrame(tryScroll);
         return () => cancelAnimationFrame(raf);
-    }, [pendingNavigation, options, clearPendingNavigation, containerRef]);
+    }, [pendingNavigation, options, clearPendingNavigation, containerRef, paragraphListRef]);
 }
 
 // ---------------------------------------------------------------------------
@@ -112,6 +117,7 @@ export function useMatchNavigation(
     search: SearchHighlightState | null,
     paragraphs: { paragraphIndex: number; content: string }[],
     enabled = true,
+    paragraphListRef?: React.RefObject<ParagraphListHandle | null>,
 ) {
     const setTotalMatches = useSearchStore((s) => s.setTotalMatches);
     const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
@@ -172,13 +178,19 @@ export function useMatchNavigation(
             return;
         }
 
+        if (paragraphListRef?.current) {
+            paragraphListRef.current.scrollToParagraph(requestedTargetParagraphIndex);
+            clearScrollToMatchRequest(tabKey);
+            return;
+        }
+
         let raf = 0;
         let attemptsLeft = 120;
         let cancelled = false;
 
         const tryScroll = () => {
             if (cancelled) return;
-            if (scrollToParagraph(containerRef.current, requestedTargetParagraphIndex)) {
+            if (scrollToParagraphDom(containerRef.current, requestedTargetParagraphIndex)) {
                 clearScrollToMatchRequest(tabKey);
                 return;
             }
@@ -200,6 +212,7 @@ export function useMatchNavigation(
         requestedTargetParagraphIndex,
         clearScrollToMatchRequest,
         containerRef,
+        paragraphListRef,
     ]);
 
     const activeParagraphIndex =

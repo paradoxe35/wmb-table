@@ -12,7 +12,7 @@ import {
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { SermonContent } from '@shared/types';
-import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
+import { TtsButton, ZoomControls, ParagraphList, type ParagraphListHandle } from './tts-controls';
 import DocumentBody from './document-body';
 import {
     resolveCustomDocumentScrollPersistence,
@@ -93,6 +93,7 @@ export default function CustomDocumentView() {
     const activeTitle = useSermonStore(selectActiveTabTitle);
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
+    const paragraphListRef = useRef<ParagraphListHandle>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
@@ -105,12 +106,16 @@ export default function CustomDocumentView() {
         customDoc?.id,
         docContent?.id,
     );
-    useReferenceNavigation(containerRef, {
-        contentReady: !!docContent,
-        documentType: 'custom',
-        sermonId: customDoc?.sermonId,
-        customDocumentId: customDoc?.id,
-    });
+    useReferenceNavigation(
+        containerRef,
+        {
+            contentReady: !!docContent,
+            documentType: 'custom',
+            sermonId: customDoc?.sermonId,
+            customDocumentId: customDoc?.id,
+        },
+        paragraphListRef,
+    );
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!docContent,
         restoreIdentity,
@@ -128,6 +133,7 @@ export default function CustomDocumentView() {
         search,
         paragraphs,
         !!restoreIdentity,
+        paragraphListRef,
     );
 
     // Build a minimal SermonContent-like object for context menu
@@ -201,6 +207,7 @@ export default function CustomDocumentView() {
                 <h2 className="sermon-content-header__title">{docContent?.title}</h2>
             </div>
             <ParagraphList
+                ref={paragraphListRef}
                 paragraphs={paragraphs}
                 documentId={docContent?.title ?? ''}
                 search={search}
@@ -209,6 +216,7 @@ export default function CustomDocumentView() {
                 onPlayFromHere={effectiveTts.playFromParagraph}
                 canSpeak={effectiveTts.canSpeak}
                 incompatibleMessage={effectiveTts.incompatibleMessage}
+                customScrollParent={containerRef.current}
             />
         </DocumentBody>
     );

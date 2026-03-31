@@ -18,7 +18,12 @@ import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
-import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
+import {
+    TtsButton,
+    ZoomControls,
+    type ParagraphListHandle,
+    type TtsControls,
+} from './tts-controls';
 import { useDocumentZoom } from './hooks';
 
 export default function SermonHeader({
@@ -28,6 +33,7 @@ export default function SermonHeader({
     currentTranslationId,
     paragraphs,
     tts,
+    paragraphListRef,
 }: {
     meta: SermonMeta;
     zoom: number;
@@ -35,6 +41,7 @@ export default function SermonHeader({
     currentTranslationId: number;
     paragraphs: SermonParagraph[];
     tts?: TtsControls;
+    paragraphListRef?: React.RefObject<ParagraphListHandle | null>;
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
@@ -166,6 +173,7 @@ export default function SermonHeader({
                 open={paragraphModalOpen}
                 onClose={() => setParagraphModalOpen(false)}
                 paragraphs={paragraphs}
+                paragraphListRef={paragraphListRef}
             />
         </div>
     );

@@ -2,8 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Empty, Modal, Segmented } from 'antd';
 import type { SermonParagraph } from '@shared/types';
-import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
-import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
+import type { ParagraphListHandle } from './tts-controls';
 
 const STEP_OPTIONS = [1, 2, 3, 5, 10] as const;
 
@@ -11,10 +10,12 @@ export default function ParagraphNavigatorModal({
     open,
     onClose,
     paragraphs,
+    paragraphListRef,
 }: {
     open: boolean;
     onClose: () => void;
     paragraphs: SermonParagraph[];
+    paragraphListRef?: React.RefObject<ParagraphListHandle | null>;
 }) {
     const { t } = useTranslation();
     const [step, setStep] = useState<number>(3);
@@ -28,11 +29,10 @@ export default function ParagraphNavigatorModal({
         (paragraphIndex: number) => {
             onClose();
             requestAnimationFrame(() => {
-                const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-                scrollToParagraph(container, paragraphIndex);
+                paragraphListRef?.current?.scrollToParagraph(paragraphIndex);
             });
         },
-        [onClose],
+        [onClose, paragraphListRef],
     );
 
     return (

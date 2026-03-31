@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useRef, forwardRef } from 'react';
 import { Button, Tooltip } from 'antd';
 import {
     PauseOutlined,
@@ -8,11 +8,12 @@ import {
     ZoomOutOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import type { HighlightItem } from '@shared/types';
 import type { SearchHighlightState } from './hooks';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
-import { useTtsStore } from '@renderer/stores/tts.store';
+import { useTtsStore, selectCurrentTtsSegment } from '@renderer/stores/tts.store';
 
 // ── Shared TTS controls interface ──
 
@@ -39,7 +40,6 @@ export function TtsButton({ tts }: { tts: TtsControls }) {
     const { t } = useTranslation();
 
     if (!tts.canSpeak) {
-        // Show a disabled button so the user knows TTS exists but isn't available
         return (
             <Tooltip
                 title={tts.incompatibleMessage ?? t('Aucune voix disponible pour cette langue.')}
@@ -117,7 +117,17 @@ export function ZoomControls({
     );
 }
 
-// ── Paragraph list ──
+// ── Paragraph list (virtualized) ──
+
+export interface ParagraphListHandle {
+    scrollToParagraph: (paragraphIndex: number) => void;
+}
+
+/** Global ref to the active document's paragraph list — used by components outside the view tree. */
+let activeParagraphList: ParagraphListHandle | null = null;
+export function getActiveParagraphList(): ParagraphListHandle | null {
+    return activeParagraphList;
+}
 
 interface ParagraphListProps {
     paragraphs: { paragraphIndex: number; content: string }[];
@@ -128,36 +138,104 @@ interface ParagraphListProps {
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
     incompatibleMessage?: string;
+    customScrollParent?: HTMLElement | null;
 }
 
-export function ParagraphList({
-    paragraphs,
-    documentId,
-    search,
-    activeParagraphIndex,
-    highlightsByParagraph,
-    onPlayFromHere,
-    canSpeak,
-    incompatibleMessage,
-}: ParagraphListProps) {
-    return (
-        <>
-            {paragraphs.map((p) => (
-                <TtsParagraph
-                    key={p.paragraphIndex}
-                    paragraph={p}
-                    documentId={documentId}
-                    search={search}
-                    isActiveMatch={p.paragraphIndex === activeParagraphIndex}
-                    highlights={highlightsByParagraph.get(p.paragraphIndex)}
-                    onPlayFromHere={onPlayFromHere}
-                    canSpeak={canSpeak}
-                    incompatibleMessage={incompatibleMessage}
-                />
-            ))}
-        </>
-    );
-}
+export const ParagraphList = forwardRef<ParagraphListHandle, ParagraphListProps>(
+    function ParagraphList(
+        {
+            paragraphs,
+            documentId,
+            search,
+            activeParagraphIndex,
+            highlightsByParagraph,
+            onPlayFromHere,
+            canSpeak,
+            incompatibleMessage,
+            customScrollParent,
+        },
+        ref,
+    ) {
+        const virtuosoRef = useRef<VirtuosoHandle>(null);
+
+        const scrollToParagraph = useCallback(
+            (paragraphIndex: number) => {
+                const idx = paragraphs.findIndex((p) => p.paragraphIndex === paragraphIndex);
+                if (idx >= 0) {
+                    virtuosoRef.current?.scrollToIndex({
+                        index: idx,
+                        align: 'center',
+                        behavior: 'auto',
+                    });
+                    // Trigger blink animation after Virtuoso renders the item
+                    requestAnimationFrame(() => {
+                        const el = customScrollParent?.querySelector<HTMLElement>(
+                            `[data-paragraph-index="${paragraphIndex}"]`,
+                        );
+                        if (!el) return;
+                        el.classList.add('paragraph-highlight-blink');
+                        const cleanup = () => el.classList.remove('paragraph-highlight-blink');
+                        el.addEventListener('animationend', cleanup, { once: true });
+                        setTimeout(cleanup, 2500);
+                    });
+                }
+            },
+            [paragraphs, customScrollParent],
+        );
+
+        useImperativeHandle(ref, () => ({ scrollToParagraph }), [scrollToParagraph]);
+
+        // Register as the active paragraph list for global access
+        useEffect(() => {
+            activeParagraphList = { scrollToParagraph };
+            return () => {
+                activeParagraphList = null;
+            };
+        }, [scrollToParagraph]);
+
+        // TTS auto-scroll
+        const currentSegment = useTtsStore(selectCurrentTtsSegment);
+        const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
+        const status = useTtsStore((s) => s.status);
+        const storeDocumentId = useTtsStore((s) => s.documentId);
+
+        useEffect(() => {
+            if (!currentSegment || !autoScroll) return;
+            if (storeDocumentId !== documentId) return;
+            if (status !== 'playing' && status !== 'loading') return;
+            scrollToParagraph(currentSegment.paragraphIndex);
+        }, [
+            currentSegment?.paragraphIndex,
+            autoScroll,
+            status,
+            storeDocumentId,
+            documentId,
+            scrollToParagraph,
+        ]);
+
+        return (
+            <Virtuoso
+                ref={virtuosoRef}
+                data={paragraphs}
+                {...(customScrollParent ? { customScrollParent } : {})}
+                increaseViewportBy={1500}
+                itemContent={(_index, p) => (
+                    <TtsParagraph
+                        key={p.paragraphIndex}
+                        paragraph={p}
+                        documentId={documentId}
+                        search={search}
+                        isActiveMatch={p.paragraphIndex === activeParagraphIndex}
+                        highlights={highlightsByParagraph.get(p.paragraphIndex)}
+                        onPlayFromHere={onPlayFromHere}
+                        canSpeak={canSpeak}
+                        incompatibleMessage={incompatibleMessage}
+                    />
+                )}
+            />
+        );
+    },
+);
 
 // ── Paragraph wrapper with TTS highlighting ──
 
@@ -184,14 +262,6 @@ export function TtsParagraph({
 }: TtsParagraphProps) {
     const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentId);
-    const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (ttsHighlight.isActive && autoScroll) {
-            containerRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
-        }
-    }, [ttsHighlight.isActive, autoScroll]);
 
     const readFromHereLabel = t("Lire à partir d'ici");
     const tooltip = canSpeak
@@ -199,38 +269,34 @@ export function TtsParagraph({
         : (incompatibleMessage ?? t('Aucune voix disponible pour cette langue.'));
 
     return (
-        <div ref={containerRef}>
-            <SermonParagraphView
-                paragraph={paragraph}
-                search={search}
-                isActiveMatch={isActiveMatch}
-                highlights={highlights}
-                ttsHighlight={ttsHighlight}
-                playFromHereButton={
-                    onPlayFromHere ? (
-                        <Tooltip title={tooltip}>
-                            <span>
-                                <button
-                                    className="tts-play-from-here"
-                                    disabled={!canSpeak}
-                                    onClick={(e) => {
-                                        if (!canSpeak) return;
-                                        e.stopPropagation();
-                                        onPlayFromHere(paragraph.paragraphIndex);
-                                    }}
-                                    aria-label={
-                                        canSpeak
-                                            ? readFromHereLabel
-                                            : t('Lecture audio indisponible')
-                                    }
-                                >
-                                    <CaretRightOutlined />
-                                </button>
-                            </span>
-                        </Tooltip>
-                    ) : undefined
-                }
-            />
-        </div>
+        <SermonParagraphView
+            paragraph={paragraph}
+            search={search}
+            isActiveMatch={isActiveMatch}
+            highlights={highlights}
+            ttsHighlight={ttsHighlight}
+            playFromHereButton={
+                onPlayFromHere ? (
+                    <Tooltip title={tooltip}>
+                        <span>
+                            <button
+                                className="tts-play-from-here"
+                                disabled={!canSpeak}
+                                onClick={(e) => {
+                                    if (!canSpeak) return;
+                                    e.stopPropagation();
+                                    onPlayFromHere(paragraph.paragraphIndex);
+                                }}
+                                aria-label={
+                                    canSpeak ? readFromHereLabel : t('Lecture audio indisponible')
+                                }
+                            >
+                                <CaretRightOutlined />
+                            </button>
+                        </span>
+                    </Tooltip>
+                ) : undefined
+            }
+        />
     );
 }

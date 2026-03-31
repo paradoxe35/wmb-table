@@ -2,7 +2,7 @@ import { useMemo, useRef } from 'react';
 import { useAppStore, useSermonStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
-import { ParagraphList } from './tts-controls';
+import { ParagraphList, type ParagraphListHandle } from './tts-controls';
 import DocumentBody from './document-body';
 import {
     resolveSermonScrollPersistence,
@@ -21,6 +21,7 @@ import { buildSegmentAnnouncement, buildSermonIntroText } from '@shared/tts.type
 export default function SermonDocumentView() {
     const { content, loading } = useSermonContent();
     const containerRef = useRef<HTMLDivElement>(null);
+    const paragraphListRef = useRef<ParagraphListHandle>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
@@ -37,12 +38,16 @@ export default function SermonDocumentView() {
         contentLanguage,
         content,
     );
-    useReferenceNavigation(containerRef, {
-        contentReady: !!content,
-        documentType: 'sermon',
-        sermonId: activeTab?.sermonId,
-        translationId: tabTranslationId ?? content?.meta.translationId,
-    });
+    useReferenceNavigation(
+        containerRef,
+        {
+            contentReady: !!content,
+            documentType: 'sermon',
+            sermonId: activeTab?.sermonId,
+            translationId: tabTranslationId ?? content?.meta.translationId,
+        },
+        paragraphListRef,
+    );
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!content,
         restoreIdentity,
@@ -79,6 +84,7 @@ export default function SermonDocumentView() {
         search,
         ttsParagraphs,
         !!restoreIdentity,
+        paragraphListRef,
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         content?.meta.title ?? null,
@@ -102,6 +108,7 @@ export default function SermonDocumentView() {
                         currentTranslationId={tabTranslationId ?? content.meta.translationId}
                         paragraphs={content.paragraphs}
                         tts={tts}
+                        paragraphListRef={paragraphListRef}
                     />
                 )
             }
@@ -109,6 +116,7 @@ export default function SermonDocumentView() {
             {content && <SermonContentHeader meta={content.meta} />}
             {content && (
                 <ParagraphList
+                    ref={paragraphListRef}
                     paragraphs={ttsParagraphs}
                     documentId={content.meta.title}
                     search={search}
@@ -117,6 +125,7 @@ export default function SermonDocumentView() {
                     onPlayFromHere={tts.playFromParagraph}
                     canSpeak={tts.canSpeak}
                     incompatibleMessage={tts.incompatibleMessage}
+                    customScrollParent={containerRef.current}
                 />
             )}
         </DocumentBody>

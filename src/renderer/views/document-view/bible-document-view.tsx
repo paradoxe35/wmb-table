@@ -11,7 +11,13 @@ import {
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { BibleBook, BibleIndex, SermonContent } from '@shared/types';
 import { getTabKey } from '@shared/types';
-import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
+import {
+    TtsButton,
+    ZoomControls,
+    ParagraphList,
+    type ParagraphListHandle,
+    type TtsControls,
+} from './tts-controls';
 import DocumentBody from './document-body';
 import {
     buildBibleChapterKey,
@@ -261,6 +267,7 @@ function BibleHeader({
 export default function BibleDocumentView() {
     const activeTab = useSermonStore(selectActiveTab);
     const containerRef = useRef<HTMLDivElement>(null);
+    const paragraphListRef = useRef<ParagraphListHandle>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useSermonStore(selectActiveTabKey);
@@ -287,14 +294,18 @@ export default function BibleDocumentView() {
         chapter,
         loadedChapterKey,
     );
-    useReferenceNavigation(containerRef, {
-        contentReady: verses.length > 0 && !loading,
-        documentType: 'bible',
-        sermonId: activeTab?.sermonId,
-        bibleBook: bookCode,
-        bibleChapter: chapter,
-        bibleVersionAbbreviation,
-    });
+    useReferenceNavigation(
+        containerRef,
+        {
+            contentReady: verses.length > 0 && !loading,
+            documentType: 'bible',
+            sermonId: activeTab?.sermonId,
+            bibleBook: bookCode,
+            bibleChapter: chapter,
+            bibleVersionAbbreviation,
+        },
+        paragraphListRef,
+    );
 
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: verses.length > 0 && !loading,
@@ -308,6 +319,7 @@ export default function BibleDocumentView() {
         search,
         paragraphs,
         !!restoreIdentity,
+        paragraphListRef,
     );
 
     const { hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
@@ -390,6 +402,7 @@ export default function BibleDocumentView() {
             />
 
             <ParagraphList
+                ref={paragraphListRef}
                 paragraphs={paragraphs}
                 documentId={activeTab?.title ?? ''}
                 search={search}
@@ -398,6 +411,7 @@ export default function BibleDocumentView() {
                 onPlayFromHere={tts.playFromParagraph}
                 canSpeak={tts.canSpeak}
                 incompatibleMessage={tts.incompatibleMessage}
+                customScrollParent={containerRef.current}
             />
         </DocumentBody>
     );

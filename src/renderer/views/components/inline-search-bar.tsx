@@ -9,6 +9,7 @@ import {
     selectActiveTabTitle,
     useSermonStore,
 } from '@renderer/stores';
+import { getActiveParagraphList } from '@renderer/views/document-view/tts-controls';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { debounce } from '@renderer/utils/functions';
@@ -121,8 +122,13 @@ export default function InlineSearchBar() {
         const val = searchTermRef.current.trim();
         const num = parseInt(val, 10);
         if (isNaN(num)) return;
-        const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-        scrollToParagraph(container, num);
+        const list = getActiveParagraphList();
+        if (list) {
+            list.scrollToParagraph(num);
+        } else {
+            const container = document.getElementById(DOCUMENT_CONTAINER_ID);
+            scrollToParagraph(container, num);
+        }
     }, []);
 
     return (
