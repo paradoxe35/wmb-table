@@ -3,17 +3,19 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const getInstalledLanguagesMock = vi.fn(() => ['fr']);
 const getSermonListForLanguageMock = vi.fn();
 const getSermonMetaMock = vi.fn();
+const getTraductionsForSermonMock = vi.fn();
 const searchSermonsMock = vi.fn();
+const getSermonParagraphsMock = vi.fn();
 
 vi.mock('@main/services/tantivy.service', () => ({
     getInstalledLanguages: getInstalledLanguagesMock,
-    getSermonParagraphs: vi.fn(),
+    getSermonParagraphs: getSermonParagraphsMock,
 }));
 
 vi.mock('@main/services/reference-data.service', () => ({
     getSermonListForLanguage: getSermonListForLanguageMock,
     getSermonMeta: getSermonMetaMock,
-    getTraductionsForSermon: vi.fn(),
+    getTraductionsForSermon: getTraductionsForSermonMock,
 }));
 
 vi.mock('@main/services/search.service', () => ({
@@ -24,6 +26,8 @@ describe('sermon.tools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         getInstalledLanguagesMock.mockReturnValue(['fr']);
+        getTraductionsForSermonMock.mockReturnValue([]);
+        getSermonParagraphsMock.mockResolvedValue([]);
         getSermonMetaMock.mockImplementation(
             (translationId: number, _lang: string, sermonId: string) => ({
                 sermonId,
@@ -175,5 +179,55 @@ describe('sermon.tools', () => {
         expect(second.returned).toBe(1);
         expect(second.hasMore).toBe(false);
         expect(second.results.map((item) => item.sermonId)).toEqual(['56-0103']);
+    });
+
+    it('returns resolved and fallback translation ids when getSermonContent falls back', async () => {
+        getSermonMetaMock.mockImplementation(
+            (translationId: number, _lang: string, sermonId: string) => {
+                if (translationId === 9) {
+                    return null;
+                }
+
+                return {
+                    sermonId,
+                    translationId,
+                    title: 'Message Alpha',
+                    dateMs: Date.UTC(1956, 0, 1),
+                    location: `Location ${translationId}`,
+                };
+            },
+        );
+        getTraductionsForSermonMock.mockReturnValue([
+            {
+                sermonId: '56-0101',
+                translationId: 3,
+                title: 'Message Alpha',
+                dateMs: Date.UTC(1956, 0, 1),
+            },
+        ]);
+        getSermonParagraphsMock.mockResolvedValue([
+            { paragraphIndex: 0, content: 'Premier paragraphe' },
+            { paragraphIndex: 1, content: 'Deuxieme paragraphe' },
+        ]);
+
+        const { buildSermonTools } = await import('@main/services/ai/tools/sermon.tools');
+        const tools = buildSermonTools('fr');
+
+        const result = (await tools.getSermonContent.execute({
+            sermonId: '56-0101',
+            translationId: 9,
+        })) as {
+            meta: { translationId: number };
+            requestedTranslationId?: number;
+            resolvedTranslationId?: number;
+            fallbackTranslationId?: number;
+            paragraphs: Array<{ paragraphNumber: number; content: string }>;
+        };
+
+        expect(result.meta.translationId).toBe(3);
+        expect(result.requestedTranslationId).toBe(9);
+        expect(result.resolvedTranslationId).toBe(3);
+        expect(result.fallbackTranslationId).toBe(3);
+        expect(result.paragraphs).toHaveLength(2);
     });
 });

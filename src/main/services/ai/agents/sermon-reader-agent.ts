@@ -4,7 +4,7 @@ import log from '@main/lib/logger';
 import { buildSermonTools } from '../tools/sermon.tools';
 import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
-import { buildSermonReaderAgentPrompt } from './agent-prompts';
+import { buildSermonReaderAgentPrompt, buildSermonReaderTaskPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
 
 const AGENT_NAME = 'readSermon';
@@ -26,7 +26,9 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
             description:
                 'Delegate sermon reading to a specialized subagent that paginates through sermon content ' +
                 'and answers a specific question. Use this when the user asks to summarize, explain, or ' +
-                'analyze a specific sermon. Returns a concise summary with paragraph citations.',
+                'analyze a specific sermon. For follow-ups, pass prior findings in `alreadyKnown` and the ' +
+                'new angle in `focus` or `description` so the subagent goes deeper instead of repeating a ' +
+                'general summary. Returns a concise summary with paragraph citations.',
             inputSchema: z.object({
                 sermonId: z.string().describe('The sermon ID to read'),
                 translationId: z
@@ -35,21 +37,51 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                     .optional()
                     .describe('Translation ID from search results'),
                 question: z.string().describe('The question to answer about this sermon'),
+                description: z
+                    .string()
+                    .optional()
+                    .describe(
+                        'Additional context, desired output format, or hints about the relevant section',
+                    ),
+                alreadyKnown: z
+                    .string()
+                    .optional()
+                    .describe(
+                        'What was already answered previously, so this follow-up can avoid repeating the same summary',
+                    ),
+                focus: z
+                    .string()
+                    .optional()
+                    .describe(
+                        'Specific paragraph range, theme, citation request, or unresolved angle to focus on next',
+                    ),
                 languageCode: z
                     .string()
                     .optional()
                     .describe('Language code for content (defaults to content language)'),
             }),
-            execute: async ({ sermonId, translationId, question, languageCode }) => {
+            execute: async ({
+                sermonId,
+                translationId,
+                question,
+                description,
+                alreadyKnown,
+                focus,
+                languageCode,
+            }) => {
                 const lang = languageCode ?? ctx.contentLanguage;
                 const executors = buildSermonReaderToolSubset(lang);
                 const agentTools = Object.fromEntries(
                     Object.entries(executors).map(([name, def]) => [name, tool(def)]),
                 );
-
-                const prompt = translationId
-                    ? `Read sermon "${sermonId}" (translationId: ${translationId}) and answer: ${question}`
-                    : `Read sermon "${sermonId}" and answer: ${question}`;
+                const prompt = buildSermonReaderTaskPrompt({
+                    sermonId,
+                    translationId,
+                    question,
+                    description,
+                    alreadyKnown,
+                    focus,
+                });
 
                 log.info('Sermon reader agent starting', {
                     sermonId,
@@ -60,7 +92,11 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 try {
                     const result = await generateText({
                         model: ctx.model,
-                        system: buildSermonReaderAgentPrompt(lang, ctx.uiLanguage),
+                        system: buildSermonReaderAgentPrompt(
+                            lang,
+                            ctx.uiLanguage,
+                            ctx.activeBibleVersion,
+                        ),
                         prompt,
                         tools: agentTools,
                         stopWhen: stepCountIs(MAX_STEPS),
@@ -95,8 +131,8 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                     });
 
                     return {
+                        status: 'completed',
                         summary: result.text,
-                        sermonId,
                     };
                 } catch (error) {
                     // Re-throw abort errors so the outer runner stops
@@ -106,7 +142,11 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         error instanceof Error ? error.message : 'Sermon reader agent failed';
 
                     log.error('Sermon reader agent failed', { sermonId, error: message });
-                    return { summary: `Sermon reading failed: ${message}`, sermonId };
+                    return {
+                        status: 'failed',
+                        summary: `Sermon reading failed: ${message}`,
+                        error: message,
+                    };
                 }
             },
         },

@@ -13,6 +13,25 @@ const REMOTE_MAX_OUTPUT_TOKENS = 4096;
 const LOCAL_MAX_STEPS = 15;
 const LOCAL_MAX_OUTPUT_TOKENS = 1024;
 
+function normalizeToolCallInput(input: unknown): Record<string, unknown> {
+    if (input && typeof input === 'object' && !Array.isArray(input)) {
+        return input as Record<string, unknown>;
+    }
+
+    if (typeof input === 'string') {
+        try {
+            const parsed = JSON.parse(input);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+                return parsed as Record<string, unknown>;
+            }
+        } catch {
+            // Ignore invalid provider-formatted JSON and fall through to empty input.
+        }
+    }
+
+    return {};
+}
+
 /**
  * Unified generation runner for both local and remote providers.
  * Streams text and dispatches tool call/result events via IPC.
@@ -60,7 +79,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
                         {
                             id: part.toolCallId,
                             name: part.toolName,
-                            input: (part.input as Record<string, unknown>) ?? {},
+                            input: normalizeToolCallInput(part.input),
                         },
                     );
                     break;

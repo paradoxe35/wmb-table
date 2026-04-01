@@ -6,16 +6,19 @@ import { buildDocumentTools } from '../tools/document.tools';
 import { buildSermonTools } from '../tools/sermon.tools';
 import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
-import { buildResearchAgentPrompt } from './agent-prompts';
+import { buildResearchAgentPrompt, buildResearchAgentTaskPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
 
 const AGENT_NAME = 'researchTopic';
 const MAX_STEPS = 12;
 const MAX_OUTPUT_TOKENS = 2000;
 
-function buildResearchToolSubset(languageCode: string): Record<string, AiToolDefinition> {
+function buildResearchToolSubset(
+    languageCode: string,
+    bibleAbbreviation?: string,
+): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
-    const bibleTools = buildBibleTools(languageCode);
+    const bibleTools = buildBibleTools(languageCode, bibleAbbreviation);
     const documentTools = buildDocumentTools();
 
     return {
@@ -36,28 +39,58 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
             description:
                 'Delegate a research task to a specialized subagent that searches across sermons, ' +
                 'Bible passages, and documents. Use this for broad topic exploration, cross-referencing, ' +
-                'or when the question requires reading multiple sources. Returns a concise summary.',
+                'or when the question requires reading multiple sources. For follow-ups, pass prior findings ' +
+                'in `alreadyKnown` and the new angle in `followUpGoal` so the subagent extends the research ' +
+                'instead of repeating it. Returns a concise summary.',
             inputSchema: z.object({
                 topic: z.string().describe('The research topic or question to investigate'),
+                description: z
+                    .string()
+                    .optional()
+                    .describe(
+                        'Additional context, constraints, sermon hints, or the exact angle the user cares about',
+                    ),
+                alreadyKnown: z
+                    .string()
+                    .optional()
+                    .describe(
+                        'What was already found in prior research; use this to avoid repeating the same conclusions',
+                    ),
+                followUpGoal: z
+                    .string()
+                    .optional()
+                    .describe(
+                        'What should be investigated next, verified more deeply, or clarified in this follow-up',
+                    ),
                 languageCode: z
                     .string()
                     .optional()
                     .describe('Language code for content search (defaults to content language)'),
             }),
-            execute: async ({ topic, languageCode }) => {
+            execute: async ({ topic, description, alreadyKnown, followUpGoal, languageCode }) => {
                 const lang = languageCode ?? ctx.contentLanguage;
-                const executors = buildResearchToolSubset(lang);
+                const executors = buildResearchToolSubset(lang, ctx.activeBibleVersion);
                 const agentTools = Object.fromEntries(
                     Object.entries(executors).map(([name, def]) => [name, tool(def)]),
                 );
+                const prompt = buildResearchAgentTaskPrompt({
+                    topic,
+                    description,
+                    alreadyKnown,
+                    followUpGoal,
+                });
 
                 log.info('Research agent starting', { topic, languageCode: lang });
 
                 try {
                     const result = await generateText({
                         model: ctx.model,
-                        system: buildResearchAgentPrompt(lang, ctx.uiLanguage),
-                        prompt: topic,
+                        system: buildResearchAgentPrompt(
+                            lang,
+                            ctx.uiLanguage,
+                            ctx.activeBibleVersion,
+                        ),
+                        prompt,
                         tools: agentTools,
                         stopWhen: stepCountIs(MAX_STEPS),
                         maxOutputTokens: MAX_OUTPUT_TOKENS,
@@ -90,7 +123,10 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                         steps: result.steps.length,
                     });
 
-                    return { summary: result.text };
+                    return {
+                        status: 'completed',
+                        summary: result.text,
+                    };
                 } catch (error) {
                     // Re-throw abort errors so the outer runner stops
                     if (ctx.abortSignal?.aborted) throw error;
@@ -99,7 +135,11 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                         error instanceof Error ? error.message : 'Research agent failed';
 
                     log.error('Research agent failed', { topic, error: message });
-                    return { summary: `Research failed: ${message}` };
+                    return {
+                        status: 'failed',
+                        summary: `Research failed: ${message}`,
+                        error: message,
+                    };
                 }
             },
         },

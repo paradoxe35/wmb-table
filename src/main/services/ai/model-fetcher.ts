@@ -22,6 +22,18 @@ interface ResolvedCredentials {
     baseUrl: string | undefined;
 }
 
+function normalizeBaseUrl(baseUrl?: string): string | undefined {
+    const normalized = baseUrl?.trim().replace(/\/+$/, '');
+    return normalized || undefined;
+}
+
+function buildModelsCacheKey(providerId: string, baseUrl?: string): string {
+    const suffix = normalizeBaseUrl(baseUrl);
+    return suffix
+        ? `ai-models:${providerId}:${encodeURIComponent(suffix)}`
+        : `ai-models:${providerId}`;
+}
+
 function resolveCredentials(
     settings: AiSettings,
     providerId: string,
@@ -160,7 +172,7 @@ export async function fetchProviderModels(
     }
 
     const { apiKey, baseUrl } = resolveCredentials(settings, providerId, input);
-    const base = baseUrl ?? BUILTIN_BASE_URLS[providerId];
+    const base = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
     if (!base) {
         return [];
     }
@@ -170,7 +182,10 @@ export async function fetchProviderModels(
         return [];
     }
 
-    const cache = new SimpleCache<AiRemoteModel[]>(`ai-models:${providerId}`, CACHE_TTL_MS);
+    const cache = new SimpleCache<AiRemoteModel[]>(
+        buildModelsCacheKey(providerId, base),
+        CACHE_TTL_MS,
+    );
     const cached = cache.get();
     if (cached) {
         return cached;
@@ -207,12 +222,16 @@ export async function fetchProviderModels(
 export async function getModelContextWindow(
     providerId: string,
     modelId: string,
+    baseUrl?: string,
 ): Promise<number | undefined> {
     if (providerId === 'local') {
         return undefined;
     }
 
-    const cache = new SimpleCache<AiRemoteModel[]>(`ai-models:${providerId}`, CACHE_TTL_MS);
+    const cache = new SimpleCache<AiRemoteModel[]>(
+        buildModelsCacheKey(providerId, baseUrl ?? BUILTIN_BASE_URLS[providerId]),
+        CACHE_TTL_MS,
+    );
     const models = cache.get() ?? cache.getStale();
     const fromApi = models?.find((m) => m.id === modelId)?.contextWindow;
     if (fromApi) {

@@ -1,10 +1,22 @@
 import type { InstalledLanguage } from '@shared/types';
 
+function getTodayDateFormatted(): string {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    };
+    return now.toLocaleDateString('en-US', options);
+}
+
 export function buildSystemPrompt(input: {
     contentLanguageCode: string;
     uiLanguageCode: string;
     installedLanguages: InstalledLanguage[];
     languagePreference: 'active' | 'explicit-only';
+    activeBibleVersion?: string;
     hasAgents?: boolean;
 }): string {
     const installedLanguages = input.installedLanguages
@@ -14,10 +26,16 @@ export function buildSystemPrompt(input: {
         .join('\n');
 
     return [
+        `Today's date is ${getTodayDateFormatted()}.`,
         'You are WMB Table Assistant, designed for preachers and pastors preparing sermons, studies, notes, and subjects.',
         'The sermons in this application are from the prophet William Marrion Branham.',
         "CRITICAL: You must NEVER give your own opinion or interpretation on spiritual matters. Always search and cite what the prophet William Marrion Branham said and what the Bible says. Your role is to help users find and reference the prophet's teachings and Scripture — not to teach or interpret yourself.",
         `The sermon content language is "${input.contentLanguageCode}" — use this language when calling tools (searchSermons, searchContent, getBiblePassage, etc.).`,
+        ...(input.activeBibleVersion
+            ? [
+                  `The user's active Bible version is "${input.activeBibleVersion}". Use this abbreviation for Bible lookups unless the user specifies otherwise.`,
+              ]
+            : []),
         `The user interface language is "${input.uiLanguageCode}".`,
         `Respond in "${input.uiLanguageCode}" unless the user clearly asks for another language.`,
         input.languagePreference === 'explicit-only'
@@ -71,6 +89,8 @@ export function buildSystemPrompt(input: {
                   '  Examples: "que dit le message sur la foi?", "find where the prophet talks about Rev 10:7", "compare sermons X and Y", "what sermons talk about the rapture?", "find sermons where the prophet mentions Elijah".',
                   '- **readSermon**: Anything about a specific sermon — summarize, outline, find Bible citations, extract quotes, explain a passage, list key themes.',
                   '  Examples: "résume la prédication Amour", "list Bible verses cited in sermon 65-0429B", "what are the key points of sermon X?", "explain paragraph 42 of sermon Y".',
+                  '- For follow-up requests such as "continue", "research more", "go deeper", or "what else?", call the relevant subagent again but include prior findings in `alreadyKnown` and the missing angle in `followUpGoal`, `focus`, or `description`.',
+                  '- Do not repeat the exact same broad subagent call for a follow-up when you already have prior findings available in the conversation context.',
                   '',
                   '**Rule: if the question involves reading sermon content or searching across sermons, ALWAYS delegate.** Use direct tools only for simple actions (create/update notes or subjects, list languages, quick Bible lookup).',
               ]

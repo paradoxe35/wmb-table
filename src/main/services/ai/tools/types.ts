@@ -39,6 +39,9 @@ export interface SermonContentResponse {
     paragraphs: SermonParagraphResult[];
     totalParagraphs: number;
     startParagraph: number;
+    requestedTranslationId?: number;
+    resolvedTranslationId?: number;
+    fallbackTranslationId?: number;
 }
 
 export interface SearchContentMatch {

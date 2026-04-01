@@ -4,6 +4,7 @@ import log from '@main/lib/logger';
 const TITLE_PROMPT =
     'Generate a short conversation title (max 8 words) that captures the main topic. ' +
     'Reply with ONLY the title, no quotes, no punctuation at the end.';
+const TITLE_MAX_OUTPUT_TOKENS = 1024;
 
 /**
  * Title generation triggers once after the second complete exchange
@@ -39,7 +40,7 @@ export async function generateConversationTitle(
                 `The sermon content language is "${contentLanguage}".`,
                 `Conversation:\n${conversationSnippet}`,
             ].join('\n'),
-            maxOutputTokens: 4096,
+            maxOutputTokens: TITLE_MAX_OUTPUT_TOKENS,
             abortSignal,
         });
 

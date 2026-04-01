@@ -13,6 +13,7 @@ export interface BuildAiToolsOptions {
     model?: LanguageModel;
     isLocal?: boolean;
     uiLanguage?: string;
+    activeBibleVersion?: string;
     abortSignal?: AbortSignal;
     /** Required for subagent progress dispatch to the renderer. */
     browserWindow?: BrowserWindow;
@@ -20,11 +21,14 @@ export interface BuildAiToolsOptions {
     assistantMessageId?: string;
 }
 
-export function buildToolExecutors(defaultContentLanguage: string) {
+export function buildToolExecutors(
+    defaultContentLanguage: string,
+    defaultBibleAbbreviation?: string,
+) {
     return {
         ...buildLanguageTools(),
         ...buildDocumentTools(),
-        ...buildBibleTools(defaultContentLanguage),
+        ...buildBibleTools(defaultContentLanguage, defaultBibleAbbreviation),
         ...buildSermonTools(defaultContentLanguage),
         ...buildSubjectTools(defaultContentLanguage),
         ...buildNoteTools(defaultContentLanguage),
@@ -32,7 +36,7 @@ export function buildToolExecutors(defaultContentLanguage: string) {
 }
 
 export function buildAiTools(defaultContentLanguage: string, options?: BuildAiToolsOptions) {
-    const executors = buildToolExecutors(defaultContentLanguage);
+    const executors = buildToolExecutors(defaultContentLanguage, options?.activeBibleVersion);
 
     const dispatch =
         options?.browserWindow && options.conversationId && options.assistantMessageId
@@ -49,6 +53,7 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
                   model: options.model,
                   contentLanguage: defaultContentLanguage,
                   uiLanguage: options.uiLanguage ?? defaultContentLanguage,
+                  activeBibleVersion: options.activeBibleVersion,
                   abortSignal: options.abortSignal,
                   dispatch,
               })

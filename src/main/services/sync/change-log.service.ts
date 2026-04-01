@@ -1,4 +1,4 @@
-import { eq, and, lt, inArray } from 'drizzle-orm';
+import { eq, and, lt, inArray, asc } from 'drizzle-orm';
 import { getSyncDb } from '@main/database';
 import { changeLogs } from '@main/database/sync-schema';
 import { toSqlColumnNames } from '@main/database/sync-tables';
@@ -71,7 +71,12 @@ export function logChange(
 }
 
 export function getUnsyncedChanges(): ChangeLogRecord[] {
-    const rows = getSyncDb().select().from(changeLogs).where(eq(changeLogs.synced, false)).all();
+    const rows = getSyncDb()
+        .select()
+        .from(changeLogs)
+        .where(eq(changeLogs.synced, false))
+        .orderBy(asc(changeLogs.updatedAt), asc(changeLogs.id))
+        .all();
     return rows as ChangeLogRecord[];
 }
 

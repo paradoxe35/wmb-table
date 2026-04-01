@@ -9,8 +9,6 @@ import {
     selectActiveTabTitle,
     useSermonStore,
 } from '@renderer/stores';
-import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
-import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
@@ -117,14 +115,6 @@ export default function InlineSearchBar() {
         [activeTabKey, handleClose, nextMatch, prevMatch],
     );
 
-    const handleParagraphJump = useCallback(() => {
-        const val = searchTermRef.current.trim();
-        const num = parseInt(val, 10);
-        if (isNaN(num)) return;
-        const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-        scrollToParagraph(container, num);
-    }, []);
-
     return (
         <div className="inline-search-bar">
             {!navOnly && (
@@ -165,17 +155,6 @@ export default function InlineSearchBar() {
                 onClick={() => activeTabKey && nextMatch(activeTabKey)}
                 disabled={totalMatches === 0}
             />
-            {!navOnly && (
-                <Button
-                    type="text"
-                    size="small"
-                    title={t('Aller au paragraphe')}
-                    onClick={handleParagraphJump}
-                    style={{ fontSize: 'var(--fs-rel-md)' }}
-                >
-                    &para;
-                </Button>
-            )}
             <Button type="text" size="small" icon={<CloseOutlined />} onClick={handleClose} />
         </div>
     );
