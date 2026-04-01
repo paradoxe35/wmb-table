@@ -124,9 +124,13 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 if (langError) return langError;
 
                 // Try exact match with translationId first
-                let meta = translationId
-                    ? referenceDataService.getSermonMeta(translationId, lang, sermonId)
+                const requestedTranslationId = translationId;
+
+                let meta = requestedTranslationId
+                    ? referenceDataService.getSermonMeta(requestedTranslationId, lang, sermonId)
                     : null;
+
+                const exactTranslationFound = Boolean(meta);
 
                 // Fallback: find any translation for this sermonId
                 if (!meta) {
@@ -183,6 +187,14 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                         paragraphs,
                         totalParagraphs: rawParagraphs.length,
                         startParagraph,
+                        requestedTranslationId,
+                        resolvedTranslationId: meta.translationId,
+                        fallbackTranslationId:
+                            requestedTranslationId &&
+                            !exactTranslationFound &&
+                            requestedTranslationId !== meta.translationId
+                                ? meta.translationId
+                                : undefined,
                     };
                     return response;
                 } catch (err) {
