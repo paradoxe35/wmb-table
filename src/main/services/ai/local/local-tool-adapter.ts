@@ -8,6 +8,12 @@ import type { AiToolDefinition } from '../tools/types';
 
 type ToolExecutors = Record<string, AiToolDefinition>;
 
+function normalizeToolInput(input: unknown): Record<string, unknown> {
+    return input && typeof input === 'object' && !Array.isArray(input)
+        ? (input as Record<string, unknown>)
+        : {};
+}
+
 export function filterToolExecutors(
     executors: ToolExecutors,
     tools: LanguageModelV3FunctionTool[] | undefined,
@@ -48,8 +54,29 @@ export function buildLocalChatFunctions(input: {
                     params: z.toJSONSchema(definition.inputSchema) as JSONSchema7,
                     handler: async (params: Record<string, unknown>) => {
                         const toolCallId = generateId();
-                        input.onToolCall?.({ id: toolCallId, name, input: params });
-                        const output = await definition.execute(params);
+                        const parsed = await definition.inputSchema.safeParseAsync(params);
+                        const validatedInput = parsed.success
+                            ? normalizeToolInput(parsed.data)
+                            : normalizeToolInput(params);
+
+                        input.onToolCall?.({ id: toolCallId, name, input: validatedInput });
+
+                        if (!parsed.success) {
+                            const issues = parsed.error.issues
+                                .map((issue) => {
+                                    const path =
+                                        issue.path.length > 0 ? `${issue.path.join('.')}: ` : '';
+                                    return `${path}${issue.message}`;
+                                })
+                                .join('; ');
+                            const output = {
+                                error: `Invalid input for tool "${name}". ${issues}`.trim(),
+                            };
+                            input.onToolResult?.({ toolCallId, name, output, isError: true });
+                            return output;
+                        }
+
+                        const output = await definition.execute(validatedInput);
                         input.onToolResult?.({ toolCallId, name, output });
                         return output;
                     },
