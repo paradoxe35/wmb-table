@@ -121,20 +121,20 @@ export function pendingNavigationMatchesTab(
         case 'custom':
             return pendingNavigationMatchesDocument(pendingNavigation, {
                 documentType: 'custom',
-                sermonId: activeTab.sermonId,
-                customDocumentId: activeTab.sermonId,
+                sermonId: activeTab.documentId,
+                customDocumentId: activeTab.documentId,
             });
         case 'bible':
             return pendingNavigationMatchesDocument(pendingNavigation, {
                 documentType: 'bible',
-                sermonId: activeTab.sermonId,
+                sermonId: activeTab.documentId,
                 bibleBook: activeTab.bibleBook,
                 bibleChapter: activeTab.bibleChapter,
             });
         case 'sermon':
             return pendingNavigationMatchesDocument(pendingNavigation, {
                 documentType: 'sermon',
-                sermonId: activeTab.sermonId,
+                sermonId: activeTab.documentId,
                 translationId: activeTab.translationId,
             });
     }

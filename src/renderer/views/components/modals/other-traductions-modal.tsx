@@ -21,7 +21,7 @@ export function OtherTraductionsModal() {
     const [translations, setTranslations] = useState<SermonTranslation[]>([]);
     const [loading, setLoading] = useState(false);
 
-    const meta = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
+    const meta = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
     const availableTraductions = meta?.availableTraductions ?? [];
     const hasWithinLanguage = availableTraductions.length > 1;
 
@@ -34,7 +34,7 @@ export function OtherTraductionsModal() {
             .then(setTranslations)
             .catch(() => setTranslations([]))
             .finally(() => setLoading(false));
-    }, [visible, activeTab?.sermonId, sermonsById]);
+    }, [visible, activeTab?.documentId, sermonsById]);
 
     useEffect(() => {
         const showModal = () => setVisible(true);

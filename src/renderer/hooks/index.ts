@@ -14,7 +14,7 @@ import type {
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { buildPendingNavigationTarget } from '@renderer/utils/pending-navigation';
 import { capitalize } from 'lodash';
-import { isParagraphReference } from '@shared/types';
+import { getTabKey, isParagraphReference } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -70,7 +70,7 @@ function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: n
     const currentTab = useSermonStore.getState().tabs.find((tab) => tab.active);
     const container = document.getElementById(DOCUMENT_CONTAINER_ID);
     if (!currentTab || !container) return;
-    updateTabScroll(`${currentTab.title}::${currentTab.sermonId}`, container.scrollTop);
+    updateTabScroll(getTabKey(currentTab), container.scrollTop);
 }
 
 function resolveReferenceDocumentType(

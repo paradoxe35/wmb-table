@@ -50,7 +50,7 @@ function getTabLabel(tab: DocumentTab) {
 
     return (
         <>
-            {tab.title} - {formatShortDate(tab.sermonId)}
+            {tab.title} - {formatShortDate(tab.documentId)}
             {tab.languageCode && (
                 <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
             )}
@@ -61,7 +61,7 @@ function getTabLabel(tab: DocumentTab) {
 function getTabTooltip(tab: DocumentTab) {
     if (tab.type === 'bible') return tab.title;
     const lang = tab.languageCode ? ` (${tab.languageCode})` : '';
-    return `${tab.title} - ${formatShortDate(tab.sermonId)}${lang}`;
+    return `${tab.title} - ${formatShortDate(tab.documentId)}${lang}`;
 }
 
 export default function TabItem({

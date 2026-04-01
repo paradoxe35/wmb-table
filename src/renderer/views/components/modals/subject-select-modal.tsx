@@ -40,7 +40,7 @@ export function SubjectSelectModal() {
                     documentHtmlTree,
                     textContent,
                     ref.bible,
-                    activeTab?.sermonId,
+                    activeTab?.documentId,
                 )
                 .then(() => {
                     window.dispatchEvent(

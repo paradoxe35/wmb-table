@@ -45,7 +45,7 @@ export default function DocumentView() {
             .addHistoryEntry(
                 contentLanguage,
                 activeTab.title,
-                activeTab.sermonId,
+                activeTab.documentId,
                 activeTab.type ?? 'sermon',
             )
             .then(() => {

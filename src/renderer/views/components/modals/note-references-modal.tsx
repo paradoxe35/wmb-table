@@ -62,7 +62,7 @@ export function NoteReferencesModal() {
                     item.id,
                     referenceItem,
                     titleRef.current || '',
-                    activeTab?.sermonId ?? '',
+                    activeTab?.documentId ?? '',
                 )
                 .then(() => {
                     message.success(t('Ajouté à la note'));

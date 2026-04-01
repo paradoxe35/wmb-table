@@ -29,7 +29,7 @@ export default function SermonDocumentView() {
     const activeTab = useSermonStore(selectActiveTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const sermonInfo = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
+    const sermonInfo = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
     const tabTranslationId = activeTab?.translationId;
     const { restoreIdentity, readingPositionKey } = resolveSermonScrollPersistence(
         activeTab,
@@ -40,7 +40,7 @@ export default function SermonDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: !!content,
         documentType: 'sermon',
-        sermonId: activeTab?.sermonId,
+        sermonId: activeTab?.documentId,
         translationId: tabTranslationId ?? content?.meta.translationId,
     });
     const { zoom } = useScrollAndZoom(containerRef, {
@@ -82,7 +82,7 @@ export default function SermonDocumentView() {
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         content?.meta.title ?? null,
-        activeTab?.sermonId,
+        activeTab?.documentId,
     );
 
     return (

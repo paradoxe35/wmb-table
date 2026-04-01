@@ -379,7 +379,8 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                 <Virtuoso
                     data={sorted}
                     itemContent={(_index, d) => {
-                        const sermonKey = getTabKey({ title: d.title, sermonId: d.sermonId });
+                        const sermonKey = getTabKey({ title: d.title, documentId: d.sermonId });
+
                         return (
                             <ItemOutline
                                 sermon={d}

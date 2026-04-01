@@ -60,9 +60,9 @@ export function resolveSermonScrollPersistence(
     }
 
     const translationId = activeTab.translationId ?? sermonInfo?.translationId ?? 0;
-    const contentKey = buildSermonContentKey(languageCode, translationId, activeTab.sermonId);
+    const contentKey = buildSermonContentKey(languageCode, translationId, activeTab.documentId);
     const matchesLoadedContent =
-        content?.meta.sermonId === activeTab.sermonId &&
+        content?.meta.sermonId === activeTab.documentId &&
         content.meta.languageCode === languageCode &&
         content.meta.translationId === translationId;
 
@@ -110,7 +110,7 @@ export function useSermonContent() {
     const activeContent = useSermonStore((s) => s.activeContent);
     const [loading, setLoading] = useState(false);
 
-    const tabSermonId = activeTab?.sermonId;
+    const tabSermonId = activeTab?.documentId;
     const tabTranslationId = activeTab?.translationId;
     const tabLanguage = activeTab?.languageCode ?? contentLanguage;
 

@@ -94,7 +94,7 @@ export interface ReadingPosition {
 
 export type DocumentTab = {
     title: string;
-    sermonId: string;
+    documentId: string;
     scrollY?: number;
     scrollX?: number;
     active: boolean;
@@ -106,12 +106,12 @@ export type DocumentTab = {
     bibleChapter?: string;
 };
 
-export function getTabKey(tab: { title: string; sermonId: string }): string {
-    return `${tab.title}::${tab.sermonId}`;
+export function getTabKey(tab: { title: string; documentId: string }): string {
+    return `${tab.title}::${tab.documentId}`;
 }
 
-export function tabMatches(tab: DocumentTab, title: string, sermonId: string): boolean {
-    return tab.title === title && tab.sermonId === sermonId;
+export function tabMatches(tab: DocumentTab, title: string, documentId: string): boolean {
+    return tab.title === title && tab.documentId === documentId;
 }
 
 export type DocumentTreeRanges = {

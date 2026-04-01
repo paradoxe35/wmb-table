@@ -145,7 +145,10 @@ export default function DocumentTabs() {
             const detail = (e as CustomEvent)?.detail;
             if (detail?.title) {
                 handleRemoveTab(
-                    getTabKey({ title: detail.title, sermonId: detail.sermonId ?? '' }),
+                    getTabKey({
+                        title: detail.title,
+                        documentId: detail.sermonId ?? '',
+                    }),
                 );
             }
         };

@@ -67,7 +67,7 @@ interface SermonState {
     setError(error: string | null): void;
     addTab(
         title: string,
-        sermonId: string,
+        documentId: string,
         type?: DocumentType,
         languageCode?: string,
         translationId?: number,
@@ -86,7 +86,7 @@ interface SermonState {
     updateBibleTab(
         key: string,
         title: string,
-        sermonId: string,
+        documentId: string,
         bibleBook: string,
         bibleChapter: string,
     ): void;
@@ -122,17 +122,17 @@ export const useSermonStore = create<SermonState>((set) => ({
     setTabs: (tabs) => set({ tabs }),
     setError: (error) => set({ error }),
 
-    addTab: (title, sermonId, type, languageCode, translationId, bibleBook, bibleChapter) =>
+    addTab: (title, documentId, type, languageCode, translationId, bibleBook, bibleChapter) =>
         set((s) => {
             const tabType = type ?? 'sermon';
             const exists = s.tabs.some(
-                (t) => tabMatches(t, title, sermonId) && (t.type ?? 'sermon') === tabType,
+                (t) => tabMatches(t, title, documentId) && (t.type ?? 'sermon') === tabType,
             );
             if (exists) {
                 return {
                     tabs: s.tabs.map((t) => {
                         const isMatch =
-                            tabMatches(t, title, sermonId) && (t.type ?? 'sermon') === tabType;
+                            tabMatches(t, title, documentId) && (t.type ?? 'sermon') === tabType;
                         return {
                             ...t,
                             active: isMatch,
@@ -144,7 +144,7 @@ export const useSermonStore = create<SermonState>((set) => ({
 
             const deactivated = s.tabs.map((t) => ({ ...t, active: false }));
 
-            const newTab: DocumentTab = { title, active: true, type: tabType, sermonId };
+            const newTab: DocumentTab = { title, active: true, type: tabType, documentId };
             if (languageCode) newTab.languageCode = languageCode;
             if (translationId != null) newTab.translationId = translationId;
             if (bibleBook) newTab.bibleBook = bibleBook;
@@ -214,11 +214,11 @@ export const useSermonStore = create<SermonState>((set) => ({
             tabs: s.tabs.map((t) => (matchKey(t, key) ? { ...t, translationId } : t)),
         })),
 
-    updateBibleTab: (key, title, sermonId, bibleBook, bibleChapter) =>
+    updateBibleTab: (key, title, documentId, bibleBook, bibleChapter) =>
         set((s) => ({
             tabs: s.tabs.map((t) =>
                 matchKey(t, key)
-                    ? { ...t, title, sermonId, bibleBook, bibleChapter, scrollY: 0 }
+                    ? { ...t, title, documentId, bibleBook, bibleChapter, scrollY: 0 }
                     : t,
             ),
         })),

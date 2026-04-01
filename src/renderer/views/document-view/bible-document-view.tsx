@@ -91,17 +91,17 @@ function versesToParagraphs(verses: BibleBook[]) {
 }
 
 function buildContentForMenu(
-    tab: { title: string; sermonId: string } | null,
+    tab: { title: string; documentId: string } | null,
     paragraphs: { paragraphIndex: number; content: string }[],
     bibleLang: string,
 ): SermonContent | null {
     if (!tab) return null;
     return {
         meta: {
-            id: tab.sermonId,
+            id: tab.documentId,
             translationId: 0,
             languageCode: bibleLang,
-            sermonId: tab.sermonId,
+            sermonId: tab.documentId,
             title: tab.title,
             enTitle: tab.title,
             audioLink: null,
@@ -164,14 +164,14 @@ function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
         (chapter: string) => {
             if (!activeTabKey || !bookCode) return;
             const title = `${bookName} ${chapter}`;
-            const sermonId = `${bookCode}:${chapter}`;
+            const documentId = `${bookCode}:${chapter}`;
             const existingTab = tabs.find(
-                (t) => t.type === 'bible' && t.title === title && t.sermonId === sermonId,
+                (t) => t.type === 'bible' && t.title === title && t.documentId === documentId,
             );
             if (existingTab) {
                 activateTab(getTabKey(existingTab));
             } else {
-                updateBibleTab(activeTabKey, title, sermonId, bookCode, chapter);
+                updateBibleTab(activeTabKey, title, documentId, bookCode, chapter);
             }
         },
         [activeTabKey, bookCode, bookName, tabs, activateTab, updateBibleTab],
@@ -296,7 +296,7 @@ export default function BibleDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
         documentType: 'bible',
-        sermonId: activeTab?.sermonId,
+        sermonId: activeTab?.documentId,
         bibleBook: bookCode,
         bibleChapter: chapter,
         bibleVersionAbbreviation,
@@ -368,7 +368,7 @@ export default function BibleDocumentView() {
             activateTab(
                 getTabKey({
                     title: nextTarget.title,
-                    sermonId: nextTarget.sermonId,
+                    documentId: nextTarget.sermonId,
                 }),
             );
         }
@@ -403,7 +403,7 @@ export default function BibleDocumentView() {
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         activeTab?.title ?? null,
-        activeTab?.sermonId,
+        activeTab?.documentId,
     );
 
     return (
