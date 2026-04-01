@@ -244,6 +244,26 @@ describe('db-merge.service', () => {
         expect(notesRepo.getById(note.id)?.content).toBe('Local newer');
     });
 
+    it('applyChangeLog skips a stale remote DELETE when a newer local unsynced SAVE exists', () => {
+        const note = notesRepo.create('Original');
+        clearPendingChanges();
+        notesRepo.updateContent(note.id, 'Local newer');
+
+        const affected = applyChangeLog(
+            {
+                changeId: `notes-${note.id}-DELETE`,
+                tableName: 'notes',
+                rowId: note.id,
+                operation: 'DELETE',
+                newData: JSON.stringify({ id: note.id }),
+            },
+            { remoteTime: '2026-01-01T00:00:00.000Z' },
+        );
+
+        expect(affected).toEqual({});
+        expect(notesRepo.getById(note.id)?.content).toBe('Local newer');
+    });
+
     it('applySnapshot removes rows missing from the snapshot', () => {
         const keep = notesRepo.create('Keep local');
         const stale = notesRepo.create('Remove local');
@@ -300,6 +320,28 @@ describe('db-merge.service', () => {
 
             expect(affected.notes).toBeUndefined();
             expect(notesRepo.getById(note.id)?.content).toBe('Local newer');
+        } finally {
+            cleanup();
+        }
+    });
+
+    it('applySnapshot deletes all local rows for a synced table when the remote snapshot table is empty', () => {
+        const noteA = notesRepo.create('A');
+        const noteB = notesRepo.create('B');
+        clearPendingChanges();
+
+        const { snapshotPath, cleanup } = createSnapshotDb(() => {
+            // Keep remote notes table empty on purpose.
+        });
+
+        try {
+            const affected = applySnapshot(snapshotPath, {
+                remoteTime: '2026-03-01T00:00:00.000Z',
+            });
+
+            expect(notesRepo.getById(noteA.id)).toBeNull();
+            expect(notesRepo.getById(noteB.id)).toBeNull();
+            expect(affected.notes.slice().sort()).toEqual([noteA.id, noteB.id].sort());
         } finally {
             cleanup();
         }

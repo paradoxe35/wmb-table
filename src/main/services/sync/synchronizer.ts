@@ -46,6 +46,7 @@ let lastError: string | null = null;
 let lastSyncTime: string | null = null;
 let lastSnapshotTime = 0;
 let consecutiveAuthFailures = 0;
+let startAttemptToken = 0;
 
 // Affected tables tracked per sync cycle (table → record IDs)
 let affectedTables: AffectedTables = {};
@@ -82,6 +83,7 @@ export function startSynchronizer(authClient: OAuth2Client): void {
 }
 
 export function stopSynchronizer(): void {
+    startAttemptToken++;
     if (syncTimer) {
         clearInterval(syncTimer);
         syncTimer = null;
@@ -119,12 +121,19 @@ export function getSyncStatus(): {
  * Safe to call at app startup — no-op if backup is disabled or no credentials.
  */
 export async function tryStartSynchronizer(): Promise<void> {
+    const attemptToken = ++startAttemptToken;
+
     try {
         const status = backupRepo.getStatus();
         if (!status?.active) return;
 
         const client = await getExistingClient();
+        if (attemptToken !== startAttemptToken) return;
+
         if (client) {
+            const latestStatus = backupRepo.getStatus();
+            if (!latestStatus?.active) return;
+            if (attemptToken !== startAttemptToken) return;
             startSynchronizer(client);
         }
     } catch (err) {
@@ -148,6 +157,15 @@ function resetAffectedTables(): void {
     affectedTables = {};
 }
 
+function resetRuntimeState(): void {
+    isSyncRunning = false;
+    lastError = null;
+    lastSyncTime = null;
+    lastSnapshotTime = 0;
+    consecutiveAuthFailures = 0;
+    resetAffectedTables();
+}
+
 function mergeAffectedTables(tables: AffectedTables): void {
     for (const [table, ids] of Object.entries(tables)) {
         if (!affectedTables[table]) {
@@ -168,6 +186,14 @@ function mergeAffectedTables(tables: AffectedTables): void {
 async function schedulerWorker(): Promise<void> {
     if (isSyncRunning || !driveService) return;
     if (!(await hasInternet())) return;
+    if (!driveService) return;
+
+    await runSyncCycle();
+}
+
+async function runSyncCycle(): Promise<void> {
+    const drive = driveService;
+    if (!drive) return;
 
     isSyncRunning = true;
     resetAffectedTables();
@@ -176,7 +202,7 @@ async function schedulerWorker(): Promise<void> {
     let failure: Error | null = null;
 
     try {
-        await applyRemoteChanges();
+        await applyRemoteChanges(drive);
         // After pull: invalidate any local unsynced change logs that conflict
         // with the pulled data. This prevents stale local DELETEs from being
         // pushed back and erasing records that were just restored by the pull.
@@ -189,7 +215,7 @@ async function schedulerWorker(): Promise<void> {
 
     // Snapshot creation runs even if pull had errors
     try {
-        await createDbSnapshotIfNeeded();
+        await createDbSnapshotIfNeeded(drive);
     } catch (err) {
         failure = err instanceof Error ? err : new Error(String(err));
     }
@@ -224,11 +250,13 @@ async function schedulerWorker(): Promise<void> {
 
     // Push only if pull succeeded — prevents pushing stale/partial data
     // that could overwrite valid data on Drive
-    if (!failure) {
-        await syncChangesToDrive();
+    try {
+        if (!failure) {
+            await syncChangesToDrive(drive);
+        }
+    } finally {
+        isSyncRunning = false;
     }
-
-    isSyncRunning = false;
 }
 
 // -----------------------------------------------------------------------
@@ -239,11 +267,9 @@ async function schedulerWorker(): Promise<void> {
  * Processes ALL remote files (snapshots + changes) in chronological order.
  * Snapshots and changes are sorted together by createdTime and applied in sequence.
  */
-async function applyRemoteChanges(): Promise<void> {
-    if (!driveService) return;
-
+async function applyRemoteChanges(drive: GoogleDriveService): Promise<void> {
     const timeOffset = getLastSyncTimeOffset();
-    const files = await driveService.getChangeFilesAfterTimeOffset(timeOffset);
+    const files = await drive.getChangeFilesAfterTimeOffset(timeOffset);
 
     if (files.length === 0) return;
 
@@ -269,10 +295,10 @@ async function applyRemoteChanges(): Promise<void> {
         try {
             if (file.isSnapshot) {
                 log.info(`[Sync] Applying snapshot: ${file.name}`);
-                const tables = await applyRemoteSnapshotFile(file);
+                const tables = await applyRemoteSnapshotFile(drive, file);
                 mergeAffectedTables(tables);
             } else {
-                const tables = await applyRemoteChangeLogFile(file);
+                const tables = await applyRemoteChangeLogFile(drive, file);
                 mergeAffectedTables(tables);
             }
         } catch (err) {
@@ -336,8 +362,11 @@ function canIgnoreRemoteApplyFailure(file: DriveFile, error: Error | null): bool
     return false;
 }
 
-async function applyRemoteSnapshotFile(file: DriveFile): Promise<AffectedTables> {
-    const content = await driveService!.getFileContent(file.id);
+async function applyRemoteSnapshotFile(
+    drive: Pick<GoogleDriveService, 'getFileContent'>,
+    file: DriveFile,
+): Promise<AffectedTables> {
+    const content = await drive.getFileContent(file.id);
     const decompressed = await gunzipAsync(content);
 
     const tmpPath = join(app.getPath('temp'), `wmb-snapshot-${Date.now()}.sqlite`);
@@ -356,8 +385,11 @@ async function applyRemoteSnapshotFile(file: DriveFile): Promise<AffectedTables>
     }
 }
 
-async function applyRemoteChangeLogFile(file: DriveFile): Promise<AffectedTables> {
-    const content = await driveService!.getFileContent(file.id);
+async function applyRemoteChangeLogFile(
+    drive: Pick<GoogleDriveService, 'getFileContent'>,
+    file: DriveFile,
+): Promise<AffectedTables> {
+    const content = await drive.getFileContent(file.id);
     const change = JSON.parse(content.toString('utf-8'));
     const tables = applyChangeLog(change, { remoteTime: file.createdTime });
     log.debug(`Change log applied successfully: ${file.name}`);
@@ -374,14 +406,12 @@ async function applyRemoteChangeLogFile(file: DriveFile): Promise<AffectedTables
  * Uses markSyncedIfNotChanged to avoid marking a change as synced
  * if the user modified it during the upload.
  */
-async function syncChangesToDrive(): Promise<void> {
-    if (!driveService) return;
-
+async function syncChangesToDrive(drive: DriveChangeTransport): Promise<void> {
     const unsynced = getUnsyncedChanges();
     if (unsynced.length === 0) return;
     log.info(`[Sync] Pushing ${unsynced.length} local change(s) to Drive`);
 
-    await pushChangesToDrive(driveService, unsynced);
+    await pushChangesToDrive(drive, unsynced);
 }
 
 function compareChangeOrder(a: ChangeLogRecord, b: ChangeLogRecord): number {
@@ -453,20 +483,28 @@ export const __testing = {
     compareChangeOrder,
     groupChangesByRow,
     pushChangesToDrive,
+    runSyncCycle,
+    resetRuntimeState,
+    setDriveService(service: GoogleDriveService | null) {
+        driveService = service;
+    },
 };
 
 // -----------------------------------------------------------------------
 // Snapshots
 // -----------------------------------------------------------------------
 
-async function createDbSnapshotIfNeeded(): Promise<void> {
-    if (!driveService) return;
-
+async function createDbSnapshotIfNeeded(
+    drive: Pick<
+        GoogleDriveService,
+        'getLatestSnapshot' | 'getChangeFilesAfterTimeOffset' | 'saveSnapshot' | 'pruneOldChanges'
+    >,
+): Promise<void> {
     const now = Date.now();
     if (now - lastSnapshotTime < SNAPSHOT_INTERVAL_MS) return;
 
     // Check the latest remote snapshot age
-    const latestSnapshot = await driveService.getLatestSnapshot();
+    const latestSnapshot = await drive.getLatestSnapshot();
     if (latestSnapshot) {
         const snapshotAge = now - new Date(latestSnapshot.createdTime).getTime();
         if (snapshotAge < SNAPSHOT_INTERVAL_MS) {
@@ -477,7 +515,7 @@ async function createDbSnapshotIfNeeded(): Promise<void> {
 
     // Don't snapshot if there are pending remote changes
     const timeOffset = getLastSyncTimeOffset();
-    const pendingRemote = await driveService.getChangeFilesAfterTimeOffset(timeOffset);
+    const pendingRemote = await drive.getChangeFilesAfterTimeOffset(timeOffset);
     if (pendingRemote.length > 0) return;
 
     const mainDb = getMainSqlite();
@@ -488,7 +526,7 @@ async function createDbSnapshotIfNeeded(): Promise<void> {
     const dbContent = await readFile(mainDb.name);
     const compressed = await gzipAsync(dbContent);
 
-    const newSnapshot = await driveService.saveSnapshot(compressed);
+    const newSnapshot = await drive.saveSnapshot(compressed);
     lastSnapshotTime = now;
 
     // Record snapshot in sync state
@@ -499,13 +537,13 @@ async function createDbSnapshotIfNeeded(): Promise<void> {
     const pruneTime = new Date(new Date(newSnapshot.createdTime).getTime() - 1000).toISOString();
 
     try {
-        await driveService.pruneOldChanges(pruneTime);
+        await drive.pruneOldChanges(pruneTime);
     } catch (err) {
         log.warn('Failed to prune old changes, retrying...', err);
         // Retry once after a short delay
         await new Promise((r) => setTimeout(r, 5000));
         try {
-            await driveService.pruneOldChanges(pruneTime);
+            await drive.pruneOldChanges(pruneTime);
         } catch {
             // Give up on pruning this cycle
         }
