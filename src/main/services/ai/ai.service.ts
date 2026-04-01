@@ -42,6 +42,7 @@ interface RunGenerationOptions {
     abortSignal: AbortSignal;
     isLocal: boolean;
     remoteTokenBudget?: number;
+    contextWindow?: number;
     contentLanguageCode: string;
     uiLanguageCode: string;
 }
@@ -294,6 +295,7 @@ export class AiService {
             abortSignal: controller.signal,
             isLocal,
             remoteTokenBudget,
+            contextWindow,
             contentLanguageCode,
             uiLanguageCode,
         });
@@ -350,6 +352,7 @@ export class AiService {
             abortSignal,
             isLocal,
             remoteTokenBudget,
+            contextWindow,
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
@@ -364,6 +367,7 @@ export class AiService {
                 history,
                 tools,
                 abortSignal,
+                contextWindow,
             });
 
             const nextContext = buildConversationContext(

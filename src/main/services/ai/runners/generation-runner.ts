@@ -1,5 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
 import log from '@main/lib/logger';
+import { resolveRemoteOutputTokens } from '../context-memory';
 import type { GenerationContext, GenerationRunner } from './types';
 import {
     dispatchTextDelta,
@@ -9,7 +10,6 @@ import {
 } from './stream-dispatcher';
 
 const REMOTE_MAX_STEPS = 40;
-const REMOTE_MAX_OUTPUT_TOKENS = 6144;
 const LOCAL_MAX_STEPS = 15;
 const LOCAL_MAX_OUTPUT_TOKENS = 1024;
 
@@ -41,7 +41,9 @@ export class GenerationRunnerImpl implements GenerationRunner {
 
     async run(ctx: GenerationContext): Promise<void> {
         const maxSteps = this.isLocal ? LOCAL_MAX_STEPS : REMOTE_MAX_STEPS;
-        const maxOutputTokens = this.isLocal ? LOCAL_MAX_OUTPUT_TOKENS : REMOTE_MAX_OUTPUT_TOKENS;
+        const maxOutputTokens = this.isLocal
+            ? LOCAL_MAX_OUTPUT_TOKENS
+            : resolveRemoteOutputTokens(ctx.contextWindow);
 
         const result = streamText({
             model: ctx.model,
