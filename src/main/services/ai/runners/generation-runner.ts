@@ -9,7 +9,7 @@ import {
 } from './stream-dispatcher';
 
 const REMOTE_MAX_STEPS = 40;
-const REMOTE_MAX_OUTPUT_TOKENS = 4096;
+const REMOTE_MAX_OUTPUT_TOKENS = 6144;
 const LOCAL_MAX_STEPS = 15;
 const LOCAL_MAX_OUTPUT_TOKENS = 1024;
 

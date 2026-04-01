@@ -10,8 +10,8 @@ import { buildResearchAgentPrompt, buildResearchAgentTaskPrompt } from './agent-
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
 
 const AGENT_NAME = 'researchTopic';
-const MAX_STEPS = 12;
-const MAX_OUTPUT_TOKENS = 2000;
+const MAX_STEPS = 20;
+const MAX_OUTPUT_TOKENS = 3000;
 
 function buildResearchToolSubset(
     languageCode: string,
