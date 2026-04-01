@@ -2,7 +2,13 @@ import { Button, Divider, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModalVisible, useActiveTabTitle } from '@renderer/hooks';
-import { useSermonStore, useAppStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
+import {
+    useDocumentTabsStore,
+    useSermonStore,
+    useAppStore,
+    selectActiveSermonTab,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import type { SermonTranslation } from '@shared/types';
@@ -10,13 +16,13 @@ import type { SermonTranslation } from '@shared/types';
 export function OtherTraductionsModal() {
     const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
-    const activeTab = useSermonStore(selectActiveTab);
+    const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const title = useActiveTabTitle();
-    const addTab = useSermonStore((s) => s.addTab);
+    const addTab = useDocumentTabsStore((s) => s.addTab);
     const setMainView = useAppStore((s) => s.setMainView);
-    const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const updateTabTranslationId = useDocumentTabsStore((s) => s.updateTabTranslationId);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
 
     const [translations, setTranslations] = useState<SermonTranslation[]>([]);
     const [loading, setLoading] = useState(false);
@@ -49,7 +55,12 @@ export function OtherTraductionsModal() {
 
     const handleOpen = (translationTitle: string, languageCode: string) => {
         if (meta) {
-            addTab(translationTitle, meta.sermonId, 'sermon', languageCode);
+            addTab({
+                title: translationTitle,
+                documentId: meta.sermonId,
+                type: 'sermon',
+                languageCode,
+            });
             setMainView('document');
         }
         hide();

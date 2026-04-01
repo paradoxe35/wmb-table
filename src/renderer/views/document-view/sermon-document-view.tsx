@@ -1,5 +1,11 @@
 import { useMemo, useRef } from 'react';
-import { useAppStore, useSermonStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
+import {
+    useAppStore,
+    useDocumentTabsStore,
+    useSermonStore,
+    selectActiveSermonTab,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
 import { ParagraphList } from './tts-controls';
@@ -23,10 +29,10 @@ export default function SermonDocumentView() {
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contextMenuItems = useContextMenuItems(content, contextTargetRef);
 
-    const activeTab = useSermonStore(selectActiveTab);
+    const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const sermonInfo = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
@@ -40,7 +46,7 @@ export default function SermonDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: !!content,
         documentType: 'sermon',
-        sermonId: activeTab?.documentId,
+        sermonId: activeTab?.documentId ?? '',
         translationId: tabTranslationId ?? content?.meta.translationId,
     });
     const { zoom } = useScrollAndZoom(containerRef, {

@@ -29,7 +29,7 @@ import {
 } from '@shared/types';
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useSermonStore, useSubjectsStore } from '@renderer/stores';
+import { useDocumentTabsStore, useSubjectsStore } from '@renderer/stores';
 import {
     BookOutlined,
     DeleteOutlined,
@@ -346,7 +346,7 @@ function ItemFromSelectedSubject({
 }) {
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const openDocumentRequest = useOpenDocumentRequest();
 
     const sermon = getSermonById(item.sermonId);

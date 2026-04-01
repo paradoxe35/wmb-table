@@ -3,7 +3,7 @@ import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typogra
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useModalVisible } from '@renderer/hooks';
-import { useAppStore, useSermonStore } from '@renderer/stores';
+import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
@@ -234,7 +234,7 @@ export default function LibraryModal() {
         };
     }, [refresh]);
 
-    const setTabs = useSermonStore((s) => s.setTabs);
+    const setTabs = useDocumentTabsStore((s) => s.setTabs);
     const setLoaded = useAppStore((s) => s.setLoaded);
 
     const handleSelectLanguage = async (langCode: string) => {
@@ -242,7 +242,7 @@ export default function LibraryModal() {
             // Save current tabs for the old language before switching
             const previousLang = contentLanguage;
             if (previousLang) {
-                const currentTabs = useSermonStore.getState().tabs;
+                const currentTabs = useDocumentTabsStore.getState().tabs;
                 await window.api.documents.saveTabs(previousLang, currentTabs);
             }
 

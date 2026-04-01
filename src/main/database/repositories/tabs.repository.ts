@@ -4,18 +4,11 @@ import { getDb } from '../index';
 import { tabs } from '../schema';
 import type { DocumentTab } from '@shared/types';
 
-function normalizeDocumentTab(raw: any): DocumentTab {
-    return {
-        ...raw,
-        documentId: raw?.documentId ?? raw?.sermonId ?? '',
-    };
-}
-
 export function getTabs(languageCode: string): DocumentTab[] {
     const row = getDb().select().from(tabs).where(eq(tabs.languageCode, languageCode)).get();
     if (!row) return [];
     try {
-        return (JSON.parse(row.datas) as unknown[]).map(normalizeDocumentTab);
+        return JSON.parse(row.datas) as DocumentTab[];
     } catch (err) {
         log.warn('JSON parse failed in tabs repository:', err);
         return [];

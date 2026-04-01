@@ -1,12 +1,17 @@
 import { useEffect, useState } from 'react';
-import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
+import {
+    useAppStore,
+    useDocumentTabsStore,
+    useSermonStore,
+    selectActiveSermonTab,
+} from '@renderer/stores';
 import type {
     BibleBook,
     CustomDocumentContent,
-    DocumentTab,
     DocumentType,
     SermonContent,
     SermonMetaWithTraductions,
+    SermonTab,
 } from '@shared/types';
 
 const MAX_CACHE_ENTRIES = 50;
@@ -45,7 +50,7 @@ type ScrollPersistenceState = {
 };
 
 export function resolveSermonScrollPersistence(
-    activeTab: DocumentTab | null,
+    activeTab: SermonTab | null,
     sermonInfo: SermonMetaWithTraductions | undefined,
     contentLanguage: string | null,
     content: SermonContent | null,
@@ -103,7 +108,7 @@ export function resolveBibleScrollPersistence(
 }
 
 export function useSermonContent() {
-    const activeTab = useSermonStore(selectActiveTab);
+    const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const setActiveContent = useSermonStore((s) => s.setActiveContent);

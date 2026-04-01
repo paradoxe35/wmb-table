@@ -2,7 +2,12 @@ import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
 import { App as AntApp, type MenuProps } from 'antd';
-import { useSermonStore, useSearchStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
+import {
+    useDocumentTabsStore,
+    useSearchStore,
+    useAppStore,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useTabPersistence } from '@renderer/hooks';
@@ -12,15 +17,15 @@ import TabItem from './tab-item';
 
 export default function DocumentTabs() {
     const { t } = useTranslation();
-    const tabs = useSermonStore((s) => s.tabs);
-    const reorderTabs = useSermonStore((s) => s.reorderTabs);
-    const activateTab = useSermonStore((s) => s.activateTab);
-    const removeTab = useSermonStore((s) => s.removeTab);
-    const removeOtherTabs = useSermonStore((s) => s.removeOtherTabs);
-    const removeTabsToRight = useSermonStore((s) => s.removeTabsToRight);
-    const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
-    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
+    const reorderTabs = useDocumentTabsStore((s) => s.reorderTabs);
+    const activateTab = useDocumentTabsStore((s) => s.activateTab);
+    const removeTab = useDocumentTabsStore((s) => s.removeTab);
+    const removeOtherTabs = useDocumentTabsStore((s) => s.removeOtherTabs);
+    const removeTabsToRight = useDocumentTabsStore((s) => s.removeTabsToRight);
+    const removeAllTabs = useDocumentTabsStore((s) => s.removeAllTabs);
+    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const { modal } = AntApp.useApp();
@@ -146,8 +151,8 @@ export default function DocumentTabs() {
             if (detail?.title) {
                 handleRemoveTab(
                     getTabKey({
-                        title: detail.title,
-                        documentId: detail.sermonId ?? '',
+                        type: 'custom',
+                        documentId: detail.id ?? '',
                     }),
                 );
             }

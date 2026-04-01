@@ -87,7 +87,6 @@ CREATE TABLE `custom_documents` (
 	`id` text PRIMARY KEY NOT NULL,
 	`title` text NOT NULL,
 	`content` text DEFAULT '' NOT NULL,
-	`sermon_id` text DEFAULT '' NOT NULL,
 	`language_code` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))

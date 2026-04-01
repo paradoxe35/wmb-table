@@ -92,26 +92,96 @@ export interface ReadingPosition {
     scrollX: number;
 }
 
-export type DocumentTab = {
+type BaseDocumentTab = {
     title: string;
     documentId: string;
     scrollY?: number;
     scrollX?: number;
     active: boolean;
     zoom?: number;
-    translationId?: number;
-    languageCode?: string;
-    type?: DocumentType;
-    bibleBook?: string;
-    bibleChapter?: string;
 };
 
-export function getTabKey(tab: { title: string; documentId: string }): string {
-    return `${tab.title}::${tab.documentId}`;
+export type SermonTab = BaseDocumentTab & {
+    type: 'sermon';
+    translationId?: number;
+    languageCode?: string;
+};
+
+export type BibleTab = BaseDocumentTab & {
+    type: 'bible';
+    bibleBook: string;
+    bibleChapter: string;
+};
+
+export type CustomTab = BaseDocumentTab & {
+    type: 'custom';
+};
+
+export type DocumentTab = SermonTab | BibleTab | CustomTab;
+
+export type DocumentIdentity =
+    | {
+          documentType: 'sermon';
+          sermonId: string;
+          translationId?: number;
+      }
+    | {
+          documentType: 'bible';
+          bibleBook: string;
+          bibleChapter: string;
+          bibleVersionAbbreviation?: string;
+      }
+    | {
+          documentType: 'custom';
+          customDocumentId: string;
+      };
+
+type TabKeyInput =
+    | Pick<SermonTab, 'type' | 'documentId' | 'languageCode'>
+    | Pick<BibleTab, 'type' | 'documentId'>
+    | Pick<CustomTab, 'type' | 'documentId'>;
+
+export function getTabKey(tab: TabKeyInput): string {
+    switch (tab.type) {
+        case 'sermon':
+            return `sermon:${tab.documentId}:${tab.languageCode ?? ''}`;
+        case 'bible':
+            return `bible:${tab.documentId}`;
+        case 'custom':
+            return `custom:${tab.documentId}`;
+    }
 }
 
-export function tabMatches(tab: DocumentTab, title: string, documentId: string): boolean {
-    return tab.title === title && tab.documentId === documentId;
+export function tabMatches(tab: DocumentTab, candidate: TabKeyInput): boolean {
+    if (tab.type !== candidate.type || tab.documentId !== candidate.documentId) {
+        return false;
+    }
+
+    if (tab.type === 'sermon' && candidate.type === 'sermon') {
+        return (tab.languageCode ?? '') === (candidate.languageCode ?? '');
+    }
+
+    return true;
+}
+
+export function parseBibleDocumentId(
+    documentId: string,
+): { bibleBook: string; bibleChapter: string } | null {
+    const [bibleBook, bibleChapter, ...rest] = documentId.split(':');
+    if (!bibleBook || !bibleChapter || rest.length > 0) return null;
+    return { bibleBook, bibleChapter };
+}
+
+export function isSermonTab(tab: DocumentTab | null): tab is SermonTab {
+    return !!tab && tab.type === 'sermon';
+}
+
+export function isBibleTab(tab: DocumentTab | null): tab is BibleTab {
+    return !!tab && tab.type === 'bible';
+}
+
+export function isCustomTab(tab: DocumentTab | null): tab is CustomTab {
+    return !!tab && tab.type === 'custom';
 }
 
 export type DocumentTreeRanges = {
@@ -369,7 +439,6 @@ export type CurrentAudioDocumentPlay = {
 
 export interface CustomDocument extends Readonly<BaseEntity> {
     title: string;
-    sermonId: string;
     languageCode: string;
 }
 

@@ -6,13 +6,13 @@ import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/
 import { BookOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useSermonStore, useSubjectsStore, selectActiveTab } from '@renderer/stores';
+import { useDocumentTabsStore, useSubjectsStore, selectActiveTab } from '@renderer/stores';
 
 export function SubjectSelectModal() {
     const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
-    const activeTab = useSermonStore(selectActiveTab);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
     const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<SubjectDocument[]>([]);

@@ -9,7 +9,7 @@ import {
     SearchOutlined,
 } from '@ant-design/icons';
 import {
-    useSermonStore,
+    useDocumentTabsStore,
     useSearchStore,
     useAudioStore,
     selectActiveTabKey,
@@ -38,14 +38,14 @@ export default function SermonHeader({
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
-    const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const updateTabTranslationId = useDocumentTabsStore((s) => s.updateTabTranslationId);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     const currentPlay = useAudioStore((s) => s.currentPlay);
-    const audioTitle = useAudioStore((s) => s.title);
-    const isCurrentDocument = audioTitle === meta.title;
+    const audioSermonId = useAudioStore((s) => s.sermonId);
+    const isCurrentDocument = audioSermonId === meta.sermonId;
     const isPlaying = isCurrentDocument && currentPlay?.status === 'play';
 
     const availableTraductions = useMemo(

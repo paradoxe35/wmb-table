@@ -1,11 +1,17 @@
 export { useAppStore } from './app.store';
+export { useSermonStore } from './sermon.store';
 export {
-    useSermonStore,
+    useDocumentTabsStore,
+    selectTabs,
     selectActiveTabTitle,
     selectActiveTabKey,
     selectActiveTab,
     selectActiveTabType,
-} from './sermon.store';
+    selectActiveSermonTab,
+    selectActiveBibleTab,
+    selectActiveCustomTab,
+    selectPendingNavigation,
+} from './document-tabs.store';
 export { useSearchStore } from './search.store';
 export { useSubjectsStore } from './subjects.store';
 export { useNotesStore } from './notes.store';

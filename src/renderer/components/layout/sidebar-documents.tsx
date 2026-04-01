@@ -7,10 +7,10 @@ import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types
 import { getTabKey } from '@shared/types';
 import ContainerScrollY from '../container-scroll-y';
 import {
+    useDocumentTabsStore,
     useSermonStore,
     useCustomDocumentsStore,
     selectActiveTab,
-    selectActiveTabTitle,
 } from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
 import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
@@ -77,8 +77,9 @@ const openCustomDocumentModal = () => {
 const DocumentsAdded = () => {
     const { t } = useTranslation();
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
     const openCustomDocument = useOpenCustomDocument();
+    const activeCustomDocumentId = activeTab?.type === 'custom' ? activeTab.documentId : null;
 
     if (customDocuments.length === 0) {
         return (
@@ -122,8 +123,8 @@ const DocumentsAdded = () => {
                     {customDocuments.map((d, i) => (
                         <div
                             key={d.id || i}
-                            className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                            {...interactiveProps(() => openCustomDocument(d.title, d.sermonId))}
+                            className={`sidebar-item ${activeCustomDocumentId === d.id ? 'sidebar-item--active' : ''}`}
+                            {...interactiveProps(() => openCustomDocument(d.title, d.id))}
                             title={d.title}
                         >
                             <div className="sidebar-item__left">
@@ -362,7 +363,7 @@ function SermonsTab() {
 
 const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
     const openDocument = useOpenDocument();
-    const activeTab = useSermonStore(selectActiveTab);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
     const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
     const isEnglish = useAppStore((s) => s.contentLanguage) === 'en';
     const formatDate = useFormatSermonDate();
@@ -379,7 +380,10 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                 <Virtuoso
                     data={sorted}
                     itemContent={(_index, d) => {
-                        const sermonKey = getTabKey({ title: d.title, documentId: d.sermonId });
+                        const sermonKey = getTabKey({
+                            type: 'sermon',
+                            documentId: d.sermonId,
+                        });
 
                         return (
                             <ItemOutline

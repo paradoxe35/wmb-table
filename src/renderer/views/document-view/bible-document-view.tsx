@@ -3,13 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Button, Space, Tooltip } from 'antd';
 import { LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import {
-    useSermonStore,
+    useDocumentTabsStore,
     useSearchStore,
-    selectActiveTab,
+    selectActiveBibleTab,
     selectActiveTabKey,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type { BibleBook, BibleIndex, SermonContent } from '@shared/types';
+import type { BibleBook, BibleIndex, BibleTab, SermonContent } from '@shared/types';
 import { getTabKey } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
 import DocumentBody from './document-body';
@@ -124,11 +124,11 @@ function buildContentForMenu(
 // Chapter navigation hook
 // ---------------------------------------------------------------------------
 
-function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
-    const updateBibleTab = useSermonStore((s) => s.updateBibleTab);
-    const activateTab = useSermonStore((s) => s.activateTab);
-    const tabs = useSermonStore((s) => s.tabs);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+function useChapterNavigation(activeTab: BibleTab | null) {
+    const updateBibleTab = useDocumentTabsStore((s) => s.updateBibleTab);
+    const activateTab = useDocumentTabsStore((s) => s.activateTab);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const [bibleIndex, setBibleIndex] = useState<BibleIndex>({});
 
     const bookCode = activeTab?.bibleBook;
@@ -171,7 +171,12 @@ function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
             if (existingTab) {
                 activateTab(getTabKey(existingTab));
             } else {
-                updateBibleTab(activeTabKey, title, documentId, bookCode, chapter);
+                updateBibleTab(activeTabKey, {
+                    title,
+                    documentId,
+                    bibleBook: bookCode,
+                    bibleChapter: chapter,
+                });
             }
         },
         [activeTabKey, bookCode, bookName, tabs, activateTab, updateBibleTab],
@@ -211,7 +216,7 @@ function BibleHeader({
 }) {
     const { t } = useTranslation();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
@@ -263,13 +268,13 @@ function BibleHeader({
 // ---------------------------------------------------------------------------
 
 export default function BibleDocumentView() {
-    const activeTab = useSermonStore(selectActiveTab);
-    const activateTab = useSermonStore((s) => s.activateTab);
-    const updateBibleTab = useSermonStore((s) => s.updateBibleTab);
+    const activeTab = useDocumentTabsStore(selectActiveBibleTab);
+    const activateTab = useDocumentTabsStore((s) => s.activateTab);
+    const updateBibleTab = useDocumentTabsStore((s) => s.updateBibleTab);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const bibleLang = activeBibleVersion?.langCode ?? '';
     const bibleVersionAbbreviation = activeBibleVersion?.abbreviation ?? '';
@@ -296,9 +301,8 @@ export default function BibleDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
         documentType: 'bible',
-        sermonId: activeTab?.documentId,
-        bibleBook: bookCode,
-        bibleChapter: chapter,
+        bibleBook: bookCode ?? '',
+        bibleChapter: chapter ?? '',
         bibleVersionAbbreviation,
     });
 
@@ -358,17 +362,11 @@ export default function BibleDocumentView() {
             }
 
             autoStartTtsRef.current = true;
-            updateBibleTab(
-                source.tabKey,
-                nextTarget.title,
-                nextTarget.sermonId,
-                nextTarget.bibleBook,
-                nextTarget.bibleChapter,
-            );
+            updateBibleTab(source.tabKey, nextTarget);
             activateTab(
                 getTabKey({
-                    title: nextTarget.title,
-                    documentId: nextTarget.sermonId,
+                    type: 'bible',
+                    documentId: nextTarget.documentId,
                 }),
             );
         }

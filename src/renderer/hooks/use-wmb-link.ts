@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { buildPendingNavigation, useOpenDocumentRequest } from './index';
-import { useSermonStore } from '@renderer/stores/sermon.store';
+import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 
 /**
  * Reference link format: wmb://<type>/<...params>
@@ -81,7 +81,7 @@ export function parseWmbLink(href: string): WmbRef | null {
  */
 export function useWmbLinkNavigate(): (href: string) => boolean {
     const openDocumentRequest = useOpenDocumentRequest();
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const sermonsById = useSermonStore((s) => s.sermonsById);
 
     return useCallback(
@@ -115,7 +115,6 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                 case 'bible':
                     openDocumentRequest({
                         title: `${ref.bookName} ${ref.chapter}`,
-                        sermonId: `${ref.bookCode}:${ref.chapter}`,
                         documentType: 'bible',
                         bibleBook: ref.bookCode,
                         bibleChapter: ref.chapter,
@@ -124,8 +123,8 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                 case 'doc':
                     openDocumentRequest({
                         title: ref.title,
-                        sermonId: ref.documentId,
                         documentType: 'custom',
+                        customDocumentId: ref.documentId,
                     });
                     return true;
             }

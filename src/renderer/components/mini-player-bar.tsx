@@ -22,6 +22,7 @@ export default function MiniPlayerBar() {
     const volume = useAudioStore((s) => s.volume);
     const currentPlay = useAudioStore((s) => s.currentPlay);
     const originAudioLink = useAudioStore((s) => s.originAudioLink);
+    const sermonId = useAudioStore((s) => s.sermonId);
 
     const setCurrentTime = useAudioStore((s) => s.setCurrentTime);
     const setDuration = useAudioStore((s) => s.setDuration);
@@ -34,6 +35,8 @@ export default function MiniPlayerBar() {
     const autoplayRef = useRef(true);
     const originAudioLinkRef = useRef(originAudioLink);
     originAudioLinkRef.current = originAudioLink;
+    const sermonIdRef = useRef(sermonId);
+    sermonIdRef.current = sermonId;
     const titleRef = useRef(title);
     titleRef.current = title;
 
@@ -125,8 +128,12 @@ export default function MiniPlayerBar() {
                 return;
             }
 
-            // Same title → toggle play/pause
-            if (titleRef.current === detail.title) {
+            const isSameDocument =
+                sermonIdRef.current && detail.sermonId
+                    ? sermonIdRef.current === detail.sermonId
+                    : titleRef.current === detail.title;
+
+            if (isSameDocument) {
                 if (!autoplayRef.current) {
                     openModal();
                     autoplayRef.current = true;
@@ -139,7 +146,7 @@ export default function MiniPlayerBar() {
                 return;
             }
 
-            if (detail.autoplay || (titleRef.current && titleRef.current !== detail.title)) {
+            if (detail.autoplay || (titleRef.current && !isSameDocument)) {
                 autoplayRef.current = true;
             }
 

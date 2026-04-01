@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import DocumentTabs from '../../components/document-tabs';
 import {
+    useDocumentTabsStore,
     useSermonStore,
     useSearchStore,
     useAppStore,
@@ -15,9 +16,9 @@ import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
 
 export default function DocumentView() {
-    const tabType = useSermonStore(selectActiveTabType);
-    const activeTab = useSermonStore(selectActiveTab);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const tabType = useDocumentTabsStore(selectActiveTabType);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
@@ -25,13 +26,17 @@ export default function DocumentView() {
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );
 
-    const tabs = useSermonStore((s) => s.tabs);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
     const sermons = useSermonStore((s) => s.sermons);
-    const addTab = useSermonStore((s) => s.addTab);
+    const addTab = useDocumentTabsStore((s) => s.addTab);
 
     useEffect(() => {
         if (tabs.length === 0 && sermons.length > 0) {
-            addTab(sermons[0].title, sermons[0].sermonId);
+            addTab({
+                title: sermons[0].title,
+                documentId: sermons[0].sermonId,
+                type: 'sermon',
+            });
         }
     }, [tabs.length, sermons, addTab]);
 
@@ -42,12 +47,7 @@ export default function DocumentView() {
         if (activeTabKey === prevTabKeyRef.current) return;
         prevTabKeyRef.current = activeTabKey;
         window.api.app
-            .addHistoryEntry(
-                contentLanguage,
-                activeTab.title,
-                activeTab.documentId,
-                activeTab.type ?? 'sermon',
-            )
+            .addHistoryEntry(contentLanguage, activeTab.title, activeTab.documentId, activeTab.type)
             .then(() => {
                 window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
             });

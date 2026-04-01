@@ -3,12 +3,12 @@ import { Button, Space, Tooltip } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
-    useSermonStore,
+    useDocumentTabsStore,
     useSearchStore,
     useCustomDocumentsStore,
     useAppStore,
+    selectActiveCustomTab,
     selectActiveTabKey,
-    selectActiveTabTitle,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { SermonContent } from '@shared/types';
@@ -61,7 +61,7 @@ function parseContentToParagraphs(content: string): DocumentParagraph[] {
 function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
     const { t } = useTranslation();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
@@ -90,15 +90,15 @@ function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof u
 // ---------------------------------------------------------------------------
 
 export default function CustomDocumentView() {
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTab = useDocumentTabsStore(selectActiveCustomTab);
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const customDoc = useMemo(
-        () => customDocuments.find((d) => d.title === activeTitle),
-        [customDocuments, activeTitle],
+        () => (activeTab ? customDocuments.find((d) => d.id === activeTab.documentId) : undefined),
+        [customDocuments, activeTab],
     );
     const { content: docContent, loading } = useCustomDocumentContent(customDoc?.id);
     const { restoreIdentity, readingPositionKey } = resolveCustomDocumentScrollPersistence(
@@ -108,8 +108,7 @@ export default function CustomDocumentView() {
     useReferenceNavigation(containerRef, {
         contentReady: !!docContent,
         documentType: 'custom',
-        sermonId: customDoc?.sermonId,
-        customDocumentId: customDoc?.id,
+        customDocumentId: activeTab?.documentId ?? '',
     });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!docContent,
@@ -138,7 +137,7 @@ export default function CustomDocumentView() {
                 id: customDoc?.id ?? '',
                 translationId: 0,
                 languageCode: '',
-                sermonId: customDoc?.sermonId ?? '',
+                sermonId: customDoc?.id ?? '',
                 title: docContent.title,
                 enTitle: docContent.title,
                 audioLink: null,
@@ -160,7 +159,7 @@ export default function CustomDocumentView() {
     const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'custom');
     const { highlightsByParagraph } = useDocumentHighlights(
         docContent?.title ?? null,
-        customDoc?.sermonId,
+        customDoc?.id,
     );
 
     const { t } = useTranslation();

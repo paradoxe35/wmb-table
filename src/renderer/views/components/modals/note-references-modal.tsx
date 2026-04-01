@@ -15,7 +15,7 @@ import {
 } from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-import { useNotesStore, useSermonStore, selectActiveTab } from '@renderer/stores';
+import { useNotesStore, useDocumentTabsStore, selectActiveTab } from '@renderer/stores';
 
 const { Text } = Typography;
 
@@ -23,7 +23,7 @@ export function NoteReferencesModal() {
     const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
-    const activeTab = useSermonStore(selectActiveTab);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
     const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<NoteItemReference[]>([]);

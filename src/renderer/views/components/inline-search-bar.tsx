@@ -7,14 +7,14 @@ import {
     useSearchStore,
     selectActiveTabKey,
     selectActiveTabTitle,
-    useSermonStore,
+    useDocumentTabsStore,
 } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
     const { t } = useTranslation();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const activeTitle = useDocumentTabsStore(selectActiveTabTitle);
     const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQuery);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
     const clearSearch = useSearchStore((s) => s.clearSearch);

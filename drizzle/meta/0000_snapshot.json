@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "3746089a-f152-4185-b08a-51caadceeaa0",
+    "id": "7528d744-e31c-4dc3-9ff3-8cc81ece045d",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -542,14 +542,6 @@
                 },
                 "content": {
                     "name": "content",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
-                },
-                "sermon_id": {
-                    "name": "sermon_id",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,

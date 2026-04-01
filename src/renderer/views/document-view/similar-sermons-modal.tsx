@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Empty, List, Modal, Pagination, Spin, Typography, message } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useAppStore, useSermonStore } from '@renderer/stores';
+import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 import {
     buildPendingNavigation,
     useOpenDocumentRequest,
@@ -31,7 +31,7 @@ export default function SimilarSermonsModal() {
     const [snippet, setSnippet] = useState('');
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const openDocumentRequest = useOpenDocumentRequest();
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import {
     useAppStore,
     useSearchStore,
-    useSermonStore,
+    useDocumentTabsStore,
     selectActiveTab,
     selectActiveTabKey,
 } from '@renderer/stores';
@@ -80,8 +80,8 @@ function buildRestoreState({
 }
 
 export function useDocumentZoom(zoom: number) {
-    const activeTabKey = useSermonStore(selectActiveTabKey);
-    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const updateTabZoom = useDocumentTabsStore((s) => s.updateTabZoom);
 
     const zoomIn = useCallback(() => {
         if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
@@ -98,9 +98,9 @@ export function useScrollAndZoom(
     containerRef: React.RefObject<HTMLDivElement | null>,
     options: ScrollRestoreOptions = {},
 ) {
-    const activeTab = useSermonStore(selectActiveTab);
-    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
+    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const rememberReadingPosition = useAppStore((s) => s.rememberReadingPosition);
     const lastRestoredKeyRef = useRef<string | null>(null);
     const [savedPosition, setSavedPosition] = useState<ReadingPosition | null>(null);
@@ -166,7 +166,7 @@ export function useScrollAndZoom(
 
         // Skip scroll restoration when a pending navigation will handle scrolling.
         // Read as snapshot to avoid re-running this effect when pending state clears.
-        const pending = useSermonStore.getState().pendingNavigation;
+        const pending = useDocumentTabsStore.getState().pendingNavigation;
         if (pendingNavigationMatchesTab(pending, activeTab)) {
             return;
         }

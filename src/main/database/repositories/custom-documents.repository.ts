@@ -10,7 +10,6 @@ export function getCustomDocuments(): CustomDocument[] {
         .select({
             id: customDocuments.id,
             title: customDocuments.title,
-            sermonId: customDocuments.sermonId,
             languageCode: customDocuments.languageCode,
             createdAt: customDocuments.createdAt,
             updatedAt: customDocuments.updatedAt,
@@ -20,7 +19,6 @@ export function getCustomDocuments(): CustomDocument[] {
     return rows.map((row) => ({
         id: row.id,
         title: row.title,
-        sermonId: row.sermonId || new Date().toISOString().slice(0, 10),
         languageCode: row.languageCode ?? '',
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
@@ -44,15 +42,13 @@ export function createCustomDocument(
 
     const id = randomUUID();
     const now = new Date().toISOString();
-    const sermonId = now.slice(0, 10);
     db.insert(customDocuments)
-        .values({ id, title, content, sermonId, languageCode, createdAt: now, updatedAt: now })
+        .values({ id, title, content, languageCode, createdAt: now, updatedAt: now })
         .run();
     logChange('custom_documents', id, 'SAVE', {
         id,
         title,
         content,
-        sermonId,
         languageCode,
         createdAt: now,
         updatedAt: now,
@@ -60,7 +56,6 @@ export function createCustomDocument(
     return {
         id,
         title,
-        sermonId,
         languageCode,
         createdAt: new Date(now),
         updatedAt: new Date(now),

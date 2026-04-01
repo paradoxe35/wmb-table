@@ -30,8 +30,7 @@ import {
     buildReferenceOpenRequest,
     useOpenDocumentRequest,
 } from '@renderer/hooks';
-import { useAppStore } from '@renderer/stores';
-import { useSermonStore } from '@renderer/stores/sermon.store';
+import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
@@ -122,7 +121,7 @@ function toHighlightReference(item: HighlightGroup): ParagraphReference {
 
 function useHighlightOpen() {
     const openDocumentRequest = useOpenDocumentRequest();
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     return useCallback(
         (item: HighlightGroup) => {

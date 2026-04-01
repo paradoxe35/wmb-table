@@ -1,7 +1,12 @@
 import React, { useCallback, useLayoutEffect, useRef } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
-import { useSearchStore, useSermonStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
+import {
+    useSearchStore,
+    useDocumentTabsStore,
+    useAppStore,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 
@@ -26,7 +31,7 @@ export default function DocumentBody({
     header,
     children,
 }: DocumentBodyProps) {
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const searchBarOpen = useSearchStore((s) =>
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );

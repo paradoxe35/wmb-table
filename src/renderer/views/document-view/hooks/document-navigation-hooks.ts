@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo } from 'react';
-import { useSearchStore, useSermonStore, selectActiveTabKey } from '@renderer/stores';
-import type { CurrentDocumentIdentity } from '@renderer/utils/pending-navigation';
+import { useSearchStore, useDocumentTabsStore, selectActiveTabKey } from '@renderer/stores';
+import type { DocumentIdentity } from '@shared/types';
 import { pendingNavigationMatchesDocument } from '@renderer/utils/pending-navigation';
 import { paragraphHasMatch } from '@renderer/utils/searchable';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
@@ -35,7 +35,7 @@ function buildSearchHighlightMaps(matches: DocumentSearchParagraphMatch[] | unde
 }
 
 export function useSearchHighlight(): SearchHighlightState | null {
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const query = useSearchStore((s) =>
         activeTabKey ? s.documentViewQueries[activeTabKey] : null,
     );
@@ -57,14 +57,14 @@ export function useSearchHighlight(): SearchHighlightState | null {
 // Reference navigation (highlights, notes, subjects, links)
 // ---------------------------------------------------------------------------
 
-export type ReferenceNavigationOptions = { contentReady: boolean } & CurrentDocumentIdentity;
+export type ReferenceNavigationOptions = { contentReady: boolean } & DocumentIdentity;
 
 export function useReferenceNavigation(
     containerRef: React.RefObject<HTMLDivElement | null>,
     options: ReferenceNavigationOptions,
 ) {
-    const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
-    const clearPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
+    const clearPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     useLayoutEffect(() => {
         if (!pendingNavigation || !options.contentReady) return;

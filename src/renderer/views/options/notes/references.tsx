@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlusOutlined } from '@ant-design/icons';
-import { useSermonStore } from '@renderer/stores';
+import { useDocumentTabsStore } from '@renderer/stores';
 import {
     BibleBook,
     NoteItemReference,
@@ -34,7 +34,7 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 export const useShowReferenceDetail = () => {
     const { t } = useTranslation();
     const openDocumentRequest = useOpenDocumentRequest();
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();

@@ -193,7 +193,7 @@ function DocumentList({
                         document={doc}
                         installedLanguages={installedLanguages}
                         onView={() => {
-                            openCustomDocument(doc.title, doc.sermonId);
+                            openCustomDocument(doc.title, doc.id);
                             onClose();
                         }}
                         onDelete={() => handleDeletion(doc)}

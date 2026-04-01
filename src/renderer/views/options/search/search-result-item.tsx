@@ -65,7 +65,10 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
 
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {
-            const tabKey = getTabKey({ title: hit.title, documentId: hit.sermonId });
+            const tabKey = getTabKey({
+                type: 'sermon',
+                documentId: hit.sermonId,
+            });
             setDocumentViewQuery(tabKey, {
                 documentKey: tabKey,
                 documentTitle: hit.title,

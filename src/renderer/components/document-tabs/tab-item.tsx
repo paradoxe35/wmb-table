@@ -27,14 +27,15 @@ function getTabIcon(tab: DocumentTab) {
 function useTabAudioState(tab: DocumentTab) {
     const ttsDocId = useTtsStore((s) => s.documentId);
     const ttsStatus = useTtsStore((s) => s.status);
-    const audioTitle = useAudioStore((s) => s.title);
+    const audioSermonId = useAudioStore((s) => s.sermonId);
     const audioStatus = useAudioStore((s) => s.currentPlay?.status);
     const tabKey = getTabKey(tab);
 
     const ttsPlaying = ttsDocId === tabKey && (ttsStatus === 'playing' || ttsStatus === 'loading');
     const ttsPaused = ttsDocId === tabKey && ttsStatus === 'paused';
-    const audioPlaying = audioTitle === tab.title && audioStatus === 'play';
-    const audioPaused = audioTitle === tab.title && audioStatus === 'pause';
+    const isCurrentAudioTab = tab.type === 'sermon' && audioSermonId === tab.documentId;
+    const audioPlaying = isCurrentAudioTab && audioStatus === 'play';
+    const audioPaused = isCurrentAudioTab && audioStatus === 'pause';
 
     const isPlaying = ttsPlaying || audioPlaying;
     const isPaused = !isPlaying && (ttsPaused || audioPaused);
@@ -51,7 +52,7 @@ function getTabLabel(tab: DocumentTab) {
     return (
         <>
             {tab.title} - {formatShortDate(tab.documentId)}
-            {tab.languageCode && (
+            {tab.type === 'sermon' && tab.languageCode && (
                 <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
             )}
         </>
@@ -60,7 +61,7 @@ function getTabLabel(tab: DocumentTab) {
 
 function getTabTooltip(tab: DocumentTab) {
     if (tab.type === 'bible') return tab.title;
-    const lang = tab.languageCode ? ` (${tab.languageCode})` : '';
+    const lang = tab.type === 'sermon' && tab.languageCode ? ` (${tab.languageCode})` : '';
     return `${tab.title} - ${formatShortDate(tab.documentId)}${lang}`;
 }
 
