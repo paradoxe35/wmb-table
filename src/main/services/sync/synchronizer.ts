@@ -13,6 +13,7 @@ import {
     getUnsyncedChanges,
     markSyncedIfNotChanged,
     deleteOldChangeLogs,
+    type ChangeLogRecord,
     invalidateStaleChangeLogs,
 } from './change-log.service';
 import {
@@ -48,6 +49,8 @@ let consecutiveAuthFailures = 0;
 
 // Affected tables tracked per sync cycle (table → record IDs)
 let affectedTables: AffectedTables = {};
+
+type DriveChangeTransport = Pick<GoogleDriveService, 'deleteChangeLog' | 'uploadChangeLog'>;
 
 // -----------------------------------------------------------------------
 // Public API
@@ -341,7 +344,7 @@ async function applyRemoteSnapshotFile(file: DriveFile): Promise<AffectedTables>
     await writeFile(tmpPath, decompressed);
 
     try {
-        const tables = applySnapshot(tmpPath);
+        const tables = applySnapshot(tmpPath, { remoteTime: file.createdTime });
         log.debug(`Snapshot applied successfully: ${file.name}`);
         return tables;
     } finally {
@@ -356,7 +359,7 @@ async function applyRemoteSnapshotFile(file: DriveFile): Promise<AffectedTables>
 async function applyRemoteChangeLogFile(file: DriveFile): Promise<AffectedTables> {
     const content = await driveService!.getFileContent(file.id);
     const change = JSON.parse(content.toString('utf-8'));
-    const tables = applyChangeLog(change);
+    const tables = applyChangeLog(change, { remoteTime: file.createdTime });
     log.debug(`Change log applied successfully: ${file.name}`);
     return tables;
 }
@@ -378,38 +381,79 @@ async function syncChangesToDrive(): Promise<void> {
     if (unsynced.length === 0) return;
     log.info(`[Sync] Pushing ${unsynced.length} local change(s) to Drive`);
 
-    const drive = driveService;
+    await pushChangesToDrive(driveService, unsynced);
+}
 
+function compareChangeOrder(a: ChangeLogRecord, b: ChangeLogRecord): number {
+    const timeA = a.updatedAt ?? a.createdAt ?? DEFAULT_TIME_OFFSET;
+    const timeB = b.updatedAt ?? b.createdAt ?? DEFAULT_TIME_OFFSET;
+
+    if (timeA === timeB) {
+        return a.id - b.id;
+    }
+
+    return timeA.localeCompare(timeB);
+}
+
+function groupChangesByRow(changes: ChangeLogRecord[]): ChangeLogRecord[][] {
+    const groups = new Map<string, ChangeLogRecord[]>();
+
+    for (const change of [...changes].sort(compareChangeOrder)) {
+        const key = `${change.tableName}:${change.rowId}`;
+        const existing = groups.get(key);
+        if (existing) {
+            existing.push(change);
+        } else {
+            groups.set(key, [change]);
+        }
+    }
+
+    return [...groups.values()];
+}
+
+async function pushChangesToDrive(
+    drive: DriveChangeTransport,
+    changes: ChangeLogRecord[],
+): Promise<void> {
+    const groups = groupChangesByRow(changes);
     const CONCURRENCY = 20;
-    for (let i = 0; i < unsynced.length; i += CONCURRENCY) {
-        const batch = unsynced.slice(i, i + CONCURRENCY);
+    for (let i = 0; i < groups.length; i += CONCURRENCY) {
+        const batch = groups.slice(i, i + CONCURRENCY);
         await Promise.all(
-            batch.map(async (change) => {
-                // Delete old version from Drive — isolated error handling
-                // (delete error doesn't prevent upload)
-                try {
-                    const deletedFiles = await drive.deleteChangeLog(change.changeId);
-                    if (deletedFiles.length > 0) {
-                        for (const file of deletedFiles) {
-                            deleteProcessedChange(file.id);
+            batch.map(async (group) => {
+                for (const change of group) {
+                    // Delete old version from Drive — isolated error handling
+                    // (delete error doesn't prevent upload)
+                    try {
+                        const deletedFiles = await drive.deleteChangeLog(change.changeId);
+                        if (deletedFiles.length > 0) {
+                            for (const file of deletedFiles) {
+                                deleteProcessedChange(file.id);
+                            }
                         }
+                    } catch (err) {
+                        log.warn(`Failed to delete old change ${change.changeId}:`, err);
                     }
-                } catch (err) {
-                    log.warn(`Failed to delete old change ${change.changeId}:`, err);
-                }
 
-                // Upload new version
-                try {
-                    const uploaded = await drive.uploadChangeLog(change);
-                    saveProcessedChange(uploaded.id);
-                    markSyncedIfNotChanged(change);
-                } catch (err) {
-                    log.warn(`Failed to upload change ${change.changeId}:`, err);
+                    // Upload new version
+                    try {
+                        const uploaded = await drive.uploadChangeLog(change);
+                        saveProcessedChange(uploaded.id);
+                        markSyncedIfNotChanged(change);
+                    } catch (err) {
+                        log.warn(`Failed to upload change ${change.changeId}:`, err);
+                    }
                 }
             }),
         );
     }
 }
+
+export const __testing = {
+    compareChangeOrder,
+    groupChangesByRow,
+    pushChangesToDrive,
+};
 
 // -----------------------------------------------------------------------
 // Snapshots

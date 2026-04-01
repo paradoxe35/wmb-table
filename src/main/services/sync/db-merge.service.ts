@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { getMainSqlite } from '@main/database';
 import { SYNCED_TABLE_NAMES, toSqlColumnNames } from '@main/database/sync-tables';
-import { setSyncing } from './change-log.service';
+import { getUnsyncedChanges, setSyncing, type ChangeLogRecord } from './change-log.service';
 import log from 'electron-log';
 
 interface RemoteChangeLog {
@@ -13,6 +13,10 @@ interface RemoteChangeLog {
 }
 
 export type AffectedTables = Record<string, string[]>;
+
+export interface RemoteApplyOptions {
+    remoteTime: string;
+}
 
 /** Only allow safe SQL identifiers (alphanumeric + underscore). */
 const SAFE_IDENTIFIER = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
@@ -29,6 +33,15 @@ function quoteColumn(name: string): string {
 /** Cache of local table columns to avoid repeated PRAGMA calls. */
 const localColumnsCache = new Map<string, Set<string>>();
 
+const CASCADE_RELATIONS: Record<string, { childTable: string; foreignKey: string }[]> = {
+    notes: [
+        { childTable: 'notes_references', foreignKey: 'note_id' },
+        { childTable: 'notes_bible_references', foreignKey: 'note_id' },
+    ],
+    subjects: [{ childTable: 'subject_items', foreignKey: 'subject_id' }],
+    ai_conversations: [{ childTable: 'ai_messages', foreignKey: 'conversation_id' }],
+};
+
 /** Get the set of column names for a local table. */
 function getLocalColumns(tableName: string): Set<string> {
     let columns = localColumnsCache.get(tableName);
@@ -43,6 +56,100 @@ function getLocalColumns(tableName: string): Set<string> {
 /** Invalidate local columns cache (e.g. after a migration). */
 export function clearLocalColumnsCache(): void {
     localColumnsCache.clear();
+}
+
+function mergeAffectedTables(target: AffectedTables, source: AffectedTables): void {
+    for (const [tableName, rowIds] of Object.entries(source)) {
+        if (!target[tableName]) {
+            target[tableName] = [];
+        }
+
+        for (const rowId of rowIds) {
+            if (!target[tableName].includes(rowId)) {
+                target[tableName].push(rowId);
+            }
+        }
+    }
+}
+
+function getRowKey(tableName: string, rowId: string): string {
+    return `${tableName}:${rowId}`;
+}
+
+function extractUpdatedAtFromData(raw: string): string | null {
+    try {
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            return null;
+        }
+
+        const candidate = (parsed as Record<string, unknown>).updated_at;
+        return typeof candidate === 'string' ? candidate : null;
+    } catch {
+        return null;
+    }
+}
+
+function extractUpdatedAtFromRecord(record: Record<string, unknown>): string | null {
+    const candidate = record.updated_at ?? record.updatedAt;
+    return typeof candidate === 'string' ? candidate : null;
+}
+
+function getLocalChangeMarker(change: ChangeLogRecord): string | null {
+    return extractUpdatedAtFromData(change.newData) ?? change.updatedAt ?? change.createdAt;
+}
+
+function buildPendingLocalChangeMarkers(): Map<string, string> {
+    const markers = new Map<string, string>();
+
+    for (const change of getUnsyncedChanges()) {
+        const marker = getLocalChangeMarker(change);
+        if (!marker) continue;
+
+        const key = getRowKey(change.tableName, change.rowId);
+        const existing = markers.get(key);
+        if (!existing || marker > existing) {
+            markers.set(key, marker);
+        }
+    }
+
+    return markers;
+}
+
+function hasNewerLocalChange(
+    pendingMarkers: Map<string, string>,
+    tableName: string,
+    rowId: string,
+    remoteMarker: string,
+): boolean {
+    const localMarker = pendingMarkers.get(getRowKey(tableName, rowId));
+    return !!localMarker && localMarker > remoteMarker;
+}
+
+function deleteRowWithManualCascades(
+    db: Database.Database,
+    tableName: string,
+    rowId: string,
+): AffectedTables {
+    const affectedTables: AffectedTables = {};
+
+    for (const relation of CASCADE_RELATIONS[tableName] ?? []) {
+        const childRows = db
+            .prepare(`SELECT id FROM "${relation.childTable}" WHERE "${relation.foreignKey}" = ?`)
+            .all(rowId) as { id: string }[];
+
+        if (childRows.length === 0) continue;
+
+        db.prepare(`DELETE FROM "${relation.childTable}" WHERE "${relation.foreignKey}" = ?`).run(
+            rowId,
+        );
+        affectedTables[relation.childTable] = childRows.map((row) => row.id);
+    }
+
+    db.prepare(`DELETE FROM "${tableName}" WHERE id = ?`).run(rowId);
+    affectedTables[tableName] = [rowId];
+
+    return affectedTables;
 }
 
 /**
@@ -71,7 +178,10 @@ function buildUpsertSql(tableName: string, columns: string[]): string {
  * Wrapped in setSyncing to prevent local change logging.
  * Returns affected tables with record IDs.
  */
-export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
+export function applyChangeLog(
+    change: RemoteChangeLog,
+    options: RemoteApplyOptions,
+): AffectedTables {
     if (!SYNCED_TABLE_NAMES.has(change.tableName)) {
         log.warn(`Skipping sync for unknown table: ${change.tableName}`);
         return {};
@@ -79,6 +189,18 @@ export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
 
     const db = getMainSqlite();
     const affectedTables: AffectedTables = {};
+    const pendingMarkers = buildPendingLocalChangeMarkers();
+    const remoteMarker =
+        change.operation === 'SAVE'
+            ? (extractUpdatedAtFromData(change.newData) ?? options.remoteTime)
+            : options.remoteTime;
+
+    if (hasNewerLocalChange(pendingMarkers, change.tableName, change.rowId, remoteMarker)) {
+        log.info(
+            `[Sync] Skipping remote ${change.operation} for ${change.tableName}/${change.rowId}: newer local change pending`,
+        );
+        return {};
+    }
 
     setSyncing(true);
     try {
@@ -87,8 +209,10 @@ export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
         // Wrap in a transaction for atomicity
         const applyInTransaction = db.transaction(() => {
             if (change.operation === 'DELETE') {
-                db.prepare(`DELETE FROM "${change.tableName}" WHERE id = ?`).run(change.rowId);
-                affectedTables[change.tableName] = [change.rowId];
+                mergeAffectedTables(
+                    affectedTables,
+                    deleteRowWithManualCascades(db, change.tableName, change.rowId),
+                );
             } else if (change.operation === 'SAVE') {
                 const rawRecord = JSON.parse(change.newData);
                 // Normalize keys: convert any Drizzle JS names to SQL column names
@@ -123,10 +247,11 @@ export function applyChangeLog(change: RemoteChangeLog): AffectedTables {
  * Includes schema compatibility check before merging each table.
  * Returns affected tables with record IDs.
  */
-export function applySnapshot(snapshotDbPath: string): AffectedTables {
+export function applySnapshot(snapshotDbPath: string, options: RemoteApplyOptions): AffectedTables {
     const localDb = getMainSqlite();
     const remoteDb = new Database(snapshotDbPath, { readonly: true });
     const affectedTables: AffectedTables = {};
+    const pendingMarkers = buildPendingLocalChangeMarkers();
 
     setSyncing(true);
     try {
@@ -141,29 +266,78 @@ export function applySnapshot(snapshotDbPath: string): AffectedTables {
                 }
 
                 const rows = remoteDb.prepare(`SELECT * FROM "${tableName}"`).all();
-                if (rows.length === 0) continue;
+                const remoteRows = rows as Record<string, unknown>[];
+                const remoteRowIds = new Set<string>();
 
                 const localCols = getLocalColumns(tableName);
-                const columns = Object.keys(rows[0] as Record<string, unknown>).filter(
-                    (c) => isValidIdentifier(c) && localCols.has(c),
-                );
-                if (columns.length === 0) continue;
+                const columns =
+                    remoteRows.length === 0
+                        ? []
+                        : Object.keys(remoteRows[0]).filter(
+                              (c) => isValidIdentifier(c) && localCols.has(c),
+                          );
 
-                const sql = buildUpsertSql(tableName, columns);
-                const stmt = localDb.prepare(sql);
+                const rowsToUpsert: Record<string, unknown>[] = [];
+                const upsertedIds: string[] = [];
+                for (const row of remoteRows) {
+                    const rowId = String(row.id ?? '');
+                    if (!rowId) continue;
 
-                const insertMany = localDb.transaction((records: Record<string, unknown>[]) => {
-                    for (const record of records) {
-                        stmt.run(...columns.map((col) => record[col]));
+                    remoteRowIds.add(rowId);
+
+                    const remoteMarker = extractUpdatedAtFromRecord(row) ?? options.remoteTime;
+                    if (hasNewerLocalChange(pendingMarkers, tableName, rowId, remoteMarker)) {
+                        continue;
                     }
-                });
 
-                insertMany(rows as Record<string, unknown>[]);
+                    rowsToUpsert.push(row);
+                    upsertedIds.push(rowId);
+                }
 
-                const recordIds = (rows as Record<string, unknown>[])
-                    .map((r) => String(r.id ?? ''))
-                    .filter(Boolean);
-                affectedTables[tableName] = recordIds;
+                if (rowsToUpsert.length > 0 && columns.length > 0) {
+                    const sql = buildUpsertSql(tableName, columns);
+                    const stmt = localDb.prepare(sql);
+
+                    const insertMany = localDb.transaction((records: Record<string, unknown>[]) => {
+                        for (const record of records) {
+                            stmt.run(...columns.map((col) => record[col]));
+                        }
+                    });
+
+                    insertMany(rowsToUpsert);
+                }
+
+                const localRows = localDb.prepare(`SELECT id FROM "${tableName}"`).all() as {
+                    id: string;
+                }[];
+                const rowsToDelete = localRows
+                    .map((row) => String(row.id ?? ''))
+                    .filter(Boolean)
+                    .filter((rowId) => !remoteRowIds.has(rowId))
+                    .filter(
+                        (rowId) =>
+                            !hasNewerLocalChange(
+                                pendingMarkers,
+                                tableName,
+                                rowId,
+                                options.remoteTime,
+                            ),
+                    );
+
+                if (rowsToDelete.length > 0) {
+                    const deleteById = localDb.prepare(`DELETE FROM "${tableName}" WHERE id = ?`);
+                    const deleteMany = localDb.transaction((rowIds: string[]) => {
+                        for (const rowId of rowIds) {
+                            deleteById.run(rowId);
+                        }
+                    });
+                    deleteMany(rowsToDelete);
+                }
+
+                const touchedIds = [...new Set([...upsertedIds, ...rowsToDelete])];
+                if (touchedIds.length > 0) {
+                    affectedTables[tableName] = touchedIds;
+                }
             } catch (err) {
                 log.warn(`Snapshot merge skipped table ${tableName}:`, err);
             }
