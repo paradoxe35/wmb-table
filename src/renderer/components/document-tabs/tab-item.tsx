@@ -4,6 +4,7 @@ import Icon from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import type { DocumentTab } from '@shared/types';
+import { getTabKey } from '@shared/types';
 import { formatShortDate } from '@renderer/utils/sermon-utils';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAudioStore } from '@renderer/stores';
@@ -28,10 +29,10 @@ function useTabAudioState(tab: DocumentTab) {
     const ttsStatus = useTtsStore((s) => s.status);
     const audioTitle = useAudioStore((s) => s.title);
     const audioStatus = useAudioStore((s) => s.currentPlay?.status);
+    const tabKey = getTabKey(tab);
 
-    const ttsPlaying =
-        ttsDocId === tab.title && (ttsStatus === 'playing' || ttsStatus === 'loading');
-    const ttsPaused = ttsDocId === tab.title && ttsStatus === 'paused';
+    const ttsPlaying = ttsDocId === tabKey && (ttsStatus === 'playing' || ttsStatus === 'loading');
+    const ttsPaused = ttsDocId === tabKey && ttsStatus === 'paused';
     const audioPlaying = audioTitle === tab.title && audioStatus === 'play';
     const audioPaused = audioTitle === tab.title && audioStatus === 'pause';
 

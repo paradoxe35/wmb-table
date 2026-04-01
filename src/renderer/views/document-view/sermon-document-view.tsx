@@ -68,7 +68,7 @@ export default function SermonDocumentView() {
     }, [content?.meta, formatDate]);
 
     const langCode = content?.meta.languageCode ?? '';
-    const tts = useTts(ttsParagraphs, langCode, content?.meta.title ?? '', {
+    const tts = useTts(ttsParagraphs, langCode, activeTabKey ?? '', {
         introText: ttsIntroText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
     });
@@ -110,7 +110,7 @@ export default function SermonDocumentView() {
             {content && (
                 <ParagraphList
                     paragraphs={ttsParagraphs}
-                    documentId={content.meta.title}
+                    documentId={activeTabKey ?? ''}
                     search={search}
                     activeParagraphIndex={activeParagraphIndex}
                     highlightsByParagraph={highlightsByParagraph}

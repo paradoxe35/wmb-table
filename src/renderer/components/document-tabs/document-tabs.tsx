@@ -27,9 +27,9 @@ export default function DocumentTabs() {
 
     useTabPersistence(tabs, contentLanguage);
 
-    const stopTtsIfPlaying = useCallback((closedTabTitle: string) => {
+    const stopTtsIfPlaying = useCallback((closedTabKey: string) => {
         const tts = useTtsStore.getState();
-        if (tts.documentId === closedTabTitle && tts.status !== 'idle') {
+        if (tts.documentId === closedTabKey && tts.status !== 'idle') {
             stopAllTtsPlayback();
             tts.reset();
         }
@@ -51,7 +51,7 @@ export default function DocumentTabs() {
 
                 const tab = tabs.find((t) => getTabKey(t) === activeTabKey);
                 if (tab) {
-                    stopTtsIfPlaying(tab.title);
+                    stopTtsIfPlaying(activeTabKey);
                 }
 
                 cleanupTabs([activeTabKey]);
@@ -65,7 +65,7 @@ export default function DocumentTabs() {
     const handleRemoveTab = useCallback(
         (key: string) => {
             const tab = tabs.find((t) => getTabKey(t) === key);
-            if (tab) stopTtsIfPlaying(tab.title);
+            if (tab) stopTtsIfPlaying(key);
             cleanupTabs([key]);
             removeTab(key);
         },
@@ -78,7 +78,7 @@ export default function DocumentTabs() {
             for (const tab of tabs) {
                 const tabKey = getTabKey(tab);
                 if (tabKey !== key) {
-                    stopTtsIfPlaying(tab.title);
+                    stopTtsIfPlaying(tabKey);
                     removedKeys.push(tabKey);
                 }
             }
@@ -93,8 +93,9 @@ export default function DocumentTabs() {
             const idx = tabs.findIndex((t) => getTabKey(t) === key);
             const removedKeys: string[] = [];
             for (const tab of tabs.slice(idx + 1)) {
-                stopTtsIfPlaying(tab.title);
-                removedKeys.push(getTabKey(tab));
+                const tabKey = getTabKey(tab);
+                stopTtsIfPlaying(tabKey);
+                removedKeys.push(tabKey);
             }
             cleanupTabs(removedKeys);
             removeTabsToRight(key);
@@ -104,7 +105,7 @@ export default function DocumentTabs() {
 
     const handleRemoveAllTabs = useCallback(() => {
         const allKeys = tabs.map((t) => getTabKey(t));
-        for (const tab of tabs) stopTtsIfPlaying(tab.title);
+        for (const key of allKeys) stopTtsIfPlaying(key);
         cleanupTabs(allKeys);
         removeAllTabs();
     }, [tabs, removeAllTabs, stopTtsIfPlaying, cleanupTabs]);

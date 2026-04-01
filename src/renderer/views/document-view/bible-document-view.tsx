@@ -33,6 +33,10 @@ import {
 } from '@shared/tts.types';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
+import {
+    captureBiblePlaybackSource,
+    resolveNextBibleChapterTarget,
+} from './bible-tts-continuation';
 
 // ---------------------------------------------------------------------------
 // Content header (inside body, like SermonContentHeader)
@@ -181,7 +185,7 @@ function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
         if (hasNext) navigateToChapter(chapterList[currentIdx + 1]);
     }, [hasNext, navigateToChapter, chapterList, currentIdx]);
 
-    return { hasPrev, hasNext, goPrev, goNext };
+    return { bibleIndex, hasPrev, hasNext, goPrev, goNext };
 }
 
 // ---------------------------------------------------------------------------
@@ -260,6 +264,8 @@ function BibleHeader({
 
 export default function BibleDocumentView() {
     const activeTab = useSermonStore(selectActiveTab);
+    const activateTab = useSermonStore((s) => s.activateTab);
+    const updateBibleTab = useSermonStore((s) => s.updateBibleTab);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
@@ -310,7 +316,7 @@ export default function BibleDocumentView() {
         !!restoreIdentity,
     );
 
-    const { hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
+    const { bibleIndex, hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
 
     const introText = useMemo(() => {
         if (!activeTab?.title || !chapter) return undefined;
@@ -318,23 +324,61 @@ export default function BibleDocumentView() {
         return buildBibleChapterIntro(bookName, chapter, bibleLang);
     }, [activeTab?.title, chapter, bibleLang]);
 
-    const tts = useTts(paragraphs, bibleLang, activeTab?.title ?? '', {
+    const tts = useTts(paragraphs, bibleLang, activeTabKey ?? '', {
         introText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('verse', n, bibleLang),
     });
 
-    // Feature 3: Read entire book — auto-advance to next chapter on natural completion
+    // Read entire book: keep following the chapter that started playback,
+    // even if the user switches to another Bible tab while it is still reading.
     const ttsSettings = useTtsStore((s) => s.settings);
     const completedNaturally = useTtsStore((s) => s.completedNaturally);
+    const ttsDocumentId = useTtsStore((s) => s.documentId);
+    const ttsStatus = useTtsStore((s) => s.status);
     const autoStartTtsRef = useRef(false);
+    const continuationSourceRef = useRef<ReturnType<typeof captureBiblePlaybackSource>>(null);
 
     useEffect(() => {
-        if (completedNaturally && ttsSettings?.bibleReadEntireBook && hasNext) {
-            useTtsStore.getState().clearCompletedNaturally();
-            autoStartTtsRef.current = true;
-            goNext();
+        if (
+            ttsDocumentId === activeTabKey &&
+            (ttsStatus === 'loading' || ttsStatus === 'playing' || ttsStatus === 'paused')
+        ) {
+            continuationSourceRef.current = captureBiblePlaybackSource(activeTab, activeTabKey);
         }
-    }, [completedNaturally, ttsSettings?.bibleReadEntireBook, hasNext, goNext]);
+    }, [activeTab, activeTabKey, ttsDocumentId, ttsStatus]);
+
+    useEffect(() => {
+        if (completedNaturally && ttsSettings?.bibleReadEntireBook) {
+            useTtsStore.getState().clearCompletedNaturally();
+
+            const source = continuationSourceRef.current;
+            const nextTarget = resolveNextBibleChapterTarget(source, bibleIndex);
+            if (!source || !nextTarget) {
+                return;
+            }
+
+            autoStartTtsRef.current = true;
+            updateBibleTab(
+                source.tabKey,
+                nextTarget.title,
+                nextTarget.sermonId,
+                nextTarget.bibleBook,
+                nextTarget.bibleChapter,
+            );
+            activateTab(
+                getTabKey({
+                    title: nextTarget.title,
+                    sermonId: nextTarget.sermonId,
+                }),
+            );
+        }
+    }, [
+        activateTab,
+        bibleIndex,
+        completedNaturally,
+        ttsSettings?.bibleReadEntireBook,
+        updateBibleTab,
+    ]);
 
     useEffect(() => () => useTtsStore.getState().clearCompletedNaturally(), []);
 
@@ -391,7 +435,7 @@ export default function BibleDocumentView() {
 
             <ParagraphList
                 paragraphs={paragraphs}
-                documentId={activeTab?.title ?? ''}
+                documentId={activeTabKey ?? ''}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}

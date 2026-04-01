@@ -166,7 +166,7 @@ export default function CustomDocumentView() {
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const docLang = docContent?.languageCode || contentLanguage || 'en';
-    const tts = useTts(paragraphs, docLang, docContent?.title ?? '', {
+    const tts = useTts(paragraphs, docLang, activeTabKey ?? '', {
         introText: docContent?.title,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
     });
@@ -202,7 +202,7 @@ export default function CustomDocumentView() {
             </div>
             <ParagraphList
                 paragraphs={paragraphs}
-                documentId={docContent?.title ?? ''}
+                documentId={activeTabKey ?? ''}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
