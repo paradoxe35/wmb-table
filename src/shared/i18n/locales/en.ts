@@ -87,6 +87,9 @@ const en: Record<string, string> = {
         'More capable, better understanding. Requires a bit more memory.',
     'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
         'Works offline, directly on your computer. Download a model to get started.',
+    'Le mode local est plus limité': 'Local mode is more limited',
+    'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.':
+        'Local mode may respond more slowly and with less accuracy, especially for long or difficult questions.',
     'Utiliser la carte graphique (GPU)': 'Use graphics card (GPU)',
     'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
         'Speeds up responses if your computer has a compatible graphics card. Disable this option if you experience issues.',

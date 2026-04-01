@@ -88,6 +88,9 @@ const es: Record<string, string> = {
         'Más completo, mejor comprensión. Requiere un poco más de memoria.',
     'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
         'Funciona sin conexión a internet, directamente en su ordenador. Descargue un modelo para comenzar.',
+    'Le mode local est plus limité': 'El modo local es más limitado',
+    'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.':
+        'El modo local puede responder más lentamente y con menos precisión, especialmente en preguntas largas o difíciles.',
     'Utiliser la carte graphique (GPU)': 'Usar tarjeta gráfica (GPU)',
     'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
         'Acelera las respuestas si su ordenador tiene una tarjeta gráfica compatible. Desactive esta opción en caso de problemas.',
