@@ -1,3 +1,4 @@
+import { eq } from 'drizzle-orm';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb } from '../../database/test-helpers';
 import { getSyncDb } from '@main/database';
@@ -93,11 +94,19 @@ describe('change-log.service', () => {
     });
 
     it('markSyncedIfNotChanged does not mark a change synced if it changed during upload', () => {
+        const syncDb = getSyncDb();
+
         logChange('notes', 'id-1', 'SAVE', {
             id: 'id-1',
             name: 'Before upload',
             updatedAt: '2026-01-01T00:00:00.000Z',
         });
+
+        syncDb
+            .update(changeLogs)
+            .set({ updatedAt: '2026-01-01T00:00:00.000Z' })
+            .where(eq(changeLogs.changeId, 'notes-id-1-SAVE'))
+            .run();
 
         const beforeUpload = getUnsyncedChanges()[0];
 
@@ -106,6 +115,12 @@ describe('change-log.service', () => {
             name: 'Edited during upload',
             updatedAt: '2026-01-02T00:00:00.000Z',
         });
+
+        syncDb
+            .update(changeLogs)
+            .set({ updatedAt: '2026-01-02T00:00:00.000Z' })
+            .where(eq(changeLogs.changeId, 'notes-id-1-SAVE'))
+            .run();
 
         markSyncedIfNotChanged(beforeUpload);
 
