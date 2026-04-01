@@ -280,14 +280,18 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'researchTopic':
-            if (output && typeof output === 'object')
-                return `Research: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
+            if (output && typeof output === 'object') {
+                const status = output.status === 'failed' ? 'failed' : 'completed';
+                const label = status === 'failed' ? 'Research failed' : 'Research';
+                return `${label}: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
+            }
             break;
 
         case 'readSermon':
             if (output && typeof output === 'object') {
-                const id = String(output.sermonId ?? 'sermon');
-                return `Read ${id}: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
+                const status = output.status === 'failed' ? 'failed' : 'completed';
+                const label = status === 'failed' ? 'Read sermon failed' : 'Read sermon';
+                return `${label}: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
             }
             break;
     }

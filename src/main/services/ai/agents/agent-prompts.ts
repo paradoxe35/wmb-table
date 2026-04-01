@@ -22,6 +22,71 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '- Do NOT put the sermon title in the URL. The title goes only in the link text `[Title, §N](...)`.',
 ].join('\n');
 
+export function buildResearchAgentTaskPrompt(input: {
+    topic: string;
+    description?: string;
+    alreadyKnown?: string;
+    followUpGoal?: string;
+}): string {
+    const sections = [`Topic to investigate: ${input.topic.trim()}`];
+
+    if (input.description?.trim()) {
+        sections.push(`Additional context:\n${input.description.trim()}`);
+    }
+
+    if (input.alreadyKnown?.trim()) {
+        sections.push(
+            `Already known from earlier research (avoid repeating it unless needed for continuity):\n${input.alreadyKnown.trim()}`,
+        );
+    }
+
+    if (input.followUpGoal?.trim()) {
+        sections.push(`What to deepen, verify, or find next:\n${input.followUpGoal.trim()}`);
+    }
+
+    sections.push(
+        'If this is a follow-up, prioritize new findings, missing references, and unresolved points instead of redoing the same broad search.',
+    );
+
+    return sections.join('\n\n');
+}
+
+export function buildSermonReaderTaskPrompt(input: {
+    sermonId: string;
+    question: string;
+    translationId?: number;
+    description?: string;
+    alreadyKnown?: string;
+    focus?: string;
+}): string {
+    const sections = [
+        input.translationId
+            ? `Sermon to read: ${input.sermonId.trim()} (translationId: ${input.translationId})`
+            : `Sermon to read: ${input.sermonId.trim()}`,
+        `Question to answer: ${input.question.trim()}`,
+    ];
+
+    if (input.description?.trim()) {
+        sections.push(`Additional context:\n${input.description.trim()}`);
+    }
+
+    if (input.alreadyKnown?.trim()) {
+        sections.push(
+            `Already known from prior reading (avoid repeating it unless needed briefly):\n${input.alreadyKnown.trim()}`,
+        );
+    }
+
+    if (input.focus?.trim()) {
+        sections.push(`What to focus on in this follow-up:\n${input.focus.trim()}`);
+    }
+
+    sections.push(
+        'If this is a follow-up, extend the prior reading with new details, stronger citations, or a narrower explanation instead of restating the whole sermon.',
+    );
+
+    return sections.join('\n\n');
+}
+
 export function buildResearchAgentPrompt(
     contentLanguage: string,
     uiLanguage: string,
@@ -51,6 +116,8 @@ export function buildResearchAgentPrompt(
         '- **Try multiple searches**: If initial results are sparse, try synonyms or different keyword combinations.',
         '- **Tool pagination**: If `searchContent` or `searchSermons` returns `hasMore: true`, reuse `nextCursor` to continue. Do not repeat the same first-page search without the cursor.',
         '- **`mode`**: Use "all" for multi-word phrases (higher precision), "any" for broader exploration.',
+        '- **Follow-up research**: If the task includes already-known findings or a follow-up goal, briefly keep continuity but spend most effort on NEW references, missing evidence, deeper verification, and unanswered questions.',
+        '- Avoid rerunning the same broad search unless the follow-up explicitly asks you to re-check it.',
         '',
         REFERENCE_FORMAT_INSTRUCTIONS,
         '',
@@ -58,6 +125,7 @@ export function buildResearchAgentPrompt(
         'Structure your answer with references first:',
         '1. Start with a list of all relevant references found (as clickable links)',
         '2. Then provide the analysis and explanation',
+        '3. If this is a follow-up, clearly separate newly learned details from what was already known',
         '',
         '## Rules',
         '- Use the tools provided to gather information. Do NOT invent content.',
@@ -88,6 +156,7 @@ export function buildSermonReaderAgentPrompt(
         '## Your task',
         "Read a specific sermon and answer the user's question about it.",
         'Paginate through the sermon content 20 paragraphs at a time (max 3 pages).',
+        'If the question targets a phrase, theme, or follow-up angle, use searchContent first to jump to the most relevant paragraph(s), then verify with getSermonContent around that area.',
         '',
         REFERENCE_FORMAT_INSTRUCTIONS,
         '',
@@ -96,6 +165,7 @@ export function buildSermonReaderAgentPrompt(
         '- Do not read more than 3 pages (60 paragraphs) total unless the sermon is shorter.',
         '- Keep your final answer under 600 words.',
         '- Use searchContent to find specific phrases if needed. If it returns `hasMore: true`, pass `nextCursor` to continue instead of repeating page one.',
+        '- If prior reading context is provided, avoid repeating the whole sermon summary. Focus on the new angle, extra citations, or deeper explanation requested.',
         '- If the sermon is not found, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',
         '- When multiple translations exist, use the first available one.',

@@ -77,6 +77,8 @@ export function buildSystemPrompt(input: {
                   '  Examples: "que dit le message sur la foi?", "find where the prophet talks about Rev 10:7", "compare sermons X and Y", "what sermons talk about the rapture?", "find sermons where the prophet mentions Elijah".',
                   '- **readSermon**: Anything about a specific sermon — summarize, outline, find Bible citations, extract quotes, explain a passage, list key themes.',
                   '  Examples: "résume la prédication Amour", "list Bible verses cited in sermon 65-0429B", "what are the key points of sermon X?", "explain paragraph 42 of sermon Y".',
+                  '- For follow-up requests such as "continue", "research more", "go deeper", or "what else?", call the relevant subagent again but include prior findings in `alreadyKnown` and the missing angle in `followUpGoal`, `focus`, or `description`.',
+                  '- Do not repeat the exact same broad subagent call for a follow-up when you already have prior findings available in the conversation context.',
                   '',
                   '**Rule: if the question involves reading sermon content or searching across sermons, ALWAYS delegate.** Use direct tools only for simple actions (create/update notes or subjects, list languages, quick Bible lookup).',
               ]

@@ -132,7 +132,9 @@ export class AiService {
         try {
             const defaultLanguage = configRepo.getContentLanguage();
             if (!defaultLanguage) {
-                throw Error('');
+                throw new Error(
+                    'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
+                );
             }
 
             const model = resolveLanguageModel({
@@ -220,9 +222,12 @@ export class AiService {
         const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
 
         const isLocal = providerId === 'local';
+        const providerBaseUrl = settings.customProviders.find(
+            (provider) => provider.id === providerId,
+        )?.baseUrl;
         const contextWindow = isLocal
             ? undefined
-            : await getModelContextWindow(providerId, modelId);
+            : await getModelContextWindow(providerId, modelId, providerBaseUrl);
         const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow);
 
         const activeBibleVersion = bibleService.getActiveVersion()?.abbreviation;
