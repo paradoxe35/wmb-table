@@ -1,5 +1,16 @@
 import type { InstalledLanguage } from '@shared/types';
 
+function getTodayDateFormatted(): string {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    };
+    return now.toLocaleDateString('en-US', options);
+}
+
 export function buildSystemPrompt(input: {
     contentLanguageCode: string;
     uiLanguageCode: string;
@@ -15,6 +26,7 @@ export function buildSystemPrompt(input: {
         .join('\n');
 
     return [
+        `Today's date is ${getTodayDateFormatted()}.`,
         'You are WMB Table Assistant, designed for preachers and pastors preparing sermons, studies, notes, and subjects.',
         'The sermons in this application are from the prophet William Marrion Branham.',
         "CRITICAL: You must NEVER give your own opinion or interpretation on spiritual matters. Always search and cite what the prophet William Marrion Branham said and what the Bible says. Your role is to help users find and reference the prophet's teachings and Scripture — not to teach or interpret yourself.",
