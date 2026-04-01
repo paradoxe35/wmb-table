@@ -1,6 +1,6 @@
 import { streamText, stepCountIs } from 'ai';
 import log from '@main/lib/logger';
-import { resolveRemoteOutputTokens } from '../context-memory';
+import { resolveRemoteOutputTokens } from '../token-budget';
 import type { GenerationContext, GenerationRunner } from './types';
 import {
     dispatchTextDelta,
@@ -8,6 +8,8 @@ import {
     dispatchToolCallStart,
     dispatchToolCallComplete,
 } from './stream-dispatcher';
+
+const TRUNCATION_NOTICE = '\n\n---\n*[Response truncated due to length limit]*';
 
 const REMOTE_MAX_STEPS = 40;
 const LOCAL_MAX_STEPS = 15;
@@ -32,10 +34,6 @@ function normalizeToolCallInput(input: unknown): Record<string, unknown> {
     return {};
 }
 
-/**
- * Unified generation runner for both local and remote providers.
- * Streams text and dispatches tool call/result events via IPC.
- */
 export class GenerationRunnerImpl implements GenerationRunner {
     constructor(private readonly isLocal: boolean) {}
 
@@ -43,7 +41,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
         const maxSteps = this.isLocal ? LOCAL_MAX_STEPS : REMOTE_MAX_STEPS;
         const maxOutputTokens = this.isLocal
             ? LOCAL_MAX_OUTPUT_TOKENS
-            : resolveRemoteOutputTokens(ctx.contextWindow);
+            : resolveRemoteOutputTokens(ctx.contextWindow, ctx.toolTokens);
 
         const result = streamText({
             model: ctx.model,
@@ -54,6 +52,8 @@ export class GenerationRunnerImpl implements GenerationRunner {
             stopWhen: stepCountIs(maxSteps),
             abortSignal: ctx.abortSignal,
         });
+
+        let lastFinishReason: string | undefined;
 
         for await (const part of result.fullStream) {
             switch (part.type) {
@@ -104,6 +104,9 @@ export class GenerationRunnerImpl implements GenerationRunner {
                         error: part.error,
                     });
                     break;
+                case 'finish-step':
+                    lastFinishReason = part.finishReason;
+                    break;
                 case 'error':
                     throw new Error(
                         typeof part.error === 'string'
@@ -115,6 +118,18 @@ export class GenerationRunnerImpl implements GenerationRunner {
                 default:
                     break;
             }
+        }
+        if (lastFinishReason === 'length') {
+            log.warn('AI response truncated by output token limit', {
+                conversationId: ctx.conversationId,
+                maxOutputTokens,
+            });
+            dispatchTextDelta(
+                ctx.browserWindow,
+                ctx.conversationId,
+                ctx.assistantMessageId,
+                TRUNCATION_NOTICE,
+            );
         }
     }
 }

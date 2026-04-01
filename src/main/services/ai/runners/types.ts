@@ -12,8 +12,8 @@ export interface GenerationContext {
     history: PromptHistoryMessage[];
     tools: ReturnType<typeof buildAiTools>;
     abortSignal: AbortSignal;
-    /** Known context window size (tokens). Used to cap output tokens for small models. */
     contextWindow?: number;
+    toolTokens?: number;
 }
 
 export interface GenerationRunner {

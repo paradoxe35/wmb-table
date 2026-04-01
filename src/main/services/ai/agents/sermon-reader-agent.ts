@@ -125,14 +125,22 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         },
                     });
 
+                    const truncated = result.finishReason === 'length';
+                    if (truncated) {
+                        log.warn('Sermon reader agent output truncated', { sermonId });
+                    }
+
                     log.info('Sermon reader agent completed', {
                         sermonId,
                         steps: result.steps.length,
+                        truncated,
                     });
 
                     return {
                         status: 'completed',
-                        summary: result.text,
+                        summary: truncated
+                            ? `${result.text}\n\n[Sermon reading output was truncated due to length limit]`
+                            : result.text,
                     };
                 } catch (error) {
                     // Re-throw abort errors so the outer runner stops

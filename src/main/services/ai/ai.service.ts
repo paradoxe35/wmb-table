@@ -21,7 +21,12 @@ import { downloadLocalModel } from './local/model-download.service';
 import { LocalRuntimeService } from './local/local-runtime.service';
 import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
-import { buildConversationContext, calculateRemoteTokenBudget } from './context-memory';
+import { buildConversationContext } from './context-memory';
+import {
+    calculateRemoteTokenBudget,
+    MIN_REMOTE_CONTEXT_WINDOW,
+    measureToolTokens,
+} from './token-budget';
 import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
 import { fetchProviderModels, getModelContextWindow } from './model-fetcher';
@@ -43,6 +48,7 @@ interface RunGenerationOptions {
     isLocal: boolean;
     remoteTokenBudget?: number;
     contextWindow?: number;
+    toolTokens?: number;
     contentLanguageCode: string;
     uiLanguageCode: string;
 }
@@ -223,32 +229,27 @@ export class AiService {
         const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
 
         const isLocal = providerId === 'local';
+        const activeBibleVersion = bibleService.getActiveVersion()?.abbreviation;
+
         const providerBaseUrl = settings.customProviders.find(
             (provider) => provider.id === providerId,
         )?.baseUrl;
         const contextWindow = isLocal
             ? undefined
             : await getModelContextWindow(providerId, modelId, providerBaseUrl);
-        const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow);
 
-        const activeBibleVersion = bibleService.getActiveVersion()?.abbreviation;
+        const smallContext =
+            !isLocal && contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
+        const hasAgents = !isLocal && !smallContext;
 
-        const installedLanguages = await languagePackService.getInstalledLanguages();
-        const { recentMessages, summary } = buildConversationContext(
-            conversation.id,
-            isLocal,
-            remoteTokenBudget,
-        );
-
-        const system = buildSystemPrompt({
-            contentLanguageCode,
-            uiLanguageCode,
-            installedLanguages,
-            languagePreference: settings.languagePreference,
-            activeBibleVersion,
-            hasAgents: !isLocal,
-        });
-        const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
+        if (smallContext) {
+            log.warn('Small context window detected — agents disabled', {
+                providerId,
+                modelId,
+                contextWindow,
+                minRequired: MIN_REMOTE_CONTEXT_WINDOW,
+            });
+        }
 
         const model = resolveLanguageModel({
             settings,
@@ -264,7 +265,7 @@ export class AiService {
 
         const tools = buildAiTools(contentLanguageCode, {
             model,
-            isLocal,
+            isLocal: isLocal || smallContext,
             uiLanguage: uiLanguageCode,
             activeBibleVersion,
             abortSignal: controller.signal,
@@ -272,6 +273,26 @@ export class AiService {
             conversationId: conversation.id,
             assistantMessageId: assistantMessage.id,
         });
+
+        const toolTokens = measureToolTokens(tools);
+        const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow, toolTokens);
+
+        const installedLanguages = await languagePackService.getInstalledLanguages();
+        const { recentMessages, summary } = buildConversationContext(
+            conversation.id,
+            isLocal,
+            remoteTokenBudget,
+        );
+
+        const system = buildSystemPrompt({
+            contentLanguageCode,
+            uiLanguageCode,
+            installedLanguages,
+            languagePreference: settings.languagePreference,
+            activeBibleVersion,
+            hasAgents,
+        });
+        const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
 
         const runner = new GenerationRunnerImpl(isLocal);
 
@@ -281,6 +302,7 @@ export class AiService {
             conversationId: conversation.id,
             contextWindow: contextWindow ?? 'unknown',
             tokenBudget: remoteTokenBudget,
+            toolTokens,
         });
 
         void this.runGeneration({
@@ -296,6 +318,7 @@ export class AiService {
             isLocal,
             remoteTokenBudget,
             contextWindow,
+            toolTokens,
             contentLanguageCode,
             uiLanguageCode,
         });
@@ -353,6 +376,7 @@ export class AiService {
             isLocal,
             remoteTokenBudget,
             contextWindow,
+            toolTokens,
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
@@ -368,6 +392,7 @@ export class AiService {
                 tools,
                 abortSignal,
                 contextWindow,
+                toolTokens,
             });
 
             const nextContext = buildConversationContext(
@@ -383,7 +408,6 @@ export class AiService {
                 messageId: assistantMessage.id,
             });
 
-            // Generate an AI title after the first complete exchange
             const current = aiRepo.getConversation(conversation.id);
             const allMessages = aiRepo.getMessages(conversation.id);
             if (current && shouldGenerateTitle(allMessages.length, current.aiTitle)) {

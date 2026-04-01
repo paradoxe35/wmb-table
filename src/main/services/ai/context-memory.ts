@@ -4,6 +4,7 @@ import lodash from 'lodash';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import log from '@main/lib/logger';
+import { DEFAULT_REMOTE_TOKEN_BUDGET } from './token-budget';
 
 const { omit, pick } = lodash;
 
@@ -12,61 +13,13 @@ export type PromptHistoryMessage = {
     content: string;
 };
 
-// ── Token budgets ──
+// ── Local-only constants ──
 
-const DEFAULT_REMOTE_TOKEN_BUDGET = 32_000;
 const LOCAL_TOKEN_BUDGET = 3_000;
 const MAX_LOADED_MESSAGES = 40;
 const LOCAL_GENERATION_RESERVE = 1024;
 const LOCAL_CONTEXT_OVERHEAD = 128;
 const MIN_KEPT_TURNS = 4;
-
-// ── Dynamic budget calculation ──
-
-const SYSTEM_PROMPT_TOKEN_ESTIMATE = 2_000;
-const TOOL_DEFINITIONS_TOKEN_ESTIMATE = 5_000;
-const BUDGET_SAFETY_MARGIN = 512;
-const MIN_HISTORY_BUDGET = 4_000;
-const MAX_HISTORY_BUDGET = 200_000;
-
-/** Fixed overhead: system prompt + tool definitions + safety margin. */
-const FIXED_OVERHEAD =
-    SYSTEM_PROMPT_TOKEN_ESTIMATE + TOOL_DEFINITIONS_TOKEN_ESTIMATE + BUDGET_SAFETY_MARGIN;
-
-const REMOTE_MAX_OUTPUT_TOKENS = 6_144;
-const REMOTE_MIN_OUTPUT_TOKENS = 2_048;
-
-/**
- * Resolve the output token limit for a given context window.
- * For large models, returns the full 6,144 budget.
- * For small models, reduces output so that overhead + minimum history + output fits.
- * Returns the default max when the context window is unknown.
- */
-export function resolveRemoteOutputTokens(contextWindow?: number): number {
-    if (!contextWindow) return REMOTE_MAX_OUTPUT_TOKENS;
-
-    const available = contextWindow - FIXED_OVERHEAD - MIN_HISTORY_BUDGET;
-    if (available >= REMOTE_MAX_OUTPUT_TOKENS) return REMOTE_MAX_OUTPUT_TOKENS;
-
-    return Math.max(REMOTE_MIN_OUTPUT_TOKENS, available);
-}
-
-/**
- * Calculate the conversation history token budget based on a model's context window.
- * Subtracts estimated system prompt, tool definitions, output reserve, and safety margin.
- * Uses the real output token limit (which adapts to small context windows).
- * Returns a safe default when the context window is unknown.
- */
-export function calculateRemoteTokenBudget(contextWindow?: number): number {
-    if (!contextWindow) {
-        return DEFAULT_REMOTE_TOKEN_BUDGET;
-    }
-
-    const outputReserve = resolveRemoteOutputTokens(contextWindow);
-    const budget = contextWindow - FIXED_OVERHEAD - outputReserve;
-
-    return Math.max(MIN_HISTORY_BUDGET, Math.min(budget, MAX_HISTORY_BUDGET));
-}
 
 // ── Per-message formatting limits ──
 

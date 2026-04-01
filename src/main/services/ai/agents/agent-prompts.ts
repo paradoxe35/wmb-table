@@ -129,7 +129,7 @@ export function buildResearchAgentPrompt(
         '',
         '## Rules',
         '- Use the tools provided to gather information. Do NOT invent content.',
-        '- Keep your final answer under 800 words.',
+        '- Be concise by default, but include enough references and explanation to answer the topic well.',
         '- Be concise and structured: use headings or bullet points.',
         '- If you cannot find enough information, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',
