@@ -1,18 +1,16 @@
 import { eq } from 'drizzle-orm';
-import log from 'electron-log';
 import { getDb } from '../index';
 import { tabs } from '../schema';
+import { parseJsonOrFallback } from '@main/lib/json';
 import type { DocumentTab } from '@shared/types';
 
 export function getTabs(languageCode: string): DocumentTab[] {
     const row = getDb().select().from(tabs).where(eq(tabs.languageCode, languageCode)).get();
     if (!row) return [];
-    try {
-        return JSON.parse(row.datas) as DocumentTab[];
-    } catch (err) {
-        log.warn('JSON parse failed in tabs repository:', err);
-        return [];
-    }
+    return parseJsonOrFallback<DocumentTab[]>(row.datas, [], {
+        scope: 'tabs',
+        field: 'datas',
+    });
 }
 
 export function saveTabs(languageCode: string, datas: DocumentTab[]): void {

@@ -43,6 +43,13 @@ export function useTtsSetup(): void {
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const settings = useTtsStore((s) => s.settings);
+    const setSettings = useTtsStore((s) => s.setSettings);
+    const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
+    const setLanguageSupported = useTtsStore((s) => s.setLanguageSupported);
+    const setIncompatibleMessage = useTtsStore((s) => s.setIncompatibleMessage);
+    const triggerRecheck = useTtsStore((s) => s.triggerRecheck);
+    const reset = useTtsStore((s) => s.reset);
+    const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
     const settingsLoaded = useRef(false);
     const recheckTrigger = useTtsStore((s) => s.recheckTrigger);
 
@@ -51,10 +58,10 @@ export function useTtsSetup(): void {
         if (!settingsLoaded.current) {
             settingsLoaded.current = true;
             window.api.tts.getSettings().then((s) => {
-                useTtsStore.getState().setSettings(s);
+                setSettings(s);
             });
         }
-    }, []);
+    }, [setSettings]);
 
     const activeProviderCfg = settings?.providers[settings.activeProvider ?? DEFAULT_TTS_PROVIDER];
 
@@ -68,10 +75,10 @@ export function useTtsSetup(): void {
             const { status } = useTtsStore.getState();
             if (status === 'playing' || status === 'paused') {
                 stopAllTtsPlayback();
-                useTtsStore.getState().stopAndRemember();
+                stopAndRemember();
             }
         }
-    }, [synthesisKey]);
+    }, [stopAndRemember, synthesisKey]);
 
     // Auto-switch voice on language change (provider switches handled in tts-tab)
     const prevLangRef = useRef<string | null>(null);
@@ -92,12 +99,12 @@ export function useTtsSetup(): void {
             if (cancelled || !resolved) {
                 return;
             }
-            useTtsStore.getState().setSettings(resolved);
+            setSettings(resolved);
         });
         return () => {
             cancelled = true;
         };
-    }, [contentLanguage, settings?.activeProvider, settings?.autoSwitchVoice]);
+    }, [contentLanguage, setSettings, settings?.activeProvider, settings?.autoSwitchVoice]);
 
     // Language compatibility check
     useEffect(() => {
@@ -114,9 +121,8 @@ export function useTtsSetup(): void {
                 if (cancelled) {
                     return;
                 }
-                const store = useTtsStore.getState();
-                store.setLanguageSupported(supported);
-                store.setIncompatibleMessage(
+                setLanguageSupported(supported);
+                setIncompatibleMessage(
                     supported
                         ? undefined
                         : t('Le navigateur ne dispose pas de voix pour cette langue.'),
@@ -130,18 +136,16 @@ export function useTtsSetup(): void {
                     return;
                 }
                 const result = results[activeProvider];
-                const store = useTtsStore.getState();
-                store.setLanguageSupported(result.supported);
-                store.setIncompatibleMessage(
+                setLanguageSupported(result.supported);
+                setIncompatibleMessage(
                     result.supported ? undefined : getIncompatibilityMessage(result.reason, t),
                 );
             } catch {
                 if (cancelled) {
                     return;
                 }
-                const store = useTtsStore.getState();
-                store.setLanguageSupported(false);
-                store.setIncompatibleMessage(
+                setLanguageSupported(false);
+                setIncompatibleMessage(
                     t('Impossible de vérifier la compatibilité du fournisseur.'),
                 );
             }
@@ -162,23 +166,25 @@ export function useTtsSetup(): void {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
-        contentLanguage,
-        settings?.activeProvider,
-        activeProviderCfg?.voiceId,
-        activeProviderCfg?.model,
         activeProviderCfg?.apiKey,
-        t,
+        activeProviderCfg?.model,
+        activeProviderCfg?.voiceId,
+        contentLanguage,
         recheckTrigger,
+        setIncompatibleMessage,
+        setLanguageSupported,
+        settings?.activeProvider,
+        t,
     ]);
 
     // Re-check after model download
     useEffect(() => {
         return window.api.on.ttsModelDownloadProgress((p) => {
             if (p.status === 'complete') {
-                useTtsStore.getState().triggerRecheck();
+                triggerRecheck();
             }
         });
-    }, []);
+    }, [triggerRecheck]);
 
     // Playback state from main process
     useEffect(() => {
@@ -208,7 +214,7 @@ export function useTtsSetup(): void {
                 }
                 current.reset();
             } else {
-                useTtsStore.getState().setPlaybackState(state);
+                setPlaybackState(state);
             }
             if (state.status === 'error') {
                 message.error(
@@ -216,7 +222,7 @@ export function useTtsSetup(): void {
                 );
             }
         });
-    }, [t]);
+    }, [setPlaybackState, t]);
 
     // Segment audio playback + segment completion
     useEffect(() => {
@@ -352,7 +358,7 @@ export function useTtsSetup(): void {
         // When audio playback fails, reset TTS to idle so the user isn't stuck
         ttsAudioPlayer.setOnError(() => {
             stopAllTtsPlayback();
-            useTtsStore.getState().reset();
+            reset();
         });
 
         // When a segment finishes, transition to the next one
@@ -388,5 +394,5 @@ export function useTtsSetup(): void {
             unsubAudio();
             clearGap();
         };
-    }, []);
+    }, [reset]);
 }

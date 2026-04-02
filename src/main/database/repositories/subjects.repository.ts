@@ -1,9 +1,9 @@
 import { eq, desc } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import log from 'electron-log';
 import { getDb } from '../index';
 import { subjects, subjectItems } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
+import { parseJsonOrFallback, parseRequiredJson } from '@main/lib/json';
 import type {
     DocumentReference,
     DocumentPreview,
@@ -11,36 +11,21 @@ import type {
     SubjectDocumentItem,
 } from '@shared/types';
 
-function safeJsonParse<T>(raw: string, fallback: T): T {
-    try {
-        return JSON.parse(raw);
-    } catch (err) {
-        log.warn('JSON parse failed in subjects repository:', err);
-        return fallback;
-    }
-}
-
-function parseRequiredJson<T>(raw: string, context: string): T {
-    try {
-        return JSON.parse(raw) as T;
-    } catch (err) {
-        log.error(`JSON parse failed in subjects repository for ${context}:`, err);
-        throw new Error(`Invalid ${context} JSON`);
-    }
-}
-
 function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentItem {
     return {
         id: row.id,
         subjectId: row.subjectId,
         documentTitle: row.documentTitle,
-        documentReference: parseRequiredJson<DocumentReference>(
-            row.documentReference,
-            'document_reference',
-        ),
+        documentReference: parseRequiredJson<DocumentReference>(row.documentReference, {
+            scope: 'subject_items',
+            field: 'document_reference',
+        }),
         textContent: row.textContent,
         documentPreview: row.documentPreview
-            ? safeJsonParse<DocumentPreview | undefined>(row.documentPreview, undefined)
+            ? parseJsonOrFallback<DocumentPreview | undefined>(row.documentPreview, undefined, {
+                  scope: 'subject_items',
+                  field: 'document_preview',
+              })
             : undefined,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),

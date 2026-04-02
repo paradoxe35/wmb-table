@@ -2,6 +2,7 @@ import { asc, desc, eq, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
+import { parseJsonOrFallback } from '@main/lib/json';
 import { logChange } from '@main/services/sync/change-log.service';
 import {
     BUILTIN_PROVIDER_IDS,
@@ -16,16 +17,6 @@ import {
 } from '@shared/ai.types';
 
 const AI_SETTINGS_ID = 'ai_settings';
-
-function parseJson<T>(value: string | null | undefined, fallback: T): T {
-    if (!value) return fallback;
-    try {
-        return JSON.parse(value) as T;
-    } catch {
-        return fallback;
-    }
-}
-
 function toConversation(row: typeof aiConversations.$inferSelect): AiConversation {
     return {
         id: row.id,
@@ -43,8 +34,14 @@ function toMessage(row: typeof aiMessages.$inferSelect): AiMessage {
         conversationId: row.conversationId,
         role: row.role as AiMessageRole,
         content: row.content,
-        toolCalls: parseJson<AiToolCall[]>(row.toolCalls, []),
-        toolResults: parseJson<AiToolResult[]>(row.toolResults, []),
+        toolCalls: parseJsonOrFallback<AiToolCall[]>(row.toolCalls, [], {
+            scope: 'ai_messages',
+            field: 'tool_calls',
+        }),
+        toolResults: parseJsonOrFallback<AiToolResult[]>(row.toolResults, [], {
+            scope: 'ai_messages',
+            field: 'tool_results',
+        }),
         createdAt: row.createdAt ?? new Date().toISOString(),
     };
 }
@@ -58,9 +55,15 @@ function rowToSettings(row: typeof aiSettings.$inferSelect): AiSettings {
         maxHistoryConversations: row.maxHistoryConversations,
         providers: {
             ...defaults.providers,
-            ...parseJson<AiProviders>(row.providers, defaults.providers),
+            ...parseJsonOrFallback<AiProviders>(row.providers, defaults.providers, {
+                scope: 'ai_settings',
+                field: 'providers',
+            }),
         },
-        customProviders: parseJson(row.customProviders, defaults.customProviders),
+        customProviders: parseJsonOrFallback(row.customProviders, defaults.customProviders, {
+            scope: 'ai_settings',
+            field: 'custom_providers',
+        }),
     };
 }
 
