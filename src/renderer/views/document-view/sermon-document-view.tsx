@@ -40,15 +40,12 @@ export default function SermonDocumentView() {
     const tabTranslationId = activeTab?.translationId;
     const { restoreIdentity, readingPositionKey } = resolveSermonScrollPersistence(
         activeTab,
-        sermonInfo,
         contentLanguage,
         content,
     );
     useReferenceNavigation(containerRef, {
         contentReady: !!content,
-        documentType: 'sermon',
-        sermonId: activeTab?.documentId ?? '',
-        translationId: tabTranslationId ?? content?.meta.translationId,
+        documentIdentity: activeTab ? getDocumentIdentityFromTab(activeTab) : null,
     });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!content,

@@ -57,7 +57,10 @@ export function useSearchHighlight(): SearchHighlightState | null {
 // Reference navigation (highlights, notes, subjects, links)
 // ---------------------------------------------------------------------------
 
-export type ReferenceNavigationOptions = { contentReady: boolean } & DocumentIdentity;
+export type ReferenceNavigationOptions = {
+    contentReady: boolean;
+    documentIdentity: DocumentIdentity | null;
+};
 
 export function useReferenceNavigation(
     containerRef: React.RefObject<HTMLDivElement | null>,
@@ -67,8 +70,8 @@ export function useReferenceNavigation(
     const clearPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     useLayoutEffect(() => {
-        if (!pendingNavigation || !options.contentReady) return;
-        if (!pendingNavigationMatchesDocument(pendingNavigation, options)) return;
+        if (!pendingNavigation || !options.contentReady || !options.documentIdentity) return;
+        if (!pendingNavigationMatchesDocument(pendingNavigation, options.documentIdentity)) return;
         if (!containerRef.current) return;
 
         const ref = pendingNavigation.documentHtmlTree;
@@ -99,7 +102,13 @@ export function useReferenceNavigation(
         };
         raf = requestAnimationFrame(tryScroll);
         return () => cancelAnimationFrame(raf);
-    }, [pendingNavigation, options, clearPendingNavigation, containerRef]);
+    }, [
+        pendingNavigation,
+        options.contentReady,
+        options.documentIdentity,
+        clearPendingNavigation,
+        containerRef,
+    ]);
 }
 
 // ---------------------------------------------------------------------------

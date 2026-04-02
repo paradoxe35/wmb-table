@@ -23,11 +23,10 @@ function renderSermonRef(item: SubjectDocumentItem): string {
     const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
     const lang = paragraphRef?.languageCode ?? 'en';
-    const translationId = paragraphRef?.translationId ?? 0;
     const sermon =
         item.documentIdentity.documentType === 'sermon'
             ? referenceDataService.getSermonMeta(
-                  translationId,
+                  item.documentIdentity.translationId,
                   lang,
                   item.documentIdentity.sermonId,
               )

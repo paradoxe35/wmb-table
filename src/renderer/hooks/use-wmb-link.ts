@@ -103,7 +103,6 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     setPendingNavigation(
                         buildPendingNavigation(request, {
                             paragraphIndex: ref.paragraphIndex,
-                            translationId,
                             languageCode: '',
                             documentIdentity: {
                                 documentType: 'sermon',

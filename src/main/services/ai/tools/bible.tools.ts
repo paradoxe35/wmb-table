@@ -120,7 +120,6 @@ export function buildBibleTools(
                     title,
                     {
                         paragraphIndex: 0,
-                        translationId: 0,
                         languageCode: lang,
                         documentIdentity: {
                             documentType: 'bible',

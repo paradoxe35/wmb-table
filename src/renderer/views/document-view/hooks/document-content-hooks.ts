@@ -10,7 +10,6 @@ import type {
     CustomDocumentContent,
     DocumentType,
     SermonContent,
-    SermonMetaWithTraductions,
     SermonTab,
 } from '@shared/types';
 
@@ -51,7 +50,6 @@ type ScrollPersistenceState = {
 
 export function resolveSermonScrollPersistence(
     activeTab: SermonTab | null,
-    sermonInfo: SermonMetaWithTraductions | undefined,
     contentLanguage: string | null,
     content: SermonContent | null,
 ): ScrollPersistenceState {
@@ -64,7 +62,7 @@ export function resolveSermonScrollPersistence(
         return { restoreIdentity: null, readingPositionKey: null };
     }
 
-    const translationId = activeTab.translationId ?? sermonInfo?.translationId ?? 0;
+    const translationId = activeTab.translationId;
     const contentKey = buildSermonContentKey(languageCode, translationId, activeTab.documentId);
     const matchesLoadedContent =
         content?.meta.sermonId === activeTab.documentId &&
@@ -110,7 +108,6 @@ export function resolveBibleScrollPersistence(
 export function useSermonContent() {
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const sermonsById = useSermonStore((s) => s.sermonsById);
     const setActiveContent = useSermonStore((s) => s.setActiveContent);
     const activeContent = useSermonStore((s) => s.activeContent);
     const [loading, setLoading] = useState(false);
@@ -120,14 +117,13 @@ export function useSermonContent() {
     const tabLanguage = activeTab?.languageCode ?? contentLanguage;
 
     useEffect(() => {
-        if (!tabSermonId || !tabLanguage) {
+        if (!activeTab || !tabSermonId || !tabLanguage) {
             setActiveContent(null);
             return;
         }
 
         let cancelled = false;
-        const meta = sermonsById[tabSermonId];
-        const translationId = tabTranslationId ?? meta?.translationId ?? 0;
+        const translationId = activeTab.translationId;
         const cacheKey = buildSermonContentKey(tabLanguage, translationId, tabSermonId);
         const cached = contentCache.get(cacheKey);
         if (cached) {
@@ -158,7 +154,7 @@ export function useSermonContent() {
         return () => {
             cancelled = true;
         };
-    }, [tabSermonId, tabLanguage, sermonsById, setActiveContent, tabTranslationId]);
+    }, [activeTab, tabSermonId, tabLanguage, setActiveContent, tabTranslationId]);
 
     return { content: activeContent, loading };
 }

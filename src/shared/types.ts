@@ -79,6 +79,7 @@ export interface SermonMetaWithTraductions extends SermonMeta {
 }
 
 export interface SermonTranslation {
+    translationId: number;
     languageCode: string;
     title: string;
     translatorName: string | null;
@@ -139,7 +140,7 @@ export type DocumentIdentity =
 export function getDocumentIdentityKey(identity: DocumentIdentity): string {
     switch (identity.documentType) {
         case 'sermon':
-            return `sermon:${identity.sermonId}:${identity.translationId ?? ''}`;
+            return `sermon:${identity.sermonId}:${identity.translationId}`;
         case 'bible':
             return `bible:${identity.bibleBook}:${identity.bibleChapter}:${identity.bibleVersionAbbreviation ?? ''}`;
         case 'custom':
@@ -235,7 +236,6 @@ export type StoredDocumentReference = {
 
 export type ParagraphReference = {
     paragraphIndex: number;
-    translationId: number;
     languageCode: string;
     textSnippet?: string;
 } & StoredDocumentReference;
@@ -243,7 +243,7 @@ export type ParagraphReference = {
 export function isParagraphReference(
     ref: DocumentHtmlTree | ParagraphReference,
 ): ref is ParagraphReference {
-    return 'paragraphIndex' in ref && 'translationId' in ref;
+    return 'paragraphIndex' in ref && 'languageCode' in ref && 'documentIdentity' in ref;
 }
 
 // ---------------------------------------------------------------------------

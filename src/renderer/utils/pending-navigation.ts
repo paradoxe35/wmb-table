@@ -39,7 +39,7 @@ export function pendingNavigationMatchesDocument(
             if (target.sermonId !== current.sermonId) {
                 return false;
             }
-            if (target.translationId != null && target.translationId !== current.translationId) {
+            if (target.translationId !== current.translationId) {
                 return false;
             }
             return true;

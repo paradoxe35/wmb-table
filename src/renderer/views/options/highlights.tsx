@@ -96,14 +96,8 @@ const DOC_TYPE_META: Record<DocumentType, { color: string; label: string }> = {
 // ---------------------------------------------------------------------------
 
 function toHighlightReference(item: HighlightGroup): ParagraphReference {
-    const translationId =
-        item.documentIdentity.documentType === 'sermon'
-            ? (item.documentIdentity.translationId ?? 0)
-            : 0;
-
     return {
         paragraphIndex: item.paragraphIndex,
-        translationId,
         languageCode: item.languageCode,
         documentIdentity: item.documentIdentity,
         textSnippet: item.textSnippet,

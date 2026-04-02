@@ -74,6 +74,7 @@ export default function SermonHeader({
                     traduction: meta.languageCode,
                     audio_link: meta.audioLink,
                     sermonId: meta.sermonId,
+                    translationId: meta.translationId,
                     autoplay: true,
                 },
             }),

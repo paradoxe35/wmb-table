@@ -300,10 +300,15 @@ export default function BibleDocumentView() {
     );
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
-        documentType: 'bible',
-        bibleBook: bookCode ?? '',
-        bibleChapter: chapter ?? '',
-        bibleVersionAbbreviation,
+        documentIdentity:
+            bookCode && chapter
+                ? {
+                      documentType: 'bible',
+                      bibleBook: bookCode,
+                      bibleChapter: chapter,
+                      bibleVersionAbbreviation,
+                  }
+                : null,
     });
 
     const { zoom } = useScrollAndZoom(containerRef, {

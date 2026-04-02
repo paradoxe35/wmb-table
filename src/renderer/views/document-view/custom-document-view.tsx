@@ -107,8 +107,13 @@ export default function CustomDocumentView() {
     );
     useReferenceNavigation(containerRef, {
         contentReady: !!docContent,
-        documentType: 'custom',
-        customDocumentId: activeTab?.documentId ?? '',
+        documentIdentity:
+            activeTab && customDoc
+                ? {
+                      documentType: 'custom',
+                      customDocumentId: customDoc.id,
+                  }
+                : null,
     });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!docContent,

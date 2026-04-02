@@ -79,7 +79,6 @@ export function useContextMenuItems(
                 return {
                     ref: {
                         paragraphIndex: anchor ? parseParagraphIndex(anchor) : 0,
-                        translationId: meta.translationId,
                         languageCode: meta.languageCode,
                         textSnippet: sel.toString().slice(0, 200),
                         documentIdentity,
@@ -101,7 +100,6 @@ export function useContextMenuItems(
             return {
                 ref: {
                     paragraphIndex: idx,
-                    translationId: meta.translationId,
                     languageCode: meta.languageCode,
                     textSnippet: text.slice(0, 200),
                     documentIdentity,

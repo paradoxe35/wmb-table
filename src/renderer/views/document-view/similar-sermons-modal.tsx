@@ -78,7 +78,6 @@ export default function SimilarSermonsModal() {
             setPendingNavigation(
                 buildPendingNavigation(request, {
                     paragraphIndex,
-                    translationId: hit.translationId,
                     languageCode: contentLanguage ?? '',
                     documentIdentity: {
                         documentType: 'sermon',

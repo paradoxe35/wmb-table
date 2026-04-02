@@ -12,9 +12,14 @@ export const useDocumentViewOpen = () => {
         sermonId?: string,
         translationId?: number,
     ) => {
-        const id = sermonId ?? sermonsById[name]?.sermonId ?? '';
+        const id = sermonId ?? '';
+        const resolvedTranslationId =
+            translationId ?? (id ? sermonsById[id]?.translationId : undefined);
+        if (!id || resolvedTranslationId == null) {
+            return;
+        }
         onItemClick?.();
-        openDocument(name, id, translationId);
+        openDocument(name, id, resolvedTranslationId);
     };
 
     return onClick;

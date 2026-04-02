@@ -53,13 +53,14 @@ export function OtherTraductionsModal() {
         };
     }, []);
 
-    const handleOpen = (translationTitle: string, languageCode: string) => {
+    const handleOpen = (translationTitle: string, languageCode: string, translationId: number) => {
         if (meta) {
             addTab({
                 title: translationTitle,
                 documentId: meta.sermonId,
                 type: 'sermon',
                 languageCode,
+                translationId,
             });
             setMainView('document');
         }
@@ -157,7 +158,9 @@ export function OtherTraductionsModal() {
                             </div>
                             <Tooltip title={t('Ouvrir le document')}>
                                 <Button
-                                    onClick={() => handleOpen(tr.title, tr.languageCode)}
+                                    onClick={() =>
+                                        handleOpen(tr.title, tr.languageCode, tr.translationId)
+                                    }
                                     shape="circle"
                                     icon={<EyeOutlined />}
                                 />

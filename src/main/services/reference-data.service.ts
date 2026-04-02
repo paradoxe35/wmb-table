@@ -184,6 +184,7 @@ export function getTranslationsForSermon(
     return rows
         .filter((r) => !installed || installed.has(r.lang_code))
         .map((r) => ({
+            translationId: r.translation_id,
             languageCode: r.lang_code,
             title: r.title,
             translatorName: r.translator_name,

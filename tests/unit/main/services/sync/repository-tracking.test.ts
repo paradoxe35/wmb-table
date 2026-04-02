@@ -7,6 +7,11 @@ import * as customDocsRepo from '@main/database/repositories/custom-documents.re
 import * as readingPositionsRepo from '@main/database/repositories/reading-positions.repository';
 import * as suggestionsRepo from '@main/database/repositories/suggestions.repository';
 
+const testDocumentIdentity = {
+    documentType: 'custom' as const,
+    customDocumentId: 'doc-1',
+};
+
 describe('repository change tracking', () => {
     beforeEach(() => {
         createTestDb();
@@ -86,7 +91,7 @@ describe('repository change tracking', () => {
 
         it('deleteSubject logs DELETE changes for subject and items', () => {
             const subject = subjectsRepo.create('Test Subject');
-            subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text');
+            subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text', testDocumentIdentity);
             subjectsRepo.deleteSubject(subject.id);
             const changes = getAllChangeLogs();
             const subjectDelete = changes.find(
@@ -101,7 +106,7 @@ describe('repository change tracking', () => {
 
         it('createItem logs a SAVE change', () => {
             const subject = subjectsRepo.create('Test');
-            subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text');
+            subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text', testDocumentIdentity);
             const changes = getAllChangeLogs();
             const itemChange = changes.find(
                 (c) => c.tableName === 'subject_items' && c.operation === 'SAVE',
@@ -111,7 +116,13 @@ describe('repository change tracking', () => {
 
         it('deleteItem logs a DELETE change', () => {
             const subject = subjectsRepo.create('Test');
-            const item = subjectsRepo.createItem(subject.id, 'Doc', { tree: [1] }, 'text');
+            const item = subjectsRepo.createItem(
+                subject.id,
+                'Doc',
+                { tree: [1] },
+                'text',
+                testDocumentIdentity,
+            );
             subjectsRepo.deleteItem(item.id);
             const changes = getAllChangeLogs();
             const deleteChange = changes.find(

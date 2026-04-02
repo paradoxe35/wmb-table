@@ -171,6 +171,7 @@ export default function MiniPlayerBar() {
                 detail.traduction ?? '',
                 ctime,
                 detail.sermonId ?? '',
+                detail.translationId ?? null,
             );
 
             el.src = src;

@@ -100,7 +100,6 @@ export function buildSubjectTools(
                     meta.title,
                     {
                         paragraphIndex,
-                        translationId: meta.translationId,
                         languageCode: lang,
                         documentIdentity: {
                             documentType: 'sermon',
