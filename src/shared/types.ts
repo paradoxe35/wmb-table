@@ -140,8 +140,14 @@ export function buildSermonDocumentIdentity(
     };
 }
 
-export function normalizeBibleAbbreviation(bibleVersionAbbreviation: string): string {
-    return bibleVersionAbbreviation.trim().toLowerCase();
+export function normalizeBibleAbbreviation<P extends string | null | undefined>(
+    abbreviation: P,
+): P {
+    if (!abbreviation) {
+        return abbreviation;
+    }
+
+    return abbreviation.trim().toLowerCase() as P;
 }
 
 export function getDocumentIdentityKey(identity: DocumentIdentity): string {
@@ -182,7 +188,7 @@ export function buildBibleDocumentId(bibleBook: string, bibleChapter: string): s
     return `${bibleBook}:${bibleChapter}`;
 }
 
-export function appendBibleVersionToTitle(
+function appendBibleVersionToTitle(
     title: string,
     bibleVersionAbbreviation?: string | null,
 ): string {

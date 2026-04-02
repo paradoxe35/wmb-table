@@ -136,20 +136,26 @@ function useChapterNavigation(activeTab: BibleTab | null) {
 
     const navigateToChapter = useCallback(
         (chapter: string) => {
-            if (!activeTabKey || !bookCode) return;
+            if (!activeTabKey || !bookCode) {
+                return;
+            }
+
             const title = buildBibleDocumentTitle(
                 bookName,
                 chapter,
                 activeTab?.bibleVersionAbbreviation,
             );
+
             const documentId = buildBibleDocumentId(bookCode, chapter);
-            const existingTab = tabs.find(
-                (t) =>
+            const existingTab = tabs.find((t) => {
+                return (
                     t.type === 'bible' &&
                     t.documentId === documentId &&
                     t.bibleVersionAbbreviation ===
-                        normalizeBibleAbbreviation(activeTab.bibleVersionAbbreviation),
-            );
+                        normalizeBibleAbbreviation(activeTab.bibleVersionAbbreviation)
+                );
+            });
+
             if (existingTab) {
                 activateTab(getTabKey(existingTab));
             } else {

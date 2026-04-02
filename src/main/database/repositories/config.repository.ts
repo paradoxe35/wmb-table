@@ -19,9 +19,9 @@ export function getConfig(): AppSettingsStatus | null {
         initialized: row.initialized,
         lastCheckBackupStatus: new Date(row.lastCheckBackupStatus ?? Date.now()),
         contentLanguage: row.contentLanguage ?? null,
-        activeBibleVersionAbbreviation: row.activeBibleVersionAbbreviation
-            ? normalizeBibleAbbreviation(row.activeBibleVersionAbbreviation)
-            : null,
+        activeBibleVersionAbbreviation: normalizeBibleAbbreviation(
+            row.activeBibleVersionAbbreviation,
+        ),
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
         uiLanguage: (row.uiLanguage as UiLanguagePreference) ?? null,
@@ -73,11 +73,7 @@ export function getActiveBibleVersionAbbreviation(): string | null {
 export function setActiveBibleVersionAbbreviation(abbreviation: string | null): void {
     getDb()
         .update(configurations)
-        .set({
-            activeBibleVersionAbbreviation: abbreviation
-                ? normalizeBibleAbbreviation(abbreviation)
-                : null,
-        })
+        .set({ activeBibleVersionAbbreviation: normalizeBibleAbbreviation(abbreviation) })
         .where(eq(configurations.id, getConfigId()))
         .run();
 }

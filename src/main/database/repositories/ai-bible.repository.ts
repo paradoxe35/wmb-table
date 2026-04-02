@@ -6,7 +6,7 @@ import { strNormalize } from '@shared/searchable';
 import type { BibleBook, BibleSearchResult } from '@shared/types';
 
 function resolveVersionDbPath(abbreviation?: string, languageCode?: string): string | null {
-    const abbr = abbreviation ? normalizeBibleAbbreviation(abbreviation) : undefined;
+    const abbr = normalizeBibleAbbreviation(abbreviation);
     const versions = bibleService.getAllBibleVersions();
 
     const version =

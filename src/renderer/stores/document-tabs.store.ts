@@ -209,21 +209,22 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
 
     updateBibleTab: (key, nextTab) =>
         set((state) => ({
-            tabs: state.tabs.map((tab) =>
-                matchKey(tab, key) && tab.type === 'bible'
-                    ? {
-                          ...tab,
-                          title: nextTab.title,
-                          documentId: nextTab.documentId,
-                          bibleBook: nextTab.bibleBook,
-                          bibleChapter: nextTab.bibleChapter,
-                          bibleVersionAbbreviation: normalizeBibleAbbreviation(
-                              nextTab.bibleVersionAbbreviation,
-                          ),
-                          scrollY: 0,
-                      }
-                    : tab,
-            ),
+            tabs: state.tabs.map((tab) => {
+                if (matchKey(tab, key) && tab.type === 'bible') {
+                    return {
+                        ...tab,
+                        title: nextTab.title,
+                        documentId: nextTab.documentId,
+                        bibleBook: nextTab.bibleBook,
+                        bibleChapter: nextTab.bibleChapter,
+                        bibleVersionAbbreviation: normalizeBibleAbbreviation(
+                            nextTab.bibleVersionAbbreviation,
+                        ),
+                        scrollY: 0,
+                    };
+                }
+                return tab;
+            }),
         })),
 }));
 

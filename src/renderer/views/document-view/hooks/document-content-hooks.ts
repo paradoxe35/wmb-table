@@ -32,9 +32,7 @@ export function buildSermonContentKey(
 }
 
 export function buildBibleChapterKey(book: string, chapter: string, versionAbbreviation?: string) {
-    const normalizedVersion = versionAbbreviation
-        ? normalizeBibleAbbreviation(versionAbbreviation)
-        : '';
+    const normalizedVersion = normalizeBibleAbbreviation(versionAbbreviation) ?? '';
 
     return normalizedVersion ? `${normalizedVersion}:${book}:${chapter}` : `${book}:${chapter}`;
 }

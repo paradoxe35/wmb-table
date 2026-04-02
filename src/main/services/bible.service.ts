@@ -224,9 +224,7 @@ function resolveBibleVersionForLanguage(
     langCode: string,
     preferredAbbreviation?: string | null,
 ): BibleVersion | null {
-    const preferred = preferredAbbreviation
-        ? normalizeBibleAbbreviation(preferredAbbreviation)
-        : null;
+    const preferred = normalizeBibleAbbreviation(preferredAbbreviation);
 
     const pickForLanguage = (candidateLang: string): BibleVersion | null => {
         const versions = getBibleVersionsForLanguage(candidateLang).filter(isBibleAvailable);
@@ -296,8 +294,7 @@ export function withBibleDb<T>(
     abbreviation: string | null | undefined,
     reader: (db: Database.Database) => T,
 ): T | null {
-    const normalized = abbreviation ? normalizeBibleAbbreviation(abbreviation) : null;
-
+    const normalized = normalizeBibleAbbreviation(abbreviation);
     if (!normalized) {
         return activeBibleDb ? reader(activeBibleDb) : null;
     }
@@ -328,9 +325,13 @@ export async function downloadBibleVersion(
 ): Promise<void> {
     const normalized = normalizeBibleAbbreviation(abbreviation);
     const version = loadBibleIndex().find((v) => v.abbreviation === normalized);
-    if (!version) throw new Error(`Bible version '${abbreviation}' not found in index`);
-    if (version.type !== 'remote')
+    if (!version) {
+        throw new Error(`Bible version '${abbreviation}' not found in index`);
+    }
+
+    if (version.type !== 'remote') {
         throw new Error(`Bible version '${abbreviation}' is local, not remote`);
+    }
 
     // Skip download if already available on disk
     if (isBibleAvailable(version)) {
