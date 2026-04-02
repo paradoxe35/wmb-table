@@ -29,7 +29,7 @@ export function OtherTraductionsModal() {
     const title = useActiveTabTitle();
     const { buildOpenRequest } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
-    const updateTabTranslationId = useDocumentTabsStore((s) => s.updateTabTranslationId);
+    const switchSermonTabTranslation = useDocumentTabsStore((s) => s.switchSermonTabTranslation);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
 
     const [translations, setTranslations] = useState<SermonTranslation[]>([]);
@@ -83,7 +83,7 @@ export function OtherTraductionsModal() {
 
     const handleSwitchTraduction = (translationId: number) => {
         if (activeTabKey) {
-            updateTabTranslationId(activeTabKey, translationId);
+            switchSermonTabTranslation(activeTabKey, translationId);
         }
         hide();
     };

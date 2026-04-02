@@ -42,14 +42,19 @@ export default function SermonHeader({
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
-    const updateTabTranslationId = useDocumentTabsStore((s) => s.updateTabTranslationId);
+    const switchSermonTabTranslation = useDocumentTabsStore((s) => s.switchSermonTabTranslation);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     const currentPlay = useAudioStore((s) => s.currentPlay);
     const audioSermonId = useAudioStore((s) => s.sermonId);
-    const isCurrentDocument = audioSermonId === meta.sermonId;
+    const audioTranslationId = useAudioStore((s) => s.translationId);
+    const audioLanguageCode = useAudioStore((s) => s.languageCode);
+    const isCurrentDocument =
+        audioSermonId === meta.sermonId &&
+        audioTranslationId === meta.translationId &&
+        audioLanguageCode === meta.languageCode;
     const isPlaying = isCurrentDocument && currentPlay?.status === 'play';
 
     const availableTraductions = useMemo(
@@ -100,9 +105,9 @@ export default function SermonHeader({
 
     const handleTraductionChange = useCallback(
         (value: string | number) => {
-            if (activeTabKey) updateTabTranslationId(activeTabKey, Number(value));
+            if (activeTabKey) switchSermonTabTranslation(activeTabKey, Number(value));
         },
-        [activeTabKey, updateTabTranslationId],
+        [activeTabKey, switchSermonTabTranslation],
     );
 
     const traductionOptions = useMemo(

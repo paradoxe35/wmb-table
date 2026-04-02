@@ -36,7 +36,7 @@ interface DocumentTabsState {
     updateTabScroll(key: string, scrollY?: number, scrollX?: number): void;
     updateTabZoom(key: string, zoom: number): void;
     updateTabTitle(key: string, title: string): void;
-    updateTabTranslationId(key: string, translationId: number): void;
+    switchSermonTabTranslation(key: string, translationId: number): void;
     updateBibleTab(key: string, tab: BibleTabUpdate): void;
 }
 
@@ -200,7 +200,7 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
             ),
         })),
 
-    updateTabTranslationId: (key, translationId) =>
+    switchSermonTabTranslation: (key, translationId) =>
         set((state) => ({
             tabs: state.tabs.map((tab) =>
                 matchKey(tab, key) && tab.type === 'sermon' ? { ...tab, translationId } : tab,

@@ -268,11 +268,7 @@ export function useOpenDocument() {
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 
     return useCallback(
-        (title: string, sermonId: string, translationId: number, languageCode: string) => {
-            if (!languageCode) {
-                return;
-            }
-
+        ({ title, sermonId, translationId, languageCode }: SermonOpenTarget) => {
             snapshotActiveDocumentScroll(updateTabScroll);
             addTab({
                 title,
@@ -358,12 +354,7 @@ export function useOpenDocumentRequest() {
                 return;
             }
 
-            openDocument(
-                request.title,
-                request.sermonId,
-                request.translationId,
-                request.languageCode,
-            );
+            openDocument(request);
         },
         [openBibleChapter, openCustomDocument, openDocument, setActiveBibleVersion],
     );
