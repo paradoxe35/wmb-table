@@ -20,19 +20,24 @@ function safeJsonParse<T>(raw: string, fallback: T): T {
     }
 }
 
+function parseRequiredJson<T>(raw: string, context: string): T {
+    try {
+        return JSON.parse(raw) as T;
+    } catch (err) {
+        log.error(`JSON parse failed in subjects repository for ${context}:`, err);
+        throw new Error(`Invalid ${context} JSON`);
+    }
+}
+
 function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentItem {
     return {
         id: row.id,
         subjectId: row.subjectId,
         documentTitle: row.documentTitle,
-        documentReference: safeJsonParse<DocumentReference>(row.documentReference, {
-            kind: 'tree',
-            documentIdentity: {
-                documentType: 'custom',
-                customDocumentId: '',
-            },
-            tree: [],
-        }),
+        documentReference: parseRequiredJson<DocumentReference>(
+            row.documentReference,
+            'document_reference',
+        ),
         textContent: row.textContent,
         documentPreview: row.documentPreview
             ? safeJsonParse<DocumentPreview | undefined>(row.documentPreview, undefined)

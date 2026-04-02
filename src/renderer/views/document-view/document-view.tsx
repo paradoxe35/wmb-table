@@ -39,6 +39,7 @@ export default function DocumentView() {
                 title: sermons[0].title,
                 documentId: sermons[0].sermonId,
                 type: 'sermon',
+                languageCode: sermons[0].languageCode,
                 translationId: sermons[0].translationId,
             });
         }

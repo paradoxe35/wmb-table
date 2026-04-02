@@ -90,7 +90,7 @@ type BaseDocumentTab = {
 export type SermonTab = BaseDocumentTab & {
     type: 'sermon';
     translationId: number;
-    languageCode?: string;
+    languageCode: string;
 };
 
 export type BibleTab = BaseDocumentTab & {
@@ -176,16 +176,16 @@ export function buildBibleDocumentTitle(bookName: string, bibleChapter: string):
 }
 
 type TabKeyInput =
-    | Pick<SermonTab, 'type' | 'documentId' | 'languageCode'>
-    | Pick<BibleTab, 'type' | 'documentId'>
+    | Pick<SermonTab, 'type' | 'documentId' | 'translationId' | 'languageCode'>
+    | Pick<BibleTab, 'type' | 'documentId' | 'bibleVersionAbbreviation'>
     | Pick<CustomTab, 'type' | 'documentId'>;
 
 export function getTabKey(tab: TabKeyInput): string {
     switch (tab.type) {
         case 'sermon':
-            return `sermon:${tab.documentId}:${tab.languageCode ?? ''}`;
+            return `sermon:${tab.documentId}:${tab.translationId}:${tab.languageCode}`;
         case 'bible':
-            return `bible:${tab.documentId}`;
+            return `bible:${tab.documentId}:${normalizeBibleVersionAbbreviation(tab.bibleVersionAbbreviation)}`;
         case 'custom':
             return `custom:${tab.documentId}`;
     }
@@ -197,7 +197,17 @@ export function tabMatches(tab: DocumentTab, candidate: TabKeyInput): boolean {
     }
 
     if (tab.type === 'sermon' && candidate.type === 'sermon') {
-        return (tab.languageCode ?? '') === (candidate.languageCode ?? '');
+        return (
+            tab.translationId === candidate.translationId &&
+            tab.languageCode === candidate.languageCode
+        );
+    }
+
+    if (tab.type === 'bible' && candidate.type === 'bible') {
+        return (
+            normalizeBibleVersionAbbreviation(tab.bibleVersionAbbreviation) ===
+            normalizeBibleVersionAbbreviation(candidate.bibleVersionAbbreviation)
+        );
     }
 
     return true;
@@ -322,11 +332,22 @@ export interface BibleIndex {
     [x: string]: BibleIndexValue;
 }
 
+export type BibleIndexEntry = {
+    bookName: string;
+    value: BibleIndexValue;
+};
+
 export function getBibleIndexEntry(
     bibleIndex: BibleIndex,
     bibleBook: string,
-): [string, BibleIndexValue] | null {
-    return Object.entries(bibleIndex).find(([, value]) => value.book === bibleBook) ?? null;
+): BibleIndexEntry | null {
+    for (const [bookName, value] of Object.entries(bibleIndex)) {
+        if (value.book === bibleBook) {
+            return { bookName, value };
+        }
+    }
+
+    return null;
 }
 
 export interface BibleBook {

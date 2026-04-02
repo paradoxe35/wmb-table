@@ -1,9 +1,7 @@
 import { useCallback } from 'react';
-import { message } from 'antd';
-import { useTranslation } from 'react-i18next';
 import { buildPendingNavigation, useOpenDocumentRequest } from './index';
-import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/stores';
-import { buildBibleDocumentTitle } from '@shared/types';
+import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
+import { buildBibleDocumentTitle, normalizeBibleVersionAbbreviation } from '@shared/types';
 
 /**
  * Reference link format: wmb://<type>/<...params>
@@ -25,7 +23,7 @@ interface BibleRef {
     bookCode: string;
     chapter: string;
     verse?: string;
-    bibleVersionAbbreviation?: string;
+    bibleVersionAbbreviation: string;
     bookName: string;
 }
 
@@ -55,16 +53,19 @@ export function parseWmbLink(href: string): WmbRef | null {
             };
         }
         case 'bible': {
-            const [, bookCode, chapter, verse, maybeAbbreviation, ...bookNameParts] = parts;
-            if (!bookCode || !chapter) return null;
-            const hasAbbreviation = bookNameParts.length > 0;
+            const [, bookCode, chapter, verse, bibleVersionAbbreviation, ...bookNameParts] = parts;
+            if (!bookCode || !chapter || !bibleVersionAbbreviation || bookNameParts.length === 0) {
+                return null;
+            }
+
             return {
                 type: 'bible',
                 bookCode,
                 chapter,
                 verse: verse || undefined,
-                bibleVersionAbbreviation: hasAbbreviation ? maybeAbbreviation : undefined,
-                bookName: (hasAbbreviation ? bookNameParts : parts.slice(4)).join('/') || bookCode,
+                bibleVersionAbbreviation:
+                    normalizeBibleVersionAbbreviation(bibleVersionAbbreviation),
+                bookName: bookNameParts.join('/') || bookCode,
             };
         }
         case 'doc': {
@@ -86,11 +87,9 @@ export function parseWmbLink(href: string): WmbRef | null {
  * Returns true if the link was handled, false otherwise.
  */
 export function useWmbLinkNavigate(): (href: string) => boolean {
-    const { t } = useTranslation();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const sermonsById = useSermonStore((s) => s.sermonsById);
-    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
 
     return useCallback(
         (href: string): boolean => {
@@ -124,19 +123,12 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     return true;
                 }
                 case 'bible': {
-                    const bibleVersionAbbreviation =
-                        ref.bibleVersionAbbreviation ?? activeBibleVersion?.abbreviation;
-                    if (!bibleVersionAbbreviation) {
-                        message.warning(t('Aucune version biblique active disponible.'));
-                        return true;
-                    }
-
                     openDocumentRequest({
                         title: buildBibleDocumentTitle(ref.bookName, ref.chapter),
                         documentType: 'bible',
                         bibleBook: ref.bookCode,
                         bibleChapter: ref.chapter,
-                        bibleVersionAbbreviation,
+                        bibleVersionAbbreviation: ref.bibleVersionAbbreviation,
                     });
                     return true;
                 }
@@ -149,6 +141,6 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     return true;
             }
         },
-        [activeBibleVersion, sermonsById, setPendingNavigation, openDocumentRequest, t],
+        [sermonsById, setPendingNavigation, openDocumentRequest],
     );
 }

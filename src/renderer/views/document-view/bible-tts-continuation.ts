@@ -50,8 +50,7 @@ export function resolveNextBibleChapterTarget(
         return null;
     }
 
-    const [bookName, bookValue] = bookEntry;
-    const chapterList = bookValue.chapters
+    const chapterList = bookEntry.value.chapters
         .split(',')
         .map((chapter) => chapter.trim())
         .filter(Boolean)
@@ -63,7 +62,7 @@ export function resolveNextBibleChapterTarget(
 
     const nextChapter = chapterList[currentIndex + 1];
     return {
-        title: buildBibleDocumentTitle(bookName, nextChapter),
+        title: buildBibleDocumentTitle(bookEntry.bookName, nextChapter),
         documentId: buildBibleDocumentId(source.bibleBook, nextChapter),
         bibleBook: source.bibleBook,
         bibleChapter: nextChapter,

@@ -383,6 +383,8 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                         const sermonKey = getTabKey({
                             type: 'sermon',
                             documentId: d.sermonId,
+                            translationId: d.translationId,
+                            languageCode: d.languageCode,
                         });
 
                         return (

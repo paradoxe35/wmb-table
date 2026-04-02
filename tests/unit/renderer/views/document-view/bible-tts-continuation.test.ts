@@ -16,7 +16,7 @@ describe('Bible TTS continuation', () => {
                 bibleChapter: '1',
                 bibleVersionAbbreviation: 'KJV',
             },
-            'bible:LUK:1',
+            'bible:LUK:1:kjv',
         );
 
         const nextTarget = resolveNextBibleChapterTarget(lukeOne, {
@@ -44,7 +44,7 @@ describe('Bible TTS continuation', () => {
                 bibleChapter: '22',
                 bibleVersionAbbreviation: 'KJV',
             },
-            'bible:REV:22',
+            'bible:REV:22:kjv',
         );
 
         const nextTarget = resolveNextBibleChapterTarget(revelationTwentyTwo, {

@@ -22,11 +22,19 @@ describe('tabs.repository', () => {
                 title: 'Tab 1',
                 documentId: 's1',
                 translationId: 0,
+                languageCode: 'en',
                 active: true,
                 scrollY: 100,
                 type: 'sermon',
             },
-            { title: 'Tab 2', documentId: 's2', translationId: 0, active: false, type: 'sermon' },
+            {
+                title: 'Tab 2',
+                documentId: 's2',
+                translationId: 0,
+                languageCode: 'en',
+                active: false,
+                type: 'sermon',
+            },
         ];
         tabsRepo.saveTabs(LANG, tabs);
         const result = tabsRepo.getTabs(LANG);
@@ -38,10 +46,24 @@ describe('tabs.repository', () => {
 
     it('saveTabs overwrites previous data', () => {
         tabsRepo.saveTabs(LANG, [
-            { title: 'Old', documentId: 's1', translationId: 0, active: true, type: 'sermon' },
+            {
+                title: 'Old',
+                documentId: 's1',
+                translationId: 0,
+                languageCode: 'en',
+                active: true,
+                type: 'sermon',
+            },
         ]);
         tabsRepo.saveTabs(LANG, [
-            { title: 'New', documentId: 's2', translationId: 0, active: true, type: 'sermon' },
+            {
+                title: 'New',
+                documentId: 's2',
+                translationId: 0,
+                languageCode: 'en',
+                active: true,
+                type: 'sermon',
+            },
         ]);
         const result = tabsRepo.getTabs(LANG);
         expect(result).toHaveLength(1);
@@ -59,6 +81,7 @@ describe('tabs.repository', () => {
                         title: 'Legacy',
                         documentId: 'legacy-1',
                         translationId: 0,
+                        languageCode: 'en',
                         active: true,
                         type: 'sermon',
                     },

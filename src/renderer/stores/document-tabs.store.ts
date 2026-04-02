@@ -87,8 +87,8 @@ function createTab(tab: NewDocumentTab): DocumentTab {
         active: true,
         type: 'sermon',
         documentId: tab.documentId,
+        languageCode: tab.languageCode,
         translationId: tab.translationId,
-        ...(tab.languageCode ? { languageCode: tab.languageCode } : {}),
     };
 }
 
@@ -111,7 +111,10 @@ export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
                             active: isMatch,
                             ...(isMatch ? { title: nextTab.title } : {}),
                             ...(isMatch && nextTab.type === 'sermon'
-                                ? { translationId: nextTab.translationId }
+                                ? {
+                                      translationId: nextTab.translationId,
+                                      languageCode: nextTab.languageCode,
+                                  }
                                 : {}),
                         };
                     }),

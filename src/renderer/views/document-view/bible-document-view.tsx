@@ -118,14 +118,14 @@ function useChapterNavigation(activeTab: BibleTab | null) {
 
     const chapterList = useMemo(() => {
         if (!bookEntry) return [];
-        return bookEntry[1].chapters
+        return bookEntry.value.chapters
             .split(',')
             .map((c) => c.trim())
             .filter(Boolean)
             .sort((a, b) => +a - +b);
     }, [bookEntry]);
 
-    const bookName = bookEntry?.[0] ?? '';
+    const bookName = bookEntry?.bookName ?? '';
     const currentChapter = activeTab?.bibleChapter ?? '1';
     const currentIdx = chapterList.indexOf(currentChapter);
     const hasPrev = currentIdx > 0;
@@ -250,10 +250,10 @@ export default function BibleDocumentView() {
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const bibleLang = activeBibleVersion?.langCode ?? '';
-    const bibleVersionAbbreviation = activeBibleVersion?.abbreviation ?? '';
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
+    const bibleVersionAbbreviation = activeTab?.bibleVersionAbbreviation ?? '';
     const { verses, loading: chapterLoading } = useBibleChapterContent(
         bookCode,
         chapter,
@@ -300,8 +300,11 @@ export default function BibleDocumentView() {
 
     const { bibleIndex, hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
     const bookName = useMemo(() => {
-        if (!bookCode) return '';
-        return getBibleIndexEntry(bibleIndex, bookCode)?.[0] ?? '';
+        if (!bookCode) {
+            return '';
+        }
+
+        return getBibleIndexEntry(bibleIndex, bookCode)?.bookName ?? '';
     }, [bibleIndex, bookCode]);
 
     const introText = useMemo(() => {
@@ -348,6 +351,7 @@ export default function BibleDocumentView() {
                 getTabKey({
                     type: 'bible',
                     documentId: nextTarget.documentId,
+                    bibleVersionAbbreviation: nextTarget.bibleVersionAbbreviation,
                 }),
             );
         }

@@ -169,19 +169,25 @@ export function useOpenDocument() {
     const addTab = useDocumentTabsStore((s) => s.addTab);
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     return useCallback(
         (title: string, sermonId: string, translationId: number) => {
+            if (!contentLanguage) {
+                return;
+            }
+
             snapshotActiveDocumentScroll(updateTabScroll);
             addTab({
                 title,
                 documentId: sermonId,
                 type: 'sermon',
+                languageCode: contentLanguage,
                 translationId,
             });
             setMainView('document');
         },
-        [addTab, setMainView, updateTabScroll],
+        [addTab, contentLanguage, setMainView, updateTabScroll],
     );
 }
 

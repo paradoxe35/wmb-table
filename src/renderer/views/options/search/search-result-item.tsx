@@ -5,7 +5,7 @@ import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types'
 import { getTabKey } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
-import { useSearchStore } from '@renderer/stores';
+import { useAppStore, useSearchStore } from '@renderer/stores';
 import { useSermonLookup } from '@renderer/hooks';
 
 const { Text } = Typography;
@@ -62,12 +62,15 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
 
     const searchMode = useSearchStore((s) => s.searchMode);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const contentLanguage = useAppStore((s) => s.contentLanguage) ?? '';
 
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {
             const tabKey = getTabKey({
                 type: 'sermon',
                 documentId: hit.sermonId,
+                translationId: hit.translationId,
+                languageCode: contentLanguage,
             });
             setDocumentViewQuery(tabKey, {
                 documentKey: tabKey,
@@ -95,6 +98,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             setDocumentViewQuery,
             query,
             searchMode,
+            contentLanguage,
         ],
     );
 
