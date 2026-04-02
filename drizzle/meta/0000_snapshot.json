@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "db614953-a4d4-4962-bf61-f0a7757233b9",
+    "id": "4e1180da-6a93-40b9-99bf-5f4f1070f2df",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -1007,11 +1007,11 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "document_html_tree": {
-                    "name": "document_html_tree",
+                "document_reference": {
+                    "name": "document_reference",
                     "type": "text",
                     "primaryKey": false,
-                    "notNull": true,
+                    "notNull": false,
                     "autoincrement": false
                 },
                 "text_content": {
@@ -1019,13 +1019,6 @@
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
-                    "autoincrement": false
-                },
-                "document_identity": {
-                    "name": "document_identity",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
                     "autoincrement": false
                 },
                 "created_at": {
@@ -1167,8 +1160,8 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "document_html_tree": {
-                    "name": "document_html_tree",
+                "document_reference": {
+                    "name": "document_reference",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
@@ -1186,13 +1179,6 @@
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
-                    "autoincrement": false
-                },
-                "document_identity": {
-                    "name": "document_identity",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
                     "autoincrement": false
                 },
                 "created_at": {

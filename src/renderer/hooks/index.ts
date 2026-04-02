@@ -9,17 +9,16 @@ import {
 import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
+    DocumentReference,
     DocumentIdentity,
-    DocumentHtmlTree,
     NoteItemReference,
-    ParagraphReference,
     SermonMetaWithTraductions,
     SubjectDocumentItem,
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { buildPendingNavigationTarget } from '@renderer/utils/pending-navigation';
 import { capitalize } from 'lodash';
-import { getTabKey, isParagraphReference } from '@shared/types';
+import { getTabKey } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -28,11 +27,11 @@ export type OpenDocumentRequest = { title: string } & DocumentIdentity;
 
 export function buildPendingNavigation(
     request: OpenDocumentRequest,
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference,
+    documentReference: DocumentReference,
 ) {
     return {
         target: buildPendingNavigationTarget(request),
-        documentHtmlTree,
+        documentReference,
     };
 }
 
@@ -43,27 +42,17 @@ function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: n
     updateTabScroll(getTabKey(currentTab), container.scrollTop);
 }
 
-function resolveReferenceDocumentIdentity(
-    fallbackIdentity: DocumentIdentity,
-    reference:
-        | ParagraphReference
-        | SubjectDocumentItem['documentHtmlTree']
-        | NoteItemReference['documentHtmlTree'],
-): DocumentIdentity {
-    if (isParagraphReference(reference)) {
-        return reference.documentIdentity;
-    }
-    return fallbackIdentity;
-}
-
 export function buildReferenceOpenRequest(
     title: string,
-    fallbackIdentity: DocumentIdentity,
-    reference: SubjectDocumentItem['documentHtmlTree'] | NoteItemReference['documentHtmlTree'],
+    reference: SubjectDocumentItem['documentReference'] | NoteItemReference['documentReference'],
 ): OpenDocumentRequest {
+    if (!reference) {
+        throw new Error('Missing document reference');
+    }
+
     return {
         title,
-        ...resolveReferenceDocumentIdentity(fallbackIdentity, reference),
+        ...reference.documentIdentity,
     };
 }
 

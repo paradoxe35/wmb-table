@@ -29,16 +29,14 @@ export function SubjectSelectModal() {
             }
 
             const ref = documentRefTree.current;
-            const documentHtmlTree = ref.documentHtmlTree ?? { tree: [] };
             const textContent = ref.textContent ?? '';
 
             window.api.subjects
                 .createItem(
                     subject.id,
                     titleRef.current || '',
-                    documentHtmlTree,
+                    ref.documentReference,
                     textContent,
-                    ref.documentIdentity,
                     ref.documentPreview,
                 )
                 .then(() => {

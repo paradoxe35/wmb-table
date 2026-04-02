@@ -78,6 +78,7 @@ export function useContextMenuItems(
                 const anchor = sel.anchorNode?.parentElement?.closest(PARAGRAPH_SELECTOR);
                 return {
                     ref: {
+                        kind: 'paragraph',
                         paragraphIndex: anchor ? parseParagraphIndex(anchor) : 0,
                         languageCode: meta.languageCode,
                         textSnippet: sel.toString().slice(0, 200),
@@ -99,6 +100,7 @@ export function useContextMenuItems(
 
             return {
                 ref: {
+                    kind: 'paragraph',
                     paragraphIndex: idx,
                     languageCode: meta.languageCode,
                     textSnippet: text.slice(0, 200),
@@ -162,8 +164,7 @@ export function useContextMenuItems(
                             bibleVerse: verse,
                         },
                         textContent: result.text,
-                        documentHtmlTree: result.ref,
-                        documentIdentity,
+                        documentReference: result.ref,
                     };
                 }
             }
@@ -176,7 +177,7 @@ export function useContextMenuItems(
             const displayText = isPartialSelection
                 ? (fullParagraph.startsWith(result.text) ? '' : '...') + result.text
                 : result.text;
-            return { documentHtmlTree: result.ref, textContent: displayText, documentIdentity };
+            return { documentReference: result.ref, textContent: displayText };
         };
 
         // ----- Menu items -----

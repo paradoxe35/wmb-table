@@ -53,7 +53,7 @@ describe('notes.repository', () => {
         const note = notesRepo.create('Test');
         const ref = notesRepo.createReference(note.id, 'Doc');
         expect(ref.label).toBe('Doc');
-        expect(ref.documentHtmlTree).toEqual({ tree: [] });
+        expect(ref.documentReference).toBeNull();
 
         const refs = notesRepo.getReferences(note.id);
         expect(refs).toHaveLength(1);

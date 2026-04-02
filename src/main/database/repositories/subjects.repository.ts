@@ -5,12 +5,10 @@ import { getDb } from '../index';
 import { subjects, subjectItems } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
 import type {
-    DocumentIdentity,
+    DocumentReference,
     SubjectDocumentPreview,
     SubjectDocument,
     SubjectDocumentItem,
-    DocumentHtmlTree,
-    ParagraphReference,
 } from '@shared/types';
 
 function safeJsonParse<T>(raw: string, fallback: T): T {
@@ -27,15 +25,18 @@ function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentIt
         id: row.id,
         subjectId: row.subjectId,
         documentTitle: row.documentTitle,
-        documentHtmlTree: safeJsonParse(row.documentHtmlTree, { tree: [] }),
+        documentReference: safeJsonParse<DocumentReference>(row.documentReference, {
+            kind: 'tree',
+            documentIdentity: {
+                documentType: 'custom',
+                customDocumentId: '',
+            },
+            tree: [],
+        }),
         textContent: row.textContent,
         documentPreview: row.documentPreview
             ? safeJsonParse<SubjectDocumentPreview | undefined>(row.documentPreview, undefined)
             : undefined,
-        documentIdentity: safeJsonParse<DocumentIdentity>(row.documentIdentity, {
-            documentType: 'custom',
-            customDocumentId: '',
-        }),
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -170,9 +171,8 @@ export function deleteItem(id: string): void {
 export function createItem(
     subjectId: string,
     documentTitle: string,
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference,
+    documentReference: DocumentReference,
     textContent: string,
-    documentIdentity: DocumentIdentity,
     documentPreview?: SubjectDocumentPreview,
 ): SubjectDocumentItem {
     const id = randomUUID();
@@ -183,10 +183,9 @@ export function createItem(
             id,
             subjectId,
             documentTitle,
-            documentHtmlTree: JSON.stringify(documentHtmlTree),
+            documentReference: JSON.stringify(documentReference),
             textContent,
             documentPreview: documentPreview ? JSON.stringify(documentPreview) : null,
-            documentIdentity: JSON.stringify(documentIdentity),
             createdAt: now,
             updatedAt: now,
         })
@@ -195,10 +194,9 @@ export function createItem(
         id,
         subjectId,
         documentTitle,
-        documentHtmlTree: JSON.stringify(documentHtmlTree),
+        documentReference: JSON.stringify(documentReference),
         textContent,
         documentPreview: documentPreview ? JSON.stringify(documentPreview) : null,
-        documentIdentity: JSON.stringify(documentIdentity),
         createdAt: now,
         updatedAt: now,
     });
@@ -206,10 +204,9 @@ export function createItem(
         id,
         subjectId,
         documentTitle,
-        documentHtmlTree,
+        documentReference,
         textContent,
         documentPreview,
-        documentIdentity,
         createdAt: new Date(now),
         updatedAt: new Date(now),
     };

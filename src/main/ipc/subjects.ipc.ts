@@ -35,17 +35,15 @@ export function registerSubjectsHandlers(): void {
             _event,
             subjectId,
             documentTitle,
-            documentHtmlTree,
+            documentReference,
             textContent,
-            documentIdentity,
             documentPreview,
         ) => {
             return subjectsRepo.createItem(
                 subjectId,
                 documentTitle,
-                documentHtmlTree,
+                documentReference,
                 textContent,
-                documentIdentity,
                 documentPreview,
             );
         },

@@ -20,11 +20,11 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type {
+    DocumentReference,
     DocumentIdentity,
     DocumentType,
     HighlightItem,
     HighlightSearchResult,
-    ParagraphReference,
 } from '@shared/types';
 import {
     buildPendingNavigation,
@@ -95,8 +95,9 @@ const DOC_TYPE_META: Record<DocumentType, { color: string; label: string }> = {
 // Hooks
 // ---------------------------------------------------------------------------
 
-function toHighlightReference(item: HighlightGroup): ParagraphReference {
+function toHighlightReference(item: HighlightGroup): DocumentReference {
     return {
+        kind: 'paragraph',
         paragraphIndex: item.paragraphIndex,
         languageCode: item.languageCode,
         documentIdentity: item.documentIdentity,
@@ -111,11 +112,7 @@ function useHighlightOpen() {
     return useCallback(
         (item: HighlightGroup) => {
             const reference = toHighlightReference(item);
-            const request = buildReferenceOpenRequest(
-                item.documentTitle,
-                item.documentIdentity,
-                reference,
-            );
+            const request = buildReferenceOpenRequest(item.documentTitle, reference);
             setPendingNavigation(buildPendingNavigation(request, reference));
             openDocumentRequest(request);
         },

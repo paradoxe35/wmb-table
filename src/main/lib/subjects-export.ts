@@ -3,10 +3,6 @@ import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
 import { isParagraphReference, type SubjectDocumentItem } from '@shared/types';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function formatDate(dateMs: number): string {
     return new Date(dateMs).toLocaleDateString(i18n.language, {
         year: 'numeric',
@@ -15,20 +11,18 @@ function formatDate(dateMs: number): string {
     });
 }
 
-// ---------------------------------------------------------------------------
-// Card renderers
-// ---------------------------------------------------------------------------
-
 function renderSermonRef(item: SubjectDocumentItem): string {
-    const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
+    const { documentReference } = item;
+    const documentIdentity = documentReference.documentIdentity;
+    const paragraphRef = isParagraphReference(documentReference) ? documentReference : null;
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
     const lang = paragraphRef?.languageCode ?? 'en';
     const sermon =
-        item.documentIdentity.documentType === 'sermon'
+        documentIdentity.documentType === 'sermon'
             ? referenceDataService.getSermonMeta(
-                  item.documentIdentity.translationId,
+                  documentIdentity.translationId,
                   lang,
-                  item.documentIdentity.sermonId,
+                  documentIdentity.sermonId,
               )
             : null;
 
@@ -66,18 +60,21 @@ function renderBibleRef(item: SubjectDocumentItem): string {
     return lines.join('\n');
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
 export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[]): string {
-    const bibleRefs = items.filter((i) => i.documentIdentity.documentType === 'bible');
-    const sermonRefs = items.filter((i) => i.documentIdentity.documentType === 'sermon');
-    const otherRefs = items.filter(
-        (i) =>
-            i.documentIdentity.documentType !== 'bible' &&
-            i.documentIdentity.documentType !== 'sermon',
-    );
+    const bibleRefs = items.filter(({ documentReference }) => {
+        const documentIdentity = documentReference.documentIdentity;
+        return documentIdentity.documentType === 'bible';
+    });
+    const sermonRefs = items.filter(({ documentReference }) => {
+        const documentIdentity = documentReference.documentIdentity;
+        return documentIdentity.documentType === 'sermon';
+    });
+    const otherRefs = items.filter(({ documentReference }) => {
+        const documentIdentity = documentReference.documentIdentity;
+        return (
+            documentIdentity.documentType !== 'bible' && documentIdentity.documentType !== 'sermon'
+        );
+    });
     const hasBothTypes = bibleRefs.length > 0 && sermonRefs.length > 0;
 
     let body = '';

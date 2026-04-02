@@ -8,7 +8,7 @@ import { bibleVerses } from '../bible-schema';
 import { logChange } from '@main/services/sync/change-log.service';
 import log from 'electron-log';
 import type {
-    DocumentIdentity,
+    DocumentReference,
     NoteItem,
     NoteItemReference,
     NoteItemReferenceBible,
@@ -43,11 +43,10 @@ function toNoteRef(row: typeof notesReferences.$inferSelect): NoteItemReference 
         noteId: row.noteId,
         label: row.label,
         documentTitle: row.documentTitle,
-        documentHtmlTree: safeJsonParse(row.documentHtmlTree, { tree: [] }),
-        textContent: row.textContent,
-        documentIdentity: row.documentIdentity
-            ? safeJsonParse<DocumentIdentity | null>(row.documentIdentity, null)
+        documentReference: row.documentReference
+            ? safeJsonParse<DocumentReference | null>(row.documentReference, null)
             : null,
+        textContent: row.textContent,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -133,11 +132,7 @@ export function getReferences(noteId: string): NoteItemReference[] {
     return rows.map(toNoteRef);
 }
 
-export function createReference(
-    noteId: string,
-    label: string,
-    documentIdentity: DocumentIdentity | null = null,
-): NoteItemReference {
+export function createReference(noteId: string, label: string): NoteItemReference {
     const id = randomUUID();
     const now = new Date().toISOString();
     const documentTitle = '';
@@ -148,9 +143,8 @@ export function createReference(
             noteId,
             label,
             documentTitle,
-            documentHtmlTree: JSON.stringify({ tree: [] }),
+            documentReference: null,
             textContent: '',
-            documentIdentity: documentIdentity ? JSON.stringify(documentIdentity) : null,
             createdAt: now,
             updatedAt: now,
         })
@@ -185,20 +179,14 @@ export function syncReferences(noteId: string, refIds: string[]): void {
     }
 }
 
-export function updateReference(
-    id: string,
-    ref: SubjectRefTree,
-    documentTitle: string,
-    documentIdentity: DocumentIdentity,
-): void {
+export function updateReference(id: string, ref: SubjectRefTree, documentTitle: string): void {
     const now = new Date().toISOString();
     getDb()
         .update(notesReferences)
         .set({
-            documentHtmlTree: JSON.stringify(ref.documentHtmlTree),
+            documentReference: JSON.stringify(ref.documentReference),
             textContent: ref.textContent,
             documentTitle,
-            documentIdentity: JSON.stringify(documentIdentity),
             updatedAt: now,
         })
         .where(eq(notesReferences.id, id))

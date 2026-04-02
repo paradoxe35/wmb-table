@@ -102,6 +102,7 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     };
                     setPendingNavigation(
                         buildPendingNavigation(request, {
+                            kind: 'paragraph',
                             paragraphIndex: ref.paragraphIndex,
                             languageCode: '',
                             documentIdentity: {

@@ -77,6 +77,7 @@ export default function SimilarSermonsModal() {
             };
             setPendingNavigation(
                 buildPendingNavigation(request, {
+                    kind: 'paragraph',
                     paragraphIndex,
                     languageCode: contentLanguage ?? '',
                     documentIdentity: {

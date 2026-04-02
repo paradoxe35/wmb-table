@@ -160,9 +160,8 @@ CREATE TABLE `notes_references` (
 	`note_id` text NOT NULL,
 	`label` text NOT NULL,
 	`document_title` text NOT NULL,
-	`document_html_tree` text NOT NULL,
+	`document_reference` text,
 	`text_content` text NOT NULL,
-	`document_identity` text,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`note_id`) REFERENCES `notes`(`id`) ON UPDATE no action ON DELETE cascade
@@ -186,10 +185,9 @@ CREATE TABLE `subject_items` (
 	`id` text PRIMARY KEY NOT NULL,
 	`subject_id` text NOT NULL,
 	`document_title` text NOT NULL,
-	`document_html_tree` text NOT NULL,
+	`document_reference` text NOT NULL,
 	`text_content` text NOT NULL,
 	`document_preview` text,
-	`document_identity` text NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE cascade

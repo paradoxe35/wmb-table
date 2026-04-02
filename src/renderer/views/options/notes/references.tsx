@@ -14,6 +14,7 @@ import {
     BibleBook,
     NoteItemReference,
     NoteItemReferenceBible,
+    hasReferenceAssignment,
     isParagraphReference,
 } from '@shared/types';
 import { BibleContent } from '../bible';
@@ -40,27 +41,24 @@ export const useShowReferenceDetail = () => {
     const formatDate = useFormatSermonDate();
 
     const modal = useCallback((reference: NoteItemReference) => {
-        const ref = reference.documentHtmlTree;
-        const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
+        const ref = reference.documentReference;
+        const assigned = hasReferenceAssignment(ref);
+        const documentIdentity = ref?.documentIdentity;
 
         const openDocument = () => {
-            if (reference.documentHtmlTree) {
-                if (!reference.documentIdentity) {
-                    return;
-                }
+            if (reference.documentReference) {
                 const request = buildReferenceOpenRequest(
                     reference.documentTitle,
-                    reference.documentIdentity,
-                    reference.documentHtmlTree,
+                    reference.documentReference,
                 );
-                setPendingNavigation(buildPendingNavigation(request, reference.documentHtmlTree));
+                setPendingNavigation(buildPendingNavigation(request, reference.documentReference));
                 openDocumentRequest(request);
             }
         };
 
         const sermon =
-            reference.documentIdentity?.documentType === 'sermon'
-                ? getSermonById(reference.documentIdentity.sermonId)
+            documentIdentity?.documentType === 'sermon'
+                ? getSermonById(documentIdentity.sermonId)
                 : undefined;
         const displayTitle = sermon?.title ?? reference.documentTitle;
         const paragraphRef = ref && isParagraphReference(ref) ? ref : null;

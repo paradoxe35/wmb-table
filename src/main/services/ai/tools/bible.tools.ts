@@ -119,6 +119,7 @@ export function buildBibleTools(
                     subjectId,
                     title,
                     {
+                        kind: 'paragraph',
                         paragraphIndex: 0,
                         languageCode: lang,
                         documentIdentity: {
@@ -129,12 +130,6 @@ export function buildBibleTools(
                         },
                     },
                     bibleContent,
-                    {
-                        documentType: 'bible',
-                        bibleBook: verse.book,
-                        bibleChapter: verse.chapter,
-                        bibleVersionAbbreviation: abbreviation ?? defaultAbbreviation,
-                    },
                     {
                         kind: 'bible-verse',
                         bibleVerse: verse,

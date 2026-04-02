@@ -223,32 +223,33 @@ export type DocumentTreeRanges = {
     endOffset: number;
 };
 
-export type DocumentHtmlTree = {
+export type TreeReference = {
+    kind: 'tree';
+    documentIdentity: DocumentIdentity;
     tree: number[];
     scrollY?: number;
     scrollX?: number;
     ranges?: DocumentTreeRanges;
 };
 
-export type StoredDocumentReference = {
-    documentIdentity: DocumentIdentity;
-};
-
 export type ParagraphReference = {
+    kind: 'paragraph';
     paragraphIndex: number;
     languageCode: string;
     textSnippet?: string;
-} & StoredDocumentReference;
+    documentIdentity: DocumentIdentity;
+};
 
-export function isParagraphReference(
-    ref: DocumentHtmlTree | ParagraphReference,
-): ref is ParagraphReference {
-    return 'paragraphIndex' in ref && 'languageCode' in ref && 'documentIdentity' in ref;
+export type DocumentReference = TreeReference | ParagraphReference;
+
+export function isParagraphReference(ref: DocumentReference): ref is ParagraphReference {
+    return ref.kind === 'paragraph';
 }
 
-// ---------------------------------------------------------------------------
-// Search
-// ---------------------------------------------------------------------------
+export function hasReferenceAssignment(ref?: DocumentReference | null): boolean {
+    if (!ref) return false;
+    return isParagraphReference(ref) || ref.tree.length > 0;
+}
 
 export type SearchMode = 'exact' | 'all' | 'any';
 
@@ -295,9 +296,8 @@ export interface NoteItemReference extends Readonly<BaseEntity> {
     label: string;
     noteId: string;
     documentTitle: string;
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
+    documentReference: DocumentReference | null;
     textContent: string;
-    documentIdentity: DocumentIdentity | null;
 }
 
 export interface NoteItemReferenceBible extends Readonly<BaseEntity> {
@@ -359,10 +359,9 @@ export interface BibleSearchResult {
 export interface SubjectDocumentItem extends Readonly<BaseEntity> {
     subjectId: string;
     documentTitle: string;
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
+    documentReference: DocumentReference;
     textContent: string;
     documentPreview?: SubjectDocumentPreview;
-    documentIdentity: DocumentIdentity;
 }
 
 export type SubjectDocumentPreview = {
@@ -372,9 +371,8 @@ export type SubjectDocumentPreview = {
 
 export type SubjectRefTree = {
     textContent: string;
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
+    documentReference: DocumentReference;
     documentPreview?: SubjectDocumentPreview;
-    documentIdentity: DocumentIdentity;
 };
 
 export interface SubjectDocument extends Readonly<BaseEntity> {

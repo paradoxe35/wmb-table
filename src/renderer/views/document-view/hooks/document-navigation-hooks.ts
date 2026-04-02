@@ -74,11 +74,11 @@ export function useReferenceNavigation(
         if (!pendingNavigationMatchesDocument(pendingNavigation, options.documentIdentity)) return;
         if (!containerRef.current) return;
 
-        const ref = pendingNavigation.documentHtmlTree;
+        const ref = pendingNavigation.documentReference;
         const paragraphIndex = ref
             ? isParagraphReference(ref)
                 ? ref.paragraphIndex
-                : ref.tree?.[0]
+                : ref.tree[0]
             : undefined;
         if (paragraphIndex == null) {
             clearPendingNavigation(null);

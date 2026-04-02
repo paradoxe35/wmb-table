@@ -30,11 +30,14 @@ export function buildSubjectTools(
                 return {
                     subjectId: subject.id,
                     name: subject.name,
-                    documents: subject.documents.map((doc) => ({
-                        referenceId: doc.id,
-                        documentTitle: doc.documentTitle,
-                        documentIdentity: doc.documentIdentity,
-                    })),
+                    documents: subject.documents.map((doc) => {
+                        const documentIdentity = doc.documentReference.documentIdentity;
+                        return {
+                            referenceId: doc.id,
+                            documentTitle: doc.documentTitle,
+                            documentIdentity,
+                        };
+                    }),
                 };
             },
         },
@@ -99,6 +102,7 @@ export function buildSubjectTools(
                     subjectId,
                     meta.title,
                     {
+                        kind: 'paragraph',
                         paragraphIndex,
                         languageCode: lang,
                         documentIdentity: {
@@ -108,11 +112,6 @@ export function buildSubjectTools(
                         },
                     },
                     paragraph.content,
-                    {
-                        documentType: 'sermon',
-                        sermonId: meta.sermonId,
-                        translationId: meta.translationId,
-                    },
                 );
                 return {
                     referenceId: item.id,

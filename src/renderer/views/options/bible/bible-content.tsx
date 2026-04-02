@@ -395,13 +395,16 @@ const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook })
                             kind: 'bible-verse',
                             bibleVerse: verse,
                         },
-                        documentIdentity: {
-                            documentType: 'bible',
-                            bibleBook: verse.book,
-                            bibleChapter: verse.chapter,
-                        },
                         textContent: verse.content,
-                        documentHtmlTree: { tree: [+verse.verse] },
+                        documentReference: {
+                            kind: 'tree',
+                            documentIdentity: {
+                                documentType: 'bible',
+                                bibleBook: verse.book,
+                                bibleChapter: verse.chapter,
+                            },
+                            tree: [+verse.verse],
+                        },
                     },
                 },
             ),

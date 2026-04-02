@@ -63,10 +63,9 @@ export const subjectItems = sqliteTable('subject_items', {
         .notNull()
         .references(() => subjects.id, { onDelete: 'cascade' }),
     documentTitle: text('document_title').notNull(),
-    documentHtmlTree: text('document_html_tree').notNull(), // JSON
+    documentReference: text('document_reference').notNull(), // JSON
     textContent: text('text_content').notNull(),
     documentPreview: text('document_preview'), // JSON (nullable)
-    documentIdentity: text('document_identity').notNull(),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -146,9 +145,8 @@ export const notesReferences = sqliteTable('notes_references', {
         .references(() => notes.id, { onDelete: 'cascade' }),
     label: text('label').notNull(),
     documentTitle: text('document_title').notNull(),
-    documentHtmlTree: text('document_html_tree').notNull(), // JSON
+    documentReference: text('document_reference'), // JSON (nullable)
     textContent: text('text_content').notNull(),
-    documentIdentity: text('document_identity'),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

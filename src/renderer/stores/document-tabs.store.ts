@@ -2,10 +2,9 @@ import { create } from 'zustand';
 import type {
     BibleTab,
     CustomTab,
-    DocumentHtmlTree,
+    DocumentReference,
     DocumentIdentity,
     DocumentTab,
-    ParagraphReference,
     SermonTab,
 } from '@shared/types';
 import { getTabKey, tabMatches } from '@shared/types';
@@ -13,7 +12,7 @@ import { useAppStore } from './app.store';
 
 export type PendingNavigation = {
     target: DocumentIdentity;
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
+    documentReference: DocumentReference;
 } | null;
 
 interface DocumentTabsState {

@@ -2,10 +2,10 @@ import { Button, Empty, Modal, Tooltip, Typography, message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+    hasReferenceAssignment,
     type NoteItem,
     type NoteItemReference,
     type SubjectRefTree,
-    isParagraphReference,
 } from '@shared/types';
 import {
     useSermonLookup,
@@ -23,7 +23,7 @@ export function NoteReferencesModal() {
     const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
-    const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
+    const pendingReference = useRef<SubjectRefTree | null>(null);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<NoteItemReference[]>([]);
     const workingNote = useRef<NoteItem | null>(null);
@@ -47,23 +47,18 @@ export function NoteReferencesModal() {
 
     const onSelectItem = useCallback(
         (item: NoteItemReference) => {
-            if (!documentRefTree.current) {
+            if (!pendingReference.current) {
                 return;
             }
 
             const referenceItem: SubjectRefTree = {
-                documentHtmlTree: documentRefTree.current.documentHtmlTree,
-                textContent: documentRefTree.current.textContent ?? '',
-                documentIdentity: documentRefTree.current.documentIdentity,
+                documentReference: pendingReference.current.documentReference,
+                textContent: pendingReference.current.textContent ?? '',
+                documentPreview: pendingReference.current.documentPreview,
             };
 
             window.api.notes
-                .updateReference(
-                    item.id,
-                    referenceItem,
-                    titleRef.current || '',
-                    documentRefTree.current.documentIdentity,
-                )
+                .updateReference(item.id, referenceItem, titleRef.current || '')
                 .then(() => {
                     message.success(t('Ajouté à la note'));
                 })
@@ -77,7 +72,7 @@ export function NoteReferencesModal() {
 
     useEffect(() => {
         const showModal = (e: CustomEventInit<SubjectRefTree>) => {
-            documentRefTree.current = e.detail ?? undefined;
+            pendingReference.current = e.detail ?? null;
             setVisible(true);
         };
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, showModal);
@@ -126,11 +121,12 @@ function NoteReferenceItem({
     const { t } = useTranslation();
     const { getSermonById } = useSermonLookup();
 
-    const ref = item.documentHtmlTree;
-    const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
+    const ref = item.documentReference;
+    const assigned = hasReferenceAssignment(ref);
+    const documentIdentity = ref?.documentIdentity;
     const linkedTitle =
-        item.documentIdentity?.documentType === 'sermon'
-            ? getSermonById(item.documentIdentity.sermonId)?.title || item.documentTitle
+        documentIdentity?.documentType === 'sermon'
+            ? getSermonById(documentIdentity.sermonId)?.title || item.documentTitle
             : item.documentTitle;
 
     return (

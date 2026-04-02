@@ -349,21 +349,20 @@ function ItemFromSelectedSubject({
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const openDocumentRequest = useOpenDocumentRequest();
 
+    const documentIdentity = item.documentReference.documentIdentity;
     const sermon =
-        item.documentIdentity.documentType === 'sermon'
-            ? getSermonById(item.documentIdentity.sermonId)
+        documentIdentity.documentType === 'sermon'
+            ? getSermonById(documentIdentity.sermonId)
             : undefined;
     const displayTitle = sermon?.title ?? item.documentTitle;
-    const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
+    const paragraphRef = isParagraphReference(item.documentReference)
+        ? item.documentReference
+        : null;
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
     const onNavigate = () => {
-        const request = buildReferenceOpenRequest(
-            item.documentTitle,
-            item.documentIdentity,
-            item.documentHtmlTree,
-        );
-        setPendingNavigation(buildPendingNavigation(request, item.documentHtmlTree));
+        const request = buildReferenceOpenRequest(item.documentTitle, item.documentReference);
+        setPendingNavigation(buildPendingNavigation(request, item.documentReference));
         openDocumentRequest(request);
     };
 

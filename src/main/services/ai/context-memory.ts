@@ -340,14 +340,14 @@ function cleanToolOutput(name: string, output: any): unknown {
             return {
                 ...output,
                 documents: output.documents.map((doc: any) => ({
-                    ...omit(doc, ['documentHtmlTree', 'textContent']),
+                    ...omit(doc, ['documentReference', 'textContent']),
                     textContent: previewText(doc.textContent, LONG_PREVIEW),
                 })),
             };
 
         case 'addBibleReferenceToSubject':
         case 'addSermonReferenceToSubject':
-            return omit(output, ['documentHtmlTree', 'textContent', 'bible']);
+            return omit(output, ['documentReference', 'textContent', 'bible']);
 
         case 'getNoteById':
         case 'createNote':

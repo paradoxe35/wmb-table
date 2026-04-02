@@ -30,8 +30,7 @@ import type {
     RestoreProgressEvent,
     UpdaterNotification,
     ViewMenuValue,
-    DocumentHtmlTree,
-    ParagraphReference,
+    DocumentReference,
     SermonMeta,
     SermonMetaWithTraductions,
     SermonContent,
@@ -372,7 +371,7 @@ export interface InvokeChannelMap {
         return: void;
     };
     [NotesChannels.updateReference]: {
-        args: [string, SubjectRefTree, string, DocumentIdentity];
+        args: [string, SubjectRefTree, string];
         return: void;
     };
     [NotesChannels.getBibleReference]: {
@@ -421,14 +420,7 @@ export interface InvokeChannelMap {
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
     [SubjectChannels.createItem]: {
-        args: [
-            string,
-            string,
-            DocumentHtmlTree | ParagraphReference,
-            string,
-            DocumentIdentity,
-            SubjectDocumentPreview?,
-        ];
+        args: [string, string, DocumentReference, string, SubjectDocumentPreview?];
         return: SubjectDocumentItem;
     };
     [SubjectChannels.exportPdf]: { args: [string]; return: string };

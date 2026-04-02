@@ -23,14 +23,13 @@ import { DEFAULT_SEARCH_MODE, type UiLanguagePreference } from '@shared/constant
 import type {
     BookRequest,
     DocumentIdentity,
-    DocumentHtmlTree,
+    DocumentReference,
     DocumentTab,
     HistoryEntryCreateData,
     SubjectDocumentPreview,
     ReadingPosition,
     HighlightCreateData,
     HighlightUpdateData,
-    ParagraphReference,
     SearchMode,
     SubjectRefTree,
 } from '@shared/types';
@@ -128,12 +127,8 @@ const api = {
         getReference: (id: string) => invoke(NotesChannels.getReference, id),
         syncReferences: (noteId: string, refs: string[]) =>
             invoke(NotesChannels.syncReferences, noteId, refs),
-        updateReference: (
-            id: string,
-            ref: SubjectRefTree,
-            documentTitle: string,
-            documentIdentity: DocumentIdentity,
-        ) => invoke(NotesChannels.updateReference, id, ref, documentTitle, documentIdentity),
+        updateReference: (id: string, ref: SubjectRefTree, documentTitle: string) =>
+            invoke(NotesChannels.updateReference, id, ref, documentTitle),
         getBibleReference: (id: string) => invoke(NotesChannels.getBibleReference, id),
         getBibleReferences: (noteId: string) => invoke(NotesChannels.getBibleReferences, noteId),
         createBibleReference: (noteId: string, label: string) =>
@@ -172,18 +167,16 @@ const api = {
         createItem: (
             subjectId: string,
             docTitle: string,
-            htmlTree: DocumentHtmlTree | ParagraphReference,
+            documentReference: DocumentReference,
             text: string,
-            documentIdentity: DocumentIdentity,
             documentPreview?: SubjectDocumentPreview,
         ) =>
             invoke(
                 SubjectChannels.createItem,
                 subjectId,
                 docTitle,
-                htmlTree,
+                documentReference,
                 text,
-                documentIdentity,
                 documentPreview,
             ),
         exportPdf: (subjectId: string) => invoke(SubjectChannels.exportPdf, subjectId),
