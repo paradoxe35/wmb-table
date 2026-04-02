@@ -122,14 +122,24 @@ export function buildBibleTools(
                         paragraphIndex: 0,
                         translationId: 0,
                         languageCode: lang,
+                        documentIdentity: {
+                            documentType: 'bible',
+                            bibleBook: verse.book,
+                            bibleChapter: verse.chapter,
+                            bibleVersionAbbreviation: abbreviation ?? defaultAbbreviation,
+                        },
+                    },
+                    bibleContent,
+                    {
                         documentType: 'bible',
                         bibleBook: verse.book,
                         bibleChapter: verse.chapter,
                         bibleVersionAbbreviation: abbreviation ?? defaultAbbreviation,
                     },
-                    bibleContent,
-                    verse,
-                    '',
+                    {
+                        kind: 'bible-verse',
+                        bibleVerse: verse,
+                    },
                 );
 
                 return { referenceId: item.id, subjectId, documentTitle: title };

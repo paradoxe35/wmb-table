@@ -9,6 +9,7 @@ import {
 } from '@renderer/utils/events';
 import type {
     BibleBook,
+    DocumentIdentity,
     DocumentType,
     HighlightItem,
     HighlightParagraphRange,
@@ -49,17 +50,26 @@ export function useContextMenuItems(
         if (!content) return [];
 
         const { meta, paragraphs } = content;
-        const [bibleBook, bibleChapter] =
-            documentType === 'bible' ? meta.sermonId.split(':') : [undefined, undefined];
-
-        const referenceMeta = {
-            documentType,
-            sermonId: meta.sermonId,
-            customDocumentId: documentType === 'custom' ? meta.id : undefined,
-            bibleBook,
-            bibleChapter,
-            bibleVersionAbbreviation,
-        };
+        const bibleBook = documentType === 'bible' ? bibleVerses?.[0]?.book : undefined;
+        const bibleChapter = documentType === 'bible' ? bibleVerses?.[0]?.chapter : undefined;
+        const documentIdentity: DocumentIdentity =
+            documentType === 'custom'
+                ? {
+                      documentType: 'custom',
+                      customDocumentId: meta.id,
+                  }
+                : documentType === 'bible'
+                  ? {
+                        documentType: 'bible',
+                        bibleBook: bibleBook ?? '',
+                        bibleChapter: bibleChapter ?? '',
+                        bibleVersionAbbreviation,
+                    }
+                  : {
+                        documentType: 'sermon',
+                        sermonId: meta.sermonId,
+                        translationId: meta.translationId,
+                    };
 
         const buildRef = (): { ref: ParagraphReference; text: string } | null => {
             const sel = window.getSelection();
@@ -72,7 +82,7 @@ export function useContextMenuItems(
                         translationId: meta.translationId,
                         languageCode: meta.languageCode,
                         textSnippet: sel.toString().slice(0, 200),
-                        ...referenceMeta,
+                        documentIdentity,
                     },
                     text: sel.toString(),
                 };
@@ -94,7 +104,7 @@ export function useContextMenuItems(
                     translationId: meta.translationId,
                     languageCode: meta.languageCode,
                     textSnippet: text.slice(0, 200),
-                    ...referenceMeta,
+                    documentIdentity,
                 },
                 text,
             };
@@ -147,7 +157,17 @@ export function useContextMenuItems(
         const buildRefDetail = (result: { ref: ParagraphReference; text: string }) => {
             if (documentType === 'bible') {
                 const verse = getBibleVerse(result.ref.paragraphIndex);
-                if (verse) return { bible: verse, textContent: result.text };
+                if (verse) {
+                    return {
+                        documentPreview: {
+                            kind: 'bible-verse' as const,
+                            bibleVerse: verse,
+                        },
+                        textContent: result.text,
+                        documentHtmlTree: result.ref,
+                        documentIdentity,
+                    };
+                }
             }
             // Include full paragraph content so the subject view can detect
             // whether the textContent is a mid-paragraph selection (show "...")
@@ -158,7 +178,7 @@ export function useContextMenuItems(
             const displayText = isPartialSelection
                 ? (fullParagraph.startsWith(result.text) ? '' : '...') + result.text
                 : result.text;
-            return { documentHtmlTree: result.ref, textContent: displayText };
+            return { documentHtmlTree: result.ref, textContent: displayText, documentIdentity };
         };
 
         // ----- Menu items -----
@@ -196,12 +216,10 @@ export function useContextMenuItems(
                         new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openHighlightModal, {
                             detail: {
                                 documentTitle: meta.title,
-                                sermonId: meta.sermonId,
+                                documentIdentity,
                                 paragraphs: selParagraphs,
                                 textSnippet: ref.text.slice(0, 200),
-                                translationId: meta.translationId,
                                 languageCode: meta.languageCode,
-                                documentType,
                             },
                         }),
                     );
@@ -286,19 +304,22 @@ export function useContextMenuItems(
 // Document highlights
 // ---------------------------------------------------------------------------
 
-export function useDocumentHighlights(documentTitle: string | null, sermonId: string | undefined) {
+export function useDocumentHighlights(
+    documentTitle: string | null,
+    documentIdentity: DocumentIdentity | undefined,
+) {
     const [highlights, setHighlights] = useState<HighlightItem[]>([]);
 
     const fetchHighlights = useCallback(() => {
-        if (!documentTitle) {
+        if (!documentTitle || !documentIdentity) {
             setHighlights([]);
             return;
         }
         window.api.highlights
-            .getByDocument(documentTitle, sermonId ?? '')
+            .getByDocument(documentTitle, documentIdentity)
             .then(setHighlights)
             .catch(() => setHighlights([]));
-    }, [documentTitle, sermonId]);
+    }, [documentTitle, documentIdentity]);
 
     useEffect(() => {
         fetchHighlights();

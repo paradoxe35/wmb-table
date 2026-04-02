@@ -114,37 +114,22 @@ export function registerAppHandlers(): void {
         return historyRepo.getHistory(langCode);
     });
 
-    registerHandler(
-        AppChannels.addHistoryEntry,
-        async (_event, langCode, documentTitle, sermonId, documentType) => {
-            const now = new Date();
-            const locale = langToLocale[langCode] ?? 'fr-FR';
-            const date = now.toLocaleDateString(locale, {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-            });
-            const milliseconds = new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate(),
-            ).getTime();
-            const time = now.toLocaleTimeString(locale, {
-                hour: '2-digit',
-                minute: '2-digit',
-            });
-            historyRepo.addHistoryEntry(
-                date,
-                milliseconds,
-                time,
-                documentTitle,
-                langCode,
-                sermonId,
-                documentType,
-            );
-        },
-    );
+    registerHandler(AppChannels.addHistoryEntry, async (_event, langCode, entry) => {
+        const now = new Date();
+        const locale = langToLocale[langCode] ?? 'fr-FR';
+        const date = now.toLocaleDateString(locale, {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+        const milliseconds = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const time = now.toLocaleTimeString(locale, {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+        historyRepo.addHistoryEntry(date, milliseconds, time, langCode, entry);
+    });
 
     registerHandler(AppChannels.getHistoryItems, async (_event, historyId) => {
         return historyRepo.getHistoryItems(historyId);

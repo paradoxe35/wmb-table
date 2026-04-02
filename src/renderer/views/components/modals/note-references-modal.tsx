@@ -15,7 +15,7 @@ import {
 } from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-import { useNotesStore, useDocumentTabsStore, selectActiveTab } from '@renderer/stores';
+import { useNotesStore } from '@renderer/stores';
 
 const { Text } = Typography;
 
@@ -23,7 +23,6 @@ export function NoteReferencesModal() {
     const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
-    const activeTab = useDocumentTabsStore(selectActiveTab);
     const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<NoteItemReference[]>([]);
@@ -55,6 +54,7 @@ export function NoteReferencesModal() {
             const referenceItem: SubjectRefTree = {
                 documentHtmlTree: documentRefTree.current.documentHtmlTree,
                 textContent: documentRefTree.current.textContent ?? '',
+                documentIdentity: documentRefTree.current.documentIdentity,
             };
 
             window.api.notes
@@ -62,7 +62,7 @@ export function NoteReferencesModal() {
                     item.id,
                     referenceItem,
                     titleRef.current || '',
-                    activeTab?.documentId ?? '',
+                    documentRefTree.current.documentIdentity,
                 )
                 .then(() => {
                     message.success(t('Ajouté à la note'));
@@ -72,7 +72,7 @@ export function NoteReferencesModal() {
                 });
             setVisible(false);
         },
-        [titleRef, activeTab, setVisible, t],
+        [titleRef, setVisible, t],
     );
 
     useEffect(() => {
@@ -128,7 +128,10 @@ function NoteReferenceItem({
 
     const ref = item.documentHtmlTree;
     const assigned = ref ? isParagraphReference(ref) || (ref.tree || []).length > 0 : false;
-    const linkedTitle = getSermonById(item.sermonId)?.title || item.documentTitle;
+    const linkedTitle =
+        item.documentIdentity?.documentType === 'sermon'
+            ? getSermonById(item.documentIdentity.sermonId)?.title || item.documentTitle
+            : item.documentTitle;
 
     return (
         <div className="note-ref-select-item" onClick={() => onSelect(item)}>

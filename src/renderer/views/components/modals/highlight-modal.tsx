@@ -50,13 +50,11 @@ export default function HighlightModal() {
         try {
             await window.api.highlights.create({
                 documentTitle: data.documentTitle,
-                sermonId: data.sermonId,
+                documentIdentity: data.documentIdentity,
                 paragraphs: data.paragraphs,
                 textSnippet: data.textSnippet,
                 color,
                 comment: comment || undefined,
-                documentType: data.documentType,
-                translationId: data.translationId,
                 languageCode: data.languageCode,
             });
             window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));

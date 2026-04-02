@@ -4,27 +4,30 @@ import { getDb } from '../index';
 import { highlights } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
 import type {
-    DocumentType,
+    DocumentIdentity,
     HighlightCreateData,
     HighlightItem,
     HighlightSearchResult,
     HighlightUpdateData,
 } from '@shared/types';
+import { documentIdentityEquals as sameDocumentIdentity } from '@shared/types';
+
+function parseDocumentIdentity(raw: string): DocumentIdentity {
+    return JSON.parse(raw) as DocumentIdentity;
+}
 
 function toHighlightItem(row: typeof highlights.$inferSelect): HighlightItem {
     return {
         id: row.id,
         groupId: row.groupId,
         documentTitle: row.documentTitle,
-        sermonId: row.sermonId,
+        documentIdentity: parseDocumentIdentity(row.documentIdentity),
         paragraphIndex: row.paragraphIndex,
         startOffset: row.startOffset,
         endOffset: row.endOffset,
         textSnippet: row.textSnippet,
         color: row.color,
         comment: row.comment ?? undefined,
-        documentType: row.documentType as DocumentType,
-        translationId: row.translationId,
         languageCode: row.languageCode,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
@@ -50,9 +53,13 @@ export function search(
           )
         : undefined;
 
-    // Filter by language for sermon/bible, but keep custom documents (language-independent)
+    // Filter by language for sermon/bible, but keep custom documents (language-independent).
+    // The document type now lives only inside document_identity JSON.
     const langFilter = languageCode
-        ? or(eq(highlights.documentType, 'custom'), eq(highlights.languageCode, languageCode))
+        ? or(
+              sql`json_extract(${highlights.documentIdentity}, '$.documentType') = 'custom'`,
+              eq(highlights.languageCode, languageCode),
+          )
         : undefined;
 
     const conditions = and(searchFilter, langFilter);
@@ -105,13 +112,19 @@ export function search(
     };
 }
 
-export function getByDocument(documentTitle: string, sermonId: string): HighlightItem[] {
+export function getByDocument(
+    documentTitle: string,
+    documentIdentity: DocumentIdentity,
+): HighlightItem[] {
     const rows = getDb()
         .select()
         .from(highlights)
-        .where(and(eq(highlights.documentTitle, documentTitle), eq(highlights.sermonId, sermonId)))
+        .where(eq(highlights.documentTitle, documentTitle))
         .all();
-    return rows.map(toHighlightItem);
+
+    return rows
+        .map(toHighlightItem)
+        .filter((item) => sameDocumentIdentity(item.documentIdentity, documentIdentity));
 }
 
 export function create(data: HighlightCreateData): HighlightItem[] {
@@ -123,15 +136,13 @@ export function create(data: HighlightCreateData): HighlightItem[] {
         id: randomUUID(),
         groupId,
         documentTitle: data.documentTitle,
-        sermonId: data.sermonId,
+        documentIdentity: JSON.stringify(data.documentIdentity),
         paragraphIndex: p.paragraphIndex,
         startOffset: p.startOffset,
         endOffset: p.endOffset,
         textSnippet: data.textSnippet,
         color: data.color,
         comment: data.comment ?? null,
-        documentType: data.documentType,
-        translationId: data.translationId,
         languageCode: data.languageCode,
         createdAt: now,
         updatedAt: now,

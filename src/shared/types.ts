@@ -103,7 +103,7 @@ type BaseDocumentTab = {
 
 export type SermonTab = BaseDocumentTab & {
     type: 'sermon';
-    translationId?: number;
+    translationId: number;
     languageCode?: string;
 };
 
@@ -123,7 +123,7 @@ export type DocumentIdentity =
     | {
           documentType: 'sermon';
           sermonId: string;
-          translationId?: number;
+          translationId: number;
       }
     | {
           documentType: 'bible';
@@ -135,6 +135,43 @@ export type DocumentIdentity =
           documentType: 'custom';
           customDocumentId: string;
       };
+
+export function getDocumentIdentityKey(identity: DocumentIdentity): string {
+    switch (identity.documentType) {
+        case 'sermon':
+            return `sermon:${identity.sermonId}:${identity.translationId ?? ''}`;
+        case 'bible':
+            return `bible:${identity.bibleBook}:${identity.bibleChapter}:${identity.bibleVersionAbbreviation ?? ''}`;
+        case 'custom':
+            return `custom:${identity.customDocumentId}`;
+    }
+}
+
+export function documentIdentityEquals(left: DocumentIdentity, right: DocumentIdentity): boolean {
+    return getDocumentIdentityKey(left) === getDocumentIdentityKey(right);
+}
+
+export function getDocumentIdentityFromTab(tab: DocumentTab): DocumentIdentity {
+    switch (tab.type) {
+        case 'custom':
+            return {
+                documentType: 'custom',
+                customDocumentId: tab.documentId,
+            };
+        case 'bible':
+            return {
+                documentType: 'bible',
+                bibleBook: tab.bibleBook,
+                bibleChapter: tab.bibleChapter,
+            };
+        case 'sermon':
+            return {
+                documentType: 'sermon',
+                sermonId: tab.documentId,
+                translationId: tab.translationId,
+            };
+    }
+}
 
 type TabKeyInput =
     | Pick<SermonTab, 'type' | 'documentId' | 'languageCode'>
@@ -162,14 +199,6 @@ export function tabMatches(tab: DocumentTab, candidate: TabKeyInput): boolean {
     }
 
     return true;
-}
-
-export function parseBibleDocumentId(
-    documentId: string,
-): { bibleBook: string; bibleChapter: string } | null {
-    const [bibleBook, bibleChapter, ...rest] = documentId.split(':');
-    if (!bibleBook || !bibleChapter || rest.length > 0) return null;
-    return { bibleBook, bibleChapter };
 }
 
 export function isSermonTab(tab: DocumentTab | null): tab is SermonTab {
@@ -201,12 +230,7 @@ export type DocumentHtmlTree = {
 };
 
 export type StoredDocumentReference = {
-    documentType?: DocumentType;
-    sermonId?: string;
-    customDocumentId?: string;
-    bibleBook?: string;
-    bibleChapter?: string;
-    bibleVersionAbbreviation?: string;
+    documentIdentity: DocumentIdentity;
 };
 
 export type ParagraphReference = {
@@ -273,7 +297,7 @@ export interface NoteItemReference extends Readonly<BaseEntity> {
     documentTitle: string;
     documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     textContent: string;
-    sermonId: string;
+    documentIdentity: DocumentIdentity | null;
 }
 
 export interface NoteItemReferenceBible extends Readonly<BaseEntity> {
@@ -337,14 +361,20 @@ export interface SubjectDocumentItem extends Readonly<BaseEntity> {
     documentTitle: string;
     documentHtmlTree: DocumentHtmlTree | ParagraphReference;
     textContent: string;
-    bible?: BibleBook;
-    sermonId: string;
+    documentPreview?: SubjectDocumentPreview;
+    documentIdentity: DocumentIdentity;
 }
+
+export type SubjectDocumentPreview = {
+    kind: 'bible-verse';
+    bibleVerse: BibleBook;
+};
 
 export type SubjectRefTree = {
     textContent: string;
     documentHtmlTree: DocumentHtmlTree | ParagraphReference;
-    bible?: BibleBook;
+    documentPreview?: SubjectDocumentPreview;
+    documentIdentity: DocumentIdentity;
 };
 
 export interface SubjectDocument extends Readonly<BaseEntity> {
@@ -366,13 +396,11 @@ export interface HighlightParagraphRange {
 
 export interface HighlightCreateData {
     documentTitle: string;
-    sermonId: string;
+    documentIdentity: DocumentIdentity;
     paragraphs: HighlightParagraphRange[];
     textSnippet: string;
     color: string;
     comment?: string;
-    documentType: DocumentType;
-    translationId: number;
     languageCode: string;
 }
 
@@ -384,15 +412,13 @@ export interface HighlightUpdateData {
 export interface HighlightItem extends Readonly<BaseEntity> {
     groupId: string;
     documentTitle: string;
-    sermonId: string;
+    documentIdentity: DocumentIdentity;
     paragraphIndex: number;
     startOffset: number;
     endOffset: number;
     textSnippet: string;
     color: string;
     comment?: string;
-    documentType: DocumentType;
-    translationId: number;
     languageCode: string;
 }
 
@@ -463,8 +489,12 @@ export interface HistoryDataItem extends Readonly<BaseEntity> {
     date: string;
     time: string;
     documentTitle: string;
-    sermonId: string;
-    documentType: DocumentType;
+    documentIdentity: DocumentIdentity;
+}
+
+export interface HistoryEntryCreateData {
+    documentTitle: string;
+    documentIdentity: DocumentIdentity;
 }
 
 export type HistoryDateUpload = {

@@ -45,9 +45,12 @@ export const useShowReferenceDetail = () => {
 
         const openDocument = () => {
             if (reference.documentHtmlTree) {
+                if (!reference.documentIdentity) {
+                    return;
+                }
                 const request = buildReferenceOpenRequest(
                     reference.documentTitle,
-                    reference.sermonId,
+                    reference.documentIdentity,
                     reference.documentHtmlTree,
                 );
                 setPendingNavigation(buildPendingNavigation(request, reference.documentHtmlTree));
@@ -55,7 +58,10 @@ export const useShowReferenceDetail = () => {
             }
         };
 
-        const sermon = getSermonById(reference.sermonId);
+        const sermon =
+            reference.documentIdentity?.documentType === 'sermon'
+                ? getSermonById(reference.documentIdentity.sermonId)
+                : undefined;
         const displayTitle = sermon?.title ?? reference.documentTitle;
         const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
         const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;

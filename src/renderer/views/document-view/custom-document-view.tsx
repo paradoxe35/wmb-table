@@ -11,7 +11,7 @@ import {
     selectActiveTabKey,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type { SermonContent } from '@shared/types';
+import { getDocumentIdentityFromTab, type SermonContent } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
 import DocumentBody from './document-body';
 import {
@@ -159,7 +159,7 @@ export default function CustomDocumentView() {
     const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'custom');
     const { highlightsByParagraph } = useDocumentHighlights(
         docContent?.title ?? null,
-        customDoc?.id,
+        activeTab ? getDocumentIdentityFromTab(activeTab) : undefined,
     );
 
     const { t } = useTranslation();

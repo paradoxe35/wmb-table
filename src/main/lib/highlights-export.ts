@@ -4,7 +4,7 @@ import * as bibleRepo from '@main/database/repositories/bible.repository';
 import * as customDocRepo from '@main/database/repositories/custom-documents.repository';
 import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
-import type { HighlightItem } from '@shared/types';
+import { getDocumentIdentityKey, type HighlightItem } from '@shared/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,7 +35,7 @@ interface DeduplicatedHighlight {
 function groupByDocument(items: HighlightItem[]): Map<string, HighlightItem[]> {
     const grouped = new Map<string, HighlightItem[]>();
     for (const item of items) {
-        const key = `${item.documentType}::${item.documentTitle}::${item.sermonId}`;
+        const key = `${item.documentTitle}::${getDocumentIdentityKey(item.documentIdentity)}`;
         const list = grouped.get(key) ?? [];
         list.push(item);
         grouped.set(key, list);
@@ -74,11 +74,17 @@ function formatDate(dateMs: number): string {
 async function fetchSermonContext(first: HighlightItem): Promise<Partial<DocumentContext>> {
     const paragraphContents = new Map<number, string>();
     let meta: string | undefined;
+    if (first.documentIdentity.documentType !== 'sermon') {
+        return { paragraphContents };
+    }
+    if (first.documentIdentity.translationId == null) {
+        return { paragraphContents };
+    }
 
     const sermon = referenceDataService.getSermonMeta(
-        first.translationId,
+        first.documentIdentity.translationId,
         first.languageCode,
-        first.sermonId,
+        first.documentIdentity.sermonId,
     );
     if (!sermon) {
         return { paragraphContents };
@@ -94,7 +100,7 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
     try {
         const paragraphs = await tantivyService.getSermonParagraphs(
             first.languageCode,
-            first.translationId,
+            first.documentIdentity.translationId,
             sermon.dateMs,
         );
         for (const p of paragraphs) paragraphContents.set(p.paragraphIndex, p.content);
@@ -107,17 +113,23 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
 
 function fetchBibleContext(first: HighlightItem): Partial<DocumentContext> {
     const paragraphContents = new Map<number, string>();
-    const [bookCode, chapter] = first.sermonId.split(':');
-    if (bookCode && chapter) {
-        const verses = bibleRepo.getBooks({ book: bookCode, chapter });
-        for (const v of verses) paragraphContents.set(+v.verse, v.content);
+    if (first.documentIdentity.documentType !== 'bible') return { paragraphContents };
+    const verses = bibleRepo.getBooks({
+        book: first.documentIdentity.bibleBook,
+        chapter: first.documentIdentity.bibleChapter,
+    });
+
+    for (const v of verses) {
+        paragraphContents.set(+v.verse, v.content);
     }
+
     return { paragraphContents };
 }
 
 function fetchCustomDocContext(first: HighlightItem): Partial<DocumentContext> {
     const paragraphContents = new Map<number, string>();
-    const doc = customDocRepo.getCustomDocumentContent(first.sermonId);
+    if (first.documentIdentity.documentType !== 'custom') return { paragraphContents };
+    const doc = customDocRepo.getCustomDocumentContent(first.documentIdentity.customDocumentId);
     if (doc?.content) {
         try {
             const lines: string[] = JSON.parse(doc.content);
@@ -136,11 +148,11 @@ async function fetchDocumentContext(items: HighlightItem[]): Promise<DocumentCon
     const first = items[0];
     let partial: Partial<DocumentContext> = {};
 
-    if (first.documentType === 'sermon') {
+    if (first.documentIdentity.documentType === 'sermon') {
         partial = await fetchSermonContext(first);
-    } else if (first.documentType === 'bible') {
+    } else if (first.documentIdentity.documentType === 'bible') {
         partial = fetchBibleContext(first);
-    } else if (first.documentType === 'custom') {
+    } else if (first.documentIdentity.documentType === 'custom') {
         partial = fetchCustomDocContext(first);
     }
 

@@ -37,16 +37,16 @@ export function registerSubjectsHandlers(): void {
             documentTitle,
             documentHtmlTree,
             textContent,
-            bible,
-            sermonId,
+            documentIdentity,
+            documentPreview,
         ) => {
             return subjectsRepo.createItem(
                 subjectId,
                 documentTitle,
                 documentHtmlTree,
                 textContent,
-                bible,
-                sermonId,
+                documentIdentity,
+                documentPreview,
             );
         },
     );

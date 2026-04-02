@@ -21,11 +21,12 @@ import {
 } from '@shared/ipc.types';
 import { DEFAULT_SEARCH_MODE, type UiLanguagePreference } from '@shared/constants';
 import type {
-    BibleBook,
     BookRequest,
+    DocumentIdentity,
     DocumentHtmlTree,
     DocumentTab,
-    DocumentType,
+    HistoryEntryCreateData,
+    SubjectDocumentPreview,
     ReadingPosition,
     HighlightCreateData,
     HighlightUpdateData,
@@ -131,8 +132,8 @@ const api = {
             id: string,
             ref: SubjectRefTree,
             documentTitle: string,
-            sermonId: string,
-        ) => invoke(NotesChannels.updateReference, id, ref, documentTitle, sermonId),
+            documentIdentity: DocumentIdentity,
+        ) => invoke(NotesChannels.updateReference, id, ref, documentTitle, documentIdentity),
         getBibleReference: (id: string) => invoke(NotesChannels.getBibleReference, id),
         getBibleReferences: (noteId: string) => invoke(NotesChannels.getBibleReferences, noteId),
         createBibleReference: (noteId: string, label: string) =>
@@ -173,8 +174,8 @@ const api = {
             docTitle: string,
             htmlTree: DocumentHtmlTree | ParagraphReference,
             text: string,
-            bible?: BibleBook,
-            sermonId?: string,
+            documentIdentity: DocumentIdentity,
+            documentPreview?: SubjectDocumentPreview,
         ) =>
             invoke(
                 SubjectChannels.createItem,
@@ -182,8 +183,8 @@ const api = {
                 docTitle,
                 htmlTree,
                 text,
-                bible,
-                sermonId,
+                documentIdentity,
+                documentPreview,
             ),
         exportPdf: (subjectId: string) => invoke(SubjectChannels.exportPdf, subjectId),
     },
@@ -191,8 +192,8 @@ const api = {
     highlights: {
         search: (query: string, page: number, pageSize?: number, languageCode?: string) =>
             invoke(HighlightChannels.search, query, page, pageSize, languageCode),
-        getByDocument: (documentTitle: string, sermonId: string) =>
-            invoke(HighlightChannels.getByDocument, documentTitle, sermonId),
+        getByDocument: (documentTitle: string, documentIdentity: DocumentIdentity) =>
+            invoke(HighlightChannels.getByDocument, documentTitle, documentIdentity),
         create: (data: HighlightCreateData) => invoke(HighlightChannels.create, data),
         update: (id: string, data: HighlightUpdateData) =>
             invoke(HighlightChannels.update, id, data),
@@ -250,12 +251,8 @@ const api = {
         updateCustomDocumentLanguage: (id: string, languageCode: string) =>
             invoke(AppChannels.updateCustomDocumentLanguage, id, languageCode),
         getHistory: (langCode: string) => invoke(AppChannels.getHistory, langCode),
-        addHistoryEntry: (
-            langCode: string,
-            documentTitle: string,
-            sermonId: string,
-            documentType: DocumentType,
-        ) => invoke(AppChannels.addHistoryEntry, langCode, documentTitle, sermonId, documentType),
+        addHistoryEntry: (langCode: string, entry: HistoryEntryCreateData) =>
+            invoke(AppChannels.addHistoryEntry, langCode, entry),
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         getUiLanguage: () => invoke(AppChannels.getUiLanguage),
         setUiLanguage: (pref: UiLanguagePreference) => invoke(AppChannels.setUiLanguage, pref),

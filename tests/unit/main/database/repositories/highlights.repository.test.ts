@@ -10,11 +10,9 @@ describe('highlights.repository', () => {
     it('create inserts multiple paragraphs in one call', () => {
         const items = highlightsRepo.create({
             documentTitle: 'Sermon A',
-            sermonId: 'S-001',
+            documentIdentity: { documentType: 'sermon', sermonId: 'S-001', translationId: 0 },
             textSnippet: 'some text',
             color: '#FF0000',
-            documentType: 'sermon',
-            translationId: 0,
             languageCode: 'en',
             paragraphs: [
                 { paragraphIndex: 1, startOffset: 0, endOffset: 10 },
@@ -32,12 +30,10 @@ describe('highlights.repository', () => {
     it('create returns correct fields', () => {
         const items = highlightsRepo.create({
             documentTitle: 'Doc',
-            sermonId: 'S-002',
+            documentIdentity: { documentType: 'sermon', sermonId: 'S-002', translationId: 1 },
             textSnippet: 'snippet',
             color: '#00FF00',
             comment: 'a comment',
-            documentType: 'sermon',
-            translationId: 1,
             languageCode: 'fr',
             paragraphs: [{ paragraphIndex: 5, startOffset: 2, endOffset: 8 }],
         });
@@ -45,7 +41,11 @@ describe('highlights.repository', () => {
         expect(items).toHaveLength(1);
         const item = items[0];
         expect(item.documentTitle).toBe('Doc');
-        expect(item.sermonId).toBe('S-002');
+        expect(item.documentIdentity).toEqual({
+            documentType: 'sermon',
+            sermonId: 'S-002',
+            translationId: 1,
+        });
         expect(item.color).toBe('#00FF00');
         expect(item.comment).toBe('a comment');
         expect(item.paragraphIndex).toBe(5);
@@ -54,27 +54,27 @@ describe('highlights.repository', () => {
     it('getByDocument retrieves created highlights', () => {
         highlightsRepo.create({
             documentTitle: 'Sermon A',
-            sermonId: 'S-001',
+            documentIdentity: { documentType: 'sermon', sermonId: 'S-001', translationId: 0 },
             textSnippet: 'text',
             color: '#FF0000',
-            documentType: 'sermon',
-            translationId: 0,
             languageCode: 'en',
             paragraphs: [{ paragraphIndex: 1, startOffset: 0, endOffset: 10 }],
         });
 
-        const results = highlightsRepo.getByDocument('Sermon A', 'S-001');
+        const results = highlightsRepo.getByDocument('Sermon A', {
+            documentType: 'sermon',
+            sermonId: 'S-001',
+            translationId: 0,
+        });
         expect(results).toHaveLength(1);
     });
 
     it('deleteHighlight removes entire group', () => {
         const items = highlightsRepo.create({
             documentTitle: 'Doc',
-            sermonId: 'S-001',
+            documentIdentity: { documentType: 'sermon', sermonId: 'S-001', translationId: 0 },
             textSnippet: 'text',
             color: '#FF0000',
-            documentType: 'sermon',
-            translationId: 0,
             languageCode: 'en',
             paragraphs: [
                 { paragraphIndex: 1, startOffset: 0, endOffset: 10 },
@@ -83,18 +83,20 @@ describe('highlights.repository', () => {
         });
 
         highlightsRepo.deleteHighlight(items[0].id);
-        const remaining = highlightsRepo.getByDocument('Doc', 'S-001');
+        const remaining = highlightsRepo.getByDocument('Doc', {
+            documentType: 'sermon',
+            sermonId: 'S-001',
+            translationId: 0,
+        });
         expect(remaining).toHaveLength(0);
     });
 
     it('update changes color and comment', () => {
         const items = highlightsRepo.create({
             documentTitle: 'Doc',
-            sermonId: 'S-001',
+            documentIdentity: { documentType: 'sermon', sermonId: 'S-001', translationId: 0 },
             textSnippet: 'text',
             color: '#FF0000',
-            documentType: 'sermon',
-            translationId: 0,
             languageCode: 'en',
             paragraphs: [{ paragraphIndex: 1, startOffset: 0, endOffset: 10 }],
         });
@@ -110,11 +112,13 @@ describe('highlights.repository', () => {
         for (let i = 0; i < 3; i++) {
             highlightsRepo.create({
                 documentTitle: `Doc ${i}`,
-                sermonId: `S-00${i}`,
+                documentIdentity: {
+                    documentType: 'sermon',
+                    sermonId: `S-00${i}`,
+                    translationId: 0,
+                },
                 textSnippet: `text ${i}`,
                 color: '#FF0000',
-                documentType: 'sermon',
-                translationId: 0,
                 languageCode: 'en',
                 paragraphs: [{ paragraphIndex: 0, startOffset: 0, endOffset: 5 }],
             });

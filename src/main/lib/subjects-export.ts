@@ -24,9 +24,14 @@ function renderSermonRef(item: SubjectDocumentItem): string {
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
     const lang = paragraphRef?.languageCode ?? 'en';
     const translationId = paragraphRef?.translationId ?? 0;
-    const sermon = item.sermonId
-        ? referenceDataService.getSermonMeta(translationId, lang, item.sermonId)
-        : null;
+    const sermon =
+        item.documentIdentity.documentType === 'sermon'
+            ? referenceDataService.getSermonMeta(
+                  translationId,
+                  lang,
+                  item.documentIdentity.sermonId,
+              )
+            : null;
 
     const lines: string[] = [`<div class="ref-card">`];
 
@@ -49,7 +54,8 @@ function renderSermonRef(item: SubjectDocumentItem): string {
 }
 
 function renderBibleRef(item: SubjectDocumentItem): string {
-    const b = item.bible!;
+    const b = item.documentPreview?.kind === 'bible-verse' ? item.documentPreview.bibleVerse : null;
+    if (!b) return '';
     const lines: string[] = [
         `<div class="ref-card">`,
         `<div class="ref-title">${escapeHtml(b.bookName)} ${b.chapter}:${b.verse}</div>`,
@@ -66,8 +72,13 @@ function renderBibleRef(item: SubjectDocumentItem): string {
 // ---------------------------------------------------------------------------
 
 export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[]): string {
-    const bibleRefs = items.filter((i) => i.bible);
-    const sermonRefs = items.filter((i) => !i.bible);
+    const bibleRefs = items.filter((i) => i.documentIdentity.documentType === 'bible');
+    const sermonRefs = items.filter((i) => i.documentIdentity.documentType === 'sermon');
+    const otherRefs = items.filter(
+        (i) =>
+            i.documentIdentity.documentType !== 'bible' &&
+            i.documentIdentity.documentType !== 'sermon',
+    );
     const hasBothTypes = bibleRefs.length > 0 && sermonRefs.length > 0;
 
     let body = '';
@@ -84,6 +95,10 @@ export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[
             body += `<h2>${escapeHtml(i18n.t('Bible'))}</h2>\n`;
         }
         body += bibleRefs.map(renderBibleRef).join('\n');
+    }
+
+    if (otherRefs.length > 0) {
+        body += otherRefs.map(renderSermonRef).join('\n');
     }
 
     return `<!DOCTYPE html>

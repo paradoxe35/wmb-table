@@ -20,6 +20,7 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import type {
+    DocumentIdentity,
     DocumentType,
     HighlightItem,
     HighlightSearchResult,
@@ -44,13 +45,11 @@ const PAGE_SIZE = 20;
 interface HighlightGroup {
     groupId: string;
     documentTitle: string;
-    sermonId: string;
+    documentIdentity: DocumentIdentity;
     paragraphIndex: number;
     textSnippet: string;
     color: string;
     comment?: string;
-    documentType: DocumentType;
-    translationId: number;
     languageCode: string;
     createdAt: Date;
     ids: string[];
@@ -71,13 +70,11 @@ function groupHighlights(items: HighlightItem[]): HighlightGroup[] {
             map.set(item.groupId, {
                 groupId: item.groupId,
                 documentTitle: item.documentTitle,
-                sermonId: item.sermonId,
+                documentIdentity: item.documentIdentity,
                 paragraphIndex: item.paragraphIndex,
                 textSnippet: item.textSnippet,
                 color: item.color,
                 comment: item.comment,
-                documentType: item.documentType,
-                translationId: item.translationId,
                 languageCode: item.languageCode,
                 createdAt: item.createdAt,
                 ids: [item.id],
@@ -99,23 +96,17 @@ const DOC_TYPE_META: Record<DocumentType, { color: string; label: string }> = {
 // ---------------------------------------------------------------------------
 
 function toHighlightReference(item: HighlightGroup): ParagraphReference {
-    const bibleReference =
-        item.documentType === 'bible'
-            ? {
-                  bibleBook: item.sermonId.split(':')[0],
-                  bibleChapter: item.sermonId.split(':')[1],
-              }
-            : {};
+    const translationId =
+        item.documentIdentity.documentType === 'sermon'
+            ? (item.documentIdentity.translationId ?? 0)
+            : 0;
 
     return {
         paragraphIndex: item.paragraphIndex,
-        translationId: item.translationId,
+        translationId,
         languageCode: item.languageCode,
-        sermonId: item.sermonId,
-        documentType: item.documentType,
+        documentIdentity: item.documentIdentity,
         textSnippet: item.textSnippet,
-        customDocumentId: item.documentType === 'custom' ? item.sermonId : undefined,
-        ...bibleReference,
     };
 }
 
@@ -126,7 +117,11 @@ function useHighlightOpen() {
     return useCallback(
         (item: HighlightGroup) => {
             const reference = toHighlightReference(item);
-            const request = buildReferenceOpenRequest(item.documentTitle, item.sermonId, reference);
+            const request = buildReferenceOpenRequest(
+                item.documentTitle,
+                item.documentIdentity,
+                reference,
+            );
             setPendingNavigation(buildPendingNavigation(request, reference));
             openDocumentRequest(request);
         },
@@ -213,7 +208,7 @@ function HighlightListItem({
                     >
                         {group.documentTitle}
                     </Text>
-                    <DocumentTypeTag documentType={group.documentType} />
+                    <DocumentTypeTag documentType={group.documentIdentity.documentType} />
                 </div>
                 <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)', lineHeight: 1.3 }}>
                     {snippet}

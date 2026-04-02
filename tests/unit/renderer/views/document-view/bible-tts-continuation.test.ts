@@ -9,13 +9,13 @@ describe('Bible TTS continuation', () => {
         const lukeOne = captureBiblePlaybackSource(
             {
                 title: 'Luke 1',
-                sermonId: 'LUK:1',
+                documentId: 'LUK:1',
                 active: false,
                 type: 'bible',
                 bibleBook: 'LUK',
                 bibleChapter: '1',
             },
-            'Luke 1::LUK:1',
+            'bible:LUK:1',
         );
 
         const nextTarget = resolveNextBibleChapterTarget(lukeOne, {
@@ -25,7 +25,7 @@ describe('Bible TTS continuation', () => {
 
         expect(nextTarget).toEqual({
             title: 'Luke 2',
-            sermonId: 'LUK:2',
+            documentId: 'LUK:2',
             bibleBook: 'LUK',
             bibleChapter: '2',
         });
@@ -35,13 +35,13 @@ describe('Bible TTS continuation', () => {
         const revelationTwentyTwo = captureBiblePlaybackSource(
             {
                 title: 'Revelation 22',
-                sermonId: 'REV:22',
+                documentId: 'REV:22',
                 active: true,
                 type: 'bible',
                 bibleBook: 'REV',
                 bibleChapter: '22',
             },
-            'Revelation 22::REV:22',
+            'bible:REV:22',
         );
 
         const nextTarget = resolveNextBibleChapterTarget(revelationTwentyTwo, {

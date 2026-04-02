@@ -2,7 +2,13 @@ import { eq, and, desc, asc, inArray } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { history, historyItems } from '../schema';
-import type { DocumentType, HistoryData, HistoryDataItem } from '@shared/types';
+import type {
+    DocumentIdentity,
+    HistoryData,
+    HistoryDataItem,
+    HistoryEntryCreateData,
+} from '@shared/types';
+import { documentIdentityEquals } from '@shared/types';
 
 const MAX_HISTORY = 30;
 const MAX_ITEMS_PER_HISTORY = 50;
@@ -17,6 +23,10 @@ function toHistoryData(row: typeof history.$inferSelect): HistoryData {
     };
 }
 
+function parseDocumentIdentity(raw: string): DocumentIdentity {
+    return JSON.parse(raw) as DocumentIdentity;
+}
+
 function toHistoryItem(row: typeof historyItems.$inferSelect): HistoryDataItem {
     return {
         id: row.id,
@@ -24,8 +34,7 @@ function toHistoryItem(row: typeof historyItems.$inferSelect): HistoryDataItem {
         date: row.date,
         time: row.time,
         documentTitle: row.documentTitle,
-        sermonId: row.sermonId,
-        documentType: (row.documentType as DocumentType) ?? 'sermon',
+        documentIdentity: parseDocumentIdentity(row.documentIdentity),
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -55,10 +64,8 @@ export function addHistoryEntry(
     date: string,
     milliseconds: number,
     time: string,
-    documentTitle: string,
     languageCode: string,
-    sermonId: string,
-    documentType: DocumentType,
+    entry: HistoryEntryCreateData,
 ): void {
     const db = getDb();
 
@@ -99,7 +106,15 @@ export function addHistoryEntry(
         .limit(1)
         .get();
 
-    if (lastItem?.sermonId === sermonId) return;
+    if (
+        lastItem?.documentIdentity &&
+        documentIdentityEquals(
+            parseDocumentIdentity(lastItem.documentIdentity),
+            entry.documentIdentity,
+        )
+    ) {
+        return;
+    }
 
     // Enforce item cap per history
     const items = db
@@ -124,9 +139,8 @@ export function addHistoryEntry(
             historyId: historyRow.id,
             date,
             time,
-            documentTitle,
-            sermonId,
-            documentType,
+            documentTitle: entry.documentTitle,
+            documentIdentity: JSON.stringify(entry.documentIdentity),
             createdAt: now,
             updatedAt: now,
         })

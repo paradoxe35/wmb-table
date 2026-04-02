@@ -105,8 +105,11 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                             paragraphIndex: ref.paragraphIndex,
                             translationId,
                             languageCode: '',
-                            sermonId: ref.sermonId,
-                            documentType: 'sermon',
+                            documentIdentity: {
+                                documentType: 'sermon',
+                                sermonId: ref.sermonId,
+                                translationId,
+                            },
                         }),
                     );
                     openDocumentRequest(request);

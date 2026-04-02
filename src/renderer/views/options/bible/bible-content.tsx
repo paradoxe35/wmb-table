@@ -389,7 +389,21 @@ const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook })
         window.dispatchEvent(
             new CustomEvent<Partial<SubjectRefTree>>(
                 CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
-                { detail: { bible: verse } },
+                {
+                    detail: {
+                        documentPreview: {
+                            kind: 'bible-verse',
+                            bibleVerse: verse,
+                        },
+                        documentIdentity: {
+                            documentType: 'bible',
+                            bibleBook: verse.book,
+                            bibleChapter: verse.chapter,
+                        },
+                        textContent: verse.content,
+                        documentHtmlTree: { tree: [+verse.verse] },
+                    },
+                },
             ),
         );
     }, [verse]);

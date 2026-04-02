@@ -10,7 +10,7 @@ import {
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { BibleBook, BibleIndex, BibleTab, SermonContent } from '@shared/types';
-import { getTabKey } from '@shared/types';
+import { getDocumentIdentityFromTab, getTabKey } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
 import DocumentBody from './document-body';
 import {
@@ -401,7 +401,7 @@ export default function BibleDocumentView() {
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         activeTab?.title ?? null,
-        activeTab?.documentId,
+        activeTab ? getDocumentIdentityFromTab(activeTab) : undefined,
     );
 
     return (

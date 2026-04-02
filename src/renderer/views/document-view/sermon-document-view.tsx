@@ -22,6 +22,7 @@ import {
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 import { useFormatSermonDate } from '@renderer/hooks';
+import { getDocumentIdentityFromTab } from '@shared/types';
 import { buildSegmentAnnouncement, buildSermonIntroText } from '@shared/tts.types';
 
 export default function SermonDocumentView() {
@@ -88,7 +89,7 @@ export default function SermonDocumentView() {
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         content?.meta.title ?? null,
-        activeTab?.documentId,
+        activeTab ? getDocumentIdentityFromTab(activeTab) : undefined,
     );
 
     return (

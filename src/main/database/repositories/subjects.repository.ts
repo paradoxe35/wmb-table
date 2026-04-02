@@ -5,11 +5,12 @@ import { getDb } from '../index';
 import { subjects, subjectItems } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
 import type {
+    DocumentIdentity,
+    SubjectDocumentPreview,
     SubjectDocument,
     SubjectDocumentItem,
     DocumentHtmlTree,
     ParagraphReference,
-    BibleBook,
 } from '@shared/types';
 
 function safeJsonParse<T>(raw: string, fallback: T): T {
@@ -28,8 +29,13 @@ function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentIt
         documentTitle: row.documentTitle,
         documentHtmlTree: safeJsonParse(row.documentHtmlTree, { tree: [] }),
         textContent: row.textContent,
-        bible: row.bible ? safeJsonParse<BibleBook | undefined>(row.bible, undefined) : undefined,
-        sermonId: row.sermonId,
+        documentPreview: row.documentPreview
+            ? safeJsonParse<SubjectDocumentPreview | undefined>(row.documentPreview, undefined)
+            : undefined,
+        documentIdentity: safeJsonParse<DocumentIdentity>(row.documentIdentity, {
+            documentType: 'custom',
+            customDocumentId: '',
+        }),
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -166,8 +172,8 @@ export function createItem(
     documentTitle: string,
     documentHtmlTree: DocumentHtmlTree | ParagraphReference,
     textContent: string,
-    bible?: BibleBook,
-    sermonId: string = '',
+    documentIdentity: DocumentIdentity,
+    documentPreview?: SubjectDocumentPreview,
 ): SubjectDocumentItem {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -179,8 +185,8 @@ export function createItem(
             documentTitle,
             documentHtmlTree: JSON.stringify(documentHtmlTree),
             textContent,
-            bible: bible ? JSON.stringify(bible) : null,
-            sermonId,
+            documentPreview: documentPreview ? JSON.stringify(documentPreview) : null,
+            documentIdentity: JSON.stringify(documentIdentity),
             createdAt: now,
             updatedAt: now,
         })
@@ -191,8 +197,8 @@ export function createItem(
         documentTitle,
         documentHtmlTree: JSON.stringify(documentHtmlTree),
         textContent,
-        bible: bible ? JSON.stringify(bible) : null,
-        sermonId,
+        documentPreview: documentPreview ? JSON.stringify(documentPreview) : null,
+        documentIdentity: JSON.stringify(documentIdentity),
         createdAt: now,
         updatedAt: now,
     });
@@ -202,8 +208,8 @@ export function createItem(
         documentTitle,
         documentHtmlTree,
         textContent,
-        bible,
-        sermonId,
+        documentPreview,
+        documentIdentity,
         createdAt: new Date(now),
         updatedAt: new Date(now),
     };

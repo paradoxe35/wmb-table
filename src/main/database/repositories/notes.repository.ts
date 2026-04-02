@@ -8,6 +8,7 @@ import { bibleVerses } from '../bible-schema';
 import { logChange } from '@main/services/sync/change-log.service';
 import log from 'electron-log';
 import type {
+    DocumentIdentity,
     NoteItem,
     NoteItemReference,
     NoteItemReferenceBible,
@@ -44,7 +45,9 @@ function toNoteRef(row: typeof notesReferences.$inferSelect): NoteItemReference 
         documentTitle: row.documentTitle,
         documentHtmlTree: safeJsonParse(row.documentHtmlTree, { tree: [] }),
         textContent: row.textContent,
-        sermonId: row.sermonId,
+        documentIdentity: row.documentIdentity
+            ? safeJsonParse<DocumentIdentity | null>(row.documentIdentity, null)
+            : null,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
@@ -133,7 +136,7 @@ export function getReferences(noteId: string): NoteItemReference[] {
 export function createReference(
     noteId: string,
     label: string,
-    sermonId: string = '',
+    documentIdentity: DocumentIdentity | null = null,
 ): NoteItemReference {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -147,7 +150,7 @@ export function createReference(
             documentTitle,
             documentHtmlTree: JSON.stringify({ tree: [] }),
             textContent: '',
-            sermonId,
+            documentIdentity: documentIdentity ? JSON.stringify(documentIdentity) : null,
             createdAt: now,
             updatedAt: now,
         })
@@ -186,7 +189,7 @@ export function updateReference(
     id: string,
     ref: SubjectRefTree,
     documentTitle: string,
-    sermonId: string,
+    documentIdentity: DocumentIdentity,
 ): void {
     const now = new Date().toISOString();
     getDb()
@@ -195,7 +198,7 @@ export function updateReference(
             documentHtmlTree: JSON.stringify(ref.documentHtmlTree),
             textContent: ref.textContent,
             documentTitle,
-            sermonId,
+            documentIdentity: JSON.stringify(documentIdentity),
             updatedAt: now,
         })
         .where(eq(notesReferences.id, id))

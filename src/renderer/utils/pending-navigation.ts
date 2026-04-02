@@ -1,4 +1,5 @@
 import type { DocumentIdentity, DocumentTab } from '@shared/types';
+import { getDocumentIdentityFromTab } from '@shared/types';
 import type { PendingNavigation } from '@renderer/stores/document-tabs.store';
 
 type PendingNavigationTargetInput = DocumentIdentity;
@@ -51,26 +52,10 @@ export function pendingNavigationMatchesTab(
     activeTab: DocumentTab | null,
 ): boolean {
     if (!activeTab) return false;
-
-    switch (activeTab.type) {
-        case 'custom':
-            return pendingNavigationMatchesDocument(pendingNavigation, {
-                documentType: 'custom',
-                customDocumentId: activeTab.documentId,
-            });
-        case 'bible':
-            return pendingNavigationMatchesDocument(pendingNavigation, {
-                documentType: 'bible',
-                bibleBook: activeTab.bibleBook,
-                bibleChapter: activeTab.bibleChapter,
-            });
-        case 'sermon':
-            return pendingNavigationMatchesDocument(pendingNavigation, {
-                documentType: 'sermon',
-                sermonId: activeTab.documentId,
-                translationId: activeTab.translationId,
-            });
-    }
+    return pendingNavigationMatchesDocument(
+        pendingNavigation,
+        getDocumentIdentityFromTab(activeTab),
+    );
 }
 
 export function buildPendingNavigationTarget(

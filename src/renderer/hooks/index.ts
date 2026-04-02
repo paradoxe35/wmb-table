@@ -9,7 +9,7 @@ import {
 import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
-    DocumentType,
+    DocumentIdentity,
     DocumentHtmlTree,
     NoteItemReference,
     ParagraphReference,
@@ -19,36 +19,12 @@ import type {
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { buildPendingNavigationTarget } from '@renderer/utils/pending-navigation';
 import { capitalize } from 'lodash';
-import { getTabKey, isParagraphReference, parseBibleDocumentId } from '@shared/types';
+import { getTabKey, isParagraphReference } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
 
-type SermonOpenDocumentRequest = {
-    title: string;
-    documentType: 'sermon';
-    sermonId: string;
-    translationId?: number;
-};
-
-type BibleOpenDocumentRequest = {
-    title: string;
-    documentType: 'bible';
-    bibleBook: string;
-    bibleChapter: string;
-    bibleVersionAbbreviation?: string;
-};
-
-type CustomOpenDocumentRequest = {
-    title: string;
-    documentType: 'custom';
-    customDocumentId: string;
-};
-
-export type OpenDocumentRequest =
-    | SermonOpenDocumentRequest
-    | BibleOpenDocumentRequest
-    | CustomOpenDocumentRequest;
+export type OpenDocumentRequest = { title: string } & DocumentIdentity;
 
 export function buildPendingNavigation(
     request: OpenDocumentRequest,
@@ -67,61 +43,27 @@ function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: n
     updateTabScroll(getTabKey(currentTab), container.scrollTop);
 }
 
-function resolveReferenceDocumentType(
+function resolveReferenceDocumentIdentity(
+    fallbackIdentity: DocumentIdentity,
     reference:
         | ParagraphReference
         | SubjectDocumentItem['documentHtmlTree']
         | NoteItemReference['documentHtmlTree'],
-): DocumentType {
-    if (isParagraphReference(reference) && reference.documentType) {
-        return reference.documentType;
+): DocumentIdentity {
+    if (isParagraphReference(reference)) {
+        return reference.documentIdentity;
     }
-    return 'sermon';
+    return fallbackIdentity;
 }
 
 export function buildReferenceOpenRequest(
     title: string,
-    documentId: string,
+    fallbackIdentity: DocumentIdentity,
     reference: SubjectDocumentItem['documentHtmlTree'] | NoteItemReference['documentHtmlTree'],
 ): OpenDocumentRequest {
-    const documentType = resolveReferenceDocumentType(reference);
-    const parsedBibleDocumentId = parseBibleDocumentId(documentId);
-    if (documentType === 'custom' && isParagraphReference(reference)) {
-        return {
-            title,
-            documentType,
-            customDocumentId: reference.customDocumentId ?? documentId,
-        };
-    }
-    if (documentType === 'bible' && isParagraphReference(reference)) {
-        return {
-            title,
-            documentType,
-            bibleBook: reference.bibleBook ?? parsedBibleDocumentId?.bibleBook ?? '',
-            bibleChapter: reference.bibleChapter ?? parsedBibleDocumentId?.bibleChapter ?? '',
-            bibleVersionAbbreviation: reference.bibleVersionAbbreviation,
-        };
-    }
-    if (documentType === 'bible') {
-        return {
-            title,
-            documentType,
-            bibleBook: parsedBibleDocumentId?.bibleBook ?? '',
-            bibleChapter: parsedBibleDocumentId?.bibleChapter ?? '',
-        };
-    }
-    if (documentType === 'custom') {
-        return {
-            title,
-            documentType,
-            customDocumentId: documentId,
-        };
-    }
     return {
         title,
-        sermonId: documentId,
-        documentType: 'sermon',
-        translationId: isParagraphReference(reference) ? reference.translationId : undefined,
+        ...resolveReferenceDocumentIdentity(fallbackIdentity, reference),
     };
 }
 
@@ -239,13 +181,13 @@ export function useOpenDocument() {
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 
     return useCallback(
-        (title: string, sermonId: string, translationId?: number) => {
+        (title: string, sermonId: string, translationId: number) => {
             snapshotActiveDocumentScroll(updateTabScroll);
             addTab({
                 title,
                 documentId: sermonId,
                 type: 'sermon',
-                ...(translationId != null ? { translationId } : {}),
+                translationId,
             });
             setMainView('document');
         },

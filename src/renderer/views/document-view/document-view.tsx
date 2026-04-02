@@ -14,6 +14,7 @@ import CustomDocumentView from './custom-document-view';
 import BibleDocumentView from './bible-document-view';
 import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
+import { getDocumentIdentityFromTab } from '@shared/types';
 
 export default function DocumentView() {
     const tabType = useDocumentTabsStore(selectActiveTabType);
@@ -36,6 +37,7 @@ export default function DocumentView() {
                 title: sermons[0].title,
                 documentId: sermons[0].sermonId,
                 type: 'sermon',
+                translationId: sermons[0].translationId,
             });
         }
     }, [tabs.length, sermons, addTab]);
@@ -47,7 +49,10 @@ export default function DocumentView() {
         if (activeTabKey === prevTabKeyRef.current) return;
         prevTabKeyRef.current = activeTabKey;
         window.api.app
-            .addHistoryEntry(contentLanguage, activeTab.title, activeTab.documentId, activeTab.type)
+            .addHistoryEntry(contentLanguage, {
+                documentTitle: activeTab.title,
+                documentIdentity: getDocumentIdentityFromTab(activeTab),
+            })
             .then(() => {
                 window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
             });

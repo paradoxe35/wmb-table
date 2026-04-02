@@ -31,21 +31,25 @@ function useHistoryItemOpen() {
 
     return useCallback(
         (item: HistoryDataItem) => {
-            const docType: DocumentType = item.documentType ?? 'sermon';
+            const documentIdentity = item.documentIdentity;
 
-            if (docType === 'custom') {
-                openCustomDocument(item.documentTitle, item.sermonId);
+            if (documentIdentity.documentType === 'custom') {
+                openCustomDocument(item.documentTitle, documentIdentity.customDocumentId);
                 return;
             }
 
-            if (docType === 'bible') {
-                const [bookCode, chapter] = item.sermonId.split(':');
+            if (documentIdentity.documentType === 'bible') {
+                const { bibleBook: bookCode, bibleChapter: chapter } = documentIdentity;
                 const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
                 openBibleChapter(bookName, bookCode, chapter);
                 return;
             }
 
-            openDocument(item.documentTitle, item.sermonId);
+            openDocument(
+                item.documentTitle,
+                documentIdentity.sermonId,
+                documentIdentity.translationId,
+            );
         },
         [openDocument, openCustomDocument, openBibleChapter],
     );
@@ -171,7 +175,7 @@ export default function History() {
                     <div className="history-timeline">
                         <Timeline
                             items={historyItems.map((item) => {
-                                const meta = DOC_TYPE_META[item.documentType ?? 'sermon'];
+                                const meta = DOC_TYPE_META[item.documentIdentity.documentType];
                                 return {
                                     key: item.id,
                                     dot: meta.icon,

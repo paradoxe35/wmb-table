@@ -18,8 +18,15 @@ describe('tabs.repository', () => {
 
     it('saveTabs and getTabs round-trip', () => {
         const tabs: DocumentTab[] = [
-            { title: 'Tab 1', documentId: 's1', active: true, scrollY: 100 },
-            { title: 'Tab 2', documentId: 's2', active: false },
+            {
+                title: 'Tab 1',
+                documentId: 's1',
+                translationId: 0,
+                active: true,
+                scrollY: 100,
+                type: 'sermon',
+            },
+            { title: 'Tab 2', documentId: 's2', translationId: 0, active: false, type: 'sermon' },
         ];
         tabsRepo.saveTabs(LANG, tabs);
         const result = tabsRepo.getTabs(LANG);
@@ -30,20 +37,32 @@ describe('tabs.repository', () => {
     });
 
     it('saveTabs overwrites previous data', () => {
-        tabsRepo.saveTabs(LANG, [{ title: 'Old', documentId: 's1', active: true }]);
-        tabsRepo.saveTabs(LANG, [{ title: 'New', documentId: 's2', active: true }]);
+        tabsRepo.saveTabs(LANG, [
+            { title: 'Old', documentId: 's1', translationId: 0, active: true, type: 'sermon' },
+        ]);
+        tabsRepo.saveTabs(LANG, [
+            { title: 'New', documentId: 's2', translationId: 0, active: true, type: 'sermon' },
+        ]);
         const result = tabsRepo.getTabs(LANG);
         expect(result).toHaveLength(1);
         expect(result[0].title).toBe('New');
     });
 
-    it('normalizes legacy persisted sermonId into documentId', () => {
+    it('returns persisted tabs without legacy normalization', () => {
         getDb()
             .insert(tabsTable)
             .values({
                 id: `tabs-${LANG}`,
                 languageCode: LANG,
-                datas: JSON.stringify([{ title: 'Legacy', sermonId: 'legacy-1', active: true }]),
+                datas: JSON.stringify([
+                    {
+                        title: 'Legacy',
+                        documentId: 'legacy-1',
+                        translationId: 0,
+                        active: true,
+                        type: 'sermon',
+                    },
+                ]),
             })
             .run();
         const result = tabsRepo.getTabs(LANG);

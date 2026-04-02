@@ -15,12 +15,14 @@ import type {
     BibleVersionInfo,
     SubjectDocument,
     SubjectDocumentItem,
+    SubjectDocumentPreview,
     SubjectRefTree,
     CustomDocument,
     CustomDocumentContent,
-    DocumentType,
+    DocumentIdentity,
     HistoryData,
     HistoryDataItem,
+    HistoryEntryCreateData,
     AudioTimeAndDownload,
     AudioDownloadProgress,
     SearchMode,
@@ -370,7 +372,7 @@ export interface InvokeChannelMap {
         return: void;
     };
     [NotesChannels.updateReference]: {
-        args: [string, SubjectRefTree, string, string];
+        args: [string, SubjectRefTree, string, DocumentIdentity];
         return: void;
     };
     [NotesChannels.getBibleReference]: {
@@ -419,7 +421,14 @@ export interface InvokeChannelMap {
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
     [SubjectChannels.createItem]: {
-        args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?, string?];
+        args: [
+            string,
+            string,
+            DocumentHtmlTree | ParagraphReference,
+            string,
+            DocumentIdentity,
+            SubjectDocumentPreview?,
+        ];
         return: SubjectDocumentItem;
     };
     [SubjectChannels.exportPdf]: { args: [string]; return: string };
@@ -430,7 +439,7 @@ export interface InvokeChannelMap {
         return: HighlightSearchResult;
     };
     [HighlightChannels.getByDocument]: {
-        args: [string, string];
+        args: [string, DocumentIdentity];
         return: HighlightItem[];
     };
     [HighlightChannels.create]: {
@@ -496,7 +505,7 @@ export interface InvokeChannelMap {
     };
     [AppChannels.updateCustomDocumentLanguage]: { args: [string, string]; return: void };
     [AppChannels.getHistory]: { args: [string]; return: HistoryData[] };
-    [AppChannels.addHistoryEntry]: { args: [string, string, string, DocumentType]; return: void };
+    [AppChannels.addHistoryEntry]: { args: [string, HistoryEntryCreateData]; return: void };
     [AppChannels.getHistoryItems]: {
         args: [string];
         return: HistoryDataItem[];

@@ -349,7 +349,10 @@ function ItemFromSelectedSubject({
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const openDocumentRequest = useOpenDocumentRequest();
 
-    const sermon = getSermonById(item.sermonId);
+    const sermon =
+        item.documentIdentity.documentType === 'sermon'
+            ? getSermonById(item.documentIdentity.sermonId)
+            : undefined;
     const displayTitle = sermon?.title ?? item.documentTitle;
     const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
@@ -357,24 +360,25 @@ function ItemFromSelectedSubject({
     const onNavigate = () => {
         const request = buildReferenceOpenRequest(
             item.documentTitle,
-            item.sermonId,
+            item.documentIdentity,
             item.documentHtmlTree,
         );
         setPendingNavigation(buildPendingNavigation(request, item.documentHtmlTree));
         openDocumentRequest(request);
     };
 
-    if (item.bible) {
+    if (item.documentPreview?.kind === 'bible-verse') {
+        const verse = item.documentPreview.bibleVerse;
         return (
             <div className="subject-ref-card">
                 <div className="subject-ref-card__header">
                     <BibleIcons />
                     <Text strong style={{ fontSize: 'var(--fs-rel-4xl)' }}>
-                        {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
+                        {verse.bookName} {verse.chapter}:{verse.verse}
                     </Text>
                     <DeleteBtn confirm={() => confirm(item)} />
                 </div>
-                <div className="subject-ref-card__body">{item.bible.content}</div>
+                <div className="subject-ref-card__body">{verse.content}</div>
             </div>
         );
     }

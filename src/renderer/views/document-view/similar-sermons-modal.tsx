@@ -80,8 +80,11 @@ export default function SimilarSermonsModal() {
                     paragraphIndex,
                     translationId: hit.translationId,
                     languageCode: contentLanguage ?? '',
-                    sermonId: hit.sermonId,
-                    documentType: 'sermon',
+                    documentIdentity: {
+                        documentType: 'sermon',
+                        sermonId: hit.sermonId,
+                        translationId: hit.translationId,
+                    },
                 }),
             );
             openDocumentRequest(request);

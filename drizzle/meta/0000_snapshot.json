@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "7528d744-e31c-4dc3-9ff3-8cc81ece045d",
+    "id": "db614953-a4d4-4962-bf61-f0a7757233b9",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -604,13 +604,12 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "sermon_id": {
-                    "name": "sermon_id",
+                "document_identity": {
+                    "name": "document_identity",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
+                    "autoincrement": false
                 },
                 "paragraph_index": {
                     "name": "paragraph_index",
@@ -654,22 +653,6 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
-                },
-                "document_type": {
-                    "name": "document_type",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "'sermon'"
-                },
-                "translation_id": {
-                    "name": "translation_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
                 },
                 "language_code": {
                     "name": "language_code",
@@ -795,21 +778,12 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "sermon_id": {
-                    "name": "sermon_id",
+                "document_identity": {
+                    "name": "document_identity",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
-                },
-                "document_type": {
-                    "name": "document_type",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "'sermon'"
+                    "autoincrement": false
                 },
                 "created_at": {
                     "name": "created_at",
@@ -1047,13 +1021,12 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "sermon_id": {
-                    "name": "sermon_id",
+                "document_identity": {
+                    "name": "document_identity",
                     "type": "text",
                     "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
+                    "notNull": false,
+                    "autoincrement": false
                 },
                 "created_at": {
                     "name": "created_at",
@@ -1208,20 +1181,19 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "bible": {
-                    "name": "bible",
+                "document_preview": {
+                    "name": "document_preview",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
                 },
-                "sermon_id": {
-                    "name": "sermon_id",
+                "document_identity": {
+                    "name": "document_identity",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
+                    "autoincrement": false
                 },
                 "created_at": {
                     "name": "created_at",

@@ -12,9 +12,12 @@ export function registerHighlightsHandlers(): void {
         },
     );
 
-    registerHandler(HighlightChannels.getByDocument, async (_event, documentTitle, sermonId) => {
-        return highlightsRepo.getByDocument(documentTitle, sermonId);
-    });
+    registerHandler(
+        HighlightChannels.getByDocument,
+        async (_event, documentTitle, documentIdentity) => {
+            return highlightsRepo.getByDocument(documentTitle, documentIdentity);
+        },
+    );
 
     registerHandler(HighlightChannels.create, async (_event, data) => {
         return highlightsRepo.create(data);

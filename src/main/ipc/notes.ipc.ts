@@ -46,8 +46,8 @@ export function registerNotesHandlers(): void {
 
     registerHandler(
         NotesChannels.updateReference,
-        async (_event, id, ref, documentTitle, sermonId) => {
-            notesRepo.updateReference(id, ref, documentTitle, sermonId);
+        async (_event, id, ref, documentTitle, documentIdentity) => {
+            notesRepo.updateReference(id, ref, documentTitle, documentIdentity);
         },
     );
 
