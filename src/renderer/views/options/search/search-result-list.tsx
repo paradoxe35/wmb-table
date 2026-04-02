@@ -80,7 +80,7 @@ export default memo(function SearchResultList({
                 dataSource={results?.hits || []}
                 renderItem={(hit) => (
                     <SearchResultItem
-                        key={`${hit.title}-${results?.query}`}
+                        key={`${hit.languageCode}:${hit.sermonId}:${hit.translationId}:${results?.query ?? ''}`}
                         hit={hit}
                         query={results?.query ?? ''}
                     />

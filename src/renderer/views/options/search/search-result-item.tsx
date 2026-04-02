@@ -150,7 +150,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 <div className="search-result-snippets">
                     {visibleSnippets.map((s) => (
                         <SnippetRow
-                            key={s.paragraphIndex}
+                            key={`${s.paragraphIndex}:${s.matchIndex}`}
                             snippet={s}
                             query={query}
                             searchMode={searchMode}

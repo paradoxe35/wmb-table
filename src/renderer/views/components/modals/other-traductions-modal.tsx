@@ -163,7 +163,7 @@ export function OtherTraductionsModal() {
                 ) : (
                     otherLanguageTranslations.map((tr, i) => (
                         <div
-                            key={`${tr.languageCode}-${tr.title}`}
+                            key={`${tr.languageCode}:${tr.translationId}`}
                             style={{
                                 display: 'flex',
                                 alignItems: 'center',
