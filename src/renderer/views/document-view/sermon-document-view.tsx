@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
     useDocumentTabsStore,
     useSermonStore,
@@ -30,6 +30,7 @@ export default function SermonDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const updateTabTitle = useDocumentTabsStore((s) => s.updateTabTitle);
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const sermonsById = useSermonStore((s) => s.sermonsById);
@@ -59,6 +60,14 @@ export default function SermonDocumentView() {
     );
 
     const formatDate = useFormatSermonDate();
+
+    useEffect(() => {
+        if (!activeTabKey || !content?.meta.title) {
+            return;
+        }
+
+        updateTabTitle(activeTabKey, content.meta.title);
+    }, [activeTabKey, content?.meta.title, updateTabTitle]);
 
     const ttsIntroText = useMemo(() => {
         if (!content?.meta) return undefined;

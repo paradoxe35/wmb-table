@@ -22,12 +22,16 @@ import type {
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { capitalize } from 'lodash';
-import { buildBibleDocumentId, getDisplayDocumentTitle, getTabKey } from '@shared/types';
+import { buildBibleDocumentId, getTabKey, resolveDocumentTitle } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
 
 export type OpenDocumentRequest = { title: string } & DocumentIdentity;
+type OpenDocumentRequestSource =
+    | DocumentIdentity
+    | SubjectDocumentItem['documentReference']
+    | NoteItemReference['documentReference'];
 
 type LanguageWorkspace = {
     sermons: SermonMetaWithTraductions[];
@@ -53,18 +57,44 @@ function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: n
     updateTabScroll(getTabKey(currentTab), container.scrollTop);
 }
 
-export function buildReferenceOpenRequest(
-    title: string,
-    reference: SubjectDocumentItem['documentReference'] | NoteItemReference['documentReference'],
-): OpenDocumentRequest {
-    if (!reference) {
-        throw new Error('Missing document reference');
+function getOpenRequestIdentity(source: OpenDocumentRequestSource): DocumentIdentity {
+    if (!source) {
+        throw new Error('Missing document source');
     }
 
-    return {
-        title: getDisplayDocumentTitle(title, reference.documentIdentity),
-        ...reference.documentIdentity,
-    };
+    return 'documentType' in source ? source : source.documentIdentity;
+}
+
+function resolveOpenRequestTitle(
+    title: string,
+    documentIdentity: DocumentIdentity,
+    getSermonTitleById: (sermonId: string) => string | undefined,
+): string {
+    return documentIdentity.documentType === 'sermon'
+        ? resolveDocumentTitle(
+              title,
+              documentIdentity,
+              getSermonTitleById(documentIdentity.sermonId),
+          )
+        : resolveDocumentTitle(title, documentIdentity);
+}
+
+export function useBuildOpenDocumentRequest() {
+    const { getSermonById } = useSermonLookup();
+
+    return useCallback(
+        (title: string, source: OpenDocumentRequestSource): OpenDocumentRequest => {
+            const documentIdentity = getOpenRequestIdentity(source);
+
+            return {
+                title: resolveOpenRequestTitle(title, documentIdentity, (sermonId) => {
+                    return getSermonById(sermonId)?.title;
+                }),
+                ...documentIdentity,
+            };
+        },
+        [getSermonById],
+    );
 }
 
 export function useValueStateRef<T>(value: T) {

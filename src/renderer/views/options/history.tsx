@@ -16,7 +16,7 @@ import {
     type HistoryDataItem,
 } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
-import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
+import { useBuildOpenDocumentRequest, useOpenDocumentRequest } from '@renderer/hooks';
 import { HISTORY_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
@@ -30,34 +30,16 @@ function titleCase(str: string): string {
 // ---------------------------------------------------------------------------
 
 function useHistoryItemOpen() {
-    const openDocument = useOpenDocument();
-    const openCustomDocument = useOpenCustomDocument();
-    const openBibleChapter = useOpenBibleChapter();
+    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
+    const openDocumentRequest = useOpenDocumentRequest();
 
     return useCallback(
         (item: HistoryDataItem) => {
-            const documentIdentity = item.documentIdentity;
-
-            if (documentIdentity.documentType === 'custom') {
-                openCustomDocument(item.documentTitle, documentIdentity.customDocumentId);
-                return;
-            }
-
-            if (documentIdentity.documentType === 'bible') {
-                openBibleChapter({
-                    title: getDisplayDocumentTitle(item.documentTitle, documentIdentity),
-                    ...documentIdentity,
-                });
-                return;
-            }
-
-            openDocument(
-                item.documentTitle,
-                documentIdentity.sermonId,
-                documentIdentity.translationId,
+            openDocumentRequest(
+                buildOpenDocumentRequest(item.documentTitle, item.documentIdentity),
             );
         },
-        [openDocument, openCustomDocument, openBibleChapter],
+        [buildOpenDocumentRequest, openDocumentRequest],
     );
 }
 

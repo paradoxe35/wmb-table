@@ -29,7 +29,7 @@ import type {
 import { getDisplayDocumentTitle } from '@shared/types';
 import {
     buildPendingNavigation,
-    buildReferenceOpenRequest,
+    useBuildOpenDocumentRequest,
     useOpenDocumentRequest,
 } from '@renderer/hooks';
 import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
@@ -108,16 +108,17 @@ function toHighlightReference(item: HighlightGroup): DocumentReference {
 
 function useHighlightOpen() {
     const openDocumentRequest = useOpenDocumentRequest();
+    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     return useCallback(
         (item: HighlightGroup) => {
             const reference = toHighlightReference(item);
-            const request = buildReferenceOpenRequest(item.documentTitle, reference);
+            const request = buildOpenDocumentRequest(item.documentTitle, reference);
             setPendingNavigation(buildPendingNavigation(request, reference));
             openDocumentRequest(request);
         },
-        [openDocumentRequest, setPendingNavigation],
+        [buildOpenDocumentRequest, openDocumentRequest, setPendingNavigation],
     );
 }
 

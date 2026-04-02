@@ -35,6 +35,7 @@ interface DocumentTabsState {
     enforceTabLimit(maxTabs: number): void;
     updateTabScroll(key: string, scrollY?: number, scrollX?: number): void;
     updateTabZoom(key: string, zoom: number): void;
+    updateTabTitle(key: string, title: string): void;
     updateTabTranslationId(key: string, translationId: number): void;
     updateBibleTab(key: string, tab: BibleTabUpdate): void;
 }
@@ -190,6 +191,13 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
     updateTabZoom: (key, zoom) =>
         set((state) => ({
             tabs: state.tabs.map((tab) => (matchKey(tab, key) ? { ...tab, zoom } : tab)),
+        })),
+
+    updateTabTitle: (key, title) =>
+        set((state) => ({
+            tabs: state.tabs.map((tab) =>
+                matchKey(tab, key) && tab.title !== title ? { ...tab, title } : tab,
+            ),
         })),
 
     updateTabTranslationId: (key, translationId) =>

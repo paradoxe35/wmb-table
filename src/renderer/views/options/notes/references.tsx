@@ -22,7 +22,7 @@ import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import {
     buildPendingNavigation,
-    buildReferenceOpenRequest,
+    useBuildOpenDocumentRequest,
     useFormatSermonDate,
     useOpenDocumentRequest,
     useSermonLookup,
@@ -36,79 +36,92 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 export const useShowReferenceDetail = () => {
     const { t } = useTranslation();
     const openDocumentRequest = useOpenDocumentRequest();
+    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
 
-    const modal = useCallback((reference: NoteItemReference) => {
-        const ref = reference.documentReference;
-        const assigned = hasReferenceAssignment(ref);
-        const documentIdentity = ref?.documentIdentity;
+    const modal = useCallback(
+        (reference: NoteItemReference) => {
+            const ref = reference.documentReference;
+            const assigned = hasReferenceAssignment(ref);
+            const documentIdentity = ref?.documentIdentity;
 
-        const openDocument = () => {
-            if (reference.documentReference) {
-                const request = buildReferenceOpenRequest(
-                    reference.documentTitle,
-                    reference.documentReference,
-                );
-                setPendingNavigation(buildPendingNavigation(request, reference.documentReference));
-                openDocumentRequest(request);
-            }
-        };
+            const openDocument = () => {
+                if (reference.documentReference) {
+                    const request = buildOpenDocumentRequest(
+                        reference.documentTitle,
+                        reference.documentReference,
+                    );
+                    setPendingNavigation(
+                        buildPendingNavigation(request, reference.documentReference),
+                    );
+                    openDocumentRequest(request);
+                }
+            };
 
-        const sermon =
-            documentIdentity?.documentType === 'sermon'
-                ? getSermonById(documentIdentity.sermonId)
-                : undefined;
-        const displayTitle = documentIdentity
-            ? resolveDocumentTitle(reference.documentTitle, documentIdentity, sermon?.title)
-            : reference.documentTitle;
-        const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
-        const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
+            const sermon =
+                documentIdentity?.documentType === 'sermon'
+                    ? getSermonById(documentIdentity.sermonId)
+                    : undefined;
+            const displayTitle = documentIdentity
+                ? resolveDocumentTitle(reference.documentTitle, documentIdentity, sermon?.title)
+                : reference.documentTitle;
+            const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
+            const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
-        Modal[assigned ? 'info' : 'warning']({
-            closable: true,
-            onOk: assigned ? openDocument : undefined,
-            okText: assigned ? t('Ouvrir le document') : t('Fermer'),
-            title: (
-                <span style={{ fontSize: 'var(--fs-md)', fontWeight: 500 }}>
-                    {t('Référence: {{label}}', { label: reference.label })}
-                </span>
-            ),
-            content: assigned ? (
-                <div>
-                    <span style={{ fontWeight: 600, fontSize: 'var(--fs-xl)' }}>
-                        {displayTitle}
+            Modal[assigned ? 'info' : 'warning']({
+                closable: true,
+                onOk: assigned ? openDocument : undefined,
+                okText: assigned ? t('Ouvrir le document') : t('Fermer'),
+                title: (
+                    <span style={{ fontSize: 'var(--fs-md)', fontWeight: 500 }}>
+                        {t('Référence: {{label}}', { label: reference.label })}
                     </span>
-                    {sermon && (
-                        <p
-                            style={{
-                                fontSize: 'var(--fs-rel-xl)',
-                                color: 'var(--ant-color-text-secondary)',
-                                marginTop: 5,
-                            }}
-                        >
-                            {formatDate(sermon.dateMs)}
-                            {sermon.location ? ` — ${sermon.location}` : ''}
-                        </p>
-                    )}
-                    {reference.textContent && (
-                        <p>
-                            {paragraphNum != null && (
-                                <Typography.Text strong>{paragraphNum}.</Typography.Text>
-                            )}{' '}
-                            {reference.textContent}
-                        </p>
-                    )}
-                </div>
-            ) : (
-                <div>
-                    <p>{t("Aucun document n'a été attribué pour cette référence")}</p>
-                </div>
-            ),
-        });
-    }, []);
+                ),
+                content: assigned ? (
+                    <div>
+                        <span style={{ fontWeight: 600, fontSize: 'var(--fs-xl)' }}>
+                            {displayTitle}
+                        </span>
+                        {sermon && (
+                            <p
+                                style={{
+                                    fontSize: 'var(--fs-rel-xl)',
+                                    color: 'var(--ant-color-text-secondary)',
+                                    marginTop: 5,
+                                }}
+                            >
+                                {formatDate(sermon.dateMs)}
+                                {sermon.location ? ` — ${sermon.location}` : ''}
+                            </p>
+                        )}
+                        {reference.textContent && (
+                            <p>
+                                {paragraphNum != null && (
+                                    <Typography.Text strong>{paragraphNum}.</Typography.Text>
+                                )}{' '}
+                                {reference.textContent}
+                            </p>
+                        )}
+                    </div>
+                ) : (
+                    <div>
+                        <p>{t("Aucun document n'a été attribué pour cette référence")}</p>
+                    </div>
+                ),
+            });
+        },
+        [
+            buildOpenDocumentRequest,
+            formatDate,
+            getSermonById,
+            openDocumentRequest,
+            setPendingNavigation,
+            t,
+        ],
+    );
 
     return modal;
 };

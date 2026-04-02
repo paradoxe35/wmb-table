@@ -44,7 +44,7 @@ import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
     buildPendingNavigation,
-    buildReferenceOpenRequest,
+    useBuildOpenDocumentRequest,
     useOpenDocumentRequest,
     useSermonLookup,
     useFormatSermonDate,
@@ -371,6 +371,7 @@ function ItemFromSelectedSubject({
     const formatDate = useFormatSermonDate();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const openDocumentRequest = useOpenDocumentRequest();
+    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
 
     const documentIdentity = item.documentReference.documentIdentity;
     const sermon =
@@ -384,7 +385,7 @@ function ItemFromSelectedSubject({
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
     const onNavigate = () => {
-        const request = buildReferenceOpenRequest(item.documentTitle, item.documentReference);
+        const request = buildOpenDocumentRequest(item.documentTitle, item.documentReference);
         setPendingNavigation(buildPendingNavigation(request, item.documentReference));
         openDocumentRequest(request);
     };
