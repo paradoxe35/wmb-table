@@ -1,11 +1,7 @@
 import * as referenceDataService from '@main/services/reference-data.service';
 import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
-import {
-    isParagraphReference,
-    resolveDocumentTitle,
-    type SubjectDocumentItem,
-} from '@shared/types';
+import { formatDocumentTitle, isParagraphReference, type SubjectDocumentItem } from '@shared/types';
 
 function formatDate(dateMs: number): string {
     return new Date(dateMs).toLocaleDateString(i18n.language, {
@@ -15,26 +11,24 @@ function formatDate(dateMs: number): string {
     });
 }
 
-function renderSermonRef(item: SubjectDocumentItem): string {
+function renderDocumentRef(item: SubjectDocumentItem): string {
     const { documentReference } = item;
     const documentIdentity = documentReference.documentIdentity;
     const paragraphRef = isParagraphReference(documentReference) ? documentReference : null;
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
-    const lang = paragraphRef?.languageCode ?? 'en';
     const sermon =
         documentIdentity.documentType === 'sermon'
             ? referenceDataService.getSermonMeta(
                   documentIdentity.translationId,
-                  lang,
+                  documentIdentity.languageCode,
                   documentIdentity.sermonId,
               )
             : null;
 
     const lines: string[] = [`<div class="ref-card">`];
+    const title = formatDocumentTitle(sermon?.title ?? item.documentTitle, documentIdentity);
 
-    lines.push(
-        `<div class="ref-title">${escapeHtml(resolveDocumentTitle(item.documentTitle, documentIdentity, sermon?.title))}</div>`,
-    );
+    lines.push(`<div class="ref-title">${escapeHtml(title)}</div>`);
 
     if (sermon) {
         const parts: string[] = [];
@@ -89,7 +83,7 @@ export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[
         if (hasBothTypes) {
             body += `<h2>${escapeHtml(i18n.t('Prédications'))}</h2>\n`;
         }
-        body += sermonRefs.map(renderSermonRef).join('\n');
+        body += sermonRefs.map(renderDocumentRef).join('\n');
     }
 
     if (bibleRefs.length > 0) {
@@ -100,7 +94,7 @@ export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[
     }
 
     if (otherRefs.length > 0) {
-        body += otherRefs.map(renderSermonRef).join('\n');
+        body += otherRefs.map(renderDocumentRef).join('\n');
     }
 
     return `<!DOCTYPE html>

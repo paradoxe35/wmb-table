@@ -2,6 +2,7 @@ import { message } from 'antd';
 import type { MenuProps } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { buildParagraphReference } from '@shared/types';
 import {
     CHILD_PARENT_WINDOW_EVENT,
     DOCUMENT_CONTAINER_ID,
@@ -56,13 +57,19 @@ export function useContextMenuItems(
             if (sel && !sel.isCollapsed) {
                 const anchor = sel.anchorNode?.parentElement?.closest(PARAGRAPH_SELECTOR);
                 return {
-                    ref: {
-                        kind: 'paragraph',
-                        paragraphIndex: anchor ? parseParagraphIndex(anchor) : 0,
-                        languageCode,
-                        textSnippet: sel.toString().slice(0, 200),
-                        documentIdentity,
-                    },
+                    ref:
+                        documentIdentity.documentType === 'sermon'
+                            ? buildParagraphReference(
+                                  documentIdentity,
+                                  anchor ? parseParagraphIndex(anchor) : 0,
+                                  sel.toString().slice(0, 200),
+                              )
+                            : buildParagraphReference(
+                                  documentIdentity,
+                                  anchor ? parseParagraphIndex(anchor) : 0,
+                                  languageCode,
+                                  sel.toString().slice(0, 200),
+                              ),
                     text: sel.toString(),
                 };
             }
@@ -78,13 +85,15 @@ export function useContextMenuItems(
                 '';
 
             return {
-                ref: {
-                    kind: 'paragraph',
-                    paragraphIndex: idx,
-                    languageCode,
-                    textSnippet: text.slice(0, 200),
-                    documentIdentity,
-                },
+                ref:
+                    documentIdentity.documentType === 'sermon'
+                        ? buildParagraphReference(documentIdentity, idx, text.slice(0, 200))
+                        : buildParagraphReference(
+                              documentIdentity,
+                              idx,
+                              languageCode,
+                              text.slice(0, 200),
+                          ),
                 text,
             };
         };

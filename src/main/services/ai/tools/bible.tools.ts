@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import * as aiBibleRepo from '@main/database/repositories/ai-bible.repository';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
+import { buildParagraphReference } from '@shared/types';
 import type { AiToolDefinition } from './types';
 import { validateLanguage } from './shared';
 
@@ -125,17 +126,16 @@ export function buildBibleTools(
                 const item = subjectsRepo.createItem(
                     subjectId,
                     title,
-                    {
-                        kind: 'paragraph',
-                        paragraphIndex: 0,
-                        languageCode: lang,
-                        documentIdentity: {
+                    buildParagraphReference(
+                        {
                             documentType: 'bible',
                             bibleBook: verse.book,
                             bibleChapter: verse.chapter,
                             bibleVersionAbbreviation: resolvedAbbreviation,
                         },
-                    },
+                        0,
+                        lang,
+                    ),
                     bibleContent,
                     {
                         kind: 'bible-verse',

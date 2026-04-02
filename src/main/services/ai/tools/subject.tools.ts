@@ -2,7 +2,7 @@ import { z } from 'zod';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
-import { buildSermonDocumentIdentity } from '@shared/types';
+import { buildParagraphReference, buildSermonDocumentIdentity } from '@shared/types';
 import type { AiToolDefinition } from './types';
 import { inferTranslationId, validateLanguage } from './shared';
 
@@ -102,16 +102,10 @@ export function buildSubjectTools(
                 const item = subjectsRepo.createItem(
                     subjectId,
                     meta.title,
-                    {
-                        kind: 'paragraph',
+                    buildParagraphReference(
+                        buildSermonDocumentIdentity(meta.sermonId, meta.translationId, lang),
                         paragraphIndex,
-                        languageCode: lang,
-                        documentIdentity: buildSermonDocumentIdentity(
-                            meta.sermonId,
-                            meta.translationId,
-                            lang,
-                        ),
-                    },
+                    ),
                     paragraph.content,
                 );
                 return {

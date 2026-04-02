@@ -4,7 +4,7 @@ import * as bibleRepo from '@main/database/repositories/bible.repository';
 import * as customDocRepo from '@main/database/repositories/custom-documents.repository';
 import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
-import { getDisplayDocumentTitle, getDocumentIdentityKey, type HighlightItem } from '@shared/types';
+import { formatDocumentTitle, getDocumentIdentityKey, type HighlightItem } from '@shared/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,7 +35,7 @@ interface DeduplicatedHighlight {
 function groupByDocument(items: HighlightItem[]): Map<string, HighlightItem[]> {
     const grouped = new Map<string, HighlightItem[]>();
     for (const item of items) {
-        const key = `${getDisplayDocumentTitle(item.documentTitle, item.documentIdentity)}::${getDocumentIdentityKey(item.documentIdentity)}`;
+        const key = getDocumentIdentityKey(item.documentIdentity);
         const list = grouped.get(key) ?? [];
         list.push(item);
         grouped.set(key, list);
@@ -74,6 +74,7 @@ function formatDate(dateMs: number): string {
 async function fetchSermonContext(first: HighlightItem): Promise<Partial<DocumentContext>> {
     const paragraphContents = new Map<number, string>();
     let meta: string | undefined;
+    let title: string | undefined;
     if (first.documentIdentity.documentType !== 'sermon') {
         return { paragraphContents };
     }
@@ -83,12 +84,13 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
 
     const sermon = referenceDataService.getSermonMeta(
         first.documentIdentity.translationId,
-        first.languageCode,
+        first.documentIdentity.languageCode,
         first.documentIdentity.sermonId,
     );
     if (!sermon) {
         return { paragraphContents };
     }
+    title = sermon.title;
 
     const parts: string[] = [];
     if (sermon.dateMs) parts.push(formatDate(sermon.dateMs));
@@ -99,7 +101,7 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
 
     try {
         const paragraphs = await tantivyService.getSermonParagraphs(
-            first.languageCode,
+            first.documentIdentity.languageCode,
             first.documentIdentity.translationId,
             sermon.dateMs,
         );
@@ -108,7 +110,7 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
         /* unavailable */
     }
 
-    return { meta, paragraphContents };
+    return { meta, paragraphContents, title };
 }
 
 function fetchBibleContext(first: HighlightItem): Partial<DocumentContext> {
@@ -158,7 +160,7 @@ async function fetchDocumentContext(items: HighlightItem[]): Promise<DocumentCon
     }
 
     return {
-        title: getDisplayDocumentTitle(first.documentTitle, first.documentIdentity),
+        title: formatDocumentTitle(partial.title ?? first.documentTitle, first.documentIdentity),
         meta: partial.meta,
         paragraphContents: partial.paragraphContents ?? new Map(),
     };

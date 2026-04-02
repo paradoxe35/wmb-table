@@ -19,9 +19,9 @@ import {
 } from '@ant-design/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { buildParagraphReference } from '@shared/types';
 import type {
-    DocumentReference,
-    DocumentIdentity,
+    ParagraphReference,
     DocumentType,
     HighlightItem,
     HighlightSearchResult,
@@ -45,12 +45,9 @@ const PAGE_SIZE = 20;
 interface HighlightGroup {
     groupId: string;
     documentTitle: string;
-    documentIdentity: DocumentIdentity;
-    paragraphIndex: number;
-    textSnippet: string;
+    reference: ParagraphReference;
     color: string;
     comment?: string;
-    languageCode: string;
     createdAt: Date;
     ids: string[];
 }
@@ -70,12 +67,21 @@ function groupHighlights(items: HighlightItem[]): HighlightGroup[] {
             map.set(item.groupId, {
                 groupId: item.groupId,
                 documentTitle: item.documentTitle,
-                documentIdentity: item.documentIdentity,
-                paragraphIndex: item.paragraphIndex,
-                textSnippet: item.textSnippet,
+                reference:
+                    item.documentIdentity.documentType === 'sermon'
+                        ? buildParagraphReference(
+                              item.documentIdentity,
+                              item.paragraphIndex,
+                              item.textSnippet,
+                          )
+                        : buildParagraphReference(
+                              item.documentIdentity,
+                              item.paragraphIndex,
+                              item.languageCode,
+                              item.textSnippet,
+                          ),
                 color: item.color,
                 comment: item.comment,
-                languageCode: item.languageCode,
                 createdAt: item.createdAt,
                 ids: [item.id],
             });
@@ -95,16 +101,6 @@ const DOC_TYPE_META: Record<DocumentType, { color: string; label: string }> = {
 // Hooks
 // ---------------------------------------------------------------------------
 
-function toHighlightReference(item: HighlightGroup): DocumentReference {
-    return {
-        kind: 'paragraph',
-        paragraphIndex: item.paragraphIndex,
-        languageCode: item.languageCode,
-        documentIdentity: item.documentIdentity,
-        textSnippet: item.textSnippet,
-    };
-}
-
 function useHighlightOpen() {
     const openDocumentRequest = useOpenDocumentRequest();
     const { buildOpenRequest } = useDocumentPresentation();
@@ -112,7 +108,7 @@ function useHighlightOpen() {
 
     return useCallback(
         (item: HighlightGroup) => {
-            const reference = toHighlightReference(item);
+            const reference = item.reference;
             const request = buildOpenRequest(item.documentTitle, reference);
             setPendingNavigation(buildPendingNavigation(request, reference));
             openDocumentRequest(request);
@@ -167,9 +163,13 @@ function HighlightListItem({
 }) {
     const { t } = useTranslation();
     const { resolveTitle } = useDocumentPresentation();
-    const snippet =
-        group.textSnippet.length > 80 ? group.textSnippet.slice(0, 80) + '...' : group.textSnippet;
-    const displayTitle = resolveTitle(group.documentTitle, group.documentIdentity);
+
+    let snippet = group.reference.textSnippet ?? '';
+    if (snippet.length > 80) {
+        snippet = snippet.slice(0, 80) + '...';
+    }
+
+    const displayTitle = resolveTitle(group.documentTitle, group.reference.documentIdentity);
 
     return (
         <div
@@ -202,7 +202,7 @@ function HighlightListItem({
                     >
                         {displayTitle}
                     </Text>
-                    <DocumentTypeTag documentType={group.documentIdentity.documentType} />
+                    <DocumentTypeTag documentType={group.reference.documentIdentity.documentType} />
                 </div>
                 <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)', lineHeight: 1.3 }}>
                     {snippet}

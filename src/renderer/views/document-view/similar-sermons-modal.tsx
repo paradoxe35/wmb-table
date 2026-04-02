@@ -10,7 +10,11 @@ import {
     useSermonLookup,
 } from '@renderer/hooks';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-import { buildSermonDocumentIdentity, type SimilarSermonHit } from '@shared/types';
+import {
+    buildParagraphReference,
+    buildSermonDocumentIdentity,
+    type SimilarSermonHit,
+} from '@shared/types';
 
 const { Text } = Typography;
 const PAGE_SIZE = 10;
@@ -83,12 +87,10 @@ export default function SimilarSermonsModal() {
             );
             const request = buildOpenRequest(hit.title, documentIdentity);
             setPendingNavigation(
-                buildPendingNavigation(request, {
-                    kind: 'paragraph',
-                    paragraphIndex,
-                    languageCode: requestLanguageCode,
-                    documentIdentity,
-                }),
+                buildPendingNavigation(
+                    request,
+                    buildParagraphReference(documentIdentity, paragraphIndex),
+                ),
             );
             openDocumentRequest(request);
             setOpen(false);

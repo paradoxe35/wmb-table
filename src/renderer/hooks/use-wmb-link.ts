@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { buildPendingNavigation, useDocumentPresentation, useOpenDocumentRequest } from './index';
 import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 import {
+    buildParagraphReference,
     buildBibleDocumentTitle,
     buildSermonDocumentIdentity,
     type SermonDocumentIdentity,
@@ -50,12 +51,10 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     const request = buildOpenRequest(fallbackTitle, documentIdentity);
 
                     setPendingNavigation(
-                        buildPendingNavigation(request, {
-                            kind: 'paragraph',
-                            paragraphIndex: ref.paragraphIndex,
-                            languageCode: ref.languageCode,
-                            documentIdentity,
-                        }),
+                        buildPendingNavigation(
+                            request,
+                            buildParagraphReference(documentIdentity, ref.paragraphIndex),
+                        ),
                     );
                     openDocumentRequest(request);
                     return true;

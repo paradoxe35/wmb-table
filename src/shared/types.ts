@@ -188,10 +188,7 @@ export function buildBibleDocumentId(bibleBook: string, bibleChapter: string): s
     return `${bibleBook}:${bibleChapter}`;
 }
 
-function appendBibleVersionToTitle(
-    title: string,
-    bibleVersionAbbreviation?: string | null,
-): string {
+function appendBibleVersionSuffix(title: string, bibleVersionAbbreviation?: string | null): string {
     const trimmedTitle = title.trim();
     const normalizedAbbreviation = bibleVersionAbbreviation
         ? normalizeBibleAbbreviation(bibleVersionAbbreviation)
@@ -205,23 +202,13 @@ function appendBibleVersionToTitle(
     return trimmedTitle.endsWith(suffix) ? trimmedTitle : `${trimmedTitle}${suffix}`;
 }
 
-export function getDisplayDocumentTitle(
+export function formatDocumentTitle(
     documentTitle: string,
     documentIdentity: DocumentIdentity,
 ): string {
     return documentIdentity.documentType === 'bible'
-        ? appendBibleVersionToTitle(documentTitle, documentIdentity.bibleVersionAbbreviation)
+        ? appendBibleVersionSuffix(documentTitle, documentIdentity.bibleVersionAbbreviation)
         : documentTitle;
-}
-
-export function resolveDocumentTitle(
-    documentTitle: string,
-    documentIdentity: DocumentIdentity,
-    sermonTitle?: string | null,
-): string {
-    return documentIdentity.documentType === 'sermon' && sermonTitle
-        ? sermonTitle
-        : getDisplayDocumentTitle(documentTitle, documentIdentity);
 }
 
 export function buildBibleDocumentTitle(
@@ -229,7 +216,7 @@ export function buildBibleDocumentTitle(
     bibleChapter: string,
     bibleVersionAbbreviation?: string | null,
 ): string {
-    return appendBibleVersionToTitle(`${bookName} ${bibleChapter}`, bibleVersionAbbreviation);
+    return appendBibleVersionSuffix(`${bookName} ${bibleChapter}`, bibleVersionAbbreviation);
 }
 
 type TabKeyInput =
@@ -309,6 +296,39 @@ export type ParagraphReference = {
 };
 
 export type DocumentReference = TreeReference | ParagraphReference;
+
+export function buildParagraphReference(
+    documentIdentity: SermonDocumentIdentity,
+    paragraphIndex: number,
+    textSnippet?: string,
+): ParagraphReference;
+export function buildParagraphReference(
+    documentIdentity: Exclude<DocumentIdentity, SermonDocumentIdentity>,
+    paragraphIndex: number,
+    languageCode: string,
+    textSnippet?: string,
+): ParagraphReference;
+export function buildParagraphReference(
+    documentIdentity: DocumentIdentity,
+    paragraphIndex: number,
+    languageCodeOrTextSnippet?: string,
+    textSnippet?: string,
+): ParagraphReference {
+    const isSermon = documentIdentity.documentType === 'sermon';
+    const languageCode = isSermon ? documentIdentity.languageCode : languageCodeOrTextSnippet;
+
+    if (!languageCode) {
+        throw new Error('Missing languageCode for paragraph reference');
+    }
+
+    return {
+        kind: 'paragraph',
+        paragraphIndex,
+        languageCode,
+        textSnippet: isSermon ? languageCodeOrTextSnippet : textSnippet,
+        documentIdentity,
+    };
+}
 
 export function isParagraphReference(ref: DocumentReference): ref is ParagraphReference {
     return ref.kind === 'paragraph';

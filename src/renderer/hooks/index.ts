@@ -22,33 +22,15 @@ import type {
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { capitalize } from 'lodash';
-import { buildBibleDocumentId, getTabKey, resolveDocumentTitle } from '@shared/types';
+import { buildBibleDocumentId, formatDocumentTitle, getTabKey } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
 
-export type OpenDocumentRequest =
-    | ({
-          title: string;
-          languageCode: string;
-      } & Extract<DocumentIdentity, { documentType: 'sermon' }>)
-    | ({ title: string } & Exclude<DocumentIdentity, { documentType: 'sermon' }>);
-
-type SermonOpenRequestSource = Extract<DocumentIdentity, { documentType: 'sermon' }> & {
-    languageCode: string;
-};
-
-type DirectOpenRequestSource =
-    | SermonOpenRequestSource
-    | Exclude<DocumentIdentity, { documentType: 'sermon' }>;
+export type OpenDocumentRequest = { title: string } & DocumentIdentity;
 
 type PresentationSource =
     | DocumentIdentity
-    | SubjectDocumentItem['documentReference']
-    | NoteItemReference['documentReference'];
-
-type OpenDocumentRequestSource =
-    | DirectOpenRequestSource
     | SubjectDocumentItem['documentReference']
     | NoteItemReference['documentReference'];
 
@@ -88,35 +70,23 @@ function getDocumentIdentityFromSource(source: PresentationSource): DocumentIden
     return source.documentIdentity;
 }
 
-function getOpenRequestLanguageCode(source: OpenDocumentRequestSource): string | undefined {
-    if (!source) {
-        return undefined;
-    }
-
-    if ('documentType' in source && source.documentType === 'sermon') {
-        return source.languageCode;
-    }
-
-    return 'kind' in source && source.kind === 'paragraph' ? source.languageCode : undefined;
-}
-
 function resolveOpenRequestTitle(
     title: string,
     documentIdentity: DocumentIdentity,
     getSermonById: (sermonId: string) => SermonMetaWithTraductions | undefined,
 ): string {
     if (documentIdentity.documentType !== 'sermon') {
-        return resolveDocumentTitle(title, documentIdentity);
+        return formatDocumentTitle(title, documentIdentity);
     }
 
     const sermon = getSermonById(documentIdentity.sermonId);
-    const sermonTitle =
+    const canonicalTitle =
         sermon?.translationId === documentIdentity.translationId &&
         sermon.languageCode === documentIdentity.languageCode
             ? sermon.title
-            : undefined;
+            : title;
 
-    return resolveDocumentTitle(title, documentIdentity, sermonTitle);
+    return formatDocumentTitle(canonicalTitle, documentIdentity);
 }
 
 export function useDocumentPresentation() {
@@ -129,26 +99,10 @@ export function useDocumentPresentation() {
     );
 
     const buildOpenRequest = useCallback(
-        (title: string, source: OpenDocumentRequestSource): OpenDocumentRequest => {
+        (title: string, source: PresentationSource): OpenDocumentRequest => {
             const documentIdentity = getDocumentIdentityFromSource(source);
-            const resolvedTitle = resolveTitle(title, source);
-
-            if (documentIdentity.documentType === 'sermon') {
-                const languageCode = getOpenRequestLanguageCode(source);
-
-                if (!languageCode) {
-                    throw new Error('Missing languageCode for sermon open request');
-                }
-
-                return {
-                    title: resolvedTitle,
-                    ...documentIdentity,
-                    languageCode,
-                };
-            }
-
             return {
-                title: resolvedTitle,
+                title: resolveTitle(title, source),
                 ...documentIdentity,
             };
         },
