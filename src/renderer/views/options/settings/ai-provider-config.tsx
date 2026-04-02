@@ -113,7 +113,8 @@ function ModelSelect({
 
     // Sync local state when external value changes (e.g. settings reload)
     useEffect(() => {
-        setLocalValue(value ?? '');
+        const nextValue = value ?? '';
+        setLocalValue((current) => (current === nextValue ? current : nextValue));
     }, [value]);
 
     // Debounced save — lets the user type freely without cursor jumps

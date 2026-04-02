@@ -206,7 +206,8 @@ export function ReferenceBibleModal({
 
     // Reset bible picker visibility when modal opens/closes or reference changes
     useEffect(() => {
-        setShowBible(!hasVerses);
+        const nextVisible = !hasVerses;
+        setShowBible((current) => (current === nextVisible ? current : nextVisible));
     }, [isModalVisible, reference?.id]);
 
     return (

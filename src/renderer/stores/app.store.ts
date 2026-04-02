@@ -1,6 +1,6 @@
-import { create } from 'zustand';
 import type { BibleVersionInfo, ViewMenuValue } from '@shared/types';
 import { DEFAULT_MAX_TABS } from '@shared/constants';
+import { createStore } from './create-store';
 
 type OptionViewValue =
     | 'search'
@@ -41,7 +41,7 @@ interface AppState {
     toggleReadingMode(): void;
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = createStore<AppState>((set) => ({
     loaded: false,
     syncing: false,
     mainView: 'document',

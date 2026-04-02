@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import type { SubjectDocument, SubjectDocumentItem } from '@shared/types';
+import { createStore } from './create-store';
 
 interface SubjectsState {
     subjects: SubjectDocument[];
@@ -11,7 +11,7 @@ interface SubjectsState {
     setError(error: string | null): void;
 }
 
-export const useSubjectsStore = create<SubjectsState>((set) => ({
+export const useSubjectsStore = createStore<SubjectsState>((set) => ({
     subjects: [],
     activeSubject: null,
     error: null,

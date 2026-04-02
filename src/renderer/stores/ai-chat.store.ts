@@ -1,4 +1,3 @@
-import { create } from 'zustand';
 import type {
     AiConversation,
     AiMessage,
@@ -10,6 +9,7 @@ import type {
 } from '@shared/ai.types';
 import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
 import { AI_DATA_EVENT } from '@renderer/utils/events';
+import { createStore } from './create-store';
 
 const TOOL_TO_EVENT: Record<string, string> = {
     createNote: AI_DATA_EVENT.notesChanged,
@@ -81,7 +81,7 @@ function toErrorMessage(error: unknown, fallback: string): string {
 
 let listenersBound = false;
 
-export const useAiChatStore = create<AiChatState>((set, get) => ({
+export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     initialized: false,
     settings: null,
     providerCatalog: [],

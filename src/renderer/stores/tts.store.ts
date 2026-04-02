@@ -1,4 +1,3 @@
-import { create } from 'zustand';
 import type {
     TtsProviderInfo,
     TtsSettings,
@@ -7,6 +6,7 @@ import type {
     TtsSegment,
     TtsProviderType,
 } from '@shared/tts.types';
+import { createStore } from './create-store';
 
 interface TtsState {
     providers: TtsProviderInfo[];
@@ -43,7 +43,7 @@ interface TtsState {
     reset(): void;
 }
 
-export const useTtsStore = create<TtsState>((set, get) => ({
+export const useTtsStore = createStore<TtsState>((set, get) => ({
     providers: [],
     settings: null,
     status: 'idle',

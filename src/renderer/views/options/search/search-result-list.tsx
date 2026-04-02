@@ -64,7 +64,7 @@ export default memo(function SearchResultList({
 
     // Reset to page 1 when query or mode changes
     useEffect(() => {
-        setCurrentPage(1);
+        setCurrentPage((page) => (page === 1 ? page : 1));
     }, [results?.query, searchMode]);
 
     return (

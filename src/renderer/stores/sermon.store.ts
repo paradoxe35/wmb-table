@@ -1,6 +1,6 @@
-import { create } from 'zustand';
 import type { SermonContent, SermonMetaWithTraductions } from '@shared/types';
 import { getSermonYear } from '@renderer/utils/sermon-utils';
+import { createStore } from './create-store';
 
 interface SermonState {
     sermons: SermonMetaWithTraductions[];
@@ -14,7 +14,7 @@ interface SermonState {
     setError(error: string | null): void;
 }
 
-export const useSermonStore = create<SermonState>((set) => ({
+export const useSermonStore = createStore<SermonState>((set) => ({
     sermons: [],
     sermonsById: {},
     sermonsByYear: {},

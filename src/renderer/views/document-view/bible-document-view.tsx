@@ -273,15 +273,7 @@ export default function BibleDocumentView() {
     );
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
-        documentIdentity:
-            bookCode && chapter
-                ? {
-                      documentType: 'bible',
-                      bibleBook: bookCode,
-                      bibleChapter: chapter,
-                      bibleVersionAbbreviation,
-                  }
-                : null,
+        documentIdentity: activeDocumentIdentity,
     });
 
     const { zoom } = useScrollAndZoom(containerRef, {

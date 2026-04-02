@@ -1,6 +1,6 @@
-import { create } from 'zustand';
 import { DEFAULT_SEARCH_MODE } from '@shared/constants';
 import type { DocumentViewQuery, SearchMode } from '@shared/types';
+import { createStore } from './create-store';
 
 type SearchUiState = {
     searchBarOpen: boolean;
@@ -72,7 +72,7 @@ function updateTabUiState(
     };
 }
 
-export const useSearchStore = create<SearchState>((set, get) => ({
+export const useSearchStore = createStore<SearchState>((set, get) => ({
     documentViewQueries: {},
     searchUiByTab: {},
     searchMode: DEFAULT_SEARCH_MODE,

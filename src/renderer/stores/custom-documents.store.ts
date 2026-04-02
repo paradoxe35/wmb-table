@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import type { CustomDocument } from '@shared/types';
+import { createStore } from './create-store';
 
 interface CustomDocumentsState {
     customDocuments: CustomDocument[];
@@ -10,7 +10,7 @@ interface CustomDocumentsState {
     setError(error: string | null): void;
 }
 
-export const useCustomDocumentsStore = create<CustomDocumentsState>((set) => ({
+export const useCustomDocumentsStore = createStore<CustomDocumentsState>((set) => ({
     customDocuments: [],
     error: null,
     setCustomDocuments: (docs) => set({ customDocuments: docs }),

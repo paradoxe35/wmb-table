@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import type { CurrentAudioDocumentPlay } from '@shared/types';
+import { createStore } from './create-store';
 
 interface AudioState {
     currentPlay: CurrentAudioDocumentPlay | null;
@@ -37,7 +37,7 @@ interface AudioState {
     setError(error: string | null): void;
 }
 
-export const useAudioStore = create<AudioState>((set) => ({
+export const useAudioStore = createStore<AudioState>((set) => ({
     currentPlay: null,
     audioSrc: null,
     originAudioLink: null,

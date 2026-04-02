@@ -128,6 +128,25 @@ export function useSubjectsDatas() {
     return { odatas, datas, setDatas, setSubjects, onSearch };
 }
 
+function normalizeSubjectSelection(
+    subjects: SubjectDocument[],
+    preferredId?: string | null,
+): SubjectDocument[] {
+    if (subjects.length === 0) {
+        return subjects;
+    }
+
+    const activeId =
+        preferredId && subjects.some((subject) => subject.id === preferredId)
+            ? preferredId
+            : (subjects.find((subject) => subject.active)?.id ?? subjects[0].id);
+
+    return subjects.map((subject) => ({
+        ...subject,
+        active: subject.id === activeId,
+    }));
+}
+
 export default function Subject() {
     const { t } = useTranslation();
     const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
@@ -138,14 +157,16 @@ export default function Subject() {
         window.api.subjects
             .getAll()
             .then((subjects) => {
-                odatas.current = subjects;
-                setDatas(subjects);
-                setSubjects(subjects);
+                const preferredId = odatas.current.find((subject) => subject.active)?.id ?? null;
+                const normalized = normalizeSubjectSelection(subjects, preferredId);
+                odatas.current = normalized;
+                setDatas(normalized);
+                setSubjects(normalized);
             })
             .catch(() => {
                 message.error(t('Erreur lors du chargement des sujets'));
             });
-    }, [setSubjects]);
+    }, [odatas, setSubjects, t]);
 
     useEffect(() => {
         loadSubjects();
@@ -164,22 +185,16 @@ export default function Subject() {
     }, [loadSubjects]);
 
     useEffect(() => {
-        if (datas.length > 0) {
-            const hasActive = datas.some((d) => d.active);
-            if (!hasActive) {
-                setDatas((ds) => ds.map((nd, i) => ({ ...nd, active: i === 0 })));
-            }
-        }
-    }, [datas]);
-
-    useEffect(() => {
         const focusSubject = (event: Event) => {
             const id = (event as CustomEvent<{ id: string }>).detail?.id;
-            if (id) setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
+            if (!id) return;
+            const normalized = normalizeSubjectSelection(odatas.current, id);
+            odatas.current = normalized;
+            setDatas(normalized);
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-    }, []);
+    }, [odatas]);
 
     useEffect(() => {
         const subject = datas.find((d) => d.active);
@@ -205,9 +220,14 @@ export default function Subject() {
         });
     }, [activeDocument?.id]);
 
-    const onSelectItem = useCallback((id: string) => {
-        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
-    }, []);
+    const onSelectItem = useCallback(
+        (id: string) => {
+            const normalized = normalizeSubjectSelection(odatas.current, id);
+            odatas.current = normalized;
+            setDatas(normalized);
+        },
+        [odatas],
+    );
 
     const saveNewSubject = (searchValue: string) => {
         const value = searchValue.trim();
@@ -229,7 +249,9 @@ export default function Subject() {
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
         window.api.subjects.delete(item.id).then(() => {
-            odatas.current = odatas.current.filter((d) => d.id !== item.id);
+            odatas.current = normalizeSubjectSelection(
+                odatas.current.filter((d) => d.id !== item.id),
+            );
             setDatas(odatas.current);
             setSubjects(odatas.current);
             message.success(t('Supprimé'));

@@ -1,4 +1,3 @@
-import { create } from 'zustand';
 import type {
     BibleTab,
     CustomTab,
@@ -7,6 +6,7 @@ import type {
     DocumentTab,
     SermonTab,
 } from '@shared/types';
+import { createStore } from './create-store';
 import {
     getDocumentIdentityFromTab,
     getTabKey,
@@ -107,7 +107,7 @@ export function clampTabsToLimit(tabs: DocumentTab[], maxTabs: number): Document
     return keptTabs;
 }
 
-export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
+export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
     tabs: [],
     pendingNavigation: null,
 

@@ -1,6 +1,6 @@
-import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { UiLanguagePreference } from '@shared/constants';
+import { createStore } from './create-store';
 
 type ThemeMode = 'system' | 'light' | 'dark';
 
@@ -34,7 +34,7 @@ function resolveTheme(mode: ThemeMode): 'light' | 'dark' {
     return mode;
 }
 
-export const useThemeStore = create<ThemeState>()(
+export const useThemeStore = createStore<ThemeState>()(
     persist(
         (set) => ({
             themeMode: 'light',
