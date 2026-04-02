@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Divider, Empty, Progress, Select, Space, Typography } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { BibleIndex, BibleIndexValue } from '@shared/types';
+import { buildBibleDocumentTitle, type BibleIndex, type BibleIndexValue } from '@shared/types';
 import { useOpenBibleChapter } from '@renderer/hooks';
 import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 import { useAppStore } from '@renderer/stores';
@@ -148,7 +148,14 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
                         <Button
                             key={ch}
                             size="small"
-                            onClick={() => openChapter(book.bookName, book.bookCode, ch)}
+                            onClick={() =>
+                                openChapter({
+                                    title: buildBibleDocumentTitle(book.bookName, ch),
+                                    documentType: 'bible',
+                                    bibleBook: book.bookCode,
+                                    bibleChapter: ch,
+                                })
+                            }
                             style={{ width: '100%' }}
                         >
                             {ch}

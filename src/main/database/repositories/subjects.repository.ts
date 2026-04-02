@@ -6,7 +6,7 @@ import { subjects, subjectItems } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
 import type {
     DocumentReference,
-    SubjectDocumentPreview,
+    DocumentPreview,
     SubjectDocument,
     SubjectDocumentItem,
 } from '@shared/types';
@@ -35,7 +35,7 @@ function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentIt
         }),
         textContent: row.textContent,
         documentPreview: row.documentPreview
-            ? safeJsonParse<SubjectDocumentPreview | undefined>(row.documentPreview, undefined)
+            ? safeJsonParse<DocumentPreview | undefined>(row.documentPreview, undefined)
             : undefined,
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
@@ -173,7 +173,7 @@ export function createItem(
     documentTitle: string,
     documentReference: DocumentReference,
     textContent: string,
-    documentPreview?: SubjectDocumentPreview,
+    documentPreview?: DocumentPreview,
 ): SubjectDocumentItem {
     const id = randomUUID();
     const now = new Date().toISOString();

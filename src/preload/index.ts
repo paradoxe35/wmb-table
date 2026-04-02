@@ -26,12 +26,12 @@ import type {
     DocumentReference,
     DocumentTab,
     HistoryEntryCreateData,
-    SubjectDocumentPreview,
+    DocumentPreview,
     ReadingPosition,
     HighlightCreateData,
     HighlightUpdateData,
     SearchMode,
-    SubjectRefTree,
+    DocumentReferenceSelection,
 } from '@shared/types';
 import type {
     TtsProviderType,
@@ -127,7 +127,7 @@ const api = {
         getReference: (id: string) => invoke(NotesChannels.getReference, id),
         syncReferences: (noteId: string, refs: string[]) =>
             invoke(NotesChannels.syncReferences, noteId, refs),
-        updateReference: (id: string, ref: SubjectRefTree, documentTitle: string) =>
+        updateReference: (id: string, ref: DocumentReferenceSelection, documentTitle: string) =>
             invoke(NotesChannels.updateReference, id, ref, documentTitle),
         getBibleReference: (id: string) => invoke(NotesChannels.getBibleReference, id),
         getBibleReferences: (noteId: string) => invoke(NotesChannels.getBibleReferences, noteId),
@@ -169,7 +169,7 @@ const api = {
             docTitle: string,
             documentReference: DocumentReference,
             text: string,
-            documentPreview?: SubjectDocumentPreview,
+            documentPreview?: DocumentPreview,
         ) =>
             invoke(
                 SubjectChannels.createItem,

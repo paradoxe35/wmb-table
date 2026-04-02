@@ -10,7 +10,13 @@ import {
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { BibleBook, BibleIndex, BibleTab, SermonContent } from '@shared/types';
-import { getDocumentIdentityFromTab, getTabKey } from '@shared/types';
+import {
+    buildBibleDocumentId,
+    buildBibleDocumentTitle,
+    getBibleIndexEntry,
+    getDocumentIdentityFromTab,
+    getTabKey,
+} from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
 import DocumentBody from './document-body';
 import {
@@ -43,18 +49,17 @@ import {
 // ---------------------------------------------------------------------------
 
 function BibleContentHeader({
-    title,
+    bookName,
     chapter,
     bibleLang,
     versionName,
 }: {
-    title?: string;
+    bookName?: string;
     chapter?: string;
     bibleLang: string;
     versionName?: string;
 }) {
-    if (!title) return null;
-    const bookName = chapter ? title.replace(new RegExp(`\\s+${chapter}$`), '') : title;
+    if (!bookName) return null;
     const chapterLabel = chapter ? `${getChapterLabel(bibleLang)} ${chapter}` : null;
 
     return (
@@ -142,7 +147,7 @@ function useChapterNavigation(activeTab: BibleTab | null) {
 
     const bookEntry = useMemo(() => {
         if (!bookCode) return null;
-        return Object.entries(bibleIndex).find(([, val]) => val.book === bookCode) ?? null;
+        return getBibleIndexEntry(bibleIndex, bookCode);
     }, [bibleIndex, bookCode]);
 
     const chapterList = useMemo(() => {
@@ -163,8 +168,8 @@ function useChapterNavigation(activeTab: BibleTab | null) {
     const navigateToChapter = useCallback(
         (chapter: string) => {
             if (!activeTabKey || !bookCode) return;
-            const title = `${bookName} ${chapter}`;
-            const documentId = `${bookCode}:${chapter}`;
+            const title = buildBibleDocumentTitle(bookName, chapter);
+            const documentId = buildBibleDocumentId(bookCode, chapter);
             const existingTab = tabs.find(
                 (t) => t.type === 'bible' && t.title === title && t.documentId === documentId,
             );
@@ -326,12 +331,15 @@ export default function BibleDocumentView() {
     );
 
     const { bibleIndex, hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
+    const bookName = useMemo(() => {
+        if (!bookCode) return '';
+        return getBibleIndexEntry(bibleIndex, bookCode)?.[0] ?? '';
+    }, [bibleIndex, bookCode]);
 
     const introText = useMemo(() => {
-        if (!activeTab?.title || !chapter) return undefined;
-        const bookName = activeTab.title.replace(new RegExp(`\\s+${chapter}$`), '');
+        if (!bookName || !chapter) return undefined;
         return buildBibleChapterIntro(bookName, chapter, bibleLang);
-    }, [activeTab?.title, chapter, bibleLang]);
+    }, [bookName, chapter, bibleLang]);
 
     const tts = useTts(paragraphs, bibleLang, activeTabKey ?? '', {
         introText,
@@ -430,7 +438,7 @@ export default function BibleDocumentView() {
             }
         >
             <BibleContentHeader
-                title={activeTab?.title}
+                bookName={bookName}
                 chapter={chapter}
                 bibleLang={bibleLang}
                 versionName={activeBibleVersion?.name}

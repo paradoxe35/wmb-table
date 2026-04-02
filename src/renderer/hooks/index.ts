@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import {
     useAppStore,
@@ -9,6 +9,7 @@ import {
 import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
+    BibleDocumentIdentity,
     DocumentReference,
     DocumentIdentity,
     NoteItemReference,
@@ -18,7 +19,7 @@ import type {
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { buildPendingNavigationTarget } from '@renderer/utils/pending-navigation';
 import { capitalize } from 'lodash';
-import { getTabKey } from '@shared/types';
+import { buildBibleDocumentId, getTabKey } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -58,7 +59,7 @@ export function buildReferenceOpenRequest(
 
 export function useValueStateRef<T>(value: T) {
     const ref = useRef<T>(value);
-    ref.current = useMemo(() => value, [value]);
+    ref.current = value;
     return ref;
 }
 
@@ -203,21 +204,22 @@ export function useOpenCustomDocument() {
     );
 }
 
+type OpenBibleChapterRequest = BibleDocumentIdentity & { title: string };
+
 export function useOpenBibleChapter() {
     const addTab = useDocumentTabsStore((s) => s.addTab);
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 
     return useCallback(
-        (bookName: string, bookCode: string, chapter: string) => {
+        ({ title, bibleBook, bibleChapter }: OpenBibleChapterRequest) => {
             snapshotActiveDocumentScroll(updateTabScroll);
-            const title = `${bookName} ${chapter}`;
             addTab({
                 title,
-                documentId: `${bookCode}:${chapter}`,
+                documentId: buildBibleDocumentId(bibleBook, bibleChapter),
                 type: 'bible',
-                bibleBook: bookCode,
-                bibleChapter: chapter,
+                bibleBook,
+                bibleChapter,
             });
             setMainView('document');
         },
@@ -243,11 +245,7 @@ export function useOpenDocumentRequest() {
                     const v = await window.api.bible.getActiveVersion();
                     useAppStore.getState().setActiveBibleVersion(v);
                 }
-                const bookName = request.title.replace(
-                    new RegExp(`\\s+${request.bibleChapter}$`),
-                    '',
-                );
-                openBibleChapter(bookName, request.bibleBook, request.bibleChapter);
+                openBibleChapter(request);
                 return;
             }
 

@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { buildPendingNavigation, useOpenDocumentRequest } from './index';
 import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
+import { buildBibleDocumentTitle } from '@shared/types';
 
 /**
  * Reference link format: wmb://<type>/<...params>
@@ -117,7 +118,7 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                 }
                 case 'bible':
                     openDocumentRequest({
-                        title: `${ref.bookName} ${ref.chapter}`,
+                        title: buildBibleDocumentTitle(ref.bookName, ref.chapter),
                         documentType: 'bible',
                         bibleBook: ref.bookCode,
                         bibleChapter: ref.chapter,

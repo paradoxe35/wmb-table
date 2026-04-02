@@ -39,9 +39,10 @@ function useHistoryItemOpen() {
             }
 
             if (documentIdentity.documentType === 'bible') {
-                const { bibleBook: bookCode, bibleChapter: chapter } = documentIdentity;
-                const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
-                openBibleChapter(bookName, bookCode, chapter);
+                openBibleChapter({
+                    title: item.documentTitle,
+                    ...documentIdentity,
+                });
                 return;
             }
 

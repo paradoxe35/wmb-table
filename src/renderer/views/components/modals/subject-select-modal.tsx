@@ -1,7 +1,7 @@
 import { Empty, Input, Modal, message } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SubjectDocument, SubjectRefTree } from '@shared/types';
+import type { DocumentReferenceSelection, SubjectDocument } from '@shared/types';
 import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
 import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
@@ -12,14 +12,14 @@ export function SubjectSelectModal() {
     const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
-    const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
+    const pendingReference = useRef<DocumentReferenceSelection | null>(null);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
     const subjects = useSubjectsStore((s) => s.subjects);
 
     const onSelectItem = useCallback(
         (subjectId: string) => {
-            if (!documentRefTree.current) {
+            if (!pendingReference.current) {
                 return;
             }
 
@@ -28,7 +28,7 @@ export function SubjectSelectModal() {
                 return;
             }
 
-            const ref = documentRefTree.current;
+            const ref = pendingReference.current;
             const textContent = ref.textContent ?? '';
 
             window.api.subjects
@@ -71,8 +71,8 @@ export function SubjectSelectModal() {
     }, [subjects]);
 
     useEffect(() => {
-        const showModal = (e: CustomEventInit<SubjectRefTree>) => {
-            documentRefTree.current = e.detail ?? undefined;
+        const showModal = (e: CustomEventInit<DocumentReferenceSelection>) => {
+            pendingReference.current = e.detail ?? null;
             setVisible(true);
         };
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);

@@ -1,21 +1,10 @@
-// Domain model types — ported from legacy src/types/index.d.ts
-// removed global augmentations and renderer-only types.
-
 import { UiLanguagePreference } from './constants';
-
-// ---------------------------------------------------------------------------
-// Base entity fields
-// ---------------------------------------------------------------------------
 
 export interface BaseEntity {
     id: string;
     createdAt: Date;
     updatedAt: Date;
 }
-
-// ---------------------------------------------------------------------------
-// Reference data types (from data.sqlite)
-// ---------------------------------------------------------------------------
 
 export interface RefLanguage {
     isarId: number;
@@ -49,10 +38,6 @@ export interface RefTranslator {
     name: string;
     longName: string;
 }
-
-// ---------------------------------------------------------------------------
-// Documents
-// ---------------------------------------------------------------------------
 
 export interface SermonMeta {
     id: string;
@@ -137,6 +122,8 @@ export type DocumentIdentity =
           customDocumentId: string;
       };
 
+export type BibleDocumentIdentity = Extract<DocumentIdentity, { documentType: 'bible' }>;
+
 export function getDocumentIdentityKey(identity: DocumentIdentity): string {
     switch (identity.documentType) {
         case 'sermon':
@@ -172,6 +159,14 @@ export function getDocumentIdentityFromTab(tab: DocumentTab): DocumentIdentity {
                 translationId: tab.translationId,
             };
     }
+}
+
+export function buildBibleDocumentId(bibleBook: string, bibleChapter: string): string {
+    return `${bibleBook}:${bibleChapter}`;
+}
+
+export function buildBibleDocumentTitle(bookName: string, bibleChapter: string): string {
+    return `${bookName} ${bibleChapter}`;
 }
 
 type TabKeyInput =
@@ -321,6 +316,13 @@ export interface BibleIndex {
     [x: string]: BibleIndexValue;
 }
 
+export function getBibleIndexEntry(
+    bibleIndex: BibleIndex,
+    bibleBook: string,
+): [string, BibleIndexValue] | null {
+    return Object.entries(bibleIndex).find(([, value]) => value.book === bibleBook) ?? null;
+}
+
 export interface BibleBook {
     id: string;
     bookName: string;
@@ -352,27 +354,23 @@ export interface BibleSearchResult {
     data: BibleSearchItem[];
 }
 
-// ---------------------------------------------------------------------------
-// Subjects
-// ---------------------------------------------------------------------------
-
 export interface SubjectDocumentItem extends Readonly<BaseEntity> {
     subjectId: string;
     documentTitle: string;
     documentReference: DocumentReference;
     textContent: string;
-    documentPreview?: SubjectDocumentPreview;
+    documentPreview?: DocumentPreview;
 }
 
-export type SubjectDocumentPreview = {
+export type DocumentPreview = {
     kind: 'bible-verse';
     bibleVerse: BibleBook;
 };
 
-export type SubjectRefTree = {
+export type DocumentReferenceSelection = {
     textContent: string;
     documentReference: DocumentReference;
-    documentPreview?: SubjectDocumentPreview;
+    documentPreview?: DocumentPreview;
 };
 
 export interface SubjectDocument extends Readonly<BaseEntity> {
@@ -381,10 +379,6 @@ export interface SubjectDocument extends Readonly<BaseEntity> {
     documents: SubjectDocumentItem[];
     active?: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Highlights
-// ---------------------------------------------------------------------------
 
 export interface HighlightParagraphRange {
     paragraphIndex: number;

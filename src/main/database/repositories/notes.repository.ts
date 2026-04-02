@@ -13,7 +13,7 @@ import type {
     NoteItemReference,
     NoteItemReferenceBible,
     BibleBook,
-    SubjectRefTree,
+    DocumentReferenceSelection,
 } from '@shared/types';
 
 function safeJsonParse<T>(raw: string, fallback: T): T {
@@ -179,7 +179,11 @@ export function syncReferences(noteId: string, refIds: string[]): void {
     }
 }
 
-export function updateReference(id: string, ref: SubjectRefTree, documentTitle: string): void {
+export function updateReference(
+    id: string,
+    ref: DocumentReferenceSelection,
+    documentTitle: string,
+): void {
     const now = new Date().toISOString();
     getDb()
         .update(notesReferences)

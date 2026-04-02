@@ -2,7 +2,12 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Collapse, Empty, List, Segmented, Space, Spin, Typography, Dropdown } from 'antd';
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
-import type { BibleBook, BibleIndex, BibleIndexValue, SubjectRefTree } from '@shared/types';
+import type {
+    BibleBook,
+    BibleIndex,
+    BibleIndexValue,
+    DocumentReferenceSelection,
+} from '@shared/types';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { useAppStore } from '@renderer/stores';
 
@@ -387,7 +392,7 @@ const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook })
     const { t } = useTranslation();
     const handler = useCallback(() => {
         window.dispatchEvent(
-            new CustomEvent<Partial<SubjectRefTree>>(
+            new CustomEvent<Partial<DocumentReferenceSelection>>(
                 CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
                 {
                     detail: {

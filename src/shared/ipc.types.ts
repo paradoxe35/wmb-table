@@ -15,8 +15,8 @@ import type {
     BibleVersionInfo,
     SubjectDocument,
     SubjectDocumentItem,
-    SubjectDocumentPreview,
-    SubjectRefTree,
+    DocumentPreview,
+    DocumentReferenceSelection,
     CustomDocument,
     CustomDocumentContent,
     DocumentIdentity,
@@ -371,7 +371,7 @@ export interface InvokeChannelMap {
         return: void;
     };
     [NotesChannels.updateReference]: {
-        args: [string, SubjectRefTree, string];
+        args: [string, DocumentReferenceSelection, string];
         return: void;
     };
     [NotesChannels.getBibleReference]: {
@@ -420,7 +420,7 @@ export interface InvokeChannelMap {
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
     [SubjectChannels.createItem]: {
-        args: [string, string, DocumentReference, string, SubjectDocumentPreview?];
+        args: [string, string, DocumentReference, string, DocumentPreview?];
         return: SubjectDocumentItem;
     };
     [SubjectChannels.exportPdf]: { args: [string]; return: string };

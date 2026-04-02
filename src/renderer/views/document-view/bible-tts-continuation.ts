@@ -1,4 +1,10 @@
-import type { BibleIndexValue, BibleTab } from '@shared/types';
+import {
+    buildBibleDocumentId,
+    buildBibleDocumentTitle,
+    getBibleIndexEntry,
+    type BibleIndex,
+    type BibleTab,
+} from '@shared/types';
 
 export type BiblePlaybackSource = {
     tabKey: string;
@@ -30,14 +36,13 @@ export function captureBiblePlaybackSource(
 
 export function resolveNextBibleChapterTarget(
     source: BiblePlaybackSource | null,
-    bibleIndex: Record<string, BibleIndexValue>,
+    bibleIndex: BibleIndex,
 ): BibleChapterTarget | null {
     if (!source) {
         return null;
     }
 
-    const bookEntry =
-        Object.entries(bibleIndex).find(([, value]) => value.book === source.bibleBook) ?? null;
+    const bookEntry = getBibleIndexEntry(bibleIndex, source.bibleBook);
     if (!bookEntry) {
         return null;
     }
@@ -55,8 +60,8 @@ export function resolveNextBibleChapterTarget(
 
     const nextChapter = chapterList[currentIndex + 1];
     return {
-        title: `${bookName} ${nextChapter}`,
-        documentId: `${source.bibleBook}:${nextChapter}`,
+        title: buildBibleDocumentTitle(bookName, nextChapter),
+        documentId: buildBibleDocumentId(source.bibleBook, nextChapter),
         bibleBook: source.bibleBook,
         bibleChapter: nextChapter,
     };

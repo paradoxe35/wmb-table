@@ -5,7 +5,7 @@ import {
     hasReferenceAssignment,
     type NoteItem,
     type NoteItemReference,
-    type SubjectRefTree,
+    type DocumentReferenceSelection,
 } from '@shared/types';
 import {
     useSermonLookup,
@@ -23,7 +23,7 @@ export function NoteReferencesModal() {
     const { t } = useTranslation();
     const title = useActiveTabTitle();
     const titleRef = useValueStateRef(title);
-    const pendingReference = useRef<SubjectRefTree | null>(null);
+    const pendingReference = useRef<DocumentReferenceSelection | null>(null);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<NoteItemReference[]>([]);
     const workingNote = useRef<NoteItem | null>(null);
@@ -51,7 +51,7 @@ export function NoteReferencesModal() {
                 return;
             }
 
-            const referenceItem: SubjectRefTree = {
+            const referenceItem: DocumentReferenceSelection = {
                 documentReference: pendingReference.current.documentReference,
                 textContent: pendingReference.current.textContent ?? '',
                 documentPreview: pendingReference.current.documentPreview,
@@ -71,7 +71,7 @@ export function NoteReferencesModal() {
     );
 
     useEffect(() => {
-        const showModal = (e: CustomEventInit<SubjectRefTree>) => {
+        const showModal = (e: CustomEventInit<DocumentReferenceSelection>) => {
             pendingReference.current = e.detail ?? null;
             setVisible(true);
         };
