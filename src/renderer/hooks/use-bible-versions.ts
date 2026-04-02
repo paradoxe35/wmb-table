@@ -22,6 +22,7 @@ function invalidateCache() {
 export function useBibleVersions(): BibleVersionState {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const activeVersion = activeBibleVersion?.abbreviation;
     const updateBibleTabsVersion = useDocumentTabsStore((s) => s.updateBibleTabsVersion);
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
@@ -52,13 +53,13 @@ export function useBibleVersions(): BibleVersionState {
         async (abbreviation: string) => {
             await window.api.bible.switchVersion(abbreviation);
             const v = await window.api.bible.getActiveVersion();
-            useAppStore.getState().setActiveBibleVersion(v);
+            setActiveBibleVersion(v);
             if (v?.abbreviation) {
                 updateBibleTabsVersion(v.abbreviation);
             }
             refresh();
         },
-        [refresh, updateBibleTabsVersion],
+        [refresh, setActiveBibleVersion, updateBibleTabsVersion],
     );
 
     const handleDownload = useCallback((abbreviation: string) => {

@@ -323,6 +323,7 @@ export default function BibleDocumentView() {
     const completedNaturally = useTtsStore((s) => s.completedNaturally);
     const ttsDocumentId = useTtsStore((s) => s.documentId);
     const ttsStatus = useTtsStore((s) => s.status);
+    const clearCompletedNaturally = useTtsStore((s) => s.clearCompletedNaturally);
     const autoStartTtsRef = useRef(false);
     const continuationSourceRef = useRef<ReturnType<typeof captureBiblePlaybackSource>>(null);
 
@@ -337,7 +338,7 @@ export default function BibleDocumentView() {
 
     useEffect(() => {
         if (completedNaturally && ttsSettings?.bibleReadEntireBook) {
-            useTtsStore.getState().clearCompletedNaturally();
+            clearCompletedNaturally();
 
             const source = continuationSourceRef.current;
             const nextTarget = resolveNextBibleChapterTarget(source, bibleIndex);
@@ -358,12 +359,13 @@ export default function BibleDocumentView() {
     }, [
         activateTab,
         bibleIndex,
+        clearCompletedNaturally,
         completedNaturally,
         ttsSettings?.bibleReadEntireBook,
         updateBibleTab,
     ]);
 
-    useEffect(() => () => useTtsStore.getState().clearCompletedNaturally(), []);
+    useEffect(() => () => clearCompletedNaturally(), [clearCompletedNaturally]);
 
     useEffect(() => {
         if (autoStartTtsRef.current && paragraphs.length > 0 && !loading) {

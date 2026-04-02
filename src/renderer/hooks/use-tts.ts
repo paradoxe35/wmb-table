@@ -85,7 +85,12 @@ function clearBrowserTtsTimer(): void {
     }
 }
 
-function playBrowserSegment(segments: TtsSegment[], index: number, settings: TtsSettings): void {
+function playBrowserSegment(
+    segments: TtsSegment[],
+    index: number,
+    settings: TtsSettings,
+    actions: Pick<ReturnType<typeof useTtsStore.getState>, 'reset' | 'setPlaybackState'>,
+): void {
     clearBrowserTtsTimer();
 
     if (index >= segments.length) {
@@ -94,11 +99,11 @@ function playBrowserSegment(segments: TtsSegment[], index: number, settings: Tts
             lastStoppedDocumentId: null,
             lastStoppedSegmentIndex: 0,
         });
-        useTtsStore.getState().reset();
+        actions.reset();
         return;
     }
 
-    useTtsStore.getState().setPlaybackState({
+    actions.setPlaybackState({
         status: 'playing',
         currentSegmentIndex: index,
         totalSegments: segments.length,
@@ -114,11 +119,11 @@ function playBrowserSegment(segments: TtsSegment[], index: number, settings: Tts
 
         if (gapMs > 0) {
             browserTtsGapTimer = setTimeout(
-                () => playBrowserSegment(segments, index + 1, settings),
+                () => playBrowserSegment(segments, index + 1, settings, actions),
                 gapMs,
             );
         } else {
-            playBrowserSegment(segments, index + 1, settings);
+            playBrowserSegment(segments, index + 1, settings, actions);
         }
     });
     browserTts.speak(segments[index].text, cfg?.voiceId, {
@@ -136,12 +141,15 @@ function startPlaybackAtIndex(
     settings: TtsSettings,
     language: string,
     documentId: string,
+    actions: Pick<
+        ReturnType<typeof useTtsStore.getState>,
+        'reset' | 'setDocumentId' | 'setPlaybackState' | 'setSegments'
+    >,
 ): void {
-    const store = useTtsStore.getState();
-    store.setSegments(segments);
-    store.setDocumentId(documentId);
+    actions.setSegments(segments);
+    actions.setDocumentId(documentId);
     // Set status eagerly so the mini-player subscriber pauses sermon audio
-    store.setPlaybackState({
+    actions.setPlaybackState({
         status: 'loading',
         currentSegmentIndex: startIndex,
         totalSegments: segments.length,
@@ -149,13 +157,13 @@ function startPlaybackAtIndex(
     });
 
     if (settings.activeProvider === 'browser') {
-        playBrowserSegment(segments, startIndex, settings);
+        playBrowserSegment(segments, startIndex, settings, actions);
     } else {
         window.api.tts.startPlayback(segments, language, startIndex).catch(() => {
             message.error(
                 i18next.t('La lecture audio a échoué. Vérifiez la configuration du fournisseur.'),
             );
-            useTtsStore.getState().reset();
+            actions.reset();
         });
     }
 }
@@ -174,6 +182,10 @@ export function useTts(
     const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
     const languageSupported = useTtsStore((s) => s.languageSupported);
     const incompatibleMessage = useTtsStore((s) => s.incompatibleMessage);
+    const setSegments = useTtsStore((s) => s.setSegments);
+    const setDocumentId = useTtsStore((s) => s.setDocumentId);
+    const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
+    const reset = useTtsStore((s) => s.reset);
     const activeProvider = settings?.activeProvider;
 
     // Stop TTS on language change (ignore empty transitions during tab switches)
@@ -187,9 +199,9 @@ export function useTts(
         prevLanguageRef.current = language;
         if (hadLanguage && useTtsStore.getState().status !== 'idle') {
             stopAllTtsPlayback();
-            useTtsStore.getState().reset();
+            reset();
         }
-    }, [language]);
+    }, [language, reset]);
 
     const play = useCallback(async () => {
         if (!settings || !paragraphs.length) {
@@ -231,8 +243,23 @@ export function useTts(
                 : 0;
         const startIndex = savedIndex < allSegments.length ? savedIndex : 0;
 
-        startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId);
-    }, [paragraphs, language, documentId, settings, options]);
+        startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId, {
+            reset,
+            setDocumentId,
+            setPlaybackState,
+            setSegments,
+        });
+    }, [
+        documentId,
+        language,
+        options,
+        paragraphs,
+        reset,
+        setDocumentId,
+        setPlaybackState,
+        setSegments,
+        settings,
+    ]);
 
     const pause = useCallback(() => {
         const state = useTtsStore.getState();
@@ -270,20 +297,22 @@ export function useTts(
         clearBrowserTtsTimer();
         browserTts.cancel();
         stopAllTtsPlayback();
-        useTtsStore.getState().stopAndRemember();
-    }, []);
+        stopAndRemember();
+    }, [stopAndRemember]);
 
     const seekToSegment = useCallback(
         (i: number) => {
             if (activeProvider === 'browser') {
                 browserTts.cancel();
                 const segs = useTtsStore.getState().segments;
-                if (segs.length && settings) playBrowserSegment(segs, i, settings);
+                if (segs.length && settings) {
+                    playBrowserSegment(segs, i, settings, { reset, setPlaybackState });
+                }
             } else {
                 window.api.tts.seekToSegment(i);
             }
         },
-        [activeProvider, settings],
+        [activeProvider, reset, setPlaybackState, settings],
     );
 
     const playFromParagraph = useCallback(
@@ -323,9 +352,24 @@ export function useTts(
                 return;
             }
 
-            startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId);
+            startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId, {
+                reset,
+                setDocumentId,
+                setPlaybackState,
+                setSegments,
+            });
         },
-        [paragraphs, language, documentId, settings, options],
+        [
+            documentId,
+            language,
+            options,
+            paragraphs,
+            reset,
+            setDocumentId,
+            setPlaybackState,
+            setSegments,
+            settings,
+        ],
     );
 
     // Restart playback from current paragraph when content-shaping settings change

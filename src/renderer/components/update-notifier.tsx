@@ -14,6 +14,7 @@ export const UPDATE_TAB_EVENT = 'go-to-update-tab';
 export default function UpdateNotifier() {
     const { t } = useTranslation();
     const showOptions = useAppStore((s) => s.showOptions);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const shownRef = useRef<Set<string>>(new Set());
 
     const goToUpdateTab = () => {
@@ -53,8 +54,7 @@ export default function UpdateNotifier() {
                             type="primary"
                             size="small"
                             onClick={() => {
-                                const lang = useAppStore.getState().contentLanguage;
-                                window.api.app.openExternal(buildDownloadPageLink(lang));
+                                window.api.app.openExternal(buildDownloadPageLink(contentLanguage));
                                 notification.destroy(key);
                             }}
                         >
@@ -88,7 +88,7 @@ export default function UpdateNotifier() {
                 });
             }
         });
-    }, [showOptions]);
+    }, [contentLanguage, showOptions, t]);
 
     return null;
 }

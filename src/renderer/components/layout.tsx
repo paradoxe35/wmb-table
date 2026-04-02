@@ -70,9 +70,8 @@ const SidebarStatusHandler = () => {
 
     const handleToggle = useCallback(() => {
         toggleSidebar();
-        const next = useAppStore.getState().sidebarHidden;
-        window.api.app.setSidebarStatus(next);
-    }, [toggleSidebar]);
+        window.api.app.setSidebarStatus(!sidebarHidden);
+    }, [sidebarHidden, toggleSidebar]);
 
     useEffect(() => {
         return window.api.on.toggleSidebar(handleToggle);
