@@ -27,9 +27,28 @@ import { buildBibleDocumentId, getTabKey, resolveDocumentTitle } from '@shared/t
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
 
-export type OpenDocumentRequest = { title: string } & DocumentIdentity;
-type OpenDocumentRequestSource =
+export type OpenDocumentRequest =
+    | ({
+          title: string;
+          languageCode: string;
+      } & Extract<DocumentIdentity, { documentType: 'sermon' }>)
+    | ({ title: string } & Exclude<DocumentIdentity, { documentType: 'sermon' }>);
+
+type SermonOpenRequestSource = Extract<DocumentIdentity, { documentType: 'sermon' }> & {
+    languageCode: string;
+};
+
+type DirectOpenRequestSource =
+    | SermonOpenRequestSource
+    | Exclude<DocumentIdentity, { documentType: 'sermon' }>;
+
+type PresentationSource =
     | DocumentIdentity
+    | SubjectDocumentItem['documentReference']
+    | NoteItemReference['documentReference'];
+
+type OpenDocumentRequestSource =
+    | DirectOpenRequestSource
     | SubjectDocumentItem['documentReference']
     | NoteItemReference['documentReference'];
 
@@ -57,12 +76,28 @@ function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: n
     updateTabScroll(getTabKey(currentTab), container.scrollTop);
 }
 
-function getOpenRequestIdentity(source: OpenDocumentRequestSource): DocumentIdentity {
+function getDocumentIdentityFromSource(source: PresentationSource): DocumentIdentity {
     if (!source) {
         throw new Error('Missing document source');
     }
 
-    return 'documentType' in source ? source : source.documentIdentity;
+    if ('documentType' in source) {
+        return source;
+    }
+
+    return source.documentIdentity;
+}
+
+function getOpenRequestLanguageCode(source: OpenDocumentRequestSource): string | undefined {
+    if (!source) {
+        return undefined;
+    }
+
+    if ('documentType' in source && source.documentType === 'sermon') {
+        return source.languageCode;
+    }
+
+    return 'kind' in source && source.kind === 'paragraph' ? source.languageCode : undefined;
 }
 
 function resolveOpenRequestTitle(
@@ -76,34 +111,44 @@ function resolveOpenRequestTitle(
 
     const sermon = getSermonById(documentIdentity.sermonId);
     const sermonTitle =
-        sermon?.translationId === documentIdentity.translationId ? sermon.title : undefined;
+        sermon?.translationId === documentIdentity.translationId &&
+        sermon.languageCode === documentIdentity.languageCode
+            ? sermon.title
+            : undefined;
 
     return resolveDocumentTitle(title, documentIdentity, sermonTitle);
-}
-
-function resolveStoredDocumentTitle(
-    title: string,
-    source: OpenDocumentRequestSource,
-    getSermonById: (sermonId: string) => SermonMetaWithTraductions | undefined,
-): string {
-    return resolveOpenRequestTitle(title, getOpenRequestIdentity(source), getSermonById);
 }
 
 export function useDocumentPresentation() {
     const { getSermonById } = useSermonLookup();
 
     const resolveTitle = useCallback(
-        (title: string, source: OpenDocumentRequestSource) =>
-            resolveStoredDocumentTitle(title, source, getSermonById),
+        (title: string, source: PresentationSource) =>
+            resolveOpenRequestTitle(title, getDocumentIdentityFromSource(source), getSermonById),
         [getSermonById],
     );
 
     const buildOpenRequest = useCallback(
         (title: string, source: OpenDocumentRequestSource): OpenDocumentRequest => {
-            const documentIdentity = getOpenRequestIdentity(source);
+            const documentIdentity = getDocumentIdentityFromSource(source);
+            const resolvedTitle = resolveTitle(title, source);
+
+            if (documentIdentity.documentType === 'sermon') {
+                const languageCode = getOpenRequestLanguageCode(source);
+
+                if (!languageCode) {
+                    throw new Error('Missing languageCode for sermon open request');
+                }
+
+                return {
+                    title: resolvedTitle,
+                    ...documentIdentity,
+                    languageCode,
+                };
+            }
 
             return {
-                title: resolveTitle(title, source),
+                title: resolvedTitle,
                 ...documentIdentity,
             };
         },
@@ -267,11 +312,10 @@ export function useOpenDocument() {
     const addTab = useAddDocumentTab();
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     return useCallback(
-        (title: string, sermonId: string, translationId: number) => {
-            if (!contentLanguage) {
+        (title: string, sermonId: string, translationId: number, languageCode: string) => {
+            if (!languageCode) {
                 return;
             }
 
@@ -280,14 +324,21 @@ export function useOpenDocument() {
                 title,
                 documentId: sermonId,
                 type: 'sermon',
-                languageCode: contentLanguage,
+                languageCode,
                 translationId,
             });
             setMainView('document');
         },
-        [addTab, contentLanguage, setMainView, updateTabScroll],
+        [addTab, setMainView, updateTabScroll],
     );
 }
+
+export type SermonOpenTarget = {
+    title: string;
+    sermonId: string;
+    translationId: number;
+    languageCode: string;
+};
 
 export function useOpenCustomDocument() {
     const addTab = useAddDocumentTab();
@@ -353,7 +404,12 @@ export function useOpenDocumentRequest() {
                 return;
             }
 
-            openDocument(request.title, request.sermonId, request.translationId);
+            openDocument(
+                request.title,
+                request.sermonId,
+                request.translationId,
+                request.languageCode,
+            );
         },
         [openBibleChapter, openCustomDocument, openDocument, setActiveBibleVersion],
     );

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Empty, List, Modal, Pagination, Spin, Typography, message } from 'antd';
 import { useTranslation } from 'react-i18next';
-import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
+import { useDocumentTabsStore } from '@renderer/stores';
 import {
     buildPendingNavigation,
     useDocumentPresentation,
@@ -10,7 +10,7 @@ import {
     useSermonLookup,
 } from '@renderer/hooks';
 import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
-import type { SimilarSermonHit } from '@shared/types';
+import { buildSermonDocumentIdentity, type SimilarSermonHit } from '@shared/types';
 
 const { Text } = Typography;
 const PAGE_SIZE = 10;
@@ -30,7 +30,7 @@ export default function SimilarSermonsModal() {
     const [allHits, setAllHits] = useState<SimilarSermonHit[]>([]);
     const [page, setPage] = useState(1);
     const [snippet, setSnippet] = useState('');
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const [requestLanguageCode, setRequestLanguageCode] = useState<string | null>(null);
     const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
@@ -40,17 +40,18 @@ export default function SimilarSermonsModal() {
     useEffect(() => {
         const handler = (e: Event) => {
             const detail = (e as CustomEvent<SimilarSermonsRequest>).detail;
-            if (!detail || !contentLanguage) return;
+            if (!detail.languageCode) return;
 
             setOpen(true);
             setLoading(true);
             setAllHits([]);
             setPage(1);
             setSnippet(detail.textSnippet);
+            setRequestLanguageCode(detail.languageCode);
 
             window.api.search
                 .findSimilarSermons(
-                    contentLanguage,
+                    detail.languageCode,
                     detail.translationId,
                     detail.sermonDate,
                     detail.paragraphIndex,
@@ -67,37 +68,39 @@ export default function SimilarSermonsModal() {
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, handler);
         return () =>
             window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, handler);
-    }, [contentLanguage, t]);
+    }, [t]);
 
     const handleNavigate = useCallback(
         (hit: SimilarSermonHit, paragraphIndex: number) => {
-            const request = buildOpenRequest(hit.title, {
-                documentType: 'sermon' as const,
-                sermonId: hit.sermonId,
-                translationId: hit.translationId,
-            });
+            if (!requestLanguageCode) {
+                return;
+            }
+
+            const documentIdentity = buildSermonDocumentIdentity(
+                hit.sermonId,
+                hit.translationId,
+                requestLanguageCode,
+            );
+            const request = buildOpenRequest(hit.title, documentIdentity);
             setPendingNavigation(
                 buildPendingNavigation(request, {
                     kind: 'paragraph',
                     paragraphIndex,
-                    languageCode: contentLanguage ?? '',
-                    documentIdentity: {
-                        documentType: 'sermon',
-                        sermonId: hit.sermonId,
-                        translationId: hit.translationId,
-                    },
+                    languageCode: requestLanguageCode,
+                    documentIdentity,
                 }),
             );
             openDocumentRequest(request);
             setOpen(false);
         },
-        [buildOpenRequest, openDocumentRequest, setPendingNavigation, contentLanguage],
+        [buildOpenRequest, openDocumentRequest, requestLanguageCode, setPendingNavigation],
     );
 
     const handleClose = useCallback(() => {
         setOpen(false);
         setAllHits([]);
         setSnippet('');
+        setRequestLanguageCode(null);
     }, []);
 
     const pagedHits = allHits.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -158,11 +161,16 @@ export default function SimilarSermonsModal() {
                             dataSource={pagedHits}
                             renderItem={(hit) => {
                                 const sermon = getSermonById(hit.sermonId);
-                                const displayTitle = resolveTitle(hit.title, {
-                                    documentType: 'sermon',
-                                    sermonId: hit.sermonId,
-                                    translationId: hit.translationId,
-                                });
+                                const displayTitle = requestLanguageCode
+                                    ? resolveTitle(
+                                          hit.title,
+                                          buildSermonDocumentIdentity(
+                                              hit.sermonId,
+                                              hit.translationId,
+                                              requestLanguageCode,
+                                          ),
+                                      )
+                                    : hit.title;
 
                                 const dateStr = sermon?.dateMs ? formatDate(sermon.dateMs) : '';
                                 const subtitle = dateStr

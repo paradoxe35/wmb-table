@@ -8,6 +8,7 @@ interface AudioState {
     title: string | null;
     sermonId: string | null;
     translationId: number | null;
+    languageCode: string | null;
     traduction: string | null;
     currentTime: number;
     duration: number;
@@ -24,6 +25,7 @@ interface AudioState {
         defaultTime: number,
         sermonId: string,
         translationId: number | null,
+        languageCode: string | null,
     ): void;
     setCurrentTime(t: number): void;
     setDuration(d: number): void;
@@ -44,6 +46,7 @@ export const useAudioStore = createStore<AudioState>((set) => ({
     title: null,
     sermonId: null,
     translationId: null,
+    languageCode: null,
     traduction: null,
     currentTime: 0,
     duration: 0,
@@ -53,13 +56,23 @@ export const useAudioStore = createStore<AudioState>((set) => ({
     modalOpen: false,
     error: null,
 
-    loadAudio: (src, originLink, title, traduction, defaultTime, sermonId, translationId) =>
+    loadAudio: (
+        src,
+        originLink,
+        title,
+        traduction,
+        defaultTime,
+        sermonId,
+        translationId,
+        languageCode,
+    ) =>
         set({
             audioSrc: src,
             originAudioLink: originLink,
             title,
             sermonId,
             translationId,
+            languageCode,
             traduction,
             defaultTime,
             currentTime: defaultTime,
@@ -78,6 +91,7 @@ export const useAudioStore = createStore<AudioState>((set) => ({
             title: null,
             sermonId: null,
             translationId: null,
+            languageCode: null,
             traduction: null,
             currentTime: 0,
             duration: 0,

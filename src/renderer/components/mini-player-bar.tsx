@@ -11,6 +11,54 @@ import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
 import { throttle, formatTime } from '@renderer/utils/functions';
 import { AUDIO_SPEEDS, THROTTLE_MS } from '@renderer/utils/constants';
 
+type AudioPlayEventDetail = {
+    audio_link?: string;
+    sermonId?: string | null;
+    translationId?: number | null;
+    languageCode?: string | null;
+    title?: string;
+    traduction?: string | null;
+    autoplay?: boolean;
+};
+
+function isSameAudioDocument(
+    current: {
+        audioLink: string | null;
+        sermonId: string | null;
+        translationId: number | null;
+        languageCode: string | null;
+    },
+    next: AudioPlayEventDetail,
+): boolean {
+    if (current.audioLink && current.audioLink === next.audio_link) {
+        return true;
+    }
+
+    if (!current.sermonId || !next.sermonId) {
+        return false;
+    }
+
+    if (current.sermonId !== next.sermonId) {
+        return false;
+    }
+
+    if (current.translationId == null || next.translationId == null) {
+        return current.languageCode == null || next.languageCode == null
+            ? true
+            : current.languageCode === next.languageCode;
+    }
+
+    if (current.translationId !== next.translationId) {
+        return false;
+    }
+
+    if (current.languageCode == null || next.languageCode == null) {
+        return true;
+    }
+
+    return current.languageCode === next.languageCode;
+}
+
 export default function MiniPlayerBar() {
     const { t } = useTranslation();
     const audioRef = useAudioRef();
@@ -23,6 +71,8 @@ export default function MiniPlayerBar() {
     const currentPlay = useAudioStore((s) => s.currentPlay);
     const originAudioLink = useAudioStore((s) => s.originAudioLink);
     const sermonId = useAudioStore((s) => s.sermonId);
+    const translationId = useAudioStore((s) => s.translationId);
+    const languageCode = useAudioStore((s) => s.languageCode);
 
     const setCurrentTime = useAudioStore((s) => s.setCurrentTime);
     const setDuration = useAudioStore((s) => s.setDuration);
@@ -40,6 +90,12 @@ export default function MiniPlayerBar() {
 
     const sermonIdRef = useRef(sermonId);
     sermonIdRef.current = sermonId;
+
+    const translationIdRef = useRef(translationId);
+    translationIdRef.current = translationId;
+
+    const languageCodeRef = useRef(languageCode);
+    languageCodeRef.current = languageCode;
 
     const titleRef = useRef(title);
     titleRef.current = title;
@@ -122,7 +178,7 @@ export default function MiniPlayerBar() {
 
     // Handle audio play events from document header
     useEffect(() => {
-        const handleAudioPlay = async (event: CustomEventInit<any>) => {
+        const handleAudioPlay = async (event: CustomEventInit<AudioPlayEventDetail>) => {
             const detail = event.detail;
             if (!detail?.audio_link) {
                 return;
@@ -132,10 +188,15 @@ export default function MiniPlayerBar() {
                 return;
             }
 
-            const isSameDocument =
-                sermonIdRef.current && detail.sermonId
-                    ? sermonIdRef.current === detail.sermonId
-                    : titleRef.current === detail.title;
+            const isSameDocument = isSameAudioDocument(
+                {
+                    audioLink: originAudioLinkRef.current,
+                    sermonId: sermonIdRef.current,
+                    translationId: translationIdRef.current,
+                    languageCode: languageCodeRef.current,
+                },
+                detail,
+            );
 
             if (isSameDocument) {
                 if (!autoplayRef.current) {
@@ -154,11 +215,14 @@ export default function MiniPlayerBar() {
                 autoplayRef.current = true;
             }
 
-            window.api.audio.setLastPlay(detail.title);
+            const documentTitle = detail.title ?? '';
+
+            window.api.audio.setLastPlay(documentTitle);
 
             const result = await window.api.audio.getTimeAndLocalFile(detail.audio_link);
             const ctime = typeof result.time?.time === 'number' ? result.time.time : 0;
             const localFile = result.download?.local_file;
+
             const src = localFile
                 ? `audio-cache://file/${localFile.split('/').pop()}`
                 : detail.audio_link;
@@ -171,11 +235,12 @@ export default function MiniPlayerBar() {
             loadAudio(
                 src,
                 detail.audio_link,
-                detail.title,
+                documentTitle,
                 detail.traduction ?? '',
                 ctime,
                 detail.sermonId ?? '',
                 detail.translationId ?? null,
+                detail.languageCode ?? null,
             );
 
             el.src = src;
@@ -205,7 +270,7 @@ export default function MiniPlayerBar() {
             }
 
             setCurrentPlay({
-                documentTitle: detail.title ?? '',
+                documentTitle,
                 status: autoplayRef.current ? 'play' : 'pause',
             });
         };

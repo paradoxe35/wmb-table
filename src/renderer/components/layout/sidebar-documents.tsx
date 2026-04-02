@@ -393,7 +393,14 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                                 active={activeTabKeyStr === sermonKey}
                                 isEnglish={isEnglish}
                                 formatDate={formatDate}
-                                onClick={() => openDocument(d.title, d.sermonId, d.translationId)}
+                                onClick={() => {
+                                    return openDocument(
+                                        d.title,
+                                        d.sermonId,
+                                        d.translationId,
+                                        d.languageCode,
+                                    );
+                                }}
                             />
                         );
                     }}

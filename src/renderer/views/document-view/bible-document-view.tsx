@@ -16,6 +16,7 @@ import {
     buildBibleDocumentTitle,
     getBibleIndexEntry,
     getTabKey,
+    normalizeBibleAbbreviation,
 } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
 import DocumentBody from './document-body';
@@ -143,7 +144,11 @@ function useChapterNavigation(activeTab: BibleTab | null) {
             );
             const documentId = buildBibleDocumentId(bookCode, chapter);
             const existingTab = tabs.find(
-                (t) => t.type === 'bible' && t.title === title && t.documentId === documentId,
+                (t) =>
+                    t.type === 'bible' &&
+                    t.documentId === documentId &&
+                    t.bibleVersionAbbreviation ===
+                        normalizeBibleAbbreviation(activeTab.bibleVersionAbbreviation),
             );
             if (existingTab) {
                 activateTab(getTabKey(existingTab));

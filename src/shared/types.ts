@@ -111,6 +111,7 @@ export type DocumentIdentity =
           documentType: 'sermon';
           sermonId: string;
           translationId: number;
+          languageCode: string;
       }
     | {
           documentType: 'bible';
@@ -123,7 +124,21 @@ export type DocumentIdentity =
           customDocumentId: string;
       };
 
+export type SermonDocumentIdentity = Extract<DocumentIdentity, { documentType: 'sermon' }>;
 export type BibleDocumentIdentity = Extract<DocumentIdentity, { documentType: 'bible' }>;
+
+export function buildSermonDocumentIdentity(
+    sermonId: string,
+    translationId: number,
+    languageCode: string,
+): SermonDocumentIdentity {
+    return {
+        documentType: 'sermon',
+        sermonId,
+        translationId,
+        languageCode,
+    };
+}
 
 export function normalizeBibleAbbreviation(bibleVersionAbbreviation: string): string {
     return bibleVersionAbbreviation.trim().toLowerCase();
@@ -132,7 +147,7 @@ export function normalizeBibleAbbreviation(bibleVersionAbbreviation: string): st
 export function getDocumentIdentityKey(identity: DocumentIdentity): string {
     switch (identity.documentType) {
         case 'sermon':
-            return `sermon:${identity.sermonId}:${identity.translationId}`;
+            return `sermon:${identity.languageCode}:${identity.sermonId}:${identity.translationId}`;
         case 'bible':
             return `bible:${identity.bibleBook}:${identity.bibleChapter}:${normalizeBibleAbbreviation(identity.bibleVersionAbbreviation)}`;
         case 'custom':
@@ -159,11 +174,7 @@ export function getDocumentIdentityFromTab(tab: DocumentTab): DocumentIdentity {
                 bibleVersionAbbreviation: tab.bibleVersionAbbreviation,
             };
         case 'sermon':
-            return {
-                documentType: 'sermon',
-                sermonId: tab.documentId,
-                translationId: tab.translationId,
-            };
+            return buildSermonDocumentIdentity(tab.documentId, tab.translationId, tab.languageCode);
     }
 }
 

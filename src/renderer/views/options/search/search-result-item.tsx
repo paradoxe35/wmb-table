@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import { List, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
-import { getTabKey } from '@shared/types';
+import { buildSermonDocumentIdentity, getTabKey } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
 import { useAppStore, useSearchStore } from '@renderer/stores';
@@ -19,6 +19,7 @@ function SnippetRow({
     hitTitle,
     sermonId,
     translationId,
+    languageCode,
     onNavigate,
 }: {
     snippet: SearchSnippet;
@@ -27,6 +28,7 @@ function SnippetRow({
     hitTitle: string;
     sermonId: string;
     translationId: number;
+    languageCode: string;
     onNavigate: (paragraphIndex: number, matchIndex: number) => void;
 }) {
     return (
@@ -35,6 +37,7 @@ function SnippetRow({
             name={hitTitle}
             sermonId={sermonId}
             translationId={translationId}
+            languageCode={languageCode}
         >
             <div className="search-snippet-row">
                 <span className="snippet-paragraph-badge">{snippet.paragraphIndex}</span>
@@ -63,11 +66,12 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const searchMode = useSearchStore((s) => s.searchMode);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const contentLanguage = useAppStore((s) => s.contentLanguage) ?? '';
-    const displayTitle = resolveTitle(hit.title, {
-        documentType: 'sermon',
-        sermonId: hit.sermonId,
-        translationId: hit.translationId,
-    });
+    const documentIdentity = buildSermonDocumentIdentity(
+        hit.sermonId,
+        hit.translationId,
+        contentLanguage,
+    );
+    const displayTitle = resolveTitle(hit.title, documentIdentity);
 
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {
@@ -129,6 +133,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                             name={displayTitle}
                             sermonId={hit.sermonId}
                             translationId={hit.translationId}
+                            languageCode={contentLanguage}
                         >
                             {displayTitle}
                         </DocumentViewer>
@@ -151,6 +156,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                             hitTitle={displayTitle}
                             sermonId={hit.sermonId}
                             translationId={hit.translationId}
+                            languageCode={contentLanguage}
                             onNavigate={navigateTo}
                         />
                     ))}

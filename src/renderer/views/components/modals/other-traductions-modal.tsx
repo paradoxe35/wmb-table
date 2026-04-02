@@ -1,11 +1,15 @@
 import { Button, Divider, Empty, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAddDocumentTab, useModalVisible, useActiveTabTitle } from '@renderer/hooks';
+import {
+    useDocumentPresentation,
+    useModalVisible,
+    useActiveTabTitle,
+    useOpenDocumentRequest,
+} from '@renderer/hooks';
 import {
     useDocumentTabsStore,
     useSermonStore,
-    useAppStore,
     selectActiveSermonTab,
     selectActiveTabKey,
 } from '@renderer/stores';
@@ -15,7 +19,7 @@ import {
     type OpenOtherTraductionsModalDetail,
 } from '@renderer/utils/events';
 import { getLanguageDisplayName } from '@shared/tts.types';
-import type { SermonTranslation } from '@shared/types';
+import { buildSermonDocumentIdentity, type SermonTranslation } from '@shared/types';
 
 export function OtherTraductionsModal() {
     const { t } = useTranslation();
@@ -23,8 +27,8 @@ export function OtherTraductionsModal() {
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const title = useActiveTabTitle();
-    const addTab = useAddDocumentTab();
-    const setMainView = useAppStore((s) => s.setMainView);
+    const { buildOpenRequest } = useDocumentPresentation();
+    const openDocumentRequest = useOpenDocumentRequest();
     const updateTabTranslationId = useDocumentTabsStore((s) => s.updateTabTranslationId);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
 
@@ -67,14 +71,12 @@ export function OtherTraductionsModal() {
 
     const handleOpen = (translationTitle: string, languageCode: string, translationId: number) => {
         if (sermonId) {
-            addTab({
-                title: translationTitle,
-                documentId: sermonId,
-                type: 'sermon',
-                languageCode,
-                translationId,
-            });
-            setMainView('document');
+            openDocumentRequest(
+                buildOpenRequest(
+                    translationTitle,
+                    buildSermonDocumentIdentity(sermonId, translationId, languageCode),
+                ),
+            );
         }
         hide();
     };
@@ -181,9 +183,9 @@ export function OtherTraductionsModal() {
                             </div>
                             <Tooltip title={t('Ouvrir le document')}>
                                 <Button
-                                    onClick={() =>
-                                        handleOpen(tr.title, tr.languageCode, tr.translationId)
-                                    }
+                                    onClick={() => {
+                                        handleOpen(tr.title, tr.languageCode, tr.translationId);
+                                    }}
                                     shape="circle"
                                     icon={<EyeOutlined />}
                                 />

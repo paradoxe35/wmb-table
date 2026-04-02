@@ -1,85 +1,21 @@
 import { useCallback } from 'react';
 import { buildPendingNavigation, useDocumentPresentation, useOpenDocumentRequest } from './index';
 import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
-import { buildBibleDocumentTitle, normalizeBibleAbbreviation } from '@shared/types';
+import {
+    buildBibleDocumentTitle,
+    buildSermonDocumentIdentity,
+    type SermonDocumentIdentity,
+} from '@shared/types';
+export { parseWmbLink } from '@shared/wmb-link';
+import { parseWmbLink } from '@shared/wmb-link';
 
 /**
  * Reference link format: wmb://<type>/<...params>
  *
- * - wmb://sermon/<sermonId>/<translationId>/<paragraphIndex>
+ * - wmb://sermon/<sermonId>/<languageCode>/<translationId>/<paragraphIndex>
  * - wmb://bible/<bookCode>/<chapter>/<verse>/<bibleVersionAbbreviation>/<bookName>
  * - wmb://doc/<documentId>/<title>
  */
-
-interface SermonRef {
-    type: 'sermon';
-    sermonId: string;
-    translationId: number;
-    paragraphIndex: number;
-}
-
-interface BibleRef {
-    type: 'bible';
-    bookCode: string;
-    chapter: string;
-    verse?: string;
-    bibleVersionAbbreviation: string;
-    bookName: string;
-}
-
-interface DocRef {
-    type: 'doc';
-    documentId: string;
-    title: string;
-}
-
-export type WmbRef = SermonRef | BibleRef | DocRef;
-
-export function parseWmbLink(href: string): WmbRef | null {
-    if (!href.startsWith('wmb://')) return null;
-
-    const parts = href.slice(6).split('/').map(decodeURIComponent);
-    const refType = parts[0];
-
-    switch (refType) {
-        case 'sermon': {
-            const [, sermonId, translationId, paragraphIndex] = parts;
-            if (!sermonId) return null;
-            return {
-                type: 'sermon',
-                sermonId,
-                translationId: parseInt(translationId ?? '0', 10),
-                paragraphIndex: parseInt(paragraphIndex ?? '0', 10),
-            };
-        }
-        case 'bible': {
-            const [, bookCode, chapter, verse, bibleVersionAbbreviation, ...bookNameParts] = parts;
-            if (!bookCode || !chapter || !bibleVersionAbbreviation || bookNameParts.length === 0) {
-                return null;
-            }
-
-            return {
-                type: 'bible',
-                bookCode,
-                chapter,
-                verse: verse || undefined,
-                bibleVersionAbbreviation: normalizeBibleAbbreviation(bibleVersionAbbreviation),
-                bookName: bookNameParts.join('/') || bookCode,
-            };
-        }
-        case 'doc': {
-            const [, documentId, ...titleParts] = parts;
-            if (!documentId) return null;
-            return {
-                type: 'doc',
-                documentId,
-                title: titleParts.join('/') || documentId,
-            };
-        }
-        default:
-            return null;
-    }
-}
 
 /**
  * Hook that returns a function to navigate to a wmb:// link.
@@ -99,24 +35,26 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
             switch (ref.type) {
                 case 'sermon': {
                     const sermon = sermonsById[ref.sermonId];
-                    const translationId = ref.translationId || 0;
+                    const documentIdentity: SermonDocumentIdentity = buildSermonDocumentIdentity(
+                        ref.sermonId,
+                        ref.translationId,
+                        ref.languageCode,
+                    );
+
                     const fallbackTitle =
-                        sermon?.translationId === translationId ? sermon.title : ref.sermonId;
-                    const request = buildOpenRequest(fallbackTitle, {
-                        documentType: 'sermon' as const,
-                        sermonId: ref.sermonId,
-                        translationId,
-                    });
+                        sermon?.translationId === ref.translationId &&
+                        sermon.languageCode === ref.languageCode
+                            ? sermon.title
+                            : ref.sermonId;
+
+                    const request = buildOpenRequest(fallbackTitle, documentIdentity);
+
                     setPendingNavigation(
                         buildPendingNavigation(request, {
                             kind: 'paragraph',
                             paragraphIndex: ref.paragraphIndex,
-                            languageCode: '',
-                            documentIdentity: {
-                                documentType: 'sermon',
-                                sermonId: ref.sermonId,
-                                translationId,
-                            },
+                            languageCode: ref.languageCode,
+                            documentIdentity,
                         }),
                     );
                     openDocumentRequest(request);

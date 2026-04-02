@@ -20,6 +20,7 @@ import {
     CHILD_PARENT_WINDOW_EVENT,
     type OpenOtherTraductionsModalDetail,
 } from '@renderer/utils/events';
+import { getLanguageDisplayName } from '@shared/tts.types';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
 import { useDocumentZoom } from './hooks';
@@ -74,7 +75,8 @@ export default function SermonHeader({
                     title: meta.title,
                     frTitle: meta.title,
                     enTitle: meta.enTitle ?? '',
-                    traduction: meta.languageCode,
+                    traduction: getLanguageDisplayName(meta.languageCode),
+                    languageCode: meta.languageCode,
                     audio_link: meta.audioLink,
                     sermonId: meta.sermonId,
                     translationId: meta.translationId,

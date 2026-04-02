@@ -40,6 +40,19 @@ function toHistoryItem(row: typeof historyItems.$inferSelect): HistoryDataItem {
     };
 }
 
+function getHistoryItemDocumentKey(row: typeof historyItems.$inferSelect): string {
+    if (row.documentKey) {
+        return row.documentKey;
+    }
+
+    return getDocumentIdentityKey(
+        parseRequiredJson<DocumentIdentity>(row.documentIdentity, {
+            scope: 'history_items',
+            field: 'document_identity',
+        }),
+    );
+}
+
 export function getHistory(languageCode: string): HistoryData[] {
     return getDb()
         .select()
@@ -107,7 +120,7 @@ export function addHistoryEntry(
         .limit(1)
         .get();
 
-    if (lastItem?.documentKey && lastItem.documentKey === documentKey) {
+    if (lastItem && getHistoryItemDocumentKey(lastItem) === documentKey) {
         return;
     }
 

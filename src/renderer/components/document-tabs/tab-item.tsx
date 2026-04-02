@@ -28,12 +28,18 @@ function useTabAudioState(tab: DocumentTab) {
     const ttsDocId = useTtsStore((s) => s.documentId);
     const ttsStatus = useTtsStore((s) => s.status);
     const audioSermonId = useAudioStore((s) => s.sermonId);
+    const audioTranslationId = useAudioStore((s) => s.translationId);
+    const audioLanguageCode = useAudioStore((s) => s.languageCode);
     const audioStatus = useAudioStore((s) => s.currentPlay?.status);
     const tabKey = getTabKey(tab);
 
     const ttsPlaying = ttsDocId === tabKey && (ttsStatus === 'playing' || ttsStatus === 'loading');
     const ttsPaused = ttsDocId === tabKey && ttsStatus === 'paused';
-    const isCurrentAudioTab = tab.type === 'sermon' && audioSermonId === tab.documentId;
+    const isCurrentAudioTab =
+        tab.type === 'sermon' &&
+        audioSermonId === tab.documentId &&
+        audioTranslationId === tab.translationId &&
+        audioLanguageCode === tab.languageCode;
     const audioPlaying = isCurrentAudioTab && audioStatus === 'play';
     const audioPaused = isCurrentAudioTab && audioStatus === 'pause';
 
