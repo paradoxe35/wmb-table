@@ -714,6 +714,7 @@ export interface SearchSnippet {
 }
 
 export interface TantivySearchHit {
+    languageCode: string;
     translationId: number;
     sermonId: string;
     title: string;
@@ -737,6 +738,7 @@ export interface SimilarParagraph {
 }
 
 export interface SimilarSermonHit {
+    languageCode: string;
     sermonId: string;
     title: string;
     translationId: number;

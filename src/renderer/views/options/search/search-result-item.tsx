@@ -5,7 +5,7 @@ import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types'
 import { buildSermonDocumentIdentity, getTabKey } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
-import { useAppStore, useSearchStore } from '@renderer/stores';
+import { useSearchStore } from '@renderer/stores';
 import { useDocumentPresentation } from '@renderer/hooks';
 
 const { Text } = Typography;
@@ -65,12 +65,12 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
 
     const searchMode = useSearchStore((s) => s.searchMode);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
-    const contentLanguage = useAppStore((s) => s.contentLanguage) ?? '';
     const documentIdentity = buildSermonDocumentIdentity(
         hit.sermonId,
         hit.translationId,
-        contentLanguage,
+        hit.languageCode,
     );
+
     const displayTitle = resolveTitle(hit.title, documentIdentity);
 
     const navigateTo = useCallback(
@@ -79,8 +79,9 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 type: 'sermon',
                 documentId: hit.sermonId,
                 translationId: hit.translationId,
-                languageCode: contentLanguage,
+                languageCode: hit.languageCode,
             });
+
             setDocumentViewQuery(tabKey, {
                 documentKey: tabKey,
                 documentTitle: displayTitle,
@@ -108,7 +109,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             setDocumentViewQuery,
             query,
             searchMode,
-            contentLanguage,
+            hit.languageCode,
         ],
     );
 
@@ -133,7 +134,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                             name={displayTitle}
                             sermonId={hit.sermonId}
                             translationId={hit.translationId}
-                            languageCode={contentLanguage}
+                            languageCode={hit.languageCode}
                         >
                             {displayTitle}
                         </DocumentViewer>
@@ -156,7 +157,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                             hitTitle={displayTitle}
                             sermonId={hit.sermonId}
                             translationId={hit.translationId}
-                            languageCode={contentLanguage}
+                            languageCode={hit.languageCode}
                             onNavigate={navigateTo}
                         />
                     ))}

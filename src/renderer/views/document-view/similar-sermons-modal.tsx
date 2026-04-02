@@ -34,7 +34,6 @@ export default function SimilarSermonsModal() {
     const [allHits, setAllHits] = useState<SimilarSermonHit[]>([]);
     const [page, setPage] = useState(1);
     const [snippet, setSnippet] = useState('');
-    const [requestLanguageCode, setRequestLanguageCode] = useState<string | null>(null);
     const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
@@ -51,7 +50,6 @@ export default function SimilarSermonsModal() {
             setAllHits([]);
             setPage(1);
             setSnippet(detail.textSnippet);
-            setRequestLanguageCode(detail.languageCode);
 
             window.api.search
                 .findSimilarSermons(
@@ -76,14 +74,14 @@ export default function SimilarSermonsModal() {
 
     const handleNavigate = useCallback(
         (hit: SimilarSermonHit, paragraphIndex: number) => {
-            if (!requestLanguageCode) {
+            if (!hit.languageCode) {
                 return;
             }
 
             const documentIdentity = buildSermonDocumentIdentity(
                 hit.sermonId,
                 hit.translationId,
-                requestLanguageCode,
+                hit.languageCode,
             );
             const request = buildOpenRequest(hit.title, documentIdentity);
             setPendingNavigation(
@@ -95,14 +93,13 @@ export default function SimilarSermonsModal() {
             openDocumentRequest(request);
             setOpen(false);
         },
-        [buildOpenRequest, openDocumentRequest, requestLanguageCode, setPendingNavigation],
+        [buildOpenRequest, openDocumentRequest, setPendingNavigation],
     );
 
     const handleClose = useCallback(() => {
         setOpen(false);
         setAllHits([]);
         setSnippet('');
-        setRequestLanguageCode(null);
     }, []);
 
     const pagedHits = allHits.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -163,13 +160,13 @@ export default function SimilarSermonsModal() {
                             dataSource={pagedHits}
                             renderItem={(hit) => {
                                 const sermon = getSermonById(hit.sermonId);
-                                const displayTitle = requestLanguageCode
+                                const displayTitle = hit.languageCode
                                     ? resolveTitle(
                                           hit.title,
                                           buildSermonDocumentIdentity(
                                               hit.sermonId,
                                               hit.translationId,
-                                              requestLanguageCode,
+                                              hit.languageCode,
                                           ),
                                       )
                                     : hit.title;

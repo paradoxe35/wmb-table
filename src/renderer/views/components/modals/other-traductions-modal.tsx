@@ -1,5 +1,5 @@
 import { Button, Divider, Empty, Modal, Spin, Tag, Tooltip } from 'antd';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModalVisible, useOpenDocumentRequest } from '@renderer/hooks';
 import { useDocumentTabsStore } from '@renderer/stores';
@@ -29,6 +29,17 @@ export function OtherTraductionsModal() {
     const modalTitle = request?.title ?? '';
     const availableTraductions = request?.availableTraductions ?? [];
     const hasWithinLanguage = availableTraductions.length > 1;
+
+    const currentLanguageCodes = useMemo(
+        () => new Set(availableTraductions.map((translation) => translation.languageCode)),
+        [availableTraductions],
+    );
+
+    const otherLanguageTranslations = useMemo(() => {
+        return translations.filter(
+            (translation) => !currentLanguageCodes.has(translation.languageCode),
+        );
+    }, [currentLanguageCodes, translations]);
 
     const hideModal = useCallback(() => {
         setRequest(null);
@@ -144,13 +155,13 @@ export function OtherTraductionsModal() {
                     <div className="flex flex-center" style={{ marginTop: '2rem' }}>
                         <Spin />
                     </div>
-                ) : translations.length === 0 && !hasWithinLanguage ? (
+                ) : otherLanguageTranslations.length === 0 && !hasWithinLanguage ? (
                     <Empty
                         image={Empty.PRESENTED_IMAGE_SIMPLE}
                         description={t('Aucune autre traduction disponible')}
                     />
                 ) : (
-                    translations.map((tr, i) => (
+                    otherLanguageTranslations.map((tr, i) => (
                         <div
                             key={`${tr.languageCode}-${tr.title}`}
                             style={{
