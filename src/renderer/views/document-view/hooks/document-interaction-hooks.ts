@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildParagraphReference } from '@shared/types';
 import {
+    type AddDocumentReferenceDetail,
     CHILD_PARENT_WINDOW_EVENT,
     DOCUMENT_CONTAINER_ID,
     HIGHLIGHT_EVENT,
@@ -149,6 +150,7 @@ export function useContextMenuItems(
                 const verse = getBibleVerse(result.ref.paragraphIndex);
                 if (verse) {
                     return {
+                        documentTitle,
                         documentPreview: {
                             kind: 'bible-verse' as const,
                             bibleVerse: verse,
@@ -167,7 +169,11 @@ export function useContextMenuItems(
             const displayText = isPartialSelection
                 ? (fullParagraph.startsWith(result.text) ? '' : '...') + result.text
                 : result.text;
-            return { documentReference: result.ref, textContent: displayText };
+            return {
+                documentTitle,
+                documentReference: result.ref,
+                textContent: displayText,
+            };
         };
 
         // ----- Menu items -----
@@ -226,10 +232,12 @@ export function useContextMenuItems(
                 onClick: () => {
                     const ref = buildRef();
                     if (!ref) return;
+                    const detail: AddDocumentReferenceDetail = buildRefDetail(ref);
                     window.dispatchEvent(
-                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, {
-                            detail: buildRefDetail(ref),
-                        }),
+                        new CustomEvent<AddDocumentReferenceDetail>(
+                            CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
+                            { detail },
+                        ),
                     );
                 },
             },
@@ -244,10 +252,12 @@ export function useContextMenuItems(
                           onClick: () => {
                               const ref = buildRef();
                               if (!ref) return;
+                              const detail: AddDocumentReferenceDetail = buildRefDetail(ref);
                               window.dispatchEvent(
-                                  new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, {
-                                      detail: buildRefDetail(ref),
-                                  }),
+                                  new CustomEvent<AddDocumentReferenceDetail>(
+                                      CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote,
+                                      { detail },
+                                  ),
                               );
                           },
                       },

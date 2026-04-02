@@ -60,9 +60,8 @@ export function OtherTranslationsModal() {
     }, [sermonId, visible]);
 
     useEffect(() => {
-        const showModal = (event: Event) => {
-            const nextRequest = (event as CustomEvent<OpenOtherTranslationsModalDetail | undefined>)
-                .detail;
+        const showModal = (event: CustomEventInit<OpenOtherTranslationsModalDetail>) => {
+            const nextRequest = event.detail;
             setRequest(nextRequest ?? null);
             setVisible(true);
         };

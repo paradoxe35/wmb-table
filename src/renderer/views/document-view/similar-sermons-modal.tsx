@@ -33,8 +33,9 @@ export default function SimilarSermonsModal() {
     const formatDate = useFormatSermonDate();
 
     useEffect(() => {
-        const handler = (e: Event) => {
-            const detail = (e as CustomEvent<ShowSimilarSermonsDetail>).detail;
+        const handler = (e: CustomEventInit<ShowSimilarSermonsDetail>) => {
+            const detail = e.detail;
+            if (!detail) return;
             if (!detail.languageCode) return;
 
             setOpen(true);

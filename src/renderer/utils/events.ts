@@ -1,6 +1,7 @@
 import type {
     AudioDocumentPlayRequest,
     AvailableTranslation,
+    DocumentReferenceSelection,
     HighlightCreateData,
 } from '@shared/types';
 
@@ -8,6 +9,10 @@ export const EDITOR_EVENT = {
     renameNoteModal: 'rename-note-modal',
     renameNote: 'rename-note',
 } as const;
+
+export type RenameNoteDetail = {
+    name: string;
+};
 
 export const CUSTOM_DOCUMENT_EVENT = {
     customDocumentRemoved: 'custom-document-removed',
@@ -70,6 +75,14 @@ export type OpenOtherTranslationsModalDetail = {
 export type AudioDocumentPlayDetail = AudioDocumentPlayRequest;
 
 export type OpenHighlightModalDetail = Omit<HighlightCreateData, 'color' | 'comment'>;
+
+export type AddDocumentReferenceDetail = DocumentReferenceSelection & {
+    documentTitle: string;
+};
+
+export type FocusSubjectDetail = {
+    id: string;
+};
 
 export type ShowSimilarSermonsDetail = {
     paragraphIndex: number;

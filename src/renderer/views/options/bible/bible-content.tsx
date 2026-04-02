@@ -13,13 +13,8 @@ import {
     message,
 } from 'antd';
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
-import type {
-    BibleBook,
-    BibleIndex,
-    BibleIndexValue,
-    DocumentReferenceSelection,
-} from '@shared/types';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import type { BibleBook, BibleIndex, BibleIndexValue } from '@shared/types';
+import { CHILD_PARENT_WINDOW_EVENT, type AddDocumentReferenceDetail } from '@renderer/utils/events';
 import { useAppStore } from '@renderer/stores';
 
 // ---------------------------------------------------------------------------
@@ -409,10 +404,11 @@ const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook })
         }
 
         window.dispatchEvent(
-            new CustomEvent<Partial<DocumentReferenceSelection>>(
+            new CustomEvent<AddDocumentReferenceDetail>(
                 CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
                 {
                     detail: {
+                        documentTitle: `${verse.bookName} ${verse.chapter}`,
                         documentPreview: {
                             kind: 'bible-verse',
                             bibleVerse: verse,

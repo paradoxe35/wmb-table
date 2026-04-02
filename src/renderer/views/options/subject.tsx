@@ -38,7 +38,7 @@ import {
     MoreOutlined,
 } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
-import { SUBJECT_EVENT, AI_DATA_EVENT } from '@renderer/utils/events';
+import { SUBJECT_EVENT, AI_DATA_EVENT, type FocusSubjectDetail } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
@@ -186,7 +186,7 @@ export default function Subject() {
 
     useEffect(() => {
         const focusSubject = (event: Event) => {
-            const id = (event as CustomEvent<{ id: string }>).detail?.id;
+            const id = (event as CustomEvent<FocusSubjectDetail>).detail?.id;
             if (!id) return;
             const normalized = normalizeSubjectSelection(odatas.current, id);
             odatas.current = normalized;

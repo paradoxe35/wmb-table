@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const getInstalledLanguagesMock = vi.fn(() => ['fr']);
 const getSermonListForLanguageMock = vi.fn();
 const getSermonMetaMock = vi.fn();
-const getTraductionsForSermonMock = vi.fn();
+const getTranslationsForSermonInLanguageMock = vi.fn();
 const searchSermonsMock = vi.fn();
 const getSermonParagraphsMock = vi.fn();
 
@@ -15,7 +15,7 @@ vi.mock('@main/services/tantivy.service', () => ({
 vi.mock('@main/services/reference-data.service', () => ({
     getSermonListForLanguage: getSermonListForLanguageMock,
     getSermonMeta: getSermonMetaMock,
-    getTraductionsForSermon: getTraductionsForSermonMock,
+    getTranslationsForSermonInLanguage: getTranslationsForSermonInLanguageMock,
 }));
 
 vi.mock('@main/services/search.service', () => ({
@@ -26,7 +26,7 @@ describe('sermon.tools', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         getInstalledLanguagesMock.mockReturnValue(['fr']);
-        getTraductionsForSermonMock.mockReturnValue([]);
+        getTranslationsForSermonInLanguageMock.mockReturnValue([]);
         getSermonParagraphsMock.mockResolvedValue([]);
         getSermonMetaMock.mockImplementation(
             (translationId: number, _lang: string, sermonId: string) => ({
@@ -197,7 +197,7 @@ describe('sermon.tools', () => {
                 };
             },
         );
-        getTraductionsForSermonMock.mockReturnValue([
+        getTranslationsForSermonInLanguageMock.mockReturnValue([
             {
                 sermonId: '56-0101',
                 translationId: 3,

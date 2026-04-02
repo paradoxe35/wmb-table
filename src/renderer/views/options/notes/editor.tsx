@@ -23,7 +23,7 @@ import {
     useBibleReferenceModal,
     useShowReferenceDetail,
 } from './references';
-import { EDITOR_EVENT } from '@renderer/utils/events';
+import { EDITOR_EVENT, type RenameNoteDetail } from '@renderer/utils/events';
 
 // CKEditor UMD bundle — side-effect import assigns to window.DecoupledDocumentEditor
 import './ckeditor/ckeditor';
@@ -63,10 +63,9 @@ const useRenameNote = (note: NoteItem | null) => {
                 if (typeof saved === 'boolean') {
                     message.error(t('Le nom entré est invalid'));
                 } else {
+                    const detail: RenameNoteDetail = { name: searchValue.current.trim() };
                     window.dispatchEvent(
-                        new CustomEvent<{ name: string }>(EDITOR_EVENT.renameNote, {
-                            detail: { name: searchValue.current.trim() },
-                        }),
+                        new CustomEvent<RenameNoteDetail>(EDITOR_EVENT.renameNote, { detail }),
                     );
                     message.success(t('Modifié'));
                 }
@@ -258,12 +257,13 @@ export default function EditorContent({
     }, [workingNoteId]);
 
     useEffect(() => {
-        const renameUpdate = (e: CustomEventInit<{ name: string }>) => {
-            if (!e.detail) return;
+        const renameUpdate = (e: CustomEventInit<RenameNoteDetail>) => {
+            const detail = e.detail;
+            if (!detail) return;
             setWorkingNote((n) => {
                 if (!n) return n;
                 const nn = { ...n };
-                nn.name = e.detail?.name || '';
+                nn.name = detail.name;
                 return nn;
             });
         };

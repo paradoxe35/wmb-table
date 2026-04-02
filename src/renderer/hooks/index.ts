@@ -5,7 +5,6 @@ import {
     clampTabsToLimit,
     useDocumentTabsStore,
     useSermonStore,
-    selectActiveTabTitle,
 } from '@renderer/stores';
 import type { NewDocumentTab } from '@renderer/stores/document-tabs.store';
 import { useThemeStore } from '@renderer/stores/theme.store';
@@ -314,10 +313,6 @@ export function useOpenDocumentRequest() {
 export function useShowOptions() {
     const showOptions = useAppStore((s) => s.showOptions);
     return showOptions;
-}
-
-export function useActiveTabTitle(): string | null {
-    return useDocumentTabsStore(selectActiveTabTitle);
 }
 
 export function useSermonLookup() {

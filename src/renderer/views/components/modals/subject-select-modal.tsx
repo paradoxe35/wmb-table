@@ -1,18 +1,21 @@
 import { Empty, Input, Modal, message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { DocumentReferenceSelection, SubjectDocument } from '@shared/types';
-import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
+import type { SubjectDocument } from '@shared/types';
+import { useModalVisible } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
-import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    SUBJECT_EVENT,
+    type AddDocumentReferenceDetail,
+    type FocusSubjectDetail,
+} from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useSubjectsStore } from '@renderer/stores';
 
 export function SubjectSelectModal() {
     const { t } = useTranslation();
-    const title = useActiveTabTitle();
-    const titleRef = useValueStateRef(title);
-    const pendingReference = useRef<DocumentReferenceSelection | null>(null);
+    const pendingReference = useRef<AddDocumentReferenceDetail | null>(null);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
     const subjects = useSubjectsStore((s) => s.subjects);
@@ -34,15 +37,16 @@ export function SubjectSelectModal() {
             window.api.subjects
                 .createItem(
                     subject.id,
-                    titleRef.current || '',
+                    ref.documentTitle,
                     ref.documentReference,
                     textContent,
                     ref.documentPreview,
                 )
                 .then(() => {
+                    const detail: FocusSubjectDetail = { id: subject.id };
                     window.dispatchEvent(
-                        new CustomEvent(SUBJECT_EVENT.focusSubject, {
-                            detail: { id: subject.id },
+                        new CustomEvent<FocusSubjectDetail>(SUBJECT_EVENT.focusSubject, {
+                            detail,
                         }),
                     );
                     message.success(t('Ajouté au sujet'));
@@ -52,7 +56,7 @@ export function SubjectSelectModal() {
                 });
             setVisible(false);
         },
-        [subjects, titleRef, setVisible, t],
+        [subjects, setVisible, t],
     );
 
     const onSearch = useCallback(
@@ -71,7 +75,7 @@ export function SubjectSelectModal() {
     }, [subjects]);
 
     useEffect(() => {
-        const showModal = (e: CustomEventInit<DocumentReferenceSelection>) => {
+        const showModal = (e: CustomEventInit<AddDocumentReferenceDetail>) => {
             pendingReference.current = e.detail ?? null;
             setVisible(true);
         };

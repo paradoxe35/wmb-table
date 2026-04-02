@@ -109,7 +109,10 @@ export default function SermonHeader({
         };
 
         window.dispatchEvent(
-            new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openOtherTranslationsModal, { detail }),
+            new CustomEvent<OpenOtherTranslationsModalDetail>(
+                CHILD_PARENT_WINDOW_EVENT.openOtherTranslationsModal,
+                { detail },
+            ),
         );
     }, [activeTabKey, availableTranslations, meta.sermonId, meta.title]);
 
@@ -143,7 +146,7 @@ export default function SermonHeader({
         }));
     }, [availableTranslations]);
 
-    const hasOtherTranslations = availableTranslations.length > 0;
+    const canOpenTranslations = Boolean(meta.sermonId);
 
     return (
         <div className="sermon-header">
@@ -177,7 +180,7 @@ export default function SermonHeader({
                     </Tooltip>
                 )}
                 {tts && <TtsButton tts={tts} />}
-                {hasOtherTranslations && (
+                {canOpenTranslations && (
                     <Tooltip title={t('Traductions')}>
                         <Button
                             type="text"

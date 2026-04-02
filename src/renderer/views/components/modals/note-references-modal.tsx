@@ -7,23 +7,16 @@ import {
     type NoteItemReference,
     type DocumentReferenceSelection,
 } from '@shared/types';
-import {
-    useModalVisible,
-    useActiveTabTitle,
-    useDocumentPresentation,
-    useValueStateRef,
-} from '@renderer/hooks';
+import { useModalVisible, useDocumentPresentation } from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { CHILD_PARENT_WINDOW_EVENT, type AddDocumentReferenceDetail } from '@renderer/utils/events';
 import { useNotesStore } from '@renderer/stores';
 
 const { Text } = Typography;
 
 export function NoteReferencesModal() {
     const { t } = useTranslation();
-    const title = useActiveTabTitle();
-    const titleRef = useValueStateRef(title);
-    const pendingReference = useRef<DocumentReferenceSelection | null>(null);
+    const pendingReference = useRef<AddDocumentReferenceDetail | null>(null);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<NoteItemReference[]>([]);
     const workingNote = useRef<NoteItem | null>(null);
@@ -58,7 +51,7 @@ export function NoteReferencesModal() {
             };
 
             window.api.notes
-                .updateReference(item.id, referenceItem, titleRef.current || '')
+                .updateReference(item.id, referenceItem, pendingReference.current.documentTitle)
                 .then(() => {
                     message.success(t('Ajouté à la note'));
                 })
@@ -67,11 +60,11 @@ export function NoteReferencesModal() {
                 });
             setVisible(false);
         },
-        [titleRef, setVisible, t],
+        [setVisible, t],
     );
 
     useEffect(() => {
-        const showModal = (e: CustomEventInit<DocumentReferenceSelection>) => {
+        const showModal = (e: CustomEventInit<AddDocumentReferenceDetail>) => {
             pendingReference.current = e.detail ?? null;
             setVisible(true);
         };
