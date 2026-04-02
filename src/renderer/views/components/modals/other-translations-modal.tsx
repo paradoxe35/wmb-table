@@ -49,15 +49,35 @@ export function OtherTranslationsModal() {
 
     useEffect(() => {
         if (!visible || !sermonId) {
+            setTranslations([]);
+            setLoading(false);
             return;
         }
 
+        let cancelled = false;
+        setTranslations([]);
         setLoading(true);
         window.api.documents
             .getTranslations(sermonId)
-            .then(setTranslations)
-            .catch(() => setTranslations([]))
-            .finally(() => setLoading(false));
+            .then((nextTranslations) => {
+                if (!cancelled) {
+                    setTranslations(nextTranslations);
+                }
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setTranslations([]);
+                }
+            })
+            .finally(() => {
+                if (!cancelled) {
+                    setLoading(false);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
     }, [sermonId, visible]);
 
     useEffect(() => {

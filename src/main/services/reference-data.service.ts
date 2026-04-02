@@ -174,7 +174,9 @@ export function getTranslationsForSermonInLanguage(
 
     // All translations share the same sermon_id — audio URL is identical, query once
     const audioLink = refRepo.getAudioForSermonByIds(sermonId, langCode);
-    return translations.map((t) => translationToMeta(t, langCode, audioLink));
+    return translations
+        .map((t) => translationToMeta(t, langCode, audioLink))
+        .sort((left, right) => left.translationId - right.translationId);
 }
 
 /**
