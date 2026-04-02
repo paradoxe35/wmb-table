@@ -68,15 +68,17 @@ function getOpenRequestIdentity(source: OpenDocumentRequestSource): DocumentIden
 function resolveOpenRequestTitle(
     title: string,
     documentIdentity: DocumentIdentity,
-    getSermonTitleById: (sermonId: string) => string | undefined,
+    getSermonById: (sermonId: string) => SermonMetaWithTraductions | undefined,
 ): string {
-    return documentIdentity.documentType === 'sermon'
-        ? resolveDocumentTitle(
-              title,
-              documentIdentity,
-              getSermonTitleById(documentIdentity.sermonId),
-          )
-        : resolveDocumentTitle(title, documentIdentity);
+    if (documentIdentity.documentType !== 'sermon') {
+        return resolveDocumentTitle(title, documentIdentity);
+    }
+
+    const sermon = getSermonById(documentIdentity.sermonId);
+    const sermonTitle =
+        sermon?.translationId === documentIdentity.translationId ? sermon.title : undefined;
+
+    return resolveDocumentTitle(title, documentIdentity, sermonTitle);
 }
 
 export function useBuildOpenDocumentRequest() {
@@ -87,9 +89,7 @@ export function useBuildOpenDocumentRequest() {
             const documentIdentity = getOpenRequestIdentity(source);
 
             return {
-                title: resolveOpenRequestTitle(title, documentIdentity, (sermonId) => {
-                    return getSermonById(sermonId)?.title;
-                }),
+                title: resolveOpenRequestTitle(title, documentIdentity, getSermonById),
                 ...documentIdentity,
             };
         },

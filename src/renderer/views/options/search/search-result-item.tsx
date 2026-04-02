@@ -63,7 +63,8 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const searchMode = useSearchStore((s) => s.searchMode);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const contentLanguage = useAppStore((s) => s.contentLanguage) ?? '';
-    const displayTitle = getSermonById(hit.sermonId)?.title ?? hit.title;
+    const sermon = getSermonById(hit.sermonId);
+    const displayTitle = sermon?.translationId === hit.translationId ? sermon.title : hit.title;
 
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {

@@ -1,5 +1,9 @@
 import { useCallback } from 'react';
-import { buildPendingNavigation, useOpenDocumentRequest } from './index';
+import {
+    buildPendingNavigation,
+    useBuildOpenDocumentRequest,
+    useOpenDocumentRequest,
+} from './index';
 import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 import { buildBibleDocumentTitle, normalizeBibleAbbreviation } from '@shared/types';
 
@@ -86,6 +90,7 @@ export function parseWmbLink(href: string): WmbRef | null {
  * Returns true if the link was handled, false otherwise.
  */
 export function useWmbLinkNavigate(): (href: string) => boolean {
+    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const sermonsById = useSermonStore((s) => s.sermonsById);
@@ -98,14 +103,14 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
             switch (ref.type) {
                 case 'sermon': {
                     const sermon = sermonsById[ref.sermonId];
-                    const title = sermon?.title ?? ref.sermonId;
-                    const translationId = sermon?.translationId || ref.translationId || 0;
-                    const request = {
-                        title,
-                        sermonId: ref.sermonId,
+                    const translationId = ref.translationId || 0;
+                    const fallbackTitle =
+                        sermon?.translationId === translationId ? sermon.title : ref.sermonId;
+                    const request = buildOpenDocumentRequest(fallbackTitle, {
                         documentType: 'sermon' as const,
+                        sermonId: ref.sermonId,
                         translationId,
-                    };
+                    });
                     setPendingNavigation(
                         buildPendingNavigation(request, {
                             kind: 'paragraph',
@@ -144,6 +149,6 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     return true;
             }
         },
-        [sermonsById, setPendingNavigation, openDocumentRequest],
+        [buildOpenDocumentRequest, sermonsById, setPendingNavigation, openDocumentRequest],
     );
 }

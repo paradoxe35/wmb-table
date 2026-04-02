@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 import {
     buildPendingNavigation,
+    useBuildOpenDocumentRequest,
     useOpenDocumentRequest,
     useSermonLookup,
     useFormatSermonDate,
@@ -30,6 +31,7 @@ export default function SimilarSermonsModal() {
     const [page, setPage] = useState(1);
     const [snippet, setSnippet] = useState('');
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const { getSermonById } = useSermonLookup();
@@ -69,12 +71,11 @@ export default function SimilarSermonsModal() {
 
     const handleNavigate = useCallback(
         (hit: SimilarSermonHit, paragraphIndex: number) => {
-            const request = {
-                title: hit.title,
-                sermonId: hit.sermonId,
+            const request = buildOpenDocumentRequest(hit.title, {
                 documentType: 'sermon' as const,
+                sermonId: hit.sermonId,
                 translationId: hit.translationId,
-            };
+            });
             setPendingNavigation(
                 buildPendingNavigation(request, {
                     kind: 'paragraph',
@@ -90,7 +91,7 @@ export default function SimilarSermonsModal() {
             openDocumentRequest(request);
             setOpen(false);
         },
-        [openDocumentRequest, setPendingNavigation, contentLanguage],
+        [buildOpenDocumentRequest, openDocumentRequest, setPendingNavigation, contentLanguage],
     );
 
     const handleClose = useCallback(() => {
@@ -157,7 +158,11 @@ export default function SimilarSermonsModal() {
                             dataSource={pagedHits}
                             renderItem={(hit) => {
                                 const sermon = getSermonById(hit.sermonId);
-                                const displayTitle = sermon?.title ?? hit.title;
+                                const displayTitle =
+                                    sermon?.translationId === hit.translationId
+                                        ? sermon.title
+                                        : hit.title;
+
                                 const dateStr = sermon?.dateMs ? formatDate(sermon.dateMs) : '';
                                 const subtitle = dateStr
                                     ? `${dateStr}${sermon?.location ? ` — ${sermon.location}` : ''}`
