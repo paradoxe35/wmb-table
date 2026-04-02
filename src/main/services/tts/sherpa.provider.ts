@@ -13,7 +13,8 @@ import type {
     TtsVoice,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { normalizeLangCode, getLangLabelFr, entrySupportsLang } from './sherpa-catalog';
+import { getLanguageLabelFr, normalizeLanguageCode } from '@shared/tts.types';
+import { entrySupportsLang } from './sherpa-catalog';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
 import { getTtsModelsDir } from '@main/lib/app-paths';
 import { WorkerRpc } from './worker-rpc';
@@ -76,16 +77,18 @@ function getInstalledModelNames(): string[] {
 }
 
 function getLangCodeForModel(modelName: string): string {
-    if (modelName.startsWith('mms-')) return normalizeLangCode(modelName.slice(4));
+    if (modelName.startsWith('mms-')) return normalizeLanguageCode(modelName.slice(4));
     const entry = findCatalogModelByModelName(modelName);
     if (entry) {
         const lc = entry.langCode;
-        return normalizeLangCode(Array.isArray(lc) ? lc[0] : lc);
+        return normalizeLanguageCode(Array.isArray(lc) ? lc[0] : lc);
     }
     const parts = modelName.split('-');
     if (parts.length >= 3) {
         const langPart = parts[2].split('_')[0];
-        if (langPart.length === 2 || langPart.length === 3) return normalizeLangCode(langPart);
+        if (langPart.length === 2 || langPart.length === 3) {
+            return normalizeLanguageCode(langPart);
+        }
     }
     return 'en';
 }
@@ -154,7 +157,7 @@ export class SherpaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Promise<TtsCompatibilityResult> {
-        const code = normalizeLangCode(langCode);
+        const code = normalizeLanguageCode(langCode);
         const installed = getInstalledModelNames();
 
         if (installed.length === 0) {
@@ -165,14 +168,14 @@ export class SherpaProvider implements TtsProvider {
         if (cfg?.voiceId) {
             const modelName = cfg.voiceId.split(':')[0];
             if (modelName && installed.includes(modelName)) {
-                return normalizeLangCode(getLangCodeForModel(modelName)) === code
+                return normalizeLanguageCode(getLangCodeForModel(modelName)) === code
                     ? { supported: true }
                     : { supported: false, reason: 'no_model_for_language' };
             }
         }
 
         // No voice configured: check if any installed model supports the language
-        return installed.some((name) => normalizeLangCode(getLangCodeForModel(name)) === code)
+        return installed.some((name) => normalizeLanguageCode(getLangCodeForModel(name)) === code)
             ? { supported: true }
             : { supported: false, reason: 'no_model_for_language' };
     }
@@ -231,7 +234,7 @@ export class SherpaProvider implements TtsProvider {
             const primaryLang = Array.isArray(entry.langCode) ? entry.langCode[0] : entry.langCode;
             return {
                 langCode: entry.langCode,
-                langLabel: getLangLabelFr(primaryLang) || entry.langName,
+                langLabel: getLanguageLabelFr(primaryLang) || entry.langName,
                 langName: entry.langName,
                 modelName: entry.modelName,
                 voiceName: entry.name,
@@ -271,14 +274,14 @@ export class SherpaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Partial<TtsProviderSettings> | null {
-        const code = normalizeLangCode(langCode);
+        const code = normalizeLanguageCode(langCode);
         const installed = getInstalledModelNames();
 
         // If the configured voiceId already points to an installed model for this language, no change needed
         if (cfg?.voiceId) {
             const modelName = cfg.voiceId.split(':')[0];
             if (modelName && installed.includes(modelName)) {
-                if (normalizeLangCode(getLangCodeForModel(modelName)) === code) {
+                if (normalizeLanguageCode(getLangCodeForModel(modelName)) === code) {
                     return null;
                 }
             }
@@ -286,7 +289,7 @@ export class SherpaProvider implements TtsProvider {
 
         // Find the first installed model whose language matches
         const compatibleModel = installed.find(
-            (name) => normalizeLangCode(getLangCodeForModel(name)) === code,
+            (name) => normalizeLanguageCode(getLangCodeForModel(name)) === code,
         );
 
         if (!compatibleModel) {
@@ -329,7 +332,7 @@ export class SherpaProvider implements TtsProvider {
 
     private findModelForLanguage(language?: string): string | undefined {
         if (!language) return undefined;
-        const code = normalizeLangCode(language);
+        const code = normalizeLanguageCode(language);
         const installed = getInstalledModelNames();
 
         // Prefer non-MMS model (typically higher quality)

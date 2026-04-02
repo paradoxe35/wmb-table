@@ -104,7 +104,7 @@ describe('subjects.repository', () => {
         expect(subjectsRepo.getItems(subject.id)).toHaveLength(0);
     });
 
-    it('getAll returns items correctly for multiple subjects', () => {
+    it('getAll returns lightweight subject summaries', () => {
         const s1 = subjectsRepo.create('Subject A');
         const s2 = subjectsRepo.create('Subject B');
         const s3 = subjectsRepo.create('Subject C');
@@ -144,21 +144,12 @@ describe('subjects.repository', () => {
         const all = subjectsRepo.getAll();
         expect(all).toHaveLength(3);
 
-        const a = all.find((s) => s.name === 'Subject A')!;
-        const b = all.find((s) => s.name === 'Subject B')!;
-        const c = all.find((s) => s.name === 'Subject C')!;
-
-        expect(a.documents).toHaveLength(2);
-        expect(a.documents[0].documentTitle).toBe('Doc 1');
-        expect(a.documents[1].documentTitle).toBe('Doc 2');
-
-        expect(b.documents).toHaveLength(1);
-        expect(b.documents[0].documentTitle).toBe('Doc 3');
-
-        expect(c.documents).toHaveLength(0);
+        expect(all.find((s) => s.name === 'Subject A')?.documents).toEqual([]);
+        expect(all.find((s) => s.name === 'Subject B')?.documents).toEqual([]);
+        expect(all.find((s) => s.name === 'Subject C')?.documents).toEqual([]);
     });
 
-    it('getAll items have correct fields', () => {
+    it('getById returns items with correct fields', () => {
         const subject = subjectsRepo.create('Topic');
         const bible = {
             id: 'b1',
@@ -181,8 +172,9 @@ describe('subjects.repository', () => {
             { kind: 'bible-verse', bibleVerse: bible },
         );
 
-        const all = subjectsRepo.getAll();
-        const item = all[0].documents[0];
+        const loaded = subjectsRepo.getById(subject.id);
+        const item = loaded?.documents[0];
+        expect(item).toBeDefined();
         expect(item.subjectId).toBe(subject.id);
         expect(item.documentTitle).toBe('Doc');
         expect(item.documentReference).toEqual({

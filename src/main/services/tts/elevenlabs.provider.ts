@@ -1,6 +1,5 @@
 import log from 'electron-log';
 import { SimpleCache } from '@main/lib/simple-cache';
-import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -13,6 +12,7 @@ import type {
     TtsVoiceCloneResult,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
+import { normalizeLanguageCode } from '@shared/tts.types';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 
@@ -249,7 +249,7 @@ export class ElevenLabsProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = normalizeLangCode(langCode);
+        const code = normalizeLanguageCode(langCode);
         const model = cfg?.model ?? this.model;
         const modelLangs = MODEL_LANGUAGES[model] ?? V3_LANGUAGES;
         if (!modelLangs.includes(code)) {
@@ -281,7 +281,7 @@ export class ElevenLabsProvider implements TtsProvider {
         };
 
         if (request.language) {
-            body.language_code = normalizeLangCode(request.language);
+            body.language_code = normalizeLanguageCode(request.language);
         }
 
         const response = await fetch(url.toString(), {

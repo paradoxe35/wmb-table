@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "b02bc5af-480d-4393-84ff-f3cb53ef5793",
+    "id": "a6ae27d2-b52f-4bf1-9bea-e342625d4957",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -806,6 +806,14 @@
                     "notNull": true,
                     "autoincrement": false
                 },
+                "document_key": {
+                    "name": "document_key",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "''"
+                },
                 "created_at": {
                     "name": "created_at",
                     "type": "text",
@@ -823,7 +831,18 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {},
+            "indexes": {
+                "history_items_document_key_idx": {
+                    "name": "history_items_document_key_idx",
+                    "columns": ["document_key"],
+                    "isUnique": false
+                },
+                "history_items_history_created_idx": {
+                    "name": "history_items_history_created_idx",
+                    "columns": ["history_id", "created_at"],
+                    "isUnique": false
+                }
+            },
             "foreignKeys": {
                 "history_items_history_id_history_id_fk": {
                     "name": "history_items_history_id_history_id_fk",
@@ -1219,7 +1238,13 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {},
+            "indexes": {
+                "subject_items_subject_id_idx": {
+                    "name": "subject_items_subject_id_idx",
+                    "columns": ["subject_id"],
+                    "isUnique": false
+                }
+            },
             "foreignKeys": {
                 "subject_items_subject_id_subjects_id_fk": {
                     "name": "subject_items_subject_id_subjects_id_fk",

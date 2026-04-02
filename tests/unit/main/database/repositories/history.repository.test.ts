@@ -117,6 +117,28 @@ describe('history.repository', () => {
         expect(items).toHaveLength(1);
     });
 
+    it('dedupes by document identity even when the display title changes', () => {
+        const documentIdentity = {
+            documentType: 'bible' as const,
+            bibleBook: 'gen',
+            bibleChapter: '1',
+            bibleVersionAbbreviation: 'KJV',
+        };
+
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', LANG, {
+            documentTitle: 'Genesis 1',
+            documentIdentity,
+        });
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:05', LANG, {
+            documentTitle: 'Genesis 1 (KJV)',
+            documentIdentity,
+        });
+
+        const all = historyRepo.getHistory(LANG);
+        const items = historyRepo.getHistoryItems(all[0].id);
+        expect(items).toHaveLength(1);
+    });
+
     it('separates history by language', () => {
         historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'en', {
             documentTitle: 'Doc EN',

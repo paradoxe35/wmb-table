@@ -25,7 +25,7 @@ describe('Bible TTS continuation', () => {
         });
 
         expect(nextTarget).toEqual({
-            title: 'Luke 2',
+            title: 'Luke 2 (KJV)',
             documentId: 'LUK:2',
             bibleBook: 'LUK',
             bibleChapter: '2',

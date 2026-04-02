@@ -14,6 +14,7 @@ import {
     CHILD_PARENT_WINDOW_EVENT,
     type OpenOtherTraductionsModalDetail,
 } from '@renderer/utils/events';
+import { getLanguageDisplayName } from '@shared/tts.types';
 import type { SermonTranslation } from '@shared/types';
 
 export function OtherTraductionsModal() {
@@ -172,7 +173,9 @@ export function OtherTraductionsModal() {
                                             color: 'var(--ant-color-text-secondary)',
                                         }}
                                     >
-                                        {t('Langue: {{name}}', { name: tr.languageCode })}
+                                        {t('Langue: {{name}}', {
+                                            name: getLanguageDisplayName(tr.languageCode),
+                                        })}
                                     </div>
                                 </div>
                             </div>

@@ -32,18 +32,26 @@ export const history = sqliteTable('history', {
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
-export const historyItems = sqliteTable('history_items', {
-    id: text('id').primaryKey(),
-    historyId: text('history_id')
-        .notNull()
-        .references(() => history.id, { onDelete: 'cascade' }),
-    date: text('date').notNull(),
-    time: text('time').notNull(),
-    documentTitle: text('document_title').notNull(),
-    documentIdentity: text('document_identity').notNull(),
-    createdAt: text('created_at').default(sql`(datetime('now'))`),
-    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
-});
+export const historyItems = sqliteTable(
+    'history_items',
+    {
+        id: text('id').primaryKey(),
+        historyId: text('history_id')
+            .notNull()
+            .references(() => history.id, { onDelete: 'cascade' }),
+        date: text('date').notNull(),
+        time: text('time').notNull(),
+        documentTitle: text('document_title').notNull(),
+        documentIdentity: text('document_identity').notNull(),
+        documentKey: text('document_key').notNull().default(''),
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+        updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [
+        index('history_items_document_key_idx').on(table.documentKey),
+        index('history_items_history_created_idx').on(table.historyId, table.createdAt),
+    ],
+);
 
 // ---------------------------------------------------------------------------
 // Subjects
@@ -58,18 +66,22 @@ export const subjects = sqliteTable('subjects', {
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
-export const subjectItems = sqliteTable('subject_items', {
-    id: text('id').primaryKey(),
-    subjectId: text('subject_id')
-        .notNull()
-        .references(() => subjects.id, { onDelete: 'cascade' }),
-    documentTitle: text('document_title').notNull(),
-    documentReference: text('document_reference').notNull(), // JSON
-    textContent: text('text_content').notNull(),
-    documentPreview: text('document_preview'), // JSON (nullable)
-    createdAt: text('created_at').default(sql`(datetime('now'))`),
-    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
-});
+export const subjectItems = sqliteTable(
+    'subject_items',
+    {
+        id: text('id').primaryKey(),
+        subjectId: text('subject_id')
+            .notNull()
+            .references(() => subjects.id, { onDelete: 'cascade' }),
+        documentTitle: text('document_title').notNull(),
+        documentReference: text('document_reference').notNull(), // JSON
+        textContent: text('text_content').notNull(),
+        documentPreview: text('document_preview'), // JSON (nullable)
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+        updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [index('subject_items_subject_id_idx').on(table.subjectId)],
+);
 
 // ---------------------------------------------------------------------------
 // Tabs (single-row)

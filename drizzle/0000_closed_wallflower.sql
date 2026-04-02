@@ -127,11 +127,14 @@ CREATE TABLE `history_items` (
 	`time` text NOT NULL,
 	`document_title` text NOT NULL,
 	`document_identity` text NOT NULL,
+	`document_key` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`history_id`) REFERENCES `history`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `history_items_document_key_idx` ON `history_items` (`document_key`);--> statement-breakpoint
+CREATE INDEX `history_items_history_created_idx` ON `history_items` (`history_id`,`created_at`);--> statement-breakpoint
 CREATE TABLE `kv_cache` (
 	`key` text PRIMARY KEY NOT NULL,
 	`value` text NOT NULL,
@@ -196,6 +199,7 @@ CREATE TABLE `subject_items` (
 	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `subject_items_subject_id_idx` ON `subject_items` (`subject_id`);--> statement-breakpoint
 CREATE TABLE `subjects` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,

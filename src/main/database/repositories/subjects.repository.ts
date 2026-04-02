@@ -32,6 +32,21 @@ function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentIt
     };
 }
 
+function toSubjectDocument(
+    row: typeof subjects.$inferSelect,
+    documents: SubjectDocumentItem[] = [],
+): SubjectDocument {
+    return {
+        id: row.id,
+        name: row.name,
+        date: row.date,
+        active: false,
+        documents,
+        createdAt: new Date(row.createdAt ?? Date.now()),
+        updatedAt: new Date(row.updatedAt ?? Date.now()),
+    };
+}
+
 /** List subjects without loading their references (lightweight). */
 export function getAllSummary(): { id: string; name: string; date: string }[] {
     return getDb()
@@ -42,33 +57,12 @@ export function getAllSummary(): { id: string; name: string; date: string }[] {
 }
 
 export function getAll(): SubjectDocument[] {
-    const db = getDb();
-    const subjectRows = db.select().from(subjects).orderBy(desc(subjects.createdAt)).all();
-    if (subjectRows.length === 0) {
-        return [];
-    }
-
-    // Single query for ALL items, then group by subjectId in JS
-    const allItems = db.select().from(subjectItems).all();
-    const itemsBySubject = new Map<string, (typeof subjectItems.$inferSelect)[]>();
-    for (const item of allItems) {
-        const list = itemsBySubject.get(item.subjectId);
-        if (list) {
-            list.push(item);
-        } else {
-            itemsBySubject.set(item.subjectId, [item]);
-        }
-    }
-
-    return subjectRows.map((row) => ({
-        id: row.id,
-        name: row.name,
-        date: row.date,
-        active: false,
-        documents: (itemsBySubject.get(row.id) ?? []).map(toSubjectItem),
-        createdAt: new Date(row.createdAt ?? Date.now()),
-        updatedAt: new Date(row.updatedAt ?? Date.now()),
-    }));
+    return getDb()
+        .select()
+        .from(subjects)
+        .orderBy(desc(subjects.createdAt))
+        .all()
+        .map((row) => toSubjectDocument(row));
 }
 
 export function getById(id: string): SubjectDocument | null {
@@ -78,15 +72,7 @@ export function getById(id: string): SubjectDocument | null {
         return null;
     }
     const items = db.select().from(subjectItems).where(eq(subjectItems.subjectId, row.id)).all();
-    return {
-        id: row.id,
-        name: row.name,
-        date: row.date,
-        active: false,
-        documents: items.map(toSubjectItem),
-        createdAt: new Date(row.createdAt ?? Date.now()),
-        updatedAt: new Date(row.updatedAt ?? Date.now()),
-    };
+    return toSubjectDocument(row, items.map(toSubjectItem));
 }
 
 export function create(name: string): SubjectDocument {
@@ -111,13 +97,8 @@ export function create(name: string): SubjectDocument {
         updatedAt: now,
     });
     return {
-        id,
-        name,
-        date,
+        ...toSubjectDocument({ id, name, date, active: true, createdAt: now, updatedAt: now }, []),
         active: true,
-        documents: [],
-        createdAt: new Date(now),
-        updatedAt: new Date(now),
     };
 }
 

@@ -1,7 +1,6 @@
 import log from 'electron-log';
 import pLimit from 'p-limit';
 import { SimpleCache } from '@main/lib/simple-cache';
-import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -14,6 +13,7 @@ import type {
     TtsVoiceCloneResult,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
+import { normalizeLanguageCode } from '@shared/tts.types';
 
 const CARTESIA_API_BASE = 'https://api.cartesia.ai';
 const CARTESIA_VERSION = '2025-04-16';
@@ -129,7 +129,7 @@ export class CartesiaProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = normalizeLangCode(langCode);
+        const code = normalizeLanguageCode(langCode);
         if (!SUPPORTED_LANGUAGES.includes(code)) {
             return { supported: false, reason: 'unsupported_language' };
         }
@@ -145,7 +145,7 @@ export class CartesiaProvider implements TtsProvider {
             throw new Error('No Cartesia voice selected');
         }
 
-        const language = normalizeLangCode(request.language ?? 'en');
+        const language = normalizeLanguageCode(request.language ?? 'en');
 
         return synthesisLimit(() => this.doSynthesize(model, voiceId, language, request.text));
     }
@@ -275,7 +275,7 @@ export class CartesiaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Promise<Partial<TtsProviderSettings> | null> {
-        const code = normalizeLangCode(langCode);
+        const code = normalizeLanguageCode(langCode);
         const voices = await this.fetchVoices();
 
         // If current voice already matches language, keep it
