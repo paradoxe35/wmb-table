@@ -16,10 +16,9 @@ export default function ViewerMenu() {
 
     useEffect(() => {
         return window.api.on.switchOnMenu(() => {
-            const current = useAppStore.getState().mainView;
-            setMainView(current === 'options' ? 'document' : 'options');
+            setMainView(mainView === 'options' ? 'document' : 'options');
         });
-    }, [setMainView]);
+    }, [mainView, setMainView]);
 
     useEffect(() => {
         return window.api.on.changeMenuViewer((value: string) => {

@@ -50,6 +50,7 @@ export function useTtsSetup(): void {
     const triggerRecheck = useTtsStore((s) => s.triggerRecheck);
     const reset = useTtsStore((s) => s.reset);
     const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
+    const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
     const settingsLoaded = useRef(false);
     const recheckTrigger = useTtsStore((s) => s.recheckTrigger);
 
@@ -206,11 +207,7 @@ export function useTtsSetup(): void {
                 if (state.completedNaturally) {
                     // Natural end: signal consumers AND clear resume position
                     // so the next play starts from the beginning with intro.
-                    useTtsStore.setState({
-                        completedNaturally: true,
-                        lastStoppedDocumentId: null,
-                        lastStoppedSegmentIndex: 0,
-                    });
+                    markCompletedNaturally();
                 }
                 current.reset();
             } else {
@@ -222,7 +219,7 @@ export function useTtsSetup(): void {
                 );
             }
         });
-    }, [setPlaybackState, t]);
+    }, [markCompletedNaturally, setPlaybackState, t]);
 
     // Segment audio playback + segment completion
     useEffect(() => {

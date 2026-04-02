@@ -37,6 +37,7 @@ interface TtsState {
     setIncompatibleMessage(msg: string | undefined): void;
     triggerRecheck(): void;
     clearCompletedNaturally(): void;
+    markCompletedNaturally(): void;
     /** Save position before clearing playback state */
     stopAndRemember(): void;
     reset(): void;
@@ -76,6 +77,12 @@ export const useTtsStore = create<TtsState>((set, get) => ({
     setIncompatibleMessage: (incompatibleMessage) => set({ incompatibleMessage }),
     triggerRecheck: () => set((s) => ({ recheckTrigger: s.recheckTrigger + 1 })),
     clearCompletedNaturally: () => set({ completedNaturally: false }),
+    markCompletedNaturally: () =>
+        set({
+            completedNaturally: true,
+            lastStoppedDocumentId: null,
+            lastStoppedSegmentIndex: 0,
+        }),
     stopAndRemember: () => {
         const { documentId, currentSegmentIndex } = get();
         set({

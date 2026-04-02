@@ -28,17 +28,21 @@ export default function DocumentTabs() {
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
+    const resetTts = useTtsStore((s) => s.reset);
     const { modal } = AntApp.useApp();
 
     useTabPersistence(tabs, contentLanguage);
 
-    const stopTtsIfPlaying = useCallback((closedTabKey: string) => {
-        const tts = useTtsStore.getState();
-        if (tts.documentId === closedTabKey && tts.status !== 'idle') {
-            stopAllTtsPlayback();
-            tts.reset();
-        }
-    }, []);
+    const stopTtsIfPlaying = useCallback(
+        (closedTabKey: string) => {
+            const tts = useTtsStore.getState();
+            if (tts.documentId === closedTabKey && tts.status !== 'idle') {
+                stopAllTtsPlayback();
+                resetTts();
+            }
+        },
+        [resetTts],
+    );
 
     // Close the active tab with Ctrl+W / Cmd+W (only when document view is active)
     const mainView = useAppStore((s) => s.mainView);

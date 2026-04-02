@@ -89,16 +89,15 @@ function playBrowserSegment(
     segments: TtsSegment[],
     index: number,
     settings: TtsSettings,
-    actions: Pick<ReturnType<typeof useTtsStore.getState>, 'reset' | 'setPlaybackState'>,
+    actions: Pick<
+        ReturnType<typeof useTtsStore.getState>,
+        'markCompletedNaturally' | 'reset' | 'setPlaybackState'
+    >,
 ): void {
     clearBrowserTtsTimer();
 
     if (index >= segments.length) {
-        useTtsStore.setState({
-            completedNaturally: true,
-            lastStoppedDocumentId: null,
-            lastStoppedSegmentIndex: 0,
-        });
+        actions.markCompletedNaturally();
         actions.reset();
         return;
     }
@@ -143,7 +142,7 @@ function startPlaybackAtIndex(
     documentId: string,
     actions: Pick<
         ReturnType<typeof useTtsStore.getState>,
-        'reset' | 'setDocumentId' | 'setPlaybackState' | 'setSegments'
+        'markCompletedNaturally' | 'reset' | 'setDocumentId' | 'setPlaybackState' | 'setSegments'
     >,
 ): void {
     actions.setSegments(segments);
@@ -186,6 +185,7 @@ export function useTts(
     const setDocumentId = useTtsStore((s) => s.setDocumentId);
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
     const reset = useTtsStore((s) => s.reset);
+    const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
     const activeProvider = settings?.activeProvider;
 
     // Stop TTS on language change (ignore empty transitions during tab switches)
@@ -244,6 +244,7 @@ export function useTts(
         const startIndex = savedIndex < allSegments.length ? savedIndex : 0;
 
         startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId, {
+            markCompletedNaturally,
             reset,
             setDocumentId,
             setPlaybackState,
@@ -252,6 +253,7 @@ export function useTts(
     }, [
         documentId,
         language,
+        markCompletedNaturally,
         options,
         paragraphs,
         reset,
@@ -306,13 +308,17 @@ export function useTts(
                 browserTts.cancel();
                 const segs = useTtsStore.getState().segments;
                 if (segs.length && settings) {
-                    playBrowserSegment(segs, i, settings, { reset, setPlaybackState });
+                    playBrowserSegment(segs, i, settings, {
+                        markCompletedNaturally,
+                        reset,
+                        setPlaybackState,
+                    });
                 }
             } else {
                 window.api.tts.seekToSegment(i);
             }
         },
-        [activeProvider, reset, setPlaybackState, settings],
+        [activeProvider, markCompletedNaturally, reset, setPlaybackState, settings],
     );
 
     const playFromParagraph = useCallback(
@@ -353,6 +359,7 @@ export function useTts(
             }
 
             startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId, {
+                markCompletedNaturally,
                 reset,
                 setDocumentId,
                 setPlaybackState,
@@ -362,6 +369,7 @@ export function useTts(
         [
             documentId,
             language,
+            markCompletedNaturally,
             options,
             paragraphs,
             reset,

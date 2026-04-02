@@ -29,6 +29,7 @@ export default function MiniPlayerBar() {
     const setCurrentPlay = useAudioStore((s) => s.setCurrentPlay);
     const loadAudio = useAudioStore((s) => s.loadAudio);
     const openModal = useAudioStore((s) => s.openModal);
+    const resetTts = useTtsStore((s) => s.reset);
 
     const controls = useAudioControls();
 
@@ -66,7 +67,7 @@ export default function MiniPlayerBar() {
             // Stop TTS when sermon audio starts
             if (useTtsStore.getState().status !== 'idle') {
                 stopAllTtsPlayback();
-                useTtsStore.getState().reset();
+                resetTts();
             }
 
             setCurrentPlay({
@@ -100,7 +101,7 @@ export default function MiniPlayerBar() {
             el.removeEventListener('pause', onPause);
             el.removeEventListener('ended', onEnded);
         };
-    }, [audioRef, setCurrentTime, setDuration, setCurrentPlay, saveTime]);
+    }, [audioRef, resetTts, setCurrentTime, setDuration, setCurrentPlay, saveTime]);
 
     // Pause sermon audio when TTS starts
     useEffect(() => {

@@ -86,10 +86,12 @@ export async function fetchLanguageWorkspace(langCode: string): Promise<Language
 }
 
 export function applyLanguageWorkspace(langCode: string, workspace: LanguageWorkspace): void {
-    useAppStore.getState().setContentLanguage(langCode);
-    useAppStore.getState().setActiveBibleVersion(workspace.activeBibleVersion);
-    useSermonStore.getState().setSermons(workspace.sermons);
-    useDocumentTabsStore.getState().setTabs(workspace.tabs);
+    useAppStore.setState({
+        contentLanguage: langCode,
+        activeBibleVersion: workspace.activeBibleVersion,
+    });
+    useSermonStore.setState({ sermons: workspace.sermons });
+    useDocumentTabsStore.setState({ tabs: workspace.tabs });
 }
 
 export const useIpcRequestWithLoader = () => {
@@ -112,6 +114,7 @@ export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
+    const setMaxTabs = useAppStore((s) => s.setMaxTabs);
     const setError = useAppStore((s) => s.setError);
 
     useEffect(() => {
@@ -140,7 +143,7 @@ export function useInitApp() {
                     setSidebarHidden(sidebarStatus.hidden);
                 }
                 setRememberReadingPosition(rememberReadingPosition);
-                useAppStore.getState().setMaxTabs(maxTabs);
+                setMaxTabs(maxTabs);
 
                 // Sync UI language preference from DB (null = auto)
                 const pref = dbUiLanguage ?? 'auto';
@@ -167,7 +170,7 @@ export function useInitApp() {
                 setLoaded(true);
             }
         })();
-    }, [setLoaded, setSidebarHidden, setRememberReadingPosition, setError]);
+    }, [setError, setLoaded, setMaxTabs, setRememberReadingPosition, setSidebarHidden]);
 }
 
 export function useOpenDocument() {
@@ -244,6 +247,7 @@ export function useOpenDocumentRequest() {
     const openCustomDocument = useOpenCustomDocument();
     const openBibleChapter = useOpenBibleChapter();
     const updateBibleTabsVersion = useDocumentTabsStore((s) => s.updateBibleTabsVersion);
+    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
 
     return useCallback(
         async (request: OpenDocumentRequest) => {
@@ -255,7 +259,7 @@ export function useOpenDocumentRequest() {
             if (request.documentType === 'bible') {
                 await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
                 const v = await window.api.bible.getActiveVersion();
-                useAppStore.getState().setActiveBibleVersion(v);
+                setActiveBibleVersion(v);
                 if (v?.abbreviation) {
                     updateBibleTabsVersion(v.abbreviation);
                 }
@@ -265,7 +269,13 @@ export function useOpenDocumentRequest() {
 
             openDocument(request.title, request.sermonId, request.translationId);
         },
-        [openBibleChapter, openCustomDocument, openDocument, updateBibleTabsVersion],
+        [
+            openBibleChapter,
+            openCustomDocument,
+            openDocument,
+            setActiveBibleVersion,
+            updateBibleTabsVersion,
+        ],
     );
 }
 
