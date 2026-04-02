@@ -1,11 +1,5 @@
 import React from 'react';
 import { useOpenDocumentRequest } from '@renderer/hooks';
-import type { SermonDocumentIdentity } from '@shared/types';
-
-type DocumentViewTarget = Omit<SermonDocumentIdentity, 'documentType'> & {
-    title: string;
-    onItemClick?: () => void;
-};
 
 const SermonDocumentLink: React.FC<{
     name: string;
@@ -17,32 +11,16 @@ const SermonDocumentLink: React.FC<{
 }> = ({ children, name, sermonId, translationId, languageCode, onItemClick }) => {
     const openDocumentRequest = useOpenDocumentRequest();
 
-    const handleClick = ({
-        title,
-        sermonId,
-        translationId,
-        languageCode,
-        onItemClick,
-    }: DocumentViewTarget) => {
-        onItemClick?.();
-        openDocumentRequest({
-            title,
-            documentType: 'sermon',
-            sermonId,
-            translationId,
-            languageCode,
-        });
-    };
-
     return (
         <span
             onClick={() => {
-                handleClick({
+                onItemClick?.();
+                openDocumentRequest({
                     title: name,
+                    documentType: 'sermon',
                     sermonId,
                     translationId,
                     languageCode,
-                    onItemClick,
                 });
             }}
         >

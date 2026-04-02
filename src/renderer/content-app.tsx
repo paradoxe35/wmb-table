@@ -4,7 +4,7 @@ import { LoadingOutlined } from '@ant-design/icons';
 import { useAppStore } from './stores';
 import LoadByVisibility from './components/load-by-visibility';
 import CustomDocumentsModal from './views/components/modals/custom-documents';
-import { OtherTraductionsModal } from './views/components/modals/other-traductions-modal';
+import { OtherTranslationsModal } from './views/components/modals/other-translations-modal';
 import { SubjectSelectModal } from './views/components/modals/subject-select-modal';
 import { NoteReferencesModal } from './views/components/modals/note-references-modal';
 import DocumentAudioPlayer from './views/components/modals/document-audio-player';
@@ -134,7 +134,7 @@ export function ContentApp() {
             </div>
             {/* independent components */}
             <CustomDocumentsModal />
-            <OtherTraductionsModal />
+            <OtherTranslationsModal />
             <SubjectSelectModal />
             <NoteReferencesModal />
             <DocumentAudioPlayer />

@@ -16,7 +16,7 @@ import type {
     DocumentIdentity,
     DocumentTab,
     NoteItemReference,
-    SermonMetaWithTraductions,
+    SermonMetaWithTranslations,
     SubjectDocumentItem,
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
@@ -34,7 +34,7 @@ type PresentationSource =
     | NoteItemReference['documentReference'];
 
 type LanguageWorkspace = {
-    sermons: SermonMetaWithTraductions[];
+    sermons: SermonMetaWithTranslations[];
     tabs: DocumentTab[];
     activeBibleVersion: BibleVersionInfo | null;
 };
@@ -72,7 +72,7 @@ function getDocumentIdentityFromSource(source: PresentationSource): DocumentIden
 function resolveOpenRequestTitle(
     title: string,
     documentIdentity: DocumentIdentity,
-    getSermonById: (sermonId: string) => SermonMetaWithTraductions | undefined,
+    getSermonById: (sermonId: string) => SermonMetaWithTranslations | undefined,
 ): string {
     if (documentIdentity.documentType !== 'sermon') {
         return formatDocumentTitle(title, documentIdentity);
@@ -324,7 +324,7 @@ export function useSermonLookup() {
     const sermonsById = useSermonStore((s) => s.sermonsById);
 
     const getSermonById = useCallback(
-        (sermonId: string): SermonMetaWithTraductions | undefined => sermonsById[sermonId],
+        (sermonId: string): SermonMetaWithTranslations | undefined => sermonsById[sermonId],
         [sermonsById],
     );
 

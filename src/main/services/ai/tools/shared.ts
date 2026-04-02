@@ -2,7 +2,10 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 
 export function inferTranslationId(sermonId: string, languageCode: string): number {
-    const translations = referenceDataService.getTraductionsForSermon(sermonId, languageCode);
+    const translations = referenceDataService.getTranslationsForSermonInLanguage(
+        sermonId,
+        languageCode,
+    );
     return translations[0]?.translationId ?? 0;
 }
 

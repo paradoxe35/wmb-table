@@ -1,4 +1,8 @@
-import type { AvailableTraduction } from '@shared/types';
+import type {
+    AudioDocumentPlayRequest,
+    AvailableTranslation,
+    HighlightCreateData,
+} from '@shared/types';
 
 export const EDITOR_EVENT = {
     renameNoteModal: 'rename-note-modal',
@@ -18,7 +22,7 @@ export const SUBJECT_EVENT = {
 export const CHILD_PARENT_WINDOW_EVENT = {
     addDocumentRefSubject: 'add-document-ref-subject',
     addDocumentRefNote: 'add-document-ref-note',
-    openOtherTraductionsModal: 'open-other-traductions-modal',
+    openOtherTranslationsModal: 'open-other-translations-modal',
     audioDocumentPlay: 'audio-document-play',
     noSelectableDocumentText: 'no-selectable-document-text',
     openHighlightModal: 'open-highlight-modal',
@@ -56,9 +60,21 @@ export const AI_DATA_EVENT = {
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';
 
-export type OpenOtherTraductionsModalDetail = {
+export type OpenOtherTranslationsModalDetail = {
     tabKey: string;
     sermonId: string;
     title: string;
-    availableTraductions: AvailableTraduction[];
+    availableTranslations: AvailableTranslation[];
+};
+
+export type AudioDocumentPlayDetail = AudioDocumentPlayRequest;
+
+export type OpenHighlightModalDetail = Omit<HighlightCreateData, 'color' | 'comment'>;
+
+export type ShowSimilarSermonsDetail = {
+    paragraphIndex: number;
+    translationId: number;
+    sermonDate: number;
+    languageCode: string;
+    textSnippet: string;
 };

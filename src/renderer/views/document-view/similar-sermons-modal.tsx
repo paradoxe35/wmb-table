@@ -9,7 +9,7 @@ import {
     useOpenDocumentRequest,
     useSermonLookup,
 } from '@renderer/hooks';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { CHILD_PARENT_WINDOW_EVENT, type ShowSimilarSermonsDetail } from '@renderer/utils/events';
 import {
     buildParagraphReference,
     buildSermonDocumentIdentity,
@@ -18,14 +18,6 @@ import {
 
 const { Text } = Typography;
 const PAGE_SIZE = 10;
-
-interface SimilarSermonsRequest {
-    paragraphIndex: number;
-    translationId: number;
-    sermonDate: number;
-    languageCode: string;
-    textSnippet: string;
-}
 
 export default function SimilarSermonsModal() {
     const { t } = useTranslation();
@@ -42,7 +34,7 @@ export default function SimilarSermonsModal() {
 
     useEffect(() => {
         const handler = (e: Event) => {
-            const detail = (e as CustomEvent<SimilarSermonsRequest>).detail;
+            const detail = (e as CustomEvent<ShowSimilarSermonsDetail>).detail;
             if (!detail.languageCode) return;
 
             setOpen(true);

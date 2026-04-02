@@ -19,11 +19,11 @@ import { AUDIO_SPEEDS } from '@renderer/utils/constants';
 
 function TrackInfo({
     title,
-    traduction,
+    languageLabel,
     onTitleClick,
 }: {
     title: string;
-    traduction: string | null;
+    languageLabel: string | null;
     onTitleClick: () => void;
 }) {
     const { t } = useTranslation();
@@ -36,7 +36,7 @@ function TrackInfo({
             >
                 {title}
             </h3>
-            {traduction && (
+            {languageLabel && (
                 <div
                     style={{
                         color: 'var(--ant-color-text-secondary)',
@@ -44,7 +44,7 @@ function TrackInfo({
                         marginBottom: 16,
                     }}
                 >
-                    {t('Langue: {{name}}', { name: traduction })}
+                    {t('Langue: {{name}}', { name: languageLabel })}
                 </div>
             )}
         </>
@@ -172,7 +172,7 @@ export default function DocumentAudioPlayer() {
     const modalOpen = useAudioStore((s) => s.modalOpen);
     const closeModal = useAudioStore((s) => s.closeModal);
     const title = useAudioStore((s) => s.title);
-    const traduction = useAudioStore((s) => s.traduction);
+    const languageLabel = useAudioStore((s) => s.languageLabel);
     const currentTime = useAudioStore((s) => s.currentTime);
     const duration = useAudioStore((s) => s.duration);
     const playbackRate = useAudioStore((s) => s.playbackRate);
@@ -209,7 +209,7 @@ export default function DocumentAudioPlayer() {
                 <div style={{ textAlign: 'center', padding: '16px 0' }}>
                     <TrackInfo
                         title={title}
-                        traduction={traduction}
+                        languageLabel={languageLabel}
                         onTitleClick={handleTitleClick}
                     />
                     <SeekBar currentTime={currentTime} duration={duration} onSeek={controls.seek} />

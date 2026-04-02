@@ -3,7 +3,7 @@ import { List, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
 import { buildSermonDocumentIdentity, getTabKey } from '@shared/types';
-import SermonDocumentLink from '@renderer/components/viewer/document-viewer';
+import SermonDocumentLink from '@renderer/components/viewer/sermon-document-link';
 import HighlightedText from '@renderer/components/highlighted-text';
 import { useSearchStore } from '@renderer/stores';
 import { useDocumentPresentation } from '@renderer/hooks';

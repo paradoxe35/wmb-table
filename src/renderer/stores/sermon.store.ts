@@ -1,15 +1,15 @@
-import type { SermonContent, SermonMetaWithTraductions } from '@shared/types';
+import type { SermonContent, SermonMetaWithTranslations } from '@shared/types';
 import { getSermonYear } from '@renderer/utils/sermon-utils';
 import { createStore } from './create-store';
 
 interface SermonState {
-    sermons: SermonMetaWithTraductions[];
-    sermonsById: Record<string, SermonMetaWithTraductions>;
-    sermonsByYear: Record<string, SermonMetaWithTraductions[]>;
+    sermons: SermonMetaWithTranslations[];
+    sermonsById: Record<string, SermonMetaWithTranslations>;
+    sermonsByYear: Record<string, SermonMetaWithTranslations[]>;
     activeContent: SermonContent | null;
     error: string | null;
 
-    setSermons(s: SermonMetaWithTraductions[]): void;
+    setSermons(s: SermonMetaWithTranslations[]): void;
     setActiveContent(c: SermonContent | null): void;
     setError(error: string | null): void;
 }
@@ -22,8 +22,8 @@ export const useSermonStore = createStore<SermonState>((set) => ({
     error: null,
 
     setSermons: (sermons) => {
-        const sermonsById: Record<string, SermonMetaWithTraductions> = {};
-        const sermonsByYear: Record<string, SermonMetaWithTraductions[]> = {};
+        const sermonsById: Record<string, SermonMetaWithTranslations> = {};
+        const sermonsByYear: Record<string, SermonMetaWithTranslations[]> = {};
 
         for (const sermon of sermons) {
             sermonsById[sermon.sermonId] = sermon;

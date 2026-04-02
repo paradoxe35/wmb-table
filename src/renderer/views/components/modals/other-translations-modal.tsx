@@ -6,16 +6,16 @@ import { useDocumentTabsStore } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import {
     CHILD_PARENT_WINDOW_EVENT,
-    type OpenOtherTraductionsModalDetail,
+    type OpenOtherTranslationsModalDetail,
 } from '@renderer/utils/events';
 import { getLanguageDisplayName } from '@shared/tts.types';
 import {
     buildSermonDocumentIdentity,
-    type AvailableTraduction,
+    type AvailableTranslation,
     type SermonTranslation,
 } from '@shared/types';
 
-export function OtherTraductionsModal() {
+export function OtherTranslationsModal() {
     const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
     const openDocumentRequest = useOpenDocumentRequest();
@@ -23,16 +23,16 @@ export function OtherTraductionsModal() {
 
     const [translations, setTranslations] = useState<SermonTranslation[]>([]);
     const [loading, setLoading] = useState(false);
-    const [request, setRequest] = useState<OpenOtherTraductionsModalDetail | null>(null);
+    const [request, setRequest] = useState<OpenOtherTranslationsModalDetail | null>(null);
 
     const sermonId = request?.sermonId ?? null;
     const modalTitle = request?.title ?? '';
-    const availableTraductions = request?.availableTraductions ?? [];
-    const hasWithinLanguage = availableTraductions.length > 1;
+    const availableTranslations = request?.availableTranslations ?? [];
+    const hasWithinLanguage = availableTranslations.length > 1;
 
     const currentLanguageCodes = useMemo(
-        () => new Set(availableTraductions.map((translation) => translation.languageCode)),
-        [availableTraductions],
+        () => new Set(availableTranslations.map((translation) => translation.languageCode)),
+        [availableTranslations],
     );
 
     const otherLanguageTranslations = useMemo(() => {
@@ -61,15 +61,15 @@ export function OtherTraductionsModal() {
 
     useEffect(() => {
         const showModal = (event: Event) => {
-            const nextRequest = (event as CustomEvent<OpenOtherTraductionsModalDetail | undefined>)
+            const nextRequest = (event as CustomEvent<OpenOtherTranslationsModalDetail | undefined>)
                 .detail;
             setRequest(nextRequest ?? null);
             setVisible(true);
         };
-        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal, showModal);
+        window.addEventListener(CHILD_PARENT_WINDOW_EVENT.openOtherTranslationsModal, showModal);
         return () => {
             window.removeEventListener(
-                CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal,
+                CHILD_PARENT_WINDOW_EVENT.openOtherTranslationsModal,
                 showModal,
             );
         };
@@ -85,13 +85,13 @@ export function OtherTraductionsModal() {
         hideModal();
     };
 
-    const handleSwitchTraduction = (traduction: AvailableTraduction) => {
+    const handleSwitchTranslation = (translation: AvailableTranslation) => {
         if (request) {
             updateSermonTab(request.tabKey, {
-                title: traduction.title,
+                title: translation.title,
                 documentId: request.sermonId,
-                translationId: traduction.translationId,
-                languageCode: traduction.languageCode,
+                translationId: translation.translationId,
+                languageCode: translation.languageCode,
             });
         }
         hideModal();
@@ -115,9 +115,9 @@ export function OtherTraductionsModal() {
                         <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>
                             {t('Sources de traduction')}
                         </Divider>
-                        {availableTraductions.map((tr) => (
+                        {availableTranslations.map((translation) => (
                             <div
-                                key={tr.translationId}
+                                key={translation.translationId}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
@@ -129,16 +129,16 @@ export function OtherTraductionsModal() {
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                     <BookOutlined />
                                     <span>
-                                        {tr.traductionName ??
-                                            `${t('Traduction')} ${tr.translationId}`}
+                                        {translation.translationName ??
+                                            `${t('Traduction')} ${translation.translationId}`}
                                         <Tag color="blue" style={{ marginLeft: 8 }}>
-                                            ID: {tr.translationId}
+                                            ID: {translation.translationId}
                                         </Tag>
                                     </span>
                                 </div>
                                 <Tooltip title={t('Basculer vers cette traduction')}>
                                     <Button
-                                        onClick={() => handleSwitchTraduction(tr)}
+                                        onClick={() => handleSwitchTranslation(translation)}
                                         shape="circle"
                                         icon={<EyeOutlined />}
                                     />

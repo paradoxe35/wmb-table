@@ -25,6 +25,7 @@ import type {
     HistoryEntryCreateData,
     AudioTimeAndDownload,
     AudioDownloadProgress,
+    AudioDocumentPlayRequest,
     SearchMode,
     BackupStatus,
     RestoreProgressEvent,
@@ -32,7 +33,7 @@ import type {
     ViewMenuValue,
     DocumentReference,
     SermonMeta,
-    SermonMetaWithTraductions,
+    SermonMetaWithTranslations,
     SermonContent,
     InstalledLanguage,
     DownloadableLanguage,
@@ -93,7 +94,7 @@ export const DocumentChannels = {
     getSermonList: 'documents:getSermonList',
     getSermonsByYear: 'documents:getSermonsByYear',
     getTranslations: 'documents:getTranslations',
-    getTraductionsForSermon: 'documents:getTraductionsForSermon',
+    getTranslationsForSermonInLanguage: 'documents:getTranslationsForSermonInLanguage',
     getTabs: 'documents:getTabs',
     saveTabs: 'documents:saveTabs',
     getReadingPosition: 'documents:getReadingPosition',
@@ -308,7 +309,7 @@ export const PushChannels = {
 /** Maps each invoke channel to its argument tuple and return type. */
 export interface InvokeChannelMap {
     // Documents
-    [DocumentChannels.getTitles]: { args: [string]; return: SermonMetaWithTraductions[] };
+    [DocumentChannels.getTitles]: { args: [string]; return: SermonMetaWithTranslations[] };
     [DocumentChannels.getSermonContent]: {
         args: [string, number, string];
         return: SermonContent;
@@ -319,7 +320,7 @@ export interface InvokeChannelMap {
         args: [string];
         return: SermonTranslation[];
     };
-    [DocumentChannels.getTraductionsForSermon]: {
+    [DocumentChannels.getTranslationsForSermonInLanguage]: {
         args: [string, string];
         return: SermonMeta[];
     };
@@ -451,8 +452,8 @@ export interface InvokeChannelMap {
         return: AudioTimeAndDownload;
     };
     [AudioChannels.setTime]: { args: [string, number]; return: void };
-    [AudioChannels.getLastPlay]: { args: []; return: string | null };
-    [AudioChannels.setLastPlay]: { args: [string]; return: void };
+    [AudioChannels.getLastPlay]: { args: []; return: AudioDocumentPlayRequest | null };
+    [AudioChannels.setLastPlay]: { args: [AudioDocumentPlayRequest]; return: void };
     [AudioChannels.cacheAudio]: { args: [string]; return: void };
 
     // Backup

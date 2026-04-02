@@ -95,8 +95,8 @@ async function fetchSermonContext(first: HighlightItem): Promise<Partial<Documen
     const parts: string[] = [];
     if (sermon.dateMs) parts.push(formatDate(sermon.dateMs));
     if (sermon.location) parts.push(escapeHtml(sermon.location));
-    if (sermon.traductionName)
-        parts.push(`${i18n.t('Traduction:')} ${escapeHtml(sermon.traductionName)}`);
+    if (sermon.translationName)
+        parts.push(`${i18n.t('Traduction:')} ${escapeHtml(sermon.translationName)}`);
     if (parts.length > 0) meta = parts.join(' — ');
 
     try {

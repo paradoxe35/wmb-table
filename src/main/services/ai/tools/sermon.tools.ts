@@ -134,7 +134,7 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
 
                 // Fallback: find any translation for this sermonId
                 if (!meta) {
-                    const allForSermon = referenceDataService.getTraductionsForSermon(
+                    const allForSermon = referenceDataService.getTranslationsForSermonInLanguage(
                         sermonId,
                         lang,
                     );

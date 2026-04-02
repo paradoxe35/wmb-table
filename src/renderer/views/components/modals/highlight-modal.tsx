@@ -2,10 +2,11 @@ import { Button, Input, Modal, Space, message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useModalVisible } from '@renderer/hooks';
-import { CHILD_PARENT_WINDOW_EVENT, HIGHLIGHT_EVENT } from '@renderer/utils/events';
-import type { HighlightCreateData } from '@shared/types';
-
-type HighlightModalData = Omit<HighlightCreateData, 'color' | 'comment'>;
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    HIGHLIGHT_EVENT,
+    type OpenHighlightModalDetail,
+} from '@renderer/utils/events';
 
 const PRESET_COLORS = [
     { label: 'Jaune', value: '#FDE68A' },
@@ -25,13 +26,13 @@ const PRESET_COLORS = [
 export default function HighlightModal() {
     const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
-    const dataRef = useRef<HighlightModalData | null>(null);
+    const dataRef = useRef<OpenHighlightModalDetail | null>(null);
     const [color, setColor] = useState(PRESET_COLORS[0].value);
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        const handler = (e: CustomEventInit<HighlightModalData>) => {
+        const handler = (e: CustomEventInit<OpenHighlightModalDetail>) => {
             if (!e.detail) return;
             dataRef.current = e.detail;
             setColor(PRESET_COLORS[0].value);

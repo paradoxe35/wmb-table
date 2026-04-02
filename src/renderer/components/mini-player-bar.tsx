@@ -7,19 +7,9 @@ import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useAudioRef } from './audio-context';
 import { useAudioControls } from '@renderer/hooks/use-audio-controls';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import { CHILD_PARENT_WINDOW_EVENT, type AudioDocumentPlayDetail } from '@renderer/utils/events';
 import { throttle, formatTime } from '@renderer/utils/functions';
 import { AUDIO_SPEEDS, THROTTLE_MS } from '@renderer/utils/constants';
-
-type AudioPlayEventDetail = {
-    audio_link?: string;
-    sermonId?: string | null;
-    translationId?: number | null;
-    languageCode?: string | null;
-    title?: string;
-    traduction?: string | null;
-    autoplay?: boolean;
-};
 
 function isSameAudioDocument(
     current: {
@@ -28,9 +18,9 @@ function isSameAudioDocument(
         translationId: number | null;
         languageCode: string | null;
     },
-    next: AudioPlayEventDetail,
+    next: AudioDocumentPlayDetail,
 ): boolean {
-    if (current.audioLink && current.audioLink === next.audio_link) {
+    if (current.audioLink && current.audioLink === next.audioLink) {
         return true;
     }
 
@@ -178,9 +168,9 @@ export default function MiniPlayerBar() {
 
     // Handle audio play events from document header
     useEffect(() => {
-        const handleAudioPlay = async (event: CustomEventInit<AudioPlayEventDetail>) => {
+        const handleAudioPlay = async (event: CustomEventInit<AudioDocumentPlayDetail>) => {
             const detail = event.detail;
-            if (!detail?.audio_link) {
+            if (!detail?.audioLink) {
                 return;
             }
             const el = audioRef.current;
@@ -215,32 +205,32 @@ export default function MiniPlayerBar() {
                 autoplayRef.current = true;
             }
 
-            const documentTitle = detail.title ?? '';
+            const documentTitle = detail.title;
 
-            window.api.audio.setLastPlay(documentTitle);
+            window.api.audio.setLastPlay(detail);
 
-            const result = await window.api.audio.getTimeAndLocalFile(detail.audio_link);
+            const result = await window.api.audio.getTimeAndLocalFile(detail.audioLink);
             const ctime = typeof result.time?.time === 'number' ? result.time.time : 0;
             const localFile = result.download?.local_file;
 
             const src = localFile
                 ? `audio-cache://file/${localFile.split('/').pop()}`
-                : detail.audio_link;
+                : detail.audioLink;
 
             // Cache the audio file in the background for next time
             if (!localFile) {
-                window.api.audio.cacheAudio(detail.audio_link);
+                window.api.audio.cacheAudio(detail.audioLink);
             }
 
             loadAudio(
                 src,
-                detail.audio_link,
+                detail.audioLink,
                 documentTitle,
-                detail.traduction ?? '',
+                detail.languageLabel ?? '',
                 ctime,
-                detail.sermonId ?? '',
-                detail.translationId ?? null,
-                detail.languageCode ?? null,
+                detail.sermonId,
+                detail.translationId,
+                detail.languageCode,
             );
 
             el.src = src;
@@ -302,9 +292,12 @@ export default function MiniPlayerBar() {
             if (data) {
                 autoplayRef.current = false;
                 window.dispatchEvent(
-                    new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
-                        detail: data,
-                    }),
+                    new CustomEvent<AudioDocumentPlayDetail>(
+                        CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay,
+                        {
+                            detail: data,
+                        },
+                    ),
                 );
             }
         });

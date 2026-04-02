@@ -30,6 +30,7 @@ import type {
     ReadingPosition,
     HighlightCreateData,
     HighlightUpdateData,
+    AudioDocumentPlayRequest,
     SearchMode,
     DocumentReferenceSelection,
 } from '@shared/types';
@@ -70,8 +71,8 @@ const api = {
             invoke(DocumentChannels.getSermonList, langCode, options),
         getSermonsByYear: (langCode: string) => invoke(DocumentChannels.getSermonsByYear, langCode),
         getTranslations: (sermonId: string) => invoke(DocumentChannels.getTranslations, sermonId),
-        getTraductionsForSermon: (sermonId: string, langCode: string) =>
-            invoke(DocumentChannels.getTraductionsForSermon, sermonId, langCode),
+        getTranslationsForSermonInLanguage: (sermonId: string, langCode: string) =>
+            invoke(DocumentChannels.getTranslationsForSermonInLanguage, sermonId, langCode),
         getTabs: (langCode: string) => invoke(DocumentChannels.getTabs, langCode),
         saveTabs: (langCode: string, tabs: DocumentTab[]) =>
             invoke(DocumentChannels.saveTabs, langCode, tabs),
@@ -201,7 +202,8 @@ const api = {
         setTime: (audioLink: string, time: number) =>
             invoke(AudioChannels.setTime, audioLink, time),
         getLastPlay: () => invoke(AudioChannels.getLastPlay),
-        setLastPlay: (title: string) => invoke(AudioChannels.setLastPlay, title),
+        setLastPlay: (request: AudioDocumentPlayRequest) =>
+            invoke(AudioChannels.setLastPlay, request),
         cacheAudio: (audioLink: string) => invoke(AudioChannels.cacheAudio, audioLink),
     },
 

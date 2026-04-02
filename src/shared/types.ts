@@ -47,29 +47,29 @@ export interface SermonMeta {
     title: string;
     enTitle: string;
     audioLink: string | null;
-    traductionName: string | null;
+    translationName: string | null;
     dateMs: number;
     minutes: number;
     location: string | null;
     cityState: string | null;
 }
 
-export interface AvailableTraduction {
+export interface AvailableTranslation {
     translationId: number;
     languageCode: string;
     title: string;
-    traductionName: string | null;
+    translationName: string | null;
 }
 
-export interface SermonMetaWithTraductions extends SermonMeta {
-    availableTraductions: AvailableTraduction[];
+export interface SermonMetaWithTranslations extends SermonMeta {
+    availableTranslations: AvailableTranslation[];
 }
 
 export interface SermonTranslation {
     translationId: number;
     languageCode: string;
     title: string;
-    translatorName: string | null;
+    translationName: string | null;
 }
 
 export type DocumentType = 'sermon' | 'custom' | 'bible';
@@ -549,6 +549,16 @@ export interface AudioTimeAndDownload {
 export type AudioDownloadProgress = {
     document_title: string;
     percentage: number;
+};
+
+export type AudioDocumentPlayRequest = {
+    title: string;
+    audioLink: string;
+    sermonId: string;
+    translationId: number | null;
+    languageCode: string | null;
+    languageLabel: string | null;
+    autoplay?: boolean;
 };
 
 export type CurrentAudioDocumentPlay = {

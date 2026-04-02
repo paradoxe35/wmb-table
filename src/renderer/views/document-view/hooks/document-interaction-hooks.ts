@@ -7,6 +7,8 @@ import {
     CHILD_PARENT_WINDOW_EVENT,
     DOCUMENT_CONTAINER_ID,
     HIGHLIGHT_EVENT,
+    type OpenHighlightModalDetail,
+    type ShowSimilarSermonsDetail,
 } from '@renderer/utils/events';
 import type {
     BibleBook,
@@ -199,16 +201,19 @@ export function useContextMenuItems(
                         return;
                     }
 
+                    const detail: OpenHighlightModalDetail = {
+                        documentTitle,
+                        documentIdentity,
+                        paragraphs: selParagraphs,
+                        textSnippet: ref.text.slice(0, 200),
+                        languageCode,
+                    };
+
                     window.dispatchEvent(
-                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openHighlightModal, {
-                            detail: {
-                                documentTitle,
-                                documentIdentity,
-                                paragraphs: selParagraphs,
-                                textSnippet: ref.text.slice(0, 200),
-                                languageCode,
-                            },
-                        }),
+                        new CustomEvent<OpenHighlightModalDetail>(
+                            CHILD_PARENT_WINDOW_EVENT.openHighlightModal,
+                            { detail },
+                        ),
                     );
                 },
             },
@@ -249,31 +254,37 @@ export function useContextMenuItems(
                   ]
                 : [];
 
-        const similarItem: MenuProps['items'] =
-            documentType === 'sermon' && content.sermonDateMs && content.sermonTranslationId != null
-                ? [
-                      { type: 'divider' as const, key: 'divider-3' },
-                      {
-                          key: 'find-similar',
-                          label: t('Trouver des prédications similaires'),
-                          onClick: () => {
-                              const ref = buildRef();
-                              if (!ref) return;
-                              window.dispatchEvent(
-                                  new CustomEvent(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, {
-                                      detail: {
-                                          paragraphIndex: ref.ref.paragraphIndex,
-                                          translationId: content.sermonTranslationId,
-                                          sermonDate: content.sermonDateMs,
-                                          languageCode,
-                                          textSnippet: ref.text.slice(0, 200),
-                                      },
-                                  }),
-                              );
-                          },
+        const hasSimilarSermonsContext =
+            documentType === 'sermon' &&
+            content.sermonDateMs != null &&
+            content.sermonTranslationId != null;
+
+        const similarItem: MenuProps['items'] = hasSimilarSermonsContext
+            ? [
+                  { type: 'divider' as const, key: 'divider-3' },
+                  {
+                      key: 'find-similar',
+                      label: t('Trouver des prédications similaires'),
+                      onClick: () => {
+                          const ref = buildRef();
+                          if (!ref) return;
+                          const detail: ShowSimilarSermonsDetail = {
+                              paragraphIndex: ref.ref.paragraphIndex,
+                              translationId: content.sermonTranslationId!,
+                              sermonDate: content.sermonDateMs!,
+                              languageCode,
+                              textSnippet: ref.text.slice(0, 200),
+                          };
+                          window.dispatchEvent(
+                              new CustomEvent<ShowSimilarSermonsDetail>(
+                                  CHILD_PARENT_WINDOW_EVENT.showSimilarSermons,
+                                  { detail },
+                              ),
+                          );
                       },
-                  ]
-                : [];
+                  },
+              ]
+            : [];
 
         return [
             ...copyItem,
