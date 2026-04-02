@@ -1,4 +1,4 @@
-import { Button, Divider, Modal, Spin, Tag, Tooltip } from 'antd';
+import { Button, Divider, Empty, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAddDocumentTab, useModalVisible, useActiveTabTitle } from '@renderer/hooks';
@@ -10,7 +10,10 @@ import {
     selectActiveTabKey,
 } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    type OpenOtherTraductionsModalDetail,
+} from '@renderer/utils/events';
 import type { SermonTranslation } from '@shared/types';
 
 export function OtherTraductionsModal() {
@@ -26,24 +29,32 @@ export function OtherTraductionsModal() {
 
     const [translations, setTranslations] = useState<SermonTranslation[]>([]);
     const [loading, setLoading] = useState(false);
+    const [request, setRequest] = useState<OpenOtherTraductionsModalDetail | null>(null);
 
     const meta = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
-    const availableTraductions = meta?.availableTraductions ?? [];
+    const sermonId = request?.sermonId ?? meta?.sermonId;
+    const modalTitle = request?.title ?? title;
+    const availableTraductions = request?.availableTraductions ?? meta?.availableTraductions ?? [];
     const hasWithinLanguage = availableTraductions.length > 1;
 
     useEffect(() => {
-        if (!visible || !title || !meta) return;
+        if (!visible || !sermonId) return;
 
         setLoading(true);
         window.api.documents
-            .getTranslations(meta.sermonId)
+            .getTranslations(sermonId)
             .then(setTranslations)
             .catch(() => setTranslations([]))
             .finally(() => setLoading(false));
-    }, [visible, activeTab?.documentId, sermonsById]);
+    }, [sermonId, visible]);
 
     useEffect(() => {
-        const showModal = () => setVisible(true);
+        const showModal = (event: Event) => {
+            const nextRequest = (event as CustomEvent<OpenOtherTraductionsModalDetail | undefined>)
+                .detail;
+            setRequest(nextRequest ?? null);
+            setVisible(true);
+        };
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal, showModal);
         return () => {
             window.removeEventListener(
@@ -51,13 +62,13 @@ export function OtherTraductionsModal() {
                 showModal,
             );
         };
-    }, []);
+    }, [setVisible]);
 
     const handleOpen = (translationTitle: string, languageCode: string, translationId: number) => {
-        if (meta) {
+        if (sermonId) {
             addTab({
                 title: translationTitle,
-                documentId: meta.sermonId,
+                documentId: sermonId,
                 type: 'sermon',
                 languageCode,
                 translationId,
@@ -76,7 +87,11 @@ export function OtherTraductionsModal() {
 
     return (
         <Modal
-            title={<div className="mr-2">{t('Traductions du document: {{title}}', { title })}</div>}
+            title={
+                <div className="mr-2">
+                    {t('Traductions du document: {{title}}', { title: modalTitle })}
+                </div>
+            }
             footer={[]}
             open={visible}
             onOk={hide}
@@ -128,6 +143,11 @@ export function OtherTraductionsModal() {
                     <div className="flex flex-center" style={{ marginTop: '2rem' }}>
                         <Spin />
                     </div>
+                ) : translations.length === 0 && !hasWithinLanguage ? (
+                    <Empty
+                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                        description={t('Aucune autre traduction disponible')}
+                    />
                 ) : (
                     translations.map((tr, i) => (
                         <div

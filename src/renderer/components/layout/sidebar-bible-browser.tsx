@@ -152,7 +152,11 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
                             onClick={() => {
                                 if (activeBibleVersion?.abbreviation) {
                                     openChapter({
-                                        title: buildBibleDocumentTitle(book.bookName, ch),
+                                        title: buildBibleDocumentTitle(
+                                            book.bookName,
+                                            ch,
+                                            activeBibleVersion.abbreviation,
+                                        ),
                                         documentType: 'bible',
                                         bibleBook: book.bookCode,
                                         bibleChapter: ch,
@@ -188,7 +192,7 @@ export default function SidebarBibleBrowser() {
 
     const loadIndex = useCallback(() => {
         window.api.bible
-            .getIndexes()
+            .getIndexes(activeBibleVersion?.abbreviation)
             .then((flat: BibleIndex) => {
                 if (!flat || Object.keys(flat).length === 0) {
                     setNoBible(true);
@@ -213,7 +217,7 @@ export default function SidebarBibleBrowser() {
             .catch(() => {
                 setNoBible(true);
             });
-    }, []);
+    }, [activeBibleVersion?.abbreviation]);
 
     useEffect(() => {
         const versionChanged = activeBibleVersion?.abbreviation !== prevVersionRef.current;

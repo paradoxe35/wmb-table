@@ -271,10 +271,7 @@ export function switchBibleForLanguage(
  * Switch to a specific Bible version by abbreviation.
  */
 export function switchBibleVersion(abbreviation: string): BibleVersion | null {
-    const normalized = normalizeBibleAbbreviation(abbreviation);
-    const version = loadBibleIndex().find(
-        (v) => normalizeBibleAbbreviation(v.abbreviation) === normalized,
-    );
+    const version = findBibleVersion(abbreviation);
     if (!version) {
         log.warn(`Bible version '${abbreviation}' not found in index`);
         return null;
@@ -285,6 +282,41 @@ export function switchBibleVersion(abbreviation: string): BibleVersion | null {
     }
 
     return replaceActiveBible(version);
+}
+
+export function findBibleVersion(abbreviation: string): BibleVersion | null {
+    const normalized = normalizeBibleAbbreviation(abbreviation);
+    return (
+        loadBibleIndex().find((v) => normalizeBibleAbbreviation(v.abbreviation) === normalized) ??
+        null
+    );
+}
+
+export function withBibleDb<T>(
+    abbreviation: string | null | undefined,
+    reader: (db: Database.Database) => T,
+): T | null {
+    const normalized = abbreviation ? normalizeBibleAbbreviation(abbreviation) : null;
+
+    if (!normalized) {
+        return activeBibleDb ? reader(activeBibleDb) : null;
+    }
+
+    if (activeVersion && normalizeBibleAbbreviation(activeVersion.abbreviation) === normalized) {
+        return activeBibleDb ? reader(activeBibleDb) : null;
+    }
+
+    const version = findBibleVersion(normalized);
+    if (!version || !isBibleAvailable(version)) {
+        return null;
+    }
+
+    const db = openBibleDb(version);
+    try {
+        return reader(db);
+    } finally {
+        db.close();
+    }
 }
 
 /**

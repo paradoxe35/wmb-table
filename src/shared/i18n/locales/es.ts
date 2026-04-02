@@ -549,6 +549,7 @@ const es: Record<string, string> = {
     'Autres langues': 'Otros idiomas',
     'Langue: {{code}}': 'Idioma: {{code}}',
     'Ouvrir le document': 'Abrir documento',
+    'Aucune autre traduction disponible': 'No hay otras traducciones disponibles',
 
     // ── Subject select modal ──
     'Choiser un sujet': 'Elegir un tema',

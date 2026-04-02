@@ -62,7 +62,11 @@ export function resolveNextBibleChapterTarget(
 
     const nextChapter = chapterList[currentIndex + 1];
     return {
-        title: buildBibleDocumentTitle(bookEntry.bookName, nextChapter),
+        title: buildBibleDocumentTitle(
+            bookEntry.bookName,
+            nextChapter,
+            source.bibleVersionAbbreviation,
+        ),
         documentId: buildBibleDocumentId(source.bibleBook, nextChapter),
         bibleBook: source.bibleBook,
         bibleChapter: nextChapter,

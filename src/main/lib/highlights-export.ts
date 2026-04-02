@@ -117,6 +117,7 @@ function fetchBibleContext(first: HighlightItem): Partial<DocumentContext> {
     const verses = bibleRepo.getBooks({
         book: first.documentIdentity.bibleBook,
         chapter: first.documentIdentity.bibleChapter,
+        bibleVersionAbbreviation: first.documentIdentity.bibleVersionAbbreviation,
     });
 
     for (const v of verses) {

@@ -1,3 +1,5 @@
+import type { AvailableTraduction } from '@shared/types';
+
 export const EDITOR_EVENT = {
     renameNoteModal: 'rename-note-modal',
     renameNote: 'rename-note',
@@ -53,3 +55,9 @@ export const AI_DATA_EVENT = {
 } as const;
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';
+
+export type OpenOtherTraductionsModalDetail = {
+    sermonId: string;
+    title: string;
+    availableTraductions: AvailableTraduction[];
+};

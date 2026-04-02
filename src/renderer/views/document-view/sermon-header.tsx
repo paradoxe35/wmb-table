@@ -16,7 +16,10 @@ import {
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    type OpenOtherTraductionsModalDetail,
+} from '@renderer/utils/events';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
 import { useDocumentZoom } from './hooks';
@@ -82,8 +85,16 @@ export default function SermonHeader({
     }, [meta, isCurrentDocument, isPlaying, openAudioModal]);
 
     const handleOtherTraductions = useCallback(() => {
-        window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
-    }, []);
+        const detail: OpenOtherTraductionsModalDetail = {
+            sermonId: meta.sermonId,
+            title: meta.title,
+            availableTraductions,
+        };
+
+        window.dispatchEvent(
+            new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal, { detail }),
+        );
+    }, [availableTraductions, meta.sermonId, meta.title]);
 
     const handleTraductionChange = useCallback(
         (value: string | number) => {

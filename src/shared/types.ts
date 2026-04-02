@@ -171,8 +171,29 @@ export function buildBibleDocumentId(bibleBook: string, bibleChapter: string): s
     return `${bibleBook}:${bibleChapter}`;
 }
 
-export function buildBibleDocumentTitle(bookName: string, bibleChapter: string): string {
-    return `${bookName} ${bibleChapter}`;
+export function appendBibleVersionToTitle(
+    title: string,
+    bibleVersionAbbreviation?: string | null,
+): string {
+    const trimmedTitle = title.trim();
+    const normalizedAbbreviation = bibleVersionAbbreviation
+        ? normalizeBibleAbbreviation(bibleVersionAbbreviation)
+        : '';
+
+    if (!normalizedAbbreviation) {
+        return trimmedTitle;
+    }
+
+    const suffix = ` (${normalizedAbbreviation.toUpperCase()})`;
+    return trimmedTitle.endsWith(suffix) ? trimmedTitle : `${trimmedTitle}${suffix}`;
+}
+
+export function buildBibleDocumentTitle(
+    bookName: string,
+    bibleChapter: string,
+    bibleVersionAbbreviation?: string | null,
+): string {
+    return appendBibleVersionToTitle(`${bookName} ${bibleChapter}`, bibleVersionAbbreviation);
 }
 
 type TabKeyInput =
@@ -364,6 +385,7 @@ export type BookRequest = {
     book: string;
     chapter: string;
     verse?: string;
+    bibleVersionAbbreviation?: string;
 };
 
 export interface BibleSearchItem {

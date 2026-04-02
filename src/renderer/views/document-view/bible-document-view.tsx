@@ -10,7 +10,7 @@ import {
     selectActiveTabKey,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type { BibleBook, BibleIndex, BibleTab } from '@shared/types';
+import type { BibleBook, BibleIndex, BibleTab, BibleVersionInfo } from '@shared/types';
 import {
     buildBibleDocumentId,
     buildBibleDocumentTitle,
@@ -91,6 +91,8 @@ function versesToParagraphs(verses: BibleBook[]) {
         }));
 }
 
+let cachedBibleVersions: BibleVersionInfo[] | null = null;
+
 // ---------------------------------------------------------------------------
 // Chapter navigation hook
 // ---------------------------------------------------------------------------
@@ -106,10 +108,10 @@ function useChapterNavigation(activeTab: BibleTab | null) {
 
     useEffect(() => {
         window.api.bible
-            .getIndexes()
+            .getIndexes(activeTab?.bibleVersionAbbreviation)
             .then((flat) => setBibleIndex(flat ?? {}))
             .catch(() => setBibleIndex({}));
-    }, []);
+    }, [activeTab?.bibleVersionAbbreviation]);
 
     const bookEntry = useMemo(() => {
         if (!bookCode) return null;
@@ -134,7 +136,11 @@ function useChapterNavigation(activeTab: BibleTab | null) {
     const navigateToChapter = useCallback(
         (chapter: string) => {
             if (!activeTabKey || !bookCode) return;
-            const title = buildBibleDocumentTitle(bookName, chapter);
+            const title = buildBibleDocumentTitle(
+                bookName,
+                chapter,
+                activeTab?.bibleVersionAbbreviation,
+            );
             const documentId = buildBibleDocumentId(bookCode, chapter);
             const existingTab = tabs.find(
                 (t) => t.type === 'bible' && t.title === title && t.documentId === documentId,
@@ -249,11 +255,26 @@ export default function BibleDocumentView() {
     const search = useSearchHighlight();
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
-    const bibleLang = activeBibleVersion?.langCode ?? '';
+    const [allBibleVersions, setAllBibleVersions] = useState<BibleVersionInfo[]>(
+        cachedBibleVersions ?? [],
+    );
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
     const bibleVersionAbbreviation = activeTab?.bibleVersionAbbreviation ?? '';
+    const activeTabVersion = useMemo(() => {
+        if (!bibleVersionAbbreviation) {
+            return null;
+        }
+
+        return (
+            allBibleVersions.find((version) => version.abbreviation === bibleVersionAbbreviation) ??
+            (activeBibleVersion?.abbreviation === bibleVersionAbbreviation
+                ? activeBibleVersion
+                : null)
+        );
+    }, [activeBibleVersion, allBibleVersions, bibleVersionAbbreviation]);
+    const bibleLang = activeTabVersion?.langCode ?? '';
     const { verses, loading: chapterLoading } = useBibleChapterContent(
         bookCode,
         chapter,
@@ -263,14 +284,27 @@ export default function BibleDocumentView() {
     const loading = chapterLoading && verses.length === 0;
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
-    const loadedChapterKey = verses[0]
-        ? buildBibleChapterKey(verses[0].book, verses[0].chapter)
-        : null;
+    const loadedChapterKey =
+        verses.length > 0 && bookCode && chapter && bibleVersionAbbreviation
+            ? buildBibleChapterKey(bookCode, chapter, bibleVersionAbbreviation)
+            : null;
     const { restoreIdentity, readingPositionKey } = resolveBibleScrollPersistence(
         bookCode,
         chapter,
         loadedChapterKey,
+        bibleVersionAbbreviation,
     );
+
+    useEffect(() => {
+        if (cachedBibleVersions) {
+            return;
+        }
+
+        window.api.bible.getAllVersions().then((versions) => {
+            cachedBibleVersions = versions;
+            setAllBibleVersions(versions);
+        });
+    }, []);
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
         documentIdentity: activeDocumentIdentity,
@@ -414,7 +448,7 @@ export default function BibleDocumentView() {
                 bookName={bookName}
                 chapter={chapter}
                 bibleLang={bibleLang}
-                versionName={activeBibleVersion?.name}
+                versionName={activeTabVersion?.name}
             />
 
             <ParagraphList

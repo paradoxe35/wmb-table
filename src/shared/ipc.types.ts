@@ -402,7 +402,7 @@ export interface InvokeChannelMap {
     [NotesChannels.exportPdf]: { args: [string]; return: string };
 
     // Bible
-    [BibleChannels.getIndexes]: { args: []; return: BibleIndex };
+    [BibleChannels.getIndexes]: { args: [string?]; return: BibleIndex };
     [BibleChannels.getBooks]: { args: [BookRequest]; return: BibleBook[] };
     [BibleChannels.search]: { args: [string, number, string?]; return: BibleSearchResult };
     [BibleChannels.getVersions]: { args: []; return: BibleVersionInfo[] };

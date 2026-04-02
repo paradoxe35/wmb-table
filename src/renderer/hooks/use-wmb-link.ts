@@ -123,7 +123,11 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                 }
                 case 'bible': {
                     openDocumentRequest({
-                        title: buildBibleDocumentTitle(ref.bookName, ref.chapter),
+                        title: buildBibleDocumentTitle(
+                            ref.bookName,
+                            ref.chapter,
+                            ref.bibleVersionAbbreviation,
+                        ),
                         documentType: 'bible',
                         bibleBook: ref.bookCode,
                         bibleChapter: ref.chapter,

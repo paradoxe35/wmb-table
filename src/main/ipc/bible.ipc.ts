@@ -18,8 +18,8 @@ function toBibleVersionInfo(v: bibleService.BibleVersion): BibleVersionInfo {
 }
 
 export function registerBibleHandlers(): void {
-    registerHandler(BibleChannels.getIndexes, async () => {
-        return bibleRepo.getIndexes();
+    registerHandler(BibleChannels.getIndexes, async (_event, bibleVersionAbbreviation) => {
+        return bibleRepo.getIndexes(bibleVersionAbbreviation);
     });
 
     registerHandler(BibleChannels.getBooks, async (_event, request) => {

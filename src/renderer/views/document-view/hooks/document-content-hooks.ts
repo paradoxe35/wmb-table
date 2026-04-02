@@ -7,6 +7,7 @@ import type {
     SermonContent,
     SermonTab,
 } from '@shared/types';
+import { normalizeBibleAbbreviation } from '@shared/types';
 
 const MAX_CACHE_ENTRIES = 50;
 
@@ -30,8 +31,12 @@ export function buildSermonContentKey(
     return `${languageCode}:${translationId}:${sermonId}`;
 }
 
-export function buildBibleChapterKey(book: string, chapter: string) {
-    return `${book}:${chapter}`;
+export function buildBibleChapterKey(book: string, chapter: string, versionAbbreviation?: string) {
+    const normalizedVersion = versionAbbreviation
+        ? normalizeBibleAbbreviation(versionAbbreviation)
+        : '';
+
+    return normalizedVersion ? `${normalizedVersion}:${book}:${chapter}` : `${book}:${chapter}`;
 }
 
 export function buildReadingPositionKey(documentType: DocumentType, documentKey: string) {
@@ -83,12 +88,13 @@ export function resolveBibleScrollPersistence(
     bookCode?: string,
     chapter?: string,
     loadedChapterKey?: string | null,
+    bibleVersionAbbreviation?: string,
 ): ScrollPersistenceState {
-    if (!bookCode || !chapter) {
+    if (!bookCode || !chapter || !bibleVersionAbbreviation) {
         return { restoreIdentity: null, readingPositionKey: null };
     }
 
-    const chapterKey = buildBibleChapterKey(bookCode, chapter);
+    const chapterKey = buildBibleChapterKey(bookCode, chapter, bibleVersionAbbreviation);
     return {
         restoreIdentity: loadedChapterKey === chapterKey ? chapterKey : null,
         readingPositionKey: buildReadingPositionKey('bible', chapterKey),
@@ -209,7 +215,7 @@ export function useBibleChapterContent(
             return;
         }
 
-        const cacheKey = `${versionAbbreviation ?? ''}:${buildBibleChapterKey(book, chapter)}`;
+        const cacheKey = buildBibleChapterKey(book, chapter, versionAbbreviation);
         const cached = bibleCache.get(cacheKey);
         if (cached) {
             setVerses(cached);
@@ -218,10 +224,15 @@ export function useBibleChapterContent(
         }
 
         let cancelled = false;
+        setVerses([]);
         setLoading(true);
 
         window.api.bible
-            .getBooks({ book, chapter })
+            .getBooks({
+                book,
+                chapter,
+                bibleVersionAbbreviation: versionAbbreviation,
+            })
             .then((nextVerses) => {
                 if (cancelled) return;
                 boundedSet(bibleCache, cacheKey, nextVerses);

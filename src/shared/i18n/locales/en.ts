@@ -544,6 +544,7 @@ const en: Record<string, string> = {
     'Autres langues': 'Other languages',
     'Langue: {{code}}': 'Language: {{code}}',
     'Ouvrir le document': 'Open document',
+    'Aucune autre traduction disponible': 'No other translations available',
 
     // ── Subject select modal ──
     'Choiser un sujet': 'Choose a subject',

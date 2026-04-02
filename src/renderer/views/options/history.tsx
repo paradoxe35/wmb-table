@@ -9,7 +9,12 @@ import {
     ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { DocumentType, HistoryData, HistoryDataItem } from '@shared/types';
+import {
+    appendBibleVersionToTitle,
+    type DocumentType,
+    type HistoryData,
+    type HistoryDataItem,
+} from '@shared/types';
 import { useAppStore } from '@renderer/stores';
 import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
 import { HISTORY_EVENT } from '@renderer/utils/events';
@@ -40,7 +45,10 @@ function useHistoryItemOpen() {
 
             if (documentIdentity.documentType === 'bible') {
                 openBibleChapter({
-                    title: item.documentTitle,
+                    title: appendBibleVersionToTitle(
+                        item.documentTitle,
+                        documentIdentity.bibleVersionAbbreviation,
+                    ),
                     ...documentIdentity,
                 });
                 return;
@@ -78,6 +86,16 @@ export default function History() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
     const openHistoryItem = useHistoryItemOpen();
+    const getItemTitle = useCallback((item: HistoryDataItem) => {
+        if (item.documentIdentity.documentType !== 'bible') {
+            return item.documentTitle;
+        }
+
+        return appendBibleVersionToTitle(
+            item.documentTitle,
+            item.documentIdentity.bibleVersionAbbreviation,
+        );
+    }, []);
 
     const loadHistories = useCallback(() => {
         if (contentLanguage) {
@@ -187,7 +205,7 @@ export default function History() {
                                         >
                                             <div className="history-item__header">
                                                 <Text className="history-item__title">
-                                                    {item.documentTitle}
+                                                    {getItemTitle(item)}
                                                 </Text>
                                                 <Tag
                                                     color={meta.color}

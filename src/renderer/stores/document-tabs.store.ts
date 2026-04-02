@@ -37,7 +37,6 @@ interface DocumentTabsState {
     updateTabZoom(key: string, zoom: number): void;
     updateTabTranslationId(key: string, translationId: number): void;
     updateBibleTab(key: string, tab: BibleTabUpdate): void;
-    updateBibleTabsVersion(bibleVersionAbbreviation: string): void;
 }
 
 const matchKey = (tab: DocumentTab, key: string) => getTabKey(tab) === key;
@@ -214,19 +213,6 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
                               nextTab.bibleVersionAbbreviation,
                           ),
                           scrollY: 0,
-                      }
-                    : tab,
-            ),
-        })),
-
-    updateBibleTabsVersion: (bibleVersionAbbreviation) =>
-        set((state) => ({
-            tabs: state.tabs.map((tab) =>
-                tab.type === 'bible'
-                    ? {
-                          ...tab,
-                          bibleVersionAbbreviation:
-                              normalizeBibleAbbreviation(bibleVersionAbbreviation),
                       }
                     : tab,
             ),

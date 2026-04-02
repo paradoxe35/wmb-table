@@ -42,7 +42,7 @@ export function BibleContent({
 
     const loadIndex = useCallback(() => {
         window.api.bible
-            .getIndexes()
+            .getIndexes(activeBibleVersion?.abbreviation)
             .then((flat) => {
                 if (!flat || Object.keys(flat).length === 0) {
                     setNoBible(true);
@@ -225,6 +225,7 @@ function BookContent({
     onClick?: (id: string) => void;
     verseMetaContent?: boolean;
 }) {
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const [chaptersKey, setChaptersKey] = useState(1);
     const [verses, setVerses] = useState<BibleBook[]>();
 
@@ -233,24 +234,23 @@ function BookContent({
             .getBooks({
                 book: bookDetail.book,
                 chapter: chaptersKey.toString(),
+                bibleVersionAbbreviation: activeBibleVersion?.abbreviation,
             })
             .then(setVerses);
-    }, [chaptersKey, bookDetail.book]);
+    }, [activeBibleVersion?.abbreviation, chaptersKey, bookDetail.book]);
 
     const sortedVerses = useMemo(
         () => (verses ? verses.slice().sort((a, b) => +a.verse - +b.verse) : []),
         [verses],
     );
 
-    const chapterList = useMemo(
-        () =>
-            bookDetail.chapters
-                .split(',')
-                .map((c) => c.trim())
-                .filter(Boolean)
-                .sort((a, b) => +a - +b),
-        [bookDetail.chapters],
-    );
+    const chapterList = useMemo(() => {
+        return bookDetail.chapters
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean)
+            .sort((a, b) => +a - +b);
+    }, [bookDetail.chapters]);
 
     return (
         <Collapse

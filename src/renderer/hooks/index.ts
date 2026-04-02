@@ -287,7 +287,6 @@ export function useOpenDocumentRequest() {
     const openDocument = useOpenDocument();
     const openCustomDocument = useOpenCustomDocument();
     const openBibleChapter = useOpenBibleChapter();
-    const updateBibleTabsVersion = useDocumentTabsStore((s) => s.updateBibleTabsVersion);
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
 
     return useCallback(
@@ -301,22 +300,13 @@ export function useOpenDocumentRequest() {
                 await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
                 const v = await window.api.bible.getActiveVersion();
                 setActiveBibleVersion(v);
-                if (v?.abbreviation) {
-                    updateBibleTabsVersion(v.abbreviation);
-                }
                 openBibleChapter(request);
                 return;
             }
 
             openDocument(request.title, request.sermonId, request.translationId);
         },
-        [
-            openBibleChapter,
-            openCustomDocument,
-            openDocument,
-            setActiveBibleVersion,
-            updateBibleTabsVersion,
-        ],
+        [openBibleChapter, openCustomDocument, openDocument, setActiveBibleVersion],
     );
 }
 
