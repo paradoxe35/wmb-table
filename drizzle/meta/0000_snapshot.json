@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "4e1180da-6a93-40b9-99bf-5f4f1070f2df",
+    "id": "067fbc76-f896-4fdd-965b-8dc6e45c60e3",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -488,6 +488,13 @@
                 },
                 "content_language": {
                     "name": "content_language",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "active_bible_version_abbreviation": {
+                    "name": "active_bible_version_abbreviation",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
