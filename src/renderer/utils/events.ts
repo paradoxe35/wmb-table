@@ -38,6 +38,7 @@ export const HISTORY_EVENT = {
 
 export const LANGUAGE_EVENT = {
     openLibrary: 'open-library',
+    catalogChanged: 'language-catalog-changed',
 } as const;
 
 export const TTS_EVENT = {

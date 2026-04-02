@@ -18,6 +18,7 @@ import { useAppStore } from '@renderer/stores';
 import { useThemeStore, type FontSizeOption } from '@renderer/stores/theme.store';
 import { UI_LANGUAGE_OPTIONS, type UiLanguagePreference } from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
+import { LANGUAGE_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
 
@@ -50,17 +51,24 @@ export default function GeneralTab() {
         });
     }, []);
 
-    useEffect(() => {
+    const refreshLanguageSummary = useCallback(() => {
         window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
             setInstalledCount(langs.length);
-            if (contentLanguage) {
-                const lang = langs.find((l) => l.code === contentLanguage);
-                if (lang) setLangName(lang.language);
+            if (!contentLanguage) {
+                setLangName('');
+                return;
             }
+
+            const lang = langs.find((item) => item.code === contentLanguage);
+            setLangName(lang?.language ?? '');
         });
+    }, [contentLanguage]);
+
+    useEffect(() => {
+        refreshLanguageSummary();
         window.api.app.getUpdateStatus().then(setUpdateInfo);
         refreshBackup();
-    }, [contentLanguage, refreshBackup]);
+    }, [refreshBackup, refreshLanguageSummary]);
 
     // Stay in sync when backup status changes
     useEffect(() => {
@@ -77,6 +85,14 @@ export default function GeneralTab() {
     useEffect(() => {
         return window.api.on.notifyForNewUpdate(setUpdateInfo);
     }, []);
+
+    useEffect(() => {
+        const refresh = () => refreshLanguageSummary();
+        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
+        return () => {
+            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
+        };
+    }, [refreshLanguageSummary]);
 
     const openDocs = useCallback(() => {
         window.api.app.openExternal(DOCS_LINK).catch(() => {

@@ -126,6 +126,8 @@ export default function LibraryModal() {
     const [searchQuery, setSearchQuery] = useState('');
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const setContentLanguage = useAppStore((s) => s.setContentLanguage);
+    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
     const [, startTransition] = useTransition();
 
     const refresh = useCallback(() => {
@@ -214,6 +216,13 @@ export default function LibraryModal() {
         }
     }, [visible, refresh]);
 
+    const setTabs = useDocumentTabsStore((s) => s.setTabs);
+    const setLoaded = useAppStore((s) => s.setLoaded);
+    const setSermons = useSermonStore((s) => s.setSermons);
+    const notifyLibraryChanged = useCallback(() => {
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.catalogChanged));
+    }, []);
+
     useEffect(() => {
         const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
             setDownloadProgress((prev) => ({ ...prev, [p.langCode]: p.percentage }));
@@ -225,24 +234,21 @@ export default function LibraryModal() {
                 return next;
             });
             refresh();
+            notifyLibraryChanged();
             message.success(t('Langue téléchargée avec succès'));
         });
         return () => {
             unsub1();
             unsub2();
         };
-    }, [refresh]);
-
-    const setTabs = useDocumentTabsStore((s) => s.setTabs);
-    const setLoaded = useAppStore((s) => s.setLoaded);
+    }, [notifyLibraryChanged, refresh, t]);
 
     const handleSelectLanguage = async (langCode: string) => {
         try {
             // Save current tabs for the old language before switching
             const previousLang = contentLanguage;
             if (previousLang) {
-                const currentTabs = useDocumentTabsStore.getState().tabs;
-                await window.api.documents.saveTabs(previousLang, currentTabs);
+                await window.api.documents.saveTabs(previousLang, tabs);
             }
 
             await window.api.app.setContentLanguage(langCode);
@@ -272,12 +278,13 @@ export default function LibraryModal() {
             } else {
                 await window.api.app.setContentLanguage(null);
                 setContentLanguage(null);
-                useAppStore.getState().setActiveBibleVersion(null);
-                useSermonStore.getState().setSermons([]);
+                setActiveBibleVersion(null);
+                setSermons([]);
                 setTabs([]);
             }
         }
         refresh();
+        notifyLibraryChanged();
         message.success(t('Langue supprimée'));
     };
 

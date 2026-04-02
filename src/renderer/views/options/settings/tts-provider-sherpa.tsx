@@ -61,6 +61,7 @@ interface SherpaConfigProps extends ProviderConfigProps {
 export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigProps) {
     const { t } = useTranslation();
     const cfg = settings.providers.sherpa;
+    const setProviders = useTtsStore((s) => s.setProviders);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const langCode = contentLanguage?.split('-')[0].toLowerCase() ?? '';
 
@@ -98,7 +99,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 });
                 message.success(t('Voix installée'));
                 loadModels();
-                window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
+                window.api.tts.getProviders().then(setProviders);
             } else if (p.status === 'error') {
                 setDownloads((prev) => {
                     const next = new Map(prev);
@@ -114,7 +115,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 });
             }
         });
-    }, [loadModels, t]);
+    }, [loadModels, setProviders, t]);
 
     // ── Actions ──
 
@@ -139,7 +140,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 await window.api.tts.deleteProviderModel('sherpa', modelName);
                 message.success(t('Voix supprimée'));
                 loadModels();
-                window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
+                window.api.tts.getProviders().then(setProviders);
                 if (cfg.model === modelName || cfg.voiceId?.startsWith(`${modelName}:`)) {
                     onUpdate({
                         providers: {
@@ -158,7 +159,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
             }
         },
-        [loadModels, cfg.model, cfg.voiceId, onUpdate, settings, t],
+        [cfg.model, cfg.voiceId, loadModels, onUpdate, setProviders, settings, t],
     );
 
     // ── Derived data ──

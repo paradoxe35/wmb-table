@@ -13,9 +13,21 @@ export default function LibraryTab() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langs, setLangs] = useState<InstalledLanguage[]>([]);
 
-    useEffect(() => {
+    const refreshInstalledLanguages = useCallback(() => {
         window.api.languages.getInstalled().then(setLangs);
     }, []);
+
+    useEffect(() => {
+        refreshInstalledLanguages();
+    }, [refreshInstalledLanguages]);
+
+    useEffect(() => {
+        const refresh = () => refreshInstalledLanguages();
+        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
+        return () => {
+            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
+        };
+    }, [refreshInstalledLanguages]);
 
     const openManager = useCallback(() => {
         window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));

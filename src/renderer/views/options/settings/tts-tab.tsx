@@ -88,6 +88,7 @@ export default function TtsTab() {
     const settings = useTtsStore((s) => s.settings);
     const setSettings = useTtsStore((s) => s.setSettings);
     const setProviders = useTtsStore((s) => s.setProviders);
+    const triggerRecheck = useTtsStore((s) => s.triggerRecheck);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [cacheSize, setCacheSize] = useState(0);
     const [previewing, setPreviewing] = useState(false);
@@ -163,7 +164,7 @@ export default function TtsTab() {
                     // Refresh provider info and recheck compatibility after API key save
                     if (hasApiKeyChange) {
                         await window.api.tts.getProviders().then(setProviders);
-                        useTtsStore.getState().triggerRecheck();
+                        triggerRecheck();
                     }
                     // Resolve voice for current language on provider switch or API key change
                     if (
@@ -181,7 +182,7 @@ export default function TtsTab() {
                 debouncedSave(partial);
             }
         },
-        [settings, setSettings, setProviders, debouncedSave, contentLanguage],
+        [settings, setSettings, setProviders, debouncedSave, contentLanguage, triggerRecheck],
     );
 
     const handleClearCache = useCallback(async () => {
