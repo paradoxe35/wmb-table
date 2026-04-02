@@ -1,13 +1,13 @@
 import React from 'react';
-import {
-    type SermonOpenTarget,
-    useDocumentPresentation,
-    useOpenDocumentRequest,
-} from '@renderer/hooks';
-import { buildSermonDocumentIdentity } from '@shared/types';
+import { useOpenDocumentRequest } from '@renderer/hooks';
+import type { SermonDocumentIdentity } from '@shared/types';
+
+type DocumentViewTarget = Omit<SermonDocumentIdentity, 'documentType'> & {
+    title: string;
+    onItemClick?: () => void;
+};
 
 export const useDocumentViewOpen = () => {
-    const { buildOpenRequest } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
 
     const onClick = ({
@@ -16,14 +16,15 @@ export const useDocumentViewOpen = () => {
         translationId,
         languageCode,
         onItemClick,
-    }: SermonOpenTarget & { onItemClick?: () => void }) => {
+    }: DocumentViewTarget) => {
         onItemClick?.();
-        openDocumentRequest(
-            buildOpenRequest(
-                title,
-                buildSermonDocumentIdentity(sermonId, translationId, languageCode),
-            ),
-        );
+        openDocumentRequest({
+            title,
+            documentType: 'sermon',
+            sermonId,
+            translationId,
+            languageCode,
+        });
     };
 
     return onClick;
@@ -41,15 +42,15 @@ const DocumentViewer: React.FC<{
 
     return (
         <span
-            onClick={() =>
+            onClick={() => {
                 viewDocument({
                     title: name,
                     sermonId,
                     translationId,
                     languageCode,
                     onItemClick,
-                })
-            }
+                });
+            }}
         >
             {children}
         </span>

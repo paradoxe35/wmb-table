@@ -115,6 +115,8 @@ export function getSermonListDeduplicated(langCode: string): SermonMetaWithTradu
         const primary = rows[0];
         const availableTraductions = rows.map((r) => ({
             translationId: r.translationId,
+            languageCode: r.languageCode,
+            title: r.title,
             traductionName: r.traductionName,
         }));
         result.push({ ...primary, availableTraductions });

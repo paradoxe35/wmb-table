@@ -13,7 +13,11 @@ import {
     selectActiveTab,
 } from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
-import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
+import {
+    useOpenDocumentRequest,
+    useOpenCustomDocument,
+    useFormatSermonDate,
+} from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import SidebarBibleBrowser from './sidebar-bible-browser';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
@@ -362,7 +366,7 @@ function SermonsTab() {
 }
 
 const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
-    const openDocument = useOpenDocument();
+    const openDocumentRequest = useOpenDocumentRequest();
     const activeTab = useDocumentTabsStore(selectActiveTab);
     const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
     const isEnglish = useAppStore((s) => s.contentLanguage) === 'en';
@@ -393,14 +397,15 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                                 active={activeTabKeyStr === sermonKey}
                                 isEnglish={isEnglish}
                                 formatDate={formatDate}
-                                onClick={() =>
-                                    openDocument({
+                                onClick={() => {
+                                    openDocumentRequest({
                                         title: d.title,
+                                        documentType: 'sermon',
                                         sermonId: d.sermonId,
                                         translationId: d.translationId,
                                         languageCode: d.languageCode,
-                                    })
-                                }
+                                    });
+                                }}
                             />
                         );
                     }}

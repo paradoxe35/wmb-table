@@ -42,7 +42,7 @@ export default function SermonHeader({
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
-    const switchSermonTabTranslation = useDocumentTabsStore((s) => s.switchSermonTabTranslation);
+    const updateSermonTab = useDocumentTabsStore((s) => s.updateSermonTab);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
@@ -92,7 +92,12 @@ export default function SermonHeader({
     }, [meta, isCurrentDocument, isPlaying, openAudioModal]);
 
     const handleOtherTraductions = useCallback(() => {
+        if (!activeTabKey) {
+            return;
+        }
+
         const detail: OpenOtherTraductionsModalDetail = {
+            tabKey: activeTabKey,
             sermonId: meta.sermonId,
             title: meta.title,
             availableTraductions,
@@ -101,23 +106,37 @@ export default function SermonHeader({
         window.dispatchEvent(
             new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal, { detail }),
         );
-    }, [availableTraductions, meta.sermonId, meta.title]);
+    }, [activeTabKey, availableTraductions, meta.sermonId, meta.title]);
 
     const handleTraductionChange = useCallback(
         (value: string | number) => {
-            if (activeTabKey) switchSermonTabTranslation(activeTabKey, Number(value));
+            if (!activeTabKey) {
+                return;
+            }
+
+            const nextTraduction = availableTraductions.find(
+                (tr) => tr.translationId === Number(value),
+            );
+            if (!nextTraduction) {
+                return;
+            }
+
+            updateSermonTab(activeTabKey, {
+                title: nextTraduction.title,
+                documentId: meta.sermonId,
+                translationId: nextTraduction.translationId,
+                languageCode: nextTraduction.languageCode,
+            });
         },
-        [activeTabKey, switchSermonTabTranslation],
+        [activeTabKey, availableTraductions, meta.sermonId, updateSermonTab],
     );
 
-    const traductionOptions = useMemo(
-        () =>
-            availableTraductions.map((t) => ({
-                label: t.traductionName ?? `T${t.translationId}`,
-                value: t.translationId,
-            })),
-        [availableTraductions],
-    );
+    const traductionOptions = useMemo(() => {
+        return availableTraductions.map((t) => ({
+            label: t.traductionName ?? `T${t.translationId}`,
+            value: t.translationId,
+        }));
+    }, [availableTraductions]);
 
     return (
         <div className="sermon-header">

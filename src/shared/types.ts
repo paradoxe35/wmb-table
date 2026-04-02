@@ -56,6 +56,8 @@ export interface SermonMeta {
 
 export interface AvailableTraduction {
     translationId: number;
+    languageCode: string;
+    title: string;
     traductionName: string | null;
 }
 

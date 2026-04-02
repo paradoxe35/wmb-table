@@ -262,34 +262,6 @@ export function useAddDocumentTab() {
     );
 }
 
-export function useOpenDocument() {
-    const addTab = useAddDocumentTab();
-    const setMainView = useAppStore((s) => s.setMainView);
-    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
-
-    return useCallback(
-        ({ title, sermonId, translationId, languageCode }: SermonOpenTarget) => {
-            snapshotActiveDocumentScroll(updateTabScroll);
-            addTab({
-                title,
-                documentId: sermonId,
-                type: 'sermon',
-                languageCode,
-                translationId,
-            });
-            setMainView('document');
-        },
-        [addTab, setMainView, updateTabScroll],
-    );
-}
-
-export type SermonOpenTarget = {
-    title: string;
-    sermonId: string;
-    translationId: number;
-    languageCode: string;
-};
-
 export function useOpenCustomDocument() {
     const addTab = useAddDocumentTab();
     const setMainView = useAppStore((s) => s.setMainView);
@@ -334,10 +306,12 @@ export function useOpenBibleChapter() {
 }
 
 export function useOpenDocumentRequest() {
-    const openDocument = useOpenDocument();
+    const addTab = useAddDocumentTab();
     const openCustomDocument = useOpenCustomDocument();
     const openBibleChapter = useOpenBibleChapter();
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
+    const setMainView = useAppStore((s) => s.setMainView);
+    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 
     return useCallback(
         async (request: OpenDocumentRequest) => {
@@ -354,9 +328,24 @@ export function useOpenDocumentRequest() {
                 return;
             }
 
-            openDocument(request);
+            snapshotActiveDocumentScroll(updateTabScroll);
+            addTab({
+                title: request.title,
+                documentId: request.sermonId,
+                type: 'sermon',
+                languageCode: request.languageCode,
+                translationId: request.translationId,
+            });
+            setMainView('document');
         },
-        [openBibleChapter, openCustomDocument, openDocument, setActiveBibleVersion],
+        [
+            addTab,
+            openBibleChapter,
+            openCustomDocument,
+            setActiveBibleVersion,
+            setMainView,
+            updateTabScroll,
+        ],
     );
 }
 

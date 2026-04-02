@@ -1,49 +1,44 @@
 import { Button, Divider, Empty, Modal, Spin, Tag, Tooltip } from 'antd';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-    useDocumentPresentation,
-    useModalVisible,
-    useActiveTabTitle,
-    useOpenDocumentRequest,
-} from '@renderer/hooks';
-import {
-    useDocumentTabsStore,
-    useSermonStore,
-    selectActiveSermonTab,
-    selectActiveTabKey,
-} from '@renderer/stores';
+import { useModalVisible, useOpenDocumentRequest } from '@renderer/hooks';
+import { useDocumentTabsStore } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import {
     CHILD_PARENT_WINDOW_EVENT,
     type OpenOtherTraductionsModalDetail,
 } from '@renderer/utils/events';
 import { getLanguageDisplayName } from '@shared/tts.types';
-import { buildSermonDocumentIdentity, type SermonTranslation } from '@shared/types';
+import {
+    buildSermonDocumentIdentity,
+    type AvailableTraduction,
+    type SermonTranslation,
+} from '@shared/types';
 
 export function OtherTraductionsModal() {
     const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
-    const activeTab = useDocumentTabsStore(selectActiveSermonTab);
-    const sermonsById = useSermonStore((s) => s.sermonsById);
-    const title = useActiveTabTitle();
-    const { buildOpenRequest } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
-    const switchSermonTabTranslation = useDocumentTabsStore((s) => s.switchSermonTabTranslation);
-    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const updateSermonTab = useDocumentTabsStore((s) => s.updateSermonTab);
 
     const [translations, setTranslations] = useState<SermonTranslation[]>([]);
     const [loading, setLoading] = useState(false);
     const [request, setRequest] = useState<OpenOtherTraductionsModalDetail | null>(null);
 
-    const meta = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
-    const sermonId = request?.sermonId ?? meta?.sermonId;
-    const modalTitle = request?.title ?? title;
-    const availableTraductions = request?.availableTraductions ?? meta?.availableTraductions ?? [];
+    const sermonId = request?.sermonId ?? null;
+    const modalTitle = request?.title ?? '';
+    const availableTraductions = request?.availableTraductions ?? [];
     const hasWithinLanguage = availableTraductions.length > 1;
 
+    const hideModal = useCallback(() => {
+        setRequest(null);
+        hide();
+    }, [hide]);
+
     useEffect(() => {
-        if (!visible || !sermonId) return;
+        if (!visible || !sermonId) {
+            return;
+        }
 
         setLoading(true);
         window.api.documents
@@ -71,21 +66,24 @@ export function OtherTraductionsModal() {
 
     const handleOpen = (translationTitle: string, languageCode: string, translationId: number) => {
         if (sermonId) {
-            openDocumentRequest(
-                buildOpenRequest(
-                    translationTitle,
-                    buildSermonDocumentIdentity(sermonId, translationId, languageCode),
-                ),
-            );
+            openDocumentRequest({
+                title: translationTitle,
+                ...buildSermonDocumentIdentity(sermonId, translationId, languageCode),
+            });
         }
-        hide();
+        hideModal();
     };
 
-    const handleSwitchTraduction = (translationId: number) => {
-        if (activeTabKey) {
-            switchSermonTabTranslation(activeTabKey, translationId);
+    const handleSwitchTraduction = (traduction: AvailableTraduction) => {
+        if (request) {
+            updateSermonTab(request.tabKey, {
+                title: traduction.title,
+                documentId: request.sermonId,
+                translationId: traduction.translationId,
+                languageCode: traduction.languageCode,
+            });
         }
-        hide();
+        hideModal();
     };
 
     return (
@@ -97,8 +95,8 @@ export function OtherTraductionsModal() {
             }
             footer={[]}
             open={visible}
-            onOk={hide}
-            onCancel={hide}
+            onOk={hideModal}
+            onCancel={hideModal}
         >
             <div style={{ overflow: 'auto', maxHeight: '400px' }}>
                 {hasWithinLanguage && (
@@ -129,7 +127,7 @@ export function OtherTraductionsModal() {
                                 </div>
                                 <Tooltip title={t('Basculer vers cette traduction')}>
                                     <Button
-                                        onClick={() => handleSwitchTraduction(tr.translationId)}
+                                        onClick={() => handleSwitchTraduction(tr)}
                                         shape="circle"
                                         icon={<EyeOutlined />}
                                     />

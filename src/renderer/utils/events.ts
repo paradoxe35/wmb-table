@@ -57,6 +57,7 @@ export const AI_DATA_EVENT = {
 export const DOCUMENT_CONTAINER_ID = 'page-container';
 
 export type OpenOtherTraductionsModalDetail = {
+    tabKey: string;
     sermonId: string;
     title: string;
     availableTraductions: AvailableTraduction[];

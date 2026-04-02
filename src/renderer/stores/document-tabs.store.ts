@@ -36,7 +36,7 @@ interface DocumentTabsState {
     updateTabScroll(key: string, scrollY?: number, scrollX?: number): void;
     updateTabZoom(key: string, zoom: number): void;
     updateTabTitle(key: string, title: string): void;
-    switchSermonTabTranslation(key: string, translationId: number): void;
+    updateSermonTab(key: string, tab: SermonTabUpdate): void;
     updateBibleTab(key: string, tab: BibleTabUpdate): void;
 }
 
@@ -57,6 +57,7 @@ type BibleTabUpdate = Pick<
     BibleTab,
     'title' | 'documentId' | 'bibleBook' | 'bibleChapter' | 'bibleVersionAbbreviation'
 >;
+type SermonTabUpdate = Pick<SermonTab, 'title' | 'documentId' | 'translationId' | 'languageCode'>;
 
 function createTab(tab: NewDocumentTab): DocumentTab {
     if (tab.type === 'bible') {
@@ -200,11 +201,21 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
             ),
         })),
 
-    switchSermonTabTranslation: (key, translationId) =>
+    updateSermonTab: (key, nextTab) =>
         set((state) => ({
-            tabs: state.tabs.map((tab) =>
-                matchKey(tab, key) && tab.type === 'sermon' ? { ...tab, translationId } : tab,
-            ),
+            tabs: state.tabs.map((tab) => {
+                if (matchKey(tab, key) && tab.type === 'sermon') {
+                    return {
+                        ...tab,
+                        title: nextTab.title,
+                        documentId: nextTab.documentId,
+                        translationId: nextTab.translationId,
+                        languageCode: nextTab.languageCode,
+                    };
+                }
+
+                return tab;
+            }),
         })),
 
     updateBibleTab: (key, nextTab) =>
