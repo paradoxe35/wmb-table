@@ -3,7 +3,7 @@ import { List, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
 import { buildSermonDocumentIdentity, getTabKey } from '@shared/types';
-import DocumentViewer from '@renderer/components/viewer/document-viewer';
+import SermonDocumentLink from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
 import { useSearchStore } from '@renderer/stores';
 import { useDocumentPresentation } from '@renderer/hooks';
@@ -32,7 +32,7 @@ function SnippetRow({
     onNavigate: (paragraphIndex: number, matchIndex: number) => void;
 }) {
     return (
-        <DocumentViewer
+        <SermonDocumentLink
             onItemClick={() => onNavigate(snippet.paragraphIndex, snippet.matchIndex)}
             name={hitTitle}
             sermonId={sermonId}
@@ -50,7 +50,7 @@ function SnippetRow({
                     maxChars={350}
                 />
             </div>
-        </DocumentViewer>
+        </SermonDocumentLink>
     );
 }
 
@@ -129,7 +129,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             <div className="w-100">
                 <div className="search-result-header">
                     <a className="underline">
-                        <DocumentViewer
+                        <SermonDocumentLink
                             onItemClick={handleTitleClick}
                             name={displayTitle}
                             sermonId={hit.sermonId}
@@ -137,7 +137,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                             languageCode={hit.languageCode}
                         >
                             {displayTitle}
-                        </DocumentViewer>
+                        </SermonDocumentLink>
                     </a>
                     {hit.hitCount > 0 && (
                         <Text type="secondary" className="search-result-hit-count">

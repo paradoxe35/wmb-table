@@ -7,7 +7,7 @@ type DocumentViewTarget = Omit<SermonDocumentIdentity, 'documentType'> & {
     onItemClick?: () => void;
 };
 
-const DocumentViewer: React.FC<{
+const SermonDocumentLink: React.FC<{
     name: string;
     sermonId: string;
     translationId: number;
@@ -51,4 +51,4 @@ const DocumentViewer: React.FC<{
     );
 };
 
-export default DocumentViewer;
+export default SermonDocumentLink;

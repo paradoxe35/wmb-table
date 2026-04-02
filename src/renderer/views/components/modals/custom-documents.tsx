@@ -10,7 +10,7 @@ import {
     UploadOutlined,
 } from '@ant-design/icons';
 
-import { useModalVisible, useIpcRequestWithLoader, useOpenCustomDocument } from '@renderer/hooks';
+import { useModalVisible, useIpcRequestWithLoader, useOpenDocumentRequest } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useAppStore, useCustomDocumentsStore } from '@renderer/stores';
@@ -117,7 +117,7 @@ function DocumentList({
     onAdd: () => void;
 }) {
     const { t } = useTranslation();
-    const openCustomDocument = useOpenCustomDocument();
+    const openDocumentRequest = useOpenDocumentRequest();
     const [searchTerm, setSearchTerm] = useState('');
     const ipcRequestWithLoader = useIpcRequestWithLoader();
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
@@ -193,7 +193,11 @@ function DocumentList({
                         document={doc}
                         installedLanguages={installedLanguages}
                         onView={() => {
-                            openCustomDocument(doc.title, doc.id);
+                            openDocumentRequest({
+                                title: doc.title,
+                                documentType: 'custom',
+                                customDocumentId: doc.id,
+                            });
                             onClose();
                         }}
                         onDelete={() => handleDeletion(doc)}

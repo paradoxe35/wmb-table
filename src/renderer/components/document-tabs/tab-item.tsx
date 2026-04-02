@@ -51,7 +51,7 @@ function useTabAudioState(tab: DocumentTab) {
 }
 
 function getTabLabel(tab: DocumentTab) {
-    if (tab.type === 'bible') {
+    if (tab.type !== 'sermon') {
         return tab.title;
     }
 
@@ -59,7 +59,9 @@ function getTabLabel(tab: DocumentTab) {
 }
 
 function getTabTooltip(tab: DocumentTab) {
-    if (tab.type === 'bible') return tab.title;
+    if (tab.type !== 'sermon') {
+        return tab.title;
+    }
     return `${tab.title} - ${formatShortDate(tab.documentId)}`;
 }
 

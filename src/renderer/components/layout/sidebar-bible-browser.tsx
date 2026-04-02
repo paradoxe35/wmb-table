@@ -3,7 +3,7 @@ import { Button, Divider, Empty, Progress, Select, Space, Typography, message } 
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { buildBibleDocumentTitle, type BibleIndex, type BibleIndexValue } from '@shared/types';
-import { useOpenBibleChapter } from '@renderer/hooks';
+import { useOpenDocumentRequest } from '@renderer/hooks';
 import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 import { useAppStore } from '@renderer/stores';
 import ContainerScrollY from '../container-scroll-y';
@@ -110,7 +110,7 @@ const BookListItem = memo(function BookListItem({
 // ---------------------------------------------------------------------------
 
 function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) {
-    const openChapter = useOpenBibleChapter();
+    const openDocumentRequest = useOpenDocumentRequest();
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const { t } = useTranslation();
 
@@ -151,7 +151,7 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
                             size="small"
                             onClick={() => {
                                 if (activeBibleVersion?.abbreviation) {
-                                    openChapter({
+                                    openDocumentRequest({
                                         title: buildBibleDocumentTitle(
                                             book.bookName,
                                             ch,

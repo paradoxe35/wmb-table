@@ -13,11 +13,7 @@ import {
     selectActiveTab,
 } from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
-import {
-    useOpenDocumentRequest,
-    useOpenCustomDocument,
-    useFormatSermonDate,
-} from '@renderer/hooks';
+import { useOpenDocumentRequest, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import SidebarBibleBrowser from './sidebar-bible-browser';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
@@ -82,7 +78,7 @@ const DocumentsAdded = () => {
     const { t } = useTranslation();
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const activeTab = useDocumentTabsStore(selectActiveTab);
-    const openCustomDocument = useOpenCustomDocument();
+    const openDocumentRequest = useOpenDocumentRequest();
     const activeCustomDocumentId = activeTab?.type === 'custom' ? activeTab.documentId : null;
 
     if (customDocuments.length === 0) {
@@ -128,7 +124,13 @@ const DocumentsAdded = () => {
                         <div
                             key={d.id || i}
                             className={`sidebar-item ${activeCustomDocumentId === d.id ? 'sidebar-item--active' : ''}`}
-                            {...interactiveProps(() => openCustomDocument(d.title, d.id))}
+                            {...interactiveProps(() =>
+                                openDocumentRequest({
+                                    title: d.title,
+                                    documentType: 'custom',
+                                    customDocumentId: d.id,
+                                }),
+                            )}
                             title={d.title}
                         >
                             <div className="sidebar-item__left">

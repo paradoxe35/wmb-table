@@ -12,7 +12,6 @@ import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     BibleVersionInfo,
-    BibleDocumentIdentity,
     DocumentReference,
     DocumentIdentity,
     DocumentTab,
@@ -262,53 +261,8 @@ export function useAddDocumentTab() {
     );
 }
 
-export function useOpenCustomDocument() {
-    const addTab = useAddDocumentTab();
-    const setMainView = useAppStore((s) => s.setMainView);
-    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
-
-    return useCallback(
-        (title: string, documentId: string) => {
-            snapshotActiveDocumentScroll(updateTabScroll);
-            addTab({
-                title,
-                documentId,
-                type: 'custom',
-            });
-            setMainView('document');
-        },
-        [addTab, setMainView, updateTabScroll],
-    );
-}
-
-type OpenBibleChapterRequest = BibleDocumentIdentity & { title: string };
-
-export function useOpenBibleChapter() {
-    const addTab = useAddDocumentTab();
-    const setMainView = useAppStore((s) => s.setMainView);
-    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
-
-    return useCallback(
-        ({ title, bibleBook, bibleChapter, bibleVersionAbbreviation }: OpenBibleChapterRequest) => {
-            snapshotActiveDocumentScroll(updateTabScroll);
-            addTab({
-                title,
-                documentId: buildBibleDocumentId(bibleBook, bibleChapter),
-                type: 'bible',
-                bibleBook,
-                bibleChapter,
-                bibleVersionAbbreviation,
-            });
-            setMainView('document');
-        },
-        [addTab, setMainView, updateTabScroll],
-    );
-}
-
 export function useOpenDocumentRequest() {
     const addTab = useAddDocumentTab();
-    const openCustomDocument = useOpenCustomDocument();
-    const openBibleChapter = useOpenBibleChapter();
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
@@ -316,7 +270,13 @@ export function useOpenDocumentRequest() {
     return useCallback(
         async (request: OpenDocumentRequest) => {
             if (request.documentType === 'custom') {
-                openCustomDocument(request.title, request.customDocumentId);
+                snapshotActiveDocumentScroll(updateTabScroll);
+                addTab({
+                    title: request.title,
+                    documentId: request.customDocumentId,
+                    type: 'custom',
+                });
+                setMainView('document');
                 return;
             }
 
@@ -324,7 +284,16 @@ export function useOpenDocumentRequest() {
                 await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
                 const v = await window.api.bible.getActiveVersion();
                 setActiveBibleVersion(v);
-                openBibleChapter(request);
+                snapshotActiveDocumentScroll(updateTabScroll);
+                addTab({
+                    title: request.title,
+                    documentId: buildBibleDocumentId(request.bibleBook, request.bibleChapter),
+                    type: 'bible',
+                    bibleBook: request.bibleBook,
+                    bibleChapter: request.bibleChapter,
+                    bibleVersionAbbreviation: request.bibleVersionAbbreviation,
+                });
+                setMainView('document');
                 return;
             }
 
@@ -338,14 +307,7 @@ export function useOpenDocumentRequest() {
             });
             setMainView('document');
         },
-        [
-            addTab,
-            openBibleChapter,
-            openCustomDocument,
-            setActiveBibleVersion,
-            setMainView,
-            updateTabScroll,
-        ],
+        [addTab, setActiveBibleVersion, setMainView, updateTabScroll],
     );
 }
 
