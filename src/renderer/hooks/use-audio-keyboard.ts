@@ -10,6 +10,8 @@ type AudioControls = ReturnType<typeof useAudioControls>;
  * ArrowUp / ArrowDown    — volume +5% / -5%
  */
 export function useAudioKeyboard(controls: AudioControls, enabled: boolean): void {
+    const volume = useAudioStore((s) => s.volume);
+
     useEffect(() => {
         if (!enabled) return;
 
@@ -36,14 +38,12 @@ export function useAudioKeyboard(controls: AudioControls, enabled: boolean): voi
                     break;
                 case 'ArrowUp': {
                     e.preventDefault();
-                    const vol = useAudioStore.getState().volume;
-                    controls.changeVolume(Math.min(1, vol + 0.05));
+                    controls.changeVolume(Math.min(1, volume + 0.05));
                     break;
                 }
                 case 'ArrowDown': {
                     e.preventDefault();
-                    const vol = useAudioStore.getState().volume;
-                    controls.changeVolume(Math.max(0, vol - 0.05));
+                    controls.changeVolume(Math.max(0, volume - 0.05));
                     break;
                 }
             }
@@ -51,5 +51,5 @@ export function useAudioKeyboard(controls: AudioControls, enabled: boolean): voi
 
         window.addEventListener('keydown', handler, true);
         return () => window.removeEventListener('keydown', handler, true);
-    }, [enabled, controls]);
+    }, [enabled, controls, volume]);
 }

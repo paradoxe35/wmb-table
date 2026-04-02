@@ -29,19 +29,20 @@ export default function DocumentTabs() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const resetTts = useTtsStore((s) => s.reset);
+    const ttsDocumentId = useTtsStore((s) => s.documentId);
+    const ttsStatus = useTtsStore((s) => s.status);
     const { modal } = AntApp.useApp();
 
     useTabPersistence(tabs, contentLanguage);
 
     const stopTtsIfPlaying = useCallback(
         (closedTabKey: string) => {
-            const tts = useTtsStore.getState();
-            if (tts.documentId === closedTabKey && tts.status !== 'idle') {
+            if (ttsDocumentId === closedTabKey && ttsStatus !== 'idle') {
                 stopAllTtsPlayback();
                 resetTts();
             }
         },
-        [resetTts],
+        [resetTts, ttsDocumentId, ttsStatus],
     );
 
     // Close the active tab with Ctrl+W / Cmd+W (only when document view is active)

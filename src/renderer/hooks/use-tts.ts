@@ -197,11 +197,11 @@ export function useTts(
 
         const hadLanguage = !!prevLanguageRef.current;
         prevLanguageRef.current = language;
-        if (hadLanguage && useTtsStore.getState().status !== 'idle') {
+        if (hadLanguage && status !== 'idle') {
             stopAllTtsPlayback();
             reset();
         }
-    }, [language, reset]);
+    }, [language, reset, status]);
 
     const play = useCallback(async () => {
         if (!settings || !paragraphs.length) {
