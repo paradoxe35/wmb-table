@@ -8,6 +8,7 @@ import {
     type TtsHighlightMode,
     type TtsSegment,
     type TtsSettings,
+    type TtsPlaybackState,
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
     hasSpeakableContent,
@@ -19,6 +20,17 @@ interface UseTtsOptions {
     introText?: string;
     getSegmentLabel?: (paragraphIndex: number) => string;
 }
+
+type BrowserPlaybackActions = {
+    markCompletedNaturally(): void;
+    reset(): void;
+    setPlaybackState(state: TtsPlaybackState): void;
+};
+
+type PlaybackActions = BrowserPlaybackActions & {
+    setDocumentId(documentId: string | null): void;
+    setSegments(segments: TtsSegment[]): void;
+};
 
 // ── Segmentation ──
 
@@ -85,14 +97,16 @@ function clearBrowserTtsTimer(): void {
     }
 }
 
+function getTtsStatusSnapshot(): 'idle' | 'loading' | 'playing' | 'paused' | 'error' {
+    return useTtsStore.getState().status;
+}
+
 function playBrowserSegment(
     segments: TtsSegment[],
     index: number,
     settings: TtsSettings,
-    actions: Pick<
-        ReturnType<typeof useTtsStore.getState>,
-        'markCompletedNaturally' | 'reset' | 'setPlaybackState'
-    >,
+    actions: BrowserPlaybackActions,
+    getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error',
 ): void {
     clearBrowserTtsTimer();
 
@@ -114,15 +128,15 @@ function playBrowserSegment(
 
     browserTts.setOnSegmentEnd(() => {
         // Check if we were stopped while speaking
-        if (useTtsStore.getState().status === 'idle') return;
+        if (getStatus() === 'idle') return;
 
         if (gapMs > 0) {
             browserTtsGapTimer = setTimeout(
-                () => playBrowserSegment(segments, index + 1, settings, actions),
+                () => playBrowserSegment(segments, index + 1, settings, actions, getStatus),
                 gapMs,
             );
         } else {
-            playBrowserSegment(segments, index + 1, settings, actions);
+            playBrowserSegment(segments, index + 1, settings, actions, getStatus);
         }
     });
     browserTts.speak(segments[index].text, cfg?.voiceId, {
@@ -140,10 +154,8 @@ function startPlaybackAtIndex(
     settings: TtsSettings,
     language: string,
     documentId: string,
-    actions: Pick<
-        ReturnType<typeof useTtsStore.getState>,
-        'markCompletedNaturally' | 'reset' | 'setDocumentId' | 'setPlaybackState' | 'setSegments'
-    >,
+    actions: PlaybackActions,
+    getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error',
 ): void {
     actions.setSegments(segments);
     actions.setDocumentId(documentId);
@@ -156,7 +168,7 @@ function startPlaybackAtIndex(
     });
 
     if (settings.activeProvider === 'browser') {
-        playBrowserSegment(segments, startIndex, settings, actions);
+        playBrowserSegment(segments, startIndex, settings, actions, getStatus);
     } else {
         window.api.tts.startPlayback(segments, language, startIndex).catch(() => {
             message.error(
@@ -178,6 +190,9 @@ export function useTts(
     const settings = useTtsStore((s) => s.settings);
     const status = useTtsStore((s) => s.status);
     const currentDocId = useTtsStore((s) => s.documentId);
+    const currentSegmentIndex = useTtsStore((s) => s.currentSegmentIndex);
+    const totalSegments = useTtsStore((s) => s.totalSegments);
+    const segments = useTtsStore((s) => s.segments);
     const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
     const languageSupported = useTtsStore((s) => s.languageSupported);
     const incompatibleMessage = useTtsStore((s) => s.incompatibleMessage);
@@ -236,20 +251,28 @@ export function useTts(
         }
 
         // Resume at saved position (skips intro naturally), clamp if stale
-        const store = useTtsStore.getState();
+        const { lastStoppedDocumentId, lastStoppedSegmentIndex } = useTtsStore.getState();
         const savedIndex =
-            store.lastStoppedDocumentId === documentId && store.lastStoppedSegmentIndex > 0
-                ? store.lastStoppedSegmentIndex
+            lastStoppedDocumentId === documentId && lastStoppedSegmentIndex > 0
+                ? lastStoppedSegmentIndex
                 : 0;
         const startIndex = savedIndex < allSegments.length ? savedIndex : 0;
 
-        startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId, {
-            markCompletedNaturally,
-            reset,
-            setDocumentId,
-            setPlaybackState,
-            setSegments,
-        });
+        startPlaybackAtIndex(
+            allSegments,
+            startIndex,
+            settings,
+            language,
+            documentId,
+            {
+                markCompletedNaturally,
+                reset,
+                setDocumentId,
+                setPlaybackState,
+                setSegments,
+            },
+            getTtsStatusSnapshot,
+        );
     }, [
         documentId,
         language,
@@ -264,7 +287,6 @@ export function useTts(
     ]);
 
     const pause = useCallback(() => {
-        const state = useTtsStore.getState();
         if (activeProvider === 'browser') {
             browserTts.pause();
         } else {
@@ -273,14 +295,13 @@ export function useTts(
         }
         setPlaybackState({
             status: 'paused',
-            currentSegmentIndex: state.currentSegmentIndex,
-            totalSegments: state.totalSegments,
+            currentSegmentIndex,
+            totalSegments,
             provider: activeProvider ?? DEFAULT_TTS_PROVIDER,
         });
-    }, [activeProvider, setPlaybackState]);
+    }, [activeProvider, currentSegmentIndex, setPlaybackState, totalSegments]);
 
     const resume = useCallback(() => {
-        const state = useTtsStore.getState();
         if (activeProvider === 'browser') {
             browserTts.resume();
         } else {
@@ -289,11 +310,11 @@ export function useTts(
         }
         setPlaybackState({
             status: 'playing',
-            currentSegmentIndex: state.currentSegmentIndex,
-            totalSegments: state.totalSegments,
+            currentSegmentIndex,
+            totalSegments,
             provider: activeProvider ?? DEFAULT_TTS_PROVIDER,
         });
-    }, [activeProvider, setPlaybackState]);
+    }, [activeProvider, currentSegmentIndex, setPlaybackState, totalSegments]);
 
     const stop = useCallback(() => {
         clearBrowserTtsTimer();
@@ -308,11 +329,17 @@ export function useTts(
                 browserTts.cancel();
                 const segs = useTtsStore.getState().segments;
                 if (segs.length && settings) {
-                    playBrowserSegment(segs, i, settings, {
-                        markCompletedNaturally,
-                        reset,
-                        setPlaybackState,
-                    });
+                    playBrowserSegment(
+                        segs,
+                        i,
+                        settings,
+                        {
+                            markCompletedNaturally,
+                            reset,
+                            setPlaybackState,
+                        },
+                        getTtsStatusSnapshot,
+                    );
                 }
             } else {
                 window.api.tts.seekToSegment(i);
@@ -358,13 +385,21 @@ export function useTts(
                 return;
             }
 
-            startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId, {
-                markCompletedNaturally,
-                reset,
-                setDocumentId,
-                setPlaybackState,
-                setSegments,
-            });
+            startPlaybackAtIndex(
+                allSegments,
+                startIndex,
+                settings,
+                language,
+                documentId,
+                {
+                    markCompletedNaturally,
+                    reset,
+                    setDocumentId,
+                    setPlaybackState,
+                    setSegments,
+                },
+                getTtsStatusSnapshot,
+            );
         },
         [
             documentId,
@@ -386,17 +421,21 @@ export function useTts(
     useEffect(() => {
         if (contentKeyRef.current !== contentKey) {
             contentKeyRef.current = contentKey;
-            const store = useTtsStore.getState();
-            if (
-                store.documentId === documentId &&
-                (store.status === 'playing' || store.status === 'paused')
-            ) {
-                const currentSeg = store.segments[store.currentSegmentIndex];
+            if (currentDocId === documentId && (status === 'playing' || status === 'paused')) {
+                const currentSeg = segments[currentSegmentIndex];
                 const paragraphIdx = currentSeg?.paragraphIndex ?? 0;
                 playFromParagraph(Math.max(1, paragraphIdx));
             }
         }
-    }, [contentKey, documentId, playFromParagraph]);
+    }, [
+        contentKey,
+        currentDocId,
+        currentSegmentIndex,
+        documentId,
+        playFromParagraph,
+        segments,
+        status,
+    ]);
 
     const isThisDocument = currentDocId === documentId;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');

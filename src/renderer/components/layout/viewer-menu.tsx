@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FundViewOutlined, ProfileOutlined } from '@ant-design/icons';
 import { Menu } from 'antd';
@@ -10,15 +10,13 @@ export default function ViewerMenu() {
     const { t } = useTranslation();
     const mainView = useAppStore((s) => s.mainView);
     const setMainView = useAppStore((s) => s.setMainView);
-    const mainViewRef = useRef(mainView);
-    mainViewRef.current = mainView;
 
     const showOptions = useCallback(() => setMainView('options'), [setMainView]);
     const showDocument = useCallback(() => setMainView('document'), [setMainView]);
 
     useEffect(() => {
         return window.api.on.switchOnMenu(() => {
-            setMainView(mainViewRef.current === 'options' ? 'document' : 'options');
+            setMainView(useAppStore.getState().mainView === 'options' ? 'document' : 'options');
         });
     }, [setMainView]);
 

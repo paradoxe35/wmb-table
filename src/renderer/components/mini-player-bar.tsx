@@ -30,23 +30,19 @@ export default function MiniPlayerBar() {
     const loadAudio = useAudioStore((s) => s.loadAudio);
     const openModal = useAudioStore((s) => s.openModal);
     const resetTts = useTtsStore((s) => s.reset);
-    const ttsStatus = useTtsStore((s) => s.status);
 
     const controls = useAudioControls();
 
     const autoplayRef = useRef(true);
+
     const originAudioLinkRef = useRef(originAudioLink);
     originAudioLinkRef.current = originAudioLink;
+
     const sermonIdRef = useRef(sermonId);
     sermonIdRef.current = sermonId;
+
     const titleRef = useRef(title);
     titleRef.current = title;
-    const playbackRateRef = useRef(playbackRate);
-    playbackRateRef.current = playbackRate;
-    const volumeRef = useRef(volume);
-    volumeRef.current = volume;
-    const ttsStatusRef = useRef(ttsStatus);
-    ttsStatusRef.current = ttsStatus;
 
     // Throttled time save
     const saveTime = useCallback(
@@ -72,7 +68,7 @@ export default function MiniPlayerBar() {
         const onLoadedMetadata = () => setDuration(el.duration);
         const onPlay = () => {
             // Stop TTS when sermon audio starts
-            if (ttsStatusRef.current !== 'idle') {
+            if (useTtsStore.getState().status !== 'idle') {
                 stopAllTtsPlayback();
                 resetTts();
             }
@@ -184,8 +180,8 @@ export default function MiniPlayerBar() {
 
             el.src = src;
             el.load();
-            el.playbackRate = playbackRateRef.current;
-            el.volume = volumeRef.current;
+            el.playbackRate = useAudioStore.getState().playbackRate;
+            el.volume = useAudioStore.getState().volume;
 
             if (autoplayRef.current) {
                 // Wait for the element to be ready before playing
