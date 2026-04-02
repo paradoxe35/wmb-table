@@ -12,7 +12,6 @@ import {
     selectActiveTabKey,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import { type SermonContent } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
 import DocumentBody from './document-body';
 import {
@@ -28,10 +27,6 @@ import {
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 import { buildSegmentAnnouncement } from '@shared/tts.types';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 interface DocumentParagraph {
     paragraphIndex: number;
@@ -54,10 +49,6 @@ function parseContentToParagraphs(content: string): DocumentParagraph[] {
         content: text,
     }));
 }
-
-// ---------------------------------------------------------------------------
-// Header
-// ---------------------------------------------------------------------------
 
 function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
     const { t } = useTranslation();
@@ -85,10 +76,6 @@ function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof u
         </div>
     );
 }
-
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
 
 export default function CustomDocumentView() {
     const activeTab = useDocumentTabsStore(selectActiveCustomTab);
@@ -130,34 +117,20 @@ export default function CustomDocumentView() {
         !!restoreIdentity,
     );
 
-    // Build a minimal SermonContent-like object for context menu
-    const contentForMenu = useMemo((): SermonContent | null => {
-        if (!docContent) return null;
-        return {
-            meta: {
-                id: customDoc?.id ?? '',
-                translationId: 0,
-                languageCode: '',
-                sermonId: customDoc?.id ?? '',
-                title: docContent.title,
-                enTitle: docContent.title,
-                audioLink: null,
-                traductionName: null,
-                dateMs: 0,
-                minutes: 0,
-                location: null,
-                cityState: null,
-            },
-            paragraphs: paragraphs.map((p) => ({
-                paragraphIndex: p.paragraphIndex,
-                translationId: 0,
-                sermonId: 0,
-                content: p.content,
-            })),
-        };
-    }, [docContent, paragraphs, customDoc]);
+    const contextMenuContent = useMemo(() => {
+        if (!docContent || !customDoc || !activeDocumentIdentity) {
+            return null;
+        }
 
-    const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'custom');
+        return {
+            documentTitle: docContent.title,
+            documentIdentity: activeDocumentIdentity,
+            languageCode: docContent.languageCode || '',
+            paragraphs,
+        };
+    }, [docContent, customDoc, activeDocumentIdentity, paragraphs]);
+
+    const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef, 'custom');
     const { highlightsByParagraph } = useDocumentHighlights(
         docContent?.title ?? null,
         customDoc ? (activeDocumentIdentity ?? undefined) : undefined,

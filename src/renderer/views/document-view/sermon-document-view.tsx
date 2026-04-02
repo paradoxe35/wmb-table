@@ -31,8 +31,6 @@ export default function SermonDocumentView() {
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
-    const contextMenuItems = useContextMenuItems(content, contextTargetRef);
-
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const sermonsById = useSermonStore((s) => s.sermonsById);
@@ -77,6 +75,22 @@ export default function SermonDocumentView() {
         introText: ttsIntroText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
     });
+    const contextMenuContent = useMemo(() => {
+        if (!content || !activeDocumentIdentity) {
+            return null;
+        }
+
+        return {
+            documentTitle: content.meta.title,
+            documentIdentity: activeDocumentIdentity,
+            languageCode: content.meta.languageCode,
+            paragraphs: ttsParagraphs,
+            sermonDateMs: content.meta.dateMs,
+            sermonTranslationId: content.meta.translationId,
+        };
+    }, [content, activeDocumentIdentity, ttsParagraphs]);
+
+    const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef);
 
     const { activeParagraphIndex } = useMatchNavigation(
         containerRef,

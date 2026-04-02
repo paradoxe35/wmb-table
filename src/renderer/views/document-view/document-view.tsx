@@ -15,6 +15,7 @@ import CustomDocumentView from './custom-document-view';
 import BibleDocumentView from './bible-document-view';
 import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
+import { getDocumentIdentityKey } from '@shared/types';
 
 export default function DocumentView() {
     const tabType = useDocumentTabsStore(selectActiveTabType);
@@ -44,17 +45,18 @@ export default function DocumentView() {
     }, [tabs.length, sermons, addTab]);
 
     // Record history when the active document changes (works for all document types)
-    const prevTabKeyRef = useRef<string | null>(null);
+    const prevDocumentIdentityKeyRef = useRef<string | null>(null);
     useEffect(() => {
-        if (!contentLanguage || !activeTab || !activeTabKey || !activeDocumentIdentity) {
+        if (!contentLanguage || !activeTab || !activeDocumentIdentity) {
             return;
         }
 
-        if (activeTabKey === prevTabKeyRef.current) {
+        const documentIdentityKey = getDocumentIdentityKey(activeDocumentIdentity);
+        if (documentIdentityKey === prevDocumentIdentityKeyRef.current) {
             return;
         }
 
-        prevTabKeyRef.current = activeTabKey;
+        prevDocumentIdentityKeyRef.current = documentIdentityKey;
 
         window.api.app
             .addHistoryEntry(contentLanguage, {
@@ -64,7 +66,7 @@ export default function DocumentView() {
             .then(() => {
                 window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
             });
-    }, [activeTabKey, activeTab, activeDocumentIdentity, contentLanguage]);
+    }, [activeTab, activeDocumentIdentity, contentLanguage]);
 
     const readingMode = useAppStore((s) => s.readingMode);
     const setReadingMode = useAppStore((s) => s.setReadingMode);

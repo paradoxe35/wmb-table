@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 
 export interface BibleVersionState {
     versions: BibleVersionInfo[];
@@ -23,6 +23,7 @@ export function useBibleVersions(): BibleVersionState {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const activeVersion = activeBibleVersion?.abbreviation;
+    const updateBibleTabsVersion = useDocumentTabsStore((s) => s.updateBibleTabsVersion);
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
 
@@ -56,9 +57,12 @@ export function useBibleVersions(): BibleVersionState {
             await window.api.bible.switchVersion(abbreviation);
             const v = await window.api.bible.getActiveVersion();
             useAppStore.getState().setActiveBibleVersion(v);
+            if (v?.abbreviation) {
+                updateBibleTabsVersion(v.abbreviation);
+            }
             refresh();
         },
-        [refresh],
+        [refresh, updateBibleTabsVersion],
     );
 
     const handleDownload = useCallback((abbreviation: string) => {

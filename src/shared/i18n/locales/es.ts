@@ -609,6 +609,8 @@ const es: Record<string, string> = {
 
     // ── Bible content ──
     'Aucune Bible disponible pour cette langue': 'No hay Biblia disponible para este idioma',
+    'Aucune version biblique active disponible.':
+        'No hay ninguna versión bíblica activa disponible.',
     Ancien: 'Antiguo',
     Testament: 'Testamento',
     'Ajouter à un sujet': 'Añadir a un tema',

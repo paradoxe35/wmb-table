@@ -96,11 +96,18 @@ export function buildBibleTools(
                 const subjectId = rawSubjectId.trim();
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
-                if (langError) return langError;
+                if (langError) {
+                    return langError;
+                }
+
+                const resolvedAbbreviation = abbreviation ?? defaultAbbreviation;
+                if (!resolvedAbbreviation) {
+                    return { error: 'Aucune version biblique active disponible.' };
+                }
 
                 const result = aiBibleRepo.getPassage({
                     ...rest,
-                    abbreviation: abbreviation ?? defaultAbbreviation,
+                    abbreviation: resolvedAbbreviation,
                     languageCode: lang,
                 });
                 if ('error' in result) return result;
@@ -126,7 +133,7 @@ export function buildBibleTools(
                             documentType: 'bible',
                             bibleBook: verse.book,
                             bibleChapter: verse.chapter,
-                            bibleVersionAbbreviation: abbreviation ?? defaultAbbreviation,
+                            bibleVersionAbbreviation: resolvedAbbreviation,
                         },
                     },
                     bibleContent,

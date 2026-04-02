@@ -97,6 +97,7 @@ export type BibleTab = BaseDocumentTab & {
     type: 'bible';
     bibleBook: string;
     bibleChapter: string;
+    bibleVersionAbbreviation: string;
 };
 
 export type CustomTab = BaseDocumentTab & {
@@ -115,7 +116,7 @@ export type DocumentIdentity =
           documentType: 'bible';
           bibleBook: string;
           bibleChapter: string;
-          bibleVersionAbbreviation?: string;
+          bibleVersionAbbreviation: string;
       }
     | {
           documentType: 'custom';
@@ -124,12 +125,16 @@ export type DocumentIdentity =
 
 export type BibleDocumentIdentity = Extract<DocumentIdentity, { documentType: 'bible' }>;
 
+export function normalizeBibleVersionAbbreviation(bibleVersionAbbreviation: string): string {
+    return bibleVersionAbbreviation.trim().toLowerCase();
+}
+
 export function getDocumentIdentityKey(identity: DocumentIdentity): string {
     switch (identity.documentType) {
         case 'sermon':
             return `sermon:${identity.sermonId}:${identity.translationId}`;
         case 'bible':
-            return `bible:${identity.bibleBook}:${identity.bibleChapter}:${identity.bibleVersionAbbreviation ?? ''}`;
+            return `bible:${identity.bibleBook}:${identity.bibleChapter}:${normalizeBibleVersionAbbreviation(identity.bibleVersionAbbreviation)}`;
         case 'custom':
             return `custom:${identity.customDocumentId}`;
     }
@@ -151,6 +156,7 @@ export function getDocumentIdentityFromTab(tab: DocumentTab): DocumentIdentity {
                 documentType: 'bible',
                 bibleBook: tab.bibleBook,
                 bibleChapter: tab.bibleChapter,
+                bibleVersionAbbreviation: tab.bibleVersionAbbreviation,
             };
         case 'sermon':
             return {

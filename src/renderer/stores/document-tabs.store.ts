@@ -7,7 +7,12 @@ import type {
     DocumentTab,
     SermonTab,
 } from '@shared/types';
-import { getDocumentIdentityFromTab, getTabKey, tabMatches } from '@shared/types';
+import {
+    getDocumentIdentityFromTab,
+    getTabKey,
+    normalizeBibleVersionAbbreviation,
+    tabMatches,
+} from '@shared/types';
 import { useAppStore } from './app.store';
 
 export type PendingNavigation = {
@@ -32,6 +37,7 @@ interface DocumentTabsState {
     updateTabZoom(key: string, zoom: number): void;
     updateTabTranslationId(key: string, translationId: number): void;
     updateBibleTab(key: string, tab: BibleTabUpdate): void;
+    updateBibleTabsVersion(bibleVersionAbbreviation: string): void;
 }
 
 const matchKey = (tab: DocumentTab, key: string) => getTabKey(tab) === key;
@@ -40,11 +46,17 @@ type NewSermonTab = Pick<
     SermonTab,
     'title' | 'documentId' | 'type' | 'languageCode' | 'translationId'
 >;
-type NewBibleTab = Pick<BibleTab, 'title' | 'documentId' | 'type' | 'bibleBook' | 'bibleChapter'>;
+type NewBibleTab = Pick<
+    BibleTab,
+    'title' | 'documentId' | 'type' | 'bibleBook' | 'bibleChapter' | 'bibleVersionAbbreviation'
+>;
 type NewCustomTab = Pick<CustomTab, 'title' | 'documentId' | 'type'>;
 type NewDocumentTab = NewSermonTab | NewBibleTab | NewCustomTab;
 
-type BibleTabUpdate = Pick<BibleTab, 'title' | 'documentId' | 'bibleBook' | 'bibleChapter'>;
+type BibleTabUpdate = Pick<
+    BibleTab,
+    'title' | 'documentId' | 'bibleBook' | 'bibleChapter' | 'bibleVersionAbbreviation'
+>;
 
 function createTab(tab: NewDocumentTab): DocumentTab {
     if (tab.type === 'bible') {
@@ -55,6 +67,9 @@ function createTab(tab: NewDocumentTab): DocumentTab {
             documentId: tab.documentId,
             bibleBook: tab.bibleBook,
             bibleChapter: tab.bibleChapter,
+            bibleVersionAbbreviation: normalizeBibleVersionAbbreviation(
+                tab.bibleVersionAbbreviation,
+            ),
         };
     }
 
@@ -180,7 +195,23 @@ export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
                           documentId: nextTab.documentId,
                           bibleBook: nextTab.bibleBook,
                           bibleChapter: nextTab.bibleChapter,
+                          bibleVersionAbbreviation: normalizeBibleVersionAbbreviation(
+                              nextTab.bibleVersionAbbreviation,
+                          ),
                           scrollY: 0,
+                      }
+                    : tab,
+            ),
+        })),
+
+    updateBibleTabsVersion: (bibleVersionAbbreviation) =>
+        set((state) => ({
+            tabs: state.tabs.map((tab) =>
+                tab.type === 'bible'
+                    ? {
+                          ...tab,
+                          bibleVersionAbbreviation:
+                              normalizeBibleVersionAbbreviation(bibleVersionAbbreviation),
                       }
                     : tab,
             ),

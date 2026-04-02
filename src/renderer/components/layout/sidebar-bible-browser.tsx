@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Divider, Empty, Progress, Select, Space, Typography } from 'antd';
+import { Button, Divider, Empty, Progress, Select, Space, Typography, message } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { buildBibleDocumentTitle, type BibleIndex, type BibleIndexValue } from '@shared/types';
@@ -111,6 +111,7 @@ const BookListItem = memo(function BookListItem({
 
 function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) {
     const openChapter = useOpenBibleChapter();
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const { t } = useTranslation();
 
     return (
@@ -148,14 +149,20 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
                         <Button
                             key={ch}
                             size="small"
-                            onClick={() =>
-                                openChapter({
-                                    title: buildBibleDocumentTitle(book.bookName, ch),
-                                    documentType: 'bible',
-                                    bibleBook: book.bookCode,
-                                    bibleChapter: ch,
-                                })
-                            }
+                            onClick={() => {
+                                if (activeBibleVersion?.abbreviation) {
+                                    openChapter({
+                                        title: buildBibleDocumentTitle(book.bookName, ch),
+                                        documentType: 'bible',
+                                        bibleBook: book.bookCode,
+                                        bibleChapter: ch,
+                                        bibleVersionAbbreviation: activeBibleVersion.abbreviation,
+                                    });
+
+                                    return;
+                                }
+                                message.warning(t('Aucune version biblique active disponible.'));
+                            }}
                             style={{ width: '100%' }}
                         >
                             {ch}

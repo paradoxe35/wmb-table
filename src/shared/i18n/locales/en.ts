@@ -604,6 +604,7 @@ const en: Record<string, string> = {
 
     // ── Bible content ──
     'Aucune Bible disponible pour cette langue': 'No Bible available for this language',
+    'Aucune version biblique active disponible.': 'No active Bible version is available.',
     Ancien: 'Old',
     Testament: 'Testament',
     'Ajouter à un sujet': 'Add to a subject',

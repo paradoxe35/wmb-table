@@ -14,13 +14,14 @@ describe('Bible TTS continuation', () => {
                 type: 'bible',
                 bibleBook: 'LUK',
                 bibleChapter: '1',
+                bibleVersionAbbreviation: 'KJV',
             },
             'bible:LUK:1',
         );
 
         const nextTarget = resolveNextBibleChapterTarget(lukeOne, {
-            Luke: { book: 'LUK', chapters: '1,2,3' },
-            Revelation: { book: 'REV', chapters: '1,2,3,10,11' },
+            Luke: { book: 'LUK', chapters: '1,2,3', verses: '', testament: 'N' },
+            Revelation: { book: 'REV', chapters: '1,2,3,10,11', verses: '', testament: 'N' },
         });
 
         expect(nextTarget).toEqual({
@@ -28,6 +29,7 @@ describe('Bible TTS continuation', () => {
             documentId: 'LUK:2',
             bibleBook: 'LUK',
             bibleChapter: '2',
+            bibleVersionAbbreviation: 'KJV',
         });
     });
 
@@ -40,12 +42,13 @@ describe('Bible TTS continuation', () => {
                 type: 'bible',
                 bibleBook: 'REV',
                 bibleChapter: '22',
+                bibleVersionAbbreviation: 'KJV',
             },
             'bible:REV:22',
         );
 
         const nextTarget = resolveNextBibleChapterTarget(revelationTwentyTwo, {
-            Revelation: { book: 'REV', chapters: '1,2,22' },
+            Revelation: { book: 'REV', chapters: '1,2,22', verses: '', testament: 'N' },
         });
 
         expect(nextTarget).toBeNull();

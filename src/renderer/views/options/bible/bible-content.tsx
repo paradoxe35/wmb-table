@@ -1,6 +1,17 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Collapse, Empty, List, Segmented, Space, Spin, Typography, Dropdown } from 'antd';
+import {
+    Button,
+    Collapse,
+    Empty,
+    List,
+    Segmented,
+    Space,
+    Spin,
+    Typography,
+    Dropdown,
+    message,
+} from 'antd';
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
 import type {
     BibleBook,
@@ -25,6 +36,7 @@ export function BibleContent({
     compact?: boolean;
 }) {
     const { t } = useTranslation();
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const [bibleIndex, setBibleIndex] = useState<Record<string, BibleIndex>>({});
     const [noBible, setNoBible] = useState(false);
 
@@ -49,8 +61,6 @@ export function BibleContent({
                 setNoBible(true);
             });
     }, []);
-
-    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
 
     useEffect(() => {
         loadIndex();
@@ -390,7 +400,14 @@ const VerseItem = memo(function VerseItem({
 
 const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook }) {
     const { t } = useTranslation();
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const bibleVersionAbbreviation = activeBibleVersion?.abbreviation;
     const handler = useCallback(() => {
+        if (!bibleVersionAbbreviation) {
+            message.warning(t('Aucune version biblique active disponible.'));
+            return;
+        }
+
         window.dispatchEvent(
             new CustomEvent<Partial<DocumentReferenceSelection>>(
                 CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
@@ -407,6 +424,7 @@ const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook })
                                 documentType: 'bible',
                                 bibleBook: verse.book,
                                 bibleChapter: verse.chapter,
+                                bibleVersionAbbreviation,
                             },
                             tree: [+verse.verse],
                         },
@@ -414,7 +432,7 @@ const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook })
                 },
             ),
         );
-    }, [verse]);
+    }, [bibleVersionAbbreviation, verse]);
 
     const menuItems = useMemo(
         () => [{ key: 'add', label: t('Ajouter à un sujet'), onClick: handler }],

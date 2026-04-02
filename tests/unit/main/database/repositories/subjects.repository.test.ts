@@ -56,7 +56,12 @@ describe('subjects.repository', () => {
             'Doc',
             {
                 kind: 'tree',
-                documentIdentity: { documentType: 'bible', bibleBook: 'gen', bibleChapter: '1' },
+                documentIdentity: {
+                    documentType: 'bible',
+                    bibleBook: 'gen',
+                    bibleChapter: '1',
+                    bibleVersionAbbreviation: 'KJV',
+                },
                 tree: [],
             },
             'text',

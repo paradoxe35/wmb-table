@@ -212,7 +212,7 @@ export function useOpenBibleChapter() {
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 
     return useCallback(
-        ({ title, bibleBook, bibleChapter }: OpenBibleChapterRequest) => {
+        ({ title, bibleBook, bibleChapter, bibleVersionAbbreviation }: OpenBibleChapterRequest) => {
             snapshotActiveDocumentScroll(updateTabScroll);
             addTab({
                 title,
@@ -220,6 +220,7 @@ export function useOpenBibleChapter() {
                 type: 'bible',
                 bibleBook,
                 bibleChapter,
+                bibleVersionAbbreviation,
             });
             setMainView('document');
         },
@@ -231,6 +232,7 @@ export function useOpenDocumentRequest() {
     const openDocument = useOpenDocument();
     const openCustomDocument = useOpenCustomDocument();
     const openBibleChapter = useOpenBibleChapter();
+    const updateBibleTabsVersion = useDocumentTabsStore((s) => s.updateBibleTabsVersion);
 
     return useCallback(
         async (request: OpenDocumentRequest) => {
@@ -240,10 +242,11 @@ export function useOpenDocumentRequest() {
             }
 
             if (request.documentType === 'bible') {
-                if (request.bibleVersionAbbreviation) {
-                    await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
-                    const v = await window.api.bible.getActiveVersion();
-                    useAppStore.getState().setActiveBibleVersion(v);
+                await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
+                const v = await window.api.bible.getActiveVersion();
+                useAppStore.getState().setActiveBibleVersion(v);
+                if (v?.abbreviation) {
+                    updateBibleTabsVersion(v.abbreviation);
                 }
                 openBibleChapter(request);
                 return;
@@ -251,7 +254,7 @@ export function useOpenDocumentRequest() {
 
             openDocument(request.title, request.sermonId, request.translationId);
         },
-        [openBibleChapter, openCustomDocument, openDocument],
+        [openBibleChapter, openCustomDocument, openDocument, updateBibleTabsVersion],
     );
 }
 

@@ -10,7 +10,7 @@ import {
     selectActiveTabKey,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type { BibleBook, BibleIndex, BibleTab, SermonContent } from '@shared/types';
+import type { BibleBook, BibleIndex, BibleTab } from '@shared/types';
 import {
     buildBibleDocumentId,
     buildBibleDocumentTitle,
@@ -81,10 +81,6 @@ function BibleContentHeader({
     );
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function versesToParagraphs(verses: BibleBook[]) {
     return verses
         .slice()
@@ -93,36 +89,6 @@ function versesToParagraphs(verses: BibleBook[]) {
             paragraphIndex: +v.verse,
             content: v.content,
         }));
-}
-
-function buildContentForMenu(
-    tab: { title: string; documentId: string } | null,
-    paragraphs: { paragraphIndex: number; content: string }[],
-    bibleLang: string,
-): SermonContent | null {
-    if (!tab) return null;
-    return {
-        meta: {
-            id: tab.documentId,
-            translationId: 0,
-            languageCode: bibleLang,
-            sermonId: tab.documentId,
-            title: tab.title,
-            enTitle: tab.title,
-            audioLink: null,
-            traductionName: null,
-            dateMs: 0,
-            minutes: 0,
-            location: null,
-            cityState: null,
-        },
-        paragraphs: paragraphs.map((p) => ({
-            paragraphIndex: p.paragraphIndex,
-            translationId: 0,
-            sermonId: 0,
-            content: p.content,
-        })),
-    };
 }
 
 // ---------------------------------------------------------------------------
@@ -181,10 +147,11 @@ function useChapterNavigation(activeTab: BibleTab | null) {
                     documentId,
                     bibleBook: bookCode,
                     bibleChapter: chapter,
+                    bibleVersionAbbreviation: activeTab.bibleVersionAbbreviation,
                 });
             }
         },
-        [activeTabKey, bookCode, bookName, tabs, activateTab, updateBibleTab],
+        [activeTab, activeTabKey, bookCode, bookName, tabs, activateTab, updateBibleTab],
     );
 
     const goPrev = useCallback(() => {
@@ -402,16 +369,23 @@ export default function BibleDocumentView() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [paragraphs.length, loading]);
 
-    const contentForMenu = useMemo(
-        () => buildContentForMenu(activeTab, paragraphs, bibleLang),
-        [activeTab, paragraphs, bibleLang],
-    );
+    const contextMenuContent = useMemo(() => {
+        if (!activeTab || !activeDocumentIdentity) {
+            return null;
+        }
+
+        return {
+            documentTitle: activeTab.title,
+            documentIdentity: activeDocumentIdentity,
+            languageCode: bibleLang,
+            paragraphs,
+        };
+    }, [activeTab, activeDocumentIdentity, bibleLang, paragraphs]);
     const contextMenuItems = useContextMenuItems(
-        contentForMenu,
+        contextMenuContent,
         contextTargetRef,
         'bible',
         verses,
-        bibleVersionAbbreviation,
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         activeTab?.title ?? null,

@@ -10,6 +10,7 @@ export type BiblePlaybackSource = {
     tabKey: string;
     bibleBook: string;
     bibleChapter: string;
+    bibleVersionAbbreviation: string;
 };
 
 export type BibleChapterTarget = {
@@ -17,6 +18,7 @@ export type BibleChapterTarget = {
     documentId: string;
     bibleBook: string;
     bibleChapter: string;
+    bibleVersionAbbreviation: string;
 };
 
 export function captureBiblePlaybackSource(
@@ -31,6 +33,7 @@ export function captureBiblePlaybackSource(
         tabKey,
         bibleBook: tab.bibleBook,
         bibleChapter: tab.bibleChapter,
+        bibleVersionAbbreviation: tab.bibleVersionAbbreviation,
     };
 }
 
@@ -64,5 +67,6 @@ export function resolveNextBibleChapterTarget(
         documentId: buildBibleDocumentId(source.bibleBook, nextChapter),
         bibleBook: source.bibleBook,
         bibleChapter: nextChapter,
+        bibleVersionAbbreviation: source.bibleVersionAbbreviation,
     };
 }
