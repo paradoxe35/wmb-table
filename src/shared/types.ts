@@ -190,10 +190,8 @@ export function buildBibleDocumentId(bibleBook: string, bibleChapter: string): s
 
 function appendBibleVersionSuffix(title: string, bibleVersionAbbreviation?: string | null): string {
     const trimmedTitle = title.trim();
-    const normalizedAbbreviation = bibleVersionAbbreviation
-        ? normalizeBibleAbbreviation(bibleVersionAbbreviation)
-        : '';
 
+    const normalizedAbbreviation = normalizeBibleAbbreviation(bibleVersionAbbreviation);
     if (!normalizedAbbreviation) {
         return trimmedTitle;
     }

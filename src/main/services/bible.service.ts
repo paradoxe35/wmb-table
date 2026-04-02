@@ -284,10 +284,12 @@ export function switchBibleVersion(abbreviation: string): BibleVersion | null {
 
 export function findBibleVersion(abbreviation: string): BibleVersion | null {
     const normalized = normalizeBibleAbbreviation(abbreviation);
-    return (
-        loadBibleIndex().find((v) => normalizeBibleAbbreviation(v.abbreviation) === normalized) ??
-        null
+
+    const bibleVersion = loadBibleIndex().find(
+        (v) => normalizeBibleAbbreviation(v.abbreviation) === normalized,
     );
+
+    return bibleVersion ?? null;
 }
 
 export function withBibleDb<T>(
