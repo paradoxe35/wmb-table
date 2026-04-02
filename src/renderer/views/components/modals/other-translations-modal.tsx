@@ -9,11 +9,7 @@ import {
     type OpenOtherTranslationsModalDetail,
 } from '@renderer/utils/events';
 import { getLanguageDisplayName } from '@shared/tts.types';
-import {
-    buildSermonDocumentIdentity,
-    type AvailableTranslation,
-    type SermonTranslation,
-} from '@shared/types';
+import { buildSermonDocumentIdentity, type SermonTranslation } from '@shared/types';
 
 export function OtherTranslationsModal() {
     const { t } = useTranslation();
@@ -27,19 +23,24 @@ export function OtherTranslationsModal() {
 
     const sermonId = request?.sermonId ?? null;
     const modalTitle = request?.title ?? '';
-    const availableTranslations = request?.availableTranslations ?? [];
-    const hasWithinLanguage = availableTranslations.length > 1;
+    const currentTranslationId = request?.currentTranslationId ?? null;
+    const currentLanguageCode = request?.currentLanguageCode ?? null;
 
-    const currentLanguageCodes = useMemo(
-        () => new Set(availableTranslations.map((translation) => translation.languageCode)),
-        [availableTranslations],
+    const sameLanguageTranslations = useMemo(() => {
+        return translations.filter(
+            (translation) =>
+                translation.languageCode === currentLanguageCode &&
+                translation.translationId !== currentTranslationId,
+        );
+    }, [currentLanguageCode, currentTranslationId, translations]);
+
+    const otherLanguageTranslations = useMemo(
+        () =>
+            translations.filter((translation) => translation.languageCode !== currentLanguageCode),
+        [currentLanguageCode, translations],
     );
 
-    const otherLanguageTranslations = useMemo(() => {
-        return translations.filter(
-            (translation) => !currentLanguageCodes.has(translation.languageCode),
-        );
-    }, [currentLanguageCodes, translations]);
+    const hasWithinLanguage = sameLanguageTranslations.length > 0;
 
     const hideModal = useCallback(() => {
         setRequest(null);
@@ -84,7 +85,7 @@ export function OtherTranslationsModal() {
         hideModal();
     };
 
-    const handleSwitchTranslation = (translation: AvailableTranslation) => {
+    const handleSwitchTranslation = (translation: SermonTranslation) => {
         if (request) {
             updateSermonTab(request.tabKey, {
                 title: translation.title,
@@ -114,7 +115,7 @@ export function OtherTranslationsModal() {
                         <Divider titlePlacement="left" plain style={{ margin: '8px 0' }}>
                             {t('Sources de traduction')}
                         </Divider>
-                        {availableTranslations.map((translation) => (
+                        {sameLanguageTranslations.map((translation) => (
                             <div
                                 key={translation.translationId}
                                 style={{

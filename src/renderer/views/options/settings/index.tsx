@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
 import { UPDATE_TAB_EVENT } from '@renderer/components/update-notifier';
+import { APP_UI_EVENT } from '@renderer/utils/events';
 import GeneralTab from './general-tab';
 import LibraryTab from './library-tab';
 import BackupTab from './backup-tab';
@@ -50,11 +51,11 @@ export default function Settings() {
             setActiveTab(TAB_KEYS.backup);
         };
         const cleanupIpc = window.api.on.openBackupModalFromMain(goToBackup);
-        window.addEventListener('open-backup-modal-from-main', goToBackup);
+        window.addEventListener(APP_UI_EVENT.openBackupModalFromMain, goToBackup);
         window.api.backup.getReminder().then((canOpen) => canOpen && goToBackup());
         return () => {
             cleanupIpc();
-            window.removeEventListener('open-backup-modal-from-main', goToBackup);
+            window.removeEventListener(APP_UI_EVENT.openBackupModalFromMain, goToBackup);
         };
     }, [showOptions]);
 

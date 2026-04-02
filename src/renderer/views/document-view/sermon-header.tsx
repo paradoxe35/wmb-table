@@ -105,7 +105,8 @@ export default function SermonHeader({
             tabKey: activeTabKey,
             sermonId: meta.sermonId,
             title: meta.title,
-            availableTranslations,
+            currentTranslationId: meta.translationId,
+            currentLanguageCode: meta.languageCode,
         };
 
         window.dispatchEvent(
@@ -114,7 +115,7 @@ export default function SermonHeader({
                 { detail },
             ),
         );
-    }, [activeTabKey, availableTranslations, meta.sermonId, meta.title]);
+    }, [activeTabKey, meta.languageCode, meta.sermonId, meta.title, meta.translationId]);
 
     const handleTranslationChange = useCallback(
         (value: string | number) => {

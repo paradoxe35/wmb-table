@@ -8,7 +8,7 @@ import type {
     AiSettings,
 } from '@shared/ai.types';
 import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
-import { AI_DATA_EVENT } from '@renderer/utils/events';
+import { AI_DATA_EVENT, APP_UI_EVENT } from '@renderer/utils/events';
 import { createStore } from './create-store';
 
 const TOOL_TO_EVENT: Record<string, string> = {
@@ -204,7 +204,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     saveSettings: async (partial) => {
         const settings = await window.api.ai.updateSettings(partial);
         set({ settings });
-        window.dispatchEvent(new Event('ai-settings-updated'));
+        window.dispatchEvent(new Event(APP_UI_EVENT.aiSettingsUpdated));
     },
 
     loadConversations: async () => {

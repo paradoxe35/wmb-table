@@ -1,6 +1,5 @@
 import type {
     AudioDocumentPlayRequest,
-    AvailableTranslation,
     DocumentReferenceSelection,
     HighlightCreateData,
 } from '@shared/types';
@@ -63,13 +62,19 @@ export const AI_DATA_EVENT = {
     conversationsChanged: 'ai-data-conversations-changed',
 } as const;
 
+export const APP_UI_EVENT = {
+    aiSettingsUpdated: 'ai-settings-updated',
+    openBackupModalFromMain: 'open-backup-modal-from-main',
+} as const;
+
 export const DOCUMENT_CONTAINER_ID = 'page-container';
 
 export type OpenOtherTranslationsModalDetail = {
     tabKey: string;
     sermonId: string;
     title: string;
-    availableTranslations: AvailableTranslation[];
+    currentTranslationId: number;
+    currentLanguageCode: string;
 };
 
 export type AudioDocumentPlayDetail = AudioDocumentPlayRequest;

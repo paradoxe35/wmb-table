@@ -52,7 +52,7 @@ describe('reference-data.service', () => {
             expect(meta!.languageCode).toBe('fr');
             expect(meta!.title).toBe(sample.title);
             expect(meta!.enTitle).toBe(sample.sermon_title);
-            expect(meta!.traductionName).toBe(sample.translator_name);
+            expect(meta!.translationName).toBe(sample.translator_name);
             expect(typeof meta!.dateMs).toBe('number');
         });
 
@@ -84,10 +84,10 @@ describe('reference-data.service', () => {
             const list = refDataService.getSermonListDeduplicated('fr');
             expect(list.length).toBeGreaterThan(0);
 
-            // Each entry should have availableTraductions
+            // Each entry should have availableTranslations
             for (const entry of list) {
-                expect(entry.availableTraductions).toBeDefined();
-                expect(entry.availableTraductions.length).toBeGreaterThanOrEqual(1);
+                expect(entry.availableTranslations).toBeDefined();
+                expect(entry.availableTranslations.length).toBeGreaterThanOrEqual(1);
             }
 
             // Deduplicated count should match unique sermon count from repo
@@ -145,22 +145,28 @@ describe('reference-data.service', () => {
         });
     });
 
-    describe('getTraductionsForSermon', () => {
-        it('returns traductions for a known French sermon', { timeout: 30000 }, () => {
+    describe('getTranslationsForSermonInLanguage', () => {
+        it('returns translations for a known French sermon', { timeout: 30000 }, () => {
             const translations = refRepo.getTranslationsForLanguage('fr');
             const sample = translations[0];
-            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
-            expect(traductions.length).toBeGreaterThanOrEqual(1);
-            expect(traductions[0].sermonId).toBe(sample.sermon_id);
+            const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                sample.sermon_id,
+                'fr',
+            );
+            expect(sermonTranslations.length).toBeGreaterThanOrEqual(1);
+            expect(sermonTranslations[0].sermonId).toBe(sample.sermon_id);
         });
 
         it('returns sorted by translationId', { timeout: 30000 }, () => {
             const translations = refRepo.getTranslationsForLanguage('fr');
             const sample = translations[0];
-            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
-            for (let i = 1; i < traductions.length; i++) {
-                expect(traductions[i].translationId).toBeGreaterThanOrEqual(
-                    traductions[i - 1].translationId,
+            const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                sample.sermon_id,
+                'fr',
+            );
+            for (let i = 1; i < sermonTranslations.length; i++) {
+                expect(sermonTranslations[i].translationId).toBeGreaterThanOrEqual(
+                    sermonTranslations[i - 1].translationId,
                 );
             }
         });
@@ -168,20 +174,26 @@ describe('reference-data.service', () => {
         it('all returned entries share the same sermonId', { timeout: 30000 }, () => {
             const translations = refRepo.getTranslationsForLanguage('fr');
             const sample = translations[0];
-            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
-            for (const t of traductions) {
+            const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                sample.sermon_id,
+                'fr',
+            );
+            for (const t of sermonTranslations) {
                 expect(t.sermonId).toBe(sample.sermon_id);
                 expect(t.languageCode).toBe('fr');
             }
         });
 
-        it('includes audioLink, title, and traductionName', { timeout: 30000 }, () => {
+        it('includes audioLink, title, and translationName', { timeout: 30000 }, () => {
             const translations = refRepo.getTranslationsForLanguage('fr');
             const sample = translations[0];
-            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
-            const t = traductions[0];
+            const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                sample.sermon_id,
+                'fr',
+            );
+            const t = sermonTranslations[0];
             expect(t.title).toBeTruthy();
-            expect(t.traductionName).toBeTruthy();
+            expect(t.translationName).toBeTruthy();
             expect(typeof t.dateMs).toBe('number');
             // audioLink can be null if no audio exists
             if (t.audioLink !== null) {
@@ -193,26 +205,35 @@ describe('reference-data.service', () => {
             const translations = refRepo.getTranslationsForLanguage('fr');
             const sample = translations[0];
             // Get from targeted function
-            const traductions = refDataService.getTraductionsForSermon(sample.sermon_id, 'fr');
+            const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                sample.sermon_id,
+                'fr',
+            );
             // Get from full list and filter (old approach)
             const fullList = refDataService.getSermonListForLanguage('fr');
             const fromFullList = fullList
                 .filter((m) => m.sermonId === sample.sermon_id)
                 .sort((a, b) => a.translationId - b.translationId);
             // Should be identical
-            expect(traductions).toEqual(fromFullList);
+            expect(sermonTranslations).toEqual(fromFullList);
         });
 
         it('returns empty for non-existent sermon', { timeout: 30000 }, () => {
-            const traductions = refDataService.getTraductionsForSermon('XX-XXXX', 'fr');
-            expect(traductions).toEqual([]);
+            const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                'XX-XXXX',
+                'fr',
+            );
+            expect(sermonTranslations).toEqual([]);
         });
 
         it('returns single entry for English sermon', { timeout: 30000 }, () => {
-            const traductions = refDataService.getTraductionsForSermon('53-0403', 'en');
-            expect(traductions).toHaveLength(1);
-            expect(traductions[0].translationId).toBe(0);
-            expect(traductions[0].sermonId).toBe('53-0403');
+            const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                '53-0403',
+                'en',
+            );
+            expect(sermonTranslations).toHaveLength(1);
+            expect(sermonTranslations[0].translationId).toBe(0);
+            expect(sermonTranslations[0].sermonId).toBe('53-0403');
         });
     });
 

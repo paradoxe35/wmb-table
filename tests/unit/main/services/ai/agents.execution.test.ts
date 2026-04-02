@@ -53,7 +53,8 @@ vi.mock('@main/database/repositories/custom-documents.repository', () => ({
 vi.mock('@main/services/reference-data.service', () => ({
     getSermonListForLanguage: vi.fn(),
     getSermonMeta: vi.fn(),
-    getTraductionsForSermon: vi.fn(),
+    getTranslationsForSermon: vi.fn(),
+    getTranslationsForSermonInLanguage: vi.fn(),
 }));
 
 vi.mock('@main/services/tantivy.service', () => ({
