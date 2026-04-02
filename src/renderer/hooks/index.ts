@@ -17,7 +17,6 @@ import type {
     SubjectDocumentItem,
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
-import { buildPendingNavigationTarget } from '@renderer/utils/pending-navigation';
 import { capitalize } from 'lodash';
 import { buildBibleDocumentId, getTabKey } from '@shared/types';
 
@@ -30,8 +29,9 @@ export function buildPendingNavigation(
     request: OpenDocumentRequest,
     documentReference: DocumentReference,
 ) {
+    const { title: _title, ...target } = request;
     return {
-        target: buildPendingNavigationTarget(request),
+        target,
         documentReference,
     };
 }

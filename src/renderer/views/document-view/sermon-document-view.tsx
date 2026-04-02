@@ -3,6 +3,7 @@ import {
     useAppStore,
     useDocumentTabsStore,
     useSermonStore,
+    selectActiveDocumentIdentity,
     selectActiveSermonTab,
     selectActiveTabKey,
 } from '@renderer/stores';
@@ -22,7 +23,6 @@ import {
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 import { useFormatSermonDate } from '@renderer/hooks';
-import { getDocumentIdentityFromTab } from '@shared/types';
 import { buildSegmentAnnouncement, buildSermonIntroText } from '@shared/tts.types';
 
 export default function SermonDocumentView() {
@@ -34,6 +34,7 @@ export default function SermonDocumentView() {
     const contextMenuItems = useContextMenuItems(content, contextTargetRef);
 
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const sermonInfo = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
@@ -45,7 +46,7 @@ export default function SermonDocumentView() {
     );
     useReferenceNavigation(containerRef, {
         contentReady: !!content,
-        documentIdentity: activeTab ? getDocumentIdentityFromTab(activeTab) : null,
+        documentIdentity: activeDocumentIdentity,
     });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!content,
@@ -86,7 +87,7 @@ export default function SermonDocumentView() {
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         content?.meta.title ?? null,
-        activeTab ? getDocumentIdentityFromTab(activeTab) : undefined,
+        activeDocumentIdentity ?? undefined,
     );
 
     return (

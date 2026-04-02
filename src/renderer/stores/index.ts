@@ -7,6 +7,7 @@ export {
     selectActiveTabKey,
     selectActiveTab,
     selectActiveTabType,
+    selectActiveDocumentIdentity,
     selectActiveSermonTab,
     selectActiveBibleTab,
     selectActiveCustomTab,

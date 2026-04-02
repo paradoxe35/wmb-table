@@ -6,6 +6,7 @@ import {
     useSearchStore,
     useAppStore,
     selectActiveTab,
+    selectActiveDocumentIdentity,
     selectActiveTabKey,
     selectActiveTabType,
 } from '@renderer/stores';
@@ -14,11 +15,11 @@ import CustomDocumentView from './custom-document-view';
 import BibleDocumentView from './bible-document-view';
 import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
-import { getDocumentIdentityFromTab } from '@shared/types';
 
 export default function DocumentView() {
     const tabType = useDocumentTabsStore(selectActiveTabType);
     const activeTab = useDocumentTabsStore(selectActiveTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
@@ -45,18 +46,25 @@ export default function DocumentView() {
     // Record history when the active document changes (works for all document types)
     const prevTabKeyRef = useRef<string | null>(null);
     useEffect(() => {
-        if (!contentLanguage || !activeTab || !activeTabKey) return;
-        if (activeTabKey === prevTabKeyRef.current) return;
+        if (!contentLanguage || !activeTab || !activeTabKey || !activeDocumentIdentity) {
+            return;
+        }
+
+        if (activeTabKey === prevTabKeyRef.current) {
+            return;
+        }
+
         prevTabKeyRef.current = activeTabKey;
+
         window.api.app
             .addHistoryEntry(contentLanguage, {
                 documentTitle: activeTab.title,
-                documentIdentity: getDocumentIdentityFromTab(activeTab),
+                documentIdentity: activeDocumentIdentity,
             })
             .then(() => {
                 window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
             });
-    }, [activeTabKey, activeTab, contentLanguage]);
+    }, [activeTabKey, activeTab, activeDocumentIdentity, contentLanguage]);
 
     const readingMode = useAppStore((s) => s.readingMode);
     const setReadingMode = useAppStore((s) => s.setReadingMode);

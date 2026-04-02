@@ -5,6 +5,7 @@ import { LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import {
     useDocumentTabsStore,
     useSearchStore,
+    selectActiveDocumentIdentity,
     selectActiveBibleTab,
     selectActiveTabKey,
 } from '@renderer/stores';
@@ -14,7 +15,6 @@ import {
     buildBibleDocumentId,
     buildBibleDocumentTitle,
     getBibleIndexEntry,
-    getDocumentIdentityFromTab,
     getTabKey,
 } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
@@ -274,6 +274,7 @@ function BibleHeader({
 
 export default function BibleDocumentView() {
     const activeTab = useDocumentTabsStore(selectActiveBibleTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const activateTab = useDocumentTabsStore((s) => s.activateTab);
     const updateBibleTab = useDocumentTabsStore((s) => s.updateBibleTab);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -414,7 +415,7 @@ export default function BibleDocumentView() {
     );
     const { highlightsByParagraph } = useDocumentHighlights(
         activeTab?.title ?? null,
-        activeTab ? getDocumentIdentityFromTab(activeTab) : undefined,
+        activeDocumentIdentity ?? undefined,
     );
 
     return (

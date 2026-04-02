@@ -33,6 +33,40 @@ function createContentRange(el: Element): Range {
     return r;
 }
 
+function resolveDocumentIdentity(
+    content: SermonContent,
+    documentType: DocumentType,
+    bibleVerses?: BibleBook[],
+    bibleVersionAbbreviation?: string,
+): DocumentIdentity | null {
+    if (documentType === 'custom') {
+        return {
+            documentType: 'custom',
+            customDocumentId: content.meta.id,
+        };
+    }
+
+    if (documentType === 'bible') {
+        const firstVerse = bibleVerses?.[0];
+        if (!firstVerse) {
+            return null;
+        }
+
+        return {
+            documentType: 'bible',
+            bibleBook: firstVerse.book,
+            bibleChapter: firstVerse.chapter,
+            bibleVersionAbbreviation,
+        };
+    }
+
+    return {
+        documentType: 'sermon',
+        sermonId: content.meta.sermonId,
+        translationId: content.meta.translationId,
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Context menu
 // ---------------------------------------------------------------------------
@@ -50,26 +84,13 @@ export function useContextMenuItems(
         if (!content) return [];
 
         const { meta, paragraphs } = content;
-        const bibleBook = documentType === 'bible' ? bibleVerses?.[0]?.book : undefined;
-        const bibleChapter = documentType === 'bible' ? bibleVerses?.[0]?.chapter : undefined;
-        const documentIdentity: DocumentIdentity =
-            documentType === 'custom'
-                ? {
-                      documentType: 'custom',
-                      customDocumentId: meta.id,
-                  }
-                : documentType === 'bible'
-                  ? {
-                        documentType: 'bible',
-                        bibleBook: bibleBook ?? '',
-                        bibleChapter: bibleChapter ?? '',
-                        bibleVersionAbbreviation,
-                    }
-                  : {
-                        documentType: 'sermon',
-                        sermonId: meta.sermonId,
-                        translationId: meta.translationId,
-                    };
+        const documentIdentity = resolveDocumentIdentity(
+            content,
+            documentType,
+            bibleVerses,
+            bibleVersionAbbreviation,
+        );
+        if (!documentIdentity) return [];
 
         const buildRef = (): { ref: ParagraphReference; text: string } | null => {
             const sel = window.getSelection();

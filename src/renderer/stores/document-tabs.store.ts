@@ -7,7 +7,7 @@ import type {
     DocumentTab,
     SermonTab,
 } from '@shared/types';
-import { getTabKey, tabMatches } from '@shared/types';
+import { getDocumentIdentityFromTab, getTabKey, tabMatches } from '@shared/types';
 import { useAppStore } from './app.store';
 
 export type PendingNavigation = {
@@ -206,6 +206,11 @@ export function selectActiveTabKey(state: DocumentTabsState): string | null {
 
 export function selectActiveTabType(state: DocumentTabsState): DocumentTab['type'] | null {
     return selectActiveTab(state)?.type ?? null;
+}
+
+export function selectActiveDocumentIdentity(state: DocumentTabsState): DocumentIdentity | null {
+    const activeTab = selectActiveTab(state);
+    return activeTab ? getDocumentIdentityFromTab(activeTab) : null;
 }
 
 export function selectActiveSermonTab(state: DocumentTabsState): SermonTab | null {

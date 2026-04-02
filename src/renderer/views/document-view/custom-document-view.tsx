@@ -7,11 +7,12 @@ import {
     useSearchStore,
     useCustomDocumentsStore,
     useAppStore,
+    selectActiveDocumentIdentity,
     selectActiveCustomTab,
     selectActiveTabKey,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import { getDocumentIdentityFromTab, type SermonContent } from '@shared/types';
+import { type SermonContent } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
 import DocumentBody from './document-body';
 import {
@@ -91,6 +92,7 @@ function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof u
 
 export default function CustomDocumentView() {
     const activeTab = useDocumentTabsStore(selectActiveCustomTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
@@ -107,13 +109,7 @@ export default function CustomDocumentView() {
     );
     useReferenceNavigation(containerRef, {
         contentReady: !!docContent,
-        documentIdentity:
-            activeTab && customDoc
-                ? {
-                      documentType: 'custom',
-                      customDocumentId: customDoc.id,
-                  }
-                : null,
+        documentIdentity: customDoc ? activeDocumentIdentity : null,
     });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!docContent,
@@ -164,7 +160,7 @@ export default function CustomDocumentView() {
     const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'custom');
     const { highlightsByParagraph } = useDocumentHighlights(
         docContent?.title ?? null,
-        activeTab ? getDocumentIdentityFromTab(activeTab) : undefined,
+        customDoc ? (activeDocumentIdentity ?? undefined) : undefined,
     );
 
     const { t } = useTranslation();
