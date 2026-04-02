@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { buildPendingNavigation, useOpenDocumentRequest } from './index';
 import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
-import { buildBibleDocumentTitle, normalizeBibleVersionAbbreviation } from '@shared/types';
+import { buildBibleDocumentTitle, normalizeBibleAbbreviation } from '@shared/types';
 
 /**
  * Reference link format: wmb://<type>/<...params>
@@ -63,8 +63,7 @@ export function parseWmbLink(href: string): WmbRef | null {
                 bookCode,
                 chapter,
                 verse: verse || undefined,
-                bibleVersionAbbreviation:
-                    normalizeBibleVersionAbbreviation(bibleVersionAbbreviation),
+                bibleVersionAbbreviation: normalizeBibleAbbreviation(bibleVersionAbbreviation),
                 bookName: bookNameParts.join('/') || bookCode,
             };
         }

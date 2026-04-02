@@ -8,6 +8,13 @@
             "when": 1775115009658,
             "tag": "0000_glossy_elektra",
             "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "7",
+            "when": 1775115009659,
+            "tag": "0001_active_bible_version_config",
+            "breakpoints": true
         }
     ]
 }

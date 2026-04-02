@@ -6,6 +6,7 @@ import log from 'electron-log';
 import { getDatabaseDir } from '@main/lib/app-paths';
 import { githubDownload } from '@main/lib/github';
 import { SimpleCache } from '@main/lib/simple-cache';
+import { normalizeBibleAbbreviation } from '@shared/types';
 
 const BIBLE_INDEX_FILE = 'bible-index.json';
 
@@ -23,6 +24,13 @@ export interface BibleVersion {
 let bibleIndex: BibleVersion[] | null = null;
 let activeBibleDb: Database.Database | null = null;
 let activeVersion: BibleVersion | null = null;
+
+function normalizeBibleVersion(version: BibleVersion): BibleVersion {
+    return {
+        ...version,
+        abbreviation: normalizeBibleAbbreviation(version.abbreviation),
+    };
+}
 
 function getResourceDir(): string {
     if (app.isPackaged) {
@@ -48,7 +56,9 @@ function loadLocalIndex(): BibleVersion[] {
         log.warn('bible-index.json not found at', indexPath);
         return [];
     }
-    return JSON.parse(readFileSync(indexPath, 'utf-8')) as BibleVersion[];
+    return (JSON.parse(readFileSync(indexPath, 'utf-8')) as BibleVersion[]).map(
+        normalizeBibleVersion,
+    );
 }
 
 /**
@@ -58,7 +68,9 @@ function loadCachedRemoteIndex(): BibleVersion[] {
     const cachePath = getCachedRemoteIndexPath();
     if (!existsSync(cachePath)) return [];
     try {
-        return JSON.parse(readFileSync(cachePath, 'utf-8')) as BibleVersion[];
+        return (JSON.parse(readFileSync(cachePath, 'utf-8')) as BibleVersion[]).map(
+            normalizeBibleVersion,
+        );
     } catch {
         log.warn('Failed to parse cached remote bible-index.json');
         return [];
@@ -70,13 +82,12 @@ function loadCachedRemoteIndex(): BibleVersion[] {
  * Local entries are authoritative — remote entries only add new versions (by abbreviation).
  */
 function mergeIndexes(local: BibleVersion[], remote: BibleVersion[]): BibleVersion[] {
-    const seen = new Set(local.map((v) => v.abbreviation));
+    const seen = new Set(local.map((version) => version.abbreviation));
     const merged = [...local];
-    for (const rv of remote) {
-        if (!seen.has(rv.abbreviation)) {
-            // Remote entries are always type: 'remote'
-            merged.push({ ...rv, type: 'remote' });
-            seen.add(rv.abbreviation);
+    for (const remoteVersion of remote.map(normalizeBibleVersion)) {
+        if (!seen.has(remoteVersion.abbreviation)) {
+            merged.push({ ...remoteVersion, type: 'remote' });
+            seen.add(remoteVersion.abbreviation);
         }
     }
     return merged;
@@ -112,7 +123,9 @@ export async function refreshRemoteIndex(): Promise<BibleVersion[]> {
             return loadBibleIndex();
         }
 
-        const remoteVersions = (await response.json()) as BibleVersion[];
+        const remoteVersions = ((await response.json()) as BibleVersion[]).map(
+            normalizeBibleVersion,
+        );
 
         // Cache to disk (for offline startup) and to DB (for TTL)
         const cacheDir = getBibleDataDir();
@@ -136,11 +149,30 @@ export function getAllBibleVersions(): BibleVersion[] {
 }
 
 export function getBibleVersionsForLanguage(langCode: string): BibleVersion[] {
-    return loadBibleIndex().filter((v) => v.langCode === langCode);
+    return loadBibleIndex()
+        .filter((version) => version.langCode === langCode)
+        .map(normalizeBibleVersion);
+}
+
+export function getBibleVersionsForResolvedLanguage(langCode: string): BibleVersion[] {
+    const requestedVersions = getBibleVersionsForLanguage(langCode);
+    if (requestedVersions.length > 0) {
+        return requestedVersions;
+    }
+
+    if (langCode !== 'en') {
+        const englishVersions = getBibleVersionsForLanguage('en');
+        if (englishVersions.length > 0) {
+            return englishVersions;
+        }
+    }
+
+    const [firstVersion] = loadBibleIndex();
+    return firstVersion ? getBibleVersionsForLanguage(firstVersion.langCode) : [];
 }
 
 export function getDefaultBibleVersion(langCode: string): BibleVersion | null {
-    const versions = getBibleVersionsForLanguage(langCode);
+    const versions = getBibleVersionsForLanguage(langCode).filter(isBibleAvailable);
     return versions.length > 0 ? versions[0] : null;
 }
 
@@ -171,67 +203,88 @@ function openBibleDb(version: BibleVersion): Database.Database {
     return db;
 }
 
-export function switchBibleForLanguage(langCode: string): void {
-    // Close current Bible DB if open
-    if (activeBibleDb) {
-        activeBibleDb.close();
-        activeBibleDb = null;
-        activeVersion = null;
-    }
-
-    // Try requested language, then 'en' fallback, then first available
-    let version = getDefaultBibleVersion(langCode);
-    if (!version || !isBibleAvailable(version)) {
-        if (langCode !== 'en') {
-            version = getDefaultBibleVersion('en');
-        }
-    }
-    // Last resort: first available version that has a file
-    if (!version || !isBibleAvailable(version)) {
-        version = loadBibleIndex().find((v) => isBibleAvailable(v)) ?? null;
-    }
-
-    if (!version) {
-        log.warn(`No Bible version available for language '${langCode}' or any fallback`);
-        return;
-    }
-
+function replaceActiveBible(version: BibleVersion): BibleVersion | null {
     try {
-        activeBibleDb = openBibleDb(version);
+        const nextDb = openBibleDb(version);
+        const previousDb = activeBibleDb;
+
+        activeBibleDb = nextDb;
         activeVersion = version;
+        previousDb?.close();
+
         log.info(`Switched Bible to ${version.name} (${version.fileName})`);
+        return version;
     } catch (err) {
         log.error('Failed to open Bible database:', err);
+        return null;
     }
+}
+
+function resolveBibleVersionForLanguage(
+    langCode: string,
+    preferredAbbreviation?: string | null,
+): BibleVersion | null {
+    const preferred = preferredAbbreviation
+        ? normalizeBibleAbbreviation(preferredAbbreviation)
+        : null;
+
+    const pickForLanguage = (candidateLang: string): BibleVersion | null => {
+        const versions = getBibleVersionsForLanguage(candidateLang).filter(isBibleAvailable);
+        if (versions.length === 0) {
+            return null;
+        }
+
+        if (preferred) {
+            const preferredVersion = versions.find(
+                (version) => normalizeBibleAbbreviation(version.abbreviation) === preferred,
+            );
+            if (preferredVersion) {
+                return preferredVersion;
+            }
+        }
+
+        return versions[0];
+    };
+
+    return (
+        pickForLanguage(langCode) ??
+        (langCode !== 'en' ? pickForLanguage('en') : null) ??
+        loadBibleIndex().find(isBibleAvailable) ??
+        null
+    );
+}
+
+export function switchBibleForLanguage(
+    langCode: string,
+    preferredAbbreviation?: string | null,
+): BibleVersion | null {
+    const version = resolveBibleVersionForLanguage(langCode, preferredAbbreviation);
+    if (!version) {
+        log.warn(`No Bible version available for language '${langCode}' or any fallback`);
+        return null;
+    }
+
+    return replaceActiveBible(version);
 }
 
 /**
  * Switch to a specific Bible version by abbreviation.
  */
-export function switchBibleVersion(abbreviation: string): void {
-    const version = loadBibleIndex().find((v) => v.abbreviation === abbreviation);
+export function switchBibleVersion(abbreviation: string): BibleVersion | null {
+    const normalized = normalizeBibleAbbreviation(abbreviation);
+    const version = loadBibleIndex().find(
+        (v) => normalizeBibleAbbreviation(v.abbreviation) === normalized,
+    );
     if (!version) {
         log.warn(`Bible version '${abbreviation}' not found in index`);
-        return;
+        return null;
     }
     if (!isBibleAvailable(version)) {
         log.warn(`Bible version '${abbreviation}' file not available`);
-        return;
+        return null;
     }
 
-    if (activeBibleDb) {
-        activeBibleDb.close();
-        activeBibleDb = null;
-        activeVersion = null;
-    }
-
-    try {
-        activeBibleDb = openBibleDb(version);
-        activeVersion = version;
-        log.info(`Switched Bible to ${version.name} (${version.fileName})`);
-    } catch (err) {
-        log.error('Failed to open Bible database:', err);
-    }
+    return replaceActiveBible(version);
 }
 
 /**
@@ -241,7 +294,8 @@ export async function downloadBibleVersion(
     abbreviation: string,
     onProgress?: (percentage: number) => void,
 ): Promise<void> {
-    const version = loadBibleIndex().find((v) => v.abbreviation === abbreviation);
+    const normalized = normalizeBibleAbbreviation(abbreviation);
+    const version = loadBibleIndex().find((v) => v.abbreviation === normalized);
     if (!version) throw new Error(`Bible version '${abbreviation}' not found in index`);
     if (version.type !== 'remote')
         throw new Error(`Bible version '${abbreviation}' is local, not remote`);

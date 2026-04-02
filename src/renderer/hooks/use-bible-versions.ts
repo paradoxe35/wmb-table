@@ -28,14 +28,10 @@ export function useBibleVersions(): BibleVersionState {
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
 
     const refresh = useCallback(async () => {
-        const langVersions = await window.api.bible.getVersions();
-        const all =
-            langVersions.length > 0 ? langVersions : await window.api.bible.getAllVersions();
-
-        cachedVersions = all;
+        const nextVersions = await window.api.bible.getVersions();
+        cachedVersions = nextVersions;
         cachedForLanguage = contentLanguage;
-
-        setVersions(all);
+        setVersions(nextVersions);
     }, [contentLanguage]);
 
     useEffect(() => {

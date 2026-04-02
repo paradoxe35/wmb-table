@@ -15,6 +15,7 @@ describe('config.repository', () => {
         const config = configRepo.ensureConfig();
         expect(config.app_id).toBeTruthy();
         expect(config.initialized).toBe(false);
+        expect(config.activeBibleVersionAbbreviation).toBeNull();
     });
 
     it('ensureConfig is idempotent', () => {
@@ -27,5 +28,14 @@ describe('config.repository', () => {
         configRepo.markInitialized();
         const config = configRepo.getConfig();
         expect(config?.initialized).toBe(true);
+    });
+
+    it('persists the active Bible version abbreviation', () => {
+        configRepo.ensureConfig();
+
+        configRepo.setActiveBibleVersionAbbreviation('lsg');
+
+        expect(configRepo.getActiveBibleVersionAbbreviation()).toBe('lsg');
+        expect(configRepo.getConfig()?.activeBibleVersionAbbreviation).toBe('lsg');
     });
 });

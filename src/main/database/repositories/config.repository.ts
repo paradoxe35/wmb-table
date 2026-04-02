@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { configurations } from '../schema';
-import type { AppSettingsStatus } from '@shared/types';
+import { normalizeBibleAbbreviation, type AppSettingsStatus } from '@shared/types';
 import {
     DEFAULT_MAX_TABS,
     MIN_MAX_TABS,
@@ -19,6 +19,9 @@ export function getConfig(): AppSettingsStatus | null {
         initialized: row.initialized,
         lastCheckBackupStatus: new Date(row.lastCheckBackupStatus ?? Date.now()),
         contentLanguage: row.contentLanguage ?? null,
+        activeBibleVersionAbbreviation: row.activeBibleVersionAbbreviation
+            ? normalizeBibleAbbreviation(row.activeBibleVersionAbbreviation)
+            : null,
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
         uiLanguage: (row.uiLanguage as UiLanguagePreference) ?? null,
@@ -59,6 +62,22 @@ export function setContentLanguage(langCode: string): void {
     getDb()
         .update(configurations)
         .set({ contentLanguage: langCode })
+        .where(eq(configurations.id, getConfigId()))
+        .run();
+}
+
+export function getActiveBibleVersionAbbreviation(): string | null {
+    return getConfig()?.activeBibleVersionAbbreviation ?? null;
+}
+
+export function setActiveBibleVersionAbbreviation(abbreviation: string | null): void {
+    getDb()
+        .update(configurations)
+        .set({
+            activeBibleVersionAbbreviation: abbreviation
+                ? normalizeBibleAbbreviation(abbreviation)
+                : null,
+        })
         .where(eq(configurations.id, getConfigId()))
         .run();
 }

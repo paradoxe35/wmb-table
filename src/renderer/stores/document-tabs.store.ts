@@ -10,7 +10,7 @@ import type {
 import {
     getDocumentIdentityFromTab,
     getTabKey,
-    normalizeBibleVersionAbbreviation,
+    normalizeBibleAbbreviation,
     tabMatches,
 } from '@shared/types';
 import { useAppStore } from './app.store';
@@ -67,9 +67,7 @@ function createTab(tab: NewDocumentTab): DocumentTab {
             documentId: tab.documentId,
             bibleBook: tab.bibleBook,
             bibleChapter: tab.bibleChapter,
-            bibleVersionAbbreviation: normalizeBibleVersionAbbreviation(
-                tab.bibleVersionAbbreviation,
-            ),
+            bibleVersionAbbreviation: normalizeBibleAbbreviation(tab.bibleVersionAbbreviation),
         };
     }
 
@@ -198,7 +196,7 @@ export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
                           documentId: nextTab.documentId,
                           bibleBook: nextTab.bibleBook,
                           bibleChapter: nextTab.bibleChapter,
-                          bibleVersionAbbreviation: normalizeBibleVersionAbbreviation(
+                          bibleVersionAbbreviation: normalizeBibleAbbreviation(
                               nextTab.bibleVersionAbbreviation,
                           ),
                           scrollY: 0,
@@ -214,7 +212,7 @@ export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
                     ? {
                           ...tab,
                           bibleVersionAbbreviation:
-                              normalizeBibleVersionAbbreviation(bibleVersionAbbreviation),
+                              normalizeBibleAbbreviation(bibleVersionAbbreviation),
                       }
                     : tab,
             ),

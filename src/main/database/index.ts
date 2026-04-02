@@ -73,8 +73,13 @@ export function initializeDatabase(): void {
  * Switch the Bible DB to match the given language. Updates the Drizzle wrapper.
  */
 export function switchBibleLanguage(langCode: string): void {
-    bibleService.switchBibleForLanguage(langCode);
+    const activeBibleVersionAbbreviation = configRepo.getActiveBibleVersionAbbreviation();
+    const activeVersion = bibleService.switchBibleForLanguage(
+        langCode,
+        activeBibleVersionAbbreviation,
+    );
     refreshBibleDrizzle();
+    configRepo.setActiveBibleVersionAbbreviation(activeVersion?.abbreviation ?? null);
 }
 
 /**

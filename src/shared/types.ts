@@ -125,7 +125,7 @@ export type DocumentIdentity =
 
 export type BibleDocumentIdentity = Extract<DocumentIdentity, { documentType: 'bible' }>;
 
-export function normalizeBibleVersionAbbreviation(bibleVersionAbbreviation: string): string {
+export function normalizeBibleAbbreviation(bibleVersionAbbreviation: string): string {
     return bibleVersionAbbreviation.trim().toLowerCase();
 }
 
@@ -134,7 +134,7 @@ export function getDocumentIdentityKey(identity: DocumentIdentity): string {
         case 'sermon':
             return `sermon:${identity.sermonId}:${identity.translationId}`;
         case 'bible':
-            return `bible:${identity.bibleBook}:${identity.bibleChapter}:${normalizeBibleVersionAbbreviation(identity.bibleVersionAbbreviation)}`;
+            return `bible:${identity.bibleBook}:${identity.bibleChapter}:${normalizeBibleAbbreviation(identity.bibleVersionAbbreviation)}`;
         case 'custom':
             return `custom:${identity.customDocumentId}`;
     }
@@ -185,7 +185,7 @@ export function getTabKey(tab: TabKeyInput): string {
         case 'sermon':
             return `sermon:${tab.documentId}:${tab.translationId}:${tab.languageCode}`;
         case 'bible':
-            return `bible:${tab.documentId}:${normalizeBibleVersionAbbreviation(tab.bibleVersionAbbreviation)}`;
+            return `bible:${tab.documentId}:${normalizeBibleAbbreviation(tab.bibleVersionAbbreviation)}`;
         case 'custom':
             return `custom:${tab.documentId}`;
     }
@@ -205,8 +205,8 @@ export function tabMatches(tab: DocumentTab, candidate: TabKeyInput): boolean {
 
     if (tab.type === 'bible' && candidate.type === 'bible') {
         return (
-            normalizeBibleVersionAbbreviation(tab.bibleVersionAbbreviation) ===
-            normalizeBibleVersionAbbreviation(candidate.bibleVersionAbbreviation)
+            normalizeBibleAbbreviation(tab.bibleVersionAbbreviation) ===
+            normalizeBibleAbbreviation(candidate.bibleVersionAbbreviation)
         );
     }
 
@@ -702,6 +702,7 @@ export interface AppSettingsStatus {
     initialized: boolean;
     lastCheckBackupStatus: Date;
     contentLanguage: string | null;
+    activeBibleVersionAbbreviation: string | null;
     rememberReadingPosition: boolean;
     maxTabs: number;
     uiLanguage: UiLanguagePreference | null;
