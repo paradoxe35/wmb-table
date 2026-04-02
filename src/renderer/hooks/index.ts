@@ -9,9 +9,11 @@ import {
 import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
+    BibleVersionInfo,
     BibleDocumentIdentity,
     DocumentReference,
     DocumentIdentity,
+    DocumentTab,
     NoteItemReference,
     SermonMetaWithTraductions,
     SubjectDocumentItem,
@@ -24,6 +26,12 @@ export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
 
 export type OpenDocumentRequest = { title: string } & DocumentIdentity;
+
+type LanguageWorkspace = {
+    sermons: SermonMetaWithTraductions[];
+    tabs: DocumentTab[];
+    activeBibleVersion: BibleVersionInfo | null;
+};
 
 export function buildPendingNavigation(
     request: OpenDocumentRequest,
@@ -63,6 +71,27 @@ export function useValueStateRef<T>(value: T) {
     return ref;
 }
 
+export async function fetchLanguageWorkspace(langCode: string): Promise<LanguageWorkspace> {
+    const [sermons, savedTabs, activeBibleVersion] = await Promise.all([
+        window.api.documents.getTitles(langCode),
+        window.api.documents.getTabs(langCode),
+        window.api.bible.getActiveVersion(),
+    ]);
+
+    return {
+        sermons,
+        tabs: savedTabs?.length ? savedTabs : [],
+        activeBibleVersion,
+    };
+}
+
+export function applyLanguageWorkspace(langCode: string, workspace: LanguageWorkspace): void {
+    useAppStore.getState().setContentLanguage(langCode);
+    useAppStore.getState().setActiveBibleVersion(workspace.activeBibleVersion);
+    useSermonStore.getState().setSermons(workspace.sermons);
+    useDocumentTabsStore.getState().setTabs(workspace.tabs);
+}
+
 export const useIpcRequestWithLoader = () => {
     const setLoaded = useAppStore((s) => s.setLoaded);
 
@@ -82,12 +111,7 @@ export const useIpcRequestWithLoader = () => {
 export function useInitApp() {
     const setLoaded = useAppStore((s) => s.setLoaded);
     const setSidebarHidden = useAppStore((s) => s.setSidebarHidden);
-    const setContentLanguage = useAppStore((s) => s.setContentLanguage);
-    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
-    const setSermons = useSermonStore((s) => s.setSermons);
-    const setTabs = useDocumentTabsStore((s) => s.setTabs);
-
     const setError = useAppStore((s) => s.setError);
 
     useEffect(() => {
@@ -134,18 +158,8 @@ export function useInitApp() {
                     return;
                 }
 
-                setContentLanguage(dbContentLanguage);
-                const [sermons, savedTabs, bibleVersion] = await Promise.all([
-                    window.api.documents.getTitles(dbContentLanguage),
-                    window.api.documents.getTabs(dbContentLanguage),
-                    window.api.bible.getActiveVersion(),
-                ]);
-                setActiveBibleVersion(bibleVersion);
-
-                setSermons(sermons);
-                if (savedTabs?.length) {
-                    setTabs(savedTabs);
-                }
+                const workspace = await fetchLanguageWorkspace(dbContentLanguage);
+                applyLanguageWorkspace(dbContentLanguage, workspace);
             } catch (err) {
                 console.error('[useInitApp] Initialization failed:', err);
                 setError(i18n.t("Erreur lors de l'initialisation de l'application"));
@@ -153,16 +167,7 @@ export function useInitApp() {
                 setLoaded(true);
             }
         })();
-    }, [
-        setLoaded,
-        setSidebarHidden,
-        setContentLanguage,
-        setActiveBibleVersion,
-        setRememberReadingPosition,
-        setSermons,
-        setTabs,
-        setError,
-    ]);
+    }, [setLoaded, setSidebarHidden, setRememberReadingPosition, setError]);
 }
 
 export function useOpenDocument() {

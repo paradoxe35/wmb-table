@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-    useAppStore,
-    useDocumentTabsStore,
-    useSermonStore,
-    selectActiveSermonTab,
-} from '@renderer/stores';
+import { useDocumentTabsStore, useSermonStore, selectActiveSermonTab } from '@renderer/stores';
 import type {
     BibleBook,
     CustomDocumentContent,
@@ -50,18 +45,13 @@ type ScrollPersistenceState = {
 
 export function resolveSermonScrollPersistence(
     activeTab: SermonTab | null,
-    contentLanguage: string | null,
     content: SermonContent | null,
 ): ScrollPersistenceState {
     if (!activeTab) {
         return { restoreIdentity: null, readingPositionKey: null };
     }
 
-    const languageCode = activeTab.languageCode ?? contentLanguage;
-    if (!languageCode) {
-        return { restoreIdentity: null, readingPositionKey: null };
-    }
-
+    const languageCode = activeTab.languageCode;
     const translationId = activeTab.translationId;
     const contentKey = buildSermonContentKey(languageCode, translationId, activeTab.documentId);
     const matchesLoadedContent =
@@ -107,14 +97,13 @@ export function resolveBibleScrollPersistence(
 
 export function useSermonContent() {
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const setActiveContent = useSermonStore((s) => s.setActiveContent);
     const activeContent = useSermonStore((s) => s.activeContent);
     const [loading, setLoading] = useState(false);
 
     const tabSermonId = activeTab?.documentId;
     const tabTranslationId = activeTab?.translationId;
-    const tabLanguage = activeTab?.languageCode ?? contentLanguage;
+    const tabLanguage = activeTab?.languageCode;
 
     useEffect(() => {
         if (!activeTab || !tabSermonId || !tabLanguage) {

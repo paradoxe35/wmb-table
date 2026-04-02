@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useModalVisible } from '@renderer/hooks';
+import { applyLanguageWorkspace, fetchLanguageWorkspace, useModalVisible } from '@renderer/hooks';
 import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
@@ -126,7 +126,6 @@ export default function LibraryModal() {
     const [searchQuery, setSearchQuery] = useState('');
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const setContentLanguage = useAppStore((s) => s.setContentLanguage);
-    const setSermons = useSermonStore((s) => s.setSermons);
     const [, startTransition] = useTransition();
 
     const refresh = useCallback(() => {
@@ -247,16 +246,9 @@ export default function LibraryModal() {
             }
 
             await window.api.app.setContentLanguage(langCode);
-            const bibleVersion = await window.api.bible.getActiveVersion();
-            const [sermons, tabs] = await Promise.all([
-                window.api.documents.getTitles(langCode),
-                window.api.documents.getTabs(langCode),
-            ]);
+            const workspace = await fetchLanguageWorkspace(langCode);
             startTransition(() => {
-                setContentLanguage(langCode);
-                useAppStore.getState().setActiveBibleVersion(bibleVersion);
-                setSermons(sermons);
-                setTabs(tabs?.length ? tabs : []);
+                applyLanguageWorkspace(langCode, workspace);
                 setLoaded(true);
             });
             hide();
@@ -281,7 +273,7 @@ export default function LibraryModal() {
                 await window.api.app.setContentLanguage(null);
                 setContentLanguage(null);
                 useAppStore.getState().setActiveBibleVersion(null);
-                setSermons([]);
+                useSermonStore.getState().setSermons([]);
                 setTabs([]);
             }
         }

@@ -1,6 +1,5 @@
 import { useMemo, useRef } from 'react';
 import {
-    useAppStore,
     useDocumentTabsStore,
     useSermonStore,
     selectActiveDocumentIdentity,
@@ -34,12 +33,10 @@ export default function SermonDocumentView() {
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const sermonsById = useSermonStore((s) => s.sermonsById);
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const sermonInfo = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
     const tabTranslationId = activeTab?.translationId;
     const { restoreIdentity, readingPositionKey } = resolveSermonScrollPersistence(
         activeTab,
-        contentLanguage,
         content,
     );
     useReferenceNavigation(containerRef, {
