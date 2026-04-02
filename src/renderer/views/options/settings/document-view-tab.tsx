@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, InputNumber, Space, Switch, Typography, message } from 'antd';
 import { BookOutlined, AppstoreOutlined } from '@ant-design/icons';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 import { MIN_MAX_TABS, MAX_MAX_TABS } from '@shared/constants';
 
 const { Text } = Typography;
@@ -13,14 +13,21 @@ export default function DocumentViewTab() {
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
     const maxTabs = useAppStore((s) => s.maxTabs);
     const setMaxTabs = useAppStore((s) => s.setMaxTabs);
+    const enforceTabLimit = useDocumentTabsStore((s) => s.enforceTabLimit);
     const [saving, setSaving] = useState(false);
 
-    const handleMaxTabsChange = (value: number | null) => {
-        if (value == null) return;
-        window.api.app
-            .setMaxTabs(value)
-            .then(() => setMaxTabs(value))
-            .catch(() => message.error(t("Impossible d'enregistrer le paramètre")));
+    const handleMaxTabsChange = async (value: number | null) => {
+        if (value == null) {
+            return;
+        }
+
+        try {
+            const savedValue = await window.api.app.setMaxTabs(value);
+            setMaxTabs(savedValue);
+            enforceTabLimit(savedValue);
+        } catch {
+            message.error(t("Impossible d'enregistrer le paramètre"));
+        }
     };
 
     return (

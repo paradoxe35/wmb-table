@@ -1,7 +1,7 @@
 import { Button, Divider, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useModalVisible, useActiveTabTitle } from '@renderer/hooks';
+import { useAddDocumentTab, useModalVisible, useActiveTabTitle } from '@renderer/hooks';
 import {
     useDocumentTabsStore,
     useSermonStore,
@@ -19,7 +19,7 @@ export function OtherTraductionsModal() {
     const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const title = useActiveTabTitle();
-    const addTab = useDocumentTabsStore((s) => s.addTab);
+    const addTab = useAddDocumentTab();
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabTranslationId = useDocumentTabsStore((s) => s.updateTabTranslationId);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);

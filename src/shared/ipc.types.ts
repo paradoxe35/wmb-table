@@ -476,7 +476,7 @@ export interface InvokeChannelMap {
     [AppChannels.getRememberReadingPosition]: { args: []; return: boolean };
     [AppChannels.setRememberReadingPosition]: { args: [boolean]; return: void };
     [AppChannels.getMaxTabs]: { args: []; return: number };
-    [AppChannels.setMaxTabs]: { args: [number]; return: void };
+    [AppChannels.setMaxTabs]: { args: [number]; return: number };
     [AppChannels.openExternal]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };

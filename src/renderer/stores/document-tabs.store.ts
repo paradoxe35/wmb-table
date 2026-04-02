@@ -13,7 +13,6 @@ import {
     normalizeBibleAbbreviation,
     tabMatches,
 } from '@shared/types';
-import { useAppStore } from './app.store';
 
 export type PendingNavigation = {
     target: DocumentIdentity;
@@ -26,13 +25,14 @@ interface DocumentTabsState {
 
     setTabs(tabs: DocumentTab[]): void;
     setPendingNavigation(nav: PendingNavigation): void;
-    addTab(tab: NewDocumentTab): void;
+    addTab(tab: NewDocumentTab, maxTabs: number): void;
     removeTab(key: string): void;
     activateTab(key: string): void;
     removeOtherTabs(key: string): void;
     removeTabsToRight(key: string): void;
     removeAllTabs(): void;
     reorderTabs(tabs: DocumentTab[]): void;
+    enforceTabLimit(maxTabs: number): void;
     updateTabScroll(key: string, scrollY?: number, scrollX?: number): void;
     updateTabZoom(key: string, zoom: number): void;
     updateTabTranslationId(key: string, translationId: number): void;
@@ -51,7 +51,7 @@ type NewBibleTab = Pick<
     'title' | 'documentId' | 'type' | 'bibleBook' | 'bibleChapter' | 'bibleVersionAbbreviation'
 >;
 type NewCustomTab = Pick<CustomTab, 'title' | 'documentId' | 'type'>;
-type NewDocumentTab = NewSermonTab | NewBibleTab | NewCustomTab;
+export type NewDocumentTab = NewSermonTab | NewBibleTab | NewCustomTab;
 
 type BibleTabUpdate = Pick<
     BibleTab,
@@ -90,6 +90,23 @@ function createTab(tab: NewDocumentTab): DocumentTab {
     };
 }
 
+export function clampTabsToLimit(tabs: DocumentTab[], maxTabs: number): DocumentTab[] {
+    if (tabs.length <= maxTabs) {
+        return tabs;
+    }
+
+    const keptTabs = tabs.slice(tabs.length - maxTabs);
+    if (keptTabs.some((tab) => tab.active)) {
+        return keptTabs;
+    }
+
+    keptTabs[keptTabs.length - 1] = {
+        ...keptTabs[keptTabs.length - 1],
+        active: true,
+    };
+    return keptTabs;
+}
+
 export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
     tabs: [],
     pendingNavigation: null,
@@ -97,7 +114,7 @@ export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
     setTabs: (tabs) => set({ tabs }),
     setPendingNavigation: (pendingNavigation) => set({ pendingNavigation }),
 
-    addTab: (nextTab) =>
+    addTab: (nextTab, maxTabs) =>
         set((state) => {
             const exists = state.tabs.some((tab) => tabMatches(tab, nextTab));
             if (exists) {
@@ -120,14 +137,7 @@ export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
             }
 
             const deactivated = state.tabs.map((tab) => ({ ...tab, active: false }));
-            let nextTabs = [...deactivated, createTab(nextTab)];
-
-            const maxTabs = useAppStore.getState().maxTabs;
-            if (nextTabs.length > maxTabs) {
-                nextTabs = nextTabs.slice(nextTabs.length - maxTabs);
-            }
-
-            return { tabs: nextTabs };
+            return { tabs: clampTabsToLimit([...deactivated, createTab(nextTab)], maxTabs) };
         }),
 
     removeTab: (key) =>
@@ -166,6 +176,10 @@ export const useDocumentTabsStore = create<DocumentTabsState>((set) => ({
 
     removeAllTabs: () => set({ tabs: [] }),
     reorderTabs: (tabs) => set({ tabs }),
+    enforceTabLimit: (maxTabs) =>
+        set((state) => ({
+            tabs: clampTabsToLimit(state.tabs, maxTabs),
+        })),
 
     updateTabScroll: (key, scrollY, scrollX) =>
         set((state) => ({

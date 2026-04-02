@@ -58,7 +58,7 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.setMaxTabs, async (_event, value) => {
-        configRepo.setMaxTabs(value);
+        return configRepo.setMaxTabs(value);
     });
 
     registerHandler(AppChannels.openExternal, async (_event, url) => {

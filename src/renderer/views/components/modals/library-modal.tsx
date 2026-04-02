@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { applyLanguageWorkspace, fetchLanguageWorkspace, useModalVisible } from '@renderer/hooks';
+import {
+    fetchLanguageWorkspace,
+    useApplyLanguageWorkspace,
+    useModalVisible,
+} from '@renderer/hooks';
 import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
@@ -124,6 +128,7 @@ export default function LibraryModal() {
     const [loading, setLoading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
     const [searchQuery, setSearchQuery] = useState('');
+    const applyLanguageWorkspace = useApplyLanguageWorkspace();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const setContentLanguage = useAppStore((s) => s.setContentLanguage);
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);

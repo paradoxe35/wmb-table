@@ -2,10 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import i18n from '@renderer/i18n';
 import {
     useAppStore,
+    clampTabsToLimit,
     useDocumentTabsStore,
     useSermonStore,
     selectActiveTabTitle,
 } from '@renderer/stores';
+import type { NewDocumentTab } from '@renderer/stores/document-tabs.store';
 import { useThemeStore } from '@renderer/stores/theme.store';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
@@ -85,13 +87,28 @@ export async function fetchLanguageWorkspace(langCode: string): Promise<Language
     };
 }
 
-export function applyLanguageWorkspace(langCode: string, workspace: LanguageWorkspace): void {
+function applyLanguageWorkspaceState(
+    langCode: string,
+    workspace: LanguageWorkspace,
+    maxTabs: number,
+): void {
     useAppStore.setState({
         contentLanguage: langCode,
         activeBibleVersion: workspace.activeBibleVersion,
     });
     useSermonStore.setState({ sermons: workspace.sermons });
-    useDocumentTabsStore.setState({ tabs: workspace.tabs });
+    useDocumentTabsStore.setState({ tabs: clampTabsToLimit(workspace.tabs, maxTabs) });
+}
+
+export function useApplyLanguageWorkspace() {
+    const maxTabs = useAppStore((s) => s.maxTabs);
+
+    return useCallback(
+        (langCode: string, workspace: LanguageWorkspace) => {
+            applyLanguageWorkspaceState(langCode, workspace, maxTabs);
+        },
+        [maxTabs],
+    );
 }
 
 export const useIpcRequestWithLoader = () => {
@@ -116,6 +133,9 @@ export function useInitApp() {
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
     const setMaxTabs = useAppStore((s) => s.setMaxTabs);
     const setError = useAppStore((s) => s.setError);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    const setUiLanguagePreference = useThemeStore((s) => s.setUiLanguagePreference);
+    const applyLanguageWorkspace = useApplyLanguageWorkspace();
 
     useEffect(() => {
         (async () => {
@@ -147,8 +167,8 @@ export function useInitApp() {
 
                 // Sync UI language preference from DB (null = auto)
                 const pref = dbUiLanguage ?? 'auto';
-                if (pref !== useThemeStore.getState().uiLanguagePreference) {
-                    useThemeStore.getState().setUiLanguagePreference(pref);
+                if (pref !== uiLanguagePreference) {
+                    setUiLanguagePreference(pref);
                 }
 
                 // Validate content language is still installed
@@ -170,11 +190,32 @@ export function useInitApp() {
                 setLoaded(true);
             }
         })();
-    }, [setError, setLoaded, setMaxTabs, setRememberReadingPosition, setSidebarHidden]);
+    }, [
+        setError,
+        setLoaded,
+        setMaxTabs,
+        setRememberReadingPosition,
+        setSidebarHidden,
+        setUiLanguagePreference,
+        uiLanguagePreference,
+        applyLanguageWorkspace,
+    ]);
+}
+
+export function useAddDocumentTab() {
+    const addTab = useDocumentTabsStore((s) => s.addTab);
+    const maxTabs = useAppStore((s) => s.maxTabs);
+
+    return useCallback(
+        (tab: NewDocumentTab) => {
+            addTab(tab, maxTabs);
+        },
+        [addTab, maxTabs],
+    );
 }
 
 export function useOpenDocument() {
-    const addTab = useDocumentTabsStore((s) => s.addTab);
+    const addTab = useAddDocumentTab();
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
@@ -200,7 +241,7 @@ export function useOpenDocument() {
 }
 
 export function useOpenCustomDocument() {
-    const addTab = useDocumentTabsStore((s) => s.addTab);
+    const addTab = useAddDocumentTab();
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 
@@ -221,7 +262,7 @@ export function useOpenCustomDocument() {
 type OpenBibleChapterRequest = BibleDocumentIdentity & { title: string };
 
 export function useOpenBibleChapter() {
-    const addTab = useDocumentTabsStore((s) => s.addTab);
+    const addTab = useAddDocumentTab();
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 

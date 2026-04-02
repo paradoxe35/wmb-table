@@ -1,6 +1,7 @@
 export { useAppStore } from './app.store';
 export { useSermonStore } from './sermon.store';
 export {
+    clampTabsToLimit,
     useDocumentTabsStore,
     selectTabs,
     selectActiveTabTitle,

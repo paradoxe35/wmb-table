@@ -18,6 +18,8 @@ export default function SyncListener() {
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
     const setNotes = useNotesStore((s) => s.setNotes);
     const setSyncing = useAppStore((s) => s.setSyncing);
+    const aiInitialized = useAiChatStore((s) => s.initialized);
+    const loadConversations = useAiChatStore((s) => s.loadConversations);
 
     useEffect(() => {
         const cleanupSuccess = window.api.on.newSynchronizedDatas((tables) => {
@@ -41,9 +43,8 @@ export default function SyncListener() {
                 window.dispatchEvent(new Event(AI_DATA_EVENT.notesChanged));
             }
             if (tables.includes('ai_conversations') || tables.includes('ai_messages')) {
-                const aiStore = useAiChatStore.getState();
-                if (aiStore.initialized) {
-                    aiStore.loadConversations();
+                if (aiInitialized) {
+                    loadConversations();
                 }
                 window.dispatchEvent(new Event(AI_DATA_EVENT.conversationsChanged));
             }
@@ -73,7 +74,15 @@ export default function SyncListener() {
             cleanupFailure();
             window.removeEventListener('online', onOnline);
         };
-    }, [setSubjects, setCustomDocuments, setNotes, setSyncing]);
+    }, [
+        aiInitialized,
+        loadConversations,
+        setSubjects,
+        setCustomDocuments,
+        setNotes,
+        setSyncing,
+        t,
+    ]);
 
     return null;
 }

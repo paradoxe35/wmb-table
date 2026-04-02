@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import DocumentTabs from '../../components/document-tabs';
+import { useAddDocumentTab } from '@renderer/hooks';
 import {
     useDocumentTabsStore,
     useSermonStore,
@@ -31,7 +32,7 @@ export default function DocumentView() {
 
     const tabs = useDocumentTabsStore((s) => s.tabs);
     const sermons = useSermonStore((s) => s.sermons);
-    const addTab = useDocumentTabsStore((s) => s.addTab);
+    const addTab = useAddDocumentTab();
 
     useEffect(() => {
         if (tabs.length === 0 && sermons.length > 0) {

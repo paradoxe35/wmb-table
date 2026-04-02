@@ -106,13 +106,15 @@ export function getMaxTabs(): number {
     return getConfig()?.maxTabs ?? DEFAULT_MAX_TABS;
 }
 
-export function setMaxTabs(value: number): void {
+export function setMaxTabs(value: number): number {
     const clamped = Math.max(MIN_MAX_TABS, Math.min(MAX_MAX_TABS, value));
     getDb()
         .update(configurations)
         .set({ maxTabs: clamped })
         .where(eq(configurations.id, getConfigId()))
         .run();
+
+    return clamped;
 }
 
 export function getUiLanguage(): UiLanguagePreference | null {
