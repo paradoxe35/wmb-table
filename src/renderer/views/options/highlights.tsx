@@ -26,10 +26,9 @@ import type {
     HighlightItem,
     HighlightSearchResult,
 } from '@shared/types';
-import { getDisplayDocumentTitle } from '@shared/types';
 import {
     buildPendingNavigation,
-    useBuildOpenDocumentRequest,
+    useDocumentPresentation,
     useOpenDocumentRequest,
 } from '@renderer/hooks';
 import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
@@ -108,17 +107,17 @@ function toHighlightReference(item: HighlightGroup): DocumentReference {
 
 function useHighlightOpen() {
     const openDocumentRequest = useOpenDocumentRequest();
-    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
+    const { buildOpenRequest } = useDocumentPresentation();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     return useCallback(
         (item: HighlightGroup) => {
             const reference = toHighlightReference(item);
-            const request = buildOpenDocumentRequest(item.documentTitle, reference);
+            const request = buildOpenRequest(item.documentTitle, reference);
             setPendingNavigation(buildPendingNavigation(request, reference));
             openDocumentRequest(request);
         },
-        [buildOpenDocumentRequest, openDocumentRequest, setPendingNavigation],
+        [buildOpenRequest, openDocumentRequest, setPendingNavigation],
     );
 }
 
@@ -167,8 +166,10 @@ function HighlightListItem({
     onDelete: (g: HighlightGroup) => void;
 }) {
     const { t } = useTranslation();
+    const { resolveTitle } = useDocumentPresentation();
     const snippet =
         group.textSnippet.length > 80 ? group.textSnippet.slice(0, 80) + '...' : group.textSnippet;
+    const displayTitle = resolveTitle(group.documentTitle, group.documentIdentity);
 
     return (
         <div
@@ -199,7 +200,7 @@ function HighlightListItem({
                             lineHeight: 1.3,
                         }}
                     >
-                        {getDisplayDocumentTitle(group.documentTitle, group.documentIdentity)}
+                        {displayTitle}
                     </Text>
                     <DocumentTypeTag documentType={group.documentIdentity.documentType} />
                 </div>

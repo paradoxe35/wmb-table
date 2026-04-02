@@ -81,20 +81,39 @@ function resolveOpenRequestTitle(
     return resolveDocumentTitle(title, documentIdentity, sermonTitle);
 }
 
-export function useBuildOpenDocumentRequest() {
+function resolveStoredDocumentTitle(
+    title: string,
+    source: OpenDocumentRequestSource,
+    getSermonById: (sermonId: string) => SermonMetaWithTraductions | undefined,
+): string {
+    return resolveOpenRequestTitle(title, getOpenRequestIdentity(source), getSermonById);
+}
+
+export function useDocumentPresentation() {
     const { getSermonById } = useSermonLookup();
 
-    return useCallback(
+    const resolveTitle = useCallback(
+        (title: string, source: OpenDocumentRequestSource) =>
+            resolveStoredDocumentTitle(title, source, getSermonById),
+        [getSermonById],
+    );
+
+    const buildOpenRequest = useCallback(
         (title: string, source: OpenDocumentRequestSource): OpenDocumentRequest => {
             const documentIdentity = getOpenRequestIdentity(source);
 
             return {
-                title: resolveOpenRequestTitle(title, documentIdentity, getSermonById),
+                title: resolveTitle(title, source),
                 ...documentIdentity,
             };
         },
-        [getSermonById],
+        [resolveTitle],
     );
+
+    return {
+        resolveTitle,
+        buildOpenRequest,
+    };
 }
 
 export function useValueStateRef<T>(value: T) {

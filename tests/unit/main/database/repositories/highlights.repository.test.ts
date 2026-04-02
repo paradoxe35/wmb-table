@@ -61,7 +61,7 @@ describe('highlights.repository', () => {
             paragraphs: [{ paragraphIndex: 1, startOffset: 0, endOffset: 10 }],
         });
 
-        const results = highlightsRepo.getByDocument('Sermon A', {
+        const results = highlightsRepo.getByDocument({
             documentType: 'sermon',
             sermonId: 'S-001',
             translationId: 0,
@@ -83,7 +83,7 @@ describe('highlights.repository', () => {
         });
 
         highlightsRepo.deleteHighlight(items[0].id);
-        const remaining = highlightsRepo.getByDocument('Doc', {
+        const remaining = highlightsRepo.getByDocument({
             documentType: 'sermon',
             sermonId: 'S-001',
             translationId: 0,

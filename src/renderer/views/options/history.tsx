@@ -9,14 +9,9 @@ import {
     ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import {
-    getDisplayDocumentTitle,
-    type DocumentType,
-    type HistoryData,
-    type HistoryDataItem,
-} from '@shared/types';
+import { type DocumentType, type HistoryData, type HistoryDataItem } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
-import { useBuildOpenDocumentRequest, useOpenDocumentRequest } from '@renderer/hooks';
+import { useDocumentPresentation, useOpenDocumentRequest } from '@renderer/hooks';
 import { HISTORY_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
@@ -30,16 +25,14 @@ function titleCase(str: string): string {
 // ---------------------------------------------------------------------------
 
 function useHistoryItemOpen() {
-    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
+    const { buildOpenRequest } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
 
     return useCallback(
         (item: HistoryDataItem) => {
-            openDocumentRequest(
-                buildOpenDocumentRequest(item.documentTitle, item.documentIdentity),
-            );
+            openDocumentRequest(buildOpenRequest(item.documentTitle, item.documentIdentity));
         },
-        [buildOpenDocumentRequest, openDocumentRequest],
+        [buildOpenRequest, openDocumentRequest],
     );
 }
 
@@ -65,10 +58,10 @@ export default function History() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
     const openHistoryItem = useHistoryItemOpen();
+    const { resolveTitle } = useDocumentPresentation();
     const getItemTitle = useCallback(
-        (item: HistoryDataItem) =>
-            getDisplayDocumentTitle(item.documentTitle, item.documentIdentity),
-        [],
+        (item: HistoryDataItem) => resolveTitle(item.documentTitle, item.documentIdentity),
+        [resolveTitle],
     );
 
     const loadHistories = useCallback(() => {

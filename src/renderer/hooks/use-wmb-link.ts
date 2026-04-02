@@ -1,9 +1,5 @@
 import { useCallback } from 'react';
-import {
-    buildPendingNavigation,
-    useBuildOpenDocumentRequest,
-    useOpenDocumentRequest,
-} from './index';
+import { buildPendingNavigation, useDocumentPresentation, useOpenDocumentRequest } from './index';
 import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 import { buildBibleDocumentTitle, normalizeBibleAbbreviation } from '@shared/types';
 
@@ -90,7 +86,7 @@ export function parseWmbLink(href: string): WmbRef | null {
  * Returns true if the link was handled, false otherwise.
  */
 export function useWmbLinkNavigate(): (href: string) => boolean {
-    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
+    const { buildOpenRequest } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const sermonsById = useSermonStore((s) => s.sermonsById);
@@ -106,7 +102,7 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     const translationId = ref.translationId || 0;
                     const fallbackTitle =
                         sermon?.translationId === translationId ? sermon.title : ref.sermonId;
-                    const request = buildOpenDocumentRequest(fallbackTitle, {
+                    const request = buildOpenRequest(fallbackTitle, {
                         documentType: 'sermon' as const,
                         sermonId: ref.sermonId,
                         translationId,
@@ -149,6 +145,6 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     return true;
             }
         },
-        [buildOpenDocumentRequest, sermonsById, setPendingNavigation, openDocumentRequest],
+        [buildOpenRequest, sermonsById, setPendingNavigation, openDocumentRequest],
     );
 }

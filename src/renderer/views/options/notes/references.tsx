@@ -16,13 +16,12 @@ import {
     NoteItemReferenceBible,
     hasReferenceAssignment,
     isParagraphReference,
-    resolveDocumentTitle,
 } from '@shared/types';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import {
     buildPendingNavigation,
-    useBuildOpenDocumentRequest,
+    useDocumentPresentation,
     useFormatSermonDate,
     useOpenDocumentRequest,
     useSermonLookup,
@@ -36,7 +35,7 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 export const useShowReferenceDetail = () => {
     const { t } = useTranslation();
     const openDocumentRequest = useOpenDocumentRequest();
-    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
+    const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     const { getSermonById } = useSermonLookup();
@@ -50,7 +49,7 @@ export const useShowReferenceDetail = () => {
 
             const openDocument = () => {
                 if (reference.documentReference) {
-                    const request = buildOpenDocumentRequest(
+                    const request = buildOpenRequest(
                         reference.documentTitle,
                         reference.documentReference,
                     );
@@ -66,7 +65,7 @@ export const useShowReferenceDetail = () => {
                     ? getSermonById(documentIdentity.sermonId)
                     : undefined;
             const displayTitle = documentIdentity
-                ? resolveDocumentTitle(reference.documentTitle, documentIdentity, sermon?.title)
+                ? resolveTitle(reference.documentTitle, reference.documentReference)
                 : reference.documentTitle;
             const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
             const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
@@ -114,10 +113,11 @@ export const useShowReferenceDetail = () => {
             });
         },
         [
-            buildOpenDocumentRequest,
+            buildOpenRequest,
             formatDate,
             getSermonById,
             openDocumentRequest,
+            resolveTitle,
             setPendingNavigation,
             t,
         ],

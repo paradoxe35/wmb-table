@@ -23,7 +23,6 @@ import {
 } from 'antd';
 import { useTranslation } from 'react-i18next';
 import {
-    resolveDocumentTitle,
     type SubjectDocument,
     type SubjectDocumentItem,
     isParagraphReference,
@@ -44,7 +43,7 @@ import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
     buildPendingNavigation,
-    useBuildOpenDocumentRequest,
+    useDocumentPresentation,
     useOpenDocumentRequest,
     useSermonLookup,
     useFormatSermonDate,
@@ -371,21 +370,21 @@ function ItemFromSelectedSubject({
     const formatDate = useFormatSermonDate();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const openDocumentRequest = useOpenDocumentRequest();
-    const buildOpenDocumentRequest = useBuildOpenDocumentRequest();
+    const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
 
     const documentIdentity = item.documentReference.documentIdentity;
     const sermon =
         documentIdentity.documentType === 'sermon'
             ? getSermonById(documentIdentity.sermonId)
             : undefined;
-    const displayTitle = resolveDocumentTitle(item.documentTitle, documentIdentity, sermon?.title);
+    const displayTitle = resolveTitle(item.documentTitle, item.documentReference);
     const paragraphRef = isParagraphReference(item.documentReference)
         ? item.documentReference
         : null;
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
     const onNavigate = () => {
-        const request = buildOpenDocumentRequest(item.documentTitle, item.documentReference);
+        const request = buildOpenRequest(item.documentTitle, item.documentReference);
         setPendingNavigation(buildPendingNavigation(request, item.documentReference));
         openDocumentRequest(request);
     };

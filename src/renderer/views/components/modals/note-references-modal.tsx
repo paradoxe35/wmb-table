@@ -3,15 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     hasReferenceAssignment,
-    resolveDocumentTitle,
     type NoteItem,
     type NoteItemReference,
     type DocumentReferenceSelection,
 } from '@shared/types';
 import {
-    useSermonLookup,
     useModalVisible,
     useActiveTabTitle,
+    useDocumentPresentation,
     useValueStateRef,
 } from '@renderer/hooks';
 import { BookOutlined, SelectOutlined } from '@ant-design/icons';
@@ -120,17 +119,13 @@ function NoteReferenceItem({
     onSelect: (item: NoteItemReference) => void;
 }) {
     const { t } = useTranslation();
-    const { getSermonById } = useSermonLookup();
+    const { resolveTitle } = useDocumentPresentation();
 
     const ref = item.documentReference;
     const assigned = hasReferenceAssignment(ref);
     const documentIdentity = ref?.documentIdentity;
-    const sermonTitle =
-        documentIdentity?.documentType === 'sermon'
-            ? getSermonById(documentIdentity.sermonId)?.title
-            : null;
     const linkedTitle = documentIdentity
-        ? resolveDocumentTitle(item.documentTitle, documentIdentity, sermonTitle)
+        ? resolveTitle(item.documentTitle, item.documentReference)
         : item.documentTitle;
 
     return (

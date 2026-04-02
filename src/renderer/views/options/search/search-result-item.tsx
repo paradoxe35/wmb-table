@@ -6,7 +6,7 @@ import { getTabKey } from '@shared/types';
 import DocumentViewer from '@renderer/components/viewer/document-viewer';
 import HighlightedText from '@renderer/components/highlighted-text';
 import { useAppStore, useSearchStore } from '@renderer/stores';
-import { useSermonLookup } from '@renderer/hooks';
+import { useDocumentPresentation } from '@renderer/hooks';
 
 const { Text } = Typography;
 
@@ -57,14 +57,17 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
     const setCurrentParagraphIndex = useSearchStore((s) => s.setCurrentParagraphIndex);
     const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
-    const { getSermonById } = useSermonLookup();
+    const { resolveTitle } = useDocumentPresentation();
     const [expanded, setExpanded] = useState(false);
 
     const searchMode = useSearchStore((s) => s.searchMode);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const contentLanguage = useAppStore((s) => s.contentLanguage) ?? '';
-    const sermon = getSermonById(hit.sermonId);
-    const displayTitle = sermon?.translationId === hit.translationId ? sermon.title : hit.title;
+    const displayTitle = resolveTitle(hit.title, {
+        documentType: 'sermon',
+        sermonId: hit.sermonId,
+        translationId: hit.translationId,
+    });
 
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {

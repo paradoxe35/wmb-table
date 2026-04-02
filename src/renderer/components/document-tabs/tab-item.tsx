@@ -49,20 +49,12 @@ function getTabLabel(tab: DocumentTab) {
         return tab.title;
     }
 
-    return (
-        <>
-            {tab.title} - {formatShortDate(tab.documentId)}
-            {tab.type === 'sermon' && tab.languageCode && (
-                <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
-            )}
-        </>
-    );
+    return `${tab.title} - ${formatShortDate(tab.documentId)}`;
 }
 
 function getTabTooltip(tab: DocumentTab) {
     if (tab.type === 'bible') return tab.title;
-    const lang = tab.type === 'sermon' && tab.languageCode ? ` (${tab.languageCode})` : '';
-    return `${tab.title} - ${formatShortDate(tab.documentId)}${lang}`;
+    return `${tab.title} - ${formatShortDate(tab.documentId)}`;
 }
 
 export default function TabItem({
@@ -89,7 +81,7 @@ export default function TabItem({
                 data-active={isActive}
                 initial={false}
                 onClick={onActivate}
-                title={tab.title}
+                title={getTabTooltip(tab)}
                 onMouseDown={(e) => {
                     if (e.button === 1) {
                         e.preventDefault();
