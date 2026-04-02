@@ -132,7 +132,6 @@ export default function CustomDocumentView() {
 
     const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef, 'custom');
     const { highlightsByParagraph } = useDocumentHighlights(
-        docContent?.title ?? null,
         customDoc ? (activeDocumentIdentity ?? undefined) : undefined,
     );
 

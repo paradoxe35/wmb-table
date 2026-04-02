@@ -278,22 +278,19 @@ export function useContextMenuItems(
     }, [content, contextTargetRef, documentType, bibleVerses, t]);
 }
 
-export function useDocumentHighlights(
-    documentTitle: string | null,
-    documentIdentity: DocumentIdentity | undefined,
-) {
+export function useDocumentHighlights(documentIdentity: DocumentIdentity | undefined) {
     const [highlights, setHighlights] = useState<HighlightItem[]>([]);
 
     const fetchHighlights = useCallback(() => {
-        if (!documentTitle || !documentIdentity) {
+        if (!documentIdentity) {
             setHighlights([]);
             return;
         }
         window.api.highlights
-            .getByDocument(documentTitle, documentIdentity)
+            .getByDocument(documentIdentity)
             .then(setHighlights)
             .catch(() => setHighlights([]));
-    }, [documentTitle, documentIdentity]);
+    }, [documentIdentity]);
 
     useEffect(() => {
         fetchHighlights();

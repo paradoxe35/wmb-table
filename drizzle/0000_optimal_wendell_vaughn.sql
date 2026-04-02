@@ -96,6 +96,7 @@ CREATE TABLE `custom_documents` (
 CREATE TABLE `highlights` (
 	`id` text PRIMARY KEY NOT NULL,
 	`group_id` text DEFAULT '' NOT NULL,
+	`document_key` text DEFAULT '' NOT NULL,
 	`document_title` text NOT NULL,
 	`document_identity` text NOT NULL,
 	`paragraph_index` integer NOT NULL,
@@ -109,6 +110,7 @@ CREATE TABLE `highlights` (
 	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint
+CREATE INDEX `highlights_document_key_idx` ON `highlights` (`document_key`);--> statement-breakpoint
 CREATE TABLE `history` (
 	`id` text PRIMARY KEY NOT NULL,
 	`date` text NOT NULL,

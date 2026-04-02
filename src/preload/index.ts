@@ -186,8 +186,8 @@ const api = {
     highlights: {
         search: (query: string, page: number, pageSize?: number, languageCode?: string) =>
             invoke(HighlightChannels.search, query, page, pageSize, languageCode),
-        getByDocument: (documentTitle: string, documentIdentity: DocumentIdentity) =>
-            invoke(HighlightChannels.getByDocument, documentTitle, documentIdentity),
+        getByDocument: (documentIdentity: DocumentIdentity) =>
+            invoke(HighlightChannels.getByDocument, documentIdentity),
         create: (data: HighlightCreateData) => invoke(HighlightChannels.create, data),
         update: (id: string, data: HighlightUpdateData) =>
             invoke(HighlightChannels.update, id, data),

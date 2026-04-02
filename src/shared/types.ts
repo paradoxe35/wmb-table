@@ -188,6 +188,25 @@ export function appendBibleVersionToTitle(
     return trimmedTitle.endsWith(suffix) ? trimmedTitle : `${trimmedTitle}${suffix}`;
 }
 
+export function getDisplayDocumentTitle(
+    documentTitle: string,
+    documentIdentity: DocumentIdentity,
+): string {
+    return documentIdentity.documentType === 'bible'
+        ? appendBibleVersionToTitle(documentTitle, documentIdentity.bibleVersionAbbreviation)
+        : documentTitle;
+}
+
+export function resolveDocumentTitle(
+    documentTitle: string,
+    documentIdentity: DocumentIdentity,
+    sermonTitle?: string | null,
+): string {
+    return documentIdentity.documentType === 'sermon' && sermonTitle
+        ? sermonTitle
+        : getDisplayDocumentTitle(documentTitle, documentIdentity);
+}
+
 export function buildBibleDocumentTitle(
     bookName: string,
     bibleChapter: string,

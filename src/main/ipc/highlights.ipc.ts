@@ -12,12 +12,9 @@ export function registerHighlightsHandlers(): void {
         },
     );
 
-    registerHandler(
-        HighlightChannels.getByDocument,
-        async (_event, documentTitle, documentIdentity) => {
-            return highlightsRepo.getByDocument(documentTitle, documentIdentity);
-        },
-    );
+    registerHandler(HighlightChannels.getByDocument, async (_event, documentIdentity) => {
+        return highlightsRepo.getByDocument(documentIdentity);
+    });
 
     registerHandler(HighlightChannels.create, async (_event, data) => {
         return highlightsRepo.create(data);

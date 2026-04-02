@@ -10,7 +10,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
-    appendBibleVersionToTitle,
+    getDisplayDocumentTitle,
     type DocumentType,
     type HistoryData,
     type HistoryDataItem,
@@ -45,10 +45,7 @@ function useHistoryItemOpen() {
 
             if (documentIdentity.documentType === 'bible') {
                 openBibleChapter({
-                    title: appendBibleVersionToTitle(
-                        item.documentTitle,
-                        documentIdentity.bibleVersionAbbreviation,
-                    ),
+                    title: getDisplayDocumentTitle(item.documentTitle, documentIdentity),
                     ...documentIdentity,
                 });
                 return;
@@ -86,16 +83,11 @@ export default function History() {
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
     const openHistoryItem = useHistoryItemOpen();
-    const getItemTitle = useCallback((item: HistoryDataItem) => {
-        if (item.documentIdentity.documentType !== 'bible') {
-            return item.documentTitle;
-        }
-
-        return appendBibleVersionToTitle(
-            item.documentTitle,
-            item.documentIdentity.bibleVersionAbbreviation,
-        );
-    }, []);
+    const getItemTitle = useCallback(
+        (item: HistoryDataItem) =>
+            getDisplayDocumentTitle(item.documentTitle, item.documentIdentity),
+        [],
+    );
 
     const loadHistories = useCallback(() => {
         if (contentLanguage) {

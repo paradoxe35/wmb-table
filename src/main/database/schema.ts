@@ -193,21 +193,26 @@ export const audioDownloads = sqliteTable('audio_downloads', {
 // Highlights
 // ---------------------------------------------------------------------------
 
-export const highlights = sqliteTable('highlights', {
-    id: text('id').primaryKey(),
-    groupId: text('group_id').notNull().default(''),
-    documentTitle: text('document_title').notNull(),
-    documentIdentity: text('document_identity').notNull(),
-    paragraphIndex: integer('paragraph_index').notNull(),
-    startOffset: integer('start_offset').notNull(),
-    endOffset: integer('end_offset').notNull(),
-    textSnippet: text('text_snippet').notNull(),
-    color: text('color').notNull().default('#FFFF00'),
-    comment: text('comment'),
-    languageCode: text('language_code').notNull().default(''),
-    createdAt: text('created_at').default(sql`(datetime('now'))`),
-    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
-});
+export const highlights = sqliteTable(
+    'highlights',
+    {
+        id: text('id').primaryKey(),
+        groupId: text('group_id').notNull().default(''),
+        documentKey: text('document_key').notNull().default(''),
+        documentTitle: text('document_title').notNull(),
+        documentIdentity: text('document_identity').notNull(),
+        paragraphIndex: integer('paragraph_index').notNull(),
+        startOffset: integer('start_offset').notNull(),
+        endOffset: integer('end_offset').notNull(),
+        textSnippet: text('text_snippet').notNull(),
+        color: text('color').notNull().default('#FFFF00'),
+        comment: text('comment'),
+        languageCode: text('language_code').notNull().default(''),
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+        updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [index('highlights_document_key_idx').on(table.documentKey)],
+);
 
 // ---------------------------------------------------------------------------
 // Backup

@@ -1,7 +1,11 @@
 import * as referenceDataService from '@main/services/reference-data.service';
 import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
-import { isParagraphReference, type SubjectDocumentItem } from '@shared/types';
+import {
+    isParagraphReference,
+    resolveDocumentTitle,
+    type SubjectDocumentItem,
+} from '@shared/types';
 
 function formatDate(dateMs: number): string {
     return new Date(dateMs).toLocaleDateString(i18n.language, {
@@ -28,7 +32,9 @@ function renderSermonRef(item: SubjectDocumentItem): string {
 
     const lines: string[] = [`<div class="ref-card">`];
 
-    lines.push(`<div class="ref-title">${escapeHtml(sermon?.title ?? item.documentTitle)}</div>`);
+    lines.push(
+        `<div class="ref-title">${escapeHtml(resolveDocumentTitle(item.documentTitle, documentIdentity, sermon?.title))}</div>`,
+    );
 
     if (sermon) {
         const parts: string[] = [];

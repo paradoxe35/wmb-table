@@ -26,6 +26,7 @@ import type {
     HighlightItem,
     HighlightSearchResult,
 } from '@shared/types';
+import { getDisplayDocumentTitle } from '@shared/types';
 import {
     buildPendingNavigation,
     buildReferenceOpenRequest,
@@ -197,7 +198,7 @@ function HighlightListItem({
                             lineHeight: 1.3,
                         }}
                     >
-                        {group.documentTitle}
+                        {getDisplayDocumentTitle(group.documentTitle, group.documentIdentity)}
                     </Text>
                     <DocumentTypeTag documentType={group.documentIdentity.documentType} />
                 </div>

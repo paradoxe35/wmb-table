@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     hasReferenceAssignment,
+    resolveDocumentTitle,
     type NoteItem,
     type NoteItemReference,
     type DocumentReferenceSelection,
@@ -124,10 +125,13 @@ function NoteReferenceItem({
     const ref = item.documentReference;
     const assigned = hasReferenceAssignment(ref);
     const documentIdentity = ref?.documentIdentity;
-    const linkedTitle =
+    const sermonTitle =
         documentIdentity?.documentType === 'sermon'
-            ? getSermonById(documentIdentity.sermonId)?.title || item.documentTitle
-            : item.documentTitle;
+            ? getSermonById(documentIdentity.sermonId)?.title
+            : null;
+    const linkedTitle = documentIdentity
+        ? resolveDocumentTitle(item.documentTitle, documentIdentity, sermonTitle)
+        : item.documentTitle;
 
     return (
         <div className="note-ref-select-item" onClick={() => onSelect(item)}>

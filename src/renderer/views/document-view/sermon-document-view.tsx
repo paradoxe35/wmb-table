@@ -96,10 +96,7 @@ export default function SermonDocumentView() {
         ttsParagraphs,
         !!restoreIdentity,
     );
-    const { highlightsByParagraph } = useDocumentHighlights(
-        content?.meta.title ?? null,
-        activeDocumentIdentity ?? undefined,
-    );
+    const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
     return (
         <DocumentBody

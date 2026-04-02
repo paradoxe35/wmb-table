@@ -16,6 +16,7 @@ import {
     NoteItemReferenceBible,
     hasReferenceAssignment,
     isParagraphReference,
+    resolveDocumentTitle,
 } from '@shared/types';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
@@ -60,7 +61,9 @@ export const useShowReferenceDetail = () => {
             documentIdentity?.documentType === 'sermon'
                 ? getSermonById(documentIdentity.sermonId)
                 : undefined;
-        const displayTitle = sermon?.title ?? reference.documentTitle;
+        const displayTitle = documentIdentity
+            ? resolveDocumentTitle(reference.documentTitle, documentIdentity, sermon?.title)
+            : reference.documentTitle;
         const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
         const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 

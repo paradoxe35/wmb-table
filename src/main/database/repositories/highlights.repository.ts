@@ -10,7 +10,7 @@ import type {
     HighlightSearchResult,
     HighlightUpdateData,
 } from '@shared/types';
-import { documentIdentityEquals as sameDocumentIdentity } from '@shared/types';
+import { getDocumentIdentityKey } from '@shared/types';
 
 function parseDocumentIdentity(raw: string): DocumentIdentity {
     return JSON.parse(raw) as DocumentIdentity;
@@ -112,19 +112,13 @@ export function search(
     };
 }
 
-export function getByDocument(
-    documentTitle: string,
-    documentIdentity: DocumentIdentity,
-): HighlightItem[] {
-    const rows = getDb()
+export function getByDocument(documentIdentity: DocumentIdentity): HighlightItem[] {
+    return getDb()
         .select()
         .from(highlights)
-        .where(eq(highlights.documentTitle, documentTitle))
-        .all();
-
-    return rows
-        .map(toHighlightItem)
-        .filter((item) => sameDocumentIdentity(item.documentIdentity, documentIdentity));
+        .where(eq(highlights.documentKey, getDocumentIdentityKey(documentIdentity)))
+        .all()
+        .map(toHighlightItem);
 }
 
 export function create(data: HighlightCreateData): HighlightItem[] {
@@ -135,6 +129,7 @@ export function create(data: HighlightCreateData): HighlightItem[] {
     const allValues = data.paragraphs.map((p) => ({
         id: randomUUID(),
         groupId,
+        documentKey: getDocumentIdentityKey(data.documentIdentity),
         documentTitle: data.documentTitle,
         documentIdentity: JSON.stringify(data.documentIdentity),
         paragraphIndex: p.paragraphIndex,

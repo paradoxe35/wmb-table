@@ -23,6 +23,7 @@ import {
 } from 'antd';
 import { useTranslation } from 'react-i18next';
 import {
+    resolveDocumentTitle,
     type SubjectDocument,
     type SubjectDocumentItem,
     isParagraphReference,
@@ -376,7 +377,7 @@ function ItemFromSelectedSubject({
         documentIdentity.documentType === 'sermon'
             ? getSermonById(documentIdentity.sermonId)
             : undefined;
-    const displayTitle = sermon?.title ?? item.documentTitle;
+    const displayTitle = resolveDocumentTitle(item.documentTitle, documentIdentity, sermon?.title);
     const paragraphRef = isParagraphReference(item.documentReference)
         ? item.documentReference
         : null;

@@ -4,7 +4,7 @@ import * as bibleRepo from '@main/database/repositories/bible.repository';
 import * as customDocRepo from '@main/database/repositories/custom-documents.repository';
 import i18n from '@main/lib/i18n';
 import { escapeHtml } from '@shared/searchable';
-import { getDocumentIdentityKey, type HighlightItem } from '@shared/types';
+import { getDisplayDocumentTitle, getDocumentIdentityKey, type HighlightItem } from '@shared/types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,7 +35,7 @@ interface DeduplicatedHighlight {
 function groupByDocument(items: HighlightItem[]): Map<string, HighlightItem[]> {
     const grouped = new Map<string, HighlightItem[]>();
     for (const item of items) {
-        const key = `${item.documentTitle}::${getDocumentIdentityKey(item.documentIdentity)}`;
+        const key = `${getDisplayDocumentTitle(item.documentTitle, item.documentIdentity)}::${getDocumentIdentityKey(item.documentIdentity)}`;
         const list = grouped.get(key) ?? [];
         list.push(item);
         grouped.set(key, list);
@@ -158,7 +158,7 @@ async function fetchDocumentContext(items: HighlightItem[]): Promise<DocumentCon
     }
 
     return {
-        title: first.documentTitle,
+        title: getDisplayDocumentTitle(first.documentTitle, first.documentIdentity),
         meta: partial.meta,
         paragraphContents: partial.paragraphContents ?? new Map(),
     };

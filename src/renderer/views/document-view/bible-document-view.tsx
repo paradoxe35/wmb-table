@@ -419,10 +419,7 @@ export default function BibleDocumentView() {
         'bible',
         verses,
     );
-    const { highlightsByParagraph } = useDocumentHighlights(
-        activeTab?.title ?? null,
-        activeDocumentIdentity ?? undefined,
-    );
+    const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
     return (
         <DocumentBody

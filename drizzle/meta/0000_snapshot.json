@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "067fbc76-f896-4fdd-965b-8dc6e45c60e3",
+    "id": "b02bc5af-480d-4393-84ff-f3cb53ef5793",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -604,6 +604,14 @@
                     "autoincrement": false,
                     "default": "''"
                 },
+                "document_key": {
+                    "name": "document_key",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "''"
+                },
                 "document_title": {
                     "name": "document_title",
                     "type": "text",
@@ -686,7 +694,13 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {},
+            "indexes": {
+                "highlights_document_key_idx": {
+                    "name": "highlights_document_key_idx",
+                    "columns": ["document_key"],
+                    "isUnique": false
+                }
+            },
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},

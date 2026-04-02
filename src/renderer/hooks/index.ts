@@ -22,7 +22,7 @@ import type {
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { capitalize } from 'lodash';
-import { buildBibleDocumentId, getTabKey } from '@shared/types';
+import { buildBibleDocumentId, getDisplayDocumentTitle, getTabKey } from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -62,7 +62,7 @@ export function buildReferenceOpenRequest(
     }
 
     return {
-        title,
+        title: getDisplayDocumentTitle(title, reference.documentIdentity),
         ...reference.documentIdentity,
     };
 }

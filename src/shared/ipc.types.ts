@@ -431,7 +431,7 @@ export interface InvokeChannelMap {
         return: HighlightSearchResult;
     };
     [HighlightChannels.getByDocument]: {
-        args: [string, DocumentIdentity];
+        args: [DocumentIdentity];
         return: HighlightItem[];
     };
     [HighlightChannels.create]: {
