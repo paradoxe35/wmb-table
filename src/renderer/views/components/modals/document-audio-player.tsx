@@ -9,7 +9,7 @@ import {
     SoundOutlined,
 } from '@ant-design/icons';
 import { useAudioStore } from '@renderer/stores';
-import { useDocumentViewOpen } from '@renderer/components/viewer/document-viewer';
+import { useOpenDocumentRequest } from '@renderer/hooks';
 import { useAudioControls } from '@renderer/hooks/use-audio-controls';
 import { useAudioKeyboard } from '@renderer/hooks/use-audio-keyboard';
 import { formatTime } from '@renderer/utils/functions';
@@ -181,7 +181,7 @@ export default function DocumentAudioPlayer() {
     const sermonId = useAudioStore((s) => s.sermonId);
     const translationId = useAudioStore((s) => s.translationId);
     const languageCode = useAudioStore((s) => s.languageCode);
-    const viewDocument = useDocumentViewOpen();
+    const openDocumentRequest = useOpenDocumentRequest();
 
     const controls = useAudioControls();
     useAudioKeyboard(controls, modalOpen);
@@ -193,14 +193,15 @@ export default function DocumentAudioPlayer() {
             return;
         }
 
-        viewDocument({
+        openDocumentRequest({
             title,
+            documentType: 'sermon',
             sermonId,
             translationId,
             languageCode,
         });
         closeModal();
-    }, [title, sermonId, translationId, languageCode, viewDocument, closeModal]);
+    }, [title, sermonId, translationId, languageCode, openDocumentRequest, closeModal]);
 
     return (
         <Modal title={null} footer={null} width={500} open={modalOpen} onCancel={closeModal}>

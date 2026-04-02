@@ -7,10 +7,17 @@ type DocumentViewTarget = Omit<SermonDocumentIdentity, 'documentType'> & {
     onItemClick?: () => void;
 };
 
-export const useDocumentViewOpen = () => {
+const DocumentViewer: React.FC<{
+    name: string;
+    sermonId: string;
+    translationId: number;
+    languageCode: string;
+    onItemClick?: () => void;
+    children?: React.ReactNode;
+}> = ({ children, name, sermonId, translationId, languageCode, onItemClick }) => {
     const openDocumentRequest = useOpenDocumentRequest();
 
-    const onClick = ({
+    const handleClick = ({
         title,
         sermonId,
         translationId,
@@ -27,23 +34,10 @@ export const useDocumentViewOpen = () => {
         });
     };
 
-    return onClick;
-};
-
-const DocumentViewer: React.FC<{
-    name: string;
-    sermonId: string;
-    translationId: number;
-    languageCode: string;
-    onItemClick?: () => void;
-    children?: React.ReactNode;
-}> = ({ children, name, sermonId, translationId, languageCode, onItemClick }) => {
-    const viewDocument = useDocumentViewOpen();
-
     return (
         <span
             onClick={() => {
-                viewDocument({
+                handleClick({
                     title: name,
                     sermonId,
                     translationId,
