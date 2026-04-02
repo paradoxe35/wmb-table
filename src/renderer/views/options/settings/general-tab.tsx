@@ -18,7 +18,7 @@ import { useAppStore } from '@renderer/stores';
 import { useThemeStore, type FontSizeOption } from '@renderer/stores/theme.store';
 import { UI_LANGUAGE_OPTIONS, type UiLanguagePreference } from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
-import { LANGUAGE_EVENT } from '@renderer/utils/events';
+import { LANGUAGE_EVENT, SYNC_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
 
@@ -74,10 +74,10 @@ export default function GeneralTab() {
     useEffect(() => {
         const cleanupAccess = window.api.on.backupAccessStatus(() => refreshBackup());
         const handleSync = () => refreshBackup();
-        window.addEventListener('sync-completed', handleSync);
+        window.addEventListener(SYNC_EVENT.syncCompleted, handleSync);
         return () => {
             cleanupAccess();
-            window.removeEventListener('sync-completed', handleSync);
+            window.removeEventListener(SYNC_EVENT.syncCompleted, handleSync);
         };
     }, [refreshBackup]);
 

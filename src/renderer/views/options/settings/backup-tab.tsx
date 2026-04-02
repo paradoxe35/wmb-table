@@ -309,8 +309,8 @@ function RestoreProgress({
                 if (s) onStatusRefresh(s);
             });
         };
-        window.addEventListener('sync-completed', handler);
-        return () => window.removeEventListener('sync-completed', handler);
+        window.addEventListener(SYNC_EVENT.syncCompleted, handler);
+        return () => window.removeEventListener(SYNC_EVENT.syncCompleted, handler);
     }, [onStatusRefresh]);
 
     const restartAppNow = useCallback(() => {

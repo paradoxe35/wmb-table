@@ -85,12 +85,17 @@ export function SubjectSelectModal() {
         };
     }, [setVisible]);
 
+    const handleClose = useCallback(() => {
+        pendingReference.current = null;
+        hide();
+    }, [hide]);
+
     return (
         <Modal
             title={t('Ajouter au sujet')}
             footer={null}
             open={visible}
-            onCancel={hide}
+            onCancel={handleClose}
             width={420}
         >
             <Input.Search

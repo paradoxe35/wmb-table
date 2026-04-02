@@ -74,6 +74,11 @@ export function NoteReferencesModal() {
         };
     }, []);
 
+    const handleClose = useCallback(() => {
+        pendingReference.current = null;
+        hide();
+    }, [hide]);
+
     const modalTitle = workingNote.current ? (
         <div>
             <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)', fontWeight: 400 }}>
@@ -86,7 +91,7 @@ export function NoteReferencesModal() {
     );
 
     return (
-        <Modal title={modalTitle} footer={null} open={visible} onCancel={hide} width={480}>
+        <Modal title={modalTitle} footer={null} open={visible} onCancel={handleClose} width={480}>
             <div className="note-ref-select-list">
                 {datas.length === 0 ? (
                     <Empty
