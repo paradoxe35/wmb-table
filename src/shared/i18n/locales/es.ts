@@ -270,6 +270,8 @@ const es: Record<string, string> = {
     'Modèle Kokoro téléchargé': 'Modelo Kokoro descargado',
     'Erreur: {{error}}': 'Error: {{error}}',
     'Erreur lors de la prévisualisation de la voix': 'Error al probar la voz',
+    "Impossible d'enregistrer les paramètres de Lecture audio.":
+        'No se pudieron guardar los ajustes de texto a voz.',
 
     // ── TTS provider Sherpa ──
     'Voix disponible — {{lang}}': 'Voz disponible — {{lang}}',

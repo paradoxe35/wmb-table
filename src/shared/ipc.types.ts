@@ -508,7 +508,7 @@ export interface InvokeChannelMap {
     // TTS
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
     [TtsChannels.getSettings]: { args: []; return: TtsSettings };
-    [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
+    [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: TtsSettings };
     [TtsChannels.startPlayback]: {
         args: [TtsSegment[], string, number?];
         return: void;

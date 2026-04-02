@@ -268,6 +268,8 @@ const en: Record<string, string> = {
     'Modèle Kokoro téléchargé': 'Kokoro model downloaded',
     'Erreur: {{error}}': 'Error: {{error}}',
     'Erreur lors de la prévisualisation de la voix': 'Error previewing the voice',
+    "Impossible d'enregistrer les paramètres de Lecture audio.":
+        'Unable to save audio playback settings.',
 
     // ── TTS provider Sherpa ──
     'Voix disponible — {{lang}}': 'Voice available — {{lang}}',

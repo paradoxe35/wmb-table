@@ -70,7 +70,7 @@ export function ensureSettings(): TtsSettings {
     return getSettings()!;
 }
 
-export function updateSettings(partial: Partial<TtsSettings>): void {
+export function updateSettings(partial: Partial<TtsSettings>): TtsSettings {
     const current = ensureSettings();
     const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
@@ -100,4 +100,6 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
     if (row) {
         getDb().update(ttsSettings).set(update).where(eq(ttsSettings.id, row.id)).run();
     }
+
+    return ensureSettings();
 }

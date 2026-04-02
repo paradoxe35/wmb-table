@@ -35,6 +35,14 @@ import { buildDocsGuideLink } from '@renderer/utils/constants';
 
 const { Text } = Typography;
 
+function mergeTtsSettings(settings: TtsSettings, partial: Partial<TtsSettings>): TtsSettings {
+    const merged = { ...settings, ...partial };
+    if (partial.providers) {
+        merged.providers = { ...settings.providers, ...partial.providers };
+    }
+    return merged;
+}
+
 // ── Active provider config renderer ──
 
 function ActiveProviderConfig({
@@ -92,6 +100,16 @@ export default function TtsTab() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [cacheSize, setCacheSize] = useState(0);
     const [previewing, setPreviewing] = useState(false);
+    const latestChangeIdRef = useRef(0);
+    const persistedSettingsRef = useRef<TtsSettings | null>(null);
+
+    const applyCanonicalSettings = useCallback(
+        (nextSettings: TtsSettings) => {
+            persistedSettingsRef.current = nextSettings;
+            setSettings(nextSettings);
+        },
+        [setSettings],
+    );
 
     const handlePreview = useCallback(async () => {
         if (!settings || previewing) return;
@@ -109,7 +127,7 @@ export default function TtsTab() {
                 if (settings.autoSwitchVoice) {
                     const resolved = await window.api.tts.resolveConfigForLanguage(language);
                     if (resolved) {
-                        setSettings(resolved);
+                        applyCanonicalSettings(resolved);
                     }
                 }
                 const result = await window.api.tts.previewVoice(language);
@@ -120,21 +138,67 @@ export default function TtsTab() {
         } finally {
             setPreviewing(false);
         }
-    }, [settings, contentLanguage, previewing, setSettings, t]);
+    }, [applyCanonicalSettings, settings, contentLanguage, previewing, t]);
 
     useEffect(() => {
-        window.api.tts.getSettings().then(setSettings);
+        window.api.tts.getSettings().then(applyCanonicalSettings);
         window.api.tts.getProviders().then(setProviders);
         window.api.tts.getCacheSize().then(setCacheSize);
-    }, [setSettings, setProviders]);
+    }, [applyCanonicalSettings, setProviders]);
+
+    const persistSettings = useCallback(
+        async (
+            partial: Partial<TtsSettings>,
+            changeId: number,
+            options?: {
+                hasApiKeyChange?: boolean;
+                resolveVoice?: boolean;
+            },
+        ) => {
+            try {
+                const saved = await window.api.tts.updateSettings(partial);
+                persistedSettingsRef.current = saved;
+
+                if (options?.hasApiKeyChange) {
+                    await window.api.tts.getProviders().then(setProviders);
+                    triggerRecheck();
+                }
+
+                let nextSettings = saved;
+                if (options?.resolveVoice && saved.autoSwitchVoice) {
+                    const language = contentLanguage ?? 'fr';
+                    const resolved = await window.api.tts.resolveConfigForLanguage(language);
+                    if (resolved) {
+                        nextSettings = resolved;
+                        persistedSettingsRef.current = resolved;
+                    }
+                }
+
+                if (changeId === latestChangeIdRef.current) {
+                    setSettings(nextSettings);
+                }
+            } catch (err) {
+                if (changeId === latestChangeIdRef.current && persistedSettingsRef.current) {
+                    setSettings(persistedSettingsRef.current);
+                }
+                message.error(
+                    getErrorMessage(
+                        err,
+                        t("Impossible d'enregistrer les paramètres de Lecture audio."),
+                    ),
+                );
+            }
+        },
+        [contentLanguage, setProviders, setSettings, t, triggerRecheck],
+    );
 
     // Debounced IPC save — prevents excessive writes for frequent changes (rate, volume, etc.)
-    // API key and provider changes bypass this and save immediately (see handleUpdate)
+    // Provider switches and API key changes bypass this and save immediately.
     const debouncedSave = useMemo(() => {
-        return debounce((partial: Partial<TtsSettings>) => {
-            window.api.tts.updateSettings(partial);
+        return debounce((partial: Partial<TtsSettings>, changeId: number) => {
+            void persistSettings(partial, changeId);
         }, 1000);
-    }, []);
+    }, [persistSettings]);
 
     // Cleanup debounce on unmount
     const debouncedSaveRef = useRef(debouncedSave);
@@ -146,10 +210,9 @@ export default function TtsTab() {
             if (!settings) {
                 return;
             }
-            const updated = { ...settings, ...partial };
-            if (partial.providers) {
-                updated.providers = { ...settings.providers, ...partial.providers };
-            }
+            const changeId = latestChangeIdRef.current + 1;
+            latestChangeIdRef.current = changeId;
+            const updated = mergeTtsSettings(settings, partial);
             setSettings(updated);
 
             // Check if provider config contains an API key change
@@ -160,29 +223,15 @@ export default function TtsTab() {
             // (compatibility check in use-tts-setup fires on store update, needs fresh main-process state)
             if ('activeProvider' in partial || hasApiKeyChange) {
                 debouncedSave.cancel();
-                window.api.tts.updateSettings(partial).then(async () => {
-                    // Refresh provider info and recheck compatibility after API key save
-                    if (hasApiKeyChange) {
-                        await window.api.tts.getProviders().then(setProviders);
-                        triggerRecheck();
-                    }
-                    // Resolve voice for current language on provider switch or API key change
-                    if (
-                        ('activeProvider' in partial || hasApiKeyChange) &&
-                        updated.autoSwitchVoice
-                    ) {
-                        const language = contentLanguage ?? 'fr';
-                        const resolved = await window.api.tts.resolveConfigForLanguage(language);
-                        if (resolved) {
-                            setSettings(resolved);
-                        }
-                    }
+                void persistSettings(partial, changeId, {
+                    hasApiKeyChange,
+                    resolveVoice: 'activeProvider' in partial || hasApiKeyChange,
                 });
             } else {
-                debouncedSave(partial);
+                debouncedSave(partial, changeId);
             }
         },
-        [settings, setSettings, setProviders, debouncedSave, contentLanguage, triggerRecheck],
+        [settings, setSettings, debouncedSave, persistSettings],
     );
 
     const handleClearCache = useCallback(async () => {

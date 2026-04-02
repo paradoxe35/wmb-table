@@ -90,8 +90,9 @@ export function registerTtsHandlers(): void {
     });
 
     registerHandler(TtsChannels.updateSettings, async (_event, settings) => {
-        ttsRepo.updateSettings(settings);
+        const updated = ttsRepo.updateSettings(settings);
         await getTtsService().reloadSettings();
+        return updated;
     });
 
     registerHandler(TtsChannels.startPlayback, async (_event, segments, language, startIndex) => {
