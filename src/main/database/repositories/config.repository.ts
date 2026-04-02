@@ -58,7 +58,7 @@ export function getContentLanguage(): string | null {
     return config?.contentLanguage ?? null;
 }
 
-export function setContentLanguage(langCode: string): void {
+export function setContentLanguage(langCode: string | null): void {
     getDb()
         .update(configurations)
         .set({ contentLanguage: langCode })

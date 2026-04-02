@@ -472,7 +472,7 @@ export interface InvokeChannelMap {
     [AppChannels.isInitialized]: { args: []; return: boolean };
     [AppChannels.initialize]: { args: []; return: void };
     [AppChannels.getContentLanguage]: { args: []; return: string | null };
-    [AppChannels.setContentLanguage]: { args: [string]; return: void };
+    [AppChannels.setContentLanguage]: { args: [string | null]; return: void };
     [AppChannels.getRememberReadingPosition]: { args: []; return: boolean };
     [AppChannels.setRememberReadingPosition]: { args: [boolean]; return: void };
     [AppChannels.getMaxTabs]: { args: []; return: number };

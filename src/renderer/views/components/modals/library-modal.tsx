@@ -246,16 +246,15 @@ export default function LibraryModal() {
                 await window.api.documents.saveTabs(previousLang, currentTabs);
             }
 
-            setContentLanguage(langCode);
             await window.api.app.setContentLanguage(langCode);
             const bibleVersion = await window.api.bible.getActiveVersion();
-            useAppStore.getState().setActiveBibleVersion(bibleVersion);
-
             const [sermons, tabs] = await Promise.all([
                 window.api.documents.getTitles(langCode),
                 window.api.documents.getTabs(langCode),
             ]);
             startTransition(() => {
+                setContentLanguage(langCode);
+                useAppStore.getState().setActiveBibleVersion(bibleVersion);
                 setSermons(sermons);
                 setTabs(tabs?.length ? tabs : []);
                 setLoaded(true);
@@ -279,8 +278,11 @@ export default function LibraryModal() {
             if (remaining.length > 0) {
                 await handleSelectLanguage(remaining[0].code);
             } else {
+                await window.api.app.setContentLanguage(null);
                 setContentLanguage(null);
+                useAppStore.getState().setActiveBibleVersion(null);
                 setSermons([]);
+                setTabs([]);
             }
         }
         refresh();

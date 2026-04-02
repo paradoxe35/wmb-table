@@ -5,7 +5,8 @@ import * as configRepo from '@main/database/repositories/config.repository';
 import * as sidebarRepo from '@main/database/repositories/sidebar.repository';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import * as historyRepo from '@main/database/repositories/history.repository';
-import { switchBibleLanguage } from '@main/database/index';
+import { refreshBibleDrizzle, switchBibleLanguage } from '@main/database/index';
+import { closeBibleDb } from '@main/services/bible.service';
 import { extractTextFromPdf } from '@main/services/pdf-extract.service';
 import { getUpdateStatus, startDownload, quitAndInstall, checkForUpdates } from '@main/lib/updater';
 import i18n from '@main/lib/i18n';
@@ -34,7 +35,14 @@ export function registerAppHandlers(): void {
 
     registerHandler(AppChannels.setContentLanguage, async (_event, langCode) => {
         configRepo.setContentLanguage(langCode);
-        switchBibleLanguage(langCode);
+        if (langCode) {
+            switchBibleLanguage(langCode);
+            return;
+        }
+
+        configRepo.setActiveBibleVersionAbbreviation(null);
+        closeBibleDb();
+        refreshBibleDrizzle();
     });
 
     registerHandler(AppChannels.getRememberReadingPosition, async () => {

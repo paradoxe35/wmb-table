@@ -223,7 +223,8 @@ const api = {
         isInitialized: () => invoke(AppChannels.isInitialized),
         initialize: () => invoke(AppChannels.initialize),
         getContentLanguage: () => invoke(AppChannels.getContentLanguage),
-        setContentLanguage: (langCode: string) => invoke(AppChannels.setContentLanguage, langCode),
+        setContentLanguage: (langCode: string | null) =>
+            invoke(AppChannels.setContentLanguage, langCode),
         getRememberReadingPosition: () => invoke(AppChannels.getRememberReadingPosition),
         setRememberReadingPosition: (value: boolean) =>
             invoke(AppChannels.setRememberReadingPosition, value),
