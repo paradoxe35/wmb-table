@@ -31,3 +31,7 @@ export function saveTabs(languageCode: string, datas: DocumentTab[]): void {
             .run();
     }
 }
+
+export function deleteTabs(languageCode: string): void {
+    getDb().delete(tabs).where(eq(tabs.languageCode, languageCode)).run();
+}

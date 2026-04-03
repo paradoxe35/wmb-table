@@ -11,6 +11,8 @@ import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/sto
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 
 const { Text } = Typography;
 
@@ -133,6 +135,7 @@ export default function LibraryModal() {
     const setContentLanguage = useAppStore((s) => s.setContentLanguage);
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const tabs = useDocumentTabsStore((s) => s.tabs);
+    const resetTts = useTtsStore((s) => s.reset);
     const [, startTransition] = useTransition();
     const refreshGenerationRef = useRef(0);
 
@@ -265,14 +268,19 @@ export default function LibraryModal() {
         };
     }, [notifyLibraryChanged, refresh, t]);
 
-    const handleSelectLanguage = async (langCode: string) => {
+    const handleSelectLanguage = async (
+        langCode: string,
+        options?: { preserveCurrentTabs?: boolean },
+    ) => {
         try {
             // Save current tabs for the old language before switching
             const previousLang = contentLanguage;
-            if (previousLang) {
+            if (previousLang && options?.preserveCurrentTabs !== false) {
                 await window.api.documents.saveTabs(previousLang, tabs);
             }
 
+            stopAllTtsPlayback();
+            resetTts();
             await window.api.app.setContentLanguage(langCode);
             const workspace = await fetchLanguageWorkspace(langCode);
             startTransition(() => {
@@ -296,8 +304,11 @@ export default function LibraryModal() {
         if (contentLanguage === langCode) {
             const remaining = await window.api.languages.getInstalled();
             if (remaining.length > 0) {
-                await handleSelectLanguage(remaining[0].code);
+                await handleSelectLanguage(remaining[0].code, { preserveCurrentTabs: false });
             } else {
+                stopAllTtsPlayback();
+                resetTts();
+
                 await window.api.app.setContentLanguage(null);
                 setContentLanguage(null);
                 setActiveBibleVersion(null);

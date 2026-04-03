@@ -7,6 +7,7 @@ import log from 'electron-log';
 import type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 import * as tantivyService from './tantivy.service';
 import * as refRepo from '../database/repositories/reference.repository';
+import * as tabsRepo from '../database/repositories/tabs.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
 import { githubDownload } from '@main/lib/github';
 
@@ -182,6 +183,7 @@ export async function deleteLanguagePack(langCode: string): Promise<void> {
 
     // Re-initialize remaining indexes
     await tantivyService.initializeTantivy();
+    tabsRepo.deleteTabs(langCode);
 
     log.info(`[language-pack] Deleted language pack "${langCode}"`);
 }
