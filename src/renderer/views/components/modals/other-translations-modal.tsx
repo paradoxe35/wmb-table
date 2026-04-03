@@ -188,7 +188,7 @@ export function OtherTranslationsModal() {
                     <div className="flex flex-center" style={{ marginTop: '2rem' }}>
                         <Spin />
                     </div>
-                ) : otherLanguageTranslations.length === 0 && !hasWithinLanguage ? (
+                ) : otherLanguageTranslations.length === 0 ? (
                     <Empty
                         image={Empty.PRESENTED_IMAGE_SIMPLE}
                         description={t('Aucune autre traduction disponible')}

@@ -271,7 +271,6 @@ export function useAddDocumentTab() {
 
 export function useOpenDocumentRequest() {
     const addTab = useAddDocumentTab();
-    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
 
@@ -289,9 +288,6 @@ export function useOpenDocumentRequest() {
             }
 
             if (request.documentType === 'bible') {
-                await window.api.bible.switchVersion(request.bibleVersionAbbreviation);
-                const v = await window.api.bible.getActiveVersion();
-                setActiveBibleVersion(v);
                 snapshotActiveDocumentScroll(updateTabScroll);
                 addTab({
                     title: request.title,
@@ -315,7 +311,7 @@ export function useOpenDocumentRequest() {
             });
             setMainView('document');
         },
-        [addTab, setActiveBibleVersion, setMainView, updateTabScroll],
+        [addTab, setMainView, updateTabScroll],
     );
 }
 

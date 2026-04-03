@@ -80,13 +80,13 @@ export function useBibleVersions(): BibleVersionState {
                 delete next[abbreviation];
                 return next;
             });
-            handleSwitch(abbreviation);
+            refresh();
         });
         return () => {
             unsub1();
             unsub2();
         };
-    }, [handleSwitch]);
+    }, [refresh]);
 
     const { installed, downloadable } = useMemo(() => {
         const inst: BibleVersionInfo[] = [];

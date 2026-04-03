@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, Empty, Tag, Timeline, Typography } from 'antd';
 import {
     LeftOutlined,
@@ -57,6 +57,7 @@ export default function History() {
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
+    const selectedHistoryIdRef = useRef<string | null>(null);
     const openHistoryItem = useHistoryItemOpen();
     const { resolveTitle } = useDocumentPresentation();
     const getItemTitle = useCallback(
@@ -81,7 +82,16 @@ export default function History() {
             }
 
             setHistories(data);
-            setSelectedIndex(0);
+            setSelectedIndex(() => {
+                if (!selectedHistoryIdRef.current) {
+                    return 0;
+                }
+
+                const nextIndex = data.findIndex(
+                    (item) => item.id === selectedHistoryIdRef.current,
+                );
+                return nextIndex >= 0 ? nextIndex : 0;
+            });
         });
 
         return () => {
@@ -103,6 +113,9 @@ export default function History() {
 
     // Load items when selected day changes
     const selectedHistory = histories[selectedIndex] ?? null;
+    useEffect(() => {
+        selectedHistoryIdRef.current = selectedHistory?.id ?? null;
+    }, [selectedHistory]);
     useEffect(() => {
         let cancelled = false;
 
