@@ -49,6 +49,7 @@ export function SubjectSelectModal() {
                             detail,
                         }),
                     );
+                    pendingReference.current = null;
                     message.success(t('Ajouté au sujet'));
                 })
                 .catch(() => {

@@ -59,6 +59,31 @@ type BibleTabUpdate = Pick<
 >;
 type SermonTabUpdate = Pick<SermonTab, 'title' | 'documentId' | 'translationId' | 'languageCode'>;
 
+function isMatchingSermonSource(tab: DocumentTab, nextTab: SermonTabUpdate): tab is SermonTab {
+    return (
+        tab.type === 'sermon' &&
+        tab.documentId === nextTab.documentId &&
+        tab.translationId === nextTab.translationId &&
+        tab.languageCode === nextTab.languageCode
+    );
+}
+
+function isMatchingBibleSource(tab: DocumentTab, nextTab: BibleTabUpdate): tab is BibleTab {
+    return (
+        tab.type === 'bible' &&
+        tab.documentId === nextTab.documentId &&
+        normalizeBibleAbbreviation(tab.bibleVersionAbbreviation) ===
+            normalizeBibleAbbreviation(nextTab.bibleVersionAbbreviation)
+    );
+}
+
+function activateMatchingTab<T extends DocumentTab>(
+    tabs: DocumentTab[],
+    matcher: (tab: DocumentTab) => tab is T,
+): DocumentTab[] {
+    return tabs.map((tab) => ({ ...tab, active: matcher(tab) }));
+}
+
 function createTab(tab: NewDocumentTab): DocumentTab {
     if (tab.type === 'bible') {
         return {
@@ -202,41 +227,88 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
         })),
 
     updateSermonTab: (key, nextTab) =>
-        set((state) => ({
-            tabs: state.tabs.map((tab) => {
-                if (matchKey(tab, key) && tab.type === 'sermon') {
-                    return {
-                        ...tab,
-                        title: nextTab.title,
-                        documentId: nextTab.documentId,
-                        translationId: nextTab.translationId,
-                        languageCode: nextTab.languageCode,
-                    };
-                }
+        set((state) => {
+            const currentTab = state.tabs.find(
+                (tab): tab is SermonTab => matchKey(tab, key) && tab.type === 'sermon',
+            );
+            if (!currentTab) {
+                return {};
+            }
 
-                return tab;
-            }),
-        })),
+            const existingTarget = state.tabs.find(
+                (tab) => !matchKey(tab, key) && isMatchingSermonSource(tab, nextTab),
+            );
+
+            if (existingTarget) {
+                return {
+                    tabs: activateMatchingTab(
+                        state.tabs.filter((tab) => !matchKey(tab, key)),
+                        (tab): tab is SermonTab => isMatchingSermonSource(tab, nextTab),
+                    ),
+                };
+            }
+
+            return {
+                tabs: state.tabs.map((tab) => {
+                    if (matchKey(tab, key) && tab.type === 'sermon') {
+                        return {
+                            ...tab,
+                            title: nextTab.title,
+                            documentId: nextTab.documentId,
+                            translationId: nextTab.translationId,
+                            languageCode: nextTab.languageCode,
+                            scrollY: 0,
+                            scrollX: 0,
+                        };
+                    }
+
+                    return tab;
+                }),
+            };
+        }),
 
     updateBibleTab: (key, nextTab) =>
-        set((state) => ({
-            tabs: state.tabs.map((tab) => {
-                if (matchKey(tab, key) && tab.type === 'bible') {
-                    return {
-                        ...tab,
-                        title: nextTab.title,
-                        documentId: nextTab.documentId,
-                        bibleBook: nextTab.bibleBook,
-                        bibleChapter: nextTab.bibleChapter,
-                        bibleVersionAbbreviation: normalizeBibleAbbreviation(
-                            nextTab.bibleVersionAbbreviation,
-                        ),
-                        scrollY: 0,
-                    };
-                }
-                return tab;
-            }),
-        })),
+        set((state) => {
+            const currentTab = state.tabs.find(
+                (tab): tab is BibleTab => matchKey(tab, key) && tab.type === 'bible',
+            );
+            if (!currentTab) {
+                return {};
+            }
+
+            const existingTarget = state.tabs.find(
+                (tab) => !matchKey(tab, key) && isMatchingBibleSource(tab, nextTab),
+            );
+
+            if (existingTarget) {
+                return {
+                    tabs: activateMatchingTab(
+                        state.tabs.filter((tab) => !matchKey(tab, key)),
+                        (tab): tab is BibleTab => isMatchingBibleSource(tab, nextTab),
+                    ),
+                };
+            }
+
+            return {
+                tabs: state.tabs.map((tab) => {
+                    if (matchKey(tab, key) && tab.type === 'bible') {
+                        return {
+                            ...tab,
+                            title: nextTab.title,
+                            documentId: nextTab.documentId,
+                            bibleBook: nextTab.bibleBook,
+                            bibleChapter: nextTab.bibleChapter,
+                            bibleVersionAbbreviation: normalizeBibleAbbreviation(
+                                nextTab.bibleVersionAbbreviation,
+                            ),
+                            scrollY: 0,
+                            scrollX: 0,
+                        };
+                    }
+                    return tab;
+                }),
+            };
+        }),
 }));
 
 export function selectTabs(state: DocumentTabsState): DocumentTab[] {

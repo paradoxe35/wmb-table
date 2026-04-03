@@ -62,7 +62,10 @@ function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: n
     const currentTab = useDocumentTabsStore.getState().tabs.find((tab) => tab.active);
     const container = document.getElementById(DOCUMENT_CONTAINER_ID);
     if (!currentTab || !container) return;
-    updateTabScroll(getTabKey(currentTab), container.scrollTop);
+
+    const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
+    const scrollRatio = maxScroll === 0 ? 0 : container.scrollTop / maxScroll;
+    updateTabScroll(getTabKey(currentTab), scrollRatio);
 }
 
 function getDocumentIdentityFromSource(source: PresentationSource): DocumentIdentity {
@@ -87,11 +90,18 @@ function resolveOpenRequestTitle(
     }
 
     const sermon = getSermonById(documentIdentity.sermonId);
+    const matchingTranslation = sermon?.availableTranslations.find(
+        (translation) =>
+            translation.translationId === documentIdentity.translationId &&
+            translation.languageCode === documentIdentity.languageCode,
+    );
+
     const canonicalTitle =
-        sermon?.translationId === documentIdentity.translationId &&
+        matchingTranslation?.title ??
+        (sermon?.translationId === documentIdentity.translationId &&
         sermon.languageCode === documentIdentity.languageCode
             ? sermon.title
-            : title;
+            : title);
 
     return formatDocumentTitle(canonicalTitle, documentIdentity);
 }

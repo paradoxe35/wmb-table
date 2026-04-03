@@ -1,6 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { DocumentTab } from '@shared/types';
-import { clampTabsToLimit } from '@renderer/stores';
+import { clampTabsToLimit, useDocumentTabsStore } from '@renderer/stores';
+
+beforeEach(() => {
+    useDocumentTabsStore.setState({
+        tabs: [],
+        pendingNavigation: null,
+    });
+});
 
 describe('document-tabs.store', () => {
     it('keeps the active tab when trimming to the limit', () => {
@@ -67,5 +74,127 @@ describe('document-tabs.store', () => {
         expect(keptTabs).toHaveLength(2);
         expect(keptTabs[1].documentId).toBe('c1');
         expect(keptTabs[1].active).toBe(true);
+    });
+
+    it('deduplicates sermon tabs when switching inline to an already open translation', () => {
+        useDocumentTabsStore.setState({
+            tabs: [
+                {
+                    type: 'sermon',
+                    title: 'Current translation',
+                    documentId: '63-0825E',
+                    translationId: 1,
+                    languageCode: 'fr',
+                    active: true,
+                    scrollY: 0.6,
+                },
+                {
+                    type: 'sermon',
+                    title: 'Target translation',
+                    documentId: '63-0825E',
+                    translationId: 2,
+                    languageCode: 'fr',
+                    active: false,
+                    scrollY: 0.2,
+                },
+            ],
+            pendingNavigation: null,
+        });
+
+        useDocumentTabsStore.getState().updateSermonTab('sermon:63-0825E:1:fr', {
+            title: 'Target translation',
+            documentId: '63-0825E',
+            translationId: 2,
+            languageCode: 'fr',
+        });
+
+        const tabs = useDocumentTabsStore.getState().tabs;
+
+        expect(tabs).toHaveLength(1);
+        expect(tabs[0]).toMatchObject({
+            type: 'sermon',
+            documentId: '63-0825E',
+            translationId: 2,
+            languageCode: 'fr',
+            active: true,
+            scrollY: 0.2,
+        });
+    });
+
+    it('resets sermon scroll when switching inline to a different translation', () => {
+        useDocumentTabsStore.setState({
+            tabs: [
+                {
+                    type: 'sermon',
+                    title: 'Current translation',
+                    documentId: '63-0825E',
+                    translationId: 1,
+                    languageCode: 'fr',
+                    active: true,
+                    scrollY: 0.75,
+                    scrollX: 0.1,
+                },
+            ],
+            pendingNavigation: null,
+        });
+
+        useDocumentTabsStore.getState().updateSermonTab('sermon:63-0825E:1:fr', {
+            title: 'Next translation',
+            documentId: '63-0825E',
+            translationId: 2,
+            languageCode: 'fr',
+        });
+
+        expect(useDocumentTabsStore.getState().tabs[0]).toMatchObject({
+            translationId: 2,
+            scrollY: 0,
+            scrollX: 0,
+        });
+    });
+
+    it('deduplicates bible tabs when switching inline to an already open chapter', () => {
+        useDocumentTabsStore.setState({
+            tabs: [
+                {
+                    type: 'bible',
+                    title: 'Luke 1 (KJV)',
+                    documentId: 'LUK:1',
+                    bibleBook: 'LUK',
+                    bibleChapter: '1',
+                    bibleVersionAbbreviation: 'kjv',
+                    active: true,
+                    scrollY: 0.5,
+                },
+                {
+                    type: 'bible',
+                    title: 'Luke 2 (KJV)',
+                    documentId: 'LUK:2',
+                    bibleBook: 'LUK',
+                    bibleChapter: '2',
+                    bibleVersionAbbreviation: 'kjv',
+                    active: false,
+                    scrollY: 0.3,
+                },
+            ],
+            pendingNavigation: null,
+        });
+
+        useDocumentTabsStore.getState().updateBibleTab('bible:LUK:1:kjv', {
+            title: 'Luke 2 (KJV)',
+            documentId: 'LUK:2',
+            bibleBook: 'LUK',
+            bibleChapter: '2',
+            bibleVersionAbbreviation: 'kjv',
+        });
+
+        const tabs = useDocumentTabsStore.getState().tabs;
+
+        expect(tabs).toHaveLength(1);
+        expect(tabs[0]).toMatchObject({
+            type: 'bible',
+            documentId: 'LUK:2',
+            active: true,
+            scrollY: 0.3,
+        });
     });
 });

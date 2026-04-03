@@ -191,10 +191,11 @@ export default function Subject() {
             const normalized = normalizeSubjectSelection(odatas.current, id);
             odatas.current = normalized;
             setDatas(normalized);
+            setSubjects(normalized);
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-    }, [odatas]);
+    }, [odatas, setSubjects]);
 
     useEffect(() => {
         const subject = datas.find((d) => d.active);
@@ -225,8 +226,9 @@ export default function Subject() {
             const normalized = normalizeSubjectSelection(odatas.current, id);
             odatas.current = normalized;
             setDatas(normalized);
+            setSubjects(normalized);
         },
-        [odatas],
+        [odatas, setSubjects],
     );
 
     const saveNewSubject = (searchValue: string) => {
