@@ -295,7 +295,10 @@ export default function MiniPlayerBar() {
                     new CustomEvent<AudioDocumentPlayDetail>(
                         CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay,
                         {
-                            detail: data,
+                            detail: {
+                                ...data,
+                                autoplay: false,
+                            },
                         },
                     ),
                 );

@@ -63,14 +63,20 @@ export default function SermonDocumentView() {
     );
 
     const formatDate = useFormatSermonDate();
+    const contentMatchesActiveTab =
+        !!activeTab &&
+        !!content &&
+        content.meta.sermonId === activeTab.documentId &&
+        content.meta.translationId === activeTab.translationId &&
+        content.meta.languageCode === activeTab.languageCode;
 
     useEffect(() => {
-        if (!activeTabKey || !content?.meta.title) {
+        if (!activeTabKey || !content?.meta.title || !contentMatchesActiveTab) {
             return;
         }
 
         updateTabTitle(activeTabKey, content.meta.title);
-    }, [activeTabKey, content?.meta.title, updateTabTitle]);
+    }, [activeTabKey, content?.meta.title, contentMatchesActiveTab, updateTabTitle]);
 
     useEffect(() => {
         if (!activeTab?.documentId || !activeTab.languageCode) {
