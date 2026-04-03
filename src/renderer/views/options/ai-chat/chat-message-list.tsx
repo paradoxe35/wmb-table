@@ -3,8 +3,7 @@ import { Empty, Spin, Tooltip, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { motion } from 'framer-motion';
-import { Virtuoso } from 'react-virtuoso';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useStickToBottom } from 'use-stick-to-bottom';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
@@ -212,14 +211,9 @@ export default function ChatMessageList({
     const { scrollRef, contentRef, isAtBottom, scrollToBottom, stopScroll } = useStickToBottom({
         resize: 'smooth',
     });
-    const [scrollParent, setScrollParent] = useState<HTMLElement | null>(null);
 
     // Scroll to bottom instantly before paint on conversation switch
     const conversationKey = messages[0]?.id ?? 'empty';
-
-    useLayoutEffect(() => {
-        setScrollParent(scrollRef.current);
-    }, [scrollRef]);
 
     // When leaving options view, break the sticky lock so the ResizeObserver
     // doesn't auto-scroll to bottom when the chat becomes visible again.
@@ -245,7 +239,7 @@ export default function ChatMessageList({
 
         prevOptionView.current = optionView;
         prevMainView.current = mainView;
-    }, [conversationKey, mainView, optionView, scrollRef, sending, stopScroll]);
+    }, [mainView, stopScroll, conversationKey, sending, optionView]);
 
     // Scroll to bottom when user sends a new message
     const prevSending = useRef(sending);
@@ -268,21 +262,21 @@ export default function ChatMessageList({
     return (
         <div className="ai-chat__messages-wrapper">
             <div className="ai-chat__messages" ref={scrollRef}>
-                <div
-                    className={`ai-chat__messages-content ${messages.length === 0 ? 'ai-chat__messages-content--empty' : ''}`}
-                    ref={contentRef}
-                >
+                <div className="ai-chat__messages-content" ref={contentRef}>
                     {messages.length === 0 ? (
                         <EmptyChat />
-                    ) : scrollParent ? (
-                        <VirtualizedMessages
-                            key={conversationKey}
-                            messages={messages}
-                            sending={sending}
-                            lastAssistantId={lastAssistantId}
-                            scrollParent={scrollParent}
-                        />
-                    ) : null}
+                    ) : (
+                        <AnimatePresence initial={false}>
+                            {messages.map((msg) => (
+                                <MessageBubble
+                                    key={msg.id}
+                                    message={msg}
+                                    isLastAssistant={msg.id === lastAssistantId}
+                                    sending={sending}
+                                />
+                            ))}
+                        </AnimatePresence>
+                    )}
                 </div>
             </div>
             {!isAtBottom && (
@@ -291,41 +285,6 @@ export default function ChatMessageList({
                 </button>
             )}
         </div>
-    );
-}
-
-function VirtualizedMessages({
-    messages,
-    sending,
-    lastAssistantId,
-    scrollParent,
-}: {
-    messages: AiMessage[];
-    sending: boolean;
-    lastAssistantId: string | null;
-    scrollParent: HTMLElement;
-}) {
-    return (
-        <Virtuoso
-            className="ai-chat__virtuoso"
-            data={messages}
-            customScrollParent={scrollParent}
-            defaultItemHeight={80}
-            overscan={500}
-            computeItemKey={(_index, message) => message.id}
-            initialTopMostItemIndex={messages.length - 1}
-            itemContent={(_index, message) => (
-                <div className="ai-chat__message-row">
-                    <div className="ai-chat__message-row-inner">
-                        <MessageBubble
-                            message={message}
-                            isLastAssistant={message.id === lastAssistantId}
-                            sending={sending}
-                        />
-                    </div>
-                </div>
-            )}
-        />
     );
 }
 
