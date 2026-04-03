@@ -55,7 +55,6 @@ export default function InlineSearchBar() {
                 return;
             }
             setDocumentViewQuery(tabKey, {
-                documentKey: tabKey,
                 documentTitle: title,
                 matches: [],
                 textContentLength: 0,

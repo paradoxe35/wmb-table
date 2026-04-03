@@ -356,7 +356,6 @@ export interface Suggestions extends Readonly<BaseEntity> {
 export type DocumentViewQuery = {
     term: string;
     mode: SearchMode;
-    documentKey: string;
     documentTitle: string;
     textContentLength: number;
     searchForParagraph?: boolean;

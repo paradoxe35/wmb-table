@@ -83,7 +83,6 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             });
 
             setDocumentViewQuery(tabKey, {
-                documentKey: tabKey,
                 documentTitle: displayTitle,
                 textContentLength: 0,
                 matches: [],
