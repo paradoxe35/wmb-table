@@ -250,16 +250,31 @@ const ContentLanguageBar = () => {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langName, setLangName] = useState<string>('');
 
-    useEffect(() => {
-        if (!contentLanguage) return;
+    const refreshLanguageName = useCallback(() => {
+        if (!contentLanguage) {
+            setLangName('');
+            return;
+        }
+
         window.api.languages
             .getInstalled()
             .then((langs: InstalledLanguage[]) => {
                 const lang = langs.find((l) => l.code === contentLanguage);
-                if (lang) setLangName(lang.language);
+                setLangName(lang?.language ?? '');
             })
             .catch(() => {});
     }, [contentLanguage]);
+
+    useEffect(() => {
+        refreshLanguageName();
+    }, [refreshLanguageName]);
+
+    useEffect(() => {
+        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refreshLanguageName);
+        return () => {
+            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refreshLanguageName);
+        };
+    }, [refreshLanguageName]);
 
     const openManager = () => {
         window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));

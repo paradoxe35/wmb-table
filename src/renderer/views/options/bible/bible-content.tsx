@@ -55,7 +55,7 @@ export function BibleContent({
             .catch(() => {
                 setNoBible(true);
             });
-    }, []);
+    }, [activeBibleVersion?.abbreviation]);
 
     useEffect(() => {
         loadIndex();

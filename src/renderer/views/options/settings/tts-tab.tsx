@@ -16,8 +16,10 @@ import {
 } from 'antd';
 import { BookOutlined, ReloadOutlined, SoundOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { resolveUiLanguage } from '@shared/constants';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAppStore } from '@renderer/stores/app.store';
+import { useThemeStore } from '@renderer/stores/theme.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
@@ -98,10 +100,12 @@ export default function TtsTab() {
     const setProviders = useTtsStore((s) => s.setProviders);
     const triggerRecheck = useTtsStore((s) => s.triggerRecheck);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
     const [cacheSize, setCacheSize] = useState(0);
     const [previewing, setPreviewing] = useState(false);
     const latestChangeIdRef = useRef(0);
     const persistedSettingsRef = useRef<TtsSettings | null>(null);
+    const fallbackLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
 
     const applyCanonicalSettings = useCallback(
         (nextSettings: TtsSettings) => {
@@ -113,7 +117,7 @@ export default function TtsTab() {
 
     const handlePreview = useCallback(async () => {
         if (!settings || previewing) return;
-        const language = contentLanguage ?? 'fr';
+        const language = contentLanguage ?? fallbackLanguage;
         setPreviewing(true);
         try {
             if (settings.activeProvider === 'browser') {
@@ -138,7 +142,7 @@ export default function TtsTab() {
         } finally {
             setPreviewing(false);
         }
-    }, [applyCanonicalSettings, settings, contentLanguage, previewing, t]);
+    }, [applyCanonicalSettings, settings, contentLanguage, fallbackLanguage, previewing, t]);
 
     useEffect(() => {
         window.api.tts.getSettings().then(applyCanonicalSettings);
@@ -166,7 +170,7 @@ export default function TtsTab() {
 
                 let nextSettings = saved;
                 if (options?.resolveVoice && saved.autoSwitchVoice) {
-                    const language = contentLanguage ?? 'fr';
+                    const language = contentLanguage ?? fallbackLanguage;
                     const resolved = await window.api.tts.resolveConfigForLanguage(language);
                     if (resolved) {
                         nextSettings = resolved;
@@ -189,7 +193,7 @@ export default function TtsTab() {
                 );
             }
         },
-        [contentLanguage, setProviders, setSettings, t, triggerRecheck],
+        [contentLanguage, fallbackLanguage, setProviders, setSettings, t, triggerRecheck],
     );
 
     // Debounced IPC save — prevents excessive writes for frequent changes (rate, volume, etc.)

@@ -198,7 +198,6 @@ export function useInitApp() {
     const setRememberReadingPosition = useAppStore((s) => s.setRememberReadingPosition);
     const setMaxTabs = useAppStore((s) => s.setMaxTabs);
     const setError = useAppStore((s) => s.setError);
-    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
     const setUiLanguagePreference = useThemeStore((s) => s.setUiLanguagePreference);
     const applyLanguageWorkspace = useApplyLanguageWorkspace();
 
@@ -232,7 +231,7 @@ export function useInitApp() {
 
                 // Sync UI language preference from DB (null = auto)
                 const pref = dbUiLanguage ?? 'auto';
-                if (pref !== uiLanguagePreference) {
+                if (pref !== useThemeStore.getState().uiLanguagePreference) {
                     setUiLanguagePreference(pref);
                 }
 
@@ -262,7 +261,6 @@ export function useInitApp() {
         setRememberReadingPosition,
         setSidebarHidden,
         setUiLanguagePreference,
-        uiLanguagePreference,
         applyLanguageWorkspace,
     ]);
 }

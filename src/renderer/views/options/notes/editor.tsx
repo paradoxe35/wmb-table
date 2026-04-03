@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 // @ts-expect-error — no type declarations for CKEditor 5 React
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import { useTranslation } from 'react-i18next';
+import { resolveUiLanguage, TEXT_PART_LANGUAGE_OPTIONS } from '@shared/constants';
 
 import { ContextMenu } from '@renderer/utils/context-menu';
 import { App as AntApp, Button, Input, Space, Tooltip, message } from 'antd';
@@ -16,6 +17,8 @@ import { debounce, substrAfter } from '@renderer/utils/functions';
 import { useWmbLinkNavigate } from '@renderer/hooks/use-wmb-link';
 import { NoteItem, NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { useIpcRequestWithLoader, useValueStateRef } from '@renderer/hooks';
+import { useAppStore } from '@renderer/stores';
+import { useThemeStore } from '@renderer/stores/theme.store';
 import {
     referenceBibleBrandLink,
     referenceBrandLink as referenceDocumentBrandLink,
@@ -537,6 +540,10 @@ function Editor({
     editorRef: React.RefObject<any>;
 }) {
     const { t } = useTranslation();
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    const editorUiLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
+
     useEffect(() => {
         if (editorRef.current && editorRef.current.editor) {
             editorRef.current.editor.ui.view.toolbar.element.remove();
@@ -687,12 +694,9 @@ function Editor({
                             ],
                         },
                         language: {
-                            ui: 'fr',
-                            content: 'fr',
-                            textPartLanguage: [
-                                { title: t('Français'), languageCode: 'fr' },
-                                { title: t('English'), languageCode: 'en' },
-                            ],
+                            ui: editorUiLanguage,
+                            content: editorUiLanguage,
+                            textPartLanguage: TEXT_PART_LANGUAGE_OPTIONS,
                         },
                     }}
                 />
