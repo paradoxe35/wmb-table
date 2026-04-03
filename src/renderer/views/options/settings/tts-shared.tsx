@@ -64,7 +64,9 @@ export function groupVoicesByLanguage(
 ) {
     const langPrefix = contentLanguage?.split('-')[0].toLowerCase() ?? '';
     const filtered = langPrefix
-        ? voices.filter((v) => (v.languageCodes[0] ?? '').startsWith(langPrefix))
+        ? voices.filter((v) =>
+              v.languageCodes.some((languageCode) => languageCode.startsWith(langPrefix)),
+          )
         : voices;
     const list = filtered.length > 0 ? filtered : voices;
 
@@ -76,8 +78,14 @@ export function groupVoicesByLanguage(
 
     const groups = new Map<string, TtsVoice[]>();
     for (const v of list) {
-        const lang = v.languageCodes[0] ?? 'other';
-        if (!groups.has(lang)) groups.set(lang, []);
+        const lang =
+            v.languageCodes.find((languageCode) => languageCode.startsWith(langPrefix)) ??
+            v.languageCodes[0] ??
+            'other';
+
+        if (!groups.has(lang)) {
+            groups.set(lang, []);
+        }
         groups.get(lang)!.push(v);
     }
 

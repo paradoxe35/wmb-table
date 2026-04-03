@@ -153,6 +153,7 @@ export class TtsService {
 
     async startPlayback(segments: TtsSegment[], language: string, startIndex = 0): Promise<void> {
         await this.reloadSettings();
+        await this.resolvePlaybackConfigForLanguage(language);
 
         this.playbackGeneration++;
         this.segments = segments;
@@ -168,6 +169,32 @@ export class TtsService {
         // clearPreloaded() on non-queued arrival), so await before prefetching.
         await this.playSegment(startIndex, this.playbackGeneration);
         this.ensureWindow(startIndex + 1, this.playbackGeneration);
+    }
+
+    private async resolvePlaybackConfigForLanguage(language: string): Promise<void> {
+        if (!this.settings.autoSwitchVoice) {
+            return;
+        }
+
+        const providerType = this.settings.activeProvider;
+        const activeProvider = this.providers.get(providerType);
+        if (!activeProvider?.resolveConfigForLanguage) {
+            return;
+        }
+
+        const cfg = this.settings.providers[providerType];
+        const resolved = await activeProvider.resolveConfigForLanguage(language, cfg);
+        if (!resolved) {
+            return;
+        }
+
+        ttsRepo.updateSettings({
+            providers: {
+                ...this.settings.providers,
+                [providerType]: { ...cfg, ...resolved },
+            },
+        });
+        await this.reloadSettings();
     }
 
     pause(): void {

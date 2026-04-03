@@ -27,6 +27,10 @@ function langLabels(langCode: string | string[]): string[] {
     return codes.map((c) => LANG_LABELS_FR[c] ?? c);
 }
 
+function translateLangLabel(label: string, t: (key: string) => string): string {
+    return label === 'Multilingue' ? t(label) : label;
+}
+
 const QUALITY_META: Record<string, { label: string; color: string }> = {
     high: { label: 'Haute qualité', color: 'green' },
     medium: { label: 'Qualité moyenne', color: 'blue' },
@@ -234,7 +238,9 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             {/* 1. Suggested download for content language */}
             {suggestedModel && (
                 <Field
-                    label={t('Voix disponible — {{lang}}', { lang: suggestedModel.langLabel })}
+                    label={t('Voix disponible — {{lang}}', {
+                        lang: translateLangLabel(suggestedModel.langLabel, t),
+                    })}
                     hint={t('Téléchargez une voix pour la langue active du document.')}
                 >
                     {downloads.has(suggestedModel.modelName) ? (
@@ -306,7 +312,10 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             >
                                 <div>
                                     <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                                        {m.voiceName} <Text type="secondary">({m.langLabel})</Text>
+                                        {m.voiceName}{' '}
+                                        <Text type="secondary">
+                                            ({translateLangLabel(m.langLabel, t)})
+                                        </Text>
                                         {m.engine && (
                                             <Text
                                                 type="secondary"
@@ -381,7 +390,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             <List.Item.Meta
                                 title={
                                     <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                                        {m.langLabel}
+                                        {translateLangLabel(m.langLabel, t)}
                                         {m.installed && <Text type="success"> ✓</Text>}
                                     </Text>
                                 }

@@ -16,6 +16,7 @@ interface WorkerRequest {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let ttsInstance: any = null;
 let currentModelDir = '';
+let currentKokoroConfigKey = '';
 
 function sendProgress(percentage: number): void {
     parentPort!.postMessage({ id: -1, result: { type: 'progress', percentage } });
@@ -65,9 +66,27 @@ function findAcousticModelFile(dir: string): string | null {
     return file ? join(dir, file) : null;
 }
 
-function initialize(modelDir: string): boolean {
+function findKokoroLexiconFiles(dir: string): string[] {
+    if (!existsSync(dir)) {
+        return [];
+    }
+
+    return readdirSync(dir)
+        .filter((fileName) => /^lexicon.*\.txt$/i.test(fileName))
+        .sort((a, b) => a.localeCompare(b))
+        .map((fileName) => join(dir, fileName));
+}
+
+function buildKokoroLexiconArg(dir: string): string {
+    const lexicons = findKokoroLexiconFiles(dir);
+    return lexicons.join(',');
+}
+
+function initialize(modelDir: string, _language?: string): boolean {
+    const kokoroLexiconArg = buildKokoroLexiconArg(modelDir);
+    const kokoroConfigKey = `${modelDir}|${kokoroLexiconArg}`;
     // Skip if already initialized with this model
-    if (ttsInstance && currentModelDir === modelDir) {
+    if (ttsInstance && currentKokoroConfigKey === kokoroConfigKey) {
         return true;
     }
 
@@ -98,14 +117,17 @@ function initialize(modelDir: string): boolean {
     if (hasVoicesBin) {
         // Kokoro engine
         const modelOnnx = onnxFiles.find((f) => !/vocos|vocoder|hifigan/i.test(f));
-        if (!modelOnnx) return false;
+        if (!modelOnnx) {
+            return false;
+        }
+
         offlineTtsModelConfig.offlineTtsKokoroModelConfig = {
             model: modelOnnx,
             voices: join(modelDir, 'voices.bin'),
             tokens,
             dataDir: hasDataDir ? join(modelDir, 'espeak-ng-data') : '',
             lengthScale: 1.0,
-            lexicon: '',
+            lexicon: kokoroLexiconArg,
             lang: '',
         };
     } else if (vocoder) {
@@ -145,6 +167,7 @@ function initialize(modelDir: string): boolean {
 
     ttsInstance = sherpaModule.createOfflineTts(config);
     currentModelDir = modelDir;
+    currentKokoroConfigKey = kokoroConfigKey;
     return true;
 }
 
@@ -171,6 +194,23 @@ function dispose(): void {
     if (ttsInstance?.free) ttsInstance.free();
     ttsInstance = null;
     currentModelDir = '';
+    currentKokoroConfigKey = '';
+}
+
+function serializeWorkerError(err: unknown): string {
+    if (err instanceof Error) {
+        return err.message;
+    }
+
+    if (typeof err === 'string') {
+        return err;
+    }
+
+    try {
+        return JSON.stringify(err);
+    } catch {
+        return String(err);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -292,7 +332,7 @@ parentPort?.on('message', async (msg: WorkerRequest) => {
     } catch (err) {
         parentPort!.postMessage({
             id,
-            error: err instanceof Error ? err.message : String(err),
+            error: serializeWorkerError(err),
         });
     }
 });
