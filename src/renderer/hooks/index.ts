@@ -161,7 +161,7 @@ function applyLanguageWorkspaceState(
         contentLanguage: langCode,
         activeBibleVersion: workspace.activeBibleVersion,
     });
-    useSermonStore.setState({ sermons: workspace.sermons });
+    useSermonStore.getState().setSermons(workspace.sermons);
     useDocumentTabsStore.setState({ tabs: clampTabsToLimit(workspace.tabs, maxTabs) });
 }
 

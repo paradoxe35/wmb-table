@@ -17,9 +17,9 @@ import {
 import { usePrepareTabIdentityChange } from '@renderer/hooks';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type {
+    AvailableTranslation,
     AudioDocumentPlayRequest,
     SermonMeta,
-    SermonMetaWithTranslations,
     SermonParagraph,
 } from '@shared/types';
 import {
@@ -35,14 +35,14 @@ import { useDocumentZoom } from './hooks';
 export default function SermonHeader({
     meta,
     zoom,
-    sermonInfo,
+    availableTranslations,
     currentTranslationId,
     paragraphs,
     tts,
 }: {
     meta: SermonMeta;
     zoom: number;
-    sermonInfo: SermonMetaWithTranslations | undefined;
+    availableTranslations: AvailableTranslation[];
     currentTranslationId: number;
     paragraphs: SermonParagraph[];
     tts?: TtsControls;
@@ -65,10 +65,6 @@ export default function SermonHeader({
         audioLanguageCode === meta.languageCode;
     const isPlaying = isCurrentDocument && currentPlay?.status === 'play';
 
-    const availableTranslations = useMemo(
-        () => sermonInfo?.availableTranslations ?? [],
-        [sermonInfo?.availableTranslations],
-    );
     const hasMultipleTranslations = availableTranslations.length > 1;
 
     const openAudioModal = useAudioStore((s) => s.openModal);
