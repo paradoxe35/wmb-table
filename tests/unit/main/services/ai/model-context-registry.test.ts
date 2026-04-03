@@ -22,13 +22,16 @@ const { lookupContextWindow } = await import('@main/services/ai/model-context-re
 
 const OPEN_ROUTER_MODELS = [
     { id: 'openai/gpt-5-mini', context_length: 128_000 },
+    { id: 'openai/gpt-5', context_length: 400_000 },
     { id: 'anthropic/claude-sonnet-4-6', context_length: 1_000_000 },
+    { id: 'qwen/qwen3.6-plus:free', context_length: 1_000_000 },
     { id: 'meta-llama/llama-3.3-70b-instruct', context_length: 128_000 },
     { id: 'meta-llama/llama-3.3-8b-instruct', context_length: 32_000 },
     { id: 'qwen/qwen3.5-27b', context_length: 262_144 },
     { id: 'qwen/qwen3.5-9b', context_length: 131_072 },
     { id: 'deepseek/deepseek-r1', context_length: 128_000 },
     { id: 'google/gemma-3-27b-it', context_length: 128_000 },
+    { id: 'microsoft/phi-4-mini', context_length: 128_000 },
     { id: 'mistralai/mistral-large-latest', context_length: 128_000 },
     { id: 'microsoft/phi-4', context_length: 16_384 },
     { id: 'deepseek/deepseek-coder-v2', context_length: 128_000 },
@@ -92,9 +95,19 @@ describe('model-context-registry', () => {
             expect(await lookupContextWindow('openai/gpt-5-mini')).toBe(128_000);
         });
 
+        it('prefers exact match over prefix sibling', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('gpt-5')).toBe(400_000);
+        });
+
         it('matches Anthropic model', async () => {
             setupOpenRouter();
             expect(await lookupContextWindow('claude-sonnet-4-6')).toBe(1_000_000);
+        });
+
+        it('matches OpenRouter free-tier suffix IDs', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('qwen/qwen3.6-plus:free')).toBe(1_000_000);
         });
     });
 
@@ -122,6 +135,11 @@ describe('model-context-registry', () => {
         it('phi-4:latest strips :latest, matches phi-4', async () => {
             setupOpenRouter();
             expect(await lookupContextWindow('phi-4:latest')).toBe(16_384);
+        });
+
+        it('prefers phi-4 exact match over phi-4-mini sibling', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('phi-4')).toBe(16_384);
         });
 
         it('gemma-3:27b matches gemma-3-27b-it via prefix', async () => {

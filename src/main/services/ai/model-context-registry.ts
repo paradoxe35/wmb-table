@@ -150,13 +150,22 @@ function isMatch(registryBaseName: string, candidate: string): boolean {
     }
     if (registryBaseName.startsWith(candidate)) {
         const nextChar = registryBaseName[candidate.length];
-        return nextChar === '-' || nextChar === '.' || nextChar === undefined;
+        return nextChar === '-' || nextChar === '.' || nextChar === ':' || nextChar === undefined;
     }
     return false;
 }
 
 function findInModels(candidates: string[], models: OpenRouterModel[]): number | undefined {
     for (const candidate of candidates) {
+        for (const model of models) {
+            if (!model.context_length || model.context_length <= 0) {
+                continue;
+            }
+            if (extractBaseName(model.id) === candidate) {
+                return model.context_length;
+            }
+        }
+
         for (const model of models) {
             if (!model.context_length || model.context_length <= 0) {
                 continue;
@@ -171,6 +180,12 @@ function findInModels(candidates: string[], models: OpenRouterModel[]): number |
 
 function findInRegistry(candidates: string[], registry: ContextWindowMap): number | undefined {
     for (const candidate of candidates) {
+        for (const [key, contextWindow] of Object.entries(registry)) {
+            if (extractBaseName(key) === candidate) {
+                return contextWindow;
+            }
+        }
+
         for (const [key, contextWindow] of Object.entries(registry)) {
             if (isMatch(extractBaseName(key), candidate)) {
                 return contextWindow;
