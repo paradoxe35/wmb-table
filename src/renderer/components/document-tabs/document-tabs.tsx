@@ -12,7 +12,12 @@ import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useTabPersistence } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
-import { getTabKey } from '@shared/types';
+import {
+    getDocumentIdentityFromTab,
+    getDocumentIdentityKey,
+    getTabKey,
+    type DocumentTab,
+} from '@shared/types';
 import TabItem from './tab-item';
 
 export default function DocumentTabs() {
@@ -29,20 +34,24 @@ export default function DocumentTabs() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const resetTts = useTtsStore((s) => s.reset);
-    const ttsDocumentId = useTtsStore((s) => s.documentId);
+    const ttsDocumentKey = useTtsStore((s) => s.documentKey);
     const ttsStatus = useTtsStore((s) => s.status);
     const { modal } = AntApp.useApp();
 
     useTabPersistence(tabs, contentLanguage);
 
     const stopTtsIfPlaying = useCallback(
-        (closedTabKey: string) => {
-            if (ttsDocumentId === closedTabKey && ttsStatus !== 'idle') {
+        (closedTab: DocumentTab) => {
+            const closedTabDocumentKey = getDocumentIdentityKey(
+                getDocumentIdentityFromTab(closedTab),
+            );
+
+            if (ttsDocumentKey === closedTabDocumentKey && ttsStatus !== 'idle') {
                 stopAllTtsPlayback();
                 resetTts();
             }
         },
-        [resetTts, ttsDocumentId, ttsStatus],
+        [resetTts, ttsDocumentKey, ttsStatus],
     );
 
     // Close the active tab with Ctrl+W / Cmd+W (only when document view is active)
@@ -61,7 +70,7 @@ export default function DocumentTabs() {
 
                 const tab = tabs.find((t) => getTabKey(t) === activeTabKey);
                 if (tab) {
-                    stopTtsIfPlaying(activeTabKey);
+                    stopTtsIfPlaying(tab);
                 }
 
                 cleanupTabs([activeTabKey]);
@@ -75,7 +84,10 @@ export default function DocumentTabs() {
     const handleRemoveTab = useCallback(
         (key: string) => {
             const tab = tabs.find((t) => getTabKey(t) === key);
-            if (tab) stopTtsIfPlaying(key);
+            if (tab) {
+                stopTtsIfPlaying(tab);
+            }
+
             cleanupTabs([key]);
             removeTab(key);
         },
@@ -88,7 +100,7 @@ export default function DocumentTabs() {
             for (const tab of tabs) {
                 const tabKey = getTabKey(tab);
                 if (tabKey !== key) {
-                    stopTtsIfPlaying(tabKey);
+                    stopTtsIfPlaying(tab);
                     removedKeys.push(tabKey);
                 }
             }
@@ -104,7 +116,7 @@ export default function DocumentTabs() {
             const removedKeys: string[] = [];
             for (const tab of tabs.slice(idx + 1)) {
                 const tabKey = getTabKey(tab);
-                stopTtsIfPlaying(tabKey);
+                stopTtsIfPlaying(tab);
                 removedKeys.push(tabKey);
             }
             cleanupTabs(removedKeys);
@@ -115,7 +127,10 @@ export default function DocumentTabs() {
 
     const handleRemoveAllTabs = useCallback(() => {
         const allKeys = tabs.map((t) => getTabKey(t));
-        for (const key of allKeys) stopTtsIfPlaying(key);
+        for (const tab of tabs) {
+            stopTtsIfPlaying(tab);
+        }
+
         cleanupTabs(allKeys);
         removeAllTabs();
     }, [tabs, removeAllTabs, stopTtsIfPlaying, cleanupTabs]);

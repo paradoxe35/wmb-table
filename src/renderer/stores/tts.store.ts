@@ -17,11 +17,11 @@ interface TtsState {
     segments: TtsSegment[];
     activeProvider: TtsProviderType | null;
     error: string | null;
-    documentId: string | null;
+    documentKey: string | null;
     languageSupported: boolean;
     incompatibleMessage: string | undefined;
     /** Remembered position for resume — preserved across stop/play cycles */
-    lastStoppedDocumentId: string | null;
+    lastStoppedDocumentKey: string | null;
     lastStoppedSegmentIndex: number;
     /** Bumped to force a compatibility recheck (e.g. after API key save) */
     recheckTrigger: number;
@@ -32,7 +32,7 @@ interface TtsState {
     setSettings(s: TtsSettings): void;
     setPlaybackState(s: TtsPlaybackState): void;
     setSegments(s: TtsSegment[]): void;
-    setDocumentId(id: string | null): void;
+    setDocumentKey(key: string | null): void;
     setLanguageSupported(v: boolean): void;
     setIncompatibleMessage(msg: string | undefined): void;
     triggerRecheck(): void;
@@ -52,10 +52,10 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
     segments: [],
     activeProvider: null,
     error: null,
-    documentId: null,
+    documentKey: null,
     languageSupported: false,
     incompatibleMessage: undefined,
-    lastStoppedDocumentId: null,
+    lastStoppedDocumentKey: null,
     lastStoppedSegmentIndex: 0,
     recheckTrigger: 0,
     completedNaturally: false,
@@ -72,7 +72,7 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
         }),
     setSegments: (segments) =>
         set({ segments, totalSegments: segments.length, completedNaturally: false }),
-    setDocumentId: (documentId) => set({ documentId }),
+    setDocumentKey: (documentKey) => set({ documentKey }),
     setLanguageSupported: (languageSupported) => set({ languageSupported }),
     setIncompatibleMessage: (incompatibleMessage) => set({ incompatibleMessage }),
     triggerRecheck: () => set((s) => ({ recheckTrigger: s.recheckTrigger + 1 })),
@@ -80,19 +80,19 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
     markCompletedNaturally: () =>
         set({
             completedNaturally: true,
-            lastStoppedDocumentId: null,
+            lastStoppedDocumentKey: null,
             lastStoppedSegmentIndex: 0,
         }),
     stopAndRemember: () => {
-        const { documentId, currentSegmentIndex } = get();
+        const { documentKey, currentSegmentIndex } = get();
         set({
             status: 'idle',
             currentSegmentIndex: 0,
             totalSegments: 0,
             segments: [],
             error: null,
-            documentId: null,
-            lastStoppedDocumentId: documentId,
+            documentKey: null,
+            lastStoppedDocumentKey: documentKey,
             lastStoppedSegmentIndex: currentSegmentIndex,
             completedNaturally: false,
         });
@@ -104,8 +104,8 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
             totalSegments: 0,
             segments: [],
             error: null,
-            documentId: null,
-            // Do NOT clear lastStoppedDocumentId / lastStoppedSegmentIndex here.
+            documentKey: null,
+            // Do NOT clear lastStoppedDocumentKey / lastStoppedSegmentIndex here.
             // reset() is called when the main process signals idle (natural end or
             // external stop). stopAndRemember() saves the resume position just before,
             // and wiping it here would break resume after a user stop on remote providers.

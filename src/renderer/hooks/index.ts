@@ -23,7 +23,13 @@ import type {
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
 import { capitalize } from 'lodash';
-import { buildBibleDocumentId, formatDocumentTitle, getTabKey } from '@shared/types';
+import {
+    buildBibleDocumentId,
+    formatDocumentTitle,
+    getDocumentIdentityFromTab,
+    getDocumentIdentityKey,
+    getTabKey,
+} from '@shared/types';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -316,19 +322,31 @@ export function useOpenDocumentRequest() {
 export function usePrepareTabIdentityChange() {
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const resetTts = useTtsStore((s) => s.reset);
-    const ttsDocumentId = useTtsStore((s) => s.documentId);
+    const ttsDocumentKey = useTtsStore((s) => s.documentKey);
     const ttsStatus = useTtsStore((s) => s.status);
 
     return useCallback(
         (tabKey: string, options?: { stopTts?: boolean }) => {
             cleanupTabs([tabKey]);
 
-            if (options?.stopTts && ttsDocumentId === tabKey && ttsStatus !== 'idle') {
+            const tab = useDocumentTabsStore
+                .getState()
+                .tabs.find((candidate) => getTabKey(candidate) === tabKey);
+            const tabDocumentKey = tab
+                ? getDocumentIdentityKey(getDocumentIdentityFromTab(tab))
+                : null;
+
+            if (
+                options?.stopTts &&
+                tabDocumentKey != null &&
+                ttsDocumentKey === tabDocumentKey &&
+                ttsStatus !== 'idle'
+            ) {
                 stopAllTtsPlayback();
                 resetTts();
             }
         },
-        [cleanupTabs, resetTts, ttsDocumentId, ttsStatus],
+        [cleanupTabs, resetTts, ttsDocumentKey, ttsStatus],
     );
 }
 

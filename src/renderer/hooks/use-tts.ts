@@ -28,7 +28,7 @@ type BrowserPlaybackActions = {
 };
 
 type PlaybackActions = BrowserPlaybackActions & {
-    setDocumentId(documentId: string | null): void;
+    setDocumentKey(documentKey: string | null): void;
     setSegments(segments: TtsSegment[]): void;
 };
 
@@ -153,12 +153,12 @@ function startPlaybackAtIndex(
     startIndex: number,
     settings: TtsSettings,
     language: string,
-    documentId: string,
+    documentKey: string,
     actions: PlaybackActions,
     getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error',
 ): void {
     actions.setSegments(segments);
-    actions.setDocumentId(documentId);
+    actions.setDocumentKey(documentKey);
     // Set status eagerly so the mini-player subscriber pauses sermon audio
     actions.setPlaybackState({
         status: 'loading',
@@ -184,12 +184,12 @@ function startPlaybackAtIndex(
 export function useTts(
     paragraphs: { paragraphIndex: number; content: string }[],
     language: string,
-    documentId: string,
+    documentKey: string,
     options?: UseTtsOptions,
 ) {
     const settings = useTtsStore((s) => s.settings);
     const status = useTtsStore((s) => s.status);
-    const currentDocId = useTtsStore((s) => s.documentId);
+    const currentDocumentKey = useTtsStore((s) => s.documentKey);
     const currentSegmentIndex = useTtsStore((s) => s.currentSegmentIndex);
     const totalSegments = useTtsStore((s) => s.totalSegments);
     const segments = useTtsStore((s) => s.segments);
@@ -197,7 +197,7 @@ export function useTts(
     const languageSupported = useTtsStore((s) => s.languageSupported);
     const incompatibleMessage = useTtsStore((s) => s.incompatibleMessage);
     const setSegments = useTtsStore((s) => s.setSegments);
-    const setDocumentId = useTtsStore((s) => s.setDocumentId);
+    const setDocumentKey = useTtsStore((s) => s.setDocumentKey);
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
     const reset = useTtsStore((s) => s.reset);
     const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
@@ -251,9 +251,9 @@ export function useTts(
         }
 
         // Resume at saved position (skips intro naturally), clamp if stale
-        const { lastStoppedDocumentId, lastStoppedSegmentIndex } = useTtsStore.getState();
+        const { lastStoppedDocumentKey, lastStoppedSegmentIndex } = useTtsStore.getState();
         const savedIndex =
-            lastStoppedDocumentId === documentId && lastStoppedSegmentIndex > 0
+            lastStoppedDocumentKey === documentKey && lastStoppedSegmentIndex > 0
                 ? lastStoppedSegmentIndex
                 : 0;
         const startIndex = savedIndex < allSegments.length ? savedIndex : 0;
@@ -263,24 +263,24 @@ export function useTts(
             startIndex,
             settings,
             language,
-            documentId,
+            documentKey,
             {
                 markCompletedNaturally,
                 reset,
-                setDocumentId,
+                setDocumentKey,
                 setPlaybackState,
                 setSegments,
             },
             getTtsStatusSnapshot,
         );
     }, [
-        documentId,
+        documentKey,
         language,
         markCompletedNaturally,
         options,
         paragraphs,
         reset,
-        setDocumentId,
+        setDocumentKey,
         setPlaybackState,
         setSegments,
         settings,
@@ -390,11 +390,11 @@ export function useTts(
                 startIndex,
                 settings,
                 language,
-                documentId,
+                documentKey,
                 {
                     markCompletedNaturally,
                     reset,
-                    setDocumentId,
+                    setDocumentKey,
                     setPlaybackState,
                     setSegments,
                 },
@@ -402,13 +402,13 @@ export function useTts(
             );
         },
         [
-            documentId,
+            documentKey,
             language,
             markCompletedNaturally,
             options,
             paragraphs,
             reset,
-            setDocumentId,
+            setDocumentKey,
             setPlaybackState,
             setSegments,
             settings,
@@ -421,7 +421,10 @@ export function useTts(
     useEffect(() => {
         if (contentKeyRef.current !== contentKey) {
             contentKeyRef.current = contentKey;
-            if (currentDocId === documentId && (status === 'playing' || status === 'paused')) {
+            if (
+                currentDocumentKey === documentKey &&
+                (status === 'playing' || status === 'paused')
+            ) {
                 const currentSeg = segments[currentSegmentIndex];
                 const paragraphIdx = currentSeg?.paragraphIndex ?? 0;
                 playFromParagraph(Math.max(1, paragraphIdx));
@@ -429,15 +432,15 @@ export function useTts(
         }
     }, [
         contentKey,
-        currentDocId,
+        currentDocumentKey,
         currentSegmentIndex,
-        documentId,
+        documentKey,
         playFromParagraph,
         segments,
         status,
     ]);
 
-    const isThisDocument = currentDocId === documentId;
+    const isThisDocument = currentDocumentKey === documentKey;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');
     const isPaused = isThisDocument && status === 'paused';
 

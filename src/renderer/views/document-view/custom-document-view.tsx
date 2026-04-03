@@ -27,6 +27,7 @@ import {
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 import { buildSegmentAnnouncement } from '@shared/tts.types';
+import { getDocumentIdentityKey } from '@shared/types';
 
 interface DocumentParagraph {
     paragraphIndex: number;
@@ -89,6 +90,9 @@ export default function CustomDocumentView() {
         () => (activeTab ? customDocuments.find((d) => d.id === activeTab.documentId) : undefined),
         [customDocuments, activeTab],
     );
+    const ttsDocumentKey = activeDocumentIdentity
+        ? getDocumentIdentityKey(activeDocumentIdentity)
+        : '';
     const { content: docContent, loading } = useCustomDocumentContent(customDoc?.id);
     const { restoreIdentity, readingPositionKey } = resolveCustomDocumentScrollPersistence(
         customDoc?.id,
@@ -138,7 +142,7 @@ export default function CustomDocumentView() {
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const docLang = docContent?.languageCode || contentLanguage || 'en';
-    const tts = useTts(paragraphs, docLang, activeTabKey ?? '', {
+    const tts = useTts(paragraphs, docLang, ttsDocumentKey, {
         introText: docContent?.title,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
     });
@@ -174,7 +178,7 @@ export default function CustomDocumentView() {
             </div>
             <ParagraphList
                 paragraphs={paragraphs}
-                documentId={activeTabKey ?? ''}
+                documentKey={ttsDocumentKey}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}

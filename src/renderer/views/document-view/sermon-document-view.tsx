@@ -23,6 +23,7 @@ import {
 import { useTts } from '@renderer/hooks/use-tts';
 import { useFormatSermonDate } from '@renderer/hooks';
 import { buildSegmentAnnouncement, buildSermonIntroText } from '@shared/tts.types';
+import { getDocumentIdentityKey } from '@shared/types';
 
 export default function SermonDocumentView() {
     const { content, loading } = useSermonContent();
@@ -36,6 +37,9 @@ export default function SermonDocumentView() {
     const sermonsById = useSermonStore((s) => s.sermonsById);
     const sermonInfo = activeTab?.documentId ? sermonsById[activeTab.documentId] : undefined;
     const tabTranslationId = activeTab?.translationId;
+    const ttsDocumentKey = activeDocumentIdentity
+        ? getDocumentIdentityKey(activeDocumentIdentity)
+        : '';
     const { restoreIdentity, readingPositionKey } = resolveSermonScrollPersistence(
         activeTab,
         content,
@@ -77,7 +81,7 @@ export default function SermonDocumentView() {
     }, [content?.meta, formatDate]);
 
     const langCode = content?.meta.languageCode ?? '';
-    const tts = useTts(ttsParagraphs, langCode, activeTabKey ?? '', {
+    const tts = useTts(ttsParagraphs, langCode, ttsDocumentKey, {
         introText: ttsIntroText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
     });
@@ -132,7 +136,7 @@ export default function SermonDocumentView() {
             {content && (
                 <ParagraphList
                     paragraphs={ttsParagraphs}
-                    documentId={activeTabKey ?? ''}
+                    documentKey={ttsDocumentKey}
                     search={search}
                     activeParagraphIndex={activeParagraphIndex}
                     highlightsByParagraph={highlightsByParagraph}

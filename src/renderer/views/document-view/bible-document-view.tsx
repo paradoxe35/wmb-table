@@ -15,6 +15,7 @@ import type { BibleBook, BibleIndex, BibleTab, BibleVersionInfo } from '@shared/
 import {
     buildBibleDocumentId,
     buildBibleDocumentTitle,
+    getDocumentIdentityKey,
     getBibleIndexEntry,
     getTabKey,
     normalizeBibleAbbreviation,
@@ -285,6 +286,10 @@ export default function BibleDocumentView() {
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
     const bibleVersionAbbreviation = activeTab?.bibleVersionAbbreviation ?? '';
+    const ttsDocumentKey = activeDocumentIdentity
+        ? getDocumentIdentityKey(activeDocumentIdentity)
+        : '';
+
     const activeTabVersion = useMemo(() => {
         if (!bibleVersionAbbreviation) {
             return null;
@@ -361,7 +366,7 @@ export default function BibleDocumentView() {
         return buildBibleChapterIntro(bookName, chapter, bibleLang);
     }, [bookName, chapter, bibleLang]);
 
-    const tts = useTts(paragraphs, bibleLang, activeTabKey ?? '', {
+    const tts = useTts(paragraphs, bibleLang, ttsDocumentKey, {
         introText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('verse', n, bibleLang),
     });
@@ -370,7 +375,7 @@ export default function BibleDocumentView() {
     // even if the user switches to another Bible tab while it is still reading.
     const ttsSettings = useTtsStore((s) => s.settings);
     const completedNaturally = useTtsStore((s) => s.completedNaturally);
-    const ttsDocumentId = useTtsStore((s) => s.documentId);
+    const currentTtsDocumentKey = useTtsStore((s) => s.documentKey);
     const ttsStatus = useTtsStore((s) => s.status);
     const clearCompletedNaturally = useTtsStore((s) => s.clearCompletedNaturally);
     const prepareTabIdentityChange = usePrepareTabIdentityChange();
@@ -379,12 +384,12 @@ export default function BibleDocumentView() {
 
     useEffect(() => {
         if (
-            ttsDocumentId === activeTabKey &&
+            currentTtsDocumentKey === ttsDocumentKey &&
             (ttsStatus === 'loading' || ttsStatus === 'playing' || ttsStatus === 'paused')
         ) {
             continuationSourceRef.current = captureBiblePlaybackSource(activeTab, activeTabKey);
         }
-    }, [activeTab, activeTabKey, ttsDocumentId, ttsStatus]);
+    }, [activeTab, activeTabKey, currentTtsDocumentKey, ttsDocumentKey, ttsStatus]);
 
     useEffect(() => {
         if (completedNaturally && ttsSettings?.bibleReadEntireBook) {
@@ -476,7 +481,7 @@ export default function BibleDocumentView() {
 
             <ParagraphList
                 paragraphs={paragraphs}
-                documentId={activeTabKey ?? ''}
+                documentKey={ttsDocumentKey}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
