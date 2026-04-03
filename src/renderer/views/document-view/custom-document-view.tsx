@@ -121,6 +121,10 @@ export default function CustomDocumentView() {
         !!restoreIdentity,
     );
 
+    const { t } = useTranslation();
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const docLang = docContent?.languageCode ?? contentLanguage ?? 'en';
+
     const contextMenuContent = useMemo(() => {
         if (!docContent || !customDoc || !activeDocumentIdentity) {
             return null;
@@ -129,19 +133,16 @@ export default function CustomDocumentView() {
         return {
             documentTitle: docContent.title,
             documentIdentity: activeDocumentIdentity,
-            languageCode: docContent.languageCode || '',
+            languageCode: docLang,
             paragraphs,
         };
-    }, [docContent, customDoc, activeDocumentIdentity, paragraphs]);
+    }, [docContent, customDoc, activeDocumentIdentity, docLang, paragraphs]);
 
     const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef, 'custom');
     const { highlightsByParagraph } = useDocumentHighlights(
         customDoc ? (activeDocumentIdentity ?? undefined) : undefined,
     );
 
-    const { t } = useTranslation();
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const docLang = docContent?.languageCode || contentLanguage || 'en';
     const tts = useTts(paragraphs, docLang, ttsDocumentKey, {
         introText: docContent?.title,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
@@ -149,7 +150,11 @@ export default function CustomDocumentView() {
 
     // Disable TTS when document language doesn't match the active content language
     const effectiveTts = useMemo(() => {
-        const langMismatch = docContent?.languageCode !== contentLanguage;
+        const langMismatch =
+            !!docContent?.languageCode &&
+            !!contentLanguage &&
+            docContent.languageCode !== contentLanguage;
+
         if (!langMismatch) {
             return tts;
         }

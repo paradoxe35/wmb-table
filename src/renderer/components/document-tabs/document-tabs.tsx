@@ -168,11 +168,11 @@ export default function DocumentTabs() {
     useEffect(() => {
         const handleCustomDocRemoved = (e: Event) => {
             const detail = (e as CustomEvent)?.detail;
-            if (detail?.title) {
+            if (detail?.id) {
                 handleRemoveTab(
                     getTabKey({
                         type: 'custom',
-                        documentId: detail.id ?? '',
+                        documentId: detail.id,
                     }),
                 );
             }

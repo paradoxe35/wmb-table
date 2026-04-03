@@ -279,6 +279,7 @@ export default function BibleDocumentView() {
     const search = useSearchHighlight();
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [allBibleVersions, setAllBibleVersions] = useState<BibleVersionInfo[]>(
         cachedBibleVersions ?? [],
     );
@@ -302,7 +303,10 @@ export default function BibleDocumentView() {
                 : null)
         );
     }, [activeBibleVersion, allBibleVersions, bibleVersionAbbreviation]);
-    const bibleLang = activeTabVersion?.langCode ?? '';
+
+    const bibleLang =
+        activeTabVersion?.langCode ?? activeBibleVersion?.langCode ?? contentLanguage ?? '';
+
     const { verses, loading: chapterLoading } = useBibleChapterContent(
         bookCode,
         chapter,
