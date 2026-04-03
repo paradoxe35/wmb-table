@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
 
@@ -26,15 +26,22 @@ export function useBibleVersions(): BibleVersionState {
     const activeVersion = activeBibleVersion?.abbreviation;
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+    const refreshGenerationRef = useRef(0);
 
     const refresh = useCallback(async () => {
+        const generation = ++refreshGenerationRef.current;
         const nextVersions = await window.api.bible.getVersions();
+        if (generation !== refreshGenerationRef.current) {
+            return;
+        }
         cachedVersions = nextVersions;
         cachedForLanguage = contentLanguage;
         setVersions(nextVersions);
     }, [contentLanguage]);
 
     useEffect(() => {
+        refreshGenerationRef.current += 1;
+
         if (contentLanguage !== cachedForLanguage) {
             invalidateCache();
             setVersions([]);

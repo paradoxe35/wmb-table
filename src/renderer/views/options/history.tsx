@@ -65,17 +65,33 @@ export default function History() {
     );
 
     const loadHistories = useCallback(() => {
-        if (contentLanguage) {
-            window.api.app.getHistory(contentLanguage).then((data) => {
-                setHistories(data);
-                setSelectedIndex(0);
-            });
+        let cancelled = false;
+
+        if (!contentLanguage) {
+            setHistories([]);
+            setSelectedIndex(0);
+            return () => {
+                cancelled = true;
+            };
         }
+
+        window.api.app.getHistory(contentLanguage).then((data) => {
+            if (cancelled) {
+                return;
+            }
+
+            setHistories(data);
+            setSelectedIndex(0);
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, [contentLanguage]);
 
     // Load on mount / language change
     useEffect(() => {
-        loadHistories();
+        return loadHistories();
     }, [loadHistories]);
 
     // Refresh when new history entries are added
@@ -88,11 +104,21 @@ export default function History() {
     // Load items when selected day changes
     const selectedHistory = histories[selectedIndex] ?? null;
     useEffect(() => {
+        let cancelled = false;
+
         if (selectedHistory) {
-            window.api.app.getHistoryItems(selectedHistory.id).then(setHistoryItems);
+            window.api.app.getHistoryItems(selectedHistory.id).then((items) => {
+                if (!cancelled) {
+                    setHistoryItems(items);
+                }
+            });
         } else {
             setHistoryItems([]);
         }
+
+        return () => {
+            cancelled = true;
+        };
     }, [selectedHistory]);
 
     const canGoPrev = selectedIndex < histories.length - 1;

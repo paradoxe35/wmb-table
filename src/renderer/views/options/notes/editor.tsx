@@ -246,14 +246,30 @@ export default function EditorContent({
     const ipcRequestWithLoader = useIpcRequestWithLoader();
 
     useEffect(() => {
+        let cancelled = false;
+        let renameTimer: ReturnType<typeof setTimeout> | number | null = null;
+
         window.api.notes.getById(workingNoteId).then((note) => {
+            if (cancelled) {
+                return;
+            }
+
             setWorkingNote(note);
             if (note?.created && note.defaultName) {
-                window.setTimeout(() => {
-                    window.dispatchEvent(new Event(EDITOR_EVENT.renameNoteModal));
+                renameTimer = window.setTimeout(() => {
+                    if (!cancelled) {
+                        window.dispatchEvent(new Event(EDITOR_EVENT.renameNoteModal));
+                    }
                 }, 1000);
             }
         });
+
+        return () => {
+            cancelled = true;
+            if (renameTimer != null) {
+                window.clearTimeout(renameTimer);
+            }
+        };
     }, [workingNoteId]);
 
     useEffect(() => {

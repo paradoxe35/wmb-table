@@ -23,19 +23,35 @@ export function NoteReferencesModal() {
     const workingNoteId = useNotesStore((s) => s.workingNoteId);
 
     useEffect(() => {
-        if (!workingNoteId) {
+        if (!visible || !workingNoteId) {
             setDatas([]);
             workingNote.current = null;
             return;
         }
+
+        let cancelled = false;
+
         (async () => {
             const note = await window.api.notes.getById(workingNoteId);
+            if (cancelled) {
+                return;
+            }
+
             if (note) {
                 workingNote.current = note;
                 const references = await window.api.notes.getReferences(workingNoteId);
-                setDatas(references);
+                if (!cancelled) {
+                    setDatas(references);
+                }
+            } else if (!cancelled) {
+                workingNote.current = null;
+                setDatas([]);
             }
         })();
+
+        return () => {
+            cancelled = true;
+        };
     }, [workingNoteId, visible]);
 
     const onSelectItem = useCallback(
@@ -53,6 +69,7 @@ export function NoteReferencesModal() {
             window.api.notes
                 .updateReference(item.id, referenceItem, pendingReference.current.documentTitle)
                 .then(() => {
+                    pendingReference.current = null;
                     message.success(t('Ajouté à la note'));
                 })
                 .catch(() => {

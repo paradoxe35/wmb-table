@@ -33,11 +33,15 @@ export default function SimilarSermonsModal() {
     const formatDate = useFormatSermonDate();
 
     useEffect(() => {
+        let requestToken = 0;
+
         const handler = (e: CustomEventInit<ShowSimilarSermonsDetail>) => {
             const detail = e.detail;
             if (!detail) return;
             if (!detail.languageCode) return;
 
+            requestToken += 1;
+            const currentRequestToken = requestToken;
             setOpen(true);
             setLoading(true);
             setAllHits([]);
@@ -52,17 +56,35 @@ export default function SimilarSermonsModal() {
                     detail.paragraphIndex,
                     50,
                 )
-                .then((result) => setAllHits(result.hits as SimilarSermonHit[]))
+                .then((result) => {
+                    if (currentRequestToken !== requestToken) {
+                        return;
+                    }
+
+                    setAllHits(result.hits as SimilarSermonHit[]);
+                })
                 .catch(() => {
+                    if (currentRequestToken !== requestToken) {
+                        return;
+                    }
+
                     setAllHits([]);
                     message.error(t('Erreur lors de la recherche'));
                 })
-                .finally(() => setLoading(false));
+                .finally(() => {
+                    if (currentRequestToken !== requestToken) {
+                        return;
+                    }
+
+                    setLoading(false);
+                });
         };
 
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, handler);
-        return () =>
+        return () => {
+            requestToken += 1;
             window.removeEventListener(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, handler);
+        };
     }, [t]);
 
     const handleNavigate = useCallback(

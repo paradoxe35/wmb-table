@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -134,11 +134,18 @@ export default function LibraryModal() {
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const tabs = useDocumentTabsStore((s) => s.tabs);
     const [, startTransition] = useTransition();
+    const refreshGenerationRef = useRef(0);
 
     const refresh = useCallback(() => {
+        const generation = ++refreshGenerationRef.current;
+
         setLoading(true);
         Promise.all([window.api.languages.getInstalled(), window.api.languages.getAvailable()])
             .then(([inst, avail]) => {
+                if (generation !== refreshGenerationRef.current) {
+                    return;
+                }
+
                 const installedCodes = new Set(inst.map((i) => i.code));
                 const merged: LanguageItem[] = [];
 
@@ -171,7 +178,11 @@ export default function LibraryModal() {
                 setLanguages(merged);
             })
             .catch(() => {})
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (generation === refreshGenerationRef.current) {
+                    setLoading(false);
+                }
+            });
     }, []);
 
     const filteredLanguages = useMemo(() => {
@@ -204,14 +215,20 @@ export default function LibraryModal() {
 
     // Auto-open only when no languages installed or no content language persisted
     useEffect(() => {
+        let cancelled = false;
+
         Promise.all([
             window.api.languages.getInstalled(),
             window.api.app.getContentLanguage(),
         ]).then(([inst, contentLang]) => {
-            if (inst.length === 0 || !contentLang) {
+            if (!cancelled && (inst.length === 0 || !contentLang)) {
                 setVisible(true);
             }
         });
+
+        return () => {
+            cancelled = true;
+        };
     }, [setVisible]);
 
     useEffect(() => {

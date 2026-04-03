@@ -60,7 +60,7 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                     return true;
                 }
                 case 'bible': {
-                    openDocumentRequest({
+                    const request = {
                         title: buildBibleDocumentTitle(
                             ref.bookName,
                             ref.chapter,
@@ -70,7 +70,22 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                         bibleBook: ref.bookCode,
                         bibleChapter: ref.chapter,
                         bibleVersionAbbreviation: ref.bibleVersionAbbreviation,
-                    });
+                    } as const;
+
+                    if (ref.verse) {
+                        const verse = Number.parseInt(ref.verse, 10);
+                        if (!Number.isNaN(verse)) {
+                            setPendingNavigation(
+                                buildPendingNavigation(request, {
+                                    kind: 'tree',
+                                    documentIdentity: request,
+                                    tree: [verse],
+                                }),
+                            );
+                        }
+                    }
+
+                    openDocumentRequest(request);
                     return true;
                 }
                 case 'doc':
