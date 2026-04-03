@@ -239,7 +239,6 @@ CREATE TABLE `tts_settings` (
 	`id` text PRIMARY KEY NOT NULL,
 	`active_provider` text NOT NULL,
 	`highlight_mode` text NOT NULL,
-	`auto_play` integer NOT NULL,
 	`auto_switch_voice` integer DEFAULT true NOT NULL,
 	`rate` real DEFAULT 1 NOT NULL,
 	`segment_gap_ms` integer,

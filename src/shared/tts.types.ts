@@ -98,7 +98,6 @@ export interface TtsSettings {
     activeProvider: TtsProviderType;
     highlightMode: TtsHighlightMode; // default: 'sentence'
     segmentGapMs: number; // pause between segments in ms
-    autoPlay: boolean;
     autoSwitchVoice: boolean;
     rate: number; // 0.5–2.0, default: 1
     cacheMaxSizeMb: number; // default: 1000
@@ -619,7 +618,6 @@ export function createDefaultTtsSettings(): TtsSettings {
         activeProvider: DEFAULT_TTS_PROVIDER,
         highlightMode: 'sentence',
         segmentGapMs: SEGMENT_GAP_MS,
-        autoPlay: false,
         autoSwitchVoice: true,
         rate: 1,
         cacheMaxSizeMb: DEFAULT_CACHE_MAX_SIZE_MB,

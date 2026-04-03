@@ -9,6 +9,7 @@ import {
     selectActiveBibleTab,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { usePrepareTabIdentityChange } from '@renderer/hooks';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type { BibleBook, BibleIndex, BibleTab, BibleVersionInfo } from '@shared/types';
 import {
@@ -103,6 +104,7 @@ function useChapterNavigation(activeTab: BibleTab | null) {
     const activateTab = useDocumentTabsStore((s) => s.activateTab);
     const tabs = useDocumentTabsStore((s) => s.tabs);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const prepareTabIdentityChange = usePrepareTabIdentityChange();
     const [bibleIndex, setBibleIndex] = useState<BibleIndex>({});
 
     const bookCode = activeTab?.bibleBook;
@@ -159,6 +161,7 @@ function useChapterNavigation(activeTab: BibleTab | null) {
             if (existingTab) {
                 activateTab(getTabKey(existingTab));
             } else {
+                prepareTabIdentityChange(activeTabKey, { stopTts: true });
                 updateBibleTab(activeTabKey, {
                     title,
                     documentId,
@@ -168,7 +171,16 @@ function useChapterNavigation(activeTab: BibleTab | null) {
                 });
             }
         },
-        [activeTab, activeTabKey, bookCode, bookName, tabs, activateTab, updateBibleTab],
+        [
+            activeTab,
+            activeTabKey,
+            bookCode,
+            bookName,
+            tabs,
+            activateTab,
+            prepareTabIdentityChange,
+            updateBibleTab,
+        ],
     );
 
     const goPrev = useCallback(() => {
@@ -361,6 +373,7 @@ export default function BibleDocumentView() {
     const ttsDocumentId = useTtsStore((s) => s.documentId);
     const ttsStatus = useTtsStore((s) => s.status);
     const clearCompletedNaturally = useTtsStore((s) => s.clearCompletedNaturally);
+    const prepareTabIdentityChange = usePrepareTabIdentityChange();
     const autoStartTtsRef = useRef(false);
     const continuationSourceRef = useRef<ReturnType<typeof captureBiblePlaybackSource>>(null);
 
@@ -384,6 +397,7 @@ export default function BibleDocumentView() {
             }
 
             autoStartTtsRef.current = true;
+            prepareTabIdentityChange(source.tabKey);
             updateBibleTab(source.tabKey, nextTarget);
             activateTab(
                 getTabKey({
@@ -398,6 +412,7 @@ export default function BibleDocumentView() {
         bibleIndex,
         clearCompletedNaturally,
         completedNaturally,
+        prepareTabIdentityChange,
         ttsSettings?.bibleReadEntireBook,
         updateBibleTab,
     ]);

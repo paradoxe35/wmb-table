@@ -192,9 +192,6 @@ const en: Record<string, string> = {
     'Pause entre les segments: {{gap}}s': 'Pause between segments: {{gap}}s',
     'Durée de la pause entre chaque phrase ou paragraphe lu.':
         'Duration of the pause between each spoken sentence or paragraph.',
-    'Lecture automatique': 'Auto-play',
-    "Démarrer la lecture automatiquement à l'ouverture d'un document.":
-        'Automatically start reading when a document is opened.',
     'Cache audio': 'Audio cache',
     'Les lectures passées sont conservées pour une relecture plus rapide.':
         'Past readings are cached for faster replay.',

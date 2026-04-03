@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "a6ae27d2-b52f-4bf1-9bea-e342625d4957",
+    "id": "c30c4280-5f19-4f26-83bf-3fc0dbb2f1f0",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -1485,13 +1485,6 @@
                 "highlight_mode": {
                     "name": "highlight_mode",
                     "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "auto_play": {
-                    "name": "auto_play",
-                    "type": "integer",
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false

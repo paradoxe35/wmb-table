@@ -1,7 +1,11 @@
 import { Button, Divider, Empty, Modal, Spin, Tag, Tooltip } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useModalVisible, useOpenDocumentRequest } from '@renderer/hooks';
+import {
+    useModalVisible,
+    useOpenDocumentRequest,
+    usePrepareTabIdentityChange,
+} from '@renderer/hooks';
 import { useDocumentTabsStore } from '@renderer/stores';
 import { BookOutlined, EyeOutlined } from '@ant-design/icons';
 import {
@@ -15,6 +19,7 @@ export function OtherTranslationsModal() {
     const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
     const openDocumentRequest = useOpenDocumentRequest();
+    const prepareTabIdentityChange = usePrepareTabIdentityChange();
     const updateSermonTab = useDocumentTabsStore((s) => s.updateSermonTab);
 
     const [translations, setTranslations] = useState<SermonTranslation[]>([]);
@@ -95,27 +100,35 @@ export function OtherTranslationsModal() {
         };
     }, [setVisible]);
 
-    const handleOpen = (translationTitle: string, languageCode: string, translationId: number) => {
-        if (sermonId) {
-            openDocumentRequest({
-                title: translationTitle,
-                ...buildSermonDocumentIdentity(sermonId, translationId, languageCode),
-            });
-        }
-        hideModal();
-    };
+    const handleSelectTranslation = useCallback(
+        (translation: SermonTranslation) => {
+            if (!request) {
+                return;
+            }
 
-    const handleSwitchTranslation = (translation: SermonTranslation) => {
-        if (request) {
-            updateSermonTab(request.tabKey, {
-                title: translation.title,
-                documentId: request.sermonId,
-                translationId: translation.translationId,
-                languageCode: translation.languageCode,
-            });
-        }
-        hideModal();
-    };
+            if (translation.languageCode === request.currentLanguageCode) {
+                prepareTabIdentityChange(request.tabKey);
+                updateSermonTab(request.tabKey, {
+                    title: translation.title,
+                    documentId: request.sermonId,
+                    translationId: translation.translationId,
+                    languageCode: translation.languageCode,
+                });
+            } else {
+                openDocumentRequest({
+                    title: translation.title,
+                    ...buildSermonDocumentIdentity(
+                        request.sermonId,
+                        translation.translationId,
+                        translation.languageCode,
+                    ),
+                });
+            }
+
+            hideModal();
+        },
+        [hideModal, openDocumentRequest, prepareTabIdentityChange, request, updateSermonTab],
+    );
 
     return (
         <Modal
@@ -158,7 +171,7 @@ export function OtherTranslationsModal() {
                                 </div>
                                 <Tooltip title={t('Basculer vers cette traduction')}>
                                     <Button
-                                        onClick={() => handleSwitchTranslation(translation)}
+                                        onClick={() => handleSelectTranslation(translation)}
                                         shape="circle"
                                         icon={<EyeOutlined />}
                                     />
@@ -212,9 +225,7 @@ export function OtherTranslationsModal() {
                             </div>
                             <Tooltip title={t('Ouvrir le document')}>
                                 <Button
-                                    onClick={() => {
-                                        handleOpen(tr.title, tr.languageCode, tr.translationId);
-                                    }}
+                                    onClick={() => handleSelectTranslation(tr)}
                                     shape="circle"
                                     icon={<EyeOutlined />}
                                 />

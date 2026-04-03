@@ -390,24 +390,6 @@ export default function TtsTab() {
                             onChange={(v) => handleUpdate({ segmentGapMs: v })}
                         />
                     </Field>
-                    <Divider style={{ margin: '4px 0' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Switch
-                            size="small"
-                            checked={settings.autoPlay}
-                            onChange={(v) => handleUpdate({ autoPlay: v })}
-                        />
-                        <div>
-                            <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                                {t('Lecture automatique')}
-                            </Text>
-                            <Hint>
-                                {t(
-                                    "Démarrer la lecture automatiquement à l'ouverture d'un document.",
-                                )}
-                            </Hint>
-                        </div>
-                    </div>
                 </Space>
             </Card>
 

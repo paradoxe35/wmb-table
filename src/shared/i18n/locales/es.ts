@@ -193,9 +193,6 @@ const es: Record<string, string> = {
     'Pause entre les segments: {{gap}}s': 'Pausa entre segmentos: {{gap}}s',
     'Durée de la pause entre chaque phrase ou paragraphe lu.':
         'Duración de la pausa entre cada frase o párrafo leído.',
-    'Lecture automatique': 'Reproducción automática',
-    "Démarrer la lecture automatiquement à l'ouverture d'un document.":
-        'Iniciar la lectura automáticamente al abrir un documento.',
     'Cache audio': 'Caché de audio',
     'Les lectures passées sont conservées pour une relecture plus rapide.':
         'Las lecturas anteriores se conservan para una reproducción más rápida.',

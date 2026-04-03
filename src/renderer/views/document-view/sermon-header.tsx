@@ -14,6 +14,7 @@ import {
     useAudioStore,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { usePrepareTabIdentityChange } from '@renderer/hooks';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import type {
     AudioDocumentPlayRequest,
@@ -50,6 +51,7 @@ export default function SermonHeader({
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const updateSermonTab = useDocumentTabsStore((s) => s.updateSermonTab);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const prepareTabIdentityChange = usePrepareTabIdentityChange();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
@@ -130,6 +132,7 @@ export default function SermonHeader({
                 return;
             }
 
+            prepareTabIdentityChange(activeTabKey);
             updateSermonTab(activeTabKey, {
                 title: nextTranslation.title,
                 documentId: meta.sermonId,
@@ -137,7 +140,13 @@ export default function SermonHeader({
                 languageCode: nextTranslation.languageCode,
             });
         },
-        [activeTabKey, availableTranslations, meta.sermonId, updateSermonTab],
+        [
+            activeTabKey,
+            availableTranslations,
+            meta.sermonId,
+            prepareTabIdentityChange,
+            updateSermonTab,
+        ],
     );
 
     const translationOptions = useMemo(() => {

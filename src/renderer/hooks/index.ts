@@ -5,9 +5,12 @@ import {
     clampTabsToLimit,
     useDocumentTabsStore,
     useSermonStore,
+    useSearchStore,
 } from '@renderer/stores';
 import type { NewDocumentTab } from '@renderer/stores/document-tabs.store';
 import { useThemeStore } from '@renderer/stores/theme.store';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import type {
     BibleVersionInfo,
@@ -307,6 +310,25 @@ export function useOpenDocumentRequest() {
             setMainView('document');
         },
         [addTab, setActiveBibleVersion, setMainView, updateTabScroll],
+    );
+}
+
+export function usePrepareTabIdentityChange() {
+    const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
+    const resetTts = useTtsStore((s) => s.reset);
+    const ttsDocumentId = useTtsStore((s) => s.documentId);
+    const ttsStatus = useTtsStore((s) => s.status);
+
+    return useCallback(
+        (tabKey: string, options?: { stopTts?: boolean }) => {
+            cleanupTabs([tabKey]);
+
+            if (options?.stopTts && ttsDocumentId === tabKey && ttsStatus !== 'idle') {
+                stopAllTtsPlayback();
+                resetTts();
+            }
+        },
+        [cleanupTabs, resetTts, ttsDocumentId, ttsStatus],
     );
 }
 
