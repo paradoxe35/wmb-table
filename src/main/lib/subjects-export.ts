@@ -25,10 +25,19 @@ function renderDocumentRef(item: SubjectDocumentItem): string {
               )
             : null;
 
+    const typeLabel =
+        documentIdentity.documentType === 'sermon'
+            ? i18n.t('Prédication')
+            : documentIdentity.documentType === 'custom'
+              ? i18n.t('Document')
+              : i18n.t('Référence');
+
     const lines: string[] = [`<div class="ref-card">`];
     const title = formatDocumentTitle(sermon?.title ?? item.documentTitle, documentIdentity);
 
-    lines.push(`<div class="ref-title">${escapeHtml(title)}</div>`);
+    lines.push(
+        `<div class="ref-header"><span class="ref-kind">${escapeHtml(typeLabel)}</span><div class="ref-title">${escapeHtml(title)}</div></div>`,
+    );
 
     if (sermon) {
         const parts: string[] = [];
@@ -51,7 +60,7 @@ function renderBibleRef(item: SubjectDocumentItem): string {
     if (!b) return '';
     const lines: string[] = [
         `<div class="ref-card">`,
-        `<div class="ref-title">${escapeHtml(b.bookName)} ${b.chapter}:${b.verse}</div>`,
+        `<div class="ref-header"><span class="ref-kind">${escapeHtml(i18n.t('Bible'))}</span><div class="ref-title">${escapeHtml(b.bookName)} ${b.chapter}:${b.verse}</div></div>`,
     ];
     if (b.content) {
         lines.push(`<div class="ref-body">${escapeHtml(b.content)}</div>`);
@@ -61,41 +70,13 @@ function renderBibleRef(item: SubjectDocumentItem): string {
 }
 
 export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[]): string {
-    const bibleRefs = items.filter(({ documentReference }) => {
-        const documentIdentity = documentReference.documentIdentity;
-        return documentIdentity.documentType === 'bible';
-    });
-    const sermonRefs = items.filter(({ documentReference }) => {
-        const documentIdentity = documentReference.documentIdentity;
-        return documentIdentity.documentType === 'sermon';
-    });
-    const otherRefs = items.filter(({ documentReference }) => {
-        const documentIdentity = documentReference.documentIdentity;
-        return (
-            documentIdentity.documentType !== 'bible' && documentIdentity.documentType !== 'sermon'
-        );
-    });
-    const hasBothTypes = bibleRefs.length > 0 && sermonRefs.length > 0;
-
-    let body = '';
-
-    if (sermonRefs.length > 0) {
-        if (hasBothTypes) {
-            body += `<h2>${escapeHtml(i18n.t('Prédications'))}</h2>\n`;
-        }
-        body += sermonRefs.map(renderDocumentRef).join('\n');
-    }
-
-    if (bibleRefs.length > 0) {
-        if (hasBothTypes) {
-            body += `<h2>${escapeHtml(i18n.t('Bible'))}</h2>\n`;
-        }
-        body += bibleRefs.map(renderBibleRef).join('\n');
-    }
-
-    if (otherRefs.length > 0) {
-        body += otherRefs.map(renderDocumentRef).join('\n');
-    }
+    const body = items
+        .map((item) =>
+            item.documentReference.documentIdentity.documentType === 'bible'
+                ? renderBibleRef(item)
+                : renderDocumentRef(item),
+        )
+        .join('\n');
 
     return `<!DOCTYPE html>
 <html><head>
@@ -103,10 +84,11 @@ export function buildSubjectExportHtml(name: string, items: SubjectDocumentItem[
 <title>${escapeHtml(name)}</title>
 <style>
   body { font-family: sans-serif; font-size: 14px; padding: 20px; color: #333; line-height: 1.6; }
-  h1 { border-bottom: 2px solid #333; padding-bottom: 8px; }
-  h2 { margin-top: 24px; font-size: 1.1em; color: #555; }
-  .ref-card { margin: 8px 0; padding: 10px 12px; border: 1px solid #e6e6e6; border-radius: 4px; page-break-inside: avoid; }
-  .ref-title { font-weight: 600; font-size: 0.95em; }
+  h1 { border-bottom: 2px solid #333; padding-bottom: 8px; margin-bottom: 16px; }
+  .ref-card { margin: 10px 0; padding: 12px 14px; border: 1px solid #e6e6e6; border-radius: 8px; page-break-inside: avoid; }
+  .ref-header { display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+  .ref-kind { display: inline-block; font-size: 0.72em; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #666; background: #f3f4f6; border-radius: 999px; padding: 2px 8px; flex-shrink: 0; }
+  .ref-title { font-weight: 600; font-size: 0.98em; }
   .ref-meta { margin-top: 4px; font-size: 0.85em; color: #6b7280; }
   .ref-body { margin-top: 6px; font-size: 0.9em; color: #444; line-height: 1.7; }
 </style>
