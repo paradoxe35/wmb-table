@@ -162,9 +162,10 @@ export default function MiniPlayerBar() {
                 if (el && !el.paused) {
                     el.pause();
                 }
+                setCurrentPlay(null);
             }
         });
-    }, [audioRef]);
+    }, [audioRef, setCurrentPlay]);
 
     // Handle audio play events from document header
     useEffect(() => {
