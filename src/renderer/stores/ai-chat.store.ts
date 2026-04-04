@@ -10,6 +10,7 @@ import type {
 import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
 import { AI_DATA_EVENT, APP_UI_EVENT } from '@renderer/utils/events';
 import { createStore } from './create-store';
+import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
 
 const TOOL_TO_EVENT: Record<string, string> = {
     createNote: AI_DATA_EVENT.notesChanged,
@@ -291,6 +292,9 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 conversationId,
                 content: trimmed,
             });
+
+            markFeatureReminderUsed('ai');
+
             set((state) => ({
                 conversations: state.conversations.some(
                     (conversation) => conversation.id === result.conversation.id,

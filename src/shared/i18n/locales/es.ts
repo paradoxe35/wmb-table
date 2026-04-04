@@ -121,6 +121,21 @@ const es: Record<string, string> = {
     // ── AI chat ──
     "L'assistant IA est désactivé.": 'El asistente IA está desactivado.',
     'Ouvrir les paramètres': 'Abrir configuración',
+    'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
+        '¿Sabía que <u>{{feature}}</u> puede ayudarle a explorar un tema y comprender más rápido lo que está buscando?',
+    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Active <u>{{feature}}</u> para hacer preguntas, profundizar en un tema, comparar varias predicaciones, encontrar pasajes bíblicos y obtener respuestas claras sin tener que recorrerlo todo manualmente.',
+    "Ouvrir les réglages de l'assistant": 'Abrir ajustes del asistente',
+    'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
+        '¿Sabía que <u>{{feature}}</u> puede leer sus documentos?',
+    'Choisissez une voix pour <u>{{feature}}</u>, puis lancez la lecture directement depuis vos documents.':
+        'Elija una voz para <u>{{feature}}</u> y luego inicie la lectura directamente desde sus documentos.',
+    'Ouvrir les réglages audio': 'Abrir ajustes de audio',
+    'Le saviez-vous ? <u>{{feature}}</u> peut protéger vos données.':
+        '¿Sabía que <u>{{feature}}</u> puede proteger sus datos?',
+    'Connectez Google Drive pour que <u>{{feature}}</u> garde vos notes, sujets et réglages synchronisés.':
+        'Conecte Google Drive para que <u>{{feature}}</u> mantenga sincronizados sus notas, temas y ajustes.',
+    'Ouvrir les réglages de sauvegarde': 'Abrir ajustes de copia de seguridad',
     'Posez votre question...': 'Haga su pregunta...',
     Envoyer: 'Enviar',
     Arrêter: 'Detener',

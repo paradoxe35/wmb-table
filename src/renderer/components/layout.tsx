@@ -12,6 +12,7 @@ import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
 import SidebarDocuments from './layout/sidebar-documents';
 import MiniPlayerBar from './mini-player-bar';
+import FeatureReminderBanner from './feature-reminder-banner';
 import { AudioProvider } from './audio-context';
 import { useContainerHeight } from '@renderer/hooks';
 import { useAppStore } from '@renderer/stores';
@@ -138,6 +139,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                                     flexDirection: 'column',
                                 }}
                             >
+                                {!readingMode && <FeatureReminderBanner />}
                                 {children}
                             </Content>
                         </div>

@@ -22,6 +22,7 @@ import { useAppStore } from '@renderer/stores/app.store';
 import { useThemeStore } from '@renderer/stores/theme.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer } from '@renderer/services/tts-audio-player';
+import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
 import { getTtsDemoText } from '@shared/tts-demo-texts';
 import { SEGMENT_GAP_MS, type TtsProviderType, type TtsSettings } from '@shared/tts.types';
 import { PROVIDER_CATALOG } from '@shared/tts.types';
@@ -137,6 +138,8 @@ export default function TtsTab() {
                 const result = await window.api.tts.previewVoice(language);
                 ttsAudioPlayer.play(result.audioBase64, result.mimeType, settings.rate ?? 1);
             }
+
+            markFeatureReminderUsed('tts');
         } catch (err) {
             message.error(getErrorMessage(err, t('Erreur lors de la prévisualisation de la voix')));
         } finally {
