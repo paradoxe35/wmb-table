@@ -19,6 +19,20 @@ export function SubjectSelectModal() {
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
     const subjects = useSubjectsStore((s) => s.subjects);
+    const setSubjects = useSubjectsStore((s) => s.setSubjects);
+
+    const refreshSubjects = useCallback(() => {
+        return window.api.subjects
+            .getAll()
+            .then((items) => {
+                setSubjects(items);
+                return items;
+            })
+            .catch(() => {
+                message.error(t('Erreur lors du chargement des sujets'));
+                return [];
+            });
+    }, [setSubjects, t]);
 
     const onSelectItem = useCallback(
         (subjectId: string) => {
@@ -74,6 +88,14 @@ export function SubjectSelectModal() {
     useEffect(() => {
         setDatas(subjects);
     }, [subjects]);
+
+    useEffect(() => {
+        if (!visible) {
+            return;
+        }
+
+        void refreshSubjects().then(setDatas);
+    }, [visible, refreshSubjects]);
 
     useEffect(() => {
         const showModal = (e: CustomEventInit<AddDocumentReferenceDetail>) => {
