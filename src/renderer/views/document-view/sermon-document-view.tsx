@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     useDocumentTabsStore,
+    useAppStore,
     selectActiveDocumentIdentity,
     selectActiveSermonTab,
     selectActiveTabKey,
@@ -26,6 +28,7 @@ import type { AvailableTranslation } from '@shared/types';
 import { getDocumentIdentityKey } from '@shared/types';
 
 export default function SermonDocumentView() {
+    const { t } = useTranslation();
     const { content, loading } = useSermonContent();
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
@@ -138,11 +141,30 @@ export default function SermonDocumentView() {
         return buildSermonIntroText(title, dateStr, location, languageCode);
     }, [content?.meta, formatDate]);
 
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const langCode = content?.meta.languageCode ?? '';
     const tts = useTts(ttsParagraphs, langCode, ttsDocumentKey, {
         introText: ttsIntroText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
     });
+    const effectiveTts = useMemo(() => {
+        const langMismatch =
+            !!content?.meta.languageCode &&
+            !!contentLanguage &&
+            content.meta.languageCode !== contentLanguage;
+
+        if (!langMismatch) {
+            return tts;
+        }
+
+        return {
+            ...tts,
+            canSpeak: false,
+            incompatibleMessage: t(
+                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+            ),
+        };
+    }, [tts, content?.meta.languageCode, contentLanguage, t]);
     const contextMenuContent = useMemo(() => {
         if (!content || !activeDocumentIdentity) {
             return null;
@@ -185,7 +207,7 @@ export default function SermonDocumentView() {
                         availableTranslations={headerTranslations}
                         currentTranslationId={tabTranslationId ?? content.meta.translationId}
                         paragraphs={content.paragraphs}
-                        tts={tts}
+                        tts={effectiveTts}
                     />
                 )
             }
@@ -198,9 +220,9 @@ export default function SermonDocumentView() {
                     search={search}
                     activeParagraphIndex={activeParagraphIndex}
                     highlightsByParagraph={highlightsByParagraph}
-                    onPlayFromHere={tts.playFromParagraph}
-                    canSpeak={tts.canSpeak}
-                    incompatibleMessage={tts.incompatibleMessage}
+                    onPlayFromHere={effectiveTts.playFromParagraph}
+                    canSpeak={effectiveTts.canSpeak}
+                    incompatibleMessage={effectiveTts.incompatibleMessage}
                 />
             )}
         </DocumentBody>

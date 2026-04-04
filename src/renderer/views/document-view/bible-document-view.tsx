@@ -292,6 +292,7 @@ function BibleHeader({
 // ---------------------------------------------------------------------------
 
 export default function BibleDocumentView() {
+    const { t } = useTranslation();
     const activeTab = useDocumentTabsStore(selectActiveBibleTab);
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const activateTab = useDocumentTabsStore((s) => s.activateTab);
@@ -396,6 +397,21 @@ export default function BibleDocumentView() {
         introText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('verse', n, bibleLang),
     });
+    const effectiveTts = useMemo(() => {
+        const langMismatch = !!bibleLang && !!contentLanguage && bibleLang !== contentLanguage;
+
+        if (!langMismatch) {
+            return tts;
+        }
+
+        return {
+            ...tts,
+            canSpeak: false,
+            incompatibleMessage: t(
+                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+            ),
+        };
+    }, [tts, bibleLang, contentLanguage, t]);
 
     // Read entire book: keep following the chapter that started playback,
     // even if the user switches to another Bible tab while it is still reading.
@@ -453,10 +469,10 @@ export default function BibleDocumentView() {
     useEffect(() => {
         if (autoStartTtsRef.current && paragraphs.length > 0 && !loading) {
             autoStartTtsRef.current = false;
-            tts.play();
+            effectiveTts.play();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [paragraphs.length, loading]);
+         
+    }, [paragraphs.length, loading, effectiveTts]);
 
     const contextMenuContent = useMemo(() => {
         if (!activeTab || !activeDocumentIdentity) {
@@ -495,7 +511,7 @@ export default function BibleDocumentView() {
                     onPrev={goPrev}
                     onNext={goNext}
                     paragraphs={paragraphs}
-                    tts={tts}
+                    tts={effectiveTts}
                 />
             }
         >
@@ -512,9 +528,9 @@ export default function BibleDocumentView() {
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
-                onPlayFromHere={tts.playFromParagraph}
-                canSpeak={tts.canSpeak}
-                incompatibleMessage={tts.incompatibleMessage}
+                onPlayFromHere={effectiveTts.playFromParagraph}
+                canSpeak={effectiveTts.canSpeak}
+                incompatibleMessage={effectiveTts.incompatibleMessage}
             />
         </DocumentBody>
     );
