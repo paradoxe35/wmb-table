@@ -196,11 +196,7 @@ export default function GeneralTab() {
                                 <Tooltip
                                     placement="top"
                                     mouseEnterDelay={0.2}
-                                    title={
-                                        <div style={{ maxWidth: 220 }}>
-                                            <Text>{o.description}</Text>
-                                        </div>
-                                    }
+                                    title={o.description}
                                 >
                                     <Space size={4}>
                                         {o.icon}
