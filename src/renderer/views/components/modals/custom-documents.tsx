@@ -272,6 +272,16 @@ const DocumentItem = React.memo<{
 });
 DocumentItem.displayName = 'DocumentItem';
 
+function inferDocumentNameFromFilename(fileName: string): string {
+    return fileName
+        .replace(/\.[^.]+$/u, '')
+        .replace(/[_-]+/gu, ' ')
+        .replace(/[()[\]{}]+/gu, ' ')
+        .replace(/[.,]+/gu, ' ')
+        .replace(/\s+/gu, ' ')
+        .trim();
+}
+
 function UploadForm({
     customDocuments,
     installedLanguages,
@@ -289,6 +299,7 @@ function UploadForm({
     const [languageCode, setLanguageCode] = useState(contentLanguage ?? 'fr');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [nameTouched, setNameTouched] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const nameExists = customDocuments.some(
@@ -303,8 +314,8 @@ function UploadForm({
             return;
         }
         setSelectedFile(file);
-        if (!name.trim()) {
-            setName(file.name.replace(/\.pdf$/i, ''));
+        if (!nameTouched || !name.trim()) {
+            setName(inferDocumentNameFromFilename(file.name));
         }
     };
 
@@ -345,7 +356,10 @@ function UploadForm({
                 </Typography.Text>
                 <Input
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                        setNameTouched(true);
+                        setName(e.target.value);
+                    }}
                     placeholder={t('Nom du document')}
                     status={nameExists ? 'error' : undefined}
                 />

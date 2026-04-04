@@ -1,20 +1,27 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Empty, Modal, Segmented } from 'antd';
-import type { SermonParagraph } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
 
 const STEP_OPTIONS = [1, 2, 3, 5, 10] as const;
 
+type ParagraphLike = {
+    paragraphIndex: number;
+};
+
 export default function ParagraphNavigatorModal({
     open,
     onClose,
     paragraphs,
+    title,
+    emptyText,
 }: {
     open: boolean;
     onClose: () => void;
-    paragraphs: SermonParagraph[];
+    paragraphs: ParagraphLike[];
+    title?: string;
+    emptyText?: string;
 }) {
     const { t } = useTranslation();
     const [step, setStep] = useState<number>(3);
@@ -37,7 +44,7 @@ export default function ParagraphNavigatorModal({
 
     return (
         <Modal
-            title={t('Sélectionnez un paragraphe')}
+            title={title ?? t('Sélectionnez un paragraphe')}
             open={open}
             footer={null}
             onCancel={onClose}
@@ -62,7 +69,7 @@ export default function ParagraphNavigatorModal({
                 }}
             >
                 {visibleParagraphs.length === 0 ? (
-                    <Empty description={t('Aucun paragraphe')} />
+                    <Empty description={emptyText ?? t('Aucun paragraphe')} />
                 ) : (
                     visibleParagraphs.map((p) => (
                         <Button

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Space, Tooltip } from 'antd';
-import { LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
+import { LeftOutlined, NumberOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import {
     useDocumentTabsStore,
     useSearchStore,
@@ -21,6 +21,7 @@ import {
     normalizeBibleAbbreviation,
 } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
+import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import DocumentBody from './document-body';
 import {
     buildBibleChapterKey,
@@ -206,6 +207,7 @@ function BibleHeader({
     hasNext,
     onPrev,
     onNext,
+    paragraphs,
     tts,
 }: {
     title: string;
@@ -214,54 +216,74 @@ function BibleHeader({
     hasNext: boolean;
     onPrev: () => void;
     onNext: () => void;
+    paragraphs: { paragraphIndex: number }[];
     tts?: TtsControls;
 }) {
     const { t } = useTranslation();
+    const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
-        <div className="sermon-header">
-            <div className="bible-chapter-nav">
-                <Tooltip title={t('Chapitre précédent')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<LeftOutlined />}
-                        disabled={!hasPrev}
-                        onClick={onPrev}
-                        aria-label={t('Chapitre précédent')}
-                    />
-                </Tooltip>
-                <span className="bible-chapter-nav__title">{title}</span>
-                <Tooltip title={t('Chapitre suivant')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<RightOutlined />}
-                        disabled={!hasNext}
-                        onClick={onNext}
-                        aria-label={t('Chapitre suivant')}
-                    />
-                </Tooltip>
+        <>
+            <div className="sermon-header">
+                <div className="bible-chapter-nav">
+                    <Tooltip title={t('Chapitre précédent')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<LeftOutlined />}
+                            disabled={!hasPrev}
+                            onClick={onPrev}
+                            aria-label={t('Chapitre précédent')}
+                        />
+                    </Tooltip>
+                    <span className="bible-chapter-nav__title">{title}</span>
+                    <Tooltip title={t('Chapitre suivant')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<RightOutlined />}
+                            disabled={!hasNext}
+                            onClick={onNext}
+                            aria-label={t('Chapitre suivant')}
+                        />
+                    </Tooltip>
+                </div>
+                <div style={{ flex: 1 }} />
+                <Space size="small">
+                    {tts && <TtsButton tts={tts} />}
+                    <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
+                    <Tooltip title={t('Sélectionnez un verset')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<NumberOutlined />}
+                            onClick={() => setParagraphModalOpen(true)}
+                            aria-label={t('Sélectionnez un verset')}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Rechercher')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<SearchOutlined />}
+                            onClick={() => activeTabKey && openSearchBar(activeTabKey)}
+                            aria-label={t('Rechercher')}
+                        />
+                    </Tooltip>
+                    <ReadingModeToggle />
+                </Space>
             </div>
-            <div style={{ flex: 1 }} />
-            <Space size="small">
-                {tts && <TtsButton tts={tts} />}
-                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
-                <Tooltip title={t('Rechercher')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<SearchOutlined />}
-                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
-                        aria-label={t('Rechercher')}
-                    />
-                </Tooltip>
-                <ReadingModeToggle />
-            </Space>
-        </div>
+            <ParagraphNavigatorModal
+                open={paragraphModalOpen}
+                onClose={() => setParagraphModalOpen(false)}
+                paragraphs={paragraphs}
+                title={t('Sélectionnez un verset')}
+                emptyText={t('Aucun verset')}
+            />
+        </>
     );
 }
 
@@ -472,6 +494,7 @@ export default function BibleDocumentView() {
                     hasNext={hasNext}
                     onPrev={goPrev}
                     onNext={goNext}
+                    paragraphs={paragraphs}
                     tts={tts}
                 />
             }

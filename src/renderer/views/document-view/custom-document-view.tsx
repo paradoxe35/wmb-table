@@ -1,6 +1,6 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button, Space, Tooltip } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { NumberOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
     useDocumentTabsStore,
@@ -13,6 +13,7 @@ import {
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
+import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import DocumentBody from './document-body';
 import {
     resolveCustomDocumentScrollPersistence,
@@ -51,30 +52,55 @@ function parseContentToParagraphs(content: string): DocumentParagraph[] {
     }));
 }
 
-function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
+function CustomDocHeader({
+    zoom,
+    tts,
+    paragraphs,
+}: {
+    zoom: number;
+    tts: ReturnType<typeof useTts>;
+    paragraphs: DocumentParagraph[];
+}) {
     const { t } = useTranslation();
+    const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
-        <div className="sermon-header">
-            <div style={{ flex: 1 }} />
-            <Space size="small">
-                <TtsButton tts={tts} />
-                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
-                <Tooltip title={t('Rechercher')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<SearchOutlined />}
-                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
-                        aria-label={t('Rechercher')}
-                    />
-                </Tooltip>
-                <ReadingModeToggle />
-            </Space>
-        </div>
+        <>
+            <div className="sermon-header">
+                <div style={{ flex: 1 }} />
+                <Space size="small">
+                    <TtsButton tts={tts} />
+                    <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
+                    <Tooltip title={t('Sélectionnez un paragraphe')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<NumberOutlined />}
+                            onClick={() => setParagraphModalOpen(true)}
+                            aria-label={t('Sélectionnez un paragraphe')}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Rechercher')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<SearchOutlined />}
+                            onClick={() => activeTabKey && openSearchBar(activeTabKey)}
+                            aria-label={t('Rechercher')}
+                        />
+                    </Tooltip>
+                    <ReadingModeToggle />
+                </Space>
+            </div>
+            <ParagraphNavigatorModal
+                open={paragraphModalOpen}
+                onClose={() => setParagraphModalOpen(false)}
+                paragraphs={paragraphs}
+            />
+        </>
     );
 }
 
@@ -176,7 +202,7 @@ export default function CustomDocumentView() {
             contextTargetRef={contextTargetRef}
             zoom={zoom}
             contextMenuItems={contextMenuItems}
-            header={<CustomDocHeader zoom={zoom} tts={effectiveTts} />}
+            header={<CustomDocHeader zoom={zoom} tts={effectiveTts} paragraphs={paragraphs} />}
         >
             <div className="sermon-content-header">
                 <h2 className="sermon-content-header__title">{docContent?.title}</h2>

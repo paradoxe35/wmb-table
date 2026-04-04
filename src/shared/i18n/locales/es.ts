@@ -576,6 +576,8 @@ const es: Record<string, string> = {
     // ── Paragraph navigator modal ──
     'Sélectionnez un paragraphe': 'Seleccione un párrafo',
     'Aucun paragraphe': 'Sin párrafos',
+    'Sélectionnez un verset': 'Seleccione un versículo',
+    'Aucun verset': 'Sin versículos',
 
     // ── Sermon paragraph ──
     'Surlignage supprimé': 'Resaltado eliminado',
@@ -785,6 +787,12 @@ const es: Record<string, string> = {
     Clair: 'Claro',
     Sombre: 'Oscuro',
     Système: 'Sistema',
+    'Utilise le thème clair en journée et le thème sombre le soir.':
+        'Usa el tema claro durante el día y el tema oscuro por la noche.',
+    "Suit automatiquement l'apparence définie par votre système.":
+        'Sigue automáticamente la apariencia definida por su sistema.',
+    'Utilise toujours le thème clair.': 'Usa siempre el tema claro.',
+    'Utilise toujours le thème sombre.': 'Usa siempre el tema oscuro.',
 };
 
 export default es;
