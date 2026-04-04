@@ -575,6 +575,14 @@ export interface CustomDocument extends Readonly<BaseEntity> {
     languageCode: string;
 }
 
+export type CustomDocumentImportFormat = 'pdf' | 'txt' | 'md' | 'docx' | 'epub';
+
+export interface CustomDocumentImportInput {
+    fileName: string;
+    mimeType?: string | null;
+    bytes: Uint8Array;
+}
+
 export interface CustomDocumentContent {
     id: string;
     title: string;

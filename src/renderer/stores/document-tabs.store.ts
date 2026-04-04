@@ -21,9 +21,11 @@ export type PendingNavigation = {
 
 interface DocumentTabsState {
     tabs: DocumentTab[];
+    hydrated: boolean;
     pendingNavigation: PendingNavigation;
 
     setTabs(tabs: DocumentTab[]): void;
+    setHydrated(hydrated: boolean): void;
     setPendingNavigation(nav: PendingNavigation): void;
     addTab(tab: NewDocumentTab, maxTabs: number): void;
     removeTab(key: string): void;
@@ -135,9 +137,11 @@ export function clampTabsToLimit(tabs: DocumentTab[], maxTabs: number): Document
 
 export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
     tabs: [],
+    hydrated: false,
     pendingNavigation: null,
 
-    setTabs: (tabs) => set({ tabs }),
+    setTabs: (tabs) => set({ tabs, hydrated: true }),
+    setHydrated: (hydrated) => set({ hydrated }),
     setPendingNavigation: (pendingNavigation) => set({ pendingNavigation }),
 
     addTab: (nextTab, maxTabs) =>
@@ -145,6 +149,7 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
             const exists = state.tabs.some((tab) => tabMatches(tab, nextTab));
             if (exists) {
                 return {
+                    hydrated: true,
                     tabs: state.tabs.map((tab) => {
                         const isMatch = tabMatches(tab, nextTab);
                         return {
@@ -163,7 +168,10 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
             }
 
             const deactivated = state.tabs.map((tab) => ({ ...tab, active: false }));
-            return { tabs: clampTabsToLimit([...deactivated, createTab(nextTab)], maxTabs) };
+            return {
+                hydrated: true,
+                tabs: clampTabsToLimit([...deactivated, createTab(nextTab)], maxTabs),
+            };
         }),
 
     removeTab: (key) =>
@@ -175,18 +183,19 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
                 const nextIdx = Math.min(idx, filtered.length - 1);
                 filtered[nextIdx] = { ...filtered[nextIdx], active: true };
             }
-            return { tabs: filtered };
+            return { hydrated: true, tabs: filtered };
         }),
 
     activateTab: (key) =>
         set((state) => ({
+            hydrated: true,
             tabs: state.tabs.map((tab) => ({ ...tab, active: matchKey(tab, key) })),
         })),
 
     removeOtherTabs: (key) =>
         set((state) => {
             const tab = state.tabs.find((entry) => matchKey(entry, key));
-            return tab ? { tabs: [{ ...tab, active: true }] } : {};
+            return tab ? { hydrated: true, tabs: [{ ...tab, active: true }] } : {};
         }),
 
     removeTabsToRight: (key) =>
@@ -197,18 +206,20 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
             if (!kept.some((tab) => tab.active)) {
                 kept[kept.length - 1] = { ...kept[kept.length - 1], active: true };
             }
-            return { tabs: kept };
+            return { hydrated: true, tabs: kept };
         }),
 
-    removeAllTabs: () => set({ tabs: [] }),
-    reorderTabs: (tabs) => set({ tabs }),
+    removeAllTabs: () => set({ tabs: [], hydrated: true }),
+    reorderTabs: (tabs) => set({ tabs, hydrated: true }),
     enforceTabLimit: (maxTabs) =>
         set((state) => ({
+            hydrated: true,
             tabs: clampTabsToLimit(state.tabs, maxTabs),
         })),
 
     updateTabScroll: (key, scrollY, scrollX) =>
         set((state) => ({
+            hydrated: true,
             tabs: state.tabs.map((tab) =>
                 matchKey(tab, key) ? { ...tab, scrollY, scrollX } : tab,
             ),
@@ -216,11 +227,13 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
 
     updateTabZoom: (key, zoom) =>
         set((state) => ({
+            hydrated: true,
             tabs: state.tabs.map((tab) => (matchKey(tab, key) ? { ...tab, zoom } : tab)),
         })),
 
     updateTabTitle: (key, title) =>
         set((state) => ({
+            hydrated: true,
             tabs: state.tabs.map((tab) =>
                 matchKey(tab, key) && tab.title !== title ? { ...tab, title } : tab,
             ),
@@ -241,6 +254,7 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
 
             if (existingTarget) {
                 return {
+                    hydrated: true,
                     tabs: activateMatchingTab(
                         state.tabs.filter((tab) => !matchKey(tab, key)),
                         (tab): tab is SermonTab => isMatchingSermonSource(tab, nextTab),
@@ -249,6 +263,7 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
             }
 
             return {
+                hydrated: true,
                 tabs: state.tabs.map((tab) => {
                     if (matchKey(tab, key) && tab.type === 'sermon') {
                         return {
@@ -282,6 +297,7 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
 
             if (existingTarget) {
                 return {
+                    hydrated: true,
                     tabs: activateMatchingTab(
                         state.tabs.filter((tab) => !matchKey(tab, key)),
                         (tab): tab is BibleTab => isMatchingBibleSource(tab, nextTab),
@@ -290,6 +306,7 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
             }
 
             return {
+                hydrated: true,
                 tabs: state.tabs.map((tab) => {
                     if (matchKey(tab, key) && tab.type === 'bible') {
                         return {
@@ -313,6 +330,10 @@ export const useDocumentTabsStore = createStore<DocumentTabsState>((set) => ({
 
 export function selectTabs(state: DocumentTabsState): DocumentTab[] {
     return state.tabs;
+}
+
+export function selectTabsHydrated(state: DocumentTabsState): boolean {
+    return state.hydrated;
 }
 
 export function selectActiveTab(state: DocumentTabsState): DocumentTab | null {

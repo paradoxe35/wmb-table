@@ -22,11 +22,17 @@ const en: Record<string, string> = {
     Documents: 'Documents',
     'Aucun document ajouté': 'No documents added',
     'Ajouter un document': 'Add a document',
+    'Choisir un document': 'Choose a document',
     Gérer: 'Manage',
     Alphabet: 'Alphabet',
     Année: 'Year',
     Années: 'Years',
     'A-Z': 'A-Z',
+    'Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.':
+        'Supported formats: PDF, TXT, MD, DOCX, EPUB.',
+    "Erreur lors de l'import du document.": 'Error importing document.',
+    'Format de document non pris en charge.': 'Unsupported document format.',
+    'Le fichier est trop volumineux.': 'The file is too large.',
 
     // ── Settings index ──
     Général: 'General',

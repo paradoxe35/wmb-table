@@ -33,6 +33,7 @@ import type {
     AudioDocumentPlayRequest,
     SearchMode,
     DocumentReferenceSelection,
+    CustomDocumentImportInput,
 } from '@shared/types';
 import type {
     TtsProviderType,
@@ -244,8 +245,11 @@ const api = {
         setSidebarStatus: (hidden: boolean) => invoke(AppChannels.setSidebarStatus, hidden),
         getCustomDocuments: () => invoke(AppChannels.getCustomDocuments),
         deleteCustomDocument: (id: string) => invoke(AppChannels.deleteCustomDocument, id),
-        createCustomDocument: (title: string, pdfBytes: Uint8Array, languageCode: string) =>
-            invoke(AppChannels.createCustomDocument, title, pdfBytes, languageCode),
+        createCustomDocument: (
+            title: string,
+            input: CustomDocumentImportInput,
+            languageCode: string,
+        ) => invoke(AppChannels.createCustomDocument, title, input, languageCode),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
         updateCustomDocumentLanguage: (id: string, languageCode: string) =>
             invoke(AppChannels.updateCustomDocumentLanguage, id, languageCode),

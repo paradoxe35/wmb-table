@@ -22,11 +22,17 @@ const es: Record<string, string> = {
     Documents: 'Documentos',
     'Aucun document ajouté': 'Ningún documento añadido',
     'Ajouter un document': 'Añadir un documento',
+    'Choisir un document': 'Elegir un documento',
     Gérer: 'Gestionar',
     Alphabet: 'Alfabeto',
     Année: 'Año',
     Années: 'Años',
     'A-Z': 'A-Z',
+    'Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.':
+        'Formatos compatibles: PDF, TXT, MD, DOCX, EPUB.',
+    "Erreur lors de l'import du document.": 'Error al importar el documento.',
+    'Format de document non pris en charge.': 'Formato de documento no compatible.',
+    'Le fichier est trop volumineux.': 'El archivo es demasiado grande.',
 
     // ── Settings index ──
     Général: 'General',

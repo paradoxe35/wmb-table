@@ -28,7 +28,7 @@ export function getCustomDocuments(): CustomDocument[] {
 export function createCustomDocument(
     title: string,
     content: string,
-    languageCode: string,
+    languageCode = '',
 ): CustomDocument {
     const db = getDb();
     const existing = db

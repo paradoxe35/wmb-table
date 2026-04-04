@@ -4,6 +4,7 @@ export {
     clampTabsToLimit,
     useDocumentTabsStore,
     selectTabs,
+    selectTabsHydrated,
     selectActiveTabTitle,
     selectActiveTabKey,
     selectActiveTab,

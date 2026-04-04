@@ -2,6 +2,19 @@ import { z } from 'zod';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import type { AiToolDefinition } from './types';
 
+function toDocumentLines(content: string): string[] {
+    try {
+        const parsed = JSON.parse(content);
+        if (Array.isArray(parsed)) {
+            return parsed.map((line) => String(line));
+        }
+    } catch {
+        // Stored content can also be plain text.
+    }
+
+    return content.split('\n');
+}
+
 export function buildDocumentTools(): Record<string, AiToolDefinition> {
     return {
         getCustomDocuments: {
@@ -39,7 +52,7 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                 if (!doc) return { error: `Document "${documentId}" not found.` };
                 if (!doc.content) return { error: 'Document has no text content.' };
 
-                const lines = doc.content.split('\n');
+                const lines = toDocumentLines(doc.content);
                 const totalLines = lines.length;
                 const slice = lines.slice(startLine, startLine + maxLines).join('\n');
 

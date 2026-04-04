@@ -7,6 +7,7 @@ import {
     useSearchStore,
     useAppStore,
     selectActiveTabKey,
+    selectTabsHydrated,
 } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
@@ -23,6 +24,7 @@ import TabItem from './tab-item';
 export default function DocumentTabs() {
     const { t } = useTranslation();
     const tabs = useDocumentTabsStore((s) => s.tabs);
+    const tabsHydrated = useDocumentTabsStore(selectTabsHydrated);
     const reorderTabs = useDocumentTabsStore((s) => s.reorderTabs);
     const activateTab = useDocumentTabsStore((s) => s.activateTab);
     const removeTab = useDocumentTabsStore((s) => s.removeTab);
@@ -39,7 +41,7 @@ export default function DocumentTabs() {
     const ttsStatus = useTtsStore((s) => s.status);
     const { modal } = AntApp.useApp();
 
-    useTabPersistence(tabs, contentLanguage);
+    useTabPersistence(tabs, contentLanguage, tabsHydrated);
 
     const stopTtsIfPlaying = useCallback(
         (closedTab: DocumentTab) => {

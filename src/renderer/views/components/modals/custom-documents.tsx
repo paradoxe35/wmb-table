@@ -17,6 +17,12 @@ import { useAppStore, useCustomDocumentsStore } from '@renderer/stores';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { invalidateCustomDocumentContentCache } from '@renderer/views/document-view/hooks/document-content-hooks';
 
+const ACCEPTED_CUSTOM_DOCUMENT_TYPES = '.pdf,.txt,.md,.markdown,.docx,.epub';
+
+function isSupportedCustomDocument(file: File): boolean {
+    return /\.(pdf|txt|md|markdown|docx|epub)$/i.test(file.name);
+}
+
 export default function CustomDocuments() {
     const { t } = useTranslation();
     const { visible, show, hide } = useModalVisible();
@@ -311,8 +317,8 @@ function UploadForm({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') {
-            message.error(t('Seul le format PDF est pris en charge.'));
+        if (!isSupportedCustomDocument(file)) {
+            message.error(t('Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.'));
             return;
         }
         setSelectedFile(file);
@@ -332,16 +338,22 @@ function UploadForm({
         setUploading(true);
         try {
             const buffer = await selectedFile.arrayBuffer();
-            const pdfBytes = new Uint8Array(buffer);
+            const fileBytes = new Uint8Array(buffer);
             const doc = await window.api.app.createCustomDocument(
                 trimmedName,
-                pdfBytes,
+                {
+                    fileName: selectedFile.name,
+                    mimeType: selectedFile.type || null,
+                    bytes: fileBytes,
+                },
                 languageCode,
             );
             onAdded(doc);
             message.success(t('Document ajouté'));
-        } catch {
-            message.error(t("Erreur lors de l'extraction du document."));
+        } catch (err) {
+            message.error(
+                err instanceof Error ? t(err.message) : t("Erreur lors de l'import du document."),
+            );
         } finally {
             setUploading(false);
         }
@@ -396,7 +408,7 @@ function UploadForm({
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf"
+                    accept={ACCEPTED_CUSTOM_DOCUMENT_TYPES}
                     style={{ display: 'none' }}
                     onChange={handleFileChange}
                 />
@@ -406,7 +418,7 @@ function UploadForm({
                     block
                     style={{ textAlign: 'left' }}
                 >
-                    {selectedFile ? selectedFile.name : t('Choisir un fichier PDF')}
+                    {selectedFile ? selectedFile.name : t('Choisir un document')}
                 </Button>
             </div>
 

@@ -169,7 +169,10 @@ function applyLanguageWorkspaceState(
         activeBibleVersion: workspace.activeBibleVersion,
     });
     useSermonStore.getState().setSermons(workspace.sermons);
-    useDocumentTabsStore.setState({ tabs: clampTabsToLimit(workspace.tabs, maxTabs) });
+    useDocumentTabsStore.setState({
+        tabs: clampTabsToLimit(workspace.tabs, maxTabs),
+        hydrated: true,
+    });
 }
 
 export function useApplyLanguageWorkspace() {
