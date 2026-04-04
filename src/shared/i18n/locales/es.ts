@@ -493,6 +493,8 @@ const es: Record<string, string> = {
     'Langue modifiée': 'Idioma cambiado',
     'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.':
         'El idioma del documento no coincide con el idioma activo. Cambie el idioma en los ajustes.',
+    'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.':
+        'El idioma del documento no coincide con el idioma activo ({{language}}). Cambie el idioma en los ajustes.',
     'Traitement...': 'Procesando...',
     Retour: 'Volver',
     "Erreur lors de l'extraction du document.": 'Error al extraer el documento.',

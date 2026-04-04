@@ -27,7 +27,7 @@ import {
     useDocumentZoom,
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
-import { buildSegmentAnnouncement } from '@shared/tts.types';
+import { buildSegmentAnnouncement, getLanguageLabelNative } from '@shared/tts.types';
 import { getDocumentIdentityKey } from '@shared/types';
 
 interface DocumentParagraph {
@@ -180,6 +180,9 @@ export default function CustomDocumentView() {
             !!docContent?.languageCode &&
             !!contentLanguage &&
             docContent.languageCode !== contentLanguage;
+        const activeLanguageLabel = contentLanguage
+            ? getLanguageLabelNative(contentLanguage)
+            : undefined;
 
         if (!langMismatch) {
             return tts;
@@ -189,7 +192,8 @@ export default function CustomDocumentView() {
             ...tts,
             canSpeak: false,
             incompatibleMessage: t(
-                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+                'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.',
+                { language: activeLanguageLabel ?? contentLanguage ?? '' },
             ),
         };
     }, [tts, docContent?.languageCode, contentLanguage, t]);

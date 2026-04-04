@@ -40,6 +40,7 @@ import {
     buildSegmentAnnouncement,
     buildBibleChapterIntro,
     getChapterLabel,
+    getLanguageLabelNative,
 } from '@shared/tts.types';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
@@ -399,6 +400,9 @@ export default function BibleDocumentView() {
     });
     const effectiveTts = useMemo(() => {
         const langMismatch = !!bibleLang && !!contentLanguage && bibleLang !== contentLanguage;
+        const activeLanguageLabel = contentLanguage
+            ? getLanguageLabelNative(contentLanguage)
+            : undefined;
 
         if (!langMismatch) {
             return tts;
@@ -408,7 +412,8 @@ export default function BibleDocumentView() {
             ...tts,
             canSpeak: false,
             incompatibleMessage: t(
-                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+                'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.',
+                { language: activeLanguageLabel ?? contentLanguage ?? '' },
             ),
         };
     }, [tts, bibleLang, contentLanguage, t]);
@@ -471,7 +476,6 @@ export default function BibleDocumentView() {
             autoStartTtsRef.current = false;
             effectiveTts.play();
         }
-         
     }, [paragraphs.length, loading, effectiveTts]);
 
     const contextMenuContent = useMemo(() => {

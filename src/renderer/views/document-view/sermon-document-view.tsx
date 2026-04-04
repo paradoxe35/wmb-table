@@ -23,7 +23,11 @@ import {
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 import { useFormatSermonDate } from '@renderer/hooks';
-import { buildSegmentAnnouncement, buildSermonIntroText } from '@shared/tts.types';
+import {
+    buildSegmentAnnouncement,
+    buildSermonIntroText,
+    getLanguageLabelNative,
+} from '@shared/tts.types';
 import type { AvailableTranslation } from '@shared/types';
 import { getDocumentIdentityKey } from '@shared/types';
 
@@ -152,6 +156,9 @@ export default function SermonDocumentView() {
             !!content?.meta.languageCode &&
             !!contentLanguage &&
             content.meta.languageCode !== contentLanguage;
+        const activeLanguageLabel = contentLanguage
+            ? getLanguageLabelNative(contentLanguage)
+            : undefined;
 
         if (!langMismatch) {
             return tts;
@@ -161,7 +168,8 @@ export default function SermonDocumentView() {
             ...tts,
             canSpeak: false,
             incompatibleMessage: t(
-                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+                'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.',
+                { language: activeLanguageLabel ?? contentLanguage ?? '' },
             ),
         };
     }, [tts, content?.meta.languageCode, contentLanguage, t]);
