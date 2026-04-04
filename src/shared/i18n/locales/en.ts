@@ -731,6 +731,7 @@ const en: Record<string, string> = {
     'Aucune prédication similaire trouvée': 'No similar sermons found',
     Prédication: 'Sermon',
     Document: 'Document',
+    Référence: 'Reference',
     'Sauvegarde de données': 'Backing up data',
     'Restauration de données': 'Restoring data',
 

@@ -739,6 +739,7 @@ const es: Record<string, string> = {
     'Aucune prédication similaire trouvée': 'No se encontraron predicaciones similares',
     Prédication: 'Predicación',
     Document: 'Documento',
+    Référence: 'Referencia',
     'Sauvegarde de données': 'Guardando datos',
     'Restauration de données': 'Restaurando datos',
 
