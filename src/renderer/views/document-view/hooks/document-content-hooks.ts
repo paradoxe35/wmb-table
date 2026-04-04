@@ -23,6 +23,10 @@ const contentCache = new Map<string, SermonContent>();
 const bibleCache = new Map<string, BibleBook[]>();
 const customDocCache = new Map<string, CustomDocumentContent>();
 
+export function invalidateCustomDocumentContentCache(documentId: string): void {
+    customDocCache.delete(documentId);
+}
+
 export function buildSermonContentKey(
     languageCode: string,
     translationId: number,
@@ -152,7 +156,7 @@ export function useSermonContent() {
     return { content: activeContent, loading };
 }
 
-export function useCustomDocumentContent(documentId?: string) {
+export function useCustomDocumentContent(documentId?: string, expectedLanguageCode?: string) {
     const [content, setContent] = useState<CustomDocumentContent | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -164,7 +168,7 @@ export function useCustomDocumentContent(documentId?: string) {
         }
 
         const cached = customDocCache.get(documentId);
-        if (cached) {
+        if (cached && (!expectedLanguageCode || cached.languageCode === expectedLanguageCode)) {
             setContent(cached);
             setLoading(false);
             return;
@@ -193,7 +197,7 @@ export function useCustomDocumentContent(documentId?: string) {
         return () => {
             cancelled = true;
         };
-    }, [documentId]);
+    }, [documentId, expectedLanguageCode]);
 
     return { content, loading };
 }

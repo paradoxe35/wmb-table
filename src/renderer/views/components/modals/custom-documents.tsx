@@ -15,6 +15,7 @@ import { CUSTOM_DOCUMENT_EVENT, LANGUAGE_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useAppStore, useCustomDocumentsStore } from '@renderer/stores';
 import { DeleteBtn } from '@renderer/components/delete-btn';
+import { invalidateCustomDocumentContentCache } from '@renderer/views/document-view/hooks/document-content-hooks';
 
 export default function CustomDocuments() {
     const { t } = useTranslation();
@@ -130,7 +131,7 @@ function DocumentList({
     const openDocumentRequest = useOpenDocumentRequest();
     const [searchTerm, setSearchTerm] = useState('');
     const ipcRequestWithLoader = useIpcRequestWithLoader();
-    const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
+    const updateCustomDocument = useCustomDocumentsStore((s) => s.updateCustomDocument);
 
     const filtered = searchTerm
         ? customDocuments.filter((d) => simpleRegExp(searchTerm).test(strNormalize(d.title)))
@@ -151,9 +152,8 @@ function DocumentList({
 
     const handleLanguageChange = async (doc: CustomDocument, languageCode: string) => {
         await window.api.app.updateCustomDocumentLanguage(doc.id, languageCode);
-        setCustomDocuments(
-            customDocuments.map((d) => (d.id === doc.id ? { ...d, languageCode } : d)),
-        );
+        updateCustomDocument(doc.id, { languageCode });
+        invalidateCustomDocumentContentCache(doc.id);
         message.success(t('Langue modifiée'));
     };
 

@@ -116,10 +116,15 @@ export default function CustomDocumentView() {
         () => (activeTab ? customDocuments.find((d) => d.id === activeTab.documentId) : undefined),
         [customDocuments, activeTab],
     );
+
     const ttsDocumentKey = activeDocumentIdentity
         ? getDocumentIdentityKey(activeDocumentIdentity)
         : '';
-    const { content: docContent, loading } = useCustomDocumentContent(customDoc?.id);
+
+    const { content: docContent, loading } = useCustomDocumentContent(
+        customDoc?.id,
+        customDoc?.languageCode,
+    );
     const { restoreIdentity, readingPositionKey } = resolveCustomDocumentScrollPersistence(
         customDoc?.id,
         docContent?.id,

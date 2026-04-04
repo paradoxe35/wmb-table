@@ -5,6 +5,7 @@ import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@
 import { Virtuoso } from 'react-virtuoso';
 import type { InstalledLanguage, SermonMetaWithTranslations } from '@shared/types';
 import { getTabKey } from '@shared/types';
+import { getLanguageDisplayName } from '@shared/tts.types';
 import ContainerScrollY from '../container-scroll-y';
 import {
     useDocumentTabsStore,
@@ -137,6 +138,9 @@ const DocumentsAdded = () => {
                                 <div className="sidebar-item__title">{d.title}</div>
                                 <div className="sidebar-item__date">
                                     {new Date(d.createdAt).toLocaleDateString()}
+                                </div>
+                                <div className="sidebar-item__date">
+                                    {getLanguageDisplayName(d.languageCode)}
                                 </div>
                             </div>
                             <div className="sidebar-item__right" style={{ alignSelf: 'center' }}>
