@@ -33,10 +33,15 @@ type PositionedLine = {
     height: number;
 };
 
+type PageMode = 'prose' | 'structured';
+
 function normalizeInlineWhitespace(text: string): string {
     return text
         .replace(/\u00a0/g, ' ')
-        .replace(/[ \t]+/g, ' ')
+        .split('\t')
+        .map((segment) => segment.replace(/ {2,}/g, ' ').trim())
+        .join('\t')
+        .replace(/\t{2,}/g, '\t')
         .trim();
 }
 
@@ -54,20 +59,78 @@ function isTableLikeLine(text: string): boolean {
 }
 
 function isBulletLikeLine(text: string): boolean {
-    return /^([-*•▪◦]|\d+[.)]|[A-Za-z][.)])\s+/.test(text);
+    return /^([-*•▪◦]|\d+[.)]|\p{L}[.)])\s+/u.test(text);
+}
+
+function isLikelyTocLine(text: string): boolean {
+    return (
+        /\t/.test(text) ||
+        /\.{2,}\s*\d+\s*$/.test(text) ||
+        /^(chapter|part|section|appendix)\b.+\d+\s*$/i.test(text) ||
+        /^(?:\d+|[ivxlcdm]+)\b.+\d+\s*$/i.test(text)
+    );
+}
+
+function startsWithQuote(text: string): boolean {
+    return /^["'`“‘«「『（《【]/u.test(text);
 }
 
 function isLikelyHeading(text: string): boolean {
     if (text.length === 0 || text.length > 120) return false;
     if (isBulletLikeLine(text)) return false;
-    const letters = text.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g, '');
+    const letters = text.replace(/[^\p{L}]/gu, '');
     if (letters.length < 4) return false;
-    const uppercaseLetters = letters.replace(/[^A-ZÀ-ÖØ-Þ]/g, '').length;
+    const uppercaseLetters = letters.replace(/[^\p{Lu}]/gu, '').length;
+    if (uppercaseLetters === 0) return false;
     return uppercaseLetters / letters.length > 0.8;
 }
 
 function isStandalonePageNumber(text: string): boolean {
     return /^(page\s+)?\d+([/-]\d+)?$/i.test(text) || /^\d+\s+of\s+\d+$/i.test(text);
+}
+
+function countMatches(text: string, pattern: RegExp): number {
+    return [...text.matchAll(pattern)].length;
+}
+
+function isCjkDominant(text: string): boolean {
+    const cjkCount = countMatches(
+        text,
+        /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu,
+    );
+    if (cjkCount < 2) return false;
+
+    const latinLetterCount = countMatches(text, /\p{Script=Latin}/gu);
+    return cjkCount >= latinLetterCount;
+}
+
+function endsWithTerminalPunctuation(text: string): boolean {
+    return /[.!?…:;。！？：；]["'»”’）\]」』】》)]*$/u.test(text);
+}
+
+function startsLikeSentence(text: string): boolean {
+    return /^[\p{Lu}0-9«"'(“‘「『（《【\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(
+        text,
+    );
+}
+
+function shouldPreferCjkParagraphBreak(
+    previousLine: string,
+    nextLine: string,
+    medianLength: number,
+): boolean {
+    if (!isCjkDominant(previousLine) && !isCjkDominant(nextLine)) {
+        return false;
+    }
+
+    if (!endsWithTerminalPunctuation(previousLine) || !startsLikeSentence(nextLine)) {
+        return false;
+    }
+
+    const previousWasShort = previousLine.length < Math.max(24, medianLength * 0.8);
+    const nextWasShort = nextLine.length < Math.max(30, medianLength);
+
+    return startsWithQuote(nextLine) || previousWasShort || nextWasShort;
 }
 
 function median(values: number[]): number {
@@ -193,7 +256,18 @@ export function groupPdfItemsIntoLines(items: PdfTextItem[]): PositionedLine[] {
     return lines;
 }
 
-function reorderPageLinesForReading(page: PositionedLine[]): string[] {
+function getVerticalOverlap(left: PositionedLine[], right: PositionedLine[]): number {
+    if (left.length === 0 || right.length === 0) return 0;
+
+    const leftMinY = Math.min(...left.map((line) => line.y));
+    const leftMaxY = Math.max(...left.map((line) => line.y));
+    const rightMinY = Math.min(...right.map((line) => line.y));
+    const rightMaxY = Math.max(...right.map((line) => line.y));
+
+    return Math.min(leftMaxY, rightMaxY) - Math.max(leftMinY, rightMinY);
+}
+
+export function reorderPageLinesForReading(page: PositionedLine[]): string[] {
     const sorted = [...page].sort((left, right) => {
         if (Math.abs(left.y - right.y) > 2) return right.y - left.y;
         return left.x - right.x;
@@ -225,6 +299,10 @@ function reorderPageLinesForReading(page: PositionedLine[]): string[] {
         return sorted.map((line) => line.text);
     }
 
+    if (getVerticalOverlap(leftColumn, rightColumn) < 100) {
+        return sorted.map((line) => line.text);
+    }
+
     const byReadingOrder = (lines: PositionedLine[]) =>
         [...lines].sort((left, right) => {
             if (Math.abs(left.y - right.y) > 2) return right.y - left.y;
@@ -234,7 +312,7 @@ function reorderPageLinesForReading(page: PositionedLine[]): string[] {
     return [...byReadingOrder(leftColumn), ...byReadingOrder(rightColumn)].map((line) => line.text);
 }
 
-function detectRepeatedMarginLines(pages: PositionedLine[][]): Set<string> {
+export function detectRepeatedMarginLines(pages: PositionedLine[][]): Set<string> {
     const counts = new Map<string, number>();
 
     for (const page of pages) {
@@ -252,8 +330,25 @@ function detectRepeatedMarginLines(pages: PositionedLine[][]): Set<string> {
     }
 
     return new Set(
-        [...counts.entries()].filter(([, count]) => count >= 2).map(([candidate]) => candidate),
+        [...counts.entries()].filter(([, count]) => count >= 4).map(([candidate]) => candidate),
     );
+}
+
+function detectPageMode(lines: string[]): PageMode {
+    const visibleLines = lines
+        .map((line) => normalizeInlineWhitespace(line))
+        .filter((line) => line && !isStandalonePageNumber(line));
+
+    if (visibleLines.length < 6) {
+        return 'prose';
+    }
+
+    const structuredCount = visibleLines.filter((line) => {
+        const shortIndexedLine = line.length < 70 && /\d+\s*$/.test(line);
+        return isTableLikeLine(line) || isLikelyTocLine(line) || shortIndexedLine;
+    }).length;
+
+    return structuredCount / visibleLines.length >= 0.25 ? 'structured' : 'prose';
 }
 
 function shouldStartNewParagraph(
@@ -264,15 +359,34 @@ function shouldStartNewParagraph(
     if (!previousLine) return false;
     if (isTableLikeLine(previousLine) || isTableLikeLine(nextLine)) return true;
     if (isBulletLikeLine(nextLine) || isLikelyHeading(nextLine)) return true;
+    if (isLikelyHeading(previousLine)) return true;
 
-    const previousLooksTerminal = /[.!?…:;)"'»]$/.test(previousLine);
-    const nextLooksLikeSentenceStart = /^[A-ZÀ-ÖØ-Þ0-9«"'(]/.test(nextLine);
+    if (
+        startsWithQuote(nextLine) &&
+        (endsWithTerminalPunctuation(previousLine) || /[-—]["'»”’)]*$/u.test(previousLine))
+    ) {
+        return true;
+    }
+
+    if (shouldPreferCjkParagraphBreak(previousLine, nextLine, medianLength)) {
+        return true;
+    }
+
+    const previousLooksTerminal = endsWithTerminalPunctuation(previousLine);
+    const nextLooksLikeSentenceStart = startsLikeSentence(nextLine);
     const previousWasShort = previousLine.length < Math.max(40, medianLength * 0.75);
 
-    return previousLooksTerminal && nextLooksLikeSentenceStart && previousWasShort;
+    return (
+        (previousLooksTerminal && nextLooksLikeSentenceStart && previousWasShort) ||
+        (previousLooksTerminal && startsWithQuote(nextLine))
+    );
 }
 
-export function buildParagraphsFromLines(lines: string[]): string[] {
+function isSoftHyphenation(previousLine: string, nextLine: string): boolean {
+    return /[\p{Ll}]{2,}-$/u.test(previousLine) && /^[\p{Ll}]/u.test(nextLine);
+}
+
+export function buildParagraphsFromLines(lines: string[], pageMode: PageMode = 'prose'): string[] {
     const visibleLines = lines
         .map((line) => normalizeInlineWhitespace(line))
         .filter((line) => line && !isStandalonePageNumber(line));
@@ -305,7 +419,13 @@ export function buildParagraphsFromLines(lines: string[]): string[] {
             continue;
         }
 
-        if (isBulletLikeLine(line) || isLikelyHeading(line) || isTableLikeLine(line)) {
+        if (
+            pageMode === 'structured' ||
+            isBulletLikeLine(line) ||
+            isLikelyHeading(line) ||
+            isTableLikeLine(line) ||
+            isLikelyTocLine(line)
+        ) {
             flush();
             current = line;
             previousLine = line;
@@ -326,7 +446,9 @@ export function buildParagraphsFromLines(lines: string[]): string[] {
             continue;
         }
 
-        current = current.endsWith('-') ? current.slice(0, -1) + line : `${current} ${line}`;
+        current = isSoftHyphenation(current, line)
+            ? current.slice(0, -1) + line
+            : `${current} ${line}`;
         previousLine = line;
     }
 
@@ -355,16 +477,16 @@ export async function extractPdfParagraphs(pdfBytes: Uint8Array): Promise<string
         }
 
         const repeatedMargins = detectRepeatedMarginLines(pageLines);
-        const flattenedLines = pageLines.flatMap((page) =>
-            reorderPageLinesForReading(page)
+        return pageLines.flatMap((page) => {
+            const lines = reorderPageLinesForReading(page)
                 .map((line) => normalizeInlineWhitespace(line))
                 .filter((line) => {
                     const normalized = normalizeMarginCandidate(line);
                     return normalized ? !repeatedMargins.has(normalized) : false;
-                }),
-        );
+                });
 
-        return buildParagraphsFromLines(flattenedLines);
+            return buildParagraphsFromLines(lines, detectPageMode(lines));
+        });
     } finally {
         await pdf.destroy();
     }

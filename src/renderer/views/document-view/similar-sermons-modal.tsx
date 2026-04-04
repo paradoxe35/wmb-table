@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Empty, List, Modal, Pagination, Spin, Typography, message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useDocumentTabsStore } from '@renderer/stores';
@@ -26,6 +26,8 @@ export default function SimilarSermonsModal() {
     const [allHits, setAllHits] = useState<SimilarSermonHit[]>([]);
     const [page, setPage] = useState(1);
     const [snippet, setSnippet] = useState('');
+    const listElRef = useRef<HTMLDivElement | null>(null);
+
     const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
@@ -170,7 +172,7 @@ export default function SimilarSermonsModal() {
                         {t('Trouvé dans {{count}} documents', { count: allHits.length })}
                     </Text>
 
-                    <div style={scrollAreaStyle}>
+                    <div style={scrollAreaStyle} ref={listElRef}>
                         <List
                             dataSource={pagedHits}
                             renderItem={(hit) => {
@@ -264,7 +266,12 @@ export default function SimilarSermonsModal() {
                                 pageSize={PAGE_SIZE}
                                 total={allHits.length}
                                 showSizeChanger={false}
-                                onChange={setPage}
+                                onChange={(page) => {
+                                    setPage(page);
+                                    if (listElRef.current) {
+                                        listElRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                                    }
+                                }}
                             />
                         </div>
                     )}

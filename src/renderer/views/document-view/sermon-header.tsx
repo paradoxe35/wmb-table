@@ -67,15 +67,8 @@ export default function SermonHeader({
 
     const hasMultipleTranslations = availableTranslations.length > 1;
 
-    const openAudioModal = useAudioStore((s) => s.openModal);
-
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
-
-        // Open modal for new documents or when audio is paused
-        if (!isCurrentDocument || !isPlaying) {
-            openAudioModal();
-        }
 
         const detail: AudioDocumentPlayRequest = {
             title: meta.title,
@@ -92,7 +85,7 @@ export default function SermonHeader({
                 detail,
             }),
         );
-    }, [meta, isCurrentDocument, isPlaying, openAudioModal]);
+    }, [meta]);
 
     const handleOtherTranslations = useCallback(() => {
         if (!activeTabKey) {

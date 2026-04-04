@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     buildParagraphsFromLines,
+    detectRepeatedMarginLines,
     groupPdfItemsIntoLines,
+    reorderPageLinesForReading,
 } from '@main/services/pdf-extract.service';
 
 describe('pdf-extract.service', () => {
@@ -33,6 +35,90 @@ describe('pdf-extract.service', () => {
         ]);
     });
 
+    it('separates headings from the following body paragraph', () => {
+        const paragraphs = buildParagraphsFromLines([
+            'THE WORST BIRTHDAY',
+            'Not for the first time, an argument had broken out over breakfast.',
+        ]);
+
+        expect(paragraphs).toEqual([
+            'THE WORST BIRTHDAY',
+            'Not for the first time, an argument had broken out over breakfast.',
+        ]);
+    });
+
+    it('does not treat interrupted dialogue dashes as soft hyphenation', () => {
+        const paragraphs = buildParagraphsFromLines([
+            `"I meant 'please'!" said Harry quickly. "I didn't mean -"`,
+            `"WHAT HAVE I TOLD YOU," thundered his uncle.`,
+        ]);
+
+        expect(paragraphs).toEqual([
+            `"I meant 'please'!" said Harry quickly. "I didn't mean -"`,
+            `"WHAT HAVE I TOLD YOU," thundered his uncle.`,
+        ]);
+    });
+
+    it('still merges true word hyphenation across line breaks', () => {
+        const paragraphs = buildParagraphsFromLines([
+            'Dynamic languages are more difficult to com-',
+            'pile than statically typed ones.',
+        ]);
+
+        expect(paragraphs).toEqual([
+            'Dynamic languages are more difficult to compile than statically typed ones.',
+        ]);
+    });
+
+    it('splits short Chinese dialogue lines into separate paragraphs', () => {
+        const paragraphs = buildParagraphsFromLines([
+            '谁呀？',
+            '是我，王朋，还有李友。',
+            '请进，请进，快进来！',
+            '来，我介绍一下，这是我姐姐，高小音。',
+        ]);
+
+        expect(paragraphs).toEqual([
+            '谁呀？',
+            '是我，王朋，还有李友。',
+            '请进，请进，快进来！',
+            '来，我介绍一下，这是我姐姐，高小音。',
+        ]);
+    });
+
+    it('splits quoted Chinese dialogue into separate paragraphs', () => {
+        const paragraphs = buildParagraphsFromLines(['她说：“欢迎你。”', '他回答：“谢谢。”']);
+
+        expect(paragraphs).toEqual(['她说：“欢迎你。”', '他回答：“谢谢。”']);
+    });
+
+    it('preserves table-like tab separators as standalone lines', () => {
+        const paragraphs = buildParagraphsFromLines([
+            'Chapter\tPage',
+            'Algebra\t1',
+            'A normal paragraph follows here.',
+        ]);
+
+        expect(paragraphs).toEqual([
+            'Chapter\tPage',
+            'Algebra\t1',
+            'A normal paragraph follows here.',
+        ]);
+    });
+
+    it('keeps TOC-like lines separate in structured mode', () => {
+        const paragraphs = buildParagraphsFromLines(
+            ['Chapter 1 Numbers 1', 'Chapter 2 Linear Equations 35', 'Chapter 3 Real Numbers 79'],
+            'structured',
+        );
+
+        expect(paragraphs).toEqual([
+            'Chapter 1 Numbers 1',
+            'Chapter 2 Linear Equations 35',
+            'Chapter 3 Real Numbers 79',
+        ]);
+    });
+
     it('splits same-baseline content when the horizontal gap suggests separate columns', () => {
         const lines = groupPdfItemsIntoLines([
             {
@@ -54,5 +140,44 @@ describe('pdf-extract.service', () => {
         expect(lines).toHaveLength(2);
         expect(lines[0]?.text).toBe('Left column text');
         expect(lines[1]?.text).toBe('Right column text');
+    });
+
+    it('does not force a fake two-column reading order when clusters do not overlap vertically', () => {
+        const lines = reorderPageLinesForReading([
+            { text: 'Centered title', x: 220, y: 700, height: 10 },
+            { text: 'Centered subtitle', x: 220, y: 680, height: 10 },
+            { text: 'Centered author', x: 220, y: 660, height: 10 },
+            { text: 'Centered publisher', x: 220, y: 640, height: 10 },
+            { text: 'Body line 1', x: 50, y: 600, height: 10 },
+            { text: 'Body line 2', x: 50, y: 580, height: 10 },
+            { text: 'Body line 3', x: 50, y: 560, height: 10 },
+            { text: 'Body line 4', x: 50, y: 540, height: 10 },
+        ]);
+
+        expect(lines).toEqual([
+            'Centered title',
+            'Centered subtitle',
+            'Centered author',
+            'Centered publisher',
+            'Body line 1',
+            'Body line 2',
+            'Body line 3',
+            'Body line 4',
+        ]);
+    });
+
+    it('does not drop repeated margin text that appears on only two pages', () => {
+        const repeated = detectRepeatedMarginLines([
+            [
+                { text: 'Shared Header', x: 50, y: 700, height: 10 },
+                { text: 'Body 1', x: 50, y: 600, height: 10 },
+            ],
+            [
+                { text: 'Shared Header', x: 50, y: 700, height: 10 },
+                { text: 'Body 2', x: 50, y: 600, height: 10 },
+            ],
+        ]);
+
+        expect(repeated.size).toBe(0);
     });
 });

@@ -194,7 +194,6 @@ export default function MiniPlayerBar() {
                     return;
                 }
 
-                openModal();
                 if (el.paused) {
                     el.play().catch(() => {});
                 } else {
