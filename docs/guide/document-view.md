@@ -66,7 +66,13 @@ Cela rend la lecture plus simple pour :
 - revenir à un paragraphe mentionné ailleurs
 - préparer un sujet ou une note à partir d’un passage exact
 
-Si vous voulez aller plus vite vers un endroit précis, utilisez le bouton avec le numéro de paragraphe dans la barre du haut.
+Si vous voulez aller plus vite vers un endroit précis, utilisez le bouton avec le numéro affiché dans la barre du haut.
+
+Selon le document, ce bouton ouvre :
+
+- une liste de paragraphes pour une prédication
+- une liste de versets pour un chapitre biblique
+- une liste de paragraphes pour un document personnel
 
 Une fenêtre s’ouvre alors avec une liste de numéros. Cliquez sur le numéro voulu pour vous rendre directement à cet endroit.
 
@@ -303,6 +309,7 @@ Vous pouvez voir :
 
 - le nom du livre et le chapitre
 - les boutons pour passer au chapitre précédent ou suivant
+- le bouton pour aller directement à un verset
 - la lecture à voix haute
 - la recherche dans le chapitre ouvert
 
@@ -311,6 +318,7 @@ Vous pouvez voir :
 Vous pouvez voir :
 
 - le titre du document
+- le bouton pour aller directement à un paragraphe
 - la lecture à voix haute
 - la recherche dans le texte
 - les mêmes actions de travail sur les paragraphes

@@ -1,4 +1,4 @@
-import { Button, Col, message, Modal, Row, Typography } from 'antd';
+import { App as AntApp, Button, Col, message, Modal, Row, Typography } from 'antd';
 import {
     type Dispatch,
     type SetStateAction,
@@ -34,6 +34,7 @@ export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
 
 export const useShowReferenceDetail = () => {
     const { t } = useTranslation();
+    const { modal: appModal } = AntApp.useApp();
     const openDocumentRequest = useOpenDocumentRequest();
     const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
@@ -41,7 +42,7 @@ export const useShowReferenceDetail = () => {
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
 
-    const modal = useCallback(
+    const showReferenceDetail = useCallback(
         (reference: NoteItemReference) => {
             const ref = reference.documentReference;
             const assigned = hasReferenceAssignment(ref);
@@ -70,7 +71,7 @@ export const useShowReferenceDetail = () => {
             const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
             const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
-            Modal[assigned ? 'info' : 'warning']({
+            appModal[assigned ? 'info' : 'warning']({
                 closable: true,
                 onOk: assigned ? openDocument : undefined,
                 okText: assigned ? t('Ouvrir le document') : t('Fermer'),
@@ -114,6 +115,7 @@ export const useShowReferenceDetail = () => {
         },
         [
             buildOpenRequest,
+            appModal,
             formatDate,
             getSermonById,
             openDocumentRequest,
@@ -123,7 +125,7 @@ export const useShowReferenceDetail = () => {
         ],
     );
 
-    return modal;
+    return showReferenceDetail;
 };
 
 export const useBibleReferenceModal = () => {
@@ -183,38 +185,43 @@ export function ReferenceBibleModal({
         });
     };
 
-    const onClickVerse = useCallback((refId: string) => {
-        const exists = referenceRef.current?.references.some((d) => (d as BibleBook).id == refId);
-        if (exists) {
-            message.warning(t('Le verset cliqué existe déjà dans la références !'));
-            return;
-        }
-        (
-            window.api.notes.addBibleVerse(
-                referenceRef.current?.id ?? '',
-                refId,
-            ) as Promise<BibleBook>
-        )
-            .then((item) => {
-                setReference((r) => {
-                    const nr = { ...r } as NoteItemReferenceBible;
-                    nr.references = (nr.references as BibleBook[]).slice();
-                    nr.references.push(item);
-                    return nr;
+    const onClickVerse = useCallback(
+        (refId: string) => {
+            const exists = referenceRef.current?.references.some(
+                (d) => (d as BibleBook).id == refId,
+            );
+            if (exists) {
+                message.warning(t('Le verset cliqué existe déjà dans la références !'));
+                return;
+            }
+            (
+                window.api.notes.addBibleVerse(
+                    referenceRef.current?.id ?? '',
+                    refId,
+                ) as Promise<BibleBook>
+            )
+                .then((item) => {
+                    setReference((r) => {
+                        const nr = { ...r } as NoteItemReferenceBible;
+                        nr.references = (nr.references as BibleBook[]).slice();
+                        nr.references.push(item);
+                        return nr;
+                    });
+                    message.success(t('Verset ajouté'));
+                })
+                .finally(() => {
+                    window.setTimeout(() => {
+                        if (versesRef.current) {
+                            versesRef.current.scrollTo({
+                                behavior: 'smooth',
+                                top: versesRef.current.scrollHeight,
+                            });
+                        }
+                    }, 500);
                 });
-                message.success(t('Verset ajouté'));
-            })
-            .finally(() => {
-                window.setTimeout(() => {
-                    if (versesRef.current) {
-                        versesRef.current.scrollTo({
-                            behavior: 'smooth',
-                            top: versesRef.current.scrollHeight,
-                        });
-                    }
-                }, 500);
-            });
-    }, []);
+        },
+        [referenceRef, setReference, t],
+    );
 
     const verses = reference ? (reference.references as BibleBook[]) : [];
     const hasVerses = verses.length > 0;
@@ -224,7 +231,7 @@ export function ReferenceBibleModal({
     useEffect(() => {
         const nextVisible = !hasVerses;
         setShowBible((current) => (current === nextVisible ? current : nextVisible));
-    }, [isModalVisible, reference?.id]);
+    }, [hasVerses, isModalVisible, reference?.id]);
 
     return (
         <Modal

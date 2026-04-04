@@ -66,9 +66,15 @@ This makes it easier to:
 - return to a paragraph mentioned elsewhere
 - prepare a subject or a note from an exact passage
 
-If you want to move quickly to a specific place, use the paragraph number button in the top bar.
+If you want to move quickly to a specific place, use the number button in the top bar.
 
-A small window opens with paragraph numbers. Click the number you want to go straight there.
+Depending on the content, this opens:
+
+- a paragraph list for a sermon
+- a verse list for a Bible chapter
+- a paragraph list for a personal document
+
+A small window opens with a list of numbers. Click the one you want to go straight there.
 
 <ScreenshotPlaceholder
   file="en-document-view-paragraph-picker.png"
@@ -303,6 +309,7 @@ You may see:
 
 - the book name and chapter
 - buttons for previous and next chapter
+- a button to jump directly to a verse
 - read aloud
 - search inside the open chapter
 
@@ -311,6 +318,7 @@ You may see:
 You may see:
 
 - the document title
+- a button to jump directly to a paragraph
 - read aloud
 - search inside the text
 - the same paragraph actions

@@ -46,6 +46,7 @@ export interface AiProviderDefinition {
     kind: AiProviderKind;
     name: string;
     description: string;
+    apiKeyUrl?: string;
     configurableFields: AiProviderFieldDefinition[];
 }
 

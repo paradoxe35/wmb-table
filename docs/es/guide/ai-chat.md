@@ -1,6 +1,6 @@
 # Chat con IA
 
-<p class="lead">Wmb Table incluye una función real de chat con IA para ayudarle a encontrar predicaciones, pasajes bíblicos, temas, notas y documentos personales más rápidamente.</p>
+<p class="lead">Wmb Table incluye una función real de chat con IA para ayudarle a encontrar predicaciones, pasajes bíblicos, temas, notas y documentos personales más rápidamente, pero también para explorar un tema, comparar mensajes y preparar un estudio con más facilidad.</p>
 
 > [!IMPORTANT]
 > El chat con IA existe en la aplicación, pero permanece apagado hasta que usted lo active en la pestaña `Assistant`.
@@ -12,6 +12,9 @@ El chat con IA le puede ayudar a:
 - encontrar una predicación por título, fecha, ciudad u otros datos
 - buscar dentro del contenido de las predicaciones
 - leer el contenido de una predicación
+- resumir una predicación concreta
+- comparar varias predicaciones sobre un mismo tema
+- profundizar un tema con varias preguntas seguidas
 - encontrar pasajes bíblicos
 - ver las versiones bíblicas disponibles
 - encontrar sus temas
@@ -22,6 +25,8 @@ El chat con IA le puede ayudar a:
 - crear una nota
 - agregar un pasaje bíblico o una referencia de predicación a una nota
 - encontrar sus documentos personales
+
+La idea sencilla es esta: en lugar de hacer varias búsquedas separadas usted mismo, puede hacer una petición natural y dejar que el asistente reúna lo que ya existe dentro de Wmb Table.
 
 ## Dónde abrirlo
 
@@ -47,24 +52,25 @@ La página tiene tres zonas sencillas:
   hint="Mostrar la lista de conversaciones a la izquierda, los mensajes en el centro y la caja de escritura abajo."
 />
 
-## Uso sencillo
+## Ejemplos útiles
 
-1. abra `Assistant`
-2. escriba su petición
-3. pulse `Enter`
-4. lea la respuesta
-5. abra después la predicación, el pasaje, el tema o la nota si el resultado es correcto
+- `Busca predicaciones sobre el bautismo`
+- `Resume esta predicación`
+- `Compara lo que el profeta dice sobre la fe en varias predicaciones`
+- `Ayúdame a profundizar el tema del bautismo`
+- `Muéstrame Juan 3:16`
 
-## Relación con los idiomas
+## Qué puede usar
 
-El asistente utiliza dos idiomas:
+El chat con IA trabaja con la información que ya está dentro de Wmb Table:
 
-- **Idioma de su biblioteca**: el asistente busca los sermones, los pasajes bíblicos y las referencias en el idioma elegido para su biblioteca.
-- **Idioma de la interfaz**: el asistente le responde en el idioma elegido para los menús y botones de la aplicación.
-
-Por ejemplo, si su biblioteca está en inglés pero su interfaz está en español, el asistente buscará en las predicaciones en inglés y le responderá en español.
-
-Si usted pide claramente otro idioma en su mensaje, el asistente puede adaptarse.
+- idiomas instalados
+- predicaciones disponibles en su biblioteca
+- búsqueda dentro del contenido de las predicaciones
+- versiones bíblicas disponibles
+- sus temas
+- sus notas
+- sus documentos personales
 
 <ScreenshotPlaceholder
   file="es-ai-chat-tool-results.png"
@@ -74,21 +80,24 @@ Si usted pide claramente otro idioma en su mensaje, el asistente puede adaptarse
 
 ## Referencias clicables
 
-Cuando el asistente le da resultados, las referencias a predicaciones, pasajes bíblicos y documentos aparecen como pequeñas etiquetas de color.
+Cuando el asistente le da resultados, las referencias a predicaciones, pasajes bíblicos y documentos aparecen como etiquetas clicables.
 
-Al hacer clic en una etiqueta, se abre directamente el documento en el lugar correcto:
-
-- una etiqueta azul abre la predicación en el párrafo correcto
-- una etiqueta verde abre el capítulo bíblico
-- una etiqueta naranja abre el documento personal
-
-Esto le ahorra buscar usted mismo en la lista de predicaciones o en la Biblia.
+Al hacer clic en una etiqueta, se abre directamente el documento en el lugar correcto.
 
 <ScreenshotPlaceholder
   file="es-ai-chat-reference-links.png"
   label="Referencias clicables en el chat con IA"
-  hint="Mostrar una respuesta de IA con etiquetas azules (predicación), verdes (Biblia) y naranjas (documento) clicables."
+  hint="Mostrar una respuesta de IA con etiquetas clicables para predicaciones, Biblia y documentos."
 />
+
+## Cuándo resulta más útil
+
+El chat con IA es especialmente útil cuando:
+
+- recuerda una idea pero no el título exacto
+- quiere profundizar un tema sin abrir primero muchas páginas
+- quiere comparar varias predicaciones rápidamente
+- quiere pasar más rápido entre búsqueda, lectura, notas y temas
 
 ## Ver también
 

@@ -1,6 +1,6 @@
 # Adding PDF Documents
 
-<p class="lead">Wmb Table can store your own PDF documents so they stay close to your sermons and notes.</p>
+<p class="lead">Wmb Table can store your own PDF documents so they stay close to your sermons, Bible reading, and notes.</p>
 
 ## What this is for
 
@@ -26,7 +26,10 @@ In the right panel, open the `Documents` tab.
 1. Click `Add`.
 2. Choose a PDF file.
 3. Check the proposed name.
-4. Start the import.
+4. Choose the document language if needed.
+5. Start the import.
+
+The name can be suggested automatically from the filename. You can change it before import if you want a cleaner title.
 
 The app then extracts the text so it can be read inside Wmb Table.
 
@@ -41,4 +44,6 @@ Depending on the extracted content, you can:
 - read it
 - search inside the open document
 - use voice reading
+- jump directly to a paragraph
 - add passages to subjects
+- add passages to notes
