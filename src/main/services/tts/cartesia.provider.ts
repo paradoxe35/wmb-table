@@ -137,12 +137,14 @@ export class CartesiaProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        if (!this.apiKey) throw new Error('Cartesia API key not configured');
+        if (!this.apiKey) {
+            throw new Error("La clé API Cartesia n'est pas configurée.");
+        }
 
         const model = request.model ?? this.model;
         const voiceId = request.voiceId ?? this.voiceId;
         if (!voiceId) {
-            throw new Error('No Cartesia voice selected');
+            throw new Error("Aucune voix Cartesia n'est sélectionnée.");
         }
 
         const language = normalizeLanguageCode(request.language ?? 'en');
@@ -190,8 +192,9 @@ export class CartesiaProvider implements TtsProvider {
     }
 
     async cloneVoice(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult> {
-        if (!this.apiKey) throw new Error('Cartesia API key not configured');
-        if (!request.language) throw new Error('Language is required for Cartesia voice cloning');
+        if (!this.apiKey) throw new Error("La clé API Cartesia n'est pas configurée.");
+        if (!request.language)
+            throw new Error('La langue est requise pour cloner une voix Cartesia.');
 
         const audioBuffer = Buffer.from(request.audioBase64, 'base64');
 
@@ -256,7 +259,7 @@ export class CartesiaProvider implements TtsProvider {
     }
 
     async deleteClonedVoice(voiceId: string): Promise<void> {
-        if (!this.apiKey) throw new Error('Cartesia API key not configured');
+        if (!this.apiKey) throw new Error("La clé API Cartesia n'est pas configurée.");
 
         const response = await fetch(`${CARTESIA_API_BASE}/voices/${voiceId}`, {
             method: 'DELETE',

@@ -53,7 +53,7 @@ function TestButton({
             });
             setStatus(result.valid ? 'success' : 'error');
             if (result.error) {
-                setErrorMessage(result.error);
+                setErrorMessage(t(result.error));
             }
         } catch {
             setStatus('error');

@@ -263,7 +263,9 @@ export class ElevenLabsProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        if (!this.apiKey) throw new Error('ElevenLabs API key not configured');
+        if (!this.apiKey) {
+            throw new Error("La clé API ElevenLabs n'est pas configurée.");
+        }
 
         const model = request.model ?? this.model;
         const voiceId = request.voiceId ?? this.voiceId;
@@ -306,7 +308,7 @@ export class ElevenLabsProvider implements TtsProvider {
     }
 
     async cloneVoice(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult> {
-        if (!this.apiKey) throw new Error('ElevenLabs API key not configured');
+        if (!this.apiKey) throw new Error("La clé API ElevenLabs n'est pas configurée.");
 
         const audioBuffer = Buffer.from(request.audioBase64, 'base64');
 
@@ -365,7 +367,7 @@ export class ElevenLabsProvider implements TtsProvider {
     }
 
     async deleteClonedVoice(voiceId: string): Promise<void> {
-        if (!this.apiKey) throw new Error('ElevenLabs API key not configured');
+        if (!this.apiKey) throw new Error("La clé API ElevenLabs n'est pas configurée.");
 
         const response = await fetch(`${ELEVENLABS_API_BASE}/voices/${voiceId}`, {
             method: 'DELETE',

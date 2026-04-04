@@ -53,7 +53,7 @@ export default function ElevenLabsConfig({ settings, info, onUpdate }: ElevenLab
                 await refreshVoices(setClonedVoices, setProviders);
                 message.success(t('Voix clonée supprimée'));
             } catch (err) {
-                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+                message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(err)) }));
             }
         },
         [setProviders, t],

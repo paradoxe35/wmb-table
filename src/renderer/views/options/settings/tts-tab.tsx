@@ -141,7 +141,7 @@ export default function TtsTab() {
 
             markFeatureReminderUsed('tts');
         } catch (err) {
-            message.error(getErrorMessage(err, t('Erreur lors de la prévisualisation de la voix')));
+            message.error(t(getErrorMessage(err, 'Erreur lors de la prévisualisation de la voix')));
         } finally {
             setPreviewing(false);
         }
@@ -189,9 +189,11 @@ export default function TtsTab() {
                     setSettings(persistedSettingsRef.current);
                 }
                 message.error(
-                    getErrorMessage(
-                        err,
-                        t("Impossible d'enregistrer les paramètres de Lecture audio."),
+                    t(
+                        getErrorMessage(
+                            err,
+                            "Impossible d'enregistrer les paramètres de Lecture audio.",
+                        ),
                     ),
                 );
             }

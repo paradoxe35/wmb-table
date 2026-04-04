@@ -179,7 +179,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                     });
                 }
             } catch (err) {
-                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+                message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(err)) }));
             }
         },
         [cfg.model, cfg.voiceId, loadModels, onUpdate, setProviders, settings, t],

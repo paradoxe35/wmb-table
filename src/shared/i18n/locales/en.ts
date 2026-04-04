@@ -108,6 +108,33 @@ const en: Record<string, string> = {
     Connecté: 'Connected',
     Échec: 'Failed',
     'La connexion a échoué.': 'Connection failed.',
+    'La clé API est manquante pour ce fournisseur.': 'The API key is missing for this provider.',
+    'Fournisseur IA inconnu.': 'Unknown AI provider.',
+    'Validation du fournisseur impossible.': 'Unable to validate the provider.',
+    'Le mode local nécessite une langue par défaut et un moteur local actif.':
+        'Local mode requires a default language and an active local runtime.',
+    'La synthèse du navigateur est gérée dans le processus renderer.':
+        'Browser speech synthesis is handled in the renderer process.',
+    'La prévisualisation du navigateur est gérée dans le processus renderer.':
+        'Browser preview is handled in the renderer process.',
+    'Fournisseur TTS inconnu.': 'Unknown TTS provider.',
+    'Fournisseur TTS introuvable.': 'TTS provider not found.',
+    'Ce fournisseur ne prend pas en charge le téléchargement de modèles.':
+        'This provider does not support model downloads.',
+    'Ce fournisseur ne prend pas en charge la suppression de modèles.':
+        'This provider does not support model deletion.',
+    'Ce fournisseur ne prend pas en charge le clonage de voix.':
+        'This provider does not support voice cloning.',
+    'Voix de référence introuvable.': 'Reference voice not found.',
+    "La clé API OpenAI n'est pas configurée.": 'OpenAI API key is not configured.',
+    "La clé API ElevenLabs n'est pas configurée.": 'ElevenLabs API key is not configured.',
+    "La clé API Cartesia n'est pas configurée.": 'Cartesia API key is not configured.',
+    "Aucune voix Cartesia n'est sélectionnée.": 'No Cartesia voice is selected.',
+    'La langue est requise pour cloner une voix Cartesia.':
+        'Language is required to clone a Cartesia voice.',
+    'Le nom du modèle est requis pour le téléchargement Sherpa.':
+        'A model name is required for Sherpa download.',
+    'Modèle Sherpa inconnu.': 'Unknown Sherpa model.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":

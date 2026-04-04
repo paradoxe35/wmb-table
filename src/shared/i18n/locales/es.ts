@@ -109,6 +109,34 @@ const es: Record<string, string> = {
     Connecté: 'Conectado',
     Échec: 'Error',
     'La connexion a échoué.': 'La conexión ha fallado.',
+    'La clé API est manquante pour ce fournisseur.': 'Falta la clave API para este proveedor.',
+    'Fournisseur IA inconnu.': 'Proveedor IA desconocido.',
+    'Validation du fournisseur impossible.': 'No se pudo validar el proveedor.',
+    'Le mode local nécessite une langue par défaut et un moteur local actif.':
+        'El modo local requiere un idioma predeterminado y un motor local activo.',
+    'La synthèse du navigateur est gérée dans le processus renderer.':
+        'La síntesis del navegador se gestiona en el proceso renderer.',
+    'La prévisualisation du navigateur est gérée dans le processus renderer.':
+        'La vista previa del navegador se gestiona en el proceso renderer.',
+    'Fournisseur TTS inconnu.': 'Proveedor TTS desconocido.',
+    'Fournisseur TTS introuvable.': 'Proveedor TTS no encontrado.',
+    'Ce fournisseur ne prend pas en charge le téléchargement de modèles.':
+        'Este proveedor no admite la descarga de modelos.',
+    'Ce fournisseur ne prend pas en charge la suppression de modèles.':
+        'Este proveedor no admite la eliminación de modelos.',
+    'Ce fournisseur ne prend pas en charge le clonage de voix.':
+        'Este proveedor no admite la clonación de voces.',
+    'Voix de référence introuvable.': 'Voz de referencia no encontrada.',
+    "La clé API OpenAI n'est pas configurée.": 'La clave API de OpenAI no está configurada.',
+    "La clé API ElevenLabs n'est pas configurée.":
+        'La clave API de ElevenLabs no está configurada.',
+    "La clé API Cartesia n'est pas configurée.": 'La clave API de Cartesia no está configurada.',
+    "Aucune voix Cartesia n'est sélectionnée.": 'No hay ninguna voz de Cartesia seleccionada.',
+    'La langue est requise pour cloner une voix Cartesia.':
+        'El idioma es obligatorio para clonar una voz de Cartesia.',
+    'Le nom du modèle est requis pour le téléchargement Sherpa.':
+        'Se requiere un nombre de modelo para la descarga de Sherpa.',
+    'Modèle Sherpa inconnu.': 'Modelo Sherpa desconocido.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":

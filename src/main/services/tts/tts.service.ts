@@ -132,10 +132,12 @@ export class TtsService {
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
         const providerType = request.provider ?? this.settings.activeProvider;
         if (providerType === 'browser') {
-            throw new Error('Browser TTS synthesis is handled in the renderer process');
+            throw new Error('La synthèse du navigateur est gérée dans le processus renderer.');
         }
         const provider = this.providers.get(providerType);
-        if (!provider) throw new Error(`Unknown TTS provider: ${providerType}`);
+        if (!provider) {
+            throw new Error('Fournisseur TTS inconnu.');
+        }
 
         const cfg = this.settings.providers[providerType];
         const cacheKey = this.buildCacheKey(
@@ -298,7 +300,7 @@ export class TtsService {
     async downloadModel(providerType: TtsProviderType, modelName?: string): Promise<void> {
         const provider = this.providers.get(providerType);
         if (!provider?.downloadModel) {
-            throw new Error(`Provider ${providerType} does not support model download`);
+            throw new Error('Ce fournisseur ne prend pas en charge le téléchargement de modèles.');
         }
         const downloadKey = `${providerType}:${modelName ?? ''}`;
         const existing = this.activeModelDownloads.get(downloadKey);
@@ -371,7 +373,7 @@ export class TtsService {
     async deleteProviderModel(providerType: TtsProviderType, modelName: string): Promise<void> {
         const provider = this.providers.get(providerType);
         if (!provider?.deleteModel) {
-            throw new Error(`Provider ${providerType} does not support model deletion`);
+            throw new Error('Ce fournisseur ne prend pas en charge la suppression de modèles.');
         }
         await provider.deleteModel(modelName);
     }
@@ -390,7 +392,7 @@ export class TtsService {
     ): Promise<TtsVoiceCloneResult> {
         const provider = this.providers.get(providerType);
         if (!provider?.cloneVoice) {
-            throw new Error(`Provider ${providerType} does not support voice cloning`);
+            throw new Error('Ce fournisseur ne prend pas en charge le clonage de voix.');
         }
         return provider.cloneVoice(request);
     }
@@ -407,10 +409,12 @@ export class TtsService {
         await this.reloadSettings();
         const providerType = this.settings.activeProvider;
         if (providerType === 'browser') {
-            throw new Error('Browser TTS preview is handled in the renderer process');
+            throw new Error(
+                'La prévisualisation du navigateur est gérée dans le processus renderer.',
+            );
         }
         const provider = this.providers.get(providerType);
-        if (!provider) throw new Error(`Unknown TTS provider: ${providerType}`);
+        if (!provider) throw new Error('Fournisseur TTS inconnu.');
 
         const cfg = this.settings.providers[providerType];
         const text = getTtsDemoText(language);
@@ -426,7 +430,7 @@ export class TtsService {
     async deleteClonedVoice(providerType: TtsProviderType, voiceId: string): Promise<void> {
         const provider = this.providers.get(providerType);
         if (!provider?.deleteClonedVoice) {
-            throw new Error(`Provider ${providerType} does not support voice cloning`);
+            throw new Error('Ce fournisseur ne prend pas en charge le clonage de voix.');
         }
         return provider.deleteClonedVoice(voiceId);
     }
@@ -434,7 +438,7 @@ export class TtsService {
     getReferenceVoiceAudio(referenceId: string): string {
         const ref = TTS_REFERENCE_VOICES.find((v) => v.id === referenceId);
         if (!ref) {
-            throw new Error(`Unknown reference voice: ${referenceId}`);
+            throw new Error('Voix de référence introuvable.');
         }
         const filePath = join(getTtsResourceDir(), ref.fileName);
         return readFileSync(filePath).toString('base64');
@@ -553,7 +557,7 @@ export class TtsService {
         const s = this.playbackSettings ?? this.settings;
         const providerType = s.activeProvider;
         const provider = this.providers.get(providerType);
-        if (!provider) throw new Error(`Provider not found: ${providerType}`);
+        if (!provider) throw new Error('Fournisseur TTS introuvable.');
 
         const cfg = s.providers[providerType];
         // Synthesize at 1.0x — speed is applied in the renderer via playbackRate

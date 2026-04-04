@@ -254,7 +254,9 @@ export class SherpaProvider implements TtsProvider {
         onProgress: (progress: TtsProviderDownloadProgress) => void,
         modelName?: string,
     ): Promise<void> {
-        if (!modelName) throw new Error('Model name required for Sherpa download');
+        if (!modelName) {
+            throw new Error('Le nom du modèle est requis pour le téléchargement Sherpa.');
+        }
 
         this.rpc.onProgressEvent = (event) => {
             onProgress({
@@ -272,7 +274,7 @@ export class SherpaProvider implements TtsProvider {
             } else {
                 const entry = findCatalogModelByModelName(modelName);
                 if (!entry) {
-                    throw new Error(`Unknown model: ${modelName}`);
+                    throw new Error('Modèle Sherpa inconnu.');
                 }
 
                 await this.rpc.call<void>(

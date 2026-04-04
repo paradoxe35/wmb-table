@@ -160,9 +160,12 @@ export class AiService {
             });
             return { valid: true };
         } catch (error) {
+            const message =
+                error instanceof Error ? error.message : 'Validation du fournisseur impossible.';
+
             return {
                 valid: false,
-                error: error instanceof Error ? error.message : 'Provider validation failed.',
+                error: message,
             };
         }
     }

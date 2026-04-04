@@ -53,7 +53,9 @@ export function resolveLanguageModel(input: {
 
     if (providerId === 'local') {
         if (!input.localRuntime || !input.defaultContentLanguage) {
-            throw new Error('Local provider requires a runtime service and default language.');
+            throw new Error(
+                'Le mode local nécessite une langue par défaut et un moteur local actif.',
+            );
         }
         return createLocalProvider({
             runtime: input.localRuntime,
@@ -68,14 +70,14 @@ export function resolveLanguageModel(input: {
             | undefined;
         const apiKey = input.apiKey ?? providerConfig?.apiKey;
         if (builtinFactory.requiresApiKey && !apiKey) {
-            throw new Error(`API key is missing for provider: ${providerId}`);
+            throw new Error('La clé API est manquante pour ce fournisseur.');
         }
         return wrapReasoningFilteredModel(builtinFactory.create(apiKey ?? '', modelId));
     }
 
     const customProvider = settings.customProviders.find((p) => p.id === providerId);
     if (!customProvider) {
-        throw new Error(`Unknown AI provider: ${providerId}`);
+        throw new Error('Fournisseur IA inconnu.');
     }
 
     return wrapReasoningFilteredModel(

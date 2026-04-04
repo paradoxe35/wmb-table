@@ -119,7 +119,7 @@ export class OpenAiProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        if (!this.apiKey) throw new Error('OpenAI API key not configured');
+        if (!this.apiKey) throw new Error("La clé API OpenAI n'est pas configurée.");
 
         const model = request.model ?? this.model;
         const voice = request.voiceId ?? this.voiceId;
