@@ -145,6 +145,7 @@ export interface TtsModelDownloadProgress {
     modelName?: string;
     percentage: number;
     status: 'downloading' | 'complete' | 'error';
+    phase?: 'downloading' | 'extracting' | 'finalizing';
     error?: string;
 }
 

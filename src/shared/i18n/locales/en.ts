@@ -282,6 +282,9 @@ const en: Record<string, string> = {
     'Voix installée': 'Voice installed',
     'Voix supprimée': 'Voice removed',
     Télécharger: 'Download',
+    Téléchargement: 'Downloading',
+    Extraction: 'Extracting',
+    Finalisation: 'Finalizing',
     'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
         'No voice available for the content language. Use the search above to find a voice in another language.',
     // quality tags

@@ -18,24 +18,70 @@ import { entrySupportsLang, normalizeLangCodes } from './sherpa-catalog';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
 import { getTtsModelsDir } from '@main/lib/app-paths';
 import { WorkerRpc } from './worker-rpc';
+import type { TtsProviderDownloadProgress } from './provider';
 import workerPath from './sherpa.worker?modulePath';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function findOnnxFile(dir: string): string | null {
+function findOnnxFiles(dir: string): string[] {
+    if (!existsSync(dir)) return [];
+    try {
+        return readdirSync(dir)
+            .filter((fileName) => extname(fileName) === '.onnx' && !fileName.endsWith('.json'))
+            .map((fileName) => join(dir, fileName));
+    } catch {
+        return [];
+    }
+}
+
+function findVocoderFile(dir: string): string | null {
     if (!existsSync(dir)) return null;
     try {
-        const file = readdirSync(dir).find((f) => extname(f) === '.onnx' && !f.endsWith('.json'));
-        return file ? join(dir, file) : null;
+        const fileName = readdirSync(dir).find(
+            (fileName) => extname(fileName) === '.onnx' && /vocos|vocoder|hifigan/i.test(fileName),
+        );
+        return fileName ? join(dir, fileName) : null;
+    } catch {
+        return null;
+    }
+}
+
+function findAcousticModelFile(dir: string): string | null {
+    if (!existsSync(dir)) return null;
+    try {
+        const fileName = readdirSync(dir).find(
+            (fileName) =>
+                extname(fileName) === '.onnx' &&
+                !/vocos|vocoder|hifigan/i.test(fileName) &&
+                !fileName.endsWith('.json'),
+        );
+        return fileName ? join(dir, fileName) : null;
     } catch {
         return null;
     }
 }
 
 function isModelInstalled(modelDir: string): boolean {
-    return findOnnxFile(modelDir) !== null && existsSync(join(modelDir, 'tokens.txt'));
+    if (!existsSync(join(modelDir, 'tokens.txt'))) {
+        return false;
+    }
+
+    const onnxFiles = findOnnxFiles(modelDir);
+    if (onnxFiles.length === 0) {
+        return false;
+    }
+
+    if (existsSync(join(modelDir, 'voices.bin'))) {
+        return findAcousticModelFile(modelDir) !== null;
+    }
+
+    if (findVocoderFile(modelDir)) {
+        return findAcousticModelFile(modelDir) !== null;
+    }
+
+    return true;
 }
 
 function getSherpaModelsDir(): string {
@@ -204,19 +250,31 @@ export class SherpaProvider implements TtsProvider {
         return { audioBase64, mimeType: 'audio/wav' };
     }
 
-    async downloadModel(onProgress: (pct: number) => void, modelName?: string): Promise<void> {
+    async downloadModel(
+        onProgress: (progress: TtsProviderDownloadProgress) => void,
+        modelName?: string,
+    ): Promise<void> {
         if (!modelName) throw new Error('Model name required for Sherpa download');
 
-        this.rpc.onProgress = onProgress;
+        this.rpc.onProgressEvent = (event) => {
+            onProgress({
+                percentage: event.percentage,
+                phase: event.phase as TtsProviderDownloadProgress['phase'],
+            });
+        };
+
         try {
-            onProgress(0);
+            onProgress({ percentage: 0, phase: 'downloading' });
 
             if (modelName.startsWith('mms-')) {
                 const langCode = modelName.slice(4);
                 await this.rpc.call<void>('downloadMmsModel', langCode, getSherpaModelsDir());
             } else {
                 const entry = findCatalogModelByModelName(modelName);
-                if (!entry) throw new Error(`Unknown model: ${modelName}`);
+                if (!entry) {
+                    throw new Error(`Unknown model: ${modelName}`);
+                }
+
                 await this.rpc.call<void>(
                     'downloadModel',
                     entry.url,
@@ -227,7 +285,7 @@ export class SherpaProvider implements TtsProvider {
 
             // Worker already sends 100% progress via RPC — no need to call again
         } finally {
-            this.rpc.onProgress = null;
+            this.rpc.onProgressEvent = null;
         }
     }
 

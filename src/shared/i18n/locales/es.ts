@@ -284,6 +284,9 @@ const es: Record<string, string> = {
     'Voix installée': 'Voz instalada',
     'Voix supprimée': 'Voz eliminada',
     Télécharger: 'Descargar',
+    Téléchargement: 'Descargando',
+    Extraction: 'Extrayendo',
+    Finalisation: 'Finalizando',
     'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
         'No hay voces disponibles para el idioma activo. Use la búsqueda anterior para encontrar una voz en otro idioma.',
 

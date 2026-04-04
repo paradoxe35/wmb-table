@@ -2,6 +2,10 @@ import { Worker } from 'node:worker_threads';
 import log from 'electron-log';
 
 type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
+export interface WorkerProgressEvent {
+    percentage: number;
+    phase?: string;
+}
 
 /**
  * Lightweight RPC wrapper over a Node.js Worker thread.
@@ -9,7 +13,7 @@ type Pending = { resolve: (v: unknown) => void; reject: (e: Error) => void };
  * Protocol (same as the existing worker message format):
  *   Request:  { id: number, method: string, args: unknown[] }
  *   Response: { id: number, result?: unknown, error?: string }
- *   Progress: { id: -1, result: { type: 'progress', percentage: number } }
+ *   Progress: { id: -1, result: { type: 'progress', percentage: number, phase?: string } }
  */
 export class WorkerRpc {
     private worker: Worker | null = null;
@@ -17,7 +21,7 @@ export class WorkerRpc {
     private pending = new Map<number, Pending>();
 
     /** Set before calling a long-running method to receive progress events. */
-    onProgress: ((pct: number) => void) | null = null;
+    onProgressEvent: ((event: WorkerProgressEvent) => void) | null = null;
 
     constructor(
         private readonly workerPath: string,
@@ -29,8 +33,13 @@ export class WorkerRpc {
             this.worker = new Worker(this.workerPath);
             this.worker.on('message', (msg: { id: number; result?: unknown; error?: string }) => {
                 if (msg.id === -1 && msg.result && typeof msg.result === 'object') {
-                    const r = msg.result as { type?: string; percentage?: number };
-                    if (r.type === 'progress') this.onProgress?.(r.percentage ?? 0);
+                    const r = msg.result as WorkerProgressEvent & { type?: string };
+                    if (r.type === 'progress') {
+                        this.onProgressEvent?.({
+                            percentage: r.percentage ?? 0,
+                            phase: r.phase,
+                        });
+                    }
                     return;
                 }
                 const p = this.pending.get(msg.id);

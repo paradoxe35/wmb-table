@@ -5,11 +5,14 @@ import type {
     TtsSynthesizeRequest,
     TtsSynthesizeResult,
     TtsModelInfo,
+    TtsModelDownloadProgress,
     TtsCompatibilityResult,
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
     TtsVoice,
 } from '@shared/tts.types';
+
+export type TtsProviderDownloadProgress = Pick<TtsModelDownloadProgress, 'percentage' | 'phase'>;
 
 export interface TtsProvider {
     readonly type: TtsProviderType;
@@ -20,7 +23,10 @@ export interface TtsProvider {
     ): Promise<TtsCompatibilityResult>;
     synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
     previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult>;
-    downloadModel?(onProgress: (pct: number) => void, modelName?: string): Promise<void>;
+    downloadModel?(
+        onProgress: (progress: TtsProviderDownloadProgress) => void,
+        modelName?: string,
+    ): Promise<void>;
     isModelReady?(): Promise<boolean>;
     getAvailableModels?(): TtsModelInfo[];
     deleteModel?(modelName: string): Promise<void>;

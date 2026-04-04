@@ -1,11 +1,13 @@
 import { parentPort } from 'node:worker_threads';
 import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
-import { unlink } from 'node:fs/promises';
+import { rename, rm, stat, unlink } from 'node:fs/promises';
+import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { join, extname } from 'node:path';
 import { extract as tarExtract } from 'tar';
 import unbzip2 from 'unbzip2-stream';
 import { pcmToWav } from './utils.worker';
+import type { TtsModelDownloadProgress } from '@shared/tts.types';
 
 interface WorkerRequest {
     id: number;
@@ -18,8 +20,11 @@ let ttsInstance: any = null;
 let currentModelDir = '';
 let currentKokoroConfigKey = '';
 
-function sendProgress(percentage: number): void {
-    parentPort!.postMessage({ id: -1, result: { type: 'progress', percentage } });
+function sendProgress(
+    percentage: number,
+    phase: TtsModelDownloadProgress['phase'] = 'downloading',
+): void {
+    parentPort!.postMessage({ id: -1, result: { type: 'progress', percentage, phase } });
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +85,69 @@ function findKokoroLexiconFiles(dir: string): string[] {
 function buildKokoroLexiconArg(dir: string): string {
     const lexicons = findKokoroLexiconFiles(dir);
     return lexicons.join(',');
+}
+
+function hasValidModelAssets(modelDir: string): boolean {
+    if (!existsSync(join(modelDir, 'tokens.txt'))) {
+        return false;
+    }
+
+    const onnxFiles = findOnnxFiles(modelDir);
+    if (onnxFiles.length === 0) {
+        return false;
+    }
+
+    if (existsSync(join(modelDir, 'voices.bin'))) {
+        return findAcousticModelFile(modelDir) !== null;
+    }
+
+    if (findVocoderFile(modelDir)) {
+        return findAcousticModelFile(modelDir) !== null;
+    }
+
+    return true;
+}
+
+function resolveExtractedModelDir(rootDir: string, modelName: string): string | null {
+    const directMatch = join(rootDir, modelName);
+    if (hasValidModelAssets(directMatch)) {
+        return directMatch;
+    }
+
+    if (hasValidModelAssets(rootDir)) {
+        return rootDir;
+    }
+
+    const children = readdirSync(rootDir, { withFileTypes: true }).filter((entry) =>
+        entry.isDirectory(),
+    );
+    if (children.length === 1) {
+        const nestedDir = join(rootDir, children[0].name);
+        return hasValidModelAssets(nestedDir) ? nestedDir : null;
+    }
+
+    return null;
+}
+
+function createProgressTransform(
+    totalBytes: number,
+    pctStart: number,
+    pctEnd: number,
+    phase: NonNullable<TtsModelDownloadProgress['phase']>,
+): Transform {
+    let processedBytes = 0;
+
+    return new Transform({
+        transform(chunk, _encoding, callback) {
+            processedBytes += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk);
+            const pct =
+                totalBytes > 0
+                    ? pctStart + (processedBytes / totalBytes) * (pctEnd - pctStart)
+                    : pctEnd;
+            sendProgress(Math.min(pctEnd, Math.round(pct)), phase);
+            callback(null, chunk);
+        },
+    });
 }
 
 function initialize(modelDir: string, _language?: string): boolean {
@@ -222,6 +290,7 @@ async function downloadFile(
     destPath: string,
     pctStart: number,
     pctEnd: number,
+    phase: NonNullable<TtsModelDownloadProgress['phase']> = 'downloading',
 ): Promise<void> {
     const response = await fetch(url, { redirect: 'follow' });
     if (!response.ok) throw new Error(`Download failed: ${response.status} ${url}`);
@@ -239,7 +308,7 @@ async function downloadFile(
             downloaded += value.byteLength;
             if (contentLength > 0) {
                 const pct = pctStart + (downloaded / contentLength) * (pctEnd - pctStart);
-                sendProgress(Math.round(pct));
+                sendProgress(Math.round(pct), phase);
             }
         }
         fileStream.end();
@@ -259,19 +328,45 @@ async function downloadFile(
 // ---------------------------------------------------------------------------
 
 async function downloadModel(url: string, modelName: string, modelsDir: string): Promise<void> {
-    const tmpFile = join(modelsDir, `${modelName}.tar.bz2`);
+    const tmpFile = join(modelsDir, `${modelName}.${Date.now()}.tmp.tar.bz2`);
+    const tmpExtractDir = join(modelsDir, `${modelName}.partial-${Date.now()}`);
+    const finalModelDir = join(modelsDir, modelName);
     mkdirSync(modelsDir, { recursive: true });
-    sendProgress(2);
+    mkdirSync(tmpExtractDir, { recursive: true });
+    sendProgress(2, 'downloading');
 
     try {
-        await downloadFile(url, tmpFile, 5, 75);
-        sendProgress(80);
-        await pipeline(createReadStream(tmpFile), unbzip2(), tarExtract({ cwd: modelsDir }));
-        sendProgress(95);
+        await downloadFile(url, tmpFile, 5, 78, 'downloading');
+
+        const archiveSize = (await stat(tmpFile)).size;
+        sendProgress(80, 'extracting');
+        await pipeline(
+            createReadStream(tmpFile),
+            createProgressTransform(archiveSize, 80, 94, 'extracting'),
+            unbzip2(),
+            tarExtract({ cwd: tmpExtractDir }),
+        );
+
+        const extractedModelDir = resolveExtractedModelDir(tmpExtractDir, modelName);
+        if (!extractedModelDir) {
+            throw new Error(`Extracted Sherpa model is incomplete: ${modelName}`);
+        }
+
+        sendProgress(96, 'finalizing');
+        await rm(finalModelDir, { recursive: true, force: true }).catch(() => {});
+
+        if (extractedModelDir === tmpExtractDir) {
+            await rename(tmpExtractDir, finalModelDir);
+        } else {
+            await rename(extractedModelDir, finalModelDir);
+            await rm(tmpExtractDir, { recursive: true, force: true }).catch(() => {});
+        }
+
         await unlink(tmpFile).catch(() => {});
-        sendProgress(100);
+        sendProgress(100, 'finalizing');
     } catch (err) {
         await unlink(tmpFile).catch(() => {});
+        await rm(tmpExtractDir, { recursive: true, force: true }).catch(() => {});
         throw err;
     }
 }
@@ -282,27 +377,38 @@ async function downloadModel(url: string, modelName: string, modelsDir: string):
 
 async function downloadMmsModel(langCode: string, modelsDir: string): Promise<void> {
     const baseUrl = 'https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main';
-    const modelDir = join(modelsDir, `mms-${langCode}`);
-    mkdirSync(modelDir, { recursive: true });
-    sendProgress(2);
+    const modelName = `mms-${langCode}`;
+    const modelDir = join(modelsDir, modelName);
+    const tmpModelDir = join(modelsDir, `${modelName}.partial-${Date.now()}`);
+    mkdirSync(tmpModelDir, { recursive: true });
+    sendProgress(2, 'downloading');
 
     try {
         await downloadFile(
             `${baseUrl}/${langCode}/model.onnx`,
-            join(modelDir, 'model.onnx'),
+            join(tmpModelDir, 'model.onnx'),
             2,
-            90,
+            86,
+            'downloading',
         );
         await downloadFile(
             `${baseUrl}/${langCode}/tokens.txt`,
-            join(modelDir, 'tokens.txt'),
-            90,
-            98,
+            join(tmpModelDir, 'tokens.txt'),
+            86,
+            94,
+            'downloading',
         );
-        sendProgress(100);
-    } catch (err) {
-        const { rm } = await import('node:fs/promises');
+
+        if (!hasValidModelAssets(tmpModelDir)) {
+            throw new Error(`Downloaded Sherpa model is incomplete: ${modelName}`);
+        }
+
+        sendProgress(96, 'finalizing');
         await rm(modelDir, { recursive: true, force: true }).catch(() => {});
+        await rename(tmpModelDir, modelDir);
+        sendProgress(100, 'finalizing');
+    } catch (err) {
+        await rm(tmpModelDir, { recursive: true, force: true }).catch(() => {});
         throw err;
     }
 }
