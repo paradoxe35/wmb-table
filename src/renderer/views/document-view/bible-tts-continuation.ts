@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import {
     buildBibleDocumentId,
     buildBibleDocumentTitle,
@@ -113,13 +113,16 @@ export function useBibleTtsContinuation(): void {
     const completedNaturally = useTtsStore((s) => s.completedNaturally);
     const lastCompletedDocumentKey = useTtsStore((s) => s.lastCompletedDocumentKey);
     const clearCompletedNaturally = useTtsStore((s) => s.clearCompletedNaturally);
+    const handledCompletionKeyRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!completedNaturally || !settings?.bibleReadEntireBook || !lastCompletedDocumentKey) {
             return;
         }
-
-        clearCompletedNaturally();
+        if (handledCompletionKeyRef.current === lastCompletedDocumentKey) {
+            return;
+        }
+        handledCompletionKeyRef.current = lastCompletedDocumentKey;
 
         const sourceTab = tabs.find((tab) => {
             if (tab.type !== 'bible') {
@@ -132,84 +135,81 @@ export function useBibleTtsContinuation(): void {
         });
 
         if (!sourceTab || sourceTab.type !== 'bible') {
+            clearCompletedNaturally();
             return;
         }
 
         const source = captureBiblePlaybackSource(sourceTab, getTabKey(sourceTab));
         if (!source) {
+            clearCompletedNaturally();
             return;
         }
 
-        let cancelled = false;
-
         void (async () => {
-            const [bibleIndex, versions] = await Promise.all([
-                window.api.bible.getIndexes(sourceTab.bibleVersionAbbreviation),
-                getBibleVersions(),
-            ]);
+            try {
+                const [bibleIndex, versions] = await Promise.all([
+                    window.api.bible.getIndexes(sourceTab.bibleVersionAbbreviation),
+                    getBibleVersions(),
+                ]);
 
-            if (cancelled) {
-                return;
+                const nextTarget = resolveNextBibleChapterTarget(source, bibleIndex);
+                if (!nextTarget) {
+                    return;
+                }
+
+                const nextLanguage =
+                    versions.find(
+                        (version) => version.abbreviation === nextTarget.bibleVersionAbbreviation,
+                    )?.langCode ??
+                    contentLanguage ??
+                    '';
+
+                if (contentLanguage && nextLanguage && nextLanguage !== contentLanguage) {
+                    return;
+                }
+
+                const verses = await window.api.bible.getBooks({
+                    book: nextTarget.bibleBook,
+                    chapter: nextTarget.bibleChapter,
+                    bibleVersionAbbreviation: nextTarget.bibleVersionAbbreviation,
+                });
+
+                if (verses.length === 0) {
+                    return;
+                }
+
+                const bookName =
+                    getBibleIndexEntry(bibleIndex, nextTarget.bibleBook)?.bookName ?? '';
+                const introText =
+                    bookName && nextLanguage
+                        ? buildBibleChapterIntro(bookName, nextTarget.bibleChapter, nextLanguage)
+                        : undefined;
+
+                updateBibleTab(source.tabKey, nextTarget);
+
+                await startTtsPlayback(
+                    versesToParagraphs(verses),
+                    nextLanguage,
+                    getDocumentIdentityKey(
+                        getDocumentIdentityFromTab({
+                            ...sourceTab,
+                            title: nextTarget.title,
+                            documentId: nextTarget.documentId,
+                            bibleBook: nextTarget.bibleBook,
+                            bibleChapter: nextTarget.bibleChapter,
+                            bibleVersionAbbreviation: nextTarget.bibleVersionAbbreviation,
+                        }),
+                    ),
+                    {
+                        introText,
+                        getSegmentLabel: (paragraphIndex) =>
+                            buildSegmentAnnouncement('verse', paragraphIndex, nextLanguage),
+                    },
+                );
+            } finally {
+                clearCompletedNaturally();
             }
-
-            const nextTarget = resolveNextBibleChapterTarget(source, bibleIndex);
-            if (!nextTarget) {
-                return;
-            }
-
-            updateBibleTab(source.tabKey, nextTarget);
-
-            const nextLanguage =
-                versions.find(
-                    (version) => version.abbreviation === nextTarget.bibleVersionAbbreviation,
-                )?.langCode ??
-                contentLanguage ??
-                '';
-
-            if (contentLanguage && nextLanguage && nextLanguage !== contentLanguage) {
-                return;
-            }
-
-            const verses = await window.api.bible.getBooks({
-                book: nextTarget.bibleBook,
-                chapter: nextTarget.bibleChapter,
-                bibleVersionAbbreviation: nextTarget.bibleVersionAbbreviation,
-            });
-
-            if (cancelled || verses.length === 0) {
-                return;
-            }
-
-            const bookName = getBibleIndexEntry(bibleIndex, nextTarget.bibleBook)?.bookName ?? '';
-            const introText =
-                bookName && nextLanguage
-                    ? buildBibleChapterIntro(bookName, nextTarget.bibleChapter, nextLanguage)
-                    : undefined;
-
-            await startTtsPlayback(
-                versesToParagraphs(verses),
-                nextLanguage,
-                getDocumentIdentityKey(
-                    getDocumentIdentityFromTab({
-                        ...sourceTab,
-                        title: nextTarget.title,
-                        documentId: nextTarget.documentId,
-                        bibleBook: nextTarget.bibleBook,
-                        bibleChapter: nextTarget.bibleChapter,
-                        bibleVersionAbbreviation: nextTarget.bibleVersionAbbreviation,
-                    }),
-                ),
-                {
-                    introText,
-                    getSegmentLabel: (paragraphIndex) =>
-                        buildSegmentAnnouncement('verse', paragraphIndex, nextLanguage),
-                },
-            );
         })();
-
-        return () => {
-            cancelled = true;
-        };
     }, [
         clearCompletedNaturally,
         completedNaturally,
