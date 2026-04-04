@@ -32,6 +32,7 @@ export default function DocumentTabs() {
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const rememberReadingPosition = useAppStore((s) => s.rememberReadingPosition);
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const resetTts = useTtsStore((s) => s.reset);
     const ttsDocumentKey = useTtsStore((s) => s.documentKey);
@@ -208,7 +209,7 @@ export default function DocumentTabs() {
                             isActive={key === activeTabKey}
                             onActivate={() => {
                                 const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-                                if (activeTabKey && container) {
+                                if (rememberReadingPosition && activeTabKey && container) {
                                     const maxScroll = Math.max(
                                         0,
                                         container.scrollHeight - container.clientHeight,

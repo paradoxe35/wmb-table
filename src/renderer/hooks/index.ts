@@ -58,7 +58,14 @@ export function buildPendingNavigation(
     };
 }
 
-function snapshotActiveDocumentScroll(updateTabScroll: (key: string, scrollY?: number) => void) {
+function snapshotActiveDocumentScroll(
+    updateTabScroll: (key: string, scrollY?: number) => void,
+    rememberReadingPosition: boolean,
+) {
+    if (!rememberReadingPosition) {
+        return;
+    }
+
     const currentTab = useDocumentTabsStore.getState().tabs.find((tab) => tab.active);
     const container = document.getElementById(DOCUMENT_CONTAINER_ID);
     if (!currentTab || !container) return;
@@ -281,11 +288,12 @@ export function useOpenDocumentRequest() {
     const addTab = useAddDocumentTab();
     const setMainView = useAppStore((s) => s.setMainView);
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
+    const rememberReadingPosition = useAppStore((s) => s.rememberReadingPosition);
 
     return useCallback(
         async (request: OpenDocumentRequest) => {
             if (request.documentType === 'custom') {
-                snapshotActiveDocumentScroll(updateTabScroll);
+                snapshotActiveDocumentScroll(updateTabScroll, rememberReadingPosition);
                 addTab({
                     title: request.title,
                     documentId: request.customDocumentId,
@@ -296,7 +304,7 @@ export function useOpenDocumentRequest() {
             }
 
             if (request.documentType === 'bible') {
-                snapshotActiveDocumentScroll(updateTabScroll);
+                snapshotActiveDocumentScroll(updateTabScroll, rememberReadingPosition);
                 addTab({
                     title: request.title,
                     documentId: buildBibleDocumentId(request.bibleBook, request.bibleChapter),
@@ -309,7 +317,7 @@ export function useOpenDocumentRequest() {
                 return;
             }
 
-            snapshotActiveDocumentScroll(updateTabScroll);
+            snapshotActiveDocumentScroll(updateTabScroll, rememberReadingPosition);
             addTab({
                 title: request.title,
                 documentId: request.sermonId,
@@ -319,7 +327,7 @@ export function useOpenDocumentRequest() {
             });
             setMainView('document');
         },
-        [addTab, setMainView, updateTabScroll],
+        [addTab, rememberReadingPosition, setMainView, updateTabScroll],
     );
 }
 
