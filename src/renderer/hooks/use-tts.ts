@@ -16,7 +16,7 @@ import {
 
 // ── Per-document TTS options ──
 
-interface UseTtsOptions {
+export interface UseTtsOptions {
     introText?: string;
     getSegmentLabel?: (paragraphIndex: number) => string;
 }
@@ -84,6 +84,88 @@ async function segmentText(
         result.push({ ...seg, index: result.length });
     }
     return result;
+}
+
+function buildPlaybackSegments(
+    contentSegments: TtsSegment[],
+    options?: UseTtsOptions,
+    readIntroduction?: boolean,
+): TtsSegment[] {
+    const allSegments: TtsSegment[] = [];
+    if (options?.introText && readIntroduction) {
+        allSegments.push({
+            index: 0,
+            text: options.introText,
+            paragraphIndex: -1,
+            startOffset: 0,
+            endOffset: 0,
+        });
+    }
+    for (const seg of contentSegments) {
+        allSegments.push({ ...seg, index: allSegments.length });
+    }
+    return allSegments;
+}
+
+export async function startTtsPlayback(
+    paragraphs: { paragraphIndex: number; content: string }[],
+    language: string,
+    documentKey: string,
+    options?: UseTtsOptions,
+    startParagraphIndex?: number,
+): Promise<void> {
+    const settings = useTtsStore.getState().settings;
+    if (!settings || !paragraphs.length) {
+        return;
+    }
+
+    const contentSegments = await segmentText(
+        paragraphs,
+        settings.highlightMode,
+        language,
+        options?.getSegmentLabel,
+        settings.announceSegmentNumbers,
+    );
+    if (!contentSegments.length) {
+        return;
+    }
+
+    const allSegments = buildPlaybackSegments(contentSegments, options, settings.readIntroduction);
+    const state = useTtsStore.getState();
+
+    const savedIndex =
+        startParagraphIndex == null &&
+        state.lastStoppedDocumentKey === documentKey &&
+        state.lastStoppedSegmentIndex > 0
+            ? state.lastStoppedSegmentIndex
+            : 0;
+
+    const startIndex =
+        startParagraphIndex == null
+            ? savedIndex < allSegments.length
+                ? savedIndex
+                : 0
+            : allSegments.findIndex((segment) => segment.paragraphIndex >= startParagraphIndex);
+
+    if (startIndex < 0) {
+        return;
+    }
+
+    startPlaybackAtIndex(
+        allSegments,
+        startIndex,
+        settings,
+        language,
+        documentKey,
+        {
+            markCompletedNaturally: state.markCompletedNaturally,
+            reset: state.reset,
+            setDocumentKey: state.setDocumentKey,
+            setPlaybackState: state.setPlaybackState,
+            setSegments: state.setSegments,
+        },
+        getTtsStatusSnapshot,
+    );
 }
 
 // ── Browser TTS ──
@@ -196,8 +278,6 @@ export function useTts(
     const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
     const languageSupported = useTtsStore((s) => s.languageSupported);
     const incompatibleMessage = useTtsStore((s) => s.incompatibleMessage);
-    const setSegments = useTtsStore((s) => s.setSegments);
-    const setDocumentKey = useTtsStore((s) => s.setDocumentKey);
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
     const reset = useTtsStore((s) => s.reset);
     const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
@@ -219,72 +299,8 @@ export function useTts(
     }, [language, reset, status]);
 
     const play = useCallback(async () => {
-        if (!settings || !paragraphs.length) {
-            return;
-        }
-        const contentSegments = await segmentText(
-            paragraphs,
-            settings.highlightMode,
-            language,
-            options?.getSegmentLabel,
-            settings.announceSegmentNumbers,
-        );
-        if (!contentSegments.length) {
-            return;
-        }
-
-        // Always build allSegments with intro at index 0 (when enabled).
-        // The startIndex will skip the intro naturally on resume — no need
-        // to conditionally omit it, which avoids an index offset bug.
-        const allSegments: TtsSegment[] = [];
-        if (options?.introText && settings.readIntroduction) {
-            allSegments.push({
-                index: 0,
-                text: options.introText,
-                paragraphIndex: -1,
-                startOffset: 0,
-                endOffset: 0,
-            });
-        }
-        for (const seg of contentSegments) {
-            allSegments.push({ ...seg, index: allSegments.length });
-        }
-
-        // Resume at saved position (skips intro naturally), clamp if stale
-        const { lastStoppedDocumentKey, lastStoppedSegmentIndex } = useTtsStore.getState();
-        const savedIndex =
-            lastStoppedDocumentKey === documentKey && lastStoppedSegmentIndex > 0
-                ? lastStoppedSegmentIndex
-                : 0;
-        const startIndex = savedIndex < allSegments.length ? savedIndex : 0;
-
-        startPlaybackAtIndex(
-            allSegments,
-            startIndex,
-            settings,
-            language,
-            documentKey,
-            {
-                markCompletedNaturally,
-                reset,
-                setDocumentKey,
-                setPlaybackState,
-                setSegments,
-            },
-            getTtsStatusSnapshot,
-        );
-    }, [
-        documentKey,
-        language,
-        markCompletedNaturally,
-        options,
-        paragraphs,
-        reset,
-        setDocumentKey,
-        setPlaybackState,
-        setSegments,
-        settings,
-    ]);
+        await startTtsPlayback(paragraphs, language, documentKey, options);
+    }, [documentKey, language, options, paragraphs]);
 
     const pause = useCallback(() => {
         if (activeProvider === 'browser') {
@@ -350,69 +366,9 @@ export function useTts(
 
     const playFromParagraph = useCallback(
         async (paragraphIndex: number) => {
-            if (!settings || !paragraphs.length) {
-                return;
-            }
-            const contentSegments = await segmentText(
-                paragraphs,
-                settings.highlightMode,
-                language,
-                options?.getSegmentLabel,
-                settings.announceSegmentNumbers,
-            );
-            if (!contentSegments.length) {
-                return;
-            }
-
-            // Build same segment array as play() so indices are consistent
-            // across stop/resume cycles (intro is included but skipped).
-            const allSegments: TtsSegment[] = [];
-            if (options?.introText && settings.readIntroduction) {
-                allSegments.push({
-                    index: 0,
-                    text: options.introText,
-                    paragraphIndex: -1,
-                    startOffset: 0,
-                    endOffset: 0,
-                });
-            }
-            for (const seg of contentSegments) {
-                allSegments.push({ ...seg, index: allSegments.length });
-            }
-
-            const startIndex = allSegments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
-            if (startIndex < 0) {
-                return;
-            }
-
-            startPlaybackAtIndex(
-                allSegments,
-                startIndex,
-                settings,
-                language,
-                documentKey,
-                {
-                    markCompletedNaturally,
-                    reset,
-                    setDocumentKey,
-                    setPlaybackState,
-                    setSegments,
-                },
-                getTtsStatusSnapshot,
-            );
+            await startTtsPlayback(paragraphs, language, documentKey, options, paragraphIndex);
         },
-        [
-            documentKey,
-            language,
-            markCompletedNaturally,
-            options,
-            paragraphs,
-            reset,
-            setDocumentKey,
-            setPlaybackState,
-            setSegments,
-            settings,
-        ],
+        [documentKey, language, options, paragraphs],
     );
 
     // Restart playback from current paragraph when content-shaping settings change

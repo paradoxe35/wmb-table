@@ -23,6 +23,8 @@ interface TtsState {
     /** Remembered position for resume — preserved across stop/play cycles */
     lastStoppedDocumentKey: string | null;
     lastStoppedSegmentIndex: number;
+    /** Last document that completed naturally, used by continuations */
+    lastCompletedDocumentKey: string | null;
     /** Bumped to force a compatibility recheck (e.g. after API key save) */
     recheckTrigger: number;
     /** true when TTS finished all segments naturally (not stopped by user) */
@@ -57,6 +59,7 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
     incompatibleMessage: undefined,
     lastStoppedDocumentKey: null,
     lastStoppedSegmentIndex: 0,
+    lastCompletedDocumentKey: null,
     recheckTrigger: 0,
     completedNaturally: false,
 
@@ -76,10 +79,12 @@ export const useTtsStore = createStore<TtsState>((set, get) => ({
     setLanguageSupported: (languageSupported) => set({ languageSupported }),
     setIncompatibleMessage: (incompatibleMessage) => set({ incompatibleMessage }),
     triggerRecheck: () => set((s) => ({ recheckTrigger: s.recheckTrigger + 1 })),
-    clearCompletedNaturally: () => set({ completedNaturally: false }),
+    clearCompletedNaturally: () =>
+        set({ completedNaturally: false, lastCompletedDocumentKey: null }),
     markCompletedNaturally: () =>
         set({
             completedNaturally: true,
+            lastCompletedDocumentKey: get().documentKey,
             lastStoppedDocumentKey: null,
             lastStoppedSegmentIndex: 0,
         }),

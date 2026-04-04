@@ -17,8 +17,11 @@ import BibleDocumentView from './bible-document-view';
 import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
 import { getDocumentIdentityKey } from '@shared/types';
+import { useBibleTtsContinuation } from './bible-tts-continuation';
 
 export default function DocumentView() {
+    useBibleTtsContinuation();
+
     const tabType = useDocumentTabsStore(selectActiveTabType);
     const activeTab = useDocumentTabsStore(selectActiveTab);
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);

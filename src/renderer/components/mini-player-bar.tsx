@@ -190,10 +190,11 @@ export default function MiniPlayerBar() {
             );
 
             if (isSameDocument) {
-                if (!autoplayRef.current) {
-                    openModal();
-                    autoplayRef.current = true;
+                if (!detail.autoplay) {
+                    return;
                 }
+
+                openModal();
                 if (el.paused) {
                     el.play().catch(() => {});
                 } else {
@@ -202,9 +203,7 @@ export default function MiniPlayerBar() {
                 return;
             }
 
-            if (detail.autoplay || (titleRef.current && !isSameDocument)) {
-                autoplayRef.current = true;
-            }
+            autoplayRef.current = detail.autoplay === true;
 
             const documentTitle = detail.title;
 

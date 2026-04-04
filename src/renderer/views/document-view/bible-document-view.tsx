@@ -43,11 +43,6 @@ import {
     getLanguageLabelNative,
 } from '@shared/tts.types';
 import { useAppStore } from '@renderer/stores';
-import { useTtsStore } from '@renderer/stores/tts.store';
-import {
-    captureBiblePlaybackSource,
-    resolveNextBibleChapterTarget,
-} from './bible-tts-continuation';
 
 // ---------------------------------------------------------------------------
 // Content header (inside body, like SermonContentHeader)
@@ -296,8 +291,6 @@ export default function BibleDocumentView() {
     const { t } = useTranslation();
     const activeTab = useDocumentTabsStore(selectActiveBibleTab);
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
-    const activateTab = useDocumentTabsStore((s) => s.activateTab);
-    const updateBibleTab = useDocumentTabsStore((s) => s.updateBibleTab);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
@@ -420,64 +413,6 @@ export default function BibleDocumentView() {
 
     // Read entire book: keep following the chapter that started playback,
     // even if the user switches to another Bible tab while it is still reading.
-    const ttsSettings = useTtsStore((s) => s.settings);
-    const completedNaturally = useTtsStore((s) => s.completedNaturally);
-    const currentTtsDocumentKey = useTtsStore((s) => s.documentKey);
-    const ttsStatus = useTtsStore((s) => s.status);
-    const clearCompletedNaturally = useTtsStore((s) => s.clearCompletedNaturally);
-    const prepareTabIdentityChange = usePrepareTabIdentityChange();
-    const autoStartTtsRef = useRef(false);
-    const continuationSourceRef = useRef<ReturnType<typeof captureBiblePlaybackSource>>(null);
-
-    useEffect(() => {
-        if (
-            currentTtsDocumentKey === ttsDocumentKey &&
-            (ttsStatus === 'loading' || ttsStatus === 'playing' || ttsStatus === 'paused')
-        ) {
-            continuationSourceRef.current = captureBiblePlaybackSource(activeTab, activeTabKey);
-        }
-    }, [activeTab, activeTabKey, currentTtsDocumentKey, ttsDocumentKey, ttsStatus]);
-
-    useEffect(() => {
-        if (completedNaturally && ttsSettings?.bibleReadEntireBook) {
-            clearCompletedNaturally();
-
-            const source = continuationSourceRef.current;
-            const nextTarget = resolveNextBibleChapterTarget(source, bibleIndex);
-            if (!source || !nextTarget) {
-                return;
-            }
-
-            autoStartTtsRef.current = true;
-            prepareTabIdentityChange(source.tabKey);
-            updateBibleTab(source.tabKey, nextTarget);
-            activateTab(
-                getTabKey({
-                    type: 'bible',
-                    documentId: nextTarget.documentId,
-                    bibleVersionAbbreviation: nextTarget.bibleVersionAbbreviation,
-                }),
-            );
-        }
-    }, [
-        activateTab,
-        bibleIndex,
-        clearCompletedNaturally,
-        completedNaturally,
-        prepareTabIdentityChange,
-        ttsSettings?.bibleReadEntireBook,
-        updateBibleTab,
-    ]);
-
-    useEffect(() => () => clearCompletedNaturally(), [clearCompletedNaturally]);
-
-    useEffect(() => {
-        if (autoStartTtsRef.current && paragraphs.length > 0 && !loading) {
-            autoStartTtsRef.current = false;
-            effectiveTts.play();
-        }
-    }, [paragraphs.length, loading, effectiveTts]);
-
     const contextMenuContent = useMemo(() => {
         if (!activeTab || !activeDocumentIdentity) {
             return null;
