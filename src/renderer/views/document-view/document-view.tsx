@@ -50,18 +50,19 @@ export default function DocumentView() {
     }, [tabs.length, sermons, addTab]);
 
     // Record history when the active document changes (works for all document types)
-    const prevDocumentIdentityKeyRef = useRef<string | null>(null);
+    const prevHistorySignatureRef = useRef<string | null>(null);
     useEffect(() => {
         if (!contentLanguage || !activeTab || !activeDocumentIdentity) {
             return;
         }
 
         const documentIdentityKey = getDocumentIdentityKey(activeDocumentIdentity);
-        if (documentIdentityKey === prevDocumentIdentityKeyRef.current) {
+        const historySignature = `${documentIdentityKey}::${activeTab.title}`;
+        if (historySignature === prevHistorySignatureRef.current) {
             return;
         }
 
-        prevDocumentIdentityKeyRef.current = documentIdentityKey;
+        prevHistorySignatureRef.current = historySignature;
 
         window.api.app
             .addHistoryEntry(contentLanguage, {

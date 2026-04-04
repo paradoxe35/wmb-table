@@ -121,6 +121,15 @@ export function addHistoryEntry(
         .get();
 
     if (lastItem && getHistoryItemDocumentKey(lastItem) === documentKey) {
+        if (lastItem.documentTitle !== entry.documentTitle) {
+            db.update(historyItems)
+                .set({
+                    documentTitle: entry.documentTitle,
+                    updatedAt: new Date().toISOString(),
+                })
+                .where(eq(historyItems.id, lastItem.id))
+                .run();
+        }
         return;
     }
 
