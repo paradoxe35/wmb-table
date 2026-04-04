@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, notification } from 'antd';
+import { App as AntApp, Button } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
@@ -17,6 +17,7 @@ import {
 
 export default function FeatureReminderBanner() {
     const { t } = useTranslation();
+    const { notification } = AntApp.useApp();
     const loaded = useAppStore((s) => s.loaded);
     const syncing = useAppStore((s) => s.syncing);
     const mainView = useAppStore((s) => s.mainView);
