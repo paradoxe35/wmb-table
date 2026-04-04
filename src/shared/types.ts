@@ -460,6 +460,7 @@ export interface BibleSearchResult {
 
 export interface SubjectDocumentItem extends Readonly<BaseEntity> {
     subjectId: string;
+    sortOrder: number;
     documentTitle: string;
     documentReference: DocumentReference;
     textContent: string;

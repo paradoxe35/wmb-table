@@ -156,6 +156,7 @@ export const SubjectChannels = {
     rename: 'subjects:rename',
     delete: 'subjects:delete',
     getItems: 'subjects:getItems',
+    reorderItems: 'subjects:reorderItems',
     deleteItem: 'subjects:deleteItem',
     createItem: 'subjects:createItem',
     exportPdf: 'subjects:exportPdf',
@@ -419,6 +420,7 @@ export interface InvokeChannelMap {
     [SubjectChannels.rename]: { args: [string, string]; return: void };
     [SubjectChannels.delete]: { args: [string]; return: void };
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
+    [SubjectChannels.reorderItems]: { args: [string, string[]]; return: void };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
     [SubjectChannels.createItem]: {
         args: [string, string, DocumentReference, string, DocumentPreview?];

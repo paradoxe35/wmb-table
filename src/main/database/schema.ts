@@ -73,6 +73,7 @@ export const subjectItems = sqliteTable(
         subjectId: text('subject_id')
             .notNull()
             .references(() => subjects.id, { onDelete: 'cascade' }),
+        sortOrder: integer('sort_order').notNull().default(0),
         documentTitle: text('document_title').notNull(),
         documentReference: text('document_reference').notNull(), // JSON
         textContent: text('text_content').notNull(),
@@ -80,7 +81,10 @@ export const subjectItems = sqliteTable(
         createdAt: text('created_at').default(sql`(datetime('now'))`),
         updatedAt: text('updated_at').default(sql`(datetime('now'))`),
     },
-    (table) => [index('subject_items_subject_id_idx').on(table.subjectId)],
+    (table) => [
+        index('subject_items_subject_id_idx').on(table.subjectId),
+        index('subject_items_subject_order_idx').on(table.subjectId, table.sortOrder),
+    ],
 );
 
 // ---------------------------------------------------------------------------

@@ -190,6 +190,7 @@ CREATE TABLE `sidebar_status` (
 CREATE TABLE `subject_items` (
 	`id` text PRIMARY KEY NOT NULL,
 	`subject_id` text NOT NULL,
+	`sort_order` integer DEFAULT 0 NOT NULL,
 	`document_title` text NOT NULL,
 	`document_reference` text NOT NULL,
 	`text_content` text NOT NULL,
@@ -200,6 +201,7 @@ CREATE TABLE `subject_items` (
 );
 --> statement-breakpoint
 CREATE INDEX `subject_items_subject_id_idx` ON `subject_items` (`subject_id`);--> statement-breakpoint
+CREATE INDEX `subject_items_subject_order_idx` ON `subject_items` (`subject_id`,`sort_order`);--> statement-breakpoint
 CREATE TABLE `subjects` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,

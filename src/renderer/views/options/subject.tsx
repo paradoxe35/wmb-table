@@ -8,7 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import {
     Card,
     Input,
@@ -35,6 +35,7 @@ import {
     DeleteOutlined,
     EditOutlined,
     FilePdfOutlined,
+    HolderOutlined,
     MoreOutlined,
 } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
@@ -396,6 +397,14 @@ function ItemFromSelectedSubject({
         return (
             <div className="subject-ref-card">
                 <div className="subject-ref-card__header">
+                    <HolderOutlined
+                        style={{
+                            fontSize: 'var(--fs-base)',
+                            cursor: 'grab',
+                            opacity: 0.5,
+                            flexShrink: 0,
+                        }}
+                    />
                     <BibleIcons />
                     <Text strong style={{ fontSize: 'var(--fs-rel-4xl)' }}>
                         {verse.bookName} {verse.chapter}:{verse.verse}
@@ -410,6 +419,14 @@ function ItemFromSelectedSubject({
     return (
         <div className="subject-ref-card">
             <div className="subject-ref-card__header">
+                <HolderOutlined
+                    style={{
+                        fontSize: 'var(--fs-base)',
+                        cursor: 'grab',
+                        opacity: 0.5,
+                        flexShrink: 0,
+                    }}
+                />
                 <BookOutlined style={{ fontSize: 'var(--fs-base)' }} />
                 <a className="underline" style={{ flex: 1, fontSize: 'var(--fs-rel-4xl)' }}>
                     <span onClick={onNavigate}>{displayTitle}</span>
@@ -441,6 +458,17 @@ function ShowActiveDocuments({
     setDocuments: Dispatch<SetStateAction<SubjectDocumentItem[]>>;
 }) {
     const { t } = useTranslation();
+    const documentsRef = useRef(documents);
+    const persistedOrderRef = useRef(documents.map((item) => item.id));
+
+    useEffect(() => {
+        documentsRef.current = documents;
+    }, [documents]);
+
+    useEffect(() => {
+        persistedOrderRef.current = documents.map((item) => item.id);
+    }, [subject.id]);
+
     function confirm(item: SubjectDocumentItem) {
         window.api.subjects.deleteItem(item.id).then(() => {
             setDocuments((ds) => ds.filter((d) => d.id !== item.id));
@@ -457,6 +485,31 @@ function ShowActiveDocuments({
             message.error(t("Erreur lors de l'export PDF"));
         }
     }, [subject.id, t]);
+
+    const persistOrder = useCallback(async () => {
+        const nextIds = documentsRef.current.map((item) => item.id);
+        const previousIds = persistedOrderRef.current;
+        const changed =
+            nextIds.length !== previousIds.length ||
+            nextIds.some((id, index) => id !== previousIds[index]);
+
+        if (!changed) {
+            return;
+        }
+
+        try {
+            await window.api.subjects.reorderItems(subject.id, nextIds);
+            persistedOrderRef.current = nextIds;
+        } catch {
+            setDocuments((current) => {
+                const byId = new Map(current.map((item) => [item.id, item] as const));
+                return persistedOrderRef.current
+                    .map((id) => byId.get(id))
+                    .filter((item): item is SubjectDocumentItem => !!item);
+            });
+            message.error(t('Erreur lors de la réorganisation des références'));
+        }
+    }, [setDocuments, subject.id, t]);
 
     return (
         <>
@@ -476,22 +529,31 @@ function ShowActiveDocuments({
                             />
                         </Tooltip>
                     </div>
-                    <div className="subject-ref-list">
-                        <AnimatePresence mode="popLayout">
+                    <Reorder.Group
+                        axis="y"
+                        values={documents}
+                        onReorder={setDocuments}
+                        as="div"
+                        className="subject-ref-list"
+                    >
+                        <AnimatePresence initial={false}>
                             {documents.map((item) => (
-                                <motion.div
+                                <Reorder.Item
                                     key={item.id}
+                                    value={item}
+                                    as="div"
                                     layout
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 0.2 }}
+                                    onDragEnd={() => void persistOrder()}
                                 >
                                     <ItemFromSelectedSubject item={item} confirm={confirm} />
-                                </motion.div>
+                                </Reorder.Item>
                             ))}
                         </AnimatePresence>
-                    </div>
+                    </Reorder.Group>
                 </>
             ) : (
                 <Empty

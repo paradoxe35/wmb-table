@@ -25,6 +25,10 @@ export function registerSubjectsHandlers(): void {
         return subjectsRepo.getItems(subjectId);
     });
 
+    registerHandler(SubjectChannels.reorderItems, async (_event, subjectId, itemIds) => {
+        subjectsRepo.reorderItems(subjectId, itemIds);
+    });
+
     registerHandler(SubjectChannels.deleteItem, async (_event, id) => {
         subjectsRepo.deleteItem(id);
     });

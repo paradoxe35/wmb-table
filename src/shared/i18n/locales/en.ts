@@ -390,6 +390,7 @@ const en: Record<string, string> = {
     Enregistrer: 'Save',
     'Erreur lors du chargement des sujets': 'Error loading subjects',
     'Erreur lors du chargement des éléments du sujet': 'Error loading subject items',
+    'Erreur lors de la réorganisation des références': 'Error while reordering subject references',
     'Sujet créé': 'Subject created',
     'Un sujet avec ce nom existe déjà.': 'A subject with this name already exists.',
     'Sujet introuvable': 'Subject not found',

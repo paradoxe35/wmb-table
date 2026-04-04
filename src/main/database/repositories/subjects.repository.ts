@@ -1,4 +1,4 @@
-import { eq, desc } from 'drizzle-orm';
+import { and, asc, desc, eq, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { subjects, subjectItems } from '../schema';
@@ -11,10 +11,35 @@ import type {
     SubjectDocumentItem,
 } from '@shared/types';
 
-function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentItem {
+const subjectItemSelection = {
+    id: subjectItems.id,
+    subjectId: subjectItems.subjectId,
+    sortOrder: subjectItems.sortOrder,
+    documentTitle: subjectItems.documentTitle,
+    documentReference: subjectItems.documentReference,
+    textContent: subjectItems.textContent,
+    documentPreview: subjectItems.documentPreview,
+    createdAt: subjectItems.createdAt,
+    updatedAt: subjectItems.updatedAt,
+} as const;
+
+type SubjectItemRow = {
+    id: string;
+    subjectId: string;
+    sortOrder: number;
+    documentTitle: string;
+    documentReference: string;
+    textContent: string;
+    documentPreview: string | null;
+    createdAt: string | null;
+    updatedAt: string | null;
+};
+
+function toSubjectItem(row: SubjectItemRow): SubjectDocumentItem {
     return {
         id: row.id,
         subjectId: row.subjectId,
+        sortOrder: row.sortOrder,
         documentTitle: row.documentTitle,
         documentReference: parseRequiredJson<DocumentReference>(row.documentReference, {
             scope: 'subject_items',
@@ -30,6 +55,10 @@ function toSubjectItem(row: typeof subjectItems.$inferSelect): SubjectDocumentIt
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     };
+}
+
+function mapSubjectItems(rows: SubjectItemRow[]): SubjectDocumentItem[] {
+    return rows.map(toSubjectItem);
 }
 
 function toSubjectDocument(
@@ -71,8 +100,14 @@ export function getById(id: string): SubjectDocument | null {
     if (!row) {
         return null;
     }
-    const items = db.select().from(subjectItems).where(eq(subjectItems.subjectId, row.id)).all();
-    return toSubjectDocument(row, items.map(toSubjectItem));
+    const items = db
+        .select(subjectItemSelection)
+        .from(subjectItems)
+        .where(eq(subjectItems.subjectId, row.id))
+        .orderBy(asc(subjectItems.sortOrder), asc(subjectItems.createdAt), asc(subjectItems.id))
+        .all();
+
+    return toSubjectDocument(row, mapSubjectItems(items));
 }
 
 export function create(name: string): SubjectDocument {
@@ -116,7 +151,11 @@ export function rename(id: string, newName: string): void {
 
 export function deleteSubject(id: string): void {
     const db = getDb();
-    const items = db.select().from(subjectItems).where(eq(subjectItems.subjectId, id)).all();
+    const items = db
+        .select({ id: subjectItems.id })
+        .from(subjectItems)
+        .where(eq(subjectItems.subjectId, id))
+        .all();
     for (const item of items) {
         logChange('subject_items', item.id, 'DELETE', { id: item.id });
     }
@@ -127,11 +166,52 @@ export function deleteSubject(id: string): void {
 
 export function getItems(subjectId: string): SubjectDocumentItem[] {
     const rows = getDb()
-        .select()
+        .select(subjectItemSelection)
         .from(subjectItems)
         .where(eq(subjectItems.subjectId, subjectId))
+        .orderBy(asc(subjectItems.sortOrder), asc(subjectItems.createdAt), asc(subjectItems.id))
         .all();
-    return rows.map(toSubjectItem);
+    return mapSubjectItems(rows);
+}
+
+export function reorderItems(subjectId: string, itemIds: string[]): void {
+    const db = getDb();
+    const existingIds = db
+        .select({ id: subjectItems.id })
+        .from(subjectItems)
+        .where(eq(subjectItems.subjectId, subjectId))
+        .all()
+        .map((row) => row.id);
+
+    if (existingIds.length !== itemIds.length) {
+        throw new Error('La liste des références est incomplète.');
+    }
+
+    const existingIdSet = new Set(existingIds);
+    if (itemIds.some((id) => !existingIdSet.has(id))) {
+        throw new Error('La liste des références contient des éléments invalides.');
+    }
+
+    const now = new Date().toISOString();
+
+    db.transaction((tx) => {
+        itemIds.forEach((id, index) => {
+            tx.update(subjectItems)
+                .set({
+                    sortOrder: index,
+                    updatedAt: now,
+                })
+                .where(and(eq(subjectItems.id, id), eq(subjectItems.subjectId, subjectId)))
+                .run();
+
+            logChange('subject_items', id, 'SAVE', {
+                id,
+                subjectId,
+                sortOrder: index,
+                updatedAt: now,
+            });
+        });
+    });
 }
 
 export function deleteItem(id: string): void {
@@ -148,11 +228,21 @@ export function createItem(
 ): SubjectDocumentItem {
     const id = randomUUID();
     const now = new Date().toISOString();
+    const sortOrder =
+        (getDb()
+            .select({
+                value: sql<number>`coalesce(max(${subjectItems.sortOrder}), -1)`,
+            })
+            .from(subjectItems)
+            .where(eq(subjectItems.subjectId, subjectId))
+            .get()?.value ?? -1) + 1;
+
     getDb()
         .insert(subjectItems)
         .values({
             id,
             subjectId,
+            sortOrder,
             documentTitle,
             documentReference: JSON.stringify(documentReference),
             textContent,
@@ -161,9 +251,11 @@ export function createItem(
             updatedAt: now,
         })
         .run();
+
     logChange('subject_items', id, 'SAVE', {
         id,
         subjectId,
+        sortOrder,
         documentTitle,
         documentReference: JSON.stringify(documentReference),
         textContent,
@@ -174,6 +266,7 @@ export function createItem(
     return {
         id,
         subjectId,
+        sortOrder,
         documentTitle,
         documentReference,
         textContent,

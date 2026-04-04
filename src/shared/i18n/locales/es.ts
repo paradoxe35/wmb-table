@@ -389,6 +389,8 @@ const es: Record<string, string> = {
     Enregistrer: 'Guardar',
     'Erreur lors du chargement des sujets': 'Error al cargar los temas',
     'Erreur lors du chargement des éléments du sujet': 'Error al cargar los elementos del tema',
+    'Erreur lors de la réorganisation des références':
+        'Error al reorganizar las referencias del tema',
     'Sujet créé': 'Tema creado',
     'Un sujet avec ce nom existe déjà.': 'Ya existe un tema con este nombre.',
     'Sujet introuvable': 'Tema no encontrado',

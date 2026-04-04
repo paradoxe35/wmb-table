@@ -275,6 +275,8 @@ DocumentItem.displayName = 'DocumentItem';
 function inferDocumentNameFromFilename(fileName: string): string {
     return fileName
         .replace(/\.[^.]+$/u, '')
+        .replace(/([a-z0-9])([A-Z])/gu, '$1 $2')
+        .replace(/([A-Z])([A-Z][a-z])/gu, '$1 $2')
         .replace(/[_-]+/gu, ' ')
         .replace(/[()[\]{}]+/gu, ' ')
         .replace(/[.,]+/gu, ' ')

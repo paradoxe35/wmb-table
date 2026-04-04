@@ -165,6 +165,8 @@ const api = {
         rename: (id: string, newName: string) => invoke(SubjectChannels.rename, id, newName),
         delete: (id: string) => invoke(SubjectChannels.delete, id),
         getItems: (subjectId: string) => invoke(SubjectChannels.getItems, subjectId),
+        reorderItems: (subjectId: string, itemIds: string[]) =>
+            invoke(SubjectChannels.reorderItems, subjectId, itemIds),
         deleteItem: (id: string) => invoke(SubjectChannels.deleteItem, id),
         createItem: (
             subjectId: string,
