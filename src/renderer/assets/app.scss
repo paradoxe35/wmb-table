@@ -481,12 +481,12 @@ body {
     }
     25%,
     75% {
-        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.251));
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.351));
     }
 }
 
 .paragraph-highlight-blink {
-    animation: paragraph-blink 2s ease-in-out;
+    animation: paragraph-blink 3s ease-in-out;
 }
 
 // ---------------------------------------------------------------------------
