@@ -33,6 +33,7 @@ export default function FeatureReminderBanner() {
     const ttsStatus = useTtsStore((s) => s.status);
     const aiConversations = useAiChatStore((s) => s.conversations.length);
     const suppressCloseRef = useRef(false);
+    const notificationOpenRef = useRef(false);
     const [hasInteracted, setHasInteracted] = useState(false);
     const [sessionDelayElapsed, setSessionDelayElapsed] = useState(false);
     const [configured, setConfigured] = useState<Record<'ai' | 'tts' | 'backup', boolean>>({
@@ -132,7 +133,10 @@ export default function FeatureReminderBanner() {
 
     useEffect(() => {
         const closeNotification = () => {
-            suppressCloseRef.current = true;
+            if (notificationOpenRef.current) {
+                suppressCloseRef.current = true;
+                notificationOpenRef.current = false;
+            }
             notification.destroy(FEATURE_REMINDER_NOTIFICATION_KEY);
         };
 
@@ -148,6 +152,8 @@ export default function FeatureReminderBanner() {
             return;
         }
 
+        suppressCloseRef.current = false;
+        notificationOpenRef.current = true;
         notification.info({
             key: FEATURE_REMINDER_NOTIFICATION_KEY,
             placement: 'topRight',
@@ -169,6 +175,7 @@ export default function FeatureReminderBanner() {
                 </Button>
             ),
             onClose: () => {
+                notificationOpenRef.current = false;
                 if (suppressCloseRef.current) {
                     suppressCloseRef.current = false;
                     return;
@@ -180,7 +187,16 @@ export default function FeatureReminderBanner() {
         return () => {
             closeNotification();
         };
-    }, [activeReminder, mainView, openSettingsTab, optionView, settingsTab, snooze]);
+    }, [
+        activeReminder,
+        mainView,
+        notification,
+        openSettingsTab,
+        optionView,
+        settingsTab,
+        snooze,
+        t,
+    ]);
 
     return null;
 }
