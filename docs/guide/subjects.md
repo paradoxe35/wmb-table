@@ -37,14 +37,13 @@ La page est généralement divisée en deux parties :
 2. Entrez le nom du thème.
 3. Enregistrez.
 
-Choisissez un nom simple et stable pour pouvoir le retrouver facilement plus tard.
-
 ## Ajouter une référence à un sujet
 
 Vous pouvez ajouter à un sujet :
 
 - un passage de prédication
 - un verset biblique
+- un passage d’un document personnel
 
 Cela peut se faire depuis la lecture ou depuis la Bible.
 
@@ -59,8 +58,6 @@ Faites ceci :
 3. choisissez `Ajouter au sujet`
 4. choisissez le sujet voulu dans la liste
 
-Si vous préparez un thème, cette méthode est la plus simple : vous lisez, puis vous rangez immédiatement le passage au bon endroit.
-
 <ScreenshotPlaceholder
   file="fr-subject-add-from-reading-menu.png"
   label="Ajouter un passage à un sujet depuis la lecture"
@@ -73,38 +70,34 @@ Si vous préparez un thème, cette méthode est la plus simple : vous lisez, pui
   hint="Montrer la fenêtre de sélection du sujet après avoir choisi Ajouter au sujet."
 />
 
-## Ce que contient un sujet
+## Réorganiser les références
 
-Un sujet peut afficher :
+Dans un sujet, vous pouvez déplacer les références pour les remettre dans l’ordre qui vous convient.
 
-- le titre du document source
-- le texte du passage
-- la date ou l’origine du sermon
-- le verset s’il s’agit de la Bible
+Cela est utile si vous voulez :
+
+- construire un plan de lecture
+- présenter les références dans un ordre logique
+- préparer un export plus propre
+
+L’ordre choisi est conservé.
 
 ## Ouvrir la source depuis un sujet
 
 Quand vous cliquez sur une référence d’un sujet, l’application peut vous ramener au document d’origine.
 
-C’est très utile pour relire le passage dans son contexte complet.
+## Exporter un sujet en PDF
 
-## Supprimer une référence
+Quand votre sujet est prêt, vous pouvez l’exporter en PDF.
 
-Si une référence ne vous sert plus, vous pouvez la retirer du sujet sans supprimer le document d’origine.
-
-## Supprimer un sujet
-
-Si un sujet n’est plus utile :
-
-1. ouvrez la liste des sujets
-2. supprimez le sujet voulu
-
-Faites cela seulement si vous êtes sûr de ne plus avoir besoin de toutes ses références.
+L’export suit l’ordre actuel des références dans votre sujet.  
+Si vous avez réorganisé les références, le PDF gardera ce même ordre.
 
 ## Bonne manière de travailler avec les sujets
 
 - créez un sujet pour chaque grand thème
 - ajoutez-y vos meilleurs passages
+- réorganisez les références si vous voulez créer une progression claire
 - gardez vos explications plus longues dans les notes
 - utilisez ensemble `Sujets` et `Notes`
 

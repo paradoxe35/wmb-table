@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { LANG_LABELS_FR } from '@shared/tts.types';
-import type { TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
+import type { TtsModelDownloadProgress, TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
 import { getErrorMessage } from '@renderer/utils/functions';
 import { strNormalize } from '@shared/searchable';
 import { DeleteBtn } from '@renderer/components/delete-btn';
@@ -25,6 +25,10 @@ function langCodeToString(langCode: string | string[]): string {
 function langLabels(langCode: string | string[]): string[] {
     const codes = Array.isArray(langCode) ? langCode : [langCode];
     return codes.map((c) => LANG_LABELS_FR[c] ?? c);
+}
+
+function translateLangLabel(label: string, t: (key: string) => string): string {
+    return label === 'Multilingue' ? t(label) : label;
 }
 
 const QUALITY_META: Record<string, { label: string; color: string }> = {
@@ -58,15 +62,37 @@ interface SherpaConfigProps extends ProviderConfigProps {
     info?: TtsProviderInfo;
 }
 
+type DownloadState = Pick<TtsModelDownloadProgress, 'percentage' | 'phase'>;
+
+function getDownloadPhaseLabel(
+    phase: DownloadState['phase'],
+    t: (key: string) => string,
+): string | null {
+    if (phase === 'extracting') {
+        return t('Extraction');
+    }
+
+    if (phase === 'finalizing') {
+        return t('Finalisation');
+    }
+
+    if (phase === 'downloading') {
+        return t('Téléchargement');
+    }
+
+    return null;
+}
+
 export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigProps) {
     const { t } = useTranslation();
     const cfg = settings.providers.sherpa;
+    const setProviders = useTtsStore((s) => s.setProviders);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const langCode = contentLanguage?.split('-')[0].toLowerCase() ?? '';
 
     const [models, setModels] = useState<TtsModelInfo[]>([]);
     // Per-model download progress: modelName → percentage
-    const [downloads, setDownloads] = useState<Map<string, number>>(new Map());
+    const [downloads, setDownloads] = useState<Map<string, DownloadState>>(new Map());
     const [search, setSearch] = useState('');
     const [browsePage, setBrowsePage] = useState(1);
 
@@ -98,7 +124,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 });
                 message.success(t('Voix installée'));
                 loadModels();
-                window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
+                window.api.tts.getProviders().then(setProviders);
             } else if (p.status === 'error') {
                 setDownloads((prev) => {
                     const next = new Map(prev);
@@ -109,29 +135,27 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             } else {
                 setDownloads((prev) => {
                     const next = new Map(prev);
-                    next.set(model, p.percentage);
+                    next.set(model, {
+                        percentage: p.percentage,
+                        phase: p.phase,
+                    });
                     return next;
                 });
             }
         });
-    }, [loadModels, t]);
+    }, [loadModels, setProviders, t]);
 
     // ── Actions ──
 
-    const handleDownload = useCallback(
-        (modelName: string) => {
-            setDownloads((prev) => new Map(prev).set(modelName, 0));
-            window.api.tts.downloadModel('sherpa', modelName).catch((err) => {
-                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
-                setDownloads((prev) => {
-                    const next = new Map(prev);
-                    next.delete(modelName);
-                    return next;
-                });
-            });
-        },
-        [t],
-    );
+    const handleDownload = useCallback((modelName: string) => {
+        setDownloads((prev) =>
+            new Map(prev).set(modelName, {
+                percentage: 0,
+                phase: 'downloading',
+            }),
+        );
+        void window.api.tts.downloadModel('sherpa', modelName).catch(() => {});
+    }, []);
 
     const handleDelete = useCallback(
         async (modelName: string) => {
@@ -139,7 +163,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 await window.api.tts.deleteProviderModel('sherpa', modelName);
                 message.success(t('Voix supprimée'));
                 loadModels();
-                window.api.tts.getProviders().then(useTtsStore.getState().setProviders);
+                window.api.tts.getProviders().then(setProviders);
                 if (cfg.model === modelName || cfg.voiceId?.startsWith(`${modelName}:`)) {
                     onUpdate({
                         providers: {
@@ -155,16 +179,17 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                     });
                 }
             } catch (err) {
-                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+                message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(err)) }));
             }
         },
-        [loadModels, cfg.model, cfg.voiceId, onUpdate, settings, t],
+        [cfg.model, cfg.voiceId, loadModels, onUpdate, setProviders, settings, t],
     );
 
     // ── Derived data ──
 
     const installed = useMemo(() => models.filter((m) => m.installed), [models]);
     const allVoices = info?.voices ?? [];
+    const hasActiveDownload = downloads.size > 0;
 
     // Best available model for content language: prefer quality (≥30MB), fallback to largest
     // Skip if the language already has an installed model
@@ -207,9 +232,20 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
     // ── Render helpers ──
 
     function renderModelAction(m: TtsModelInfo) {
-        const pct = downloads.get(m.modelName);
-        if (pct !== undefined) {
-            return <Progress key="progress" percent={pct} size="small" style={{ width: 80 }} />;
+        const progress = downloads.get(m.modelName);
+        if (progress) {
+            return (
+                <Space key="progress" direction="vertical" size={0} align="end">
+                    <Progress
+                        percent={progress.percentage}
+                        size="small"
+                        style={{ width: 96, marginBottom: 0 }}
+                    />
+                    <Text type="secondary" style={{ fontSize: 'var(--fs-rel-sm)' }}>
+                        {getDownloadPhaseLabel(progress.phase, t)}
+                    </Text>
+                </Space>
+            );
         }
         if (m.installed) {
             return <DeleteBtn key="delete" confirm={() => handleDelete(m.modelName)} />;
@@ -219,6 +255,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 key="download"
                 size="small"
                 icon={<DownloadOutlined />}
+                disabled={hasActiveDownload}
                 onClick={() => handleDownload(m.modelName)}
             >
                 {t('Télécharger')}
@@ -233,12 +270,14 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             {/* 1. Suggested download for content language */}
             {suggestedModel && (
                 <Field
-                    label={t('Voix disponible — {{lang}}', { lang: suggestedModel.langLabel })}
+                    label={t('Voix disponible — {{lang}}', {
+                        lang: translateLangLabel(suggestedModel.langLabel, t),
+                    })}
                     hint={t('Téléchargez une voix pour la langue active du document.')}
                 >
                     {downloads.has(suggestedModel.modelName) ? (
                         <Progress
-                            percent={downloads.get(suggestedModel.modelName) ?? 0}
+                            percent={downloads.get(suggestedModel.modelName)?.percentage ?? 0}
                             size="small"
                         />
                     ) : (
@@ -247,6 +286,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 icon={<DownloadOutlined />}
                                 onClick={() => handleDownload(suggestedModel.modelName)}
                                 size="small"
+                                disabled={hasActiveDownload}
                             >
                                 {t('Télécharger « {{name}} »', { name: suggestedModel.voiceName })}
                             </Button>
@@ -305,7 +345,10 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             >
                                 <div>
                                     <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                                        {m.voiceName} <Text type="secondary">({m.langLabel})</Text>
+                                        {m.voiceName}{' '}
+                                        <Text type="secondary">
+                                            ({translateLangLabel(m.langLabel, t)})
+                                        </Text>
                                         {m.engine && (
                                             <Text
                                                 type="secondary"
@@ -380,7 +423,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             <List.Item.Meta
                                 title={
                                     <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                                        {m.langLabel}
+                                        {translateLangLabel(m.langLabel, t)}
                                         {m.installed && <Text type="success"> ✓</Text>}
                                     </Text>
                                 }

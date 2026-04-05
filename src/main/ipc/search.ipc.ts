@@ -36,6 +36,7 @@ export function registerSearchHandlers(): void {
             if (match.snippets.length === 0) continue;
 
             hits.push({
+                languageCode: langCode,
                 translationId: match.translationId,
                 sermonId: match.sermonId,
                 title: match.title,
@@ -80,6 +81,7 @@ export function registerSearchHandlers(): void {
                     sermonId,
                 );
                 hits.push({
+                    languageCode: langCode,
                     sermonId,
                     title: meta?.title ?? meta?.enTitle ?? sermonId,
                     translationId: hit.translationId,

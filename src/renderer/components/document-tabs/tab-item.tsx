@@ -4,6 +4,7 @@ import Icon from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
 import type { DocumentTab } from '@shared/types';
+import { getDocumentIdentityFromTab, getDocumentIdentityKey } from '@shared/types';
 import { formatShortDate } from '@renderer/utils/sermon-utils';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAudioStore } from '@renderer/stores';
@@ -24,16 +25,27 @@ function getTabIcon(tab: DocumentTab) {
 }
 
 function useTabAudioState(tab: DocumentTab) {
-    const ttsDocId = useTtsStore((s) => s.documentId);
+    const ttsDocumentKey = useTtsStore((s) => s.documentKey);
     const ttsStatus = useTtsStore((s) => s.status);
-    const audioTitle = useAudioStore((s) => s.title);
+    const audioSermonId = useAudioStore((s) => s.sermonId);
+    const audioTranslationId = useAudioStore((s) => s.translationId);
+    const audioLanguageCode = useAudioStore((s) => s.languageCode);
     const audioStatus = useAudioStore((s) => s.currentPlay?.status);
+    const tabDocumentKey = getDocumentIdentityKey(getDocumentIdentityFromTab(tab));
 
     const ttsPlaying =
-        ttsDocId === tab.title && (ttsStatus === 'playing' || ttsStatus === 'loading');
-    const ttsPaused = ttsDocId === tab.title && ttsStatus === 'paused';
-    const audioPlaying = audioTitle === tab.title && audioStatus === 'play';
-    const audioPaused = audioTitle === tab.title && audioStatus === 'pause';
+        ttsDocumentKey === tabDocumentKey && (ttsStatus === 'playing' || ttsStatus === 'loading');
+
+    const ttsPaused = ttsDocumentKey === tabDocumentKey && ttsStatus === 'paused';
+
+    const isCurrentAudioTab =
+        tab.type === 'sermon' &&
+        audioSermonId === tab.documentId &&
+        audioTranslationId === tab.translationId &&
+        audioLanguageCode === tab.languageCode;
+
+    const audioPlaying = isCurrentAudioTab && audioStatus === 'play';
+    const audioPaused = isCurrentAudioTab && audioStatus === 'pause';
 
     const isPlaying = ttsPlaying || audioPlaying;
     const isPaused = !isPlaying && (ttsPaused || audioPaused);
@@ -43,24 +55,18 @@ function useTabAudioState(tab: DocumentTab) {
 }
 
 function getTabLabel(tab: DocumentTab) {
-    if (tab.type === 'bible') {
+    if (tab.type !== 'sermon') {
         return tab.title;
     }
 
-    return (
-        <>
-            {tab.title} - {formatShortDate(tab.sermonId)}
-            {tab.languageCode && (
-                <span style={{ opacity: 0.6, marginLeft: 4 }}>({tab.languageCode})</span>
-            )}
-        </>
-    );
+    return `${tab.title} - ${formatShortDate(tab.documentId)}`;
 }
 
 function getTabTooltip(tab: DocumentTab) {
-    if (tab.type === 'bible') return tab.title;
-    const lang = tab.languageCode ? ` (${tab.languageCode})` : '';
-    return `${tab.title} - ${formatShortDate(tab.sermonId)}${lang}`;
+    if (tab.type !== 'sermon') {
+        return tab.title;
+    }
+    return `${tab.title} - ${formatShortDate(tab.documentId)}`;
 }
 
 export default function TabItem({
@@ -87,7 +93,7 @@ export default function TabItem({
                 data-active={isActive}
                 initial={false}
                 onClick={onActivate}
-                title={tab.title}
+                title={getTabTooltip(tab)}
                 onMouseDown={(e) => {
                     if (e.button === 1) {
                         e.preventDefault();

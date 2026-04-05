@@ -1,6 +1,6 @@
 # Understanding the Interface
 
-<p class="lead">Wmb Table is arranged so you can move quickly from reading to preparing your message.</p>
+<p class="lead">Wmb Table is arranged so you can move quickly from reading to preparing your message or study.</p>
 
 ## General view
 
@@ -16,7 +16,7 @@ The main screen is divided into several areas.
 
 At the top of the window, you will find two main views:
 
-- `Tools`: for search, notes, subjects, Bible, and settings
+- `Tools`: for search, notes, subjects, Bible, the assistant, and settings
 - `Reading`: for reading the content opened in tabs
 
 ## 2. The left menu
@@ -25,8 +25,10 @@ The left menu contains the working pages:
 
 - `History`
 - `Search`
+- `Assistant` when the AI feature is enabled
 - `Subjects`
 - `Notes`
+- `Highlights`
 - `Bible`
 - `Settings`
 
@@ -65,10 +67,23 @@ It contains:
 Settings are separated into clear sections:
 
 - `General`
+- `Document View`
 - `Languages`
+- `Assistant`
 - `Audio Reading`
 - `Backup`
 - `Update`
+
+## 7. Quiet notifications
+
+Some important information can appear at the top without stopping your work, for example:
+
+- a reminder to configure AI Assistant
+- a reminder to configure Audio Reading
+- a reminder to enable Backup
+- an update message
+
+You can click these notifications or simply close them.
 
 ## A simple way to remember it
 

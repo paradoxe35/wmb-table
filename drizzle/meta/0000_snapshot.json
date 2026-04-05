@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "3746089a-f152-4185-b08a-51caadceeaa0",
+    "id": "83f5b2c5-c773-4ccb-a9b3-336170241cfd",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -493,6 +493,13 @@
                     "notNull": false,
                     "autoincrement": false
                 },
+                "active_bible_version_abbreviation": {
+                    "name": "active_bible_version_abbreviation",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
                 "remember_reading_position": {
                     "name": "remember_reading_position",
                     "type": "integer",
@@ -548,14 +555,6 @@
                     "autoincrement": false,
                     "default": "''"
                 },
-                "sermon_id": {
-                    "name": "sermon_id",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
-                },
                 "language_code": {
                     "name": "language_code",
                     "type": "text",
@@ -605,6 +604,14 @@
                     "autoincrement": false,
                     "default": "''"
                 },
+                "document_key": {
+                    "name": "document_key",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "''"
+                },
                 "document_title": {
                     "name": "document_title",
                     "type": "text",
@@ -612,13 +619,12 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "sermon_id": {
-                    "name": "sermon_id",
+                "document_identity": {
+                    "name": "document_identity",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
+                    "autoincrement": false
                 },
                 "paragraph_index": {
                     "name": "paragraph_index",
@@ -663,22 +669,6 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "document_type": {
-                    "name": "document_type",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "'sermon'"
-                },
-                "translation_id": {
-                    "name": "translation_id",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
-                },
                 "language_code": {
                     "name": "language_code",
                     "type": "text",
@@ -704,7 +694,13 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {},
+            "indexes": {
+                "highlights_document_key_idx": {
+                    "name": "highlights_document_key_idx",
+                    "columns": ["document_key"],
+                    "isUnique": false
+                }
+            },
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
@@ -803,21 +799,20 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "sermon_id": {
-                    "name": "sermon_id",
+                "document_identity": {
+                    "name": "document_identity",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "document_key": {
+                    "name": "document_key",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false,
                     "default": "''"
-                },
-                "document_type": {
-                    "name": "document_type",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "'sermon'"
                 },
                 "created_at": {
                     "name": "created_at",
@@ -836,7 +831,18 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {},
+            "indexes": {
+                "history_items_document_key_idx": {
+                    "name": "history_items_document_key_idx",
+                    "columns": ["document_key"],
+                    "isUnique": false
+                },
+                "history_items_history_created_idx": {
+                    "name": "history_items_history_created_idx",
+                    "columns": ["history_id", "created_at"],
+                    "isUnique": false
+                }
+            },
             "foreignKeys": {
                 "history_items_history_id_history_id_fk": {
                     "name": "history_items_history_id_history_id_fk",
@@ -1041,11 +1047,11 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "document_html_tree": {
-                    "name": "document_html_tree",
+                "document_reference": {
+                    "name": "document_reference",
                     "type": "text",
                     "primaryKey": false,
-                    "notNull": true,
+                    "notNull": false,
                     "autoincrement": false
                 },
                 "text_content": {
@@ -1054,14 +1060,6 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
-                },
-                "sermon_id": {
-                    "name": "sermon_id",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
                 },
                 "created_at": {
                     "name": "created_at",
@@ -1195,6 +1193,14 @@
                     "notNull": true,
                     "autoincrement": false
                 },
+                "sort_order": {
+                    "name": "sort_order",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
+                },
                 "document_title": {
                     "name": "document_title",
                     "type": "text",
@@ -1202,8 +1208,8 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "document_html_tree": {
-                    "name": "document_html_tree",
+                "document_reference": {
+                    "name": "document_reference",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
@@ -1216,20 +1222,12 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "bible": {
-                    "name": "bible",
+                "document_preview": {
+                    "name": "document_preview",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
-                },
-                "sermon_id": {
-                    "name": "sermon_id",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "''"
                 },
                 "created_at": {
                     "name": "created_at",
@@ -1248,7 +1246,18 @@
                     "default": "(datetime('now'))"
                 }
             },
-            "indexes": {},
+            "indexes": {
+                "subject_items_subject_id_idx": {
+                    "name": "subject_items_subject_id_idx",
+                    "columns": ["subject_id"],
+                    "isUnique": false
+                },
+                "subject_items_subject_order_idx": {
+                    "name": "subject_items_subject_order_idx",
+                    "columns": ["subject_id", "sort_order"],
+                    "isUnique": false
+                }
+            },
             "foreignKeys": {
                 "subject_items_subject_id_subjects_id_fk": {
                     "name": "subject_items_subject_id_subjects_id_fk",
@@ -1489,13 +1498,6 @@
                 "highlight_mode": {
                     "name": "highlight_mode",
                     "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "auto_play": {
-                    "name": "auto_play",
-                    "type": "integer",
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false

@@ -2,11 +2,11 @@ import { useCallback, useState } from 'react';
 import { List, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
-import { getTabKey } from '@shared/types';
-import DocumentViewer from '@renderer/components/viewer/document-viewer';
+import { buildSermonDocumentIdentity, getTabKey } from '@shared/types';
+import SermonDocumentLink from '@renderer/components/viewer/sermon-document-link';
 import HighlightedText from '@renderer/components/highlighted-text';
 import { useSearchStore } from '@renderer/stores';
-import { useSermonLookup } from '@renderer/hooks';
+import { useDocumentPresentation } from '@renderer/hooks';
 
 const { Text } = Typography;
 
@@ -19,6 +19,7 @@ function SnippetRow({
     hitTitle,
     sermonId,
     translationId,
+    languageCode,
     onNavigate,
 }: {
     snippet: SearchSnippet;
@@ -27,14 +28,16 @@ function SnippetRow({
     hitTitle: string;
     sermonId: string;
     translationId: number;
+    languageCode: string;
     onNavigate: (paragraphIndex: number, matchIndex: number) => void;
 }) {
     return (
-        <DocumentViewer
+        <SermonDocumentLink
             onItemClick={() => onNavigate(snippet.paragraphIndex, snippet.matchIndex)}
             name={hitTitle}
             sermonId={sermonId}
             translationId={translationId}
+            languageCode={languageCode}
         >
             <div className="search-snippet-row">
                 <span className="snippet-paragraph-badge">{snippet.paragraphIndex}</span>
@@ -47,7 +50,7 @@ function SnippetRow({
                     maxChars={350}
                 />
             </div>
-        </DocumentViewer>
+        </SermonDocumentLink>
     );
 }
 
@@ -57,18 +60,30 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
     const setCurrentParagraphIndex = useSearchStore((s) => s.setCurrentParagraphIndex);
     const requestScrollToMatch = useSearchStore((s) => s.requestScrollToMatch);
-    const { getSermonById } = useSermonLookup();
+    const { resolveTitle } = useDocumentPresentation();
     const [expanded, setExpanded] = useState(false);
 
     const searchMode = useSearchStore((s) => s.searchMode);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
+    const documentIdentity = buildSermonDocumentIdentity(
+        hit.sermonId,
+        hit.translationId,
+        hit.languageCode,
+    );
+
+    const displayTitle = resolveTitle(hit.title, documentIdentity);
 
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {
-            const tabKey = getTabKey({ title: hit.title, sermonId: hit.sermonId });
+            const tabKey = getTabKey({
+                type: 'sermon',
+                documentId: hit.sermonId,
+                translationId: hit.translationId,
+                languageCode: hit.languageCode,
+            });
+
             setDocumentViewQuery(tabKey, {
-                documentKey: tabKey,
-                documentTitle: hit.title,
+                documentTitle: displayTitle,
                 textContentLength: 0,
                 matches: [],
                 matchedParagraphs: hit.snippets.map((snippet) => ({
@@ -84,6 +99,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             requestScrollToMatch(tabKey, matchIndex, paragraphIndex);
         },
         [
+            displayTitle,
             hit,
             openSearchBar,
             requestScrollToMatch,
@@ -92,6 +108,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             setDocumentViewQuery,
             query,
             searchMode,
+            hit.languageCode,
         ],
     );
 
@@ -102,7 +119,6 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
         navigateTo(hit.paragraphIndex, targetSnippet?.matchIndex ?? 0);
     }, [navigateTo, hit.paragraphIndex, hit.snippets]);
 
-    const displayTitle = getSermonById(hit.sermonId)?.title ?? hit.title;
     const snippets = hit.snippets ?? [];
     const visibleSnippets = expanded ? snippets : snippets.slice(0, INITIAL_SNIPPETS);
     const hasMore = snippets.length > INITIAL_SNIPPETS;
@@ -112,14 +128,15 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             <div className="w-100">
                 <div className="search-result-header">
                     <a className="underline">
-                        <DocumentViewer
+                        <SermonDocumentLink
                             onItemClick={handleTitleClick}
-                            name={hit.title}
+                            name={displayTitle}
                             sermonId={hit.sermonId}
                             translationId={hit.translationId}
+                            languageCode={hit.languageCode}
                         >
                             {displayTitle}
-                        </DocumentViewer>
+                        </SermonDocumentLink>
                     </a>
                     {hit.hitCount > 0 && (
                         <Text type="secondary" className="search-result-hit-count">
@@ -132,13 +149,14 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 <div className="search-result-snippets">
                     {visibleSnippets.map((s) => (
                         <SnippetRow
-                            key={s.paragraphIndex}
+                            key={`${s.paragraphIndex}:${s.matchIndex}`}
                             snippet={s}
                             query={query}
                             searchMode={searchMode}
-                            hitTitle={hit.title}
+                            hitTitle={displayTitle}
                             sermonId={hit.sermonId}
                             translationId={hit.translationId}
+                            languageCode={hit.languageCode}
                             onNavigate={navigateTo}
                         />
                     ))}

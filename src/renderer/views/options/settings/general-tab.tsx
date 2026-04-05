@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Card, Segmented, Select, Space, Tag, Typography, message } from 'antd';
+import { Button, Card, Segmented, Select, Space, Tag, Tooltip, Typography, message } from 'antd';
 import {
     BookOutlined,
     CheckCircleOutlined,
+    ClockCircleOutlined,
     CloudSyncOutlined,
     DesktopOutlined,
     GlobalOutlined,
@@ -15,9 +16,10 @@ import { MoonIcon, SunIcon } from '@renderer/components/icons';
 import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shared/types';
 import { FontSizeOutlined } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
-import { useThemeStore, type FontSizeOption } from '@renderer/stores/theme.store';
+import { useThemeStore, type FontSizeOption, type ThemeMode } from '@renderer/stores/theme.store';
 import { UI_LANGUAGE_OPTIONS, type UiLanguagePreference } from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
+import { LANGUAGE_EVENT, SYNC_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
 
@@ -50,26 +52,33 @@ export default function GeneralTab() {
         });
     }, []);
 
-    useEffect(() => {
+    const refreshLanguageSummary = useCallback(() => {
         window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
             setInstalledCount(langs.length);
-            if (contentLanguage) {
-                const lang = langs.find((l) => l.code === contentLanguage);
-                if (lang) setLangName(lang.language);
+            if (!contentLanguage) {
+                setLangName('');
+                return;
             }
+
+            const lang = langs.find((item) => item.code === contentLanguage);
+            setLangName(lang?.language ?? '');
         });
+    }, [contentLanguage]);
+
+    useEffect(() => {
+        refreshLanguageSummary();
         window.api.app.getUpdateStatus().then(setUpdateInfo);
         refreshBackup();
-    }, [contentLanguage, refreshBackup]);
+    }, [refreshBackup, refreshLanguageSummary]);
 
     // Stay in sync when backup status changes
     useEffect(() => {
         const cleanupAccess = window.api.on.backupAccessStatus(() => refreshBackup());
         const handleSync = () => refreshBackup();
-        window.addEventListener('sync-completed', handleSync);
+        window.addEventListener(SYNC_EVENT.syncCompleted, handleSync);
         return () => {
             cleanupAccess();
-            window.removeEventListener('sync-completed', handleSync);
+            window.removeEventListener(SYNC_EVENT.syncCompleted, handleSync);
         };
     }, [refreshBackup]);
 
@@ -77,6 +86,14 @@ export default function GeneralTab() {
     useEffect(() => {
         return window.api.on.notifyForNewUpdate(setUpdateInfo);
     }, []);
+
+    useEffect(() => {
+        const refresh = () => refreshLanguageSummary();
+        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
+        return () => {
+            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
+        };
+    }, [refreshLanguageSummary]);
 
     const openDocs = useCallback(() => {
         window.api.app.openExternal(DOCS_LINK).catch(() => {
@@ -120,21 +137,35 @@ export default function GeneralTab() {
         { icon: <ReloadOutlined />, label: t('Mise à jour'), value: updateValue },
     ];
 
-    const themeOptions = [
+    const themeOptions: {
+        value: ThemeMode;
+        icon: React.ReactNode;
+        label: string;
+        description: string;
+    }[] = [
         {
-            value: 'light',
-            icon: <SunIcon style={{ fontSize: 'var(--fs-base)' }} />,
-            label: t('Clair'),
-        },
-        {
-            value: 'dark',
-            icon: <MoonIcon style={{ fontSize: 'var(--fs-base)' }} />,
-            label: t('Sombre'),
+            value: 'auto',
+            icon: <ClockCircleOutlined style={{ fontSize: 'var(--fs-base)' }} />,
+            label: t('Automatique'),
+            description: t('Utilise le thème clair en journée et le thème sombre le soir.'),
         },
         {
             value: 'system',
             icon: <DesktopOutlined style={{ fontSize: 'var(--fs-base)' }} />,
             label: t('Système'),
+            description: t("Suit automatiquement l'apparence définie par votre système."),
+        },
+        {
+            value: 'light',
+            icon: <SunIcon style={{ fontSize: 'var(--fs-base)' }} />,
+            label: t('Clair'),
+            description: t('Utilise toujours le thème clair.'),
+        },
+        {
+            value: 'dark',
+            icon: <MoonIcon style={{ fontSize: 'var(--fs-base)' }} />,
+            label: t('Sombre'),
+            description: t('Utilise toujours le thème sombre.'),
         },
     ];
 
@@ -158,14 +189,20 @@ export default function GeneralTab() {
                     <Segmented
                         size="small"
                         value={themeMode}
-                        onChange={(val) => setThemeMode(val as 'system' | 'light' | 'dark')}
+                        onChange={(val) => setThemeMode(val as ThemeMode)}
                         options={themeOptions.map((o) => ({
                             value: o.value,
                             label: (
-                                <Space size={4}>
-                                    {o.icon}
-                                    <span>{o.label}</span>
-                                </Space>
+                                <Tooltip
+                                    placement="top"
+                                    mouseEnterDelay={0.2}
+                                    title={o.description}
+                                >
+                                    <Space size={4}>
+                                        {o.icon}
+                                        <span>{o.label}</span>
+                                    </Space>
+                                </Tooltip>
                             ),
                         }))}
                     />

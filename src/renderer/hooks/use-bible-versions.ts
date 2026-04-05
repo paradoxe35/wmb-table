@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
 
@@ -22,22 +22,26 @@ function invalidateCache() {
 export function useBibleVersions(): BibleVersionState {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const activeVersion = activeBibleVersion?.abbreviation;
     const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+    const refreshGenerationRef = useRef(0);
 
     const refresh = useCallback(async () => {
-        const langVersions = await window.api.bible.getVersions();
-        const all =
-            langVersions.length > 0 ? langVersions : await window.api.bible.getAllVersions();
-
-        cachedVersions = all;
+        const generation = ++refreshGenerationRef.current;
+        const nextVersions = await window.api.bible.getVersions();
+        if (generation !== refreshGenerationRef.current) {
+            return;
+        }
+        cachedVersions = nextVersions;
         cachedForLanguage = contentLanguage;
-
-        setVersions(all);
+        setVersions(nextVersions);
     }, [contentLanguage]);
 
     useEffect(() => {
+        refreshGenerationRef.current += 1;
+
         if (contentLanguage !== cachedForLanguage) {
             invalidateCache();
             setVersions([]);
@@ -55,10 +59,10 @@ export function useBibleVersions(): BibleVersionState {
         async (abbreviation: string) => {
             await window.api.bible.switchVersion(abbreviation);
             const v = await window.api.bible.getActiveVersion();
-            useAppStore.getState().setActiveBibleVersion(v);
+            setActiveBibleVersion(v);
             refresh();
         },
-        [refresh],
+        [refresh, setActiveBibleVersion],
     );
 
     const handleDownload = useCallback((abbreviation: string) => {
@@ -76,13 +80,13 @@ export function useBibleVersions(): BibleVersionState {
                 delete next[abbreviation];
                 return next;
             });
-            handleSwitch(abbreviation);
+            refresh();
         });
         return () => {
             unsub1();
             unsub2();
         };
-    }, [handleSwitch]);
+    }, [refresh]);
 
     const { installed, downloadable } = useMemo(() => {
         const inst: BibleVersionInfo[] = [];

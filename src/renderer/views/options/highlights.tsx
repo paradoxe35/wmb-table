@@ -19,19 +19,19 @@ import {
 } from '@ant-design/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { buildParagraphReference } from '@shared/types';
 import type {
+    ParagraphReference,
     DocumentType,
     HighlightItem,
     HighlightSearchResult,
-    ParagraphReference,
 } from '@shared/types';
 import {
     buildPendingNavigation,
-    buildReferenceOpenRequest,
+    useDocumentPresentation,
     useOpenDocumentRequest,
 } from '@renderer/hooks';
-import { useAppStore } from '@renderer/stores';
-import { useSermonStore } from '@renderer/stores/sermon.store';
+import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
@@ -45,14 +45,9 @@ const PAGE_SIZE = 20;
 interface HighlightGroup {
     groupId: string;
     documentTitle: string;
-    sermonId: string;
-    paragraphIndex: number;
-    textSnippet: string;
+    reference: ParagraphReference;
     color: string;
     comment?: string;
-    documentType: DocumentType;
-    translationId: number;
-    languageCode: string;
     createdAt: Date;
     ids: string[];
 }
@@ -72,14 +67,21 @@ function groupHighlights(items: HighlightItem[]): HighlightGroup[] {
             map.set(item.groupId, {
                 groupId: item.groupId,
                 documentTitle: item.documentTitle,
-                sermonId: item.sermonId,
-                paragraphIndex: item.paragraphIndex,
-                textSnippet: item.textSnippet,
+                reference:
+                    item.documentIdentity.documentType === 'sermon'
+                        ? buildParagraphReference(
+                              item.documentIdentity,
+                              item.paragraphIndex,
+                              item.textSnippet,
+                          )
+                        : buildParagraphReference(
+                              item.documentIdentity,
+                              item.paragraphIndex,
+                              item.languageCode,
+                              item.textSnippet,
+                          ),
                 color: item.color,
                 comment: item.comment,
-                documentType: item.documentType,
-                translationId: item.translationId,
-                languageCode: item.languageCode,
                 createdAt: item.createdAt,
                 ids: [item.id],
             });
@@ -99,39 +101,19 @@ const DOC_TYPE_META: Record<DocumentType, { color: string; label: string }> = {
 // Hooks
 // ---------------------------------------------------------------------------
 
-function toHighlightReference(item: HighlightGroup): ParagraphReference {
-    const bibleReference =
-        item.documentType === 'bible'
-            ? {
-                  bibleBook: item.sermonId.split(':')[0],
-                  bibleChapter: item.sermonId.split(':')[1],
-              }
-            : {};
-
-    return {
-        paragraphIndex: item.paragraphIndex,
-        translationId: item.translationId,
-        languageCode: item.languageCode,
-        sermonId: item.sermonId,
-        documentType: item.documentType,
-        textSnippet: item.textSnippet,
-        customDocumentId: item.documentType === 'custom' ? item.sermonId : undefined,
-        ...bibleReference,
-    };
-}
-
 function useHighlightOpen() {
     const openDocumentRequest = useOpenDocumentRequest();
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const { buildOpenRequest } = useDocumentPresentation();
+    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     return useCallback(
         (item: HighlightGroup) => {
-            const reference = toHighlightReference(item);
-            const request = buildReferenceOpenRequest(item.documentTitle, item.sermonId, reference);
+            const reference = item.reference;
+            const request = buildOpenRequest(item.documentTitle, reference);
             setPendingNavigation(buildPendingNavigation(request, reference));
             openDocumentRequest(request);
         },
-        [openDocumentRequest, setPendingNavigation],
+        [buildOpenRequest, openDocumentRequest, setPendingNavigation],
     );
 }
 
@@ -180,8 +162,14 @@ function HighlightListItem({
     onDelete: (g: HighlightGroup) => void;
 }) {
     const { t } = useTranslation();
-    const snippet =
-        group.textSnippet.length > 80 ? group.textSnippet.slice(0, 80) + '...' : group.textSnippet;
+    const { resolveTitle } = useDocumentPresentation();
+
+    let snippet = group.reference.textSnippet ?? '';
+    if (snippet.length > 80) {
+        snippet = snippet.slice(0, 80) + '...';
+    }
+
+    const displayTitle = resolveTitle(group.documentTitle, group.reference.documentIdentity);
 
     return (
         <div
@@ -212,9 +200,9 @@ function HighlightListItem({
                             lineHeight: 1.3,
                         }}
                     >
-                        {group.documentTitle}
+                        {displayTitle}
                     </Text>
-                    <DocumentTypeTag documentType={group.documentType} />
+                    <DocumentTypeTag documentType={group.reference.documentIdentity.documentType} />
                 </div>
                 <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)', lineHeight: 1.3 }}>
                     {snippet}

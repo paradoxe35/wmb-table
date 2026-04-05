@@ -44,12 +44,9 @@ export function registerNotesHandlers(): void {
         notesRepo.syncReferences(noteId, refs);
     });
 
-    registerHandler(
-        NotesChannels.updateReference,
-        async (_event, id, ref, documentTitle, sermonId) => {
-            notesRepo.updateReference(id, ref, documentTitle, sermonId);
-        },
-    );
+    registerHandler(NotesChannels.updateReference, async (_event, id, ref, documentTitle) => {
+        notesRepo.updateReference(id, ref, documentTitle);
+    });
 
     registerHandler(NotesChannels.getBibleReference, async (_event, id) => {
         return notesRepo.getBibleReference(id);

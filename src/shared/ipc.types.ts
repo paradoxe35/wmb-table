@@ -15,23 +15,26 @@ import type {
     BibleVersionInfo,
     SubjectDocument,
     SubjectDocumentItem,
-    SubjectRefTree,
+    DocumentPreview,
+    DocumentReferenceSelection,
     CustomDocument,
     CustomDocumentContent,
-    DocumentType,
+    CustomDocumentImportInput,
+    DocumentIdentity,
     HistoryData,
     HistoryDataItem,
+    HistoryEntryCreateData,
     AudioTimeAndDownload,
     AudioDownloadProgress,
+    AudioDocumentPlayRequest,
     SearchMode,
     BackupStatus,
     RestoreProgressEvent,
     UpdaterNotification,
     ViewMenuValue,
-    DocumentHtmlTree,
-    ParagraphReference,
+    DocumentReference,
     SermonMeta,
-    SermonMetaWithTraductions,
+    SermonMetaWithTranslations,
     SermonContent,
     InstalledLanguage,
     DownloadableLanguage,
@@ -92,7 +95,7 @@ export const DocumentChannels = {
     getSermonList: 'documents:getSermonList',
     getSermonsByYear: 'documents:getSermonsByYear',
     getTranslations: 'documents:getTranslations',
-    getTraductionsForSermon: 'documents:getTraductionsForSermon',
+    getTranslationsForSermonInLanguage: 'documents:getTranslationsForSermonInLanguage',
     getTabs: 'documents:getTabs',
     saveTabs: 'documents:saveTabs',
     getReadingPosition: 'documents:getReadingPosition',
@@ -154,6 +157,7 @@ export const SubjectChannels = {
     rename: 'subjects:rename',
     delete: 'subjects:delete',
     getItems: 'subjects:getItems',
+    reorderItems: 'subjects:reorderItems',
     deleteItem: 'subjects:deleteItem',
     createItem: 'subjects:createItem',
     exportPdf: 'subjects:exportPdf',
@@ -307,7 +311,7 @@ export const PushChannels = {
 /** Maps each invoke channel to its argument tuple and return type. */
 export interface InvokeChannelMap {
     // Documents
-    [DocumentChannels.getTitles]: { args: [string]; return: SermonMetaWithTraductions[] };
+    [DocumentChannels.getTitles]: { args: [string]; return: SermonMetaWithTranslations[] };
     [DocumentChannels.getSermonContent]: {
         args: [string, number, string];
         return: SermonContent;
@@ -318,7 +322,7 @@ export interface InvokeChannelMap {
         args: [string];
         return: SermonTranslation[];
     };
-    [DocumentChannels.getTraductionsForSermon]: {
+    [DocumentChannels.getTranslationsForSermonInLanguage]: {
         args: [string, string];
         return: SermonMeta[];
     };
@@ -370,7 +374,7 @@ export interface InvokeChannelMap {
         return: void;
     };
     [NotesChannels.updateReference]: {
-        args: [string, SubjectRefTree, string, string];
+        args: [string, DocumentReferenceSelection, string];
         return: void;
     };
     [NotesChannels.getBibleReference]: {
@@ -401,7 +405,7 @@ export interface InvokeChannelMap {
     [NotesChannels.exportPdf]: { args: [string]; return: string };
 
     // Bible
-    [BibleChannels.getIndexes]: { args: []; return: BibleIndex };
+    [BibleChannels.getIndexes]: { args: [string?]; return: BibleIndex };
     [BibleChannels.getBooks]: { args: [BookRequest]; return: BibleBook[] };
     [BibleChannels.search]: { args: [string, number, string?]; return: BibleSearchResult };
     [BibleChannels.getVersions]: { args: []; return: BibleVersionInfo[] };
@@ -417,9 +421,10 @@ export interface InvokeChannelMap {
     [SubjectChannels.rename]: { args: [string, string]; return: void };
     [SubjectChannels.delete]: { args: [string]; return: void };
     [SubjectChannels.getItems]: { args: [string]; return: SubjectDocumentItem[] };
+    [SubjectChannels.reorderItems]: { args: [string, string[]]; return: void };
     [SubjectChannels.deleteItem]: { args: [string]; return: void };
     [SubjectChannels.createItem]: {
-        args: [string, string, DocumentHtmlTree | ParagraphReference, string, BibleBook?, string?];
+        args: [string, string, DocumentReference, string, DocumentPreview?];
         return: SubjectDocumentItem;
     };
     [SubjectChannels.exportPdf]: { args: [string]; return: string };
@@ -430,7 +435,7 @@ export interface InvokeChannelMap {
         return: HighlightSearchResult;
     };
     [HighlightChannels.getByDocument]: {
-        args: [string, string];
+        args: [DocumentIdentity];
         return: HighlightItem[];
     };
     [HighlightChannels.create]: {
@@ -450,8 +455,8 @@ export interface InvokeChannelMap {
         return: AudioTimeAndDownload;
     };
     [AudioChannels.setTime]: { args: [string, number]; return: void };
-    [AudioChannels.getLastPlay]: { args: []; return: string | null };
-    [AudioChannels.setLastPlay]: { args: [string]; return: void };
+    [AudioChannels.getLastPlay]: { args: []; return: AudioDocumentPlayRequest | null };
+    [AudioChannels.setLastPlay]: { args: [AudioDocumentPlayRequest]; return: void };
     [AudioChannels.cacheAudio]: { args: [string]; return: void };
 
     // Backup
@@ -471,11 +476,11 @@ export interface InvokeChannelMap {
     [AppChannels.isInitialized]: { args: []; return: boolean };
     [AppChannels.initialize]: { args: []; return: void };
     [AppChannels.getContentLanguage]: { args: []; return: string | null };
-    [AppChannels.setContentLanguage]: { args: [string]; return: void };
+    [AppChannels.setContentLanguage]: { args: [string | null]; return: void };
     [AppChannels.getRememberReadingPosition]: { args: []; return: boolean };
     [AppChannels.setRememberReadingPosition]: { args: [boolean]; return: void };
     [AppChannels.getMaxTabs]: { args: []; return: number };
-    [AppChannels.setMaxTabs]: { args: [number]; return: void };
+    [AppChannels.setMaxTabs]: { args: [number]; return: number };
     [AppChannels.openExternal]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
@@ -487,7 +492,7 @@ export interface InvokeChannelMap {
     [AppChannels.getCustomDocuments]: { args: []; return: CustomDocument[] };
     [AppChannels.deleteCustomDocument]: { args: [string]; return: void };
     [AppChannels.createCustomDocument]: {
-        args: [string, Uint8Array, string];
+        args: [string, CustomDocumentImportInput, string];
         return: CustomDocument;
     };
     [AppChannels.getCustomDocumentContent]: {
@@ -496,7 +501,7 @@ export interface InvokeChannelMap {
     };
     [AppChannels.updateCustomDocumentLanguage]: { args: [string, string]; return: void };
     [AppChannels.getHistory]: { args: [string]; return: HistoryData[] };
-    [AppChannels.addHistoryEntry]: { args: [string, string, string, DocumentType]; return: void };
+    [AppChannels.addHistoryEntry]: { args: [string, HistoryEntryCreateData]; return: void };
     [AppChannels.getHistoryItems]: {
         args: [string];
         return: HistoryDataItem[];
@@ -507,7 +512,7 @@ export interface InvokeChannelMap {
     // TTS
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };
     [TtsChannels.getSettings]: { args: []; return: TtsSettings };
-    [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: void };
+    [TtsChannels.updateSettings]: { args: [Partial<TtsSettings>]; return: TtsSettings };
     [TtsChannels.startPlayback]: {
         args: [TtsSegment[], string, number?];
         return: void;

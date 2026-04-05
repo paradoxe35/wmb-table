@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Input, Modal, Select, Space, Typography, message, Spin } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { CustomDocument, InstalledLanguage } from '@shared/types';
@@ -10,11 +10,18 @@ import {
     UploadOutlined,
 } from '@ant-design/icons';
 
-import { useModalVisible, useIpcRequestWithLoader, useOpenCustomDocument } from '@renderer/hooks';
-import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
+import { useModalVisible, useIpcRequestWithLoader, useOpenDocumentRequest } from '@renderer/hooks';
+import { CUSTOM_DOCUMENT_EVENT, LANGUAGE_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useAppStore, useCustomDocumentsStore } from '@renderer/stores';
 import { DeleteBtn } from '@renderer/components/delete-btn';
+import { invalidateCustomDocumentContentCache } from '@renderer/views/document-view/hooks/document-content-hooks';
+
+const ACCEPTED_CUSTOM_DOCUMENT_TYPES = '.pdf,.txt,.md,.markdown,.docx,.epub';
+
+function isSupportedCustomDocument(file: File): boolean {
+    return /\.(pdf|txt|md|markdown|docx|epub)$/i.test(file.name);
+}
 
 export default function CustomDocuments() {
     const { t } = useTranslation();
@@ -27,6 +34,13 @@ export default function CustomDocuments() {
     const addCustomDocument = useCustomDocumentsStore((s) => s.addCustomDocument);
     const removeCustomDocument = useCustomDocumentsStore((s) => s.removeCustomDocument);
 
+    const refreshInstalledLanguages = useCallback(() => {
+        window.api.languages
+            .getInstalled()
+            .then(setInstalledLanguages)
+            .catch(() => {});
+    }, []);
+
     useEffect(() => {
         window.api.app
             .getCustomDocuments()
@@ -36,11 +50,14 @@ export default function CustomDocuments() {
             .catch(() => {
                 message.error(t('Erreur lors du chargement des documents'));
             });
-        window.api.languages
-            .getInstalled()
-            .then(setInstalledLanguages)
-            .catch(() => {});
-    }, []);
+        refreshInstalledLanguages();
+    }, [refreshInstalledLanguages, setCustomDocuments, t]);
+
+    useEffect(() => {
+        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refreshInstalledLanguages);
+        return () =>
+            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refreshInstalledLanguages);
+    }, [refreshInstalledLanguages]);
 
     useEffect(() => {
         const cleanup = window.api.on.openModalDocumentFromMain(show);
@@ -117,10 +134,10 @@ function DocumentList({
     onAdd: () => void;
 }) {
     const { t } = useTranslation();
-    const openCustomDocument = useOpenCustomDocument();
+    const openDocumentRequest = useOpenDocumentRequest();
     const [searchTerm, setSearchTerm] = useState('');
     const ipcRequestWithLoader = useIpcRequestWithLoader();
-    const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
+    const updateCustomDocument = useCustomDocumentsStore((s) => s.updateCustomDocument);
 
     const filtered = searchTerm
         ? customDocuments.filter((d) => simpleRegExp(searchTerm).test(strNormalize(d.title)))
@@ -141,9 +158,8 @@ function DocumentList({
 
     const handleLanguageChange = async (doc: CustomDocument, languageCode: string) => {
         await window.api.app.updateCustomDocumentLanguage(doc.id, languageCode);
-        setCustomDocuments(
-            customDocuments.map((d) => (d.id === doc.id ? { ...d, languageCode } : d)),
-        );
+        updateCustomDocument(doc.id, { languageCode });
+        invalidateCustomDocumentContentCache(doc.id);
         message.success(t('Langue modifiée'));
     };
 
@@ -193,7 +209,11 @@ function DocumentList({
                         document={doc}
                         installedLanguages={installedLanguages}
                         onView={() => {
-                            openCustomDocument(doc.title, doc.sermonId);
+                            openDocumentRequest({
+                                title: doc.title,
+                                documentType: 'custom',
+                                customDocumentId: doc.id,
+                            });
                             onClose();
                         }}
                         onDelete={() => handleDeletion(doc)}
@@ -258,6 +278,18 @@ const DocumentItem = React.memo<{
 });
 DocumentItem.displayName = 'DocumentItem';
 
+function inferDocumentNameFromFilename(fileName: string): string {
+    return fileName
+        .replace(/\.[^.]+$/u, '')
+        .replace(/([a-z0-9])([A-Z])/gu, '$1 $2')
+        .replace(/([A-Z])([A-Z][a-z])/gu, '$1 $2')
+        .replace(/[_-]+/gu, ' ')
+        .replace(/[()[\]{}]+/gu, ' ')
+        .replace(/[.,]+/gu, ' ')
+        .replace(/\s+/gu, ' ')
+        .trim();
+}
+
 function UploadForm({
     customDocuments,
     installedLanguages,
@@ -275,6 +307,7 @@ function UploadForm({
     const [languageCode, setLanguageCode] = useState(contentLanguage ?? 'fr');
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [nameTouched, setNameTouched] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const nameExists = customDocuments.some(
@@ -284,13 +317,13 @@ function UploadForm({
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        if (file.type !== 'application/pdf') {
-            message.error(t('Seul le format PDF est pris en charge.'));
+        if (!isSupportedCustomDocument(file)) {
+            message.error(t('Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.'));
             return;
         }
         setSelectedFile(file);
-        if (!name.trim()) {
-            setName(file.name.replace(/\.pdf$/i, ''));
+        if (!nameTouched || !name.trim()) {
+            setName(inferDocumentNameFromFilename(file.name));
         }
     };
 
@@ -305,16 +338,22 @@ function UploadForm({
         setUploading(true);
         try {
             const buffer = await selectedFile.arrayBuffer();
-            const pdfBytes = new Uint8Array(buffer);
+            const fileBytes = new Uint8Array(buffer);
             const doc = await window.api.app.createCustomDocument(
                 trimmedName,
-                pdfBytes,
+                {
+                    fileName: selectedFile.name,
+                    mimeType: selectedFile.type || null,
+                    bytes: fileBytes,
+                },
                 languageCode,
             );
             onAdded(doc);
             message.success(t('Document ajouté'));
-        } catch {
-            message.error(t("Erreur lors de l'extraction du document."));
+        } catch (err) {
+            message.error(
+                err instanceof Error ? t(err.message) : t("Erreur lors de l'import du document."),
+            );
         } finally {
             setUploading(false);
         }
@@ -331,7 +370,10 @@ function UploadForm({
                 </Typography.Text>
                 <Input
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={(e) => {
+                        setNameTouched(true);
+                        setName(e.target.value);
+                    }}
                     placeholder={t('Nom du document')}
                     status={nameExists ? 'error' : undefined}
                 />
@@ -366,7 +408,7 @@ function UploadForm({
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".pdf"
+                    accept={ACCEPTED_CUSTOM_DOCUMENT_TYPES}
                     style={{ display: 'none' }}
                     onChange={handleFileChange}
                 />
@@ -376,7 +418,7 @@ function UploadForm({
                     block
                     style={{ textAlign: 'left' }}
                 >
-                    {selectedFile ? selectedFile.name : t('Choisir un fichier PDF')}
+                    {selectedFile ? selectedFile.name : t('Choisir un document')}
                 </Button>
             </div>
 

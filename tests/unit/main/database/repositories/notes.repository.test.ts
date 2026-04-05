@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb, createTestBibleDb } from '../test-helpers';
 import * as notesRepo from '@main/database/repositories/notes.repository';
+import { getDb } from '@main/database';
+import { notesBibleReferences } from '@main/database/schema';
+import { eq } from 'drizzle-orm';
 
 describe('notes.repository', () => {
     beforeEach(() => {
@@ -53,7 +56,7 @@ describe('notes.repository', () => {
         const note = notesRepo.create('Test');
         const ref = notesRepo.createReference(note.id, 'Doc');
         expect(ref.label).toBe('Doc');
-        expect(ref.documentHtmlTree).toEqual({ tree: [] });
+        expect(ref.documentReference).toBeNull();
 
         const refs = notesRepo.getReferences(note.id);
         expect(refs).toHaveLength(1);
@@ -115,5 +118,20 @@ describe('notes.repository', () => {
         notesRepo.removeBibleVerse(bibleRef.id, 'v1');
         refs = notesRepo.getBibleReferences(note.id);
         expect(refs[0].references).toHaveLength(0);
+    });
+
+    it('throws when required bible references JSON is corrupted', () => {
+        const note = notesRepo.create('Test');
+        const bibleRef = notesRepo.createBibleReference(note.id, 'Bible Ref');
+
+        getDb()
+            .update(notesBibleReferences)
+            .set({ references: '{invalid json' })
+            .where(eq(notesBibleReferences.id, bibleRef.id))
+            .run();
+
+        expect(() => notesRepo.getBibleReference(bibleRef.id)).toThrow(
+            'Invalid JSON stored in notes_bible_references.references',
+        );
     });
 });

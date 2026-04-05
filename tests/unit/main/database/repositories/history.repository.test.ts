@@ -14,14 +14,10 @@ describe('history.repository', () => {
     });
 
     it('addHistoryEntry creates history and item', () => {
-        historyRepo.addHistoryEntry(
-            '2024-01-01',
-            1704067200000,
-            '10:00',
-            'Doc Title',
-            LANG,
-            '53-0403',
-        );
+        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:00', LANG, {
+            documentTitle: 'Doc Title',
+            documentIdentity: { documentType: 'sermon', sermonId: '53-0403', translationId: 0 },
+        });
         const all = historyRepo.getHistory(LANG);
         expect(all).toHaveLength(1);
         expect(all[0].date).toBe('2024-01-01');
@@ -32,8 +28,14 @@ describe('history.repository', () => {
     });
 
     it('addHistoryEntry reuses existing history for same milliseconds', () => {
-        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:00', 'Doc 1', LANG, '53-0403');
-        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:05', 'Doc 2', LANG, '53-0404');
+        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:00', LANG, {
+            documentTitle: 'Doc 1',
+            documentIdentity: { documentType: 'sermon', sermonId: '53-0403', translationId: 0 },
+        });
+        historyRepo.addHistoryEntry('2024-01-01', 1704067200000, '10:05', LANG, {
+            documentTitle: 'Doc 2',
+            documentIdentity: { documentType: 'sermon', sermonId: '53-0404', translationId: 0 },
+        });
 
         const all = historyRepo.getHistory(LANG);
         expect(all).toHaveLength(1);
@@ -44,7 +46,14 @@ describe('history.repository', () => {
 
     it('enforces 30-entry cap', () => {
         for (let i = 0; i < 32; i++) {
-            historyRepo.addHistoryEntry(`date-${i}`, i, '10:00', `Doc ${i}`, LANG, `sermon-${i}`);
+            historyRepo.addHistoryEntry(`date-${i}`, i, '10:00', LANG, {
+                documentTitle: `Doc ${i}`,
+                documentIdentity: {
+                    documentType: 'sermon',
+                    sermonId: `sermon-${i}`,
+                    translationId: 0,
+                },
+            });
         }
         const all = historyRepo.getHistory(LANG);
         expect(all.length).toBeLessThanOrEqual(30);
@@ -52,7 +61,14 @@ describe('history.repository', () => {
 
     it('keeps most recent entries when enforcing cap', () => {
         for (let i = 0; i < 32; i++) {
-            historyRepo.addHistoryEntry(`date-${i}`, i, '10:00', `Doc ${i}`, LANG, `sermon-${i}`);
+            historyRepo.addHistoryEntry(`date-${i}`, i, '10:00', LANG, {
+                documentTitle: `Doc ${i}`,
+                documentIdentity: {
+                    documentType: 'sermon',
+                    sermonId: `sermon-${i}`,
+                    translationId: 0,
+                },
+            });
         }
         const all = historyRepo.getHistory(LANG);
         // Most recent (highest milliseconds) should survive
@@ -66,17 +82,20 @@ describe('history.repository', () => {
 
     it('enforces 50-item cap per history entry', () => {
         // Create a single history entry
-        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'Doc 0', LANG, 'sermon-0');
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', LANG, {
+            documentTitle: 'Doc 0',
+            documentIdentity: { documentType: 'sermon', sermonId: 'sermon-0', translationId: 0 },
+        });
         // Add 51 more items to the same date (different sermonIds so they don't dedup)
         for (let i = 1; i <= 51; i++) {
-            historyRepo.addHistoryEntry(
-                '2024-01-01',
-                1000,
-                '10:00',
-                `Doc ${i}`,
-                LANG,
-                `sermon-${i}`,
-            );
+            historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', LANG, {
+                documentTitle: `Doc ${i}`,
+                documentIdentity: {
+                    documentType: 'sermon',
+                    sermonId: `sermon-${i}`,
+                    translationId: 0,
+                },
+            });
         }
         const all = historyRepo.getHistory(LANG);
         expect(all).toHaveLength(1);
@@ -85,16 +104,50 @@ describe('history.repository', () => {
     });
 
     it('skips duplicate consecutive entries', () => {
-        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'Doc', LANG, 'sermon-1');
-        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:05', 'Doc', LANG, 'sermon-1');
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', LANG, {
+            documentTitle: 'Doc',
+            documentIdentity: { documentType: 'sermon', sermonId: 'sermon-1', translationId: 0 },
+        });
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:05', LANG, {
+            documentTitle: 'Doc',
+            documentIdentity: { documentType: 'sermon', sermonId: 'sermon-1', translationId: 0 },
+        });
+        const all = historyRepo.getHistory(LANG);
+        const items = historyRepo.getHistoryItems(all[0].id);
+        expect(items).toHaveLength(1);
+    });
+
+    it('dedupes by document identity even when the display title changes', () => {
+        const documentIdentity = {
+            documentType: 'bible' as const,
+            bibleBook: 'gen',
+            bibleChapter: '1',
+            bibleVersionAbbreviation: 'KJV',
+        };
+
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', LANG, {
+            documentTitle: 'Genesis 1',
+            documentIdentity,
+        });
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:05', LANG, {
+            documentTitle: 'Genesis 1 (KJV)',
+            documentIdentity,
+        });
+
         const all = historyRepo.getHistory(LANG);
         const items = historyRepo.getHistoryItems(all[0].id);
         expect(items).toHaveLength(1);
     });
 
     it('separates history by language', () => {
-        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'Doc EN', 'en', 'sermon-1');
-        historyRepo.addHistoryEntry('2024-01-01', 2000, '10:00', 'Doc FR', 'fr', 'sermon-2');
+        historyRepo.addHistoryEntry('2024-01-01', 1000, '10:00', 'en', {
+            documentTitle: 'Doc EN',
+            documentIdentity: { documentType: 'sermon', sermonId: 'sermon-1', translationId: 0 },
+        });
+        historyRepo.addHistoryEntry('2024-01-01', 2000, '10:00', 'fr', {
+            documentTitle: 'Doc FR',
+            documentIdentity: { documentType: 'sermon', sermonId: 'sermon-2', translationId: 0 },
+        });
         expect(historyRepo.getHistory('en')).toHaveLength(1);
         expect(historyRepo.getHistory('fr')).toHaveLength(1);
     });

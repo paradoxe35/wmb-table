@@ -1,6 +1,5 @@
 import log from 'electron-log';
 import { SimpleCache } from '@main/lib/simple-cache';
-import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -13,6 +12,7 @@ import type {
     TtsVoiceCloneResult,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
+import { normalizeLanguageCode } from '@shared/tts.types';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 
@@ -249,7 +249,7 @@ export class ElevenLabsProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = normalizeLangCode(langCode);
+        const code = normalizeLanguageCode(langCode);
         const model = cfg?.model ?? this.model;
         const modelLangs = MODEL_LANGUAGES[model] ?? V3_LANGUAGES;
         if (!modelLangs.includes(code)) {
@@ -263,7 +263,9 @@ export class ElevenLabsProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        if (!this.apiKey) throw new Error('ElevenLabs API key not configured');
+        if (!this.apiKey) {
+            throw new Error("La clé API ElevenLabs n'est pas configurée.");
+        }
 
         const model = request.model ?? this.model;
         const voiceId = request.voiceId ?? this.voiceId;
@@ -281,7 +283,7 @@ export class ElevenLabsProvider implements TtsProvider {
         };
 
         if (request.language) {
-            body.language_code = normalizeLangCode(request.language);
+            body.language_code = normalizeLanguageCode(request.language);
         }
 
         const response = await fetch(url.toString(), {
@@ -306,7 +308,7 @@ export class ElevenLabsProvider implements TtsProvider {
     }
 
     async cloneVoice(request: TtsVoiceCloneRequest): Promise<TtsVoiceCloneResult> {
-        if (!this.apiKey) throw new Error('ElevenLabs API key not configured');
+        if (!this.apiKey) throw new Error("La clé API ElevenLabs n'est pas configurée.");
 
         const audioBuffer = Buffer.from(request.audioBase64, 'base64');
 
@@ -365,7 +367,7 @@ export class ElevenLabsProvider implements TtsProvider {
     }
 
     async deleteClonedVoice(voiceId: string): Promise<void> {
-        if (!this.apiKey) throw new Error('ElevenLabs API key not configured');
+        if (!this.apiKey) throw new Error("La clé API ElevenLabs n'est pas configurée.");
 
         const response = await fetch(`${ELEVENLABS_API_BASE}/voices/${voiceId}`, {
             method: 'DELETE',

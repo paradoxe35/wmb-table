@@ -78,6 +78,7 @@ CREATE TABLE `configurations` (
 	`initialized` integer DEFAULT false NOT NULL,
 	`last_check_backup_status` text DEFAULT (datetime('now')),
 	`content_language` text,
+	`active_bible_version_abbreviation` text,
 	`remember_reading_position` integer DEFAULT true NOT NULL,
 	`max_tabs` integer DEFAULT 12 NOT NULL,
 	`ui_language` text
@@ -87,7 +88,6 @@ CREATE TABLE `custom_documents` (
 	`id` text PRIMARY KEY NOT NULL,
 	`title` text NOT NULL,
 	`content` text DEFAULT '' NOT NULL,
-	`sermon_id` text DEFAULT '' NOT NULL,
 	`language_code` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
@@ -96,21 +96,21 @@ CREATE TABLE `custom_documents` (
 CREATE TABLE `highlights` (
 	`id` text PRIMARY KEY NOT NULL,
 	`group_id` text DEFAULT '' NOT NULL,
+	`document_key` text DEFAULT '' NOT NULL,
 	`document_title` text NOT NULL,
-	`sermon_id` text DEFAULT '' NOT NULL,
+	`document_identity` text NOT NULL,
 	`paragraph_index` integer NOT NULL,
 	`start_offset` integer NOT NULL,
 	`end_offset` integer NOT NULL,
 	`text_snippet` text NOT NULL,
 	`color` text DEFAULT '#FFFF00' NOT NULL,
 	`comment` text,
-	`document_type` text DEFAULT 'sermon' NOT NULL,
-	`translation_id` integer DEFAULT 0 NOT NULL,
 	`language_code` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint
+CREATE INDEX `highlights_document_key_idx` ON `highlights` (`document_key`);--> statement-breakpoint
 CREATE TABLE `history` (
 	`id` text PRIMARY KEY NOT NULL,
 	`date` text NOT NULL,
@@ -126,13 +126,15 @@ CREATE TABLE `history_items` (
 	`date` text NOT NULL,
 	`time` text NOT NULL,
 	`document_title` text NOT NULL,
-	`sermon_id` text DEFAULT '' NOT NULL,
-	`document_type` text DEFAULT 'sermon' NOT NULL,
+	`document_identity` text NOT NULL,
+	`document_key` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`history_id`) REFERENCES `history`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `history_items_document_key_idx` ON `history_items` (`document_key`);--> statement-breakpoint
+CREATE INDEX `history_items_history_created_idx` ON `history_items` (`history_id`,`created_at`);--> statement-breakpoint
 CREATE TABLE `kv_cache` (
 	`key` text PRIMARY KEY NOT NULL,
 	`value` text NOT NULL,
@@ -164,9 +166,8 @@ CREATE TABLE `notes_references` (
 	`note_id` text NOT NULL,
 	`label` text NOT NULL,
 	`document_title` text NOT NULL,
-	`document_html_tree` text NOT NULL,
+	`document_reference` text,
 	`text_content` text NOT NULL,
-	`sermon_id` text DEFAULT '' NOT NULL,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`note_id`) REFERENCES `notes`(`id`) ON UPDATE no action ON DELETE cascade
@@ -189,16 +190,18 @@ CREATE TABLE `sidebar_status` (
 CREATE TABLE `subject_items` (
 	`id` text PRIMARY KEY NOT NULL,
 	`subject_id` text NOT NULL,
+	`sort_order` integer DEFAULT 0 NOT NULL,
 	`document_title` text NOT NULL,
-	`document_html_tree` text NOT NULL,
+	`document_reference` text NOT NULL,
 	`text_content` text NOT NULL,
-	`bible` text,
-	`sermon_id` text DEFAULT '' NOT NULL,
+	`document_preview` text,
 	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now')),
 	FOREIGN KEY (`subject_id`) REFERENCES `subjects`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
+CREATE INDEX `subject_items_subject_id_idx` ON `subject_items` (`subject_id`);--> statement-breakpoint
+CREATE INDEX `subject_items_subject_order_idx` ON `subject_items` (`subject_id`,`sort_order`);--> statement-breakpoint
 CREATE TABLE `subjects` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
@@ -238,7 +241,6 @@ CREATE TABLE `tts_settings` (
 	`id` text PRIMARY KEY NOT NULL,
 	`active_provider` text NOT NULL,
 	`highlight_mode` text NOT NULL,
-	`auto_play` integer NOT NULL,
 	`auto_switch_voice` integer DEFAULT true NOT NULL,
 	`rate` real DEFAULT 1 NOT NULL,
 	`segment_gap_ms` integer,

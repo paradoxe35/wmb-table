@@ -79,6 +79,14 @@ export const UI_LANGUAGE_OPTIONS: { value: UiLanguagePreference; label: string }
     { value: 'es', label: 'Español' },
 ];
 
+export const TEXT_PART_LANGUAGE_OPTIONS: { title: string; languageCode: UiLanguage }[] =
+    UI_LANGUAGE_OPTIONS.filter(
+        (option): option is { value: UiLanguage; label: string } => option.value !== 'auto',
+    ).map((option) => ({
+        title: option.label,
+        languageCode: option.value,
+    }));
+
 const UI_LANGUAGE_CODES = new Set<string>(['fr', 'en', 'es']);
 
 /**

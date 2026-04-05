@@ -67,6 +67,7 @@ interface AudioRow {
 }
 
 interface CrossLangTranslationRow {
+    translation_id: number;
     lang_code: string;
     title: string;
     translator_name: string | null;
@@ -269,6 +270,7 @@ export function getTranslationsForSermonAndLanguage(
 export function getTranslationsForSermon(sermonId: string): CrossLangTranslationRow[] {
     const stmt = getRefDb().prepare(`
         SELECT
+            tr.translator_id as translation_id,
             lang.code as lang_code,
             t.title,
             tr.name as translator_name

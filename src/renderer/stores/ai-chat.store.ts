@@ -1,4 +1,3 @@
-import { create } from 'zustand';
 import type {
     AiConversation,
     AiMessage,
@@ -9,7 +8,9 @@ import type {
     AiSettings,
 } from '@shared/ai.types';
 import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
-import { AI_DATA_EVENT } from '@renderer/utils/events';
+import { AI_DATA_EVENT, APP_UI_EVENT } from '@renderer/utils/events';
+import { createStore } from './create-store';
+import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
 
 const TOOL_TO_EVENT: Record<string, string> = {
     createNote: AI_DATA_EVENT.notesChanged,
@@ -81,7 +82,7 @@ function toErrorMessage(error: unknown, fallback: string): string {
 
 let listenersBound = false;
 
-export const useAiChatStore = create<AiChatState>((set, get) => ({
+export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     initialized: false,
     settings: null,
     providerCatalog: [],
@@ -204,7 +205,7 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
     saveSettings: async (partial) => {
         const settings = await window.api.ai.updateSettings(partial);
         set({ settings });
-        window.dispatchEvent(new Event('ai-settings-updated'));
+        window.dispatchEvent(new Event(APP_UI_EVENT.aiSettingsUpdated));
     },
 
     loadConversations: async () => {
@@ -291,6 +292,9 @@ export const useAiChatStore = create<AiChatState>((set, get) => ({
                 conversationId,
                 content: trimmed,
             });
+
+            markFeatureReminderUsed('ai');
+
             set((state) => ({
                 conversations: state.conversations.some(
                     (conversation) => conversation.id === result.conversation.id,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Divider, Tabs, Typography } from 'antd';
 import {
@@ -12,7 +12,9 @@ import {
     SoundOutlined,
 } from '@ant-design/icons';
 import { useAppStore } from '@renderer/stores';
+import { SETTINGS_TAB_KEYS, type SettingsTabValue } from '@renderer/stores/app.store';
 import { UPDATE_TAB_EVENT } from '@renderer/components/update-notifier';
+import { APP_UI_EVENT } from '@renderer/utils/events';
 import GeneralTab from './general-tab';
 import LibraryTab from './library-tab';
 import BackupTab from './backup-tab';
@@ -23,20 +25,11 @@ import AiTab from './ai-tab';
 
 const { Title, Text } = Typography;
 
-const TAB_KEYS = {
-    general: 'general',
-    documentView: 'documentView',
-    languages: 'languages',
-    tts: 'tts',
-    ai: 'ai',
-    backup: 'backup',
-    update: 'update',
-} as const;
-
 export default function Settings() {
     const { t } = useTranslation();
     const showOptions = useAppStore((s) => s.showOptions);
-    const [activeTab, setActiveTab] = useState<string>(TAB_KEYS.general);
+    const activeTab = useAppStore((s) => s.settingsTab);
+    const setSettingsTab = useAppStore((s) => s.setSettingsTab);
 
     useEffect(() => {
         return window.api.on.openSettings(() => {
@@ -47,36 +40,39 @@ export default function Settings() {
     useEffect(() => {
         const goToBackup = () => {
             showOptions('settings');
-            setActiveTab(TAB_KEYS.backup);
+            setSettingsTab(SETTINGS_TAB_KEYS.backup);
         };
         const cleanupIpc = window.api.on.openBackupModalFromMain(goToBackup);
-        window.addEventListener('open-backup-modal-from-main', goToBackup);
+        window.addEventListener(APP_UI_EVENT.openBackupModalFromMain, goToBackup);
         window.api.backup.getReminder().then((canOpen) => canOpen && goToBackup());
         return () => {
             cleanupIpc();
-            window.removeEventListener('open-backup-modal-from-main', goToBackup);
+            window.removeEventListener(APP_UI_EVENT.openBackupModalFromMain, goToBackup);
         };
     }, [showOptions]);
 
     useEffect(() => {
         return window.api.on.appUpdateMenu(() => {
             showOptions('settings');
-            setActiveTab(TAB_KEYS.update);
+            setSettingsTab(SETTINGS_TAB_KEYS.update);
         });
-    }, [showOptions]);
+    }, [setSettingsTab, showOptions]);
 
     useEffect(() => {
-        const handler = () => setActiveTab(TAB_KEYS.update);
+        const handler = () => setSettingsTab(SETTINGS_TAB_KEYS.update);
         window.addEventListener(UPDATE_TAB_EVENT, handler);
         return () => window.removeEventListener(UPDATE_TAB_EVENT, handler);
-    }, []);
+    }, [setSettingsTab]);
 
-    const onTabChange = useCallback((key: string) => setActiveTab(key), []);
+    const onTabChange = useCallback(
+        (key: string) => setSettingsTab(key as SettingsTabValue),
+        [setSettingsTab],
+    );
 
     const tabItems = useMemo(
         () => [
             {
-                key: TAB_KEYS.general,
+                key: SETTINGS_TAB_KEYS.general,
                 label: (
                     <span>
                         <InfoCircleOutlined /> {t('Général')}
@@ -85,7 +81,7 @@ export default function Settings() {
                 children: <GeneralTab />,
             },
             {
-                key: TAB_KEYS.documentView,
+                key: SETTINGS_TAB_KEYS.documentView,
                 label: (
                     <span>
                         <ReadOutlined /> {t('Vue document')}
@@ -94,7 +90,7 @@ export default function Settings() {
                 children: <DocumentViewTab />,
             },
             {
-                key: TAB_KEYS.languages,
+                key: SETTINGS_TAB_KEYS.languages,
                 label: (
                     <span>
                         <GlobalOutlined /> {t('Bibliothèque')}
@@ -103,7 +99,7 @@ export default function Settings() {
                 children: <LibraryTab />,
             },
             {
-                key: TAB_KEYS.tts,
+                key: SETTINGS_TAB_KEYS.tts,
                 label: (
                     <span>
                         <SoundOutlined /> {t('Lecture audio')}
@@ -112,7 +108,7 @@ export default function Settings() {
                 children: <TtsTab />,
             },
             {
-                key: TAB_KEYS.ai,
+                key: SETTINGS_TAB_KEYS.ai,
                 label: (
                     <span>
                         <CommentOutlined /> {t('Assistant')}
@@ -121,7 +117,7 @@ export default function Settings() {
                 children: <AiTab />,
             },
             {
-                key: TAB_KEYS.backup,
+                key: SETTINGS_TAB_KEYS.backup,
                 label: (
                     <span>
                         <CloudSyncOutlined /> {t('Sauvegarde')}
@@ -130,7 +126,7 @@ export default function Settings() {
                 children: <BackupTab />,
             },
             {
-                key: TAB_KEYS.update,
+                key: SETTINGS_TAB_KEYS.update,
                 label: (
                     <span>
                         <ReloadOutlined /> {t('Mise à jour')}

@@ -1,6 +1,6 @@
 # Vue d’ensemble des paramètres
 
-<p class="lead">Cette page vous montre clairement à quoi servent les paramètres de Wmb Table et quand ouvrir chaque section.</p>
+<p class="lead">Cette page montre clairement à quoi servent les paramètres de Wmb Table et quand ouvrir chaque section.</p>
 
 ## Où trouver les paramètres
 
@@ -9,6 +9,7 @@ Dans le menu de gauche, cliquez sur `Paramètres`.
 La page des paramètres contient plusieurs onglets simples :
 
 - `Général`
+- `Vue document`
 - `Bibliothèque`
 - `Assistant`
 - `Lecture audio`
@@ -18,24 +19,33 @@ La page des paramètres contient plusieurs onglets simples :
 <ScreenshotPlaceholder
   file="fr-settings-overview-page.png"
   label="Page générale des paramètres avec tous les onglets"
-  hint="Prendre un écran montrant les onglets Général, Langues, Assistant, Lecture audio, Sauvegarde et Mise à jour."
+  hint="Prendre un écran montrant les onglets Général, Vue document, Langues, Assistant, Lecture audio, Sauvegarde et Mise à jour."
 />
 
 ## À quoi sert chaque onglet
 
 ### Général
 
-Cette partie vous donne une vue rapide de l’état de l’application.
+Cette partie donne une vue rapide de l’état de l’application.
 
 Vous y voyez par exemple :
 
+- le mode d’apparence
+- la taille du texte
 - la langue de votre bibliothèque
 - la langue de l'interface
 - le nombre de langues installées
 - l’état de la sauvegarde
 - l’état des mises à jour
 
-Cette page est utile si vous voulez vérifier rapidement que tout est en ordre.
+### Vue document
+
+Cette partie sert à régler la lecture elle-même.
+
+Elle permet de :
+
+- mémoriser ou non la position de lecture
+- choisir le nombre maximum d’onglets ouverts
 
 ### Bibliothèque
 
@@ -45,8 +55,6 @@ Cette partie sert à :
 - ouvrir la gestion complète des langues
 - changer la langue de votre bibliothèque
 
-Si vous ne voyez pas les prédications attendues, c’est une des premières pages à vérifier.
-
 ### Assistant
 
 Cette partie sert à gérer la fonction de discussion IA.
@@ -54,10 +62,11 @@ Cette partie sert à gérer la fonction de discussion IA.
 Elle permet de :
 
 - activer ou désactiver l’assistant
-- choisir les réglages liés à l’assistant
-- vérifier le comportement de la fonction selon votre besoin
+- choisir le fournisseur IA
+- régler un modèle local ou un service en ligne
+- vérifier le comportement de langue
 
-Si vous voulez utiliser la discussion IA, c’est cet onglet qu’il faudra ouvrir en premier.
+Après quelque temps d’utilisation, l’application peut aussi vous rappeler cette fonction de manière discrète si elle n’a pas encore été configurée.
 
 ### Lecture audio
 
@@ -69,7 +78,7 @@ Cette partie sert à :
 - choisir le type de surlignage
 - gérer le cache audio
 
-Ouvrez cette page si vous voulez écouter vos lectures ou améliorer le confort de lecture audio.
+Si vous n’avez encore jamais configuré la lecture audio, Wmb Table peut aussi vous le rappeler plus tard avec une petite notification non bloquante.
 
 ### Sauvegarde
 
@@ -80,7 +89,7 @@ Cette partie sert à :
 - voir l’état de la sauvegarde
 - suivre la restauration de vos données
 
-Ouvrez cette page si vous voulez protéger vos notes, vos sujets et vos documents personnels.
+Comme pour l’assistant et la lecture audio, l’application peut vous rappeler cette fonction plus tard si elle n’a jamais été configurée.
 
 ### Mise à jour
 
@@ -94,33 +103,29 @@ Cette partie sert à :
 
 Si vous voulez…
 
+- faire une vérification rapide : ouvrez `Général`
+- reprendre vos lectures ou limiter les onglets : ouvrez `Vue document`
 - changer la langue de votre bibliothèque : ouvrez `Bibliothèque`
 - utiliser ou activer la discussion IA : ouvrez `Assistant`
 - écouter une prédication ou la Bible : ouvrez `Lecture audio`
 - protéger votre travail : ouvrez `Sauvegarde`
 - installer la dernière version : ouvrez `Mise à jour`
-- faire une vérification rapide : ouvrez `Général`
 
 ## Ordre conseillé pour un nouvel utilisateur
 
 Pour quelqu’un qui débute, l’ordre le plus simple est :
 
-1. `Langues`
-2. `Assistant` quand vous voudrez utiliser la fonction IA
-3. `Lecture audio` si vous voulez écouter les textes
-4. `Sauvegarde` si vous voulez sécuriser vos données
-5. `Mise à jour` de temps en temps
-
-## Conseils simples
-
-- N’essayez pas de tout régler le premier jour.
-- Commencez par choisir votre langue et la lecture.
-- Activez la sauvegarde dès que vous commencez à créer des notes et des sujets.
-- Revenez dans les paramètres seulement quand vous avez un besoin précis.
+1. `Bibliothèque`
+2. `Vue document` si vous voulez ajuster les onglets et la reprise de lecture
+3. `Assistant` quand vous voudrez utiliser la fonction IA
+4. `Lecture audio` si vous voulez écouter les textes
+5. `Sauvegarde` si vous voulez sécuriser vos données
+6. `Mise à jour` de temps en temps
 
 ## Pages détaillées
 
 - [Général](/guide/settings-general)
+- [Réglages de la vue document](/guide/settings-document-view)
 - [Bibliothèque](/guide/languages)
 - [Assistant](/guide/settings-assistant)
 - [Discussion IA](/guide/ai-chat)

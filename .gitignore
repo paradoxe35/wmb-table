@@ -56,3 +56,6 @@ docs/.vitepress/cache
 
 # Claude
 .claude/
+
+# Codex
+.codex

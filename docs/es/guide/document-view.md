@@ -66,9 +66,15 @@ Esto facilita:
 - volver a un párrafo mencionado en otra parte
 - preparar un tema o una nota desde un pasaje preciso
 
-Si quiere ir más rápido a un lugar concreto, use el botón del número de párrafo en la barra superior.
+Si quiere ir más rápido a un lugar concreto, use el botón con el número mostrado en la barra superior.
 
-Se abre una pequeña ventana con números de párrafo. Haga clic en el número que desea para ir directamente allí.
+Según el contenido, este botón abre:
+
+- una lista de párrafos para una predicación
+- una lista de versículos para un capítulo bíblico
+- una lista de párrafos para un documento personal
+
+Se abre una pequeña ventana con una lista de números. Haga clic en el que desea para ir directamente allí.
 
 <ScreenshotPlaceholder
   file="es-document-view-paragraph-picker.png"
@@ -303,6 +309,7 @@ Puede ver:
 
 - el nombre del libro y el capítulo
 - botones para capítulo anterior y siguiente
+- el botón para ir directamente a un versículo
 - lectura en voz alta
 - búsqueda dentro del capítulo abierto
 
@@ -311,6 +318,7 @@ Puede ver:
 Puede ver:
 
 - el título del documento
+- el botón para ir directamente a un párrafo
 - lectura en voz alta
 - búsqueda dentro del texto
 - las mismas acciones sobre los párrafos

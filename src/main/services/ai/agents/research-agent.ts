@@ -118,14 +118,22 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                         },
                     });
 
+                    const truncated = result.finishReason === 'length';
+                    if (truncated) {
+                        log.warn('Research agent output truncated', { topic });
+                    }
+
                     log.info('Research agent completed', {
                         topic,
                         steps: result.steps.length,
+                        truncated,
                     });
 
                     return {
                         status: 'completed',
-                        summary: result.text,
+                        summary: truncated
+                            ? `${result.text}\n\n[Research output was truncated due to length limit]`
+                            : result.text,
                     };
                 } catch (error) {
                     // Re-throw abort errors so the outer runner stops

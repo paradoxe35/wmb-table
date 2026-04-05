@@ -4,6 +4,7 @@ import lodash from 'lodash';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import log from '@main/lib/logger';
+import { DEFAULT_REMOTE_TOKEN_BUDGET } from './token-budget';
 
 const { omit, pick } = lodash;
 
@@ -12,43 +13,13 @@ export type PromptHistoryMessage = {
     content: string;
 };
 
-// ── Token budgets ──
+// ── Local-only constants ──
 
-const DEFAULT_REMOTE_TOKEN_BUDGET = 32_000;
 const LOCAL_TOKEN_BUDGET = 3_000;
 const MAX_LOADED_MESSAGES = 40;
 const LOCAL_GENERATION_RESERVE = 1024;
 const LOCAL_CONTEXT_OVERHEAD = 128;
 const MIN_KEPT_TURNS = 4;
-
-// ── Dynamic budget calculation ──
-
-const SYSTEM_PROMPT_TOKEN_ESTIMATE = 2_000;
-const TOOL_DEFINITIONS_TOKEN_ESTIMATE = 5_000;
-const OUTPUT_TOKEN_RESERVE = 6_144;
-const BUDGET_SAFETY_MARGIN = 512;
-const MIN_HISTORY_BUDGET = 4_000;
-const MAX_HISTORY_BUDGET = 200_000;
-
-/**
- * Calculate the conversation history token budget based on a model's context window.
- * Subtracts estimated system prompt, tool definitions, output reserve, and safety margin.
- * Returns a safe default when the context window is unknown.
- */
-export function calculateRemoteTokenBudget(contextWindow?: number): number {
-    if (!contextWindow) {
-        return DEFAULT_REMOTE_TOKEN_BUDGET;
-    }
-
-    const budget =
-        contextWindow -
-        SYSTEM_PROMPT_TOKEN_ESTIMATE -
-        TOOL_DEFINITIONS_TOKEN_ESTIMATE -
-        OUTPUT_TOKEN_RESERVE -
-        BUDGET_SAFETY_MARGIN;
-
-    return Math.max(MIN_HISTORY_BUDGET, Math.min(budget, MAX_HISTORY_BUDGET));
-}
 
 // ── Per-message formatting limits ──
 
@@ -369,14 +340,14 @@ function cleanToolOutput(name: string, output: any): unknown {
             return {
                 ...output,
                 documents: output.documents.map((doc: any) => ({
-                    ...omit(doc, ['documentHtmlTree', 'textContent']),
+                    ...omit(doc, ['documentReference', 'textContent']),
                     textContent: previewText(doc.textContent, LONG_PREVIEW),
                 })),
             };
 
         case 'addBibleReferenceToSubject':
         case 'addSermonReferenceToSubject':
-            return omit(output, ['documentHtmlTree', 'textContent', 'bible']);
+            return omit(output, ['documentReference', 'textContent', 'bible']);
 
         case 'getNoteById':
         case 'createNote':

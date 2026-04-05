@@ -2,16 +2,16 @@ import { useTtsStore, selectCurrentTtsSegment } from '@renderer/stores/tts.store
 
 export function useTtsHighlight(
     paragraphIndex: number,
-    documentId: string,
+    documentKey: string,
 ): {
     isActive: boolean;
     highlightRange: { start: number; end: number } | null;
 } {
     const currentSegment = useTtsStore(selectCurrentTtsSegment);
     const status = useTtsStore((s) => s.status);
-    const storeDocumentId = useTtsStore((s) => s.documentId);
+    const storeDocumentKey = useTtsStore((s) => s.documentKey);
     const isActive =
-        storeDocumentId === documentId &&
+        storeDocumentKey === documentKey &&
         (status === 'playing' || status === 'loading') &&
         currentSegment?.paragraphIndex === paragraphIndex;
     const highlightRange =

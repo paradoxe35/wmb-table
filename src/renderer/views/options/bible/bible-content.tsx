@@ -1,9 +1,20 @@
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Collapse, Empty, List, Segmented, Space, Spin, Typography, Dropdown } from 'antd';
+import {
+    Button,
+    Collapse,
+    Empty,
+    List,
+    Segmented,
+    Space,
+    Spin,
+    Typography,
+    Dropdown,
+    message,
+} from 'antd';
 import { DownOutlined, LoadingOutlined } from '@ant-design/icons';
-import type { BibleBook, BibleIndex, BibleIndexValue, SubjectRefTree } from '@shared/types';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import type { BibleBook, BibleIndex, BibleIndexValue } from '@shared/types';
+import { CHILD_PARENT_WINDOW_EVENT, type AddDocumentReferenceDetail } from '@renderer/utils/events';
 import { useAppStore } from '@renderer/stores';
 
 // ---------------------------------------------------------------------------
@@ -20,12 +31,13 @@ export function BibleContent({
     compact?: boolean;
 }) {
     const { t } = useTranslation();
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const [bibleIndex, setBibleIndex] = useState<Record<string, BibleIndex>>({});
     const [noBible, setNoBible] = useState(false);
 
     const loadIndex = useCallback(() => {
         window.api.bible
-            .getIndexes()
+            .getIndexes(activeBibleVersion?.abbreviation)
             .then((flat) => {
                 if (!flat || Object.keys(flat).length === 0) {
                     setNoBible(true);
@@ -43,9 +55,7 @@ export function BibleContent({
             .catch(() => {
                 setNoBible(true);
             });
-    }, []);
-
-    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    }, [activeBibleVersion?.abbreviation]);
 
     useEffect(() => {
         loadIndex();
@@ -210,6 +220,7 @@ function BookContent({
     onClick?: (id: string) => void;
     verseMetaContent?: boolean;
 }) {
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const [chaptersKey, setChaptersKey] = useState(1);
     const [verses, setVerses] = useState<BibleBook[]>();
 
@@ -218,24 +229,23 @@ function BookContent({
             .getBooks({
                 book: bookDetail.book,
                 chapter: chaptersKey.toString(),
+                bibleVersionAbbreviation: activeBibleVersion?.abbreviation,
             })
             .then(setVerses);
-    }, [chaptersKey, bookDetail.book]);
+    }, [activeBibleVersion?.abbreviation, chaptersKey, bookDetail.book]);
 
     const sortedVerses = useMemo(
         () => (verses ? verses.slice().sort((a, b) => +a.verse - +b.verse) : []),
         [verses],
     );
 
-    const chapterList = useMemo(
-        () =>
-            bookDetail.chapters
-                .split(',')
-                .map((c) => c.trim())
-                .filter(Boolean)
-                .sort((a, b) => +a - +b),
-        [bookDetail.chapters],
-    );
+    const chapterList = useMemo(() => {
+        return bookDetail.chapters
+            .split(',')
+            .map((c) => c.trim())
+            .filter(Boolean)
+            .sort((a, b) => +a - +b);
+    }, [bookDetail.chapters]);
 
     return (
         <Collapse
@@ -385,14 +395,40 @@ const VerseItem = memo(function VerseItem({
 
 const AddToSubject = memo(function AddToSubject({ verse }: { verse: BibleBook }) {
     const { t } = useTranslation();
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const bibleVersionAbbreviation = activeBibleVersion?.abbreviation;
     const handler = useCallback(() => {
+        if (!bibleVersionAbbreviation) {
+            message.warning(t('Aucune version biblique active disponible.'));
+            return;
+        }
+
         window.dispatchEvent(
-            new CustomEvent<Partial<SubjectRefTree>>(
+            new CustomEvent<AddDocumentReferenceDetail>(
                 CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
-                { detail: { bible: verse } },
+                {
+                    detail: {
+                        documentTitle: `${verse.bookName} ${verse.chapter}`,
+                        documentPreview: {
+                            kind: 'bible-verse',
+                            bibleVerse: verse,
+                        },
+                        textContent: verse.content,
+                        documentReference: {
+                            kind: 'tree',
+                            documentIdentity: {
+                                documentType: 'bible',
+                                bibleBook: verse.book,
+                                bibleChapter: verse.chapter,
+                                bibleVersionAbbreviation,
+                            },
+                            tree: [+verse.verse],
+                        },
+                    },
+                },
             ),
         );
-    }, [verse]);
+    }, [bibleVersionAbbreviation, verse]);
 
     const menuItems = useMemo(
         () => [{ key: 'add', label: t('Ajouter à un sujet'), onClick: handler }],

@@ -18,8 +18,8 @@ function toBibleVersionInfo(v: bibleService.BibleVersion): BibleVersionInfo {
 }
 
 export function registerBibleHandlers(): void {
-    registerHandler(BibleChannels.getIndexes, async () => {
-        return bibleRepo.getIndexes();
+    registerHandler(BibleChannels.getIndexes, async (_event, bibleVersionAbbreviation) => {
+        return bibleRepo.getIndexes(bibleVersionAbbreviation);
     });
 
     registerHandler(BibleChannels.getBooks, async (_event, request) => {
@@ -33,7 +33,7 @@ export function registerBibleHandlers(): void {
     registerHandler(BibleChannels.getVersions, async () => {
         const langCode = configRepo.getContentLanguage();
         if (!langCode) return [];
-        return bibleService.getBibleVersionsForLanguage(langCode).map(toBibleVersionInfo);
+        return bibleService.getBibleVersionsForResolvedLanguage(langCode).map(toBibleVersionInfo);
     });
 
     registerHandler(BibleChannels.getAllVersions, async () => {
@@ -47,8 +47,9 @@ export function registerBibleHandlers(): void {
     });
 
     registerHandler(BibleChannels.switchVersion, async (_event, abbreviation) => {
-        bibleService.switchBibleVersion(abbreviation);
+        const version = bibleService.switchBibleVersion(abbreviation);
         refreshBibleDrizzle();
+        configRepo.setActiveBibleVersionAbbreviation(version?.abbreviation ?? null);
     });
 
     registerHandler(BibleChannels.refreshIndex, async () => {

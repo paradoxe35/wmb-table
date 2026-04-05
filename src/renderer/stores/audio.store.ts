@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import type { CurrentAudioDocumentPlay } from '@shared/types';
+import { createStore } from './create-store';
 
 interface AudioState {
     currentPlay: CurrentAudioDocumentPlay | null;
@@ -7,7 +7,9 @@ interface AudioState {
     originAudioLink: string | null;
     title: string | null;
     sermonId: string | null;
-    traduction: string | null;
+    translationId: number | null;
+    languageCode: string | null;
+    languageLabel: string | null;
     currentTime: number;
     duration: number;
     playbackRate: number;
@@ -19,9 +21,11 @@ interface AudioState {
         src: string,
         originLink: string,
         title: string,
-        traduction: string,
+        languageLabel: string,
         defaultTime: number,
         sermonId: string,
+        translationId: number | null,
+        languageCode: string | null,
     ): void;
     setCurrentTime(t: number): void;
     setDuration(d: number): void;
@@ -35,13 +39,15 @@ interface AudioState {
     setError(error: string | null): void;
 }
 
-export const useAudioStore = create<AudioState>((set) => ({
+export const useAudioStore = createStore<AudioState>((set) => ({
     currentPlay: null,
     audioSrc: null,
     originAudioLink: null,
     title: null,
     sermonId: null,
-    traduction: null,
+    translationId: null,
+    languageCode: null,
+    languageLabel: null,
     currentTime: 0,
     duration: 0,
     playbackRate: 1,
@@ -50,13 +56,24 @@ export const useAudioStore = create<AudioState>((set) => ({
     modalOpen: false,
     error: null,
 
-    loadAudio: (src, originLink, title, traduction, defaultTime, sermonId) =>
+    loadAudio: (
+        src,
+        originLink,
+        title,
+        languageLabel,
+        defaultTime,
+        sermonId,
+        translationId,
+        languageCode,
+    ) =>
         set({
             audioSrc: src,
             originAudioLink: originLink,
             title,
             sermonId,
-            traduction,
+            translationId,
+            languageCode,
+            languageLabel,
             defaultTime,
             currentTime: defaultTime,
         }),
@@ -73,7 +90,9 @@ export const useAudioStore = create<AudioState>((set) => ({
             originAudioLink: null,
             title: null,
             sermonId: null,
-            traduction: null,
+            translationId: null,
+            languageCode: null,
+            languageLabel: null,
             currentTime: 0,
             duration: 0,
             defaultTime: 0,

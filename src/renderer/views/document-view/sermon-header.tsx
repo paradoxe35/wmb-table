@@ -9,14 +9,25 @@ import {
     SearchOutlined,
 } from '@ant-design/icons';
 import {
-    useSermonStore,
+    useDocumentTabsStore,
     useSearchStore,
     useAudioStore,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { usePrepareTabIdentityChange } from '@renderer/hooks';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type { SermonMeta, SermonMetaWithTraductions, SermonParagraph } from '@shared/types';
-import { CHILD_PARENT_WINDOW_EVENT } from '@renderer/utils/events';
+import type {
+    AvailableTranslation,
+    AudioDocumentPlayRequest,
+    SermonMeta,
+    SermonParagraph,
+} from '@shared/types';
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    type AudioDocumentPlayDetail,
+    type OpenOtherTranslationsModalDetail,
+} from '@renderer/utils/events';
+import { getLanguageDisplayName } from '@shared/tts.types';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
 import { useDocumentZoom } from './hooks';
@@ -24,90 +35,126 @@ import { useDocumentZoom } from './hooks';
 export default function SermonHeader({
     meta,
     zoom,
-    sermonInfo,
+    availableTranslations,
     currentTranslationId,
     paragraphs,
     tts,
 }: {
     meta: SermonMeta;
     zoom: number;
-    sermonInfo: SermonMetaWithTraductions | undefined;
+    availableTranslations: AvailableTranslation[];
     currentTranslationId: number;
     paragraphs: SermonParagraph[];
     tts?: TtsControls;
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
-    const updateTabTranslationId = useSermonStore((s) => s.updateTabTranslationId);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const updateSermonTab = useDocumentTabsStore((s) => s.updateSermonTab);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const prepareTabIdentityChange = usePrepareTabIdentityChange();
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     const currentPlay = useAudioStore((s) => s.currentPlay);
-    const audioTitle = useAudioStore((s) => s.title);
-    const isCurrentDocument = audioTitle === meta.title;
+    const audioSermonId = useAudioStore((s) => s.sermonId);
+    const audioTranslationId = useAudioStore((s) => s.translationId);
+    const audioLanguageCode = useAudioStore((s) => s.languageCode);
+    const isCurrentDocument =
+        audioSermonId === meta.sermonId &&
+        audioTranslationId === meta.translationId &&
+        audioLanguageCode === meta.languageCode;
     const isPlaying = isCurrentDocument && currentPlay?.status === 'play';
 
-    const availableTraductions = useMemo(
-        () => sermonInfo?.availableTraductions ?? [],
-        [sermonInfo?.availableTraductions],
-    );
-    const hasMultipleTraductions = availableTraductions.length > 1;
-
-    const openAudioModal = useAudioStore((s) => s.openModal);
+    const hasMultipleTranslations = availableTranslations.length > 1;
 
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
 
-        // Open modal for new documents or when audio is paused
-        if (!isCurrentDocument || !isPlaying) {
-            openAudioModal();
-        }
+        const detail: AudioDocumentPlayRequest = {
+            title: meta.title,
+            audioLink: meta.audioLink,
+            languageLabel: getLanguageDisplayName(meta.languageCode),
+            languageCode: meta.languageCode,
+            sermonId: meta.sermonId,
+            translationId: meta.translationId,
+            autoplay: true,
+        };
 
         window.dispatchEvent(
-            new CustomEvent(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
-                detail: {
-                    id: meta.id,
-                    title: meta.title,
-                    frTitle: meta.title,
-                    enTitle: meta.enTitle ?? '',
-                    traduction: meta.languageCode,
-                    audio_link: meta.audioLink,
-                    sermonId: meta.sermonId,
-                    autoplay: true,
-                },
+            new CustomEvent<AudioDocumentPlayDetail>(CHILD_PARENT_WINDOW_EVENT.audioDocumentPlay, {
+                detail,
             }),
         );
-    }, [meta, isCurrentDocument, isPlaying, openAudioModal]);
+    }, [meta]);
 
-    const handleOtherTraductions = useCallback(() => {
-        window.dispatchEvent(new Event(CHILD_PARENT_WINDOW_EVENT.openOtherTraductionsModal));
-    }, []);
+    const handleOtherTranslations = useCallback(() => {
+        if (!activeTabKey) {
+            return;
+        }
 
-    const handleTraductionChange = useCallback(
+        const detail: OpenOtherTranslationsModalDetail = {
+            tabKey: activeTabKey,
+            sermonId: meta.sermonId,
+            title: meta.title,
+            currentTranslationId: meta.translationId,
+            currentLanguageCode: meta.languageCode,
+        };
+
+        window.dispatchEvent(
+            new CustomEvent<OpenOtherTranslationsModalDetail>(
+                CHILD_PARENT_WINDOW_EVENT.openOtherTranslationsModal,
+                { detail },
+            ),
+        );
+    }, [activeTabKey, meta.languageCode, meta.sermonId, meta.title, meta.translationId]);
+
+    const handleTranslationChange = useCallback(
         (value: string | number) => {
-            if (activeTabKey) updateTabTranslationId(activeTabKey, Number(value));
+            if (!activeTabKey) {
+                return;
+            }
+
+            const nextTranslation = availableTranslations.find(
+                (tr) => tr.translationId === Number(value),
+            );
+            if (!nextTranslation) {
+                return;
+            }
+
+            prepareTabIdentityChange(activeTabKey);
+            updateSermonTab(activeTabKey, {
+                title: nextTranslation.title,
+                documentId: meta.sermonId,
+                translationId: nextTranslation.translationId,
+                languageCode: nextTranslation.languageCode,
+            });
         },
-        [activeTabKey, updateTabTranslationId],
+        [
+            activeTabKey,
+            availableTranslations,
+            meta.sermonId,
+            prepareTabIdentityChange,
+            updateSermonTab,
+        ],
     );
 
-    const traductionOptions = useMemo(
-        () =>
-            availableTraductions.map((t) => ({
-                label: t.traductionName ?? `T${t.translationId}`,
-                value: t.translationId,
-            })),
-        [availableTraductions],
-    );
+    const translationOptions = useMemo(() => {
+        return availableTranslations.map((translation) => ({
+            label: translation.translationName ?? `T${translation.translationId}`,
+            value: translation.translationId,
+        }));
+    }, [availableTranslations]);
+
+    const canOpenTranslations = Boolean(meta.sermonId);
 
     return (
         <div className="sermon-header">
-            {hasMultipleTraductions && (
+            {hasMultipleTranslations && (
                 <Segmented
                     size="small"
-                    options={traductionOptions}
+                    options={translationOptions}
                     value={currentTranslationId}
-                    onChange={handleTraductionChange}
+                    onChange={handleTranslationChange}
                 />
             )}
             <div style={{ flex: 1 }} />
@@ -132,15 +179,17 @@ export default function SermonHeader({
                     </Tooltip>
                 )}
                 {tts && <TtsButton tts={tts} />}
-                <Tooltip title={t('Traductions')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<TranslationOutlined />}
-                        onClick={handleOtherTraductions}
-                        aria-label={t('Traductions')}
-                    />
-                </Tooltip>
+                {canOpenTranslations && (
+                    <Tooltip title={t('Traductions')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<TranslationOutlined />}
+                            onClick={handleOtherTranslations}
+                            aria-label={t('Traductions')}
+                        />
+                    </Tooltip>
+                )}
                 <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
                 <Tooltip title={t('Sélectionnez un paragraphe')}>
                     <Button

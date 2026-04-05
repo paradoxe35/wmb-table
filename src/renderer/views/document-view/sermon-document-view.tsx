@@ -1,5 +1,12 @@
-import { useMemo, useRef } from 'react';
-import { useAppStore, useSermonStore, selectActiveTab, selectActiveTabKey } from '@renderer/stores';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import {
+    useDocumentTabsStore,
+    useAppStore,
+    selectActiveDocumentIdentity,
+    selectActiveSermonTab,
+    selectActiveTabKey,
+} from '@renderer/stores';
 import SermonHeader from './sermon-header';
 import SermonContentHeader from './sermon-content-header';
 import { ParagraphList } from './tts-controls';
@@ -16,32 +23,36 @@ import {
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
 import { useFormatSermonDate } from '@renderer/hooks';
-import { buildSegmentAnnouncement, buildSermonIntroText } from '@shared/tts.types';
+import {
+    buildSegmentAnnouncement,
+    buildSermonIntroText,
+    getLanguageLabelNative,
+} from '@shared/tts.types';
+import type { AvailableTranslation } from '@shared/types';
+import { getDocumentIdentityKey } from '@shared/types';
 
 export default function SermonDocumentView() {
+    const { t } = useTranslation();
     const { content, loading } = useSermonContent();
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
-    const contextMenuItems = useContextMenuItems(content, contextTargetRef);
-
-    const activeTab = useSermonStore(selectActiveTab);
-    const sermonsById = useSermonStore((s) => s.sermonsById);
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const sermonInfo = activeTab?.sermonId ? sermonsById[activeTab.sermonId] : undefined;
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const updateTabTitle = useDocumentTabsStore((s) => s.updateTabTitle);
+    const activeTab = useDocumentTabsStore(selectActiveSermonTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const tabTranslationId = activeTab?.translationId;
+    const [availableTranslations, setAvailableTranslations] = useState<AvailableTranslation[]>([]);
+    const ttsDocumentKey = activeDocumentIdentity
+        ? getDocumentIdentityKey(activeDocumentIdentity)
+        : '';
     const { restoreIdentity, readingPositionKey } = resolveSermonScrollPersistence(
         activeTab,
-        sermonInfo,
-        contentLanguage,
         content,
     );
     useReferenceNavigation(containerRef, {
         contentReady: !!content,
-        documentType: 'sermon',
-        sermonId: activeTab?.sermonId,
-        translationId: tabTranslationId ?? content?.meta.translationId,
+        documentIdentity: activeDocumentIdentity,
     });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!content,
@@ -59,6 +70,73 @@ export default function SermonDocumentView() {
     );
 
     const formatDate = useFormatSermonDate();
+    const contentMatchesActiveTab =
+        !!activeTab &&
+        !!content &&
+        content.meta.sermonId === activeTab.documentId &&
+        content.meta.translationId === activeTab.translationId &&
+        content.meta.languageCode === activeTab.languageCode;
+
+    useEffect(() => {
+        if (!activeTabKey || !content?.meta.title || !contentMatchesActiveTab) {
+            return;
+        }
+
+        updateTabTitle(activeTabKey, content.meta.title);
+    }, [activeTabKey, content?.meta.title, contentMatchesActiveTab, updateTabTitle]);
+
+    useEffect(() => {
+        if (!activeTab?.documentId || !activeTab.languageCode) {
+            setAvailableTranslations([]);
+            return;
+        }
+
+        let cancelled = false;
+        window.api.documents
+            .getTranslationsForSermonInLanguage(activeTab.documentId, activeTab.languageCode)
+            .then((translations) => {
+                if (cancelled) {
+                    return;
+                }
+
+                setAvailableTranslations(
+                    translations.map((translation) => ({
+                        translationId: translation.translationId,
+                        languageCode: translation.languageCode,
+                        title: translation.title,
+                        translationName: translation.translationName,
+                    })),
+                );
+            })
+            .catch(() => {
+                if (!cancelled) {
+                    setAvailableTranslations([]);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeTab?.documentId, activeTab?.languageCode]);
+
+    const headerTranslations = useMemo(() => {
+        if (availableTranslations.length > 0) {
+            return availableTranslations;
+        }
+
+        if (!content?.meta) {
+            return [];
+        }
+
+        return [
+            {
+                translationId: content.meta.translationId,
+                languageCode: content.meta.languageCode,
+                title: content.meta.title,
+                translationName: content.meta.translationName,
+            },
+        ];
+    }, [availableTranslations, content?.meta]);
 
     const ttsIntroText = useMemo(() => {
         if (!content?.meta) return undefined;
@@ -67,11 +145,50 @@ export default function SermonDocumentView() {
         return buildSermonIntroText(title, dateStr, location, languageCode);
     }, [content?.meta, formatDate]);
 
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const langCode = content?.meta.languageCode ?? '';
-    const tts = useTts(ttsParagraphs, langCode, content?.meta.title ?? '', {
+    const tts = useTts(ttsParagraphs, langCode, ttsDocumentKey, {
         introText: ttsIntroText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
     });
+    const effectiveTts = useMemo(() => {
+        const langMismatch =
+            !!content?.meta.languageCode &&
+            !!contentLanguage &&
+            content.meta.languageCode !== contentLanguage;
+        const activeLanguageLabel = contentLanguage
+            ? getLanguageLabelNative(contentLanguage)
+            : undefined;
+
+        if (!langMismatch) {
+            return tts;
+        }
+
+        return {
+            ...tts,
+            canSpeak: false,
+            incompatibleMessage: t(
+                'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.',
+                { language: activeLanguageLabel ?? contentLanguage ?? '' },
+            ),
+        };
+    }, [tts, content?.meta.languageCode, contentLanguage, t]);
+    const contextMenuContent = useMemo(() => {
+        if (!content || !activeDocumentIdentity) {
+            return null;
+        }
+
+        return {
+            documentTitle: content.meta.title,
+            documentIdentity: activeDocumentIdentity,
+            languageCode: content.meta.languageCode,
+            paragraphs: ttsParagraphs,
+            sermonDateMs: content.meta.dateMs,
+            sermonTranslationId: content.meta.translationId,
+        };
+    }, [content, activeDocumentIdentity, ttsParagraphs]);
+
+    const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef);
 
     const { activeParagraphIndex } = useMatchNavigation(
         containerRef,
@@ -80,10 +197,7 @@ export default function SermonDocumentView() {
         ttsParagraphs,
         !!restoreIdentity,
     );
-    const { highlightsByParagraph } = useDocumentHighlights(
-        content?.meta.title ?? null,
-        activeTab?.sermonId,
-    );
+    const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
     return (
         <DocumentBody
@@ -98,10 +212,10 @@ export default function SermonDocumentView() {
                     <SermonHeader
                         meta={content.meta}
                         zoom={zoom}
-                        sermonInfo={sermonInfo}
+                        availableTranslations={headerTranslations}
                         currentTranslationId={tabTranslationId ?? content.meta.translationId}
                         paragraphs={content.paragraphs}
-                        tts={tts}
+                        tts={effectiveTts}
                     />
                 )
             }
@@ -110,13 +224,13 @@ export default function SermonDocumentView() {
             {content && (
                 <ParagraphList
                     paragraphs={ttsParagraphs}
-                    documentId={content.meta.title}
+                    documentKey={ttsDocumentKey}
                     search={search}
                     activeParagraphIndex={activeParagraphIndex}
                     highlightsByParagraph={highlightsByParagraph}
-                    onPlayFromHere={tts.playFromParagraph}
-                    canSpeak={tts.canSpeak}
-                    incompatibleMessage={tts.incompatibleMessage}
+                    onPlayFromHere={effectiveTts.playFromParagraph}
+                    canSpeak={effectiveTts.canSpeak}
+                    incompatibleMessage={effectiveTts.incompatibleMessage}
                 />
             )}
         </DocumentBody>

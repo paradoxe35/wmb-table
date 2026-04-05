@@ -22,11 +22,17 @@ const es: Record<string, string> = {
     Documents: 'Documentos',
     'Aucun document ajouté': 'Ningún documento añadido',
     'Ajouter un document': 'Añadir un documento',
+    'Choisir un document': 'Elegir un documento',
     Gérer: 'Gestionar',
     Alphabet: 'Alfabeto',
     Année: 'Año',
     Années: 'Años',
     'A-Z': 'A-Z',
+    'Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.':
+        'Formatos compatibles: PDF, TXT, MD, DOCX, EPUB.',
+    "Erreur lors de l'import du document.": 'Error al importar el documento.',
+    'Format de document non pris en charge.': 'Formato de documento no compatible.',
+    'Le fichier est trop volumineux.': 'El archivo es demasiado grande.',
 
     // ── Settings index ──
     Général: 'General',
@@ -88,6 +94,9 @@ const es: Record<string, string> = {
         'Más completo, mejor comprensión. Requiere un poco más de memoria.',
     'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
         'Funciona sin conexión a internet, directamente en su ordenador. Descargue un modelo para comenzar.',
+    'Le mode local est plus limité': 'El modo local es más limitado',
+    'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.':
+        'El modo local puede responder más lentamente y con menos precisión, especialmente en preguntas largas o difíciles.',
     'Utiliser la carte graphique (GPU)': 'Usar tarjeta gráfica (GPU)',
     'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
         'Acelera las respuestas si su ordenador tiene una tarjeta gráfica compatible. Desactive esta opción en caso de problemas.',
@@ -106,6 +115,34 @@ const es: Record<string, string> = {
     Connecté: 'Conectado',
     Échec: 'Error',
     'La connexion a échoué.': 'La conexión ha fallado.',
+    'La clé API est manquante pour ce fournisseur.': 'Falta la clave API para este proveedor.',
+    'Fournisseur IA inconnu.': 'Proveedor IA desconocido.',
+    'Validation du fournisseur impossible.': 'No se pudo validar el proveedor.',
+    'Le mode local nécessite une langue par défaut et un moteur local actif.':
+        'El modo local requiere un idioma predeterminado y un motor local activo.',
+    'La synthèse du navigateur est gérée dans le processus renderer.':
+        'La síntesis del navegador se gestiona en el proceso renderer.',
+    'La prévisualisation du navigateur est gérée dans le processus renderer.':
+        'La vista previa del navegador se gestiona en el proceso renderer.',
+    'Fournisseur TTS inconnu.': 'Proveedor TTS desconocido.',
+    'Fournisseur TTS introuvable.': 'Proveedor TTS no encontrado.',
+    'Ce fournisseur ne prend pas en charge le téléchargement de modèles.':
+        'Este proveedor no admite la descarga de modelos.',
+    'Ce fournisseur ne prend pas en charge la suppression de modèles.':
+        'Este proveedor no admite la eliminación de modelos.',
+    'Ce fournisseur ne prend pas en charge le clonage de voix.':
+        'Este proveedor no admite la clonación de voces.',
+    'Voix de référence introuvable.': 'Voz de referencia no encontrada.',
+    "La clé API OpenAI n'est pas configurée.": 'La clave API de OpenAI no está configurada.',
+    "La clé API ElevenLabs n'est pas configurée.":
+        'La clave API de ElevenLabs no está configurada.',
+    "La clé API Cartesia n'est pas configurée.": 'La clave API de Cartesia no está configurada.',
+    "Aucune voix Cartesia n'est sélectionnée.": 'No hay ninguna voz de Cartesia seleccionada.',
+    'La langue est requise pour cloner une voix Cartesia.':
+        'El idioma es obligatorio para clonar una voz de Cartesia.',
+    'Le nom du modèle est requis pour le téléchargement Sherpa.':
+        'Se requiere un nombre de modelo para la descarga de Sherpa.',
+    'Modèle Sherpa inconnu.': 'Modelo Sherpa desconocido.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":
@@ -118,6 +155,21 @@ const es: Record<string, string> = {
     // ── AI chat ──
     "L'assistant IA est désactivé.": 'El asistente IA está desactivado.',
     'Ouvrir les paramètres': 'Abrir configuración',
+    'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
+        '¿Sabía que <u>{{feature}}</u> puede ayudarle a explorar un tema y comprender más rápido lo que está buscando?',
+    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Active <u>{{feature}}</u> para hacer preguntas, profundizar en un tema, comparar varias predicaciones, encontrar pasajes bíblicos y obtener respuestas claras sin tener que recorrerlo todo manualmente.',
+    "Ouvrir les réglages de l'assistant": 'Abrir ajustes del asistente',
+    'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
+        '¿Sabía que <u>{{feature}}</u> puede leer sus documentos?',
+    'Choisissez une voix pour <u>{{feature}}</u>, puis lancez la lecture directement depuis vos documents.':
+        'Elija una voz para <u>{{feature}}</u> y luego inicie la lectura directamente desde sus documentos.',
+    'Ouvrir les réglages audio': 'Abrir ajustes de audio',
+    'Le saviez-vous ? <u>{{feature}}</u> peut protéger vos données.':
+        '¿Sabía que <u>{{feature}}</u> puede proteger sus datos?',
+    'Connectez Google Drive pour que <u>{{feature}}</u> garde vos notes, sujets et réglages synchronisés.':
+        'Conecte Google Drive para que <u>{{feature}}</u> mantenga sincronizados sus notas, temas y ajustes.',
+    'Ouvrir les réglages de sauvegarde': 'Abrir ajustes de copia de seguridad',
     'Posez votre question...': 'Haga su pregunta...',
     Envoyer: 'Enviar',
     Arrêter: 'Detener',
@@ -190,9 +242,6 @@ const es: Record<string, string> = {
     'Pause entre les segments: {{gap}}s': 'Pausa entre segmentos: {{gap}}s',
     'Durée de la pause entre chaque phrase ou paragraphe lu.':
         'Duración de la pausa entre cada frase o párrafo leído.',
-    'Lecture automatique': 'Reproducción automática',
-    "Démarrer la lecture automatiquement à l'ouverture d'un document.":
-        'Iniciar la lectura automáticamente al abrir un documento.',
     'Cache audio': 'Caché de audio',
     'Les lectures passées sont conservées pour une relecture plus rapide.':
         'Las lecturas anteriores se conservan para una reproducción más rápida.',
@@ -267,6 +316,8 @@ const es: Record<string, string> = {
     'Modèle Kokoro téléchargé': 'Modelo Kokoro descargado',
     'Erreur: {{error}}': 'Error: {{error}}',
     'Erreur lors de la prévisualisation de la voix': 'Error al probar la voz',
+    "Impossible d'enregistrer les paramètres de Lecture audio.":
+        'No se pudieron guardar los ajustes de texto a voz.',
 
     // ── TTS provider Sherpa ──
     'Voix disponible — {{lang}}': 'Voz disponible — {{lang}}',
@@ -282,6 +333,9 @@ const es: Record<string, string> = {
     'Voix installée': 'Voz instalada',
     'Voix supprimée': 'Voz eliminada',
     Télécharger: 'Descargar',
+    Téléchargement: 'Descargando',
+    Extraction: 'Extrayendo',
+    Finalisation: 'Finalizando',
     'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
         'No hay voces disponibles para el idioma activo. Use la búsqueda anterior para encontrar una voz en otro idioma.',
 
@@ -384,6 +438,8 @@ const es: Record<string, string> = {
     Enregistrer: 'Guardar',
     'Erreur lors du chargement des sujets': 'Error al cargar los temas',
     'Erreur lors du chargement des éléments du sujet': 'Error al cargar los elementos del tema',
+    'Erreur lors de la réorganisation des références':
+        'Error al reorganizar las referencias del tema',
     'Sujet créé': 'Tema creado',
     'Un sujet avec ce nom existe déjà.': 'Ya existe un tema con este nombre.',
     'Sujet introuvable': 'Tema no encontrado',
@@ -488,6 +544,8 @@ const es: Record<string, string> = {
     'Langue modifiée': 'Idioma cambiado',
     'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.':
         'El idioma del documento no coincide con el idioma activo. Cambie el idioma en los ajustes.',
+    'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.':
+        'El idioma del documento no coincide con el idioma activo ({{language}}). Cambie el idioma en los ajustes.',
     'Traitement...': 'Procesando...',
     Retour: 'Volver',
     "Erreur lors de l'extraction du document.": 'Error al extraer el documento.',
@@ -544,6 +602,7 @@ const es: Record<string, string> = {
     'Autres langues': 'Otros idiomas',
     'Langue: {{code}}': 'Idioma: {{code}}',
     'Ouvrir le document': 'Abrir documento',
+    'Aucune autre traduction disponible': 'No hay otras traducciones disponibles',
 
     // ── Subject select modal ──
     'Choiser un sujet': 'Elegir un tema',
@@ -570,6 +629,8 @@ const es: Record<string, string> = {
     // ── Paragraph navigator modal ──
     'Sélectionnez un paragraphe': 'Seleccione un párrafo',
     'Aucun paragraphe': 'Sin párrafos',
+    'Sélectionnez un verset': 'Seleccione un versículo',
+    'Aucun verset': 'Sin versículos',
 
     // ── Sermon paragraph ──
     'Surlignage supprimé': 'Resaltado eliminado',
@@ -606,6 +667,8 @@ const es: Record<string, string> = {
 
     // ── Bible content ──
     'Aucune Bible disponible pour cette langue': 'No hay Biblia disponible para este idioma',
+    'Aucune version biblique active disponible.':
+        'No hay ninguna versión bíblica activa disponible.',
     Ancien: 'Antiguo',
     Testament: 'Testamento',
     'Ajouter à un sujet': 'Añadir a un tema',
@@ -725,6 +788,7 @@ const es: Record<string, string> = {
     'Aucune prédication similaire trouvée': 'No se encontraron predicaciones similares',
     Prédication: 'Predicación',
     Document: 'Documento',
+    Référence: 'Referencia',
     'Sauvegarde de données': 'Guardando datos',
     'Restauration de données': 'Restaurando datos',
 
@@ -777,6 +841,12 @@ const es: Record<string, string> = {
     Clair: 'Claro',
     Sombre: 'Oscuro',
     Système: 'Sistema',
+    'Utilise le thème clair en journée et le thème sombre le soir.':
+        'Usa el tema claro durante el día y el tema oscuro por la noche.',
+    "Suit automatiquement l'apparence définie par votre système.":
+        'Sigue automáticamente la apariencia definida por su sistema.',
+    'Utilise toujours le thème clair.': 'Usa siempre el tema claro.',
+    'Utilise toujours le thème sombre.': 'Usa siempre el tema oscuro.',
 };
 
 export default es;

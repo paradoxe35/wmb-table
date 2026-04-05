@@ -1,5 +1,4 @@
 import log from 'electron-log';
-import { normalizeLangCode } from './sherpa-catalog';
 import type { TtsProvider } from './provider';
 import type {
     TtsProviderType,
@@ -9,6 +8,7 @@ import type {
     TtsSynthesizeResult,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
+import { normalizeLanguageCode } from '@shared/tts.types';
 
 const OPENAI_VOICES = [
     'alloy',
@@ -111,7 +111,7 @@ export class OpenAiProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = normalizeLangCode(langCode);
+        const code = normalizeLanguageCode(langCode);
         if (!SUPPORTED_LANGUAGES.includes(code)) {
             return { supported: false, reason: 'unsupported_language' };
         }
@@ -119,7 +119,7 @@ export class OpenAiProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        if (!this.apiKey) throw new Error('OpenAI API key not configured');
+        if (!this.apiKey) throw new Error("La clé API OpenAI n'est pas configurée.");
 
         const model = request.model ?? this.model;
         const voice = request.voiceId ?? this.voiceId;

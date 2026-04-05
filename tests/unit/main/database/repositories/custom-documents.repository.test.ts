@@ -10,11 +10,13 @@ describe('custom-documents.repository', () => {
     it('custom documents CRUD', () => {
         const doc = customDocsRepo.createCustomDocument('My Custom Doc', 'Hello world content');
         expect(doc.title).toBe('My Custom Doc');
+        expect((doc as Record<string, unknown>).sermonId).toBeUndefined();
 
         const docs = customDocsRepo.getCustomDocuments();
         expect(docs).toHaveLength(1);
         // getCustomDocuments should not include content
         expect((docs[0] as Record<string, unknown>).content).toBeUndefined();
+        expect((docs[0] as Record<string, unknown>).sermonId).toBeUndefined();
 
         customDocsRepo.deleteCustomDocument(doc.id);
         expect(customDocsRepo.getCustomDocuments()).toHaveLength(0);

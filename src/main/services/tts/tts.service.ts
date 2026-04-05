@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import log from 'electron-log';
+import pLimit from 'p-limit';
 import { getMainWindow } from '@main/lib/window';
 import { sendToRenderer } from '@main/ipc/register';
 import { PushChannels } from '@shared/ipc.types';
@@ -54,6 +55,8 @@ export class TtsService {
     private lastError?: string;
     private playbackGeneration = 0;
     private completedNaturally = false;
+    private readonly modelDownloadLimit = pLimit(1);
+    private readonly activeModelDownloads = new Map<string, Promise<void>>();
 
     /** Frozen copy of settings at playback start — immune to mid-session provider switches. */
     private playbackSettings: TtsSettings | null = null;
@@ -129,10 +132,12 @@ export class TtsService {
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
         const providerType = request.provider ?? this.settings.activeProvider;
         if (providerType === 'browser') {
-            throw new Error('Browser TTS synthesis is handled in the renderer process');
+            throw new Error('La synthèse du navigateur est gérée dans le processus renderer.');
         }
         const provider = this.providers.get(providerType);
-        if (!provider) throw new Error(`Unknown TTS provider: ${providerType}`);
+        if (!provider) {
+            throw new Error('Fournisseur TTS inconnu.');
+        }
 
         const cfg = this.settings.providers[providerType];
         const cacheKey = this.buildCacheKey(
@@ -153,6 +158,7 @@ export class TtsService {
 
     async startPlayback(segments: TtsSegment[], language: string, startIndex = 0): Promise<void> {
         await this.reloadSettings();
+        await this.resolvePlaybackConfigForLanguage(language);
 
         this.playbackGeneration++;
         this.segments = segments;
@@ -168,6 +174,32 @@ export class TtsService {
         // clearPreloaded() on non-queued arrival), so await before prefetching.
         await this.playSegment(startIndex, this.playbackGeneration);
         this.ensureWindow(startIndex + 1, this.playbackGeneration);
+    }
+
+    private async resolvePlaybackConfigForLanguage(language: string): Promise<void> {
+        if (!this.settings.autoSwitchVoice) {
+            return;
+        }
+
+        const providerType = this.settings.activeProvider;
+        const activeProvider = this.providers.get(providerType);
+        if (!activeProvider?.resolveConfigForLanguage) {
+            return;
+        }
+
+        const cfg = this.settings.providers[providerType];
+        const resolved = await activeProvider.resolveConfigForLanguage(language, cfg);
+        if (!resolved) {
+            return;
+        }
+
+        ttsRepo.updateSettings({
+            providers: {
+                ...this.settings.providers,
+                [providerType]: { ...cfg, ...resolved },
+            },
+        });
+        await this.reloadSettings();
     }
 
     pause(): void {
@@ -255,7 +287,12 @@ export class TtsService {
         const result = {} as Record<TtsProviderType, TtsCompatibilityResult>;
         for (const [type, provider] of this.providers) {
             const cfg = this.settings.providers[type];
-            result[type] = await provider.checkCompatibility(langCode, cfg);
+            try {
+                result[type] = await provider.checkCompatibility(langCode, cfg);
+            } catch (err) {
+                log.warn(`TTS compatibility check failed for provider ${type}:`, err);
+                result[type] = { supported: false };
+            }
         }
         return result;
     }
@@ -263,32 +300,69 @@ export class TtsService {
     async downloadModel(providerType: TtsProviderType, modelName?: string): Promise<void> {
         const provider = this.providers.get(providerType);
         if (!provider?.downloadModel) {
-            throw new Error(`Provider ${providerType} does not support model download`);
+            throw new Error('Ce fournisseur ne prend pas en charge le téléchargement de modèles.');
         }
-        const win = getMainWindow();
-        try {
-            await provider.downloadModel((percentage) => {
-                if (win) {
-                    sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
-                        provider: providerType,
-                        modelName,
-                        percentage,
-                        status: percentage >= 100 ? 'complete' : 'downloading',
+        const downloadKey = `${providerType}:${modelName ?? ''}`;
+        const existing = this.activeModelDownloads.get(downloadKey);
+        if (existing) {
+            await existing;
+            return;
+        }
+
+        const job = this.modelDownloadLimit(async () => {
+            try {
+                await provider.downloadModel?.((progress) => {
+                    this.pushModelDownloadProgress(providerType, modelName, {
+                        percentage: progress.percentage,
+                        status: 'downloading',
+                        phase: progress.phase,
                     });
-                }
-            }, modelName);
-        } catch (err) {
-            if (win) {
-                sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
-                    provider: providerType,
-                    modelName,
+                }, modelName);
+
+                this.pushModelDownloadProgress(providerType, modelName, {
+                    percentage: 100,
+                    status: 'complete',
+                    phase: 'finalizing',
+                });
+            } catch (err) {
+                this.pushModelDownloadProgress(providerType, modelName, {
                     percentage: 0,
                     status: 'error',
                     error: err instanceof Error ? err.message : String(err),
                 });
+                throw err;
+            } finally {
+                this.activeModelDownloads.delete(downloadKey);
             }
-            throw err;
+        });
+
+        this.activeModelDownloads.set(downloadKey, job);
+        await job;
+    }
+
+    private pushModelDownloadProgress(
+        providerType: TtsProviderType,
+        modelName: string | undefined,
+        progress: {
+            percentage: number;
+            status: 'downloading' | 'complete' | 'error';
+            phase?: 'downloading' | 'extracting' | 'finalizing';
+            error?: string;
+        },
+    ): void {
+        const win = getMainWindow();
+        if (!win) {
+            return;
         }
+
+        sendToRenderer(win, PushChannels.ttsModelDownloadProgress, {
+            provider: providerType,
+            modelName,
+            percentage: progress.percentage,
+            status: progress.status,
+            phase: progress.phase,
+            error: progress.error,
+        });
     }
 
     getProviderModels(providerType: TtsProviderType): TtsModelInfo[] {
@@ -299,7 +373,7 @@ export class TtsService {
     async deleteProviderModel(providerType: TtsProviderType, modelName: string): Promise<void> {
         const provider = this.providers.get(providerType);
         if (!provider?.deleteModel) {
-            throw new Error(`Provider ${providerType} does not support model deletion`);
+            throw new Error('Ce fournisseur ne prend pas en charge la suppression de modèles.');
         }
         await provider.deleteModel(modelName);
     }
@@ -318,7 +392,7 @@ export class TtsService {
     ): Promise<TtsVoiceCloneResult> {
         const provider = this.providers.get(providerType);
         if (!provider?.cloneVoice) {
-            throw new Error(`Provider ${providerType} does not support voice cloning`);
+            throw new Error('Ce fournisseur ne prend pas en charge le clonage de voix.');
         }
         return provider.cloneVoice(request);
     }
@@ -335,10 +409,12 @@ export class TtsService {
         await this.reloadSettings();
         const providerType = this.settings.activeProvider;
         if (providerType === 'browser') {
-            throw new Error('Browser TTS preview is handled in the renderer process');
+            throw new Error(
+                'La prévisualisation du navigateur est gérée dans le processus renderer.',
+            );
         }
         const provider = this.providers.get(providerType);
-        if (!provider) throw new Error(`Unknown TTS provider: ${providerType}`);
+        if (!provider) throw new Error('Fournisseur TTS inconnu.');
 
         const cfg = this.settings.providers[providerType];
         const text = getTtsDemoText(language);
@@ -354,7 +430,7 @@ export class TtsService {
     async deleteClonedVoice(providerType: TtsProviderType, voiceId: string): Promise<void> {
         const provider = this.providers.get(providerType);
         if (!provider?.deleteClonedVoice) {
-            throw new Error(`Provider ${providerType} does not support voice cloning`);
+            throw new Error('Ce fournisseur ne prend pas en charge le clonage de voix.');
         }
         return provider.deleteClonedVoice(voiceId);
     }
@@ -362,7 +438,7 @@ export class TtsService {
     getReferenceVoiceAudio(referenceId: string): string {
         const ref = TTS_REFERENCE_VOICES.find((v) => v.id === referenceId);
         if (!ref) {
-            throw new Error(`Unknown reference voice: ${referenceId}`);
+            throw new Error('Voix de référence introuvable.');
         }
         const filePath = join(getTtsResourceDir(), ref.fileName);
         return readFileSync(filePath).toString('base64');
@@ -481,7 +557,7 @@ export class TtsService {
         const s = this.playbackSettings ?? this.settings;
         const providerType = s.activeProvider;
         const provider = this.providers.get(providerType);
-        if (!provider) throw new Error(`Provider not found: ${providerType}`);
+        if (!provider) throw new Error('Fournisseur TTS introuvable.');
 
         const cfg = s.providers[providerType];
         // Synthesize at 1.0x — speed is applied in the renderer via playbackRate

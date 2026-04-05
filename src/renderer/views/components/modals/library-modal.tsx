@@ -1,12 +1,18 @@
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
 import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useModalVisible } from '@renderer/hooks';
-import { useAppStore, useSermonStore } from '@renderer/stores';
+import {
+    fetchLanguageWorkspace,
+    useApplyLanguageWorkspace,
+    useModalVisible,
+} from '@renderer/hooks';
+import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { useTtsStore } from '@renderer/stores/tts.store';
+import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 
 const { Text } = Typography;
 
@@ -124,15 +130,25 @@ export default function LibraryModal() {
     const [loading, setLoading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
     const [searchQuery, setSearchQuery] = useState('');
+    const applyLanguageWorkspace = useApplyLanguageWorkspace();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const setContentLanguage = useAppStore((s) => s.setContentLanguage);
-    const setSermons = useSermonStore((s) => s.setSermons);
+    const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
+    const resetTts = useTtsStore((s) => s.reset);
     const [, startTransition] = useTransition();
+    const refreshGenerationRef = useRef(0);
 
     const refresh = useCallback(() => {
+        const generation = ++refreshGenerationRef.current;
+
         setLoading(true);
         Promise.all([window.api.languages.getInstalled(), window.api.languages.getAvailable()])
             .then(([inst, avail]) => {
+                if (generation !== refreshGenerationRef.current) {
+                    return;
+                }
+
                 const installedCodes = new Set(inst.map((i) => i.code));
                 const merged: LanguageItem[] = [];
 
@@ -165,7 +181,11 @@ export default function LibraryModal() {
                 setLanguages(merged);
             })
             .catch(() => {})
-            .finally(() => setLoading(false));
+            .finally(() => {
+                if (generation === refreshGenerationRef.current) {
+                    setLoading(false);
+                }
+            });
     }, []);
 
     const filteredLanguages = useMemo(() => {
@@ -198,14 +218,20 @@ export default function LibraryModal() {
 
     // Auto-open only when no languages installed or no content language persisted
     useEffect(() => {
+        let cancelled = false;
+
         Promise.all([
             window.api.languages.getInstalled(),
             window.api.app.getContentLanguage(),
         ]).then(([inst, contentLang]) => {
-            if (inst.length === 0 || !contentLang) {
+            if (!cancelled && (inst.length === 0 || !contentLang)) {
                 setVisible(true);
             }
         });
+
+        return () => {
+            cancelled = true;
+        };
     }, [setVisible]);
 
     useEffect(() => {
@@ -214,6 +240,13 @@ export default function LibraryModal() {
             setSearchQuery('');
         }
     }, [visible, refresh]);
+
+    const setTabs = useDocumentTabsStore((s) => s.setTabs);
+    const setLoaded = useAppStore((s) => s.setLoaded);
+    const setSermons = useSermonStore((s) => s.setSermons);
+    const notifyLibraryChanged = useCallback(() => {
+        window.dispatchEvent(new Event(LANGUAGE_EVENT.catalogChanged));
+    }, []);
 
     useEffect(() => {
         const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
@@ -226,38 +259,32 @@ export default function LibraryModal() {
                 return next;
             });
             refresh();
+            notifyLibraryChanged();
             message.success(t('Langue téléchargée avec succès'));
         });
         return () => {
             unsub1();
             unsub2();
         };
-    }, [refresh]);
+    }, [notifyLibraryChanged, refresh, t]);
 
-    const setTabs = useSermonStore((s) => s.setTabs);
-    const setLoaded = useAppStore((s) => s.setLoaded);
-
-    const handleSelectLanguage = async (langCode: string) => {
+    const handleSelectLanguage = async (
+        langCode: string,
+        options?: { preserveCurrentTabs?: boolean },
+    ) => {
         try {
             // Save current tabs for the old language before switching
             const previousLang = contentLanguage;
-            if (previousLang) {
-                const currentTabs = useSermonStore.getState().tabs;
-                await window.api.documents.saveTabs(previousLang, currentTabs);
+            if (previousLang && options?.preserveCurrentTabs !== false) {
+                await window.api.documents.saveTabs(previousLang, tabs);
             }
 
-            setContentLanguage(langCode);
+            stopAllTtsPlayback();
+            resetTts();
             await window.api.app.setContentLanguage(langCode);
-            const bibleVersion = await window.api.bible.getActiveVersion();
-            useAppStore.getState().setActiveBibleVersion(bibleVersion);
-
-            const [sermons, tabs] = await Promise.all([
-                window.api.documents.getTitles(langCode),
-                window.api.documents.getTabs(langCode),
-            ]);
+            const workspace = await fetchLanguageWorkspace(langCode);
             startTransition(() => {
-                setSermons(sermons);
-                setTabs(tabs?.length ? tabs : []);
+                applyLanguageWorkspace(langCode, workspace);
                 setLoaded(true);
             });
             hide();
@@ -277,13 +304,20 @@ export default function LibraryModal() {
         if (contentLanguage === langCode) {
             const remaining = await window.api.languages.getInstalled();
             if (remaining.length > 0) {
-                await handleSelectLanguage(remaining[0].code);
+                await handleSelectLanguage(remaining[0].code, { preserveCurrentTabs: false });
             } else {
+                stopAllTtsPlayback();
+                resetTts();
+
+                await window.api.app.setContentLanguage(null);
                 setContentLanguage(null);
+                setActiveBibleVersion(null);
                 setSermons([]);
+                setTabs([]);
             }
         }
         refresh();
+        notifyLibraryChanged();
         message.success(t('Langue supprimée'));
     };
 

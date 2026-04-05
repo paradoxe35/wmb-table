@@ -1,21 +1,10 @@
-// Domain model types — ported from legacy src/types/index.d.ts
-// removed global augmentations and renderer-only types.
-
 import { UiLanguagePreference } from './constants';
-
-// ---------------------------------------------------------------------------
-// Base entity fields
-// ---------------------------------------------------------------------------
 
 export interface BaseEntity {
     id: string;
     createdAt: Date;
     updatedAt: Date;
 }
-
-// ---------------------------------------------------------------------------
-// Reference data types (from data.sqlite)
-// ---------------------------------------------------------------------------
 
 export interface RefLanguage {
     isarId: number;
@@ -50,10 +39,6 @@ export interface RefTranslator {
     longName: string;
 }
 
-// ---------------------------------------------------------------------------
-// Documents
-// ---------------------------------------------------------------------------
-
 export interface SermonMeta {
     id: string;
     translationId: number;
@@ -62,26 +47,29 @@ export interface SermonMeta {
     title: string;
     enTitle: string;
     audioLink: string | null;
-    traductionName: string | null;
+    translationName: string | null;
     dateMs: number;
     minutes: number;
     location: string | null;
     cityState: string | null;
 }
 
-export interface AvailableTraduction {
+export interface AvailableTranslation {
     translationId: number;
-    traductionName: string | null;
+    languageCode: string;
+    title: string;
+    translationName: string | null;
 }
 
-export interface SermonMetaWithTraductions extends SermonMeta {
-    availableTraductions: AvailableTraduction[];
+export interface SermonMetaWithTranslations extends SermonMeta {
+    availableTranslations: AvailableTranslation[];
 }
 
 export interface SermonTranslation {
+    translationId: number;
     languageCode: string;
     title: string;
-    translatorName: string | null;
+    translationName: string | null;
 }
 
 export type DocumentType = 'sermon' | 'custom' | 'bible';
@@ -92,26 +80,193 @@ export interface ReadingPosition {
     scrollX: number;
 }
 
-export type DocumentTab = {
+type BaseDocumentTab = {
     title: string;
-    sermonId: string;
+    documentId: string;
     scrollY?: number;
     scrollX?: number;
     active: boolean;
     zoom?: number;
-    translationId?: number;
-    languageCode?: string;
-    type?: DocumentType;
-    bibleBook?: string;
-    bibleChapter?: string;
 };
 
-export function getTabKey(tab: { title: string; sermonId: string }): string {
-    return `${tab.title}::${tab.sermonId}`;
+export type SermonTab = BaseDocumentTab & {
+    type: 'sermon';
+    translationId: number;
+    languageCode: string;
+};
+
+export type BibleTab = BaseDocumentTab & {
+    type: 'bible';
+    bibleBook: string;
+    bibleChapter: string;
+    bibleVersionAbbreviation: string;
+};
+
+export type CustomTab = BaseDocumentTab & {
+    type: 'custom';
+};
+
+export type DocumentTab = SermonTab | BibleTab | CustomTab;
+
+export type DocumentIdentity =
+    | {
+          documentType: 'sermon';
+          sermonId: string;
+          translationId: number;
+          languageCode: string;
+      }
+    | {
+          documentType: 'bible';
+          bibleBook: string;
+          bibleChapter: string;
+          bibleVersionAbbreviation: string;
+      }
+    | {
+          documentType: 'custom';
+          customDocumentId: string;
+      };
+
+export type SermonDocumentIdentity = Extract<DocumentIdentity, { documentType: 'sermon' }>;
+export type BibleDocumentIdentity = Extract<DocumentIdentity, { documentType: 'bible' }>;
+
+export function buildSermonDocumentIdentity(
+    sermonId: string,
+    translationId: number,
+    languageCode: string,
+): SermonDocumentIdentity {
+    return {
+        documentType: 'sermon',
+        sermonId,
+        translationId,
+        languageCode,
+    };
 }
 
-export function tabMatches(tab: DocumentTab, title: string, sermonId: string): boolean {
-    return tab.title === title && tab.sermonId === sermonId;
+export function normalizeBibleAbbreviation<P extends string | null | undefined>(
+    abbreviation: P,
+): P {
+    if (!abbreviation) {
+        return abbreviation;
+    }
+
+    return abbreviation.trim().toLowerCase() as P;
+}
+
+export function getDocumentIdentityKey(identity: DocumentIdentity): string {
+    switch (identity.documentType) {
+        case 'sermon':
+            return `sermon:${identity.languageCode}:${identity.sermonId}:${identity.translationId}`;
+        case 'bible':
+            return `bible:${identity.bibleBook}:${identity.bibleChapter}:${normalizeBibleAbbreviation(identity.bibleVersionAbbreviation)}`;
+        case 'custom':
+            return `custom:${identity.customDocumentId}`;
+    }
+}
+
+export function documentIdentityEquals(left: DocumentIdentity, right: DocumentIdentity): boolean {
+    return getDocumentIdentityKey(left) === getDocumentIdentityKey(right);
+}
+
+export function getDocumentIdentityFromTab(tab: DocumentTab): DocumentIdentity {
+    switch (tab.type) {
+        case 'custom':
+            return {
+                documentType: 'custom',
+                customDocumentId: tab.documentId,
+            };
+        case 'bible':
+            return {
+                documentType: 'bible',
+                bibleBook: tab.bibleBook,
+                bibleChapter: tab.bibleChapter,
+                bibleVersionAbbreviation: tab.bibleVersionAbbreviation,
+            };
+        case 'sermon':
+            return buildSermonDocumentIdentity(tab.documentId, tab.translationId, tab.languageCode);
+    }
+}
+
+export function buildBibleDocumentId(bibleBook: string, bibleChapter: string): string {
+    return `${bibleBook}:${bibleChapter}`;
+}
+
+function appendBibleVersionSuffix(title: string, bibleVersionAbbreviation?: string | null): string {
+    const trimmedTitle = title.trim();
+
+    const normalizedAbbreviation = normalizeBibleAbbreviation(bibleVersionAbbreviation);
+    if (!normalizedAbbreviation) {
+        return trimmedTitle;
+    }
+
+    const suffix = ` (${normalizedAbbreviation.toUpperCase()})`;
+    return trimmedTitle.endsWith(suffix) ? trimmedTitle : `${trimmedTitle}${suffix}`;
+}
+
+export function formatDocumentTitle(
+    documentTitle: string,
+    documentIdentity: DocumentIdentity,
+): string {
+    return documentIdentity.documentType === 'bible'
+        ? appendBibleVersionSuffix(documentTitle, documentIdentity.bibleVersionAbbreviation)
+        : documentTitle;
+}
+
+export function buildBibleDocumentTitle(
+    bookName: string,
+    bibleChapter: string,
+    bibleVersionAbbreviation?: string | null,
+): string {
+    return appendBibleVersionSuffix(`${bookName} ${bibleChapter}`, bibleVersionAbbreviation);
+}
+
+type TabKeyInput =
+    | Pick<SermonTab, 'type' | 'documentId' | 'translationId' | 'languageCode'>
+    | Pick<BibleTab, 'type' | 'documentId' | 'bibleVersionAbbreviation'>
+    | Pick<CustomTab, 'type' | 'documentId'>;
+
+export function getTabKey(tab: TabKeyInput): string {
+    switch (tab.type) {
+        case 'sermon':
+            return `sermon:${tab.documentId}:${tab.translationId}:${tab.languageCode}`;
+        case 'bible':
+            return `bible:${tab.documentId}:${normalizeBibleAbbreviation(tab.bibleVersionAbbreviation)}`;
+        case 'custom':
+            return `custom:${tab.documentId}`;
+    }
+}
+
+export function tabMatches(tab: DocumentTab, candidate: TabKeyInput): boolean {
+    if (tab.type !== candidate.type || tab.documentId !== candidate.documentId) {
+        return false;
+    }
+
+    if (tab.type === 'sermon' && candidate.type === 'sermon') {
+        return (
+            tab.translationId === candidate.translationId &&
+            tab.languageCode === candidate.languageCode
+        );
+    }
+
+    if (tab.type === 'bible' && candidate.type === 'bible') {
+        return (
+            normalizeBibleAbbreviation(tab.bibleVersionAbbreviation) ===
+            normalizeBibleAbbreviation(candidate.bibleVersionAbbreviation)
+        );
+    }
+
+    return true;
+}
+
+export function isSermonTab(tab: DocumentTab | null): tab is SermonTab {
+    return !!tab && tab.type === 'sermon';
+}
+
+export function isBibleTab(tab: DocumentTab | null): tab is BibleTab {
+    return !!tab && tab.type === 'bible';
+}
+
+export function isCustomTab(tab: DocumentTab | null): tab is CustomTab {
+    return !!tab && tab.type === 'custom';
 }
 
 export type DocumentTreeRanges = {
@@ -123,38 +278,66 @@ export type DocumentTreeRanges = {
     endOffset: number;
 };
 
-export type DocumentHtmlTree = {
+export type TreeReference = {
+    kind: 'tree';
+    documentIdentity: DocumentIdentity;
     tree: number[];
     scrollY?: number;
     scrollX?: number;
     ranges?: DocumentTreeRanges;
 };
 
-export type StoredDocumentReference = {
-    documentType?: DocumentType;
-    sermonId?: string;
-    customDocumentId?: string;
-    bibleBook?: string;
-    bibleChapter?: string;
-    bibleVersionAbbreviation?: string;
-};
-
 export type ParagraphReference = {
+    kind: 'paragraph';
     paragraphIndex: number;
-    translationId: number;
     languageCode: string;
     textSnippet?: string;
-} & StoredDocumentReference;
+    documentIdentity: DocumentIdentity;
+};
 
-export function isParagraphReference(
-    ref: DocumentHtmlTree | ParagraphReference,
-): ref is ParagraphReference {
-    return 'paragraphIndex' in ref && 'translationId' in ref;
+export type DocumentReference = TreeReference | ParagraphReference;
+
+export function buildParagraphReference(
+    documentIdentity: SermonDocumentIdentity,
+    paragraphIndex: number,
+    textSnippet?: string,
+): ParagraphReference;
+export function buildParagraphReference(
+    documentIdentity: Exclude<DocumentIdentity, SermonDocumentIdentity>,
+    paragraphIndex: number,
+    languageCode: string,
+    textSnippet?: string,
+): ParagraphReference;
+export function buildParagraphReference(
+    documentIdentity: DocumentIdentity,
+    paragraphIndex: number,
+    languageCodeOrTextSnippet?: string,
+    textSnippet?: string,
+): ParagraphReference {
+    const isSermon = documentIdentity.documentType === 'sermon';
+    const languageCode = isSermon ? documentIdentity.languageCode : languageCodeOrTextSnippet;
+
+    if (!languageCode) {
+        throw new Error('Missing languageCode for paragraph reference');
+    }
+
+    return {
+        kind: 'paragraph',
+        paragraphIndex,
+        languageCode,
+        textSnippet: isSermon ? languageCodeOrTextSnippet : textSnippet,
+        documentIdentity,
+    };
 }
 
-// ---------------------------------------------------------------------------
-// Search
-// ---------------------------------------------------------------------------
+export function isParagraphReference(ref: DocumentReference): ref is ParagraphReference {
+    return ref.kind === 'paragraph';
+}
+
+export function hasReferenceAssignment(ref?: DocumentReference | null): boolean {
+    if (!ref) return false;
+    return isParagraphReference(ref) || ref.tree.length > 0;
+}
 
 export type SearchMode = 'exact' | 'all' | 'any';
 
@@ -173,7 +356,6 @@ export interface Suggestions extends Readonly<BaseEntity> {
 export type DocumentViewQuery = {
     term: string;
     mode: SearchMode;
-    documentKey: string;
     documentTitle: string;
     textContentLength: number;
     searchForParagraph?: boolean;
@@ -201,9 +383,8 @@ export interface NoteItemReference extends Readonly<BaseEntity> {
     label: string;
     noteId: string;
     documentTitle: string;
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
+    documentReference: DocumentReference | null;
     textContent: string;
-    sermonId: string;
 }
 
 export interface NoteItemReferenceBible extends Readonly<BaseEntity> {
@@ -227,6 +408,24 @@ export interface BibleIndex {
     [x: string]: BibleIndexValue;
 }
 
+export type BibleIndexEntry = {
+    bookName: string;
+    value: BibleIndexValue;
+};
+
+export function getBibleIndexEntry(
+    bibleIndex: BibleIndex,
+    bibleBook: string,
+): BibleIndexEntry | null {
+    for (const [bookName, value] of Object.entries(bibleIndex)) {
+        if (value.book === bibleBook) {
+            return { bookName, value };
+        }
+    }
+
+    return null;
+}
+
 export interface BibleBook {
     id: string;
     bookName: string;
@@ -241,6 +440,7 @@ export type BookRequest = {
     book: string;
     chapter: string;
     verse?: string;
+    bibleVersionAbbreviation?: string;
 };
 
 export interface BibleSearchItem {
@@ -258,23 +458,24 @@ export interface BibleSearchResult {
     data: BibleSearchItem[];
 }
 
-// ---------------------------------------------------------------------------
-// Subjects
-// ---------------------------------------------------------------------------
-
 export interface SubjectDocumentItem extends Readonly<BaseEntity> {
     subjectId: string;
+    sortOrder: number;
     documentTitle: string;
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
+    documentReference: DocumentReference;
     textContent: string;
-    bible?: BibleBook;
-    sermonId: string;
+    documentPreview?: DocumentPreview;
 }
 
-export type SubjectRefTree = {
+export type DocumentPreview = {
+    kind: 'bible-verse';
+    bibleVerse: BibleBook;
+};
+
+export type DocumentReferenceSelection = {
     textContent: string;
-    documentHtmlTree: DocumentHtmlTree | ParagraphReference;
-    bible?: BibleBook;
+    documentReference: DocumentReference;
+    documentPreview?: DocumentPreview;
 };
 
 export interface SubjectDocument extends Readonly<BaseEntity> {
@@ -284,10 +485,6 @@ export interface SubjectDocument extends Readonly<BaseEntity> {
     active?: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Highlights
-// ---------------------------------------------------------------------------
-
 export interface HighlightParagraphRange {
     paragraphIndex: number;
     startOffset: number;
@@ -296,13 +493,11 @@ export interface HighlightParagraphRange {
 
 export interface HighlightCreateData {
     documentTitle: string;
-    sermonId: string;
+    documentIdentity: DocumentIdentity;
     paragraphs: HighlightParagraphRange[];
     textSnippet: string;
     color: string;
     comment?: string;
-    documentType: DocumentType;
-    translationId: number;
     languageCode: string;
 }
 
@@ -314,15 +509,13 @@ export interface HighlightUpdateData {
 export interface HighlightItem extends Readonly<BaseEntity> {
     groupId: string;
     documentTitle: string;
-    sermonId: string;
+    documentIdentity: DocumentIdentity;
     paragraphIndex: number;
     startOffset: number;
     endOffset: number;
     textSnippet: string;
     color: string;
     comment?: string;
-    documentType: DocumentType;
-    translationId: number;
     languageCode: string;
 }
 
@@ -358,6 +551,16 @@ export type AudioDownloadProgress = {
     percentage: number;
 };
 
+export type AudioDocumentPlayRequest = {
+    title: string;
+    audioLink: string;
+    sermonId: string;
+    translationId: number | null;
+    languageCode: string | null;
+    languageLabel: string | null;
+    autoplay?: boolean;
+};
+
 export type CurrentAudioDocumentPlay = {
     documentTitle: string;
     status: 'play' | 'pause';
@@ -369,8 +572,15 @@ export type CurrentAudioDocumentPlay = {
 
 export interface CustomDocument extends Readonly<BaseEntity> {
     title: string;
-    sermonId: string;
     languageCode: string;
+}
+
+export type CustomDocumentImportFormat = 'pdf' | 'txt' | 'md' | 'docx' | 'epub';
+
+export interface CustomDocumentImportInput {
+    fileName: string;
+    mimeType?: string | null;
+    bytes: Uint8Array;
 }
 
 export interface CustomDocumentContent {
@@ -394,8 +604,12 @@ export interface HistoryDataItem extends Readonly<BaseEntity> {
     date: string;
     time: string;
     documentTitle: string;
-    sermonId: string;
-    documentType: DocumentType;
+    documentIdentity: DocumentIdentity;
+}
+
+export interface HistoryEntryCreateData {
+    documentTitle: string;
+    documentIdentity: DocumentIdentity;
 }
 
 export type HistoryDateUpload = {
@@ -518,6 +732,7 @@ export interface SearchSnippet {
 }
 
 export interface TantivySearchHit {
+    languageCode: string;
     translationId: number;
     sermonId: string;
     title: string;
@@ -541,6 +756,7 @@ export interface SimilarParagraph {
 }
 
 export interface SimilarSermonHit {
+    languageCode: string;
     sermonId: string;
     title: string;
     translationId: number;
@@ -584,6 +800,7 @@ export interface AppSettingsStatus {
     initialized: boolean;
     lastCheckBackupStatus: Date;
     contentLanguage: string | null;
+    activeBibleVersionAbbreviation: string | null;
     rememberReadingPosition: boolean;
     maxTabs: number;
     uiLanguage: UiLanguagePreference | null;

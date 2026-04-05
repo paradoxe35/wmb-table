@@ -22,11 +22,19 @@ describe('subjects.repository', () => {
         const item = subjectsRepo.createItem(
             subject.id,
             'Doc Title',
-            { tree: [1] },
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'custom', customDocumentId: 'doc-1' },
+                tree: [1],
+            },
             'text content',
         );
         expect(item.subjectId).toBe(subject.id);
-        expect(item.documentHtmlTree).toEqual({ tree: [1] });
+        expect(item.documentReference).toEqual({
+            kind: 'tree',
+            documentIdentity: { documentType: 'custom', customDocumentId: 'doc-1' },
+            tree: [1],
+        });
 
         const items = subjectsRepo.getItems(subject.id);
         expect(items).toHaveLength(1);
@@ -43,13 +51,37 @@ describe('subjects.repository', () => {
             verse: '1',
             content: 'In the beginning...',
         };
-        const item = subjectsRepo.createItem(subject.id, 'Doc', { tree: [] }, 'text', bible);
-        expect(item.bible?.bookName).toBe('Genesis');
+        const item = subjectsRepo.createItem(
+            subject.id,
+            'Doc',
+            {
+                kind: 'tree',
+                documentIdentity: {
+                    documentType: 'bible',
+                    bibleBook: 'gen',
+                    bibleChapter: '1',
+                    bibleVersionAbbreviation: 'KJV',
+                },
+                tree: [],
+            },
+            'text',
+            { kind: 'bible-verse', bibleVerse: bible },
+        );
+        expect(item.documentPreview?.kind).toBe('bible-verse');
     });
 
     it('deleteSubject removes subject and items', () => {
         const subject = subjectsRepo.create('ToDelete');
-        subjectsRepo.createItem(subject.id, 'Doc', { tree: [] }, 'text');
+        subjectsRepo.createItem(
+            subject.id,
+            'Doc',
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'custom', customDocumentId: 'doc-1' },
+                tree: [],
+            },
+            'text',
+        );
 
         subjectsRepo.deleteSubject(subject.id);
         expect(subjectsRepo.getAll()).toHaveLength(0);
@@ -58,39 +90,66 @@ describe('subjects.repository', () => {
 
     it('deleteItem removes single item', () => {
         const subject = subjectsRepo.create('Topic');
-        const item = subjectsRepo.createItem(subject.id, 'Doc', { tree: [] }, 'text');
+        const item = subjectsRepo.createItem(
+            subject.id,
+            'Doc',
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'custom', customDocumentId: 'doc-1' },
+                tree: [],
+            },
+            'text',
+        );
         subjectsRepo.deleteItem(item.id);
         expect(subjectsRepo.getItems(subject.id)).toHaveLength(0);
     });
 
-    it('getAll returns items correctly for multiple subjects', () => {
+    it('getAll returns lightweight subject summaries', () => {
         const s1 = subjectsRepo.create('Subject A');
         const s2 = subjectsRepo.create('Subject B');
         const s3 = subjectsRepo.create('Subject C');
 
-        subjectsRepo.createItem(s1.id, 'Doc 1', { tree: [1] }, 'text 1');
-        subjectsRepo.createItem(s1.id, 'Doc 2', { tree: [2] }, 'text 2');
-        subjectsRepo.createItem(s2.id, 'Doc 3', { tree: [3] }, 'text 3');
+        subjectsRepo.createItem(
+            s1.id,
+            'Doc 1',
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'custom', customDocumentId: 'doc-1' },
+                tree: [1],
+            },
+            'text 1',
+        );
+        subjectsRepo.createItem(
+            s1.id,
+            'Doc 2',
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'custom', customDocumentId: 'doc-2' },
+                tree: [2],
+            },
+            'text 2',
+        );
+        subjectsRepo.createItem(
+            s2.id,
+            'Doc 3',
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'custom', customDocumentId: 'doc-3' },
+                tree: [3],
+            },
+            'text 3',
+        );
         // s3 has no items
 
         const all = subjectsRepo.getAll();
         expect(all).toHaveLength(3);
 
-        const a = all.find((s) => s.name === 'Subject A')!;
-        const b = all.find((s) => s.name === 'Subject B')!;
-        const c = all.find((s) => s.name === 'Subject C')!;
-
-        expect(a.documents).toHaveLength(2);
-        expect(a.documents[0].documentTitle).toBe('Doc 1');
-        expect(a.documents[1].documentTitle).toBe('Doc 2');
-
-        expect(b.documents).toHaveLength(1);
-        expect(b.documents[0].documentTitle).toBe('Doc 3');
-
-        expect(c.documents).toHaveLength(0);
+        expect(all.find((s) => s.name === 'Subject A')?.documents).toEqual([]);
+        expect(all.find((s) => s.name === 'Subject B')?.documents).toEqual([]);
+        expect(all.find((s) => s.name === 'Subject C')?.documents).toEqual([]);
     });
 
-    it('getAll items have correct fields', () => {
+    it('getById returns items with correct fields', () => {
         const subject = subjectsRepo.create('Topic');
         const bible = {
             id: 'b1',
@@ -101,16 +160,30 @@ describe('subjects.repository', () => {
             verse: '1',
             content: 'In the beginning...',
         };
-        subjectsRepo.createItem(subject.id, 'Doc', { tree: [1, 2] }, 'sample text', bible, 'S-001');
+        subjectsRepo.createItem(
+            subject.id,
+            'Doc',
+            {
+                kind: 'tree',
+                documentIdentity: { documentType: 'sermon', sermonId: 'S-001', translationId: 0 },
+                tree: [1, 2],
+            },
+            'sample text',
+            { kind: 'bible-verse', bibleVerse: bible },
+        );
 
-        const all = subjectsRepo.getAll();
-        const item = all[0].documents[0];
+        const loaded = subjectsRepo.getById(subject.id);
+        const item = loaded?.documents[0];
+        expect(item).toBeDefined();
         expect(item.subjectId).toBe(subject.id);
         expect(item.documentTitle).toBe('Doc');
-        expect(item.documentHtmlTree).toEqual({ tree: [1, 2] });
+        expect(item.documentReference).toEqual({
+            kind: 'tree',
+            documentIdentity: { documentType: 'sermon', sermonId: 'S-001', translationId: 0 },
+            tree: [1, 2],
+        });
         expect(item.textContent).toBe('sample text');
-        expect(item.bible?.bookName).toBe('Genesis');
-        expect(item.sermonId).toBe('S-001');
+        expect(item.documentPreview?.kind).toBe('bible-verse');
         expect(item.createdAt).toBeInstanceOf(Date);
         expect(item.updatedAt).toBeInstanceOf(Date);
     });

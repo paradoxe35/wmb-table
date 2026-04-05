@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button, Card, Empty, Tag, Timeline, Typography } from 'antd';
 import {
     LeftOutlined,
@@ -9,9 +9,9 @@ import {
     ClockCircleOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { DocumentType, HistoryData, HistoryDataItem } from '@shared/types';
+import { type DocumentType, type HistoryData, type HistoryDataItem } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
-import { useOpenDocument, useOpenCustomDocument, useOpenBibleChapter } from '@renderer/hooks';
+import { useDocumentPresentation, useOpenDocumentRequest } from '@renderer/hooks';
 import { HISTORY_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
@@ -25,29 +25,14 @@ function titleCase(str: string): string {
 // ---------------------------------------------------------------------------
 
 function useHistoryItemOpen() {
-    const openDocument = useOpenDocument();
-    const openCustomDocument = useOpenCustomDocument();
-    const openBibleChapter = useOpenBibleChapter();
+    const { buildOpenRequest } = useDocumentPresentation();
+    const openDocumentRequest = useOpenDocumentRequest();
 
     return useCallback(
         (item: HistoryDataItem) => {
-            const docType: DocumentType = item.documentType ?? 'sermon';
-
-            if (docType === 'custom') {
-                openCustomDocument(item.documentTitle, item.sermonId);
-                return;
-            }
-
-            if (docType === 'bible') {
-                const [bookCode, chapter] = item.sermonId.split(':');
-                const bookName = item.documentTitle.replace(new RegExp(`\\s+${chapter}$`), '');
-                openBibleChapter(bookName, bookCode, chapter);
-                return;
-            }
-
-            openDocument(item.documentTitle, item.sermonId);
+            openDocumentRequest(buildOpenRequest(item.documentTitle, item.documentIdentity));
         },
-        [openDocument, openCustomDocument, openBibleChapter],
+        [buildOpenRequest, openDocumentRequest],
     );
 }
 
@@ -72,20 +57,51 @@ export default function History() {
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
+    const selectedHistoryIdRef = useRef<string | null>(null);
     const openHistoryItem = useHistoryItemOpen();
+    const { resolveTitle } = useDocumentPresentation();
+    const getItemTitle = useCallback(
+        (item: HistoryDataItem) => resolveTitle(item.documentTitle, item.documentIdentity),
+        [resolveTitle],
+    );
 
     const loadHistories = useCallback(() => {
-        if (contentLanguage) {
-            window.api.app.getHistory(contentLanguage).then((data) => {
-                setHistories(data);
-                setSelectedIndex(0);
-            });
+        let cancelled = false;
+
+        if (!contentLanguage) {
+            setHistories([]);
+            setSelectedIndex(0);
+            return () => {
+                cancelled = true;
+            };
         }
+
+        window.api.app.getHistory(contentLanguage).then((data) => {
+            if (cancelled) {
+                return;
+            }
+
+            setHistories(data);
+            setSelectedIndex(() => {
+                if (!selectedHistoryIdRef.current) {
+                    return 0;
+                }
+
+                const nextIndex = data.findIndex(
+                    (item) => item.id === selectedHistoryIdRef.current,
+                );
+                return nextIndex >= 0 ? nextIndex : 0;
+            });
+        });
+
+        return () => {
+            cancelled = true;
+        };
     }, [contentLanguage]);
 
     // Load on mount / language change
     useEffect(() => {
-        loadHistories();
+        return loadHistories();
     }, [loadHistories]);
 
     // Refresh when new history entries are added
@@ -98,11 +114,24 @@ export default function History() {
     // Load items when selected day changes
     const selectedHistory = histories[selectedIndex] ?? null;
     useEffect(() => {
+        selectedHistoryIdRef.current = selectedHistory?.id ?? null;
+    }, [selectedHistory]);
+    useEffect(() => {
+        let cancelled = false;
+
         if (selectedHistory) {
-            window.api.app.getHistoryItems(selectedHistory.id).then(setHistoryItems);
+            window.api.app.getHistoryItems(selectedHistory.id).then((items) => {
+                if (!cancelled) {
+                    setHistoryItems(items);
+                }
+            });
         } else {
             setHistoryItems([]);
         }
+
+        return () => {
+            cancelled = true;
+        };
     }, [selectedHistory]);
 
     const canGoPrev = selectedIndex < histories.length - 1;
@@ -171,7 +200,7 @@ export default function History() {
                     <div className="history-timeline">
                         <Timeline
                             items={historyItems.map((item) => {
-                                const meta = DOC_TYPE_META[item.documentType ?? 'sermon'];
+                                const meta = DOC_TYPE_META[item.documentIdentity.documentType];
                                 return {
                                     key: item.id,
                                     dot: meta.icon,
@@ -182,7 +211,7 @@ export default function History() {
                                         >
                                             <div className="history-item__header">
                                                 <Text className="history-item__title">
-                                                    {item.documentTitle}
+                                                    {getItemTitle(item)}
                                                 </Text>
                                                 <Tag
                                                     color={meta.color}

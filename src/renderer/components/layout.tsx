@@ -12,6 +12,7 @@ import ViewerMenu from './layout/viewer-menu';
 import SidebarMenu from './layout/sidebar-menu';
 import SidebarDocuments from './layout/sidebar-documents';
 import MiniPlayerBar from './mini-player-bar';
+import FeatureReminderBanner from './feature-reminder-banner';
 import { AudioProvider } from './audio-context';
 import { useContainerHeight } from '@renderer/hooks';
 import { useAppStore } from '@renderer/stores';
@@ -70,9 +71,8 @@ const SidebarStatusHandler = () => {
 
     const handleToggle = useCallback(() => {
         toggleSidebar();
-        const next = useAppStore.getState().sidebarHidden;
-        window.api.app.setSidebarStatus(next);
-    }, [toggleSidebar]);
+        window.api.app.setSidebarStatus(!sidebarHidden);
+    }, [sidebarHidden, toggleSidebar]);
 
     useEffect(() => {
         return window.api.on.toggleSidebar(handleToggle);
@@ -139,6 +139,7 @@ const AppLayout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                                     flexDirection: 'column',
                                 }}
                             >
+                                {!readingMode && <FeatureReminderBanner />}
                                 {children}
                             </Content>
                         </div>

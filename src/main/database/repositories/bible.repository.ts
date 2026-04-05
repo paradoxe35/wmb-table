@@ -1,4 +1,5 @@
 import { eq, and } from 'drizzle-orm';
+import type Database from 'better-sqlite3';
 import { bibleVerses } from '../bible-schema';
 import type { BibleBook, BibleIndex, BibleSearchResult, BookRequest } from '@shared/types';
 import * as bibleService from '@main/services/bible.service';
@@ -21,62 +22,63 @@ function getSqlite() {
     return bibleService.getActiveBibleDb();
 }
 
-function getDrizzle() {
-    const sqlite = getSqlite();
-    if (!sqlite) return null;
+function getDrizzle(sqlite: Database.Database) {
     return drizzle(sqlite, { schema: bibleSchema });
 }
 
-export function getIndexes(): BibleIndex {
-    const sqlite = getSqlite();
-    if (!sqlite) return {};
+export function getIndexes(bibleVersionAbbreviation?: string): BibleIndex {
+    return (
+        bibleService.withBibleDb(bibleVersionAbbreviation, (sqlite) => {
+            const rows = sqlite
+                .prepare(
+                    `SELECT book_name, book, testament,
+                      GROUP_CONCAT(DISTINCT chapter) as chapters,
+                      GROUP_CONCAT(DISTINCT verse) as verses
+               FROM bible_verses
+               GROUP BY book_name, book, testament
+               ORDER BY book`,
+                )
+                .all() as Array<{
+                book_name: string;
+                book: string;
+                testament: string;
+                chapters: string;
+                verses: string;
+            }>;
 
-    const rows = sqlite
-        .prepare(
-            `SELECT book_name, book, testament,
-              GROUP_CONCAT(DISTINCT chapter) as chapters,
-              GROUP_CONCAT(DISTINCT verse) as verses
-       FROM bible_verses
-       GROUP BY book_name, book, testament
-       ORDER BY book`,
-        )
-        .all() as Array<{
-        book_name: string;
-        book: string;
-        testament: string;
-        chapters: string;
-        verses: string;
-    }>;
-
-    const index: BibleIndex = {};
-    for (const row of rows) {
-        index[row.book_name] = {
-            book: row.book,
-            chapters: row.chapters,
-            verses: row.verses,
-            testament: row.testament,
-        };
-    }
-    return index;
+            const index: BibleIndex = {};
+            for (const row of rows) {
+                index[row.book_name] = {
+                    book: row.book,
+                    chapters: row.chapters,
+                    verses: row.verses,
+                    testament: row.testament,
+                };
+            }
+            return index;
+        }) ?? {}
+    );
 }
 
 export function getBooks(request: BookRequest): BibleBook[] {
-    const db = getDrizzle();
-    if (!db) return [];
-
-    const conditions = [
-        eq(bibleVerses.book, request.book),
-        eq(bibleVerses.chapter, request.chapter),
-    ];
-    if (request.verse) {
-        conditions.push(eq(bibleVerses.verse, request.verse));
-    }
-    const rows = db
-        .select()
-        .from(bibleVerses)
-        .where(and(...conditions))
-        .all();
-    return rows.map(toBook);
+    return (
+        bibleService.withBibleDb(request.bibleVersionAbbreviation, (sqlite) => {
+            const db = getDrizzle(sqlite);
+            const conditions = [
+                eq(bibleVerses.book, request.book),
+                eq(bibleVerses.chapter, request.chapter),
+            ];
+            if (request.verse) {
+                conditions.push(eq(bibleVerses.verse, request.verse));
+            }
+            const rows = db
+                .select()
+                .from(bibleVerses)
+                .where(and(...conditions))
+                .all();
+            return rows.map(toBook);
+        }) ?? []
+    );
 }
 
 function sanitizeFtsQuery(raw: string): string {

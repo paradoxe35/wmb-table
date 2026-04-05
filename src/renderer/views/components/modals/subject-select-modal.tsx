@@ -1,26 +1,42 @@
 import { Empty, Input, Modal, message } from 'antd';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SubjectDocument, SubjectRefTree } from '@shared/types';
-import { useModalVisible, useActiveTabTitle, useValueStateRef } from '@renderer/hooks';
+import type { SubjectDocument } from '@shared/types';
+import { useModalVisible } from '@renderer/hooks';
 import { BookOutlined } from '@ant-design/icons';
-import { CHILD_PARENT_WINDOW_EVENT, SUBJECT_EVENT } from '@renderer/utils/events';
+import {
+    CHILD_PARENT_WINDOW_EVENT,
+    SUBJECT_EVENT,
+    type AddDocumentReferenceDetail,
+    type FocusSubjectDetail,
+} from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useSermonStore, useSubjectsStore, selectActiveTab } from '@renderer/stores';
+import { useSubjectsStore } from '@renderer/stores';
 
 export function SubjectSelectModal() {
     const { t } = useTranslation();
-    const title = useActiveTabTitle();
-    const titleRef = useValueStateRef(title);
-    const activeTab = useSermonStore(selectActiveTab);
-    const documentRefTree = useRef<SubjectRefTree | undefined>(undefined);
+    const pendingReference = useRef<AddDocumentReferenceDetail | null>(null);
     const { visible, hide, setVisible } = useModalVisible();
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
     const subjects = useSubjectsStore((s) => s.subjects);
+    const setSubjects = useSubjectsStore((s) => s.setSubjects);
+
+    const refreshSubjects = useCallback(() => {
+        return window.api.subjects
+            .getAll()
+            .then((items) => {
+                setSubjects(items);
+                return items;
+            })
+            .catch(() => {
+                message.error(t('Erreur lors du chargement des sujets'));
+                return [];
+            });
+    }, [setSubjects, t]);
 
     const onSelectItem = useCallback(
         (subjectId: string) => {
-            if (!documentRefTree.current) {
+            if (!pendingReference.current) {
                 return;
             }
 
@@ -29,25 +45,25 @@ export function SubjectSelectModal() {
                 return;
             }
 
-            const ref = documentRefTree.current;
-            const documentHtmlTree = ref.documentHtmlTree ?? { tree: [] };
+            const ref = pendingReference.current;
             const textContent = ref.textContent ?? '';
 
             window.api.subjects
                 .createItem(
                     subject.id,
-                    titleRef.current || '',
-                    documentHtmlTree,
+                    ref.documentTitle,
+                    ref.documentReference,
                     textContent,
-                    ref.bible,
-                    activeTab?.sermonId,
+                    ref.documentPreview,
                 )
                 .then(() => {
+                    const detail: FocusSubjectDetail = { id: subject.id };
                     window.dispatchEvent(
-                        new CustomEvent(SUBJECT_EVENT.focusSubject, {
-                            detail: { id: subject.id },
+                        new CustomEvent<FocusSubjectDetail>(SUBJECT_EVENT.focusSubject, {
+                            detail,
                         }),
                     );
+                    pendingReference.current = null;
                     message.success(t('Ajouté au sujet'));
                 })
                 .catch(() => {
@@ -55,7 +71,7 @@ export function SubjectSelectModal() {
                 });
             setVisible(false);
         },
-        [subjects, titleRef, activeTab, setVisible, t],
+        [subjects, setVisible, t],
     );
 
     const onSearch = useCallback(
@@ -74,8 +90,16 @@ export function SubjectSelectModal() {
     }, [subjects]);
 
     useEffect(() => {
-        const showModal = (e: CustomEventInit<SubjectRefTree>) => {
-            documentRefTree.current = e.detail ?? undefined;
+        if (!visible) {
+            return;
+        }
+
+        void refreshSubjects().then(setDatas);
+    }, [visible, refreshSubjects]);
+
+    useEffect(() => {
+        const showModal = (e: CustomEventInit<AddDocumentReferenceDetail>) => {
+            pendingReference.current = e.detail ?? null;
             setVisible(true);
         };
         window.addEventListener(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, showModal);
@@ -84,12 +108,17 @@ export function SubjectSelectModal() {
         };
     }, [setVisible]);
 
+    const handleClose = useCallback(() => {
+        pendingReference.current = null;
+        hide();
+    }, [hide]);
+
     return (
         <Modal
             title={t('Ajouter au sujet')}
             footer={null}
             open={visible}
-            onCancel={hide}
+            onCancel={handleClose}
             width={420}
         >
             <Input.Search

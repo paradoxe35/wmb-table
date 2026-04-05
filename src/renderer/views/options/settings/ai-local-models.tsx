@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+    Alert,
     Button,
     Card,
     Divider,
@@ -212,6 +213,14 @@ export default function AiLocalModels({
                         'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.',
                     )}
                 </Text>
+                <Alert
+                    type="warning"
+                    showIcon
+                    message={t('Le mode local est plus limité')}
+                    description={t(
+                        'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.',
+                    )}
+                />
 
                 {models.length > 0 ? (
                     <Select

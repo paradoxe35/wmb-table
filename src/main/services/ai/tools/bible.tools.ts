@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import * as aiBibleRepo from '@main/database/repositories/ai-bible.repository';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
+import { buildParagraphReference } from '@shared/types';
 import type { AiToolDefinition } from './types';
 import { validateLanguage } from './shared';
 
@@ -96,11 +97,18 @@ export function buildBibleTools(
                 const subjectId = rawSubjectId.trim();
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
-                if (langError) return langError;
+                if (langError) {
+                    return langError;
+                }
+
+                const resolvedAbbreviation = abbreviation ?? defaultAbbreviation;
+                if (!resolvedAbbreviation) {
+                    return { error: 'Aucune version biblique active disponible.' };
+                }
 
                 const result = aiBibleRepo.getPassage({
                     ...rest,
-                    abbreviation: abbreviation ?? defaultAbbreviation,
+                    abbreviation: resolvedAbbreviation,
                     languageCode: lang,
                 });
                 if ('error' in result) return result;
@@ -118,18 +126,21 @@ export function buildBibleTools(
                 const item = subjectsRepo.createItem(
                     subjectId,
                     title,
-                    {
-                        paragraphIndex: 0,
-                        translationId: 0,
-                        languageCode: lang,
-                        documentType: 'bible',
-                        bibleBook: verse.book,
-                        bibleChapter: verse.chapter,
-                        bibleVersionAbbreviation: abbreviation ?? defaultAbbreviation,
-                    },
+                    buildParagraphReference(
+                        {
+                            documentType: 'bible',
+                            bibleBook: verse.book,
+                            bibleChapter: verse.chapter,
+                            bibleVersionAbbreviation: resolvedAbbreviation,
+                        },
+                        0,
+                        lang,
+                    ),
                     bibleContent,
-                    verse,
-                    '',
+                    {
+                        kind: 'bible-verse',
+                        bibleVerse: verse,
+                    },
                 );
 
                 return { referenceId: item.id, subjectId, documentTitle: title };

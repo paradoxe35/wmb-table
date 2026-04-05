@@ -2,23 +2,23 @@ import { message } from 'antd';
 import type { MenuProps } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { buildParagraphReference } from '@shared/types';
 import {
+    type AddDocumentReferenceDetail,
     CHILD_PARENT_WINDOW_EVENT,
     DOCUMENT_CONTAINER_ID,
     HIGHLIGHT_EVENT,
+    type OpenHighlightModalDetail,
+    type ShowSimilarSermonsDetail,
 } from '@renderer/utils/events';
 import type {
     BibleBook,
+    DocumentIdentity,
     DocumentType,
     HighlightItem,
     HighlightParagraphRange,
     ParagraphReference,
-    SermonContent,
 } from '@shared/types';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 const PARAGRAPH_SELECTOR = '[data-paragraph-index]';
 
@@ -32,34 +32,27 @@ function createContentRange(el: Element): Range {
     return r;
 }
 
-// ---------------------------------------------------------------------------
-// Context menu
-// ---------------------------------------------------------------------------
+type ContextMenuContent = {
+    documentTitle: string;
+    documentIdentity: DocumentIdentity;
+    languageCode: string;
+    paragraphs: { paragraphIndex: number; content: string }[];
+    sermonDateMs?: number;
+    sermonTranslationId?: number;
+};
 
 export function useContextMenuItems(
-    content: SermonContent | null,
+    content: ContextMenuContent | null,
     contextTargetRef: React.RefObject<Element | null>,
     documentType: DocumentType = 'sermon',
     bibleVerses?: BibleBook[],
-    bibleVersionAbbreviation?: string,
 ): MenuProps['items'] {
     const { t } = useTranslation();
 
     return useMemo(() => {
         if (!content) return [];
 
-        const { meta, paragraphs } = content;
-        const [bibleBook, bibleChapter] =
-            documentType === 'bible' ? meta.sermonId.split(':') : [undefined, undefined];
-
-        const referenceMeta = {
-            documentType,
-            sermonId: meta.sermonId,
-            customDocumentId: documentType === 'custom' ? meta.id : undefined,
-            bibleBook,
-            bibleChapter,
-            bibleVersionAbbreviation,
-        };
+        const { documentIdentity, documentTitle, languageCode, paragraphs } = content;
 
         const buildRef = (): { ref: ParagraphReference; text: string } | null => {
             const sel = window.getSelection();
@@ -67,13 +60,19 @@ export function useContextMenuItems(
             if (sel && !sel.isCollapsed) {
                 const anchor = sel.anchorNode?.parentElement?.closest(PARAGRAPH_SELECTOR);
                 return {
-                    ref: {
-                        paragraphIndex: anchor ? parseParagraphIndex(anchor) : 0,
-                        translationId: meta.translationId,
-                        languageCode: meta.languageCode,
-                        textSnippet: sel.toString().slice(0, 200),
-                        ...referenceMeta,
-                    },
+                    ref:
+                        documentIdentity.documentType === 'sermon'
+                            ? buildParagraphReference(
+                                  documentIdentity,
+                                  anchor ? parseParagraphIndex(anchor) : 0,
+                                  sel.toString().slice(0, 200),
+                              )
+                            : buildParagraphReference(
+                                  documentIdentity,
+                                  anchor ? parseParagraphIndex(anchor) : 0,
+                                  languageCode,
+                                  sel.toString().slice(0, 200),
+                              ),
                     text: sel.toString(),
                 };
             }
@@ -89,13 +88,15 @@ export function useContextMenuItems(
                 '';
 
             return {
-                ref: {
-                    paragraphIndex: idx,
-                    translationId: meta.translationId,
-                    languageCode: meta.languageCode,
-                    textSnippet: text.slice(0, 200),
-                    ...referenceMeta,
-                },
+                ref:
+                    documentIdentity.documentType === 'sermon'
+                        ? buildParagraphReference(documentIdentity, idx, text.slice(0, 200))
+                        : buildParagraphReference(
+                              documentIdentity,
+                              idx,
+                              languageCode,
+                              text.slice(0, 200),
+                          ),
                 text,
             };
         };
@@ -147,7 +148,17 @@ export function useContextMenuItems(
         const buildRefDetail = (result: { ref: ParagraphReference; text: string }) => {
             if (documentType === 'bible') {
                 const verse = getBibleVerse(result.ref.paragraphIndex);
-                if (verse) return { bible: verse, textContent: result.text };
+                if (verse) {
+                    return {
+                        documentTitle,
+                        documentPreview: {
+                            kind: 'bible-verse' as const,
+                            bibleVerse: verse,
+                        },
+                        textContent: result.text,
+                        documentReference: result.ref,
+                    };
+                }
             }
             // Include full paragraph content so the subject view can detect
             // whether the textContent is a mid-paragraph selection (show "...")
@@ -158,7 +169,11 @@ export function useContextMenuItems(
             const displayText = isPartialSelection
                 ? (fullParagraph.startsWith(result.text) ? '' : '...') + result.text
                 : result.text;
-            return { documentHtmlTree: result.ref, textContent: displayText };
+            return {
+                documentTitle,
+                documentReference: result.ref,
+                textContent: displayText,
+            };
         };
 
         // ----- Menu items -----
@@ -192,18 +207,19 @@ export function useContextMenuItems(
                         return;
                     }
 
+                    const detail: OpenHighlightModalDetail = {
+                        documentTitle,
+                        documentIdentity,
+                        paragraphs: selParagraphs,
+                        textSnippet: ref.text.slice(0, 200),
+                        languageCode,
+                    };
+
                     window.dispatchEvent(
-                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.openHighlightModal, {
-                            detail: {
-                                documentTitle: meta.title,
-                                sermonId: meta.sermonId,
-                                paragraphs: selParagraphs,
-                                textSnippet: ref.text.slice(0, 200),
-                                translationId: meta.translationId,
-                                languageCode: meta.languageCode,
-                                documentType,
-                            },
-                        }),
+                        new CustomEvent<OpenHighlightModalDetail>(
+                            CHILD_PARENT_WINDOW_EVENT.openHighlightModal,
+                            { detail },
+                        ),
                     );
                 },
             },
@@ -216,10 +232,12 @@ export function useContextMenuItems(
                 onClick: () => {
                     const ref = buildRef();
                     if (!ref) return;
+                    const detail: AddDocumentReferenceDetail = buildRefDetail(ref);
                     window.dispatchEvent(
-                        new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject, {
-                            detail: buildRefDetail(ref),
-                        }),
+                        new CustomEvent<AddDocumentReferenceDetail>(
+                            CHILD_PARENT_WINDOW_EVENT.addDocumentRefSubject,
+                            { detail },
+                        ),
                     );
                 },
             },
@@ -234,41 +252,49 @@ export function useContextMenuItems(
                           onClick: () => {
                               const ref = buildRef();
                               if (!ref) return;
+                              const detail: AddDocumentReferenceDetail = buildRefDetail(ref);
                               window.dispatchEvent(
-                                  new CustomEvent(CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote, {
-                                      detail: buildRefDetail(ref),
-                                  }),
+                                  new CustomEvent<AddDocumentReferenceDetail>(
+                                      CHILD_PARENT_WINDOW_EVENT.addDocumentRefNote,
+                                      { detail },
+                                  ),
                               );
                           },
                       },
                   ]
                 : [];
 
-        const similarItem: MenuProps['items'] =
-            documentType === 'sermon' && meta.dateMs
-                ? [
-                      { type: 'divider' as const, key: 'divider-3' },
-                      {
-                          key: 'find-similar',
-                          label: t('Trouver des prédications similaires'),
-                          onClick: () => {
-                              const ref = buildRef();
-                              if (!ref) return;
-                              window.dispatchEvent(
-                                  new CustomEvent(CHILD_PARENT_WINDOW_EVENT.showSimilarSermons, {
-                                      detail: {
-                                          paragraphIndex: ref.ref.paragraphIndex,
-                                          translationId: meta.translationId,
-                                          sermonDate: meta.dateMs,
-                                          languageCode: meta.languageCode,
-                                          textSnippet: ref.text.slice(0, 200),
-                                      },
-                                  }),
-                              );
-                          },
+        const hasSimilarSermonsContext =
+            documentType === 'sermon' &&
+            content.sermonDateMs != null &&
+            content.sermonTranslationId != null;
+
+        const similarItem: MenuProps['items'] = hasSimilarSermonsContext
+            ? [
+                  { type: 'divider' as const, key: 'divider-3' },
+                  {
+                      key: 'find-similar',
+                      label: t('Trouver des prédications similaires'),
+                      onClick: () => {
+                          const ref = buildRef();
+                          if (!ref) return;
+                          const detail: ShowSimilarSermonsDetail = {
+                              paragraphIndex: ref.ref.paragraphIndex,
+                              translationId: content.sermonTranslationId!,
+                              sermonDate: content.sermonDateMs!,
+                              languageCode,
+                              textSnippet: ref.text.slice(0, 200),
+                          };
+                          window.dispatchEvent(
+                              new CustomEvent<ShowSimilarSermonsDetail>(
+                                  CHILD_PARENT_WINDOW_EVENT.showSimilarSermons,
+                                  { detail },
+                              ),
+                          );
                       },
-                  ]
-                : [];
+                  },
+              ]
+            : [];
 
         return [
             ...copyItem,
@@ -279,26 +305,22 @@ export function useContextMenuItems(
             ...noteItem,
             ...similarItem,
         ];
-    }, [content, contextTargetRef, documentType, bibleVerses, bibleVersionAbbreviation, t]);
+    }, [content, contextTargetRef, documentType, bibleVerses, t]);
 }
 
-// ---------------------------------------------------------------------------
-// Document highlights
-// ---------------------------------------------------------------------------
-
-export function useDocumentHighlights(documentTitle: string | null, sermonId: string | undefined) {
+export function useDocumentHighlights(documentIdentity: DocumentIdentity | undefined) {
     const [highlights, setHighlights] = useState<HighlightItem[]>([]);
 
     const fetchHighlights = useCallback(() => {
-        if (!documentTitle) {
+        if (!documentIdentity) {
             setHighlights([]);
             return;
         }
         window.api.highlights
-            .getByDocument(documentTitle, sermonId ?? '')
+            .getByDocument(documentIdentity)
             .then(setHighlights)
             .catch(() => setHighlights([]));
-    }, [documentTitle, sermonId]);
+    }, [documentIdentity]);
 
     useEffect(() => {
         fetchHighlights();

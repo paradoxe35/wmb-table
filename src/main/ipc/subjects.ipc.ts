@@ -25,6 +25,10 @@ export function registerSubjectsHandlers(): void {
         return subjectsRepo.getItems(subjectId);
     });
 
+    registerHandler(SubjectChannels.reorderItems, async (_event, subjectId, itemIds) => {
+        subjectsRepo.reorderItems(subjectId, itemIds);
+    });
+
     registerHandler(SubjectChannels.deleteItem, async (_event, id) => {
         subjectsRepo.deleteItem(id);
     });
@@ -35,18 +39,16 @@ export function registerSubjectsHandlers(): void {
             _event,
             subjectId,
             documentTitle,
-            documentHtmlTree,
+            documentReference,
             textContent,
-            bible,
-            sermonId,
+            documentPreview,
         ) => {
             return subjectsRepo.createItem(
                 subjectId,
                 documentTitle,
-                documentHtmlTree,
+                documentReference,
                 textContent,
-                bible,
-                sermonId,
+                documentPreview,
             );
         },
     );

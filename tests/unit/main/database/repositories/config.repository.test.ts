@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb } from '../test-helpers';
 import * as configRepo from '@main/database/repositories/config.repository';
+import { MAX_MAX_TABS, MIN_MAX_TABS } from '@shared/constants';
 
 describe('config.repository', () => {
     beforeEach(() => {
@@ -15,6 +16,7 @@ describe('config.repository', () => {
         const config = configRepo.ensureConfig();
         expect(config.app_id).toBeTruthy();
         expect(config.initialized).toBe(false);
+        expect(config.activeBibleVersionAbbreviation).toBeNull();
     });
 
     it('ensureConfig is idempotent', () => {
@@ -27,5 +29,24 @@ describe('config.repository', () => {
         configRepo.markInitialized();
         const config = configRepo.getConfig();
         expect(config?.initialized).toBe(true);
+    });
+
+    it('persists the active Bible version abbreviation', () => {
+        configRepo.ensureConfig();
+
+        configRepo.setActiveBibleVersionAbbreviation('lsg');
+
+        expect(configRepo.getActiveBibleVersionAbbreviation()).toBe('lsg');
+        expect(configRepo.getConfig()?.activeBibleVersionAbbreviation).toBe('lsg');
+    });
+
+    it('clamps max tabs and returns the saved value', () => {
+        configRepo.ensureConfig();
+
+        expect(configRepo.setMaxTabs(MIN_MAX_TABS - 10)).toBe(MIN_MAX_TABS);
+        expect(configRepo.getMaxTabs()).toBe(MIN_MAX_TABS);
+
+        expect(configRepo.setMaxTabs(MAX_MAX_TABS + 10)).toBe(MAX_MAX_TABS);
+        expect(configRepo.getMaxTabs()).toBe(MAX_MAX_TABS);
     });
 });

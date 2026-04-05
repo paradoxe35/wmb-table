@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { useAppStore, useSermonStore, selectActiveTab } from '@renderer/stores';
+import { useDocumentTabsStore, useSermonStore, selectActiveSermonTab } from '@renderer/stores';
 import type {
     BibleBook,
     CustomDocumentContent,
-    DocumentTab,
     DocumentType,
     SermonContent,
-    SermonMetaWithTraductions,
+    SermonTab,
 } from '@shared/types';
+import { normalizeBibleAbbreviation } from '@shared/types';
 
 const MAX_CACHE_ENTRIES = 50;
 
@@ -23,6 +23,10 @@ const contentCache = new Map<string, SermonContent>();
 const bibleCache = new Map<string, BibleBook[]>();
 const customDocCache = new Map<string, CustomDocumentContent>();
 
+export function invalidateCustomDocumentContentCache(documentId: string): void {
+    customDocCache.delete(documentId);
+}
+
 export function buildSermonContentKey(
     languageCode: string,
     translationId: number,
@@ -31,8 +35,10 @@ export function buildSermonContentKey(
     return `${languageCode}:${translationId}:${sermonId}`;
 }
 
-export function buildBibleChapterKey(book: string, chapter: string) {
-    return `${book}:${chapter}`;
+export function buildBibleChapterKey(book: string, chapter: string, versionAbbreviation?: string) {
+    const normalizedVersion = normalizeBibleAbbreviation(versionAbbreviation);
+
+    return normalizedVersion ? `${normalizedVersion}:${book}:${chapter}` : `${book}:${chapter}`;
 }
 
 export function buildReadingPositionKey(documentType: DocumentType, documentKey: string) {
@@ -45,24 +51,18 @@ type ScrollPersistenceState = {
 };
 
 export function resolveSermonScrollPersistence(
-    activeTab: DocumentTab | null,
-    sermonInfo: SermonMetaWithTraductions | undefined,
-    contentLanguage: string | null,
+    activeTab: SermonTab | null,
     content: SermonContent | null,
 ): ScrollPersistenceState {
     if (!activeTab) {
         return { restoreIdentity: null, readingPositionKey: null };
     }
 
-    const languageCode = activeTab.languageCode ?? contentLanguage;
-    if (!languageCode) {
-        return { restoreIdentity: null, readingPositionKey: null };
-    }
-
-    const translationId = activeTab.translationId ?? sermonInfo?.translationId ?? 0;
-    const contentKey = buildSermonContentKey(languageCode, translationId, activeTab.sermonId);
+    const languageCode = activeTab.languageCode;
+    const translationId = activeTab.translationId;
+    const contentKey = buildSermonContentKey(languageCode, translationId, activeTab.documentId);
     const matchesLoadedContent =
-        content?.meta.sermonId === activeTab.sermonId &&
+        content?.meta.sermonId === activeTab.documentId &&
         content.meta.languageCode === languageCode &&
         content.meta.translationId === translationId;
 
@@ -90,12 +90,13 @@ export function resolveBibleScrollPersistence(
     bookCode?: string,
     chapter?: string,
     loadedChapterKey?: string | null,
+    bibleVersionAbbreviation?: string,
 ): ScrollPersistenceState {
-    if (!bookCode || !chapter) {
+    if (!bookCode || !chapter || !bibleVersionAbbreviation) {
         return { restoreIdentity: null, readingPositionKey: null };
     }
 
-    const chapterKey = buildBibleChapterKey(bookCode, chapter);
+    const chapterKey = buildBibleChapterKey(bookCode, chapter, bibleVersionAbbreviation);
     return {
         restoreIdentity: loadedChapterKey === chapterKey ? chapterKey : null,
         readingPositionKey: buildReadingPositionKey('bible', chapterKey),
@@ -103,26 +104,23 @@ export function resolveBibleScrollPersistence(
 }
 
 export function useSermonContent() {
-    const activeTab = useSermonStore(selectActiveTab);
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const sermonsById = useSermonStore((s) => s.sermonsById);
+    const activeTab = useDocumentTabsStore(selectActiveSermonTab);
     const setActiveContent = useSermonStore((s) => s.setActiveContent);
     const activeContent = useSermonStore((s) => s.activeContent);
     const [loading, setLoading] = useState(false);
 
-    const tabSermonId = activeTab?.sermonId;
+    const tabSermonId = activeTab?.documentId;
     const tabTranslationId = activeTab?.translationId;
-    const tabLanguage = activeTab?.languageCode ?? contentLanguage;
+    const tabLanguage = activeTab?.languageCode;
 
     useEffect(() => {
-        if (!tabSermonId || !tabLanguage) {
+        if (!activeTab || !tabSermonId || !tabLanguage) {
             setActiveContent(null);
             return;
         }
 
         let cancelled = false;
-        const meta = sermonsById[tabSermonId];
-        const translationId = tabTranslationId ?? meta?.translationId ?? 0;
+        const translationId = activeTab.translationId;
         const cacheKey = buildSermonContentKey(tabLanguage, translationId, tabSermonId);
         const cached = contentCache.get(cacheKey);
         if (cached) {
@@ -153,12 +151,12 @@ export function useSermonContent() {
         return () => {
             cancelled = true;
         };
-    }, [tabSermonId, tabLanguage, sermonsById, setActiveContent, tabTranslationId]);
+    }, [activeTab, tabSermonId, tabLanguage, setActiveContent, tabTranslationId]);
 
     return { content: activeContent, loading };
 }
 
-export function useCustomDocumentContent(documentId?: string) {
+export function useCustomDocumentContent(documentId?: string, expectedLanguageCode?: string) {
     const [content, setContent] = useState<CustomDocumentContent | null>(null);
     const [loading, setLoading] = useState(false);
 
@@ -170,7 +168,7 @@ export function useCustomDocumentContent(documentId?: string) {
         }
 
         const cached = customDocCache.get(documentId);
-        if (cached) {
+        if (cached && (!expectedLanguageCode || cached.languageCode === expectedLanguageCode)) {
             setContent(cached);
             setLoading(false);
             return;
@@ -199,7 +197,7 @@ export function useCustomDocumentContent(documentId?: string) {
         return () => {
             cancelled = true;
         };
-    }, [documentId]);
+    }, [documentId, expectedLanguageCode]);
 
     return { content, loading };
 }
@@ -219,7 +217,7 @@ export function useBibleChapterContent(
             return;
         }
 
-        const cacheKey = `${versionAbbreviation ?? ''}:${buildBibleChapterKey(book, chapter)}`;
+        const cacheKey = buildBibleChapterKey(book, chapter, versionAbbreviation);
         const cached = bibleCache.get(cacheKey);
         if (cached) {
             setVerses(cached);
@@ -228,10 +226,15 @@ export function useBibleChapterContent(
         }
 
         let cancelled = false;
+        setVerses([]);
         setLoading(true);
 
         window.api.bible
-            .getBooks({ book, chapter })
+            .getBooks({
+                book,
+                chapter,
+                bibleVersionAbbreviation: versionAbbreviation,
+            })
             .then((nextVerses) => {
                 if (cancelled) return;
                 boundedSet(bibleCache, cacheKey, nextVerses);

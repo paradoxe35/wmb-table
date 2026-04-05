@@ -450,16 +450,15 @@ describe('synchronizer', () => {
             sqlite
                 .prepare(
                     `INSERT INTO notes_references (
-                        id, note_id, label, document_title, document_html_tree, text_content, sermon_id, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        id, note_id, label, document_title, document_reference, text_content, created_at, updated_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
                 )
                 .run(
                     remoteDeleteRef.id,
                     remoteDelete.id,
                     'Doc',
                     '',
-                    JSON.stringify({ tree: [] }),
-                    '',
+                    null,
                     '',
                     '2026-01-01T00:00:00.000Z',
                     snapshotTime,

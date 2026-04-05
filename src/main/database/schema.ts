@@ -11,6 +11,7 @@ export const configurations = sqliteTable('configurations', {
     initialized: integer('initialized', { mode: 'boolean' }).notNull().default(false),
     lastCheckBackupStatus: text('last_check_backup_status').default(sql`(datetime('now'))`),
     contentLanguage: text('content_language'),
+    activeBibleVersionAbbreviation: text('active_bible_version_abbreviation'),
     rememberReadingPosition: integer('remember_reading_position', { mode: 'boolean' })
         .notNull()
         .default(true),
@@ -31,19 +32,26 @@ export const history = sqliteTable('history', {
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
-export const historyItems = sqliteTable('history_items', {
-    id: text('id').primaryKey(),
-    historyId: text('history_id')
-        .notNull()
-        .references(() => history.id, { onDelete: 'cascade' }),
-    date: text('date').notNull(),
-    time: text('time').notNull(),
-    documentTitle: text('document_title').notNull(),
-    sermonId: text('sermon_id').notNull().default(''),
-    documentType: text('document_type').notNull().default('sermon'),
-    createdAt: text('created_at').default(sql`(datetime('now'))`),
-    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
-});
+export const historyItems = sqliteTable(
+    'history_items',
+    {
+        id: text('id').primaryKey(),
+        historyId: text('history_id')
+            .notNull()
+            .references(() => history.id, { onDelete: 'cascade' }),
+        date: text('date').notNull(),
+        time: text('time').notNull(),
+        documentTitle: text('document_title').notNull(),
+        documentIdentity: text('document_identity').notNull(),
+        documentKey: text('document_key').notNull().default(''),
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+        updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [
+        index('history_items_document_key_idx').on(table.documentKey),
+        index('history_items_history_created_idx').on(table.historyId, table.createdAt),
+    ],
+);
 
 // ---------------------------------------------------------------------------
 // Subjects
@@ -58,19 +66,26 @@ export const subjects = sqliteTable('subjects', {
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
-export const subjectItems = sqliteTable('subject_items', {
-    id: text('id').primaryKey(),
-    subjectId: text('subject_id')
-        .notNull()
-        .references(() => subjects.id, { onDelete: 'cascade' }),
-    documentTitle: text('document_title').notNull(),
-    documentHtmlTree: text('document_html_tree').notNull(), // JSON
-    textContent: text('text_content').notNull(),
-    bible: text('bible'), // JSON (nullable)
-    sermonId: text('sermon_id').notNull().default(''),
-    createdAt: text('created_at').default(sql`(datetime('now'))`),
-    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
-});
+export const subjectItems = sqliteTable(
+    'subject_items',
+    {
+        id: text('id').primaryKey(),
+        subjectId: text('subject_id')
+            .notNull()
+            .references(() => subjects.id, { onDelete: 'cascade' }),
+        sortOrder: integer('sort_order').notNull().default(0),
+        documentTitle: text('document_title').notNull(),
+        documentReference: text('document_reference').notNull(), // JSON
+        textContent: text('text_content').notNull(),
+        documentPreview: text('document_preview'), // JSON (nullable)
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+        updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [
+        index('subject_items_subject_id_idx').on(table.subjectId),
+        index('subject_items_subject_order_idx').on(table.subjectId, table.sortOrder),
+    ],
+);
 
 // ---------------------------------------------------------------------------
 // Tabs (single-row)
@@ -121,7 +136,6 @@ export const customDocuments = sqliteTable('custom_documents', {
     id: text('id').primaryKey(),
     title: text('title').notNull(),
     content: text('content').notNull().default(''),
-    sermonId: text('sermon_id').notNull().default(''),
     languageCode: text('language_code').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
@@ -148,9 +162,8 @@ export const notesReferences = sqliteTable('notes_references', {
         .references(() => notes.id, { onDelete: 'cascade' }),
     label: text('label').notNull(),
     documentTitle: text('document_title').notNull(),
-    documentHtmlTree: text('document_html_tree').notNull(), // JSON
+    documentReference: text('document_reference'), // JSON (nullable)
     textContent: text('text_content').notNull(),
-    sermonId: text('sermon_id').notNull().default(''),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
@@ -196,23 +209,26 @@ export const audioDownloads = sqliteTable('audio_downloads', {
 // Highlights
 // ---------------------------------------------------------------------------
 
-export const highlights = sqliteTable('highlights', {
-    id: text('id').primaryKey(),
-    groupId: text('group_id').notNull().default(''),
-    documentTitle: text('document_title').notNull(),
-    sermonId: text('sermon_id').notNull().default(''),
-    paragraphIndex: integer('paragraph_index').notNull(),
-    startOffset: integer('start_offset').notNull(),
-    endOffset: integer('end_offset').notNull(),
-    textSnippet: text('text_snippet').notNull(),
-    color: text('color').notNull().default('#FFFF00'),
-    comment: text('comment'),
-    documentType: text('document_type').notNull().default('sermon'),
-    translationId: integer('translation_id').notNull().default(0),
-    languageCode: text('language_code').notNull().default(''),
-    createdAt: text('created_at').default(sql`(datetime('now'))`),
-    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
-});
+export const highlights = sqliteTable(
+    'highlights',
+    {
+        id: text('id').primaryKey(),
+        groupId: text('group_id').notNull().default(''),
+        documentKey: text('document_key').notNull().default(''),
+        documentTitle: text('document_title').notNull(),
+        documentIdentity: text('document_identity').notNull(),
+        paragraphIndex: integer('paragraph_index').notNull(),
+        startOffset: integer('start_offset').notNull(),
+        endOffset: integer('end_offset').notNull(),
+        textSnippet: text('text_snippet').notNull(),
+        color: text('color').notNull().default('#FFFF00'),
+        comment: text('comment'),
+        languageCode: text('language_code').notNull().default(''),
+        createdAt: text('created_at').default(sql`(datetime('now'))`),
+        updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+    },
+    (table) => [index('highlights_document_key_idx').on(table.documentKey)],
+);
 
 // ---------------------------------------------------------------------------
 // Backup
@@ -242,7 +258,6 @@ export const ttsSettings = sqliteTable('tts_settings', {
     id: text('id').primaryKey(),
     activeProvider: text('active_provider').notNull(),
     highlightMode: text('highlight_mode').notNull(),
-    autoPlay: integer('auto_play', { mode: 'boolean' }).notNull(),
     autoSwitchVoice: integer('auto_switch_voice', { mode: 'boolean' }).notNull().default(true),
     rate: real('rate').notNull().default(1),
     segmentGapMs: integer('segment_gap_ms'),

@@ -55,6 +55,7 @@ const frSidebar = [
         items: [
             { text: 'Vue d’ensemble des paramètres', link: '/guide/settings-overview' },
             { text: 'Général', link: '/guide/settings-general' },
+            { text: 'Vue document', link: '/guide/settings-document-view' },
             { text: 'Langues', link: '/guide/languages' },
             { text: 'Assistant', link: '/guide/settings-assistant' },
             { text: 'Lecture audio et voix', link: '/guide/audio-and-tts' },
@@ -105,6 +106,7 @@ const enSidebar = [
         items: [
             { text: 'Settings Overview', link: '/en/guide/settings-overview' },
             { text: 'General', link: '/en/guide/settings-general' },
+            { text: 'Document View', link: '/en/guide/settings-document-view' },
             { text: 'Languages', link: '/en/guide/languages' },
             { text: 'Assistant', link: '/en/guide/settings-assistant' },
             { text: 'Audio Reading and Voices', link: '/en/guide/audio-and-tts' },
@@ -155,6 +157,7 @@ const esSidebar = [
         items: [
             { text: 'Vista general de ajustes', link: '/es/guide/settings-overview' },
             { text: 'General', link: '/es/guide/settings-general' },
+            { text: 'Vista de lectura', link: '/es/guide/settings-document-view' },
             { text: 'Idiomas', link: '/es/guide/languages' },
             { text: 'Assistant', link: '/es/guide/settings-assistant' },
             { text: 'Lectura en audio y voces', link: '/es/guide/audio-and-tts' },

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import {
     useAppStore,
     useSearchStore,
-    useSermonStore,
+    useDocumentTabsStore,
     selectActiveTab,
     selectActiveTabKey,
 } from '@renderer/stores';
@@ -60,28 +60,31 @@ function buildRestoreState({
 }): RestoreState {
     const restoreScrollRatio = rememberReadingPosition
         ? (savedPosition?.scrollY ?? activeTabScrollY ?? 0)
-        : (activeTabScrollY ?? 0);
+        : 0;
+
     const hasImmediateScroll = activeTabScrollY != null;
     const waitingOnPersistedPosition = !!readingPositionKey && !savedPositionLoaded;
     const canRestore =
         contentReady && !!restoreIdentity && (hasImmediateScroll || !waitingOnPersistedPosition);
 
+    const restoreSource = rememberReadingPosition ? (hasImmediateScroll ? 'tab' : 'saved') : 'top';
+
     return {
         restoreScrollRatio,
         restoreToken:
             canRestore && activeTabKey && restoreIdentity
-                ? `${activeTabKey}::${restoreIdentity}::${hasImmediateScroll ? 'tab' : 'saved'}`
+                ? `${activeTabKey}::${restoreIdentity}::${restoreSource}`
                 : null,
         saveToken:
-            contentReady && activeTabKey && restoreIdentity
+            rememberReadingPosition && contentReady && activeTabKey && restoreIdentity
                 ? `${activeTabKey}::${restoreIdentity}`
                 : null,
     };
 }
 
 export function useDocumentZoom(zoom: number) {
-    const activeTabKey = useSermonStore(selectActiveTabKey);
-    const updateTabZoom = useSermonStore((s) => s.updateTabZoom);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const updateTabZoom = useDocumentTabsStore((s) => s.updateTabZoom);
 
     const zoomIn = useCallback(() => {
         if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
@@ -98,9 +101,9 @@ export function useScrollAndZoom(
     containerRef: React.RefObject<HTMLDivElement | null>,
     options: ScrollRestoreOptions = {},
 ) {
-    const activeTab = useSermonStore(selectActiveTab);
-    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
+    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const rememberReadingPosition = useAppStore((s) => s.rememberReadingPosition);
     const lastRestoredKeyRef = useRef<string | null>(null);
     const [savedPosition, setSavedPosition] = useState<ReadingPosition | null>(null);
@@ -166,7 +169,7 @@ export function useScrollAndZoom(
 
         // Skip scroll restoration when a pending navigation will handle scrolling.
         // Read as snapshot to avoid re-running this effect when pending state clears.
-        const pending = useSermonStore.getState().pendingNavigation;
+        const pending = useDocumentTabsStore.getState().pendingNavigation;
         if (pendingNavigationMatchesTab(pending, activeTab)) {
             return;
         }
@@ -212,25 +215,29 @@ export function useScrollAndZoom(
 
     useLayoutEffect(() => {
         const el = containerRef.current;
-        if (!el || !saveToken || !activeTabKey) return;
+        if (!el || !saveToken || !activeTabKey || !rememberReadingPosition) {
+            return;
+        }
+
         const getScrollRatio = () => {
             const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
             return maxScroll === 0 ? 0 : el.scrollTop / maxScroll;
         };
+
         let lastScrollRatio = getScrollRatio();
         const handler = debounce(() => {
             if (readingPositionKey) {
                 void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollRatio);
             }
         }, 500);
+
         const onScroll = () => {
             // Ignore scroll resets caused by parent becoming display:none
             if (!el.offsetParent) return;
             lastScrollRatio = getScrollRatio();
-            updateTabScroll(activeTabKey, lastScrollRatio);
             handler();
         };
-        el.addEventListener('scroll', onScroll);
+        el.addEventListener('scroll', onScroll, { passive: true });
         return () => {
             handler.cancel();
             el.removeEventListener('scroll', onScroll);
@@ -240,7 +247,14 @@ export function useScrollAndZoom(
                 void window.api.documents.saveReadingPosition(readingPositionKey, lastScrollRatio);
             }
         };
-    }, [activeTabKey, readingPositionKey, saveToken, updateTabScroll, containerRef]);
+    }, [
+        activeTabKey,
+        readingPositionKey,
+        rememberReadingPosition,
+        saveToken,
+        updateTabScroll,
+        containerRef,
+    ]);
 
     return { zoom };
 }

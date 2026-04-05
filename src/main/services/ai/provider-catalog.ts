@@ -13,6 +13,7 @@ const PROVIDER_DEFINITIONS: AiProviderDefinition[] = [
         kind: 'remote',
         name: 'OpenRouter',
         description: 'Accédez à plusieurs modèles avec une seule clé API.',
+        apiKeyUrl: 'https://openrouter.ai/keys',
         configurableFields: [
             { key: 'apiKey', kind: 'secret', required: true },
             { key: 'model', kind: 'text' },
@@ -23,6 +24,7 @@ const PROVIDER_DEFINITIONS: AiProviderDefinition[] = [
         kind: 'remote',
         name: 'OpenAI',
         description: 'ChatGPT et autres modèles OpenAI.',
+        apiKeyUrl: 'https://platform.openai.com/api-keys',
         configurableFields: [
             { key: 'apiKey', kind: 'secret', required: true },
             { key: 'model', kind: 'text' },
@@ -33,6 +35,7 @@ const PROVIDER_DEFINITIONS: AiProviderDefinition[] = [
         kind: 'remote',
         name: 'Gemini',
         description: 'Les modèles Gemini de Google.',
+        apiKeyUrl: 'https://aistudio.google.com/app/apikey',
         configurableFields: [
             { key: 'apiKey', kind: 'secret', required: true },
             { key: 'model', kind: 'text' },
@@ -43,6 +46,7 @@ const PROVIDER_DEFINITIONS: AiProviderDefinition[] = [
         kind: 'remote',
         name: 'Claude',
         description: "Les modèles Claude d'Anthropic.",
+        apiKeyUrl: 'https://console.anthropic.com/settings/keys',
         configurableFields: [
             { key: 'apiKey', kind: 'secret', required: true },
             { key: 'model', kind: 'text' },

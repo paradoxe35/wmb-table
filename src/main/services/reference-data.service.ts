@@ -3,7 +3,7 @@ import type { TranslationRow } from '../database/repositories/reference.reposito
 import type {
     RefSermon,
     SermonMeta,
-    SermonMetaWithTraductions,
+    SermonMetaWithTranslations,
     SermonTranslation,
 } from '@shared/types';
 
@@ -37,7 +37,7 @@ function sermonToMeta(s: RefSermon, langCode: string, audioLink: string | null):
         title: s.title,
         enTitle: s.title,
         audioLink,
-        traductionName: null,
+        translationName: null,
         dateMs: s.dateMs,
         minutes: s.minutes,
         location: s.location,
@@ -58,7 +58,7 @@ function translationToMeta(
         title: t.title,
         enTitle: t.sermon_title,
         audioLink,
-        traductionName: t.translator_name,
+        translationName: t.translator_name,
         dateMs: t.sermon_date_ms,
         minutes: t.sermon_minutes,
         location: t.location_name,
@@ -94,9 +94,9 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
 }
 
 /**
- * Get sermon list deduplicated by sermon, with available traductions array.
+ * Get sermon list deduplicated by sermon, with available translations array.
  */
-export function getSermonListDeduplicated(langCode: string): SermonMetaWithTraductions[] {
+export function getSermonListDeduplicated(langCode: string): SermonMetaWithTranslations[] {
     const allMeta = getSermonListForLanguage(langCode);
 
     const groups = new Map<string, SermonMeta[]>();
@@ -109,15 +109,17 @@ export function getSermonListDeduplicated(langCode: string): SermonMetaWithTradu
         }
     }
 
-    const result: SermonMetaWithTraductions[] = [];
+    const result: SermonMetaWithTranslations[] = [];
     for (const [, rows] of groups) {
         rows.sort((a, b) => a.translationId - b.translationId);
         const primary = rows[0];
-        const availableTraductions = rows.map((r) => ({
+        const availableTranslations = rows.map((r) => ({
             translationId: r.translationId,
-            traductionName: r.traductionName,
+            languageCode: r.languageCode,
+            title: r.title,
+            translationName: r.translationName,
         }));
-        result.push({ ...primary, availableTraductions });
+        result.push({ ...primary, availableTranslations });
     }
 
     result.sort((a, b) => b.dateMs - a.dateMs);
@@ -152,7 +154,10 @@ export function getSermonMeta(
  * Get all sermon list entries for a specific sermon and language.
  * Uses a targeted query instead of loading the full sermon list.
  */
-export function getTraductionsForSermon(sermonId: string, langCode: string): SermonMeta[] {
+export function getTranslationsForSermonInLanguage(
+    sermonId: string,
+    langCode: string,
+): SermonMeta[] {
     const lang = refRepo.getLanguageByCode(langCode);
     if (!lang) return [];
 
@@ -169,7 +174,9 @@ export function getTraductionsForSermon(sermonId: string, langCode: string): Ser
 
     // All translations share the same sermon_id — audio URL is identical, query once
     const audioLink = refRepo.getAudioForSermonByIds(sermonId, langCode);
-    return translations.map((t) => translationToMeta(t, langCode, audioLink));
+    return translations
+        .map((t) => translationToMeta(t, langCode, audioLink))
+        .sort((left, right) => left.translationId - right.translationId);
 }
 
 /**
@@ -184,9 +191,10 @@ export function getTranslationsForSermon(
     return rows
         .filter((r) => !installed || installed.has(r.lang_code))
         .map((r) => ({
+            translationId: r.translation_id,
             languageCode: r.lang_code,
             title: r.title,
-            translatorName: r.translator_name,
+            translationName: r.translator_name,
         }));
 }
 

@@ -1,18 +1,19 @@
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Button, Space, Tooltip } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { NumberOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
-    useSermonStore,
+    useDocumentTabsStore,
     useSearchStore,
     useCustomDocumentsStore,
     useAppStore,
+    selectActiveDocumentIdentity,
+    selectActiveCustomTab,
     selectActiveTabKey,
-    selectActiveTabTitle,
 } from '@renderer/stores';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type { SermonContent } from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
+import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import DocumentBody from './document-body';
 import {
     resolveCustomDocumentScrollPersistence,
@@ -26,11 +27,8 @@ import {
     useDocumentZoom,
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
-import { buildSegmentAnnouncement } from '@shared/tts.types';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+import { buildSegmentAnnouncement, getLanguageLabelNative } from '@shared/tts.types';
+import { getDocumentIdentityKey } from '@shared/types';
 
 interface DocumentParagraph {
     paragraphIndex: number;
@@ -54,62 +52,86 @@ function parseContentToParagraphs(content: string): DocumentParagraph[] {
     }));
 }
 
-// ---------------------------------------------------------------------------
-// Header
-// ---------------------------------------------------------------------------
-
-function CustomDocHeader({ zoom, tts }: { zoom: number; tts: ReturnType<typeof useTts> }) {
+function CustomDocHeader({
+    zoom,
+    tts,
+    paragraphs,
+}: {
+    zoom: number;
+    tts: ReturnType<typeof useTts>;
+    paragraphs: DocumentParagraph[];
+}) {
     const { t } = useTranslation();
+    const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
-        <div className="sermon-header">
-            <div style={{ flex: 1 }} />
-            <Space size="small">
-                <TtsButton tts={tts} />
-                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
-                <Tooltip title={t('Rechercher')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<SearchOutlined />}
-                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
-                        aria-label={t('Rechercher')}
-                    />
-                </Tooltip>
-                <ReadingModeToggle />
-            </Space>
-        </div>
+        <>
+            <div className="sermon-header">
+                <div style={{ flex: 1 }} />
+                <Space size="small">
+                    <TtsButton tts={tts} />
+                    <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
+                    <Tooltip title={t('Sélectionnez un paragraphe')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<NumberOutlined />}
+                            onClick={() => setParagraphModalOpen(true)}
+                            aria-label={t('Sélectionnez un paragraphe')}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Rechercher')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<SearchOutlined />}
+                            onClick={() => activeTabKey && openSearchBar(activeTabKey)}
+                            aria-label={t('Rechercher')}
+                        />
+                    </Tooltip>
+                    <ReadingModeToggle />
+                </Space>
+            </div>
+            <ParagraphNavigatorModal
+                open={paragraphModalOpen}
+                onClose={() => setParagraphModalOpen(false)}
+                paragraphs={paragraphs}
+            />
+        </>
     );
 }
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
 export default function CustomDocumentView() {
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTab = useDocumentTabsStore(selectActiveCustomTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const customDoc = useMemo(
-        () => customDocuments.find((d) => d.title === activeTitle),
-        [customDocuments, activeTitle],
+        () => (activeTab ? customDocuments.find((d) => d.id === activeTab.documentId) : undefined),
+        [customDocuments, activeTab],
     );
-    const { content: docContent, loading } = useCustomDocumentContent(customDoc?.id);
+
+    const ttsDocumentKey = activeDocumentIdentity
+        ? getDocumentIdentityKey(activeDocumentIdentity)
+        : '';
+
+    const { content: docContent, loading } = useCustomDocumentContent(
+        customDoc?.id,
+        customDoc?.languageCode,
+    );
     const { restoreIdentity, readingPositionKey } = resolveCustomDocumentScrollPersistence(
         customDoc?.id,
         docContent?.id,
     );
     useReferenceNavigation(containerRef, {
         contentReady: !!docContent,
-        documentType: 'custom',
-        sermonId: customDoc?.sermonId,
-        customDocumentId: customDoc?.id,
+        documentIdentity: customDoc ? activeDocumentIdentity : null,
     });
     const { zoom } = useScrollAndZoom(containerRef, {
         contentReady: !!docContent,
@@ -130,50 +152,43 @@ export default function CustomDocumentView() {
         !!restoreIdentity,
     );
 
-    // Build a minimal SermonContent-like object for context menu
-    const contentForMenu = useMemo((): SermonContent | null => {
-        if (!docContent) return null;
-        return {
-            meta: {
-                id: customDoc?.id ?? '',
-                translationId: 0,
-                languageCode: '',
-                sermonId: customDoc?.sermonId ?? '',
-                title: docContent.title,
-                enTitle: docContent.title,
-                audioLink: null,
-                traductionName: null,
-                dateMs: 0,
-                minutes: 0,
-                location: null,
-                cityState: null,
-            },
-            paragraphs: paragraphs.map((p) => ({
-                paragraphIndex: p.paragraphIndex,
-                translationId: 0,
-                sermonId: 0,
-                content: p.content,
-            })),
-        };
-    }, [docContent, paragraphs, customDoc]);
-
-    const contextMenuItems = useContextMenuItems(contentForMenu, contextTargetRef, 'custom');
-    const { highlightsByParagraph } = useDocumentHighlights(
-        docContent?.title ?? null,
-        customDoc?.sermonId,
-    );
-
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const docLang = docContent?.languageCode || contentLanguage || 'en';
-    const tts = useTts(paragraphs, docLang, docContent?.title ?? '', {
+    const docLang = docContent?.languageCode ?? contentLanguage ?? 'en';
+
+    const contextMenuContent = useMemo(() => {
+        if (!docContent || !customDoc || !activeDocumentIdentity) {
+            return null;
+        }
+
+        return {
+            documentTitle: docContent.title,
+            documentIdentity: activeDocumentIdentity,
+            languageCode: docLang,
+            paragraphs,
+        };
+    }, [docContent, customDoc, activeDocumentIdentity, docLang, paragraphs]);
+
+    const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef, 'custom');
+    const { highlightsByParagraph } = useDocumentHighlights(
+        customDoc ? (activeDocumentIdentity ?? undefined) : undefined,
+    );
+
+    const tts = useTts(paragraphs, docLang, ttsDocumentKey, {
         introText: docContent?.title,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
     });
 
     // Disable TTS when document language doesn't match the active content language
     const effectiveTts = useMemo(() => {
-        const langMismatch = docContent?.languageCode !== contentLanguage;
+        const langMismatch =
+            !!docContent?.languageCode &&
+            !!contentLanguage &&
+            docContent.languageCode !== contentLanguage;
+        const activeLanguageLabel = contentLanguage
+            ? getLanguageLabelNative(contentLanguage)
+            : undefined;
+
         if (!langMismatch) {
             return tts;
         }
@@ -182,7 +197,8 @@ export default function CustomDocumentView() {
             ...tts,
             canSpeak: false,
             incompatibleMessage: t(
-                'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.',
+                'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.',
+                { language: activeLanguageLabel ?? contentLanguage ?? '' },
             ),
         };
     }, [tts, docContent?.languageCode, contentLanguage, t]);
@@ -195,14 +211,14 @@ export default function CustomDocumentView() {
             contextTargetRef={contextTargetRef}
             zoom={zoom}
             contextMenuItems={contextMenuItems}
-            header={<CustomDocHeader zoom={zoom} tts={effectiveTts} />}
+            header={<CustomDocHeader zoom={zoom} tts={effectiveTts} paragraphs={paragraphs} />}
         >
             <div className="sermon-content-header">
                 <h2 className="sermon-content-header__title">{docContent?.title}</h2>
             </div>
             <ParagraphList
                 paragraphs={paragraphs}
-                documentId={docContent?.title ?? ''}
+                documentKey={ttsDocumentKey}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}

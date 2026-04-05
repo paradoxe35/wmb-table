@@ -3,7 +3,12 @@ import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { getDb } from '../index';
 import { audioDocumentTimes, audioDownloads, audioDocumentLastPlay } from '../schema';
-import type { AudioDocumentTime, AudioDocumentDownload } from '@shared/types';
+import type {
+    AudioDocumentTime,
+    AudioDocumentDownload,
+    AudioDocumentPlayRequest,
+} from '@shared/types';
+import { parseJsonOrFallback } from '@main/lib/json';
 
 const LAST_PLAY_ID = 'last-play-singleton';
 
@@ -72,15 +77,19 @@ export function setDownload(audioLink: string, localFile: string): void {
         .run();
 }
 
-export function getLastPlay(): string | null {
+export function getLastPlay(): AudioDocumentPlayRequest | null {
     const row = getDb().select().from(audioDocumentLastPlay).get();
     if (!row || !row.doc) return null;
-    return row.doc; // JSON-stringified Title
+    return parseJsonOrFallback<AudioDocumentPlayRequest | null>(row.doc, null, {
+        scope: 'audio_document_last_play',
+        field: 'doc',
+    });
 }
 
-export function setLastPlay(docJson: string): void {
+export function setLastPlay(request: AudioDocumentPlayRequest): void {
     const db = getDb();
     const existing = db.select().from(audioDocumentLastPlay).get();
+    const docJson = JSON.stringify(request);
     if (existing) {
         db.update(audioDocumentLastPlay)
             .set({ doc: docJson, reference: '' })

@@ -8,6 +8,7 @@ import {
     type TtsHighlightMode,
     type TtsSegment,
     type TtsSettings,
+    type TtsPlaybackState,
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
     hasSpeakableContent,
@@ -15,10 +16,21 @@ import {
 
 // ── Per-document TTS options ──
 
-interface UseTtsOptions {
+export interface UseTtsOptions {
     introText?: string;
     getSegmentLabel?: (paragraphIndex: number) => string;
 }
+
+type BrowserPlaybackActions = {
+    markCompletedNaturally(): void;
+    reset(): void;
+    setPlaybackState(state: TtsPlaybackState): void;
+};
+
+type PlaybackActions = BrowserPlaybackActions & {
+    setDocumentKey(documentKey: string | null): void;
+    setSegments(segments: TtsSegment[]): void;
+};
 
 // ── Segmentation ──
 
@@ -74,6 +86,88 @@ async function segmentText(
     return result;
 }
 
+function buildPlaybackSegments(
+    contentSegments: TtsSegment[],
+    options?: UseTtsOptions,
+    readIntroduction?: boolean,
+): TtsSegment[] {
+    const allSegments: TtsSegment[] = [];
+    if (options?.introText && readIntroduction) {
+        allSegments.push({
+            index: 0,
+            text: options.introText,
+            paragraphIndex: -1,
+            startOffset: 0,
+            endOffset: 0,
+        });
+    }
+    for (const seg of contentSegments) {
+        allSegments.push({ ...seg, index: allSegments.length });
+    }
+    return allSegments;
+}
+
+export async function startTtsPlayback(
+    paragraphs: { paragraphIndex: number; content: string }[],
+    language: string,
+    documentKey: string,
+    options?: UseTtsOptions,
+    startParagraphIndex?: number,
+): Promise<void> {
+    const settings = useTtsStore.getState().settings;
+    if (!settings || !paragraphs.length) {
+        return;
+    }
+
+    const contentSegments = await segmentText(
+        paragraphs,
+        settings.highlightMode,
+        language,
+        options?.getSegmentLabel,
+        settings.announceSegmentNumbers,
+    );
+    if (!contentSegments.length) {
+        return;
+    }
+
+    const allSegments = buildPlaybackSegments(contentSegments, options, settings.readIntroduction);
+    const state = useTtsStore.getState();
+
+    const savedIndex =
+        startParagraphIndex == null &&
+        state.lastStoppedDocumentKey === documentKey &&
+        state.lastStoppedSegmentIndex > 0
+            ? state.lastStoppedSegmentIndex
+            : 0;
+
+    const startIndex =
+        startParagraphIndex == null
+            ? savedIndex < allSegments.length
+                ? savedIndex
+                : 0
+            : allSegments.findIndex((segment) => segment.paragraphIndex >= startParagraphIndex);
+
+    if (startIndex < 0) {
+        return;
+    }
+
+    startPlaybackAtIndex(
+        allSegments,
+        startIndex,
+        settings,
+        language,
+        documentKey,
+        {
+            markCompletedNaturally: state.markCompletedNaturally,
+            reset: state.reset,
+            setDocumentKey: state.setDocumentKey,
+            setPlaybackState: state.setPlaybackState,
+            setSegments: state.setSegments,
+        },
+        getTtsStatusSnapshot,
+    );
+}
+
 // ── Browser TTS ──
 
 let browserTtsGapTimer: ReturnType<typeof setTimeout> | null = null;
@@ -85,20 +179,26 @@ function clearBrowserTtsTimer(): void {
     }
 }
 
-function playBrowserSegment(segments: TtsSegment[], index: number, settings: TtsSettings): void {
+function getTtsStatusSnapshot(): 'idle' | 'loading' | 'playing' | 'paused' | 'error' {
+    return useTtsStore.getState().status;
+}
+
+function playBrowserSegment(
+    segments: TtsSegment[],
+    index: number,
+    settings: TtsSettings,
+    actions: BrowserPlaybackActions,
+    getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error',
+): void {
     clearBrowserTtsTimer();
 
     if (index >= segments.length) {
-        useTtsStore.setState({
-            completedNaturally: true,
-            lastStoppedDocumentId: null,
-            lastStoppedSegmentIndex: 0,
-        });
-        useTtsStore.getState().reset();
+        actions.markCompletedNaturally();
+        actions.reset();
         return;
     }
 
-    useTtsStore.getState().setPlaybackState({
+    actions.setPlaybackState({
         status: 'playing',
         currentSegmentIndex: index,
         totalSegments: segments.length,
@@ -110,15 +210,15 @@ function playBrowserSegment(segments: TtsSegment[], index: number, settings: Tts
 
     browserTts.setOnSegmentEnd(() => {
         // Check if we were stopped while speaking
-        if (useTtsStore.getState().status === 'idle') return;
+        if (getStatus() === 'idle') return;
 
         if (gapMs > 0) {
             browserTtsGapTimer = setTimeout(
-                () => playBrowserSegment(segments, index + 1, settings),
+                () => playBrowserSegment(segments, index + 1, settings, actions, getStatus),
                 gapMs,
             );
         } else {
-            playBrowserSegment(segments, index + 1, settings);
+            playBrowserSegment(segments, index + 1, settings, actions, getStatus);
         }
     });
     browserTts.speak(segments[index].text, cfg?.voiceId, {
@@ -135,13 +235,14 @@ function startPlaybackAtIndex(
     startIndex: number,
     settings: TtsSettings,
     language: string,
-    documentId: string,
+    documentKey: string,
+    actions: PlaybackActions,
+    getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error',
 ): void {
-    const store = useTtsStore.getState();
-    store.setSegments(segments);
-    store.setDocumentId(documentId);
+    actions.setSegments(segments);
+    actions.setDocumentKey(documentKey);
     // Set status eagerly so the mini-player subscriber pauses sermon audio
-    store.setPlaybackState({
+    actions.setPlaybackState({
         status: 'loading',
         currentSegmentIndex: startIndex,
         totalSegments: segments.length,
@@ -149,13 +250,13 @@ function startPlaybackAtIndex(
     });
 
     if (settings.activeProvider === 'browser') {
-        playBrowserSegment(segments, startIndex, settings);
+        playBrowserSegment(segments, startIndex, settings, actions, getStatus);
     } else {
         window.api.tts.startPlayback(segments, language, startIndex).catch(() => {
             message.error(
                 i18next.t('La lecture audio a échoué. Vérifiez la configuration du fournisseur.'),
             );
-            useTtsStore.getState().reset();
+            actions.reset();
         });
     }
 }
@@ -165,15 +266,21 @@ function startPlaybackAtIndex(
 export function useTts(
     paragraphs: { paragraphIndex: number; content: string }[],
     language: string,
-    documentId: string,
+    documentKey: string,
     options?: UseTtsOptions,
 ) {
     const settings = useTtsStore((s) => s.settings);
     const status = useTtsStore((s) => s.status);
-    const currentDocId = useTtsStore((s) => s.documentId);
+    const currentDocumentKey = useTtsStore((s) => s.documentKey);
+    const currentSegmentIndex = useTtsStore((s) => s.currentSegmentIndex);
+    const totalSegments = useTtsStore((s) => s.totalSegments);
+    const segments = useTtsStore((s) => s.segments);
     const setPlaybackState = useTtsStore((s) => s.setPlaybackState);
     const languageSupported = useTtsStore((s) => s.languageSupported);
     const incompatibleMessage = useTtsStore((s) => s.incompatibleMessage);
+    const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
+    const reset = useTtsStore((s) => s.reset);
+    const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
     const activeProvider = settings?.activeProvider;
 
     // Stop TTS on language change (ignore empty transitions during tab switches)
@@ -185,57 +292,17 @@ export function useTts(
 
         const hadLanguage = !!prevLanguageRef.current;
         prevLanguageRef.current = language;
-        if (hadLanguage && useTtsStore.getState().status !== 'idle') {
+        if (hadLanguage && status !== 'idle') {
             stopAllTtsPlayback();
-            useTtsStore.getState().reset();
+            reset();
         }
-    }, [language]);
+    }, [language, reset, status]);
 
     const play = useCallback(async () => {
-        if (!settings || !paragraphs.length) {
-            return;
-        }
-        const contentSegments = await segmentText(
-            paragraphs,
-            settings.highlightMode,
-            language,
-            options?.getSegmentLabel,
-            settings.announceSegmentNumbers,
-        );
-        if (!contentSegments.length) {
-            return;
-        }
-
-        // Always build allSegments with intro at index 0 (when enabled).
-        // The startIndex will skip the intro naturally on resume — no need
-        // to conditionally omit it, which avoids an index offset bug.
-        const allSegments: TtsSegment[] = [];
-        if (options?.introText && settings.readIntroduction) {
-            allSegments.push({
-                index: 0,
-                text: options.introText,
-                paragraphIndex: -1,
-                startOffset: 0,
-                endOffset: 0,
-            });
-        }
-        for (const seg of contentSegments) {
-            allSegments.push({ ...seg, index: allSegments.length });
-        }
-
-        // Resume at saved position (skips intro naturally), clamp if stale
-        const store = useTtsStore.getState();
-        const savedIndex =
-            store.lastStoppedDocumentId === documentId && store.lastStoppedSegmentIndex > 0
-                ? store.lastStoppedSegmentIndex
-                : 0;
-        const startIndex = savedIndex < allSegments.length ? savedIndex : 0;
-
-        startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId);
-    }, [paragraphs, language, documentId, settings, options]);
+        await startTtsPlayback(paragraphs, language, documentKey, options);
+    }, [documentKey, language, options, paragraphs]);
 
     const pause = useCallback(() => {
-        const state = useTtsStore.getState();
         if (activeProvider === 'browser') {
             browserTts.pause();
         } else {
@@ -244,14 +311,13 @@ export function useTts(
         }
         setPlaybackState({
             status: 'paused',
-            currentSegmentIndex: state.currentSegmentIndex,
-            totalSegments: state.totalSegments,
+            currentSegmentIndex,
+            totalSegments,
             provider: activeProvider ?? DEFAULT_TTS_PROVIDER,
         });
-    }, [activeProvider, setPlaybackState]);
+    }, [activeProvider, currentSegmentIndex, setPlaybackState, totalSegments]);
 
     const resume = useCallback(() => {
-        const state = useTtsStore.getState();
         if (activeProvider === 'browser') {
             browserTts.resume();
         } else {
@@ -260,72 +326,49 @@ export function useTts(
         }
         setPlaybackState({
             status: 'playing',
-            currentSegmentIndex: state.currentSegmentIndex,
-            totalSegments: state.totalSegments,
+            currentSegmentIndex,
+            totalSegments,
             provider: activeProvider ?? DEFAULT_TTS_PROVIDER,
         });
-    }, [activeProvider, setPlaybackState]);
+    }, [activeProvider, currentSegmentIndex, setPlaybackState, totalSegments]);
 
     const stop = useCallback(() => {
         clearBrowserTtsTimer();
         browserTts.cancel();
         stopAllTtsPlayback();
-        useTtsStore.getState().stopAndRemember();
-    }, []);
+        stopAndRemember();
+    }, [stopAndRemember]);
 
     const seekToSegment = useCallback(
         (i: number) => {
             if (activeProvider === 'browser') {
                 browserTts.cancel();
                 const segs = useTtsStore.getState().segments;
-                if (segs.length && settings) playBrowserSegment(segs, i, settings);
+                if (segs.length && settings) {
+                    playBrowserSegment(
+                        segs,
+                        i,
+                        settings,
+                        {
+                            markCompletedNaturally,
+                            reset,
+                            setPlaybackState,
+                        },
+                        getTtsStatusSnapshot,
+                    );
+                }
             } else {
                 window.api.tts.seekToSegment(i);
             }
         },
-        [activeProvider, settings],
+        [activeProvider, markCompletedNaturally, reset, setPlaybackState, settings],
     );
 
     const playFromParagraph = useCallback(
         async (paragraphIndex: number) => {
-            if (!settings || !paragraphs.length) {
-                return;
-            }
-            const contentSegments = await segmentText(
-                paragraphs,
-                settings.highlightMode,
-                language,
-                options?.getSegmentLabel,
-                settings.announceSegmentNumbers,
-            );
-            if (!contentSegments.length) {
-                return;
-            }
-
-            // Build same segment array as play() so indices are consistent
-            // across stop/resume cycles (intro is included but skipped).
-            const allSegments: TtsSegment[] = [];
-            if (options?.introText && settings.readIntroduction) {
-                allSegments.push({
-                    index: 0,
-                    text: options.introText,
-                    paragraphIndex: -1,
-                    startOffset: 0,
-                    endOffset: 0,
-                });
-            }
-            for (const seg of contentSegments) {
-                allSegments.push({ ...seg, index: allSegments.length });
-            }
-
-            const startIndex = allSegments.findIndex((s) => s.paragraphIndex >= paragraphIndex);
-            if (startIndex < 0) {
-                return;
-            }
-
-            startPlaybackAtIndex(allSegments, startIndex, settings, language, documentId);
+            await startTtsPlayback(paragraphs, language, documentKey, options, paragraphIndex);
         },
-        [paragraphs, language, documentId, settings, options],
+        [documentKey, language, options, paragraphs],
     );
 
     // Restart playback from current paragraph when content-shaping settings change
@@ -334,19 +377,26 @@ export function useTts(
     useEffect(() => {
         if (contentKeyRef.current !== contentKey) {
             contentKeyRef.current = contentKey;
-            const store = useTtsStore.getState();
             if (
-                store.documentId === documentId &&
-                (store.status === 'playing' || store.status === 'paused')
+                currentDocumentKey === documentKey &&
+                (status === 'playing' || status === 'paused')
             ) {
-                const currentSeg = store.segments[store.currentSegmentIndex];
+                const currentSeg = segments[currentSegmentIndex];
                 const paragraphIdx = currentSeg?.paragraphIndex ?? 0;
                 playFromParagraph(Math.max(1, paragraphIdx));
             }
         }
-    }, [contentKey, documentId, playFromParagraph]);
+    }, [
+        contentKey,
+        currentDocumentKey,
+        currentSegmentIndex,
+        documentKey,
+        playFromParagraph,
+        segments,
+        status,
+    ]);
 
-    const isThisDocument = currentDocId === documentId;
+    const isThisDocument = currentDocumentKey === documentKey;
     const isPlaying = isThisDocument && (status === 'playing' || status === 'loading');
     const isPaused = isThisDocument && status === 'paused';
 

@@ -42,9 +42,9 @@ export function registerDocumentsHandlers(): void {
     });
 
     registerHandler(
-        DocumentChannels.getTraductionsForSermon,
+        DocumentChannels.getTranslationsForSermonInLanguage,
         async (_event, sermonId, langCode) => {
-            return referenceDataService.getTraductionsForSermon(sermonId, langCode);
+            return referenceDataService.getTranslationsForSermonInLanguage(sermonId, langCode);
         },
     );
 

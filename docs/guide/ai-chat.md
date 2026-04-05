@@ -1,19 +1,22 @@
 # Discussion IA
 
-<p class="lead">Wmb Table comprend une vraie fonction de discussion IA pour vous aider à retrouver plus vite des prédications, des versets, des sujets, des notes et des documents personnels. Cette page explique son usage avec des mots simples.</p>
+<p class="lead">Wmb Table comprend une vraie fonction de discussion IA pour vous aider à retrouver plus vite des prédications, des versets, des sujets, des notes et des documents personnels, mais aussi pour explorer un thème, comparer des messages et préparer une étude plus facilement.</p>
 
 > [!IMPORTANT]
 > La discussion IA existe dans l’application, mais elle reste désactivée tant que vous ne l’activez pas vous-même dans l’onglet `Assistant`.
 
 ## À quoi sert la discussion IA
 
-La discussion IA sert surtout à gagner du temps dans votre préparation.
+La discussion IA sert surtout à gagner du temps dans votre préparation et dans votre étude.
 
 Elle peut vous aider à :
 
 - retrouver une prédication par son titre, sa date, sa ville ou d’autres informations
 - chercher un mot ou une expression à l’intérieur des prédications
 - lire le contenu d’une prédication
+- résumer une prédication précise
+- comparer plusieurs prédications sur un même thème
+- approfondir un sujet de façon interactive en posant plusieurs questions de suite
 - retrouver un passage biblique
 - voir les versions bibliques disponibles
 - retrouver vos sujets existants
@@ -25,17 +28,11 @@ Elle peut vous aider à :
 - ajouter un passage biblique ou une référence de prédication à une note
 - retrouver vos documents personnels
 
+L’idée simple est celle-ci : au lieu de refaire vous-même plusieurs recherches séparées, vous pouvez poser une demande naturelle et laisser l’assistant rassembler ce qu’il trouve déjà dans Wmb Table.
+
 ## Où ouvrir cette fonction
 
 Quand elle est activée, la discussion IA apparaît dans la barre latérale de l’application, avec les autres outils.
-
-Le plus simple est :
-
-1. ouvrir `Paramètres`
-2. ouvrir `Assistant`
-3. activer la fonction
-4. revenir ensuite dans le menu de gauche
-5. ouvrir `Assistant`
 
 <ScreenshotPlaceholder
   file="fr-ai-chat-sidebar-entry.png"
@@ -51,52 +48,26 @@ La page de discussion IA contient trois zones simples :
 - au centre, les messages
 - en bas, la zone où vous écrivez votre demande
 
-Vous pouvez aussi :
-
-- créer une nouvelle conversation
-- ouvrir une ancienne conversation
-- supprimer une conversation
-- vider tout l’historique des conversations
-- arrêter une réponse en cours
-
 <ScreenshotPlaceholder
   file="fr-ai-chat-main-screen.png"
   label="Page principale de discussion IA"
   hint="Montrer la liste des conversations à gauche, les messages au centre et la zone de saisie en bas."
 />
 
-## Utilisation très simple
-
-Le fonctionnement le plus simple est celui-ci :
-
-1. ouvrez `Assistant`
-2. écrivez votre demande
-3. appuyez sur `Entrée` pour envoyer
-4. lisez la réponse
-5. ouvrez ensuite le sermon, le passage biblique, le sujet ou la note si le résultat est bon
-
-Pour écrire sur plusieurs lignes, utilisez `Maj + Entrée`.
-
-Si vous voulez arrêter une réponse en cours, utilisez le bouton d’arrêt dans la zone de saisie.
-
 ## Exemples de demandes utiles
 
 - `Trouve les prédications prêchées à Jeffersonville`
 - `Cherche les sermons sur le baptême`
+- `Résume cette prédication`
+- `Compare ce que le prophète dit sur la foi dans plusieurs prédications`
+- `Aide-moi à approfondir le thème du baptême`
 - `Montre-moi le passage de Jean 3:16`
-- `Montre-moi les versions bibliques disponibles en français`
 - `Liste mes sujets sur la foi`
-- `Crée un sujet appelé Repentance`
 - `Ajoute Jean 3:16 au sujet Salut`
-- `Montre mes notes sur la semence`
-- `Crée une note appelée Message du dimanche`
-- `Ajoute le paragraphe 25 de ce sermon à ma note`
 
 ## Ce que la discussion IA sait utiliser
 
-La discussion IA travaille avec les informations déjà présentes dans Wmb Table.
-
-Elle sait utiliser :
+La discussion IA travaille avec les informations déjà présentes dans Wmb Table :
 
 - les langues installées
 - les prédications disponibles dans votre bibliothèque
@@ -106,13 +77,7 @@ Elle sait utiliser :
 - vos notes
 - vos documents personnels
 
-Quand elle agit, l’application peut aussi afficher de petits repères sous la réponse pour montrer ce qu’elle a fait, par exemple :
-
-- recherche de sermons
-- lecture d’un sermon
-- passage biblique
-- ajout à un sujet
-- ajout à une note
+L’application peut aussi afficher de petits repères sous la réponse pour montrer ce que l’assistant a utilisé.
 
 <ScreenshotPlaceholder
   file="fr-ai-chat-tool-results.png"
@@ -120,54 +85,26 @@ Quand elle agit, l’application peut aussi afficher de petits repères sous la 
   hint="Montrer une réponse IA avec les petites étiquettes indiquant recherche de sermons, passage biblique, ajout au sujet ou ajout à la note."
 />
 
-## Relation avec les langues
-
-L’assistant utilise deux langues :
-
-- **La langue de votre bibliothèque** : l’assistant cherche les sermons, les passages bibliques et les références dans la langue choisie pour votre bibliothèque.
-- **La langue de l’interface** : l’assistant vous répond dans la langue choisie pour les menus et les boutons de l’application.
-
-Par exemple, si votre bibliothèque est en anglais mais que votre interface est en français, l’assistant cherchera dans les prédications anglaises et vous répondra en français.
-
-Si une autre langue est demandée clairement dans votre message, il peut s’y adapter.
-
 ## Références cliquables
 
-Quand l'assistant vous donne des résultats, les références aux prédications, passages bibliques et documents apparaissent sous forme de petites étiquettes colorées.
+Quand l'assistant vous donne des résultats, les références aux prédications, passages bibliques et documents apparaissent sous forme de petites étiquettes cliquables.
 
-En cliquant sur une étiquette, vous ouvrez directement le document au bon endroit :
-
-- une étiquette bleue ouvre la prédication au bon paragraphe
-- une étiquette verte ouvre le chapitre biblique
-- une étiquette orange ouvre le document personnel
-
-Cela vous évite de chercher vous-même dans la liste des prédications ou dans la Bible.
+En cliquant dessus, vous ouvrez directement le document au bon endroit.
 
 <ScreenshotPlaceholder
   file="fr-ai-chat-reference-links.png"
   label="Références cliquables dans la discussion IA"
-  hint="Montrer une réponse IA contenant des étiquettes bleues (prédication), vertes (Bible) et oranges (document) cliquables."
+  hint="Montrer une réponse IA contenant des étiquettes cliquables pour les sermons, la Bible et les documents."
 />
-
-## Ce que la discussion IA ne remplace pas
-
-Même si elle peut retrouver beaucoup de choses, elle ne remplace pas votre jugement.
-
-Gardez cette habitude :
-
-1. ouvrez la source proposée
-2. relisez le passage dans son contexte
-3. vérifiez qu’il s’agit bien de la bonne référence
-4. ajoutez seulement ce qui vous sert vraiment
 
 ## Quand cette fonction est la plus utile
 
 La discussion IA aide surtout quand :
 
-- vous vous souvenez d’un détail mais pas du titre exact
-- vous voulez vérifier si vous avez déjà un sujet sur un thème
-- vous voulez retrouver rapidement une note ancienne
-- vous voulez ajouter plusieurs références sans refaire toutes les recherches à la main
+- vous vous souvenez d’une idée mais pas du titre exact
+- vous voulez approfondir un thème sans ouvrir d’abord plusieurs pages vous-même
+- vous voulez comparer plusieurs prédications rapidement
+- vous voulez passer plus vite entre recherche, lecture, notes et sujets
 
 ## Voir aussi
 

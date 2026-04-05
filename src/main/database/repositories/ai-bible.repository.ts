@@ -1,16 +1,17 @@
 import Database from 'better-sqlite3';
 import { existsSync } from 'node:fs';
 import * as bibleService from '@main/services/bible.service';
+import { normalizeBibleAbbreviation } from '@shared/types';
 import { strNormalize } from '@shared/searchable';
 import type { BibleBook, BibleSearchResult } from '@shared/types';
 
 function resolveVersionDbPath(abbreviation?: string, languageCode?: string): string | null {
-    const abbr = abbreviation?.trim().toLowerCase();
+    const abbr = normalizeBibleAbbreviation(abbreviation);
     const versions = bibleService.getAllBibleVersions();
 
     const version =
         (abbr
-            ? versions.find((v) => v.abbreviation.toLowerCase() === abbr)
+            ? versions.find((v) => v.abbreviation === abbr)
             : languageCode
               ? versions.find(
                     (v) => v.langCode === languageCode && bibleService.isBibleAvailable(v),

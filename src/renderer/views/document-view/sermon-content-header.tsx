@@ -15,9 +15,9 @@ export default function SermonContentHeader({ meta }: { meta: SermonMeta }) {
                     {meta.location ? ` ${meta.location}` : ''}
                 </div>
             )}
-            {meta.traductionName && (
-                <div className="sermon-content-header__traduction">
-                    {t('Traduction:')} {meta.traductionName}
+            {meta.translationName && (
+                <div className="sermon-content-header__translation">
+                    {t('Traduction:')} {meta.translationName}
                 </div>
             )}
         </div>

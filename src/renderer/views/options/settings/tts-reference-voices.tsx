@@ -74,7 +74,7 @@ export default function TtsReferenceVoices({
                 await audio.play();
             } catch (err) {
                 setPlayingId(null);
-                message.error(getErrorMessage(err, t('Erreur lors de la lecture')));
+                message.error(t(getErrorMessage(err, 'Erreur lors de la lecture')));
             }
         },
         [playingId, fetchAudio, t],
@@ -93,7 +93,7 @@ export default function TtsReferenceVoices({
                 message.success(t('Voix clonée avec succès'));
                 onVoiceCloned(result.voiceId);
             } catch (err) {
-                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+                message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(err)) }));
             } finally {
                 setCloningId(null);
             }

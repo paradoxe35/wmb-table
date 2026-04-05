@@ -121,7 +121,7 @@ export function ZoomControls({
 
 interface ParagraphListProps {
     paragraphs: { paragraphIndex: number; content: string }[];
-    documentId: string;
+    documentKey: string;
     search: SearchHighlightState | null;
     activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
@@ -132,7 +132,7 @@ interface ParagraphListProps {
 
 export function ParagraphList({
     paragraphs,
-    documentId,
+    documentKey,
     search,
     activeParagraphIndex,
     highlightsByParagraph,
@@ -146,7 +146,7 @@ export function ParagraphList({
                 <TtsParagraph
                     key={p.paragraphIndex}
                     paragraph={p}
-                    documentId={documentId}
+                    documentKey={documentKey}
                     search={search}
                     isActiveMatch={p.paragraphIndex === activeParagraphIndex}
                     highlights={highlightsByParagraph.get(p.paragraphIndex)}
@@ -163,7 +163,7 @@ export function ParagraphList({
 
 interface TtsParagraphProps {
     paragraph: { paragraphIndex: number; content: string };
-    documentId: string;
+    documentKey: string;
     search: SearchHighlightState | null;
     isActiveMatch?: boolean;
     highlights?: HighlightItem[];
@@ -174,7 +174,7 @@ interface TtsParagraphProps {
 
 export function TtsParagraph({
     paragraph,
-    documentId,
+    documentKey,
     search,
     isActiveMatch,
     highlights,
@@ -183,7 +183,7 @@ export function TtsParagraph({
     incompatibleMessage,
 }: TtsParagraphProps) {
     const { t } = useTranslation();
-    const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentId);
+    const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentKey);
     const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
     const containerRef = useRef<HTMLDivElement>(null);
 

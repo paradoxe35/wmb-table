@@ -29,7 +29,6 @@ function rowToSettings(row: typeof ttsSettings.$inferSelect): TtsSettings {
     return {
         activeProvider: row.activeProvider as TtsProviderType,
         highlightMode: row.highlightMode as TtsHighlightMode,
-        autoPlay: row.autoPlay,
         autoSwitchVoice: row.autoSwitchVoice ?? true,
         rate: row.rate,
         segmentGapMs: row.segmentGapMs ?? SEGMENT_GAP_MS,
@@ -59,7 +58,6 @@ export function ensureSettings(): TtsSettings {
             id: TTS_SETTINGS_ID,
             activeProvider: defaults.activeProvider,
             highlightMode: defaults.highlightMode,
-            autoPlay: defaults.autoPlay,
             autoSwitchVoice: defaults.autoSwitchVoice,
             rate: defaults.rate,
             segmentGapMs: defaults.segmentGapMs,
@@ -70,13 +68,12 @@ export function ensureSettings(): TtsSettings {
     return getSettings()!;
 }
 
-export function updateSettings(partial: Partial<TtsSettings>): void {
+export function updateSettings(partial: Partial<TtsSettings>): TtsSettings {
     const current = ensureSettings();
     const update: Record<string, unknown> = { updatedAt: new Date().toISOString() };
 
     if (partial.activeProvider !== undefined) update.activeProvider = partial.activeProvider;
     if (partial.highlightMode !== undefined) update.highlightMode = partial.highlightMode;
-    if (partial.autoPlay !== undefined) update.autoPlay = partial.autoPlay;
     if (partial.autoSwitchVoice !== undefined) update.autoSwitchVoice = partial.autoSwitchVoice;
     if (partial.rate !== undefined) update.rate = partial.rate;
     if (partial.segmentGapMs !== undefined) update.segmentGapMs = partial.segmentGapMs;
@@ -100,4 +97,6 @@ export function updateSettings(partial: Partial<TtsSettings>): void {
     if (row) {
         getDb().update(ttsSettings).set(update).where(eq(ttsSettings.id, row.id)).run();
     }
+
+    return ensureSettings();
 }

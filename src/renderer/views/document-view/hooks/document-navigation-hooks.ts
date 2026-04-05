@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo } from 'react';
-import { useSearchStore, useSermonStore, selectActiveTabKey } from '@renderer/stores';
-import type { CurrentDocumentIdentity } from '@renderer/utils/pending-navigation';
+import { useSearchStore, useDocumentTabsStore, selectActiveTabKey } from '@renderer/stores';
+import type { DocumentIdentity } from '@shared/types';
 import { pendingNavigationMatchesDocument } from '@renderer/utils/pending-navigation';
 import { paragraphHasMatch } from '@renderer/utils/searchable';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
@@ -35,7 +35,7 @@ function buildSearchHighlightMaps(matches: DocumentSearchParagraphMatch[] | unde
 }
 
 export function useSearchHighlight(): SearchHighlightState | null {
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const query = useSearchStore((s) =>
         activeTabKey ? s.documentViewQueries[activeTabKey] : null,
     );
@@ -57,25 +57,28 @@ export function useSearchHighlight(): SearchHighlightState | null {
 // Reference navigation (highlights, notes, subjects, links)
 // ---------------------------------------------------------------------------
 
-export type ReferenceNavigationOptions = { contentReady: boolean } & CurrentDocumentIdentity;
+export type ReferenceNavigationOptions = {
+    contentReady: boolean;
+    documentIdentity: DocumentIdentity | null;
+};
 
 export function useReferenceNavigation(
     containerRef: React.RefObject<HTMLDivElement | null>,
     options: ReferenceNavigationOptions,
 ) {
-    const pendingNavigation = useSermonStore((s) => s.pendingNavigation);
-    const clearPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
+    const clearPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
 
     useLayoutEffect(() => {
-        if (!pendingNavigation || !options.contentReady) return;
-        if (!pendingNavigationMatchesDocument(pendingNavigation, options)) return;
+        if (!pendingNavigation || !options.contentReady || !options.documentIdentity) return;
+        if (!pendingNavigationMatchesDocument(pendingNavigation, options.documentIdentity)) return;
         if (!containerRef.current) return;
 
-        const ref = pendingNavigation.documentHtmlTree;
+        const ref = pendingNavigation.documentReference;
         const paragraphIndex = ref
             ? isParagraphReference(ref)
                 ? ref.paragraphIndex
-                : ref.tree?.[0]
+                : ref.tree[0]
             : undefined;
         if (paragraphIndex == null) {
             clearPendingNavigation(null);
@@ -99,7 +102,13 @@ export function useReferenceNavigation(
         };
         raf = requestAnimationFrame(tryScroll);
         return () => cancelAnimationFrame(raf);
-    }, [pendingNavigation, options, clearPendingNavigation, containerRef]);
+    }, [
+        pendingNavigation,
+        options.contentReady,
+        options.documentIdentity,
+        clearPendingNavigation,
+        containerRef,
+    ]);
 }
 
 // ---------------------------------------------------------------------------

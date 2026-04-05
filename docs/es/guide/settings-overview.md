@@ -9,6 +9,7 @@ En el menú izquierdo, haga clic en `Ajustes`.
 La página de ajustes contiene varias pestañas sencillas:
 
 - `General`
+- `Vista de lectura`
 - `Biblioteca`
 - `Assistant`
 - `Lectura en audio`
@@ -18,7 +19,7 @@ La página de ajustes contiene varias pestañas sencillas:
 <ScreenshotPlaceholder
   file="es-settings-overview-page.png"
   label="Página principal de ajustes con todas las pestañas"
-  hint="Tomar una pantalla mostrando las pestañas General, Idiomas, Assistant, Lectura en audio, Copia de seguridad y Actualización."
+  hint="Tomar una pantalla mostrando las pestañas General, Vista de lectura, Idiomas, Assistant, Lectura en audio, Copia de seguridad y Actualización."
 />
 
 ## Para qué sirve cada pestaña
@@ -29,11 +30,22 @@ Ofrece un resumen rápido del estado de la aplicación.
 
 Puede mostrar:
 
+- el modo de apariencia
+- el tamaño del texto
 - el idioma de su biblioteca
 - el idioma de la interfaz
 - el número de idiomas instalados
 - el estado de la copia de seguridad
 - el estado de las actualizaciones
+
+### Vista de lectura
+
+Esta sección sirve para controlar la propia lectura.
+
+Permite:
+
+- recordar o no la posición de lectura
+- elegir el número máximo de pestañas abiertas
 
 ### Biblioteca
 
@@ -45,15 +57,16 @@ Use esta sección para:
 
 ### Assistant
 
-Esta sección servirá para la función de chat con IA.
+Esta sección sirve para la función de chat con IA.
 
-Deberá permitir:
+Permite:
 
 - activar o desactivar el asistente
-- gestionar las opciones relacionadas con el asistente
-- revisar cómo usar esta función
+- elegir el proveedor IA
+- configurar un modelo local o un servicio en línea
+- controlar el comportamiento del idioma
 
-Si quiere usar el chat con IA, esta será la primera pestaña que deberá abrir.
+Después de empezar a usar la aplicación, Wmb Table también puede recordarle esta función con una pequeña notificación si todavía no está configurada.
 
 ### Lectura en audio
 
@@ -65,6 +78,8 @@ Use esta sección para:
 - elegir el modo de resaltado
 - gestionar la caché de audio
 
+La aplicación también puede recordarle esta función más tarde si nunca la ha configurado o usado.
+
 ### Copia de seguridad
 
 Use esta sección para:
@@ -73,6 +88,8 @@ Use esta sección para:
 - activar o pausar la sincronización
 - revisar el estado de la copia de seguridad
 - seguir el progreso de restauración
+
+La aplicación también puede recordarle esta función más tarde si todavía no está configurada.
 
 ### Actualización
 
@@ -86,16 +103,18 @@ Use esta sección para:
 
 Si quiere…
 
+- hacer una revisión rápida: abra `General`
+- gestionar pestañas o reanudar lecturas: abra `Vista de lectura`
 - cambiar el idioma de su biblioteca: abra `Biblioteca`
 - usar o activar el chat con IA: abra `Assistant`
 - escuchar una predicación o un capítulo bíblico: abra `Lectura en audio`
 - proteger su trabajo: abra `Copia de seguridad`
 - instalar la última versión: abra `Actualización`
-- hacer una revisión rápida: abra `General`
 
 ## Páginas detalladas
 
 - [General](/es/guide/settings-general)
+- [Ajustes de la vista de lectura](/es/guide/settings-document-view)
 - [Biblioteca](/es/guide/languages)
 - [Assistant](/es/guide/settings-assistant)
 - [Chat con IA](/es/guide/ai-chat)

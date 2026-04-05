@@ -7,14 +7,14 @@ import {
     useSearchStore,
     selectActiveTabKey,
     selectActiveTabTitle,
-    useSermonStore,
+    useDocumentTabsStore,
 } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 
 export default function InlineSearchBar() {
     const { t } = useTranslation();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const activeTitle = useDocumentTabsStore(selectActiveTabTitle);
     const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQuery);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
     const clearSearch = useSearchStore((s) => s.clearSearch);
@@ -37,8 +37,8 @@ export default function InlineSearchBar() {
     const searchTermRef = useRef('');
 
     // Keep latest values in refs so the debounced callback never captures stale closures
-    const latestRef = useRef({ activeTitle, activeTabKey, searchMode });
-    latestRef.current = { activeTitle, activeTabKey, searchMode };
+    const latestRef = useRef({ activeTitle, activeTabKey, searchMode, clearSearch });
+    latestRef.current = { activeTitle, activeTabKey, searchMode, clearSearch };
 
     // Stable debounced function — never recreated, reads latest values from refs
     const debouncedSearch = useRef(
@@ -47,14 +47,14 @@ export default function InlineSearchBar() {
                 activeTitle: title,
                 activeTabKey: tabKey,
                 searchMode: mode,
+                clearSearch: clearActiveSearch,
             } = latestRef.current;
             if (!title || !tabKey) return;
             if (value.trim().length < 3) {
-                useSearchStore.getState().clearSearch(tabKey);
+                clearActiveSearch(tabKey);
                 return;
             }
             setDocumentViewQuery(tabKey, {
-                documentKey: tabKey,
                 documentTitle: title,
                 matches: [],
                 textContentLength: 0,

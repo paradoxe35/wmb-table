@@ -25,6 +25,7 @@ import {
 import { message } from 'antd';
 import type { BackupStatus, RestoreProgressEvent, RestoreProgressEventType } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
+import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
 import { SYNC_EVENT } from '@renderer/utils/events';
 
 const { Text, Paragraph } = Typography;
@@ -80,7 +81,10 @@ export default function BackupTab() {
         window.api.backup
             .login()
             .then((result) => {
-                if (result && typeof result === 'object') setStatus(result);
+                if (result && typeof result === 'object') {
+                    setStatus(result);
+                }
+                markFeatureReminderUsed('backup');
                 setSyncing(true);
                 message.success(t('Connexion réussie. Synchronisation en arrière-plan...'), 3);
             })
@@ -309,8 +313,8 @@ function RestoreProgress({
                 if (s) onStatusRefresh(s);
             });
         };
-        window.addEventListener('sync-completed', handler);
-        return () => window.removeEventListener('sync-completed', handler);
+        window.addEventListener(SYNC_EVENT.syncCompleted, handler);
+        return () => window.removeEventListener(SYNC_EVENT.syncCompleted, handler);
     }, [onStatusRefresh]);
 
     const restartAppNow = useCallback(() => {

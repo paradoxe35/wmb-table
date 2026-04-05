@@ -3,17 +3,18 @@ import { useTranslation } from 'react-i18next';
 import { Input, Button, Card, Divider, Segmented, Select, Tag, Typography } from 'antd';
 import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
-import type { InstalledLanguage, SermonMetaWithTraductions } from '@shared/types';
+import type { InstalledLanguage, SermonMetaWithTranslations } from '@shared/types';
 import { getTabKey } from '@shared/types';
+import { getLanguageDisplayName } from '@shared/tts.types';
 import ContainerScrollY from '../container-scroll-y';
 import {
+    useDocumentTabsStore,
     useSermonStore,
     useCustomDocumentsStore,
     selectActiveTab,
-    selectActiveTabTitle,
 } from '@renderer/stores';
 import { useAppStore } from '@renderer/stores';
-import { useOpenDocument, useOpenCustomDocument, useFormatSermonDate } from '@renderer/hooks';
+import { useOpenDocumentRequest, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import SidebarBibleBrowser from './sidebar-bible-browser';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
@@ -77,8 +78,9 @@ const openCustomDocumentModal = () => {
 const DocumentsAdded = () => {
     const { t } = useTranslation();
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
-    const activeTitle = useSermonStore(selectActiveTabTitle);
-    const openCustomDocument = useOpenCustomDocument();
+    const activeTab = useDocumentTabsStore(selectActiveTab);
+    const openDocumentRequest = useOpenDocumentRequest();
+    const activeCustomDocumentId = activeTab?.type === 'custom' ? activeTab.documentId : null;
 
     if (customDocuments.length === 0) {
         return (
@@ -122,14 +124,23 @@ const DocumentsAdded = () => {
                     {customDocuments.map((d, i) => (
                         <div
                             key={d.id || i}
-                            className={`sidebar-item ${activeTitle === d.title ? 'sidebar-item--active' : ''}`}
-                            {...interactiveProps(() => openCustomDocument(d.title, d.sermonId))}
+                            className={`sidebar-item ${activeCustomDocumentId === d.id ? 'sidebar-item--active' : ''}`}
+                            {...interactiveProps(() =>
+                                openDocumentRequest({
+                                    title: d.title,
+                                    documentType: 'custom',
+                                    customDocumentId: d.id,
+                                }),
+                            )}
                             title={d.title}
                         >
                             <div className="sidebar-item__left">
                                 <div className="sidebar-item__title">{d.title}</div>
                                 <div className="sidebar-item__date">
                                     {new Date(d.createdAt).toLocaleDateString()}
+                                </div>
+                                <div className="sidebar-item__date">
+                                    {getLanguageDisplayName(d.languageCode)}
                                 </div>
                             </div>
                             <div className="sidebar-item__right" style={{ alignSelf: 'center' }}>
@@ -149,7 +160,7 @@ const alphabets = alpha.map((x) => String.fromCharCode(x));
 const DocumentByAlphabetic = () => {
     const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
-    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
+    const [datas, setDatas] = useState<SermonMetaWithTranslations[]>([]);
     const alphabet = useRef(alphabets[0]);
 
     const onSearch = useCallback(() => {
@@ -190,7 +201,7 @@ const DocumentByAlphabetic = () => {
 const DocumentByYears = () => {
     const { t } = useTranslation();
     const sermonsByYear = useSermonStore((s) => s.sermonsByYear);
-    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
+    const [datas, setDatas] = useState<SermonMetaWithTranslations[]>([]);
     const selectedYear = useRef<string>('');
 
     const years = useMemo(
@@ -243,16 +254,31 @@ const ContentLanguageBar = () => {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [langName, setLangName] = useState<string>('');
 
-    useEffect(() => {
-        if (!contentLanguage) return;
+    const refreshLanguageName = useCallback(() => {
+        if (!contentLanguage) {
+            setLangName('');
+            return;
+        }
+
         window.api.languages
             .getInstalled()
             .then((langs: InstalledLanguage[]) => {
                 const lang = langs.find((l) => l.code === contentLanguage);
-                if (lang) setLangName(lang.language);
+                setLangName(lang?.language ?? '');
             })
             .catch(() => {});
     }, [contentLanguage]);
+
+    useEffect(() => {
+        refreshLanguageName();
+    }, [refreshLanguageName]);
+
+    useEffect(() => {
+        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refreshLanguageName);
+        return () => {
+            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refreshLanguageName);
+        };
+    }, [refreshLanguageName]);
 
     const openManager = () => {
         window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));
@@ -287,7 +313,7 @@ const ContentLanguageBar = () => {
 const DocumentSearch = () => {
     const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
-    const [datas, setDatas] = useState<SermonMetaWithTraductions[]>([]);
+    const [datas, setDatas] = useState<SermonMetaWithTranslations[]>([]);
 
     useEffect(() => {
         setDatas(sermons);
@@ -360,9 +386,9 @@ function SermonsTab() {
     );
 }
 
-const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
-    const openDocument = useOpenDocument();
-    const activeTab = useSermonStore(selectActiveTab);
+const DocumentList = ({ datas }: { datas: SermonMetaWithTranslations[] }) => {
+    const openDocumentRequest = useOpenDocumentRequest();
+    const activeTab = useDocumentTabsStore(selectActiveTab);
     const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
     const isEnglish = useAppStore((s) => s.contentLanguage) === 'en';
     const formatDate = useFormatSermonDate();
@@ -379,14 +405,28 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
                 <Virtuoso
                     data={sorted}
                     itemContent={(_index, d) => {
-                        const sermonKey = getTabKey({ title: d.title, sermonId: d.sermonId });
+                        const sermonKey = getTabKey({
+                            type: 'sermon',
+                            documentId: d.sermonId,
+                            translationId: d.translationId,
+                            languageCode: d.languageCode,
+                        });
+
                         return (
                             <ItemOutline
                                 sermon={d}
                                 active={activeTabKeyStr === sermonKey}
                                 isEnglish={isEnglish}
                                 formatDate={formatDate}
-                                onClick={() => openDocument(d.title, d.sermonId, d.translationId)}
+                                onClick={() => {
+                                    openDocumentRequest({
+                                        title: d.title,
+                                        documentType: 'sermon',
+                                        sermonId: d.sermonId,
+                                        translationId: d.translationId,
+                                        languageCode: d.languageCode,
+                                    });
+                                }}
                             />
                         );
                     }}
@@ -397,13 +437,13 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTraductions[] }) => {
 };
 
 const ItemOutline = React.memo<{
-    sermon: SermonMetaWithTraductions;
+    sermon: SermonMetaWithTranslations;
     active?: boolean;
     isEnglish: boolean;
     formatDate: (dateMs: number) => string;
     onClick: () => void;
 }>(({ sermon, active, isEnglish, formatDate, onClick }) => {
-    const hasTraductions = sermon.availableTraductions && sermon.availableTraductions.length > 0;
+    const hasTranslations = sermon.availableTranslations && sermon.availableTranslations.length > 0;
 
     return (
         <div
@@ -417,11 +457,11 @@ const ItemOutline = React.memo<{
                     <div className="sidebar-item__en-title">{sermon.enTitle}</div>
                 )}
                 <div className="sidebar-item__date">{formatDate(sermon.dateMs)}</div>
-                {hasTraductions && (
+                {hasTranslations && (
                     <div className="sidebar-item__tags">
-                        {sermon.availableTraductions.map((t) => (
+                        {sermon.availableTranslations.map((t) => (
                             <Tag key={t.translationId} color="blue" className="translation-tag">
-                                {t.traductionName ?? `T${t.translationId}`}
+                                {t.translationName ?? `T${t.translationId}`}
                             </Tag>
                         ))}
                     </div>

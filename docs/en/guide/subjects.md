@@ -34,6 +34,7 @@ You can add:
 
 - a sermon passage
 - a Bible verse
+- a passage from a personal document
 
 ## Adding a passage from the reading view
 
@@ -45,8 +46,6 @@ Do this:
 2. right-click
 3. choose `Add to subject`
 4. choose the subject from the list
-
-If you are preparing a theme, this is the easiest method: read first, then save the passage immediately in the right place.
 
 <ScreenshotPlaceholder
   file="en-subject-add-from-reading-menu.png"
@@ -60,14 +59,33 @@ If you are preparing a theme, this is the easiest method: read first, then save 
   hint="Show the subject selection window after choosing Add to subject."
 />
 
+## Reordering references
+
+Inside a subject, you can drag references into the order you want.
+
+This is useful when you want to:
+
+- build a reading sequence
+- prepare a cleaner outline
+- export the subject in a deliberate order
+
+The chosen order is kept.
+
 ## Opening the original source
 
 When you click a reference in a subject, the app can take you back to the original sermon or Bible passage.
+
+## Exporting a subject to PDF
+
+When your subject is ready, you can export it as PDF.
+
+The PDF follows the current order of the references in the subject.
 
 ## Working well with subjects
 
 - create one subject for each main theme
 - put your strongest references there
+- reorder references if you want a clearer flow
 - keep longer explanations in notes
 
 ## See also

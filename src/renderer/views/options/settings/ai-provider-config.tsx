@@ -18,7 +18,7 @@ import {
 import { useAiChatStore } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
 import DebouncedInput from '@renderer/components/debounced-input';
-import { Field, Hint } from './ai-shared';
+import { ApiKeyLink, Field, Hint } from './ai-shared';
 
 type TestStatus = 'idle' | 'testing' | 'success' | 'error';
 
@@ -53,7 +53,7 @@ function TestButton({
             });
             setStatus(result.valid ? 'success' : 'error');
             if (result.error) {
-                setErrorMessage(result.error);
+                setErrorMessage(t(result.error));
             }
         } catch {
             setStatus('error');
@@ -113,7 +113,8 @@ function ModelSelect({
 
     // Sync local state when external value changes (e.g. settings reload)
     useEffect(() => {
-        setLocalValue(value ?? '');
+        const nextValue = value ?? '';
+        setLocalValue((current) => (current === nextValue ? current : nextValue));
     }, [value]);
 
     // Debounced save — lets the user type freely without cursor jumps
@@ -246,12 +247,15 @@ export function BuiltinProviderConfig({
                     if (field.key === 'apiKey') {
                         return (
                             <Field key={field.key} label={t('Clé API')}>
-                                <DebouncedInput
-                                    password
-                                    value={config?.apiKey ?? ''}
-                                    onChange={(val) => updateField('apiKey', val)}
-                                    placeholder={t('Clé API')}
-                                />
+                                <>
+                                    <DebouncedInput
+                                        password
+                                        value={config?.apiKey ?? ''}
+                                        onChange={(val) => updateField('apiKey', val)}
+                                        placeholder={t('Clé API')}
+                                    />
+                                    <ApiKeyLink provider={provider} />
+                                </>
                             </Field>
                         );
                     }

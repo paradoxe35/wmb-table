@@ -2,6 +2,7 @@ import { z } from 'zod';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
+import { buildParagraphReference, buildSermonDocumentIdentity } from '@shared/types';
 import type { AiToolDefinition } from './types';
 import { inferTranslationId, validateLanguage } from './shared';
 
@@ -30,11 +31,14 @@ export function buildSubjectTools(
                 return {
                     subjectId: subject.id,
                     name: subject.name,
-                    documents: subject.documents.map((doc) => ({
-                        referenceId: doc.id,
-                        documentTitle: doc.documentTitle,
-                        sermonId: doc.sermonId,
-                    })),
+                    documents: subject.documents.map((doc) => {
+                        const documentIdentity = doc.documentReference.documentIdentity;
+                        return {
+                            referenceId: doc.id,
+                            documentTitle: doc.documentTitle,
+                            documentIdentity,
+                        };
+                    }),
                 };
             },
         },
@@ -98,16 +102,11 @@ export function buildSubjectTools(
                 const item = subjectsRepo.createItem(
                     subjectId,
                     meta.title,
-                    {
+                    buildParagraphReference(
+                        buildSermonDocumentIdentity(meta.sermonId, meta.translationId, lang),
                         paragraphIndex,
-                        translationId: meta.translationId,
-                        languageCode: lang,
-                        sermonId: meta.sermonId,
-                        documentType: 'sermon',
-                    },
+                    ),
                     paragraph.content,
-                    undefined,
-                    meta.sermonId,
                 );
                 return {
                     referenceId: item.id,

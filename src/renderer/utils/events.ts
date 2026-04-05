@@ -1,7 +1,17 @@
+import type {
+    AudioDocumentPlayRequest,
+    DocumentReferenceSelection,
+    HighlightCreateData,
+} from '@shared/types';
+
 export const EDITOR_EVENT = {
     renameNoteModal: 'rename-note-modal',
     renameNote: 'rename-note',
 } as const;
+
+export type RenameNoteDetail = {
+    name: string;
+};
 
 export const CUSTOM_DOCUMENT_EVENT = {
     customDocumentRemoved: 'custom-document-removed',
@@ -16,7 +26,7 @@ export const SUBJECT_EVENT = {
 export const CHILD_PARENT_WINDOW_EVENT = {
     addDocumentRefSubject: 'add-document-ref-subject',
     addDocumentRefNote: 'add-document-ref-note',
-    openOtherTraductionsModal: 'open-other-traductions-modal',
+    openOtherTranslationsModal: 'open-other-translations-modal',
     audioDocumentPlay: 'audio-document-play',
     noSelectableDocumentText: 'no-selectable-document-text',
     openHighlightModal: 'open-highlight-modal',
@@ -38,6 +48,7 @@ export const HISTORY_EVENT = {
 
 export const LANGUAGE_EVENT = {
     openLibrary: 'open-library',
+    catalogChanged: 'language-catalog-changed',
 } as const;
 
 export const TTS_EVENT = {
@@ -51,4 +62,37 @@ export const AI_DATA_EVENT = {
     conversationsChanged: 'ai-data-conversations-changed',
 } as const;
 
+export const APP_UI_EVENT = {
+    aiSettingsUpdated: 'ai-settings-updated',
+    openBackupModalFromMain: 'open-backup-modal-from-main',
+} as const;
+
 export const DOCUMENT_CONTAINER_ID = 'page-container';
+
+export type OpenOtherTranslationsModalDetail = {
+    tabKey: string;
+    sermonId: string;
+    title: string;
+    currentTranslationId: number;
+    currentLanguageCode: string;
+};
+
+export type AudioDocumentPlayDetail = AudioDocumentPlayRequest;
+
+export type OpenHighlightModalDetail = Omit<HighlightCreateData, 'color' | 'comment'>;
+
+export type AddDocumentReferenceDetail = DocumentReferenceSelection & {
+    documentTitle: string;
+};
+
+export type FocusSubjectDetail = {
+    id: string;
+};
+
+export type ShowSimilarSermonsDetail = {
+    paragraphIndex: number;
+    translationId: number;
+    sermonDate: number;
+    languageCode: string;
+    textSnippet: string;
+};

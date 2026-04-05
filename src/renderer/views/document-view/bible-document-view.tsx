@@ -1,17 +1,27 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Space, Tooltip } from 'antd';
-import { LeftOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
+import { LeftOutlined, NumberOutlined, RightOutlined, SearchOutlined } from '@ant-design/icons';
 import {
-    useSermonStore,
+    useDocumentTabsStore,
     useSearchStore,
-    selectActiveTab,
+    selectActiveDocumentIdentity,
+    selectActiveBibleTab,
     selectActiveTabKey,
 } from '@renderer/stores';
+import { usePrepareTabIdentityChange } from '@renderer/hooks';
 import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
-import type { BibleBook, BibleIndex, SermonContent } from '@shared/types';
-import { getTabKey } from '@shared/types';
+import type { BibleBook, BibleIndex, BibleTab, BibleVersionInfo } from '@shared/types';
+import {
+    buildBibleDocumentId,
+    buildBibleDocumentTitle,
+    getDocumentIdentityKey,
+    getBibleIndexEntry,
+    getTabKey,
+    normalizeBibleAbbreviation,
+} from '@shared/types';
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
+import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import DocumentBody from './document-body';
 import {
     buildBibleChapterKey,
@@ -30,27 +40,26 @@ import {
     buildSegmentAnnouncement,
     buildBibleChapterIntro,
     getChapterLabel,
+    getLanguageLabelNative,
 } from '@shared/tts.types';
 import { useAppStore } from '@renderer/stores';
-import { useTtsStore } from '@renderer/stores/tts.store';
 
 // ---------------------------------------------------------------------------
 // Content header (inside body, like SermonContentHeader)
 // ---------------------------------------------------------------------------
 
 function BibleContentHeader({
-    title,
+    bookName,
     chapter,
     bibleLang,
     versionName,
 }: {
-    title?: string;
+    bookName?: string;
     chapter?: string;
     bibleLang: string;
     versionName?: string;
 }) {
-    if (!title) return null;
-    const bookName = chapter ? title.replace(new RegExp(`\\s+${chapter}$`), '') : title;
+    if (!bookName) return null;
     const chapterLabel = chapter ? `${getChapterLabel(bibleLang)} ${chapter}` : null;
 
     return (
@@ -72,10 +81,6 @@ function BibleContentHeader({
     );
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function versesToParagraphs(verses: BibleBook[]) {
     return verses
         .slice()
@@ -86,71 +91,44 @@ function versesToParagraphs(verses: BibleBook[]) {
         }));
 }
 
-function buildContentForMenu(
-    tab: { title: string; sermonId: string } | null,
-    paragraphs: { paragraphIndex: number; content: string }[],
-    bibleLang: string,
-): SermonContent | null {
-    if (!tab) return null;
-    return {
-        meta: {
-            id: tab.sermonId,
-            translationId: 0,
-            languageCode: bibleLang,
-            sermonId: tab.sermonId,
-            title: tab.title,
-            enTitle: tab.title,
-            audioLink: null,
-            traductionName: null,
-            dateMs: 0,
-            minutes: 0,
-            location: null,
-            cityState: null,
-        },
-        paragraphs: paragraphs.map((p) => ({
-            paragraphIndex: p.paragraphIndex,
-            translationId: 0,
-            sermonId: 0,
-            content: p.content,
-        })),
-    };
-}
+let cachedBibleVersions: BibleVersionInfo[] | null = null;
 
 // ---------------------------------------------------------------------------
 // Chapter navigation hook
 // ---------------------------------------------------------------------------
 
-function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
-    const updateBibleTab = useSermonStore((s) => s.updateBibleTab);
-    const activateTab = useSermonStore((s) => s.activateTab);
-    const tabs = useSermonStore((s) => s.tabs);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+function useChapterNavigation(activeTab: BibleTab | null) {
+    const updateBibleTab = useDocumentTabsStore((s) => s.updateBibleTab);
+    const activateTab = useDocumentTabsStore((s) => s.activateTab);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
+    const prepareTabIdentityChange = usePrepareTabIdentityChange();
     const [bibleIndex, setBibleIndex] = useState<BibleIndex>({});
 
     const bookCode = activeTab?.bibleBook;
 
     useEffect(() => {
         window.api.bible
-            .getIndexes()
+            .getIndexes(activeTab?.bibleVersionAbbreviation)
             .then((flat) => setBibleIndex(flat ?? {}))
             .catch(() => setBibleIndex({}));
-    }, []);
+    }, [activeTab?.bibleVersionAbbreviation]);
 
     const bookEntry = useMemo(() => {
         if (!bookCode) return null;
-        return Object.entries(bibleIndex).find(([, val]) => val.book === bookCode) ?? null;
+        return getBibleIndexEntry(bibleIndex, bookCode);
     }, [bibleIndex, bookCode]);
 
     const chapterList = useMemo(() => {
         if (!bookEntry) return [];
-        return bookEntry[1].chapters
+        return bookEntry.value.chapters
             .split(',')
             .map((c) => c.trim())
             .filter(Boolean)
             .sort((a, b) => +a - +b);
     }, [bookEntry]);
 
-    const bookName = bookEntry?.[0] ?? '';
+    const bookName = bookEntry?.bookName ?? '';
     const currentChapter = activeTab?.bibleChapter ?? '1';
     const currentIdx = chapterList.indexOf(currentChapter);
     const hasPrev = currentIdx > 0;
@@ -158,19 +136,49 @@ function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
 
     const navigateToChapter = useCallback(
         (chapter: string) => {
-            if (!activeTabKey || !bookCode) return;
-            const title = `${bookName} ${chapter}`;
-            const sermonId = `${bookCode}:${chapter}`;
-            const existingTab = tabs.find(
-                (t) => t.type === 'bible' && t.title === title && t.sermonId === sermonId,
+            if (!activeTabKey || !bookCode) {
+                return;
+            }
+
+            const title = buildBibleDocumentTitle(
+                bookName,
+                chapter,
+                activeTab?.bibleVersionAbbreviation,
             );
+
+            const documentId = buildBibleDocumentId(bookCode, chapter);
+            const existingTab = tabs.find((t) => {
+                return (
+                    t.type === 'bible' &&
+                    t.documentId === documentId &&
+                    t.bibleVersionAbbreviation ===
+                        normalizeBibleAbbreviation(activeTab.bibleVersionAbbreviation)
+                );
+            });
+
             if (existingTab) {
                 activateTab(getTabKey(existingTab));
             } else {
-                updateBibleTab(activeTabKey, title, sermonId, bookCode, chapter);
+                prepareTabIdentityChange(activeTabKey, { stopTts: true });
+                updateBibleTab(activeTabKey, {
+                    title,
+                    documentId,
+                    bibleBook: bookCode,
+                    bibleChapter: chapter,
+                    bibleVersionAbbreviation: activeTab.bibleVersionAbbreviation,
+                });
             }
         },
-        [activeTabKey, bookCode, bookName, tabs, activateTab, updateBibleTab],
+        [
+            activeTab,
+            activeTabKey,
+            bookCode,
+            bookName,
+            tabs,
+            activateTab,
+            prepareTabIdentityChange,
+            updateBibleTab,
+        ],
     );
 
     const goPrev = useCallback(() => {
@@ -181,7 +189,7 @@ function useChapterNavigation(activeTab: ReturnType<typeof selectActiveTab>) {
         if (hasNext) navigateToChapter(chapterList[currentIdx + 1]);
     }, [hasNext, navigateToChapter, chapterList, currentIdx]);
 
-    return { hasPrev, hasNext, goPrev, goNext };
+    return { bibleIndex, hasPrev, hasNext, goPrev, goNext };
 }
 
 // ---------------------------------------------------------------------------
@@ -195,6 +203,7 @@ function BibleHeader({
     hasNext,
     onPrev,
     onNext,
+    paragraphs,
     tts,
 }: {
     title: string;
@@ -203,54 +212,74 @@ function BibleHeader({
     hasNext: boolean;
     onPrev: () => void;
     onNext: () => void;
+    paragraphs: { paragraphIndex: number }[];
     tts?: TtsControls;
 }) {
     const { t } = useTranslation();
+    const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const { zoomIn, zoomOut } = useDocumentZoom(zoom);
 
     return (
-        <div className="sermon-header">
-            <div className="bible-chapter-nav">
-                <Tooltip title={t('Chapitre précédent')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<LeftOutlined />}
-                        disabled={!hasPrev}
-                        onClick={onPrev}
-                        aria-label={t('Chapitre précédent')}
-                    />
-                </Tooltip>
-                <span className="bible-chapter-nav__title">{title}</span>
-                <Tooltip title={t('Chapitre suivant')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<RightOutlined />}
-                        disabled={!hasNext}
-                        onClick={onNext}
-                        aria-label={t('Chapitre suivant')}
-                    />
-                </Tooltip>
+        <>
+            <div className="sermon-header">
+                <div className="bible-chapter-nav">
+                    <Tooltip title={t('Chapitre précédent')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<LeftOutlined />}
+                            disabled={!hasPrev}
+                            onClick={onPrev}
+                            aria-label={t('Chapitre précédent')}
+                        />
+                    </Tooltip>
+                    <span className="bible-chapter-nav__title">{title}</span>
+                    <Tooltip title={t('Chapitre suivant')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<RightOutlined />}
+                            disabled={!hasNext}
+                            onClick={onNext}
+                            aria-label={t('Chapitre suivant')}
+                        />
+                    </Tooltip>
+                </div>
+                <div style={{ flex: 1 }} />
+                <Space size="small">
+                    {tts && <TtsButton tts={tts} />}
+                    <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
+                    <Tooltip title={t('Sélectionnez un verset')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<NumberOutlined />}
+                            onClick={() => setParagraphModalOpen(true)}
+                            aria-label={t('Sélectionnez un verset')}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Rechercher')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<SearchOutlined />}
+                            onClick={() => activeTabKey && openSearchBar(activeTabKey)}
+                            aria-label={t('Rechercher')}
+                        />
+                    </Tooltip>
+                    <ReadingModeToggle />
+                </Space>
             </div>
-            <div style={{ flex: 1 }} />
-            <Space size="small">
-                {tts && <TtsButton tts={tts} />}
-                <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
-                <Tooltip title={t('Rechercher')}>
-                    <Button
-                        type="text"
-                        size="small"
-                        icon={<SearchOutlined />}
-                        onClick={() => activeTabKey && openSearchBar(activeTabKey)}
-                        aria-label={t('Rechercher')}
-                    />
-                </Tooltip>
-                <ReadingModeToggle />
-            </Space>
-        </div>
+            <ParagraphNavigatorModal
+                open={paragraphModalOpen}
+                onClose={() => setParagraphModalOpen(false)}
+                paragraphs={paragraphs}
+                title={t('Sélectionnez un verset')}
+                emptyText={t('Aucun verset')}
+            />
+        </>
     );
 }
 
@@ -259,17 +288,42 @@ function BibleHeader({
 // ---------------------------------------------------------------------------
 
 export default function BibleDocumentView() {
-    const activeTab = useSermonStore(selectActiveTab);
+    const { t } = useTranslation();
+    const activeTab = useDocumentTabsStore(selectActiveBibleTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
-    const bibleLang = activeBibleVersion?.langCode ?? '';
-    const bibleVersionAbbreviation = activeBibleVersion?.abbreviation ?? '';
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const [allBibleVersions, setAllBibleVersions] = useState<BibleVersionInfo[]>(
+        cachedBibleVersions ?? [],
+    );
 
     const bookCode = activeTab?.bibleBook;
     const chapter = activeTab?.bibleChapter;
+    const bibleVersionAbbreviation = activeTab?.bibleVersionAbbreviation ?? '';
+    const ttsDocumentKey = activeDocumentIdentity
+        ? getDocumentIdentityKey(activeDocumentIdentity)
+        : '';
+
+    const activeTabVersion = useMemo(() => {
+        if (!bibleVersionAbbreviation) {
+            return null;
+        }
+
+        return (
+            allBibleVersions.find((version) => version.abbreviation === bibleVersionAbbreviation) ??
+            (activeBibleVersion?.abbreviation === bibleVersionAbbreviation
+                ? activeBibleVersion
+                : null)
+        );
+    }, [activeBibleVersion, allBibleVersions, bibleVersionAbbreviation]);
+
+    const bibleLang =
+        activeTabVersion?.langCode ?? activeBibleVersion?.langCode ?? contentLanguage ?? '';
+
     const { verses, loading: chapterLoading } = useBibleChapterContent(
         bookCode,
         chapter,
@@ -279,21 +333,30 @@ export default function BibleDocumentView() {
     const loading = chapterLoading && verses.length === 0;
 
     const paragraphs = useMemo(() => versesToParagraphs(verses), [verses]);
-    const loadedChapterKey = verses[0]
-        ? buildBibleChapterKey(verses[0].book, verses[0].chapter)
-        : null;
+    const loadedChapterKey =
+        verses.length > 0 && bookCode && chapter && bibleVersionAbbreviation
+            ? buildBibleChapterKey(bookCode, chapter, bibleVersionAbbreviation)
+            : null;
     const { restoreIdentity, readingPositionKey } = resolveBibleScrollPersistence(
         bookCode,
         chapter,
         loadedChapterKey,
+        bibleVersionAbbreviation,
     );
+
+    useEffect(() => {
+        if (cachedBibleVersions) {
+            return;
+        }
+
+        window.api.bible.getAllVersions().then((versions) => {
+            cachedBibleVersions = versions;
+            setAllBibleVersions(versions);
+        });
+    }, []);
     useReferenceNavigation(containerRef, {
         contentReady: verses.length > 0 && !loading,
-        documentType: 'bible',
-        sermonId: activeTab?.sermonId,
-        bibleBook: bookCode,
-        bibleChapter: chapter,
-        bibleVersionAbbreviation,
+        documentIdentity: activeDocumentIdentity,
     });
 
     const { zoom } = useScrollAndZoom(containerRef, {
@@ -310,57 +373,65 @@ export default function BibleDocumentView() {
         !!restoreIdentity,
     );
 
-    const { hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
+    const { bibleIndex, hasPrev, hasNext, goPrev, goNext } = useChapterNavigation(activeTab);
+    const bookName = useMemo(() => {
+        if (!bookCode) {
+            return '';
+        }
+
+        return getBibleIndexEntry(bibleIndex, bookCode)?.bookName ?? '';
+    }, [bibleIndex, bookCode]);
 
     const introText = useMemo(() => {
-        if (!activeTab?.title || !chapter) return undefined;
-        const bookName = activeTab.title.replace(new RegExp(`\\s+${chapter}$`), '');
+        if (!bookName || !chapter) return undefined;
         return buildBibleChapterIntro(bookName, chapter, bibleLang);
-    }, [activeTab?.title, chapter, bibleLang]);
+    }, [bookName, chapter, bibleLang]);
 
-    const tts = useTts(paragraphs, bibleLang, activeTab?.title ?? '', {
+    const tts = useTts(paragraphs, bibleLang, ttsDocumentKey, {
         introText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('verse', n, bibleLang),
     });
+    const effectiveTts = useMemo(() => {
+        const langMismatch = !!bibleLang && !!contentLanguage && bibleLang !== contentLanguage;
+        const activeLanguageLabel = contentLanguage
+            ? getLanguageLabelNative(contentLanguage)
+            : undefined;
 
-    // Feature 3: Read entire book — auto-advance to next chapter on natural completion
-    const ttsSettings = useTtsStore((s) => s.settings);
-    const completedNaturally = useTtsStore((s) => s.completedNaturally);
-    const autoStartTtsRef = useRef(false);
-
-    useEffect(() => {
-        if (completedNaturally && ttsSettings?.bibleReadEntireBook && hasNext) {
-            useTtsStore.getState().clearCompletedNaturally();
-            autoStartTtsRef.current = true;
-            goNext();
+        if (!langMismatch) {
+            return tts;
         }
-    }, [completedNaturally, ttsSettings?.bibleReadEntireBook, hasNext, goNext]);
 
-    useEffect(() => () => useTtsStore.getState().clearCompletedNaturally(), []);
+        return {
+            ...tts,
+            canSpeak: false,
+            incompatibleMessage: t(
+                'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.',
+                { language: activeLanguageLabel ?? contentLanguage ?? '' },
+            ),
+        };
+    }, [tts, bibleLang, contentLanguage, t]);
 
-    useEffect(() => {
-        if (autoStartTtsRef.current && paragraphs.length > 0 && !loading) {
-            autoStartTtsRef.current = false;
-            tts.play();
+    // Read entire book: keep following the chapter that started playback,
+    // even if the user switches to another Bible tab while it is still reading.
+    const contextMenuContent = useMemo(() => {
+        if (!activeTab || !activeDocumentIdentity) {
+            return null;
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [paragraphs.length, loading]);
 
-    const contentForMenu = useMemo(
-        () => buildContentForMenu(activeTab, paragraphs, bibleLang),
-        [activeTab, paragraphs, bibleLang],
-    );
+        return {
+            documentTitle: activeTab.title,
+            documentIdentity: activeDocumentIdentity,
+            languageCode: bibleLang,
+            paragraphs,
+        };
+    }, [activeTab, activeDocumentIdentity, bibleLang, paragraphs]);
     const contextMenuItems = useContextMenuItems(
-        contentForMenu,
+        contextMenuContent,
         contextTargetRef,
         'bible',
         verses,
-        bibleVersionAbbreviation,
     );
-    const { highlightsByParagraph } = useDocumentHighlights(
-        activeTab?.title ?? null,
-        activeTab?.sermonId,
-    );
+    const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
     return (
         <DocumentBody
@@ -378,26 +449,27 @@ export default function BibleDocumentView() {
                     hasNext={hasNext}
                     onPrev={goPrev}
                     onNext={goNext}
-                    tts={tts}
+                    paragraphs={paragraphs}
+                    tts={effectiveTts}
                 />
             }
         >
             <BibleContentHeader
-                title={activeTab?.title}
+                bookName={bookName}
                 chapter={chapter}
                 bibleLang={bibleLang}
-                versionName={activeBibleVersion?.name}
+                versionName={activeTabVersion?.name}
             />
 
             <ParagraphList
                 paragraphs={paragraphs}
-                documentId={activeTab?.title ?? ''}
+                documentKey={ttsDocumentKey}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
-                onPlayFromHere={tts.playFromParagraph}
-                canSpeak={tts.canSpeak}
-                incompatibleMessage={tts.incompatibleMessage}
+                onPlayFromHere={effectiveTts.playFromParagraph}
+                canSpeak={effectiveTts.canSpeak}
+                incompatibleMessage={effectiveTts.incompatibleMessage}
             />
         </DocumentBody>
     );

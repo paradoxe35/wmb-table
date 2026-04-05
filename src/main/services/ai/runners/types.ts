@@ -12,6 +12,8 @@ export interface GenerationContext {
     history: PromptHistoryMessage[];
     tools: ReturnType<typeof buildAiTools>;
     abortSignal: AbortSignal;
+    contextWindow?: number;
+    toolTokens?: number;
 }
 
 export interface GenerationRunner {

@@ -98,7 +98,6 @@ export interface TtsSettings {
     activeProvider: TtsProviderType;
     highlightMode: TtsHighlightMode; // default: 'sentence'
     segmentGapMs: number; // pause between segments in ms
-    autoPlay: boolean;
     autoSwitchVoice: boolean;
     rate: number; // 0.5–2.0, default: 1
     cacheMaxSizeMb: number; // default: 1000
@@ -146,6 +145,7 @@ export interface TtsModelDownloadProgress {
     modelName?: string;
     percentage: number;
     status: 'downloading' | 'complete' | 'error';
+    phase?: 'downloading' | 'extracting' | 'finalizing';
     error?: string;
 }
 
@@ -227,6 +227,136 @@ export type TtsIncompatibilityReason =
 export interface TtsCompatibilityResult {
     supported: boolean;
     reason?: TtsIncompatibilityReason;
+}
+
+const ISO3_TO_ISO1: Record<string, string> = {
+    fra: 'fr',
+    eng: 'en',
+    deu: 'de',
+    spa: 'es',
+    ita: 'it',
+    por: 'pt',
+    rus: 'ru',
+    zho: 'zh',
+    nld: 'nl',
+    pol: 'pl',
+    ukr: 'uk',
+    swe: 'sv',
+    dan: 'da',
+    nor: 'no',
+    fin: 'fi',
+    tur: 'tr',
+    ces: 'cs',
+    ron: 'ro',
+    hun: 'hu',
+    ell: 'el',
+    isl: 'is',
+    bul: 'bg',
+    ltz: 'lb',
+    mkd: 'mk',
+    lit: 'lt',
+    lav: 'lv',
+    est: 'et',
+    glg: 'gl',
+    eus: 'eu',
+    cat: 'ca',
+    cym: 'cy',
+    bel: 'be',
+    slv: 'sl',
+    hrv: 'hr',
+    srp: 'sr',
+    sqi: 'sq',
+    slk: 'sk',
+    fao: 'fo',
+    lat: 'la',
+    ara: 'ar',
+    hin: 'hi',
+    vie: 'vi',
+    ind: 'id',
+    fas: 'fa',
+    jpn: 'ja',
+    kor: 'ko',
+    tha: 'th',
+    heb: 'he',
+    msa: 'ms',
+    zlm: 'ms',
+    tam: 'ta',
+    tel: 'te',
+    mal: 'ml',
+    mar: 'mr',
+    nep: 'ne',
+    sin: 'si',
+    guj: 'gu',
+    kan: 'kn',
+    pan: 'pa',
+    ben: 'bn',
+    ory: 'or',
+    asm: 'as',
+    kat: 'ka',
+    tgl: 'tl',
+    jav: 'jv',
+    sun: 'su',
+    khm: 'km',
+    lao: 'lo',
+    mya: 'my',
+    bod: 'bo',
+    dzo: 'dz',
+    div: 'dv',
+    kaz: 'kk',
+    kir: 'ky',
+    tgk: 'tg',
+    tat: 'tt',
+    aze: 'az',
+    uzb: 'uz',
+    tuk: 'tk',
+    mon: 'mn',
+    swa: 'sw',
+    swh: 'sw',
+    hau: 'ha',
+    amh: 'am',
+    yor: 'yo',
+    ibo: 'ig',
+    orm: 'om',
+    som: 'so',
+    sna: 'sn',
+    nya: 'ny',
+    kin: 'rw',
+    run: 'rn',
+    lin: 'ln',
+    sag: 'sg',
+    tso: 'ts',
+    bam: 'bm',
+    ful: 'ff',
+    ewe: 'ee',
+    wol: 'wo',
+    aka: 'ak',
+    mlg: 'mg',
+    hat: 'ht',
+    grn: 'gn',
+    que: 'qu',
+    smo: 'sm',
+    fij: 'fj',
+    ava: 'av',
+    bak: 'ba',
+    che: 'ce',
+    chv: 'cv',
+    oss: 'os',
+};
+
+export function iso3ToIso1LanguageCode(code: string): string {
+    return ISO3_TO_ISO1[code.toLowerCase()] ?? code.toLowerCase();
+}
+
+export function normalizeLanguageCode(code: string): string {
+    return iso3ToIso1LanguageCode(code.split('-')[0]);
+}
+
+function resolveLanguageLabel(
+    labels: Record<string, string>,
+    languageCode: string,
+): string | undefined {
+    const normalizedCode = normalizeLanguageCode(languageCode);
+    return labels[languageCode] ?? labels[normalizedCode];
 }
 
 // ── French language labels (shared across main + renderer) ──
@@ -459,6 +589,22 @@ export const LANG_LABELS_NATIVE: Record<string, string> = {
     sd: 'سنڌي',
 };
 
+export function getLanguageLabelFr(languageCode: string): string {
+    return resolveLanguageLabel(LANG_LABELS_FR, languageCode) ?? languageCode;
+}
+
+export function getLanguageLabelNative(languageCode: string): string {
+    return resolveLanguageLabel(LANG_LABELS_NATIVE, languageCode) ?? languageCode;
+}
+
+export function getLanguageDisplayName(languageCode: string): string {
+    return (
+        resolveLanguageLabel(LANG_LABELS_NATIVE, languageCode) ??
+        resolveLanguageLabel(LANG_LABELS_FR, languageCode) ??
+        languageCode
+    );
+}
+
 // ── Text helpers ──
 
 /** Returns true if the text contains at least one letter (any script). */
@@ -473,7 +619,6 @@ export function createDefaultTtsSettings(): TtsSettings {
         activeProvider: DEFAULT_TTS_PROVIDER,
         highlightMode: 'sentence',
         segmentGapMs: SEGMENT_GAP_MS,
-        autoPlay: false,
         autoSwitchVoice: true,
         rate: 1,
         cacheMaxSizeMb: DEFAULT_CACHE_MAX_SIZE_MB,

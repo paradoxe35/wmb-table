@@ -76,7 +76,7 @@ export function VoiceCloneForm({ providerType, onCloned, languages }: VoiceClone
             setFile(null);
             onCloned(result.voiceId);
         } catch (err) {
-            message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+            message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(err)) }));
         } finally {
             setCloning(false);
         }

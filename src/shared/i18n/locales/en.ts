@@ -22,11 +22,17 @@ const en: Record<string, string> = {
     Documents: 'Documents',
     'Aucun document ajouté': 'No documents added',
     'Ajouter un document': 'Add a document',
+    'Choisir un document': 'Choose a document',
     Gérer: 'Manage',
     Alphabet: 'Alphabet',
     Année: 'Year',
     Années: 'Years',
     'A-Z': 'A-Z',
+    'Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.':
+        'Supported formats: PDF, TXT, MD, DOCX, EPUB.',
+    "Erreur lors de l'import du document.": 'Error importing document.',
+    'Format de document non pris en charge.': 'Unsupported document format.',
+    'Le fichier est trop volumineux.': 'The file is too large.',
 
     // ── Settings index ──
     Général: 'General',
@@ -87,6 +93,9 @@ const en: Record<string, string> = {
         'More capable, better understanding. Requires a bit more memory.',
     'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
         'Works offline, directly on your computer. Download a model to get started.',
+    'Le mode local est plus limité': 'Local mode is more limited',
+    'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.':
+        'Local mode may respond more slowly and with less accuracy, especially for long or difficult questions.',
     'Utiliser la carte graphique (GPU)': 'Use graphics card (GPU)',
     'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
         'Speeds up responses if your computer has a compatible graphics card. Disable this option if you experience issues.',
@@ -105,6 +114,33 @@ const en: Record<string, string> = {
     Connecté: 'Connected',
     Échec: 'Failed',
     'La connexion a échoué.': 'Connection failed.',
+    'La clé API est manquante pour ce fournisseur.': 'The API key is missing for this provider.',
+    'Fournisseur IA inconnu.': 'Unknown AI provider.',
+    'Validation du fournisseur impossible.': 'Unable to validate the provider.',
+    'Le mode local nécessite une langue par défaut et un moteur local actif.':
+        'Local mode requires a default language and an active local runtime.',
+    'La synthèse du navigateur est gérée dans le processus renderer.':
+        'Browser speech synthesis is handled in the renderer process.',
+    'La prévisualisation du navigateur est gérée dans le processus renderer.':
+        'Browser preview is handled in the renderer process.',
+    'Fournisseur TTS inconnu.': 'Unknown TTS provider.',
+    'Fournisseur TTS introuvable.': 'TTS provider not found.',
+    'Ce fournisseur ne prend pas en charge le téléchargement de modèles.':
+        'This provider does not support model downloads.',
+    'Ce fournisseur ne prend pas en charge la suppression de modèles.':
+        'This provider does not support model deletion.',
+    'Ce fournisseur ne prend pas en charge le clonage de voix.':
+        'This provider does not support voice cloning.',
+    'Voix de référence introuvable.': 'Reference voice not found.',
+    "La clé API OpenAI n'est pas configurée.": 'OpenAI API key is not configured.',
+    "La clé API ElevenLabs n'est pas configurée.": 'ElevenLabs API key is not configured.',
+    "La clé API Cartesia n'est pas configurée.": 'Cartesia API key is not configured.',
+    "Aucune voix Cartesia n'est sélectionnée.": 'No Cartesia voice is selected.',
+    'La langue est requise pour cloner une voix Cartesia.':
+        'Language is required to clone a Cartesia voice.',
+    'Le nom du modèle est requis pour le téléchargement Sherpa.':
+        'A model name is required for Sherpa download.',
+    'Modèle Sherpa inconnu.': 'Unknown Sherpa model.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":
@@ -117,6 +153,21 @@ const en: Record<string, string> = {
     // ── AI chat ──
     "L'assistant IA est désactivé.": 'The AI assistant is disabled.',
     'Ouvrir les paramètres': 'Open settings',
+    'Le saviez-vous ? <u>{{feature}}</u> peut vous aider à explorer un sujet et comprendre plus vite ce que vous cherchez.':
+        'Did you know? <u>{{feature}}</u> can help you explore a topic and understand what you are looking for faster.',
+    'Activez <u>{{feature}}</u> pour poser vos questions, approfondir un thème, comparer plusieurs prédications, retrouver des passages bibliques et obtenir des réponses claires sans tout parcourir manuellement.':
+        'Enable <u>{{feature}}</u> to ask questions, dig deeper into a theme, compare multiple sermons, find Bible passages, and get clear answers without reading through everything manually.',
+    "Ouvrir les réglages de l'assistant": 'Open assistant settings',
+    'Le saviez-vous ? <u>{{feature}}</u> peut lire vos documents.':
+        'Did you know? <u>{{feature}}</u> can read your documents aloud.',
+    'Choisissez une voix pour <u>{{feature}}</u>, puis lancez la lecture directement depuis vos documents.':
+        'Choose a voice for <u>{{feature}}</u>, then start playback directly from your documents.',
+    'Ouvrir les réglages audio': 'Open audio settings',
+    'Le saviez-vous ? <u>{{feature}}</u> peut protéger vos données.':
+        'Did you know? <u>{{feature}}</u> can protect your data.',
+    'Connectez Google Drive pour que <u>{{feature}}</u> garde vos notes, sujets et réglages synchronisés.':
+        'Connect Google Drive so <u>{{feature}}</u> keeps your notes, subjects, and settings in sync.',
+    'Ouvrir les réglages de sauvegarde': 'Open backup settings',
     'Posez votre question...': 'Ask your question...',
     Envoyer: 'Send',
     Arrêter: 'Stop',
@@ -189,9 +240,6 @@ const en: Record<string, string> = {
     'Pause entre les segments: {{gap}}s': 'Pause between segments: {{gap}}s',
     'Durée de la pause entre chaque phrase ou paragraphe lu.':
         'Duration of the pause between each spoken sentence or paragraph.',
-    'Lecture automatique': 'Auto-play',
-    "Démarrer la lecture automatiquement à l'ouverture d'un document.":
-        'Automatically start reading when a document is opened.',
     'Cache audio': 'Audio cache',
     'Les lectures passées sont conservées pour une relecture plus rapide.':
         'Past readings are cached for faster replay.',
@@ -265,6 +313,8 @@ const en: Record<string, string> = {
     'Modèle Kokoro téléchargé': 'Kokoro model downloaded',
     'Erreur: {{error}}': 'Error: {{error}}',
     'Erreur lors de la prévisualisation de la voix': 'Error previewing the voice',
+    "Impossible d'enregistrer les paramètres de Lecture audio.":
+        'Unable to save audio playback settings.',
 
     // ── TTS provider Sherpa ──
     'Voix disponible — {{lang}}': 'Voice available — {{lang}}',
@@ -280,6 +330,9 @@ const en: Record<string, string> = {
     'Voix installée': 'Voice installed',
     'Voix supprimée': 'Voice removed',
     Télécharger: 'Download',
+    Téléchargement: 'Downloading',
+    Extraction: 'Extracting',
+    Finalisation: 'Finalizing',
     'Aucune voix disponible pour la langue active. Utilisez la recherche ci-dessus pour trouver une voix dans une autre langue.':
         'No voice available for the content language. Use the search above to find a voice in another language.',
     // quality tags
@@ -364,6 +417,8 @@ const en: Record<string, string> = {
         'The browser has no voice for this language.',
     'La langue du document ne correspond pas à la langue active. Changez la langue dans les paramètres.':
         'The document language does not match the active language. Change the language in settings.',
+    'La langue du document ne correspond pas à la langue active ({{language}}). Changez la langue dans les paramètres.':
+        'The document language does not match the active language ({{language}}). Change the language in settings.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Unable to verify provider compatibility.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
@@ -383,6 +438,7 @@ const en: Record<string, string> = {
     Enregistrer: 'Save',
     'Erreur lors du chargement des sujets': 'Error loading subjects',
     'Erreur lors du chargement des éléments du sujet': 'Error loading subject items',
+    'Erreur lors de la réorganisation des références': 'Error while reordering subject references',
     'Sujet créé': 'Subject created',
     'Un sujet avec ce nom existe déjà.': 'A subject with this name already exists.',
     'Sujet introuvable': 'Subject not found',
@@ -539,6 +595,7 @@ const en: Record<string, string> = {
     'Autres langues': 'Other languages',
     'Langue: {{code}}': 'Language: {{code}}',
     'Ouvrir le document': 'Open document',
+    'Aucune autre traduction disponible': 'No other translations available',
 
     // ── Subject select modal ──
     'Choiser un sujet': 'Choose a subject',
@@ -565,6 +622,8 @@ const en: Record<string, string> = {
     // ── Paragraph navigator modal ──
     'Sélectionnez un paragraphe': 'Select a paragraph',
     'Aucun paragraphe': 'No paragraphs',
+    'Sélectionnez un verset': 'Select a verse',
+    'Aucun verset': 'No verses',
 
     // ── Sermon paragraph ──
     'Surlignage supprimé': 'Highlight deleted',
@@ -601,6 +660,7 @@ const en: Record<string, string> = {
 
     // ── Bible content ──
     'Aucune Bible disponible pour cette langue': 'No Bible available for this language',
+    'Aucune version biblique active disponible.': 'No active Bible version is available.',
     Ancien: 'Old',
     Testament: 'Testament',
     'Ajouter à un sujet': 'Add to a subject',
@@ -719,6 +779,7 @@ const en: Record<string, string> = {
     'Aucune prédication similaire trouvée': 'No similar sermons found',
     Prédication: 'Sermon',
     Document: 'Document',
+    Référence: 'Reference',
     'Sauvegarde de données': 'Backing up data',
     'Restauration de données': 'Restoring data',
 
@@ -771,6 +832,12 @@ const en: Record<string, string> = {
     Clair: 'Light',
     Sombre: 'Dark',
     Système: 'System',
+    'Utilise le thème clair en journée et le thème sombre le soir.':
+        'Uses the light theme during the day and the dark theme in the evening.',
+    "Suit automatiquement l'apparence définie par votre système.":
+        'Automatically follows the appearance defined by your system.',
+    'Utilise toujours le thème clair.': 'Always uses the light theme.',
+    'Utilise toujours le thème sombre.': 'Always uses the dark theme.',
 };
 
 export default en;

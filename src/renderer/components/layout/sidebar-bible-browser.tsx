@@ -1,9 +1,9 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Divider, Empty, Progress, Select, Space, Typography } from 'antd';
+import { Button, Divider, Empty, Progress, Select, Space, Typography, message } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { BibleIndex, BibleIndexValue } from '@shared/types';
-import { useOpenBibleChapter } from '@renderer/hooks';
+import { buildBibleDocumentTitle, type BibleIndex, type BibleIndexValue } from '@shared/types';
+import { useOpenDocumentRequest } from '@renderer/hooks';
 import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 import { useAppStore } from '@renderer/stores';
 import ContainerScrollY from '../container-scroll-y';
@@ -110,7 +110,8 @@ const BookListItem = memo(function BookListItem({
 // ---------------------------------------------------------------------------
 
 function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) {
-    const openChapter = useOpenBibleChapter();
+    const openDocumentRequest = useOpenDocumentRequest();
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const { t } = useTranslation();
 
     return (
@@ -148,7 +149,24 @@ function ChapterView({ book, onBack }: { book: BookEntry; onBack: () => void }) 
                         <Button
                             key={ch}
                             size="small"
-                            onClick={() => openChapter(book.bookName, book.bookCode, ch)}
+                            onClick={() => {
+                                if (activeBibleVersion?.abbreviation) {
+                                    openDocumentRequest({
+                                        title: buildBibleDocumentTitle(
+                                            book.bookName,
+                                            ch,
+                                            activeBibleVersion.abbreviation,
+                                        ),
+                                        documentType: 'bible',
+                                        bibleBook: book.bookCode,
+                                        bibleChapter: ch,
+                                        bibleVersionAbbreviation: activeBibleVersion.abbreviation,
+                                    });
+
+                                    return;
+                                }
+                                message.warning(t('Aucune version biblique active disponible.'));
+                            }}
                             style={{ width: '100%' }}
                         >
                             {ch}
@@ -174,7 +192,7 @@ export default function SidebarBibleBrowser() {
 
     const loadIndex = useCallback(() => {
         window.api.bible
-            .getIndexes()
+            .getIndexes(activeBibleVersion?.abbreviation)
             .then((flat: BibleIndex) => {
                 if (!flat || Object.keys(flat).length === 0) {
                     setNoBible(true);
@@ -199,7 +217,7 @@ export default function SidebarBibleBrowser() {
             .catch(() => {
                 setNoBible(true);
             });
-    }, []);
+    }, [activeBibleVersion?.abbreviation]);
 
     useEffect(() => {
         const versionChanged = activeBibleVersion?.abbreviation !== prevVersionRef.current;

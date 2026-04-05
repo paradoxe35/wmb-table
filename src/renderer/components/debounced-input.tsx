@@ -20,7 +20,7 @@ export default function DebouncedInput({
     const [localValue, setLocalValue] = useState(externalValue);
 
     useEffect(() => {
-        setLocalValue(externalValue);
+        setLocalValue((current) => (current === externalValue ? current : externalValue));
     }, [externalValue]);
 
     const debouncedOnChange = useMemo(() => debounce(onChange, delay), [onChange, delay]);

@@ -8,7 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, Reorder } from 'framer-motion';
 import {
     Card,
     Input,
@@ -29,21 +29,22 @@ import {
 } from '@shared/types';
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import { useSermonStore, useSubjectsStore } from '@renderer/stores';
+import { useDocumentTabsStore, useSubjectsStore } from '@renderer/stores';
 import {
     BookOutlined,
     DeleteOutlined,
     EditOutlined,
     FilePdfOutlined,
+    HolderOutlined,
     MoreOutlined,
 } from '@ant-design/icons';
 import { BibleIcons } from '@renderer/components/icons';
-import { SUBJECT_EVENT, AI_DATA_EVENT } from '@renderer/utils/events';
+import { SUBJECT_EVENT, AI_DATA_EVENT, type FocusSubjectDetail } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { interactiveProps } from '@renderer/utils/interactive';
 import {
     buildPendingNavigation,
-    buildReferenceOpenRequest,
+    useDocumentPresentation,
     useOpenDocumentRequest,
     useSermonLookup,
     useFormatSermonDate,
@@ -128,6 +129,25 @@ export function useSubjectsDatas() {
     return { odatas, datas, setDatas, setSubjects, onSearch };
 }
 
+function normalizeSubjectSelection(
+    subjects: SubjectDocument[],
+    preferredId?: string | null,
+): SubjectDocument[] {
+    if (subjects.length === 0) {
+        return subjects;
+    }
+
+    const activeId =
+        preferredId && subjects.some((subject) => subject.id === preferredId)
+            ? preferredId
+            : (subjects.find((subject) => subject.active)?.id ?? subjects[0].id);
+
+    return subjects.map((subject) => ({
+        ...subject,
+        active: subject.id === activeId,
+    }));
+}
+
 export default function Subject() {
     const { t } = useTranslation();
     const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
@@ -138,14 +158,16 @@ export default function Subject() {
         window.api.subjects
             .getAll()
             .then((subjects) => {
-                odatas.current = subjects;
-                setDatas(subjects);
-                setSubjects(subjects);
+                const preferredId = odatas.current.find((subject) => subject.active)?.id ?? null;
+                const normalized = normalizeSubjectSelection(subjects, preferredId);
+                odatas.current = normalized;
+                setDatas(normalized);
+                setSubjects(normalized);
             })
             .catch(() => {
                 message.error(t('Erreur lors du chargement des sujets'));
             });
-    }, [setSubjects]);
+    }, [odatas, setSubjects, t]);
 
     useEffect(() => {
         loadSubjects();
@@ -164,22 +186,17 @@ export default function Subject() {
     }, [loadSubjects]);
 
     useEffect(() => {
-        if (datas.length > 0) {
-            const hasActive = datas.some((d) => d.active);
-            if (!hasActive) {
-                setDatas((ds) => ds.map((nd, i) => ({ ...nd, active: i === 0 })));
-            }
-        }
-    }, [datas]);
-
-    useEffect(() => {
         const focusSubject = (event: Event) => {
-            const id = (event as CustomEvent<{ id: string }>).detail?.id;
-            if (id) setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
+            const id = (event as CustomEvent<FocusSubjectDetail>).detail?.id;
+            if (!id) return;
+            const normalized = normalizeSubjectSelection(odatas.current, id);
+            odatas.current = normalized;
+            setDatas(normalized);
+            setSubjects(normalized);
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-    }, []);
+    }, [odatas, setSubjects]);
 
     useEffect(() => {
         const subject = datas.find((d) => d.active);
@@ -205,9 +222,15 @@ export default function Subject() {
         });
     }, [activeDocument?.id]);
 
-    const onSelectItem = useCallback((id: string) => {
-        setDatas((ds) => ds.map((nd) => ({ ...nd, active: nd.id === id })));
-    }, []);
+    const onSelectItem = useCallback(
+        (id: string) => {
+            const normalized = normalizeSubjectSelection(odatas.current, id);
+            odatas.current = normalized;
+            setDatas(normalized);
+            setSubjects(normalized);
+        },
+        [odatas, setSubjects],
+    );
 
     const saveNewSubject = (searchValue: string) => {
         const value = searchValue.trim();
@@ -229,7 +252,9 @@ export default function Subject() {
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
         window.api.subjects.delete(item.id).then(() => {
-            odatas.current = odatas.current.filter((d) => d.id !== item.id);
+            odatas.current = normalizeSubjectSelection(
+                odatas.current.filter((d) => d.id !== item.id),
+            );
             setDatas(odatas.current);
             setSubjects(odatas.current);
             message.success(t('Supprimé'));
@@ -346,35 +371,47 @@ function ItemFromSelectedSubject({
 }) {
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
-    const setPendingNavigation = useSermonStore((s) => s.setPendingNavigation);
+    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
     const openDocumentRequest = useOpenDocumentRequest();
+    const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
 
-    const sermon = getSermonById(item.sermonId);
-    const displayTitle = sermon?.title ?? item.documentTitle;
-    const paragraphRef = isParagraphReference(item.documentHtmlTree) ? item.documentHtmlTree : null;
+    const documentIdentity = item.documentReference.documentIdentity;
+    const sermon =
+        documentIdentity.documentType === 'sermon'
+            ? getSermonById(documentIdentity.sermonId)
+            : undefined;
+    const displayTitle = resolveTitle(item.documentTitle, item.documentReference);
+    const paragraphRef = isParagraphReference(item.documentReference)
+        ? item.documentReference
+        : null;
     const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
 
     const onNavigate = () => {
-        const request = buildReferenceOpenRequest(
-            item.documentTitle,
-            item.sermonId,
-            item.documentHtmlTree,
-        );
-        setPendingNavigation(buildPendingNavigation(request, item.documentHtmlTree));
+        const request = buildOpenRequest(item.documentTitle, item.documentReference);
+        setPendingNavigation(buildPendingNavigation(request, item.documentReference));
         openDocumentRequest(request);
     };
 
-    if (item.bible) {
+    if (item.documentPreview?.kind === 'bible-verse') {
+        const verse = item.documentPreview.bibleVerse;
         return (
             <div className="subject-ref-card">
                 <div className="subject-ref-card__header">
+                    <HolderOutlined
+                        style={{
+                            fontSize: 'var(--fs-base)',
+                            cursor: 'grab',
+                            opacity: 0.5,
+                            flexShrink: 0,
+                        }}
+                    />
                     <BibleIcons />
                     <Text strong style={{ fontSize: 'var(--fs-rel-4xl)' }}>
-                        {item.bible.bookName} {item.bible.chapter}:{item.bible.verse}
+                        {verse.bookName} {verse.chapter}:{verse.verse}
                     </Text>
                     <DeleteBtn confirm={() => confirm(item)} />
                 </div>
-                <div className="subject-ref-card__body">{item.bible.content}</div>
+                <div className="subject-ref-card__body">{verse.content}</div>
             </div>
         );
     }
@@ -382,6 +419,14 @@ function ItemFromSelectedSubject({
     return (
         <div className="subject-ref-card">
             <div className="subject-ref-card__header">
+                <HolderOutlined
+                    style={{
+                        fontSize: 'var(--fs-base)',
+                        cursor: 'grab',
+                        opacity: 0.5,
+                        flexShrink: 0,
+                    }}
+                />
                 <BookOutlined style={{ fontSize: 'var(--fs-base)' }} />
                 <a className="underline" style={{ flex: 1, fontSize: 'var(--fs-rel-4xl)' }}>
                     <span onClick={onNavigate}>{displayTitle}</span>
@@ -413,6 +458,17 @@ function ShowActiveDocuments({
     setDocuments: Dispatch<SetStateAction<SubjectDocumentItem[]>>;
 }) {
     const { t } = useTranslation();
+    const documentsRef = useRef(documents);
+    const persistedOrderRef = useRef(documents.map((item) => item.id));
+
+    useEffect(() => {
+        documentsRef.current = documents;
+    }, [documents]);
+
+    useEffect(() => {
+        persistedOrderRef.current = documents.map((item) => item.id);
+    }, [subject.id]);
+
     function confirm(item: SubjectDocumentItem) {
         window.api.subjects.deleteItem(item.id).then(() => {
             setDocuments((ds) => ds.filter((d) => d.id !== item.id));
@@ -429,6 +485,31 @@ function ShowActiveDocuments({
             message.error(t("Erreur lors de l'export PDF"));
         }
     }, [subject.id, t]);
+
+    const persistOrder = useCallback(async () => {
+        const nextIds = documentsRef.current.map((item) => item.id);
+        const previousIds = persistedOrderRef.current;
+        const changed =
+            nextIds.length !== previousIds.length ||
+            nextIds.some((id, index) => id !== previousIds[index]);
+
+        if (!changed) {
+            return;
+        }
+
+        try {
+            await window.api.subjects.reorderItems(subject.id, nextIds);
+            persistedOrderRef.current = nextIds;
+        } catch {
+            setDocuments((current) => {
+                const byId = new Map(current.map((item) => [item.id, item] as const));
+                return persistedOrderRef.current
+                    .map((id) => byId.get(id))
+                    .filter((item): item is SubjectDocumentItem => !!item);
+            });
+            message.error(t('Erreur lors de la réorganisation des références'));
+        }
+    }, [setDocuments, subject.id, t]);
 
     return (
         <>
@@ -448,22 +529,31 @@ function ShowActiveDocuments({
                             />
                         </Tooltip>
                     </div>
-                    <div className="subject-ref-list">
-                        <AnimatePresence mode="popLayout">
+                    <Reorder.Group
+                        axis="y"
+                        values={documents}
+                        onReorder={setDocuments}
+                        as="div"
+                        className="subject-ref-list"
+                    >
+                        <AnimatePresence initial={false}>
                             {documents.map((item) => (
-                                <motion.div
+                                <Reorder.Item
                                     key={item.id}
+                                    value={item}
+                                    as="div"
                                     layout
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 0.2 }}
+                                    onDragEnd={() => void persistOrder()}
                                 >
                                     <ItemFromSelectedSubject item={item} confirm={confirm} />
-                                </motion.div>
+                                </Reorder.Item>
                             ))}
                         </AnimatePresence>
-                    </div>
+                    </Reorder.Group>
                 </>
             ) : (
                 <Empty

@@ -1,11 +1,16 @@
 import { useEffect, useRef } from 'react';
 import type { DocumentTab } from '@shared/types';
 
-export function useTabPersistence(tabs: DocumentTab[], languageCode: string | null) {
+export function useTabPersistence(
+    tabs: DocumentTab[],
+    languageCode: string | null,
+    hydrated: boolean,
+) {
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const prevRef = useRef<DocumentTab[]>(tabs);
 
     useEffect(() => {
+        if (!hydrated) return;
         if (tabs === prevRef.current) return;
         prevRef.current = tabs;
 
@@ -19,5 +24,5 @@ export function useTabPersistence(tabs: DocumentTab[], languageCode: string | nu
         return () => {
             if (timerRef.current) clearTimeout(timerRef.current);
         };
-    }, [tabs, languageCode]);
+    }, [tabs, languageCode, hydrated]);
 }

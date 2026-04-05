@@ -12,6 +12,7 @@ import {
 import { Menu, Layout } from 'antd';
 import type { MenuProps } from 'antd';
 import { useAppStore } from '@renderer/stores';
+import { APP_UI_EVENT } from '@renderer/utils/events';
 import { BibleIcons } from '../icons';
 import AudioDocumentPlayerIndicator from '../audio-document-player-indicator';
 
@@ -68,8 +69,8 @@ export default function SidebarMenu({
                 .catch(() => setAiEnabled(false));
         };
         refreshAiEnabled();
-        window.addEventListener('ai-settings-updated', refreshAiEnabled);
-        return () => window.removeEventListener('ai-settings-updated', refreshAiEnabled);
+        window.addEventListener(APP_UI_EVENT.aiSettingsUpdated, refreshAiEnabled);
+        return () => window.removeEventListener(APP_UI_EVENT.aiSettingsUpdated, refreshAiEnabled);
     }, []);
 
     const menuItems: MenuProps['items'] = useMemo(

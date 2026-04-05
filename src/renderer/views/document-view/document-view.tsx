@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react';
 import DocumentTabs from '../../components/document-tabs';
+import { useAddDocumentTab } from '@renderer/hooks';
 import {
+    useDocumentTabsStore,
     useSermonStore,
     useSearchStore,
     useAppStore,
     selectActiveTab,
+    selectActiveDocumentIdentity,
     selectActiveTabKey,
     selectActiveTabType,
 } from '@renderer/stores';
@@ -13,11 +16,16 @@ import CustomDocumentView from './custom-document-view';
 import BibleDocumentView from './bible-document-view';
 import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
+import { getDocumentIdentityKey } from '@shared/types';
+import { useBibleTtsContinuation } from './bible-tts-continuation';
 
 export default function DocumentView() {
-    const tabType = useSermonStore(selectActiveTabType);
-    const activeTab = useSermonStore(selectActiveTab);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    useBibleTtsContinuation();
+
+    const tabType = useDocumentTabsStore(selectActiveTabType);
+    const activeTab = useDocumentTabsStore(selectActiveTab);
+    const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const openSearchBar = useSearchStore((s) => s.openSearchBar);
     const closeSearchBar = useSearchStore((s) => s.closeSearchBar);
@@ -25,33 +33,46 @@ export default function DocumentView() {
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );
 
-    const tabs = useSermonStore((s) => s.tabs);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
     const sermons = useSermonStore((s) => s.sermons);
-    const addTab = useSermonStore((s) => s.addTab);
+    const addTab = useAddDocumentTab();
 
     useEffect(() => {
         if (tabs.length === 0 && sermons.length > 0) {
-            addTab(sermons[0].title, sermons[0].sermonId);
+            addTab({
+                title: sermons[0].title,
+                documentId: sermons[0].sermonId,
+                type: 'sermon',
+                languageCode: sermons[0].languageCode,
+                translationId: sermons[0].translationId,
+            });
         }
     }, [tabs.length, sermons, addTab]);
 
     // Record history when the active document changes (works for all document types)
-    const prevTabKeyRef = useRef<string | null>(null);
+    const prevHistorySignatureRef = useRef<string | null>(null);
     useEffect(() => {
-        if (!contentLanguage || !activeTab || !activeTabKey) return;
-        if (activeTabKey === prevTabKeyRef.current) return;
-        prevTabKeyRef.current = activeTabKey;
+        if (!contentLanguage || !activeTab || !activeDocumentIdentity) {
+            return;
+        }
+
+        const documentIdentityKey = getDocumentIdentityKey(activeDocumentIdentity);
+        const historySignature = `${documentIdentityKey}::${activeTab.title}`;
+        if (historySignature === prevHistorySignatureRef.current) {
+            return;
+        }
+
+        prevHistorySignatureRef.current = historySignature;
+
         window.api.app
-            .addHistoryEntry(
-                contentLanguage,
-                activeTab.title,
-                activeTab.sermonId,
-                activeTab.type ?? 'sermon',
-            )
+            .addHistoryEntry(contentLanguage, {
+                documentTitle: activeTab.title,
+                documentIdentity: activeDocumentIdentity,
+            })
             .then(() => {
                 window.dispatchEvent(new Event(HISTORY_EVENT.historyUpdated));
             });
-    }, [activeTabKey, activeTab, contentLanguage]);
+    }, [activeTab, activeDocumentIdentity, contentLanguage]);
 
     const readingMode = useAppStore((s) => s.readingMode);
     const setReadingMode = useAppStore((s) => s.setReadingMode);

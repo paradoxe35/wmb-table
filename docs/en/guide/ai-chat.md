@@ -1,19 +1,22 @@
 # AI Chat
 
-<p class="lead">Wmb Table includes a real AI chat feature to help you find sermons, Bible passages, subjects, notes, and personal documents more quickly. This page explains how to use it in simple steps.</p>
+<p class="lead">Wmb Table includes a real AI chat feature to help you find sermons, Bible passages, subjects, notes, and personal documents more quickly, but also to explore a topic, compare messages, and prepare a study more easily.</p>
 
 > [!IMPORTANT]
 > AI chat exists in the app, but it stays off until you turn it on yourself in the `Assistant` tab.
 
 ## What AI chat is for
 
-AI chat is mainly there to save time while preparing.
+AI chat is mainly there to save time while preparing and studying.
 
 It can help you:
 
 - find a sermon by title, date, town, or other details
 - search inside sermon content
 - read sermon content
+- summarize a specific sermon
+- compare several sermons around one theme
+- explore a topic interactively by asking follow-up questions
 - find Bible passages
 - see available Bible versions
 - find your existing subjects
@@ -25,17 +28,11 @@ It can help you:
 - add a Bible passage or sermon reference to a note
 - find your personal documents
 
+The simple idea is this: instead of doing several separate searches yourself, you can ask naturally and let the assistant gather what already exists in Wmb Table.
+
 ## Where to open it
 
 After it is enabled, `Assistant` appears in the left menu with the other tools.
-
-The simplest path is:
-
-1. open `Settings`
-2. open `Assistant`
-3. enable the feature
-4. return to the left menu
-5. open `Assistant`
 
 <ScreenshotPlaceholder
   file="en-ai-chat-sidebar-entry.png"
@@ -51,51 +48,26 @@ The AI chat page has three simple areas:
 - in the center, the messages
 - at the bottom, the place where you type your request
 
-You can also:
-
-- create a new conversation
-- open an older conversation
-- delete one conversation
-- clear the whole conversation history
-- stop a reply that is still being generated
-
 <ScreenshotPlaceholder
   file="en-ai-chat-main-screen.png"
   label="Main AI chat screen"
   hint="Show the conversation list on the left, the messages in the center, and the input box at the bottom."
 />
 
-## Very simple use
-
-The simplest way to use it is:
-
-1. open `Assistant`
-2. type your request
-3. press `Enter` to send
-4. read the answer
-5. then open the sermon, Bible passage, subject, or note if the result is correct
-
-Use `Shift + Enter` if you want a new line.
-
-If you want to stop a reply in progress, use the stop button in the input area.
-
 ## Useful example requests
 
 - `Find sermons preached in Jeffersonville`
 - `Search sermons about baptism`
+- `Summarize this sermon`
+- `Compare what the prophet says about faith in several sermons`
+- `Help me go deeper on the subject of baptism`
 - `Show me John 3:16`
-- `Show the available Bible versions in English`
 - `List my subjects about faith`
-- `Create a subject called Repentance`
 - `Add John 3:16 to the subject Salvation`
-- `Show my notes about seed`
-- `Create a note called Sunday message`
 
 ## What AI chat can use
 
-AI chat works with information already inside Wmb Table.
-
-It can use:
+AI chat works with information already inside Wmb Table:
 
 - installed languages
 - sermons available in your library
@@ -105,59 +77,34 @@ It can use:
 - your notes
 - your personal documents
 
-The app can also show small action tags under a reply to indicate what the assistant used, such as:
-
-- sermon search
-- sermon reading
-- Bible passage
-- add to subject
-- add to note
+The app can also show small action tags under a reply to indicate what the assistant used.
 
 <ScreenshotPlaceholder
   file="en-ai-chat-tool-results.png"
   label="AI tool action tags"
-  hint="Show an AI reply with the small tags for sermon search, Bible passage, add to subject, or add to note."
+  hint="Show an AI reply with small tags for sermon search, Bible passage, add to subject, or add to note."
 />
-
-## Relation with languages
-
-The assistant uses two languages:
-
-- **Your library language**: the assistant searches sermons, Bible passages, and references in the language chosen for your library.
-- **Interface language**: the assistant replies in the language chosen for the application menus and buttons.
-
-For example, if your library is in French but your interface is in English, the assistant will search French sermons and reply in English.
-
-If you clearly ask for a different language in your message, it can adapt.
 
 ## Clickable references
 
-When the assistant gives you results, references to sermons, Bible passages, and documents appear as small colored tags.
+When the assistant gives you results, references to sermons, Bible passages, and documents appear as clickable tags.
 
-By clicking a tag, you open the document directly at the right place:
-
-- a blue tag opens the sermon at the right paragraph
-- a green tag opens the Bible chapter
-- an orange tag opens the custom document
-
-This saves you from searching through the sermon list or the Bible yourself.
+By clicking one, you open the document directly at the right place.
 
 <ScreenshotPlaceholder
   file="en-ai-chat-reference-links.png"
   label="Clickable references in AI chat"
-  hint="Show an AI response containing blue (sermon), green (Bible) and orange (document) clickable tags."
+  hint="Show an AI response containing clickable tags for sermons, Bible, and documents."
 />
 
-## What AI chat does not replace
+## When it is especially useful
 
-Even if it can find many things, it does not replace your judgment.
+AI chat is most useful when:
 
-Keep this habit:
-
-1. open the suggested source
-2. reread the passage in context
-3. make sure it is the correct reference
-4. only keep what is truly useful
+- you remember an idea but not the exact title
+- you want to go deeper on a theme without opening everything manually first
+- you want to compare several sermons quickly
+- you want to move faster between search, reading, notes, and subjects
 
 ## See also
 

@@ -2,38 +2,60 @@ import { useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Reorder } from 'framer-motion';
 import { App as AntApp, type MenuProps } from 'antd';
-import { useSermonStore, useSearchStore, useAppStore, selectActiveTabKey } from '@renderer/stores';
+import {
+    useDocumentTabsStore,
+    useSearchStore,
+    useAppStore,
+    selectActiveTabKey,
+    selectTabsHydrated,
+} from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { useTabPersistence } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT, DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
-import { getTabKey } from '@shared/types';
+import {
+    getDocumentIdentityFromTab,
+    getDocumentIdentityKey,
+    getTabKey,
+    type DocumentTab,
+} from '@shared/types';
 import TabItem from './tab-item';
 
 export default function DocumentTabs() {
     const { t } = useTranslation();
-    const tabs = useSermonStore((s) => s.tabs);
-    const reorderTabs = useSermonStore((s) => s.reorderTabs);
-    const activateTab = useSermonStore((s) => s.activateTab);
-    const removeTab = useSermonStore((s) => s.removeTab);
-    const removeOtherTabs = useSermonStore((s) => s.removeOtherTabs);
-    const removeTabsToRight = useSermonStore((s) => s.removeTabsToRight);
-    const removeAllTabs = useSermonStore((s) => s.removeAllTabs);
-    const updateTabScroll = useSermonStore((s) => s.updateTabScroll);
-    const activeTabKey = useSermonStore(selectActiveTabKey);
+    const tabs = useDocumentTabsStore((s) => s.tabs);
+    const tabsHydrated = useDocumentTabsStore(selectTabsHydrated);
+    const reorderTabs = useDocumentTabsStore((s) => s.reorderTabs);
+    const activateTab = useDocumentTabsStore((s) => s.activateTab);
+    const removeTab = useDocumentTabsStore((s) => s.removeTab);
+    const removeOtherTabs = useDocumentTabsStore((s) => s.removeOtherTabs);
+    const removeTabsToRight = useDocumentTabsStore((s) => s.removeTabsToRight);
+    const removeAllTabs = useDocumentTabsStore((s) => s.removeAllTabs);
+    const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
+    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const rememberReadingPosition = useAppStore((s) => s.rememberReadingPosition);
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
+    const resetTts = useTtsStore((s) => s.reset);
+    const ttsDocumentKey = useTtsStore((s) => s.documentKey);
+    const ttsStatus = useTtsStore((s) => s.status);
     const { modal } = AntApp.useApp();
 
-    useTabPersistence(tabs, contentLanguage);
+    useTabPersistence(tabs, contentLanguage, tabsHydrated);
 
-    const stopTtsIfPlaying = useCallback((closedTabTitle: string) => {
-        const tts = useTtsStore.getState();
-        if (tts.documentId === closedTabTitle && tts.status !== 'idle') {
-            stopAllTtsPlayback();
-            tts.reset();
-        }
-    }, []);
+    const stopTtsIfPlaying = useCallback(
+        (closedTab: DocumentTab) => {
+            const closedTabDocumentKey = getDocumentIdentityKey(
+                getDocumentIdentityFromTab(closedTab),
+            );
+
+            if (ttsDocumentKey === closedTabDocumentKey && ttsStatus !== 'idle') {
+                stopAllTtsPlayback();
+                resetTts();
+            }
+        },
+        [resetTts, ttsDocumentKey, ttsStatus],
+    );
 
     // Close the active tab with Ctrl+W / Cmd+W (only when document view is active)
     const mainView = useAppStore((s) => s.mainView);
@@ -51,7 +73,7 @@ export default function DocumentTabs() {
 
                 const tab = tabs.find((t) => getTabKey(t) === activeTabKey);
                 if (tab) {
-                    stopTtsIfPlaying(tab.title);
+                    stopTtsIfPlaying(tab);
                 }
 
                 cleanupTabs([activeTabKey]);
@@ -65,7 +87,10 @@ export default function DocumentTabs() {
     const handleRemoveTab = useCallback(
         (key: string) => {
             const tab = tabs.find((t) => getTabKey(t) === key);
-            if (tab) stopTtsIfPlaying(tab.title);
+            if (tab) {
+                stopTtsIfPlaying(tab);
+            }
+
             cleanupTabs([key]);
             removeTab(key);
         },
@@ -78,7 +103,7 @@ export default function DocumentTabs() {
             for (const tab of tabs) {
                 const tabKey = getTabKey(tab);
                 if (tabKey !== key) {
-                    stopTtsIfPlaying(tab.title);
+                    stopTtsIfPlaying(tab);
                     removedKeys.push(tabKey);
                 }
             }
@@ -93,8 +118,9 @@ export default function DocumentTabs() {
             const idx = tabs.findIndex((t) => getTabKey(t) === key);
             const removedKeys: string[] = [];
             for (const tab of tabs.slice(idx + 1)) {
-                stopTtsIfPlaying(tab.title);
-                removedKeys.push(getTabKey(tab));
+                const tabKey = getTabKey(tab);
+                stopTtsIfPlaying(tab);
+                removedKeys.push(tabKey);
             }
             cleanupTabs(removedKeys);
             removeTabsToRight(key);
@@ -104,7 +130,10 @@ export default function DocumentTabs() {
 
     const handleRemoveAllTabs = useCallback(() => {
         const allKeys = tabs.map((t) => getTabKey(t));
-        for (const tab of tabs) stopTtsIfPlaying(tab.title);
+        for (const tab of tabs) {
+            stopTtsIfPlaying(tab);
+        }
+
         cleanupTabs(allKeys);
         removeAllTabs();
     }, [tabs, removeAllTabs, stopTtsIfPlaying, cleanupTabs]);
@@ -142,9 +171,12 @@ export default function DocumentTabs() {
     useEffect(() => {
         const handleCustomDocRemoved = (e: Event) => {
             const detail = (e as CustomEvent)?.detail;
-            if (detail?.title) {
+            if (detail?.id) {
                 handleRemoveTab(
-                    getTabKey({ title: detail.title, sermonId: detail.sermonId ?? '' }),
+                    getTabKey({
+                        type: 'custom',
+                        documentId: detail.id,
+                    }),
                 );
             }
         };
@@ -179,7 +211,7 @@ export default function DocumentTabs() {
                             isActive={key === activeTabKey}
                             onActivate={() => {
                                 const container = document.getElementById(DOCUMENT_CONTAINER_ID);
-                                if (activeTabKey && container) {
+                                if (rememberReadingPosition && activeTabKey && container) {
                                     const maxScroll = Math.max(
                                         0,
                                         container.scrollHeight - container.clientHeight,

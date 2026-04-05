@@ -1,5 +1,5 @@
-import { create } from 'zustand';
 import type { NoteItem } from '@shared/types';
+import { createStore } from './create-store';
 
 interface NotesState {
     notes: NoteItem[];
@@ -10,7 +10,7 @@ interface NotesState {
     setError(error: string | null): void;
 }
 
-export const useNotesStore = create<NotesState>((set) => ({
+export const useNotesStore = createStore<NotesState>((set) => ({
     notes: [],
     workingNoteId: null,
     error: null,

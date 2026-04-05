@@ -24,18 +24,22 @@ interface CartesiaConfigProps extends ProviderConfigProps {
     info?: TtsProviderInfo;
 }
 
-async function refreshVoices(setClonedVoices: (v: TtsVoice[]) => void): Promise<void> {
+async function refreshVoices(
+    setClonedVoices: (v: TtsVoice[]) => void,
+    setProviders: (providers: TtsProviderInfo[]) => void,
+): Promise<void> {
     const [cloned, providers] = await Promise.all([
         window.api.tts.listClonedVoices(PROVIDER_TYPE),
         window.api.tts.getProviders(),
     ]);
     setClonedVoices(cloned);
-    useTtsStore.getState().setProviders(providers);
+    setProviders(providers);
 }
 
 export default function CartesiaConfig({ settings, info, onUpdate }: CartesiaConfigProps) {
     const { t } = useTranslation();
     const cfg = settings.providers.cartesia;
+    const setProviders = useTtsStore((s) => s.setProviders);
     const [clonedVoices, setClonedVoices] = useState<TtsVoice[]>([]);
 
     useEffect(() => {
@@ -50,21 +54,21 @@ export default function CartesiaConfig({ settings, info, onUpdate }: CartesiaCon
         async (voiceId: string) => {
             try {
                 await window.api.tts.deleteClonedVoice(PROVIDER_TYPE, voiceId);
-                await refreshVoices(setClonedVoices);
+                await refreshVoices(setClonedVoices, setProviders);
                 message.success(t('Voix clonée supprimée'));
             } catch (err) {
-                message.error(t('Erreur: {{error}}', { error: getErrorMessage(err) }));
+                message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(err)) }));
             }
         },
-        [t],
+        [setProviders, t],
     );
 
     const handleVoiceCloned = useCallback(
         async (voiceId: string) => {
-            await refreshVoices(setClonedVoices);
+            await refreshVoices(setClonedVoices, setProviders);
             onUpdate(providerUpdate(settings, PROVIDER_TYPE, 'voiceId', voiceId));
         },
-        [settings, onUpdate],
+        [onUpdate, setProviders, settings],
     );
 
     const contentLanguage = useAppStore((s) => s.contentLanguage);

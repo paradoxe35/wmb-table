@@ -21,11 +21,17 @@ export function SearchContent() {
     const [results, setResults] = useState<BibleSearchResult | null>(null);
     const lastSearch = useRef<string>('');
     const testament = useRef<Testament | undefined>(undefined);
+    const generationRef = useRef(0);
 
     const onPageChange = useCallback((page: number) => {
+        const generation = ++generationRef.current;
         window.api.bible
             .search(lastSearch.current.trim(), page, testament.current?.value)
             .then((datas) => {
+                if (generation !== generationRef.current) {
+                    return;
+                }
+
                 document
                     .querySelector('.bible__option__content')
                     ?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -40,6 +46,7 @@ export function SearchContent() {
                     testament={testament}
                     setResults={setResults}
                     lastSearch={lastSearch}
+                    generationRef={generationRef}
                 />
             </div>
             <SearchResult onPageChange={onPageChange} results={results} />
@@ -55,10 +62,12 @@ function InputSearchBible({
     setResults,
     lastSearch,
     testament,
+    generationRef,
 }: {
     setResults: React.Dispatch<React.SetStateAction<BibleSearchResult | null>>;
     lastSearch: React.RefObject<string>;
     testament: React.RefObject<Testament | undefined>;
+    generationRef: React.RefObject<number>;
 }) {
     const { t: tr } = useTranslation();
     const [loading, setLoading] = useState(false);
@@ -67,27 +76,49 @@ function InputSearchBible({
         (value: string) => {
             if (!value || value.length < 3) return;
             lastSearch.current = value;
+            const generation = ++generationRef.current;
             setLoading(true);
             window.api.bible
                 .search(value, 1, testament.current?.value || undefined)
-                .then(setResults)
-                .finally(() => setLoading(false));
+                .then((results) => {
+                    if (generation !== generationRef.current) {
+                        return;
+                    }
+
+                    setResults(results);
+                })
+                .finally(() => {
+                    if (generation === generationRef.current) {
+                        setLoading(false);
+                    }
+                });
         },
-        [lastSearch, setResults],
+        [generationRef, lastSearch, setResults],
     );
 
     const onTestamentChange = useCallback(
         (value: string | undefined) => {
             testament.current = TESTAMENTS.find((t) => t.value === value);
             if (lastSearch.current && lastSearch.current.length >= 3) {
+                const generation = ++generationRef.current;
                 setLoading(true);
                 window.api.bible
                     .search(lastSearch.current, 1, testament.current?.value || undefined)
-                    .then(setResults)
-                    .finally(() => setLoading(false));
+                    .then((results) => {
+                        if (generation !== generationRef.current) {
+                            return;
+                        }
+
+                        setResults(results);
+                    })
+                    .finally(() => {
+                        if (generation === generationRef.current) {
+                            setLoading(false);
+                        }
+                    });
             }
         },
-        [testament, lastSearch, setResults],
+        [generationRef, testament, lastSearch, setResults],
     );
 
     const testamentOptions = useMemo(
