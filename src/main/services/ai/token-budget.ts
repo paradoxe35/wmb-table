@@ -1,4 +1,4 @@
-import { asSchema } from 'ai';
+import { asSchema, FlexibleSchema, Tool } from 'ai';
 import { estimateTokenCount } from 'tokenx';
 
 const BUDGET_SAFETY_MARGIN = 512;
@@ -52,11 +52,10 @@ export function measurePromptTokens(prompt: string): number {
     return estimateTokenCount(prompt);
 }
 
-export function measureToolTokens(tools: Record<string, unknown>): number {
+export function measureToolTokens(tools: Record<string, Tool<any, any>>): number {
     const text = Object.entries(tools)
-        .map(([name, t]) => {
-            const tool = (t as Record<string, unknown>) ?? {};
-            const schema = resolveToolSchema(tool.inputSchema ?? tool.parameters);
+        .map(([name, tool]) => {
+            const schema = resolveToolSchema(tool.inputSchema ?? (tool as any).parameters);
             const description = typeof tool.description === 'string' ? tool.description : '';
             return `${name}:${description}:${JSON.stringify(schema)}`;
         })
@@ -65,13 +64,13 @@ export function measureToolTokens(tools: Record<string, unknown>): number {
     return estimateTokenCount(text);
 }
 
-function resolveToolSchema(schema: unknown): unknown {
-    if (schema == null) {
+function resolveToolSchema(schema: FlexibleSchema<any>): unknown {
+    if (schema == null || schema == undefined) {
         return {};
     }
 
     try {
-        const normalized = asSchema(schema as never).jsonSchema;
+        const normalized = asSchema(schema).jsonSchema;
         if (
             normalized &&
             typeof normalized === 'object' &&
