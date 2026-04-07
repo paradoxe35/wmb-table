@@ -12,7 +12,12 @@ import {
     useApplyLanguageWorkspace,
     useModalVisible,
 } from '@renderer/hooks';
-import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/stores';
+import {
+    useAppStore,
+    useDocumentTabsStore,
+    useInstalledLanguagesStore,
+    useSermonStore,
+} from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
@@ -174,6 +179,13 @@ export default function LibraryModal() {
                 if (generation !== refreshGenerationRef.current) {
                     return;
                 }
+
+                // Keep the global store in sync so the badge in settings
+                // reflects the latest update-check results immediately.
+                useInstalledLanguagesStore.setState({
+                    installedLanguages: inst,
+                    hydrated: true,
+                });
 
                 const installedCodes = new Set(inst.map((i) => i.code));
                 const merged: LanguageItem[] = [];
