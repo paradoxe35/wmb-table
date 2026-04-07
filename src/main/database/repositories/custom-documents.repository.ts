@@ -184,13 +184,17 @@ export function searchCustomDocuments(input: {
 }
 
 export function updateCustomDocumentLanguage(id: string, languageCode: string): void {
+    const db = getDb();
     const now = new Date().toISOString();
-    getDb()
-        .update(customDocuments)
+    db.update(customDocuments)
         .set({ languageCode, updatedAt: now })
         .where(eq(customDocuments.id, id))
         .run();
-    logChange('custom_documents', id, 'SAVE', { id, languageCode, updatedAt: now });
+
+    const row = db.select().from(customDocuments).where(eq(customDocuments.id, id)).get();
+    if (row) {
+        logChange('custom_documents', id, 'SAVE', row);
+    }
 }
 
 export function deleteCustomDocument(id: string): void {

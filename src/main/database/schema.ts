@@ -352,7 +352,6 @@ export const syncedTables = [
     subjects,
     subjectItems,
     customDocuments,
-    readingPositions,
     suggestions,
     highlights,
     aiConversations,
