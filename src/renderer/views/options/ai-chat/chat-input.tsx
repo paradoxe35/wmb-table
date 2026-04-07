@@ -8,6 +8,7 @@ export default function ChatInput({
     sending,
     conversationId,
     completionCount,
+    lastCompletedConversationId,
     onDraftChange,
     onSend,
     onStop,
@@ -16,6 +17,7 @@ export default function ChatInput({
     sending: boolean;
     conversationId: string | null;
     completionCount: number;
+    lastCompletedConversationId: string | null;
     onDraftChange: (value: string) => void;
     onSend: () => void;
     onStop: () => void;
@@ -38,7 +40,11 @@ export default function ChatInput({
     }, [sending]);
 
     useEffect(() => {
-        if (completionCount <= 0) {
+        if (
+            completionCount <= 0 ||
+            !conversationId ||
+            lastCompletedConversationId !== conversationId
+        ) {
             return;
         }
 
@@ -47,7 +53,7 @@ export default function ChatInput({
         });
 
         return () => window.cancelAnimationFrame(frame);
-    }, [completionCount]);
+    }, [completionCount, conversationId, lastCompletedConversationId]);
 
     return (
         <div className="ai-chat__input-wrapper">

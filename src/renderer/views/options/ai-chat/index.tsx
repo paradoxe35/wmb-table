@@ -48,9 +48,10 @@ export default function AiChatView() {
     const clearConversations = useAiChatStore((s) => s.clearConversations);
     const sendMessage = useAiChatStore((s) => s.sendMessage);
     const stopGeneration = useAiChatStore((s) => s.stopGeneration);
-    const sending = useAiChatStore((s) => s.sending);
+    const streamingConversations = useAiChatStore((s) => s.streamingConversations);
     const error = useAiChatStore((s) => s.error);
     const completionCount = useAiChatStore((s) => s.completionCount);
+    const lastCompletedConversationId = useAiChatStore((s) => s.lastCompletedConversationId);
     const [draft, setDraft] = useState('');
 
     useEffect(() => {
@@ -60,6 +61,9 @@ export default function AiChatView() {
     const activeMessages = useMemo(
         () => (activeConversationId ? (messagesByConversation[activeConversationId] ?? []) : []),
         [activeConversationId, messagesByConversation],
+    );
+    const activeSending = Boolean(
+        activeConversationId && streamingConversations[activeConversationId],
     );
 
     const handleSend = useCallback(() => {
@@ -106,6 +110,7 @@ export default function AiChatView() {
             <ChatConversationList
                 conversations={conversations}
                 activeConversationId={activeConversationId}
+                streamingConversations={streamingConversations}
                 onCreateConversation={handleCreateConversation}
                 onSelectConversation={handleSelectConversation}
                 onDeleteConversation={handleDeleteConversation}
@@ -123,13 +128,14 @@ export default function AiChatView() {
                     />
                 ) : null}
 
-                <ChatMessageList messages={activeMessages} sending={sending} />
+                <ChatMessageList messages={activeMessages} sending={activeSending} />
 
                 <ChatInput
                     draft={draft}
-                    sending={sending}
+                    sending={activeSending}
                     conversationId={activeConversationId}
                     completionCount={completionCount}
+                    lastCompletedConversationId={lastCompletedConversationId}
                     onDraftChange={setDraft}
                     onSend={handleSend}
                     onStop={handleStop}

@@ -1,11 +1,12 @@
 import { memo } from 'react';
 import { Button, Popconfirm, Typography } from 'antd';
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { DeleteOutlined, LoadingOutlined, PlusOutlined } from '@ant-design/icons';
 import type { AiConversation } from '@shared/ai.types';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const { Text } = Typography;
+type StreamingConversationMap = Readonly<Record<string, true>>;
 
 function formatRelativeDate(isoDate: string, t: (key: string) => string): string {
     const now = Date.now();
@@ -24,6 +25,7 @@ function formatRelativeDate(isoDate: string, t: (key: string) => string): string
 export default memo(function ChatConversationList({
     conversations,
     activeConversationId,
+    streamingConversations,
     onCreateConversation,
     onSelectConversation,
     onDeleteConversation,
@@ -31,6 +33,7 @@ export default memo(function ChatConversationList({
 }: {
     conversations: AiConversation[];
     activeConversationId: string | null;
+    streamingConversations: StreamingConversationMap;
     onCreateConversation: () => void;
     onSelectConversation: (conversationId: string) => void;
     onDeleteConversation: (conversationId: string) => void;
@@ -69,6 +72,8 @@ export default memo(function ChatConversationList({
                     <AnimatePresence mode="popLayout">
                         {conversations.map((conversation) => {
                             const isActive = conversation.id === activeConversationId;
+                            const isStreaming = Boolean(streamingConversations[conversation.id]);
+                            const showStreamingStatus = isStreaming && !isActive;
                             return (
                                 <motion.div
                                     key={conversation.id}
@@ -109,28 +114,42 @@ export default memo(function ChatConversationList({
                                             {formatRelativeDate(conversation.updatedAt, t)}
                                         </Text>
                                     </div>
-                                    <Popconfirm
-                                        title={t('Supprimer cette conversation ?')}
-                                        onConfirm={(e) => {
-                                            e?.stopPropagation();
-                                            onDeleteConversation(conversation.id);
-                                        }}
-                                        onCancel={(e) => e?.stopPropagation()}
-                                    >
-                                        <Button
-                                            type="text"
-                                            size="small"
-                                            danger
-                                            className="ai-chat__conv-delete"
-                                            icon={
-                                                <DeleteOutlined
-                                                    style={{ fontSize: 'var(--fs-xs)' }}
+                                    <div className="ai-chat__conv-action">
+                                        {showStreamingStatus ? (
+                                            <span
+                                                className="ai-chat__conv-status"
+                                                title={t('Génération en cours')}
+                                                aria-label={t('Génération en cours')}
+                                            >
+                                                <LoadingOutlined spin />
+                                            </span>
+                                        ) : (
+                                            <Popconfirm
+                                                title={t('Supprimer cette conversation ?')}
+                                                disabled={isStreaming}
+                                                onConfirm={(e) => {
+                                                    e?.stopPropagation();
+                                                    onDeleteConversation(conversation.id);
+                                                }}
+                                                onCancel={(e) => e?.stopPropagation()}
+                                            >
+                                                <Button
+                                                    type="text"
+                                                    size="small"
+                                                    danger
+                                                    disabled={isStreaming}
+                                                    className="ai-chat__conv-delete"
+                                                    icon={
+                                                        <DeleteOutlined
+                                                            style={{ fontSize: 'var(--fs-xs)' }}
+                                                        />
+                                                    }
+                                                    style={{ flexShrink: 0 }}
+                                                    onClick={(e) => e.stopPropagation()}
                                                 />
-                                            }
-                                            style={{ flexShrink: 0 }}
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
-                                    </Popconfirm>
+                                            </Popconfirm>
+                                        )}
+                                    </div>
                                 </motion.div>
                             );
                         })}
