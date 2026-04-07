@@ -22,7 +22,7 @@ export type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 // Constants
 // ---------------------------------------------------------------------------
 
-const UPDATE_CHECK_INTERVAL_MS = 24 * 60 * 60 * 1000;
+const UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 60 * 1000;
 
 type LanguageDownloadSource = {
     response: Response;
