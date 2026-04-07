@@ -5,6 +5,7 @@ import { useAiChatStore, useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useFeatureRemindersStore } from '@renderer/stores/feature-reminders.store';
 import {
+    canDisplayFeatureReminders,
     FEATURE_REMINDER_DEFINITIONS,
     FEATURE_REMINDER_NOTIFICATION_KEY,
     FEATURE_REMINDER_SESSION_DELAY_MS,
@@ -19,6 +20,7 @@ export default function FeatureReminderBanner() {
     const { notification } = AntApp.useApp();
     const loaded = useAppStore((s) => s.loaded);
     const syncing = useAppStore((s) => s.syncing);
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
     const mainView = useAppStore((s) => s.mainView);
     const optionView = useAppStore((s) => s.optionView);
     const settingsTab = useAppStore((s) => s.settingsTab);
@@ -94,15 +96,17 @@ export default function FeatureReminderBanner() {
         });
     }, []);
 
-    const canShowReminders =
-        hydrated &&
-        backendLoaded &&
-        loaded &&
-        !syncing &&
-        !readingMode &&
-        hasInteracted &&
-        sessionDelayElapsed &&
-        (!sessionHiddenUntil || sessionHiddenUntil <= Date.now());
+    const canShowReminders = canDisplayFeatureReminders({
+        hydrated,
+        backendLoaded,
+        loaded,
+        syncing,
+        readingMode,
+        hasInteracted,
+        sessionDelayElapsed,
+        sessionHiddenUntil,
+        contentLanguage,
+    });
 
     const activeReminder = canShowReminders
         ? FEATURE_REMINDER_DEFINITIONS.find((reminder) => {

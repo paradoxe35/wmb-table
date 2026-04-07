@@ -39,6 +39,19 @@ export interface FeatureReminderBackendSnapshot {
     ttsCacheSize: number;
 }
 
+export interface FeatureReminderVisibilityInput {
+    hydrated: boolean;
+    backendLoaded: boolean;
+    loaded: boolean;
+    syncing: boolean;
+    readingMode: boolean;
+    hasInteracted: boolean;
+    sessionDelayElapsed: boolean;
+    sessionHiddenUntil: number | null;
+    contentLanguage: string | null;
+    now?: number;
+}
+
 export async function loadFeatureReminderBackendSnapshot(): Promise<FeatureReminderBackendSnapshot> {
     const [backupStatus, aiSettings, ttsCacheSize, ttsSettings, ttsProviders, conversations] =
         await Promise.all([
@@ -123,6 +136,31 @@ export function getFeatureReminderCopy(definition: FeatureReminderDefinition, t:
         ),
         actionLabel: t(definition.actionLabelKey),
     };
+}
+
+export function canDisplayFeatureReminders({
+    hydrated,
+    backendLoaded,
+    loaded,
+    syncing,
+    readingMode,
+    hasInteracted,
+    sessionDelayElapsed,
+    sessionHiddenUntil,
+    contentLanguage,
+    now = Date.now(),
+}: FeatureReminderVisibilityInput): boolean {
+    return (
+        Boolean(contentLanguage) &&
+        hydrated &&
+        backendLoaded &&
+        loaded &&
+        !syncing &&
+        !readingMode &&
+        hasInteracted &&
+        sessionDelayElapsed &&
+        (!sessionHiddenUntil || sessionHiddenUntil <= now)
+    );
 }
 
 export function markFeatureReminderUsed(key: FeatureReminderKey): void {
