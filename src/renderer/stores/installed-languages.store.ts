@@ -1,17 +1,22 @@
 import type { InstalledLanguage } from '@shared/types';
 import { createStore } from './create-store';
 
+export interface RefreshInstalledLanguagesOptions {
+    checkForUpdates?: boolean;
+    force?: boolean;
+}
+
 interface InstalledLanguagesState {
     installedLanguages: InstalledLanguage[];
     hydrated: boolean;
-    refresh(): Promise<void>;
+    refresh(options?: RefreshInstalledLanguagesOptions): Promise<void>;
 }
 
 export const useInstalledLanguagesStore = createStore<InstalledLanguagesState>((set) => ({
     installedLanguages: [],
     hydrated: false,
-    refresh: async () => {
-        const langs = await window.api.languages.getInstalled();
+    refresh: async (options) => {
+        const langs = await window.api.languages.getInstalled(options);
         set({ installedLanguages: langs, hydrated: true });
     },
 }));

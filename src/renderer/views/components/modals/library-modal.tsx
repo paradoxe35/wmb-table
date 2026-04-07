@@ -42,11 +42,6 @@ type LanguageItem = {
     filesize: number;
 };
 
-type LanguageSnapshot = {
-    installed: InstalledLanguage[];
-    available: DownloadableLanguage[];
-};
-
 function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -54,8 +49,8 @@ function formatSize(bytes: number): string {
 }
 
 function mergeLanguageItems(
-    installed: LanguageSnapshot['installed'],
-    available: LanguageSnapshot['available'],
+    installed: InstalledLanguage[],
+    available: DownloadableLanguage[],
 ): LanguageItem[] {
     const installedCodes = new Set(installed.map((i) => i.code));
     const merged: LanguageItem[] = [];
@@ -212,11 +207,9 @@ export default function LibraryModal() {
     const [, startTransition] = useTransition();
     const hasLoadedLanguagesRef = useRef(false);
     const refreshGenerationRef = useRef(0);
-    const updateCheckGenerationRef = useRef(0);
 
-    const refresh = useCallback(async (): Promise<LanguageSnapshot | null> => {
+    const refresh = useCallback(async (): Promise<void> => {
         const generation = ++refreshGenerationRef.current;
-        updateCheckGenerationRef.current += 1;
 
         setLoading(!hasLoadedLanguagesRef.current);
         try {
@@ -226,7 +219,7 @@ export default function LibraryModal() {
             ]);
 
             if (generation !== refreshGenerationRef.current) {
-                return null;
+                return;
             }
 
             useInstalledLanguagesStore.setState({
@@ -235,53 +228,14 @@ export default function LibraryModal() {
             });
             hasLoadedLanguagesRef.current = true;
             setLanguages(mergeLanguageItems(installed, available));
-            return { installed, available };
         } catch {
-            return null;
+            // Keep existing modal data on transient failures.
         } finally {
             if (generation === refreshGenerationRef.current) {
                 setLoading(false);
             }
         }
     }, []);
-
-    const refreshUpdateAvailability = useCallback(
-        async (snapshot: LanguageSnapshot, options?: { force?: boolean }) => {
-            const generation = ++updateCheckGenerationRef.current;
-
-            try {
-                const installed = await window.api.languages.getInstalled({
-                    checkForUpdates: true,
-                    force: options?.force,
-                });
-
-                if (generation !== updateCheckGenerationRef.current) {
-                    return;
-                }
-
-                useInstalledLanguagesStore.setState({
-                    installedLanguages: installed,
-                    hydrated: true,
-                });
-                setLanguages(mergeLanguageItems(installed, snapshot.available));
-            } catch {
-                // Keep the already-rendered list; update checks are best-effort.
-            }
-        },
-        [],
-    );
-
-    const refreshWithBackgroundUpdateCheck = useCallback(
-        async (options?: { force?: boolean }) => {
-            const snapshot = await refresh();
-            if (!snapshot) {
-                return;
-            }
-
-            void refreshUpdateAvailability(snapshot, options);
-        },
-        [refresh, refreshUpdateAvailability],
-    );
 
     const filteredLanguages = useMemo(() => {
         let list = languages;
@@ -331,10 +285,10 @@ export default function LibraryModal() {
 
     useEffect(() => {
         if (visible) {
-            void refreshWithBackgroundUpdateCheck({ force: true });
+            void refresh();
             setSearchQuery('');
         }
-    }, [visible, refreshWithBackgroundUpdateCheck]);
+    }, [visible, refresh]);
 
     const setTabs = useDocumentTabsStore((s) => s.setTabs);
     const setLoaded = useAppStore((s) => s.setLoaded);
