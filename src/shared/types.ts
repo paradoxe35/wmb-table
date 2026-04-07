@@ -849,6 +849,8 @@ export interface SyncFailureEvent {
     message: string;
     isAuthError: boolean;
     consecutiveFailures: number;
+    /** True when the backend has removed auth & backup status (user must re-login). */
+    disconnected?: boolean;
 }
 
 // ---------------------------------------------------------------------------

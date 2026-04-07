@@ -55,6 +55,10 @@ export default function BackupTab() {
                 window.api.backup.getStatus().then((s) => {
                     if (s) setStatus(s);
                 });
+            } else {
+                // Backend removed auth — reset UI to login screen
+                setStatus(undefined);
+                setSyncError(null);
             }
         });
 
@@ -64,7 +68,12 @@ export default function BackupTab() {
 
         // Show error on sync failure
         const cleanupFailure = window.api.on.syncFailure((event) => {
-            setSyncError(event.message);
+            if (event.disconnected) {
+                // Status already cleared via backupAccessStatus(false)
+                setSyncError(null);
+            } else {
+                setSyncError(event.message);
+            }
         });
 
         return () => {
@@ -88,11 +97,25 @@ export default function BackupTab() {
                 setSyncing(true);
                 message.success(t('Connexion réussie. Synchronisation en arrière-plan...'), 3);
             })
-            .catch(() => {
-                message.error(
-                    t("Une erreur s'est produite lors de la connexion, réessayez plus tard"),
-                    7,
-                );
+            .catch((err: unknown) => {
+                const errMsg =
+                    err instanceof Error ? err.message : typeof err === 'string' ? err : '';
+                if (
+                    errMsg.includes('missing scopes') ||
+                    errMsg.includes('Authorization incomplete')
+                ) {
+                    message.error(
+                        t(
+                            "Connexion refusée : vous devez autoriser tous les accès demandés. Reconnectez-vous et cochez toutes les cases d'autorisation.",
+                        ),
+                        10,
+                    );
+                } else {
+                    message.error(
+                        t("Une erreur s'est produite lors de la connexion, réessayez plus tard"),
+                        7,
+                    );
+                }
             })
             .finally(() => setLoading(false));
     }, [setSyncing]);

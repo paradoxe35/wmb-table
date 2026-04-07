@@ -23,7 +23,7 @@ import {
     type DriveFile,
 } from './drive.service';
 import { applyChangeLog, applySnapshot, type AffectedTables } from './db-merge.service';
-import { getExistingClient } from './google-auth.service';
+import { getExistingClient, revokeAndDeleteToken } from './google-auth.service';
 import * as backupRepo from '@main/database/repositories/backup.repository';
 import { hasInternet } from '@main/lib/network';
 import { pushToRenderer } from '@main/lib/push';
@@ -230,16 +230,26 @@ async function runSyncCycle(): Promise<void> {
             consecutiveAuthFailures++;
         }
 
+        const shouldDisconnect =
+            isAuthError && consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES;
+
         pushToRenderer(PushChannels.syncFailure, {
             message: failure.message,
             isAuthError,
             consecutiveFailures: consecutiveAuthFailures,
+            disconnected: shouldDisconnect,
         });
 
-        // After too many consecutive auth failures, stop and let frontend handle re-auth
-        if (isAuthError && consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES) {
-            log.error('Too many consecutive auth failures — stopping synchronizer');
+        // After too many consecutive auth failures, clean up and remove authentication
+        if (shouldDisconnect) {
+            log.error('Too many consecutive auth failures — removing authentication');
             stopSynchronizer();
+            // Clean up token and backup status so the user must re-authenticate
+            revokeAndDeleteToken().catch((err) =>
+                log.warn('Failed to revoke token during auth failure cleanup:', err),
+            );
+            backupRepo.deleteStatus();
+            pushToRenderer(PushChannels.backupAccessStatus, false);
         }
     } else {
         lastError = null;
@@ -612,12 +622,13 @@ function isAlreadyProcessed(fileId: string): boolean {
 /**
  * Detect Google auth errors (invalid_grant, token revoked, etc.)
  */
-function isGoogleAuthError(error: Error): boolean {
+export function isGoogleAuthError(error: Error): boolean {
     const msg = error.message.toLowerCase();
     return (
         msg.includes('invalid_grant') ||
         msg.includes('token has been expired or revoked') ||
         msg.includes('invalid credentials') ||
+        msg.includes('invalid authentication credentials') ||
         msg.includes('unauthorized')
     );
 }

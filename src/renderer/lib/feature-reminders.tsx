@@ -204,13 +204,14 @@ export function isFeatureReminderConfigured(
 export function syncFeatureReminderUsageFromSnapshot(
     snapshot: FeatureReminderBackendSnapshot,
 ): void {
+    // Mark as used if the feature has activity OR is configured (user has set it up)
     if (snapshot.backupStatus) {
         markFeatureReminderUsed('backup');
     }
-    if (snapshot.ttsCacheSize > 0) {
+    if (snapshot.ttsCacheSize > 0 || isTtsConfigured(snapshot.ttsSettings, snapshot.ttsProviders)) {
         markFeatureReminderUsed('tts');
     }
-    if (snapshot.aiConversationCount > 0) {
+    if (snapshot.aiConversationCount > 0 || isAiConfigured(snapshot.aiSettings)) {
         markFeatureReminderUsed('ai');
     }
 }

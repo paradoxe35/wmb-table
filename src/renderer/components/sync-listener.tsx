@@ -10,8 +10,6 @@ import {
 } from '@renderer/stores';
 import { AI_DATA_EVENT, HIGHLIGHT_EVENT, SYNC_EVENT } from '@renderer/utils/events';
 
-const AUTH_FAILURE_THRESHOLD = 4;
-
 export default function SyncListener() {
     const { t } = useTranslation();
     const setSubjects = useSubjectsStore((s) => s.setSubjects);
@@ -55,10 +53,10 @@ export default function SyncListener() {
             setSyncing(false);
             window.dispatchEvent(new Event(SYNC_EVENT.syncFailed));
 
-            if (event.isAuthError && event.consecutiveFailures >= AUTH_FAILURE_THRESHOLD) {
-                message.warning(
+            if (event.disconnected) {
+                message.error(
                     t(
-                        'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.',
+                        'Session Google expirée. Le compte a été déconnecté. Reconnectez-vous dans les paramètres de sauvegarde.',
                     ),
                     10,
                 );

@@ -463,6 +463,8 @@ const en: Record<string, string> = {
         'Connection successful. Syncing in background...',
     "Une erreur s'est produite lors de la connexion, réessayez plus tard":
         'An error occurred during sign-in, please try again later',
+    "Connexion refusée : vous devez autoriser tous les accès demandés. Reconnectez-vous et cochez toutes les cases d'autorisation.":
+        'Connection refused: you must authorize all requested access. Please reconnect and check all authorization boxes.',
     'Synchronisation activée': 'Sync enabled',
     Déconnexion: 'Sign out',
     'Se déconnecter de Google ?': 'Sign out from Google?',
@@ -613,8 +615,8 @@ const en: Record<string, string> = {
     'Fermer à droite': 'Close to the right',
 
     // ── Sync listener ──
-    'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.':
-        'Google session expired. Please reconnect in backup settings.',
+    'Session Google expirée. Le compte a été déconnecté. Reconnectez-vous dans les paramètres de sauvegarde.':
+        'Google session expired. The account has been disconnected. Please reconnect in backup settings.',
 
     // ── Layout ──
     'Chargement des données...': 'Loading data...',

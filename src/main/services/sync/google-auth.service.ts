@@ -14,6 +14,20 @@ const SCOPES = [
     'https://www.googleapis.com/auth/drive.appdata',
 ];
 
+/**
+ * Detect auth-related refresh errors (revoked token, expired grant, etc.)
+ */
+function isRefreshAuthError(error: Error): boolean {
+    const msg = error.message.toLowerCase();
+    return (
+        msg.includes('invalid_grant') ||
+        msg.includes('token has been expired or revoked') ||
+        msg.includes('invalid credentials') ||
+        msg.includes('invalid authentication credentials') ||
+        msg.includes('unauthorized')
+    );
+}
+
 function getCredentialsPath(): string {
     if (app.isPackaged) {
         return join(
@@ -76,10 +90,21 @@ export async function getExistingClient(): Promise<OAuth2Client | null> {
                 writeFileSync(tokenPath, JSON.stringify(updatedToken));
                 log.debug('Google auth token refreshed and saved');
             }
-        } catch {
-            // Offline or refresh failed — return client with existing token.
+        } catch (refreshErr) {
+            // If the error is an auth error (revoked, expired grant), clean up
+            const error = refreshErr instanceof Error ? refreshErr : new Error(String(refreshErr));
+            if (isRefreshAuthError(error)) {
+                log.warn('Token refresh failed with auth error — removing saved token');
+                try {
+                    unlinkSync(tokenPath);
+                } catch {
+                    // ignore cleanup errors
+                }
+                return null;
+            }
+            // Offline or transient failure — return client with existing token.
             // The scheduler checks connectivity before each sync cycle.
-            log.debug('Token refresh skipped (offline or failed), using saved token');
+            log.debug('Token refresh skipped (offline or transient), using saved token');
         }
 
         return client;

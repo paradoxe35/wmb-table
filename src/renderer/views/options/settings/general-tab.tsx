@@ -52,9 +52,7 @@ export default function GeneralTab() {
     );
 
     const refreshBackup = useCallback(() => {
-        window.api.backup.getStatus().then((s) => {
-            if (s) setBackupStatus(s);
-        });
+        window.api.backup.getStatus().then((s) => setBackupStatus(s ?? null));
     }, []);
 
     useEffect(() => {

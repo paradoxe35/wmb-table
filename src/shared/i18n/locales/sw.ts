@@ -467,6 +467,8 @@ const sw: Record<string, string> = {
         'Muunganisho umefaulu. Inasawazisha chinichini...',
     "Une erreur s'est produite lors de la connexion, réessayez plus tard":
         'Hitilafu imetokea wakati wa kuingia, jaribu tena baadaye',
+    "Connexion refusée : vous devez autoriser tous les accès demandés. Reconnectez-vous et cochez toutes les cases d'autorisation.":
+        'Muunganisho umekataliwa: lazima uidhinishe ufikiaji wote unaohitajika. Unganisha tena na uweke alama kwenye visanduku vyote vya idhini.',
     'Synchronisation activée': 'Usawazishaji umewashwa',
     Déconnexion: 'Toka',
     'Se déconnecter de Google ?': 'Toka kwenye Google?',
@@ -617,8 +619,8 @@ const sw: Record<string, string> = {
     'Fermer à droite': 'Funga vilivyo kulia',
 
     // ── Sync listener ──
-    'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.':
-        'Kikao cha Google kimeisha muda wake. Tafadhali unganisha tena katika mipangilio ya hifadhi nakala.',
+    'Session Google expirée. Le compte a été déconnecté. Reconnectez-vous dans les paramètres de sauvegarde.':
+        'Kikao cha Google kimeisha muda wake. Akaunti imetenganishwa. Tafadhali unganisha tena katika mipangilio ya hifadhi nakala.',
 
     // ── Layout ──
     'Chargement des données...': 'Inapakia data...',

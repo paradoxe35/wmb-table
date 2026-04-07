@@ -467,6 +467,8 @@ const pt: Record<string, string> = {
         'Conexão bem-sucedida. Sincronizando em segundo plano...',
     "Une erreur s'est produite lors de la connexion, réessayez plus tard":
         'Ocorreu um erro durante o login, tente novamente mais tarde',
+    "Connexion refusée : vous devez autoriser tous les accès demandés. Reconnectez-vous et cochez toutes les cases d'autorisation.":
+        'Conexão recusada: você deve autorizar todos os acessos solicitados. Reconecte-se e marque todas as caixas de autorização.',
     'Synchronisation activée': 'Sincronização ativada',
     Déconnexion: 'Sair',
     'Se déconnecter de Google ?': 'Desconectar do Google?',
@@ -618,8 +620,8 @@ const pt: Record<string, string> = {
     'Fermer à droite': 'Fechar à direita',
 
     // ── Sync listener ──
-    'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.':
-        'A sessão do Google expirou. Reconecte-se nas configurações de backup.',
+    'Session Google expirée. Le compte a été déconnecté. Reconnectez-vous dans les paramètres de sauvegarde.':
+        'A sessão do Google expirou. A conta foi desconectada. Reconecte-se nas configurações de backup.',
 
     // ── Layout ──
     'Chargement des données...': 'Carregando dados...',
