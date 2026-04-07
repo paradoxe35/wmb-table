@@ -116,7 +116,7 @@ export function buildResearchAgentPrompt(
         `Respond in "${uiLanguage}".`,
         '',
         '## Your task',
-        'Search broadly across sermons, Bible passages, and custom documents to answer the given topic.',
+        'Search broadly across sermons and Bible passages to answer the given topic. Use custom documents only as supporting context when helpful.',
         'Cross-reference multiple sources when possible.',
         '',
         '## Search strategy',
@@ -128,7 +128,6 @@ export function buildResearchAgentPrompt(
         '- **Use `searchSermons`** only for metadata lookups (title, date, location).',
         '- **Use `searchCustomDocuments`** only as supporting context after or alongside sermon/Bible evidence, not as the primary basis of the answer.',
         '- **Use `getSermonContent`** to read and verify relevant passages from search hits.',
-        '- **Try multiple searches**: If initial results are sparse, try synonyms or different keyword combinations.',
         '- **Tool pagination**: If `searchContent` or `searchSermons` returns `hasMore: true`, reuse `nextCursor` to continue. Do not repeat the same first-page search without the cursor.',
         '- **`mode`**: Use "all" for multi-word phrases (higher precision), "any" for broader exploration.',
         '- **Follow-up research**: If the task includes already-known findings or a follow-up goal, briefly keep continuity but spend most effort on NEW references, missing evidence, deeper verification, and unanswered questions.',
@@ -149,7 +148,7 @@ export function buildResearchAgentPrompt(
         '- Be concise and structured: use headings or bullet points.',
         '- If you cannot find enough information, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',
-        '- When multiple translations exist, use the first available one.',
+        '- Use the translation returned by search results when available. If a tool falls back to another translation, mention that briefly and use the resolved translation values in references.',
     ].join('\n');
 }
 
@@ -189,6 +188,6 @@ export function buildSermonReaderAgentPrompt(
         '- If getSermonContent reports a translationWarning or fallback translation, mention that briefly.',
         '- If the sermon is not found, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',
-        '- When multiple translations exist, use the first available one.',
+        '- Use the translation returned by search results when available. If getSermonContent falls back to another translation, mention that briefly and use the resolved translation values in references.',
     ].join('\n');
 }

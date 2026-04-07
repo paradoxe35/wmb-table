@@ -36,6 +36,7 @@ interface AiChatState {
     localModels: AiModelScanResult | null;
     sending: boolean;
     error: string | null;
+    completionCount: number;
 
     initialize(): Promise<void>;
     loadSettings(): Promise<void>;
@@ -93,6 +94,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     localModels: null,
     sending: false,
     error: null,
+    completionCount: 0,
 
     initialize: async () => {
         if (!listenersBound) {
@@ -169,7 +171,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 },
             );
             window.api.on.aiStreamComplete(() => {
-                set({ sending: false });
+                set((state) => ({
+                    sending: false,
+                    completionCount: state.completionCount + 1,
+                }));
             });
             window.api.on.aiStreamError(({ error }) => {
                 set({ sending: false, error });

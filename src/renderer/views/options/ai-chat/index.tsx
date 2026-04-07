@@ -50,6 +50,7 @@ export default function AiChatView() {
     const stopGeneration = useAiChatStore((s) => s.stopGeneration);
     const sending = useAiChatStore((s) => s.sending);
     const error = useAiChatStore((s) => s.error);
+    const completionCount = useAiChatStore((s) => s.completionCount);
     const [draft, setDraft] = useState('');
 
     useEffect(() => {
@@ -128,6 +129,7 @@ export default function AiChatView() {
                     draft={draft}
                     sending={sending}
                     conversationId={activeConversationId}
+                    completionCount={completionCount}
                     onDraftChange={setDraft}
                     onSend={handleSend}
                     onStop={handleStop}
