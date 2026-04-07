@@ -202,13 +202,16 @@ export default function SimilarSermonsModal() {
                                         }}
                                     >
                                         <div style={{ marginBottom: 4 }}>
-                                            <Text strong style={{ fontSize: '1em' }}>
+                                            <Text strong style={{ fontSize: 'var(--fs-base)' }}>
                                                 {displayTitle}
                                             </Text>
                                             {subtitle && (
                                                 <Text
                                                     type="secondary"
-                                                    style={{ fontSize: '0.85em', marginLeft: 8 }}
+                                                    style={{
+                                                        fontSize: 'var(--fs-rel-xl)',
+                                                        marginLeft: 8,
+                                                    }}
                                                 >
                                                     {subtitle}
                                                 </Text>
@@ -241,13 +244,13 @@ export default function SimilarSermonsModal() {
                                                 <Text
                                                     type="secondary"
                                                     strong
-                                                    style={{ fontSize: '0.8em' }}
+                                                    style={{ fontSize: 'var(--fs-rel-lg)' }}
                                                 >
                                                     §{p.paragraphIndex}
                                                 </Text>{' '}
                                                 <Text
                                                     type="secondary"
-                                                    style={{ fontSize: '0.85em' }}
+                                                    style={{ fontSize: 'var(--fs-rel-xl)' }}
                                                 >
                                                     {p.snippet.replace(/\n/g, ' ')}
                                                 </Text>

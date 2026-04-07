@@ -13,7 +13,8 @@ export interface GenerationContext {
     tools: ReturnType<typeof buildAiTools>;
     abortSignal: AbortSignal;
     contextWindow?: number;
-    toolTokens?: number;
+    toolTokens: number;
+    systemPromptTokens: number;
 }
 
 export interface GenerationRunner {

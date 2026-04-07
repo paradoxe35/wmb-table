@@ -365,6 +365,9 @@ function areTableSchemasCompatible(
         const localColumns = localDb.prepare(`PRAGMA table_info("${tableName}")`).all() as {
             name: string;
             type: string;
+            notnull: number;
+            dflt_value: unknown;
+            pk: number;
         }[];
         const remoteColumns = remoteDb.prepare(`PRAGMA table_info("${tableName}")`).all() as {
             name: string;
@@ -374,6 +377,22 @@ function areTableSchemasCompatible(
         if (localColumns.length === 0 || remoteColumns.length === 0) return false;
 
         const localNames = new Set(localColumns.map((c) => c.name));
+        const remoteNames = new Set(remoteColumns.map((c) => c.name));
+
+        // Snapshot rows must always provide the primary key used for merge.
+        if (!remoteNames.has('id')) return false;
+
+        // If the remote snapshot lacks a local NOT NULL column without a default,
+        // we cannot safely insert missing rows for this table.
+        for (const column of localColumns) {
+            if (column.name === 'id') continue;
+
+            const requiresRemoteValue = column.notnull === 1 && column.dflt_value == null;
+            if (requiresRemoteValue && !remoteNames.has(column.name)) {
+                return false;
+            }
+        }
+
         return remoteColumns.some((col) => localNames.has(col.name));
     } catch {
         return false;

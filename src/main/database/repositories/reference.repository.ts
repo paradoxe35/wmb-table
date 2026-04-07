@@ -1,6 +1,24 @@
 import { getRefDb } from '../reference-db';
 import type { RefLanguage, RefSermon, RefTranslator } from '@shared/types';
 
+// WARNING:
+// Do not use `isar_id` as an external or persisted reference.
+//
+// Why:
+// - `isar_id` is an internal storage key from the upstream Isar database.
+// - It is used here only to join tables inside the read-only reference DB.
+// - It is not stable across upstream database rebuilds or releases.
+// - The same `isar_id` can point to different content after regenerating
+//   `resources/database/data.sqlite` from a newer `db.isar`.
+//
+// External app state must use stable business identifiers instead:
+// - sermon: `sermon.id`
+// - translator: `translator.translator_id`
+// - language: `language.code`
+//
+// If new code needs a durable reference, do not add APIs or persisted fields
+// keyed by `isar_id`.
+
 // ---------------------------------------------------------------------------
 // Row types (raw from SQLite)
 // ---------------------------------------------------------------------------
@@ -135,12 +153,6 @@ export function getLanguageByCode(code: string): RefLanguage | null {
     return row ? toRefLanguage(row) : null;
 }
 
-export function getLanguageByIsarId(isarId: number): RefLanguage | null {
-    const stmt = getRefDb().prepare(`SELECT * FROM language WHERE isar_id = ?`);
-    const row = stmt.get(isarId) as LanguageRow | undefined;
-    return row ? toRefLanguage(row) : null;
-}
-
 // ---------------------------------------------------------------------------
 // Sermon queries
 // ---------------------------------------------------------------------------
@@ -158,22 +170,6 @@ export function getAllSermons(): RefSermon[] {
         ORDER BY s.date_ms
     `);
     return (stmt.all() as SermonRow[]).map(toRefSermon);
-}
-
-export function getSermonByIsarId(isarId: number): RefSermon | null {
-    const stmt = getRefDb().prepare(`
-        SELECT s.isar_id, s.id, s.title, s.title_formatted, s.date_ms, s.minutes,
-               l.name as location_name,
-               c.name as city_name,
-               st.idx as state_abbr
-        FROM sermon s
-        LEFT JOIN location l ON s.location_id = l.isar_id
-        LEFT JOIN city c ON l.city_id = c.isar_id
-        LEFT JOIN state st ON c.state_id = st.isar_id
-        WHERE s.isar_id = ?
-    `);
-    const row = stmt.get(isarId) as SermonRow | undefined;
-    return row ? toRefSermon(row) : null;
 }
 
 export function getSermonById(sermonId: string): RefSermon | null {

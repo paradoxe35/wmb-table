@@ -10,7 +10,7 @@ import { buildResearchAgentPrompt, buildResearchAgentTaskPrompt } from './agent-
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
 
 const AGENT_NAME = 'researchTopic';
-const MAX_STEPS = 20;
+const MAX_STEPS = 24;
 const MAX_OUTPUT_TOKENS = 3000;
 
 function buildResearchToolSubset(
@@ -28,6 +28,7 @@ function buildResearchToolSubset(
         getBiblePassage: bibleTools.getBiblePassage,
         getBibleVersions: bibleTools.getBibleVersions,
         searchBible: bibleTools.searchBible,
+        searchCustomDocuments: documentTools.searchCustomDocuments,
         getCustomDocuments: documentTools.getCustomDocuments,
         getCustomDocumentContent: documentTools.getCustomDocumentContent,
     };

@@ -1,4 +1,5 @@
 import type { z } from 'zod';
+import type { CustomDocumentSearchHit, SearchMode } from '@shared/types';
 
 export interface AiToolDefinition<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
     description: string;
@@ -16,6 +17,7 @@ export interface AiToolDefinition<TSchema extends z.ZodTypeAny = z.ZodTypeAny> {
 export interface SermonSearchResult {
     sermonId: string;
     translationId: number;
+    languageCode: string;
     title: string;
     enTitle?: string;
     dateMs: number;
@@ -25,6 +27,7 @@ export interface SermonSearchResult {
 export interface SermonContentMeta {
     sermonId: string;
     translationId: number;
+    languageCode: string;
     title: string;
     dateMs: number;
 }
@@ -42,6 +45,7 @@ export interface SermonContentResponse {
     requestedTranslationId?: number;
     resolvedTranslationId?: number;
     fallbackTranslationId?: number;
+    translationWarning?: string;
 }
 
 export interface SearchContentMatch {
@@ -52,6 +56,7 @@ export interface SearchContentMatch {
 export interface SearchContentHit {
     sermonId: string;
     translationId: number;
+    languageCode: string;
     title: string;
     location?: string;
     matches: SearchContentMatch[];
@@ -73,4 +78,11 @@ export interface SearchContentToolResponse extends PaginatedToolResult {
     results: SearchContentHit[];
     totalSermons: number;
     totalIsExact: boolean;
+}
+
+export interface CustomDocumentSearchToolResponse extends PaginatedToolResult {
+    results: CustomDocumentSearchHit[];
+    totalDocuments: number;
+    mode: SearchMode;
+    query: string;
 }

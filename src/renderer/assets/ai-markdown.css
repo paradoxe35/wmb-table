@@ -2,6 +2,9 @@
     font-size: var(--fs-rel-4xl);
     line-height: 1.5;
     user-select: text;
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .ai-markdown p {
@@ -28,6 +31,9 @@
     padding: 1px 4px;
     border-radius: 4px;
     background: var(--ant-color-fill-tertiary);
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: break-spaces;
 }
 
 .ai-markdown pre {
@@ -73,6 +79,13 @@
 .ai-markdown td {
     border: 1px solid var(--ant-color-border);
     padding: 4px 8px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.ai-markdown a {
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .ai-markdown th {

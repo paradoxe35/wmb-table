@@ -1,20 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AiSettings } from '@shared/ai.types';
 
-const cacheGetMock = vi.fn();
-const cacheGetStaleMock = vi.fn();
-const cacheSetMock = vi.fn();
 const cacheKeys: string[] = [];
+const cacheData = new Map<string, unknown>();
+const cacheSetCalls: Array<{ key: string; value: unknown }> = [];
+
+function resetCache(): void {
+    cacheKeys.length = 0;
+    cacheData.clear();
+    cacheSetCalls.length = 0;
+}
 
 vi.mock('@main/lib/simple-cache', () => ({
     SimpleCache: class {
+        private readonly key: string;
+
         constructor(key: string) {
+            this.key = key;
             cacheKeys.push(key);
         }
 
-        get = cacheGetMock;
-        getStale = cacheGetStaleMock;
-        set = cacheSetMock;
+        get = () => (cacheData.has(this.key) ? cacheData.get(this.key) : null);
+        getStale = () => (cacheData.has(this.key) ? cacheData.get(this.key) : null);
+        set = (value: unknown) => {
+            cacheData.set(this.key, value);
+            cacheSetCalls.push({ key: this.key, value });
+        };
     },
 }));
 
@@ -54,10 +65,7 @@ function createSettings(): AiSettings {
 describe('model-fetcher', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        cacheKeys.length = 0;
-        cacheGetMock.mockReturnValue(null);
-        cacheGetStaleMock.mockReturnValue(null);
-        cacheSetMock.mockImplementation(() => undefined);
+        resetCache();
         globalThis.fetch = vi.fn().mockResolvedValue({
             ok: true,
             json: async () => ({
@@ -80,12 +88,14 @@ describe('model-fetcher', () => {
 
         expect(cacheKeys).toEqual([
             'ai-models:custom-a:https%3A%2F%2Fexample-a.test%2Fv1',
+            'ai-model-context:model-a',
             'ai-models:custom-a:https%3A%2F%2Fexample-b.test%2Fv1',
+            'ai-model-context:model-a',
         ]);
     });
 
-    it('uses the same baseUrl-aware cache key when resolving context window', async () => {
-        cacheGetMock.mockReturnValue([{ id: 'model-a', name: 'Model A', contextWindow: 123_456 }]);
+    it('checks the dedicated model context cache before the model list cache', async () => {
+        cacheData.set('ai-model-context:model-a', 123_456);
 
         const contextWindow = await getModelContextWindow(
             'custom-a',
@@ -94,6 +104,29 @@ describe('model-fetcher', () => {
         );
 
         expect(contextWindow).toBe(123_456);
-        expect(cacheKeys).toEqual(['ai-models:custom-a:https%3A%2F%2Fexample-a.test%2Fv1']);
+        expect(cacheKeys).toEqual(['ai-model-context:model-a']);
+    });
+
+    it('persists a permanent model context cache entry from the model list cache', async () => {
+        cacheData.set('ai-models:custom-a:https%3A%2F%2Fexample-a.test%2Fv1', [
+            { id: 'model-a', name: 'Model A', contextWindow: 123_456 },
+        ]);
+
+        const contextWindow = await getModelContextWindow(
+            'custom-a',
+            'model-a',
+            'https://example-a.test/v1',
+        );
+
+        expect(contextWindow).toBe(123_456);
+        expect(cacheKeys).toEqual([
+            'ai-model-context:model-a',
+            'ai-models:custom-a:https%3A%2F%2Fexample-a.test%2Fv1',
+            'ai-model-context:model-a',
+        ]);
+        expect(cacheSetCalls).toContainEqual({
+            key: 'ai-model-context:model-a',
+            value: 123_456,
+        });
     });
 });

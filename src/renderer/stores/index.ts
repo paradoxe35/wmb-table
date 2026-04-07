@@ -24,3 +24,4 @@ export { useTtsStore, selectCurrentTtsSegment, selectIsTtsPlaying } from './tts.
 export { useAiChatStore } from './ai-chat.store';
 export { useThemeStore } from './theme.store';
 export { useFeatureRemindersStore } from './feature-reminders.store';
+export { useInstalledLanguagesStore, selectHasLanguageUpdates } from './installed-languages.store';

@@ -12,6 +12,7 @@ const resolveLanguageModelMock = vi.fn();
 const getModelContextWindowMock = vi.fn();
 const resolveUiLanguageMock = vi.fn();
 const calculateRemoteTokenBudgetMock = vi.fn();
+const measurePromptTokensMock = vi.fn();
 const measureToolTokensMock = vi.fn();
 const getConversationMock = vi.fn();
 const createMessageMock = vi.fn();
@@ -76,6 +77,7 @@ vi.mock('@main/services/ai/context-memory', () => ({
 
 vi.mock('@main/services/ai/token-budget', () => ({
     calculateRemoteTokenBudget: calculateRemoteTokenBudgetMock,
+    measurePromptTokens: measurePromptTokensMock,
     measureToolTokens: measureToolTokensMock,
     MIN_REMOTE_CONTEXT_WINDOW: 16_000,
 }));
@@ -145,6 +147,7 @@ describe('AiService', () => {
             searchContent: { description: 'search', inputSchema: { type: 'object' } },
         });
         measureToolTokensMock.mockReturnValue(321);
+        measurePromptTokensMock.mockReturnValue(654);
         calculateRemoteTokenBudgetMock.mockReturnValue(4_000);
         buildConversationContextMock.mockReturnValue({
             recentMessages: [],

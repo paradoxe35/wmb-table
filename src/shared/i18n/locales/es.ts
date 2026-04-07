@@ -465,6 +465,8 @@ const es: Record<string, string> = {
         'Conexión exitosa. Sincronizando en segundo plano...',
     "Une erreur s'est produite lors de la connexion, réessayez plus tard":
         'Ocurrió un error durante la conexión, inténtelo más tarde',
+    "Connexion refusée : vous devez autoriser tous les accès demandés. Reconnectez-vous et cochez toutes les cases d'autorisation.":
+        'Conexión rechazada: debe autorizar todos los accesos solicitados. Vuelva a conectarse y marque todas las casillas de autorización.',
     'Synchronisation activée': 'Sincronización activada',
     Déconnexion: 'Cerrar sesión',
     'Se déconnecter de Google ?': '¿Cerrar sesión de Google?',
@@ -521,6 +523,7 @@ const es: Record<string, string> = {
     Supprimer: 'Eliminar',
     Annuler: 'Cancelar',
     'Langue téléchargée avec succès': 'Idioma descargado con éxito',
+    'Langue mise à jour avec succès': 'Idioma actualizado con éxito',
     'Téléchargez une langue pour commencer': 'Descargue un idioma para comenzar',
     'Rechercher une langue...': 'Buscar un idioma...',
     'Aucune langue trouvée': 'Ningún idioma encontrado',
@@ -619,8 +622,8 @@ const es: Record<string, string> = {
     'Fermer à droite': 'Cerrar a la derecha',
 
     // ── Sync listener ──
-    'Session Google expirée. Veuillez vous reconnecter dans les paramètres de sauvegarde.':
-        'Sesión de Google expirada. Reconéctese en la configuración de copia de seguridad.',
+    'Session Google expirée. Le compte a été déconnecté. Reconnectez-vous dans les paramètres de sauvegarde.':
+        'Sesión de Google expirada. La cuenta ha sido desconectada. Reconéctese en la configuración de copia de seguridad.',
 
     // ── Layout ──
     'Chargement des données...': 'Cargando datos...',

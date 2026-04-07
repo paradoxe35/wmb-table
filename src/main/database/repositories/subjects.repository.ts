@@ -146,7 +146,10 @@ export function rename(id: string, newName: string): void {
 
     const now = new Date().toISOString();
     db.update(subjects).set({ name: newName, updatedAt: now }).where(eq(subjects.id, id)).run();
-    logChange('subjects', id, 'SAVE', { id, name: newName, updatedAt: now });
+    const row = db.select().from(subjects).where(eq(subjects.id, id)).get();
+    if (row) {
+        logChange('subjects', id, 'SAVE', row);
+    }
 }
 
 export function deleteSubject(id: string): void {
@@ -176,12 +179,12 @@ export function getItems(subjectId: string): SubjectDocumentItem[] {
 
 export function reorderItems(subjectId: string, itemIds: string[]): void {
     const db = getDb();
-    const existingIds = db
-        .select({ id: subjectItems.id })
+    const existingItems = db
+        .select(subjectItemSelection)
         .from(subjectItems)
         .where(eq(subjectItems.subjectId, subjectId))
-        .all()
-        .map((row) => row.id);
+        .all();
+    const existingIds = existingItems.map((row) => row.id);
 
     if (existingIds.length !== itemIds.length) {
         throw new Error('La liste des références est incomplète.');
@@ -193,6 +196,7 @@ export function reorderItems(subjectId: string, itemIds: string[]): void {
     }
 
     const now = new Date().toISOString();
+    const itemsById = new Map(existingItems.map((row) => [row.id, row] as const));
 
     db.transaction((tx) => {
         itemIds.forEach((id, index) => {
@@ -204,12 +208,14 @@ export function reorderItems(subjectId: string, itemIds: string[]): void {
                 .where(and(eq(subjectItems.id, id), eq(subjectItems.subjectId, subjectId)))
                 .run();
 
-            logChange('subject_items', id, 'SAVE', {
-                id,
-                subjectId,
-                sortOrder: index,
-                updatedAt: now,
-            });
+            const row = itemsById.get(id);
+            if (row) {
+                logChange('subject_items', id, 'SAVE', {
+                    ...row,
+                    sortOrder: index,
+                    updatedAt: now,
+                });
+            }
         });
     });
 }

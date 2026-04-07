@@ -161,6 +161,14 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
                 );
             break;
 
+        case 'searchCustomDocuments':
+            if (output && typeof output === 'object' && Array.isArray(output.results))
+                return summarizeList(
+                    extractNames(output.results, 'title', 'documentId'),
+                    `${output.results.length} custom document hit(s)`,
+                );
+            break;
+
         case 'getCustomDocumentContent':
             if (output && typeof output === 'object') {
                 const title = String(output.title ?? output.documentId ?? 'document');
@@ -329,6 +337,9 @@ function cleanToolOutput(name: string, output: any): unknown {
                     content: previewText(d.item?.content, SHORT_PREVIEW),
                 })),
             };
+
+        case 'searchCustomDocuments':
+            return omit(output, 'nextCursor');
 
         case 'getCustomDocumentContent':
             return { ...output, content: previewText(output.content, LONG_PREVIEW) };

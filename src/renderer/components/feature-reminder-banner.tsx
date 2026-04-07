@@ -9,7 +9,6 @@ import {
     FEATURE_REMINDER_NOTIFICATION_KEY,
     FEATURE_REMINDER_SESSION_DELAY_MS,
     getFeatureReminderCopy,
-    isFeatureReminderConfigured,
     loadFeatureReminderBackendSnapshot,
     markFeatureReminderUsed,
     syncFeatureReminderUsageFromSnapshot,
@@ -32,15 +31,10 @@ export default function FeatureReminderBanner() {
     const snooze = useFeatureRemindersStore((s) => s.snooze);
     const ttsStatus = useTtsStore((s) => s.status);
     const aiConversations = useAiChatStore((s) => s.conversations.length);
-    const suppressCloseRef = useRef(false);
-    const notificationOpenRef = useRef(false);
+    /** Incremented each time the notification effect re-opens; onClose ignores stale versions */
+    const notificationVersionRef = useRef(0);
     const [hasInteracted, setHasInteracted] = useState(false);
     const [sessionDelayElapsed, setSessionDelayElapsed] = useState(false);
-    const [configured, setConfigured] = useState<Record<'ai' | 'tts' | 'backup', boolean>>({
-        ai: false,
-        tts: false,
-        backup: false,
-    });
     const [backendLoaded, setBackendLoaded] = useState(false);
 
     useEffect(() => {
@@ -67,22 +61,12 @@ export default function FeatureReminderBanner() {
 
         void loadFeatureReminderBackendSnapshot()
             .then((snapshot) => {
-                if (cancelled) {
-                    return;
-                }
-
+                if (cancelled) return;
                 syncFeatureReminderUsageFromSnapshot(snapshot);
-                setConfigured({
-                    ai: isFeatureReminderConfigured('ai', snapshot),
-                    tts: isFeatureReminderConfigured('tts', snapshot),
-                    backup: isFeatureReminderConfigured('backup', snapshot),
-                });
                 setBackendLoaded(true);
             })
             .catch(() => {
-                if (!cancelled) {
-                    setBackendLoaded(true);
-                }
+                if (!cancelled) setBackendLoaded(true);
             });
 
         return () => {
@@ -107,7 +91,6 @@ export default function FeatureReminderBanner() {
             if (hasAccess) {
                 markFeatureReminderUsed('backup');
             }
-            setConfigured((state) => ({ ...state, backup: hasAccess || state.backup }));
         });
     }, []);
 
@@ -124,21 +107,13 @@ export default function FeatureReminderBanner() {
     const activeReminder = canShowReminders
         ? FEATURE_REMINDER_DEFINITIONS.find((reminder) => {
               const hiddenUntil = hiddenUntilByKey[reminder.key];
-              return (
-                  (!used[reminder.key] || !configured[reminder.key]) &&
-                  (!hiddenUntil || hiddenUntil <= Date.now())
-              );
+              return !used[reminder.key] && (!hiddenUntil || hiddenUntil <= Date.now());
           })
         : null;
 
     useEffect(() => {
-        const closeNotification = () => {
-            if (notificationOpenRef.current) {
-                suppressCloseRef.current = true;
-                notificationOpenRef.current = false;
-            }
-            notification.destroy(FEATURE_REMINDER_NOTIFICATION_KEY);
-        };
+        // Increment version so stale onClose callbacks are ignored
+        const version = ++notificationVersionRef.current;
 
         const copy = activeReminder ? getFeatureReminderCopy(activeReminder, t) : null;
 
@@ -148,12 +123,10 @@ export default function FeatureReminderBanner() {
                 optionView === 'settings' &&
                 settingsTab === activeReminder.tab)
         ) {
-            closeNotification();
+            notification.destroy(FEATURE_REMINDER_NOTIFICATION_KEY);
             return;
         }
 
-        suppressCloseRef.current = false;
-        notificationOpenRef.current = true;
         notification.info({
             key: FEATURE_REMINDER_NOTIFICATION_KEY,
             placement: 'topRight',
@@ -167,7 +140,7 @@ export default function FeatureReminderBanner() {
                     type="primary"
                     onClick={() => {
                         snooze(activeReminder.key);
-                        closeNotification();
+                        notification.destroy(FEATURE_REMINDER_NOTIFICATION_KEY);
                         openSettingsTab(activeReminder.tab);
                     }}
                 >
@@ -175,17 +148,14 @@ export default function FeatureReminderBanner() {
                 </Button>
             ),
             onClose: () => {
-                notificationOpenRef.current = false;
-                if (suppressCloseRef.current) {
-                    suppressCloseRef.current = false;
-                    return;
-                }
+                // Ignore stale close callbacks from destroyed notifications
+                if (notificationVersionRef.current !== version) return;
                 snooze(activeReminder.key);
             },
         });
 
         return () => {
-            closeNotification();
+            notification.destroy(FEATURE_REMINDER_NOTIFICATION_KEY);
         };
     }, [
         activeReminder,

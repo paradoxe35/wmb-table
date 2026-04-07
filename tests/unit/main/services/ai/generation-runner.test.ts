@@ -45,6 +45,7 @@ describe('GenerationRunnerImpl', () => {
             abortSignal: new AbortController().signal,
             contextWindow: 16_000,
             toolTokens: 5_000,
+            systemPromptTokens: 2_000,
         });
 
         expect(dispatchTextDeltaMock).toHaveBeenCalledWith(

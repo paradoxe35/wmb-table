@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+    buildResearchAgentPrompt,
     buildResearchAgentTaskPrompt,
+    buildSermonReaderAgentPrompt,
     buildSermonReaderTaskPrompt,
 } from '@main/services/ai/agents/agent-prompts';
 
@@ -38,5 +40,20 @@ describe('AI agents prompt builders', () => {
         expect(prompt).toContain('Already known from prior reading');
         expect(prompt).toContain('What to focus on in this follow-up:');
         expect(prompt).toContain('extend the prior reading');
+    });
+
+    it('tells the research agent to broaden and vary queries', () => {
+        const prompt = buildResearchAgentPrompt('fr', 'en', 'kjv');
+
+        expect(prompt).toContain('Run multiple query variants');
+        expect(prompt).toContain('Keep searching until novelty drops');
+    });
+
+    it('tells the sermon reader it may read more for whole-sermon tasks', () => {
+        const prompt = buildSermonReaderAgentPrompt('fr', 'en', 'kjv');
+
+        expect(prompt).toContain('whole-sermon summaries');
+        expect(prompt).toContain('up to 8 pages (160 paragraphs)');
+        expect(prompt).toContain('use searchSermons first');
     });
 });

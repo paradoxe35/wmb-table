@@ -20,6 +20,7 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '- The languageCode and translationId MUST be the exact values from sermon metadata returned by tool results. Never invent or guess them.',
     '- The paragraph number MUST be the exact `paragraphNumber` field from the paragraph object. Never guess or compute it.',
     '- Do NOT put the sermon title in the URL. The title goes only in the link text `[Title, §N](...)`.',
+    '- If a tool reports `translationWarning` or a fallback translation, say that briefly and then use the resolved translation values in references.',
 ].join('\n');
 
 export function buildResearchAgentTaskPrompt(input: {
@@ -52,19 +53,29 @@ export function buildResearchAgentTaskPrompt(input: {
 }
 
 export function buildSermonReaderTaskPrompt(input: {
-    sermonId: string;
+    sermonId?: string;
+    sermonQuery?: string;
     question: string;
     translationId?: number;
     description?: string;
     alreadyKnown?: string;
     focus?: string;
 }): string {
-    const sections = [
-        input.translationId
-            ? `Sermon to read: ${input.sermonId.trim()} (translationId: ${input.translationId})`
-            : `Sermon to read: ${input.sermonId.trim()}`,
-        `Question to answer: ${input.question.trim()}`,
-    ];
+    const sections = [];
+
+    if (input.sermonId?.trim()) {
+        sections.push(
+            input.translationId
+                ? `Sermon to read: ${input.sermonId.trim()} (translationId: ${input.translationId})`
+                : `Sermon to read: ${input.sermonId.trim()}`,
+        );
+    }
+
+    if (input.sermonQuery?.trim()) {
+        sections.push(`Sermon to resolve first: ${input.sermonQuery.trim()}`);
+    }
+
+    sections.push(`Question to answer: ${input.question.trim()}`);
 
     if (input.description?.trim()) {
         sections.push(`Additional context:\n${input.description.trim()}`);
@@ -95,6 +106,7 @@ export function buildResearchAgentPrompt(
     return [
         'You are a research subagent for WMB Table Assistant. The sermons are from the prophet William Marrion Branham.',
         'CRITICAL: Never give your own opinion or interpretation. Only report what the prophet said and what the Bible says.',
+        'CRITICAL: Sermons and Bible passages are the source of truth. Use custom documents only as supporting context, never as the final authority over doctrine, teaching, or what the prophet said.',
         `The sermon content language is "${contentLanguage}". Use it for all tool calls unless the user specifies otherwise.`,
         ...(activeBibleVersion
             ? [
@@ -104,16 +116,18 @@ export function buildResearchAgentPrompt(
         `Respond in "${uiLanguage}".`,
         '',
         '## Your task',
-        'Search broadly across sermons, Bible passages, and custom documents to answer the given topic.',
+        'Search broadly across sermons and Bible passages to answer the given topic. Use custom documents only as supporting context when helpful.',
         'Cross-reference multiple sources when possible.',
         '',
         '## Search strategy',
         '- **Extract keywords**: Do NOT search with the full natural language question. Extract 2-3 key content words.',
         '  Example: "Quand l\'ouverture des sceaux se produit elle?" → search "ouverture sceaux"',
+        '- **Run multiple query variants**: Start with the strongest keywords, then try narrower and broader variants, synonyms, alternate spellings, Bible references, and related sermon phrases.',
+        '- **Keep searching until novelty drops**: Do not stop after one weak search. Try several query combinations and use pagination before concluding that evidence is sparse.',
         '- **Use `searchContent`** (full-text search) as your primary tool — it searches inside sermon text.',
         '- **Use `searchSermons`** only for metadata lookups (title, date, location).',
+        '- **Use `searchCustomDocuments`** only as supporting context after or alongside sermon/Bible evidence, not as the primary basis of the answer.',
         '- **Use `getSermonContent`** to read and verify relevant passages from search hits.',
-        '- **Try multiple searches**: If initial results are sparse, try synonyms or different keyword combinations.',
         '- **Tool pagination**: If `searchContent` or `searchSermons` returns `hasMore: true`, reuse `nextCursor` to continue. Do not repeat the same first-page search without the cursor.',
         '- **`mode`**: Use "all" for multi-word phrases (higher precision), "any" for broader exploration.',
         '- **Follow-up research**: If the task includes already-known findings or a follow-up goal, briefly keep continuity but spend most effort on NEW references, missing evidence, deeper verification, and unanswered questions.',
@@ -129,11 +143,12 @@ export function buildResearchAgentPrompt(
         '',
         '## Rules',
         '- Use the tools provided to gather information. Do NOT invent content.',
+        '- If custom documents disagree with sermons or Bible passages, follow the sermons and Bible passages.',
         '- Be concise by default, but include enough references and explanation to answer the topic well.',
         '- Be concise and structured: use headings or bullet points.',
         '- If you cannot find enough information, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',
-        '- When multiple translations exist, use the first available one.',
+        '- Use the translation returned by search results when available. If a tool falls back to another translation, mention that briefly and use the resolved translation values in references.',
     ].join('\n');
 }
 
@@ -155,19 +170,24 @@ export function buildSermonReaderAgentPrompt(
         '',
         '## Your task',
         "Read a specific sermon and answer the user's question about it.",
-        'Paginate through the sermon content 20 paragraphs at a time (max 3 pages).',
+        'Paginate through sermon content 20 paragraphs at a time.',
+        'Start with the most relevant section. For focused questions, usually 1-3 pages are enough; read more only if the answer remains incomplete.',
+        'For whole-sermon summaries, outlines, theme extraction, or citation lists, read enough representative sections to answer confidently: beginning, relevant middle sections, later sections, and search-hit areas.',
+        'You may read up to 8 pages (160 paragraphs) or the full sermon if it is shorter.',
+        'If the user gives only a title, date, or location hint, use searchSermons first to resolve the sermonId and translationId before reading.',
         'If the question targets a phrase, theme, or follow-up angle, use searchContent first to jump to the most relevant paragraph(s), then verify with getSermonContent around that area.',
         '',
         REFERENCE_FORMAT_INSTRUCTIONS,
         '',
         '## Rules',
         '- Use getSermonContent with maxParagraphs=20 and increment startParagraph to paginate.',
-        '- Do not read more than 3 pages (60 paragraphs) total unless the sermon is shorter.',
+        '- Use searchSermons when the exact sermonId or translationId is missing.',
         '- Keep your final answer under 600 words.',
         '- Use searchContent to find specific phrases if needed. If it returns `hasMore: true`, pass `nextCursor` to continue instead of repeating page one.',
         '- If prior reading context is provided, avoid repeating the whole sermon summary. Focus on the new angle, extra citations, or deeper explanation requested.',
+        '- If getSermonContent reports a translationWarning or fallback translation, mention that briefly.',
         '- If the sermon is not found, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',
-        '- When multiple translations exist, use the first available one.',
+        '- Use the translation returned by search results when available. If getSermonContent falls back to another translation, mention that briefly and use the resolved translation values in references.',
     ].join('\n');
 }

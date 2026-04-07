@@ -11,7 +11,12 @@ import {
     SettingOutlined,
     SoundOutlined,
 } from '@ant-design/icons';
-import { useAppStore } from '@renderer/stores';
+import { Badge } from 'antd';
+import {
+    useAppStore,
+    useInstalledLanguagesStore,
+    selectHasLanguageUpdates,
+} from '@renderer/stores';
 import { SETTINGS_TAB_KEYS, type SettingsTabValue } from '@renderer/stores/app.store';
 import { UPDATE_TAB_EVENT } from '@renderer/components/update-notifier';
 import { APP_UI_EVENT } from '@renderer/utils/events';
@@ -24,6 +29,22 @@ import DocumentViewTab from './document-view-tab';
 import AiTab from './ai-tab';
 
 const { Title, Text } = Typography;
+
+function LibraryTabLabel() {
+    const { t } = useTranslation();
+    const hasUpdates = useInstalledLanguagesStore(selectHasLanguageUpdates);
+    return (
+        <Badge
+            dot={hasUpdates}
+            title={hasUpdates ? t('Mise à jour disponible') : undefined}
+            offset={[6, 2]}
+        >
+            <span>
+                <GlobalOutlined /> {t('Bibliothèque')}
+            </span>
+        </Badge>
+    );
+}
 
 export default function Settings() {
     const { t } = useTranslation();
@@ -91,11 +112,7 @@ export default function Settings() {
             },
             {
                 key: SETTINGS_TAB_KEYS.languages,
-                label: (
-                    <span>
-                        <GlobalOutlined /> {t('Bibliothèque')}
-                    </span>
-                ),
+                label: <LibraryTabLabel />,
                 children: <LibraryTab />,
             },
             {

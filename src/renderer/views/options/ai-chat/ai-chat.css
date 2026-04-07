@@ -93,6 +93,15 @@
     background: var(--ant-color-primary-bg-hover);
 }
 
+.ai-chat__conv-action {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 .ai-chat__conv-item .ai-chat__conv-delete {
     opacity: 0;
     transition: opacity 0.15s;
@@ -100,6 +109,16 @@
 
 .ai-chat__conv-item:hover .ai-chat__conv-delete {
     opacity: 0.8;
+}
+
+.ai-chat__conv-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    color: var(--ant-color-primary);
+    font-size: var(--fs-xs);
 }
 
 /* ── Main content area ───────────────────────────────────────── */

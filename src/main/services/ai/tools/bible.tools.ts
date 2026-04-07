@@ -73,7 +73,9 @@ export function buildBibleTools(
             execute: async ({ languageCode, abbreviation, ...rest }) => {
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
-                if (langError) return langError;
+                if (langError) {
+                    return langError;
+                }
                 return aiBibleRepo.searchVerses({
                     ...rest,
                     abbreviation: abbreviation ?? defaultAbbreviation,
@@ -111,10 +113,16 @@ export function buildBibleTools(
                     abbreviation: resolvedAbbreviation,
                     languageCode: lang,
                 });
-                if ('error' in result) return result;
+                if ('error' in result) {
+                    return result;
+                }
 
                 const verse = result[0];
-                if (!verse) return { error: 'Passage biblique introuvable.' };
+                if (!verse) {
+                    return {
+                        error: 'Passage biblique introuvable.',
+                    };
+                }
 
                 const title = `${verse.bookName} ${verse.chapter}`;
                 const bibleContent = result

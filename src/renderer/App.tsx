@@ -1,11 +1,12 @@
 import { useEffect, useMemo } from 'react';
 import { App as AntApp, ConfigProvider, theme } from 'antd';
-import type { Locale } from 'antd/es/locale';
 import { resolveUiLanguage, type UiLanguage } from '@shared/constants';
 import { useAppStore } from './stores';
+import type { Locale } from 'antd/es/locale';
 import frFR from 'antd/locale/fr_FR';
 import enUS from 'antd/locale/en_US';
 import esES from 'antd/locale/es_ES';
+import ptBR from 'antd/locale/pt_BR';
 
 import { useTranslation } from 'react-i18next';
 import { useInitApp } from './hooks/index';
@@ -20,6 +21,8 @@ const ANTD_LOCALES: Record<UiLanguage, Locale> = {
     fr: frFR,
     en: enUS,
     es: esES,
+    pt: ptBR,
+    sw: enUS,
 };
 
 function useAntdLocale(): Locale {

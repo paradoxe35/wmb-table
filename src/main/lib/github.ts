@@ -69,6 +69,36 @@ async function getReleaseAssets(): Promise<GitHubAsset[]> {
     return releaseAssetsCache;
 }
 
+export function getGitHubReleaseAssetUrl(fileName: string): string {
+    const encodedFileName = fileName
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+    return `${GITHUB_RELEASE_DOWNLOAD_BASE}/${encodedFileName}`;
+}
+
+async function getReleaseAsset(fileName: string): Promise<GitHubAsset | null> {
+    const assets = await getReleaseAssets();
+    return assets.find((asset) => asset.name === fileName) ?? null;
+}
+
+async function getGitHubAssetRedirectResponse(fileName: string): Promise<Response> {
+    const asset = await getReleaseAsset(fileName);
+    if (!asset) {
+        return new Response(null, { status: 404, statusText: `Asset "${fileName}" not found` });
+    }
+
+    const headers = new Headers();
+    headers.set('Accept', 'application/octet-stream');
+    headers.set('User-Agent', 'wmb-table');
+    headers.set('X-GitHub-Api-Version', '2022-11-28');
+    if (GITHUB_TOKEN) {
+        headers.set('Authorization', `Bearer ${GITHUB_TOKEN}`);
+    }
+
+    return fetch(asset.url, { headers, redirect: 'manual' });
+}
+
 /**
  * Download a GitHub release asset by file name (works for private repos).
  *
@@ -78,22 +108,7 @@ async function getReleaseAssets(): Promise<GitHubAsset[]> {
  * 4. Downloads from S3 WITHOUT auth headers (S3 rejects them)
  */
 export async function githubDownload(fileName: string): Promise<Response> {
-    const assets = await getReleaseAssets();
-    const asset = assets.find((a) => a.name === fileName);
-    if (!asset) {
-        return new Response(null, { status: 404, statusText: `Asset "${fileName}" not found` });
-    }
-
-    // Step 1: Request asset from API — don't follow redirect automatically
-    const headers = new Headers();
-    headers.set('Accept', 'application/octet-stream');
-    headers.set('User-Agent', 'wmb-table');
-    headers.set('X-GitHub-Api-Version', '2022-11-28');
-    if (GITHUB_TOKEN) {
-        headers.set('Authorization', `Bearer ${GITHUB_TOKEN}`);
-    }
-
-    const apiResponse = await fetch(asset.url, { headers, redirect: 'manual' });
+    const apiResponse = await getGitHubAssetRedirectResponse(fileName);
 
     // Step 2: Follow redirect to S3 without auth headers
     if (apiResponse.status === 302 || apiResponse.status === 307) {
@@ -110,5 +125,26 @@ export async function githubDownload(fileName: string): Promise<Response> {
     }
 
     // Direct response (200) — return as-is
+    return apiResponse;
+}
+
+export async function githubHead(fileName: string): Promise<Response> {
+    const apiResponse = await getGitHubAssetRedirectResponse(fileName);
+
+    if (apiResponse.status === 302 || apiResponse.status === 307) {
+        const downloadUrl = apiResponse.headers.get('location');
+        if (!downloadUrl) {
+            return new Response(null, {
+                status: 502,
+                statusText: 'GitHub redirect missing Location header',
+            });
+        }
+
+        return fetch(downloadUrl, {
+            method: 'HEAD',
+            headers: { Accept: 'application/octet-stream', 'User-Agent': 'wmb-table' },
+        });
+    }
+
     return apiResponse;
 }

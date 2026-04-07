@@ -1,15 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
-import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import {
+    CheckCircleOutlined,
+    DeleteOutlined,
+    DownloadOutlined,
+    ReloadOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
     fetchLanguageWorkspace,
     useApplyLanguageWorkspace,
     useModalVisible,
 } from '@renderer/hooks';
-import { useAppStore, useDocumentTabsStore, useSermonStore } from '@renderer/stores';
+import {
+    useAppStore,
+    useDocumentTabsStore,
+    useInstalledLanguagesStore,
+    useSermonStore,
+} from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
-import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
+import type {
+    DownloadableLanguage,
+    InstalledLanguage,
+    LanguageDownloadProgress,
+    LanguageInstalledEvent,
+} from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
@@ -21,6 +36,7 @@ type LanguageItem = {
     language: string;
     enLanguage: string;
     installed: boolean;
+    updateAvailable: boolean;
     sermonsCount: number;
     sizeOnDisk: number;
     filesize: number;
@@ -30,6 +46,44 @@ function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function mergeLanguageItems(
+    installed: InstalledLanguage[],
+    available: DownloadableLanguage[],
+): LanguageItem[] {
+    const installedCodes = new Set(installed.map((i) => i.code));
+    const merged: LanguageItem[] = [];
+
+    for (const lang of installed) {
+        merged.push({
+            code: lang.code,
+            language: lang.language,
+            enLanguage: lang.enLanguage,
+            installed: true,
+            updateAvailable: lang.updateAvailable,
+            sermonsCount: lang.sermonsCount,
+            sizeOnDisk: lang.sizeOnDisk,
+            filesize: 0,
+        });
+    }
+
+    for (const lang of available) {
+        if (!installedCodes.has(lang.code)) {
+            merged.push({
+                code: lang.code,
+                language: lang.language,
+                enLanguage: lang.enLanguage,
+                installed: false,
+                updateAvailable: false,
+                sermonsCount: lang.sermonsAvailable,
+                sizeOnDisk: 0,
+                filesize: lang.filesize,
+            });
+        }
+    }
+
+    return merged;
 }
 
 function LanguageRow({
@@ -85,6 +139,11 @@ function LanguageRow({
                             {t('Actif')}
                         </Tag>
                     )}
+                    {lang.updateAvailable && (
+                        <Tag color="gold" style={{ margin: 0 }}>
+                            {t('Mise à jour disponible')}
+                        </Tag>
+                    )}
                     {lang.installed && !isActive && (
                         <CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />
                     )}
@@ -100,7 +159,18 @@ function LanguageRow({
                 style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
                 onClick={(e) => e.stopPropagation()}
             >
-                {lang.installed ? (
+                {isDownloading ? (
+                    <Progress type="circle" size={28} percent={downloadPercent} />
+                ) : lang.installed && lang.updateAvailable ? (
+                    <Button
+                        size="small"
+                        type="primary"
+                        icon={<ReloadOutlined />}
+                        onClick={onInstall}
+                    >
+                        {t('Mettre à jour')}
+                    </Button>
+                ) : lang.installed ? (
                     <Popconfirm
                         title={t('Supprimer cette langue ?')}
                         description={t('Les données de cette langue seront supprimées du disque.')}
@@ -111,8 +181,6 @@ function LanguageRow({
                     >
                         <Button type="text" danger size="small" icon={<DeleteOutlined />} />
                     </Popconfirm>
-                ) : isDownloading ? (
-                    <Progress type="circle" size={28} percent={downloadPercent} />
                 ) : (
                     <Button size="small" icon={<DownloadOutlined />} onClick={onInstall}>
                         {t('Télécharger')}
@@ -137,55 +205,36 @@ export default function LibraryModal() {
     const tabs = useDocumentTabsStore((s) => s.tabs);
     const resetTts = useTtsStore((s) => s.reset);
     const [, startTransition] = useTransition();
+    const hasLoadedLanguagesRef = useRef(false);
     const refreshGenerationRef = useRef(0);
 
-    const refresh = useCallback(() => {
+    const refresh = useCallback(async (): Promise<void> => {
         const generation = ++refreshGenerationRef.current;
 
-        setLoading(true);
-        Promise.all([window.api.languages.getInstalled(), window.api.languages.getAvailable()])
-            .then(([inst, avail]) => {
-                if (generation !== refreshGenerationRef.current) {
-                    return;
-                }
+        setLoading(!hasLoadedLanguagesRef.current);
+        try {
+            const [installed, available] = await Promise.all([
+                window.api.languages.getInstalled(),
+                window.api.languages.getAvailable(),
+            ]);
 
-                const installedCodes = new Set(inst.map((i) => i.code));
-                const merged: LanguageItem[] = [];
+            if (generation !== refreshGenerationRef.current) {
+                return;
+            }
 
-                for (const lang of inst) {
-                    merged.push({
-                        code: lang.code,
-                        language: lang.language,
-                        enLanguage: lang.enLanguage,
-                        installed: true,
-                        sermonsCount: lang.sermonsCount,
-                        sizeOnDisk: lang.sizeOnDisk,
-                        filesize: 0,
-                    });
-                }
-
-                for (const lang of avail) {
-                    if (!installedCodes.has(lang.code)) {
-                        merged.push({
-                            code: lang.code,
-                            language: lang.language,
-                            enLanguage: lang.enLanguage,
-                            installed: false,
-                            sermonsCount: lang.sermonsAvailable,
-                            sizeOnDisk: 0,
-                            filesize: lang.filesize,
-                        });
-                    }
-                }
-
-                setLanguages(merged);
-            })
-            .catch(() => {})
-            .finally(() => {
-                if (generation === refreshGenerationRef.current) {
-                    setLoading(false);
-                }
+            useInstalledLanguagesStore.setState({
+                installedLanguages: installed,
+                hydrated: true,
             });
+            hasLoadedLanguagesRef.current = true;
+            setLanguages(mergeLanguageItems(installed, available));
+        } catch {
+            // Keep existing modal data on transient failures.
+        } finally {
+            if (generation === refreshGenerationRef.current) {
+                setLoading(false);
+            }
+        }
     }, []);
 
     const filteredLanguages = useMemo(() => {
@@ -236,7 +285,7 @@ export default function LibraryModal() {
 
     useEffect(() => {
         if (visible) {
-            refresh();
+            void refresh();
             setSearchQuery('');
         }
     }, [visible, refresh]);
@@ -248,51 +297,96 @@ export default function LibraryModal() {
         window.dispatchEvent(new Event(LANGUAGE_EVENT.catalogChanged));
     }, []);
 
-    useEffect(() => {
-        const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
-            setDownloadProgress((prev) => ({ ...prev, [p.langCode]: p.percentage }));
-        });
-        const unsub2 = window.api.on.languageInstalled(({ langCode }: LanguageInstalledEvent) => {
-            setDownloadProgress((prev) => {
-                const next = { ...prev };
-                delete next[langCode];
-                return next;
-            });
-            refresh();
-            notifyLibraryChanged();
-            message.success(t('Langue téléchargée avec succès'));
-        });
-        return () => {
-            unsub1();
-            unsub2();
-        };
-    }, [notifyLibraryChanged, refresh, t]);
-
-    const handleSelectLanguage = async (
-        langCode: string,
-        options?: { preserveCurrentTabs?: boolean },
-    ) => {
-        try {
-            // Save current tabs for the old language before switching
-            const previousLang = contentLanguage;
-            if (previousLang && options?.preserveCurrentTabs !== false) {
-                await window.api.documents.saveTabs(previousLang, tabs);
+    const loadLanguageWorkspace = useCallback(
+        async (
+            langCode: string,
+            options?: {
+                saveTabsForLanguage?: string | null;
+                persistContentLanguage?: boolean;
+                closeModal?: boolean;
+            },
+        ) => {
+            if (options?.saveTabsForLanguage) {
+                await window.api.documents.saveTabs(options.saveTabsForLanguage, tabs);
             }
 
             stopAllTtsPlayback();
             resetTts();
-            await window.api.app.setContentLanguage(langCode);
+
+            if (options?.persistContentLanguage !== false) {
+                await window.api.app.setContentLanguage(langCode);
+            }
+
             const workspace = await fetchLanguageWorkspace(langCode);
             startTransition(() => {
                 applyLanguageWorkspace(langCode, workspace);
                 setLoaded(true);
             });
-            hide();
-        } catch (err) {
-            console.error('[LibraryModal] Failed to select language:', err);
-            message.error(t('Échec de la sélection de la langue'));
-        }
-    };
+
+            if (options?.closeModal) {
+                hide();
+            }
+        },
+        [applyLanguageWorkspace, hide, resetTts, setLoaded, tabs],
+    );
+
+    useEffect(() => {
+        const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
+            setDownloadProgress((prev) => ({ ...prev, [p.langCode]: p.percentage }));
+        });
+        const unsub2 = window.api.on.languageInstalled(
+            async ({ langCode, action }: LanguageInstalledEvent) => {
+                setDownloadProgress((prev) => {
+                    const next = { ...prev };
+                    delete next[langCode];
+                    return next;
+                });
+
+                if (action === 'updated' && contentLanguage === langCode) {
+                    try {
+                        await loadLanguageWorkspace(langCode, {
+                            saveTabsForLanguage: langCode,
+                            persistContentLanguage: false,
+                        });
+                    } catch (err) {
+                        console.error('[LibraryModal] Failed to reload updated language:', err);
+                        message.error(t('Échec de la sélection de la langue'));
+                    }
+                }
+
+                void refresh();
+                notifyLibraryChanged();
+                message.success(
+                    action === 'updated'
+                        ? t('Langue mise à jour avec succès')
+                        : t('Langue téléchargée avec succès'),
+                );
+            },
+        );
+        return () => {
+            unsub1();
+            unsub2();
+        };
+    }, [contentLanguage, loadLanguageWorkspace, notifyLibraryChanged, refresh, t]);
+
+    const handleSelectLanguage = useCallback(
+        async (langCode: string, options?: { preserveCurrentTabs?: boolean }) => {
+            try {
+                const previousLang = contentLanguage;
+                await loadLanguageWorkspace(langCode, {
+                    saveTabsForLanguage:
+                        previousLang && options?.preserveCurrentTabs !== false
+                            ? previousLang
+                            : null,
+                    closeModal: true,
+                });
+            } catch (err) {
+                console.error('[LibraryModal] Failed to select language:', err);
+                message.error(t('Échec de la sélection de la langue'));
+            }
+        },
+        [contentLanguage, loadLanguageWorkspace, t],
+    );
 
     const handleInstall = (langCode: string) => {
         setDownloadProgress((prev) => ({ ...prev, [langCode]: 0 }));
@@ -316,7 +410,7 @@ export default function LibraryModal() {
                 setTabs([]);
             }
         }
-        refresh();
+        void refresh();
         notifyLibraryChanged();
         message.success(t('Langue supprimée'));
     };

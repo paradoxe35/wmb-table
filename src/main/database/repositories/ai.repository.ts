@@ -148,6 +148,15 @@ export function getConversation(conversationId: string): AiConversation | null {
     return row ? toConversation(row) : null;
 }
 
+function logConversationChange(conversationId: string): void {
+    const row = getDb()
+        .select()
+        .from(aiConversations)
+        .where(eq(aiConversations.id, conversationId))
+        .get();
+    if (row) logChange('ai_conversations', conversationId, 'SAVE', row);
+}
+
 export function createConversation(languageCode: string, title?: string): AiConversation {
     const id = randomUUID();
     const now = new Date().toISOString();
@@ -162,8 +171,9 @@ export function createConversation(languageCode: string, title?: string): AiConv
             updatedAt: now,
         })
         .run();
-    const row = getDb().select().from(aiConversations).where(eq(aiConversations.id, id)).get();
-    if (row) logChange('ai_conversations', id, 'SAVE', row);
+
+    logConversationChange(id);
+
     return getConversation(id)!;
 }
 
@@ -181,12 +191,7 @@ export function updateConversation(
         })
         .where(eq(aiConversations.id, conversationId))
         .run();
-    const row = getDb()
-        .select()
-        .from(aiConversations)
-        .where(eq(aiConversations.id, conversationId))
-        .get();
-    if (row) logChange('ai_conversations', conversationId, 'SAVE', row);
+    logConversationChange(conversationId);
     return getConversation(conversationId)!;
 }
 
@@ -305,6 +310,7 @@ export function createMessage(input: {
         })
         .run();
     touchConversation(input.conversationId);
+    logConversationChange(input.conversationId);
     // Only log user messages immediately; assistant messages are logged via syncMessage() after streaming
     if (input.role === 'user') {
         const row = getDb().select().from(aiMessages).where(eq(aiMessages.id, id)).get();
@@ -362,5 +368,10 @@ export function addAssistantToolResult(messageId: string, toolResult: AiToolResu
  */
 export function syncMessage(messageId: string): void {
     const row = getDb().select().from(aiMessages).where(eq(aiMessages.id, messageId)).get();
-    if (row) logChange('ai_messages', messageId, 'SAVE', row);
+    if (!row) {
+        return;
+    }
+
+    logChange('ai_messages', messageId, 'SAVE', row);
+    logConversationChange(row.conversationId);
 }

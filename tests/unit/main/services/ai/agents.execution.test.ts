@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const generateTextMock = vi.fn();
+const getMessagesMock = vi.fn();
 
 vi.mock('ai', () => ({
     generateText: generateTextMock,
@@ -22,6 +23,10 @@ vi.mock('@main/services/ai/agents/agent-dispatcher', () => ({
     dispatchAgentToolComplete: vi.fn(),
 }));
 
+vi.mock('@main/database/repositories/ai.repository', () => ({
+    getMessages: getMessagesMock,
+}));
+
 vi.mock('@main/services/ai/tools/sermon.tools', () => ({
     buildSermonTools: vi.fn(() => ({
         searchSermons: { description: 'search sermons', inputSchema: {}, execute: vi.fn() },
@@ -40,6 +45,7 @@ vi.mock('@main/services/ai/tools/bible.tools', () => ({
 
 vi.mock('@main/services/ai/tools/document.tools', () => ({
     buildDocumentTools: vi.fn(() => ({
+        searchCustomDocuments: { description: 'search docs', inputSchema: {}, execute: vi.fn() },
         getCustomDocuments: { description: 'docs', inputSchema: {}, execute: vi.fn() },
         getCustomDocumentContent: { description: 'doc', inputSchema: {}, execute: vi.fn() },
     })),
@@ -76,6 +82,11 @@ const { buildResearchAgentTool } = await import('@main/services/ai/agents/resear
 const { buildSermonReaderAgentTool } = await import('@main/services/ai/agents/sermon-reader-agent');
 
 describe('AI subagent execution', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        getMessagesMock.mockReturnValue([]);
+    });
+
     it('returns a truncation note for research agent output cut by length', async () => {
         generateTextMock.mockResolvedValueOnce({
             text: 'Research summary',
@@ -119,5 +130,162 @@ describe('AI subagent execution', () => {
             status: 'completed',
             summary: 'Sermon summary\n\n[Sermon reading output was truncated due to length limit]',
         });
+    });
+
+    it('does not auto-carry research findings without explicit alreadyKnown input', async () => {
+        getMessagesMock.mockReturnValue([
+            {
+                id: 'assistant-prev',
+                role: 'assistant',
+                content: '',
+                toolCalls: [
+                    {
+                        id: 'tool-1',
+                        name: 'researchTopic',
+                        input: { topic: 'Revelation 10' },
+                    },
+                ],
+                toolResults: [
+                    {
+                        toolCallId: 'tool-1',
+                        name: 'researchTopic',
+                        output: {
+                            status: 'completed',
+                            summary: 'Earlier research found references in multiple sermons.',
+                        },
+                    },
+                ],
+            },
+        ]);
+        generateTextMock.mockResolvedValueOnce({
+            text: 'Research summary',
+            finishReason: 'stop',
+            steps: [],
+        });
+
+        const { researchTopic } = buildResearchAgentTool({
+            model: {} as never,
+            contentLanguage: 'fr',
+            uiLanguage: 'en',
+            dispatch: {
+                browserWindow: {} as never,
+                conversationId: 'conv-1',
+                assistantMessageId: 'assistant-1',
+            },
+        });
+        await researchTopic.execute({
+            topic: 'Revelation 10',
+            followUpGoal: 'Find more references about the open book.',
+        });
+
+        const call = generateTextMock.mock.calls[0]?.[0];
+        expect(call.prompt).not.toContain('Already known from earlier research');
+        expect(call.prompt).not.toContain('Earlier research found references in multiple sermons.');
+    });
+
+    it('lets readSermon resolve a sermon by query and uses broader reading mode for whole-sermon work', async () => {
+        generateTextMock.mockResolvedValueOnce({
+            text: 'Sermon summary',
+            finishReason: 'stop',
+            steps: [],
+        });
+
+        const { readSermon } = buildSermonReaderAgentTool({
+            model: {} as never,
+            contentLanguage: 'fr',
+            uiLanguage: 'en',
+        });
+        await readSermon.execute({
+            sermonQuery: 'Amour',
+            question: 'Summarize the whole sermon and list Bible verses cited.',
+        });
+
+        const call = generateTextMock.mock.calls[0]?.[0];
+        expect(call.tools.searchSermons).toBeDefined();
+        expect(call.prompt).toContain('Sermon to resolve first: Amour');
+        expect(call.system).toContain('up to 8 pages (160 paragraphs)');
+    });
+
+    it('does not auto-carry sermon findings without explicit alreadyKnown input', async () => {
+        getMessagesMock.mockReturnValue([
+            {
+                id: 'assistant-prev',
+                role: 'assistant',
+                content: '',
+                toolCalls: [
+                    {
+                        id: 'tool-2',
+                        name: 'readSermon',
+                        input: { sermonId: '63-0318' },
+                    },
+                ],
+                toolResults: [
+                    {
+                        toolCallId: 'tool-2',
+                        name: 'readSermon',
+                        output: {
+                            status: 'completed',
+                            summary: 'Earlier reading covered the first section of the sermon.',
+                        },
+                    },
+                ],
+            },
+        ]);
+        generateTextMock.mockResolvedValueOnce({
+            text: 'Sermon summary',
+            finishReason: 'stop',
+            steps: [],
+        });
+
+        const { readSermon } = buildSermonReaderAgentTool({
+            model: {} as never,
+            contentLanguage: 'fr',
+            uiLanguage: 'en',
+            dispatch: {
+                browserWindow: {} as never,
+                conversationId: 'conv-1',
+                assistantMessageId: 'assistant-1',
+            },
+        });
+        await readSermon.execute({
+            sermonId: '63-0318',
+            question: 'Go deeper on the later paragraphs.',
+            focus: 'Later paragraphs tied to Revelation 10.',
+        });
+
+        const call = generateTextMock.mock.calls[0]?.[0];
+        expect(call.prompt).not.toContain('Already known from prior reading');
+        expect(call.prompt).not.toContain(
+            'Earlier reading covered the first section of the sermon.',
+        );
+    });
+
+    it('passes explicit alreadyKnown sermon context through to the prompt', async () => {
+        generateTextMock.mockResolvedValueOnce({
+            text: 'Sermon summary',
+            finishReason: 'stop',
+            steps: [],
+        });
+
+        const { readSermon } = buildSermonReaderAgentTool({
+            model: {} as never,
+            contentLanguage: 'fr',
+            uiLanguage: 'en',
+            dispatch: {
+                browserWindow: {} as never,
+                conversationId: 'conv-1',
+                assistantMessageId: 'assistant-1',
+            },
+        });
+        await readSermon.execute({
+            sermonId: '63-0318',
+            question: 'Go deeper on the later paragraphs.',
+            alreadyKnown: 'Earlier reading covered the first section of the sermon.',
+            focus: 'Later paragraphs tied to Revelation 10.',
+        });
+
+        const call = generateTextMock.mock.calls[0]?.[0];
+        expect(call.prompt).toContain('Already known from prior reading');
+        expect(call.prompt).toContain('Earlier reading covered the first section of the sermon.');
     });
 });

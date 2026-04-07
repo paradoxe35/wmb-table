@@ -25,6 +25,7 @@ import { buildConversationContext } from './context-memory';
 import {
     calculateRemoteTokenBudget,
     MIN_REMOTE_CONTEXT_WINDOW,
+    measurePromptTokens,
     measureToolTokens,
 } from './token-budget';
 import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
@@ -48,7 +49,8 @@ interface RunGenerationOptions {
     isLocal: boolean;
     remoteTokenBudget?: number;
     contextWindow?: number;
-    toolTokens?: number;
+    toolTokens: number;
+    systemPromptTokens: number;
     contentLanguageCode: string;
     uiLanguageCode: string;
 }
@@ -277,16 +279,7 @@ export class AiService {
             assistantMessageId: assistantMessage.id,
         });
 
-        const toolTokens = measureToolTokens(tools);
-        const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow, toolTokens);
-
         const installedLanguages = await languagePackService.getInstalledLanguages();
-        const { recentMessages, summary } = buildConversationContext(
-            conversation.id,
-            isLocal,
-            remoteTokenBudget,
-        );
-
         const system = buildSystemPrompt({
             contentLanguageCode,
             uiLanguageCode,
@@ -295,7 +288,23 @@ export class AiService {
             activeBibleVersion,
             hasAgents,
         });
+        const toolTokens = measureToolTokens(tools);
+        const baseSystemPromptTokens = measurePromptTokens(system);
+        const initialRemoteTokenBudget = calculateRemoteTokenBudget(contextWindow, {
+            toolTokens,
+            systemPromptTokens: baseSystemPromptTokens,
+        });
+        const { recentMessages, summary } = buildConversationContext(
+            conversation.id,
+            isLocal,
+            initialRemoteTokenBudget,
+        );
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
+        const systemPromptTokens = measurePromptTokens(systemPrompt);
+        const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow, {
+            toolTokens,
+            systemPromptTokens,
+        });
 
         const runner = new GenerationRunnerImpl(isLocal);
 
@@ -306,6 +315,7 @@ export class AiService {
             contextWindow: contextWindow ?? 'unknown',
             tokenBudget: remoteTokenBudget,
             toolTokens,
+            systemPromptTokens,
         });
 
         void this.runGeneration({
@@ -322,6 +332,7 @@ export class AiService {
             remoteTokenBudget,
             contextWindow,
             toolTokens,
+            systemPromptTokens,
             contentLanguageCode,
             uiLanguageCode,
         });
@@ -380,6 +391,7 @@ export class AiService {
             remoteTokenBudget,
             contextWindow,
             toolTokens,
+            systemPromptTokens,
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
@@ -396,6 +408,7 @@ export class AiService {
                 abortSignal,
                 contextWindow,
                 toolTokens,
+                systemPromptTokens,
             });
 
             const nextContext = buildConversationContext(

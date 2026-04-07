@@ -24,6 +24,30 @@ const TOOL_TO_EVENT: Record<string, string> = {
 
 type MessageMap = Record<string, AiMessage[]>;
 type ReasoningMap = Record<string, string>;
+type StreamingConversationMap = Record<string, true>;
+
+function addStreamingConversation(
+    streamingConversations: StreamingConversationMap,
+    conversationId: string,
+): StreamingConversationMap {
+    return {
+        ...streamingConversations,
+        [conversationId]: true,
+    };
+}
+
+function removeStreamingConversation(
+    streamingConversations: StreamingConversationMap,
+    conversationId: string,
+): StreamingConversationMap {
+    if (!streamingConversations[conversationId]) {
+        return streamingConversations;
+    }
+
+    const next = { ...streamingConversations };
+    delete next[conversationId];
+    return next;
+}
 
 interface AiChatState {
     initialized: boolean;
@@ -33,9 +57,12 @@ interface AiChatState {
     activeConversationId: string | null;
     messagesByConversation: MessageMap;
     reasoningByMessage: ReasoningMap;
+    streamingConversations: StreamingConversationMap;
     localModels: AiModelScanResult | null;
     sending: boolean;
     error: string | null;
+    completionCount: number;
+    lastCompletedConversationId: string | null;
 
     initialize(): Promise<void>;
     loadSettings(): Promise<void>;
@@ -90,9 +117,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     activeConversationId: null,
     messagesByConversation: {},
     reasoningByMessage: {},
+    streamingConversations: {},
     localModels: null,
     sending: false,
     error: null,
+    completionCount: 0,
+    lastCompletedConversationId: null,
 
     initialize: async () => {
         if (!listenersBound) {
@@ -168,11 +198,35 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     if (event) window.dispatchEvent(new Event(event));
                 },
             );
-            window.api.on.aiStreamComplete(() => {
-                set({ sending: false });
+            window.api.on.aiStreamComplete(({ conversationId }) => {
+                set((state) => ({
+                    streamingConversations: removeStreamingConversation(
+                        state.streamingConversations,
+                        conversationId,
+                    ),
+                    sending:
+                        Object.keys(
+                            removeStreamingConversation(
+                                state.streamingConversations,
+                                conversationId,
+                            ),
+                        ).length > 0,
+                    completionCount: state.completionCount + 1,
+                    lastCompletedConversationId: conversationId,
+                }));
             });
-            window.api.on.aiStreamError(({ error }) => {
-                set({ sending: false, error });
+            window.api.on.aiStreamError(({ conversationId, error }) => {
+                set((state) => {
+                    const streamingConversations = removeStreamingConversation(
+                        state.streamingConversations,
+                        conversationId,
+                    );
+                    return {
+                        streamingConversations,
+                        sending: Object.keys(streamingConversations).length > 0,
+                        error,
+                    };
+                });
             });
             window.api.on.aiConversationUpdated(({ conversation }) => {
                 set((state) => ({
@@ -286,7 +340,17 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             }));
         }
 
-        set({ sending: true, error: null });
+        set((state) => {
+            const streamingConversations = addStreamingConversation(
+                state.streamingConversations,
+                conversationId,
+            );
+            return {
+                streamingConversations,
+                sending: true,
+                error: null,
+            };
+        });
         try {
             const result: AiSendMessageResult = await window.api.ai.sendMessage({
                 conversationId,
@@ -318,9 +382,16 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 activeConversationId: result.conversation.id,
             }));
         } catch (error) {
-            set({
-                sending: false,
-                error: toErrorMessage(error, "L'envoi du message a échoué."),
+            set((state) => {
+                const streamingConversations = removeStreamingConversation(
+                    state.streamingConversations,
+                    conversationId,
+                );
+                return {
+                    streamingConversations,
+                    sending: Object.keys(streamingConversations).length > 0,
+                    error: toErrorMessage(error, "L'envoi du message a échoué."),
+                };
             });
         }
     },
@@ -331,7 +402,16 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         try {
             await window.api.ai.stopGeneration(conversationId);
         } finally {
-            set({ sending: false });
+            set((state) => {
+                const streamingConversations = removeStreamingConversation(
+                    state.streamingConversations,
+                    conversationId,
+                );
+                return {
+                    streamingConversations,
+                    sending: Object.keys(streamingConversations).length > 0,
+                };
+            });
         }
     },
 

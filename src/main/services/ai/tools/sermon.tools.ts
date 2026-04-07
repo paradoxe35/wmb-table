@@ -45,7 +45,9 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
 
                 const lang = page.languageCode;
                 const langError = validateLanguage(lang);
-                if (langError) return langError;
+                if (langError) {
+                    return langError;
+                }
 
                 const words = page.query
                     .trim()
@@ -79,6 +81,7 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     .map((s) => ({
                         sermonId: s.sermonId,
                         translationId: s.translationId,
+                        languageCode: lang,
                         title: s.title,
                         enTitle: s.enTitle || undefined,
                         dateMs: s.dateMs,
@@ -103,7 +106,8 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 'You MUST pass sermonId (and translationId if available from searchSermons results). ' +
                 'Use startParagraph and maxParagraphs to paginate through long sermons. ' +
                 'To get a general overview, read the first 15 paragraphs. ' +
-                'Each paragraph has a paragraphNumber field — always use that value when building wmb:// reference links.',
+                'Each paragraph has a paragraphNumber field — always use that value when building wmb:// reference links. ' +
+                'If the requested translation is unavailable, the response will include translationWarning and the resolved translationId.',
             inputSchema: z.object({
                 sermonId: z.string(),
                 languageCode: z.string().optional(),
@@ -163,6 +167,7 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     const slimMeta: SermonContentMeta = {
                         sermonId: meta.sermonId,
                         translationId: meta.translationId,
+                        languageCode: lang,
                         title: meta.title,
                         dateMs: meta.dateMs,
                     };
@@ -194,6 +199,12 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                             !exactTranslationFound &&
                             requestedTranslationId !== meta.translationId
                                 ? meta.translationId
+                                : undefined,
+                        translationWarning:
+                            requestedTranslationId &&
+                            !exactTranslationFound &&
+                            requestedTranslationId !== meta.translationId
+                                ? `Requested translation ${requestedTranslationId} was not found; using translation ${meta.translationId} instead.`
                                 : undefined,
                     };
                     return response;
@@ -246,6 +257,7 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                     const items: SearchContentHit[] = matches.map((m) => ({
                         sermonId: m.sermonId,
                         translationId: m.translationId,
+                        languageCode: page.languageCode,
                         title: m.title,
                         location:
                             referenceDataService.getSermonMeta(

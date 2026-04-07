@@ -2,6 +2,12 @@ import log from '@main/lib/logger';
 import { SimpleCache } from '@main/lib/simple-cache';
 import type { AiRemoteModel, AiSettings } from '@shared/ai.types';
 import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
+import {
+    buildProviderModelsListCacheKey,
+    cacheContextWindow,
+    cacheResolvedContextWindows,
+    getCachedContextWindow,
+} from './model-context-cache';
 import { lookupContextWindow } from './model-context-registry';
 
 // ── Constants ──
@@ -25,13 +31,6 @@ interface ResolvedCredentials {
 function normalizeBaseUrl(baseUrl?: string): string | undefined {
     const normalized = baseUrl?.trim().replace(/\/+$/, '');
     return normalized || undefined;
-}
-
-function buildModelsCacheKey(providerId: string, baseUrl?: string): string {
-    const suffix = normalizeBaseUrl(baseUrl);
-    return suffix
-        ? `ai-models:${providerId}:${encodeURIComponent(suffix)}`
-        : `ai-models:${providerId}`;
 }
 
 function resolveCredentials(
@@ -183,9 +182,10 @@ export async function fetchProviderModels(
     }
 
     const cache = new SimpleCache<AiRemoteModel[]>(
-        buildModelsCacheKey(providerId, base),
+        buildProviderModelsListCacheKey(providerId, base),
         CACHE_TTL_MS,
     );
+
     const cached = cache.get();
     if (cached) {
         return cached;
@@ -203,6 +203,7 @@ export async function fetchProviderModels(
 
         if (models.length > 0) {
             cache.set(models);
+            cacheResolvedContextWindows(models);
         }
         return models;
     } catch (err) {
@@ -228,15 +229,27 @@ export async function getModelContextWindow(
         return undefined;
     }
 
-    const cache = new SimpleCache<AiRemoteModel[]>(
-        buildModelsCacheKey(providerId, baseUrl ?? BUILTIN_BASE_URLS[providerId]),
-        CACHE_TTL_MS,
-    );
-    const models = cache.get() ?? cache.getStale();
-    const fromApi = models?.find((m) => m.id === modelId)?.contextWindow;
-    if (fromApi) {
-        return fromApi;
+    const resolvedBaseUrl = baseUrl ?? BUILTIN_BASE_URLS[providerId];
+
+    const cachedContextWindow = getCachedContextWindow(modelId);
+    if (cachedContextWindow) {
+        return cachedContextWindow;
     }
 
-    return lookupContextWindow(modelId);
+    const cache = new SimpleCache<AiRemoteModel[]>(
+        buildProviderModelsListCacheKey(providerId, resolvedBaseUrl),
+        CACHE_TTL_MS,
+    );
+    const cachedModels = cache.get() ?? cache.getStale();
+    const fromApiContextWindow = cachedModels?.find((m) => m.id === modelId)?.contextWindow;
+    if (fromApiContextWindow && fromApiContextWindow > 0) {
+        cacheContextWindow(modelId, fromApiContextWindow);
+        return fromApiContextWindow;
+    }
+
+    const fromRegistry = await lookupContextWindow(modelId);
+    if (fromRegistry) {
+        cacheContextWindow(modelId, fromRegistry);
+    }
+    return fromRegistry;
 }

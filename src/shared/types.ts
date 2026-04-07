@@ -590,6 +590,28 @@ export interface CustomDocumentContent {
     languageCode: string;
 }
 
+export interface CustomDocumentSearchMatch {
+    lineIndex: number;
+    snippet: string;
+}
+
+export interface CustomDocumentSearchHit {
+    documentId: string;
+    title: string;
+    languageCode?: string;
+    matches: CustomDocumentSearchMatch[];
+    totalMatches: number;
+}
+
+export interface CustomDocumentSearchResult {
+    results: CustomDocumentSearchHit[];
+    totalDocuments: number;
+    query: string;
+    mode: SearchMode;
+    returned: number;
+    hasMore: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // History
 // ---------------------------------------------------------------------------
@@ -682,6 +704,7 @@ export interface InstalledLanguage {
     enLanguage: string;
     sermonsCount: number;
     sizeOnDisk: number;
+    updateAvailable: boolean;
 }
 
 export interface DownloadableLanguage {
@@ -699,8 +722,11 @@ export interface LanguageDownloadProgress {
     percentage: number;
 }
 
+export type LanguageInstallAction = 'installed' | 'updated';
+
 export interface LanguageInstalledEvent {
     langCode: string;
+    action: LanguageInstallAction;
 }
 
 // ---------------------------------------------------------------------------
@@ -823,6 +849,8 @@ export interface SyncFailureEvent {
     message: string;
     isAuthError: boolean;
     consecutiveFailures: number;
+    /** True when the backend has removed auth & backup status (user must re-login). */
+    disconnected?: boolean;
 }
 
 // ---------------------------------------------------------------------------
