@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Segmented, Select, Space, Tag, Tooltip, Typography, message } from 'antd';
 import {
@@ -13,23 +13,28 @@ import {
     TranslationOutlined,
 } from '@ant-design/icons';
 import { MoonIcon, SunIcon } from '@renderer/components/icons';
-import type { BackupStatus, InstalledLanguage, UpdaterNotification } from '@shared/types';
+import type { BackupStatus, UpdaterNotification } from '@shared/types';
 import { FontSizeOutlined } from '@ant-design/icons';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { useThemeStore, type FontSizeOption, type ThemeMode } from '@renderer/stores/theme.store';
 import { UI_LANGUAGE_OPTIONS, type UiLanguagePreference } from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
-import { LANGUAGE_EVENT, SYNC_EVENT } from '@renderer/utils/events';
+import { SYNC_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
 
 export default function GeneralTab() {
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const [langName, setLangName] = useState('');
-    const [installedCount, setInstalledCount] = useState(0);
+    const installedLanguages = useInstalledLanguagesStore((s) => s.installedLanguages);
     const [updateInfo, setUpdateInfo] = useState<UpdaterNotification | null>(null);
     const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
+
+    const installedCount = installedLanguages.length;
+    const langName = useMemo(
+        () => installedLanguages.find((l) => l.code === contentLanguage)?.language ?? '',
+        [installedLanguages, contentLanguage],
+    );
 
     const themeMode = useThemeStore((s) => s.themeMode);
     const setThemeMode = useThemeStore((s) => s.setThemeMode);
@@ -52,24 +57,10 @@ export default function GeneralTab() {
         });
     }, []);
 
-    const refreshLanguageSummary = useCallback(() => {
-        window.api.languages.getInstalled().then((langs: InstalledLanguage[]) => {
-            setInstalledCount(langs.length);
-            if (!contentLanguage) {
-                setLangName('');
-                return;
-            }
-
-            const lang = langs.find((item) => item.code === contentLanguage);
-            setLangName(lang?.language ?? '');
-        });
-    }, [contentLanguage]);
-
     useEffect(() => {
-        refreshLanguageSummary();
         window.api.app.getUpdateStatus().then(setUpdateInfo);
         refreshBackup();
-    }, [refreshBackup, refreshLanguageSummary]);
+    }, [refreshBackup]);
 
     // Stay in sync when backup status changes
     useEffect(() => {
@@ -86,14 +77,6 @@ export default function GeneralTab() {
     useEffect(() => {
         return window.api.on.notifyForNewUpdate(setUpdateInfo);
     }, []);
-
-    useEffect(() => {
-        const refresh = () => refreshLanguageSummary();
-        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
-        return () => {
-            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
-        };
-    }, [refreshLanguageSummary]);
 
     const openDocs = useCallback(() => {
         window.api.app.openExternal(DOCS_LINK).catch(() => {

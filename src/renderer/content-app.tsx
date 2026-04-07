@@ -13,6 +13,7 @@ import HighlightModal from './views/components/modals/highlight-modal';
 import WelcomeModal from './views/components/modals/welcome-modal';
 import SyncListener from './components/sync-listener';
 import UpdateNotifier from './components/update-notifier';
+import InstalledLanguagesListener from './components/installed-languages-listener';
 
 import Search from './views/options/search';
 import History from './views/options/history';
@@ -143,6 +144,7 @@ export function ContentApp() {
             <WelcomeModal />
             <SyncListener />
             <UpdateNotifier />
+            <InstalledLanguagesListener />
         </>
     );
 }

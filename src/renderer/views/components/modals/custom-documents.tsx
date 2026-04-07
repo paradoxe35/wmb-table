@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Input, Modal, Select, Space, Typography, message, Spin } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { CustomDocument, InstalledLanguage } from '@shared/types';
@@ -11,9 +11,9 @@ import {
 } from '@ant-design/icons';
 
 import { useModalVisible, useIpcRequestWithLoader, useOpenDocumentRequest } from '@renderer/hooks';
-import { CUSTOM_DOCUMENT_EVENT, LANGUAGE_EVENT } from '@renderer/utils/events';
+import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useAppStore, useCustomDocumentsStore } from '@renderer/stores';
+import { useAppStore, useCustomDocumentsStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { invalidateCustomDocumentContentCache } from '@renderer/views/document-view/hooks/document-content-hooks';
 
@@ -27,19 +27,12 @@ export default function CustomDocuments() {
     const { t } = useTranslation();
     const { visible, show, hide } = useModalVisible();
     const [showUploadForm, setShowUploadForm] = useState(false);
-    const [installedLanguages, setInstalledLanguages] = useState<InstalledLanguage[]>([]);
+    const installedLanguages = useInstalledLanguagesStore((s) => s.installedLanguages);
 
     const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const setCustomDocuments = useCustomDocumentsStore((s) => s.setCustomDocuments);
     const addCustomDocument = useCustomDocumentsStore((s) => s.addCustomDocument);
     const removeCustomDocument = useCustomDocumentsStore((s) => s.removeCustomDocument);
-
-    const refreshInstalledLanguages = useCallback(() => {
-        window.api.languages
-            .getInstalled()
-            .then(setInstalledLanguages)
-            .catch(() => {});
-    }, []);
 
     useEffect(() => {
         window.api.app
@@ -50,14 +43,7 @@ export default function CustomDocuments() {
             .catch(() => {
                 message.error(t('Erreur lors du chargement des documents'));
             });
-        refreshInstalledLanguages();
-    }, [refreshInstalledLanguages, setCustomDocuments, t]);
-
-    useEffect(() => {
-        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refreshInstalledLanguages);
-        return () =>
-            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refreshInstalledLanguages);
-    }, [refreshInstalledLanguages]);
+    }, [setCustomDocuments, t]);
 
     useEffect(() => {
         const cleanup = window.api.on.openModalDocumentFromMain(show);

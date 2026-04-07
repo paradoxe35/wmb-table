@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Input, Button, Card, Divider, Segmented, Select, Tag, Typography } from 'antd';
 import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
-import type { InstalledLanguage, SermonMetaWithTranslations } from '@shared/types';
+import type { SermonMetaWithTranslations } from '@shared/types';
 import { getTabKey } from '@shared/types';
 import { getLanguageDisplayName } from '@shared/tts.types';
 import ContainerScrollY from '../container-scroll-y';
@@ -13,7 +13,7 @@ import {
     useCustomDocumentsStore,
     selectActiveTab,
 } from '@renderer/stores';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { useOpenDocumentRequest, useFormatSermonDate } from '@renderer/hooks';
 import PanelGroup from './components/documents-menu';
 import SidebarBibleBrowser from './sidebar-bible-browser';
@@ -252,39 +252,16 @@ const DocumentByYears = () => {
 const ContentLanguageBar = () => {
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const [langName, setLangName] = useState<string>('');
-
-    const refreshLanguageName = useCallback(() => {
-        if (!contentLanguage) {
-            setLangName('');
-            return;
-        }
-
-        window.api.languages
-            .getInstalled()
-            .then((langs: InstalledLanguage[]) => {
-                const lang = langs.find((l) => l.code === contentLanguage);
-                setLangName(lang?.language ?? '');
-            })
-            .catch(() => {});
-    }, [contentLanguage]);
-
-    useEffect(() => {
-        refreshLanguageName();
-    }, [refreshLanguageName]);
-
-    useEffect(() => {
-        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refreshLanguageName);
-        return () => {
-            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refreshLanguageName);
-        };
-    }, [refreshLanguageName]);
+    const installedLanguages = useInstalledLanguagesStore((s) => s.installedLanguages);
+    const langName = installedLanguages.find((l) => l.code === contentLanguage)?.language ?? '';
 
     const openManager = () => {
         window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));
     };
 
-    if (!langName) return null;
+    if (!langName) {
+        return null;
+    }
 
     return (
         <div

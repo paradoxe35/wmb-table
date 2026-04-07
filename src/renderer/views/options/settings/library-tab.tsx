@@ -1,9 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Space, Tag, Typography } from 'antd';
 import { CheckCircleOutlined, GlobalOutlined } from '@ant-design/icons';
-import type { InstalledLanguage } from '@shared/types';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
@@ -11,23 +10,7 @@ const { Text } = Typography;
 export default function LibraryTab() {
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const [langs, setLangs] = useState<InstalledLanguage[]>([]);
-
-    const refreshInstalledLanguages = useCallback(() => {
-        window.api.languages.getInstalled({ checkForUpdates: true }).then(setLangs);
-    }, []);
-
-    useEffect(() => {
-        refreshInstalledLanguages();
-    }, [refreshInstalledLanguages]);
-
-    useEffect(() => {
-        const refresh = () => refreshInstalledLanguages();
-        window.addEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
-        return () => {
-            window.removeEventListener(LANGUAGE_EVENT.catalogChanged, refresh);
-        };
-    }, [refreshInstalledLanguages]);
+    const langs = useInstalledLanguagesStore((s) => s.installedLanguages);
 
     const openManager = useCallback(() => {
         window.dispatchEvent(new Event(LANGUAGE_EVENT.openLibrary));
