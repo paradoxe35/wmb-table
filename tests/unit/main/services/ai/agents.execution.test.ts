@@ -206,7 +206,7 @@ describe('AI subagent execution', () => {
         expect(call.system).toContain('up to 8 pages (160 paragraphs)');
     });
 
-    it('auto-carries prior sermon findings for a same-sermon follow-up', async () => {
+    it('does not auto-carry sermon findings without explicit alreadyKnown input', async () => {
         getMessagesMock.mockReturnValue([
             {
                 id: 'assistant-prev',
@@ -250,6 +250,37 @@ describe('AI subagent execution', () => {
         await readSermon.execute({
             sermonId: '63-0318',
             question: 'Go deeper on the later paragraphs.',
+            focus: 'Later paragraphs tied to Revelation 10.',
+        });
+
+        const call = generateTextMock.mock.calls[0]?.[0];
+        expect(call.prompt).not.toContain('Already known from prior reading');
+        expect(call.prompt).not.toContain(
+            'Earlier reading covered the first section of the sermon.',
+        );
+    });
+
+    it('passes explicit alreadyKnown sermon context through to the prompt', async () => {
+        generateTextMock.mockResolvedValueOnce({
+            text: 'Sermon summary',
+            finishReason: 'stop',
+            steps: [],
+        });
+
+        const { readSermon } = buildSermonReaderAgentTool({
+            model: {} as never,
+            contentLanguage: 'fr',
+            uiLanguage: 'en',
+            dispatch: {
+                browserWindow: {} as never,
+                conversationId: 'conv-1',
+                assistantMessageId: 'assistant-1',
+            },
+        });
+        await readSermon.execute({
+            sermonId: '63-0318',
+            question: 'Go deeper on the later paragraphs.',
+            alreadyKnown: 'Earlier reading covered the first section of the sermon.',
             focus: 'Later paragraphs tied to Revelation 10.',
         });
 

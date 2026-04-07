@@ -6,7 +6,6 @@ import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
 import { buildSermonReaderAgentPrompt, buildSermonReaderTaskPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
-import { getAutoSermonAlreadyKnown } from './follow-up-context';
 
 const AGENT_NAME = 'readSermon';
 const MAX_STEPS = 18;
@@ -87,13 +86,6 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 const lang = languageCode ?? ctx.contentLanguage;
                 const normalizedSermonId = sermonId?.trim();
                 const normalizedSermonQuery = sermonQuery?.trim();
-                const carriedAlreadyKnown = getAutoSermonAlreadyKnown({
-                    conversationId: ctx.dispatch?.conversationId,
-                    sermonId: normalizedSermonId,
-                    sermonQuery: normalizedSermonQuery,
-                    alreadyKnown,
-                    focus,
-                });
                 const executors = buildSermonReaderToolSubset(lang);
                 const agentTools = Object.fromEntries(
                     Object.entries(executors).map(([name, def]) => [name, tool(def)]),
@@ -104,7 +96,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                     translationId,
                     question,
                     description,
-                    alreadyKnown: carriedAlreadyKnown,
+                    alreadyKnown,
                     focus,
                 });
 
