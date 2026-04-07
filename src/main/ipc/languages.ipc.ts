@@ -4,8 +4,8 @@ import { registerHandler, sendToRenderer } from './register';
 import * as languagePackService from '@main/services/language-pack.service';
 
 export function registerLanguageHandlers(): void {
-    registerHandler(LanguageChannels.getInstalled, async () => {
-        return languagePackService.getInstalledLanguages();
+    registerHandler(LanguageChannels.getInstalled, async (_event, options) => {
+        return languagePackService.getInstalledLanguages(options);
     });
 
     registerHandler(LanguageChannels.getAvailable, async () => {
@@ -14,7 +14,7 @@ export function registerLanguageHandlers(): void {
 
     registerHandler(LanguageChannels.install, async (event, langCode) => {
         const win = BrowserWindow.fromWebContents(event.sender);
-        await languagePackService.downloadLanguagePack(langCode, (percentage) => {
+        const result = await languagePackService.downloadLanguagePack(langCode, (percentage) => {
             if (win && !win.isDestroyed()) {
                 sendToRenderer(win, PushChannels.languageDownloadProgress, {
                     langCode,
@@ -23,7 +23,10 @@ export function registerLanguageHandlers(): void {
             }
         });
         if (win && !win.isDestroyed()) {
-            sendToRenderer(win, PushChannels.languageInstalled, { langCode });
+            sendToRenderer(win, PushChannels.languageInstalled, {
+                langCode,
+                action: result.action,
+            });
         }
     });
 

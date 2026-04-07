@@ -519,6 +519,7 @@ const en: Record<string, string> = {
     Supprimer: 'Delete',
     Annuler: 'Cancel',
     'Langue téléchargée avec succès': 'Language downloaded successfully',
+    'Langue mise à jour avec succès': 'Language updated successfully',
     'Téléchargez une langue pour commencer': 'Download a language to get started',
     'Rechercher une langue...': 'Search for a language...',
     'Aucune langue trouvée': 'No languages found',

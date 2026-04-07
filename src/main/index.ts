@@ -11,12 +11,14 @@ import { initializeLogger } from '@main/lib/logger';
 import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
+import { refreshInstalledLanguageUpdates } from '@main/services/language-pack.service';
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 import { disposeTtsService } from '@main/services/tts';
 import { disposeAiService } from '@main/services/ai';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir } from '@main/lib/app-paths';
 import i18n from '@main/lib/i18n';
+import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
 
 // Initialize logger first
@@ -134,6 +136,9 @@ app.whenReady().then(async () => {
     });
 
     await initializeTantivy();
+    void refreshInstalledLanguageUpdates().catch((error) => {
+        log.warn('[language-pack] Background update check failed:', error);
+    });
     createWindow();
     tryStartSynchronizer();
 

@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "83f5b2c5-c773-4ccb-a9b3-336170241cfd",
+    "id": "d0594084-dee4-4679-b9c2-955ec001e958",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -854,6 +854,111 @@
                     "onUpdate": "no action"
                 }
             },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "checkConstraints": {}
+        },
+        "installed_language_sources": {
+            "name": "installed_language_sources",
+            "columns": {
+                "lang_code": {
+                    "name": "lang_code",
+                    "type": "text",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "source_type": {
+                    "name": "source_type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "source_url": {
+                    "name": "source_url",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "file_name": {
+                    "name": "file_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false
+                },
+                "etag": {
+                    "name": "etag",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "last_modified": {
+                    "name": "last_modified",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "content_length": {
+                    "name": "content_length",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "version_id": {
+                    "name": "version_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "update_available": {
+                    "name": "update_available",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
+                },
+                "installed_at": {
+                    "name": "installed_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "(datetime('now'))"
+                },
+                "last_checked_at": {
+                    "name": "last_checked_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "(datetime('now'))"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false,
+                    "default": "(datetime('now'))"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
             "checkConstraints": {}

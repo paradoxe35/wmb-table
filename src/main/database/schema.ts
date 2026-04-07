@@ -104,6 +104,23 @@ export const readingPositions = sqliteTable('reading_positions', {
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
+// Local-only metadata for installed language archives. Never synced.
+export const installedLanguageSources = sqliteTable('installed_language_sources', {
+    langCode: text('lang_code').primaryKey(),
+    sourceType: text('source_type').notNull(),
+    sourceUrl: text('source_url').notNull(),
+    fileName: text('file_name').notNull(),
+    etag: text('etag'),
+    lastModified: text('last_modified'),
+    contentLength: integer('content_length'),
+    versionId: text('version_id'),
+    updateAvailable: integer('update_available', { mode: 'boolean' }).notNull().default(false),
+    installedAt: text('installed_at').default(sql`(datetime('now'))`),
+    lastCheckedAt: text('last_checked_at'),
+    createdAt: text('created_at').default(sql`(datetime('now'))`),
+    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
+});
+
 // ---------------------------------------------------------------------------
 // Suggestions
 // ---------------------------------------------------------------------------

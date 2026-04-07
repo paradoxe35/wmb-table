@@ -232,4 +232,8 @@ describe('repository sync payloads', () => {
     it('does not include reading_positions in synced tables', () => {
         expect(SYNCED_TABLE_NAMES.has('reading_positions')).toBe(false);
     });
+
+    it('does not include installed_language_sources in synced tables', () => {
+        expect(SYNCED_TABLE_NAMES.has('installed_language_sources')).toBe(false);
+    });
 });

@@ -14,7 +14,7 @@ export default function LibraryTab() {
     const [langs, setLangs] = useState<InstalledLanguage[]>([]);
 
     const refreshInstalledLanguages = useCallback(() => {
-        window.api.languages.getInstalled().then(setLangs);
+        window.api.languages.getInstalled({ checkForUpdates: true }).then(setLangs);
     }, []);
 
     useEffect(() => {
@@ -72,6 +72,11 @@ export default function LibraryTab() {
                                         style={{ marginLeft: 8 }}
                                     >
                                         {t('Actif')}
+                                    </Tag>
+                                )}
+                                {l.updateAvailable && (
+                                    <Tag color="gold" style={{ marginLeft: 8 }}>
+                                        {t('Mise à jour disponible')}
                                     </Tag>
                                 )}
                             </Text>

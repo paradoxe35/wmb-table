@@ -523,6 +523,7 @@ const sw: Record<string, string> = {
     Supprimer: 'Futa',
     Annuler: 'Ghairi',
     'Langue téléchargée avec succès': 'Lugha imepakuliwa kwa mafanikio',
+    'Langue mise à jour avec succès': 'Lugha imesasishwa kwa mafanikio',
     'Téléchargez une langue pour commencer': 'Pakua lugha ili kuanza',
     'Rechercher une langue...': 'Tafuta lugha...',
     'Aucune langue trouvée': 'Hakuna lugha iliyopatikana',

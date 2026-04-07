@@ -523,6 +523,7 @@ const pt: Record<string, string> = {
     Supprimer: 'Excluir',
     Annuler: 'Cancelar',
     'Langue téléchargée avec succès': 'Idioma baixado com sucesso',
+    'Langue mise à jour avec succès': 'Idioma atualizado com sucesso',
     'Téléchargez une langue pour commencer': 'Baixe um idioma para começar',
     'Rechercher une langue...': 'Pesquisar um idioma...',
     'Aucune langue trouvée': 'Nenhum idioma encontrado',

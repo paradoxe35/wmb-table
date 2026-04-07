@@ -135,6 +135,22 @@ CREATE TABLE `history_items` (
 --> statement-breakpoint
 CREATE INDEX `history_items_document_key_idx` ON `history_items` (`document_key`);--> statement-breakpoint
 CREATE INDEX `history_items_history_created_idx` ON `history_items` (`history_id`,`created_at`);--> statement-breakpoint
+CREATE TABLE `installed_language_sources` (
+	`lang_code` text PRIMARY KEY NOT NULL,
+	`source_type` text NOT NULL,
+	`source_url` text NOT NULL,
+	`file_name` text NOT NULL,
+	`etag` text,
+	`last_modified` text,
+	`content_length` integer,
+	`version_id` text,
+	`update_available` integer DEFAULT false NOT NULL,
+	`installed_at` text DEFAULT (datetime('now')),
+	`last_checked_at` text,
+	`created_at` text DEFAULT (datetime('now')),
+	`updated_at` text DEFAULT (datetime('now'))
+);
+--> statement-breakpoint
 CREATE TABLE `kv_cache` (
 	`key` text PRIMARY KEY NOT NULL,
 	`value` text NOT NULL,

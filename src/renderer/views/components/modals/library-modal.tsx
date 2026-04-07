@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { Button, Input, Modal, Popconfirm, Progress, Spin, Tag, message, Typography } from 'antd';
-import { CheckCircleOutlined, DeleteOutlined, DownloadOutlined } from '@ant-design/icons';
+import {
+    CheckCircleOutlined,
+    DeleteOutlined,
+    DownloadOutlined,
+    ReloadOutlined,
+} from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
     fetchLanguageWorkspace,
@@ -21,6 +26,7 @@ type LanguageItem = {
     language: string;
     enLanguage: string;
     installed: boolean;
+    updateAvailable: boolean;
     sermonsCount: number;
     sizeOnDisk: number;
     filesize: number;
@@ -85,6 +91,11 @@ function LanguageRow({
                             {t('Actif')}
                         </Tag>
                     )}
+                    {lang.updateAvailable && (
+                        <Tag color="gold" style={{ margin: 0 }}>
+                            {t('Mise à jour disponible')}
+                        </Tag>
+                    )}
                     {lang.installed && !isActive && (
                         <CheckCircleOutlined style={{ color: 'var(--ant-color-success)' }} />
                     )}
@@ -100,7 +111,18 @@ function LanguageRow({
                 style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}
                 onClick={(e) => e.stopPropagation()}
             >
-                {lang.installed ? (
+                {isDownloading ? (
+                    <Progress type="circle" size={28} percent={downloadPercent} />
+                ) : lang.installed && lang.updateAvailable ? (
+                    <Button
+                        size="small"
+                        type="primary"
+                        icon={<ReloadOutlined />}
+                        onClick={onInstall}
+                    >
+                        {t('Mettre à jour')}
+                    </Button>
+                ) : lang.installed ? (
                     <Popconfirm
                         title={t('Supprimer cette langue ?')}
                         description={t('Les données de cette langue seront supprimées du disque.')}
@@ -111,8 +133,6 @@ function LanguageRow({
                     >
                         <Button type="text" danger size="small" icon={<DeleteOutlined />} />
                     </Popconfirm>
-                ) : isDownloading ? (
-                    <Progress type="circle" size={28} percent={downloadPercent} />
                 ) : (
                     <Button size="small" icon={<DownloadOutlined />} onClick={onInstall}>
                         {t('Télécharger')}
@@ -139,11 +159,17 @@ export default function LibraryModal() {
     const [, startTransition] = useTransition();
     const refreshGenerationRef = useRef(0);
 
-    const refresh = useCallback(() => {
+    const refresh = useCallback((options?: { force?: boolean }) => {
         const generation = ++refreshGenerationRef.current;
 
         setLoading(true);
-        Promise.all([window.api.languages.getInstalled(), window.api.languages.getAvailable()])
+        Promise.all([
+            window.api.languages.getInstalled({
+                checkForUpdates: true,
+                force: options?.force,
+            }),
+            window.api.languages.getAvailable(),
+        ])
             .then(([inst, avail]) => {
                 if (generation !== refreshGenerationRef.current) {
                     return;
@@ -158,6 +184,7 @@ export default function LibraryModal() {
                         language: lang.language,
                         enLanguage: lang.enLanguage,
                         installed: true,
+                        updateAvailable: lang.updateAvailable,
                         sermonsCount: lang.sermonsCount,
                         sizeOnDisk: lang.sizeOnDisk,
                         filesize: 0,
@@ -171,6 +198,7 @@ export default function LibraryModal() {
                             language: lang.language,
                             enLanguage: lang.enLanguage,
                             installed: false,
+                            updateAvailable: false,
                             sermonsCount: lang.sermonsAvailable,
                             sizeOnDisk: 0,
                             filesize: lang.filesize,
@@ -236,7 +264,7 @@ export default function LibraryModal() {
 
     useEffect(() => {
         if (visible) {
-            refresh();
+            refresh({ force: true });
             setSearchQuery('');
         }
     }, [visible, refresh]);
@@ -252,16 +280,22 @@ export default function LibraryModal() {
         const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
             setDownloadProgress((prev) => ({ ...prev, [p.langCode]: p.percentage }));
         });
-        const unsub2 = window.api.on.languageInstalled(({ langCode }: LanguageInstalledEvent) => {
-            setDownloadProgress((prev) => {
-                const next = { ...prev };
-                delete next[langCode];
-                return next;
-            });
-            refresh();
-            notifyLibraryChanged();
-            message.success(t('Langue téléchargée avec succès'));
-        });
+        const unsub2 = window.api.on.languageInstalled(
+            ({ langCode, action }: LanguageInstalledEvent) => {
+                setDownloadProgress((prev) => {
+                    const next = { ...prev };
+                    delete next[langCode];
+                    return next;
+                });
+                refresh();
+                notifyLibraryChanged();
+                message.success(
+                    action === 'updated'
+                        ? t('Langue mise à jour avec succès')
+                        : t('Langue téléchargée avec succès'),
+                );
+            },
+        );
         return () => {
             unsub1();
             unsub2();

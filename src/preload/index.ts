@@ -84,7 +84,8 @@ const api = {
     },
 
     languages: {
-        getInstalled: () => invoke(LanguageChannels.getInstalled),
+        getInstalled: (options?: { checkForUpdates?: boolean; force?: boolean }) =>
+            invoke(LanguageChannels.getInstalled, options),
         getAvailable: () => invoke(LanguageChannels.getAvailable),
         install: (langCode: string) => invoke(LanguageChannels.install, langCode),
         delete: (langCode: string) => invoke(LanguageChannels.delete, langCode),

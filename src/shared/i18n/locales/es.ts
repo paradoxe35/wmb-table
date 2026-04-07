@@ -521,6 +521,7 @@ const es: Record<string, string> = {
     Supprimer: 'Eliminar',
     Annuler: 'Cancelar',
     'Langue téléchargée avec succès': 'Idioma descargado con éxito',
+    'Langue mise à jour avec succès': 'Idioma actualizado con éxito',
     'Téléchargez une langue pour commencer': 'Descargue un idioma para comenzar',
     'Rechercher une langue...': 'Buscar un idioma...',
     'Aucune langue trouvée': 'Ningún idioma encontrado',

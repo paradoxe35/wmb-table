@@ -704,6 +704,7 @@ export interface InstalledLanguage {
     enLanguage: string;
     sermonsCount: number;
     sizeOnDisk: number;
+    updateAvailable: boolean;
 }
 
 export interface DownloadableLanguage {
@@ -721,8 +722,11 @@ export interface LanguageDownloadProgress {
     percentage: number;
 }
 
+export type LanguageInstallAction = 'installed' | 'updated';
+
 export interface LanguageInstalledEvent {
     langCode: string;
+    action: LanguageInstallAction;
 }
 
 // ---------------------------------------------------------------------------

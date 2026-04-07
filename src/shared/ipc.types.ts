@@ -335,7 +335,10 @@ export interface InvokeChannelMap {
     };
 
     // Languages
-    [LanguageChannels.getInstalled]: { args: []; return: InstalledLanguage[] };
+    [LanguageChannels.getInstalled]: {
+        args: [{ checkForUpdates?: boolean; force?: boolean }?];
+        return: InstalledLanguage[];
+    };
     [LanguageChannels.getAvailable]: { args: []; return: DownloadableLanguage[] };
     [LanguageChannels.install]: { args: [string]; return: void };
     [LanguageChannels.delete]: { args: [string]; return: void };
