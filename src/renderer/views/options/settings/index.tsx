@@ -34,7 +34,11 @@ function LibraryTabLabel() {
     const { t } = useTranslation();
     const hasUpdates = useInstalledLanguagesStore(selectHasLanguageUpdates);
     return (
-        <Badge dot={hasUpdates} offset={[6, 2]}>
+        <Badge
+            dot={hasUpdates}
+            title={hasUpdates ? t('Mise à jour disponible') : undefined}
+            offset={[6, 2]}
+        >
             <span>
                 <GlobalOutlined /> {t('Bibliothèque')}
             </span>
