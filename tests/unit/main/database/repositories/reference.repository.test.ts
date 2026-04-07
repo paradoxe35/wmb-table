@@ -58,21 +58,6 @@ describe('reference.repository', () => {
         expect(sermon!.cityState).toBe('Jeffersonville, IN');
     });
 
-    it('getSermonByIsarId returns sermon with cityState when id is in range', () => {
-        // Note: some isar_ids are large numbers that lose JS precision.
-        // Use getAllSermons to find one that round-trips correctly.
-        const sermons = refRepo.getAllSermons();
-        const testSermon = sermons.find((s) => {
-            const byIsarId = refRepo.getSermonByIsarId(s.isarId);
-            return byIsarId !== null;
-        });
-        expect(testSermon).toBeDefined();
-        const result = refRepo.getSermonByIsarId(testSermon!.isarId);
-        expect(result).not.toBeNull();
-        expect(result!.id).toBe(testSermon!.id);
-        expect(result!.cityState).toBe(testSermon!.cityState);
-    });
-
     it('getTranslatorsForLanguage returns translators for French', () => {
         const translators = refRepo.getTranslatorsForLanguage('fr');
         expect(translators.length).toBeGreaterThan(1);

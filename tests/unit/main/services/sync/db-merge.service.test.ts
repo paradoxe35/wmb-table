@@ -160,10 +160,10 @@ describe('db-merge.service', () => {
         expect(note?.name).toBe('Remote note');
     });
 
-    it('applyChangeLog SAVE upserts a reading position', () => {
+    it('applyChangeLog ignores reading positions because they are not synced', () => {
         readingPositionsRepo.saveReadingPosition('sermon:en:1:abc', 120, 0);
 
-        applyChangeLog(
+        const affected = applyChangeLog(
             {
                 changeId: 'reading_positions-sermon:en:1:abc-SAVE',
                 tableName: 'reading_positions',
@@ -179,9 +179,10 @@ describe('db-merge.service', () => {
             { remoteTime: new Date().toISOString() },
         );
 
+        expect(affected).toEqual({});
         expect(readingPositionsRepo.getReadingPosition('sermon:en:1:abc')).toEqual({
             documentKey: 'sermon:en:1:abc',
-            scrollY: 640,
+            scrollY: 120,
             scrollX: 0,
         });
     });
