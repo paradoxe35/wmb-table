@@ -276,17 +276,63 @@ export default function LibraryModal() {
         window.dispatchEvent(new Event(LANGUAGE_EVENT.catalogChanged));
     }, []);
 
+    const loadLanguageWorkspace = useCallback(
+        async (
+            langCode: string,
+            options?: {
+                saveTabsForLanguage?: string | null;
+                persistContentLanguage?: boolean;
+                closeModal?: boolean;
+            },
+        ) => {
+            if (options?.saveTabsForLanguage) {
+                await window.api.documents.saveTabs(options.saveTabsForLanguage, tabs);
+            }
+
+            stopAllTtsPlayback();
+            resetTts();
+
+            if (options?.persistContentLanguage !== false) {
+                await window.api.app.setContentLanguage(langCode);
+            }
+
+            const workspace = await fetchLanguageWorkspace(langCode);
+            startTransition(() => {
+                applyLanguageWorkspace(langCode, workspace);
+                setLoaded(true);
+            });
+
+            if (options?.closeModal) {
+                hide();
+            }
+        },
+        [applyLanguageWorkspace, hide, resetTts, setLoaded, tabs],
+    );
+
     useEffect(() => {
         const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
             setDownloadProgress((prev) => ({ ...prev, [p.langCode]: p.percentage }));
         });
         const unsub2 = window.api.on.languageInstalled(
-            ({ langCode, action }: LanguageInstalledEvent) => {
+            async ({ langCode, action }: LanguageInstalledEvent) => {
                 setDownloadProgress((prev) => {
                     const next = { ...prev };
                     delete next[langCode];
                     return next;
                 });
+
+                if (action === 'updated' && contentLanguage === langCode) {
+                    try {
+                        await loadLanguageWorkspace(langCode, {
+                            saveTabsForLanguage: langCode,
+                            persistContentLanguage: false,
+                        });
+                    } catch (err) {
+                        console.error('[LibraryModal] Failed to reload updated language:', err);
+                        message.error(t('Échec de la sélection de la langue'));
+                    }
+                }
+
                 refresh();
                 notifyLibraryChanged();
                 message.success(
@@ -300,33 +346,26 @@ export default function LibraryModal() {
             unsub1();
             unsub2();
         };
-    }, [notifyLibraryChanged, refresh, t]);
+    }, [contentLanguage, loadLanguageWorkspace, notifyLibraryChanged, refresh, t]);
 
-    const handleSelectLanguage = async (
-        langCode: string,
-        options?: { preserveCurrentTabs?: boolean },
-    ) => {
-        try {
-            // Save current tabs for the old language before switching
-            const previousLang = contentLanguage;
-            if (previousLang && options?.preserveCurrentTabs !== false) {
-                await window.api.documents.saveTabs(previousLang, tabs);
+    const handleSelectLanguage = useCallback(
+        async (langCode: string, options?: { preserveCurrentTabs?: boolean }) => {
+            try {
+                const previousLang = contentLanguage;
+                await loadLanguageWorkspace(langCode, {
+                    saveTabsForLanguage:
+                        previousLang && options?.preserveCurrentTabs !== false
+                            ? previousLang
+                            : null,
+                    closeModal: true,
+                });
+            } catch (err) {
+                console.error('[LibraryModal] Failed to select language:', err);
+                message.error(t('Échec de la sélection de la langue'));
             }
-
-            stopAllTtsPlayback();
-            resetTts();
-            await window.api.app.setContentLanguage(langCode);
-            const workspace = await fetchLanguageWorkspace(langCode);
-            startTransition(() => {
-                applyLanguageWorkspace(langCode, workspace);
-                setLoaded(true);
-            });
-            hide();
-        } catch (err) {
-            console.error('[LibraryModal] Failed to select language:', err);
-            message.error(t('Échec de la sélection de la langue'));
-        }
-    };
+        },
+        [contentLanguage, loadLanguageWorkspace, t],
+    );
 
     const handleInstall = (langCode: string) => {
         setDownloadProgress((prev) => ({ ...prev, [langCode]: 0 }));
