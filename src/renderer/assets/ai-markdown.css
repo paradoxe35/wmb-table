@@ -73,14 +73,39 @@
     border-collapse: collapse;
     margin: 6px 0;
     font-size: var(--fs-rel-3xl);
+    table-layout: fixed;
+    width: 100%;
+    min-width: 500px;
 }
 
 .ai-markdown th,
 .ai-markdown td {
     border: 1px solid var(--ant-color-border);
-    padding: 4px 8px;
+    padding: 6px 10px;
     overflow-wrap: break-word;
     word-break: break-word;
+    vertical-align: top;
+}
+
+/* First column: Point - narrower */
+.ai-markdown th:first-child,
+.ai-markdown td:first-child {
+    width: 20%;
+    min-width: 120px;
+}
+
+/* Second column: Teaching - wider */
+.ai-markdown th:nth-child(2),
+.ai-markdown td:nth-child(2) {
+    width: 35%;
+    min-width: 180px;
+}
+
+/* Third column: References - widest */
+.ai-markdown th:nth-child(3),
+.ai-markdown td:nth-child(3) {
+    width: 45%;
+    min-width: 200px;
 }
 
 .ai-markdown a {
@@ -98,4 +123,63 @@
     border-top: 1px solid var(--ant-color-border);
     opacity: 0.6;
     margin: 10px 0;
+}
+
+/* Responsive table wrapper */
+.ai-markdown .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 6px -14px;
+    padding: 6px 14px;
+}
+
+/* Responsive adjustments for smaller containers */
+@container (max-width: 600px) {
+    .ai-markdown table {
+        font-size: var(--fs-rel-2xl);
+        min-width: 450px;
+    }
+
+    .ai-markdown th,
+    .ai-markdown td {
+        padding: 4px 6px;
+    }
+
+    .ai-markdown th:first-child,
+    .ai-markdown td:first-child {
+        width: 25%;
+        min-width: 100px;
+    }
+
+    .ai-markdown th:nth-child(2),
+    .ai-markdown td:nth-child(2) {
+        width: 30%;
+        min-width: 140px;
+    }
+
+    .ai-markdown th:nth-child(3),
+    .ai-markdown td:nth-child(3) {
+        width: 45%;
+        min-width: 180px;
+    }
+}
+
+/* Improve tag styling inside table cells */
+.ai-markdown td .ant-tag {
+    display: inline-block;
+    margin: 2px;
+    font-size: var(--fs-rel-lg) !important;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Ensure links in tables don't overflow */
+.ai-markdown td a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
 }
