@@ -33,4 +33,56 @@ describe('custom-documents.repository', () => {
     it('getCustomDocumentContent returns null for missing id', () => {
         expect(customDocsRepo.getCustomDocumentContent('nonexistent')).toBeNull();
     });
+
+    it('searchCustomDocuments finds matching documents with snippets', () => {
+        customDocsRepo.createCustomDocument(
+            'Open Book Notes',
+            ['The open book is mentioned here.', 'Another open book line.'].join('\n'),
+            'en',
+        );
+        customDocsRepo.createCustomDocument(
+            'Faith Study',
+            'Faith and the open book are linked.',
+            'en',
+        );
+        customDocsRepo.createCustomDocument('Other', 'Nothing relevant.', 'fr');
+
+        const result = customDocsRepo.searchCustomDocuments({
+            query: 'open book',
+            mode: 'all',
+            limit: 10,
+            offset: 0,
+        });
+
+        expect(result.totalDocuments).toBe(2);
+        expect(result.returned).toBe(2);
+        expect(result.results[0].title).toBe('Open Book Notes');
+        expect(result.results[0].totalMatches).toBe(2);
+        expect(result.results[0].matches[0].lineIndex).toBe(0);
+        expect(result.results[1].title).toBe('Faith Study');
+    });
+
+    it('searchCustomDocuments paginates results', () => {
+        customDocsRepo.createCustomDocument('Doc A', 'alpha keyword', 'en');
+        customDocsRepo.createCustomDocument('Doc B', 'keyword beta', 'en');
+
+        const first = customDocsRepo.searchCustomDocuments({
+            query: 'keyword',
+            mode: 'exact',
+            limit: 1,
+            offset: 0,
+        });
+        const second = customDocsRepo.searchCustomDocuments({
+            query: 'keyword',
+            mode: 'exact',
+            limit: 1,
+            offset: 1,
+        });
+
+        expect(first.returned).toBe(1);
+        expect(first.hasMore).toBe(true);
+        expect(second.returned).toBe(1);
+        expect(second.hasMore).toBe(false);
+        expect(first.results[0].documentId).not.toBe(second.results[0].documentId);
+    });
 });

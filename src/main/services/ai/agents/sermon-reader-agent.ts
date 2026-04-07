@@ -6,15 +6,17 @@ import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
 import { buildSermonReaderAgentPrompt, buildSermonReaderTaskPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
+import { getAutoSermonAlreadyKnown } from './follow-up-context';
 
 const AGENT_NAME = 'readSermon';
-const MAX_STEPS = 12;
-const MAX_OUTPUT_TOKENS = 2000;
+const MAX_STEPS = 18;
+const MAX_OUTPUT_TOKENS = 2400;
 
 function buildSermonReaderToolSubset(languageCode: string): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
 
     return {
+        searchSermons: sermonTools.searchSermons,
         getSermonContent: sermonTools.getSermonContent,
         searchContent: sermonTools.searchContent,
     };
@@ -25,43 +27,56 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
         readSermon: {
             description:
                 'Delegate sermon reading to a specialized subagent that paginates through sermon content ' +
-                'and answers a specific question. Use this when the user asks to summarize, explain, or ' +
+                'and answers a specific question. It can first resolve a sermon by title, date, or location hint ' +
+                'before reading. Use this when the user asks to summarize, explain, or ' +
                 'analyze a specific sermon. For follow-ups, pass prior findings in `alreadyKnown` and the ' +
-                'new angle in `focus` or `description` so the subagent goes deeper instead of repeating a ' +
+                'new angle in `focus` so the subagent goes deeper instead of repeating a ' +
                 'general summary. Returns a concise summary with paragraph citations.',
-            inputSchema: z.object({
-                sermonId: z.string().describe('The sermon ID to read'),
-                translationId: z
-                    .number()
-                    .int()
-                    .optional()
-                    .describe('Translation ID from search results'),
-                question: z.string().describe('The question to answer about this sermon'),
-                description: z
-                    .string()
-                    .optional()
-                    .describe(
-                        'Additional context, desired output format, or hints about the relevant section',
-                    ),
-                alreadyKnown: z
-                    .string()
-                    .optional()
-                    .describe(
-                        'What was already answered previously, so this follow-up can avoid repeating the same summary',
-                    ),
-                focus: z
-                    .string()
-                    .optional()
-                    .describe(
-                        'Specific paragraph range, theme, citation request, or unresolved angle to focus on next',
-                    ),
-                languageCode: z
-                    .string()
-                    .optional()
-                    .describe('Language code for content (defaults to content language)'),
-            }),
+            inputSchema: z
+                .object({
+                    sermonId: z.string().optional().describe('The sermon ID to read'),
+                    sermonQuery: z
+                        .string()
+                        .optional()
+                        .describe(
+                            'A sermon title, date, or location hint to resolve first when the exact sermonId is unknown',
+                        ),
+                    translationId: z
+                        .number()
+                        .int()
+                        .optional()
+                        .describe('Translation ID from search results'),
+                    question: z.string().describe('The question to answer about this sermon'),
+                    description: z
+                        .string()
+                        .optional()
+                        .describe(
+                            'Additional context, desired output format, or hints about the relevant section',
+                        ),
+                    alreadyKnown: z
+                        .string()
+                        .optional()
+                        .describe(
+                            'What was already answered previously, so this follow-up can avoid repeating the same summary',
+                        ),
+                    focus: z
+                        .string()
+                        .optional()
+                        .describe(
+                            'Specific paragraph range, theme, citation request, or unresolved angle to focus on next',
+                        ),
+                    languageCode: z
+                        .string()
+                        .optional()
+                        .describe('Language code for content (defaults to content language)'),
+                })
+                .refine((value) => Boolean(value.sermonId?.trim() || value.sermonQuery?.trim()), {
+                    message: 'Provide sermonId or sermonQuery.',
+                    path: ['sermonId'],
+                }),
             execute: async ({
                 sermonId,
+                sermonQuery,
                 translationId,
                 question,
                 description,
@@ -70,21 +85,32 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 languageCode,
             }) => {
                 const lang = languageCode ?? ctx.contentLanguage;
+                const normalizedSermonId = sermonId?.trim();
+                const normalizedSermonQuery = sermonQuery?.trim();
+                const carriedAlreadyKnown = getAutoSermonAlreadyKnown({
+                    conversationId: ctx.dispatch?.conversationId,
+                    sermonId: normalizedSermonId,
+                    sermonQuery: normalizedSermonQuery,
+                    alreadyKnown,
+                    focus,
+                });
                 const executors = buildSermonReaderToolSubset(lang);
                 const agentTools = Object.fromEntries(
                     Object.entries(executors).map(([name, def]) => [name, tool(def)]),
                 );
                 const prompt = buildSermonReaderTaskPrompt({
-                    sermonId,
+                    sermonId: normalizedSermonId,
+                    sermonQuery: normalizedSermonQuery,
                     translationId,
                     question,
                     description,
-                    alreadyKnown,
+                    alreadyKnown: carriedAlreadyKnown,
                     focus,
                 });
 
                 log.info('Sermon reader agent starting', {
-                    sermonId,
+                    sermonId: normalizedSermonId,
+                    sermonQuery: normalizedSermonQuery,
                     question,
                     languageCode: lang,
                 });

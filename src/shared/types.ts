@@ -590,6 +590,28 @@ export interface CustomDocumentContent {
     languageCode: string;
 }
 
+export interface CustomDocumentSearchMatch {
+    lineIndex: number;
+    snippet: string;
+}
+
+export interface CustomDocumentSearchHit {
+    documentId: string;
+    title: string;
+    languageCode?: string;
+    matches: CustomDocumentSearchMatch[];
+    totalMatches: number;
+}
+
+export interface CustomDocumentSearchResult {
+    results: CustomDocumentSearchHit[];
+    totalDocuments: number;
+    query: string;
+    mode: SearchMode;
+    returned: number;
+    hasMore: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // History
 // ---------------------------------------------------------------------------

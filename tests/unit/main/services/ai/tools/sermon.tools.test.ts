@@ -102,6 +102,7 @@ describe('sermon.tools', () => {
         expect(first.hasMore).toBe(true);
         expect(first.nextCursor).toBeTypeOf('string');
         expect(first.results.map((item) => item.sermonId)).toEqual(['56-0101', '56-0102']);
+        expect(first.results[0].languageCode).toBe('fr');
         expect(first.results[0].location).toBe('Location 1');
 
         const second = (await tools.searchContent.execute({
@@ -167,6 +168,7 @@ describe('sermon.tools', () => {
         expect(first.returned).toBe(2);
         expect(first.hasMore).toBe(true);
         expect(first.results.map((item) => item.sermonId)).toEqual(['56-0101', '56-0102']);
+        expect(first.results[0].languageCode).toBe('fr');
 
         const second = (await tools.searchSermons.execute({
             cursor: first.nextCursor,
@@ -217,17 +219,20 @@ describe('sermon.tools', () => {
             sermonId: '56-0101',
             translationId: 9,
         })) as {
-            meta: { translationId: number };
+            meta: { translationId: number; languageCode: string };
             requestedTranslationId?: number;
             resolvedTranslationId?: number;
             fallbackTranslationId?: number;
+            translationWarning?: string;
             paragraphs: Array<{ paragraphNumber: number; content: string }>;
         };
 
         expect(result.meta.translationId).toBe(3);
+        expect(result.meta.languageCode).toBe('fr');
         expect(result.requestedTranslationId).toBe(9);
         expect(result.resolvedTranslationId).toBe(3);
         expect(result.fallbackTranslationId).toBe(3);
+        expect(result.translationWarning).toContain('Requested translation 9 was not found');
         expect(result.paragraphs).toHaveLength(2);
     });
 });
