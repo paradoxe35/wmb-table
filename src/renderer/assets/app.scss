@@ -382,9 +382,10 @@ body {
     }
 
     .tab-holder {
+        display: flex;
+        width: 100%;
         overflow: visible;
         transition: transform var(--transition-normal);
-        white-space: nowrap;
     }
 
     .tabs .tab:first-child {
@@ -396,7 +397,8 @@ body {
         transition:
             transform var(--transition-normal),
             z-index 0.4s;
-        white-space: nowrap;
+        min-width: 0;
+        white-space: normal;
         /* max-width removed so tabs fill sidebar */
         z-index: 1;
     }
@@ -409,7 +411,7 @@ body {
     .tabs .tab {
         color: var(--ant-color-text, #45474a);
         padding: 9px 12px;
-        flex: 1;
+        flex: 1 1 auto;
         position: relative;
         min-width: 60px;
         text-align: center;
@@ -428,7 +430,22 @@ body {
     }
 
     .tab > div {
-        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        overflow: visible;
+    }
+
+    .tab > div > span {
+        display: block;
+        max-width: 100%;
+        line-height: 1.2;
+        white-space: normal;
+        overflow-wrap: normal;
+        word-break: normal;
+        hyphens: auto;
+        text-wrap: balance;
     }
 }
 
