@@ -68,7 +68,7 @@ export const MIN_MAX_TABS = 5;
 export const MAX_MAX_TABS = 50;
 
 // ── UI language ──
-export type UiLanguage = 'fr' | 'en' | 'es';
+export type UiLanguage = 'fr' | 'en' | 'es' | 'pt' | 'sw';
 export type UiLanguagePreference = 'auto' | UiLanguage;
 const FALLBACK_UI_LANGUAGE: UiLanguage = 'fr';
 
@@ -77,6 +77,8 @@ export const UI_LANGUAGE_OPTIONS: { value: UiLanguagePreference; label: string }
     { value: 'fr', label: 'Français' },
     { value: 'en', label: 'English' },
     { value: 'es', label: 'Español' },
+    { value: 'pt', label: 'Português' },
+    { value: 'sw', label: 'Kiswahili' },
 ];
 
 export const TEXT_PART_LANGUAGE_OPTIONS: { title: string; languageCode: UiLanguage }[] =
@@ -87,12 +89,12 @@ export const TEXT_PART_LANGUAGE_OPTIONS: { title: string; languageCode: UiLangua
         languageCode: option.value,
     }));
 
-const UI_LANGUAGE_CODES = new Set<string>(['fr', 'en', 'es']);
+const UI_LANGUAGE_CODES = new Set<string>(['fr', 'en', 'es', 'pt', 'sw']);
 
 /**
  * Resolve the effective UI language.
  * - "auto" or null → derive from content language if supported, else fallback
- * - explicit language (fr/en/es) → use it directly
+ * - explicit language (fr/en/es/pt/sw) → use it directly
  */
 export function resolveUiLanguage(
     uiPreference: UiLanguagePreference | null | undefined,
