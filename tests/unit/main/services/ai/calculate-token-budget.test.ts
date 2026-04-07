@@ -6,41 +6,83 @@ vi.mock('@main/lib/logger', () => ({
     default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-const { calculateRemoteTokenBudget, measureToolTokens } =
-    await import('@main/services/ai/token-budget');
+const {
+    calculateRemoteTokenBudget,
+    measurePromptTokens,
+    measureToolTokens,
+    resolveRemoteOutputTokens,
+} = await import('@main/services/ai/token-budget');
 
 describe('calculateRemoteTokenBudget', () => {
     it('returns default 32k when context window is undefined', () => {
-        expect(calculateRemoteTokenBudget(undefined)).toBe(32_000);
+        expect(
+            calculateRemoteTokenBudget(undefined, {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            }),
+        ).toBe(32_000);
     });
 
     it('returns default 32k when context window is 0', () => {
-        expect(calculateRemoteTokenBudget(0)).toBe(32_000);
+        expect(
+            calculateRemoteTokenBudget(0, {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            }),
+        ).toBe(32_000);
     });
 
     it('calculates budget for 128k model', () => {
-        const budget = calculateRemoteTokenBudget(128_000);
+        const budget = calculateRemoteTokenBudget(128_000, {
+            toolTokens: 5_000,
+            systemPromptTokens: 2_000,
+        });
         expect(budget).toBe(114_344);
     });
 
     it('calculates budget for 200k model', () => {
-        const budget = calculateRemoteTokenBudget(200_000);
+        const budget = calculateRemoteTokenBudget(200_000, {
+            toolTokens: 5_000,
+            systemPromptTokens: 2_000,
+        });
         expect(budget).toBe(186_344);
     });
 
     it('caps at MAX_HISTORY_BUDGET for 1M+ models', () => {
-        const budget = calculateRemoteTokenBudget(1_000_000);
+        const budget = calculateRemoteTokenBudget(1_000_000, {
+            toolTokens: 5_000,
+            systemPromptTokens: 2_000,
+        });
         expect(budget).toBe(200_000);
     });
 
     it('floors at MIN_HISTORY_BUDGET for very small models', () => {
-        const budget = calculateRemoteTokenBudget(8_000);
+        const budget = calculateRemoteTokenBudget(8_000, {
+            toolTokens: 5_000,
+            systemPromptTokens: 2_000,
+        });
         expect(budget).toBe(4_000);
     });
 
     it('handles edge case where overhead exceeds context window', () => {
-        const budget = calculateRemoteTokenBudget(5_000);
+        const budget = calculateRemoteTokenBudget(5_000, {
+            toolTokens: 5_000,
+            systemPromptTokens: 2_000,
+        });
         expect(budget).toBe(4_000);
+    });
+
+    it('uses explicit prompt and tool tokens when reserving output space', () => {
+        const maxOutputTokens = resolveRemoteOutputTokens(16_000, {
+            toolTokens: 5_000,
+            systemPromptTokens: 2_000,
+        });
+
+        expect(maxOutputTokens).toBe(4_488);
+    });
+
+    it('measures prompt tokens from the actual prompt text', () => {
+        expect(measurePromptTokens('short prompt')).toBeGreaterThan(0);
     });
 
     it('measures actual AI SDK tool schemas from inputSchema', () => {
