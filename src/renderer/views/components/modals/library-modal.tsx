@@ -19,7 +19,12 @@ import {
     useSermonStore,
 } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
-import type { LanguageDownloadProgress, LanguageInstalledEvent } from '@shared/types';
+import type {
+    DownloadableLanguage,
+    InstalledLanguage,
+    LanguageDownloadProgress,
+    LanguageInstalledEvent,
+} from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
@@ -37,10 +42,53 @@ type LanguageItem = {
     filesize: number;
 };
 
+type LanguageSnapshot = {
+    installed: InstalledLanguage[];
+    available: DownloadableLanguage[];
+};
+
 function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function mergeLanguageItems(
+    installed: LanguageSnapshot['installed'],
+    available: LanguageSnapshot['available'],
+): LanguageItem[] {
+    const installedCodes = new Set(installed.map((i) => i.code));
+    const merged: LanguageItem[] = [];
+
+    for (const lang of installed) {
+        merged.push({
+            code: lang.code,
+            language: lang.language,
+            enLanguage: lang.enLanguage,
+            installed: true,
+            updateAvailable: lang.updateAvailable,
+            sermonsCount: lang.sermonsCount,
+            sizeOnDisk: lang.sizeOnDisk,
+            filesize: 0,
+        });
+    }
+
+    for (const lang of available) {
+        if (!installedCodes.has(lang.code)) {
+            merged.push({
+                code: lang.code,
+                language: lang.language,
+                enLanguage: lang.enLanguage,
+                installed: false,
+                updateAvailable: false,
+                sermonsCount: lang.sermonsAvailable,
+                sizeOnDisk: 0,
+                filesize: lang.filesize,
+            });
+        }
+    }
+
+    return merged;
 }
 
 function LanguageRow({
@@ -162,71 +210,78 @@ export default function LibraryModal() {
     const tabs = useDocumentTabsStore((s) => s.tabs);
     const resetTts = useTtsStore((s) => s.reset);
     const [, startTransition] = useTransition();
+    const hasLoadedLanguagesRef = useRef(false);
     const refreshGenerationRef = useRef(0);
+    const updateCheckGenerationRef = useRef(0);
 
-    const refresh = useCallback((options?: { force?: boolean }) => {
+    const refresh = useCallback(async (): Promise<LanguageSnapshot | null> => {
         const generation = ++refreshGenerationRef.current;
+        updateCheckGenerationRef.current += 1;
 
-        setLoading(true);
-        Promise.all([
-            window.api.languages.getInstalled({
-                checkForUpdates: true,
-                force: options?.force,
-            }),
-            window.api.languages.getAvailable(),
-        ])
-            .then(([inst, avail]) => {
-                if (generation !== refreshGenerationRef.current) {
+        setLoading(!hasLoadedLanguagesRef.current);
+        try {
+            const [installed, available] = await Promise.all([
+                window.api.languages.getInstalled(),
+                window.api.languages.getAvailable(),
+            ]);
+
+            if (generation !== refreshGenerationRef.current) {
+                return null;
+            }
+
+            useInstalledLanguagesStore.setState({
+                installedLanguages: installed,
+                hydrated: true,
+            });
+            hasLoadedLanguagesRef.current = true;
+            setLanguages(mergeLanguageItems(installed, available));
+            return { installed, available };
+        } catch {
+            return null;
+        } finally {
+            if (generation === refreshGenerationRef.current) {
+                setLoading(false);
+            }
+        }
+    }, []);
+
+    const refreshUpdateAvailability = useCallback(
+        async (snapshot: LanguageSnapshot, options?: { force?: boolean }) => {
+            const generation = ++updateCheckGenerationRef.current;
+
+            try {
+                const installed = await window.api.languages.getInstalled({
+                    checkForUpdates: true,
+                    force: options?.force,
+                });
+
+                if (generation !== updateCheckGenerationRef.current) {
                     return;
                 }
 
-                // Keep the global store in sync so the badge in settings
-                // reflects the latest update-check results immediately.
                 useInstalledLanguagesStore.setState({
-                    installedLanguages: inst,
+                    installedLanguages: installed,
                     hydrated: true,
                 });
+                setLanguages(mergeLanguageItems(installed, snapshot.available));
+            } catch {
+                // Keep the already-rendered list; update checks are best-effort.
+            }
+        },
+        [],
+    );
 
-                const installedCodes = new Set(inst.map((i) => i.code));
-                const merged: LanguageItem[] = [];
+    const refreshWithBackgroundUpdateCheck = useCallback(
+        async (options?: { force?: boolean }) => {
+            const snapshot = await refresh();
+            if (!snapshot) {
+                return;
+            }
 
-                for (const lang of inst) {
-                    merged.push({
-                        code: lang.code,
-                        language: lang.language,
-                        enLanguage: lang.enLanguage,
-                        installed: true,
-                        updateAvailable: lang.updateAvailable,
-                        sermonsCount: lang.sermonsCount,
-                        sizeOnDisk: lang.sizeOnDisk,
-                        filesize: 0,
-                    });
-                }
-
-                for (const lang of avail) {
-                    if (!installedCodes.has(lang.code)) {
-                        merged.push({
-                            code: lang.code,
-                            language: lang.language,
-                            enLanguage: lang.enLanguage,
-                            installed: false,
-                            updateAvailable: false,
-                            sermonsCount: lang.sermonsAvailable,
-                            sizeOnDisk: 0,
-                            filesize: lang.filesize,
-                        });
-                    }
-                }
-
-                setLanguages(merged);
-            })
-            .catch(() => {})
-            .finally(() => {
-                if (generation === refreshGenerationRef.current) {
-                    setLoading(false);
-                }
-            });
-    }, []);
+            void refreshUpdateAvailability(snapshot, options);
+        },
+        [refresh, refreshUpdateAvailability],
+    );
 
     const filteredLanguages = useMemo(() => {
         let list = languages;
@@ -276,10 +331,10 @@ export default function LibraryModal() {
 
     useEffect(() => {
         if (visible) {
-            refresh({ force: true });
+            void refreshWithBackgroundUpdateCheck({ force: true });
             setSearchQuery('');
         }
-    }, [visible, refresh]);
+    }, [visible, refreshWithBackgroundUpdateCheck]);
 
     const setTabs = useDocumentTabsStore((s) => s.setTabs);
     const setLoaded = useAppStore((s) => s.setLoaded);
@@ -345,7 +400,7 @@ export default function LibraryModal() {
                     }
                 }
 
-                refresh();
+                void refresh();
                 notifyLibraryChanged();
                 message.success(
                     action === 'updated'
@@ -401,7 +456,7 @@ export default function LibraryModal() {
                 setTabs([]);
             }
         }
-        refresh();
+        void refresh();
         notifyLibraryChanged();
         message.success(t('Langue supprimée'));
     };
