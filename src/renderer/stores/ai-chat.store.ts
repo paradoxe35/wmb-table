@@ -76,6 +76,43 @@ function updateConversationMessages(
     };
 }
 
+function mergeMessageVersions(local: AiMessage, remote: AiMessage): AiMessage {
+    return {
+        ...remote,
+        content: local.content.length >= remote.content.length ? local.content : remote.content,
+        toolCalls:
+            local.toolCalls.length >= remote.toolCalls.length ? local.toolCalls : remote.toolCalls,
+        toolResults:
+            local.toolResults.length >= remote.toolResults.length
+                ? local.toolResults
+                : remote.toolResults,
+    };
+}
+
+function mergeFetchedMessages(existing: AiMessage[], fetched: AiMessage[]): AiMessage[] {
+    if (existing.length === 0) {
+        return fetched;
+    }
+
+    const mergedById = new Map<string, AiMessage>();
+
+    for (const message of fetched) {
+        mergedById.set(message.id, message);
+    }
+
+    for (const message of existing) {
+        const fetchedMessage = mergedById.get(message.id);
+        mergedById.set(
+            message.id,
+            fetchedMessage ? mergeMessageVersions(message, fetchedMessage) : message,
+        );
+    }
+
+    return [...mergedById.values()].sort(
+        (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+    );
+}
+
 function removeConversationKey<T>(
     map: Record<string, T>,
     conversationId: string,
@@ -518,7 +555,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 ),
                 messagesByConversation: {
                     ...state.messagesByConversation,
-                    [conversationId]: messages,
+                    [conversationId]: mergeFetchedMessages(
+                        state.messagesByConversation[conversationId] ?? [],
+                        messages,
+                    ),
                 },
             }));
         } catch (error) {

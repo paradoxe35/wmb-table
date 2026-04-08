@@ -119,6 +119,7 @@ async function createHarness(options?: {
         request: AiSendMessageRequest,
         index: number,
     ) => Promise<AiSendMessageResult>;
+    getMessagesImpl?: (conversationId: string) => Promise<AiMessage[]>;
 }): Promise<StoreHarness> {
     vi.resetModules();
     markFeatureReminderUsedMock.mockReset();
@@ -147,7 +148,12 @@ async function createHarness(options?: {
                 createConversation: vi.fn().mockResolvedValue(conversation),
                 deleteConversation: vi.fn().mockResolvedValue(undefined),
                 clearConversations: vi.fn().mockResolvedValue(undefined),
-                getMessages: vi.fn().mockResolvedValue([]),
+                getMessages: vi
+                    .fn()
+                    .mockImplementation(
+                        (conversationId: string) =>
+                            options?.getMessagesImpl?.(conversationId) ?? Promise.resolve([]),
+                    ),
                 sendMessage: sendMessageMock,
                 stopGeneration: vi.fn().mockResolvedValue(undefined),
                 scanLocalModels: vi
@@ -387,5 +393,46 @@ describe('ai-chat.store queue behavior', () => {
 
         expect(sendMessageMock).toHaveBeenCalledTimes(1);
         expect(store.getState().queuedMessagesByConversation['conv-1']).toBeUndefined();
+    });
+
+    it('keeps the local assistant placeholder when conversation history finishes loading after send', async () => {
+        const deferredMessages = createDeferred<AiMessage[]>();
+        const conversation = createConversation({ id: 'conv-2', title: 'Second' });
+        const { store, sendMessageMock } = await createHarness({
+            getMessagesImpl: async (conversationId) =>
+                conversationId === 'conv-2' ? deferredMessages.promise : [],
+            sendMessageImpl: async (request, index) =>
+                createSendResult(request, index, conversation),
+        });
+
+        store.setState((state) => ({
+            conversations: [conversation, ...state.conversations],
+            activeConversationId: 'conv-1',
+            messagesByConversation: {
+                ...state.messagesByConversation,
+                'conv-2': [],
+            },
+        }));
+
+        const selectPromise = store.getState().selectConversation('conv-2');
+        await flushAsync();
+
+        const sendAccepted = await store.getState().sendMessage('question on second conversation');
+        expect(sendAccepted).toBe(true);
+        await flushAsync();
+
+        expect(sendMessageMock).toHaveBeenCalledTimes(1);
+        expect(
+            store
+                .getState()
+                .messagesByConversation['conv-2'].some((message) => message.id === 'assistant-1'),
+        ).toBe(true);
+
+        deferredMessages.resolve([]);
+        await selectPromise;
+        await flushAsync();
+
+        const messages = store.getState().messagesByConversation['conv-2'];
+        expect(messages.map((message) => message.id)).toEqual(['user-1-1', 'assistant-1']);
     });
 });
