@@ -41,7 +41,9 @@ jobs:
 
             - name: Format check tool
               working-directory: tmp/isar-to-sqlite
-              run: dart format --output=none --set-exit-if-changed .
+              run: |
+                  files=$(find bin lib -type f -name '*.dart' ! -name '*.g.dart' | sort)
+                  dart format --output=none --set-exit-if-changed ${files}
 
             - name: Analyze tool
               working-directory: tmp/isar-to-sqlite
