@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { createServer, type Server } from 'node:http';
 import { app, shell } from 'electron';
 import { getAppDataDir } from '@main/lib/app-paths';
-import { OAuth2Client } from 'google-auth-library';
+import { OAuth2Client, type Credentials } from 'google-auth-library';
 import { oauth2 } from '@googleapis/oauth2';
 import log from 'electron-log';
 import { authResultPage } from './auth-result-page';
@@ -13,6 +13,8 @@ const SCOPES = [
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/drive.appdata',
 ];
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60_000;
+const tokenPersistenceBoundClients = new WeakSet<OAuth2Client>();
 
 /**
  * Detect auth-related refresh errors (revoked token, expired grant, etc.)
@@ -42,6 +44,53 @@ function getCredentialsPath(): string {
 
 function getTokenPath(): string {
     return join(getAppDataDir(), 'google-client-token.json');
+}
+
+function readSavedToken(tokenPath: string): Credentials | null {
+    try {
+        if (!existsSync(tokenPath)) return null;
+        return JSON.parse(readFileSync(tokenPath, 'utf-8')) as Credentials;
+    } catch (err) {
+        log.warn('Failed to read saved Google token:', err);
+        return null;
+    }
+}
+
+function writeToken(tokenPath: string, token: Credentials): void {
+    writeFileSync(tokenPath, JSON.stringify(token));
+}
+
+function mergeTokenState(
+    savedToken: Credentials | null,
+    currentCredentials: Credentials,
+    incomingToken: Credentials,
+): Credentials {
+    const merged = {
+        ...(savedToken ?? {}),
+        ...currentCredentials,
+        ...incomingToken,
+    };
+
+    if (!merged.refresh_token) {
+        merged.refresh_token = currentCredentials.refresh_token ?? savedToken?.refresh_token;
+    }
+
+    return merged;
+}
+
+function bindTokenPersistence(client: OAuth2Client, tokenPath = getTokenPath()): void {
+    if (tokenPersistenceBoundClients.has(client)) return;
+    tokenPersistenceBoundClients.add(client);
+
+    client.on('tokens', (tokens) => {
+        const mergedToken = mergeTokenState(
+            readSavedToken(tokenPath),
+            client.credentials,
+            tokens as Credentials,
+        );
+        writeToken(tokenPath, mergedToken);
+        log.debug('Google auth token updated and saved');
+    });
 }
 
 function loadCredentials(): { client_id: string; client_secret: string; redirect_uris: string[] } {
@@ -79,17 +128,15 @@ export async function getExistingClient(): Promise<OAuth2Client | null> {
     try {
         const credentials = loadCredentials();
         const client = createOAuth2Client(credentials, 'http://localhost');
-        const token = JSON.parse(readFileSync(tokenPath, 'utf-8'));
+        const token = readSavedToken(tokenPath);
+        if (!token) return null;
+
+        bindTokenPersistence(client, tokenPath);
         client.setCredentials(token);
 
-        // Proactively refresh if needed and save updated token
+        // Proactively refresh if the access token is missing or near expiry.
         try {
-            const refreshed = await client.getAccessToken();
-            if (refreshed.token && refreshed.token !== token.access_token) {
-                const updatedToken = client.credentials;
-                writeFileSync(tokenPath, JSON.stringify(updatedToken));
-                log.debug('Google auth token refreshed and saved');
-            }
+            await refreshAccessTokenIfNeeded(client);
         } catch (refreshErr) {
             // If the error is an auth error (revoked, expired grant), clean up
             const error = refreshErr instanceof Error ? refreshErr : new Error(String(refreshErr));
@@ -150,6 +197,21 @@ export async function revokeAndDeleteToken(): Promise<void> {
     }
 }
 
+export async function refreshAccessTokenIfNeeded(client: OAuth2Client): Promise<void> {
+    const { access_token, refresh_token, expiry_date } = client.credentials;
+    if (!refresh_token) return;
+
+    const expiresSoon =
+        typeof expiry_date !== 'number' || expiry_date <= Date.now() + TOKEN_REFRESH_BUFFER_MS;
+
+    if (!access_token || expiresSoon) {
+        const refreshed = await client.getAccessToken();
+        if (!refreshed.token) {
+            throw new Error('Could not refresh access token');
+        }
+    }
+}
+
 /**
  * Verify that the token includes all required scopes.
  * Ensures no required scopes were denied by the user.
@@ -176,6 +238,7 @@ export async function authenticateWithGoogle(): Promise<{
     userInfo: { email: string; name: string };
 }> {
     const credentials = loadCredentials();
+    const tokenPath = getTokenPath();
 
     // Start local HTTP server to receive the OAuth callback
     const { port, codePromise, server } = await startAuthServer();
@@ -183,6 +246,7 @@ export async function authenticateWithGoogle(): Promise<{
     try {
         const redirectUri = `http://localhost:${port}`;
         const client = createOAuth2Client(credentials, redirectUri);
+        bindTokenPersistence(client, tokenPath);
 
         const authUrl = client.generateAuthUrl({
             access_type: 'offline',
@@ -210,7 +274,10 @@ export async function authenticateWithGoogle(): Promise<{
         client.setCredentials(tokens);
 
         // Save token for future sessions
-        writeFileSync(getTokenPath(), JSON.stringify(tokens));
+        writeToken(
+            tokenPath,
+            mergeTokenState(readSavedToken(tokenPath), client.credentials, tokens),
+        );
 
         // Fetch user info
         const oauth2Client = oauth2({ auth: client, version: 'v2' });

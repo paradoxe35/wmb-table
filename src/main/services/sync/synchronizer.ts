@@ -23,7 +23,11 @@ import {
     type DriveFile,
 } from './drive.service';
 import { applyChangeLog, applySnapshot, type AffectedTables } from './db-merge.service';
-import { getExistingClient, revokeAndDeleteToken } from './google-auth.service';
+import {
+    getExistingClient,
+    refreshAccessTokenIfNeeded,
+    revokeAndDeleteToken,
+} from './google-auth.service';
 import * as backupRepo from '@main/database/repositories/backup.repository';
 import { hasInternet } from '@main/lib/network';
 import { pushToRenderer } from '@main/lib/push';
@@ -42,6 +46,7 @@ const DEFAULT_TIME_OFFSET = '2000-01-01T00:00:00Z';
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 let isSyncRunning = false;
 let driveService: GoogleDriveService | null = null;
+let syncAuthClient: OAuth2Client | null = null;
 let lastError: string | null = null;
 let lastSyncTime: string | null = null;
 let lastSnapshotTime = 0;
@@ -73,6 +78,7 @@ export function clearSyncData(): void {
 export function startSynchronizer(authClient: OAuth2Client): void {
     if (syncTimer) return;
 
+    syncAuthClient = authClient;
     driveService = new GoogleDriveService(authClient);
     consecutiveAuthFailures = 0;
     syncTimer = setInterval(schedulerWorker, SYNC_INTERVAL_MS);
@@ -89,6 +95,7 @@ export function stopSynchronizer(): void {
         syncTimer = null;
     }
     driveService = null;
+    syncAuthClient = null;
     consecutiveAuthFailures = 0;
     log.info('Synchronizer stopped');
 }
@@ -186,14 +193,14 @@ function mergeAffectedTables(tables: AffectedTables): void {
 async function schedulerWorker(): Promise<void> {
     if (isSyncRunning || !driveService) return;
     if (!(await hasInternet())) return;
-    if (!driveService) return;
+    if (!driveService || !syncAuthClient) return;
 
     await runSyncCycle();
 }
 
 async function runSyncCycle(): Promise<void> {
     const drive = driveService;
-    if (!drive) return;
+    if (!drive || !syncAuthClient) return;
 
     isSyncRunning = true;
     resetAffectedTables();
@@ -202,6 +209,7 @@ async function runSyncCycle(): Promise<void> {
     let failure: Error | null = null;
 
     try {
+        await refreshAccessTokenIfNeeded(syncAuthClient);
         await applyRemoteChanges(drive);
         // After pull: invalidate any local unsynced change logs that conflict
         // with the pulled data. This prevents stale local DELETEs from being
