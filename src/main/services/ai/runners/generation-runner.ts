@@ -64,7 +64,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
                     dispatchTextDelta(
                         ctx.browserWindow,
                         ctx.conversationId,
-                        ctx.requestId,
+                        ctx.generationId,
                         ctx.assistantMessageId,
                         part.text,
                         ctx.isCurrentRun,
@@ -74,7 +74,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
                     dispatchReasoningDelta(
                         ctx.browserWindow,
                         ctx.conversationId,
-                        ctx.requestId,
+                        ctx.generationId,
                         ctx.assistantMessageId,
                         part.text,
                         ctx.isCurrentRun,
@@ -84,7 +84,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
                     dispatchToolCallStart(
                         ctx.browserWindow,
                         ctx.conversationId,
-                        ctx.requestId,
+                        ctx.generationId,
                         ctx.assistantMessageId,
                         {
                             id: part.toolCallId,
@@ -98,7 +98,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
                     dispatchToolCallComplete(
                         ctx.browserWindow,
                         ctx.conversationId,
-                        ctx.requestId,
+                        ctx.generationId,
                         ctx.assistantMessageId,
                         {
                             toolCallId: part.toolCallId,
@@ -138,7 +138,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
             dispatchTextDelta(
                 ctx.browserWindow,
                 ctx.conversationId,
-                ctx.requestId,
+                ctx.generationId,
                 ctx.assistantMessageId,
                 TRUNCATION_NOTICE,
                 ctx.isCurrentRun,

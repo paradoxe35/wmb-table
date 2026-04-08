@@ -40,7 +40,7 @@ interface RunGenerationOptions {
     runner: GenerationRunnerImpl;
     browserWindow: BrowserWindow;
     conversation: AiConversation;
-    requestId: string;
+    generationId: string;
     assistantMessage: AiMessage;
     model: ReturnType<typeof resolveLanguageModel>;
     systemPrompt: string;
@@ -59,7 +59,7 @@ interface RunGenerationOptions {
 interface ActiveRun {
     browserWindow: BrowserWindow;
     conversationId: string;
-    requestId: string;
+    generationId: string;
     assistantMessageId: string;
     controller: AbortController;
 }
@@ -144,7 +144,7 @@ export class AiService {
         this.activeRuns.delete(conversationId);
         sendToRenderer(activeRun.browserWindow, PushChannels.aiStreamCancel, {
             conversationId,
-            requestId: activeRun.requestId,
+            generationId: activeRun.generationId,
             messageId: activeRun.assistantMessageId,
         });
     }
@@ -288,7 +288,7 @@ export class AiService {
         this.activeRuns.set(conversation.id, {
             browserWindow,
             conversationId: conversation.id,
-            requestId: request.requestId,
+            generationId: request.generationId,
             assistantMessageId: assistantMessage.id,
             controller,
         });
@@ -301,7 +301,7 @@ export class AiService {
             abortSignal: controller.signal,
             browserWindow,
             conversationId: conversation.id,
-            requestId: request.requestId,
+            generationId: request.generationId,
             assistantMessageId: assistantMessage.id,
         });
 
@@ -348,7 +348,7 @@ export class AiService {
             runner,
             browserWindow,
             conversation,
-            requestId: request.requestId,
+            generationId: request.generationId,
             assistantMessage,
             model,
             systemPrompt,
@@ -365,7 +365,7 @@ export class AiService {
         });
 
         return {
-            requestId: request.requestId,
+            generationId: request.generationId,
             conversation: aiRepo.getConversation(conversation.id)!,
             userMessage,
             assistantMessage,
@@ -409,7 +409,7 @@ export class AiService {
             runner,
             browserWindow,
             conversation,
-            requestId,
+            generationId,
             assistantMessage,
             model,
             systemPrompt,
@@ -425,21 +425,21 @@ export class AiService {
             uiLanguageCode,
         } = opts;
         const isCurrentRun = () =>
-            this.isCurrentRun(conversation.id, requestId, assistantMessage.id);
+            this.isCurrentRun(conversation.id, generationId, assistantMessage.id);
 
         try {
             await runner.run({
                 browserWindow,
                 conversationId: conversation.id,
-                requestId,
+                generationId,
                 assistantMessageId: assistantMessage.id,
                 model,
                 systemPrompt,
                 history,
                 tools,
                 abortSignal,
-                isCurrentRun: (_requestId, assistantMessageId) =>
-                    this.isCurrentRun(conversation.id, requestId, assistantMessageId),
+                isCurrentRun: (_generationId, assistantMessageId) =>
+                    this.isCurrentRun(conversation.id, generationId, assistantMessageId),
                 contextWindow,
                 toolTokens,
                 systemPromptTokens,
@@ -457,10 +457,10 @@ export class AiService {
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
             });
-            this.releaseRun(conversation.id, requestId);
+            this.releaseRun(conversation.id, generationId);
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,
-                requestId,
+                generationId,
                 messageId: assistantMessage.id,
             });
 
@@ -491,14 +491,14 @@ export class AiService {
                 return;
             }
 
-            this.releaseRun(conversation.id, requestId);
+            this.releaseRun(conversation.id, generationId);
             log.error('AI generation failed', {
                 conversationId: conversation.id,
                 message,
             });
             sendToRenderer(browserWindow, PushChannels.aiStreamError, {
                 conversationId: conversation.id,
-                requestId,
+                generationId,
                 messageId: assistantMessage.id,
                 error: message,
             });
@@ -510,25 +510,25 @@ export class AiService {
             } catch {
                 // DB may already be closed during app shutdown
             }
-            this.releaseRun(conversation.id, requestId);
+            this.releaseRun(conversation.id, generationId);
         }
     }
 
     private isCurrentRun(
         conversationId: string,
-        requestId: string,
+        generationId: string,
         assistantMessageId: string,
     ): boolean {
         const activeRun = this.activeRuns.get(conversationId);
         return (
-            activeRun?.requestId === requestId &&
+            activeRun?.generationId === generationId &&
             activeRun.assistantMessageId === assistantMessageId
         );
     }
 
-    private releaseRun(conversationId: string, requestId: string): void {
+    private releaseRun(conversationId: string, generationId: string): void {
         const activeRun = this.activeRuns.get(conversationId);
-        if (activeRun?.requestId === requestId) {
+        if (activeRun?.generationId === generationId) {
             this.activeRuns.delete(conversationId);
         }
     }

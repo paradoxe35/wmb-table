@@ -45,6 +45,19 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         .int()
                         .optional()
                         .describe('Translation ID from search results'),
+                    startParagraph: z
+                        .number()
+                        .int()
+                        .min(0)
+                        .optional()
+                        .describe('Optional paragraph offset hint for follow-up reading'),
+                    maxParagraphs: z
+                        .number()
+                        .int()
+                        .min(1)
+                        .max(50)
+                        .optional()
+                        .describe('Optional page size hint for sermon pagination'),
                     question: z.string().describe('The question to answer about this sermon'),
                     description: z
                         .string()
@@ -77,6 +90,8 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 sermonId,
                 sermonQuery,
                 translationId,
+                startParagraph,
+                maxParagraphs,
                 question,
                 description,
                 alreadyKnown,
@@ -94,6 +109,8 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                     sermonId: normalizedSermonId,
                     sermonQuery: normalizedSermonQuery,
                     translationId,
+                    startParagraph,
+                    maxParagraphs,
                     question,
                     description,
                     alreadyKnown,

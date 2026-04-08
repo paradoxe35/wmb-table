@@ -170,6 +170,7 @@ describe('AI subagent execution', () => {
             dispatch: {
                 browserWindow: {} as never,
                 conversationId: 'conv-1',
+                generationId: 'gen-1',
                 assistantMessageId: 'assistant-1',
             },
         });
@@ -244,6 +245,7 @@ describe('AI subagent execution', () => {
             dispatch: {
                 browserWindow: {} as never,
                 conversationId: 'conv-1',
+                generationId: 'gen-1',
                 assistantMessageId: 'assistant-1',
             },
         });
@@ -274,6 +276,7 @@ describe('AI subagent execution', () => {
             dispatch: {
                 browserWindow: {} as never,
                 conversationId: 'conv-1',
+                generationId: 'gen-1',
                 assistantMessageId: 'assistant-1',
             },
         });
@@ -287,5 +290,40 @@ describe('AI subagent execution', () => {
         const call = generateTextMock.mock.calls[0]?.[0];
         expect(call.prompt).toContain('Already known from prior reading');
         expect(call.prompt).toContain('Earlier reading covered the first section of the sermon.');
+    });
+
+    it('accepts pagination hints on readSermon and carries them into the task prompt', async () => {
+        generateTextMock.mockResolvedValueOnce({
+            text: 'Sermon summary',
+            finishReason: 'stop',
+            steps: [],
+        });
+
+        const { readSermon } = buildSermonReaderAgentTool({
+            model: {} as never,
+            contentLanguage: 'fr',
+            uiLanguage: 'en',
+        });
+
+        expect(() =>
+            readSermon.inputSchema.parse({
+                sermonId: '63-0318',
+                question: 'Continue from later in the sermon.',
+                startParagraph: 40,
+                maxParagraphs: 20,
+            }),
+        ).not.toThrow();
+
+        await readSermon.execute({
+            sermonId: '63-0318',
+            question: 'Continue from later in the sermon.',
+            startParagraph: 40,
+            maxParagraphs: 20,
+        });
+
+        const call = generateTextMock.mock.calls[0]?.[0];
+        expect(call.prompt).toContain(
+            'Pagination hint: start at paragraph 40 and read up to 20 paragraphs per page when useful.',
+        );
     });
 });

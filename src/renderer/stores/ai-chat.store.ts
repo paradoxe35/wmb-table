@@ -29,7 +29,7 @@ type LoadingConversationMap = Record<string, true>;
 type ConversationRunStatus = 'starting' | 'streaming' | 'stopping';
 
 interface ConversationRunState {
-    requestId: string;
+    generationId: string;
     assistantMessageId: string | null;
     status: ConversationRunStatus;
 }
@@ -228,10 +228,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         if (!listenersBound) {
             listenersBound = true;
 
-            window.api.on.aiStreamChunk(({ conversationId, requestId, messageId, delta }) => {
+            window.api.on.aiStreamChunk(({ conversationId, generationId, messageId, delta }) => {
                 set((state) => {
                     const run = state.conversationRuns[conversationId];
-                    if (!run || run.requestId !== requestId) {
+                    if (!run || run.generationId !== generationId) {
                         return state;
                     }
 
@@ -250,10 +250,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 });
             });
 
-            window.api.on.aiReasoningDelta(({ conversationId, requestId, messageId, delta }) => {
+            window.api.on.aiReasoningDelta(({ conversationId, generationId, messageId, delta }) => {
                 set((state) => {
                     const run = state.conversationRuns[conversationId];
-                    if (!run || run.requestId !== requestId) {
+                    if (!run || run.generationId !== generationId) {
                         return state;
                     }
 
@@ -267,10 +267,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             });
 
             window.api.on.aiToolCallStart(
-                ({ conversationId, requestId, messageId, toolName, toolCallId, payload }) => {
+                ({ conversationId, generationId, messageId, toolName, toolCallId, payload }) => {
                     set((state) => {
                         const run = state.conversationRuns[conversationId];
-                        if (!run || run.requestId !== requestId) {
+                        if (!run || run.generationId !== generationId) {
                             return state;
                         }
 
@@ -305,10 +305,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             );
 
             window.api.on.aiToolCallComplete(
-                ({ conversationId, requestId, messageId, toolName, toolCallId, payload }) => {
+                ({ conversationId, generationId, messageId, toolName, toolCallId, payload }) => {
                     set((state) => {
                         const run = state.conversationRuns[conversationId];
-                        if (!run || run.requestId !== requestId) {
+                        if (!run || run.generationId !== generationId) {
                             return state;
                         }
 
@@ -343,12 +343,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 },
             );
 
-            window.api.on.aiStreamComplete(({ conversationId, requestId }) => {
+            window.api.on.aiStreamComplete(({ conversationId, generationId }) => {
                 let shouldFlushQueue = false;
 
                 set((state) => {
                     const run = state.conversationRuns[conversationId];
-                    if (!run || run.requestId !== requestId) {
+                    if (!run || run.generationId !== generationId) {
                         return state;
                     }
 
@@ -372,12 +372,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 }
             });
 
-            window.api.on.aiStreamCancel(({ conversationId, requestId, messageId }) => {
+            window.api.on.aiStreamCancel(({ conversationId, generationId, messageId }) => {
                 let shouldFlushQueue = false;
 
                 set((state) => {
                     const run = state.conversationRuns[conversationId];
-                    if (!run || run.requestId !== requestId) {
+                    if (!run || run.generationId !== generationId) {
                         return state;
                     }
 
@@ -415,12 +415,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 }
             });
 
-            window.api.on.aiStreamError(({ conversationId, requestId, messageId, error }) => {
+            window.api.on.aiStreamError(({ conversationId, generationId, messageId, error }) => {
                 let shouldFlushQueue = false;
 
                 set((state) => {
                     const run = state.conversationRuns[conversationId];
-                    if (!run || run.requestId !== requestId) {
+                    if (!run || run.generationId !== generationId) {
                         return state;
                     }
 
@@ -644,13 +644,13 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     sendMessageNow: async (conversationId, content) => {
-        const requestId = crypto.randomUUID();
+        const generationId = crypto.randomUUID();
 
         set((state) => ({
             conversationRuns: {
                 ...state.conversationRuns,
                 [conversationId]: {
-                    requestId,
+                    generationId,
                     assistantMessageId: null,
                     status: 'starting',
                 },
@@ -663,7 +663,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             const result: AiSendMessageResult = await window.api.ai.sendMessage({
                 conversationId,
                 content,
-                requestId,
+                generationId,
             });
 
             markFeatureReminderUsed('ai');
@@ -677,7 +677,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 const messagesWithUser = upsertMessage(existingMessages, result.userMessage);
                 const currentRun = state.conversationRuns[conversationId];
 
-                if (!currentRun || currentRun.requestId !== requestId) {
+                if (!currentRun || currentRun.generationId !== generationId) {
                     return {
                         conversations: upsertConversation(state.conversations, result.conversation),
                         messagesByConversation: {
@@ -713,7 +713,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         } catch (error) {
             set((state) => {
                 const currentRun = state.conversationRuns[conversationId];
-                if (!currentRun || currentRun.requestId !== requestId) {
+                if (!currentRun || currentRun.generationId !== generationId) {
                     return state;
                 }
 
@@ -810,7 +810,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         } catch (error) {
             set((state) => {
                 const currentRun = state.conversationRuns[conversationId];
-                if (!currentRun || currentRun.requestId !== run.requestId) {
+                if (!currentRun || currentRun.generationId !== run.generationId) {
                     return state;
                 }
 

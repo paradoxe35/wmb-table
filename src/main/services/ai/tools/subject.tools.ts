@@ -73,12 +73,11 @@ export function buildSubjectTools(
                 const langError = validateLanguage(lang);
                 if (langError) return langError;
 
+                const resolvedTranslationId = translationId ?? inferTranslationId(sermonId, lang);
                 const meta =
-                    referenceDataService.getSermonMeta(
-                        translationId ?? inferTranslationId(sermonId, lang),
-                        lang,
-                        sermonId,
-                    ) ??
+                    (resolvedTranslationId != null
+                        ? referenceDataService.getSermonMeta(resolvedTranslationId, lang, sermonId)
+                        : null) ??
                     referenceDataService.getSermonListForLanguage(lang).find((sermon) => {
                         return sermon.sermonId === sermonId;
                     });

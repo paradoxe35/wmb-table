@@ -170,11 +170,11 @@ export interface AiMessage {
 export interface AiSendMessageRequest {
     conversationId: string;
     content: string;
-    requestId: string;
+    generationId: string;
 }
 
 export interface AiSendMessageResult {
-    requestId: string;
+    generationId: string;
     conversation: AiConversation;
     userMessage: AiMessage;
     assistantMessage: AiMessage;
@@ -234,33 +234,33 @@ export interface AiModelDownloadProgress {
 
 export interface AiStreamChunkEvent {
     conversationId: string;
-    requestId: string;
+    generationId: string;
     messageId: string;
     delta: string;
 }
 
 export interface AiStreamCompleteEvent {
     conversationId: string;
-    requestId: string;
+    generationId: string;
     messageId: string;
 }
 
 export interface AiStreamCancelEvent {
     conversationId: string;
-    requestId: string;
+    generationId: string;
     messageId: string;
 }
 
 export interface AiStreamErrorEvent {
     conversationId: string;
-    requestId: string;
+    generationId: string;
     messageId: string;
     error: string;
 }
 
 export interface AiToolEvent {
     conversationId: string;
-    requestId: string;
+    generationId: string;
     messageId: string;
     toolName: string;
     toolCallId: string;
@@ -269,7 +269,7 @@ export interface AiToolEvent {
 
 export interface AiReasoningEvent {
     conversationId: string;
-    requestId: string;
+    generationId: string;
     messageId: string;
     delta: string;
 }

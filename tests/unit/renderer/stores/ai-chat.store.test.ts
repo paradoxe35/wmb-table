@@ -79,7 +79,7 @@ function createSendResult(
     conversation = createConversation(),
 ): AiSendMessageResult {
     return {
-        requestId: request.requestId,
+        generationId: request.generationId,
         conversation,
         userMessage: createMessage({
             id: `user-${index}`,
@@ -232,10 +232,10 @@ describe('ai-chat.store queue behavior', () => {
         expect(sendMessageMock).toHaveBeenCalledTimes(1);
         expect(store.getState().queuedMessagesByConversation['conv-1']).toHaveLength(2);
 
-        const firstRequestId = sendMessageMock.mock.calls[0][0].requestId;
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
         listeners.aiStreamComplete?.({
             conversationId: 'conv-1',
-            requestId: firstRequestId,
+            generationId: firstGenerationId,
             messageId: 'assistant-1',
         });
         await flushAsync();
@@ -252,10 +252,10 @@ describe('ai-chat.store queue behavior', () => {
         await flushAsync();
         await store.getState().sendMessage('queued follow-up');
 
-        const firstRequestId = sendMessageMock.mock.calls[0][0].requestId;
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
         listeners.aiStreamCancel?.({
             conversationId: 'conv-1',
-            requestId: firstRequestId,
+            generationId: firstGenerationId,
             messageId: 'assistant-1',
         });
         await flushAsync();
@@ -271,10 +271,10 @@ describe('ai-chat.store queue behavior', () => {
         await flushAsync();
         await store.getState().sendMessage('queued after failure');
 
-        const firstRequestId = sendMessageMock.mock.calls[0][0].requestId;
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
         listeners.aiStreamError?.({
             conversationId: 'conv-1',
-            requestId: firstRequestId,
+            generationId: firstGenerationId,
             messageId: 'assistant-1',
             error: 'failure',
         });
@@ -293,10 +293,10 @@ describe('ai-chat.store queue behavior', () => {
         await store.getState().sendMessage('first question');
         await flushAsync();
 
-        const currentRequestId = sendMessageMock.mock.calls[0][0].requestId;
+        const currentGenerationId = sendMessageMock.mock.calls[0][0].generationId;
         listeners.aiStreamChunk?.({
             conversationId: 'conv-1',
-            requestId: 'stale-run',
+            generationId: 'stale-run',
             messageId: 'assistant-1',
             delta: 'stale text',
         });
@@ -310,7 +310,7 @@ describe('ai-chat.store queue behavior', () => {
 
         listeners.aiStreamChunk?.({
             conversationId: 'conv-1',
-            requestId: currentRequestId,
+            generationId: currentGenerationId,
             messageId: 'assistant-1',
             delta: 'live text',
         });
@@ -332,10 +332,10 @@ describe('ai-chat.store queue behavior', () => {
         await store.getState().sendMessage('race condition question');
         await flushAsync();
 
-        const requestId = sendMessageMock.mock.calls[0][0].requestId;
+        const generationId = sendMessageMock.mock.calls[0][0].generationId;
         listeners.aiStreamCancel?.({
             conversationId: 'conv-1',
-            requestId,
+            generationId,
             messageId: 'assistant-1',
         });
         await flushAsync();
@@ -345,7 +345,7 @@ describe('ai-chat.store queue behavior', () => {
                 {
                     conversationId: 'conv-1',
                     content: 'race condition question',
-                    requestId,
+                    generationId,
                 },
                 1,
             ),
@@ -372,10 +372,10 @@ describe('ai-chat.store queue behavior', () => {
         const queuedMessageId = store.getState().queuedMessagesByConversation['conv-1'][0].id;
         store.getState().removeQueuedMessage('conv-1', queuedMessageId);
 
-        const firstRequestId = sendMessageMock.mock.calls[0][0].requestId;
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
         listeners.aiStreamComplete?.({
             conversationId: 'conv-1',
-            requestId: firstRequestId,
+            generationId: firstGenerationId,
             messageId: 'assistant-1',
         });
         await flushAsync();

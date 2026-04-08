@@ -7,7 +7,7 @@ import type { RunDispatchGuard } from './stream-dispatcher';
 export interface GenerationContext {
     browserWindow: BrowserWindow;
     conversationId: string;
-    requestId: string;
+    generationId: string;
     assistantMessageId: string;
     model: LanguageModel;
     systemPrompt: string;

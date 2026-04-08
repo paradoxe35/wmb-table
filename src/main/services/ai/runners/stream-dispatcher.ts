@@ -4,24 +4,24 @@ import type { AiToolCall, AiToolResult } from '@shared/ai.types';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import { sendToRenderer } from '@main/ipc/register';
 
-export type RunDispatchGuard = (requestId: string, assistantMessageId: string) => boolean;
+export type RunDispatchGuard = (generationId: string, assistantMessageId: string) => boolean;
 
 export function dispatchTextDelta(
     browserWindow: BrowserWindow,
     conversationId: string,
-    requestId: string,
+    generationId: string,
     assistantMessageId: string,
     delta: string,
     isCurrentRun: RunDispatchGuard,
 ): void {
-    if (!isCurrentRun(requestId, assistantMessageId)) {
+    if (!isCurrentRun(generationId, assistantMessageId)) {
         return;
     }
 
     aiRepo.appendAssistantContent(assistantMessageId, delta);
     sendToRenderer(browserWindow, PushChannels.aiStreamChunk, {
         conversationId,
-        requestId,
+        generationId,
         messageId: assistantMessageId,
         delta,
     });
@@ -30,12 +30,12 @@ export function dispatchTextDelta(
 export function dispatchToolCallStart(
     browserWindow: BrowserWindow,
     conversationId: string,
-    requestId: string,
+    generationId: string,
     assistantMessageId: string,
     toolCall: AiToolCall,
     isCurrentRun: RunDispatchGuard,
 ): void {
-    if (!isCurrentRun(requestId, assistantMessageId)) {
+    if (!isCurrentRun(generationId, assistantMessageId)) {
         return;
     }
 
@@ -43,7 +43,7 @@ export function dispatchToolCallStart(
     aiRepo.setAssistantToolCalls(assistantMessageId, [...(existing?.toolCalls ?? []), toolCall]);
     sendToRenderer(browserWindow, PushChannels.aiToolCallStart, {
         conversationId,
-        requestId,
+        generationId,
         messageId: assistantMessageId,
         toolName: toolCall.name,
         toolCallId: toolCall.id,
@@ -54,18 +54,18 @@ export function dispatchToolCallStart(
 export function dispatchReasoningDelta(
     browserWindow: BrowserWindow,
     conversationId: string,
-    requestId: string,
+    generationId: string,
     assistantMessageId: string,
     delta: string,
     isCurrentRun: RunDispatchGuard,
 ): void {
-    if (!isCurrentRun(requestId, assistantMessageId)) {
+    if (!isCurrentRun(generationId, assistantMessageId)) {
         return;
     }
 
     sendToRenderer(browserWindow, PushChannels.aiReasoningDelta, {
         conversationId,
-        requestId,
+        generationId,
         messageId: assistantMessageId,
         delta,
     });
@@ -74,19 +74,19 @@ export function dispatchReasoningDelta(
 export function dispatchToolCallComplete(
     browserWindow: BrowserWindow,
     conversationId: string,
-    requestId: string,
+    generationId: string,
     assistantMessageId: string,
     toolResult: AiToolResult,
     isCurrentRun: RunDispatchGuard,
 ): void {
-    if (!isCurrentRun(requestId, assistantMessageId)) {
+    if (!isCurrentRun(generationId, assistantMessageId)) {
         return;
     }
 
     aiRepo.addAssistantToolResult(assistantMessageId, toolResult);
     sendToRenderer(browserWindow, PushChannels.aiToolCallComplete, {
         conversationId,
-        requestId,
+        generationId,
         messageId: assistantMessageId,
         toolName: toolResult.name,
         toolCallId: toolResult.toolCallId,
