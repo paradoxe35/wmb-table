@@ -10,7 +10,7 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '',
     '### Bible references',
     'Format: `[BookName Chapter:Verse](wmb://bible/{bookCode}/{chapter}/{verse}/{bibleVersionAbbreviation}/{bookName})`',
-    'Example: `[Jean 3:16](wmb://bible/43N/3/16/lsg/Jean)`',
+    'Examples: `[Jean 3:16](wmb://bible/43N/3/16/lsg/Jean)`, `[John 3:16](wmb://bible/43N/3/16/kjv/John)`, `[Jean 3:16](wmb://bible/43N/3/16/darby/Jean)`',
     '',
     '### Document references',
     'Format: `[Title](wmb://doc/{documentId}/{title})`',
@@ -19,6 +19,7 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '- The URL MUST always include the type segment: `wmb://sermon/...`, `wmb://bible/...`, or `wmb://doc/...`',
     '- The languageCode and translationId MUST be the exact values from sermon metadata returned by tool results. Never invent or guess them.',
     '- The paragraph number MUST be the exact `paragraphNumber` field from the paragraph object. Never guess or compute it.',
+    '- For Bible links, use the exact tool result fields `bookCode`, `chapter`, `verse`, `bibleVersionAbbreviation`, and `bookName`. Never infer them from memory.',
     '- Do NOT put the sermon title in the URL. The title goes only in the link text `[Title, §N](...)`.',
     '- If a tool reports `translationWarning` or a fallback translation, say that briefly and then use the resolved translation values in references.',
 ].join('\n');

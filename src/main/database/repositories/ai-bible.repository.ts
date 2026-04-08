@@ -5,7 +5,16 @@ import { normalizeBibleAbbreviation } from '@shared/types';
 import { strNormalize } from '@shared/searchable';
 import type { BibleBook, BibleSearchResult } from '@shared/types';
 
-function resolveVersionDbPath(abbreviation?: string, languageCode?: string): string | null {
+export interface ResolvedBibleVersion {
+    abbreviation: string;
+    languageCode: string;
+    name: string;
+}
+
+function resolveVersionSource(
+    abbreviation?: string,
+    languageCode?: string,
+): (ResolvedBibleVersion & { dbPath: string }) | null {
     const abbr = normalizeBibleAbbreviation(abbreviation);
     const versions = bibleService.getAllBibleVersions();
 
@@ -21,7 +30,28 @@ function resolveVersionDbPath(abbreviation?: string, languageCode?: string): str
     if (!version) return null;
 
     const dbPath = bibleService.resolveBiblePath(version);
-    return existsSync(dbPath) ? dbPath : null;
+    if (!existsSync(dbPath)) return null;
+
+    return {
+        abbreviation: version.abbreviation,
+        languageCode: version.langCode,
+        name: version.name,
+        dbPath,
+    };
+}
+
+export function resolveBibleVersion(
+    abbreviation?: string,
+    languageCode?: string,
+): ResolvedBibleVersion | null {
+    const resolved = resolveVersionSource(abbreviation, languageCode);
+    if (!resolved) return null;
+
+    return {
+        abbreviation: resolved.abbreviation,
+        languageCode: resolved.languageCode,
+        name: resolved.name,
+    };
 }
 
 export function getAvailableVersions(languageCode: string) {
@@ -48,8 +78,8 @@ export function getPassage(input: {
     abbreviation?: string;
     languageCode?: string;
 }): BibleBook[] | { error: string } {
-    const dbPath = resolveVersionDbPath(input.abbreviation, input.languageCode);
-    if (!dbPath) {
+    const source = resolveVersionSource(input.abbreviation, input.languageCode);
+    if (!source) {
         return {
             error: `No Bible found${input.abbreviation ? ` for abbreviation "${input.abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
         };
@@ -68,7 +98,7 @@ export function getPassage(input: {
         };
     }
 
-    const db = new Database(dbPath, { readonly: true });
+    const db = new Database(source.dbPath, { readonly: true });
     try {
         const bookCode = resolveBookCode(db, input.book);
         if (!bookCode) {
@@ -158,14 +188,14 @@ export function searchVerses(input: {
 }): BibleSearchResult | { error: string } {
     const maxResults = Math.min(input.limit ?? 20, 40);
 
-    const dbPath = resolveVersionDbPath(input.abbreviation, input.languageCode);
-    if (!dbPath) {
+    const source = resolveVersionSource(input.abbreviation, input.languageCode);
+    if (!source) {
         return {
             error: `No Bible found${input.abbreviation ? ` for abbreviation "${input.abbreviation}"` : ''}. Use getBibleVersions to find available versions.`,
         };
     }
 
-    const db = new Database(dbPath, { readonly: true });
+    const db = new Database(source.dbPath, { readonly: true });
     try {
         // Try FTS first
         const ftsResult = searchWithFts(db, input.query, input.testament, maxResults);
