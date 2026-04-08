@@ -185,12 +185,17 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'getBiblePassage':
-            if (Array.isArray(output) && output.length > 0) {
-                const first = output[0];
-                const last = output[output.length - 1];
+            if (
+                output &&
+                typeof output === 'object' &&
+                Array.isArray(output.verses) &&
+                output.verses.length > 0
+            ) {
+                const first = output.verses[0];
+                const last = output.verses[output.verses.length - 1];
                 const ref = `${first.bookName} ${first.chapter}:${first.verse}`;
-                const end = output.length > 1 ? `-${last.chapter}:${last.verse}` : '';
-                return `${ref}${end} (${output.length} verse(s))`;
+                const end = output.verses.length > 1 ? `-${last.chapter}:${last.verse}` : '';
+                return `${ref}${end} (${output.verses.length} verse(s))`;
             }
             break;
 
@@ -317,24 +322,52 @@ function cleanToolOutput(name: string, output: any): unknown {
             return omit(output, 'nextCursor');
 
         case 'getBiblePassage':
-            if (!Array.isArray(output)) {
+            if (!output || typeof output !== 'object' || !Array.isArray(output.verses)) {
                 return output;
             }
-            return output.map((v: any) => ({
-                ...pick(v, ['bookName', 'book', 'chapter', 'verse', 'testament']),
-                content: previewText(v.content, SHORT_PREVIEW),
-            }));
+            return {
+                ...pick(output, [
+                    'bookCode',
+                    'bookName',
+                    'chapter',
+                    'fromVerse',
+                    'toVerse',
+                    'bibleVersionAbbreviation',
+                    'verseCount',
+                ]),
+                verses: output.verses.map((v: any) => ({
+                    ...pick(v, [
+                        'bookCode',
+                        'bookName',
+                        'chapter',
+                        'verse',
+                        'testament',
+                        'bibleVersionAbbreviation',
+                    ]),
+                    content: previewText(v.content, SHORT_PREVIEW),
+                })),
+            };
 
         case 'searchBible':
-            if (!output.data) {
+            if (!Array.isArray(output.results)) {
                 return output;
             }
             return {
                 query: output.query,
+                bibleVersionAbbreviation: output.bibleVersionAbbreviation,
                 total: output.total,
-                results: output.data.map((d: any) => ({
-                    ...pick(d.item, ['bookName', 'book', 'chapter', 'verse']),
-                    content: previewText(d.item?.content, SHORT_PREVIEW),
+                returned: output.returned,
+                hasMore: output.hasMore,
+                results: output.results.map((verse: any) => ({
+                    ...pick(verse, [
+                        'bookCode',
+                        'bookName',
+                        'chapter',
+                        'verse',
+                        'testament',
+                        'bibleVersionAbbreviation',
+                    ]),
+                    content: previewText(verse?.content, SHORT_PREVIEW),
                 })),
             };
 

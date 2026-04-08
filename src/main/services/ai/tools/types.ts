@@ -86,3 +86,43 @@ export interface CustomDocumentSearchToolResponse extends PaginatedToolResult {
     mode: SearchMode;
     query: string;
 }
+
+// ---------------------------------------------------------------------------
+// Bible tool response types
+// ---------------------------------------------------------------------------
+
+export interface BibleVersionOption {
+    abbreviation: string;
+    languageCode: string;
+    name: string;
+}
+
+export interface BibleVerseResult {
+    bookCode: string;
+    bookName: string;
+    chapter: string;
+    verse: string;
+    testament: string;
+    bibleVersionAbbreviation: string;
+    content: string;
+}
+
+export interface BiblePassageToolResponse {
+    bookCode: string;
+    bookName: string;
+    chapter: string;
+    fromVerse: string;
+    toVerse: string;
+    bibleVersionAbbreviation: string;
+    verseCount: number;
+    verses: BibleVerseResult[];
+}
+
+export interface BibleSearchToolResponse {
+    query: string;
+    bibleVersionAbbreviation: string;
+    total: number;
+    returned: number;
+    hasMore: boolean;
+    results: BibleVerseResult[];
+}
