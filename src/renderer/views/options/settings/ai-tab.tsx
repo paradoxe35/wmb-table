@@ -9,6 +9,8 @@ import { Field, Hint } from './ai-shared';
 import { BuiltinProviderConfig, CustomProviderConfig } from './ai-provider-config';
 import AiCustomProviderModal from './ai-custom-provider';
 import AiLocalModels from './ai-local-models';
+import InlineHelpPopover from '../components/inline-help-popover';
+import { getAiSettingsHelp } from '../components/option-help-content';
 
 const { Text } = Typography;
 
@@ -98,7 +100,12 @@ export default function AiTab() {
             {/* Enable toggle */}
             <Card
                 size="small"
-                title={t('Assistant')}
+                title={
+                    <Space size={6}>
+                        <span>{t('Assistant')}</span>
+                        <InlineHelpPopover content={getAiSettingsHelp(t)} />
+                    </Space>
+                }
                 extra={
                     <Button
                         type="text"

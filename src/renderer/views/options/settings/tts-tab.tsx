@@ -35,6 +35,8 @@ import OpenAIConfig from './tts-provider-openai';
 import EdgeConfig from './tts-provider-edge';
 import CartesiaConfig from './tts-provider-cartesia';
 import { buildDocsGuideLink } from '@renderer/utils/constants';
+import InlineHelpPopover from '../components/inline-help-popover';
+import { getTtsSettingsHelp } from '../components/option-help-content';
 
 const { Text } = Typography;
 
@@ -247,7 +249,7 @@ export default function TtsTab() {
         await window.api.tts.clearCache();
         setCacheSize(0);
         message.success(t('Cache audio vidé'));
-    }, []);
+    }, [t]);
 
     if (!settings) return null;
 
@@ -263,7 +265,12 @@ export default function TtsTab() {
             {/* Active provider selector */}
             <Card
                 size="small"
-                title={t('Lecture audio')}
+                title={
+                    <Space size={6}>
+                        <span>{t('Lecture audio')}</span>
+                        <InlineHelpPopover content={getTtsSettingsHelp(t)} />
+                    </Space>
+                }
                 extra={
                     <Button
                         type="text"

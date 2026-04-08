@@ -850,6 +850,160 @@ const es: Record<string, string> = {
         'Sigue automáticamente la apariencia definida por su sistema.',
     'Utilise toujours le thème clair.': 'Usa siempre el tema claro.',
     'Utilise toujours le thème sombre.': 'Usa siempre el tema oscuro.',
+
+    // ── Inline help ──
+    'Comprendre cette page': 'Entender esta página',
+    'Regroupez vos versets et passages par thème.': 'Agrupe sus versículos y pasajes por tema.',
+    'À quoi servent les sujets ?': '¿Para qué sirven los temas?',
+    "Les sujets rassemblent des versets, passages de prédications et extraits de documents autour d'un même thème.":
+        'Los temas reúnen versículos, pasajes de predicaciones y extractos de documentos alrededor de un mismo tema.',
+    'Créez un sujet pour chaque thème important que vous préparez.':
+        'Cree un tema para cada asunto importante que esté preparando.',
+    'Ajoutez des références depuis la lecture ou depuis la Bible.':
+        'Añada referencias desde la lectura o desde la Biblia.',
+    "Réorganisez les références dans l'ordre qui vous aide le mieux.":
+        'Reorganice las referencias en el orden que más le ayude.',
+    'Utilisez plutôt les notes pour écrire vos idées longues, vos plans et vos commentaires personnels.':
+        'Use más bien las notas para escribir sus ideas largas, esquemas y comentarios personales.',
+    'Gardez vos plans, idées et références dans un seul endroit.':
+        'Guarde sus esquemas, ideas y referencias en un solo lugar.',
+    'À quoi servent les notes ?': '¿Para qué sirven las notas?',
+    'Les notes gardent vos idées, plans et repères de préparation dans un seul endroit.':
+        'Las notas guardan sus ideas, esquemas y referencias de preparación en un solo lugar.',
+    'Créez une note par message, étude ou projet.':
+        'Cree una nota por mensaje, estudio o proyecto.',
+    'Ajoutez des références vers la Bible ou les prédications pour retrouver la source plus tard.':
+        'Añada referencias hacia la Biblia o las predicaciones para encontrar la fuente más tarde.',
+    'Utilisez les sujets pour classer des références, et les notes pour développer votre pensée.':
+        'Use los temas para clasificar referencias y las notas para desarrollar su pensamiento.',
+    'Que fait cette page Bible ?': '¿Qué hace esta página de Biblia?',
+    'Cette page sert à lire la Bible, changer de version et rechercher des versets sans quitter votre préparation.':
+        'Esta página sirve para leer la Biblia, cambiar de versión y buscar versículos sin salir de su preparación.',
+    'Page Bible': 'Página Biblia',
+    'Lisez un chapitre complet dans la zone principale.':
+        'Lea un capítulo completo en la zona principal.',
+    'Changez ou téléchargez des versions bibliques.': 'Cambie o descargue versiones bíblicas.',
+    'Recherchez un mot ou une expression dans la Bible.':
+        'Busque una palabra o una expresión en la Biblia.',
+    'Bible dans la barre latérale': 'Biblia en la barra lateral',
+    'Le navigateur de droite est plus rapide et plus compact. Il sert surtout à ouvrir vite un livre ou un chapitre pendant une autre tâche.':
+        'El navegador de la derecha es más rápido y más compacto. Sirve sobre todo para abrir rápido un libro o un capítulo mientras hace otra tarea.',
+    'Utilisez cette page quand vous voulez lire, comparer et chercher. Utilisez la barre latérale quand vous voulez juste ouvrir rapidement un passage.':
+        'Use esta página cuando quiera leer, comparar y buscar. Use la barra lateral cuando solo quiera abrir rápidamente un pasaje.',
+    'Lisez, recherchez et changez de version biblique depuis un seul écran.':
+        'Lea, busque y cambie de versión bíblica desde una sola pantalla.',
+    'À quoi servent les réglages de Lecture audio ?':
+        '¿Para qué sirven los ajustes de Texto a voz?',
+    'Cet onglet configure la voix qui lira vos prédications, chapitres bibliques et documents personnels.':
+        'Esta pestaña configura la voz que leerá sus predicaciones, capítulos bíblicos y documentos personales.',
+    'Choisissez un fournisseur et une voix.': 'Elija un proveedor y una voz.',
+    'Testez la lecture et ajustez la vitesse.': 'Pruebe la lectura y ajuste la velocidad.',
+    "Réglez le surlignage, l'introduction et le cache audio.":
+        'Ajuste el resaltado, la introducción y la caché de audio.',
+    'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
+        'Si quiere algo sencillo, mantenga el proveedor propuesto y luego pruebe una voz.',
+    "À quoi servent les réglages de l'assistant ?": '¿Para qué sirven los ajustes del asistente?',
+    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
+        'Esta pestaña activa el asistente de IA y define cómo responde en la aplicación.',
+    "Activez ou masquez l'assistant dans la barre latérale.":
+        'Active u oculte el asistente en la barra lateral.',
+    'Sélectionnez un fournisseur local, cloud ou personnalisé.':
+        'Seleccione un proveedor local, en la nube o personalizado.',
+    'Définissez la langue et le modèle utilisés pour les réponses.':
+        'Defina el idioma y el modelo usados para las respuestas.',
+    'Comment fonctionne la recherche ?': '¿Cómo funciona la búsqueda?',
+    'Cette page recherche dans les prédications de votre bibliothèque et vous ramène directement au bon passage.':
+        'Esta página busca en las predicaciones de su biblioteca y le lleva directamente al pasaje correcto.',
+    'Entrez au moins trois caractères pour lancer une recherche.':
+        'Introduzca al menos tres caracteres para iniciar una búsqueda.',
+    'Choisissez le mode selon que vous cherchez un mot, plusieurs mots ou une phrase exacte.':
+        'Elija el modo según busque una palabra, varias palabras o una frase exacta.',
+    'Ouvrez un résultat pour aller directement au paragraphe correspondant.':
+        'Abra un resultado para ir directamente al párrafo correspondiente.',
+    'Commencez avec un mot simple, puis ajoutez un deuxième mot si les résultats sont trop larges.':
+        'Empiece con una palabra simple y añada una segunda si los resultados son demasiado amplios.',
+    'Retrouvez rapidement un mot, une expression ou un thème dans les prédications.':
+        'Encuentre rápidamente una palabra, una expresión o un tema en las predicaciones.',
+    'À quoi servent les soulignages ?': '¿Para qué sirven los subrayados?',
+    'Cette page rassemble tous les passages marqués pendant vos lectures.':
+        'Esta página reúne todos los pasajes marcados durante sus lecturas.',
+    'Retrouvez rapidement les passages importants que vous avez gardés.':
+        'Recupere rápidamente los pasajes importantes que guardó.',
+    'Filtrez par mot-clé dans le texte, le titre ou le commentaire.':
+        'Filtre por palabra clave en el texto, el título o el comentario.',
+    'Rouvrez le document exact ou exportez la liste en PDF.':
+        'Vuelva a abrir el documento exacto o exporte la lista en PDF.',
+    'Les soulignages se créent dans la vue de lecture, pas sur cette page.':
+        'Los subrayados se crean en la vista de lectura, no en esta página.',
+    'Revoyez tous les passages marqués pendant vos lectures.':
+        'Revise todos los pasajes marcados durante sus lecturas.',
+    'La Bible vous aide à ouvrir rapidement un chapitre dans la lecture, comparer les versions et retrouver un passage sans quitter votre préparation.':
+        'La Biblia le ayuda a abrir rápidamente un capítulo en la lectura, comparar versiones y encontrar un pasaje sin salir de su preparación.',
+    "Elle sert de point d'entrée vers la lecture biblique dans l'application.":
+        'Sirve como punto de entrada hacia la lectura bíblica en la aplicación.',
+    'Une fois le chapitre ouvert, vous profitez des outils de lecture du document.':
+        'Una vez abierto el capítulo, aprovecha las herramientas de lectura del documento.',
+    'Elle vous aide aussi à parcourir les livres, comparer les versions et lancer une recherche biblique dédiée.':
+        'También le ayuda a recorrer los libros, comparar versiones y lanzar una búsqueda bíblica dedicada.',
+    "C'est le chemin le plus direct pour ouvrir un livre ou un chapitre dans la vue de lecture.":
+        'Es el camino más directo para abrir un libro o un capítulo en la vista de lectura.',
+    'Utilisez cette page pour parcourir la Bible plus calmement.':
+        'Use esta página para recorrer la Biblia con más calma.',
+    'Utilisez la barre latérale pour ouvrir vite un chapitre. Utilisez cette page quand vous voulez explorer, comparer ou rechercher plus précisément.':
+        'Use la barra lateral para abrir rápido un capítulo. Use esta página cuando quiera explorar, comparar o buscar con más precisión.',
+    'Ce que cette fonction vous apporte': 'Lo que esta función le aporta',
+    'Pour commencer': 'Para empezar',
+    'Elle évite de refaire les mêmes recherches chaque fois que vous préparez un thème.':
+        'Evita repetir las mismas búsquedas cada vez que prepara un tema.',
+    'Elle garde ensemble vos meilleures références bibliques et vos passages de prédications.':
+        'Mantiene juntas sus mejores referencias bíblicas y sus pasajes de predicaciones.',
+    "Elle vous aide à construire un ordre clair pour l'étude, la prédication ou l'export PDF.":
+        'Le ayuda a construir un orden claro para el estudio, la predicación o la exportación en PDF.',
+    "Elle aide à organiser vos références dans un ordre utile pour l'étude, la prédication ou l'export PDF.":
+        'Ayuda a organizar sus referencias en un orden útil para el estudio, la predicación o la exportación en PDF.',
+    'Elle sert à développer votre pensée, vos plans et vos commentaires personnels.':
+        'Sirve para desarrollar su pensamiento, sus esquemas y sus comentarios personales.',
+    'Elle sert à développer vos idées, vos plans et vos commentaires personnels.':
+        'Sirve para desarrollar sus ideas, sus esquemas y sus comentarios personales.',
+    'Elle vous aide à garder vos idées de préparation dans un espace plus libre que les sujets.':
+        'Le ayuda a guardar sus ideas de preparación en un espacio más libre que los temas.',
+    'Elle vous offre un espace de préparation plus libre et plus personnel que les sujets.':
+        'Le ofrece un espacio de preparación más libre y más personal que los temas.',
+    'Elle peut aussi contenir des références vers la Bible ou les prédications pour retrouver la source plus tard.':
+        'También puede contener referencias hacia la Biblia o las predicaciones para encontrar la fuente más tarde.',
+    'Elle peut garder des références vers la Bible ou les prédications pour retrouver vos sources rapidement.':
+        'Puede guardar referencias hacia la Biblia o las predicaciones para encontrar sus fuentes rápidamente.',
+    'Elle vous permet de confirmer rapidement un passage, comparer des versets et garder la Bible dans votre flux de travail.':
+        'Le permite confirmar rápidamente un pasaje, comparar versículos y mantener la Biblia dentro de su flujo de trabajo.',
+    'Elle réunit la lecture, les versions bibliques et la recherche au même endroit.':
+        'Reúne la lectura, las versiones bíblicas y la búsqueda en un mismo lugar.',
+    'Sur cette page': 'En esta página',
+    "Elle permet d'écouter vos contenus au lieu de seulement les lire.":
+        'Permite escuchar sus contenidos en lugar de solo leerlos.',
+    'Elle est utile pour suivre un texte, relire pendant un déplacement ou continuer votre étude en audio.':
+        'Es útil para seguir un texto, repasar durante un desplazamiento o continuar su estudio en audio.',
+    "Elle contrôle aussi l'expérience de lecture: voix, vitesse, surlignage et comportement audio.":
+        'También controla la experiencia de escucha: voz, velocidad, resaltado y comportamiento de audio.',
+    "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
+        'El asistente puede ayudar a explorar un tema, encontrar referencias y comparar varios contenidos más rápido.',
+    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
+        'Esta pestaña determina si está disponible, qué servicio usa y en qué idioma trabaja.',
+    'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
+        'Puede elegir una solución local, en la nube o personalizada según sus necesidades.',
+    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
+        'Active el asistente para hacerlo disponible en la barra lateral.',
+    'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
+        'Sirve para encontrar rápidamente una palabra, un tema, un lugar o una expresión en las predicaciones.',
+    'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':
+        'Evita recorrer manualmente varios documentos cuando ya sabe lo que está buscando.',
+    'Elle vous ramène directement au paragraphe utile quand vous ouvrez un résultat.':
+        'Le lleva directamente al párrafo útil cuando abre un resultado.',
+    'Elle vous donne une vue unique de tous les passages importants que vous avez repérés.':
+        'Le ofrece una vista única de todos los pasajes importantes que ha marcado.',
+    'Elle aide à revoir vos découvertes sans devoir rouvrir chaque document un par un.':
+        'Ayuda a revisar sus hallazgos sin tener que reabrir cada documento uno por uno.',
+    'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
+        'También permite filtrar, reabrir la fuente exacta o exportar la lista en PDF.',
 };
 
 export default es;

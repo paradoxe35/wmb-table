@@ -10,6 +10,7 @@ import {
     Tooltip,
     Typography,
     message,
+    Space,
 } from 'antd';
 import {
     BgColorsOutlined,
@@ -33,6 +34,8 @@ import {
 } from '@renderer/hooks';
 import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
 import { HIGHLIGHT_EVENT } from '@renderer/utils/events';
+import { getHighlightsPageHelp } from './components/option-help-content';
+import OptionPageLayout from './components/option-page-layout';
 
 const { Text } = Typography;
 
@@ -241,35 +244,6 @@ function HighlightListItem({
     );
 }
 
-function HighlightsHeader({ total, onExportPdf }: { total: number; onExportPdf: () => void }) {
-    const { t } = useTranslation();
-
-    return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-            <BgColorsOutlined style={{ fontSize: 'var(--fs-2xl)' }} />
-            <Text strong style={{ fontSize: 'var(--fs-base)' }}>
-                {t('Soulignages')}
-            </Text>
-            {total > 0 && (
-                <>
-                    <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
-                        ({total})
-                    </Text>
-                    <Tooltip title={t('Exporter en PDF')}>
-                        <Button
-                            type="text"
-                            size="small"
-                            icon={<FilePdfOutlined />}
-                            onClick={onExportPdf}
-                            aria-label={t('Exporter en PDF')}
-                        />
-                    </Tooltip>
-                </>
-            )}
-        </div>
-    );
-}
-
 function EmptyState({ query }: { query: string }) {
     const { t } = useTranslation();
 
@@ -327,7 +301,7 @@ export default function Highlights() {
                 setLoading(false);
             }
         },
-        [contentLanguage],
+        [contentLanguage, t],
     );
 
     // Initial load
@@ -373,15 +347,18 @@ export default function Highlights() {
         [fetchPage, query],
     );
 
-    const handleDelete = useCallback(async (group: HighlightGroup) => {
-        try {
-            await window.api.highlights.delete(group.ids[0]);
-            window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
-            message.success(t('Soulignage supprimé'));
-        } catch {
-            message.error(t('Erreur lors de la suppression'));
-        }
-    }, []);
+    const handleDelete = useCallback(
+        async (group: HighlightGroup) => {
+            try {
+                await window.api.highlights.delete(group.ids[0]);
+                window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
+                message.success(t('Soulignage supprimé'));
+            } catch {
+                message.error(t('Erreur lors de la suppression'));
+            }
+        },
+        [t],
+    );
 
     const handleExportPdf = useCallback(async () => {
         try {
@@ -391,12 +368,38 @@ export default function Highlights() {
         } catch {
             message.error(t("Erreur lors de l'export PDF"));
         }
-    }, [contentLanguage]);
+    }, [contentLanguage, t]);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-            <div style={{ padding: '16px 12px 8px', flexShrink: 0 }}>
-                <HighlightsHeader total={total} onExportPdf={handleExportPdf} />
+        <OptionPageLayout
+            title={t('Soulignages')}
+            help={getHighlightsPageHelp(t)}
+            extra={
+                total > 0 ? (
+                    <Space size={4}>
+                        <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
+                            ({total})
+                        </Text>
+                        <Tooltip title={t('Exporter en PDF')}>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<FilePdfOutlined />}
+                                onClick={handleExportPdf}
+                                aria-label={t('Exporter en PDF')}
+                            />
+                        </Tooltip>
+                    </Space>
+                ) : null
+            }
+        >
+            <div
+                className="option-page-search-row"
+                style={{
+                    paddingBottom: 'var(--option-page-gap)',
+                    flexShrink: 0,
+                }}
+            >
                 <Input.Search
                     placeholder={t('Rechercher...')}
                     allowClear
@@ -446,6 +449,6 @@ export default function Highlights() {
                     </>
                 )}
             </div>
-        </div>
+        </OptionPageLayout>
     );
 }

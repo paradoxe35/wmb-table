@@ -841,6 +841,158 @@ const en: Record<string, string> = {
         'Automatically follows the appearance defined by your system.',
     'Utilise toujours le thème clair.': 'Always uses the light theme.',
     'Utilise toujours le thème sombre.': 'Always uses the dark theme.',
+
+    // ── Inline help ──
+    'Comprendre cette page': 'Understand this page',
+    'Regroupez vos versets et passages par thème.': 'Group your verses and passages by theme.',
+    'À quoi servent les sujets ?': 'What are subjects for?',
+    "Les sujets rassemblent des versets, passages de prédications et extraits de documents autour d'un même thème.":
+        'Subjects gather verses, sermon passages, and document excerpts around the same theme.',
+    'Créez un sujet pour chaque thème important que vous préparez.':
+        'Create one subject for each important theme you are preparing.',
+    'Ajoutez des références depuis la lecture ou depuis la Bible.':
+        'Add references from reading view or from the Bible.',
+    "Réorganisez les références dans l'ordre qui vous aide le mieux.":
+        'Reorder references in the way that helps you most.',
+    'Utilisez plutôt les notes pour écrire vos idées longues, vos plans et vos commentaires personnels.':
+        'Use notes instead for longer ideas, outlines, and personal comments.',
+    'Gardez vos plans, idées et références dans un seul endroit.':
+        'Keep your outlines, ideas, and references in one place.',
+    'À quoi servent les notes ?': 'What are notes for?',
+    'Les notes gardent vos idées, plans et repères de préparation dans un seul endroit.':
+        'Notes keep your ideas, outlines, and preparation markers in one place.',
+    'Créez une note par message, étude ou projet.':
+        'Create one note per sermon, study, or project.',
+    'Ajoutez des références vers la Bible ou les prédications pour retrouver la source plus tard.':
+        'Add references to the Bible or sermons so you can find the source later.',
+    'Utilisez les sujets pour classer des références, et les notes pour développer votre pensée.':
+        'Use subjects to organize references, and notes to develop your thinking.',
+    'Que fait cette page Bible ?': 'What does this Bible page do?',
+    'Cette page sert à lire la Bible, changer de version et rechercher des versets sans quitter votre préparation.':
+        'This page lets you read the Bible, switch versions, and search verses without leaving your preparation.',
+    'Page Bible': 'Bible page',
+    'Lisez un chapitre complet dans la zone principale.': 'Read a full chapter in the main area.',
+    'Changez ou téléchargez des versions bibliques.': 'Switch or download Bible versions.',
+    'Recherchez un mot ou une expression dans la Bible.':
+        'Search for a word or phrase in the Bible.',
+    'Bible dans la barre latérale': 'Bible in the sidebar',
+    'Le navigateur de droite est plus rapide et plus compact. Il sert surtout à ouvrir vite un livre ou un chapitre pendant une autre tâche.':
+        'The right-side browser is faster and more compact. It is mainly for quickly opening a book or chapter while doing something else.',
+    'Utilisez cette page quand vous voulez lire, comparer et chercher. Utilisez la barre latérale quand vous voulez juste ouvrir rapidement un passage.':
+        'Use this page when you want to read, compare, and search. Use the sidebar when you only want to open a passage quickly.',
+    'Lisez, recherchez et changez de version biblique depuis un seul écran.':
+        'Read, search, and switch Bible versions from one screen.',
+    'À quoi servent les réglages de Lecture audio ?': 'What are the Text-to-Speech settings for?',
+    'Cet onglet configure la voix qui lira vos prédications, chapitres bibliques et documents personnels.':
+        'This tab configures the voice that reads your sermons, Bible chapters, and personal documents.',
+    'Choisissez un fournisseur et une voix.': 'Choose a provider and a voice.',
+    'Testez la lecture et ajustez la vitesse.': 'Test playback and adjust the speed.',
+    "Réglez le surlignage, l'introduction et le cache audio.":
+        'Adjust highlighting, introduction, and audio cache.',
+    'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
+        'If you want something simple, keep the suggested provider and test a voice.',
+    "À quoi servent les réglages de l'assistant ?": 'What are the assistant settings for?',
+    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
+        'This tab enables the AI assistant and chooses how it responds in the application.',
+    "Activez ou masquez l'assistant dans la barre latérale.":
+        'Enable or hide the assistant in the sidebar.',
+    'Sélectionnez un fournisseur local, cloud ou personnalisé.':
+        'Select a local, cloud, or custom provider.',
+    'Définissez la langue et le modèle utilisés pour les réponses.':
+        'Set the language and model used for responses.',
+    'Comment fonctionne la recherche ?': 'How does search work?',
+    'Cette page recherche dans les prédications de votre bibliothèque et vous ramène directement au bon passage.':
+        'This page searches through the sermons in your library and takes you straight to the right passage.',
+    'Entrez au moins trois caractères pour lancer une recherche.':
+        'Enter at least three characters to start a search.',
+    'Choisissez le mode selon que vous cherchez un mot, plusieurs mots ou une phrase exacte.':
+        'Choose the mode depending on whether you are looking for one word, several words, or an exact phrase.',
+    'Ouvrez un résultat pour aller directement au paragraphe correspondant.':
+        'Open a result to jump directly to the matching paragraph.',
+    'Commencez avec un mot simple, puis ajoutez un deuxième mot si les résultats sont trop larges.':
+        'Start with a simple word, then add a second word if the results are too broad.',
+    'Retrouvez rapidement un mot, une expression ou un thème dans les prédications.':
+        'Quickly find a word, phrase, or theme in sermons.',
+    'À quoi servent les soulignages ?': 'What are highlights for?',
+    'Cette page rassemble tous les passages marqués pendant vos lectures.':
+        'This page gathers all passages marked during your reading.',
+    'Retrouvez rapidement les passages importants que vous avez gardés.':
+        'Quickly find the important passages you kept.',
+    'Filtrez par mot-clé dans le texte, le titre ou le commentaire.':
+        'Filter by keyword in the text, title, or comment.',
+    'Rouvrez le document exact ou exportez la liste en PDF.':
+        'Reopen the exact document or export the list as PDF.',
+    'Les soulignages se créent dans la vue de lecture, pas sur cette page.':
+        'Highlights are created in reading view, not on this page.',
+    'Revoyez tous les passages marqués pendant vos lectures.':
+        'Review all passages marked during your reading.',
+    'La Bible vous aide à ouvrir rapidement un chapitre dans la lecture, comparer les versions et retrouver un passage sans quitter votre préparation.':
+        'The Bible helps you quickly open a chapter in reading view, compare versions, and find a passage without leaving your preparation.',
+    "Elle sert de point d'entrée vers la lecture biblique dans l'application.":
+        'It serves as an entry point to Bible reading in the application.',
+    'Une fois le chapitre ouvert, vous profitez des outils de lecture du document.':
+        'Once the chapter is open, you benefit from the document reading tools.',
+    'Elle vous aide aussi à parcourir les livres, comparer les versions et lancer une recherche biblique dédiée.':
+        'It also helps you browse books, compare versions, and run a dedicated Bible search.',
+    "C'est le chemin le plus direct pour ouvrir un livre ou un chapitre dans la vue de lecture.":
+        'It is the most direct path to open a book or chapter in reading view.',
+    'Utilisez cette page pour parcourir la Bible plus calmement.':
+        'Use this page to browse the Bible more deliberately.',
+    'Utilisez la barre latérale pour ouvrir vite un chapitre. Utilisez cette page quand vous voulez explorer, comparer ou rechercher plus précisément.':
+        'Use the sidebar to quickly open a chapter. Use this page when you want to explore, compare, or search more precisely.',
+    'Ce que cette fonction vous apporte': 'What this feature gives you',
+    'Pour commencer': 'To get started',
+    'Elle évite de refaire les mêmes recherches chaque fois que vous préparez un thème.':
+        'It helps you avoid repeating the same searches every time you prepare a theme.',
+    'Elle garde ensemble vos meilleures références bibliques et vos passages de prédications.':
+        'It keeps your best Bible references and sermon passages together.',
+    "Elle vous aide à construire un ordre clair pour l'étude, la prédication ou l'export PDF.":
+        'It helps you build a clear order for study, preaching, or PDF export.',
+    "Elle aide à organiser vos références dans un ordre utile pour l'étude, la prédication ou l'export PDF.":
+        'It helps organize your references in an order that is useful for study, preaching, or PDF export.',
+    'Elle sert à développer votre pensée, vos plans et vos commentaires personnels.':
+        'It is meant for developing your thoughts, outlines, and personal comments.',
+    'Elle sert à développer vos idées, vos plans et vos commentaires personnels.':
+        'It is meant for developing your ideas, outlines, and personal comments.',
+    'Elle vous aide à garder vos idées de préparation dans un espace plus libre que les sujets.':
+        'It helps you keep your preparation ideas in a more flexible space than subjects.',
+    'Elle vous offre un espace de préparation plus libre et plus personnel que les sujets.':
+        'It gives you a preparation space that is freer and more personal than subjects.',
+    'Elle peut aussi contenir des références vers la Bible ou les prédications pour retrouver la source plus tard.':
+        'It can also contain references to the Bible or sermons so you can find the source later.',
+    'Elle peut garder des références vers la Bible ou les prédications pour retrouver vos sources rapidement.':
+        'It can keep references to the Bible or sermons so you can find your sources quickly.',
+    'Elle vous permet de confirmer rapidement un passage, comparer des versets et garder la Bible dans votre flux de travail.':
+        'It lets you quickly confirm a passage, compare verses, and keep the Bible in your workflow.',
+    'Elle réunit la lecture, les versions bibliques et la recherche au même endroit.':
+        'It brings reading, Bible versions, and search together in one place.',
+    'Sur cette page': 'On this page',
+    "Elle permet d'écouter vos contenus au lieu de seulement les lire.":
+        'It lets you listen to your content instead of only reading it.',
+    'Elle est utile pour suivre un texte, relire pendant un déplacement ou continuer votre étude en audio.':
+        'It is useful for following a text, reviewing while traveling, or continuing your study in audio.',
+    "Elle contrôle aussi l'expérience de lecture: voix, vitesse, surlignage et comportement audio.":
+        'It also controls the listening experience: voice, speed, highlighting, and audio behavior.',
+    "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
+        'The assistant can help explore a theme, find references, and compare multiple contents faster.',
+    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
+        'This tab determines whether it is available, which service it uses, and which language it works in.',
+    'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
+        'You can choose a local, cloud, or custom solution depending on your needs.',
+    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
+        'Enable the assistant to make it available in the sidebar.',
+    'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
+        'It is used to quickly find a word, theme, place, or expression in sermons.',
+    'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':
+        'It avoids manually browsing multiple documents when you already know what you are looking for.',
+    'Elle vous ramène directement au paragraphe utile quand vous ouvrez un résultat.':
+        'It takes you directly to the useful paragraph when you open a result.',
+    'Elle vous donne une vue unique de tous les passages importants que vous avez repérés.':
+        'It gives you a single view of all the important passages you marked.',
+    'Elle aide à revoir vos découvertes sans devoir rouvrir chaque document un par un.':
+        'It helps you review your findings without reopening every document one by one.',
+    'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
+        'It also lets you filter, reopen the exact source, or export the list as PDF.',
 };
 
 export default en;

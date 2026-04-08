@@ -5,13 +5,14 @@ import type { TantivySearchResult, Suggestions } from '@shared/types';
 import { useAppStore, useSearchStore } from '@renderer/stores';
 import SearchInput from './search-input';
 import SearchResultList from './search-result-list';
+import { getSearchPageHelp } from '../components/option-help-content';
+import OptionPageLayout from '../components/option-page-layout';
 
 function useSearch() {
     const { t } = useTranslation();
     const lastSearch = useRef('');
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<TantivySearchResult | null>(null);
-    const hasNewResult = useRef(0);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const searchMode = useSearchStore((s) => s.searchMode);
     const isFirstRender = useRef(true);
@@ -26,7 +27,6 @@ function useSearch() {
                 .searchText(contentLanguage, term.trim(), page, searchMode)
                 .then((datas) => {
                     if (gen !== generationRef.current) return;
-                    hasNewResult.current += 1;
                     setResults(datas);
                 })
                 .catch(() => {
@@ -37,7 +37,7 @@ function useSearch() {
                     if (gen === generationRef.current) setLoading(false);
                 });
         },
-        [contentLanguage, searchMode],
+        [contentLanguage, searchMode, t],
     );
 
     const onSearch = useCallback(
@@ -49,7 +49,7 @@ function useSearch() {
             lastSearch.current = value;
             fetchResults(value, 1);
         },
-        [fetchResults],
+        [fetchResults, t],
     );
 
     // Re-search when mode changes (skip initial render)
@@ -61,7 +61,7 @@ function useSearch() {
         if (lastSearch.current.trim().length >= 3) {
             fetchResults(lastSearch.current, 1);
         }
-    }, [searchMode]);
+    }, [fetchResults, searchMode]);
 
     const onPageChange = useCallback(
         (page: number) => {
@@ -80,44 +80,38 @@ function useSearch() {
                     message.error(t('Erreur lors de la recherche'));
                 });
         },
-        [contentLanguage, searchMode],
+        [contentLanguage, searchMode, t],
     );
 
-    return { onSearch, loading, results, onPageChange, lastSearch, hasNewResult };
+    return { onSearch, loading, results, onPageChange, lastSearch };
 }
 
 export default function Search() {
+    const { t } = useTranslation();
     const suggestions = useRef<Suggestions[]>([]);
-    const { loading, onSearch, results, lastSearch, hasNewResult, onPageChange } = useSearch();
+    const { loading, onSearch, results, lastSearch, onPageChange } = useSearch();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
 
     useEffect(() => {
-        const can =
-            lastSearch.current.trim().length > 0 &&
-            !!results &&
-            results.total > 0 &&
-            results.totalIsExact;
+        const query = results?.query?.trim() ?? lastSearch.current.trim();
+        const can = query.length > 0 && !!results && results.total > 0 && results.totalIsExact;
 
         if (can && contentLanguage) {
-            window.api.search.addSuggestion(
-                lastSearch.current.trim(),
-                results!.total,
-                contentLanguage,
-            );
+            window.api.search.addSuggestion(query, results.total, contentLanguage);
         }
         if (contentLanguage) {
             window.api.search
                 .getSuggestions(contentLanguage)
                 .then((s) => (suggestions.current = s));
         }
-    }, [hasNewResult.current, contentLanguage]);
+    }, [contentLanguage, lastSearch, results]);
 
     return (
-        <>
-            <div className="flex-center flex">
+        <OptionPageLayout title={t('Recherche')} help={getSearchPageHelp(t)}>
+            <div className="option-page-search-row">
                 <SearchInput onSearch={onSearch} loading={loading} suggestions={suggestions} />
             </div>
             <SearchResultList results={results} onPageChange={onPageChange} />
-        </>
+        </OptionPageLayout>
     );
 }

@@ -74,6 +74,8 @@
     // Misc
     --smart-editable-u-bg: #6d7275;
     --panel-active-gradient: rgba(255, 255, 255, 0.4);
+    --option-page-gap: 8px;
+    --option-page-inline-padding: 12px;
 }
 
 [data-theme='dark'] {
@@ -206,6 +208,8 @@ body {
 .app-header {
     display: flex;
     justify-content: space-between;
+    position: relative;
+    z-index: 1100;
     -webkit-app-region: drag;
 
     * {
@@ -515,6 +519,86 @@ body {
 
 .content-description-2 {
     font-size: var(--fs-rel-5xl);
+}
+
+// ---------------------------------------------------------------------------
+// Option page headers & inline help
+// ---------------------------------------------------------------------------
+.option-page-layout {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.option-page-layout__body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.option-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.option-page-header__title-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.option-page-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.inline-help-trigger.ant-btn {
+    color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.65));
+}
+
+.inline-help-trigger.ant-btn:hover {
+    color: var(--ant-color-primary, #1677ff);
+    background: var(--ant-color-fill-secondary, rgba(0, 0, 0, 0.06));
+}
+
+.inline-help-card {
+    max-width: 340px;
+}
+
+.inline-help-card__summary {
+    display: block;
+    margin-top: 4px;
+    margin-bottom: 10px;
+}
+
+.inline-help-card__section + .inline-help-card__section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--ant-color-split, rgba(5, 5, 5, 0.06));
+}
+
+.inline-help-card__list {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+.inline-help-card__list li + li {
+    margin-top: 4px;
+}
+
+.inline-help-card__footer {
+    display: block;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--ant-color-split, rgba(5, 5, 5, 0.06));
+    color: var(--ant-color-text-secondary, rgba(0, 0, 0, 0.65));
 }
 
 // ---------------------------------------------------------------------------
@@ -1006,11 +1090,14 @@ body {
     display: flex;
     gap: 8px;
     width: 100%;
-    max-width: 500px;
 }
 
 .search-mode-select {
     min-width: 160px;
+}
+
+.option-page-search-row {
+    width: 100%;
 }
 
 // ---------------------------------------------------------------------------
