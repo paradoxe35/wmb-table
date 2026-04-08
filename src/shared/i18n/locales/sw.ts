@@ -880,19 +880,18 @@ const sw: Record<string, string> = {
     'Utilisez les sujets pour classer des références, et les notes pour développer votre pensée.':
         'Tumia mada kupanga marejeo, na vidokezo kukuza mawazo yako.',
     'Que fait cette page Bible ?': 'Ukurasa huu wa Biblia hufanya nini?',
-    'Cette page sert à lire la Bible, changer de version et rechercher des versets sans quitter votre préparation.':
-        'Ukurasa huu hukuwezesha kusoma Biblia, kubadili toleo na kutafuta mistari bila kuondoka kwenye maandalizi yako.',
-    'Page Bible': 'Ukurasa wa Biblia',
-    'Lisez un chapitre complet dans la zone principale.': 'Soma sura kamili katika eneo kuu.',
-    'Changez ou téléchargez des versions bibliques.': 'Badili au pakua matoleo ya Biblia.',
-    'Recherchez un mot ou une expression dans la Bible.': 'Tafuta neno au kifungu ndani ya Biblia.',
-    'Bible dans la barre latérale': 'Biblia kwenye upau wa pembeni',
-    'Le navigateur de droite est plus rapide et plus compact. Il sert surtout à ouvrir vite un livre ou un chapitre pendant une autre tâche.':
-        'Kivinjari cha upande wa kulia ni cha haraka na kifupi zaidi. Hutumika hasa kufungua kitabu au sura upesi wakati unaendelea na kazi nyingine.',
-    'Utilisez cette page quand vous voulez lire, comparer et chercher. Utilisez la barre latérale quand vous voulez juste ouvrir rapidement un passage.':
-        'Tumia ukurasa huu unapotaka kusoma, kulinganisha na kutafuta. Tumia upau wa pembeni unapotaka tu kufungua kifungu kwa haraka.',
-    'Lisez, recherchez et changez de version biblique depuis un seul écran.':
-        'Soma, tafuta na ubadilishe toleo la Biblia kutoka skrini moja.',
+    'Cette page sert surtout à rechercher dans la Bible et à gérer les versions bibliques.':
+        'Ukurasa huu hutumika hasa kutafuta ndani ya Biblia na kusimamia matoleo ya Biblia.',
+    'Retrouvez vite un mot, une expression ou un passage biblique.':
+        'Pata haraka neno, kifungu au sehemu ya Biblia.',
+    'Filtrez la recherche par testament pour aller plus vite.':
+        'Chuja utafutaji kwa agano ili kufika haraka zaidi.',
+    'Comparez ou téléchargez des versions bibliques selon vos besoins.':
+        'Linganisha au pakua matoleo ya Biblia kulingana na mahitaji yako.',
+    'Par rapport à la Bible dans la barre latérale':
+        'Kwa kulinganisha na Biblia kwenye upau wa pembeni',
+    'La barre latérale est plus adaptée pour ouvrir et lire un chapitre. Cette page est plus utile pour la recherche et la gestion des versions.':
+        'Upau wa pembeni unafaa zaidi kwa kufungua na kusoma sura. Ukurasa huu ni wa msaada zaidi kwa utafutaji na usimamizi wa matoleo.',
     'À quoi servent les réglages de Lecture audio ?':
         'Mipangilio ya usomaji wa sauti hutumika kwa nini?',
     'Cet onglet configure la voix qui lira vos prédications, chapitres bibliques et documents personnels.':
@@ -976,7 +975,6 @@ const sw: Record<string, string> = {
         'Kinakuwezesha kuthibitisha kifungu kwa haraka, kulinganisha mistari na kuweka Biblia ndani ya mtiririko wako wa kazi.',
     'Elle réunit la lecture, les versions bibliques et la recherche au même endroit.':
         'Kinakusanya usomaji, matoleo ya Biblia na utafutaji mahali pamoja.',
-    'Sur cette page': 'Katika ukurasa huu',
     "Elle permet d'écouter vos contenus au lieu de seulement les lire.":
         'Kinakuruhusu kusikiliza maudhui yako badala ya kuya­soma tu.',
     'Elle est utile pour suivre un texte, relire pendant un déplacement ou continuer votre étude en audio.':

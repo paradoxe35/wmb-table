@@ -27,20 +27,22 @@ export default function Bible() {
     return (
         <LoadByVisibility>
             <OptionPageLayout title={t('Bible')} help={getBiblePageHelp(t)}>
-                <Menu
-                    mode="horizontal"
-                    selectedKeys={[menu]}
-                    onClick={(e) => setMenu(e.key)}
-                    items={menuItems}
-                    style={{ marginBottom: 12 }}
-                />
-                <BibleVersionSelector />
-                {menu === 'bible' && <BibleContent verseMetaContent={true} />}
-                {menu === 'search' && (
-                    <div className="bible-search-content">
-                        <SearchContent />
-                    </div>
-                )}
+                <div className="bible-option-page">
+                    <Menu
+                        mode="horizontal"
+                        selectedKeys={[menu]}
+                        onClick={(e) => setMenu(e.key)}
+                        items={menuItems}
+                        style={{ marginBottom: 7 }}
+                    />
+                    <BibleVersionSelector />
+                    {menu === 'bible' && <BibleContent verseMetaContent={true} />}
+                    {menu === 'search' && (
+                        <div className="bible-search-content">
+                            <SearchContent />
+                        </div>
+                    )}
+                </div>
             </OptionPageLayout>
         </LoadByVisibility>
     );

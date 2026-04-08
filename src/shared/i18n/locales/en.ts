@@ -875,20 +875,17 @@ const en: Record<string, string> = {
     'Utilisez les sujets pour classer des références, et les notes pour développer votre pensée.':
         'Use subjects to organize references, and notes to develop your thinking.',
     'Que fait cette page Bible ?': 'What does this Bible page do?',
-    'Cette page sert à lire la Bible, changer de version et rechercher des versets sans quitter votre préparation.':
-        'This page lets you read the Bible, switch versions, and search verses without leaving your preparation.',
-    'Page Bible': 'Bible page',
-    'Lisez un chapitre complet dans la zone principale.': 'Read a full chapter in the main area.',
-    'Changez ou téléchargez des versions bibliques.': 'Switch or download Bible versions.',
-    'Recherchez un mot ou une expression dans la Bible.':
-        'Search for a word or phrase in the Bible.',
-    'Bible dans la barre latérale': 'Bible in the sidebar',
-    'Le navigateur de droite est plus rapide et plus compact. Il sert surtout à ouvrir vite un livre ou un chapitre pendant une autre tâche.':
-        'The right-side browser is faster and more compact. It is mainly for quickly opening a book or chapter while doing something else.',
-    'Utilisez cette page quand vous voulez lire, comparer et chercher. Utilisez la barre latérale quand vous voulez juste ouvrir rapidement un passage.':
-        'Use this page when you want to read, compare, and search. Use the sidebar when you only want to open a passage quickly.',
-    'Lisez, recherchez et changez de version biblique depuis un seul écran.':
-        'Read, search, and switch Bible versions from one screen.',
+    'Cette page sert surtout à rechercher dans la Bible et à gérer les versions bibliques.':
+        'This page is mainly for searching the Bible and managing Bible versions.',
+    'Retrouvez vite un mot, une expression ou un passage biblique.':
+        'Quickly find a word, phrase, or Bible passage.',
+    'Filtrez la recherche par testament pour aller plus vite.':
+        'Filter search by testament to get there faster.',
+    'Comparez ou téléchargez des versions bibliques selon vos besoins.':
+        'Compare or download Bible versions according to your needs.',
+    'Par rapport à la Bible dans la barre latérale': 'Compared with the Bible in the sidebar',
+    'La barre latérale est plus adaptée pour ouvrir et lire un chapitre. Cette page est plus utile pour la recherche et la gestion des versions.':
+        'The sidebar is better suited to opening and reading a chapter. This page is more useful for search and version management.',
     'À quoi servent les réglages de Lecture audio ?': 'What are the Text-to-Speech settings for?',
     'Cet onglet configure la voix qui lira vos prédications, chapitres bibliques et documents personnels.':
         'This tab configures the voice that reads your sermons, Bible chapters, and personal documents.',
@@ -971,7 +968,6 @@ const en: Record<string, string> = {
         'It lets you quickly confirm a passage, compare verses, and keep the Bible in your workflow.',
     'Elle réunit la lecture, les versions bibliques et la recherche au même endroit.':
         'It brings reading, Bible versions, and search together in one place.',
-    'Sur cette page': 'On this page',
     "Elle permet d'écouter vos contenus au lieu de seulement les lire.":
         'It lets you listen to your content instead of only reading it.',
     'Elle est utile pour suivre un texte, relire pendant un déplacement ou continuer votre étude en audio.':

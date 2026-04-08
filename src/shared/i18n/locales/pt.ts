@@ -882,21 +882,17 @@ const pt: Record<string, string> = {
     'Utilisez les sujets pour classer des références, et les notes pour développer votre pensée.':
         'Use os assuntos para organizar referências e as notas para desenvolver seu pensamento.',
     'Que fait cette page Bible ?': 'O que faz esta página da Bíblia?',
-    'Cette page sert à lire la Bible, changer de version et rechercher des versets sans quitter votre préparation.':
-        'Esta página serve para ler a Bíblia, mudar de versão e pesquisar versículos sem sair da sua preparação.',
-    'Page Bible': 'Página Bíblia',
-    'Lisez un chapitre complet dans la zone principale.':
-        'Leia um capítulo completo na área principal.',
-    'Changez ou téléchargez des versions bibliques.': 'Mude ou baixe versões bíblicas.',
-    'Recherchez un mot ou une expression dans la Bible.':
-        'Pesquise uma palavra ou expressão na Bíblia.',
-    'Bible dans la barre latérale': 'Bíblia na barra lateral',
-    'Le navigateur de droite est plus rapide et plus compact. Il sert surtout à ouvrir vite un livre ou un chapitre pendant une autre tâche.':
-        'O navegador da direita é mais rápido e mais compacto. Ele serve principalmente para abrir rápido um livro ou capítulo enquanto você faz outra tarefa.',
-    'Utilisez cette page quand vous voulez lire, comparer et chercher. Utilisez la barre latérale quand vous voulez juste ouvrir rapidement un passage.':
-        'Use esta página quando quiser ler, comparar e pesquisar. Use a barra lateral quando quiser apenas abrir uma passagem rapidamente.',
-    'Lisez, recherchez et changez de version biblique depuis un seul écran.':
-        'Leia, pesquise e mude de versão bíblica em uma única tela.',
+    'Cette page sert surtout à rechercher dans la Bible et à gérer les versions bibliques.':
+        'Esta página serve principalmente para pesquisar na Bíblia e gerenciar versões bíblicas.',
+    'Retrouvez vite un mot, une expression ou un passage biblique.':
+        'Encontre rapidamente uma palavra, uma expressão ou uma passagem bíblica.',
+    'Filtrez la recherche par testament pour aller plus vite.':
+        'Filtre a pesquisa por testamento para ir mais rápido.',
+    'Comparez ou téléchargez des versions bibliques selon vos besoins.':
+        'Compare ou baixe versões bíblicas conforme suas necessidades.',
+    'Par rapport à la Bible dans la barre latérale': 'Em comparação com a Bíblia na barra lateral',
+    'La barre latérale est plus adaptée pour ouvrir et lire un chapitre. Cette page est plus utile pour la recherche et la gestion des versions.':
+        'A barra lateral é mais adequada para abrir e ler um capítulo. Esta página é mais útil para pesquisa e gerenciamento de versões.',
     'À quoi servent les réglages de Lecture audio ?':
         'Para que servem as configurações de Leitura em áudio?',
     'Cet onglet configure la voix qui lira vos prédications, chapitres bibliques et documents personnels.':
@@ -981,7 +977,6 @@ const pt: Record<string, string> = {
         'Ela permite confirmar rapidamente uma passagem, comparar versículos e manter a Bíblia no seu fluxo de trabalho.',
     'Elle réunit la lecture, les versions bibliques et la recherche au même endroit.':
         'Ela reúne leitura, versões bíblicas e pesquisa no mesmo lugar.',
-    'Sur cette page': 'Nesta página',
     "Elle permet d'écouter vos contenus au lieu de seulement les lire.":
         'Ela permite ouvir seus conteúdos em vez de apenas lê-los.',
     'Elle est utile pour suivre un texte, relire pendant un déplacement ou continuer votre étude en audio.':

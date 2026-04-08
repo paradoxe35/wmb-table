@@ -632,6 +632,10 @@ body {
 // ---------------------------------------------------------------------------
 // Bible
 // ---------------------------------------------------------------------------
+.bible-option-page {
+    padding-bottom: var(--option-page-inline-padding);
+}
+
 .bible-version-bar {
     padding: 8px 0;
     margin-bottom: 4px;

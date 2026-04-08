@@ -65,34 +65,22 @@ export function getBiblePageHelp(t: TFunction): InlineHelpContent {
     return {
         title: t('Que fait cette page Bible ?'),
         summary: t(
-            'La Bible vous aide à ouvrir rapidement un chapitre dans la lecture, comparer les versions et retrouver un passage sans quitter votre préparation.',
+            'Cette page sert surtout à rechercher dans la Bible et à gérer les versions bibliques.',
         ),
         sections: [
             {
                 title: t('Ce que cette fonction vous apporte'),
                 items: [
-                    t("Elle sert de point d'entrée vers la lecture biblique dans l'application."),
-                    t(
-                        'Une fois le chapitre ouvert, vous profitez des outils de lecture du document.',
-                    ),
-                    t(
-                        'Elle vous aide aussi à parcourir les livres, comparer les versions et lancer une recherche biblique dédiée.',
-                    ),
+                    t('Retrouvez vite un mot, une expression ou un passage biblique.'),
+                    t('Filtrez la recherche par testament pour aller plus vite.'),
+                    t('Comparez ou téléchargez des versions bibliques selon vos besoins.'),
                 ],
             },
             {
-                title: t('Bible dans la barre latérale'),
+                title: t('Par rapport à la Bible dans la barre latérale'),
                 description: t(
-                    "C'est le chemin le plus direct pour ouvrir un livre ou un chapitre dans la vue de lecture.",
+                    'La barre latérale est plus adaptée pour ouvrir et lire un chapitre. Cette page est plus utile pour la recherche et la gestion des versions.',
                 ),
-            },
-            {
-                title: t('Page Bible'),
-                items: [
-                    t('Utilisez cette page pour parcourir la Bible plus calmement.'),
-                    t('Changez ou téléchargez des versions bibliques.'),
-                    t('Recherchez un mot ou une expression dans la Bible.'),
-                ],
             },
         ],
     };
