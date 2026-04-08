@@ -395,6 +395,31 @@ describe('ai-chat.store queue behavior', () => {
         expect(store.getState().queuedMessagesByConversation['conv-1']).toBeUndefined();
     });
 
+    it('does not reload messages when the already active conversation is clicked again', async () => {
+        const getMessagesImpl = vi.fn(async () => []);
+        const { store } = await createHarness({
+            getMessagesImpl,
+        });
+
+        store.setState({
+            activeConversationId: 'conv-1',
+            messagesByConversation: {
+                'conv-1': [
+                    createMessage({
+                        id: 'user-existing',
+                        conversationId: 'conv-1',
+                        role: 'user',
+                        content: 'already loaded',
+                    }),
+                ],
+            },
+        });
+
+        await store.getState().selectConversation('conv-1');
+
+        expect(getMessagesImpl).not.toHaveBeenCalled();
+    });
+
     it('keeps the local assistant placeholder when conversation history finishes loading after send', async () => {
         const deferredMessages = createDeferred<AiMessage[]>();
         const conversation = createConversation({ id: 'conv-2', title: 'Second' });

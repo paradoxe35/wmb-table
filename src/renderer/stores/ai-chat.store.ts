@@ -537,6 +537,15 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     selectConversation: async (conversationId) => {
+        const state = get();
+        const alreadyActive = state.activeConversationId === conversationId;
+        const alreadyLoaded = conversationId in state.messagesByConversation;
+        const alreadyLoading = conversationId in state.loadingConversations;
+
+        if (alreadyActive && (alreadyLoaded || alreadyLoading)) {
+            return;
+        }
+
         set((state) => ({
             activeConversationId: conversationId,
             loadingConversations: {
