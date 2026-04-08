@@ -39,6 +39,15 @@ jobs:
               working-directory: tmp/isar-to-sqlite
               run: dart run build_runner build --delete-conflicting-outputs
 
+            - name: Download libisar runtime
+              working-directory: tmp/isar-to-sqlite
+              run: |
+                  if [ ! -f bin/libisar.so ]; then
+                    curl -sSL \
+                      -o bin/libisar.so \
+                      https://github.com/isar/isar/releases/download/3.1.0%2B1/libisar_linux_x64.so
+                  fi
+
             - name: Format check tool
               working-directory: tmp/isar-to-sqlite
               run: |
