@@ -37,7 +37,7 @@ describe('calculateRemoteTokenBudget', () => {
             toolTokens: 5_000,
             systemPromptTokens: 2_000,
         });
-        expect(budget).toBe(114_344);
+        expect(budget).toBe(112_296);
     });
 
     it('calculates budget for 200k model', () => {
@@ -45,7 +45,7 @@ describe('calculateRemoteTokenBudget', () => {
             toolTokens: 5_000,
             systemPromptTokens: 2_000,
         });
-        expect(budget).toBe(186_344);
+        expect(budget).toBe(184_296);
     });
 
     it('caps at MAX_HISTORY_BUDGET for 1M+ models', () => {

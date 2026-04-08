@@ -27,6 +27,7 @@ const { GenerationRunnerImpl } = await import('@main/services/ai/runners/generat
 describe('GenerationRunnerImpl', () => {
     it('appends a truncation notice when the stream finishes because of length', async () => {
         const browserWindow = {} as never;
+        const dispatchTextDelta = vi.fn();
         streamTextMock.mockReturnValue({
             fullStream: (async function* () {
                 yield { type: 'finish-step', finishReason: 'length' };
@@ -37,21 +38,21 @@ describe('GenerationRunnerImpl', () => {
         await runner.run({
             browserWindow,
             conversationId: 'conv-1',
+            generationId: 'gen-1',
             assistantMessageId: 'assistant-1',
             model: {} as never,
             systemPrompt: 'system',
             history: [],
             tools: {},
             abortSignal: new AbortController().signal,
+            isCurrentRun: vi.fn(() => true),
+            dispatchTextDelta,
             contextWindow: 16_000,
             toolTokens: 5_000,
             systemPromptTokens: 2_000,
         });
 
-        expect(dispatchTextDeltaMock).toHaveBeenCalledWith(
-            browserWindow,
-            'conv-1',
-            'assistant-1',
+        expect(dispatchTextDelta).toHaveBeenCalledWith(
             expect.stringContaining('Response truncated due to length limit'),
         );
     });
