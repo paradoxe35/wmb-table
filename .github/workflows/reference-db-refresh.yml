@@ -23,6 +23,8 @@ jobs:
             PR_TOKEN: ${{ secrets.REFERENCE_DB_PR_TOKEN != '' && secrets.REFERENCE_DB_PR_TOKEN || github.token }}
         steps:
             - uses: actions/checkout@v4
+              with:
+                  ref: main
 
             - uses: dart-lang/setup-dart@v1
 
@@ -59,7 +61,24 @@ jobs:
               run: dart analyze
 
             - name: Download latest Isar snapshot
-              run: bash scripts/extract-msix-resources.sh tmp/msix-out
+              run: |
+                  set +e
+                  bash scripts/extract-msix-resources.sh tmp/msix-out
+                  extract_exit=$?
+                  set -e
+
+                  if [ "${extract_exit}" -ne 0 ]; then
+                    echo "Failed to download or extract the latest Microsoft Store package." >&2
+                    echo "The upstream Store endpoint or rg-adguard bridge may be blocked, rate-limited, or temporarily unavailable." >&2
+                    echo "You can reproduce locally with: bash scripts/extract-msix-resources.sh tmp/msix-out" >&2
+                    exit "${extract_exit}"
+                  fi
+
+                  if [ ! -f tmp/msix-out/db.isar ]; then
+                    echo "Extraction completed but tmp/msix-out/db.isar was not produced." >&2
+                    echo "The package layout may have changed and the extractor script likely needs an update." >&2
+                    exit 1
+                  fi
 
             - name: Compare current SQLite against latest Isar
               id: compare
@@ -159,6 +178,8 @@ jobs:
               if: steps.compare.outputs.has_changes == 'true'
               run: |
                   mkdir -p .github/reference-db-refresh
+                  refresh_date="$(date -u +%F)"
+                  echo "REFRESH_DATE=${refresh_date}" >> "${GITHUB_ENV}"
                   cp tmp/isar-to-sqlite/${REPORT_DIR}/summary.md .github/reference-db-refresh/latest-summary.md
                   {
                     echo "# Automated reference database refresh"
@@ -179,8 +200,9 @@ jobs:
               with:
                   token: ${{ env.PR_TOKEN }}
                   commit-message: 'chore: refresh reference database'
-                  title: 'chore: refresh reference database'
+                  title: 'chore: refresh reference database (${{ env.REFRESH_DATE }})'
                   branch: ${{ env.REFRESH_BRANCH }}
+                  base: main
                   delete-branch: true
                   labels: |
                       automated
