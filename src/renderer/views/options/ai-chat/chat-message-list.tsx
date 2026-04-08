@@ -40,7 +40,7 @@ const markdownComponents = {
 };
 
 const MAX_REASONING_LINES = 50;
-const LOAD_OLDER_THRESHOLD_PX = 120;
+const LOAD_OLDER_THRESHOLD_PX = 160;
 
 function ReasoningBlock({ messageId }: { messageId: string }) {
     const { t } = useTranslation();

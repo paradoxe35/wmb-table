@@ -519,6 +519,7 @@ describe('ai-chat.store queue behavior', () => {
 
     it('prepends older messages when the user requests more history', async () => {
         const conversation = createConversation({ id: 'conv-2', title: 'Paged' });
+        const pageSize = AI_MESSAGE_HISTORY_PAGE_SIZE;
         const allMessages = Array.from({ length: 120 }, (_, index) =>
             createMessage({
                 id: `msg-${index + 1}`,
@@ -531,27 +532,50 @@ describe('ai-chat.store queue behavior', () => {
         const { store, getMessagesPageMock } = await createHarness({
             getMessagesPageImpl: async (request) => {
                 if (request.loadedCount === 0) {
-                    return createHistoryPage(allMessages.slice(70), {
-                        loadedCount: 50,
+                    return createHistoryPage(allMessages.slice(allMessages.length - pageSize), {
+                        loadedCount: pageSize,
                         totalCount: 120,
                         hasMore: true,
                     });
                 }
 
-                if (request.loadedCount === 50) {
-                    return createHistoryPage(allMessages.slice(20, 70), {
-                        loadedCount: 100,
-                        totalCount: 120,
-                        hasMore: true,
-                    });
+                if (request.loadedCount === pageSize) {
+                    return createHistoryPage(
+                        allMessages.slice(
+                            allMessages.length - pageSize * 2,
+                            allMessages.length - pageSize,
+                        ),
+                        {
+                            loadedCount: pageSize * 2,
+                            totalCount: 120,
+                            hasMore: true,
+                        },
+                    );
                 }
 
-                if (request.loadedCount === 100) {
-                    return createHistoryPage(allMessages.slice(0, 20), {
-                        loadedCount: 120,
-                        totalCount: 120,
-                        hasMore: false,
-                    });
+                if (request.loadedCount === pageSize * 2) {
+                    return createHistoryPage(
+                        allMessages.slice(
+                            allMessages.length - pageSize * 3,
+                            allMessages.length - pageSize * 2,
+                        ),
+                        {
+                            loadedCount: pageSize * 3,
+                            totalCount: 120,
+                            hasMore: true,
+                        },
+                    );
+                }
+
+                if (request.loadedCount === pageSize * 3) {
+                    return createHistoryPage(
+                        allMessages.slice(0, allMessages.length - pageSize * 3),
+                        {
+                            loadedCount: 120,
+                            totalCount: 120,
+                            hasMore: false,
+                        },
+                    );
                 }
 
                 throw new Error(`Unexpected loadedCount ${request.loadedCount}`);
@@ -565,9 +589,13 @@ describe('ai-chat.store queue behavior', () => {
         await store.getState().selectConversation(conversation.id);
         await store.getState().loadOlderMessages(conversation.id);
         await store.getState().loadOlderMessages(conversation.id);
+        await store.getState().loadOlderMessages(conversation.id);
 
         expect(getMessagesPageMock.mock.calls.map(([request]) => request.loadedCount)).toEqual([
-            0, 50, 100,
+            0,
+            pageSize,
+            pageSize * 2,
+            pageSize * 3,
         ]);
         expect(store.getState().messagesByConversation[conversation.id]).toHaveLength(120);
         expect(store.getState().messagesByConversation[conversation.id][0]?.id).toBe('msg-1');
@@ -581,6 +609,7 @@ describe('ai-chat.store queue behavior', () => {
     it('does not start overlapping older-history loads for the same conversation', async () => {
         const deferredPage = createDeferred<AiMessageHistoryPage>();
         const conversation = createConversation({ id: 'conv-2', title: 'Paged' });
+        const pageSize = AI_MESSAGE_HISTORY_PAGE_SIZE;
         const { store, getMessagesPageMock } = await createHarness({
             getMessagesPageImpl: async (request) => {
                 if (request.loadedCount === 0) {
@@ -594,7 +623,7 @@ describe('ai-chat.store queue behavior', () => {
                             }),
                         ],
                         {
-                            loadedCount: 50,
+                            loadedCount: pageSize,
                             totalCount: 120,
                             hasMore: true,
                         },
@@ -619,7 +648,7 @@ describe('ai-chat.store queue behavior', () => {
 
         deferredPage.resolve(
             createHistoryPage([], {
-                loadedCount: 50,
+                loadedCount: pageSize,
                 totalCount: 120,
                 hasMore: true,
             }),
