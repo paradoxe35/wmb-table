@@ -1,5 +1,5 @@
 import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Empty, Spin, Tooltip, Typography } from 'antd';
+import { Button, Empty, Spin, Tooltip, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -199,11 +199,17 @@ const MessageBubble = memo(function MessageBubble({
 });
 
 export default function ChatMessageList({
+    conversationId,
     messages,
     sending,
+    loading,
+    onQuickStart,
 }: {
+    conversationId: string | null;
     messages: AiMessage[];
     sending: boolean;
+    loading: boolean;
+    onQuickStart: (prompt: string) => void;
 }) {
     const mainView = useAppStore((s) => s.mainView);
     const optionView = useAppStore((s) => s.optionView);
@@ -212,8 +218,9 @@ export default function ChatMessageList({
         resize: 'smooth',
     });
 
-    // Scroll to bottom instantly before paint on conversation switch
-    const conversationKey = messages[0]?.id ?? 'empty';
+    // Scroll to bottom instantly before paint on conversation switch and
+    // again when loaded messages land for the selected conversation.
+    const conversationKey = conversationId ?? 'empty';
 
     // When leaving options view, break the sticky lock so the ResizeObserver
     // doesn't auto-scroll to bottom when the chat becomes visible again.
@@ -239,7 +246,7 @@ export default function ChatMessageList({
 
         prevOptionView.current = optionView;
         prevMainView.current = mainView;
-    }, [mainView, stopScroll, conversationKey, sending, optionView]);
+    }, [mainView, stopScroll, conversationKey, loading, messages.length, sending, optionView]);
 
     // Scroll to bottom when user sends a new message
     const prevSending = useRef(sending);
@@ -263,8 +270,8 @@ export default function ChatMessageList({
         <div className="ai-chat__messages-wrapper">
             <div className="ai-chat__messages" ref={scrollRef}>
                 <div className="ai-chat__messages-content" ref={contentRef}>
-                    {messages.length === 0 ? (
-                        <EmptyChat />
+                    {messages.length === 0 && !loading ? (
+                        <EmptyChat onQuickStart={onQuickStart} />
                     ) : (
                         <AnimatePresence initial={false}>
                             {messages.map((msg) => (
@@ -279,6 +286,11 @@ export default function ChatMessageList({
                     )}
                 </div>
             </div>
+            {loading && (
+                <div className="ai-chat__loading-overlay" aria-hidden="true">
+                    <Spin indicator={<LoadingOutlined spin />} size="large" />
+                </div>
+            )}
             {!isAtBottom && (
                 <button className="ai-chat__scroll-bottom" onClick={() => scrollToBottom()}>
                     ↓
@@ -288,25 +300,47 @@ export default function ChatMessageList({
     );
 }
 
-function EmptyChat() {
+function EmptyChat({ onQuickStart }: { onQuickStart: (prompt: string) => void }) {
     const { t } = useTranslation();
+    const quickStartPrompts = [
+        t('Suggère-moi un thème à étudier.'),
+        t('Aide-moi à formuler une question de recherche.'),
+        t('Trouve-moi quelques références utiles sur un sujet.'),
+        t('Compare plusieurs références sur un même sujet.'),
+    ];
+
     return (
         <div className="ai-chat__empty">
-            <Empty
-                image={
-                    <RobotOutlined
-                        style={{
-                            fontSize: 'var(--fs-10xl)',
-                            color: 'var(--ant-color-text-quaternary)',
-                        }}
-                    />
-                }
-                description={
-                    <Text type="secondary" style={{ fontSize: 'var(--fs-rel-xl)' }}>
-                        {t('Posez votre question...')}
+            <div className="ai-chat__empty-content">
+                <Empty
+                    image={
+                        <RobotOutlined
+                            style={{
+                                fontSize: 'var(--fs-10xl)',
+                                color: 'var(--ant-color-text-quaternary)',
+                            }}
+                        />
+                    }
+                    description={false}
+                />
+                <div className="ai-chat__quick-start">
+                    <Text type="secondary" className="ai-chat__quick-start-title">
+                        {t('Essayez une question pour commencer')}
                     </Text>
-                }
-            />
+                    <div className="ai-chat__quick-start-list">
+                        {quickStartPrompts.map((prompt) => (
+                            <Button
+                                key={prompt}
+                                type="default"
+                                className="ai-chat__quick-start-btn"
+                                onClick={() => onQuickStart(prompt)}
+                            >
+                                {prompt}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }

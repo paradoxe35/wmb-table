@@ -49,6 +49,8 @@ import {
     useSermonLookup,
     useFormatSermonDate,
 } from '@renderer/hooks';
+import { getSubjectPageHelp } from './components/option-help-content';
+import OptionPageLayout from './components/option-page-layout';
 
 const { Text } = Typography;
 
@@ -61,9 +63,8 @@ function ModalNewSubject({
     const searchValue = useRef<string>('');
     const { modal } = AntApp.useApp();
 
-    const onSave = () => onSaveNewSubject(searchValue.current);
-
     const openModal = useCallback(() => {
+        const onSave = () => onSaveNewSubject(searchValue.current);
         const modalInstance = modal.info({
             closable: true,
             icon: null,
@@ -89,7 +90,7 @@ function ModalNewSubject({
                 </form>
             ),
         });
-    }, [onSave, modal, t]);
+    }, [modal, onSaveNewSubject, t]);
 
     return (
         <Button type="primary" onClick={openModal}>
@@ -98,7 +99,7 @@ function ModalNewSubject({
     );
 }
 
-function Title({
+function SubjectToolbar({
     onSearch,
     onSaveNewSubject,
 }: {
@@ -120,11 +121,16 @@ export function useSubjectsDatas() {
     const [datas, setDatas] = useState<SubjectDocument[]>([]);
     const setSubjects = useSubjectsStore((s) => s.setSubjects);
 
-    const onSearch = useCallback((value: string) => {
-        if (odatas.current.length) {
-            setDatas(odatas.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))));
-        }
-    }, []);
+    const onSearch = useCallback(
+        (value: string) => {
+            if (odatas.current.length) {
+                setDatas(
+                    odatas.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))),
+                );
+            }
+        },
+        [setDatas],
+    );
 
     return { odatas, datas, setDatas, setSubjects, onSearch };
 }
@@ -151,7 +157,6 @@ function normalizeSubjectSelection(
 export default function Subject() {
     const { t } = useTranslation();
     const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
-    const activeSubject = useSubjectsStore((s) => s.activeSubject);
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
 
     const loadSubjects = useCallback(() => {
@@ -167,7 +172,7 @@ export default function Subject() {
             .catch(() => {
                 message.error(t('Erreur lors du chargement des sujets'));
             });
-    }, [odatas, setSubjects, t]);
+    }, [odatas, setDatas, setSubjects, t]);
 
     useEffect(() => {
         loadSubjects();
@@ -196,7 +201,7 @@ export default function Subject() {
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-    }, [odatas, setSubjects]);
+    }, [odatas, setDatas, setSubjects]);
 
     useEffect(() => {
         const subject = datas.find((d) => d.active);
@@ -208,7 +213,7 @@ export default function Subject() {
                     message.error(t('Erreur lors du chargement des éléments du sujet'));
                 });
         }
-    }, [datas, activeSubject, itemsRefreshKey]);
+    }, [datas, itemsRefreshKey, t]);
 
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
     const refPanelRef = useRef<HTMLDivElement>(null);
@@ -229,7 +234,7 @@ export default function Subject() {
             setDatas(normalized);
             setSubjects(normalized);
         },
-        [odatas, setSubjects],
+        [odatas, setDatas, setSubjects],
     );
 
     const saveNewSubject = (searchValue: string) => {
@@ -306,59 +311,61 @@ export default function Subject() {
     );
 
     return (
-        <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 4 }}>
-            <div
-                style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minHeight: 0,
-                    backgroundColor: 'var(--ant-color-bg-container)',
-                }}
-                className="layout__sidebar"
-            >
-                <Card style={{ width: '100%', flexShrink: 0, borderRadius: 0 }}>
-                    <Title onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
-                </Card>
+        <OptionPageLayout title={t('Sujets')} help={getSubjectPageHelp(t)}>
+            <div style={{ display: 'flex', flex: 1, minHeight: 0, gap: 4 }}>
                 <div
-                    className="container-y mt-2"
-                    style={{ flex: 1, minHeight: 0, padding: '22px', overflowX: 'hidden' }}
+                    style={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 0,
+                        backgroundColor: 'var(--ant-color-bg-container)',
+                    }}
+                    className="layout__sidebar"
                 >
-                    <AnimatePresence mode="popLayout">
-                        {datas.map((item) => (
-                            <motion.div
-                                key={item.name}
-                                layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ duration: 0.2 }}
-                            >
-                                <ItemSubject
-                                    item={item}
-                                    onSelectItem={onSelectItem}
-                                    onDeleteSubject={handleSubjectDeletion}
-                                    onRenameSubject={handleSubjectRename}
-                                />
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
+                    <Card style={{ width: '100%', flexShrink: 0, borderRadius: 0 }}>
+                        <SubjectToolbar onSaveNewSubject={saveNewSubject} onSearch={onSearch} />
+                    </Card>
+                    <div
+                        className="container-y mt-2"
+                        style={{ flex: 1, minHeight: 0, padding: '22px', overflowX: 'hidden' }}
+                    >
+                        <AnimatePresence mode="popLayout">
+                            {datas.map((item) => (
+                                <motion.div
+                                    key={item.name}
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <ItemSubject
+                                        item={item}
+                                        onSelectItem={onSelectItem}
+                                        onDeleteSubject={handleSubjectDeletion}
+                                        onRenameSubject={handleSubjectRename}
+                                    />
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
+                    </div>
+                </div>
+                <div
+                    ref={refPanelRef}
+                    className="container-y"
+                    style={{ flex: 1, minHeight: 0, padding: '0 10px' }}
+                >
+                    {activeDocument && (
+                        <ShowActiveDocuments
+                            subject={activeDocument}
+                            documents={subjectItemsData}
+                            setDocuments={setSubjectItemData}
+                        />
+                    )}
                 </div>
             </div>
-            <div
-                ref={refPanelRef}
-                className="container-y"
-                style={{ flex: 1, minHeight: 0, padding: '0 10px' }}
-            >
-                {activeDocument && (
-                    <ShowActiveDocuments
-                        subject={activeDocument}
-                        documents={subjectItemsData}
-                        setDocuments={setSubjectItemData}
-                    />
-                )}
-            </div>
-        </div>
+        </OptionPageLayout>
     );
 }
 
@@ -467,7 +474,7 @@ function ShowActiveDocuments({
 
     useEffect(() => {
         persistedOrderRef.current = documents.map((item) => item.id);
-    }, [subject.id]);
+    }, [documents, subject.id]);
 
     function confirm(item: SubjectDocumentItem) {
         window.api.subjects.deleteItem(item.id).then(() => {

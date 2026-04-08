@@ -171,6 +171,13 @@ const sw: Record<string, string> = {
         'Unganisha Google Drive ili <u>{{feature}}</u> iweke vidokezo, mada na mipangilio yako katika usawazishaji.',
     'Ouvrir les réglages de sauvegarde': 'Fungua mipangilio ya hifadhi nakala',
     'Posez votre question...': 'Uliza swali lako...',
+    'Essayez une question pour commencer': 'Jaribu swali ili kuanza',
+    'Suggère-moi un thème à étudier.': 'Nipendekezee mada ya kujifunza.',
+    'Aide-moi à formuler une question de recherche.': 'Nisaidie kuunda swali la utafiti.',
+    'Trouve-moi quelques références utiles sur un sujet.':
+        'Nipatie marejeo machache yenye manufaa kuhusu mada fulani.',
+    'Compare plusieurs références sur un même sujet.':
+        'Linganisha marejeo kadhaa kuhusu mada moja.',
     Envoyer: 'Tuma',
     Arrêter: 'Simamisha',
     Conversations: 'Mazungumzo',
@@ -846,6 +853,154 @@ const sw: Record<string, string> = {
         'Hufuata kiotomatiki mwonekano uliowekwa na mfumo wako.',
     'Utilise toujours le thème clair.': 'Hutumia mandhari angavu kila wakati.',
     'Utilise toujours le thème sombre.': 'Hutumia mandhari ya giza kila wakati.',
+
+    // ── Inline help ──
+    'Comprendre cette page': 'Elewa ukurasa huu',
+    'Regroupez vos versets et passages par thème.': 'Panga mistari na vifungu vyako kwa mada.',
+    'À quoi servent les sujets ?': 'Mada hutumika kwa nini?',
+    "Les sujets rassemblent des versets, passages de prédications et extraits de documents autour d'un même thème.":
+        'Mada hukusanya mistari, vifungu vya mahubiri na sehemu za nyaraka zinazohusu mada moja.',
+    'Créez un sujet pour chaque thème important que vous préparez.':
+        'Tengeneza mada kwa kila jambo muhimu unaloandaa.',
+    'Ajoutez des références depuis la lecture ou depuis la Bible.':
+        'Ongeza marejeo kutoka kwenye usomaji au kutoka Biblia.',
+    "Réorganisez les références dans l'ordre qui vous aide le mieux.":
+        'Panga upya marejeo kwa mpangilio unaokusaidia zaidi.',
+    'Utilisez plutôt les notes pour écrire vos idées longues, vos plans et vos commentaires personnels.':
+        'Tumia vidokezo kuandika mawazo marefu, mipango na maoni yako binafsi.',
+    'Gardez vos plans, idées et références dans un seul endroit.':
+        'Hifadhi mipango, mawazo na marejeo yako mahali pamoja.',
+    'À quoi servent les notes ?': 'Vidokezo hutumika kwa nini?',
+    'Les notes gardent vos idées, plans et repères de préparation dans un seul endroit.':
+        'Vidokezo huhifadhi mawazo yako, mipango na alama za maandalizi mahali pamoja.',
+    'Créez une note par message, étude ou projet.':
+        'Tengeneza dokezo moja kwa kila ujumbe, somo au mradi.',
+    'Ajoutez des références vers la Bible ou les prédications pour retrouver la source plus tard.':
+        'Ongeza marejeo ya Biblia au mahubiri ili upate chanzo tena baadaye.',
+    'Utilisez les sujets pour classer des références, et les notes pour développer votre pensée.':
+        'Tumia mada kupanga marejeo, na vidokezo kukuza mawazo yako.',
+    'Que fait cette page Bible ?': 'Ukurasa huu wa Biblia hufanya nini?',
+    'Cette page sert surtout à rechercher dans la Bible et à gérer les versions bibliques.':
+        'Ukurasa huu hutumika hasa kutafuta ndani ya Biblia na kusimamia matoleo ya Biblia.',
+    'Retrouvez vite un mot, une expression ou un passage biblique.':
+        'Pata haraka neno, kifungu au sehemu ya Biblia.',
+    'Filtrez la recherche par testament pour aller plus vite.':
+        'Chuja utafutaji kwa agano ili kufika haraka zaidi.',
+    'Comparez ou téléchargez des versions bibliques selon vos besoins.':
+        'Linganisha au pakua matoleo ya Biblia kulingana na mahitaji yako.',
+    'Par rapport à la Bible dans la barre latérale':
+        'Kwa kulinganisha na Biblia kwenye upau wa pembeni',
+    'La barre latérale est plus adaptée pour ouvrir et lire un chapitre. Cette page est plus utile pour la recherche et la gestion des versions.':
+        'Upau wa pembeni unafaa zaidi kwa kufungua na kusoma sura. Ukurasa huu ni wa msaada zaidi kwa utafutaji na usimamizi wa matoleo.',
+    'À quoi servent les réglages de Lecture audio ?':
+        'Mipangilio ya usomaji wa sauti hutumika kwa nini?',
+    'Cet onglet configure la voix qui lira vos prédications, chapitres bibliques et documents personnels.':
+        'Kichupo hiki huweka sauti itakayosoma mahubiri, sura za Biblia na nyaraka zako binafsi.',
+    'Choisissez un fournisseur et une voix.': 'Chagua mtoa huduma na sauti.',
+    'Testez la lecture et ajustez la vitesse.': 'Jaribu usomaji na urekebishe kasi.',
+    "Réglez le surlignage, l'introduction et le cache audio.":
+        'Rekebisha uangaziaji, utangulizi na akiba ya sauti.',
+    'Si vous voulez quelque chose de simple, gardez le fournisseur proposé puis testez une voix.':
+        'Ukihitaji jambo rahisi, tumia mtoa huduma uliopendekezwa kisha ujaribu sauti.',
+    "À quoi servent les réglages de l'assistant ?": 'Mipangilio ya msaidizi hutumika kwa nini?',
+    "Cet onglet active l'assistant IA et choisit comment il répond dans l'application.":
+        'Kichupo hiki huwasha msaidizi wa AI na kuchagua jinsi anavyojibu ndani ya programu.',
+    "Activez ou masquez l'assistant dans la barre latérale.":
+        'Washa au ficha msaidizi kwenye upau wa pembeni.',
+    'Sélectionnez un fournisseur local, cloud ou personnalisé.':
+        'Chagua mtoa huduma wa ndani, wa mtandaoni au maalum.',
+    'Définissez la langue et le modèle utilisés pour les réponses.':
+        'Weka lugha na modeli itakayotumiwa kwa majibu.',
+    'Comment fonctionne la recherche ?': 'Utafutaji hufanya kazi vipi?',
+    'Cette page recherche dans les prédications de votre bibliothèque et vous ramène directement au bon passage.':
+        'Ukurasa huu hutafuta ndani ya mahubiri ya maktaba yako na hukurudisha moja kwa moja kwenye kifungu sahihi.',
+    'Entrez au moins trois caractères pour lancer une recherche.':
+        'Weka angalau herufi tatu ili kuanza utafutaji.',
+    'Choisissez le mode selon que vous cherchez un mot, plusieurs mots ou une phrase exacte.':
+        'Chagua hali kulingana na kama unatafuta neno moja, maneno kadhaa au kifungu halisi.',
+    'Ouvrez un résultat pour aller directement au paragraphe correspondant.':
+        'Fungua matokeo ili kwenda moja kwa moja kwenye aya inayolingana.',
+    'Retrouvez rapidement un mot, une expression ou un thème dans les prédications.':
+        'Pata haraka neno, kifungu au mada ndani ya mahubiri.',
+    'À quoi servent les soulignages ?': 'Mwangazio hutumika kwa nini?',
+    'Cette page rassemble tous les passages marqués pendant vos lectures.':
+        'Ukurasa huu hukusanya vifungu vyote ulivyoviweka alama wakati wa kusoma.',
+    'Retrouvez rapidement les passages importants que vous avez gardés.':
+        'Pata haraka vifungu muhimu ulivyohifadhi.',
+    'Filtrez par mot-clé dans le texte, le titre ou le commentaire.':
+        'Chuja kwa neno kuu ndani ya maandishi, kichwa au maoni.',
+    'Rouvrez le document exact ou exportez la liste en PDF.':
+        'Fungua tena hati halisi au hamisha orodha kama PDF.',
+    'Les soulignages se créent dans la vue de lecture, pas sur cette page.':
+        'Mwangazio huundwa katika mwonekano wa usomaji, si katika ukurasa huu.',
+    'Revoyez tous les passages marqués pendant vos lectures.':
+        'Pitia tena vifungu vyote vilivyowekwa alama wakati wa kusoma.',
+    'La Bible vous aide à ouvrir rapidement un chapitre dans la lecture, comparer les versions et retrouver un passage sans quitter votre préparation.':
+        'Biblia inakusaidia kufungua kwa haraka sura katika mwonekano wa kusoma, kulinganisha matoleo na kupata kifungu bila kuondoka kwenye maandalizi yako.',
+    "Elle sert de point d'entrée vers la lecture biblique dans l'application.":
+        'Kinatumika kama njia ya kuingia kwenye usomaji wa Biblia ndani ya programu.',
+    'Une fois le chapitre ouvert, vous profitez des outils de lecture du document.':
+        'Sura ikishafunguliwa, unafaidika na zana za usomaji wa hati.',
+    'Elle vous aide aussi à parcourir les livres, comparer les versions et lancer une recherche biblique dédiée.':
+        'Pia kinakusaidia kupitia vitabu, kulinganisha matoleo na kuanzisha utafutaji maalum wa Biblia.',
+    "C'est le chemin le plus direct pour ouvrir un livre ou un chapitre dans la vue de lecture.":
+        'Hii ndiyo njia ya moja kwa moja zaidi ya kufungua kitabu au sura katika mwonekano wa kusoma.',
+    'Utilisez cette page pour parcourir la Bible plus calmement.':
+        'Tumia ukurasa huu kupitia Biblia kwa utulivu zaidi.',
+    'Utilisez la barre latérale pour ouvrir vite un chapitre. Utilisez cette page quand vous voulez explorer, comparer ou rechercher plus précisément.':
+        'Tumia upau wa pembeni kufungua sura kwa haraka. Tumia ukurasa huu unapotaka kuchunguza, kulinganisha au kutafuta kwa usahihi zaidi.',
+    'Ce que cette fonction vous apporte': 'Kile kipengele hiki kinakupa',
+    'Pour commencer': 'Ili kuanza',
+    'Elle évite de refaire les mêmes recherches chaque fois que vous préparez un thème.':
+        'Kinazuia kurudia utafutaji uleule kila unapokuwa unaandaa mada.',
+    'Elle garde ensemble vos meilleures références bibliques et vos passages de prédications.':
+        'Kinahifadhi pamoja marejeo yako bora ya Biblia na vifungu vya mahubiri.',
+    "Elle vous aide à construire un ordre clair pour l'étude, la prédication ou l'export PDF.":
+        'Kinakusaidia kujenga mpangilio ulio wazi kwa ajili ya somo, mahubiri au uhamishaji wa PDF.',
+    "Elle aide à organiser vos références dans un ordre utile pour l'étude, la prédication ou l'export PDF.":
+        'Kinasaidia kupanga marejeo yako katika mpangilio unaofaa kwa somo, mahubiri au uhamishaji wa PDF.',
+    'Elle sert à développer votre pensée, vos plans et vos commentaires personnels.':
+        'Kinatumika kukuza mawazo yako, mipango yako na maoni yako binafsi.',
+    'Elle sert à développer vos idées, vos plans et vos commentaires personnels.':
+        'Kinatumika kukuza mawazo yako, mipango yako na maoni yako binafsi.',
+    'Elle vous aide à garder vos idées de préparation dans un espace plus libre que les sujets.':
+        'Kinakusaidia kuhifadhi mawazo yako ya maandalizi katika nafasi iliyo huru zaidi kuliko mada.',
+    'Elle vous offre un espace de préparation plus libre et plus personnel que les sujets.':
+        'Kinakupa nafasi ya maandalizi iliyo huru zaidi na ya binafsi zaidi kuliko mada.',
+    'Elle peut aussi contenir des références vers la Bible ou les prédications pour retrouver la source plus tard.':
+        'Pia kinaweza kuwa na marejeo ya Biblia au mahubiri ili upate chanzo tena baadaye.',
+    'Elle peut garder des références vers la Bible ou les prédications pour retrouver vos sources rapidement.':
+        'Kinaweza kuhifadhi marejeo ya Biblia au mahubiri ili upate vyanzo vyako kwa haraka.',
+    'Elle vous permet de confirmer rapidement un passage, comparer des versets et garder la Bible dans votre flux de travail.':
+        'Kinakuwezesha kuthibitisha kifungu kwa haraka, kulinganisha mistari na kuweka Biblia ndani ya mtiririko wako wa kazi.',
+    'Elle réunit la lecture, les versions bibliques et la recherche au même endroit.':
+        'Kinakusanya usomaji, matoleo ya Biblia na utafutaji mahali pamoja.',
+    "Elle permet d'écouter vos contenus au lieu de seulement les lire.":
+        'Kinakuruhusu kusikiliza maudhui yako badala ya kuya­soma tu.',
+    'Elle est utile pour suivre un texte, relire pendant un déplacement ou continuer votre étude en audio.':
+        'Ni muhimu kufuatilia maandishi, kupitia tena ukiwa safarini au kuendelea na somo lako kwa sauti.',
+    "Elle contrôle aussi l'expérience de lecture: voix, vitesse, surlignage et comportement audio.":
+        'Pia kinadhibiti uzoefu wa kusikiliza: sauti, kasi, uangaziaji na tabia ya sauti.',
+    "L'assistant peut aider à explorer un thème, retrouver des références et comparer plus vite plusieurs contenus.":
+        'Msaidizi anaweza kusaidia kuchunguza mada, kupata marejeo na kulinganisha maudhui mengi kwa haraka.',
+    "Cet onglet détermine s'il est disponible, quel service il utilise et dans quelle langue il travaille.":
+        'Kichupo hiki kinaamua kama anapatikana, anatumia huduma gani na anafanya kazi kwa lugha gani.',
+    'Vous pouvez choisir une solution locale, cloud ou personnalisée selon vos besoins.':
+        'Unaweza kuchagua suluhisho la ndani, la mtandaoni au maalum kulingana na mahitaji yako.',
+    "Activez l'assistant pour le rendre disponible dans la barre latérale.":
+        'Washa msaidizi ili apatikane kwenye upau wa pembeni.',
+    'Elle sert à retrouver rapidement un mot, un thème, un lieu ou une expression dans les prédications.':
+        'Kinatumika kupata kwa haraka neno, mada, mahali au usemi ndani ya mahubiri.',
+    'Elle évite de parcourir manuellement plusieurs documents quand vous savez déjà ce que vous cherchez.':
+        'Kinazuia kupitia nyaraka nyingi kwa mkono wakati tayari unajua unachotafuta.',
+    'Elle vous ramène directement au paragraphe utile quand vous ouvrez un résultat.':
+        'Kinakurudisha moja kwa moja kwenye aya inayofaa unapofungua matokeo.',
+    'Elle vous donne une vue unique de tous les passages importants que vous avez repérés.':
+        'Kinakupa mwonekano mmoja wa vifungu vyote muhimu ulivyoviweka alama.',
+    'Elle aide à revoir vos découvertes sans devoir rouvrir chaque document un par un.':
+        'Kinasaidia kupitia tena uliyogundua bila kufungua upya kila hati moja moja.',
+    'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
+        'Pia kinakuruhusu kuchuja, kufungua tena chanzo halisi au kuhamisha orodha kuwa PDF.',
 };
 
 export default sw;

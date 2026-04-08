@@ -8,6 +8,8 @@ import LoadByVisibility from '@renderer/components/load-by-visibility';
 import { BibleVersionSelector } from './bible/bible-version-selector';
 import { BibleContent } from './bible/bible-content';
 import { SearchContent } from './bible/bible-search';
+import { getBiblePageHelp } from './components/option-help-content';
+import OptionPageLayout from './components/option-page-layout';
 export { BibleContent };
 
 export default function Bible() {
@@ -24,20 +26,24 @@ export default function Bible() {
 
     return (
         <LoadByVisibility>
-            <Menu
-                mode="horizontal"
-                selectedKeys={[menu]}
-                onClick={(e) => setMenu(e.key)}
-                items={menuItems}
-                style={{ marginBottom: 12 }}
-            />
-            <BibleVersionSelector />
-            {menu === 'bible' && <BibleContent verseMetaContent={true} />}
-            {menu === 'search' && (
-                <div className="bible-search-content">
-                    <SearchContent />
+            <OptionPageLayout title={t('Bible')} help={getBiblePageHelp(t)}>
+                <div className="bible-option-page">
+                    <Menu
+                        mode="horizontal"
+                        selectedKeys={[menu]}
+                        onClick={(e) => setMenu(e.key)}
+                        items={menuItems}
+                        style={{ marginBottom: 7 }}
+                    />
+                    <BibleVersionSelector />
+                    {menu === 'bible' && <BibleContent verseMetaContent={true} />}
+                    {menu === 'search' && (
+                        <div className="bible-search-content">
+                            <SearchContent />
+                        </div>
+                    )}
                 </div>
-            )}
+            </OptionPageLayout>
         </LoadByVisibility>
     );
 }

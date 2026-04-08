@@ -25,6 +25,7 @@ const TOOL_TO_EVENT: Record<string, string> = {
 type MessageMap = Record<string, AiMessage[]>;
 type ReasoningMap = Record<string, string>;
 type StreamingConversationMap = Record<string, true>;
+type LoadingConversationMap = Record<string, true>;
 
 function addStreamingConversation(
     streamingConversations: StreamingConversationMap,
@@ -58,6 +59,7 @@ interface AiChatState {
     messagesByConversation: MessageMap;
     reasoningByMessage: ReasoningMap;
     streamingConversations: StreamingConversationMap;
+    loadingConversations: LoadingConversationMap;
     localModels: AiModelScanResult | null;
     sending: boolean;
     error: string | null;
@@ -118,6 +120,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     messagesByConversation: {},
     reasoningByMessage: {},
     streamingConversations: {},
+    loadingConversations: {},
     localModels: null,
     sending: false,
     error: null,
@@ -265,21 +268,49 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     loadConversations: async () => {
         const conversations = await window.api.ai.getConversations();
         const activeConversationId = get().activeConversationId ?? conversations[0]?.id ?? null;
-        set({ conversations, activeConversationId });
+        set({ conversations });
         if (activeConversationId) {
             await get().selectConversation(activeConversationId);
+        } else {
+            set({ activeConversationId: null });
         }
     },
 
     selectConversation: async (conversationId) => {
-        const messages = await window.api.ai.getMessages(conversationId);
         set((state) => ({
             activeConversationId: conversationId,
-            messagesByConversation: {
-                ...state.messagesByConversation,
-                [conversationId]: messages,
+            loadingConversations: {
+                ...state.loadingConversations,
+                [conversationId]: true,
             },
         }));
+
+        try {
+            const messages = await window.api.ai.getMessages(conversationId);
+            set((state) => {
+                const loadingConversations = { ...state.loadingConversations };
+                delete loadingConversations[conversationId];
+
+                return {
+                    activeConversationId: conversationId,
+                    loadingConversations,
+                    messagesByConversation: {
+                        ...state.messagesByConversation,
+                        [conversationId]: messages,
+                    },
+                };
+            });
+        } catch (error) {
+            set((state) => {
+                const loadingConversations = { ...state.loadingConversations };
+                delete loadingConversations[conversationId];
+
+                return {
+                    loadingConversations,
+                    error: toErrorMessage(error, 'Le chargement de la conversation a échoué.'),
+                };
+            });
+        }
     },
 
     createConversation: async (title) => {
@@ -301,17 +332,20 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         );
         set((state) => {
             const nextMap = { ...state.messagesByConversation };
+            const loadingConversations = { ...state.loadingConversations };
             delete nextMap[conversationId];
+            delete loadingConversations[conversationId];
             return {
                 conversations: remaining,
                 activeConversationId:
                     state.activeConversationId === conversationId
-                        ? (remaining[0]?.id ?? null)
+                        ? null
                         : state.activeConversationId,
                 messagesByConversation: nextMap,
+                loadingConversations,
             };
         });
-        const nextConversationId = get().activeConversationId;
+        const nextConversationId = get().activeConversationId ?? remaining[0]?.id ?? null;
         if (nextConversationId) {
             await get().selectConversation(nextConversationId);
         }
@@ -319,7 +353,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
     clearConversations: async () => {
         await window.api.ai.clearConversations();
-        set({ conversations: [], activeConversationId: null, messagesByConversation: {} });
+        set({
+            conversations: [],
+            activeConversationId: null,
+            messagesByConversation: {},
+            loadingConversations: {},
+        });
     },
 
     sendMessage: async (content) => {

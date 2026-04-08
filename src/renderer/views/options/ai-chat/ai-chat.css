@@ -189,6 +189,66 @@
     justify-content: center;
 }
 
+.ai-chat__loading-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--ant-color-bg-container) 82%, transparent);
+    backdrop-filter: blur(1px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.ai-chat__empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    width: min(720px, 100%);
+}
+
+.ai-chat__quick-start {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+}
+
+.ai-chat__quick-start-title {
+    font-size: var(--fs-rel-lg);
+}
+
+.ai-chat__quick-start-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+.ai-chat__quick-start-btn.ant-btn {
+    height: auto;
+    min-height: 44px;
+    padding: 10px 12px;
+    text-align: left;
+    white-space: normal;
+    justify-content: flex-start;
+    border-radius: 12px;
+}
+
+.ai-chat__quick-start-btn.ant-btn:hover {
+    border-color: var(--ant-color-primary);
+    color: var(--ant-color-primary);
+}
+
+@container (max-width: 900px) {
+    .ai-chat__quick-start-list {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ── Message bubble ──────────────────────────────────────────── */
 .ai-chat__bubble {
     display: flex;
