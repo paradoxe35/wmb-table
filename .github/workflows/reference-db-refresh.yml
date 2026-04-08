@@ -1,0 +1,184 @@
+name: Refresh Reference Database
+
+on:
+    schedule:
+        - cron: '17 3 * * *'
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: write
+
+concurrency:
+    group: reference-db-refresh
+    cancel-in-progress: true
+
+jobs:
+    refresh-reference-db:
+        runs-on: ubuntu-latest
+        env:
+            REFRESH_BRANCH: automation/reference-db-refresh
+            REPORT_DIR: reports/ci/latest
+            VERIFY_REPORT_DIR: reports/ci/post-migrate
+            PR_TOKEN: ${{ secrets.REFERENCE_DB_PR_TOKEN != '' && secrets.REFERENCE_DB_PR_TOKEN || github.token }}
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: dart-lang/setup-dart@v1
+
+            - name: Unpack Isar refresh tool
+              run: |
+                  rm -rf tmp/isar-to-sqlite tmp/msix-out
+                  unzip -q -o scripts/isar-to-sqlite.zip -d tmp
+
+            - name: Install Dart dependencies
+              working-directory: tmp/isar-to-sqlite
+              run: dart pub get
+
+            - name: Generate Isar code
+              working-directory: tmp/isar-to-sqlite
+              run: dart run build_runner build --delete-conflicting-outputs
+
+            - name: Format check tool
+              working-directory: tmp/isar-to-sqlite
+              run: dart format --output=none --set-exit-if-changed .
+
+            - name: Analyze tool
+              working-directory: tmp/isar-to-sqlite
+              run: dart analyze
+
+            - name: Download latest Isar snapshot
+              run: bash scripts/extract-msix-resources.sh tmp/msix-out
+
+            - name: Compare current SQLite against latest Isar
+              id: compare
+              working-directory: tmp/isar-to-sqlite
+              run: |
+                  set +e
+                  dart run bin/db_tool.dart compare \
+                    --baseline-sqlite ../../resources/database/data.sqlite \
+                    --candidate-isar ../msix-out/db.isar \
+                    --report-dir "${REPORT_DIR}"
+                  compare_exit=$?
+                  set -e
+
+                  if [ ! -f "${REPORT_DIR}/summary.json" ]; then
+                    echo "Compare did not produce ${REPORT_DIR}/summary.json"
+                    exit "${compare_exit}"
+                  fi
+
+                  has_changes=$(jq -r '.hasDifferences' "${REPORT_DIR}/summary.json")
+                  echo "has_changes=${has_changes}" >> "${GITHUB_OUTPUT}"
+                  echo "compare_exit=${compare_exit}" >> "${GITHUB_OUTPUT}"
+
+                  if [ "${compare_exit}" -ne 0 ] && [ "${has_changes}" != "true" ]; then
+                    echo "Compare failed without a valid diff report."
+                    exit "${compare_exit}"
+                  fi
+
+            - name: Upload comparison reports
+              uses: actions/upload-artifact@v4
+              with:
+                  name: reference-db-compare-report
+                  path: tmp/isar-to-sqlite/${{ env.REPORT_DIR }}/
+                  if-no-files-found: error
+
+            - name: Close previous refresh pull request and delete branch
+              uses: actions/github-script@v8
+              with:
+                  github-token: ${{ env.PR_TOKEN }}
+                  script: |
+                      const owner = context.repo.owner;
+                      const repo = context.repo.repo;
+                      const branch = process.env.REFRESH_BRANCH;
+                      const prs = await github.paginate(github.rest.pulls.list, {
+                        owner,
+                        repo,
+                        state: 'open',
+                        head: `${owner}:${branch}`,
+                        base: 'main',
+                      });
+
+                      for (const pr of prs) {
+                        core.info(`Closing PR #${pr.number}`);
+                        await github.rest.pulls.update({
+                          owner,
+                          repo,
+                          pull_number: pr.number,
+                          state: 'closed',
+                        });
+                      }
+
+                      try {
+                        await github.rest.git.deleteRef({
+                          owner,
+                          repo,
+                          ref: `heads/${branch}`,
+                        });
+                        core.info(`Deleted branch ${branch}`);
+                      } catch (error) {
+                        if (error.status !== 404 && error.status !== 422) {
+                          throw error;
+                        }
+                        core.info(`Branch ${branch} did not exist or was already deleted.`);
+                      }
+
+            - name: Stop when no reference DB changes were found
+              if: steps.compare.outputs.has_changes != 'true'
+              run: echo "No reference database changes detected."
+
+            - name: Regenerate data.sqlite from latest Isar
+              if: steps.compare.outputs.has_changes == 'true'
+              working-directory: tmp/isar-to-sqlite
+              run: |
+                  dart run bin/db_tool.dart migrate \
+                    --isar ../msix-out/db.isar \
+                    --sqlite-out ../../resources/database/data.sqlite
+
+            - name: Verify regenerated SQLite matches latest Isar
+              if: steps.compare.outputs.has_changes == 'true'
+              working-directory: tmp/isar-to-sqlite
+              run: |
+                  dart run bin/db_tool.dart compare \
+                    --baseline-sqlite ../../resources/database/data.sqlite \
+                    --candidate-isar ../msix-out/db.isar \
+                    --report-dir "${VERIFY_REPORT_DIR}"
+
+            - name: Prepare PR summary files
+              if: steps.compare.outputs.has_changes == 'true'
+              run: |
+                  mkdir -p .github/reference-db-refresh
+                  cp tmp/isar-to-sqlite/${REPORT_DIR}/summary.md .github/reference-db-refresh/latest-summary.md
+                  {
+                    echo "# Automated reference database refresh"
+                    echo
+                    echo "- Trigger: \`${{ github.event_name }}\`"
+                    echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    echo "- Source Isar: \`tmp/msix-out/db.isar\`"
+                    echo
+                    cat .github/reference-db-refresh/latest-summary.md
+                  } > .github/reference-db-refresh/pr-body.md
+
+            - name: Create refresh pull request
+              if: steps.compare.outputs.has_changes == 'true'
+              id: create-pr
+              uses: peter-evans/create-pull-request@v8
+              with:
+                  token: ${{ env.PR_TOKEN }}
+                  commit-message: 'chore: refresh reference database'
+                  title: 'chore: refresh reference database'
+                  branch: ${{ env.REFRESH_BRANCH }}
+                  delete-branch: true
+                  labels: |
+                      automated
+                      reference-db
+                  body-path: .github/reference-db-refresh/pr-body.md
+                  add-paths: |
+                      resources/database/data.sqlite
+                      .github/reference-db-refresh/latest-summary.md
+
+            - name: Show pull request result
+              if: steps.compare.outputs.has_changes == 'true'
+              run: |
+                  echo "Pull request number: ${{ steps.create-pr.outputs.pull-request-number }}"
+                  echo "Pull request URL: ${{ steps.create-pr.outputs.pull-request-url }}"

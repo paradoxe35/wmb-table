@@ -200,7 +200,10 @@ async function schedulerWorker(): Promise<void> {
 
 async function runSyncCycle(): Promise<void> {
     const drive = driveService;
-    if (!drive || !syncAuthClient) return;
+    const authClient = syncAuthClient;
+    if (!drive) {
+        return;
+    }
 
     isSyncRunning = true;
     resetAffectedTables();
@@ -209,7 +212,9 @@ async function runSyncCycle(): Promise<void> {
     let failure: Error | null = null;
 
     try {
-        await refreshAccessTokenIfNeeded(syncAuthClient);
+        if (authClient) {
+            await refreshAccessTokenIfNeeded(authClient);
+        }
         await applyRemoteChanges(drive);
         // After pull: invalidate any local unsynced change logs that conflict
         // with the pulled data. This prevents stale local DELETEs from being

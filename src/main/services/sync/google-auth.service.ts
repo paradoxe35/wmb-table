@@ -198,8 +198,10 @@ export async function revokeAndDeleteToken(): Promise<void> {
 }
 
 export async function refreshAccessTokenIfNeeded(client: OAuth2Client): Promise<void> {
-    const { access_token, refresh_token, expiry_date } = client.credentials;
-    if (!refresh_token) return;
+    const { access_token, refresh_token, expiry_date } = client.credentials ?? {};
+    if (!refresh_token) {
+        return;
+    }
 
     const expiresSoon =
         typeof expiry_date !== 'number' || expiry_date <= Date.now() + TOKEN_REFRESH_BUFFER_MS;

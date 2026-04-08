@@ -98,6 +98,8 @@ vi.mock('@main/services/sync/google-auth.service', () => ({
     getExistingClient: vi.fn(
         () => mockAuthState.promise ?? Promise.resolve(mockAuthState.client as never),
     ),
+    refreshAccessTokenIfNeeded: vi.fn(async () => {}),
+    revokeAndDeleteToken: vi.fn(async () => {}),
 }));
 
 vi.mock('@main/services/sync/drive.service', () => ({
