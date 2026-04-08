@@ -326,4 +326,35 @@ describe('AI subagent execution', () => {
             'Pagination hint: start at paragraph 40 and read up to 20 paragraphs per page when useful.',
         );
     });
+
+    it('falls back to focus when readSermon is called without a question', async () => {
+        generateTextMock.mockResolvedValueOnce({
+            text: 'Sermon summary',
+            finishReason: 'stop',
+            steps: [],
+        });
+
+        const { readSermon } = buildSermonReaderAgentTool({
+            model: {} as never,
+            contentLanguage: 'fr',
+            uiLanguage: 'en',
+        });
+
+        expect(() =>
+            readSermon.inputSchema.parse({
+                sermonId: '63-0318',
+                focus: 'Continue from the later paragraphs about the Seals.',
+            }),
+        ).not.toThrow();
+
+        await readSermon.execute({
+            sermonId: '63-0318',
+            focus: 'Continue from the later paragraphs about the Seals.',
+        });
+
+        const call = generateTextMock.mock.calls[0]?.[0];
+        expect(call.prompt).toContain(
+            'Question to answer: Continue from the later paragraphs about the Seals.',
+        );
+    });
 });

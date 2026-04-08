@@ -165,6 +165,7 @@ export default function AiChatView() {
                     sending={activeSending}
                     activeAssistantMessageId={activeRun?.assistantMessageId ?? null}
                     hasQueuedMessages={activeQueuedMessages.length > 0}
+                    queuedMessageCount={activeQueuedMessages.length}
                     loading={activeLoading}
                     onQuickStart={handleQuickStart}
                 />

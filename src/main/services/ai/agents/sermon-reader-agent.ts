@@ -11,6 +11,36 @@ const AGENT_NAME = 'readSermon';
 const MAX_STEPS = 18;
 const MAX_OUTPUT_TOKENS = 2400;
 
+function resolveSermonReaderQuestion(input: {
+    question?: string;
+    focus?: string;
+    description?: string;
+    sermonId?: string;
+    sermonQuery?: string;
+}): string {
+    const explicitQuestion = input.question?.trim();
+    if (explicitQuestion) {
+        return explicitQuestion;
+    }
+
+    const focusedRequest = input.focus?.trim();
+    if (focusedRequest) {
+        return focusedRequest;
+    }
+
+    const describedRequest = input.description?.trim();
+    if (describedRequest) {
+        return describedRequest;
+    }
+
+    const sermonTarget = input.sermonId?.trim() || input.sermonQuery?.trim();
+    if (sermonTarget) {
+        return `Summarize the sermon "${sermonTarget}" and answer the user's latest request as faithfully as possible.`;
+    }
+
+    return "Summarize the sermon and answer the user's latest request as faithfully as possible.";
+}
+
 function buildSermonReaderToolSubset(languageCode: string): Record<string, AiToolDefinition> {
     const sermonTools = buildSermonTools(languageCode);
 
@@ -58,7 +88,10 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         .max(50)
                         .optional()
                         .describe('Optional page size hint for sermon pagination'),
-                    question: z.string().describe('The question to answer about this sermon'),
+                    question: z
+                        .string()
+                        .optional()
+                        .describe('The question to answer about this sermon'),
                     description: z
                         .string()
                         .optional()
@@ -101,6 +134,13 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 const lang = languageCode ?? ctx.contentLanguage;
                 const normalizedSermonId = sermonId?.trim();
                 const normalizedSermonQuery = sermonQuery?.trim();
+                const resolvedQuestion = resolveSermonReaderQuestion({
+                    question,
+                    focus,
+                    description,
+                    sermonId: normalizedSermonId,
+                    sermonQuery: normalizedSermonQuery,
+                });
                 const executors = buildSermonReaderToolSubset(lang);
                 const agentTools = Object.fromEntries(
                     Object.entries(executors).map(([name, def]) => [name, tool(def)]),
@@ -111,7 +151,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                     translationId,
                     startParagraph,
                     maxParagraphs,
-                    question,
+                    question: resolvedQuestion,
                     description,
                     alreadyKnown,
                     focus,
@@ -120,7 +160,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 log.info('Sermon reader agent starting', {
                     sermonId: normalizedSermonId,
                     sermonQuery: normalizedSermonQuery,
-                    question,
+                    question: resolvedQuestion,
                     languageCode: lang,
                 });
 

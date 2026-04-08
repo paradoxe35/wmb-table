@@ -81,12 +81,14 @@ function createSendResult(
     return {
         generationId: request.generationId,
         conversation,
-        userMessage: createMessage({
-            id: `user-${index}`,
-            conversationId: conversation.id,
-            role: 'user',
-            content: request.content,
-        }),
+        userMessages: request.messages.map((content, messageIndex) =>
+            createMessage({
+                id: `user-${index}-${messageIndex + 1}`,
+                conversationId: conversation.id,
+                role: 'user',
+                content,
+            }),
+        ),
         assistantMessage: createMessage({
             id: `assistant-${index}`,
             conversationId: conversation.id,
@@ -241,7 +243,10 @@ describe('ai-chat.store queue behavior', () => {
         await flushAsync();
 
         expect(sendMessageMock).toHaveBeenCalledTimes(2);
-        expect(sendMessageMock.mock.calls[1][0].content).toBe('second question\n\nthird question');
+        expect(sendMessageMock.mock.calls[1][0].messages).toEqual([
+            'second question',
+            'third question',
+        ]);
         expect(store.getState().queuedMessagesByConversation['conv-1']).toBeUndefined();
     });
 
@@ -261,7 +266,7 @@ describe('ai-chat.store queue behavior', () => {
         await flushAsync();
 
         expect(sendMessageMock).toHaveBeenCalledTimes(2);
-        expect(sendMessageMock.mock.calls[1][0].content).toBe('queued follow-up');
+        expect(sendMessageMock.mock.calls[1][0].messages).toEqual(['queued follow-up']);
     });
 
     it('continues with the pending queue after the active response fails', async () => {
@@ -281,7 +286,7 @@ describe('ai-chat.store queue behavior', () => {
         await flushAsync();
 
         expect(sendMessageMock).toHaveBeenCalledTimes(2);
-        expect(sendMessageMock.mock.calls[1][0].content).toBe('queued after failure');
+        expect(sendMessageMock.mock.calls[1][0].messages).toEqual(['queued after failure']);
         expect(
             store.getState().messagesByConversation['conv-1'].some((m) => m.id === 'assistant-1'),
         ).toBe(false);
@@ -344,7 +349,7 @@ describe('ai-chat.store queue behavior', () => {
             createSendResult(
                 {
                     conversationId: 'conv-1',
-                    content: 'race condition question',
+                    messages: ['race condition question'],
                     generationId,
                 },
                 1,
@@ -359,7 +364,7 @@ describe('ai-chat.store queue behavior', () => {
                 role: message.role,
                 content: message.content,
             })),
-        ).toEqual([{ id: 'user-1', role: 'user', content: 'race condition question' }]);
+        ).toEqual([{ id: 'user-1-1', role: 'user', content: 'race condition question' }]);
     });
 
     it('allows removing a queued message before it is sent', async () => {

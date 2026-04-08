@@ -472,43 +472,47 @@
 .ai-chat__queue-panel {
     max-width: 100%;
     margin: 0 auto 8px;
-    padding: 10px 12px;
+    padding: 8px 10px;
     border: 1px dashed var(--ant-color-border);
-    border-radius: 12px;
+    border-radius: 10px;
     background: color-mix(in srgb, var(--ant-color-bg-elevated) 88%, transparent);
 }
 
 .ai-chat__queue-header {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 10px;
+    gap: 4px 8px;
     align-items: center;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .ai-chat__queue-title {
-    font-size: var(--fs-rel-base);
+    font-size: var(--fs-rel-sm);
     font-weight: 600;
     color: var(--ant-color-text);
 }
 
 .ai-chat__queue-caption {
-    font-size: var(--fs-rel-sm);
+    font-size: var(--fs-rel-xs);
     color: var(--ant-color-text-secondary);
 }
 
 .ai-chat__queue-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+    max-height: clamp(88px, 22vh, 168px);
+    overflow-y: auto;
+    padding-right: 2px;
+    scrollbar-width: thin;
 }
 
 .ai-chat__queue-item {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
-    padding: 8px 8px 8px 10px;
-    border-radius: 10px;
+    gap: 6px;
+    padding: 6px 6px 6px 8px;
+    border-radius: 8px;
     background: var(--ant-color-bg-container);
     border: 1px solid var(--ant-color-border-secondary);
 }
@@ -518,17 +522,17 @@
     flex: 1;
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
 }
 
 .ai-chat__queue-item-order {
-    min-width: 18px;
-    height: 18px;
+    min-width: 16px;
+    height: 16px;
     border-radius: 999px;
     background: var(--ant-color-fill-secondary);
     color: var(--ant-color-text-secondary);
-    font-size: 11px;
-    line-height: 18px;
+    font-size: 10px;
+    line-height: 16px;
     text-align: center;
     flex-shrink: 0;
     margin-top: 1px;
@@ -536,11 +540,16 @@
 
 .ai-chat__queue-item-content {
     min-width: 0;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    color: var(--ant-color-text);
+    opacity: 0.84;
+    font-size: var(--fs-rel-sm);
+    line-height: 1.45;
     white-space: pre-wrap;
     word-break: break-word;
-    color: var(--ant-color-text);
-    opacity: 0.8;
-    font-size: var(--fs-rel-base);
 }
 
 .ai-chat__input-box {

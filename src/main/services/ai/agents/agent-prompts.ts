@@ -56,7 +56,7 @@ export function buildResearchAgentTaskPrompt(input: {
 export function buildSermonReaderTaskPrompt(input: {
     sermonId?: string;
     sermonQuery?: string;
-    question: string;
+    question?: string;
     translationId?: number;
     startParagraph?: number;
     maxParagraphs?: number;
@@ -78,7 +78,9 @@ export function buildSermonReaderTaskPrompt(input: {
         sections.push(`Sermon to resolve first: ${input.sermonQuery.trim()}`);
     }
 
-    sections.push(`Question to answer: ${input.question.trim()}`);
+    if (input.question?.trim()) {
+        sections.push(`Question to answer: ${input.question.trim()}`);
+    }
 
     if (input.startParagraph != null || input.maxParagraphs != null) {
         sections.push(

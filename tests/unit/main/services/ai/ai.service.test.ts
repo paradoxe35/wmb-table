@@ -197,7 +197,8 @@ describe('AiService', () => {
 
         await service.sendMessage({} as never, {
             conversationId: 'conv-1',
-            content: 'hello world',
+            messages: ['hello world'],
+            generationId: 'gen-1',
         });
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
@@ -210,10 +211,67 @@ describe('AiService', () => {
 
         await service.sendMessage({} as never, {
             conversationId: 'conv-1',
-            content: 'hello world',
+            messages: ['hello world'],
+            generationId: 'gen-1',
         });
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
         expect(runArgs.systemPrompt).toContain('## Delegation to subagents');
+    });
+
+    it('persists queued batches as separate user messages before the assistant run starts', async () => {
+        createMessageMock.mockReset();
+        createMessageMock
+            .mockReturnValueOnce({
+                id: 'user-1',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'second question',
+            })
+            .mockReturnValueOnce({
+                id: 'user-2',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'third question',
+            })
+            .mockReturnValueOnce({
+                id: 'assistant-1',
+                conversationId: 'conv-1',
+                role: 'assistant',
+                content: '',
+            });
+
+        const service = new AiService();
+
+        const result = await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['second question', 'third question'],
+            generationId: 'gen-1',
+        });
+
+        expect(createMessageMock).toHaveBeenNthCalledWith(1, {
+            conversationId: 'conv-1',
+            role: 'user',
+            content: 'second question',
+        });
+        expect(createMessageMock).toHaveBeenNthCalledWith(2, {
+            conversationId: 'conv-1',
+            role: 'user',
+            content: 'third question',
+        });
+        expect(result.userMessages).toEqual([
+            {
+                id: 'user-1',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'second question',
+            },
+            {
+                id: 'user-2',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'third question',
+            },
+        ]);
     });
 });

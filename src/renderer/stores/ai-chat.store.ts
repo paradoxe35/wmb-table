@@ -115,10 +115,6 @@ function isMessageEmpty(message: AiMessage | undefined): boolean {
     );
 }
 
-function buildQueuedBatch(messages: QueuedMessage[]): string {
-    return messages.map((message) => message.content).join('\n\n');
-}
-
 function createQueuedMessage(content: string): QueuedMessage {
     return {
         id: crypto.randomUUID(),
@@ -193,7 +189,7 @@ interface AiChatState {
     deleteConversation(conversationId: string): Promise<void>;
     clearConversations(): Promise<void>;
     sendMessage(content: string): Promise<boolean>;
-    sendMessageNow(conversationId: string, content: string): Promise<boolean>;
+    sendMessageNow(conversationId: string, messages: string[]): Promise<boolean>;
     flushQueuedMessages(conversationId: string): Promise<boolean>;
     removeQueuedMessage(conversationId: string, queuedMessageId: string): void;
     stopGeneration(): Promise<void>;
@@ -643,7 +639,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         return true;
     },
 
-    sendMessageNow: async (conversationId, content) => {
+    sendMessageNow: async (conversationId, messages) => {
         const generationId = crypto.randomUUID();
 
         set((state) => ({
@@ -662,7 +658,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         try {
             const result: AiSendMessageResult = await window.api.ai.sendMessage({
                 conversationId,
-                content,
+                messages,
                 generationId,
             });
 
@@ -674,7 +670,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     state.messagesByConversation[resolvedConversationId] ??
                     state.messagesByConversation[conversationId] ??
                     [];
-                const messagesWithUser = upsertMessage(existingMessages, result.userMessage);
+                const messagesWithUsers = result.userMessages.reduce(
+                    (acc, message) => upsertMessage(acc, message),
+                    existingMessages,
+                );
                 const currentRun = state.conversationRuns[conversationId];
 
                 if (!currentRun || currentRun.generationId !== generationId) {
@@ -682,12 +681,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         conversations: upsertConversation(state.conversations, result.conversation),
                         messagesByConversation: {
                             ...state.messagesByConversation,
-                            [resolvedConversationId]: messagesWithUser,
+                            [resolvedConversationId]: messagesWithUsers,
                         },
                     };
                 }
 
-                const nextMessages = upsertMessage(messagesWithUser, result.assistantMessage);
+                const nextMessages = upsertMessage(messagesWithUsers, result.assistantMessage);
 
                 return {
                     conversations: upsertConversation(state.conversations, result.conversation),
@@ -742,7 +741,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             return false;
         }
 
-        const batchContent = buildQueuedBatch(queuedMessages);
+        const batchMessages = queuedMessages.map((message) => message.content);
 
         set((state) => ({
             queuedMessagesByConversation: removeConversationKey(
@@ -751,7 +750,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             ),
         }));
 
-        const sent = await get().sendMessageNow(conversationId, batchContent);
+        const sent = await get().sendMessageNow(conversationId, batchMessages);
         if (!sent) {
             set((state) => ({
                 queuedMessagesByConversation: {

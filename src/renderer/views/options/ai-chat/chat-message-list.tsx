@@ -209,6 +209,7 @@ export default function ChatMessageList({
     sending,
     activeAssistantMessageId,
     hasQueuedMessages,
+    queuedMessageCount,
     loading,
     onQuickStart,
 }: {
@@ -217,6 +218,7 @@ export default function ChatMessageList({
     sending: boolean;
     activeAssistantMessageId: string | null;
     hasQueuedMessages: boolean;
+    queuedMessageCount: number;
     loading: boolean;
     onQuickStart: (prompt: string) => void;
 }) {
@@ -274,6 +276,15 @@ export default function ChatMessageList({
         }
         prevSending.current = sending;
     }, [sending, scrollToBottom]);
+
+    const prevQueuedMessageCount = useRef(queuedMessageCount);
+    useEffect(() => {
+        if (queuedMessageCount > prevQueuedMessageCount.current) {
+            scrollToBottom();
+        }
+
+        prevQueuedMessageCount.current = queuedMessageCount;
+    }, [queuedMessageCount, scrollToBottom]);
 
     return (
         <div className="ai-chat__messages-wrapper">

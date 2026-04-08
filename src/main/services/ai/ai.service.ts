@@ -225,13 +225,22 @@ export class AiService {
             );
         }
 
+        const trimmedMessages = request.messages
+            .map((message) => message.trim())
+            .filter((message) => message.length > 0);
+        if (trimmedMessages.length === 0) {
+            throw new Error('Le message ne peut pas être vide.');
+        }
+
         const conversation =
             aiRepo.getConversation(request.conversationId) ?? this.createConversation();
-        const userMessage = aiRepo.createMessage({
-            conversationId: conversation.id,
-            role: 'user',
-            content: request.content.trim(),
-        });
+        const userMessages = trimmedMessages.map((content) =>
+            aiRepo.createMessage({
+                conversationId: conversation.id,
+                role: 'user',
+                content,
+            }),
+        );
         const assistantMessage = aiRepo.createMessage({
             conversationId: conversation.id,
             role: 'assistant',
@@ -240,7 +249,7 @@ export class AiService {
 
         if (!conversation.title) {
             aiRepo.updateConversation(conversation.id, {
-                title: request.content.trim().slice(0, 80),
+                title: trimmedMessages[0].slice(0, 80),
             });
         }
 
@@ -367,7 +376,7 @@ export class AiService {
         return {
             generationId: request.generationId,
             conversation: aiRepo.getConversation(conversation.id)!,
-            userMessage,
+            userMessages,
             assistantMessage,
         };
     }

@@ -169,14 +169,14 @@ export interface AiMessage {
 
 export interface AiSendMessageRequest {
     conversationId: string;
-    content: string;
+    messages: string[];
     generationId: string;
 }
 
 export interface AiSendMessageResult {
     generationId: string;
     conversation: AiConversation;
-    userMessage: AiMessage;
+    userMessages: AiMessage[];
     assistantMessage: AiMessage;
 }
 
