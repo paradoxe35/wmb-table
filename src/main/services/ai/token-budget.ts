@@ -7,8 +7,8 @@ export const DEFAULT_REMOTE_TOKEN_BUDGET = 32_000;
 export const MIN_HISTORY_BUDGET = 4_000;
 export const MAX_HISTORY_BUDGET = 200_000;
 
-export const REMOTE_MAX_OUTPUT_TOKENS = 6_144;
-export const REMOTE_MIN_OUTPUT_TOKENS = 8_192;
+export const REMOTE_MAX_OUTPUT_TOKENS = 8_192;
+export const REMOTE_MIN_OUTPUT_TOKENS = 2_048;
 export const MIN_REMOTE_CONTEXT_WINDOW = 16_000;
 
 interface TokenOverheadInput {
