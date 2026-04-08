@@ -8,6 +8,8 @@ import { PushChannels } from '@shared/ipc.types';
 import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import type {
     AiConversation,
+    AiMessageHistoryPage,
+    AiMessageHistoryPageRequest,
     AiMessage,
     AiProviderTestResult,
     AiSendMessageRequest,
@@ -40,6 +42,7 @@ interface RunGenerationOptions {
     runner: GenerationRunnerImpl;
     browserWindow: BrowserWindow;
     conversation: AiConversation;
+    generationId: string;
     assistantMessage: AiMessage;
     model: ReturnType<typeof resolveLanguageModel>;
     systemPrompt: string;
@@ -55,9 +58,29 @@ interface RunGenerationOptions {
     uiLanguageCode: string;
 }
 
+interface ActiveRun {
+    browserWindow: BrowserWindow;
+    conversationId: string;
+    generationId: string;
+    assistantMessageId: string;
+    controller: AbortController;
+}
+
+interface BufferedAssistantText {
+    browserWindow: BrowserWindow;
+    conversationId: string;
+    generationId: string;
+    assistantMessageId: string;
+    buffer: string;
+    timer: ReturnType<typeof setTimeout> | null;
+}
+
 export class AiService {
-    private controllers = new Map<string, AbortController>();
+    private activeRuns = new Map<string, ActiveRun>();
+    private bufferedAssistantText = new Map<string, BufferedAssistantText>();
     private localRuntime = new LocalRuntimeService();
+    private static readonly TEXT_FLUSH_INTERVAL_MS = 40;
+    private static readonly TEXT_FLUSH_THRESHOLD_CHARS = 160;
 
     // ── Settings & catalog ──
 
@@ -109,8 +132,8 @@ export class AiService {
         aiRepo.clearAllConversations();
     }
 
-    getMessages(conversationId: string): AiMessage[] {
-        return aiRepo.getMessages(conversationId);
+    getMessagesPage(request: AiMessageHistoryPageRequest): AiMessageHistoryPage {
+        return aiRepo.getMessageHistoryPage(request);
     }
 
     // ── Local models ──
@@ -126,8 +149,19 @@ export class AiService {
     // ── Generation control ──
 
     stopGeneration(conversationId: string): void {
-        this.controllers.get(conversationId)?.abort();
-        this.controllers.delete(conversationId);
+        const activeRun = this.activeRuns.get(conversationId);
+        if (!activeRun) {
+            return;
+        }
+
+        this.flushAssistantText(activeRun.assistantMessageId);
+        activeRun.controller.abort();
+        this.activeRuns.delete(conversationId);
+        sendToRenderer(activeRun.browserWindow, PushChannels.aiStreamCancel, {
+            conversationId,
+            generationId: activeRun.generationId,
+            messageId: activeRun.assistantMessageId,
+        });
     }
 
     // ── Provider testing ──
@@ -206,23 +240,11 @@ export class AiService {
             );
         }
 
-        const conversation =
-            aiRepo.getConversation(request.conversationId) ?? this.createConversation();
-        const userMessage = aiRepo.createMessage({
-            conversationId: conversation.id,
-            role: 'user',
-            content: request.content.trim(),
-        });
-        const assistantMessage = aiRepo.createMessage({
-            conversationId: conversation.id,
-            role: 'assistant',
-            content: '',
-        });
-
-        if (!conversation.title) {
-            aiRepo.updateConversation(conversation.id, {
-                title: request.content.trim().slice(0, 80),
-            });
+        const trimmedMessages = request.messages
+            .map((message) => message.trim())
+            .filter((message) => message.length > 0);
+        if (trimmedMessages.length === 0) {
+            throw new Error('Le message ne peut pas être vide.');
         }
 
         const contentLanguageCode = configRepo.getContentLanguage();
@@ -264,9 +286,31 @@ export class AiService {
             localRuntime: this.localRuntime,
         });
 
+        const installedLanguages = await languagePackService.getInstalledLanguages();
+        const conversation =
+            aiRepo.getConversation(request.conversationId) ?? this.createConversation();
+
         this.stopGeneration(conversation.id);
+        const userMessages = trimmedMessages.map((content) =>
+            aiRepo.createMessage({
+                conversationId: conversation.id,
+                role: 'user',
+                content,
+            }),
+        );
+        const assistantMessage = aiRepo.createMessage({
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: '',
+        });
+
+        if (!conversation.title) {
+            aiRepo.updateConversation(conversation.id, {
+                title: trimmedMessages[0].slice(0, 80),
+            });
+        }
+
         const controller = new AbortController();
-        this.controllers.set(conversation.id, controller);
 
         const tools = buildAiTools(contentLanguageCode, {
             model,
@@ -276,10 +320,10 @@ export class AiService {
             abortSignal: controller.signal,
             browserWindow,
             conversationId: conversation.id,
+            generationId: request.generationId,
             assistantMessageId: assistantMessage.id,
         });
 
-        const installedLanguages = await languagePackService.getInstalledLanguages();
         const system = buildSystemPrompt({
             contentLanguageCode,
             uiLanguageCode,
@@ -308,6 +352,14 @@ export class AiService {
 
         const runner = new GenerationRunnerImpl(isLocal);
 
+        this.activeRuns.set(conversation.id, {
+            browserWindow,
+            conversationId: conversation.id,
+            generationId: request.generationId,
+            assistantMessageId: assistantMessage.id,
+            controller,
+        });
+
         log.info('AI generation starting', {
             providerId,
             modelId,
@@ -322,6 +374,7 @@ export class AiService {
             runner,
             browserWindow,
             conversation,
+            generationId: request.generationId,
             assistantMessage,
             model,
             systemPrompt,
@@ -338,8 +391,9 @@ export class AiService {
         });
 
         return {
+            generationId: request.generationId,
             conversation: aiRepo.getConversation(conversation.id)!,
-            userMessage,
+            userMessages,
             assistantMessage,
         };
     }
@@ -347,8 +401,11 @@ export class AiService {
     // ── Lifecycle ──
 
     dispose(): void {
-        for (const conversationId of this.controllers.keys()) {
+        for (const conversationId of this.activeRuns.keys()) {
             this.stopGeneration(conversationId);
+        }
+        for (const messageId of this.bufferedAssistantText.keys()) {
+            this.clearAssistantTextTimer(messageId);
         }
         void this.localRuntime.dispose();
     }
@@ -381,6 +438,7 @@ export class AiService {
             runner,
             browserWindow,
             conversation,
+            generationId,
             assistantMessage,
             model,
             systemPrompt,
@@ -395,21 +453,39 @@ export class AiService {
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
+        const isCurrentRun = () =>
+            this.isCurrentRun(conversation.id, generationId, assistantMessage.id);
 
         try {
             await runner.run({
                 browserWindow,
                 conversationId: conversation.id,
+                generationId,
                 assistantMessageId: assistantMessage.id,
                 model,
                 systemPrompt,
                 history,
                 tools,
                 abortSignal,
+                isCurrentRun: (_generationId, assistantMessageId) =>
+                    this.isCurrentRun(conversation.id, generationId, assistantMessageId),
+                dispatchTextDelta: (delta) =>
+                    this.queueAssistantText(
+                        browserWindow,
+                        conversation.id,
+                        generationId,
+                        assistantMessage.id,
+                        delta,
+                    ),
                 contextWindow,
                 toolTokens,
                 systemPromptTokens,
             });
+
+            this.flushAssistantText(assistantMessage.id);
+            if (!isCurrentRun()) {
+                return;
+            }
 
             const nextContext = buildConversationContext(
                 conversation.id,
@@ -419,19 +495,29 @@ export class AiService {
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
             });
+            this.releaseRun(conversation.id, generationId);
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,
+                generationId,
                 messageId: assistantMessage.id,
             });
 
             const current = aiRepo.getConversation(conversation.id);
-            const allMessages = aiRepo.getMessages(conversation.id);
-            if (current && shouldGenerateTitle(allMessages.length, current.aiTitle)) {
+
+            const MAX_TITLE_INPUT_MESSAGES = 20;
+            const recentMessages = aiRepo.getRecentMessages(
+                conversation.id,
+                MAX_TITLE_INPUT_MESSAGES,
+            );
+            if (current && shouldGenerateTitle(recentMessages.length, current.aiTitle)) {
                 const title = await generateConversationTitle(
                     model,
                     uiLanguageCode,
                     contentLanguageCode,
-                    allMessages.map((m) => ({ role: m.role, content: m.content })),
+                    recentMessages.map((message) => ({
+                        role: message.role,
+                        content: message.content,
+                    })),
                 );
 
                 if (title) {
@@ -445,23 +531,171 @@ export class AiService {
                 }
             }
         } catch (error) {
+            this.flushAssistantText(assistantMessage.id);
             const message = error instanceof Error ? error.message : 'AI generation failed.';
+            const wasAborted = abortSignal.aborted || this.isAbortError(error);
+            if (wasAborted || !isCurrentRun()) {
+                return;
+            }
+
+            this.releaseRun(conversation.id, generationId);
             log.error('AI generation failed', {
                 conversationId: conversation.id,
                 message,
             });
             sendToRenderer(browserWindow, PushChannels.aiStreamError, {
                 conversationId: conversation.id,
+                generationId,
                 messageId: assistantMessage.id,
                 error: message,
             });
         } finally {
             try {
-                aiRepo.syncMessage(assistantMessage.id);
+                this.flushAssistantText(assistantMessage.id);
+                this.finalizeAssistantMessage(assistantMessage.id, {
+                    removeIfEmpty: true,
+                });
             } catch {
                 // DB may already be closed during app shutdown
             }
-            this.controllers.delete(conversation.id);
+            this.releaseRun(conversation.id, generationId);
         }
+    }
+
+    private isCurrentRun(
+        conversationId: string,
+        generationId: string,
+        assistantMessageId: string,
+    ): boolean {
+        const activeRun = this.activeRuns.get(conversationId);
+        return (
+            activeRun?.generationId === generationId &&
+            activeRun.assistantMessageId === assistantMessageId
+        );
+    }
+
+    private releaseRun(conversationId: string, generationId: string): void {
+        const activeRun = this.activeRuns.get(conversationId);
+        if (activeRun?.generationId === generationId) {
+            this.activeRuns.delete(conversationId);
+        }
+    }
+
+    private finalizeAssistantMessage(
+        messageId: string,
+        options?: { removeIfEmpty?: boolean },
+    ): void {
+        const message = aiRepo.getMessage(messageId);
+        if (!message) {
+            return;
+        }
+
+        const isEmpty =
+            !message.content.trim() &&
+            message.toolCalls.length === 0 &&
+            message.toolResults.length === 0;
+
+        if (options?.removeIfEmpty && isEmpty) {
+            aiRepo.deleteMessage(messageId);
+            return;
+        }
+
+        aiRepo.syncMessage(messageId);
+    }
+
+    private queueAssistantText(
+        browserWindow: BrowserWindow,
+        conversationId: string,
+        generationId: string,
+        assistantMessageId: string,
+        delta: string,
+    ): void {
+        if (!delta) {
+            return;
+        }
+
+        const current =
+            this.bufferedAssistantText.get(assistantMessageId) ??
+            ({
+                browserWindow,
+                conversationId,
+                generationId,
+                assistantMessageId,
+                buffer: '',
+                timer: null,
+            } satisfies BufferedAssistantText);
+
+        current.buffer += delta;
+        this.bufferedAssistantText.set(assistantMessageId, current);
+
+        if (current.buffer.length >= AiService.TEXT_FLUSH_THRESHOLD_CHARS) {
+            this.flushAssistantText(assistantMessageId);
+            return;
+        }
+
+        if (current.timer) {
+            return;
+        }
+
+        current.timer = setTimeout(() => {
+            this.flushAssistantText(assistantMessageId);
+        }, AiService.TEXT_FLUSH_INTERVAL_MS);
+    }
+
+    private flushAssistantText(assistantMessageId: string): void {
+        const current = this.bufferedAssistantText.get(assistantMessageId);
+        if (!current) {
+            return;
+        }
+
+        this.clearAssistantTextTimer(assistantMessageId);
+
+        if (!current.buffer) {
+            this.bufferedAssistantText.delete(assistantMessageId);
+            return;
+        }
+
+        if (
+            !this.isCurrentRun(
+                current.conversationId,
+                current.generationId,
+                current.assistantMessageId,
+            )
+        ) {
+            this.bufferedAssistantText.delete(assistantMessageId);
+            return;
+        }
+
+        const delta = current.buffer;
+        this.bufferedAssistantText.delete(assistantMessageId);
+        aiRepo.appendAssistantContent(assistantMessageId, delta);
+        sendToRenderer(current.browserWindow, PushChannels.aiStreamChunk, {
+            conversationId: current.conversationId,
+            generationId: current.generationId,
+            messageId: current.assistantMessageId,
+            delta,
+        });
+    }
+
+    private clearAssistantTextTimer(assistantMessageId: string): void {
+        const current = this.bufferedAssistantText.get(assistantMessageId);
+        if (!current?.timer) {
+            return;
+        }
+
+        clearTimeout(current.timer);
+        current.timer = null;
+    }
+
+    private isAbortError(error: unknown): boolean {
+        if (error instanceof DOMException) {
+            return error.name === 'AbortError';
+        }
+
+        if (!(error instanceof Error)) {
+            return false;
+        }
+
+        return /abort(ed)?/i.test(error.message);
     }
 }

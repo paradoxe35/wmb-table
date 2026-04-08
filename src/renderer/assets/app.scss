@@ -209,7 +209,7 @@ body {
     display: flex;
     justify-content: space-between;
     position: relative;
-    z-index: 1100;
+    z-index: 20;
     -webkit-app-region: drag;
 
     * {
@@ -594,6 +594,10 @@ body {
 .settings-doc-button.ant-btn .anticon {
     font-size: 12px;
     line-height: 1;
+}
+
+.ant-tooltip {
+    z-index: 1201;
 }
 
 .inline-help-card {

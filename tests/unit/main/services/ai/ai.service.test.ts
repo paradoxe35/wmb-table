@@ -15,8 +15,11 @@ const calculateRemoteTokenBudgetMock = vi.fn();
 const measurePromptTokensMock = vi.fn();
 const measureToolTokensMock = vi.fn();
 const getConversationMock = vi.fn();
+const getRecentMessagesMock = vi.fn();
 const createMessageMock = vi.fn();
 const updateConversationMock = vi.fn();
+const shouldGenerateTitleMock = vi.fn();
+const generateConversationTitleMock = vi.fn();
 
 vi.mock('ai', () => ({
     generateText: generateTextMock,
@@ -27,6 +30,7 @@ vi.mock('@main/database/repositories/ai.repository', () => ({
     updateSettings: vi.fn(),
     trimConversationHistory: vi.fn(),
     getConversation: getConversationMock,
+    getRecentMessages: getRecentMessagesMock,
     createMessage: createMessageMock,
     updateConversation: updateConversationMock,
     syncMessage: vi.fn(),
@@ -105,8 +109,8 @@ vi.mock('@main/services/ai/runners', () => ({
 }));
 
 vi.mock('@main/services/ai/title-generator', () => ({
-    shouldGenerateTitle: vi.fn(),
-    generateConversationTitle: vi.fn(),
+    shouldGenerateTitle: shouldGenerateTitleMock,
+    generateConversationTitle: generateConversationTitleMock,
 }));
 
 vi.mock('@shared/constants', () => ({
@@ -154,6 +158,9 @@ describe('AiService', () => {
             summary: null,
         });
         runnerRunMock.mockImplementation(() => new Promise(() => {}));
+        getRecentMessagesMock.mockReturnValue([]);
+        shouldGenerateTitleMock.mockReturnValue(false);
+        generateConversationTitleMock.mockResolvedValue(null);
         getConversationMock.mockReturnValue({
             id: 'conv-1',
             title: null,
@@ -191,13 +198,30 @@ describe('AiService', () => {
         expect(generateTextMock).not.toHaveBeenCalled();
     });
 
+    it('does not persist queued user messages when send setup fails before generation can start', async () => {
+        getContentLanguageMock.mockReturnValue(null);
+        const service = new AiService();
+
+        await expect(
+            service.sendMessage({} as never, {
+                conversationId: 'conv-1',
+                messages: ['hello world', 'second message'],
+                generationId: 'gen-1',
+            }),
+        ).rejects.toThrow('Aucune langue sélectionnée');
+
+        expect(createMessageMock).not.toHaveBeenCalled();
+        expect(runnerRunMock).not.toHaveBeenCalled();
+    });
+
     it('omits delegation instructions for small remote context windows', async () => {
         getModelContextWindowMock.mockResolvedValue(8_000);
         const service = new AiService();
 
         await service.sendMessage({} as never, {
             conversationId: 'conv-1',
-            content: 'hello world',
+            messages: ['hello world'],
+            generationId: 'gen-1',
         });
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
@@ -210,10 +234,97 @@ describe('AiService', () => {
 
         await service.sendMessage({} as never, {
             conversationId: 'conv-1',
-            content: 'hello world',
+            messages: ['hello world'],
+            generationId: 'gen-1',
         });
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
         expect(runArgs.systemPrompt).toContain('## Delegation to subagents');
+    });
+
+    it('persists queued batches as separate user messages before the assistant run starts', async () => {
+        createMessageMock.mockReset();
+        createMessageMock
+            .mockReturnValueOnce({
+                id: 'user-1',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'second question',
+            })
+            .mockReturnValueOnce({
+                id: 'user-2',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'third question',
+            })
+            .mockReturnValueOnce({
+                id: 'assistant-1',
+                conversationId: 'conv-1',
+                role: 'assistant',
+                content: '',
+            });
+
+        const service = new AiService();
+
+        const result = await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['second question', 'third question'],
+            generationId: 'gen-1',
+        });
+
+        expect(createMessageMock).toHaveBeenNthCalledWith(1, {
+            conversationId: 'conv-1',
+            role: 'user',
+            content: 'second question',
+        });
+        expect(createMessageMock).toHaveBeenNthCalledWith(2, {
+            conversationId: 'conv-1',
+            role: 'user',
+            content: 'third question',
+        });
+        expect(result.userMessages).toEqual([
+            {
+                id: 'user-1',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'second question',
+            },
+            {
+                id: 'user-2',
+                conversationId: 'conv-1',
+                role: 'user',
+                content: 'third question',
+            },
+        ]);
+    });
+
+    it('uses only the 20 most recent messages when generating a conversation title', async () => {
+        runnerRunMock.mockResolvedValue(undefined);
+        shouldGenerateTitleMock.mockReturnValue(true);
+        getRecentMessagesMock.mockReturnValue(
+            Array.from({ length: 20 }, (_, index) => ({
+                id: `message-${index + 1}`,
+                conversationId: 'conv-1',
+                role: index % 2 === 0 ? 'user' : 'assistant',
+                content: `message ${index + 1}`,
+            })),
+        );
+        generateConversationTitleMock.mockResolvedValue('Recent title');
+
+        const service = new AiService();
+
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+
+        expect(getRecentMessagesMock).toHaveBeenCalledWith('conv-1', 20);
+        expect(generateConversationTitleMock).toHaveBeenCalledWith(
+            { id: 'model' },
+            'en',
+            'fr',
+            expect.arrayContaining([{ role: 'user', content: 'message 1' }]),
+        );
     });
 });

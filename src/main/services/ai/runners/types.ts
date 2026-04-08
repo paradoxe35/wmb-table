@@ -2,16 +2,20 @@ import type { BrowserWindow } from 'electron';
 import type { LanguageModel } from 'ai';
 import type { buildAiTools } from '../tools';
 import type { PromptHistoryMessage } from '../context-memory';
+import type { RunDispatchGuard } from './stream-dispatcher';
 
 export interface GenerationContext {
     browserWindow: BrowserWindow;
     conversationId: string;
+    generationId: string;
     assistantMessageId: string;
     model: LanguageModel;
     systemPrompt: string;
     history: PromptHistoryMessage[];
     tools: ReturnType<typeof buildAiTools>;
     abortSignal: AbortSignal;
+    isCurrentRun: RunDispatchGuard;
+    dispatchTextDelta: (delta: string) => void;
     contextWindow?: number;
     toolTokens: number;
     systemPromptTokens: number;

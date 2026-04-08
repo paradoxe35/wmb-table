@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
@@ -6,8 +6,11 @@ import { parseJsonOrFallback } from '@main/lib/json';
 import { logChange } from '@main/services/sync/change-log.service';
 import {
     BUILTIN_PROVIDER_IDS,
+    AI_MESSAGE_HISTORY_PAGE_SIZE,
     createDefaultAiSettings,
     type AiConversation,
+    type AiMessageHistoryPage,
+    type AiMessageHistoryPageRequest,
     type AiMessage,
     type AiMessageRole,
     type AiProviders,
@@ -283,6 +286,40 @@ export function getRecentMessages(conversationId: string, limit: number): AiMess
     return rows.reverse().map(toMessage);
 }
 
+export function getMessageHistoryPage(input: AiMessageHistoryPageRequest): AiMessageHistoryPage {
+    const limit = Math.max(1, input.limit ?? AI_MESSAGE_HISTORY_PAGE_SIZE);
+    const loadedCount = Math.max(0, input.loadedCount ?? 0);
+    const totalCountRow = getDb()
+        .select({ count: sql<number>`count(*)` })
+        .from(aiMessages)
+        .where(eq(aiMessages.conversationId, input.conversationId))
+        .get();
+    const totalCount = Number(totalCountRow?.count ?? 0);
+    const remainingOlderCount = Math.max(totalCount - loadedCount, 0);
+    const pageSize = Math.min(limit, remainingOlderCount);
+    const startOffset = Math.max(totalCount - loadedCount - pageSize, 0);
+
+    const messages =
+        pageSize === 0
+            ? []
+            : getDb()
+                  .select()
+                  .from(aiMessages)
+                  .where(eq(aiMessages.conversationId, input.conversationId))
+                  .orderBy(asc(aiMessages.createdAt))
+                  .limit(pageSize)
+                  .offset(startOffset)
+                  .all()
+                  .map(toMessage);
+
+    return {
+        messages,
+        loadedCount: loadedCount + messages.length,
+        totalCount,
+        hasMore: startOffset > 0,
+    };
+}
+
 export function getMessage(messageId: string): AiMessage | null {
     const row = getDb().select().from(aiMessages).where(eq(aiMessages.id, messageId)).get();
     return row ? toMessage(row) : null;
@@ -342,12 +379,25 @@ export function updateMessage(
     return getMessage(messageId)!;
 }
 
-export function appendAssistantContent(messageId: string, delta: string): AiMessage {
-    const current = getMessage(messageId);
-    if (!current) {
+export function appendAssistantContent(messageId: string, delta: string): void {
+    const row = getDb()
+        .select({ conversationId: aiMessages.conversationId })
+        .from(aiMessages)
+        .where(eq(aiMessages.id, messageId))
+        .get();
+    if (!row) {
         throw new Error(`AI message not found: ${messageId}`);
     }
-    return updateMessage(messageId, { content: `${current.content}${delta}` });
+
+    getDb()
+        .update(aiMessages)
+        .set({
+            content: sql`${aiMessages.content} || ${delta}`,
+        })
+        .where(eq(aiMessages.id, messageId))
+        .run();
+
+    touchConversation(row.conversationId);
 }
 
 export function setAssistantToolCalls(messageId: string, toolCalls: AiToolCall[]): AiMessage {
@@ -360,6 +410,18 @@ export function addAssistantToolResult(messageId: string, toolResult: AiToolResu
         throw new Error(`AI message not found: ${messageId}`);
     }
     return updateMessage(messageId, { toolResults: [...current.toolResults, toolResult] });
+}
+
+export function deleteMessage(messageId: string): void {
+    const current = getMessage(messageId);
+    if (!current) {
+        return;
+    }
+
+    getDb().delete(aiMessages).where(eq(aiMessages.id, messageId)).run();
+    touchConversation(current.conversationId);
+    logChange('ai_messages', messageId, 'DELETE', { id: messageId });
+    logConversationChange(current.conversationId);
 }
 
 /**

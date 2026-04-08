@@ -7,6 +7,7 @@ export type AiBuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[number];
 export type AiProviderId = AiBuiltinProviderId | string;
 export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';
 export type AiLanguagePreference = 'active' | 'explicit-only';
+export const AI_MESSAGE_HISTORY_PAGE_SIZE = 30;
 
 // ---------------------------------------------------------------------------
 // Provider configuration
@@ -167,14 +168,29 @@ export interface AiMessage {
     createdAt: string;
 }
 
+export interface AiMessageHistoryPageRequest {
+    conversationId: string;
+    limit?: number;
+    loadedCount?: number;
+}
+
+export interface AiMessageHistoryPage {
+    messages: AiMessage[];
+    loadedCount: number;
+    totalCount: number;
+    hasMore: boolean;
+}
+
 export interface AiSendMessageRequest {
     conversationId: string;
-    content: string;
+    messages: string[];
+    generationId: string;
 }
 
 export interface AiSendMessageResult {
+    generationId: string;
     conversation: AiConversation;
-    userMessage: AiMessage;
+    userMessages: AiMessage[];
     assistantMessage: AiMessage;
 }
 
@@ -232,23 +248,33 @@ export interface AiModelDownloadProgress {
 
 export interface AiStreamChunkEvent {
     conversationId: string;
+    generationId: string;
     messageId: string;
     delta: string;
 }
 
 export interface AiStreamCompleteEvent {
     conversationId: string;
+    generationId: string;
+    messageId: string;
+}
+
+export interface AiStreamCancelEvent {
+    conversationId: string;
+    generationId: string;
     messageId: string;
 }
 
 export interface AiStreamErrorEvent {
     conversationId: string;
+    generationId: string;
     messageId: string;
     error: string;
 }
 
 export interface AiToolEvent {
     conversationId: string;
+    generationId: string;
     messageId: string;
     toolName: string;
     toolCallId: string;
@@ -257,6 +283,7 @@ export interface AiToolEvent {
 
 export interface AiReasoningEvent {
     conversationId: string;
+    generationId: string;
     messageId: string;
     delta: string;
 }

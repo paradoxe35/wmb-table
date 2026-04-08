@@ -67,16 +67,18 @@ import type {
 } from './tts.types';
 import type {
     AiConversation,
-    AiMessage,
     AiModelDownloadProgress,
     AiModelScanResult,
     AiProviderTestResult,
     AiRemoteModel,
     AiProviderDefinition,
+    AiMessageHistoryPage,
+    AiMessageHistoryPageRequest,
     AiSendMessageRequest,
     AiSendMessageResult,
     AiSettings,
     AiStreamChunkEvent,
+    AiStreamCancelEvent,
     AiStreamCompleteEvent,
     AiStreamErrorEvent,
     AiToolEvent,
@@ -257,7 +259,7 @@ export const AiChannels = {
     createConversation: 'ai:createConversation',
     deleteConversation: 'ai:deleteConversation',
     clearConversations: 'ai:clearConversations',
-    getMessages: 'ai:getMessages',
+    getMessagesPage: 'ai:getMessagesPage',
     sendMessage: 'ai:sendMessage',
     stopGeneration: 'ai:stopGeneration',
     scanLocalModels: 'ai:scanLocalModels',
@@ -295,6 +297,7 @@ export const PushChannels = {
     ttsSegmentAudio: 'push:ttsSegmentAudio',
     aiStreamChunk: 'push:aiStreamChunk',
     aiStreamComplete: 'push:aiStreamComplete',
+    aiStreamCancel: 'push:aiStreamCancel',
     aiStreamError: 'push:aiStreamError',
     aiToolCallStart: 'push:aiToolCallStart',
     aiToolCallComplete: 'push:aiToolCallComplete',
@@ -559,7 +562,10 @@ export interface InvokeChannelMap {
     };
     [AiChannels.deleteConversation]: { args: [string]; return: void };
     [AiChannels.clearConversations]: { args: []; return: void };
-    [AiChannels.getMessages]: { args: [string]; return: AiMessage[] };
+    [AiChannels.getMessagesPage]: {
+        args: [AiMessageHistoryPageRequest];
+        return: AiMessageHistoryPage;
+    };
     [AiChannels.sendMessage]: { args: [AiSendMessageRequest]; return: AiSendMessageResult };
     [AiChannels.stopGeneration]: { args: [string]; return: void };
     [AiChannels.scanLocalModels]: { args: []; return: AiModelScanResult };
@@ -600,6 +606,7 @@ export interface PushEventMap {
     [PushChannels.ttsSegmentAudio]: TtsSegmentAudio;
     [PushChannels.aiStreamChunk]: AiStreamChunkEvent;
     [PushChannels.aiStreamComplete]: AiStreamCompleteEvent;
+    [PushChannels.aiStreamCancel]: AiStreamCancelEvent;
     [PushChannels.aiStreamError]: AiStreamErrorEvent;
     [PushChannels.aiToolCallStart]: AiToolEvent;
     [PushChannels.aiToolCallComplete]: AiToolEvent;

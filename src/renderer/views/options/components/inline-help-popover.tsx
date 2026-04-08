@@ -92,6 +92,7 @@ export default function InlineHelpPopover({
             placement={placement}
             content={<HelpBody content={content} />}
             overlayClassName="inline-help-popover"
+            zIndex={19}
         >
             <Button
                 type="text"

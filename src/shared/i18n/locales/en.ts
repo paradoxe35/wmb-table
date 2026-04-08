@@ -178,6 +178,14 @@ const en: Record<string, string> = {
         'Compare several references on the same topic.',
     Envoyer: 'Send',
     Arrêter: 'Stop',
+    '{{count}} message en attente': '{{count}} pending message',
+    '{{count}} messages en attente': '{{count}} pending messages',
+    'Ils seront envoyés dès que cette réponse se termine.':
+        'They will be sent as soon as this response finishes.',
+    "En attente d'envoi.": 'Waiting to be sent.',
+    "Ajoutez un message à la file d'attente...": 'Add a message to the queue...',
+    "Ajouter à la file d'attente": 'Add to queue',
+    'Retirer de la file': 'Remove from queue',
     Conversations: 'Conversations',
     'Aucune conversation': 'No conversations',
     'Aucun sujet': 'No subjects',
@@ -192,6 +200,7 @@ const en: Record<string, string> = {
     'Supprimer cette conversation ?': 'Delete this conversation?',
     'Supprimer toutes les conversations ?': 'Delete all conversations?',
     "Vider l'historique": 'Clear history',
+    'Le chargement des anciens messages a échoué.': 'Loading older messages failed.',
 
     // ── AI tool results ──
     'Recherche de sermons': 'Sermon search',

@@ -1,5 +1,6 @@
 import type {
     AiConversation,
+    AiMessageHistoryPage,
     AiMessage,
     AiModelScanResult,
     AiProviderDefinition,
@@ -7,7 +8,11 @@ import type {
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
-import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
+import {
+    AI_MESSAGE_HISTORY_PAGE_SIZE,
+    resolveActiveModel,
+    resolveProviderName,
+} from '@shared/ai.types';
 import { AI_DATA_EVENT, APP_UI_EVENT } from '@renderer/utils/events';
 import { createStore } from './create-store';
 import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
@@ -24,31 +29,193 @@ const TOOL_TO_EVENT: Record<string, string> = {
 
 type MessageMap = Record<string, AiMessage[]>;
 type ReasoningMap = Record<string, string>;
-type StreamingConversationMap = Record<string, true>;
 type LoadingConversationMap = Record<string, true>;
+type ConversationHistoryMap = Record<string, ConversationHistoryState>;
 
-function addStreamingConversation(
-    streamingConversations: StreamingConversationMap,
-    conversationId: string,
-): StreamingConversationMap {
+type ConversationRunStatus = 'starting' | 'streaming' | 'stopping';
+
+interface ConversationRunState {
+    generationId: string;
+    assistantMessageId: string | null;
+    status: ConversationRunStatus;
+}
+
+interface ConversationHistoryState {
+    loadedCount: number;
+    hasMore: boolean;
+}
+
+interface QueuedMessage {
+    id: string;
+    content: string;
+    createdAt: string;
+}
+
+type ConversationRunMap = Record<string, ConversationRunState>;
+type QueuedMessageMap = Record<string, QueuedMessage[]>;
+
+function createConversationHistoryState(page: AiMessageHistoryPage): ConversationHistoryState {
     return {
-        ...streamingConversations,
-        [conversationId]: true,
+        loadedCount: page.loadedCount,
+        hasMore: page.hasMore,
     };
 }
 
-function removeStreamingConversation(
-    streamingConversations: StreamingConversationMap,
-    conversationId: string,
-): StreamingConversationMap {
-    if (!streamingConversations[conversationId]) {
-        return streamingConversations;
+function upsertMessage(messages: AiMessage[], message: AiMessage): AiMessage[] {
+    const existing = messages.findIndex((item) => item.id === message.id);
+    if (existing === -1) {
+        return [...messages, message];
     }
 
-    const next = { ...streamingConversations };
+    return messages.map((item, index) => (index === existing ? message : item));
+}
+
+function upsertConversation(
+    conversations: AiConversation[],
+    conversation: AiConversation,
+): AiConversation[] {
+    const existing = conversations.findIndex((item) => item.id === conversation.id);
+    if (existing === -1) {
+        return [conversation, ...conversations];
+    }
+
+    return conversations.map((item, index) => (index === existing ? conversation : item));
+}
+
+function updateConversationMessages(
+    messagesByConversation: MessageMap,
+    conversationId: string,
+    updater: (messages: AiMessage[]) => AiMessage[],
+): MessageMap {
+    const current = messagesByConversation[conversationId] ?? [];
+    return {
+        ...messagesByConversation,
+        [conversationId]: updater(current),
+    };
+}
+
+function mergeMessageVersions(local: AiMessage, remote: AiMessage): AiMessage {
+    return {
+        ...remote,
+        content: local.content.length >= remote.content.length ? local.content : remote.content,
+        toolCalls:
+            local.toolCalls.length >= remote.toolCalls.length ? local.toolCalls : remote.toolCalls,
+        toolResults:
+            local.toolResults.length >= remote.toolResults.length
+                ? local.toolResults
+                : remote.toolResults,
+    };
+}
+
+function mergeFetchedMessages(existing: AiMessage[], fetched: AiMessage[]): AiMessage[] {
+    if (existing.length === 0) {
+        return fetched;
+    }
+
+    const mergedById = new Map<string, AiMessage>();
+
+    for (const message of fetched) {
+        mergedById.set(message.id, message);
+    }
+
+    for (const message of existing) {
+        const fetchedMessage = mergedById.get(message.id);
+        mergedById.set(
+            message.id,
+            fetchedMessage ? mergeMessageVersions(message, fetchedMessage) : message,
+        );
+    }
+
+    return [...mergedById.values()].sort(
+        (left, right) => new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime(),
+    );
+}
+
+function removeConversationKey<T>(
+    map: Record<string, T>,
+    conversationId: string,
+): Record<string, T> {
+    if (!(conversationId in map)) {
+        return map;
+    }
+
+    const next = { ...map };
     delete next[conversationId];
     return next;
 }
+
+function removeReasoning(reasoningByMessage: ReasoningMap, messageId: string): ReasoningMap {
+    if (!(messageId in reasoningByMessage)) {
+        return reasoningByMessage;
+    }
+
+    const next = { ...reasoningByMessage };
+    delete next[messageId];
+    return next;
+}
+
+function countRuns(conversationRuns: ConversationRunMap): number {
+    return Object.keys(conversationRuns).length;
+}
+
+function isMessageEmpty(message: AiMessage | undefined): boolean {
+    if (!message) {
+        return true;
+    }
+
+    return (
+        !message.content.trim() &&
+        message.toolCalls.length === 0 &&
+        message.toolResults.length === 0
+    );
+}
+
+function createQueuedMessage(content: string): QueuedMessage {
+    return {
+        id: crypto.randomUUID(),
+        content,
+        createdAt: new Date().toISOString(),
+    };
+}
+
+function stripIpcPrefix(message: string): string {
+    const match = message.match(/^Error invoking remote method '[^']+': (?:Error: )?(.+)$/s);
+    return match ? match[1] : message;
+}
+
+function toErrorMessage(error: unknown, fallback: string): string {
+    if (error instanceof Error && error.message.trim()) {
+        return stripIpcPrefix(error.message);
+    }
+
+    if (typeof error === 'string' && error.trim()) {
+        return stripIpcPrefix(error);
+    }
+
+    return fallback;
+}
+
+function moveConversationRun(
+    conversationRuns: ConversationRunMap,
+    fromConversationId: string,
+    toConversationId: string,
+    updater: (run: ConversationRunState) => ConversationRunState,
+): ConversationRunMap {
+    const currentRun = conversationRuns[fromConversationId];
+    if (!currentRun) {
+        return conversationRuns;
+    }
+
+    const nextRuns =
+        fromConversationId === toConversationId
+            ? { ...conversationRuns }
+            : removeConversationKey(conversationRuns, fromConversationId);
+
+    nextRuns[toConversationId] = updater(currentRun);
+    return nextRuns;
+}
+
+let listenersBound = false;
 
 interface AiChatState {
     initialized: boolean;
@@ -58,8 +225,11 @@ interface AiChatState {
     activeConversationId: string | null;
     messagesByConversation: MessageMap;
     reasoningByMessage: ReasoningMap;
-    streamingConversations: StreamingConversationMap;
     loadingConversations: LoadingConversationMap;
+    loadingOlderConversations: LoadingConversationMap;
+    historyByConversation: ConversationHistoryMap;
+    conversationRuns: ConversationRunMap;
+    queuedMessagesByConversation: QueuedMessageMap;
     localModels: AiModelScanResult | null;
     sending: boolean;
     error: string | null;
@@ -72,10 +242,14 @@ interface AiChatState {
     saveSettings(partial: Partial<AiSettings>): Promise<void>;
     loadConversations(): Promise<void>;
     selectConversation(conversationId: string): Promise<void>;
+    loadOlderMessages(conversationId: string): Promise<void>;
     createConversation(title?: string): Promise<void>;
     deleteConversation(conversationId: string): Promise<void>;
     clearConversations(): Promise<void>;
-    sendMessage(content: string): Promise<void>;
+    sendMessage(content: string): Promise<boolean>;
+    sendMessageNow(conversationId: string, messages: string[]): Promise<boolean>;
+    flushQueuedMessages(conversationId: string): Promise<boolean>;
+    removeQueuedMessage(conversationId: string, queuedMessageId: string): void;
     stopGeneration(): Promise<void>;
     scanLocalModels(): Promise<void>;
     testProvider(input: {
@@ -87,30 +261,6 @@ interface AiChatState {
     downloadModel(modelId: string): Promise<void>;
 }
 
-function upsertMessage(messages: AiMessage[], message: AiMessage): AiMessage[] {
-    const index = messages.findIndex((item) => item.id === message.id);
-    if (index === -1) return [...messages, message];
-    return messages.map((item, itemIndex) => (itemIndex === index ? message : item));
-}
-
-function stripIpcPrefix(message: string): string {
-    // Electron wraps IPC errors as: "Error invoking remote method '<channel>': Error: <actual message>"
-    const match = message.match(/^Error invoking remote method '[^']+': (?:Error: )?(.+)$/s);
-    return match ? match[1] : message;
-}
-
-function toErrorMessage(error: unknown, fallback: string): string {
-    if (error instanceof Error && error.message.trim()) {
-        return stripIpcPrefix(error.message);
-    }
-    if (typeof error === 'string' && error.trim()) {
-        return stripIpcPrefix(error);
-    }
-    return fallback;
-}
-
-let listenersBound = false;
-
 export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     initialized: false,
     settings: null,
@@ -119,8 +269,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     activeConversationId: null,
     messagesByConversation: {},
     reasoningByMessage: {},
-    streamingConversations: {},
     loadingConversations: {},
+    loadingOlderConversations: {},
+    historyByConversation: {},
+    conversationRuns: {},
+    queuedMessagesByConversation: {},
     localModels: null,
     sending: false,
     error: null,
@@ -130,112 +283,240 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     initialize: async () => {
         if (!listenersBound) {
             listenersBound = true;
-            window.api.on.aiStreamChunk(({ conversationId, messageId, delta }) => {
-                set((state) => ({
-                    messagesByConversation: {
-                        ...state.messagesByConversation,
-                        [conversationId]: (state.messagesByConversation[conversationId] ?? []).map(
-                            (message) =>
-                                message.id === messageId
-                                    ? { ...message, content: `${message.content}${delta}` }
-                                    : message,
-                        ),
-                    },
-                }));
-            });
-            window.api.on.aiReasoningDelta(({ messageId, delta }) => {
-                set((state) => ({
-                    reasoningByMessage: {
-                        ...state.reasoningByMessage,
-                        [messageId]: (state.reasoningByMessage[messageId] ?? '') + delta,
-                    },
-                }));
-            });
-            window.api.on.aiToolCallStart(
-                ({ conversationId, messageId, toolName, toolCallId, payload }) => {
-                    set((state) => ({
-                        messagesByConversation: {
-                            ...state.messagesByConversation,
-                            [conversationId]: (
-                                state.messagesByConversation[conversationId] ?? []
-                            ).map((message) =>
-                                message.id === messageId
-                                    ? {
-                                          ...message,
-                                          toolCalls: [
-                                              ...message.toolCalls,
-                                              {
-                                                  id: toolCallId,
-                                                  name: toolName,
-                                                  input: (payload as Record<string, unknown>) ?? {},
-                                              },
-                                          ],
-                                      }
-                                    : message,
-                            ),
-                        },
-                    }));
-                },
-            );
-            window.api.on.aiToolCallComplete(
-                ({ conversationId, messageId, toolName, toolCallId, payload }) => {
-                    set((state) => ({
-                        messagesByConversation: {
-                            ...state.messagesByConversation,
-                            [conversationId]: (
-                                state.messagesByConversation[conversationId] ?? []
-                            ).map((message) =>
-                                message.id === messageId
-                                    ? {
-                                          ...message,
-                                          toolResults: [
-                                              ...message.toolResults,
-                                              { toolCallId, name: toolName, output: payload },
-                                          ],
-                                      }
-                                    : message,
-                            ),
-                        },
-                    }));
-                    const event = TOOL_TO_EVENT[toolName];
-                    if (event) window.dispatchEvent(new Event(event));
-                },
-            );
-            window.api.on.aiStreamComplete(({ conversationId }) => {
-                set((state) => ({
-                    streamingConversations: removeStreamingConversation(
-                        state.streamingConversations,
-                        conversationId,
-                    ),
-                    sending:
-                        Object.keys(
-                            removeStreamingConversation(
-                                state.streamingConversations,
-                                conversationId,
-                            ),
-                        ).length > 0,
-                    completionCount: state.completionCount + 1,
-                    lastCompletedConversationId: conversationId,
-                }));
-            });
-            window.api.on.aiStreamError(({ conversationId, error }) => {
+
+            window.api.on.aiStreamChunk(({ conversationId, generationId, messageId, delta }) => {
                 set((state) => {
-                    const streamingConversations = removeStreamingConversation(
-                        state.streamingConversations,
-                        conversationId,
-                    );
+                    const run = state.conversationRuns[conversationId];
+                    if (!run || run.generationId !== generationId) {
+                        return state;
+                    }
+
                     return {
-                        streamingConversations,
-                        sending: Object.keys(streamingConversations).length > 0,
-                        error,
+                        messagesByConversation: updateConversationMessages(
+                            state.messagesByConversation,
+                            conversationId,
+                            (messages) =>
+                                messages.map((message) =>
+                                    message.id === messageId
+                                        ? { ...message, content: `${message.content}${delta}` }
+                                        : message,
+                                ),
+                        ),
                     };
                 });
             });
+
+            window.api.on.aiReasoningDelta(({ conversationId, generationId, messageId, delta }) => {
+                set((state) => {
+                    const run = state.conversationRuns[conversationId];
+                    if (!run || run.generationId !== generationId) {
+                        return state;
+                    }
+
+                    return {
+                        reasoningByMessage: {
+                            ...state.reasoningByMessage,
+                            [messageId]: (state.reasoningByMessage[messageId] ?? '') + delta,
+                        },
+                    };
+                });
+            });
+
+            window.api.on.aiToolCallStart(
+                ({ conversationId, generationId, messageId, toolName, toolCallId, payload }) => {
+                    set((state) => {
+                        const run = state.conversationRuns[conversationId];
+                        if (!run || run.generationId !== generationId) {
+                            return state;
+                        }
+
+                        return {
+                            messagesByConversation: updateConversationMessages(
+                                state.messagesByConversation,
+                                conversationId,
+                                (messages) =>
+                                    messages.map((message) =>
+                                        message.id === messageId
+                                            ? {
+                                                  ...message,
+                                                  toolCalls: [
+                                                      ...message.toolCalls,
+                                                      {
+                                                          id: toolCallId,
+                                                          name: toolName,
+                                                          input:
+                                                              (payload as Record<
+                                                                  string,
+                                                                  unknown
+                                                              >) ?? {},
+                                                      },
+                                                  ],
+                                              }
+                                            : message,
+                                    ),
+                            ),
+                        };
+                    });
+                },
+            );
+
+            window.api.on.aiToolCallComplete(
+                ({ conversationId, generationId, messageId, toolName, toolCallId, payload }) => {
+                    set((state) => {
+                        const run = state.conversationRuns[conversationId];
+                        if (!run || run.generationId !== generationId) {
+                            return state;
+                        }
+
+                        return {
+                            messagesByConversation: updateConversationMessages(
+                                state.messagesByConversation,
+                                conversationId,
+                                (messages) =>
+                                    messages.map((message) =>
+                                        message.id === messageId
+                                            ? {
+                                                  ...message,
+                                                  toolResults: [
+                                                      ...message.toolResults,
+                                                      {
+                                                          toolCallId,
+                                                          name: toolName,
+                                                          output: payload,
+                                                      },
+                                                  ],
+                                              }
+                                            : message,
+                                    ),
+                            ),
+                        };
+                    });
+
+                    const event = TOOL_TO_EVENT[toolName];
+                    if (event) {
+                        window.dispatchEvent(new Event(event));
+                    }
+                },
+            );
+
+            window.api.on.aiStreamComplete(({ conversationId, generationId }) => {
+                let shouldFlushQueue = false;
+
+                set((state) => {
+                    const run = state.conversationRuns[conversationId];
+                    if (!run || run.generationId !== generationId) {
+                        return state;
+                    }
+
+                    const conversationRuns = removeConversationKey(
+                        state.conversationRuns,
+                        conversationId,
+                    );
+                    shouldFlushQueue =
+                        (state.queuedMessagesByConversation[conversationId] ?? []).length > 0;
+
+                    return {
+                        conversationRuns,
+                        sending: countRuns(conversationRuns) > 0,
+                        completionCount: state.completionCount + 1,
+                        lastCompletedConversationId: conversationId,
+                    };
+                });
+
+                if (shouldFlushQueue) {
+                    void get().flushQueuedMessages(conversationId);
+                }
+            });
+
+            window.api.on.aiStreamCancel(({ conversationId, generationId, messageId }) => {
+                let shouldFlushQueue = false;
+
+                set((state) => {
+                    const run = state.conversationRuns[conversationId];
+                    if (!run || run.generationId !== generationId) {
+                        return state;
+                    }
+
+                    const conversationRuns = removeConversationKey(
+                        state.conversationRuns,
+                        conversationId,
+                    );
+                    const currentMessages = state.messagesByConversation[conversationId] ?? [];
+                    const nextMessages = currentMessages.filter((message) => {
+                        if (message.id !== messageId) {
+                            return true;
+                        }
+
+                        return !isMessageEmpty(message);
+                    });
+
+                    shouldFlushQueue =
+                        (state.queuedMessagesByConversation[conversationId] ?? []).length > 0;
+
+                    return {
+                        conversationRuns,
+                        sending: countRuns(conversationRuns) > 0,
+                        messagesByConversation: {
+                            ...state.messagesByConversation,
+                            [conversationId]: nextMessages,
+                        },
+                        reasoningByMessage: removeReasoning(state.reasoningByMessage, messageId),
+                        completionCount: state.completionCount + 1,
+                        lastCompletedConversationId: conversationId,
+                    };
+                });
+
+                if (shouldFlushQueue) {
+                    void get().flushQueuedMessages(conversationId);
+                }
+            });
+
+            window.api.on.aiStreamError(({ conversationId, generationId, messageId, error }) => {
+                let shouldFlushQueue = false;
+
+                set((state) => {
+                    const run = state.conversationRuns[conversationId];
+                    if (!run || run.generationId !== generationId) {
+                        return state;
+                    }
+
+                    const conversationRuns = removeConversationKey(
+                        state.conversationRuns,
+                        conversationId,
+                    );
+                    shouldFlushQueue =
+                        (state.queuedMessagesByConversation[conversationId] ?? []).length > 0;
+                    const currentMessages = state.messagesByConversation[conversationId] ?? [];
+                    const nextMessages = currentMessages.filter((message) => {
+                        if (message.id !== messageId) {
+                            return true;
+                        }
+
+                        return !isMessageEmpty(message);
+                    });
+
+                    return {
+                        conversationRuns,
+                        sending: countRuns(conversationRuns) > 0,
+                        messagesByConversation: {
+                            ...state.messagesByConversation,
+                            [conversationId]: nextMessages,
+                        },
+                        reasoningByMessage: removeReasoning(state.reasoningByMessage, messageId),
+                        error,
+                        completionCount: state.completionCount + 1,
+                        lastCompletedConversationId: conversationId,
+                    };
+                });
+
+                if (shouldFlushQueue) {
+                    void get().flushQueuedMessages(conversationId);
+                }
+            });
+
             window.api.on.aiConversationUpdated(({ conversation }) => {
                 set((state) => ({
-                    conversations: state.conversations.map((c) =>
-                        c.id === conversation.id ? conversation : c,
-                    ),
+                    conversations: upsertConversation(state.conversations, conversation),
                 }));
             });
         }
@@ -268,7 +549,9 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     loadConversations: async () => {
         const conversations = await window.api.ai.getConversations();
         const activeConversationId = get().activeConversationId ?? conversations[0]?.id ?? null;
+
         set({ conversations });
+
         if (activeConversationId) {
             await get().selectConversation(activeConversationId);
         } else {
@@ -277,6 +560,20 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     selectConversation: async (conversationId) => {
+        const state = get();
+        const alreadyLoaded = conversationId in state.messagesByConversation;
+        const alreadyLoading = conversationId in state.loadingConversations;
+
+        if (alreadyLoaded) {
+            set({ activeConversationId: conversationId });
+            return;
+        }
+
+        if (alreadyLoading) {
+            set({ activeConversationId: conversationId });
+            return;
+        }
+
         set((state) => ({
             activeConversationId: conversationId,
             loadingConversations: {
@@ -286,30 +583,91 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }));
 
         try {
-            const messages = await window.api.ai.getMessages(conversationId);
-            set((state) => {
-                const loadingConversations = { ...state.loadingConversations };
-                delete loadingConversations[conversationId];
-
-                return {
-                    activeConversationId: conversationId,
-                    loadingConversations,
-                    messagesByConversation: {
-                        ...state.messagesByConversation,
-                        [conversationId]: messages,
-                    },
-                };
+            const page = await window.api.ai.getMessagesPage({
+                conversationId,
+                limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+                loadedCount: 0,
             });
+            set((state) => ({
+                activeConversationId: conversationId,
+                loadingConversations: removeConversationKey(
+                    state.loadingConversations,
+                    conversationId,
+                ),
+                historyByConversation: {
+                    ...state.historyByConversation,
+                    [conversationId]: createConversationHistoryState(page),
+                },
+                messagesByConversation: {
+                    ...state.messagesByConversation,
+                    [conversationId]: mergeFetchedMessages(
+                        state.messagesByConversation[conversationId] ?? [],
+                        page.messages,
+                    ),
+                },
+            }));
         } catch (error) {
-            set((state) => {
-                const loadingConversations = { ...state.loadingConversations };
-                delete loadingConversations[conversationId];
+            set((state) => ({
+                loadingConversations: removeConversationKey(
+                    state.loadingConversations,
+                    conversationId,
+                ),
+                error: toErrorMessage(error, 'Le chargement de la conversation a échoué.'),
+            }));
+        }
+    },
 
-                return {
-                    loadingConversations,
-                    error: toErrorMessage(error, 'Le chargement de la conversation a échoué.'),
-                };
+    loadOlderMessages: async (conversationId) => {
+        const state = get();
+        const history = state.historyByConversation[conversationId];
+
+        if (
+            !history?.hasMore ||
+            conversationId in state.loadingOlderConversations ||
+            conversationId in state.loadingConversations
+        ) {
+            return;
+        }
+
+        set((current) => ({
+            loadingOlderConversations: {
+                ...current.loadingOlderConversations,
+                [conversationId]: true,
+            },
+        }));
+
+        try {
+            const page = await window.api.ai.getMessagesPage({
+                conversationId,
+                limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+                loadedCount: history.loadedCount,
             });
+
+            set((current) => ({
+                loadingOlderConversations: removeConversationKey(
+                    current.loadingOlderConversations,
+                    conversationId,
+                ),
+                historyByConversation: {
+                    ...current.historyByConversation,
+                    [conversationId]: createConversationHistoryState(page),
+                },
+                messagesByConversation: {
+                    ...current.messagesByConversation,
+                    [conversationId]: mergeFetchedMessages(
+                        current.messagesByConversation[conversationId] ?? [],
+                        page.messages,
+                    ),
+                },
+            }));
+        } catch (error) {
+            set((current) => ({
+                loadingOlderConversations: removeConversationKey(
+                    current.loadingOlderConversations,
+                    conversationId,
+                ),
+                error: toErrorMessage(error, 'Le chargement des anciens messages a échoué.'),
+            }));
         }
     },
 
@@ -318,6 +676,13 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         set((state) => ({
             conversations: [conversation, ...state.conversations],
             activeConversationId: conversation.id,
+            historyByConversation: {
+                ...state.historyByConversation,
+                [conversation.id]: {
+                    loadedCount: 0,
+                    hasMore: false,
+                },
+            },
             messagesByConversation: {
                 ...state.messagesByConversation,
                 [conversation.id]: [],
@@ -327,24 +692,41 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
     deleteConversation: async (conversationId) => {
         await window.api.ai.deleteConversation(conversationId);
+
         const remaining = get().conversations.filter(
             (conversation) => conversation.id !== conversationId,
         );
         set((state) => {
-            const nextMap = { ...state.messagesByConversation };
-            const loadingConversations = { ...state.loadingConversations };
-            delete nextMap[conversationId];
-            delete loadingConversations[conversationId];
+            const nextMessages = { ...state.messagesByConversation };
+            delete nextMessages[conversationId];
+
             return {
                 conversations: remaining,
                 activeConversationId:
                     state.activeConversationId === conversationId
                         ? null
                         : state.activeConversationId,
-                messagesByConversation: nextMap,
-                loadingConversations,
+                messagesByConversation: nextMessages,
+                loadingConversations: removeConversationKey(
+                    state.loadingConversations,
+                    conversationId,
+                ),
+                loadingOlderConversations: removeConversationKey(
+                    state.loadingOlderConversations,
+                    conversationId,
+                ),
+                historyByConversation: removeConversationKey(
+                    state.historyByConversation,
+                    conversationId,
+                ),
+                conversationRuns: removeConversationKey(state.conversationRuns, conversationId),
+                queuedMessagesByConversation: removeConversationKey(
+                    state.queuedMessagesByConversation,
+                    conversationId,
+                ),
             };
         });
+
         const nextConversationId = get().activeConversationId ?? remaining[0]?.id ?? null;
         if (nextConversationId) {
             await get().selectConversation(nextConversationId);
@@ -357,98 +739,252 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             conversations: [],
             activeConversationId: null,
             messagesByConversation: {},
+            reasoningByMessage: {},
             loadingConversations: {},
+            loadingOlderConversations: {},
+            historyByConversation: {},
+            conversationRuns: {},
+            queuedMessagesByConversation: {},
+            sending: false,
         });
     },
 
     sendMessage: async (content) => {
         const trimmed = content.trim();
-        if (!trimmed) return;
+        if (!trimmed) {
+            return false;
+        }
 
         let conversationId = get().activeConversationId;
         if (!conversationId) {
-            const conversation = await window.api.ai.createConversation({});
-            conversationId = conversation.id;
-            set((state) => ({
-                conversations: [conversation, ...state.conversations],
-                activeConversationId: conversation.id,
-                messagesByConversation: {
-                    ...state.messagesByConversation,
-                    [conversation.id]: [],
-                },
-            }));
+            try {
+                const conversation = await window.api.ai.createConversation({});
+                conversationId = conversation.id;
+                set((state) => ({
+                    conversations: [conversation, ...state.conversations],
+                    activeConversationId: conversation.id,
+                    historyByConversation: {
+                        ...state.historyByConversation,
+                        [conversation.id]: {
+                            loadedCount: 0,
+                            hasMore: false,
+                        },
+                    },
+                    messagesByConversation: {
+                        ...state.messagesByConversation,
+                        [conversation.id]: [],
+                    },
+                }));
+            } catch (error) {
+                set({
+                    error: toErrorMessage(error, 'La création de la conversation a échoué.'),
+                });
+                return false;
+            }
         }
 
-        set((state) => {
-            const streamingConversations = addStreamingConversation(
-                state.streamingConversations,
-                conversationId,
-            );
-            return {
-                streamingConversations,
-                sending: true,
-                error: null,
-            };
-        });
+        const queuedMessage = createQueuedMessage(trimmed);
+        set((state) => ({
+            queuedMessagesByConversation: {
+                ...state.queuedMessagesByConversation,
+                [conversationId]: [
+                    ...(state.queuedMessagesByConversation[conversationId] ?? []),
+                    queuedMessage,
+                ],
+            },
+            error: null,
+        }));
+
+        if (!get().conversationRuns[conversationId]) {
+            void get().flushQueuedMessages(conversationId);
+        }
+
+        return true;
+    },
+
+    sendMessageNow: async (conversationId, messages) => {
+        const generationId = crypto.randomUUID();
+
+        set((state) => ({
+            conversationRuns: {
+                ...state.conversationRuns,
+                [conversationId]: {
+                    generationId,
+                    assistantMessageId: null,
+                    status: 'starting',
+                },
+            },
+            sending: true,
+            error: null,
+        }));
+
         try {
             const result: AiSendMessageResult = await window.api.ai.sendMessage({
                 conversationId,
-                content: trimmed,
+                messages,
+                generationId,
             });
 
             markFeatureReminderUsed('ai');
 
-            set((state) => ({
-                conversations: state.conversations.some(
-                    (conversation) => conversation.id === result.conversation.id,
-                )
-                    ? state.conversations.map((conversation) =>
-                          conversation.id === result.conversation.id
-                              ? result.conversation
-                              : conversation,
-                      )
-                    : [result.conversation, ...state.conversations],
-                messagesByConversation: {
-                    ...state.messagesByConversation,
-                    [result.conversation.id]: upsertMessage(
-                        upsertMessage(
-                            state.messagesByConversation[result.conversation.id] ?? [],
-                            result.userMessage,
-                        ),
-                        result.assistantMessage,
+            set((state) => {
+                const resolvedConversationId = result.conversation.id;
+                const existingMessages =
+                    state.messagesByConversation[resolvedConversationId] ??
+                    state.messagesByConversation[conversationId] ??
+                    [];
+                const messagesWithUsers = result.userMessages.reduce(
+                    (acc, message) => upsertMessage(acc, message),
+                    existingMessages,
+                );
+                const currentRun = state.conversationRuns[conversationId];
+
+                if (!currentRun || currentRun.generationId !== generationId) {
+                    return {
+                        conversations: upsertConversation(state.conversations, result.conversation),
+                        messagesByConversation: {
+                            ...state.messagesByConversation,
+                            [resolvedConversationId]: messagesWithUsers,
+                        },
+                    };
+                }
+
+                const nextMessages = upsertMessage(messagesWithUsers, result.assistantMessage);
+
+                return {
+                    conversations: upsertConversation(state.conversations, result.conversation),
+                    messagesByConversation: {
+                        ...state.messagesByConversation,
+                        [resolvedConversationId]: nextMessages,
+                    },
+                    activeConversationId: resolvedConversationId,
+                    conversationRuns: moveConversationRun(
+                        state.conversationRuns,
+                        conversationId,
+                        resolvedConversationId,
+                        (run) => ({
+                            ...run,
+                            assistantMessageId: result.assistantMessage.id,
+                            status: 'streaming',
+                        }),
                     ),
-                },
-                activeConversationId: result.conversation.id,
-            }));
+                };
+            });
+
+            return true;
         } catch (error) {
             set((state) => {
-                const streamingConversations = removeStreamingConversation(
-                    state.streamingConversations,
+                const currentRun = state.conversationRuns[conversationId];
+                if (!currentRun || currentRun.generationId !== generationId) {
+                    return state;
+                }
+
+                const conversationRuns = removeConversationKey(
+                    state.conversationRuns,
                     conversationId,
                 );
                 return {
-                    streamingConversations,
-                    sending: Object.keys(streamingConversations).length > 0,
+                    conversationRuns,
+                    sending: countRuns(conversationRuns) > 0,
                     error: toErrorMessage(error, "L'envoi du message a échoué."),
                 };
             });
+
+            return false;
         }
+    },
+
+    flushQueuedMessages: async (conversationId) => {
+        if (get().conversationRuns[conversationId]) {
+            return false;
+        }
+
+        const queuedMessages = get().queuedMessagesByConversation[conversationId] ?? [];
+        if (queuedMessages.length === 0) {
+            return false;
+        }
+
+        const batchMessages = queuedMessages.map((message) => message.content);
+
+        set((state) => ({
+            queuedMessagesByConversation: removeConversationKey(
+                state.queuedMessagesByConversation,
+                conversationId,
+            ),
+        }));
+
+        const sent = await get().sendMessageNow(conversationId, batchMessages);
+        if (!sent) {
+            set((state) => ({
+                queuedMessagesByConversation: {
+                    ...state.queuedMessagesByConversation,
+                    [conversationId]: [
+                        ...queuedMessages,
+                        ...(state.queuedMessagesByConversation[conversationId] ?? []),
+                    ],
+                },
+            }));
+        }
+
+        return sent;
+    },
+
+    removeQueuedMessage: (conversationId, queuedMessageId) => {
+        set((state) => {
+            const currentQueue = state.queuedMessagesByConversation[conversationId] ?? [];
+            const nextQueue = currentQueue.filter((message) => message.id !== queuedMessageId);
+
+            return {
+                queuedMessagesByConversation:
+                    nextQueue.length > 0
+                        ? {
+                              ...state.queuedMessagesByConversation,
+                              [conversationId]: nextQueue,
+                          }
+                        : removeConversationKey(state.queuedMessagesByConversation, conversationId),
+            };
+        });
     },
 
     stopGeneration: async () => {
         const conversationId = get().activeConversationId;
-        if (!conversationId) return;
+        if (!conversationId) {
+            return;
+        }
+
+        const run = get().conversationRuns[conversationId];
+        if (!run) {
+            return;
+        }
+
+        set((state) => ({
+            conversationRuns: {
+                ...state.conversationRuns,
+                [conversationId]: {
+                    ...run,
+                    status: 'stopping',
+                },
+            },
+        }));
+
         try {
             await window.api.ai.stopGeneration(conversationId);
-        } finally {
+        } catch (error) {
             set((state) => {
-                const streamingConversations = removeStreamingConversation(
-                    state.streamingConversations,
-                    conversationId,
-                );
+                const currentRun = state.conversationRuns[conversationId];
+                if (!currentRun || currentRun.generationId !== run.generationId) {
+                    return state;
+                }
+
                 return {
-                    streamingConversations,
-                    sending: Object.keys(streamingConversations).length > 0,
+                    conversationRuns: {
+                        ...state.conversationRuns,
+                        [conversationId]: {
+                            ...currentRun,
+                            status: 'streaming',
+                        },
+                    },
+                    error: toErrorMessage(error, "L'arrêt de la génération a échoué."),
                 };
             });
         }
@@ -474,12 +1010,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 }));
 
-/** Selector: returns "ProviderName — model" for the active provider. */
 export function selectActiveProviderLabel(state: AiChatState): string {
     const { settings, providerCatalog } = state;
     if (!settings?.activeProvider) {
         return '';
     }
+
     const providerName = resolveProviderName(settings, providerCatalog) ?? '';
     const model = resolveActiveModel(settings) ?? '';
     return model ? `${providerName} — ${model}` : providerName;

@@ -1,0 +1,659 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type {
+    AiConversation,
+    AiMessageHistoryPage,
+    AiMessageHistoryPageRequest,
+    AiMessage,
+    AiSendMessageRequest,
+    AiSendMessageResult,
+    AiSettings,
+} from '@shared/ai.types';
+import { AI_MESSAGE_HISTORY_PAGE_SIZE, createDefaultAiSettings } from '@shared/ai.types';
+import type { PushEventMap } from '@shared/ipc.types';
+import { PushChannels } from '@shared/ipc.types';
+
+const markFeatureReminderUsedMock = vi.fn();
+
+vi.mock('@renderer/lib/feature-reminders', () => ({
+    markFeatureReminderUsed: markFeatureReminderUsedMock,
+}));
+
+type Listener<K extends keyof PushEventMap> = (payload: PushEventMap[K]) => void;
+
+interface ListenerMap {
+    aiStreamChunk?: Listener<typeof PushChannels.aiStreamChunk>;
+    aiReasoningDelta?: Listener<typeof PushChannels.aiReasoningDelta>;
+    aiToolCallStart?: Listener<typeof PushChannels.aiToolCallStart>;
+    aiToolCallComplete?: Listener<typeof PushChannels.aiToolCallComplete>;
+    aiStreamComplete?: Listener<typeof PushChannels.aiStreamComplete>;
+    aiStreamCancel?: Listener<typeof PushChannels.aiStreamCancel>;
+    aiStreamError?: Listener<typeof PushChannels.aiStreamError>;
+    aiConversationUpdated?: Listener<typeof PushChannels.aiConversationUpdated>;
+}
+
+interface StoreHarness {
+    store: typeof import('@renderer/stores/ai-chat.store').useAiChatStore;
+    listeners: ListenerMap;
+    getMessagesPageMock: ReturnType<
+        typeof vi.fn<[AiMessageHistoryPageRequest], Promise<AiMessageHistoryPage>>
+    >;
+    sendMessageMock: ReturnType<typeof vi.fn<[AiSendMessageRequest], Promise<AiSendMessageResult>>>;
+}
+
+function createSettings(): AiSettings {
+    const settings = createDefaultAiSettings();
+    settings.enabled = true;
+    settings.activeProvider = 'openai';
+    settings.providers.openai = {
+        enabled: true,
+        model: 'gpt-5-mini',
+        apiKey: 'test-key',
+    };
+    return settings;
+}
+
+function createConversation(partial?: Partial<AiConversation>): AiConversation {
+    return {
+        id: 'conv-1',
+        title: 'Conversation',
+        summary: null,
+        aiTitle: false,
+        createdAt: '2026-04-08T10:00:00.000Z',
+        updatedAt: '2026-04-08T10:00:00.000Z',
+        ...partial,
+    };
+}
+
+function createMessage(
+    partial: Partial<AiMessage> & Pick<AiMessage, 'id' | 'conversationId' | 'role'>,
+): AiMessage {
+    return {
+        id: partial.id,
+        conversationId: partial.conversationId,
+        role: partial.role,
+        content: partial.content ?? '',
+        toolCalls: partial.toolCalls ?? [],
+        toolResults: partial.toolResults ?? [],
+        createdAt: partial.createdAt ?? '2026-04-08T10:00:00.000Z',
+    };
+}
+
+function createSendResult(
+    request: AiSendMessageRequest,
+    index: number,
+    conversation = createConversation(),
+): AiSendMessageResult {
+    return {
+        generationId: request.generationId,
+        conversation,
+        userMessages: request.messages.map((content, messageIndex) =>
+            createMessage({
+                id: `user-${index}-${messageIndex + 1}`,
+                conversationId: conversation.id,
+                role: 'user',
+                content,
+            }),
+        ),
+        assistantMessage: createMessage({
+            id: `assistant-${index}`,
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: '',
+        }),
+    };
+}
+
+function createDeferred<T>() {
+    let resolve!: (value: T) => void;
+    let reject!: (error?: unknown) => void;
+    const promise = new Promise<T>((res, rej) => {
+        resolve = res;
+        reject = rej;
+    });
+    return { promise, resolve, reject };
+}
+
+function createHistoryPage(
+    messages: AiMessage[],
+    partial?: Partial<Pick<AiMessageHistoryPage, 'loadedCount' | 'totalCount' | 'hasMore'>>,
+): AiMessageHistoryPage {
+    return {
+        messages,
+        loadedCount: partial?.loadedCount ?? messages.length,
+        totalCount: partial?.totalCount ?? messages.length,
+        hasMore: partial?.hasMore ?? false,
+    };
+}
+
+async function flushAsync(): Promise<void> {
+    await Promise.resolve();
+    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+async function createHarness(options?: {
+    sendMessageImpl?: (
+        request: AiSendMessageRequest,
+        index: number,
+    ) => Promise<AiSendMessageResult>;
+    getMessagesPageImpl?: (request: AiMessageHistoryPageRequest) => Promise<AiMessageHistoryPage>;
+}): Promise<StoreHarness> {
+    vi.resetModules();
+    markFeatureReminderUsedMock.mockReset();
+
+    const listeners: ListenerMap = {};
+    const conversation = createConversation();
+    let sendCount = 0;
+
+    const sendMessageMock = vi.fn<[AiSendMessageRequest], Promise<AiSendMessageResult>>(
+        async (request) => {
+            sendCount += 1;
+            if (options?.sendMessageImpl) {
+                return options.sendMessageImpl(request, sendCount);
+            }
+            return createSendResult(request, sendCount, conversation);
+        },
+    );
+
+    const getMessagesPageMock = vi.fn<[AiMessageHistoryPageRequest], Promise<AiMessageHistoryPage>>(
+        async (request) =>
+            options?.getMessagesPageImpl?.(request) ?? createHistoryPage([], { totalCount: 0 }),
+    );
+
+    vi.stubGlobal('window', {
+        api: {
+            ai: {
+                getSettings: vi.fn().mockResolvedValue(createSettings()),
+                getProviderCatalog: vi.fn().mockResolvedValue([]),
+                updateSettings: vi.fn(),
+                getConversations: vi.fn().mockResolvedValue([]),
+                createConversation: vi.fn().mockResolvedValue(conversation),
+                deleteConversation: vi.fn().mockResolvedValue(undefined),
+                clearConversations: vi.fn().mockResolvedValue(undefined),
+                getMessagesPage: getMessagesPageMock,
+                sendMessage: sendMessageMock,
+                stopGeneration: vi.fn().mockResolvedValue(undefined),
+                scanLocalModels: vi
+                    .fn()
+                    .mockResolvedValue({ models: [], supportedModels: [], scannedPath: '' }),
+                testProvider: vi.fn(),
+                downloadModel: vi.fn(),
+            },
+            on: {
+                aiStreamChunk: vi.fn((cb) => {
+                    listeners.aiStreamChunk = cb;
+                    return () => {};
+                }),
+                aiReasoningDelta: vi.fn((cb) => {
+                    listeners.aiReasoningDelta = cb;
+                    return () => {};
+                }),
+                aiToolCallStart: vi.fn((cb) => {
+                    listeners.aiToolCallStart = cb;
+                    return () => {};
+                }),
+                aiToolCallComplete: vi.fn((cb) => {
+                    listeners.aiToolCallComplete = cb;
+                    return () => {};
+                }),
+                aiStreamComplete: vi.fn((cb) => {
+                    listeners.aiStreamComplete = cb;
+                    return () => {};
+                }),
+                aiStreamCancel: vi.fn((cb) => {
+                    listeners.aiStreamCancel = cb;
+                    return () => {};
+                }),
+                aiStreamError: vi.fn((cb) => {
+                    listeners.aiStreamError = cb;
+                    return () => {};
+                }),
+                aiConversationUpdated: vi.fn((cb) => {
+                    listeners.aiConversationUpdated = cb;
+                    return () => {};
+                }),
+            },
+        },
+        dispatchEvent: vi.fn(),
+        requestAnimationFrame: vi.fn((cb: FrameRequestCallback) => {
+            cb(0);
+            return 1;
+        }),
+        cancelAnimationFrame: vi.fn(),
+    });
+
+    const module = await import('@renderer/stores/ai-chat.store');
+    const store = module.useAiChatStore;
+
+    await store.getState().initialize();
+    store.setState({
+        conversations: [conversation],
+        activeConversationId: conversation.id,
+        messagesByConversation: { [conversation.id]: [] },
+        error: null,
+    });
+
+    return { store, listeners, getMessagesPageMock, sendMessageMock };
+}
+
+describe('ai-chat.store queue behavior', () => {
+    beforeEach(() => {
+        vi.useRealTimers();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+        vi.clearAllMocks();
+    });
+
+    it('batches pending messages and sends them after the active response completes', async () => {
+        const { store, listeners, sendMessageMock } = await createHarness();
+
+        await store.getState().sendMessage('first question');
+        await flushAsync();
+        await store.getState().sendMessage('second question');
+        await store.getState().sendMessage('third question');
+
+        expect(sendMessageMock).toHaveBeenCalledTimes(1);
+        expect(store.getState().queuedMessagesByConversation['conv-1']).toHaveLength(2);
+
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
+        listeners.aiStreamComplete?.({
+            conversationId: 'conv-1',
+            generationId: firstGenerationId,
+            messageId: 'assistant-1',
+        });
+        await flushAsync();
+
+        expect(sendMessageMock).toHaveBeenCalledTimes(2);
+        expect(sendMessageMock.mock.calls[1][0].messages).toEqual([
+            'second question',
+            'third question',
+        ]);
+        expect(store.getState().queuedMessagesByConversation['conv-1']).toBeUndefined();
+    });
+
+    it('continues with the pending queue after the active response is canceled', async () => {
+        const { store, listeners, sendMessageMock } = await createHarness();
+
+        await store.getState().sendMessage('first question');
+        await flushAsync();
+        await store.getState().sendMessage('queued follow-up');
+
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
+        listeners.aiStreamCancel?.({
+            conversationId: 'conv-1',
+            generationId: firstGenerationId,
+            messageId: 'assistant-1',
+        });
+        await flushAsync();
+
+        expect(sendMessageMock).toHaveBeenCalledTimes(2);
+        expect(sendMessageMock.mock.calls[1][0].messages).toEqual(['queued follow-up']);
+    });
+
+    it('continues with the pending queue after the active response fails', async () => {
+        const { store, listeners, sendMessageMock } = await createHarness();
+
+        await store.getState().sendMessage('first question');
+        await flushAsync();
+        await store.getState().sendMessage('queued after failure');
+
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
+        listeners.aiStreamError?.({
+            conversationId: 'conv-1',
+            generationId: firstGenerationId,
+            messageId: 'assistant-1',
+            error: 'failure',
+        });
+        await flushAsync();
+
+        expect(sendMessageMock).toHaveBeenCalledTimes(2);
+        expect(sendMessageMock.mock.calls[1][0].messages).toEqual(['queued after failure']);
+        expect(
+            store.getState().messagesByConversation['conv-1'].some((m) => m.id === 'assistant-1'),
+        ).toBe(false);
+    });
+
+    it('ignores stale stream events from an older run', async () => {
+        const { store, listeners, sendMessageMock } = await createHarness();
+
+        await store.getState().sendMessage('first question');
+        await flushAsync();
+
+        const currentGenerationId = sendMessageMock.mock.calls[0][0].generationId;
+        listeners.aiStreamChunk?.({
+            conversationId: 'conv-1',
+            generationId: 'stale-run',
+            messageId: 'assistant-1',
+            delta: 'stale text',
+        });
+
+        expect(
+            store
+                .getState()
+                .messagesByConversation['conv-1'].find((message) => message.id === 'assistant-1')
+                ?.content,
+        ).toBe('');
+
+        listeners.aiStreamChunk?.({
+            conversationId: 'conv-1',
+            generationId: currentGenerationId,
+            messageId: 'assistant-1',
+            delta: 'live text',
+        });
+
+        expect(
+            store
+                .getState()
+                .messagesByConversation['conv-1'].find((message) => message.id === 'assistant-1')
+                ?.content,
+        ).toBe('live text');
+    });
+
+    it('keeps the user message if cancellation wins the race before send confirmation returns', async () => {
+        const deferred = createDeferred<AiSendMessageResult>();
+        const { store, listeners, sendMessageMock } = await createHarness({
+            sendMessageImpl: async (_request) => deferred.promise,
+        });
+
+        await store.getState().sendMessage('race condition question');
+        await flushAsync();
+
+        const generationId = sendMessageMock.mock.calls[0][0].generationId;
+        listeners.aiStreamCancel?.({
+            conversationId: 'conv-1',
+            generationId,
+            messageId: 'assistant-1',
+        });
+        await flushAsync();
+
+        deferred.resolve(
+            createSendResult(
+                {
+                    conversationId: 'conv-1',
+                    messages: ['race condition question'],
+                    generationId,
+                },
+                1,
+            ),
+        );
+        await flushAsync();
+
+        const messages = store.getState().messagesByConversation['conv-1'];
+        expect(
+            messages.map((message) => ({
+                id: message.id,
+                role: message.role,
+                content: message.content,
+            })),
+        ).toEqual([{ id: 'user-1-1', role: 'user', content: 'race condition question' }]);
+    });
+
+    it('allows removing a queued message before it is sent', async () => {
+        const { store, listeners, sendMessageMock } = await createHarness();
+
+        await store.getState().sendMessage('first question');
+        await flushAsync();
+        await store.getState().sendMessage('remove me');
+
+        const queuedMessageId = store.getState().queuedMessagesByConversation['conv-1'][0].id;
+        store.getState().removeQueuedMessage('conv-1', queuedMessageId);
+
+        const firstGenerationId = sendMessageMock.mock.calls[0][0].generationId;
+        listeners.aiStreamComplete?.({
+            conversationId: 'conv-1',
+            generationId: firstGenerationId,
+            messageId: 'assistant-1',
+        });
+        await flushAsync();
+
+        expect(sendMessageMock).toHaveBeenCalledTimes(1);
+        expect(store.getState().queuedMessagesByConversation['conv-1']).toBeUndefined();
+    });
+
+    it('does not reload messages when the already active conversation is clicked again', async () => {
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async () => createHistoryPage([], { totalCount: 0 }),
+        });
+
+        store.setState({
+            activeConversationId: 'conv-1',
+            messagesByConversation: {
+                'conv-1': [
+                    createMessage({
+                        id: 'user-existing',
+                        conversationId: 'conv-1',
+                        role: 'user',
+                        content: 'already loaded',
+                    }),
+                ],
+            },
+        });
+
+        await store.getState().selectConversation('conv-1');
+
+        expect(getMessagesPageMock).not.toHaveBeenCalled();
+    });
+
+    it('keeps the local assistant placeholder when conversation history finishes loading after send', async () => {
+        const deferredPage = createDeferred<AiMessageHistoryPage>();
+        const conversation = createConversation({ id: 'conv-2', title: 'Second' });
+        const { store, sendMessageMock } = await createHarness({
+            getMessagesPageImpl: async (request) =>
+                request.conversationId === 'conv-2'
+                    ? deferredPage.promise
+                    : createHistoryPage([], { totalCount: 0 }),
+            sendMessageImpl: async (request, index) =>
+                createSendResult(request, index, conversation),
+        });
+
+        store.setState((state) => ({
+            conversations: [conversation, ...state.conversations],
+            activeConversationId: 'conv-1',
+            messagesByConversation: {
+                ...state.messagesByConversation,
+                'conv-2': [],
+            },
+        }));
+
+        const selectPromise = store.getState().selectConversation('conv-2');
+        await flushAsync();
+
+        const sendAccepted = await store.getState().sendMessage('question on second conversation');
+        expect(sendAccepted).toBe(true);
+        await flushAsync();
+
+        expect(sendMessageMock).toHaveBeenCalledTimes(1);
+        expect(
+            store
+                .getState()
+                .messagesByConversation['conv-2'].some((message) => message.id === 'assistant-1'),
+        ).toBe(true);
+
+        deferredPage.resolve(createHistoryPage([], { totalCount: 0 }));
+        await selectPromise;
+        await flushAsync();
+
+        const messages = store.getState().messagesByConversation['conv-2'];
+        expect(messages.map((message) => message.id)).toEqual(['user-1-1', 'assistant-1']);
+    });
+
+    it('loads all messages at once for small conversations', async () => {
+        const smallConversation = createConversation({ id: 'conv-2', title: 'Small' });
+        const storedMessages = Array.from({ length: 12 }, (_, index) =>
+            createMessage({
+                id: `msg-${index + 1}`,
+                conversationId: smallConversation.id,
+                role: index % 2 === 0 ? 'user' : 'assistant',
+                content: `message ${index + 1}`,
+                createdAt: `2026-04-08T10:${String(index).padStart(2, '0')}:00.000Z`,
+            }),
+        );
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async (request) => {
+                expect(request).toEqual({
+                    conversationId: smallConversation.id,
+                    limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+                    loadedCount: 0,
+                });
+                return createHistoryPage(storedMessages, { totalCount: storedMessages.length });
+            },
+        });
+
+        store.setState((state) => ({
+            conversations: [smallConversation, ...state.conversations],
+        }));
+
+        await store.getState().selectConversation(smallConversation.id);
+
+        expect(getMessagesPageMock).toHaveBeenCalledTimes(1);
+        expect(store.getState().messagesByConversation[smallConversation.id]).toEqual(
+            storedMessages,
+        );
+        expect(store.getState().historyByConversation[smallConversation.id]).toEqual({
+            loadedCount: 12,
+            hasMore: false,
+        });
+    });
+
+    it('prepends older messages when the user requests more history', async () => {
+        const conversation = createConversation({ id: 'conv-2', title: 'Paged' });
+        const pageSize = AI_MESSAGE_HISTORY_PAGE_SIZE;
+        const allMessages = Array.from({ length: 120 }, (_, index) =>
+            createMessage({
+                id: `msg-${index + 1}`,
+                conversationId: conversation.id,
+                role: index % 2 === 0 ? 'user' : 'assistant',
+                content: `message ${index + 1}`,
+                createdAt: `2026-04-08T10:${String(index).padStart(2, '0')}:00.000Z`,
+            }),
+        );
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async (request) => {
+                if (request.loadedCount === 0) {
+                    return createHistoryPage(allMessages.slice(allMessages.length - pageSize), {
+                        loadedCount: pageSize,
+                        totalCount: 120,
+                        hasMore: true,
+                    });
+                }
+
+                if (request.loadedCount === pageSize) {
+                    return createHistoryPage(
+                        allMessages.slice(
+                            allMessages.length - pageSize * 2,
+                            allMessages.length - pageSize,
+                        ),
+                        {
+                            loadedCount: pageSize * 2,
+                            totalCount: 120,
+                            hasMore: true,
+                        },
+                    );
+                }
+
+                if (request.loadedCount === pageSize * 2) {
+                    return createHistoryPage(
+                        allMessages.slice(
+                            allMessages.length - pageSize * 3,
+                            allMessages.length - pageSize * 2,
+                        ),
+                        {
+                            loadedCount: pageSize * 3,
+                            totalCount: 120,
+                            hasMore: true,
+                        },
+                    );
+                }
+
+                if (request.loadedCount === pageSize * 3) {
+                    return createHistoryPage(
+                        allMessages.slice(0, allMessages.length - pageSize * 3),
+                        {
+                            loadedCount: 120,
+                            totalCount: 120,
+                            hasMore: false,
+                        },
+                    );
+                }
+
+                throw new Error(`Unexpected loadedCount ${request.loadedCount}`);
+            },
+        });
+
+        store.setState((state) => ({
+            conversations: [conversation, ...state.conversations],
+        }));
+
+        await store.getState().selectConversation(conversation.id);
+        await store.getState().loadOlderMessages(conversation.id);
+        await store.getState().loadOlderMessages(conversation.id);
+        await store.getState().loadOlderMessages(conversation.id);
+
+        expect(getMessagesPageMock.mock.calls.map(([request]) => request.loadedCount)).toEqual([
+            0,
+            pageSize,
+            pageSize * 2,
+            pageSize * 3,
+        ]);
+        expect(store.getState().messagesByConversation[conversation.id]).toHaveLength(120);
+        expect(store.getState().messagesByConversation[conversation.id][0]?.id).toBe('msg-1');
+        expect(store.getState().messagesByConversation[conversation.id][119]?.id).toBe('msg-120');
+        expect(store.getState().historyByConversation[conversation.id]).toEqual({
+            loadedCount: 120,
+            hasMore: false,
+        });
+    });
+
+    it('does not start overlapping older-history loads for the same conversation', async () => {
+        const deferredPage = createDeferred<AiMessageHistoryPage>();
+        const conversation = createConversation({ id: 'conv-2', title: 'Paged' });
+        const pageSize = AI_MESSAGE_HISTORY_PAGE_SIZE;
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async (request) => {
+                if (request.loadedCount === 0) {
+                    return createHistoryPage(
+                        [
+                            createMessage({
+                                id: 'msg-81',
+                                conversationId: conversation.id,
+                                role: 'user',
+                                content: 'message 81',
+                            }),
+                        ],
+                        {
+                            loadedCount: pageSize,
+                            totalCount: 120,
+                            hasMore: true,
+                        },
+                    );
+                }
+
+                return deferredPage.promise;
+            },
+        });
+
+        store.setState((state) => ({
+            conversations: [conversation, ...state.conversations],
+        }));
+
+        await store.getState().selectConversation(conversation.id);
+
+        const firstLoad = store.getState().loadOlderMessages(conversation.id);
+        const secondLoad = store.getState().loadOlderMessages(conversation.id);
+        await flushAsync();
+
+        expect(getMessagesPageMock).toHaveBeenCalledTimes(2);
+
+        deferredPage.resolve(
+            createHistoryPage([], {
+                loadedCount: pageSize,
+                totalCount: 120,
+                hasMore: true,
+            }),
+        );
+
+        await Promise.all([firstLoad, secondLoad]);
+    });
+});

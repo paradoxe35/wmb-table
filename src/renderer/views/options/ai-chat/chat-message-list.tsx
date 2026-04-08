@@ -1,4 +1,4 @@
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
 import { Button, Empty, Spin, Tooltip, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
@@ -30,9 +30,19 @@ function sanitizeWmbLinks(content: string): string {
         );
 }
 
-const MAX_REASONING_LINES = 50;
+const markdownComponents = {
+    a: AiReferenceLink,
+    table: ({ children, node: _node, ...props }: ComponentProps<'table'> & { node?: unknown }) => (
+        <div className="ai-markdown__table-wrap">
+            <table {...props}>{children}</table>
+        </div>
+    ),
+};
 
-function ReasoningBlock({ messageId }: { messageId: string; isActive: boolean }) {
+const MAX_REASONING_LINES = 50;
+const LOAD_OLDER_THRESHOLD_PX = 160;
+
+function ReasoningBlock({ messageId }: { messageId: string }) {
     const { t } = useTranslation();
     const reasoning = useAiChatStore((s) => s.reasoningByMessage[messageId]);
     const [collapsed, setCollapsed] = useState(true);
@@ -118,26 +128,23 @@ function ToolResultsList({ results }: { results: AiToolResult[] }) {
 
 const MessageBubble = memo(function MessageBubble({
     message,
-    isLastAssistant,
-    sending,
+    isActive,
 }: {
     message: AiMessage;
-    isLastAssistant: boolean;
-    sending: boolean;
+    isActive: boolean;
 }) {
     const isUser = message.role === 'user';
-    const rawActive = sending && isLastAssistant;
+    const providerLabel = useAiChatStore(selectActiveProviderLabel);
 
-    // Once a message completes (has content while not streaming), mark it done.
-    // This prevents all active-state UI (tools, typing indicator, avatar pulse)
-    // from flashing when sending a new message briefly re-activates old messages.
-    const hasCompleted = useRef(false);
-
-    if (!rawActive && message.content) {
-        hasCompleted.current = true;
+    if (
+        !isUser &&
+        !isActive &&
+        !message.content.trim() &&
+        message.toolCalls.length === 0 &&
+        message.toolResults.length === 0
+    ) {
+        return null;
     }
-
-    const isActive = rawActive && !hasCompleted.current;
 
     const isWaiting = isActive && !message.content;
 
@@ -149,7 +156,6 @@ const MessageBubble = memo(function MessageBubble({
         .filter(Boolean)
         .join(' ');
 
-    const providerLabel = useAiChatStore(selectActiveProviderLabel);
     const providerTooltip = isUser ? '' : providerLabel;
 
     return (
@@ -167,7 +173,7 @@ const MessageBubble = memo(function MessageBubble({
             <div
                 className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
-                {!isUser && <ReasoningBlock messageId={message.id} isActive={isActive} />}
+                {!isUser && <ReasoningBlock messageId={message.id} />}
                 {isWaiting ? (
                     <Spin indicator={<LoadingOutlined spin />} size="small" />
                 ) : isUser ? (
@@ -176,7 +182,7 @@ const MessageBubble = memo(function MessageBubble({
                     <div className="ai-markdown">
                         <Markdown
                             remarkPlugins={[remarkGfm]}
-                            components={{ a: AiReferenceLink }}
+                            components={markdownComponents}
                             urlTransform={urlTransform}
                         >
                             {sanitizeWmbLinks(message.content)}
@@ -202,13 +208,25 @@ export default function ChatMessageList({
     conversationId,
     messages,
     sending,
+    activeAssistantMessageId,
+    hasQueuedMessages,
+    queuedMessageCount,
     loading,
+    loadingOlder,
+    hasMoreHistory,
+    onLoadOlderMessages,
     onQuickStart,
 }: {
     conversationId: string | null;
     messages: AiMessage[];
     sending: boolean;
+    activeAssistantMessageId: string | null;
+    hasQueuedMessages: boolean;
+    queuedMessageCount: number;
     loading: boolean;
+    loadingOlder: boolean;
+    hasMoreHistory: boolean;
+    onLoadOlderMessages: () => Promise<void>;
     onQuickStart: (prompt: string) => void;
 }) {
     const mainView = useAppStore((s) => s.mainView);
@@ -221,32 +239,41 @@ export default function ChatMessageList({
     // Scroll to bottom instantly before paint on conversation switch and
     // again when loaded messages land for the selected conversation.
     const conversationKey = conversationId ?? 'empty';
+    const pendingInitialScrollConversation = useRef<string | null>(null);
+    const prependScrollSnapshot = useRef<{ height: number; top: number } | null>(null);
 
     // When leaving options view, break the sticky lock so the ResizeObserver
     // doesn't auto-scroll to bottom when the chat becomes visible again.
     const prevMainView = useRef(mainView);
     const prevOptionView = useRef(optionView);
 
-    useLayoutEffect(() => {
-        if (sending) {
-            return;
-        }
-
+    useEffect(() => {
         if (prevMainView.current !== 'options' && mainView === 'options') {
             stopScroll();
         } else if (mainView === 'options' && prevOptionView.current !== 'ai-chat') {
             stopScroll();
-        } else {
-            stopScroll();
-            const el = scrollRef.current;
-            if (el) {
-                el.scrollTop = el.scrollHeight;
-            }
         }
 
         prevOptionView.current = optionView;
         prevMainView.current = mainView;
-    }, [mainView, stopScroll, conversationKey, loading, messages.length, sending, optionView]);
+    }, [mainView, optionView, stopScroll]);
+
+    useLayoutEffect(() => {
+        pendingInitialScrollConversation.current = conversationKey;
+    }, [conversationKey]);
+
+    useLayoutEffect(() => {
+        if (loading || pendingInitialScrollConversation.current !== conversationKey) {
+            return;
+        }
+
+        stopScroll();
+        const el = scrollRef.current;
+        if (el) {
+            el.scrollTop = el.scrollHeight;
+        }
+        pendingInitialScrollConversation.current = null;
+    }, [conversationKey, loading, scrollRef, stopScroll]);
 
     // Scroll to bottom when user sends a new message
     const prevSending = useRef(sending);
@@ -257,20 +284,60 @@ export default function ChatMessageList({
         prevSending.current = sending;
     }, [sending, scrollToBottom]);
 
-    const lastAssistantId = useMemo(() => {
-        for (let i = messages.length - 1; i >= 0; i--) {
-            if (messages[i].role === 'assistant') {
-                return messages[i].id;
-            }
+    const prevQueuedMessageCount = useRef(queuedMessageCount);
+    useEffect(() => {
+        if (queuedMessageCount > prevQueuedMessageCount.current) {
+            scrollToBottom();
         }
-        return null;
-    }, [messages]);
+
+        prevQueuedMessageCount.current = queuedMessageCount;
+    }, [queuedMessageCount, scrollToBottom]);
+
+    useLayoutEffect(() => {
+        if (loadingOlder || !prependScrollSnapshot.current) {
+            return;
+        }
+
+        const el = scrollRef.current;
+        if (!el) {
+            prependScrollSnapshot.current = null;
+            return;
+        }
+
+        const snapshot = prependScrollSnapshot.current;
+        el.scrollTop = el.scrollHeight - snapshot.height + snapshot.top;
+        prependScrollSnapshot.current = null;
+    }, [loadingOlder, messages.length, scrollRef]);
+
+    function handleScroll(): void {
+        const el = scrollRef.current;
+        if (
+            !el ||
+            loading ||
+            loadingOlder ||
+            !hasMoreHistory ||
+            el.scrollTop > LOAD_OLDER_THRESHOLD_PX
+        ) {
+            return;
+        }
+
+        prependScrollSnapshot.current = {
+            height: el.scrollHeight,
+            top: el.scrollTop,
+        };
+        void onLoadOlderMessages();
+    }
 
     return (
         <div className="ai-chat__messages-wrapper">
-            <div className="ai-chat__messages" ref={scrollRef}>
+            <div className="ai-chat__messages" ref={scrollRef} onScroll={handleScroll}>
                 <div className="ai-chat__messages-content" ref={contentRef}>
-                    {messages.length === 0 && !loading ? (
+                    {loadingOlder ? (
+                        <div className="ai-chat__history-loading">
+                            <Spin indicator={<LoadingOutlined spin />} size="small" />
+                        </div>
+                    ) : null}
+                    {messages.length === 0 && !hasQueuedMessages && !loading ? (
                         <EmptyChat onQuickStart={onQuickStart} />
                     ) : (
                         <AnimatePresence initial={false}>
@@ -278,8 +345,7 @@ export default function ChatMessageList({
                                 <MessageBubble
                                     key={msg.id}
                                     message={msg}
-                                    isLastAssistant={msg.id === lastAssistantId}
-                                    sending={sending}
+                                    isActive={msg.id === activeAssistantMessageId}
                                 />
                             ))}
                         </AnimatePresence>

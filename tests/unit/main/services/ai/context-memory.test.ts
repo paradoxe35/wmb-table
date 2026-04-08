@@ -20,6 +20,15 @@ describe('context-memory', () => {
         vi.clearAllMocks();
     });
 
+    it('loads only the most recent 40 messages from the repository', async () => {
+        getRecentMessagesMock.mockReturnValue([]);
+
+        const { buildConversationContext } = await import('@main/services/ai/context-memory');
+        buildConversationContext('conv-0', false);
+
+        expect(getRecentMessagesMock).toHaveBeenCalledWith('conv-0', 40);
+    });
+
     it('includes raw tool JSON for recent (non-compact) messages', async () => {
         const messages: AiMessage[] = [
             {

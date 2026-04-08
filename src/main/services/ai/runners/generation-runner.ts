@@ -3,7 +3,6 @@ import log from '@main/lib/logger';
 import { resolveRemoteOutputTokens } from '../token-budget';
 import type { GenerationContext, GenerationRunner } from './types';
 import {
-    dispatchTextDelta,
     dispatchReasoningDelta,
     dispatchToolCallStart,
     dispatchToolCallComplete,
@@ -61,43 +60,44 @@ export class GenerationRunnerImpl implements GenerationRunner {
         for await (const part of result.fullStream) {
             switch (part.type) {
                 case 'text-delta':
-                    dispatchTextDelta(
-                        ctx.browserWindow,
-                        ctx.conversationId,
-                        ctx.assistantMessageId,
-                        part.text,
-                    );
+                    ctx.dispatchTextDelta(part.text);
                     break;
                 case 'reasoning-delta':
                     dispatchReasoningDelta(
                         ctx.browserWindow,
                         ctx.conversationId,
+                        ctx.generationId,
                         ctx.assistantMessageId,
                         part.text,
+                        ctx.isCurrentRun,
                     );
                     break;
                 case 'tool-call':
                     dispatchToolCallStart(
                         ctx.browserWindow,
                         ctx.conversationId,
+                        ctx.generationId,
                         ctx.assistantMessageId,
                         {
                             id: part.toolCallId,
                             name: part.toolName,
                             input: normalizeToolCallInput(part.input),
                         },
+                        ctx.isCurrentRun,
                     );
                     break;
                 case 'tool-result':
                     dispatchToolCallComplete(
                         ctx.browserWindow,
                         ctx.conversationId,
+                        ctx.generationId,
                         ctx.assistantMessageId,
                         {
                             toolCallId: part.toolCallId,
                             name: part.toolName,
                             output: part.output,
                         },
+                        ctx.isCurrentRun,
                     );
                     break;
                 case 'tool-error':
@@ -127,12 +127,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
                 conversationId: ctx.conversationId,
                 maxOutputTokens,
             });
-            dispatchTextDelta(
-                ctx.browserWindow,
-                ctx.conversationId,
-                ctx.assistantMessageId,
-                TRUNCATION_NOTICE,
-            );
+            ctx.dispatchTextDelta(TRUNCATION_NOTICE);
         }
     }
 }

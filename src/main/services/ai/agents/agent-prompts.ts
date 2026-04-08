@@ -56,8 +56,10 @@ export function buildResearchAgentTaskPrompt(input: {
 export function buildSermonReaderTaskPrompt(input: {
     sermonId?: string;
     sermonQuery?: string;
-    question: string;
+    question?: string;
     translationId?: number;
+    startParagraph?: number;
+    maxParagraphs?: number;
     description?: string;
     alreadyKnown?: string;
     focus?: string;
@@ -76,7 +78,15 @@ export function buildSermonReaderTaskPrompt(input: {
         sections.push(`Sermon to resolve first: ${input.sermonQuery.trim()}`);
     }
 
-    sections.push(`Question to answer: ${input.question.trim()}`);
+    if (input.question?.trim()) {
+        sections.push(`Question to answer: ${input.question.trim()}`);
+    }
+
+    if (input.startParagraph != null || input.maxParagraphs != null) {
+        sections.push(
+            `Pagination hint: start at paragraph ${input.startParagraph ?? 0} and read up to ${input.maxParagraphs ?? 20} paragraphs per page when useful.`,
+        );
+    }
 
     if (input.description?.trim()) {
         sections.push(`Additional context:\n${input.description.trim()}`);

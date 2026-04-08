@@ -92,6 +92,45 @@ describe('ai.repository', () => {
             expect(recent).toHaveLength(3);
         });
 
+        it('getMessageHistoryPage returns the latest page first, then older messages', () => {
+            const conv = aiRepo.createConversation('en');
+            for (let i = 0; i < 10; i++) {
+                aiRepo.createMessage({
+                    conversationId: conv.id,
+                    role: 'user',
+                    content: `msg ${i + 1}`,
+                });
+            }
+
+            const latestPage = aiRepo.getMessageHistoryPage({
+                conversationId: conv.id,
+                limit: 4,
+                loadedCount: 0,
+            });
+            expect(latestPage.messages.map((message) => message.content)).toEqual([
+                'msg 7',
+                'msg 8',
+                'msg 9',
+                'msg 10',
+            ]);
+            expect(latestPage.loadedCount).toBe(4);
+            expect(latestPage.hasMore).toBe(true);
+
+            const olderPage = aiRepo.getMessageHistoryPage({
+                conversationId: conv.id,
+                limit: 4,
+                loadedCount: latestPage.loadedCount,
+            });
+            expect(olderPage.messages.map((message) => message.content)).toEqual([
+                'msg 3',
+                'msg 4',
+                'msg 5',
+                'msg 6',
+            ]);
+            expect(olderPage.loadedCount).toBe(8);
+            expect(olderPage.hasMore).toBe(true);
+        });
+
         it('updateMessage changes content', () => {
             const conv = aiRepo.createConversation('en');
             const msg = aiRepo.createMessage({

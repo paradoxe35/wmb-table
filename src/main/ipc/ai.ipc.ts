@@ -25,8 +25,8 @@ export function registerAiHandlers(): void {
         getAiService().clearConversations();
     });
 
-    registerHandler(AiChannels.getMessages, async (_event, conversationId) =>
-        getAiService().getMessages(conversationId),
+    registerHandler(AiChannels.getMessagesPage, async (_event, request) =>
+        getAiService().getMessagesPage(request),
     );
 
     registerHandler(AiChannels.sendMessage, async (event, request) => {

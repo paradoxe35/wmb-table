@@ -43,13 +43,18 @@ export default function AiChatView() {
     const activeConversationId = useAiChatStore((s) => s.activeConversationId);
     const messagesByConversation = useAiChatStore((s) => s.messagesByConversation);
     const loadingConversations = useAiChatStore((s) => s.loadingConversations);
+    const loadingOlderConversations = useAiChatStore((s) => s.loadingOlderConversations);
+    const historyByConversation = useAiChatStore((s) => s.historyByConversation);
+    const conversationRuns = useAiChatStore((s) => s.conversationRuns);
+    const queuedMessagesByConversation = useAiChatStore((s) => s.queuedMessagesByConversation);
     const createConversation = useAiChatStore((s) => s.createConversation);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
+    const loadOlderMessages = useAiChatStore((s) => s.loadOlderMessages);
     const deleteConversation = useAiChatStore((s) => s.deleteConversation);
     const clearConversations = useAiChatStore((s) => s.clearConversations);
     const sendMessage = useAiChatStore((s) => s.sendMessage);
     const stopGeneration = useAiChatStore((s) => s.stopGeneration);
-    const streamingConversations = useAiChatStore((s) => s.streamingConversations);
+    const removeQueuedMessage = useAiChatStore((s) => s.removeQueuedMessage);
     const error = useAiChatStore((s) => s.error);
     const completionCount = useAiChatStore((s) => s.completionCount);
     const lastCompletedConversationId = useAiChatStore((s) => s.lastCompletedConversationId);
@@ -63,11 +68,31 @@ export default function AiChatView() {
         () => (activeConversationId ? (messagesByConversation[activeConversationId] ?? []) : []),
         [activeConversationId, messagesByConversation],
     );
-    const activeSending = Boolean(
-        activeConversationId && streamingConversations[activeConversationId],
+    const activeRun = useMemo(
+        () => (activeConversationId ? (conversationRuns[activeConversationId] ?? null) : null),
+        [activeConversationId, conversationRuns],
     );
+    const activeQueuedMessages = useMemo(
+        () =>
+            activeConversationId ? (queuedMessagesByConversation[activeConversationId] ?? []) : [],
+        [activeConversationId, queuedMessagesByConversation],
+    );
+    const activeSending = Boolean(activeRun);
     const activeLoading = Boolean(
         activeConversationId && loadingConversations[activeConversationId],
+    );
+    const activeLoadingOlder = Boolean(
+        activeConversationId && loadingOlderConversations[activeConversationId],
+    );
+    const activeHasMoreHistory = Boolean(
+        activeConversationId && historyByConversation[activeConversationId]?.hasMore,
+    );
+    const activeConversationMap = useMemo(
+        () =>
+            Object.fromEntries(
+                Object.keys(conversationRuns).map((conversationId) => [conversationId, true]),
+            ) as Readonly<Record<string, true>>,
+        [conversationRuns],
     );
 
     const handleSend = useCallback(() => {
@@ -75,8 +100,11 @@ export default function AiChatView() {
         if (!trimmed) {
             return;
         }
-        void sendMessage(trimmed);
-        setDraft('');
+        void sendMessage(trimmed).then((accepted) => {
+            if (accepted) {
+                setDraft('');
+            }
+        });
     }, [draft, sendMessage]);
 
     const handleCreateConversation = useCallback(() => {
@@ -108,6 +136,14 @@ export default function AiChatView() {
         [sendMessage],
     );
 
+    const handleLoadOlderMessages = useCallback(() => {
+        if (!activeConversationId) {
+            return Promise.resolve();
+        }
+
+        return loadOlderMessages(activeConversationId);
+    }, [activeConversationId, loadOlderMessages]);
+
     if (!settings) {
         return null;
     }
@@ -121,7 +157,7 @@ export default function AiChatView() {
             <ChatConversationList
                 conversations={conversations}
                 activeConversationId={activeConversationId}
-                streamingConversations={streamingConversations}
+                streamingConversations={activeConversationMap}
                 onCreateConversation={handleCreateConversation}
                 onSelectConversation={handleSelectConversation}
                 onDeleteConversation={handleDeleteConversation}
@@ -143,19 +179,34 @@ export default function AiChatView() {
                     conversationId={activeConversationId}
                     messages={activeMessages}
                     sending={activeSending}
+                    activeAssistantMessageId={activeRun?.assistantMessageId ?? null}
+                    hasQueuedMessages={activeQueuedMessages.length > 0}
+                    queuedMessageCount={activeQueuedMessages.length}
                     loading={activeLoading}
+                    loadingOlder={activeLoadingOlder}
+                    hasMoreHistory={activeHasMoreHistory}
+                    onLoadOlderMessages={handleLoadOlderMessages}
                     onQuickStart={handleQuickStart}
                 />
 
                 <ChatInput
                     draft={draft}
                     sending={activeSending}
+                    runStatus={activeRun?.status ?? null}
+                    queuedMessages={activeQueuedMessages}
                     conversationId={activeConversationId}
                     completionCount={completionCount}
                     lastCompletedConversationId={lastCompletedConversationId}
                     onDraftChange={setDraft}
                     onSend={handleSend}
                     onStop={handleStop}
+                    onRemoveQueuedMessage={(queuedMessageId) => {
+                        if (!activeConversationId) {
+                            return;
+                        }
+
+                        removeQueuedMessage(activeConversationId, queuedMessageId);
+                    }}
                 />
             </div>
         </div>
