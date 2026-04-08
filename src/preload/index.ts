@@ -41,7 +41,11 @@ import type {
     TtsSegment,
     TtsVoiceCloneRequest,
 } from '@shared/tts.types';
-import type { AiSendMessageRequest, AiSettings } from '@shared/ai.types';
+import type {
+    AiMessageHistoryPageRequest,
+    AiSendMessageRequest,
+    AiSettings,
+} from '@shared/ai.types';
 
 function invoke<C extends InvokeChannel>(
     channel: C,
@@ -310,7 +314,8 @@ const api = {
         deleteConversation: (conversationId: string) =>
             invoke(AiChannels.deleteConversation, conversationId),
         clearConversations: () => invoke(AiChannels.clearConversations),
-        getMessages: (conversationId: string) => invoke(AiChannels.getMessages, conversationId),
+        getMessagesPage: (request: AiMessageHistoryPageRequest) =>
+            invoke(AiChannels.getMessagesPage, request),
         sendMessage: (request: AiSendMessageRequest) => invoke(AiChannels.sendMessage, request),
         stopGeneration: (conversationId: string) =>
             invoke(AiChannels.stopGeneration, conversationId),

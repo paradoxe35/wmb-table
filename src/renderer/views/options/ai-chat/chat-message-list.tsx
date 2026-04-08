@@ -40,6 +40,7 @@ const markdownComponents = {
 };
 
 const MAX_REASONING_LINES = 50;
+const LOAD_OLDER_THRESHOLD_PX = 120;
 
 function ReasoningBlock({ messageId }: { messageId: string }) {
     const { t } = useTranslation();
@@ -211,6 +212,9 @@ export default function ChatMessageList({
     hasQueuedMessages,
     queuedMessageCount,
     loading,
+    loadingOlder,
+    hasMoreHistory,
+    onLoadOlderMessages,
     onQuickStart,
 }: {
     conversationId: string | null;
@@ -220,6 +224,9 @@ export default function ChatMessageList({
     hasQueuedMessages: boolean;
     queuedMessageCount: number;
     loading: boolean;
+    loadingOlder: boolean;
+    hasMoreHistory: boolean;
+    onLoadOlderMessages: () => Promise<void>;
     onQuickStart: (prompt: string) => void;
 }) {
     const mainView = useAppStore((s) => s.mainView);
@@ -232,41 +239,41 @@ export default function ChatMessageList({
     // Scroll to bottom instantly before paint on conversation switch and
     // again when loaded messages land for the selected conversation.
     const conversationKey = conversationId ?? 'empty';
+    const pendingInitialScrollConversation = useRef<string | null>(null);
+    const prependScrollSnapshot = useRef<{ height: number; top: number } | null>(null);
 
     // When leaving options view, break the sticky lock so the ResizeObserver
     // doesn't auto-scroll to bottom when the chat becomes visible again.
     const prevMainView = useRef(mainView);
     const prevOptionView = useRef(optionView);
 
-    useLayoutEffect(() => {
-        if (sending) {
-            return;
-        }
-
+    useEffect(() => {
         if (prevMainView.current !== 'options' && mainView === 'options') {
             stopScroll();
         } else if (mainView === 'options' && prevOptionView.current !== 'ai-chat') {
             stopScroll();
-        } else {
-            stopScroll();
-            const el = scrollRef.current;
-            if (el) {
-                el.scrollTop = el.scrollHeight;
-            }
         }
 
         prevOptionView.current = optionView;
         prevMainView.current = mainView;
-    }, [
-        mainView,
-        stopScroll,
-        conversationKey,
-        loading,
-        messages.length,
-        sending,
-        optionView,
-        scrollRef,
-    ]);
+    }, [mainView, optionView, stopScroll]);
+
+    useLayoutEffect(() => {
+        pendingInitialScrollConversation.current = conversationKey;
+    }, [conversationKey]);
+
+    useLayoutEffect(() => {
+        if (loading || pendingInitialScrollConversation.current !== conversationKey) {
+            return;
+        }
+
+        stopScroll();
+        const el = scrollRef.current;
+        if (el) {
+            el.scrollTop = el.scrollHeight;
+        }
+        pendingInitialScrollConversation.current = null;
+    }, [conversationKey, loading, scrollRef, stopScroll]);
 
     // Scroll to bottom when user sends a new message
     const prevSending = useRef(sending);
@@ -286,10 +293,50 @@ export default function ChatMessageList({
         prevQueuedMessageCount.current = queuedMessageCount;
     }, [queuedMessageCount, scrollToBottom]);
 
+    useLayoutEffect(() => {
+        if (loadingOlder || !prependScrollSnapshot.current) {
+            return;
+        }
+
+        const el = scrollRef.current;
+        if (!el) {
+            prependScrollSnapshot.current = null;
+            return;
+        }
+
+        const snapshot = prependScrollSnapshot.current;
+        el.scrollTop = el.scrollHeight - snapshot.height + snapshot.top;
+        prependScrollSnapshot.current = null;
+    }, [loadingOlder, messages.length, scrollRef]);
+
+    function handleScroll(): void {
+        const el = scrollRef.current;
+        if (
+            !el ||
+            loading ||
+            loadingOlder ||
+            !hasMoreHistory ||
+            el.scrollTop > LOAD_OLDER_THRESHOLD_PX
+        ) {
+            return;
+        }
+
+        prependScrollSnapshot.current = {
+            height: el.scrollHeight,
+            top: el.scrollTop,
+        };
+        void onLoadOlderMessages();
+    }
+
     return (
         <div className="ai-chat__messages-wrapper">
-            <div className="ai-chat__messages" ref={scrollRef}>
+            <div className="ai-chat__messages" ref={scrollRef} onScroll={handleScroll}>
                 <div className="ai-chat__messages-content" ref={contentRef}>
+                    {loadingOlder ? (
+                        <div className="ai-chat__history-loading">
+                            <Spin indicator={<LoadingOutlined spin />} size="small" />
+                        </div>
+                    ) : null}
                     {messages.length === 0 && !hasQueuedMessages && !loading ? (
                         <EmptyChat onQuickStart={onQuickStart} />
                     ) : (

@@ -7,6 +7,7 @@ export type AiBuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[number];
 export type AiProviderId = AiBuiltinProviderId | string;
 export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';
 export type AiLanguagePreference = 'active' | 'explicit-only';
+export const AI_MESSAGE_HISTORY_PAGE_SIZE = 50;
 
 // ---------------------------------------------------------------------------
 // Provider configuration
@@ -165,6 +166,19 @@ export interface AiMessage {
     toolCalls: AiToolCall[];
     toolResults: AiToolResult[];
     createdAt: string;
+}
+
+export interface AiMessageHistoryPageRequest {
+    conversationId: string;
+    limit?: number;
+    loadedCount?: number;
+}
+
+export interface AiMessageHistoryPage {
+    messages: AiMessage[];
+    loadedCount: number;
+    totalCount: number;
+    hasMore: boolean;
 }
 
 export interface AiSendMessageRequest {

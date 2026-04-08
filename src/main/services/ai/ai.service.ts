@@ -8,6 +8,8 @@ import { PushChannels } from '@shared/ipc.types';
 import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import type {
     AiConversation,
+    AiMessageHistoryPage,
+    AiMessageHistoryPageRequest,
     AiMessage,
     AiProviderTestResult,
     AiSendMessageRequest,
@@ -130,8 +132,8 @@ export class AiService {
         aiRepo.clearAllConversations();
     }
 
-    getMessages(conversationId: string): AiMessage[] {
-        return aiRepo.getMessages(conversationId);
+    getMessagesPage(request: AiMessageHistoryPageRequest): AiMessageHistoryPage {
+        return aiRepo.getMessageHistoryPage(request);
     }
 
     // ── Local models ──
@@ -501,13 +503,21 @@ export class AiService {
             });
 
             const current = aiRepo.getConversation(conversation.id);
-            const allMessages = aiRepo.getMessages(conversation.id);
-            if (current && shouldGenerateTitle(allMessages.length, current.aiTitle)) {
+
+            const MAX_TITLE_INPUT_MESSAGES = 20;
+            const recentMessages = aiRepo.getRecentMessages(
+                conversation.id,
+                MAX_TITLE_INPUT_MESSAGES,
+            );
+            if (current && shouldGenerateTitle(recentMessages.length, current.aiTitle)) {
                 const title = await generateConversationTitle(
                     model,
                     uiLanguageCode,
                     contentLanguageCode,
-                    allMessages.map((m) => ({ role: m.role, content: m.content })),
+                    recentMessages.map((message) => ({
+                        role: message.role,
+                        content: message.content,
+                    })),
                 );
 
                 if (title) {

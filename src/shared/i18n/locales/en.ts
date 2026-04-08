@@ -200,6 +200,7 @@ const en: Record<string, string> = {
     'Supprimer cette conversation ?': 'Delete this conversation?',
     'Supprimer toutes les conversations ?': 'Delete all conversations?',
     "Vider l'historique": 'Clear history',
+    'Le chargement des anciens messages a échoué.': 'Loading older messages failed.',
 
     // ── AI tool results ──
     'Recherche de sermons': 'Sermon search',

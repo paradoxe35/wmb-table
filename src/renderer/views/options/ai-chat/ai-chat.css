@@ -167,6 +167,14 @@
     margin-right: auto;
 }
 
+.ai-chat__history-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 20px;
+    color: var(--ant-color-text-tertiary);
+}
+
 .ai-chat__scroll-bottom {
     position: absolute;
     bottom: 8px;

@@ -1,5 +1,6 @@
 import type {
     AiConversation,
+    AiMessageHistoryPage,
     AiMessage,
     AiModelScanResult,
     AiProviderDefinition,
@@ -7,7 +8,11 @@ import type {
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
-import { resolveActiveModel, resolveProviderName } from '@shared/ai.types';
+import {
+    AI_MESSAGE_HISTORY_PAGE_SIZE,
+    resolveActiveModel,
+    resolveProviderName,
+} from '@shared/ai.types';
 import { AI_DATA_EVENT, APP_UI_EVENT } from '@renderer/utils/events';
 import { createStore } from './create-store';
 import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
@@ -25,6 +30,7 @@ const TOOL_TO_EVENT: Record<string, string> = {
 type MessageMap = Record<string, AiMessage[]>;
 type ReasoningMap = Record<string, string>;
 type LoadingConversationMap = Record<string, true>;
+type ConversationHistoryMap = Record<string, ConversationHistoryState>;
 
 type ConversationRunStatus = 'starting' | 'streaming' | 'stopping';
 
@@ -32,6 +38,11 @@ interface ConversationRunState {
     generationId: string;
     assistantMessageId: string | null;
     status: ConversationRunStatus;
+}
+
+interface ConversationHistoryState {
+    loadedCount: number;
+    hasMore: boolean;
 }
 
 interface QueuedMessage {
@@ -42,6 +53,13 @@ interface QueuedMessage {
 
 type ConversationRunMap = Record<string, ConversationRunState>;
 type QueuedMessageMap = Record<string, QueuedMessage[]>;
+
+function createConversationHistoryState(page: AiMessageHistoryPage): ConversationHistoryState {
+    return {
+        loadedCount: page.loadedCount,
+        hasMore: page.hasMore,
+    };
+}
 
 function upsertMessage(messages: AiMessage[], message: AiMessage): AiMessage[] {
     const existing = messages.findIndex((item) => item.id === message.id);
@@ -208,6 +226,8 @@ interface AiChatState {
     messagesByConversation: MessageMap;
     reasoningByMessage: ReasoningMap;
     loadingConversations: LoadingConversationMap;
+    loadingOlderConversations: LoadingConversationMap;
+    historyByConversation: ConversationHistoryMap;
     conversationRuns: ConversationRunMap;
     queuedMessagesByConversation: QueuedMessageMap;
     localModels: AiModelScanResult | null;
@@ -222,6 +242,7 @@ interface AiChatState {
     saveSettings(partial: Partial<AiSettings>): Promise<void>;
     loadConversations(): Promise<void>;
     selectConversation(conversationId: string): Promise<void>;
+    loadOlderMessages(conversationId: string): Promise<void>;
     createConversation(title?: string): Promise<void>;
     deleteConversation(conversationId: string): Promise<void>;
     clearConversations(): Promise<void>;
@@ -249,6 +270,8 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     messagesByConversation: {},
     reasoningByMessage: {},
     loadingConversations: {},
+    loadingOlderConversations: {},
+    historyByConversation: {},
     conversationRuns: {},
     queuedMessagesByConversation: {},
     localModels: null,
@@ -538,11 +561,16 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
     selectConversation: async (conversationId) => {
         const state = get();
-        const alreadyActive = state.activeConversationId === conversationId;
         const alreadyLoaded = conversationId in state.messagesByConversation;
         const alreadyLoading = conversationId in state.loadingConversations;
 
-        if (alreadyActive && (alreadyLoaded || alreadyLoading)) {
+        if (alreadyLoaded) {
+            set({ activeConversationId: conversationId });
+            return;
+        }
+
+        if (alreadyLoading) {
+            set({ activeConversationId: conversationId });
             return;
         }
 
@@ -555,18 +583,26 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }));
 
         try {
-            const messages = await window.api.ai.getMessages(conversationId);
+            const page = await window.api.ai.getMessagesPage({
+                conversationId,
+                limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+                loadedCount: 0,
+            });
             set((state) => ({
                 activeConversationId: conversationId,
                 loadingConversations: removeConversationKey(
                     state.loadingConversations,
                     conversationId,
                 ),
+                historyByConversation: {
+                    ...state.historyByConversation,
+                    [conversationId]: createConversationHistoryState(page),
+                },
                 messagesByConversation: {
                     ...state.messagesByConversation,
                     [conversationId]: mergeFetchedMessages(
                         state.messagesByConversation[conversationId] ?? [],
-                        messages,
+                        page.messages,
                     ),
                 },
             }));
@@ -581,11 +617,72 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }
     },
 
+    loadOlderMessages: async (conversationId) => {
+        const state = get();
+        const history = state.historyByConversation[conversationId];
+
+        if (
+            !history?.hasMore ||
+            conversationId in state.loadingOlderConversations ||
+            conversationId in state.loadingConversations
+        ) {
+            return;
+        }
+
+        set((current) => ({
+            loadingOlderConversations: {
+                ...current.loadingOlderConversations,
+                [conversationId]: true,
+            },
+        }));
+
+        try {
+            const page = await window.api.ai.getMessagesPage({
+                conversationId,
+                limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+                loadedCount: history.loadedCount,
+            });
+
+            set((current) => ({
+                loadingOlderConversations: removeConversationKey(
+                    current.loadingOlderConversations,
+                    conversationId,
+                ),
+                historyByConversation: {
+                    ...current.historyByConversation,
+                    [conversationId]: createConversationHistoryState(page),
+                },
+                messagesByConversation: {
+                    ...current.messagesByConversation,
+                    [conversationId]: mergeFetchedMessages(
+                        current.messagesByConversation[conversationId] ?? [],
+                        page.messages,
+                    ),
+                },
+            }));
+        } catch (error) {
+            set((current) => ({
+                loadingOlderConversations: removeConversationKey(
+                    current.loadingOlderConversations,
+                    conversationId,
+                ),
+                error: toErrorMessage(error, 'Le chargement des anciens messages a échoué.'),
+            }));
+        }
+    },
+
     createConversation: async (title) => {
         const conversation = await window.api.ai.createConversation({ title });
         set((state) => ({
             conversations: [conversation, ...state.conversations],
             activeConversationId: conversation.id,
+            historyByConversation: {
+                ...state.historyByConversation,
+                [conversation.id]: {
+                    loadedCount: 0,
+                    hasMore: false,
+                },
+            },
             messagesByConversation: {
                 ...state.messagesByConversation,
                 [conversation.id]: [],
@@ -614,6 +711,14 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     state.loadingConversations,
                     conversationId,
                 ),
+                loadingOlderConversations: removeConversationKey(
+                    state.loadingOlderConversations,
+                    conversationId,
+                ),
+                historyByConversation: removeConversationKey(
+                    state.historyByConversation,
+                    conversationId,
+                ),
                 conversationRuns: removeConversationKey(state.conversationRuns, conversationId),
                 queuedMessagesByConversation: removeConversationKey(
                     state.queuedMessagesByConversation,
@@ -636,6 +741,8 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             messagesByConversation: {},
             reasoningByMessage: {},
             loadingConversations: {},
+            loadingOlderConversations: {},
+            historyByConversation: {},
             conversationRuns: {},
             queuedMessagesByConversation: {},
             sending: false,
@@ -656,6 +763,13 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 set((state) => ({
                     conversations: [conversation, ...state.conversations],
                     activeConversationId: conversation.id,
+                    historyByConversation: {
+                        ...state.historyByConversation,
+                        [conversation.id]: {
+                            loadedCount: 0,
+                            hasMore: false,
+                        },
+                    },
                     messagesByConversation: {
                         ...state.messagesByConversation,
                         [conversation.id]: [],

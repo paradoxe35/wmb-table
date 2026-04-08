@@ -43,10 +43,13 @@ export default function AiChatView() {
     const activeConversationId = useAiChatStore((s) => s.activeConversationId);
     const messagesByConversation = useAiChatStore((s) => s.messagesByConversation);
     const loadingConversations = useAiChatStore((s) => s.loadingConversations);
+    const loadingOlderConversations = useAiChatStore((s) => s.loadingOlderConversations);
+    const historyByConversation = useAiChatStore((s) => s.historyByConversation);
     const conversationRuns = useAiChatStore((s) => s.conversationRuns);
     const queuedMessagesByConversation = useAiChatStore((s) => s.queuedMessagesByConversation);
     const createConversation = useAiChatStore((s) => s.createConversation);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
+    const loadOlderMessages = useAiChatStore((s) => s.loadOlderMessages);
     const deleteConversation = useAiChatStore((s) => s.deleteConversation);
     const clearConversations = useAiChatStore((s) => s.clearConversations);
     const sendMessage = useAiChatStore((s) => s.sendMessage);
@@ -77,6 +80,12 @@ export default function AiChatView() {
     const activeSending = Boolean(activeRun);
     const activeLoading = Boolean(
         activeConversationId && loadingConversations[activeConversationId],
+    );
+    const activeLoadingOlder = Boolean(
+        activeConversationId && loadingOlderConversations[activeConversationId],
+    );
+    const activeHasMoreHistory = Boolean(
+        activeConversationId && historyByConversation[activeConversationId]?.hasMore,
     );
     const activeConversationMap = useMemo(
         () =>
@@ -127,6 +136,14 @@ export default function AiChatView() {
         [sendMessage],
     );
 
+    const handleLoadOlderMessages = useCallback(() => {
+        if (!activeConversationId) {
+            return Promise.resolve();
+        }
+
+        return loadOlderMessages(activeConversationId);
+    }, [activeConversationId, loadOlderMessages]);
+
     if (!settings) {
         return null;
     }
@@ -166,6 +183,9 @@ export default function AiChatView() {
                     hasQueuedMessages={activeQueuedMessages.length > 0}
                     queuedMessageCount={activeQueuedMessages.length}
                     loading={activeLoading}
+                    loadingOlder={activeLoadingOlder}
+                    hasMoreHistory={activeHasMoreHistory}
+                    onLoadOlderMessages={handleLoadOlderMessages}
                     onQuickStart={handleQuickStart}
                 />
 

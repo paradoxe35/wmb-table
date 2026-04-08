@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
     AiConversation,
+    AiMessageHistoryPage,
+    AiMessageHistoryPageRequest,
     AiMessage,
     AiSendMessageRequest,
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
-import { createDefaultAiSettings } from '@shared/ai.types';
+import { AI_MESSAGE_HISTORY_PAGE_SIZE, createDefaultAiSettings } from '@shared/ai.types';
 import type { PushEventMap } from '@shared/ipc.types';
 import { PushChannels } from '@shared/ipc.types';
 
@@ -32,6 +34,9 @@ interface ListenerMap {
 interface StoreHarness {
     store: typeof import('@renderer/stores/ai-chat.store').useAiChatStore;
     listeners: ListenerMap;
+    getMessagesPageMock: ReturnType<
+        typeof vi.fn<[AiMessageHistoryPageRequest], Promise<AiMessageHistoryPage>>
+    >;
     sendMessageMock: ReturnType<typeof vi.fn<[AiSendMessageRequest], Promise<AiSendMessageResult>>>;
 }
 
@@ -108,6 +113,18 @@ function createDeferred<T>() {
     return { promise, resolve, reject };
 }
 
+function createHistoryPage(
+    messages: AiMessage[],
+    partial?: Partial<Pick<AiMessageHistoryPage, 'loadedCount' | 'totalCount' | 'hasMore'>>,
+): AiMessageHistoryPage {
+    return {
+        messages,
+        loadedCount: partial?.loadedCount ?? messages.length,
+        totalCount: partial?.totalCount ?? messages.length,
+        hasMore: partial?.hasMore ?? false,
+    };
+}
+
 async function flushAsync(): Promise<void> {
     await Promise.resolve();
     await Promise.resolve();
@@ -119,7 +136,7 @@ async function createHarness(options?: {
         request: AiSendMessageRequest,
         index: number,
     ) => Promise<AiSendMessageResult>;
-    getMessagesImpl?: (conversationId: string) => Promise<AiMessage[]>;
+    getMessagesPageImpl?: (request: AiMessageHistoryPageRequest) => Promise<AiMessageHistoryPage>;
 }): Promise<StoreHarness> {
     vi.resetModules();
     markFeatureReminderUsedMock.mockReset();
@@ -138,6 +155,11 @@ async function createHarness(options?: {
         },
     );
 
+    const getMessagesPageMock = vi.fn<[AiMessageHistoryPageRequest], Promise<AiMessageHistoryPage>>(
+        async (request) =>
+            options?.getMessagesPageImpl?.(request) ?? createHistoryPage([], { totalCount: 0 }),
+    );
+
     vi.stubGlobal('window', {
         api: {
             ai: {
@@ -148,12 +170,7 @@ async function createHarness(options?: {
                 createConversation: vi.fn().mockResolvedValue(conversation),
                 deleteConversation: vi.fn().mockResolvedValue(undefined),
                 clearConversations: vi.fn().mockResolvedValue(undefined),
-                getMessages: vi
-                    .fn()
-                    .mockImplementation(
-                        (conversationId: string) =>
-                            options?.getMessagesImpl?.(conversationId) ?? Promise.resolve([]),
-                    ),
+                getMessagesPage: getMessagesPageMock,
                 sendMessage: sendMessageMock,
                 stopGeneration: vi.fn().mockResolvedValue(undefined),
                 scanLocalModels: vi
@@ -216,7 +233,7 @@ async function createHarness(options?: {
         error: null,
     });
 
-    return { store, listeners, sendMessageMock };
+    return { store, listeners, getMessagesPageMock, sendMessageMock };
 }
 
 describe('ai-chat.store queue behavior', () => {
@@ -396,9 +413,8 @@ describe('ai-chat.store queue behavior', () => {
     });
 
     it('does not reload messages when the already active conversation is clicked again', async () => {
-        const getMessagesImpl = vi.fn(async () => []);
-        const { store } = await createHarness({
-            getMessagesImpl,
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async () => createHistoryPage([], { totalCount: 0 }),
         });
 
         store.setState({
@@ -417,15 +433,17 @@ describe('ai-chat.store queue behavior', () => {
 
         await store.getState().selectConversation('conv-1');
 
-        expect(getMessagesImpl).not.toHaveBeenCalled();
+        expect(getMessagesPageMock).not.toHaveBeenCalled();
     });
 
     it('keeps the local assistant placeholder when conversation history finishes loading after send', async () => {
-        const deferredMessages = createDeferred<AiMessage[]>();
+        const deferredPage = createDeferred<AiMessageHistoryPage>();
         const conversation = createConversation({ id: 'conv-2', title: 'Second' });
         const { store, sendMessageMock } = await createHarness({
-            getMessagesImpl: async (conversationId) =>
-                conversationId === 'conv-2' ? deferredMessages.promise : [],
+            getMessagesPageImpl: async (request) =>
+                request.conversationId === 'conv-2'
+                    ? deferredPage.promise
+                    : createHistoryPage([], { totalCount: 0 }),
             sendMessageImpl: async (request, index) =>
                 createSendResult(request, index, conversation),
         });
@@ -453,11 +471,160 @@ describe('ai-chat.store queue behavior', () => {
                 .messagesByConversation['conv-2'].some((message) => message.id === 'assistant-1'),
         ).toBe(true);
 
-        deferredMessages.resolve([]);
+        deferredPage.resolve(createHistoryPage([], { totalCount: 0 }));
         await selectPromise;
         await flushAsync();
 
         const messages = store.getState().messagesByConversation['conv-2'];
         expect(messages.map((message) => message.id)).toEqual(['user-1-1', 'assistant-1']);
+    });
+
+    it('loads all messages at once for small conversations', async () => {
+        const smallConversation = createConversation({ id: 'conv-2', title: 'Small' });
+        const storedMessages = Array.from({ length: 12 }, (_, index) =>
+            createMessage({
+                id: `msg-${index + 1}`,
+                conversationId: smallConversation.id,
+                role: index % 2 === 0 ? 'user' : 'assistant',
+                content: `message ${index + 1}`,
+                createdAt: `2026-04-08T10:${String(index).padStart(2, '0')}:00.000Z`,
+            }),
+        );
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async (request) => {
+                expect(request).toEqual({
+                    conversationId: smallConversation.id,
+                    limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+                    loadedCount: 0,
+                });
+                return createHistoryPage(storedMessages, { totalCount: storedMessages.length });
+            },
+        });
+
+        store.setState((state) => ({
+            conversations: [smallConversation, ...state.conversations],
+        }));
+
+        await store.getState().selectConversation(smallConversation.id);
+
+        expect(getMessagesPageMock).toHaveBeenCalledTimes(1);
+        expect(store.getState().messagesByConversation[smallConversation.id]).toEqual(
+            storedMessages,
+        );
+        expect(store.getState().historyByConversation[smallConversation.id]).toEqual({
+            loadedCount: 12,
+            hasMore: false,
+        });
+    });
+
+    it('prepends older messages when the user requests more history', async () => {
+        const conversation = createConversation({ id: 'conv-2', title: 'Paged' });
+        const allMessages = Array.from({ length: 120 }, (_, index) =>
+            createMessage({
+                id: `msg-${index + 1}`,
+                conversationId: conversation.id,
+                role: index % 2 === 0 ? 'user' : 'assistant',
+                content: `message ${index + 1}`,
+                createdAt: `2026-04-08T10:${String(index).padStart(2, '0')}:00.000Z`,
+            }),
+        );
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async (request) => {
+                if (request.loadedCount === 0) {
+                    return createHistoryPage(allMessages.slice(70), {
+                        loadedCount: 50,
+                        totalCount: 120,
+                        hasMore: true,
+                    });
+                }
+
+                if (request.loadedCount === 50) {
+                    return createHistoryPage(allMessages.slice(20, 70), {
+                        loadedCount: 100,
+                        totalCount: 120,
+                        hasMore: true,
+                    });
+                }
+
+                if (request.loadedCount === 100) {
+                    return createHistoryPage(allMessages.slice(0, 20), {
+                        loadedCount: 120,
+                        totalCount: 120,
+                        hasMore: false,
+                    });
+                }
+
+                throw new Error(`Unexpected loadedCount ${request.loadedCount}`);
+            },
+        });
+
+        store.setState((state) => ({
+            conversations: [conversation, ...state.conversations],
+        }));
+
+        await store.getState().selectConversation(conversation.id);
+        await store.getState().loadOlderMessages(conversation.id);
+        await store.getState().loadOlderMessages(conversation.id);
+
+        expect(getMessagesPageMock.mock.calls.map(([request]) => request.loadedCount)).toEqual([
+            0, 50, 100,
+        ]);
+        expect(store.getState().messagesByConversation[conversation.id]).toHaveLength(120);
+        expect(store.getState().messagesByConversation[conversation.id][0]?.id).toBe('msg-1');
+        expect(store.getState().messagesByConversation[conversation.id][119]?.id).toBe('msg-120');
+        expect(store.getState().historyByConversation[conversation.id]).toEqual({
+            loadedCount: 120,
+            hasMore: false,
+        });
+    });
+
+    it('does not start overlapping older-history loads for the same conversation', async () => {
+        const deferredPage = createDeferred<AiMessageHistoryPage>();
+        const conversation = createConversation({ id: 'conv-2', title: 'Paged' });
+        const { store, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async (request) => {
+                if (request.loadedCount === 0) {
+                    return createHistoryPage(
+                        [
+                            createMessage({
+                                id: 'msg-81',
+                                conversationId: conversation.id,
+                                role: 'user',
+                                content: 'message 81',
+                            }),
+                        ],
+                        {
+                            loadedCount: 50,
+                            totalCount: 120,
+                            hasMore: true,
+                        },
+                    );
+                }
+
+                return deferredPage.promise;
+            },
+        });
+
+        store.setState((state) => ({
+            conversations: [conversation, ...state.conversations],
+        }));
+
+        await store.getState().selectConversation(conversation.id);
+
+        const firstLoad = store.getState().loadOlderMessages(conversation.id);
+        const secondLoad = store.getState().loadOlderMessages(conversation.id);
+        await flushAsync();
+
+        expect(getMessagesPageMock).toHaveBeenCalledTimes(2);
+
+        deferredPage.resolve(
+            createHistoryPage([], {
+                loadedCount: 50,
+                totalCount: 120,
+                hasMore: true,
+            }),
+        );
+
+        await Promise.all([firstLoad, secondLoad]);
     });
 });

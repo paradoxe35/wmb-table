@@ -6,8 +6,11 @@ import { parseJsonOrFallback } from '@main/lib/json';
 import { logChange } from '@main/services/sync/change-log.service';
 import {
     BUILTIN_PROVIDER_IDS,
+    AI_MESSAGE_HISTORY_PAGE_SIZE,
     createDefaultAiSettings,
     type AiConversation,
+    type AiMessageHistoryPage,
+    type AiMessageHistoryPageRequest,
     type AiMessage,
     type AiMessageRole,
     type AiProviders,
@@ -281,6 +284,40 @@ export function getRecentMessages(conversationId: string, limit: number): AiMess
         .limit(limit)
         .all();
     return rows.reverse().map(toMessage);
+}
+
+export function getMessageHistoryPage(input: AiMessageHistoryPageRequest): AiMessageHistoryPage {
+    const limit = Math.max(1, input.limit ?? AI_MESSAGE_HISTORY_PAGE_SIZE);
+    const loadedCount = Math.max(0, input.loadedCount ?? 0);
+    const totalCountRow = getDb()
+        .select({ count: sql<number>`count(*)` })
+        .from(aiMessages)
+        .where(eq(aiMessages.conversationId, input.conversationId))
+        .get();
+    const totalCount = Number(totalCountRow?.count ?? 0);
+    const remainingOlderCount = Math.max(totalCount - loadedCount, 0);
+    const pageSize = Math.min(limit, remainingOlderCount);
+    const startOffset = Math.max(totalCount - loadedCount - pageSize, 0);
+
+    const messages =
+        pageSize === 0
+            ? []
+            : getDb()
+                  .select()
+                  .from(aiMessages)
+                  .where(eq(aiMessages.conversationId, input.conversationId))
+                  .orderBy(asc(aiMessages.createdAt))
+                  .limit(pageSize)
+                  .offset(startOffset)
+                  .all()
+                  .map(toMessage);
+
+    return {
+        messages,
+        loadedCount: loadedCount + messages.length,
+        totalCount,
+        hasMore: startOffset > 0,
+    };
 }
 
 export function getMessage(messageId: string): AiMessage | null {
