@@ -15,6 +15,7 @@ export interface GenerationContext {
     tools: ReturnType<typeof buildAiTools>;
     abortSignal: AbortSignal;
     isCurrentRun: RunDispatchGuard;
+    dispatchTextDelta: (delta: string) => void;
     contextWindow?: number;
     toolTokens: number;
     systemPromptTokens: number;

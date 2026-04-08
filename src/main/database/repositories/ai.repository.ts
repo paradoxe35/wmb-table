@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
@@ -342,12 +342,25 @@ export function updateMessage(
     return getMessage(messageId)!;
 }
 
-export function appendAssistantContent(messageId: string, delta: string): AiMessage {
-    const current = getMessage(messageId);
-    if (!current) {
+export function appendAssistantContent(messageId: string, delta: string): void {
+    const row = getDb()
+        .select({ conversationId: aiMessages.conversationId })
+        .from(aiMessages)
+        .where(eq(aiMessages.id, messageId))
+        .get();
+    if (!row) {
         throw new Error(`AI message not found: ${messageId}`);
     }
-    return updateMessage(messageId, { content: `${current.content}${delta}` });
+
+    getDb()
+        .update(aiMessages)
+        .set({
+            content: sql`${aiMessages.content} || ${delta}`,
+        })
+        .where(eq(aiMessages.id, messageId))
+        .run();
+
+    touchConversation(row.conversationId);
 }
 
 export function setAssistantToolCalls(messageId: string, toolCalls: AiToolCall[]): AiMessage {

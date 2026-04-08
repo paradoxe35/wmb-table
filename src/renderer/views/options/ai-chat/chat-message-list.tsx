@@ -32,7 +32,7 @@ function sanitizeWmbLinks(content: string): string {
 
 const markdownComponents = {
     a: AiReferenceLink,
-    table: ({ children, ...props }: ComponentProps<'table'>) => (
+    table: ({ children, node: _node, ...props }: ComponentProps<'table'> & { node?: unknown }) => (
         <div className="ai-markdown__table-wrap">
             <table {...props}>{children}</table>
         </div>

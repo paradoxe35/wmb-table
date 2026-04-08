@@ -64,9 +64,21 @@ interface ActiveRun {
     controller: AbortController;
 }
 
+interface BufferedAssistantText {
+    browserWindow: BrowserWindow;
+    conversationId: string;
+    generationId: string;
+    assistantMessageId: string;
+    buffer: string;
+    timer: ReturnType<typeof setTimeout> | null;
+}
+
 export class AiService {
     private activeRuns = new Map<string, ActiveRun>();
+    private bufferedAssistantText = new Map<string, BufferedAssistantText>();
     private localRuntime = new LocalRuntimeService();
+    private static readonly TEXT_FLUSH_INTERVAL_MS = 40;
+    private static readonly TEXT_FLUSH_THRESHOLD_CHARS = 160;
 
     // ── Settings & catalog ──
 
@@ -140,6 +152,7 @@ export class AiService {
             return;
         }
 
+        this.flushAssistantText(activeRun.assistantMessageId);
         activeRun.controller.abort();
         this.activeRuns.delete(conversationId);
         sendToRenderer(activeRun.browserWindow, PushChannels.aiStreamCancel, {
@@ -232,27 +245,6 @@ export class AiService {
             throw new Error('Le message ne peut pas être vide.');
         }
 
-        const conversation =
-            aiRepo.getConversation(request.conversationId) ?? this.createConversation();
-        const userMessages = trimmedMessages.map((content) =>
-            aiRepo.createMessage({
-                conversationId: conversation.id,
-                role: 'user',
-                content,
-            }),
-        );
-        const assistantMessage = aiRepo.createMessage({
-            conversationId: conversation.id,
-            role: 'assistant',
-            content: '',
-        });
-
-        if (!conversation.title) {
-            aiRepo.updateConversation(conversation.id, {
-                title: trimmedMessages[0].slice(0, 80),
-            });
-        }
-
         const contentLanguageCode = configRepo.getContentLanguage();
         if (!contentLanguageCode) {
             throw new Error(
@@ -292,15 +284,31 @@ export class AiService {
             localRuntime: this.localRuntime,
         });
 
+        const installedLanguages = await languagePackService.getInstalledLanguages();
+        const conversation =
+            aiRepo.getConversation(request.conversationId) ?? this.createConversation();
+
         this.stopGeneration(conversation.id);
-        const controller = new AbortController();
-        this.activeRuns.set(conversation.id, {
-            browserWindow,
+        const userMessages = trimmedMessages.map((content) =>
+            aiRepo.createMessage({
+                conversationId: conversation.id,
+                role: 'user',
+                content,
+            }),
+        );
+        const assistantMessage = aiRepo.createMessage({
             conversationId: conversation.id,
-            generationId: request.generationId,
-            assistantMessageId: assistantMessage.id,
-            controller,
+            role: 'assistant',
+            content: '',
         });
+
+        if (!conversation.title) {
+            aiRepo.updateConversation(conversation.id, {
+                title: trimmedMessages[0].slice(0, 80),
+            });
+        }
+
+        const controller = new AbortController();
 
         const tools = buildAiTools(contentLanguageCode, {
             model,
@@ -314,7 +322,6 @@ export class AiService {
             assistantMessageId: assistantMessage.id,
         });
 
-        const installedLanguages = await languagePackService.getInstalledLanguages();
         const system = buildSystemPrompt({
             contentLanguageCode,
             uiLanguageCode,
@@ -342,6 +349,14 @@ export class AiService {
         });
 
         const runner = new GenerationRunnerImpl(isLocal);
+
+        this.activeRuns.set(conversation.id, {
+            browserWindow,
+            conversationId: conversation.id,
+            generationId: request.generationId,
+            assistantMessageId: assistantMessage.id,
+            controller,
+        });
 
         log.info('AI generation starting', {
             providerId,
@@ -386,6 +401,9 @@ export class AiService {
     dispose(): void {
         for (const conversationId of this.activeRuns.keys()) {
             this.stopGeneration(conversationId);
+        }
+        for (const messageId of this.bufferedAssistantText.keys()) {
+            this.clearAssistantTextTimer(messageId);
         }
         void this.localRuntime.dispose();
     }
@@ -449,11 +467,20 @@ export class AiService {
                 abortSignal,
                 isCurrentRun: (_generationId, assistantMessageId) =>
                     this.isCurrentRun(conversation.id, generationId, assistantMessageId),
+                dispatchTextDelta: (delta) =>
+                    this.queueAssistantText(
+                        browserWindow,
+                        conversation.id,
+                        generationId,
+                        assistantMessage.id,
+                        delta,
+                    ),
                 contextWindow,
                 toolTokens,
                 systemPromptTokens,
             });
 
+            this.flushAssistantText(assistantMessage.id);
             if (!isCurrentRun()) {
                 return;
             }
@@ -494,6 +521,7 @@ export class AiService {
                 }
             }
         } catch (error) {
+            this.flushAssistantText(assistantMessage.id);
             const message = error instanceof Error ? error.message : 'AI generation failed.';
             const wasAborted = abortSignal.aborted || this.isAbortError(error);
             if (wasAborted || !isCurrentRun()) {
@@ -513,6 +541,7 @@ export class AiService {
             });
         } finally {
             try {
+                this.flushAssistantText(assistantMessage.id);
                 this.finalizeAssistantMessage(assistantMessage.id, {
                     removeIfEmpty: true,
                 });
@@ -562,6 +591,90 @@ export class AiService {
         }
 
         aiRepo.syncMessage(messageId);
+    }
+
+    private queueAssistantText(
+        browserWindow: BrowserWindow,
+        conversationId: string,
+        generationId: string,
+        assistantMessageId: string,
+        delta: string,
+    ): void {
+        if (!delta) {
+            return;
+        }
+
+        const current =
+            this.bufferedAssistantText.get(assistantMessageId) ??
+            ({
+                browserWindow,
+                conversationId,
+                generationId,
+                assistantMessageId,
+                buffer: '',
+                timer: null,
+            } satisfies BufferedAssistantText);
+
+        current.buffer += delta;
+        this.bufferedAssistantText.set(assistantMessageId, current);
+
+        if (current.buffer.length >= AiService.TEXT_FLUSH_THRESHOLD_CHARS) {
+            this.flushAssistantText(assistantMessageId);
+            return;
+        }
+
+        if (current.timer) {
+            return;
+        }
+
+        current.timer = setTimeout(() => {
+            this.flushAssistantText(assistantMessageId);
+        }, AiService.TEXT_FLUSH_INTERVAL_MS);
+    }
+
+    private flushAssistantText(assistantMessageId: string): void {
+        const current = this.bufferedAssistantText.get(assistantMessageId);
+        if (!current) {
+            return;
+        }
+
+        this.clearAssistantTextTimer(assistantMessageId);
+
+        if (!current.buffer) {
+            this.bufferedAssistantText.delete(assistantMessageId);
+            return;
+        }
+
+        if (
+            !this.isCurrentRun(
+                current.conversationId,
+                current.generationId,
+                current.assistantMessageId,
+            )
+        ) {
+            this.bufferedAssistantText.delete(assistantMessageId);
+            return;
+        }
+
+        const delta = current.buffer;
+        this.bufferedAssistantText.delete(assistantMessageId);
+        aiRepo.appendAssistantContent(assistantMessageId, delta);
+        sendToRenderer(current.browserWindow, PushChannels.aiStreamChunk, {
+            conversationId: current.conversationId,
+            generationId: current.generationId,
+            messageId: current.assistantMessageId,
+            delta,
+        });
+    }
+
+    private clearAssistantTextTimer(assistantMessageId: string): void {
+        const current = this.bufferedAssistantText.get(assistantMessageId);
+        if (!current?.timer) {
+            return;
+        }
+
+        clearTimeout(current.timer);
+        current.timer = null;
     }
 
     private isAbortError(error: unknown): boolean {

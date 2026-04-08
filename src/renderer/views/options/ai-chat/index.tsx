@@ -141,7 +141,6 @@ export default function AiChatView() {
                 conversations={conversations}
                 activeConversationId={activeConversationId}
                 streamingConversations={activeConversationMap}
-                queuedMessagesByConversation={queuedMessagesByConversation}
                 onCreateConversation={handleCreateConversation}
                 onSelectConversation={handleSelectConversation}
                 onDeleteConversation={handleDeleteConversation}

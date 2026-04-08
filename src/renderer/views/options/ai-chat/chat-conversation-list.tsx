@@ -26,7 +26,6 @@ export default memo(function ChatConversationList({
     conversations,
     activeConversationId,
     streamingConversations,
-    queuedMessagesByConversation,
     onCreateConversation,
     onSelectConversation,
     onDeleteConversation,
@@ -35,7 +34,6 @@ export default memo(function ChatConversationList({
     conversations: AiConversation[];
     activeConversationId: string | null;
     streamingConversations: StreamingConversationMap;
-    queuedMessagesByConversation: Readonly<Record<string, { id: string }[]>>;
     onCreateConversation: () => void;
     onSelectConversation: (conversationId: string) => void;
     onDeleteConversation: (conversationId: string) => void;
@@ -75,8 +73,6 @@ export default memo(function ChatConversationList({
                         {conversations.map((conversation) => {
                             const isActive = conversation.id === activeConversationId;
                             const isStreaming = Boolean(streamingConversations[conversation.id]);
-                            const queuedCount =
-                                queuedMessagesByConversation[conversation.id]?.length ?? 0;
                             const showStreamingStatus = isStreaming && !isActive;
                             return (
                                 <motion.div
@@ -119,19 +115,6 @@ export default memo(function ChatConversationList({
                                         </Text>
                                     </div>
                                     <div className="ai-chat__conv-action">
-                                        {queuedCount > 0 ? (
-                                            <span
-                                                className="ai-chat__conv-queue-count"
-                                                title={t(
-                                                    queuedCount === 1
-                                                        ? '{{count}} message en attente'
-                                                        : '{{count}} messages en attente',
-                                                    { count: queuedCount },
-                                                )}
-                                            >
-                                                {queuedCount}
-                                            </span>
-                                        ) : null}
                                         {showStreamingStatus ? (
                                             <span
                                                 className="ai-chat__conv-status"

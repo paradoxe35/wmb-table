@@ -3,7 +3,6 @@ import log from '@main/lib/logger';
 import { resolveRemoteOutputTokens } from '../token-budget';
 import type { GenerationContext, GenerationRunner } from './types';
 import {
-    dispatchTextDelta,
     dispatchReasoningDelta,
     dispatchToolCallStart,
     dispatchToolCallComplete,
@@ -61,14 +60,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
         for await (const part of result.fullStream) {
             switch (part.type) {
                 case 'text-delta':
-                    dispatchTextDelta(
-                        ctx.browserWindow,
-                        ctx.conversationId,
-                        ctx.generationId,
-                        ctx.assistantMessageId,
-                        part.text,
-                        ctx.isCurrentRun,
-                    );
+                    ctx.dispatchTextDelta(part.text);
                     break;
                 case 'reasoning-delta':
                     dispatchReasoningDelta(
@@ -135,14 +127,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
                 conversationId: ctx.conversationId,
                 maxOutputTokens,
             });
-            dispatchTextDelta(
-                ctx.browserWindow,
-                ctx.conversationId,
-                ctx.generationId,
-                ctx.assistantMessageId,
-                TRUNCATION_NOTICE,
-                ctx.isCurrentRun,
-            );
+            ctx.dispatchTextDelta(TRUNCATION_NOTICE);
         }
     }
 }

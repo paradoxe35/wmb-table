@@ -191,6 +191,22 @@ describe('AiService', () => {
         expect(generateTextMock).not.toHaveBeenCalled();
     });
 
+    it('does not persist queued user messages when send setup fails before generation can start', async () => {
+        getContentLanguageMock.mockReturnValue(null);
+        const service = new AiService();
+
+        await expect(
+            service.sendMessage({} as never, {
+                conversationId: 'conv-1',
+                messages: ['hello world', 'second message'],
+                generationId: 'gen-1',
+            }),
+        ).rejects.toThrow('Aucune langue sélectionnée');
+
+        expect(createMessageMock).not.toHaveBeenCalled();
+        expect(runnerRunMock).not.toHaveBeenCalled();
+    });
+
     it('omits delegation instructions for small remote context windows', async () => {
         getModelContextWindowMock.mockResolvedValue(8_000);
         const service = new AiService();

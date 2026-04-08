@@ -90,10 +90,15 @@ export default function ChatInput({
                                     </div>
                                 </div>
                                 <Button
+                                    className="ai-chat__queue-remove"
                                     type="text"
                                     size="small"
                                     shape="circle"
-                                    icon={<CloseOutlined style={{ fontSize: 'var(--fs-sm)' }} />}
+                                    icon={
+                                        <CloseOutlined
+                                            style={{ fontSize: 'var(--fs-xs)', lineHeight: 1 }}
+                                        />
+                                    }
                                     onClick={() => onRemoveQueuedMessage(message.id)}
                                     title={t('Retirer de la file')}
                                     aria-label={t('Retirer de la file')}
