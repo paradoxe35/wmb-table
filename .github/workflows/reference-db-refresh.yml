@@ -163,6 +163,8 @@ jobs:
                   {
                     echo "# Automated reference database refresh"
                     echo
+                    echo "@paradoxe35"
+                    echo
                     echo "- Trigger: \`${{ github.event_name }}\`"
                     echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
                     echo "- Source Isar: \`tmp/msix-out/db.isar\`"
@@ -183,6 +185,8 @@ jobs:
                   labels: |
                       automated
                       reference-db
+                  assignees: |
+                      paradoxe35
                   body-path: .github/reference-db-refresh/pr-body.md
                   add-paths: |
                       resources/database/data.sqlite
