@@ -42,6 +42,7 @@ export default function AiChatView() {
     const conversations = useAiChatStore((s) => s.conversations);
     const activeConversationId = useAiChatStore((s) => s.activeConversationId);
     const messagesByConversation = useAiChatStore((s) => s.messagesByConversation);
+    const loadingConversations = useAiChatStore((s) => s.loadingConversations);
     const createConversation = useAiChatStore((s) => s.createConversation);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
     const deleteConversation = useAiChatStore((s) => s.deleteConversation);
@@ -64,6 +65,9 @@ export default function AiChatView() {
     );
     const activeSending = Boolean(
         activeConversationId && streamingConversations[activeConversationId],
+    );
+    const activeLoading = Boolean(
+        activeConversationId && loadingConversations[activeConversationId],
     );
 
     const handleSend = useCallback(() => {
@@ -97,6 +101,13 @@ export default function AiChatView() {
         void stopGeneration();
     }, [stopGeneration]);
 
+    const handleQuickStart = useCallback(
+        (prompt: string) => {
+            void sendMessage(prompt);
+        },
+        [sendMessage],
+    );
+
     if (!settings) {
         return null;
     }
@@ -128,7 +139,13 @@ export default function AiChatView() {
                     />
                 ) : null}
 
-                <ChatMessageList messages={activeMessages} sending={activeSending} />
+                <ChatMessageList
+                    conversationId={activeConversationId}
+                    messages={activeMessages}
+                    sending={activeSending}
+                    loading={activeLoading}
+                    onQuickStart={handleQuickStart}
+                />
 
                 <ChatInput
                     draft={draft}

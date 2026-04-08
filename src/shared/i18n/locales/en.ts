@@ -169,6 +169,13 @@ const en: Record<string, string> = {
         'Connect Google Drive so <u>{{feature}}</u> keeps your notes, subjects, and settings in sync.',
     'Ouvrir les réglages de sauvegarde': 'Open backup settings',
     'Posez votre question...': 'Ask your question...',
+    'Essayez une question pour commencer': 'Try a question to get started',
+    'Suggère-moi un thème à étudier.': 'Suggest a theme for me to study.',
+    'Aide-moi à formuler une question de recherche.': 'Help me phrase a research question.',
+    'Trouve-moi quelques références utiles sur un sujet.':
+        'Find a few useful references on a topic for me.',
+    'Compare plusieurs références sur un même sujet.':
+        'Compare several references on the same topic.',
     Envoyer: 'Send',
     Arrêter: 'Stop',
     Conversations: 'Conversations',

@@ -172,6 +172,14 @@ const pt: Record<string, string> = {
         'Conecte o Google Drive para que <u>{{feature}}</u> mantenha suas notas, assuntos e configurações sincronizados.',
     'Ouvrir les réglages de sauvegarde': 'Abrir configurações de backup',
     'Posez votre question...': 'Faça sua pergunta...',
+    'Essayez une question pour commencer': 'Experimente uma pergunta para começar',
+    'Suggère-moi un thème à étudier.': 'Sugira um tema para eu estudar.',
+    'Aide-moi à formuler une question de recherche.':
+        'Ajude-me a formular uma pergunta de pesquisa.',
+    'Trouve-moi quelques références utiles sur un sujet.':
+        'Encontre algumas referências úteis sobre um tema para mim.',
+    'Compare plusieurs références sur un même sujet.':
+        'Compare várias referências sobre o mesmo tema.',
     Envoyer: 'Enviar',
     Arrêter: 'Parar',
     Conversations: 'Conversas',

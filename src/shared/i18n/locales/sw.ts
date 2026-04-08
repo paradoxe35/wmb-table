@@ -171,6 +171,13 @@ const sw: Record<string, string> = {
         'Unganisha Google Drive ili <u>{{feature}}</u> iweke vidokezo, mada na mipangilio yako katika usawazishaji.',
     'Ouvrir les réglages de sauvegarde': 'Fungua mipangilio ya hifadhi nakala',
     'Posez votre question...': 'Uliza swali lako...',
+    'Essayez une question pour commencer': 'Jaribu swali ili kuanza',
+    'Suggère-moi un thème à étudier.': 'Nipendekezee mada ya kujifunza.',
+    'Aide-moi à formuler une question de recherche.': 'Nisaidie kuunda swali la utafiti.',
+    'Trouve-moi quelques références utiles sur un sujet.':
+        'Nipatie marejeo machache yenye manufaa kuhusu mada fulani.',
+    'Compare plusieurs références sur un même sujet.':
+        'Linganisha marejeo kadhaa kuhusu mada moja.',
     Envoyer: 'Tuma',
     Arrêter: 'Simamisha',
     Conversations: 'Mazungumzo',
