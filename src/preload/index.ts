@@ -384,6 +384,8 @@ const api = {
             onPush(PushChannels.aiStreamChunk, cb),
         aiStreamComplete: (cb: (p: PushEventMap[typeof PushChannels.aiStreamComplete]) => void) =>
             onPush(PushChannels.aiStreamComplete, cb),
+        aiStreamCancel: (cb: (p: PushEventMap[typeof PushChannels.aiStreamCancel]) => void) =>
+            onPush(PushChannels.aiStreamCancel, cb),
         aiStreamError: (cb: (p: PushEventMap[typeof PushChannels.aiStreamError]) => void) =>
             onPush(PushChannels.aiStreamError, cb),
         aiToolCallStart: (cb: (p: PushEventMap[typeof PushChannels.aiToolCallStart]) => void) =>

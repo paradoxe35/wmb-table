@@ -40,6 +40,7 @@ interface RunGenerationOptions {
     runner: GenerationRunnerImpl;
     browserWindow: BrowserWindow;
     conversation: AiConversation;
+    requestId: string;
     assistantMessage: AiMessage;
     model: ReturnType<typeof resolveLanguageModel>;
     systemPrompt: string;
@@ -55,8 +56,16 @@ interface RunGenerationOptions {
     uiLanguageCode: string;
 }
 
+interface ActiveRun {
+    browserWindow: BrowserWindow;
+    conversationId: string;
+    requestId: string;
+    assistantMessageId: string;
+    controller: AbortController;
+}
+
 export class AiService {
-    private controllers = new Map<string, AbortController>();
+    private activeRuns = new Map<string, ActiveRun>();
     private localRuntime = new LocalRuntimeService();
 
     // ── Settings & catalog ──
@@ -126,8 +135,18 @@ export class AiService {
     // ── Generation control ──
 
     stopGeneration(conversationId: string): void {
-        this.controllers.get(conversationId)?.abort();
-        this.controllers.delete(conversationId);
+        const activeRun = this.activeRuns.get(conversationId);
+        if (!activeRun) {
+            return;
+        }
+
+        activeRun.controller.abort();
+        this.activeRuns.delete(conversationId);
+        sendToRenderer(activeRun.browserWindow, PushChannels.aiStreamCancel, {
+            conversationId,
+            requestId: activeRun.requestId,
+            messageId: activeRun.assistantMessageId,
+        });
     }
 
     // ── Provider testing ──
@@ -266,7 +285,13 @@ export class AiService {
 
         this.stopGeneration(conversation.id);
         const controller = new AbortController();
-        this.controllers.set(conversation.id, controller);
+        this.activeRuns.set(conversation.id, {
+            browserWindow,
+            conversationId: conversation.id,
+            requestId: request.requestId,
+            assistantMessageId: assistantMessage.id,
+            controller,
+        });
 
         const tools = buildAiTools(contentLanguageCode, {
             model,
@@ -276,6 +301,7 @@ export class AiService {
             abortSignal: controller.signal,
             browserWindow,
             conversationId: conversation.id,
+            requestId: request.requestId,
             assistantMessageId: assistantMessage.id,
         });
 
@@ -322,6 +348,7 @@ export class AiService {
             runner,
             browserWindow,
             conversation,
+            requestId: request.requestId,
             assistantMessage,
             model,
             systemPrompt,
@@ -338,6 +365,7 @@ export class AiService {
         });
 
         return {
+            requestId: request.requestId,
             conversation: aiRepo.getConversation(conversation.id)!,
             userMessage,
             assistantMessage,
@@ -347,7 +375,7 @@ export class AiService {
     // ── Lifecycle ──
 
     dispose(): void {
-        for (const conversationId of this.controllers.keys()) {
+        for (const conversationId of this.activeRuns.keys()) {
             this.stopGeneration(conversationId);
         }
         void this.localRuntime.dispose();
@@ -381,6 +409,7 @@ export class AiService {
             runner,
             browserWindow,
             conversation,
+            requestId,
             assistantMessage,
             model,
             systemPrompt,
@@ -395,21 +424,30 @@ export class AiService {
             contentLanguageCode,
             uiLanguageCode,
         } = opts;
+        const isCurrentRun = () =>
+            this.isCurrentRun(conversation.id, requestId, assistantMessage.id);
 
         try {
             await runner.run({
                 browserWindow,
                 conversationId: conversation.id,
+                requestId,
                 assistantMessageId: assistantMessage.id,
                 model,
                 systemPrompt,
                 history,
                 tools,
                 abortSignal,
+                isCurrentRun: (_requestId, assistantMessageId) =>
+                    this.isCurrentRun(conversation.id, requestId, assistantMessageId),
                 contextWindow,
                 toolTokens,
                 systemPromptTokens,
             });
+
+            if (!isCurrentRun()) {
+                return;
+            }
 
             const nextContext = buildConversationContext(
                 conversation.id,
@@ -419,8 +457,10 @@ export class AiService {
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
             });
+            this.releaseRun(conversation.id, requestId);
             sendToRenderer(browserWindow, PushChannels.aiStreamComplete, {
                 conversationId: conversation.id,
+                requestId,
                 messageId: assistantMessage.id,
             });
 
@@ -446,22 +486,84 @@ export class AiService {
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'AI generation failed.';
+            const wasAborted = abortSignal.aborted || this.isAbortError(error);
+            if (wasAborted || !isCurrentRun()) {
+                return;
+            }
+
+            this.releaseRun(conversation.id, requestId);
             log.error('AI generation failed', {
                 conversationId: conversation.id,
                 message,
             });
             sendToRenderer(browserWindow, PushChannels.aiStreamError, {
                 conversationId: conversation.id,
+                requestId,
                 messageId: assistantMessage.id,
                 error: message,
             });
         } finally {
             try {
-                aiRepo.syncMessage(assistantMessage.id);
+                this.finalizeAssistantMessage(assistantMessage.id, {
+                    removeIfEmpty: true,
+                });
             } catch {
                 // DB may already be closed during app shutdown
             }
-            this.controllers.delete(conversation.id);
+            this.releaseRun(conversation.id, requestId);
         }
+    }
+
+    private isCurrentRun(
+        conversationId: string,
+        requestId: string,
+        assistantMessageId: string,
+    ): boolean {
+        const activeRun = this.activeRuns.get(conversationId);
+        return (
+            activeRun?.requestId === requestId &&
+            activeRun.assistantMessageId === assistantMessageId
+        );
+    }
+
+    private releaseRun(conversationId: string, requestId: string): void {
+        const activeRun = this.activeRuns.get(conversationId);
+        if (activeRun?.requestId === requestId) {
+            this.activeRuns.delete(conversationId);
+        }
+    }
+
+    private finalizeAssistantMessage(
+        messageId: string,
+        options?: { removeIfEmpty?: boolean },
+    ): void {
+        const message = aiRepo.getMessage(messageId);
+        if (!message) {
+            return;
+        }
+
+        const isEmpty =
+            !message.content.trim() &&
+            message.toolCalls.length === 0 &&
+            message.toolResults.length === 0;
+
+        if (options?.removeIfEmpty && isEmpty) {
+            aiRepo.deleteMessage(messageId);
+            return;
+        }
+
+        aiRepo.syncMessage(messageId);
+    }
+
+    private isAbortError(error: unknown): boolean {
+        if (error instanceof DOMException) {
+            return error.name === 'AbortError';
+        }
+
+        if (!(error instanceof Error)) {
+            return false;
+        }
+
+        return /abort(ed)?/i.test(error.message);
     }
 }

@@ -18,6 +18,7 @@ export interface BuildAiToolsOptions {
     /** Required for subagent progress dispatch to the renderer. */
     browserWindow?: BrowserWindow;
     conversationId?: string;
+    requestId?: string;
     assistantMessageId?: string;
 }
 
@@ -39,10 +40,14 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
     const executors = buildToolExecutors(defaultContentLanguage, options?.activeBibleVersion);
 
     const dispatch =
-        options?.browserWindow && options.conversationId && options.assistantMessageId
+        options?.browserWindow &&
+        options.conversationId &&
+        options.requestId &&
+        options.assistantMessageId
             ? {
                   browserWindow: options.browserWindow,
                   conversationId: options.conversationId,
+                  requestId: options.requestId,
                   assistantMessageId: options.assistantMessageId,
               }
             : undefined;

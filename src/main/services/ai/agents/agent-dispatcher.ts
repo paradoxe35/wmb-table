@@ -16,6 +16,7 @@ export function dispatchAgentToolStart(
 ): void {
     sendToRenderer(dispatch.browserWindow, PushChannels.aiToolCallStart, {
         conversationId: dispatch.conversationId,
+        requestId: dispatch.requestId,
         messageId: dispatch.assistantMessageId,
         toolName: `${agentName}:${toolName}`,
         toolCallId,
@@ -31,6 +32,7 @@ export function dispatchAgentToolComplete(
 ): void {
     sendToRenderer(dispatch.browserWindow, PushChannels.aiToolCallComplete, {
         conversationId: dispatch.conversationId,
+        requestId: dispatch.requestId,
         messageId: dispatch.assistantMessageId,
         toolName: `${agentName}:${toolName}`,
         toolCallId,

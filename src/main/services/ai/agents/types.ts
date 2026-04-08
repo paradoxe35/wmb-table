@@ -15,5 +15,6 @@ export interface AgentContext {
 export interface AgentDispatch {
     browserWindow: BrowserWindow;
     conversationId: string;
+    requestId: string;
     assistantMessageId: string;
 }

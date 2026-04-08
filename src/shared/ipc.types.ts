@@ -77,6 +77,7 @@ import type {
     AiSendMessageResult,
     AiSettings,
     AiStreamChunkEvent,
+    AiStreamCancelEvent,
     AiStreamCompleteEvent,
     AiStreamErrorEvent,
     AiToolEvent,
@@ -295,6 +296,7 @@ export const PushChannels = {
     ttsSegmentAudio: 'push:ttsSegmentAudio',
     aiStreamChunk: 'push:aiStreamChunk',
     aiStreamComplete: 'push:aiStreamComplete',
+    aiStreamCancel: 'push:aiStreamCancel',
     aiStreamError: 'push:aiStreamError',
     aiToolCallStart: 'push:aiToolCallStart',
     aiToolCallComplete: 'push:aiToolCallComplete',
@@ -600,6 +602,7 @@ export interface PushEventMap {
     [PushChannels.ttsSegmentAudio]: TtsSegmentAudio;
     [PushChannels.aiStreamChunk]: AiStreamChunkEvent;
     [PushChannels.aiStreamComplete]: AiStreamCompleteEvent;
+    [PushChannels.aiStreamCancel]: AiStreamCancelEvent;
     [PushChannels.aiStreamError]: AiStreamErrorEvent;
     [PushChannels.aiToolCallStart]: AiToolEvent;
     [PushChannels.aiToolCallComplete]: AiToolEvent;

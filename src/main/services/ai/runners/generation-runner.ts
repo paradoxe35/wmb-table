@@ -64,40 +64,48 @@ export class GenerationRunnerImpl implements GenerationRunner {
                     dispatchTextDelta(
                         ctx.browserWindow,
                         ctx.conversationId,
+                        ctx.requestId,
                         ctx.assistantMessageId,
                         part.text,
+                        ctx.isCurrentRun,
                     );
                     break;
                 case 'reasoning-delta':
                     dispatchReasoningDelta(
                         ctx.browserWindow,
                         ctx.conversationId,
+                        ctx.requestId,
                         ctx.assistantMessageId,
                         part.text,
+                        ctx.isCurrentRun,
                     );
                     break;
                 case 'tool-call':
                     dispatchToolCallStart(
                         ctx.browserWindow,
                         ctx.conversationId,
+                        ctx.requestId,
                         ctx.assistantMessageId,
                         {
                             id: part.toolCallId,
                             name: part.toolName,
                             input: normalizeToolCallInput(part.input),
                         },
+                        ctx.isCurrentRun,
                     );
                     break;
                 case 'tool-result':
                     dispatchToolCallComplete(
                         ctx.browserWindow,
                         ctx.conversationId,
+                        ctx.requestId,
                         ctx.assistantMessageId,
                         {
                             toolCallId: part.toolCallId,
                             name: part.toolName,
                             output: part.output,
                         },
+                        ctx.isCurrentRun,
                     );
                     break;
                 case 'tool-error':
@@ -130,8 +138,10 @@ export class GenerationRunnerImpl implements GenerationRunner {
             dispatchTextDelta(
                 ctx.browserWindow,
                 ctx.conversationId,
+                ctx.requestId,
                 ctx.assistantMessageId,
                 TRUNCATION_NOTICE,
+                ctx.isCurrentRun,
             );
         }
     }

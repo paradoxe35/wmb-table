@@ -362,6 +362,18 @@ export function addAssistantToolResult(messageId: string, toolResult: AiToolResu
     return updateMessage(messageId, { toolResults: [...current.toolResults, toolResult] });
 }
 
+export function deleteMessage(messageId: string): void {
+    const current = getMessage(messageId);
+    if (!current) {
+        return;
+    }
+
+    getDb().delete(aiMessages).where(eq(aiMessages.id, messageId)).run();
+    touchConversation(current.conversationId);
+    logChange('ai_messages', messageId, 'DELETE', { id: messageId });
+    logConversationChange(current.conversationId);
+}
+
 /**
  * Log the final state of an assistant message for sync.
  * Call once after streaming is complete to avoid flooding the change log during generation.
