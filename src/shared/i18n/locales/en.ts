@@ -909,8 +909,6 @@ const en: Record<string, string> = {
         'Choose the mode depending on whether you are looking for one word, several words, or an exact phrase.',
     'Ouvrez un résultat pour aller directement au paragraphe correspondant.':
         'Open a result to jump directly to the matching paragraph.',
-    'Commencez avec un mot simple, puis ajoutez un deuxième mot si les résultats sont trop larges.':
-        'Start with a simple word, then add a second word if the results are too broad.',
     'Retrouvez rapidement un mot, une expression ou un thème dans les prédications.':
         'Quickly find a word, phrase, or theme in sermons.',
     'À quoi servent les soulignages ?': 'What are highlights for?',

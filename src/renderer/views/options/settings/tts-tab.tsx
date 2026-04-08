@@ -275,9 +275,10 @@ export default function TtsTab() {
                     <Button
                         type="text"
                         size="small"
+                        className="settings-doc-button"
                         icon={<BookOutlined />}
                         onClick={openDocs}
-                        style={{ fontSize: 'var(--fs-rel-base)', paddingInline: 6 }}
+                        style={{ fontSize: 'var(--fs-rel-base)' }}
                     >
                         {t('Documentation')}
                     </Button>

@@ -918,8 +918,6 @@ const pt: Record<string, string> = {
         'Escolha o modo conforme você esteja procurando uma palavra, várias palavras ou uma frase exata.',
     'Ouvrez un résultat pour aller directement au paragraphe correspondant.':
         'Abra um resultado para ir diretamente ao parágrafo correspondente.',
-    'Commencez avec un mot simple, puis ajoutez un deuxième mot si les résultats sont trop larges.':
-        'Comece com uma palavra simples e adicione uma segunda se os resultados forem amplos demais.',
     'Retrouvez rapidement un mot, une expression ou un thème dans les prédications.':
         'Encontre rapidamente uma palavra, uma expressão ou um tema nos sermões.',
     'À quoi servent les soulignages ?': 'Para que servem os destaques?',

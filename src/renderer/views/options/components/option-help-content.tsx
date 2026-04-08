@@ -191,9 +191,6 @@ export function getSearchPageHelp(t: TFunction): InlineHelpContent {
                 ],
             },
         ],
-        footer: t(
-            'Commencez avec un mot simple, puis ajoutez un deuxième mot si les résultats sont trop larges.',
-        ),
     };
 }
 

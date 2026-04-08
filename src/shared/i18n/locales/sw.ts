@@ -914,8 +914,6 @@ const sw: Record<string, string> = {
         'Chagua hali kulingana na kama unatafuta neno moja, maneno kadhaa au kifungu halisi.',
     'Ouvrez un résultat pour aller directement au paragraphe correspondant.':
         'Fungua matokeo ili kwenda moja kwa moja kwenye aya inayolingana.',
-    'Commencez avec un mot simple, puis ajoutez un deuxième mot si les résultats sont trop larges.':
-        'Anza na neno rahisi, kisha ongeza neno la pili kama matokeo ni mengi sana.',
     'Retrouvez rapidement un mot, une expression ou un thème dans les prédications.':
         'Pata haraka neno, kifungu au mada ndani ya mahubiri.',
     'À quoi servent les soulignages ?': 'Mwangazio hutumika kwa nini?',
