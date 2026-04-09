@@ -10,7 +10,6 @@ What it does:
 
 - Authenticates `firebase-tools` in CI
 - Deploys Firebase Hosting
-- Deploys Firebase Storage rules
 - Uploads release files to `gs://wmb-table.appspot.com/releases/`
 
 Where to get it:
@@ -29,7 +28,6 @@ Alternative path:
 Recommended minimum access:
 
 - Firebase Hosting Admin or equivalent Firebase deploy access
-- Firebase Rules Admin or equivalent rules deploy access
 - Storage Object Admin on the project bucket
 
 ### `GOOGLE_DRIVE_CREDENTIALS`
