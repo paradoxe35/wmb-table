@@ -108,6 +108,10 @@ export function registerNotesHandlers(): void {
 ${note.content}
 </body></html>`;
 
-        return exportHtmlToPdf({ html: stripInternalExportLinks(html), defaultName });
+        return exportHtmlToPdf({
+            html: stripInternalExportLinks(html),
+            defaultName,
+            directory: 'notes',
+        });
     });
 }

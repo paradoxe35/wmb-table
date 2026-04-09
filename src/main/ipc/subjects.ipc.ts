@@ -64,6 +64,6 @@ export function registerSubjectsHandlers(): void {
 
         const html = buildSubjectExportHtml(subject.name, subject.documents);
         const defaultName = subject.name.replace(/\s+/g, '-').toLowerCase();
-        return exportHtmlToPdf({ html, defaultName });
+        return exportHtmlToPdf({ html, defaultName, directory: 'subjects' });
     });
 }
