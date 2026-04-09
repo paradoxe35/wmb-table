@@ -54,6 +54,22 @@ La page de discussion IA contient trois zones simples :
   hint="Montrer la liste des conversations à gauche, les messages au centre et la zone de saisie en bas."
 />
 
+## Gérer une conversation
+
+Chaque conversation possède un bouton `...` dans la liste de gauche.
+
+Ce menu permet de :
+
+- renommer la conversation
+- exporter la conversation en PDF
+- supprimer la conversation
+
+Si vous renommez une conversation vous-même, ce nom est conservé tel quel.
+L’application ne régénère plus automatiquement un autre titre par-dessus.
+
+L’export PDF ne s’affiche que si la conversation contient déjà du contenu utile.
+Le document exporté reste volontairement simple : un titre, la date de création et la transcription des échanges.
+
 ## Exemples de demandes utiles
 
 - `Trouve les prédications prêchées à Jeffersonville`
@@ -96,6 +112,8 @@ En cliquant dessus, vous ouvrez directement le document au bon endroit.
   label="Références cliquables dans la discussion IA"
   hint="Montrer une réponse IA contenant des étiquettes cliquables pour les sermons, la Bible et les documents."
 />
+
+Dans le PDF exporté, ces références restent visibles comme repères bleus, mais elles ne sont pas exportées comme liens internes cliquables.
 
 ## Quand cette fonction est la plus utile
 

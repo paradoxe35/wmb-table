@@ -52,6 +52,22 @@ La página tiene tres zonas sencillas:
   hint="Mostrar la lista de conversaciones a la izquierda, los mensajes en el centro y la caja de escritura abajo."
 />
 
+## Gestionar una conversación
+
+Cada conversación tiene un botón `...` en la lista de la izquierda.
+
+Ese menú permite:
+
+- renombrar la conversación
+- exportar la conversación en PDF
+- eliminar la conversación
+
+Si usted cambia el nombre de una conversación manualmente, ese título se conserva.
+La aplicación ya no vuelve a generar otro título automático encima de él.
+
+La exportación a PDF solo está disponible cuando la conversación ya contiene contenido útil.
+El documento exportado se mantiene simple a propósito: un título, la fecha de creación y la transcripción de los intercambios.
+
 ## Ejemplos útiles
 
 - `Busca predicaciones sobre el bautismo`
@@ -89,6 +105,8 @@ Al hacer clic en una etiqueta, se abre directamente el documento en el lugar cor
   label="Referencias clicables en el chat con IA"
   hint="Mostrar una respuesta de IA con etiquetas clicables para predicaciones, Biblia y documentos."
 />
+
+En el PDF exportado, esas referencias siguen siendo visibles como marcas azules, pero ya no se exportan como enlaces internos clicables.
 
 ## Cuándo resulta más útil
 
