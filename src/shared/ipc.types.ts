@@ -257,7 +257,9 @@ export const AiChannels = {
     updateSettings: 'ai:updateSettings',
     getConversations: 'ai:getConversations',
     createConversation: 'ai:createConversation',
+    renameConversation: 'ai:renameConversation',
     deleteConversation: 'ai:deleteConversation',
+    exportConversationPdf: 'ai:exportConversationPdf',
     clearConversations: 'ai:clearConversations',
     getMessagesPage: 'ai:getMessagesPage',
     sendMessage: 'ai:sendMessage',
@@ -560,7 +562,12 @@ export interface InvokeChannelMap {
         args: [{ title?: string }?];
         return: AiConversation;
     };
+    [AiChannels.renameConversation]: {
+        args: [string, string];
+        return: AiConversation;
+    };
     [AiChannels.deleteConversation]: { args: [string]; return: void };
+    [AiChannels.exportConversationPdf]: { args: [string]; return: string };
     [AiChannels.clearConversations]: { args: []; return: void };
     [AiChannels.getMessagesPage]: {
         args: [AiMessageHistoryPageRequest];

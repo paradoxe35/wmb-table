@@ -1,6 +1,11 @@
 import { generateText } from 'ai';
 import { BrowserWindow } from 'electron';
 import log from '@main/lib/logger';
+import { exportHtmlToPdf } from '@main/lib/pdf-export';
+import {
+    buildAiConversationExportHtml,
+    hasExportableConversationContent,
+} from '@main/lib/ai-chat-export';
 import * as aiRepo from '@main/database/repositories/ai.repository';
 import * as configRepo from '@main/database/repositories/config.repository';
 import * as languagePackService from '@main/services/language-pack.service';
@@ -120,9 +125,48 @@ export class AiService {
         return aiRepo.createConversation(languageCode, input?.title);
     }
 
+    renameConversation(conversationId: string, title: string): AiConversation {
+        const conversation = aiRepo.getConversation(conversationId);
+        if (!conversation) {
+            throw new Error('Conversation introuvable.');
+        }
+
+        const trimmedTitle = title.trim();
+        if (!trimmedTitle) {
+            throw new Error('Le nom entré est invalid');
+        }
+
+        return aiRepo.updateConversation(conversationId, {
+            title: trimmedTitle.slice(0, 80),
+            aiTitle: true,
+        });
+    }
+
     deleteConversation(conversationId: string): void {
         this.stopGeneration(conversationId);
         aiRepo.deleteConversation(conversationId);
+    }
+
+    async exportConversationPdf(
+        browserWindow: BrowserWindow,
+        conversationId: string,
+    ): Promise<string> {
+        const conversation = aiRepo.getConversation(conversationId);
+        if (!conversation) {
+            throw new Error('Conversation introuvable.');
+        }
+
+        const messages = aiRepo.getMessages(conversationId);
+        if (!hasExportableConversationContent(messages)) {
+            return '';
+        }
+
+        const html = await buildAiConversationExportHtml(conversation, messages);
+        return exportHtmlToPdf({
+            html,
+            defaultName: this.getConversationPdfName(conversation),
+            parentWindow: browserWindow,
+        });
     }
 
     clearConversations(): void {
@@ -431,6 +475,17 @@ export class AiService {
             }
             seen.add(provider.id);
         }
+    }
+
+    private getConversationPdfName(conversation: AiConversation): string {
+        const baseTitle = conversation.title?.trim() || 'conversation - ' + conversation.createdAt;
+        return (
+            baseTitle
+                .toLowerCase()
+                .replace(/[^\p{L}\p{N}]+/gu, '-')
+                .replace(/^-+|-+$/g, '')
+                .slice(0, 80) || 'conversation'
+        );
     }
 
     private async runGeneration(opts: RunGenerationOptions): Promise<void> {

@@ -119,9 +119,6 @@
     width: 0;
     overflow: hidden;
     margin-left: 0;
-    transition:
-        width 0.15s ease,
-        margin-left 0.15s ease;
 }
 
 .ai-chat__conv-item:hover .ai-chat__conv-action,
@@ -135,16 +132,29 @@
     margin-left: 6px;
 }
 
-.ai-chat__conv-item .ai-chat__conv-delete {
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s;
+.ai-chat__conv-menu-wrap {
+    display: inline-flex;
 }
 
-.ai-chat__conv-item:hover .ai-chat__conv-delete,
-.ai-chat__conv-item:focus-within .ai-chat__conv-delete {
-    opacity: 0.8;
-    pointer-events: auto;
+.ai-chat__conv-menu-trigger.ant-btn {
+    width: 24px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0;
+    color: var(--ant-color-text-secondary);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.ai-chat__conv-menu-trigger.ant-btn:hover,
+.ai-chat__conv-menu-trigger.ant-btn:focus-visible {
+    color: var(--ant-color-text);
+    background: transparent;
+}
+
+.ai-chat__conv-item:hover .ai-chat__conv-menu-trigger.ant-btn,
+.ai-chat__conv-item:focus-within .ai-chat__conv-menu-trigger.ant-btn {
+    opacity: 1;
 }
 
 .ai-chat__conv-status {
