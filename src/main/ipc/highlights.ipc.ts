@@ -35,6 +35,10 @@ export function registerHighlightsHandlers(): void {
         }
 
         const html = await buildHighlightsExportHtml(result.items);
-        return exportHtmlToPdf({ html, defaultName: 'soulignages' });
+        return exportHtmlToPdf({
+            html,
+            defaultName: 'soulignages',
+            directory: 'highlights',
+        });
     });
 }

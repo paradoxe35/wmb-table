@@ -166,6 +166,7 @@ export class AiService {
         return exportHtmlToPdf({
             html,
             defaultName: this.getConversationPdfName(conversation),
+            directory: 'ai',
             parentWindow: browserWindow,
         });
     }
