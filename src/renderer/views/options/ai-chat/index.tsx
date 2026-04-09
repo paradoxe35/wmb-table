@@ -50,7 +50,9 @@ export default function AiChatView() {
     const createConversation = useAiChatStore((s) => s.createConversation);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
     const loadOlderMessages = useAiChatStore((s) => s.loadOlderMessages);
+    const renameConversation = useAiChatStore((s) => s.renameConversation);
     const deleteConversation = useAiChatStore((s) => s.deleteConversation);
+    const exportConversationPdf = useAiChatStore((s) => s.exportConversationPdf);
     const clearConversations = useAiChatStore((s) => s.clearConversations);
     const sendMessage = useAiChatStore((s) => s.sendMessage);
     const stopGeneration = useAiChatStore((s) => s.stopGeneration);
@@ -121,6 +123,16 @@ export default function AiChatView() {
         [deleteConversation],
     );
 
+    const handleRenameConversation = useCallback(
+        (id: string, title: string) => renameConversation(id, title),
+        [renameConversation],
+    );
+
+    const handleExportConversation = useCallback(
+        (id: string) => exportConversationPdf(id),
+        [exportConversationPdf],
+    );
+
     const handleClearConversations = useCallback(() => {
         void clearConversations();
     }, [clearConversations]);
@@ -160,6 +172,8 @@ export default function AiChatView() {
                 streamingConversations={activeConversationMap}
                 onCreateConversation={handleCreateConversation}
                 onSelectConversation={handleSelectConversation}
+                onRenameConversation={handleRenameConversation}
+                onExportConversation={handleExportConversation}
                 onDeleteConversation={handleDeleteConversation}
                 onClearConversations={handleClearConversations}
             />

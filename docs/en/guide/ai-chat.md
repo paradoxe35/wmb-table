@@ -54,6 +54,22 @@ The AI chat page has three simple areas:
   hint="Show the conversation list on the left, the messages in the center, and the input box at the bottom."
 />
 
+## Managing a conversation
+
+Each conversation has a `...` button in the left list.
+
+That menu lets you:
+
+- rename the conversation
+- export the conversation as PDF
+- delete the conversation
+
+If you rename a conversation yourself, that title is kept as your manual title.
+The app will not generate a new automatic title over it afterward.
+
+PDF export is only available when the conversation already contains useful content.
+The exported document is intentionally simple: a title, the created date, and the conversation transcript.
+
 ## Useful example requests
 
 - `Find sermons preached in Jeffersonville`
@@ -96,6 +112,8 @@ By clicking one, you open the document directly at the right place.
   label="Clickable references in AI chat"
   hint="Show an AI response containing clickable tags for sermons, Bible, and documents."
 />
+
+In the exported PDF, those references stay visible as blue reference markers, but they are not exported as clickable internal links.
 
 ## When it is especially useful
 

@@ -123,6 +123,8 @@ Cette fonction est utile pour :
 - partager votre note
 - garder une copie séparée
 
+Dans ce PDF, les références internes de Wmb Table restent visibles comme repères bleus, mais elles ne sont pas exportées comme liens cliquables.
+
 <ScreenshotPlaceholder
   file="fr-note-editor-toolbar.png"
   label="Barre d’outils de l’éditeur de note"

@@ -4,7 +4,7 @@
 
 ## Before you start
 
-Download Wmb Table from the releases page and choose the file that matches your computer:
+Download Wmb Table from the download section on the home page and choose the file that matches your computer:
 
 - Windows: `.exe`
 - macOS Apple Silicon: `.dmg`
@@ -26,7 +26,7 @@ For most users, the easiest file is the `.exe` installer.
 3. Follow the installer steps shown on screen.
 4. Launch Wmb Table after installation finishes.
 
-If Windows shows a protection warning, review the message and continue only if the file came from the official Wmb Table release page.
+If Windows shows a protection warning, review the message and continue only if the file came from the official Wmb Table download page.
 
 ## macOS
 

@@ -70,6 +70,12 @@ Después de eso, su nota guardará un vínculo claro hacia el lugar exacto.
   hint="Mostrar la ventana con la nota actual y la lista de referencias disponibles."
 />
 
+## Exportar la nota en PDF
+
+Cuando la nota está lista, puede exportarla en PDF.
+
+En ese PDF, las referencias internas de Wmb Table siguen visibles como marcas azules, pero ya no se exportan como enlaces clicables.
+
 ## Ver también
 
 - [Usar la vista de lectura](/es/guide/document-view)

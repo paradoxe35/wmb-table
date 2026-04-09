@@ -59,7 +59,7 @@ export function registerSubjectsHandlers(): void {
             throw new Error('Sujet introuvable');
         }
         if (subject.documents.length === 0) {
-            return '';
+            return { status: 'empty' } as const;
         }
 
         const html = buildSubjectExportHtml(subject.name, subject.documents);

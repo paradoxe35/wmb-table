@@ -134,7 +134,11 @@ function ButtonsControllers({
 
         window.api.notes
             .exportPdf(workingNoteRef.current?.id ?? '')
-            .then(() => message.success(t('Enregistré')))
+            .then((result) => {
+                if (result.status === 'success') {
+                    message.success(t('Enregistré'));
+                }
+            })
             .finally(() => setLoadingPdf(false));
     };
 

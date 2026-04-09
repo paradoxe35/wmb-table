@@ -311,8 +311,12 @@ const api = {
         getConversations: () => invoke(AiChannels.getConversations),
         createConversation: (input?: { title?: string; languageCode?: string }) =>
             invoke(AiChannels.createConversation, input),
+        renameConversation: (conversationId: string, title: string) =>
+            invoke(AiChannels.renameConversation, conversationId, title),
         deleteConversation: (conversationId: string) =>
             invoke(AiChannels.deleteConversation, conversationId),
+        exportConversationPdf: (conversationId: string) =>
+            invoke(AiChannels.exportConversationPdf, conversationId),
         clearConversations: () => invoke(AiChannels.clearConversations),
         getMessagesPage: (request: AiMessageHistoryPageRequest) =>
             invoke(AiChannels.getMessagesPage, request),

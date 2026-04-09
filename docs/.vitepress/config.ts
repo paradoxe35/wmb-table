@@ -1,9 +1,5 @@
 import { defineConfig } from 'vitepress';
 
-const docsGitHubOwner = process.env.VITE_GITHUB_OWNER ?? 'paradoxe35';
-const docsGitHubRepo = process.env.VITE_GITHUB_REPO ?? 'wmb-table';
-const docsGitHubRepoUrl = `https://github.com/${docsGitHubOwner}/${docsGitHubRepo}`;
-
 const frNav = [
     { text: 'Accueil', link: '/' },
     { text: 'Documentation', link: '/guide/interface-overview' },
@@ -195,7 +191,6 @@ export default defineConfig({
         search: {
             provider: 'local',
         },
-        socialLinks: [{ icon: 'github', link: docsGitHubRepoUrl }],
     },
     locales: {
         root: {

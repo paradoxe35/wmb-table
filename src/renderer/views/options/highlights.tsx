@@ -363,8 +363,10 @@ export default function Highlights() {
     const handleExportPdf = useCallback(async () => {
         try {
             const langCode = contentLanguage?.split('-')[0].toLowerCase();
-            const filePath = await window.api.highlights.exportPdf(langCode);
-            if (filePath) message.success(t('PDF exporté avec succès'));
+            const result = await window.api.highlights.exportPdf(langCode);
+            if (result.status === 'success') {
+                message.success(t('PDF exporté avec succès'));
+            }
         } catch {
             message.error(t("Erreur lors de l'export PDF"));
         }

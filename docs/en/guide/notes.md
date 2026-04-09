@@ -98,6 +98,8 @@ If you only want to review the note without editing it, you can switch to readin
 
 When the note is ready, you can export it as a PDF.
 
+In that PDF, internal Wmb Table references stay visible as blue reference markers, but they are not exported as clickable links.
+
 <ScreenshotPlaceholder
   file="en-note-editor-toolbar.png"
   label="Note editor toolbar"

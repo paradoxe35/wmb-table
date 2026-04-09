@@ -8,6 +8,7 @@ import type {
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
+import type { PdfExportResult } from '@shared/ipc.types';
 import {
     AI_MESSAGE_HISTORY_PAGE_SIZE,
     resolveActiveModel,
@@ -244,7 +245,9 @@ interface AiChatState {
     selectConversation(conversationId: string): Promise<void>;
     loadOlderMessages(conversationId: string): Promise<void>;
     createConversation(title?: string): Promise<void>;
+    renameConversation(conversationId: string, title: string): Promise<AiConversation>;
     deleteConversation(conversationId: string): Promise<void>;
+    exportConversationPdf(conversationId: string): Promise<PdfExportResult>;
     clearConversations(): Promise<void>;
     sendMessage(content: string): Promise<boolean>;
     sendMessageNow(conversationId: string, messages: string[]): Promise<boolean>;
@@ -690,6 +693,14 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }));
     },
 
+    renameConversation: async (conversationId, title) => {
+        const conversation = await window.api.ai.renameConversation(conversationId, title);
+        set((state) => ({
+            conversations: upsertConversation(state.conversations, conversation),
+        }));
+        return conversation;
+    },
+
     deleteConversation: async (conversationId) => {
         await window.api.ai.deleteConversation(conversationId);
 
@@ -731,6 +742,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         if (nextConversationId) {
             await get().selectConversation(nextConversationId);
         }
+    },
+
+    exportConversationPdf: async (conversationId) => {
+        return window.api.ai.exportConversationPdf(conversationId);
     },
 
     clearConversations: async () => {

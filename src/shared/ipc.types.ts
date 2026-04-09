@@ -91,6 +91,10 @@ import type { UiLanguagePreference } from './constants';
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
 // ---------------------------------------------------------------------------
 
+export type PdfExportResult =
+    | { status: 'success'; filePath: string }
+    | { status: 'canceled' | 'empty' };
+
 export const DocumentChannels = {
     getTitles: 'documents:getTitles',
     getSermonContent: 'documents:getSermonContent',
@@ -257,7 +261,9 @@ export const AiChannels = {
     updateSettings: 'ai:updateSettings',
     getConversations: 'ai:getConversations',
     createConversation: 'ai:createConversation',
+    renameConversation: 'ai:renameConversation',
     deleteConversation: 'ai:deleteConversation',
+    exportConversationPdf: 'ai:exportConversationPdf',
     clearConversations: 'ai:clearConversations',
     getMessagesPage: 'ai:getMessagesPage',
     sendMessage: 'ai:sendMessage',
@@ -408,7 +414,7 @@ export interface InvokeChannelMap {
         return: void;
     };
     [NotesChannels.deleteReference]: { args: [string]; return: void };
-    [NotesChannels.exportPdf]: { args: [string]; return: string };
+    [NotesChannels.exportPdf]: { args: [string]; return: PdfExportResult };
 
     // Bible
     [BibleChannels.getIndexes]: { args: [string?]; return: BibleIndex };
@@ -433,7 +439,7 @@ export interface InvokeChannelMap {
         args: [string, string, DocumentReference, string, DocumentPreview?];
         return: SubjectDocumentItem;
     };
-    [SubjectChannels.exportPdf]: { args: [string]; return: string };
+    [SubjectChannels.exportPdf]: { args: [string]; return: PdfExportResult };
 
     // Highlights
     [HighlightChannels.search]: {
@@ -453,7 +459,7 @@ export interface InvokeChannelMap {
         return: HighlightItem | null;
     };
     [HighlightChannels.delete]: { args: [string]; return: void };
-    [HighlightChannels.exportPdf]: { args: [string?]; return: string };
+    [HighlightChannels.exportPdf]: { args: [string?]; return: PdfExportResult };
 
     // Audio
     [AudioChannels.getTimeAndLocalFile]: {
@@ -560,7 +566,12 @@ export interface InvokeChannelMap {
         args: [{ title?: string }?];
         return: AiConversation;
     };
+    [AiChannels.renameConversation]: {
+        args: [string, string];
+        return: AiConversation;
+    };
     [AiChannels.deleteConversation]: { args: [string]; return: void };
+    [AiChannels.exportConversationPdf]: { args: [string]; return: PdfExportResult };
     [AiChannels.clearConversations]: { args: []; return: void };
     [AiChannels.getMessagesPage]: {
         args: [AiMessageHistoryPageRequest];

@@ -17,8 +17,20 @@ export function registerAiHandlers(): void {
         getAiService().createConversation(input),
     );
 
+    registerHandler(AiChannels.renameConversation, async (_event, conversationId, title) =>
+        getAiService().renameConversation(conversationId, title),
+    );
+
     registerHandler(AiChannels.deleteConversation, async (_event, conversationId) => {
         getAiService().deleteConversation(conversationId);
+    });
+
+    registerHandler(AiChannels.exportConversationPdf, async (event, conversationId) => {
+        const browserWindow = BrowserWindow.fromWebContents(event.sender);
+        if (!browserWindow) {
+            throw new Error('Main window not available for PDF export.');
+        }
+        return getAiService().exportConversationPdf(browserWindow, conversationId);
     });
 
     registerHandler(AiChannels.clearConversations, async () => {
