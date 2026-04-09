@@ -485,8 +485,10 @@ function ShowActiveDocuments({
 
     const handleExportPdf = useCallback(async () => {
         try {
-            const filePath = await window.api.subjects.exportPdf(subject.id);
-            if (filePath) message.success(t('PDF exporté avec succès'));
+            const result = await window.api.subjects.exportPdf(subject.id);
+            if (result.status === 'success') {
+                message.success(t('PDF exporté avec succès'));
+            }
         } catch (err) {
             console.error('Subject PDF export failed:', err);
             message.error(t("Erreur lors de l'export PDF"));

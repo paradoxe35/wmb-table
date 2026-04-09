@@ -3,6 +3,7 @@ import { writeFile, unlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import type { PdfExportResult } from '@shared/ipc.types';
 import { getMainWindow } from './window';
 
 interface PdfExportOptions {
@@ -15,7 +16,7 @@ export async function exportHtmlToPdf({
     html,
     defaultName,
     parentWindow,
-}: PdfExportOptions): Promise<string> {
+}: PdfExportOptions): Promise<PdfExportResult> {
     const win = parentWindow ?? getMainWindow() ?? BrowserWindow.getFocusedWindow()!;
 
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
@@ -25,7 +26,7 @@ export async function exportHtmlToPdf({
     });
 
     if (canceled || !filePath) {
-        return '';
+        return { status: 'canceled' };
     }
 
     const tmpFile = join(tmpdir(), `wmb-export-${randomUUID()}.html`);
@@ -45,7 +46,7 @@ export async function exportHtmlToPdf({
             margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 },
         });
         await writeFile(filePath, pdfBuffer);
-        return filePath;
+        return { status: 'success', filePath };
     } finally {
         hiddenWindow.destroy();
         unlink(tmpFile).catch(() => {});

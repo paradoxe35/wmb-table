@@ -79,7 +79,7 @@ export function registerNotesHandlers(): void {
     registerHandler(NotesChannels.exportPdf, async (_event, noteId) => {
         const note = notesRepo.getById(noteId);
         if (!note?.content) {
-            throw new Error('Note introuvable ou vide');
+            return { status: 'empty' } as const;
         }
 
         const defaultName = (note.name || 'note').replace(/\s+/g, '-').toLowerCase();

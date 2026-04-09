@@ -10,6 +10,7 @@ import * as aiRepo from '@main/database/repositories/ai.repository';
 import * as configRepo from '@main/database/repositories/config.repository';
 import * as languagePackService from '@main/services/language-pack.service';
 import { PushChannels } from '@shared/ipc.types';
+import type { PdfExportResult } from '@shared/ipc.types';
 import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import type {
     AiConversation,
@@ -150,7 +151,7 @@ export class AiService {
     async exportConversationPdf(
         browserWindow: BrowserWindow,
         conversationId: string,
-    ): Promise<string> {
+    ): Promise<PdfExportResult> {
         const conversation = aiRepo.getConversation(conversationId);
         if (!conversation) {
             throw new Error('Conversation introuvable.');
@@ -158,7 +159,7 @@ export class AiService {
 
         const messages = aiRepo.getMessages(conversationId);
         if (!hasExportableConversationContent(messages)) {
-            return '';
+            return { status: 'empty' };
         }
 
         const html = await buildAiConversationExportHtml(conversation, messages);

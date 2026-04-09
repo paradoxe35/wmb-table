@@ -3,6 +3,7 @@ import type { MenuProps } from 'antd';
 import { App as AntApp, Button, Dropdown, Input, Popconfirm, Typography, message } from 'antd';
 import { LoadingOutlined, MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import type { AiConversation } from '@shared/ai.types';
+import type { PdfExportResult } from '@shared/ipc.types';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -37,7 +38,7 @@ const ConversationListItem = memo(function ConversationListItem({
     isStreaming: boolean;
     onSelectConversation: (conversationId: string) => void;
     onRenameConversation: (conversationId: string, title: string) => Promise<AiConversation>;
-    onExportConversation: (conversationId: string) => Promise<string>;
+    onExportConversation: (conversationId: string) => Promise<PdfExportResult>;
     onDeleteConversation: (conversationId: string) => void;
 }) {
     const { t } = useTranslation();
@@ -108,10 +109,10 @@ const ConversationListItem = memo(function ConversationListItem({
 
     const handleExport = useCallback(async () => {
         try {
-            const filePath = await onExportConversation(conversation.id);
-            if (filePath) {
+            const result = await onExportConversation(conversation.id);
+            if (result.status === 'success') {
                 message.success(t('PDF exporté avec succès'));
-            } else {
+            } else if (result.status === 'empty') {
                 message.warning(t('Cette conversation est vide.'));
             }
         } catch {
@@ -201,6 +202,7 @@ const ConversationListItem = memo(function ConversationListItem({
                                 className="ai-chat__conv-menu-trigger"
                                 icon={<MoreOutlined style={{ fontSize: 'var(--fs-xs)' }} />}
                                 onClick={(event) => event.stopPropagation()}
+                                onKeyDown={(event) => event.stopPropagation()}
                             />
                         </Dropdown>
                     </span>
@@ -227,7 +229,7 @@ export default memo(function ChatConversationList({
     onCreateConversation: () => void;
     onSelectConversation: (conversationId: string) => void;
     onRenameConversation: (conversationId: string, title: string) => Promise<AiConversation>;
-    onExportConversation: (conversationId: string) => Promise<string>;
+    onExportConversation: (conversationId: string) => Promise<PdfExportResult>;
     onDeleteConversation: (conversationId: string) => void;
     onClearConversations: () => void;
 }) {

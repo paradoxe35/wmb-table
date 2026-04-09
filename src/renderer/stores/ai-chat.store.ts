@@ -8,6 +8,7 @@ import type {
     AiSendMessageResult,
     AiSettings,
 } from '@shared/ai.types';
+import type { PdfExportResult } from '@shared/ipc.types';
 import {
     AI_MESSAGE_HISTORY_PAGE_SIZE,
     resolveActiveModel,
@@ -246,7 +247,7 @@ interface AiChatState {
     createConversation(title?: string): Promise<void>;
     renameConversation(conversationId: string, title: string): Promise<AiConversation>;
     deleteConversation(conversationId: string): Promise<void>;
-    exportConversationPdf(conversationId: string): Promise<string>;
+    exportConversationPdf(conversationId: string): Promise<PdfExportResult>;
     clearConversations(): Promise<void>;
     sendMessage(content: string): Promise<boolean>;
     sendMessageNow(conversationId: string, messages: string[]): Promise<boolean>;
