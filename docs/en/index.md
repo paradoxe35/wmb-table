@@ -89,7 +89,7 @@ features:
     title: 'Download the latest version',
     loading: 'Looking for the latest version...',
     downloading: 'Download for this computer',
-    fallback: 'Automatic detection is temporarily unavailable. You can still open the GitHub releases page.',
+    fallback: 'Downloads are temporarily unavailable. Please try again later or contact us by email.',
     all: 'View all releases',
     version: 'Version',
     windows: 'Windows',

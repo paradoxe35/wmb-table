@@ -4,7 +4,7 @@
 
 ## Avant de commencer
 
-Téléchargez Wmb Table depuis la page des versions et choisissez le fichier adapté à votre ordinateur :
+Téléchargez Wmb Table depuis la section de téléchargement de la page d’accueil et choisissez le fichier adapté à votre ordinateur :
 
 - Windows : `.exe`
 - macOS Apple Silicon : `.dmg`
@@ -26,7 +26,7 @@ Pour la plupart des utilisateurs, le fichier le plus simple est l’installateur
 3. Suivez les étapes d’installation affichées à l’écran.
 4. Lancez Wmb Table quand l’installation est terminée.
 
-Si Windows affiche un avertissement de sécurité, vérifiez le message et continuez seulement si le fichier vient bien de la page officielle des versions Wmb Table.
+Si Windows affiche un avertissement de sécurité, vérifiez le message et continuez seulement si le fichier vient bien de la page officielle de téléchargement Wmb Table.
 
 ## macOS
 

@@ -3,12 +3,14 @@ import { computed, onMounted, ref } from 'vue';
 
 type ReleaseAsset = {
     name: string;
-    browser_download_url: string;
+    url: string;
+    platform: 'windows' | 'mac' | 'linux' | 'other';
+    arch: 'arm64' | 'x64' | 'unknown';
+    kind: 'installer' | 'package' | 'portable' | 'download';
 };
 
-type ReleaseInfo = {
-    tag_name: string;
-    html_url: string;
+type ReleaseManifest = {
+    version: string;
     assets: ReleaseAsset[];
 };
 
@@ -35,19 +37,12 @@ const props = defineProps<{
     labels: Labels;
 }>();
 
-const githubOwner = import.meta.env.VITE_GITHUB_OWNER || 'paradoxe35';
-const githubRepo = import.meta.env.VITE_GITHUB_REPO || 'wmb-table';
-const githubReleasesUrl = `https://github.com/${githubOwner}/${githubRepo}/releases`;
-const githubLatestReleaseApiUrl = `https://api.github.com/repos/${githubOwner}/${githubRepo}/releases/latest`;
+const releasesManifestUrl = import.meta.env.VITE_RELEASES_MANIFEST_URL;
 
-const release = ref<ReleaseInfo | null>(null);
+const release = ref<ReleaseManifest | null>(null);
 const loading = ref(true);
 const platform = ref<'windows' | 'mac' | 'linux' | 'unknown'>('unknown');
 const arch = ref<'arm64' | 'x64'>('x64');
-
-function normalize(name: string): string {
-    return name.toLowerCase();
-}
 
 function detectPlatform() {
     if (typeof navigator === 'undefined') return;
@@ -65,12 +60,6 @@ function detectPlatform() {
     }
 }
 
-function hasArch(name: string, wanted: 'arm64' | 'x64') {
-    const n = normalize(name);
-    if (wanted === 'arm64') return /arm64|aarch64/.test(n);
-    return /x64|amd64|x86_64/.test(n) || !/arm64|aarch64/.test(n);
-}
-
 function firstMatch(assets: ReleaseAsset[], test: (asset: ReleaseAsset) => boolean) {
     return assets.find(test) ?? null;
 }
@@ -81,25 +70,26 @@ const recommendedAsset = computed(() => {
 
     if (platform.value === 'windows') {
         return (
-            firstMatch(assets, (a) => /\.exe$/i.test(a.name) && hasArch(a.name, 'x64')) ??
-            firstMatch(assets, (a) => /\.exe$/i.test(a.name)) ??
-            firstMatch(assets, (a) => /\.zip$/i.test(a.name))
+            firstMatch(assets, (a) => a.platform === 'windows' && a.kind === 'installer' && a.arch === 'x64') ??
+            firstMatch(assets, (a) => a.platform === 'windows' && a.kind === 'installer') ??
+            firstMatch(assets, (a) => a.platform === 'windows' && a.kind === 'portable')
         );
     }
 
     if (platform.value === 'mac') {
         return (
-            firstMatch(assets, (a) => /\.dmg$/i.test(a.name) && hasArch(a.name, arch.value)) ??
-            firstMatch(assets, (a) => /\.dmg$/i.test(a.name)) ??
-            firstMatch(assets, (a) => /\.zip$/i.test(a.name) && hasArch(a.name, arch.value))
+            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'installer' && a.arch === arch.value) ??
+            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'installer') ??
+            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'portable' && a.arch === arch.value) ??
+            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'portable')
         );
     }
 
     if (platform.value === 'linux') {
         return (
-            firstMatch(assets, (a) => /\.appimage$/i.test(a.name)) ??
-            firstMatch(assets, (a) => /\.deb$/i.test(a.name)) ??
-            firstMatch(assets, (a) => /\.tar\.gz$/i.test(a.name))
+            firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.appimage')) ??
+            firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.deb')) ??
+            firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.tar.gz'))
         );
     }
 
@@ -109,18 +99,22 @@ const recommendedAsset = computed(() => {
 const manualGroups = computed(() => {
     const assets = release.value?.assets ?? [];
     return {
-        windows: assets.filter((a) => /\.(exe|zip)$/i.test(a.name)),
-        mac: assets.filter((a) => /\.(dmg|zip)$/i.test(a.name)),
-        linux: assets.filter((a) => /\.(appimage|deb|tar\.gz)$/i.test(a.name)),
+        windows: assets.filter((a) => a.platform === 'windows'),
+        mac: assets.filter((a) => a.platform === 'mac'),
+        linux: assets.filter((a) => a.platform === 'linux'),
     };
 });
 
 onMounted(async () => {
     detectPlatform();
     try {
-        const res = await fetch(githubLatestReleaseApiUrl);
-        if (!res.ok) throw new Error(`GitHub API error ${res.status}`);
-        release.value = (await res.json()) as ReleaseInfo;
+        if (!releasesManifestUrl) {
+            throw new Error('Missing VITE_RELEASES_MANIFEST_URL');
+        }
+
+        const res = await fetch(releasesManifestUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error(`Release manifest error ${res.status}`);
+        release.value = (await res.json()) as ReleaseManifest;
     } catch {
         release.value = null;
     } finally {
@@ -143,7 +137,7 @@ onMounted(async () => {
             <template v-else-if="release">
                 <div class="release-panel__hero">
                     <div>
-                        <div class="release-panel__badge">{{ labels.version }} {{ release.tag_name }}</div>
+                        <div class="release-panel__badge">{{ labels.version }} {{ release.version }}</div>
                         <h3>{{ labels.recommended }}</h3>
                         <p v-if="recommendedAsset">{{ recommendedAsset.name }}</p>
                         <p v-else>{{ labels.notFound }}</p>
@@ -151,12 +145,9 @@ onMounted(async () => {
                     <a
                         v-if="recommendedAsset"
                         class="release-panel__cta"
-                        :href="recommendedAsset.browser_download_url"
+                        :href="recommendedAsset.url"
                     >
                         {{ labels.downloading }}
-                    </a>
-                    <a v-else class="release-panel__cta release-panel__cta--alt" :href="release.html_url">
-                        {{ labels.all }}
                     </a>
                 </div>
 
@@ -167,7 +158,7 @@ onMounted(async () => {
                             v-for="asset in manualGroups.windows"
                             :key="asset.name"
                             class="release-panel__link"
-                            :href="asset.browser_download_url"
+                            :href="asset.url"
                         >
                             {{ asset.name }}
                         </a>
@@ -178,7 +169,7 @@ onMounted(async () => {
                             v-for="asset in manualGroups.mac"
                             :key="asset.name"
                             class="release-panel__link"
-                            :href="asset.browser_download_url"
+                            :href="asset.url"
                         >
                             {{ asset.name }}
                         </a>
@@ -189,25 +180,18 @@ onMounted(async () => {
                             v-for="asset in manualGroups.linux"
                             :key="asset.name"
                             class="release-panel__link"
-                            :href="asset.browser_download_url"
+                            :href="asset.url"
                         >
                             {{ asset.name }}
                         </a>
                     </div>
                 </div>
-
-                <p class="release-panel__foot">
-                    <a :href="release.html_url || githubReleasesUrl">{{ labels.all }}</a>
-                </p>
             </template>
 
             <template v-else>
                 <div class="release-panel__status">
                     {{ labels.fallback }}
                 </div>
-                <p class="release-panel__foot">
-                    <a :href="githubReleasesUrl">{{ labels.all }}</a>
-                </p>
             </template>
         </div>
 

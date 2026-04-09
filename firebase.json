@@ -1,4 +1,7 @@
 {
+    "storage": {
+        "rules": "storage.rules"
+    },
     "hosting": {
         "public": "docs/.vitepress/dist",
         "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],

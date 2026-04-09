@@ -29,11 +29,17 @@ jobs:
               run: pnpm install --frozen-lockfile --ignore-scripts
 
             - name: Build docs
+              env:
+                  VITE_RELEASES_MANIFEST_URL: https://firebasestorage.googleapis.com/v0/b/wmb-table.appspot.com/o/releases%2Flatest.json?alt=media
               run: pnpm docs:build
 
-            - name: Deploy to Firebase
-              uses: docker://w9jds/firebase-action:master
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
               with:
-                  args: deploy --only hosting
-              env:
-                  FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+                  credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+                  project_id: wmb-table
+                  create_credentials_file: true
+                  export_environment_variables: true
+
+            - name: Deploy to Firebase
+              run: npx --yes firebase-tools deploy --only hosting --project wmb-table --non-interactive

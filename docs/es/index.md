@@ -89,7 +89,7 @@ features:
     title: 'Descargar la última versión',
     loading: 'Buscando la última versión...',
     downloading: 'Descargar para esta computadora',
-    fallback: 'La detección automática no está disponible por el momento. Aun así puede abrir la página de versiones en GitHub.',
+    fallback: 'Las descargas no están disponibles por el momento. Vuelva a intentarlo más tarde o contáctenos por correo.',
     all: 'Ver todas las versiones',
     version: 'Versión',
     windows: 'Windows',

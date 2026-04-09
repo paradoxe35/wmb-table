@@ -17,9 +17,7 @@ Si encuentra un problema en la aplicación, así es como puede ayudarnos a resol
 3. **Su sistema**: ¿Windows, macOS o Linux? ¿Qué versión de la aplicación?
 4. **Capturas de pantalla**: si es posible, adjunte una imagen que muestre el problema.
 
-También puede reportar un error directamente en GitHub:
-
-- [Abrir un ticket en GitHub](https://github.com/paradoxe35/wmb-table/issues/new)
+También puede enviar el reporte del error directamente por correo con esta información.
 
 ## Contactarnos por email
 
@@ -29,4 +27,4 @@ Si prefiere escribir directamente:
 
 ## Sugerir una funcionalidad
 
-¿Tiene una idea para mejorar la aplicación? Nos encantaría escucharla. Simplemente describa su idea en el formulario anterior o abra un ticket en GitHub.
+¿Tiene una idea para mejorar la aplicación? Nos encantaría escucharla. Simplemente descríbala en el formulario anterior o envíela por correo.

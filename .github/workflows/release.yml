@@ -145,6 +145,12 @@ jobs:
         permissions:
             contents: write
         steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+
             - name: Download all artifacts
               uses: actions/download-artifact@v4
               with:
@@ -164,6 +170,36 @@ jobs:
                   files: artifacts/*
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Generate public release manifest
+              env:
+                  RELEASE_VERSION: ${{ needs.validate.outputs.version }}
+                  RELEASE_STORAGE_PREFIX: releases
+              run: node scripts/build-release-manifest.mjs artifacts artifacts/latest.json
+
+            - name: Authenticate to Google Cloud
+              uses: google-github-actions/auth@v2
+              with:
+                  credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+                  project_id: wmb-table
+                  create_credentials_file: true
+                  export_environment_variables: true
+
+            - name: Set up Google Cloud SDK
+              uses: google-github-actions/setup-gcloud@v2
+
+            - name: Deploy to Firebase Storage
+              run: npx --yes firebase-tools deploy --only storage --project wmb-table --non-interactive
+
+            - name: Upload release files to Firebase Storage
+              env:
+                  FIREBASE_STORAGE_BUCKET: wmb-table.appspot.com
+              run: |
+                  gcloud storage cp artifacts/* "gs://${FIREBASE_STORAGE_BUCKET}/releases/"
+                  gcloud storage objects update "gs://${FIREBASE_STORAGE_BUCKET}/releases/latest.json" --cache-control="no-store, max-age=0"
+                  gcloud storage objects update "gs://${FIREBASE_STORAGE_BUCKET}/releases/latest.yml" --cache-control="no-store, max-age=0"
+                  gcloud storage objects update "gs://${FIREBASE_STORAGE_BUCKET}/releases/latest-linux.yml" --cache-control="no-store, max-age=0"
+                  gcloud storage objects update "gs://${FIREBASE_STORAGE_BUCKET}/releases/latest-mac.yml" --cache-control="no-store, max-age=0"
 
     cleanup:
         needs: [build, publish]
