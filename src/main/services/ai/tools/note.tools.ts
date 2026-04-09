@@ -36,11 +36,8 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
                 'Create a new note. Content MUST be markdown (not HTML). ' +
                 'You can include wmb:// reference links',
             inputSchema: z.object({
-                name: z.string().min(2),
-                content: z
-                    .string()
-                    .optional()
-                    .describe('note content in markdown format, NOT HTML'),
+                name: z.string().min(2).describe('note name/title'),
+                content: z.string().describe('note content in markdown format, NOT HTML'),
             }),
             execute: async ({ name, content }) => {
                 const note = notesRepo.create(name.trim());

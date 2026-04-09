@@ -81,6 +81,22 @@
     transition: background 0.15s;
 }
 
+.ai-chat__conv-body {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.ai-chat__conv-title {
+    display: block;
+    font-size: var(--fs-rel-lg);
+    min-width: 0;
+}
+
+.ai-chat__conv-date {
+    display: block;
+    font-size: var(--fs-rel-xs);
+}
+
 .ai-chat__conv-item:hover {
     background: var(--ant-color-fill-quaternary);
 }
@@ -100,16 +116,35 @@
     justify-content: center;
     gap: 6px;
     flex-shrink: 0;
+    width: 0;
+    overflow: hidden;
+    margin-left: 0;
+    transition:
+        width 0.15s ease,
+        margin-left 0.15s ease;
+}
+
+.ai-chat__conv-item:hover .ai-chat__conv-action,
+.ai-chat__conv-item:focus-within .ai-chat__conv-action {
+    width: 24px;
+    margin-left: 6px;
+}
+
+.ai-chat__conv-action--visible {
+    width: 24px;
     margin-left: 6px;
 }
 
 .ai-chat__conv-item .ai-chat__conv-delete {
     opacity: 0;
+    pointer-events: none;
     transition: opacity 0.15s;
 }
 
-.ai-chat__conv-item:hover .ai-chat__conv-delete {
+.ai-chat__conv-item:hover .ai-chat__conv-delete,
+.ai-chat__conv-item:focus-within .ai-chat__conv-delete {
     opacity: 0.8;
+    pointer-events: auto;
 }
 
 .ai-chat__conv-status {

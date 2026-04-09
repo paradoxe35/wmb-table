@@ -93,28 +93,21 @@ export default memo(function ChatConversationList({
                                         }
                                     }}
                                 >
-                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div className="ai-chat__conv-body">
                                         <Text
                                             ellipsis
-                                            style={{
-                                                fontSize: 'var(--fs-rel-lg)',
-                                                display: 'block',
-                                                fontWeight: isActive ? 500 : 400,
-                                            }}
+                                            className="ai-chat__conv-title"
+                                            style={{ fontWeight: isActive ? 500 : 400 }}
                                         >
                                             {conversation.title || t('Conversation')}
                                         </Text>
-                                        <Text
-                                            type="secondary"
-                                            style={{
-                                                fontSize: 'var(--fs-rel-xs)',
-                                                display: 'block',
-                                            }}
-                                        >
+                                        <Text type="secondary" className="ai-chat__conv-date">
                                             {formatRelativeDate(conversation.updatedAt, t)}
                                         </Text>
                                     </div>
-                                    <div className="ai-chat__conv-action">
+                                    <div
+                                        className={`ai-chat__conv-action ${showStreamingStatus ? 'ai-chat__conv-action--visible' : ''}`}
+                                    >
                                         {showStreamingStatus ? (
                                             <span
                                                 className="ai-chat__conv-status"
