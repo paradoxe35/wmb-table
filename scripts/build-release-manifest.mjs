@@ -84,9 +84,10 @@ const files = entries
     .filter((name) => name !== path.basename(outputFile))
     .filter(isVisibleDownload);
 
-const assets = files
-    .map((name) => {
+const assets = await Promise.all(
+    files.map(async (name) => {
         const platform = detectPlatform(name);
+        const stats = await fs.stat(path.join(artifactsDir, name));
 
         return {
             name,
@@ -94,9 +95,12 @@ const assets = files
             platform,
             arch: detectArch(name, platform),
             kind: detectKind(name),
+            sizeBytes: stats.size,
         };
-    })
-    .sort((left, right) => {
+    }),
+);
+
+assets.sort((left, right) => {
         const platformDiff = platformRank(left.platform) - platformRank(right.platform);
         if (platformDiff !== 0) return platformDiff;
 

@@ -86,20 +86,20 @@ features:
 
 <ReleaseDownloadPanel
   :labels="{
-    title: 'Télécharger la dernière version',
+    title: 'Télécharger Wmb Table',
     loading: 'Recherche de la dernière version en cours...',
-    downloading: 'Télécharger pour cet ordinateur',
+    downloading: 'Télécharger',
+    installLink: 'Guide d’installation',
     fallback: 'Les téléchargements sont momentanément indisponibles. Réessayez un peu plus tard ou contactez-nous par email.',
-    all: 'Voir toutes les versions',
     version: 'Version',
     windows: 'Windows',
     mac: 'macOS',
     linux: 'Linux',
-    direct: 'Téléchargement direct',
-    recommended: 'Téléchargement recommandé',
     notFound: 'Aucun fichier recommandé trouvé automatiquement pour cet appareil.',
+    more: 'Voir plus de fichiers',
+    forThisDevice: 'Version conseillée pour cet appareil',
     installTitle: 'Installation rapide',
-    installWindows: 'Windows : téléchargez de préférence le fichier .exe, ouvrez-le puis suivez les étapes affichées.',
+    installWindows: 'Windows : téléchargez de préférence le fichier .exe. Si Windows affiche un avertissement de sécurité, vérifiez le message et continuez seulement si le fichier vient bien de la page officielle de téléchargement Wmb Table.',
     installMac: 'macOS : téléchargez le fichier .dmg adapté à votre Mac, ouvrez-le puis glissez l’application vers Applications si demandé.',
     installLinux: 'Linux : utilisez d’abord AppImage si vous voulez le plus simple, sinon choisissez .deb ou .tar.gz selon votre habitude.'
   }"
