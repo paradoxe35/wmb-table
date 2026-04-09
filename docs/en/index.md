@@ -91,17 +91,11 @@ features:
     downloading: 'Download',
     installLink: 'Installation guide',
     fallback: 'Downloads are temporarily unavailable. Please try again later or contact us by email.',
-    version: 'Version',
     windows: 'Windows',
     mac: 'macOS',
     linux: 'Linux',
     notFound: 'No recommended file was found automatically for this device.',
-    more: 'More download options',
-    forThisDevice: 'Best option for this device',
-    installTitle: 'Quick install',
-    installWindows: 'Windows: preferably download the .exe file. If Windows shows a security warning, review the message and continue only if the file came from the official Wmb Table download page.',
-    installMac: 'macOS: download the .dmg file that matches your Mac, open it, and move the app to Applications if asked.',
-    installLinux: 'Linux: use AppImage first if you want the simplest option, otherwise choose .deb or .tar.gz based on your preference.'
+    more: 'More download options'
   }"
 />
 

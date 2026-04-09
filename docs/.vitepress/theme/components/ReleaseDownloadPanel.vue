@@ -21,17 +21,11 @@ type Labels = {
     downloading: string;
     installLink: string;
     fallback: string;
-    version: string;
     windows: string;
     mac: string;
     linux: string;
     notFound: string;
     more: string;
-    forThisDevice: string;
-    installTitle: string;
-    installWindows: string;
-    installMac: string;
-    installLinux: string;
 };
 
 const props = defineProps<{
@@ -92,12 +86,13 @@ function formatSize(bytes: number): string {
     return `${value.toFixed(digits)} ${units[unitIndex]}`;
 }
 
-function assetLabel(asset: ReleaseAsset): string {
+function assetExtension(asset: ReleaseAsset): string {
     const lower = asset.name.toLowerCase();
-    const extension =
-        lower.endsWith('.tar.gz')
-            ? 'tar.gz'
-            : asset.name.split('.').pop()?.toLowerCase() ?? '';
+    return lower.endsWith('.tar.gz') ? 'tar.gz' : asset.name.split('.').pop()?.toLowerCase() ?? '';
+}
+
+function assetLabel(asset: ReleaseAsset): string {
+    const extension = assetExtension(asset);
 
     if (asset.platform === 'windows') {
         if (extension === 'exe') return 'Windows Installer';
@@ -105,14 +100,15 @@ function assetLabel(asset: ReleaseAsset): string {
     }
 
     if (asset.platform === 'mac') {
-        if (extension === 'dmg') return asset.arch === 'arm64' ? 'macOS Apple Silicon DMG' : 'macOS Intel DMG';
-        if (extension === 'zip') return asset.arch === 'arm64' ? 'macOS Apple Silicon ZIP' : 'macOS Intel ZIP';
+        if (extension === 'dmg' || extension === 'zip') {
+            return asset.arch === 'arm64' ? 'macOS Apple Silicon' : 'macOS Intel';
+        }
     }
 
     if (asset.platform === 'linux') {
         if (extension === 'appimage') return 'Linux AppImage';
-        if (extension === 'deb') return 'Linux DEB package';
-        if (extension === 'tar.gz') return 'Linux tar.gz archive';
+        if (extension === 'deb') return 'Linux DEB Package';
+        if (extension === 'tar.gz') return 'Linux TAR.GZ Archive';
     }
 
     return asset.name;
@@ -120,6 +116,20 @@ function assetLabel(asset: ReleaseAsset): string {
 
 function assetMeta(asset: ReleaseAsset): string {
     return [assetLabel(asset), formatSize(asset.sizeBytes)].filter(Boolean).join(' • ');
+}
+
+function normalizePlatformAssets(target: 'windows' | 'mac' | 'linux', assets: ReleaseAsset[]) {
+    if (target !== 'mac') return assets;
+
+    return assets.filter((asset) => {
+        if (assetExtension(asset) !== 'zip') return true;
+
+        return !assets.some(
+            (candidate) =>
+                candidate.arch === asset.arch &&
+                assetExtension(candidate) === 'dmg',
+        );
+    });
 }
 
 function preferredAssetForPlatform(target: 'windows' | 'mac' | 'linux', assets: ReleaseAsset[]) {
@@ -189,8 +199,9 @@ const platformCards = computed(() => {
         { key: 'mac' as const, title: props.labels.mac, items: assets.filter((asset) => asset.platform === 'mac') },
         { key: 'linux' as const, title: props.labels.linux, items: assets.filter((asset) => asset.platform === 'linux') },
     ].map((entry) => {
-        const primary = preferredAssetForPlatform(entry.key, entry.items);
-        const extras = primary ? entry.items.filter((asset) => asset.name !== primary.name) : [];
+        const visibleItems = normalizePlatformAssets(entry.key, entry.items);
+        const primary = preferredAssetForPlatform(entry.key, visibleItems);
+        const extras = primary ? visibleItems.filter((asset) => asset.name !== primary.name) : [];
 
         return {
             ...entry,
@@ -243,22 +254,23 @@ onMounted(async () => {
             <template v-else-if="release">
                 <div class="release-panel__hero">
                     <div class="release-panel__lead">
-                        <div class="release-panel__badge">{{ labels.version }} {{ release.version }}</div>
-                        <h2>{{ labels.title }}</h2>
+                        <div class="release-panel__title-row">
+                            <h2>{{ labels.title }}</h2>
+                            <span class="release-panel__version">{{ release.version }}</span>
+                        </div>
+                        <div v-if="recommendedAsset" class="release-panel__download-row">
+                            <a class="release-panel__cta" :href="recommendedAsset.url">
+                                {{ labels.downloading }}
+                            </a>
+                            <div class="release-panel__helper">
+                                <span class="release-panel__meta">{{ assetMeta(recommendedAsset) }}</span>
+                                <span v-if="installGuideHref" class="release-panel__helper-sep">•</span>
+                                <a v-if="installGuideHref" class="release-panel__install-link" :href="installGuideHref">
+                                    {{ labels.installLink }}
+                                </a>
+                            </div>
+                        </div>
                     </div>
-
-                    <div v-if="recommendedAsset" class="release-panel__action">
-                        <a class="release-panel__cta" :href="recommendedAsset.url">
-                            {{ labels.downloading }}
-                        </a>
-                    </div>
-                </div>
-
-                <div v-if="recommendedAsset" class="release-panel__subline">
-                    <div class="release-panel__meta">{{ assetMeta(recommendedAsset) }}</div>
-                    <a v-if="installGuideHref" class="release-panel__install-link" :href="installGuideHref">
-                        {{ labels.installLink }}
-                    </a>
                 </div>
 
                 <div class="release-panel__grid">
@@ -295,21 +307,6 @@ onMounted(async () => {
                     {{ labels.fallback }}
                 </div>
             </template>
-        </div>
-
-        <div class="doc-overview-grid release-install-grid">
-            <div class="doc-overview-card">
-                <h3>{{ labels.installTitle }}</h3>
-                <p>{{ labels.installWindows }}</p>
-            </div>
-            <div class="doc-overview-card">
-                <h3>macOS</h3>
-                <p>{{ labels.installMac }}</p>
-            </div>
-            <div class="doc-overview-card">
-                <h3>Linux</h3>
-                <p>{{ labels.installLinux }}</p>
-            </div>
         </div>
     </section>
 </template>

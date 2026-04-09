@@ -91,17 +91,11 @@ features:
     downloading: 'Télécharger',
     installLink: 'Guide d’installation',
     fallback: 'Les téléchargements sont momentanément indisponibles. Réessayez un peu plus tard ou contactez-nous par email.',
-    version: 'Version',
     windows: 'Windows',
     mac: 'macOS',
     linux: 'Linux',
     notFound: 'Aucun fichier recommandé trouvé automatiquement pour cet appareil.',
-    more: 'Voir plus de fichiers',
-    forThisDevice: 'Version conseillée pour cet appareil',
-    installTitle: 'Installation rapide',
-    installWindows: 'Windows : téléchargez de préférence le fichier .exe. Si Windows affiche un avertissement de sécurité, vérifiez le message et continuez seulement si le fichier vient bien de la page officielle de téléchargement Wmb Table.',
-    installMac: 'macOS : téléchargez le fichier .dmg adapté à votre Mac, ouvrez-le puis glissez l’application vers Applications si demandé.',
-    installLinux: 'Linux : utilisez d’abord AppImage si vous voulez le plus simple, sinon choisissez .deb ou .tar.gz selon votre habitude.'
+    more: 'Voir plus de fichiers'
   }"
 />
 
