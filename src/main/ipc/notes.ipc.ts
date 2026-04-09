@@ -3,6 +3,14 @@ import { registerHandler } from './register';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
 
+function stripInternalExportLinks(html: string): string {
+    return html.replace(
+        /<a\b([^>]*?)href=(['"])(https?:\/\/w\.t[^'"]*|wmb:\/\/[^'"]*)\2([^>]*)>([\s\S]*?)<\/a>/gi,
+        (_match, _before, _quote, _href, _after, content: string) =>
+            `<span class="reference-link">${content}</span>`,
+    );
+}
+
 export function registerNotesHandlers(): void {
     registerHandler(NotesChannels.getAll, async () => {
         return notesRepo.getAll();
@@ -94,11 +102,12 @@ export function registerNotesHandlers(): void {
   table { border-collapse: collapse; width: 100%; }
   td, th { border: 1px solid #ccc; padding: 6px; }
   blockquote { border-left: 3px solid #ccc; margin-left: 0; padding-left: 12px; color: #555; }
+  a, .reference-link { color: #1f4b99; text-decoration: none; }
 </style>
 </head><body>
 ${note.content}
 </body></html>`;
 
-        return exportHtmlToPdf({ html, defaultName });
+        return exportHtmlToPdf({ html: stripInternalExportLinks(html), defaultName });
     });
 }

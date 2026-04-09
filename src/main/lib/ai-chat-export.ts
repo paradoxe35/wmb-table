@@ -8,6 +8,19 @@ const aiChatMarkdown = new Marked({
         html({ text }) {
             return escapeHtml(text);
         },
+        link({ href, tokens, title }) {
+            const text = this.parser.parseInline(tokens);
+            if (
+                href.startsWith('wmb://') ||
+                href.startsWith('http://w.t') ||
+                href.startsWith('https://w.t')
+            ) {
+                return `<span class="reference-link">${text}</span>`;
+            }
+
+            const titleAttr = title ? ` title="${escapeHtml(title)}"` : '';
+            return `<a href="${escapeHtml(href)}"${titleAttr}>${text}</a>`;
+        },
     },
 });
 
@@ -30,13 +43,6 @@ function sanitizeWmbLinks(content: string): string {
         );
 }
 
-function convertWmbHrefLinks(html: string): string {
-    return html.replace(
-        /href="wmb:\/\/([^"]+)"/g,
-        (_, path: string) => `href="http://w.t/#wmb/${path}"`,
-    );
-}
-
 function isMeaningfulMessage(message: AiMessage): boolean {
     return (
         message.content.trim().length > 0 ||
@@ -51,7 +57,7 @@ async function renderAssistantContent(content: string): Promise<string> {
     }
 
     const html = await aiChatMarkdown.parse(sanitizeWmbLinks(content));
-    return convertWmbHrefLinks(html);
+    return html;
 }
 
 async function renderMessage(message: AiMessage): Promise<string> {
@@ -112,7 +118,7 @@ export async function buildAiConversationExportHtml(
   .message-body blockquote { margin: 14px 0; padding-left: 14px; border-left: 3px solid #d6dde6; color: #4b5563; }
   .message-body table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
   .message-body th, .message-body td { border: 1px solid #d8dee7; padding: 8px 10px; text-align: left; vertical-align: top; }
-  .message-body a { color: #1f4b99; text-decoration: none; }
+  .message-body a, .reference-link { color: #1f4b99; text-decoration: none; }
   .message-empty { color: #6b7280; font-style: italic; }
 </style>
 </head>
