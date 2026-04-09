@@ -7,6 +7,7 @@ type ReleaseAsset = {
     platform: 'windows' | 'mac' | 'linux' | 'other';
     arch: 'arm64' | 'x64' | 'unknown';
     kind: 'installer' | 'package' | 'portable' | 'download';
+    sizeBytes: number;
 };
 
 type ReleaseManifest = {
@@ -18,15 +19,15 @@ type Labels = {
     title: string;
     loading: string;
     downloading: string;
+    installLink: string;
     fallback: string;
-    all: string;
     version: string;
     windows: string;
     mac: string;
     linux: string;
-    direct: string;
-    recommended: string;
     notFound: string;
+    more: string;
+    forThisDevice: string;
     installTitle: string;
     installWindows: string;
     installMac: string;
@@ -43,6 +44,8 @@ const release = ref<ReleaseManifest | null>(null);
 const loading = ref(true);
 const platform = ref<'windows' | 'mac' | 'linux' | 'unknown'>('unknown');
 const arch = ref<'arm64' | 'x64'>('x64');
+const isUbuntu = ref(false);
+const localePrefix = ref('');
 
 function detectPlatform() {
     if (typeof navigator === 'undefined') return;
@@ -53,6 +56,8 @@ function detectPlatform() {
     else if (ua.includes('mac') || plt.includes('mac')) platform.value = 'mac';
     else if (ua.includes('linux') || plt.includes('linux')) platform.value = 'linux';
 
+    isUbuntu.value = ua.includes('ubuntu');
+
     if (ua.includes('arm64') || ua.includes('aarch64') || ua.includes('apple silicon')) {
         arch.value = 'arm64';
     } else if (plt.includes('arm')) {
@@ -60,8 +65,87 @@ function detectPlatform() {
     }
 }
 
+function detectLocalePrefix() {
+    if (typeof window === 'undefined') return;
+    const pathname = window.location.pathname;
+    if (pathname.startsWith('/en/')) localePrefix.value = '/en';
+    else if (pathname.startsWith('/es/')) localePrefix.value = '/es';
+    else localePrefix.value = '';
+}
+
 function firstMatch(assets: ReleaseAsset[], test: (asset: ReleaseAsset) => boolean) {
     return assets.find(test) ?? null;
+}
+
+function formatSize(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) return '';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let value = bytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex += 1;
+    }
+
+    const digits = value >= 100 || unitIndex === 0 ? 0 : 1;
+    return `${value.toFixed(digits)} ${units[unitIndex]}`;
+}
+
+function assetLabel(asset: ReleaseAsset): string {
+    const lower = asset.name.toLowerCase();
+    const extension =
+        lower.endsWith('.tar.gz')
+            ? 'tar.gz'
+            : asset.name.split('.').pop()?.toLowerCase() ?? '';
+
+    if (asset.platform === 'windows') {
+        if (extension === 'exe') return 'Windows Installer';
+        if (extension === 'zip') return 'Windows Portable ZIP';
+    }
+
+    if (asset.platform === 'mac') {
+        if (extension === 'dmg') return asset.arch === 'arm64' ? 'macOS Apple Silicon DMG' : 'macOS Intel DMG';
+        if (extension === 'zip') return asset.arch === 'arm64' ? 'macOS Apple Silicon ZIP' : 'macOS Intel ZIP';
+    }
+
+    if (asset.platform === 'linux') {
+        if (extension === 'appimage') return 'Linux AppImage';
+        if (extension === 'deb') return 'Linux DEB package';
+        if (extension === 'tar.gz') return 'Linux tar.gz archive';
+    }
+
+    return asset.name;
+}
+
+function assetMeta(asset: ReleaseAsset): string {
+    return [assetLabel(asset), formatSize(asset.sizeBytes)].filter(Boolean).join(' • ');
+}
+
+function preferredAssetForPlatform(target: 'windows' | 'mac' | 'linux', assets: ReleaseAsset[]) {
+    if (target === 'windows') {
+        return (
+            firstMatch(assets, (a) => a.platform === 'windows' && a.kind === 'installer') ??
+            firstMatch(assets, (a) => a.platform === 'windows')
+        );
+    }
+
+    if (target === 'mac') {
+        return (
+            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'installer' && a.arch === 'arm64') ??
+            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'installer') ??
+            firstMatch(assets, (a) => a.platform === 'mac')
+        );
+    }
+
+    return (
+        (isUbuntu.value
+            ? firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.deb'))
+            : null) ??
+        firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.appimage')) ??
+        firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.deb')) ??
+        firstMatch(assets, (a) => a.platform === 'linux')
+    );
 }
 
 const recommendedAsset = computed(() => {
@@ -70,9 +154,8 @@ const recommendedAsset = computed(() => {
 
     if (platform.value === 'windows') {
         return (
-            firstMatch(assets, (a) => a.platform === 'windows' && a.kind === 'installer' && a.arch === 'x64') ??
             firstMatch(assets, (a) => a.platform === 'windows' && a.kind === 'installer') ??
-            firstMatch(assets, (a) => a.platform === 'windows' && a.kind === 'portable')
+            firstMatch(assets, (a) => a.platform === 'windows')
         );
     }
 
@@ -80,33 +163,60 @@ const recommendedAsset = computed(() => {
         return (
             firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'installer' && a.arch === arch.value) ??
             firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'installer') ??
-            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'portable' && a.arch === arch.value) ??
-            firstMatch(assets, (a) => a.platform === 'mac' && a.kind === 'portable')
+            firstMatch(assets, (a) => a.platform === 'mac')
         );
     }
 
     if (platform.value === 'linux') {
         return (
+            (isUbuntu.value
+                ? firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.deb'))
+                : null) ??
             firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.appimage')) ??
             firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.deb')) ??
-            firstMatch(assets, (a) => a.platform === 'linux' && a.name.toLowerCase().endsWith('.tar.gz'))
+            firstMatch(assets, (a) => a.platform === 'linux')
         );
     }
 
     return null;
 });
 
-const manualGroups = computed(() => {
+const platformCards = computed(() => {
     const assets = release.value?.assets ?? [];
-    return {
-        windows: assets.filter((a) => a.platform === 'windows'),
-        mac: assets.filter((a) => a.platform === 'mac'),
-        linux: assets.filter((a) => a.platform === 'linux'),
-    };
+
+    return [
+        { key: 'windows' as const, title: props.labels.windows, items: assets.filter((asset) => asset.platform === 'windows') },
+        { key: 'mac' as const, title: props.labels.mac, items: assets.filter((asset) => asset.platform === 'mac') },
+        { key: 'linux' as const, title: props.labels.linux, items: assets.filter((asset) => asset.platform === 'linux') },
+    ].map((entry) => {
+        const primary = preferredAssetForPlatform(entry.key, entry.items);
+        const extras = primary ? entry.items.filter((asset) => asset.name !== primary.name) : [];
+
+        return {
+            ...entry,
+            primary,
+            extras,
+        };
+    });
+});
+
+const installGuideHref = computed(() => {
+    const anchor =
+        platform.value === 'windows'
+            ? '#windows'
+            : platform.value === 'mac'
+              ? '#macos'
+              : platform.value === 'linux'
+                ? '#linux'
+                : '';
+
+    if (!anchor) return '';
+    return `${localePrefix.value}/guide/installation${anchor}`;
 });
 
 onMounted(async () => {
     detectPlatform();
+    detectLocalePrefix();
     try {
         if (!releasesManifestUrl) {
             throw new Error('Missing VITE_RELEASES_MANIFEST_URL');
@@ -125,10 +235,6 @@ onMounted(async () => {
 
 <template>
     <section id="download" class="release-panel">
-        <div class="home-section-head">
-            <h2>{{ labels.title }}</h2>
-        </div>
-
         <div class="release-panel__box">
             <div v-if="loading" class="release-panel__status">
                 {{ labels.loading }}
@@ -136,55 +242,51 @@ onMounted(async () => {
 
             <template v-else-if="release">
                 <div class="release-panel__hero">
-                    <div>
+                    <div class="release-panel__lead">
                         <div class="release-panel__badge">{{ labels.version }} {{ release.version }}</div>
-                        <h3>{{ labels.recommended }}</h3>
-                        <p v-if="recommendedAsset">{{ recommendedAsset.name }}</p>
-                        <p v-else>{{ labels.notFound }}</p>
+                        <h2>{{ labels.title }}</h2>
                     </div>
-                    <a
-                        v-if="recommendedAsset"
-                        class="release-panel__cta"
-                        :href="recommendedAsset.url"
-                    >
-                        {{ labels.downloading }}
+
+                    <div v-if="recommendedAsset" class="release-panel__action">
+                        <a class="release-panel__cta" :href="recommendedAsset.url">
+                            {{ labels.downloading }}
+                        </a>
+                    </div>
+                </div>
+
+                <div v-if="recommendedAsset" class="release-panel__subline">
+                    <div class="release-panel__meta">{{ assetMeta(recommendedAsset) }}</div>
+                    <a v-if="installGuideHref" class="release-panel__install-link" :href="installGuideHref">
+                        {{ labels.installLink }}
                     </a>
                 </div>
 
                 <div class="release-panel__grid">
-                    <div class="release-panel__card">
-                        <h4>{{ labels.windows }}</h4>
-                        <a
-                            v-for="asset in manualGroups.windows"
-                            :key="asset.name"
-                            class="release-panel__link"
-                            :href="asset.url"
-                        >
-                            {{ asset.name }}
-                        </a>
-                    </div>
-                    <div class="release-panel__card">
-                        <h4>{{ labels.mac }}</h4>
-                        <a
-                            v-for="asset in manualGroups.mac"
-                            :key="asset.name"
-                            class="release-panel__link"
-                            :href="asset.url"
-                        >
-                            {{ asset.name }}
-                        </a>
-                    </div>
-                    <div class="release-panel__card">
-                        <h4>{{ labels.linux }}</h4>
-                        <a
-                            v-for="asset in manualGroups.linux"
-                            :key="asset.name"
-                            class="release-panel__link"
-                            :href="asset.url"
-                        >
-                            {{ asset.name }}
-                        </a>
-                    </div>
+                    <article v-for="card in platformCards" :key="card.key" class="release-panel__card">
+                        <div class="release-panel__card-head">
+                            <h3>{{ card.title }}</h3>
+                        </div>
+
+                        <template v-if="card.primary">
+                            <a class="release-panel__primary-link" :href="card.primary.url">
+                                <span>{{ assetLabel(card.primary) }}</span>
+                                <small>{{ formatSize(card.primary.sizeBytes) }}</small>
+                            </a>
+
+                            <details v-if="card.extras.length" class="release-panel__details">
+                                <summary>{{ labels.more }}</summary>
+                                <div class="release-panel__list">
+                                    <a v-for="asset in card.extras" :key="asset.name" class="release-panel__link"
+                                        :href="asset.url">
+                                        <span>{{ assetLabel(asset) }}</span>
+                                        <small>{{ formatSize(asset.sizeBytes) }}</small>
+                                    </a>
+                                </div>
+                            </details>
+                        </template>
+
+                        <p v-else class="release-panel__empty">{{ labels.notFound }}</p>
+                    </article>
                 </div>
             </template>
 
