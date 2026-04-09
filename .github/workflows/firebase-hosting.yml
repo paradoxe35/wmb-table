@@ -41,5 +41,9 @@ jobs:
                   create_credentials_file: true
                   export_environment_variables: true
 
-            - name: Deploy to Firebase
+            - name: Deploy Firebase Hosting
               run: npx --yes firebase-tools deploy --only hosting --project wmb-table --non-interactive
+
+            - name: Deploy Firebase Storage
+              continue-on-error: true
+              run: npx --yes firebase-tools deploy --only storage --project wmb-table --non-interactive

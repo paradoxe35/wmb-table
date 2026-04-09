@@ -188,9 +188,6 @@ jobs:
             - name: Set up Google Cloud SDK
               uses: google-github-actions/setup-gcloud@v2
 
-            - name: Deploy to Firebase Storage
-              run: npx --yes firebase-tools deploy --only storage --project wmb-table --non-interactive
-
             - name: Upload release files to Firebase Storage
               env:
                   FIREBASE_STORAGE_BUCKET: wmb-table.appspot.com
