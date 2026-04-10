@@ -48,6 +48,12 @@ interface GitHubAsset {
     id: number;
     name: string;
     url: string;
+    browser_download_url?: string;
+}
+
+export interface GitHubDownloadRequest {
+    url: string;
+    headers?: Record<string, string>;
 }
 
 let releaseAssetsCache: GitHubAsset[] | null = null;
@@ -97,6 +103,43 @@ async function getGitHubAssetRedirectResponse(fileName: string): Promise<Respons
     }
 
     return fetch(asset.url, { headers, redirect: 'manual' });
+}
+
+export async function resolveGitHubDownloadRequest(
+    fileName: string,
+): Promise<GitHubDownloadRequest> {
+    if (!GITHUB_TOKEN) {
+        return { url: getGitHubReleaseAssetUrl(fileName) };
+    }
+
+    const apiResponse = await getGitHubAssetRedirectResponse(fileName);
+    if (apiResponse.status === 302 || apiResponse.status === 307) {
+        const downloadUrl = apiResponse.headers.get('location');
+        if (!downloadUrl) {
+            throw new Error('GitHub redirect missing Location header');
+        }
+        return { url: downloadUrl };
+    }
+
+    if (!apiResponse.ok) {
+        throw new Error(
+            `Failed to resolve GitHub asset: ${apiResponse.status} ${apiResponse.statusText}`,
+        );
+    }
+
+    const asset = await getReleaseAsset(fileName);
+    if (!asset) {
+        throw new Error(`Asset "${fileName}" not found`);
+    }
+
+    return {
+        url: asset.url,
+        headers: Object.fromEntries(
+            githubHeaders({
+                Accept: 'application/octet-stream',
+            }).entries(),
+        ),
+    };
 }
 
 /**

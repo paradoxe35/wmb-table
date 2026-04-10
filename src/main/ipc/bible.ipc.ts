@@ -57,18 +57,28 @@ export function registerBibleHandlers(): void {
         return versions.map(toBibleVersionInfo);
     });
 
-    registerHandler(BibleChannels.downloadVersion, async (_event, abbreviation) => {
-        const win = BrowserWindow.getFocusedWindow();
-        await bibleService.downloadBibleVersion(abbreviation, (percentage) => {
-            if (win) {
-                sendToRenderer(win, PushChannels.bibleDownloadProgress, {
+    registerHandler(BibleChannels.downloadVersion, async (event, abbreviation) => {
+        const win = BrowserWindow.fromWebContents(event.sender);
+        try {
+            await bibleService.downloadBibleVersion(abbreviation, (percentage) => {
+                if (win && !win.isDestroyed()) {
+                    sendToRenderer(win, PushChannels.bibleDownloadProgress, {
+                        abbreviation,
+                        percentage,
+                    });
+                }
+            });
+            if (win && !win.isDestroyed()) {
+                sendToRenderer(win, PushChannels.bibleDownloaded, { abbreviation });
+            }
+        } catch (error) {
+            if (win && !win.isDestroyed()) {
+                sendToRenderer(win, PushChannels.bibleDownloadFailed, {
                     abbreviation,
-                    percentage,
+                    error: error instanceof Error ? error.message : String(error),
                 });
             }
-        });
-        if (win) {
-            sendToRenderer(win, PushChannels.bibleDownloaded, { abbreviation });
+            throw error;
         }
     });
 }

@@ -26,6 +26,7 @@ import type {
     LanguageInstalledEvent,
 } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
+import { getErrorMessage } from '@renderer/utils/functions';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 
@@ -363,9 +364,18 @@ export default function LibraryModal() {
                 );
             },
         );
+        const unsub3 = window.api.on.languageInstallFailed(({ langCode, error }) => {
+            setDownloadProgress((prev) => {
+                const next = { ...prev };
+                delete next[langCode];
+                return next;
+            });
+            message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(error)) }));
+        });
         return () => {
             unsub1();
             unsub2();
+            unsub3();
         };
     }, [contentLanguage, loadLanguageWorkspace, notifyLibraryChanged, refresh, t]);
 
@@ -390,7 +400,7 @@ export default function LibraryModal() {
 
     const handleInstall = (langCode: string) => {
         setDownloadProgress((prev) => ({ ...prev, [langCode]: 0 }));
-        window.api.languages.install(langCode);
+        void window.api.languages.install(langCode).catch(() => {});
     };
 
     const handleDelete = async (langCode: string) => {

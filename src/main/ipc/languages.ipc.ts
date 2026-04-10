@@ -14,19 +14,32 @@ export function registerLanguageHandlers(): void {
 
     registerHandler(LanguageChannels.install, async (event, langCode) => {
         const win = BrowserWindow.fromWebContents(event.sender);
-        const result = await languagePackService.downloadLanguagePack(langCode, (percentage) => {
+        try {
+            const result = await languagePackService.downloadLanguagePack(
+                langCode,
+                (percentage) => {
+                    if (win && !win.isDestroyed()) {
+                        sendToRenderer(win, PushChannels.languageDownloadProgress, {
+                            langCode,
+                            percentage,
+                        });
+                    }
+                },
+            );
             if (win && !win.isDestroyed()) {
-                sendToRenderer(win, PushChannels.languageDownloadProgress, {
+                sendToRenderer(win, PushChannels.languageInstalled, {
                     langCode,
-                    percentage,
+                    action: result.action,
                 });
             }
-        });
-        if (win && !win.isDestroyed()) {
-            sendToRenderer(win, PushChannels.languageInstalled, {
-                langCode,
-                action: result.action,
-            });
+        } catch (error) {
+            if (win && !win.isDestroyed()) {
+                sendToRenderer(win, PushChannels.languageInstallFailed, {
+                    langCode,
+                    error: error instanceof Error ? error.message : String(error),
+                });
+            }
+            throw error;
         }
     });
 

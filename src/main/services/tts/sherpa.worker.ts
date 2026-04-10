@@ -1,5 +1,5 @@
 import { parentPort } from 'node:worker_threads';
-import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { createReadStream, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import { rename, rm, stat, unlink } from 'node:fs/promises';
 import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -8,6 +8,7 @@ import { extract as tarExtract } from 'tar';
 import unbzip2 from 'unbzip2-stream';
 import { pcmToWav } from './utils.worker';
 import type { TtsModelDownloadProgress } from '@shared/tts.types';
+import { downloadResumableFile } from '@main/lib/resumable-download';
 
 interface WorkerRequest {
     id: number;
@@ -127,6 +128,14 @@ function resolveExtractedModelDir(rootDir: string, modelName: string): string | 
     }
 
     return null;
+}
+
+function getModelArchiveTempPath(modelsDir: string, modelName: string): string {
+    return join(modelsDir, `${modelName}.download.tar.bz2`);
+}
+
+function getModelPartialDir(modelsDir: string, modelName: string): string {
+    return join(modelsDir, `${modelName}.partial`);
 }
 
 function createProgressTransform(
@@ -292,35 +301,18 @@ async function downloadFile(
     pctEnd: number,
     phase: NonNullable<TtsModelDownloadProgress['phase']> = 'downloading',
 ): Promise<void> {
-    const response = await fetch(url, { redirect: 'follow' });
-    if (!response.ok) throw new Error(`Download failed: ${response.status} ${url}`);
-
-    const contentLength = Number(response.headers.get('content-length') || 0);
-    const reader = response.body!.getReader();
-    const fileStream = createWriteStream(destPath);
-    let downloaded = 0;
-
-    try {
-        for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            fileStream.write(value);
-            downloaded += value.byteLength;
-            if (contentLength > 0) {
-                const pct = pctStart + (downloaded / contentLength) * (pctEnd - pctStart);
-                sendProgress(Math.round(pct), phase);
+    await downloadResumableFile({
+        url,
+        destinationPath: destPath,
+        reuseExistingFile: true,
+        onProgress: (progress) => {
+            if (!progress.totalBytes) {
+                return;
             }
-        }
-        fileStream.end();
-        await new Promise<void>((resolve, reject) => {
-            fileStream.on('finish', resolve);
-            fileStream.on('error', reject);
-        });
-    } catch (err) {
-        fileStream.destroy();
-        await unlink(destPath).catch(() => {});
-        throw err;
-    }
+            const pct = pctStart + (progress.percentage / 100) * (pctEnd - pctStart);
+            sendProgress(Math.round(pct), phase);
+        },
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -328,16 +320,17 @@ async function downloadFile(
 // ---------------------------------------------------------------------------
 
 async function downloadModel(url: string, modelName: string, modelsDir: string): Promise<void> {
-    const tmpFile = join(modelsDir, `${modelName}.${Date.now()}.tmp.tar.bz2`);
-    const tmpExtractDir = join(modelsDir, `${modelName}.partial-${Date.now()}`);
+    const tmpFile = getModelArchiveTempPath(modelsDir, modelName);
+    const tmpExtractDir = getModelPartialDir(modelsDir, modelName);
     const finalModelDir = join(modelsDir, modelName);
     mkdirSync(modelsDir, { recursive: true });
-    mkdirSync(tmpExtractDir, { recursive: true });
     sendProgress(2, 'downloading');
 
     try {
         await downloadFile(url, tmpFile, 5, 78, 'downloading');
 
+        await rm(tmpExtractDir, { recursive: true, force: true }).catch(() => {});
+        mkdirSync(tmpExtractDir, { recursive: true });
         const archiveSize = (await stat(tmpFile)).size;
         sendProgress(80, 'extracting');
         await pipeline(
@@ -349,6 +342,8 @@ async function downloadModel(url: string, modelName: string, modelsDir: string):
 
         const extractedModelDir = resolveExtractedModelDir(tmpExtractDir, modelName);
         if (!extractedModelDir) {
+            await unlink(tmpFile).catch(() => {});
+            await rm(tmpExtractDir, { recursive: true, force: true }).catch(() => {});
             throw new Error(`Extracted Sherpa model is incomplete: ${modelName}`);
         }
 
@@ -365,7 +360,6 @@ async function downloadModel(url: string, modelName: string, modelsDir: string):
         await unlink(tmpFile).catch(() => {});
         sendProgress(100, 'finalizing');
     } catch (err) {
-        await unlink(tmpFile).catch(() => {});
         await rm(tmpExtractDir, { recursive: true, force: true }).catch(() => {});
         throw err;
     }
@@ -379,7 +373,7 @@ async function downloadMmsModel(langCode: string, modelsDir: string): Promise<vo
     const baseUrl = 'https://huggingface.co/willwade/mms-tts-multilingual-models-onnx/resolve/main';
     const modelName = `mms-${langCode}`;
     const modelDir = join(modelsDir, modelName);
-    const tmpModelDir = join(modelsDir, `${modelName}.partial-${Date.now()}`);
+    const tmpModelDir = getModelPartialDir(modelsDir, modelName);
     mkdirSync(tmpModelDir, { recursive: true });
     sendProgress(2, 'downloading');
 
@@ -400,6 +394,7 @@ async function downloadMmsModel(langCode: string, modelsDir: string): Promise<vo
         );
 
         if (!hasValidModelAssets(tmpModelDir)) {
+            await rm(tmpModelDir, { recursive: true, force: true }).catch(() => {});
             throw new Error(`Downloaded Sherpa model is incomplete: ${modelName}`);
         }
 
@@ -408,7 +403,6 @@ async function downloadMmsModel(langCode: string, modelsDir: string): Promise<vo
         await rename(tmpModelDir, modelDir);
         sendProgress(100, 'finalizing');
     } catch (err) {
-        await rm(tmpModelDir, { recursive: true, force: true }).catch(() => {});
         throw err;
     }
 }

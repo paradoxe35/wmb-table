@@ -1,10 +1,12 @@
 import { app } from 'electron';
 import { join } from 'node:path';
-import { readFileSync, existsSync, createWriteStream, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import Database from 'better-sqlite3';
 import log from 'electron-log';
 import { getDatabaseDir } from '@main/lib/app-paths';
-import { githubDownload } from '@main/lib/github';
+import { githubDownload, resolveGitHubDownloadRequest } from '@main/lib/github';
+import { downloadResumableFile, replaceFileAtomically } from '@main/lib/resumable-download';
 import { SimpleCache } from '@main/lib/simple-cache';
 import { normalizeBibleAbbreviation } from '@shared/types';
 
@@ -192,6 +194,24 @@ export function isBibleAvailable(version: BibleVersion): boolean {
     return existsSync(resolveBiblePath(version));
 }
 
+function getBibleDownloadTempPath(version: BibleVersion): string {
+    return `${resolveBiblePath(version)}.download`;
+}
+
+function validateBibleDatabase(dbPath: string): void {
+    const db = new Database(dbPath, { readonly: true, fileMustExist: true });
+    try {
+        const quickCheck = db.prepare('PRAGMA quick_check(1)').pluck().get() as string | undefined;
+        if (quickCheck !== 'ok') {
+            throw new Error(
+                `Bible database integrity check failed: ${quickCheck ?? 'unknown error'}`,
+            );
+        }
+    } finally {
+        db.close();
+    }
+}
+
 function openBibleDb(version: BibleVersion): Database.Database {
     const dbPath = resolveBiblePath(version);
     if (!existsSync(dbPath)) {
@@ -345,42 +365,31 @@ export async function downloadBibleVersion(
     const targetDir = getBibleDataDir();
     mkdirSync(targetDir, { recursive: true });
     const targetPath = join(targetDir, version.fileName);
+    const tempPath = getBibleDownloadTempPath(version);
 
     log.info(`Downloading Bible: ${version.fileName}`);
 
-    const response = await githubDownload(version.fileName);
-    if (!response.ok)
-        throw new Error(`Failed to download Bible: ${response.status} ${response.statusText}`);
-
-    const totalBytes = Number(response.headers.get('content-length') || 0);
-    let downloadedBytes = 0;
-
-    const fileStream = createWriteStream(targetPath);
-    const body = response.body;
-    if (!body) throw new Error('No response body');
-
-    const reader = body.getReader();
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            fileStream.write(value);
-            downloadedBytes += value.length;
-            if (totalBytes > 0 && onProgress) {
-                onProgress(Math.round((downloadedBytes / totalBytes) * 100));
-            }
-        }
-    } finally {
-        fileStream.end();
-    }
-
-    await new Promise<void>((resolve, reject) => {
-        fileStream.on('finish', resolve);
-        fileStream.on('error', reject);
+    const request = await resolveGitHubDownloadRequest(version.fileName);
+    const result = await downloadResumableFile({
+        url: request.url,
+        headers: request.headers,
+        destinationPath: tempPath,
+        reuseExistingFile: true,
+        onProgress: (progress) => onProgress?.(progress.percentage),
+        onWarning: (warning) => log.warn('Bible download warning:', warning),
     });
 
+    try {
+        validateBibleDatabase(tempPath);
+    } catch (error) {
+        await rm(tempPath, { force: true }).catch(() => {});
+        throw error;
+    }
+
+    await replaceFileAtomically(tempPath, targetPath);
+
     log.info(
-        `Bible downloaded: ${version.fileName} (${(downloadedBytes / 1024 / 1024).toFixed(1)} MB)`,
+        `Bible downloaded: ${version.fileName} (${(result.downloadedBytes / 1024 / 1024).toFixed(1)} MB)`,
     );
 }
 

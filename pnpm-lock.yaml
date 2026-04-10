@@ -82,6 +82,9 @@ importers:
             marked:
                 specifier: ^17.0.6
                 version: 17.0.6
+            node-downloader-helper:
+                specifier: ^2.1.11
+                version: 2.1.11
             node-edge-tts:
                 specifier: ^1.2.10
                 version: 1.2.10
@@ -7114,6 +7117,14 @@ packages:
         engines: { node: '>=10.5.0' }
         deprecated: Use your platform's native DOMException instead
 
+    node-downloader-helper@2.1.11:
+        resolution:
+            {
+                integrity: sha512-882fH2C9AWdiPCwz/2beq5t8FGMZK9Dx8TJUOIxzMCbvG7XUKM5BuJwN5f0NKo4SCQK6jR4p2TPm54mYGdGchQ==,
+            }
+        engines: { node: '>=14.18' }
+        hasBin: true
+
     node-edge-tts@1.2.10:
         resolution:
             {
@@ -14058,6 +14069,8 @@ snapshots:
             semver: 7.7.4
 
     node-domexception@1.0.0: {}
+
+    node-downloader-helper@2.1.11: {}
 
     node-edge-tts@1.2.10:
         dependencies:

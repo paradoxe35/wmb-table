@@ -47,7 +47,9 @@ import type {
     SermonTranslation,
     BibleDownloadProgress,
     BibleDownloadedEvent,
+    BibleDownloadFailedEvent,
     LanguageInstalledEvent,
+    LanguageInstallFailedEvent,
     SimilarSermonsResult,
 } from './types';
 import type {
@@ -295,8 +297,10 @@ export const PushChannels = {
     openLibrary: 'push:openLibrary',
     languageDownloadProgress: 'push:languageDownloadProgress',
     languageInstalled: 'push:languageInstalled',
+    languageInstallFailed: 'push:languageInstallFailed',
     bibleDownloadProgress: 'push:bibleDownloadProgress',
     bibleDownloaded: 'push:bibleDownloaded',
+    bibleDownloadFailed: 'push:bibleDownloadFailed',
     openSettings: 'push:openSettings',
     ttsPlaybackState: 'push:ttsPlaybackState',
     ttsModelDownloadProgress: 'push:ttsModelDownloadProgress',
@@ -609,8 +613,10 @@ export interface PushEventMap {
     [PushChannels.openLibrary]: void;
     [PushChannels.languageDownloadProgress]: LanguageDownloadProgress;
     [PushChannels.languageInstalled]: LanguageInstalledEvent;
+    [PushChannels.languageInstallFailed]: LanguageInstallFailedEvent;
     [PushChannels.bibleDownloadProgress]: BibleDownloadProgress;
     [PushChannels.bibleDownloaded]: BibleDownloadedEvent;
+    [PushChannels.bibleDownloadFailed]: BibleDownloadFailedEvent;
     [PushChannels.openSettings]: void;
     [PushChannels.ttsPlaybackState]: TtsPlaybackState;
     [PushChannels.ttsModelDownloadProgress]: TtsModelDownloadProgress;

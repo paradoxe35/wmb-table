@@ -9,7 +9,12 @@ import * as tantivyService from './tantivy.service';
 import * as refRepo from '../database/repositories/reference.repository';
 import * as languageSourcesRepo from '../database/repositories/language-sources.repository';
 import { getIndexesDir } from '@main/lib/app-paths';
-import { getGitHubReleaseAssetUrl, githubDownload, githubHead } from '@main/lib/github';
+import {
+    getGitHubReleaseAssetUrl,
+    githubHead,
+    resolveGitHubDownloadRequest,
+} from '@main/lib/github';
+import { downloadResumableFile } from '@main/lib/resumable-download';
 import type {
     InstalledLanguageSourceType,
     StoredInstalledLanguageSource,
@@ -25,9 +30,10 @@ export type { InstalledLanguage, DownloadableLanguage } from '@shared/types';
 const UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 60 * 1000;
 
 type LanguageDownloadSource = {
-    response: Response;
+    archivePath: string;
     sourceType: InstalledLanguageSourceType;
     sourceUrl: string;
+    headers: StoredLanguageHeaders;
 };
 
 type RemoteLanguageSource = {
@@ -90,6 +96,41 @@ function getResponseHeaders(response: Response): StoredLanguageHeaders {
         contentLength: parseContentLength(response.headers.get('content-length')),
         versionId: normalizeHeaderValue(response.headers.get('x-amz-version-id')),
     };
+}
+
+function createEmptyStoredHeaders(): StoredLanguageHeaders {
+    return {
+        etag: null,
+        lastModified: null,
+        contentLength: null,
+        versionId: null,
+    };
+}
+
+function getArchiveTempPath(
+    indexesDir: string,
+    langCode: string,
+    sourceType: InstalledLanguageSourceType,
+): string {
+    return join(indexesDir, `.tmp-${langCode}.${sourceType}.zip.download`);
+}
+
+async function getPrimarySourceHeaders(url: string): Promise<StoredLanguageHeaders> {
+    try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok ? getResponseHeaders(response) : createEmptyStoredHeaders();
+    } catch {
+        return createEmptyStoredHeaders();
+    }
+}
+
+async function getGitHubSourceHeaders(fileName: string): Promise<StoredLanguageHeaders> {
+    try {
+        const response = await githubHead(fileName);
+        return response.ok ? getResponseHeaders(response) : createEmptyStoredHeaders();
+    } catch {
+        return createEmptyStoredHeaders();
+    }
 }
 
 function shouldCheckForUpdates(
@@ -284,40 +325,52 @@ async function refreshInstalledLanguageUpdate(
     }
 }
 
-async function downloadLanguageArchive(langCode: string): Promise<LanguageDownloadSource> {
+async function downloadLanguageArchive(
+    indexesDir: string,
+    langCode: string,
+    onProgress: (pct: number) => void,
+): Promise<LanguageDownloadSource> {
     const lang = refRepo.getLanguageByCode(langCode);
     if (!lang) {
         throw new Error(`Language "${langCode}" not found in reference database`);
     }
 
+    const primaryArchivePath = getArchiveTempPath(indexesDir, langCode, 'primary');
     try {
-        const primaryResponse = await fetch(lang.url);
-        if (primaryResponse.ok) {
-            return {
-                response: primaryResponse,
-                sourceType: 'primary',
-                sourceUrl: lang.url,
-            };
-        }
+        await downloadResumableFile({
+            url: lang.url,
+            destinationPath: primaryArchivePath,
+            reuseExistingFile: true,
+            onProgress: (progress) => onProgress(progress.percentage),
+            onWarning: (warning) => log.warn('[language-pack] Primary download warning', warning),
+        });
 
-        log.warn(
-            `[language-pack] Primary download failed (${primaryResponse.status}), trying fallback`,
-        );
+        return {
+            archivePath: primaryArchivePath,
+            sourceType: 'primary',
+            sourceUrl: lang.url,
+            headers: await getPrimarySourceHeaders(lang.url),
+        };
     } catch (error) {
         log.warn('[language-pack] Primary download error, trying fallback:', error);
     }
 
-    const githubResponse = await githubDownload(lang.fileName);
-    if (!githubResponse.ok) {
-        throw new Error(
-            `Download failed from both sources: ${githubResponse.status} ${githubResponse.statusText}`,
-        );
-    }
+    const githubArchivePath = getArchiveTempPath(indexesDir, langCode, 'github');
+    const request = await resolveGitHubDownloadRequest(lang.fileName);
+    await downloadResumableFile({
+        url: request.url,
+        headers: request.headers,
+        destinationPath: githubArchivePath,
+        reuseExistingFile: true,
+        onProgress: (progress) => onProgress(progress.percentage),
+        onWarning: (warning) => log.warn('[language-pack] GitHub download warning', warning),
+    });
 
     return {
-        response: githubResponse,
+        archivePath: githubArchivePath,
         sourceType: 'github',
         sourceUrl: getGitHubReleaseAssetUrl(lang.fileName),
+        headers: await getGitHubSourceHeaders(lang.fileName),
     };
 }
 
@@ -339,63 +392,49 @@ export async function downloadLanguagePack(
 
     const tmpDir = join(indexesDir, `.tmp-${langCode}`);
     const finalDir = join(indexesDir, langCode);
-    const zipPath = join(indexesDir, `.tmp-${langCode}.zip`);
     const wasInstalled =
         existsSync(finalDir) || !!languageSourcesRepo.getInstalledLanguageSource(langCode);
-
-    if (existsSync(tmpDir)) await rm(tmpDir, { recursive: true });
-    if (existsSync(zipPath)) await rm(zipPath);
-
-    const { response, sourceType, sourceUrl } = await downloadLanguageArchive(langCode);
-
-    const contentLength = Number(response.headers.get('content-length') || 0);
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('No response body');
-
-    const fileStream = createWriteStream(zipPath);
-    let downloaded = 0;
-
-    try {
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            fileStream.write(value);
-            downloaded += value.length;
-            if (contentLength > 0) {
-                onProgress(Math.round((downloaded / contentLength) * 100));
-            }
-        }
-    } finally {
-        fileStream.end();
-        await new Promise<void>((resolve, reject) => {
-            fileStream.on('finish', resolve);
-            fileStream.on('error', reject);
-        });
+    if (existsSync(tmpDir)) {
+        await rm(tmpDir, { recursive: true });
     }
 
-    await mkdir(tmpDir, { recursive: true });
-    await extractZip(zipPath, tmpDir);
-    await rm(zipPath);
+    try {
+        const archive = await downloadLanguageArchive(indexesDir, langCode, onProgress);
 
-    if (existsSync(finalDir)) await rm(finalDir, { recursive: true });
-    await rename(tmpDir, finalDir);
+        await mkdir(tmpDir, { recursive: true });
+        await extractZip(archive.archivePath, tmpDir);
 
-    await tantivyService.openIndex(langCode);
+        if (existsSync(finalDir)) {
+            await rm(finalDir, { recursive: true });
+        }
 
-    languageSourcesRepo.upsertInstalledLanguageSource({
-        langCode,
-        sourceType,
-        sourceUrl,
-        fileName: lang.fileName,
-        ...getResponseHeaders(response),
-        updateAvailable: false,
-    });
+        await rename(tmpDir, finalDir);
+        await tantivyService.openIndex(langCode);
 
-    log.info(`[language-pack] Installed language pack "${langCode}"`);
+        languageSourcesRepo.upsertInstalledLanguageSource({
+            langCode,
+            sourceType: archive.sourceType,
+            sourceUrl: archive.sourceUrl,
+            fileName: lang.fileName,
+            ...archive.headers,
+            updateAvailable: false,
+        });
 
-    return {
-        action: wasInstalled ? 'updated' : 'installed',
-    };
+        await rm(archive.archivePath, { force: true });
+        await rm(getArchiveTempPath(indexesDir, langCode, 'primary'), { force: true });
+        await rm(getArchiveTempPath(indexesDir, langCode, 'github'), { force: true });
+
+        log.info(`[language-pack] Installed language pack "${langCode}"`);
+
+        return {
+            action: wasInstalled ? 'updated' : 'installed',
+        };
+    } catch (error) {
+        if (existsSync(tmpDir)) {
+            await rm(tmpDir, { recursive: true, force: true });
+        }
+        throw error;
+    }
 }
 
 export async function deleteLanguagePack(langCode: string): Promise<void> {

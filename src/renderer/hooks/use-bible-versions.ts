@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { message } from 'antd';
+import { useTranslation } from 'react-i18next';
 import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
+import { getErrorMessage } from '@renderer/utils/functions';
 
 export interface BibleVersionState {
     versions: BibleVersionInfo[];
@@ -20,6 +23,7 @@ function invalidateCache() {
 }
 
 export function useBibleVersions(): BibleVersionState {
+    const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
@@ -67,7 +71,7 @@ export function useBibleVersions(): BibleVersionState {
 
     const handleDownload = useCallback((abbreviation: string) => {
         setDownloadProgress((prev) => ({ ...prev, [abbreviation]: 0 }));
-        window.api.bible.downloadVersion(abbreviation);
+        void window.api.bible.downloadVersion(abbreviation).catch(() => {});
     }, []);
 
     useEffect(() => {
@@ -82,11 +86,24 @@ export function useBibleVersions(): BibleVersionState {
             });
             refresh();
         });
+        const unsub3 = window.api.on.bibleDownloadFailed(({ abbreviation, error }) => {
+            setDownloadProgress((prev) => {
+                const next = { ...prev };
+                delete next[abbreviation];
+                return next;
+            });
+            message.error(
+                t('Erreur: {{error}}', {
+                    error: getErrorMessage(error, t('Le téléchargement a échoué.')),
+                }),
+            );
+        });
         return () => {
             unsub1();
             unsub2();
+            unsub3();
         };
-    }, [refresh]);
+    }, [refresh, t]);
 
     const { installed, downloadable } = useMemo(() => {
         const inst: BibleVersionInfo[] = [];
