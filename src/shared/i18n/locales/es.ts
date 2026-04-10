@@ -445,6 +445,8 @@ const es: Record<string, string> = {
         'El navegador no tiene voz para este idioma.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'No se puede verificar la compatibilidad del proveedor.',
+    'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
+        'No hay conexión a internet. Verifique su conexión e inténtelo de nuevo.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
         'La reproducción de audio falló. Verifique la configuración del proveedor.',
 
@@ -807,6 +809,8 @@ const es: Record<string, string> = {
     Renommer: 'Renombrar',
     Traduction: 'Traducción',
     'Texte copié': 'Texto copiado',
+    'Copier le texte sélectionné': 'Copiar el texto seleccionado',
+    'Impossible de copier le texte.': 'No se pudo copiar el texto.',
     'Sélectionnez du texte à souligner': 'Seleccione texto para resaltar',
     'Ajouter au sujet': 'Añadir al tema',
     'Ajouter à la note': 'Añadir a la nota',

@@ -11,6 +11,7 @@ import { useAppStore } from '@renderer/stores';
 import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
 import ChatToolResult from './chat-tool-result';
 import AiReferenceLink from './ai-reference-link';
+import SelectableMessageContent from './selectable-message-content';
 
 const { Text } = Typography;
 
@@ -135,6 +136,7 @@ const MessageBubble = memo(function MessageBubble({
 }) {
     const isUser = message.role === 'user';
     const providerLabel = useAiChatStore(selectActiveProviderLabel);
+    const providerTooltip = isUser ? '' : providerLabel;
 
     if (
         !isUser &&
@@ -156,8 +158,6 @@ const MessageBubble = memo(function MessageBubble({
         .filter(Boolean)
         .join(' ');
 
-    const providerTooltip = isUser ? '' : providerLabel;
-
     return (
         <motion.div
             key={message.id}
@@ -170,7 +170,7 @@ const MessageBubble = memo(function MessageBubble({
                 <div className={avatarClass}>{isUser ? <UserOutlined /> : <RobotOutlined />}</div>
             </Tooltip>
 
-            <div
+            <SelectableMessageContent
                 className={`ai-chat__bubble-content ai-chat__bubble-content--${isUser ? 'user' : 'assistant'}`}
             >
                 {!isUser && <ReasoningBlock messageId={message.id} />}
@@ -199,7 +199,7 @@ const MessageBubble = memo(function MessageBubble({
                 {isActive && message.toolResults.length > 0 ? (
                     <ToolResultsList results={message.toolResults} />
                 ) : null}
-            </div>
+            </SelectableMessageContent>
         </motion.div>
     );
 });

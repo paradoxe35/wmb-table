@@ -8,7 +8,7 @@ import { buildSermonReaderAgentPrompt, buildSermonReaderTaskPrompt } from './age
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
 
 const AGENT_NAME = 'readSermon';
-const MAX_STEPS = 18;
+const MAX_STEPS = 20;
 const MAX_OUTPUT_TOKENS = 2400;
 
 function resolveSermonReaderQuestion(input: {

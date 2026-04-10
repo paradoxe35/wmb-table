@@ -729,6 +729,11 @@ export interface LanguageInstalledEvent {
     action: LanguageInstallAction;
 }
 
+export interface LanguageInstallFailedEvent {
+    langCode: string;
+    error: string;
+}
+
 // ---------------------------------------------------------------------------
 // Tantivy Search
 // ---------------------------------------------------------------------------
@@ -814,6 +819,11 @@ export interface BibleDownloadProgress {
 
 export interface BibleDownloadedEvent {
     abbreviation: string;
+}
+
+export interface BibleDownloadFailedEvent {
+    abbreviation: string;
+    error: string;
 }
 
 // ---------------------------------------------------------------------------

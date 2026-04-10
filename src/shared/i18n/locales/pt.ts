@@ -447,6 +447,8 @@ const pt: Record<string, string> = {
         'O idioma do documento não corresponde ao idioma ativo ({{language}}). Altere o idioma nas configurações.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Não foi possível verificar a compatibilidade do provedor.',
+    'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
+        'Sem conexão com a internet. Verifique sua conexão e tente novamente.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
         'A leitura em voz alta falhou. Verifique a configuração do provedor.',
 
@@ -804,6 +806,8 @@ const pt: Record<string, string> = {
     Renommer: 'Renomear',
     Traduction: 'Tradução',
     'Texte copié': 'Texto copiado',
+    'Copier le texte sélectionné': 'Copiar o texto selecionado',
+    'Impossible de copier le texte.': 'Não foi possível copiar o texto.',
     'Sélectionnez du texte à souligner': 'Selecione um texto para destacar',
     'Ajouter au sujet': 'Adicionar ao assunto',
     'Ajouter à la note': 'Adicionar à nota',

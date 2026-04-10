@@ -445,6 +445,8 @@ const sw: Record<string, string> = {
         'Lugha ya waraka hailingani na lugha inayotumika ({{language}}). Badilisha lugha kwenye mipangilio.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Haiwezekani kuthibitisha uoanifu wa mtoa huduma.',
+    'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
+        'Hakuna muunganisho wa intaneti. Angalia muunganisho wako kisha ujaribu tena.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
         'Usomaji wa sauti umeshindwa. Angalia usanidi wa mtoa huduma.',
 
@@ -802,6 +804,8 @@ const sw: Record<string, string> = {
     Renommer: 'Badili jina',
     Traduction: 'Tafsiri',
     'Texte copié': 'Maandishi yamenakiliwa',
+    'Copier le texte sélectionné': 'Nakili maandishi yaliyochaguliwa',
+    'Impossible de copier le texte.': 'Imeshindikana kunakili maandishi.',
     'Sélectionnez du texte à souligner': 'Chagua maandishi ya kuangazia',
     'Ajouter au sujet': 'Ongeza kwenye mada',
     'Ajouter à la note': 'Ongeza kwenye kidokezo',

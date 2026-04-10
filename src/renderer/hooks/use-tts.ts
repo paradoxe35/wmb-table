@@ -4,6 +4,7 @@ import i18next from 'i18next';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
+import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
 import {
     type TtsHighlightMode,
     type TtsSegment,
@@ -252,10 +253,8 @@ function startPlaybackAtIndex(
     if (settings.activeProvider === 'browser') {
         playBrowserSegment(segments, startIndex, settings, actions, getStatus);
     } else {
-        window.api.tts.startPlayback(segments, language, startIndex).catch(() => {
-            message.error(
-                i18next.t('La lecture audio a échoué. Vérifiez la configuration du fournisseur.'),
-            );
+        window.api.tts.startPlayback(segments, language, startIndex).catch((error) => {
+            message.error(getTtsPlaybackErrorMessage(i18next.t, error));
             actions.reset();
         });
     }

@@ -445,6 +445,8 @@ const en: Record<string, string> = {
         'The document language does not match the active language ({{language}}). Change the language in settings.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Unable to verify provider compatibility.',
+    'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
+        'No internet connection. Check your connection and try again.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
         'Audio playback failed. Check the provider configuration.',
 
@@ -798,6 +800,8 @@ const en: Record<string, string> = {
     Renommer: 'Rename',
     Traduction: 'Translation',
     'Texte copié': 'Text copied',
+    'Copier le texte sélectionné': 'Copy selected text',
+    'Impossible de copier le texte.': 'Unable to copy the text.',
     'Sélectionnez du texte à souligner': 'Select text to highlight',
     'Ajouter au sujet': 'Add to subject',
     'Ajouter à la note': 'Add to note',

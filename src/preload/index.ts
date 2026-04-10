@@ -375,11 +375,17 @@ const api = {
         ) => onPush(PushChannels.languageDownloadProgress, cb),
         languageInstalled: (cb: (p: PushEventMap[typeof PushChannels.languageInstalled]) => void) =>
             onPush(PushChannels.languageInstalled, cb),
+        languageInstallFailed: (
+            cb: (p: PushEventMap[typeof PushChannels.languageInstallFailed]) => void,
+        ) => onPush(PushChannels.languageInstallFailed, cb),
         bibleDownloadProgress: (
             cb: (p: PushEventMap[typeof PushChannels.bibleDownloadProgress]) => void,
         ) => onPush(PushChannels.bibleDownloadProgress, cb),
         bibleDownloaded: (cb: (p: PushEventMap[typeof PushChannels.bibleDownloaded]) => void) =>
             onPush(PushChannels.bibleDownloaded, cb),
+        bibleDownloadFailed: (
+            cb: (p: PushEventMap[typeof PushChannels.bibleDownloadFailed]) => void,
+        ) => onPush(PushChannels.bibleDownloadFailed, cb),
         openSettings: (cb: (p: PushEventMap[typeof PushChannels.openSettings]) => void) =>
             onPush(PushChannels.openSettings, cb),
         ttsPlaybackState: (cb: (p: PushEventMap[typeof PushChannels.ttsPlaybackState]) => void) =>
