@@ -19,6 +19,12 @@ import {
     useSermonStore,
 } from '@renderer/stores';
 import { LANGUAGE_EVENT } from '@renderer/utils/events';
+import {
+    buildDownloadErrorMessage,
+    clearDownloadProgress,
+    startDownloadProgress,
+    updateDownloadProgress,
+} from '@renderer/lib/download-feedback';
 import type {
     DownloadableLanguage,
     InstalledLanguage,
@@ -26,7 +32,6 @@ import type {
     LanguageInstalledEvent,
 } from '@shared/types';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { getErrorMessage } from '@renderer/utils/functions';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 
@@ -333,15 +338,11 @@ export default function LibraryModal() {
 
     useEffect(() => {
         const unsub1 = window.api.on.languageDownloadProgress((p: LanguageDownloadProgress) => {
-            setDownloadProgress((prev) => ({ ...prev, [p.langCode]: p.percentage }));
+            setDownloadProgress((prev) => updateDownloadProgress(prev, p.langCode, p.percentage));
         });
         const unsub2 = window.api.on.languageInstalled(
             async ({ langCode, action }: LanguageInstalledEvent) => {
-                setDownloadProgress((prev) => {
-                    const next = { ...prev };
-                    delete next[langCode];
-                    return next;
-                });
+                setDownloadProgress((prev) => clearDownloadProgress(prev, langCode));
 
                 if (action === 'updated' && contentLanguage === langCode) {
                     try {
@@ -365,12 +366,8 @@ export default function LibraryModal() {
             },
         );
         const unsub3 = window.api.on.languageInstallFailed(({ langCode, error }) => {
-            setDownloadProgress((prev) => {
-                const next = { ...prev };
-                delete next[langCode];
-                return next;
-            });
-            message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(error)) }));
+            setDownloadProgress((prev) => clearDownloadProgress(prev, langCode));
+            message.error(buildDownloadErrorMessage(t, error));
         });
         return () => {
             unsub1();
@@ -399,7 +396,7 @@ export default function LibraryModal() {
     );
 
     const handleInstall = (langCode: string) => {
-        setDownloadProgress((prev) => ({ ...prev, [langCode]: 0 }));
+        setDownloadProgress((prev) => startDownloadProgress(prev, langCode));
         void window.api.languages.install(langCode).catch(() => {});
     };
 

@@ -2,8 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { message } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { BibleDownloadProgress, BibleDownloadedEvent, BibleVersionInfo } from '@shared/types';
+import {
+    buildDownloadErrorMessage,
+    clearDownloadProgress,
+    startDownloadProgress,
+    updateDownloadProgress,
+} from '@renderer/lib/download-feedback';
 import { useAppStore } from '@renderer/stores';
-import { getErrorMessage } from '@renderer/utils/functions';
 
 export interface BibleVersionState {
     versions: BibleVersionInfo[];
@@ -70,33 +75,23 @@ export function useBibleVersions(): BibleVersionState {
     );
 
     const handleDownload = useCallback((abbreviation: string) => {
-        setDownloadProgress((prev) => ({ ...prev, [abbreviation]: 0 }));
+        setDownloadProgress((prev) => startDownloadProgress(prev, abbreviation));
         void window.api.bible.downloadVersion(abbreviation).catch(() => {});
     }, []);
 
     useEffect(() => {
         const unsub1 = window.api.on.bibleDownloadProgress((p: BibleDownloadProgress) => {
-            setDownloadProgress((prev) => ({ ...prev, [p.abbreviation]: p.percentage }));
+            setDownloadProgress((prev) =>
+                updateDownloadProgress(prev, p.abbreviation, p.percentage),
+            );
         });
         const unsub2 = window.api.on.bibleDownloaded(({ abbreviation }: BibleDownloadedEvent) => {
-            setDownloadProgress((prev) => {
-                const next = { ...prev };
-                delete next[abbreviation];
-                return next;
-            });
+            setDownloadProgress((prev) => clearDownloadProgress(prev, abbreviation));
             refresh();
         });
         const unsub3 = window.api.on.bibleDownloadFailed(({ abbreviation, error }) => {
-            setDownloadProgress((prev) => {
-                const next = { ...prev };
-                delete next[abbreviation];
-                return next;
-            });
-            message.error(
-                t('Erreur: {{error}}', {
-                    error: getErrorMessage(error, t('Le téléchargement a échoué.')),
-                }),
-            );
+            setDownloadProgress((prev) => clearDownloadProgress(prev, abbreviation));
+            message.error(buildDownloadErrorMessage(t, error, 'Le téléchargement a échoué.'));
         });
         return () => {
             unsub1();
