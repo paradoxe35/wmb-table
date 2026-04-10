@@ -798,6 +798,8 @@ const en: Record<string, string> = {
     Renommer: 'Rename',
     Traduction: 'Translation',
     'Texte copié': 'Text copied',
+    'Copier le texte sélectionné': 'Copy selected text',
+    'Impossible de copier le texte.': 'Unable to copy the text.',
     'Sélectionnez du texte à souligner': 'Select text to highlight',
     'Ajouter au sujet': 'Add to subject',
     'Ajouter à la note': 'Add to note',

@@ -804,6 +804,8 @@ const pt: Record<string, string> = {
     Renommer: 'Renomear',
     Traduction: 'Tradução',
     'Texte copié': 'Texto copiado',
+    'Copier le texte sélectionné': 'Copiar o texto selecionado',
+    'Impossible de copier le texte.': 'Não foi possível copiar o texto.',
     'Sélectionnez du texte à souligner': 'Selecione um texto para destacar',
     'Ajouter au sujet': 'Adicionar ao assunto',
     'Ajouter à la note': 'Adicionar à nota',

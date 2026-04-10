@@ -802,6 +802,8 @@ const sw: Record<string, string> = {
     Renommer: 'Badili jina',
     Traduction: 'Tafsiri',
     'Texte copié': 'Maandishi yamenakiliwa',
+    'Copier le texte sélectionné': 'Nakili maandishi yaliyochaguliwa',
+    'Impossible de copier le texte.': 'Imeshindikana kunakili maandishi.',
     'Sélectionnez du texte à souligner': 'Chagua maandishi ya kuangazia',
     'Ajouter au sujet': 'Ongeza kwenye mada',
     'Ajouter à la note': 'Ongeza kwenye kidokezo',
