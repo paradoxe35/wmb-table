@@ -9,18 +9,19 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 const { Text } = Typography;
 type StreamingConversationMap = Readonly<Record<string, true>>;
+type RelativeTimeTranslate = (key: string, options?: { count?: number }) => string;
 
-function formatRelativeDate(isoDate: string, t: (key: string) => string): string {
+function formatRelativeDate(isoDate: string, t: RelativeTimeTranslate): string {
     const now = Date.now();
     const date = new Date(isoDate).getTime();
     const diffMs = now - date;
     const diffMin = Math.floor(diffMs / 60_000);
     if (diffMin < 1) return t('maintenant');
-    if (diffMin < 60) return `${diffMin} min`;
+    if (diffMin < 60) return t('{{count}} min', { count: diffMin });
     const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `${diffH}h`;
+    if (diffH < 24) return t('{{count}} h', { count: diffH });
     const diffD = Math.floor(diffH / 24);
-    if (diffD < 7) return `${diffD}j`;
+    if (diffD < 7) return t('{{count}} j', { count: diffD });
     return new Date(isoDate).toLocaleDateString();
 }
 

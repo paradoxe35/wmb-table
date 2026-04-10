@@ -6,8 +6,7 @@ import type { AiToolDefinition } from './types';
 
 const turndownService = new TurndownService();
 const htmlToMarkdown = (html: string) => {
-    // Convert HTML to markdown first to preserve some structure,
-    // then convert to plain text
+    // Convert HTML to markdown first to preserve some structure
     const markdown = turndownService.turndown(html);
     return markdown.replace(/\n+/g, '\n').trim();
 };
