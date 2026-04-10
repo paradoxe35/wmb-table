@@ -445,6 +445,8 @@ const en: Record<string, string> = {
         'The document language does not match the active language ({{language}}). Change the language in settings.',
     'Impossible de vérifier la compatibilité du fournisseur.':
         'Unable to verify provider compatibility.',
+    'Connexion internet indisponible. Vérifiez votre connexion et réessayez.':
+        'No internet connection. Check your connection and try again.',
     'La lecture audio a échoué. Vérifiez la configuration du fournisseur.':
         'Audio playback failed. Check the provider configuration.',
 

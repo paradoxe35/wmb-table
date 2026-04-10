@@ -5,6 +5,7 @@ import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
+import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
 import {
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
@@ -214,9 +215,7 @@ export function useTtsSetup(): void {
                 setPlaybackState(state);
             }
             if (state.status === 'error') {
-                message.error(
-                    t('La lecture audio a échoué. Vérifiez la configuration du fournisseur.'),
-                );
+                message.error(getTtsPlaybackErrorMessage(t, state.error));
             }
         });
     }, [markCompletedNaturally, setPlaybackState, t]);
