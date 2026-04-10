@@ -59,6 +59,7 @@ export function registerBibleHandlers(): void {
 
     registerHandler(BibleChannels.downloadVersion, async (event, abbreviation) => {
         const win = BrowserWindow.fromWebContents(event.sender);
+
         try {
             await bibleService.downloadBibleVersion(abbreviation, (percentage) => {
                 if (win && !win.isDestroyed()) {
@@ -68,6 +69,19 @@ export function registerBibleHandlers(): void {
                     });
                 }
             });
+
+            const versionToActivate = bibleService.getBibleVersionToAutoActivateAfterDownload(
+                configRepo.getContentLanguage(),
+                abbreviation,
+            );
+            if (versionToActivate) {
+                const activeVersion = bibleService.switchBibleVersion(
+                    versionToActivate.abbreviation,
+                );
+                refreshBibleDrizzle();
+                configRepo.setActiveBibleVersionAbbreviation(activeVersion?.abbreviation ?? null);
+            }
+
             if (win && !win.isDestroyed()) {
                 sendToRenderer(win, PushChannels.bibleDownloaded, { abbreviation });
             }

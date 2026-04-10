@@ -20,11 +20,20 @@ export interface BibleVersionState {
     handleDownload: (abbreviation: string) => void;
 }
 
-let cachedVersions: BibleVersionInfo[] = [];
-let cachedForLanguage: string | null = null;
+let remoteRefreshPromise: Promise<void> | null = null;
 
-function invalidateCache() {
-    cachedVersions = [];
+function refreshRemoteBibleIndex(): Promise<void> {
+    if (!remoteRefreshPromise) {
+        remoteRefreshPromise = window.api.bible
+            .refreshIndex()
+            .then(() => undefined)
+            .catch(() => undefined)
+            .finally(() => {
+                remoteRefreshPromise = null;
+            });
+    }
+
+    return remoteRefreshPromise;
 }
 
 export function useBibleVersions(): BibleVersionState {
@@ -33,35 +42,49 @@ export function useBibleVersions(): BibleVersionState {
     const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
     const setActiveBibleVersion = useAppStore((s) => s.setActiveBibleVersion);
     const activeVersion = activeBibleVersion?.abbreviation;
-    const [versions, setVersions] = useState<BibleVersionInfo[]>(cachedVersions);
+    const [versions, setVersions] = useState<BibleVersionInfo[]>([]);
     const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
-    const refreshGenerationRef = useRef(0);
+    const requestIdRef = useRef(0);
+    const contentLanguageRef = useRef<string | null>(contentLanguage);
+    contentLanguageRef.current = contentLanguage;
 
-    const refresh = useCallback(async () => {
-        const generation = ++refreshGenerationRef.current;
-        const nextVersions = await window.api.bible.getVersions();
-        if (generation !== refreshGenerationRef.current) {
-            return;
-        }
-        cachedVersions = nextVersions;
-        cachedForLanguage = contentLanguage;
-        setVersions(nextVersions);
-    }, [contentLanguage]);
+    const refresh = useCallback(
+        async (expectedLanguage: string | null): Promise<BibleVersionInfo[] | null> => {
+            const requestId = ++requestIdRef.current;
+            if (!expectedLanguage) {
+                if (
+                    requestId === requestIdRef.current &&
+                    contentLanguageRef.current === expectedLanguage
+                ) {
+                    setVersions([]);
+                }
+                return [];
+            }
+
+            const nextVersions = await window.api.bible.getVersions();
+            if (
+                requestId !== requestIdRef.current ||
+                contentLanguageRef.current !== expectedLanguage
+            ) {
+                return null;
+            }
+            setVersions(nextVersions);
+            return nextVersions;
+        },
+        [],
+    );
 
     useEffect(() => {
-        refreshGenerationRef.current += 1;
-
-        if (contentLanguage !== cachedForLanguage) {
-            invalidateCache();
+        const expectedLanguage = contentLanguage;
+        if (!expectedLanguage) {
             setVersions([]);
-        }
-        if (cachedVersions.length > 0) {
             return;
         }
-        window.api.bible
-            .refreshIndex()
-            .then(() => refresh())
-            .catch(() => refresh());
+
+        void refresh(expectedLanguage);
+        void refreshRemoteBibleIndex().then(() => {
+            void refresh(expectedLanguage);
+        });
     }, [refresh, contentLanguage]);
 
     const handleSwitch = useCallback(
@@ -69,7 +92,7 @@ export function useBibleVersions(): BibleVersionState {
             await window.api.bible.switchVersion(abbreviation);
             const v = await window.api.bible.getActiveVersion();
             setActiveBibleVersion(v);
-            refresh();
+            void refresh(contentLanguageRef.current);
         },
         [refresh, setActiveBibleVersion],
     );
@@ -85,10 +108,19 @@ export function useBibleVersions(): BibleVersionState {
                 updateDownloadProgress(prev, p.abbreviation, p.percentage),
             );
         });
-        const unsub2 = window.api.on.bibleDownloaded(({ abbreviation }: BibleDownloadedEvent) => {
-            setDownloadProgress((prev) => clearDownloadProgress(prev, abbreviation));
-            refresh();
-        });
+        const unsub2 = window.api.on.bibleDownloaded(
+            async ({ abbreviation }: BibleDownloadedEvent) => {
+                setDownloadProgress((prev) => clearDownloadProgress(prev, abbreviation));
+                const expectedLanguage = contentLanguageRef.current;
+                const [nextActiveVersion] = await Promise.all([
+                    window.api.bible.getActiveVersion(),
+                    refresh(expectedLanguage),
+                ]);
+                if (contentLanguageRef.current === expectedLanguage) {
+                    setActiveBibleVersion(nextActiveVersion);
+                }
+            },
+        );
         const unsub3 = window.api.on.bibleDownloadFailed(({ abbreviation, error }) => {
             setDownloadProgress((prev) => clearDownloadProgress(prev, abbreviation));
             message.error(buildDownloadErrorMessage(t, error, 'Le téléchargement a échoué.'));
@@ -98,7 +130,7 @@ export function useBibleVersions(): BibleVersionState {
             unsub2();
             unsub3();
         };
-    }, [refresh, t]);
+    }, [refresh, setActiveBibleVersion, t]);
 
     const { installed, downloadable } = useMemo(() => {
         const inst: BibleVersionInfo[] = [];

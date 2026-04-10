@@ -95,6 +95,26 @@ function mergeIndexes(local: BibleVersion[], remote: BibleVersion[]): BibleVersi
     return merged;
 }
 
+function getVersionsForLanguageFromIndex(index: BibleVersion[], langCode: string): BibleVersion[] {
+    return index.filter((version) => version.langCode === langCode).map(normalizeBibleVersion);
+}
+
+function dedupeBibleVersions(versions: BibleVersion[]): BibleVersion[] {
+    const seen = new Set<string>();
+    const deduped: BibleVersion[] = [];
+
+    for (const version of versions) {
+        const normalized = normalizeBibleVersion(version);
+        if (seen.has(normalized.abbreviation)) {
+            continue;
+        }
+        seen.add(normalized.abbreviation);
+        deduped.push(normalized);
+    }
+
+    return deduped;
+}
+
 export function loadBibleIndex(): BibleVersion[] {
     if (bibleIndex) return bibleIndex;
 
@@ -156,26 +176,89 @@ export function getBibleVersionsForLanguage(langCode: string): BibleVersion[] {
         .map(normalizeBibleVersion);
 }
 
-export function getBibleVersionsForResolvedLanguage(langCode: string): BibleVersion[] {
-    const requestedVersions = getBibleVersionsForLanguage(langCode);
+export function resolveBibleVersionsForDisplay(
+    index: BibleVersion[],
+    langCode: string,
+    isAvailable: (version: BibleVersion) => boolean,
+): BibleVersion[] {
+    const requestedVersions = getVersionsForLanguageFromIndex(index, langCode);
+    if (requestedVersions.some(isAvailable)) {
+        return requestedVersions;
+    }
+
+    const fallbackAvailableVersion =
+        (langCode !== 'en'
+            ? getVersionsForLanguageFromIndex(index, 'en').find(isAvailable)
+            : undefined) ?? index.find(isAvailable);
+
+    if (fallbackAvailableVersion) {
+        const fallbackAvailableVersions = getVersionsForLanguageFromIndex(
+            index,
+            fallbackAvailableVersion.langCode,
+        ).filter(isAvailable);
+        if (requestedVersions.length > 0 && fallbackAvailableVersion.langCode !== langCode) {
+            return dedupeBibleVersions([...fallbackAvailableVersions, ...requestedVersions]);
+        }
+        return fallbackAvailableVersions;
+    }
+
     if (requestedVersions.length > 0) {
         return requestedVersions;
     }
 
     if (langCode !== 'en') {
-        const englishVersions = getBibleVersionsForLanguage('en');
+        const englishVersions = getVersionsForLanguageFromIndex(index, 'en');
         if (englishVersions.length > 0) {
             return englishVersions;
         }
     }
 
-    const [firstVersion] = loadBibleIndex();
-    return firstVersion ? getBibleVersionsForLanguage(firstVersion.langCode) : [];
+    const [firstVersion] = index;
+    return firstVersion ? getVersionsForLanguageFromIndex(index, firstVersion.langCode) : [];
+}
+
+export function getBibleVersionsForResolvedLanguage(langCode: string): BibleVersion[] {
+    return resolveBibleVersionsForDisplay(loadBibleIndex(), langCode, isBibleAvailable);
 }
 
 export function getDefaultBibleVersion(langCode: string): BibleVersion | null {
     const versions = getBibleVersionsForLanguage(langCode).filter(isBibleAvailable);
     return versions.length > 0 ? versions[0] : null;
+}
+
+export function hasAvailableBibleVersionForLanguage(langCode: string): boolean {
+    return getBibleVersionsForLanguage(langCode).some(isBibleAvailable);
+}
+
+export function getAvailableBibleVersionsForLanguage(langCode: string): BibleVersion[] {
+    return getBibleVersionsForLanguage(langCode).filter(isBibleAvailable);
+}
+
+export function getBibleVersionToAutoActivateAfterDownload(
+    langCode: string | null,
+    abbreviation: string,
+): BibleVersion | null {
+    if (!langCode) {
+        return null;
+    }
+
+    const downloadedVersion = findBibleVersion(abbreviation);
+    if (
+        !downloadedVersion ||
+        downloadedVersion.langCode !== langCode ||
+        !isBibleAvailable(downloadedVersion)
+    ) {
+        return null;
+    }
+
+    const availableVersions = getAvailableBibleVersionsForLanguage(langCode);
+    if (availableVersions.length !== 1) {
+        return null;
+    }
+
+    return availableVersions[0].abbreviation === downloadedVersion.abbreviation
+        ? downloadedVersion
+        : null;
 }
 
 /**

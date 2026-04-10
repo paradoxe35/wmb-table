@@ -4,6 +4,8 @@ import { BibleChannels, PushChannels } from '@shared/ipc.types';
 const registerHandlerMock = vi.fn();
 const sendToRendererMock = vi.fn();
 const downloadBibleVersionMock = vi.fn();
+const getBibleVersionToAutoActivateAfterDownloadMock = vi.fn();
+const switchBibleVersionMock = vi.fn();
 
 vi.mock('@main/ipc/register', () => ({
     registerHandler: registerHandlerMock,
@@ -12,6 +14,8 @@ vi.mock('@main/ipc/register', () => ({
 
 vi.mock('@main/services/bible.service', () => ({
     downloadBibleVersion: downloadBibleVersionMock,
+    getBibleVersionToAutoActivateAfterDownload: getBibleVersionToAutoActivateAfterDownloadMock,
+    switchBibleVersion: switchBibleVersionMock,
 }));
 
 vi.mock('@main/database/repositories/bible.repository', () => ({
@@ -38,6 +42,9 @@ vi.mock('electron', () => ({
 describe('registerBibleHandlers', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        downloadBibleVersionMock.mockReset();
+        getBibleVersionToAutoActivateAfterDownloadMock.mockReset();
+        switchBibleVersionMock.mockReset();
     });
 
     it('pushes progress and completion for successful downloads', async () => {
@@ -94,6 +101,44 @@ describe('registerBibleHandlers', () => {
         expect(sendToRendererMock).toHaveBeenCalledWith(win, PushChannels.bibleDownloadFailed, {
             abbreviation: 'en-kjv',
             error: 'network down',
+        });
+    });
+
+    it('auto-selects the first downloaded Bible for the current content language', async () => {
+        const win = { isDestroyed: vi.fn(() => false) };
+        const { BrowserWindow } = await import('electron');
+        const configRepo = await import('@main/database/repositories/config.repository');
+        const database = await import('@main/database/index');
+
+        vi.mocked(BrowserWindow.fromWebContents).mockReturnValue(win as never);
+        vi.mocked(configRepo.getContentLanguage).mockReturnValue('es');
+        getBibleVersionToAutoActivateAfterDownloadMock.mockReturnValue({
+            abbreviation: 'es-rv',
+            langCode: 'es',
+            name: 'RV',
+            fileName: 'es-rv.sqlite',
+            type: 'remote',
+        });
+        switchBibleVersionMock.mockReturnValue({
+            abbreviation: 'es-rv',
+        });
+
+        const { registerBibleHandlers } = await import('@main/ipc/bible.ipc');
+        registerBibleHandlers();
+
+        const handler = registerHandlerMock.mock.calls.find(
+            ([channel]) => channel === BibleChannels.downloadVersion,
+        )?.[1];
+        expect(handler).toBeTypeOf('function');
+
+        await handler({ sender: {} }, 'es-rv');
+
+        expect(getBibleVersionToAutoActivateAfterDownloadMock).toHaveBeenCalledWith('es', 'es-rv');
+        expect(switchBibleVersionMock).toHaveBeenCalledWith('es-rv');
+        expect(database.refreshBibleDrizzle).toHaveBeenCalled();
+        expect(configRepo.setActiveBibleVersionAbbreviation).toHaveBeenCalledWith('es-rv');
+        expect(sendToRendererMock).toHaveBeenCalledWith(win, PushChannels.bibleDownloaded, {
+            abbreviation: 'es-rv',
         });
     });
 });
