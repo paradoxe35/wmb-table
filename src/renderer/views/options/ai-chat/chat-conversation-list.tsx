@@ -6,24 +6,10 @@ import type { AiConversation } from '@shared/ai.types';
 import type { PdfExportResult } from '@shared/ipc.types';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
+import RelativeTime from '@renderer/components/relative-time';
 
 const { Text } = Typography;
 type StreamingConversationMap = Readonly<Record<string, true>>;
-type RelativeTimeTranslate = (key: string, options?: { count?: number }) => string;
-
-function formatRelativeDate(isoDate: string, t: RelativeTimeTranslate): string {
-    const now = Date.now();
-    const date = new Date(isoDate).getTime();
-    const diffMs = now - date;
-    const diffMin = Math.floor(diffMs / 60_000);
-    if (diffMin < 1) return t('maintenant');
-    if (diffMin < 60) return t('{{count}} min', { count: diffMin });
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return t('{{count}} h', { count: diffH });
-    const diffD = Math.floor(diffH / 24);
-    if (diffD < 7) return t('{{count}} j', { count: diffD });
-    return new Date(isoDate).toLocaleDateString();
-}
 
 const ConversationListItem = memo(function ConversationListItem({
     conversation,
@@ -176,7 +162,7 @@ const ConversationListItem = memo(function ConversationListItem({
                     {conversation.title || t('Conversation')}
                 </Text>
                 <Text type="secondary" className="ai-chat__conv-date">
-                    {formatRelativeDate(conversation.updatedAt, t)}
+                    <RelativeTime date={conversation.updatedAt} />
                 </Text>
             </div>
             <div

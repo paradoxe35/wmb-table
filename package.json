@@ -80,6 +80,7 @@
         "react-dom": "^19.2.4",
         "react-i18next": "^16.6.6",
         "react-markdown": "^10.1.0",
+        "react-timeago": "^8.3.0",
         "react-virtuoso": "^4.18.4",
         "remark-gfm": "^4.0.1",
         "sentencex": "^1.0.17",
