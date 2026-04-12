@@ -106,6 +106,9 @@ importers:
             react-markdown:
                 specifier: ^10.1.0
                 version: 10.1.0(@types/react@19.2.14)(react@19.2.4)
+            react-timeago:
+                specifier: ^8.3.0
+                version: 8.3.0(react@19.2.4)
             react-virtuoso:
                 specifier: ^4.18.4
                 version: 4.18.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -7748,6 +7751,14 @@ packages:
             }
         engines: { node: '>=0.10.0' }
 
+    react-timeago@8.3.0:
+        resolution:
+            {
+                integrity: sha512-BeR0hj/5qqTc2+zxzBSQZMky6MmqwOtKseU3CSmcjKR5uXerej2QY34v2d+cdz11PoeVfAdWLX+qjM/UdZkUUg==,
+            }
+        peerDependencies:
+            react: ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
     react-virtuoso@4.18.4:
         resolution:
             {
@@ -14520,6 +14531,10 @@ snapshots:
             - supports-color
 
     react-refresh@0.18.0: {}
+
+    react-timeago@8.3.0(react@19.2.4):
+        dependencies:
+            react: 19.2.4
 
     react-virtuoso@4.18.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
         dependencies:
