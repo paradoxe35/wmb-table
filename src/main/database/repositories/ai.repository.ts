@@ -359,6 +359,7 @@ export function createMessage(input: {
 export function updateMessage(
     messageId: string,
     partial: Pick<Partial<AiMessage>, 'content' | 'toolCalls' | 'toolResults'>,
+    options?: { touchConversation?: boolean },
 ): AiMessage {
     const current = getMessage(messageId);
     if (!current) {
@@ -375,7 +376,10 @@ export function updateMessage(
         .where(eq(aiMessages.id, messageId))
         .run();
 
-    touchConversation(current.conversationId);
+    if (options?.touchConversation !== false) {
+        touchConversation(current.conversationId);
+    }
+
     return getMessage(messageId)!;
 }
 
@@ -396,12 +400,10 @@ export function appendAssistantContent(messageId: string, delta: string): void {
         })
         .where(eq(aiMessages.id, messageId))
         .run();
-
-    touchConversation(row.conversationId);
 }
 
 export function setAssistantToolCalls(messageId: string, toolCalls: AiToolCall[]): AiMessage {
-    return updateMessage(messageId, { toolCalls });
+    return updateMessage(messageId, { toolCalls }, { touchConversation: false });
 }
 
 export function addAssistantToolResult(messageId: string, toolResult: AiToolResult): AiMessage {
@@ -409,7 +411,11 @@ export function addAssistantToolResult(messageId: string, toolResult: AiToolResu
     if (!current) {
         throw new Error(`AI message not found: ${messageId}`);
     }
-    return updateMessage(messageId, { toolResults: [...current.toolResults, toolResult] });
+    return updateMessage(
+        messageId,
+        { toolResults: [...current.toolResults, toolResult] },
+        { touchConversation: false },
+    );
 }
 
 export function deleteMessage(messageId: string): void {
