@@ -10,18 +10,17 @@ function createStubTranslator(): TFunction {
 describe('formatRelativeTimeLabel', () => {
     const t = createStubTranslator();
 
-    it('uses now for the first few seconds', () => {
-        expect(formatRelativeTimeLabel(t, 4, 'second')).toBe('maintenant');
-    });
-
-    it('formats short translated units', () => {
-        expect(formatRelativeTimeLabel(t, 12, 'second')).toBe('12s');
-        expect(formatRelativeTimeLabel(t, 5, 'minute')).toBe('5min');
-        expect(formatRelativeTimeLabel(t, 2, 'hour')).toBe('2h');
-        expect(formatRelativeTimeLabel(t, 3, 'day')).toBe('3j');
-        expect(formatRelativeTimeLabel(t, 1, 'week')).toBe('1sem');
-        expect(formatRelativeTimeLabel(t, 7, 'month')).toBe('7mois');
-        expect(formatRelativeTimeLabel(t, 2, 'year')).toBe('2a');
+    it('formats plain relative labels', () => {
+        expect(formatRelativeTimeLabel(t, 4, 'second')).toBe("moins d'une minute");
+        expect(formatRelativeTimeLabel(t, 1, 'minute')).toBe('environ une minute');
+        expect(formatRelativeTimeLabel(t, 5, 'minute')).toBe('5 minutes');
+        expect(formatRelativeTimeLabel(t, 1, 'hour')).toBe('environ une heure');
+        expect(formatRelativeTimeLabel(t, 2, 'hour')).toBe('environ 2 heures');
+        expect(formatRelativeTimeLabel(t, 1, 'day')).toBe('un jour');
+        expect(formatRelativeTimeLabel(t, 3, 'day')).toBe('3 jours');
+        expect(formatRelativeTimeLabel(t, 1, 'week')).toBe('une semaine');
+        expect(formatRelativeTimeLabel(t, 7, 'month')).toBe('7 mois');
+        expect(formatRelativeTimeLabel(t, 2, 'year')).toBe('2 ans');
     });
 });
 

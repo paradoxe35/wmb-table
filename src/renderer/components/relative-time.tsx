@@ -18,5 +18,13 @@ export default memo(function RelativeTime({ date, title, ...props }: RelativeTim
         [date, i18n.language, i18n.resolvedLanguage, title],
     );
 
-    return <TimeAgo date={date} formatter={formatter} title={resolvedTitle} {...props} />;
+    return (
+        <TimeAgo
+            date={date}
+            formatter={formatter}
+            minPeriod={60}
+            title={resolvedTitle}
+            {...props}
+        />
+    );
 });
