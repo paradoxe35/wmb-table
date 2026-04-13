@@ -144,6 +144,13 @@ export class TtsAudioPlayer {
         });
     }
 
+    setRate(rate: number): void {
+        this.currentRate = rate;
+        if (this.audio) {
+            this.audio.playbackRate = rate;
+        }
+    }
+
     stop(): void {
         this.stopSource();
         this.isPlaying = false;
