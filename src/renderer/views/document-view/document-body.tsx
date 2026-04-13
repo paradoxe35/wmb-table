@@ -37,21 +37,24 @@ export default function DocumentBody({
     );
     const readingMode = useAppStore((s) => s.readingMode);
 
-    // Preserve visible paragraph across reading mode toggles.
-    // Ratio drifts due to line-wrapping changes; anchoring to a paragraph is exact.
+    // Preserve the active TTS paragraph, or the first visible paragraph, across
+    // layout shifts such as reading mode toggles and zoom changes.
     const anchorRef = useRef<{ index: string; offset: number } | null>(null);
     if (containerRef.current) {
         const el = containerRef.current;
         const containerTop = el.getBoundingClientRect().top;
-        const paragraphs = el.querySelectorAll<HTMLElement>('[data-paragraph-index]');
-        for (const p of paragraphs) {
-            if (p.getBoundingClientRect().bottom > containerTop) {
-                anchorRef.current = {
-                    index: p.dataset.paragraphIndex!,
-                    offset: p.getBoundingClientRect().top - containerTop,
-                };
-                break;
-            }
+
+        const anchorParagraph =
+            el.querySelector<HTMLElement>('.tts-active-paragraph[data-paragraph-index]') ??
+            Array.from(el.querySelectorAll<HTMLElement>('[data-paragraph-index]')).find(
+                (p) => p.getBoundingClientRect().bottom > containerTop,
+            );
+
+        if (anchorParagraph?.dataset.paragraphIndex) {
+            anchorRef.current = {
+                index: anchorParagraph.dataset.paragraphIndex,
+                offset: anchorParagraph.getBoundingClientRect().top - containerTop,
+            };
         }
     }
     useLayoutEffect(() => {
@@ -66,7 +69,7 @@ export default function DocumentBody({
             el.scrollTop += targetTop - containerTop - anchorRef.current.offset;
         }
         anchorRef.current = null;
-    }, [readingMode]);
+    }, [readingMode, zoom]);
 
     const onContextMenu = useCallback(
         (e: React.MouseEvent) => {
