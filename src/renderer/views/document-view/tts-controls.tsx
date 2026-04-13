@@ -13,6 +13,7 @@ import type { SearchHighlightState } from './hooks';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
 import { useTtsStore } from '@renderer/stores/tts.store';
+import { useAppStore } from '@renderer/stores';
 
 // ── Shared TTS controls interface ──
 
@@ -185,13 +186,26 @@ export function TtsParagraph({
     const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentKey);
     const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
+    const mainView = useAppStore((s) => s.mainView);
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (ttsHighlight.isActive && autoScroll) {
-            containerRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+        if (!ttsHighlight.isActive || !autoScroll || mainView !== 'document') {
+            return;
         }
-    }, [ttsHighlight.isActive, autoScroll]);
+
+        // When returning from options, the document panel was display:none.
+        // Wait for it to be visible and laid out again before re-centering.
+        let frameId = 0;
+        const alignToCurrentTtsSegment = () => {
+            frameId = requestAnimationFrame(() => {
+                containerRef.current?.scrollIntoView({ behavior: 'instant', block: 'center' });
+            });
+        };
+
+        alignToCurrentTtsSegment();
+        return () => cancelAnimationFrame(frameId);
+    }, [ttsHighlight.isActive, autoScroll, mainView]);
 
     const readFromHereLabel = t("Lire à partir d'ici");
     const tooltip = canSpeak
