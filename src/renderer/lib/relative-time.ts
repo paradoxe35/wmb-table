@@ -4,23 +4,21 @@ import type { Unit } from 'react-timeago';
 function formatRelativeTimeValue(t: TFunction, value: number, unit: Unit): string {
     switch (unit) {
         case 'second':
-            return t("moins d'une minute");
+            return t('maintenant');
         case 'minute':
-            return value <= 1 ? t('environ une minute') : t('{{count}} minutes', { count: value });
+            return t('{{count}}min', { count: value });
         case 'hour':
-            return value <= 1
-                ? t('environ une heure')
-                : t('environ {{count}} heures', { count: value });
+            return t('{{count}}h', { count: value });
         case 'day':
-            return value <= 1 ? t('un jour') : t('{{count}} jours', { count: value });
+            return t('{{count}}j', { count: value });
         case 'week':
-            return value <= 1 ? t('une semaine') : t('{{count}} semaines', { count: value });
+            return t('{{count}}sem', { count: value });
         case 'month':
-            return value <= 1 ? t('environ un mois') : t('{{count}} mois', { count: value });
+            return t('{{count}}mois', { count: value });
         case 'year':
-            return value <= 1 ? t('environ un an') : t('{{count}} ans', { count: value });
+            return t('{{count}}a', { count: value });
         default:
-            return t('{{count}} minutes', { count: value });
+            return t('{{count}}min', { count: value });
     }
 }
 
