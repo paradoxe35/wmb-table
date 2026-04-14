@@ -337,7 +337,8 @@ export default function ChatMessageList({
                             <Spin indicator={<LoadingOutlined spin />} size="small" />
                         </div>
                     ) : null}
-                    {messages.length === 0 && !hasQueuedMessages && !loading ? (
+                    {(!conversationId && !loading) ||
+                    (messages.length === 0 && !hasQueuedMessages && !loading) ? (
                         <EmptyChat onQuickStart={onQuickStart} />
                     ) : (
                         <AnimatePresence initial={false}>

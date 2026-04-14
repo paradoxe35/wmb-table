@@ -216,6 +216,19 @@ function moveConversationRun(
     return nextRuns;
 }
 
+function resolvePersistedActiveConversationId(
+    conversations: AiConversation[],
+    activeConversationId: string | null,
+): string | null {
+    if (!activeConversationId) {
+        return null;
+    }
+
+    return conversations.some((conversation) => conversation.id === activeConversationId)
+        ? activeConversationId
+        : null;
+}
+
 let listenersBound = false;
 
 interface AiChatState {
@@ -551,14 +564,15 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
     loadConversations: async () => {
         const conversations = await window.api.ai.getConversations();
-        const activeConversationId = get().activeConversationId ?? conversations[0]?.id ?? null;
+        const activeConversationId = resolvePersistedActiveConversationId(
+            conversations,
+            get().activeConversationId,
+        );
 
-        set({ conversations });
+        set({ conversations, activeConversationId });
 
         if (activeConversationId) {
             await get().selectConversation(activeConversationId);
-        } else {
-            set({ activeConversationId: null });
         }
     },
 
@@ -738,7 +752,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             };
         });
 
-        const nextConversationId = get().activeConversationId ?? remaining[0]?.id ?? null;
+        const nextConversationId = resolvePersistedActiveConversationId(
+            remaining,
+            get().activeConversationId,
+        );
         if (nextConversationId) {
             await get().selectConversation(nextConversationId);
         }
