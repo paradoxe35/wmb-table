@@ -68,28 +68,31 @@ export const MIN_MAX_TABS = 5;
 export const MAX_MAX_TABS = 50;
 
 // ── UI language ──
-export type UiLanguage = 'fr' | 'en' | 'es' | 'pt' | 'sw';
-export type UiLanguagePreference = 'auto' | UiLanguage;
-const FALLBACK_UI_LANGUAGE: UiLanguage = 'fr';
-
-export const UI_LANGUAGE_OPTIONS: { value: UiLanguagePreference; label: string }[] = [
+export const UI_LANGUAGE_OPTIONS = [
     { value: 'auto', label: 'Automatique' },
     { value: 'fr', label: 'Français' },
     { value: 'en', label: 'English' },
     { value: 'es', label: 'Español' },
     { value: 'pt', label: 'Português' },
     { value: 'sw', label: 'Kiswahili' },
-];
+] as const;
 
-export const TEXT_PART_LANGUAGE_OPTIONS: { title: string; languageCode: UiLanguage }[] =
-    UI_LANGUAGE_OPTIONS.filter(
-        (option): option is { value: UiLanguage; label: string } => option.value !== 'auto',
-    ).map((option) => ({
-        title: option.label,
-        languageCode: option.value,
-    }));
+type UIOptions = typeof UI_LANGUAGE_OPTIONS;
 
-const UI_LANGUAGE_CODES = new Set<string>(['fr', 'en', 'es', 'pt', 'sw']);
+export type UiLanguage = Exclude<UIOptions[number]['value'], 'auto'>;
+export type UiLanguagePreference = UIOptions[number]['value'];
+const FALLBACK_UI_LANGUAGE: UiLanguage = 'fr';
+
+export const TEXT_PART_LANGUAGE_OPTIONS = UI_LANGUAGE_OPTIONS.filter(
+    (option) => option.value !== 'auto',
+).map((option) => ({
+    title: option.label,
+    languageCode: option.value,
+}));
+
+const UI_LANGUAGE_CODES = new Set(
+    UI_LANGUAGE_OPTIONS.map((option) => option.value).filter((value) => value !== 'auto'),
+);
 
 /**
  * Resolve the effective UI language.
@@ -104,7 +107,7 @@ export function resolveUiLanguage(
         return uiPreference;
     }
     // Auto mode: follow content language if it's a supported UI language
-    if (contentLanguage && UI_LANGUAGE_CODES.has(contentLanguage)) {
+    if (contentLanguage && UI_LANGUAGE_CODES.has(contentLanguage as UiLanguage)) {
         return contentLanguage as UiLanguage;
     }
     return FALLBACK_UI_LANGUAGE;
