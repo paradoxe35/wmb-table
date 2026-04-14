@@ -498,6 +498,25 @@
     color: var(--ant-color-text-quaternary);
 }
 
+.ai-chat__bubble-actions {
+    display: flex;
+    margin-top: 6px;
+}
+
+.ai-chat__bubble-actions--user {
+    justify-content: flex-end;
+}
+
+.ai-chat__retry-button.ant-btn {
+    color: color-mix(in srgb, #fff 84%, transparent);
+}
+
+.ai-chat__retry-button.ant-btn:hover,
+.ai-chat__retry-button.ant-btn:focus-visible {
+    color: #fff;
+    background: color-mix(in srgb, #fff 14%, transparent);
+}
+
 .ai-chat__tool-results {
     display: flex;
     flex-wrap: wrap;

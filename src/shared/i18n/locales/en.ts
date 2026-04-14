@@ -210,11 +210,15 @@ const en: Record<string, string> = {
     'Mis à jour le': 'Updated on',
     'Exporté le': 'Exported on',
     'Réponse sans texte': 'Response without text',
+    Réessayer: 'Retry',
     'Conversation introuvable.': 'Conversation not found.',
     'Supprimer cette conversation ?': 'Delete this conversation?',
     'Supprimer toutes les conversations ?': 'Delete all conversations?',
     "Vider l'historique": 'Clear history',
     'Le chargement des anciens messages a échoué.': 'Loading older messages failed.',
+    'La relance de la réponse a échoué.': 'Retrying the response failed.',
+    'La relance est disponible uniquement pour le dernier message utilisateur.':
+        'Retry is only available for the last user message.',
 
     // ── AI tool results ──
     'Recherche de sermons': 'Sermon search',

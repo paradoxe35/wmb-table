@@ -71,6 +71,8 @@ import type {
     AiConversation,
     AiModelDownloadProgress,
     AiModelScanResult,
+    AiRetryMessageRequest,
+    AiRetryMessageResult,
     AiProviderTestResult,
     AiRemoteModel,
     AiProviderDefinition,
@@ -269,6 +271,7 @@ export const AiChannels = {
     clearConversations: 'ai:clearConversations',
     getMessagesPage: 'ai:getMessagesPage',
     sendMessage: 'ai:sendMessage',
+    retryMessage: 'ai:retryMessage',
     stopGeneration: 'ai:stopGeneration',
     scanLocalModels: 'ai:scanLocalModels',
     testProvider: 'ai:testProvider',
@@ -582,6 +585,7 @@ export interface InvokeChannelMap {
         return: AiMessageHistoryPage;
     };
     [AiChannels.sendMessage]: { args: [AiSendMessageRequest]; return: AiSendMessageResult };
+    [AiChannels.retryMessage]: { args: [AiRetryMessageRequest]; return: AiRetryMessageResult };
     [AiChannels.stopGeneration]: { args: [string]; return: void };
     [AiChannels.scanLocalModels]: { args: []; return: AiModelScanResult };
     [AiChannels.testProvider]: {

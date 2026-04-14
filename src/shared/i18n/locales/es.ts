@@ -213,10 +213,14 @@ const es: Record<string, string> = {
     'Mis à jour le': 'Actualizado el',
     'Exporté le': 'Exportado el',
     'Réponse sans texte': 'Respuesta sin texto',
+    Réessayer: 'Reintentar',
     'Conversation introuvable.': 'Conversación no encontrada.',
     'Supprimer cette conversation ?': '¿Eliminar esta conversación?',
     'Supprimer toutes les conversations ?': '¿Eliminar todas las conversaciones?',
     "Vider l'historique": 'Vaciar historial',
+    'La relance de la réponse a échoué.': 'No se pudo reintentar la respuesta.',
+    'La relance est disponible uniquement pour le dernier message utilisateur.':
+        'Solo se puede reintentar el último mensaje del usuario.',
 
     // ── AI tool results ──
     'Recherche de sermons': 'Búsqueda de predicaciones',

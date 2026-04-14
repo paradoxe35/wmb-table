@@ -43,6 +43,7 @@ import type {
 } from '@shared/tts.types';
 import type {
     AiMessageHistoryPageRequest,
+    AiRetryMessageRequest,
     AiSendMessageRequest,
     AiSettings,
 } from '@shared/ai.types';
@@ -321,6 +322,7 @@ const api = {
         getMessagesPage: (request: AiMessageHistoryPageRequest) =>
             invoke(AiChannels.getMessagesPage, request),
         sendMessage: (request: AiSendMessageRequest) => invoke(AiChannels.sendMessage, request),
+        retryMessage: (request: AiRetryMessageRequest) => invoke(AiChannels.retryMessage, request),
         stopGeneration: (conversationId: string) =>
             invoke(AiChannels.stopGeneration, conversationId),
         scanLocalModels: () => invoke(AiChannels.scanLocalModels),

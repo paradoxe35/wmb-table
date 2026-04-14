@@ -1,6 +1,12 @@
 import { memo, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
 import { Button, Empty, Spin, Tooltip, Typography } from 'antd';
-import { BulbOutlined, LoadingOutlined, RobotOutlined, UserOutlined } from '@ant-design/icons';
+import {
+    BulbOutlined,
+    LoadingOutlined,
+    ReloadOutlined,
+    RobotOutlined,
+    UserOutlined,
+} from '@ant-design/icons';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -128,14 +134,20 @@ function ToolResultsList({ results }: { results: AiToolResult[] }) {
 }
 
 const MessageBubble = memo(function MessageBubble({
+    conversationId,
     message,
     isActive,
+    canRetryLastUserMessage,
 }: {
+    conversationId: string | null;
     message: AiMessage;
     isActive: boolean;
+    canRetryLastUserMessage: boolean;
 }) {
+    const { t } = useTranslation();
     const isUser = message.role === 'user';
     const providerLabel = useAiChatStore(selectActiveProviderLabel);
+    const retryLastUserMessage = useAiChatStore((s) => s.retryLastUserMessage);
     const providerTooltip = isUser ? '' : providerLabel;
 
     if (
@@ -198,6 +210,24 @@ const MessageBubble = memo(function MessageBubble({
 
                 {isActive && message.toolResults.length > 0 ? (
                     <ToolResultsList results={message.toolResults} />
+                ) : null}
+
+                {canRetryLastUserMessage && conversationId ? (
+                    <div className="ai-chat__bubble-actions ai-chat__bubble-actions--user">
+                        <Tooltip title={t('Réessayer')}>
+                            <Button
+                                type="text"
+                                size="small"
+                                shape="circle"
+                                className="ai-chat__retry-button"
+                                icon={<ReloadOutlined />}
+                                aria-label={t('Réessayer')}
+                                onClick={() =>
+                                    void retryLastUserMessage(conversationId, message.id)
+                                }
+                            />
+                        </Tooltip>
+                    </div>
                 ) : null}
             </SelectableMessageContent>
         </motion.div>
@@ -345,8 +375,15 @@ export default function ChatMessageList({
                             {messages.map((msg) => (
                                 <MessageBubble
                                     key={msg.id}
+                                    conversationId={conversationId}
                                     message={msg}
                                     isActive={msg.id === activeAssistantMessageId}
+                                    canRetryLastUserMessage={
+                                        conversationId != null &&
+                                        !sending &&
+                                        msg.id === messages[messages.length - 1]?.id &&
+                                        msg.role === 'user'
+                                    }
                                 />
                             ))}
                         </AnimatePresence>

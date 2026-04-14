@@ -214,10 +214,14 @@ const pt: Record<string, string> = {
     'Mis à jour le': 'Atualizado em',
     'Exporté le': 'Exportado em',
     'Réponse sans texte': 'Resposta sem texto',
+    Réessayer: 'Tentar novamente',
     'Conversation introuvable.': 'Conversa não encontrada.',
     'Supprimer cette conversation ?': 'Excluir esta conversa?',
     'Supprimer toutes les conversations ?': 'Excluir todas as conversas?',
     "Vider l'historique": 'Limpar histórico',
+    'La relance de la réponse a échoué.': 'Falha ao tentar novamente a resposta.',
+    'La relance est disponible uniquement pour le dernier message utilisateur.':
+        'A nova tentativa está disponível apenas para a última mensagem do usuário.',
 
     // ── AI tool results ──
     'Recherche de sermons': 'Pesquisa de sermões',

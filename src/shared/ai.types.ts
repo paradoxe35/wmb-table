@@ -194,6 +194,18 @@ export interface AiSendMessageResult {
     assistantMessage: AiMessage;
 }
 
+export interface AiRetryMessageRequest {
+    conversationId: string;
+    lastUserMessageId: string;
+    generationId: string;
+}
+
+export interface AiRetryMessageResult {
+    generationId: string;
+    conversation: AiConversation;
+    assistantMessage: AiMessage;
+}
+
 export interface AiProviderTestResult {
     valid: boolean;
     error?: string;

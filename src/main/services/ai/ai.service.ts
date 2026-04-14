@@ -18,11 +18,14 @@ import type {
     AiMessageHistoryPageRequest,
     AiMessage,
     AiProviderTestResult,
+    AiRetryMessageRequest,
+    AiRetryMessageResult,
     AiSendMessageRequest,
     AiSendMessageResult,
     AiSettings,
     AiRemoteModel,
 } from '@shared/ai.types';
+import type { InstalledLanguage } from '@shared/types';
 import { buildSystemPrompt } from './system-prompt';
 import { scanLocalModels } from './local/local-model.service';
 import { downloadLocalModel } from './local/model-download.service';
@@ -62,6 +65,20 @@ interface RunGenerationOptions {
     systemPromptTokens: number;
     contentLanguageCode: string;
     uiLanguageCode: string;
+}
+
+interface GenerationEnvironment {
+    settings: AiSettings;
+    providerId: string;
+    modelId: string;
+    contentLanguageCode: string;
+    uiLanguageCode: string;
+    isLocal: boolean;
+    activeBibleVersion?: string;
+    contextWindow?: number;
+    hasAgents: boolean;
+    model: ReturnType<typeof resolveLanguageModel>;
+    installedLanguages: InstalledLanguage[];
 }
 
 interface ActiveRun {
@@ -268,24 +285,6 @@ export class AiService {
         browserWindow: BrowserWindow,
         request: AiSendMessageRequest,
     ): Promise<AiSendMessageResult> {
-        const settings = this.getSettings();
-        if (!settings.enabled) {
-            throw new Error("L'assistant IA est désactivé dans les paramètres.");
-        }
-
-        const providerId = settings.activeProvider;
-        if (!providerId) {
-            throw new Error(
-                'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.',
-            );
-        }
-        const modelId = resolveActiveModel(settings);
-        if (!modelId) {
-            throw new Error(
-                'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.',
-            );
-        }
-
         const trimmedMessages = request.messages
             .map((message) => message.trim())
             .filter((message) => message.length > 0);
@@ -293,46 +292,7 @@ export class AiService {
             throw new Error('Le message ne peut pas être vide.');
         }
 
-        const contentLanguageCode = configRepo.getContentLanguage();
-        if (!contentLanguageCode) {
-            throw new Error(
-                'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
-            );
-        }
-        const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
-
-        const isLocal = providerId === 'local';
-        const activeBibleVersion = bibleService.getActiveVersion()?.abbreviation;
-
-        const providerBaseUrl = settings.customProviders.find(
-            (provider) => provider.id === providerId,
-        )?.baseUrl;
-        const contextWindow = isLocal
-            ? undefined
-            : await getModelContextWindow(providerId, modelId, providerBaseUrl);
-
-        const smallContext =
-            !isLocal && contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
-        const hasAgents = !isLocal && !smallContext;
-
-        if (smallContext) {
-            log.warn('Small context window detected — agents disabled', {
-                providerId,
-                modelId,
-                contextWindow,
-                minRequired: MIN_REMOTE_CONTEXT_WINDOW,
-            });
-        }
-
-        const model = resolveLanguageModel({
-            settings,
-            providerId,
-            modelId,
-            defaultContentLanguage: contentLanguageCode,
-            localRuntime: this.localRuntime,
-        });
-
-        const installedLanguages = await languagePackService.getInstalledLanguages();
+        const environment = await this.resolveGenerationEnvironment();
         const conversation =
             aiRepo.getConversation(request.conversationId) ?? this.createConversation();
 
@@ -356,90 +316,62 @@ export class AiService {
             });
         }
 
-        const controller = new AbortController();
-
-        const tools = buildAiTools(contentLanguageCode, {
-            model,
-            isLocal: isLocal || smallContext,
-            uiLanguage: uiLanguageCode,
-            activeBibleVersion,
-            abortSignal: controller.signal,
-            browserWindow,
-            conversationId: conversation.id,
-            generationId: request.generationId,
-            assistantMessageId: assistantMessage.id,
-        });
-
-        const system = buildSystemPrompt({
-            contentLanguageCode,
-            uiLanguageCode,
-            installedLanguages,
-            languagePreference: settings.languagePreference,
-            activeBibleVersion,
-            hasAgents,
-        });
-        const toolTokens = measureToolTokens(tools);
-        const baseSystemPromptTokens = measurePromptTokens(system);
-        const initialRemoteTokenBudget = calculateRemoteTokenBudget(contextWindow, {
-            toolTokens,
-            systemPromptTokens: baseSystemPromptTokens,
-        });
-        const { recentMessages, summary } = buildConversationContext(
-            conversation.id,
-            isLocal,
-            initialRemoteTokenBudget,
-        );
-        const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
-        const systemPromptTokens = measurePromptTokens(systemPrompt);
-        const remoteTokenBudget = calculateRemoteTokenBudget(contextWindow, {
-            toolTokens,
-            systemPromptTokens,
-        });
-
-        const runner = new GenerationRunnerImpl(isLocal);
-
-        this.activeRuns.set(conversation.id, {
-            browserWindow,
-            conversationId: conversation.id,
-            generationId: request.generationId,
-            assistantMessageId: assistantMessage.id,
-            controller,
-        });
-
-        log.info('AI generation starting', {
-            providerId,
-            modelId,
-            conversationId: conversation.id,
-            contextWindow: contextWindow ?? 'unknown',
-            tokenBudget: remoteTokenBudget,
-            toolTokens,
-            systemPromptTokens,
-        });
-
-        void this.runGeneration({
-            runner,
+        this.startConversationGeneration(
             browserWindow,
             conversation,
-            generationId: request.generationId,
+            request.generationId,
             assistantMessage,
-            model,
-            systemPrompt,
-            history: recentMessages,
-            tools,
-            abortSignal: controller.signal,
-            isLocal,
-            remoteTokenBudget,
-            contextWindow,
-            toolTokens,
-            systemPromptTokens,
-            contentLanguageCode,
-            uiLanguageCode,
-        });
+            environment,
+        );
 
         return {
             generationId: request.generationId,
             conversation: aiRepo.getConversation(conversation.id)!,
             userMessages,
+            assistantMessage,
+        };
+    }
+
+    async retryMessage(
+        browserWindow: BrowserWindow,
+        request: AiRetryMessageRequest,
+    ): Promise<AiRetryMessageResult> {
+        const environment = await this.resolveGenerationEnvironment();
+        const conversation = aiRepo.getConversation(request.conversationId);
+        if (!conversation) {
+            throw new Error('Conversation introuvable.');
+        }
+
+        const lastMessage = aiRepo.getRecentMessages(conversation.id, 1)[0];
+        if (
+            !lastMessage ||
+            lastMessage.id !== request.lastUserMessageId ||
+            lastMessage.role !== 'user'
+        ) {
+            throw new Error(
+                'La relance est disponible uniquement pour le dernier message utilisateur.',
+            );
+        }
+
+        this.stopGeneration(conversation.id);
+
+        const assistantMessage = aiRepo.createMessage({
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: '',
+        });
+
+        this.startConversationGeneration(
+            browserWindow,
+            conversation,
+            request.generationId,
+            assistantMessage,
+            environment,
+        );
+
+        return {
+            generationId: request.generationId,
+            conversation: aiRepo.getConversation(conversation.id)!,
             assistantMessage,
         };
     }
@@ -488,6 +420,170 @@ export class AiService {
                 .replace(/^-+|-+$/g, '')
                 .slice(0, 80) || 'conversation'
         );
+    }
+
+    private async resolveGenerationEnvironment(): Promise<GenerationEnvironment> {
+        const settings = this.getSettings();
+        if (!settings.enabled) {
+            throw new Error("L'assistant IA est désactivé dans les paramètres.");
+        }
+
+        const providerId = settings.activeProvider;
+        if (!providerId) {
+            throw new Error(
+                'Aucun fournisseur IA configuré. Sélectionnez un fournisseur dans les paramètres.',
+            );
+        }
+
+        const modelId = resolveActiveModel(settings);
+        if (!modelId) {
+            throw new Error(
+                'Aucun modèle configuré pour ce fournisseur. Définissez un modèle dans les paramètres.',
+            );
+        }
+
+        const contentLanguageCode = configRepo.getContentLanguage();
+        if (!contentLanguageCode) {
+            throw new Error(
+                'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
+            );
+        }
+
+        const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
+        const isLocal = providerId === 'local';
+        const activeBibleVersion = bibleService.getActiveVersion()?.abbreviation;
+        const providerBaseUrl = settings.customProviders.find(
+            (provider) => provider.id === providerId,
+        )?.baseUrl;
+        const contextWindow = isLocal
+            ? undefined
+            : await getModelContextWindow(providerId, modelId, providerBaseUrl);
+        const smallContext =
+            !isLocal && contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
+        const hasAgents = !isLocal && !smallContext;
+
+        if (smallContext) {
+            log.warn('Small context window detected — agents disabled', {
+                providerId,
+                modelId,
+                contextWindow,
+                minRequired: MIN_REMOTE_CONTEXT_WINDOW,
+            });
+        }
+
+        const model = resolveLanguageModel({
+            settings,
+            providerId,
+            modelId,
+            defaultContentLanguage: contentLanguageCode,
+            localRuntime: this.localRuntime,
+        });
+        const installedLanguages = await languagePackService.getInstalledLanguages();
+
+        return {
+            settings,
+            providerId,
+            modelId,
+            contentLanguageCode,
+            uiLanguageCode,
+            isLocal,
+            activeBibleVersion,
+            contextWindow,
+            hasAgents,
+            model,
+            installedLanguages,
+        };
+    }
+
+    private startConversationGeneration(
+        browserWindow: BrowserWindow,
+        conversation: AiConversation,
+        generationId: string,
+        assistantMessage: AiMessage,
+        environment: GenerationEnvironment,
+    ): void {
+        const controller = new AbortController();
+        const localExecution =
+            environment.isLocal ||
+            (environment.contextWindow != null &&
+                environment.contextWindow < MIN_REMOTE_CONTEXT_WINDOW);
+
+        const tools = buildAiTools(environment.contentLanguageCode, {
+            model: environment.model,
+            isLocal: localExecution,
+            uiLanguage: environment.uiLanguageCode,
+            activeBibleVersion: environment.activeBibleVersion,
+            abortSignal: controller.signal,
+            browserWindow,
+            conversationId: conversation.id,
+            generationId,
+            assistantMessageId: assistantMessage.id,
+        });
+
+        const system = buildSystemPrompt({
+            contentLanguageCode: environment.contentLanguageCode,
+            uiLanguageCode: environment.uiLanguageCode,
+            installedLanguages: environment.installedLanguages,
+            languagePreference: environment.settings.languagePreference,
+            activeBibleVersion: environment.activeBibleVersion,
+            hasAgents: environment.hasAgents,
+        });
+        const toolTokens = measureToolTokens(tools);
+        const baseSystemPromptTokens = measurePromptTokens(system);
+        const initialRemoteTokenBudget = calculateRemoteTokenBudget(environment.contextWindow, {
+            toolTokens,
+            systemPromptTokens: baseSystemPromptTokens,
+        });
+        const { recentMessages, summary } = buildConversationContext(
+            conversation.id,
+            environment.isLocal,
+            initialRemoteTokenBudget,
+        );
+        const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
+        const systemPromptTokens = measurePromptTokens(systemPrompt);
+        const remoteTokenBudget = calculateRemoteTokenBudget(environment.contextWindow, {
+            toolTokens,
+            systemPromptTokens,
+        });
+        const runner = new GenerationRunnerImpl(environment.isLocal);
+
+        this.activeRuns.set(conversation.id, {
+            browserWindow,
+            conversationId: conversation.id,
+            generationId,
+            assistantMessageId: assistantMessage.id,
+            controller,
+        });
+
+        log.info('AI generation starting', {
+            providerId: environment.providerId,
+            modelId: environment.modelId,
+            conversationId: conversation.id,
+            contextWindow: environment.contextWindow ?? 'unknown',
+            tokenBudget: remoteTokenBudget,
+            toolTokens,
+            systemPromptTokens,
+        });
+
+        void this.runGeneration({
+            runner,
+            browserWindow,
+            conversation,
+            generationId,
+            assistantMessage,
+            model: environment.model,
+            systemPrompt,
+            history: recentMessages,
+            tools,
+            abortSignal: controller.signal,
+            isLocal: environment.isLocal,
+            remoteTokenBudget,
+            contextWindow: environment.contextWindow,
+            toolTokens,
+            systemPromptTokens,
+            contentLanguageCode: environment.contentLanguageCode,
+            uiLanguageCode: environment.uiLanguageCode,
+        });
     }
 
     private async runGeneration(opts: RunGenerationOptions): Promise<void> {
