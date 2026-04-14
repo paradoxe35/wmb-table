@@ -1,12 +1,14 @@
 import React, { useCallback, useLayoutEffect, useRef } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
+import { getPendingNavigationParagraphIndex } from '@renderer/utils/pending-navigation';
 import {
     useSearchStore,
     useDocumentTabsStore,
     useAppStore,
     selectActiveTabKey,
 } from '@renderer/stores';
+import type { DocumentIdentity } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 
@@ -15,6 +17,7 @@ interface DocumentBodyProps {
     ready: boolean;
     containerRef: React.RefObject<HTMLDivElement | null>;
     contextTargetRef: React.MutableRefObject<Element | null>;
+    documentIdentity: DocumentIdentity | null;
     zoom: number;
     contextMenuItems: MenuProps['items'];
     header: React.ReactNode;
@@ -26,6 +29,7 @@ export default function DocumentBody({
     ready,
     containerRef,
     contextTargetRef,
+    documentIdentity,
     zoom,
     contextMenuItems,
     header,
@@ -36,15 +40,25 @@ export default function DocumentBody({
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );
     const readingMode = useAppStore((s) => s.readingMode);
+    const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
 
     // Preserve the active TTS paragraph, or the first visible paragraph, across
     // layout shifts such as reading mode toggles and zoom changes.
+    // When an explicit paragraph navigation is pending, anchor to that target
+    // instead of the currently playing TTS paragraph.
     const anchorRef = useRef<{ index: string; offset: number } | null>(null);
     if (containerRef.current) {
         const el = containerRef.current;
         const containerTop = el.getBoundingClientRect().top;
+        const pendingParagraphIndex = getPendingNavigationParagraphIndex(
+            pendingNavigation,
+            documentIdentity,
+        );
 
         const anchorParagraph =
+            (pendingParagraphIndex != null
+                ? el.querySelector<HTMLElement>(`[data-paragraph-index="${pendingParagraphIndex}"]`)
+                : null) ??
             el.querySelector<HTMLElement>('.tts-active-paragraph[data-paragraph-index]') ??
             Array.from(el.querySelectorAll<HTMLElement>('[data-paragraph-index]')).find(
                 (p) => p.getBoundingClientRect().bottom > containerTop,
@@ -69,7 +83,7 @@ export default function DocumentBody({
             el.scrollTop += targetTop - containerTop - anchorRef.current.offset;
         }
         anchorRef.current = null;
-    }, [readingMode, zoom]);
+    }, [readingMode, zoom, pendingNavigation, documentIdentity]);
 
     const onContextMenu = useCallback(
         (e: React.MouseEvent) => {

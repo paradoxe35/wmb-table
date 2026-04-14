@@ -1,6 +1,7 @@
 import { Button, Input, Modal, Space, message } from 'antd';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { CheckOutlined } from '@ant-design/icons';
 import { useModalVisible } from '@renderer/hooks';
 import {
     CHILD_PARENT_WINDOW_EVENT,
@@ -8,26 +9,130 @@ import {
     type OpenHighlightModalDetail,
 } from '@renderer/utils/events';
 
-const PRESET_COLORS = [
-    { label: 'Jaune', value: '#FDE68A' },
-    { label: 'Vert clair', value: '#A7F3D0' },
-    { label: 'Bleu ciel', value: '#BFDBFE' },
-    { label: 'Rose', value: '#FECDD3' },
-    { label: 'Orange', value: '#FED7AA' },
-    { label: 'Violet', value: '#DDD6FE' },
-    { label: 'Menthe', value: '#A7F3D0' },
-    { label: 'Pêche', value: '#FECACA' },
-    { label: 'Lavande', value: '#E9D5FF' },
-    { label: 'Corail', value: '#FCA5A5' },
-    { label: 'Cyan', value: '#A5F3FC' },
-    { label: 'Lime', value: '#D9F99D' },
+type HighlightPresetColor = {
+    label: string;
+    value: string;
+};
+
+const PRESET_COLORS: HighlightPresetColor[] = [
+    { label: 'Jaune', value: '#FFF59D' },
+    { label: 'Vert', value: '#C5E1A5' },
+    { label: 'Bleu', value: '#90CAF9' },
+    { label: 'Rose', value: '#F8BBD0' },
+    { label: 'Orange', value: '#FFCC80' },
+    { label: 'Violet', value: '#D1C4E9' },
+    { label: 'Turquoise', value: '#80DEEA' },
+    { label: 'Rouge', value: '#EF9A9A' },
 ];
+
+const DEFAULT_HIGHLIGHT_COLOR = PRESET_COLORS[0].value;
+
+function HighlightSnippetPreview({ text }: { text?: string }) {
+    return (
+        <div style={{ marginBottom: 16 }}>
+            <div
+                style={{
+                    padding: '8px 12px',
+                    background: 'var(--ant-color-fill-quaternary)',
+                    borderRadius: 6,
+                    fontSize: 'var(--fs-rel-3xl)',
+                    maxHeight: 80,
+                    overflow: 'auto',
+                }}
+            >
+                {text}
+            </div>
+        </div>
+    );
+}
+
+function HighlightColorSwatch({
+    color,
+    selected,
+    title,
+    onSelect,
+}: {
+    color: string;
+    selected: boolean;
+    title: string;
+    onSelect: () => void;
+}) {
+    return (
+        <button
+            type="button"
+            title={title}
+            onClick={onSelect}
+            aria-pressed={selected}
+            style={{
+                appearance: 'none',
+                position: 'relative',
+                width: 32,
+                height: 32,
+                padding: 0,
+                borderRadius: '50%',
+                backgroundColor: color,
+                cursor: 'pointer',
+                outline: 'none',
+                border: '3px solid transparent',
+                borderColor: selected ? 'var(--ant-color-primary)' : 'transparent',
+                boxShadow: selected
+                    ? '0 0 0 2px color-mix(in srgb, var(--ant-color-primary) 20%, transparent)'
+                    : 'inset 0 0 0 1px rgba(0, 0, 0, 0.08)',
+                transition: 'box-shadow 0.2s, border-color 0.2s',
+            }}
+        >
+            {selected && (
+                <CheckOutlined
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'grid',
+                        placeItems: 'center',
+                        color: 'rgba(0, 0, 0, 0.65)',
+                        fontSize: 14,
+                    }}
+                />
+            )}
+        </button>
+    );
+}
+
+function HighlightColorPicker({
+    colors,
+    selectedColor,
+    onSelectColor,
+    label,
+    translate,
+}: {
+    colors: HighlightPresetColor[];
+    selectedColor: string;
+    onSelectColor: (color: string) => void;
+    label: string;
+    translate: (value: string) => string;
+}) {
+    return (
+        <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 6, fontWeight: 500 }}>{label}</div>
+            <Space size="small" wrap>
+                {colors.map((preset) => (
+                    <HighlightColorSwatch
+                        key={preset.value}
+                        color={preset.value}
+                        selected={selectedColor === preset.value}
+                        title={translate(preset.label)}
+                        onSelect={() => onSelectColor(preset.value)}
+                    />
+                ))}
+            </Space>
+        </div>
+    );
+}
 
 export default function HighlightModal() {
     const { t } = useTranslation();
     const { visible, hide, setVisible } = useModalVisible();
     const dataRef = useRef<OpenHighlightModalDetail | null>(null);
-    const [color, setColor] = useState(PRESET_COLORS[0].value);
+    const [color, setColor] = useState(DEFAULT_HIGHLIGHT_COLOR);
     const [comment, setComment] = useState('');
     const [saving, setSaving] = useState(false);
 
@@ -35,7 +140,7 @@ export default function HighlightModal() {
         const handler = (e: CustomEventInit<OpenHighlightModalDetail>) => {
             if (!e.detail) return;
             dataRef.current = e.detail;
-            setColor(PRESET_COLORS[0].value);
+            setColor(DEFAULT_HIGHLIGHT_COLOR);
             setComment('');
             setVisible(true);
         };
@@ -83,45 +188,14 @@ export default function HighlightModal() {
             ]}
             width={420}
         >
-            <div style={{ marginBottom: 16 }}>
-                <div
-                    style={{
-                        padding: '8px 12px',
-                        background: 'var(--ant-color-fill-quaternary)',
-                        borderRadius: 6,
-                        fontSize: 'var(--fs-rel-3xl)',
-                        maxHeight: 80,
-                        overflow: 'auto',
-                    }}
-                >
-                    {dataRef.current?.textSnippet}
-                </div>
-            </div>
-            <div style={{ marginBottom: 16 }}>
-                <div style={{ marginBottom: 6, fontWeight: 500 }}>{t('Couleur')}</div>
-                <Space size="small" wrap>
-                    {PRESET_COLORS.map((c) => (
-                        <div
-                            key={c.value}
-                            title={t(c.label)}
-                            onClick={() => setColor(c.value)}
-                            style={{
-                                width: 32,
-                                height: 32,
-                                borderRadius: '50%',
-                                backgroundColor: c.value,
-                                cursor: 'pointer',
-                                border: '2px solid var(--ant-color-border)',
-                                boxShadow:
-                                    color === c.value
-                                        ? '0 0 0 2px var(--ant-color-primary)'
-                                        : 'none',
-                                transition: 'box-shadow 0.2s',
-                            }}
-                        />
-                    ))}
-                </Space>
-            </div>
+            <HighlightSnippetPreview text={dataRef.current?.textSnippet} />
+            <HighlightColorPicker
+                colors={PRESET_COLORS}
+                selectedColor={color}
+                onSelectColor={setColor}
+                label={t('Couleur')}
+                translate={t}
+            />
             <div>
                 <div style={{ marginBottom: 6, fontWeight: 500 }}>{t('Commentaire')}</div>
                 <Input.TextArea

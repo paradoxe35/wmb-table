@@ -8,12 +8,13 @@ import {
     ZoomOutOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import type { HighlightItem } from '@shared/types';
+import type { DocumentIdentity, HighlightItem } from '@shared/types';
 import type { SearchHighlightState } from './hooks';
 import SermonParagraphView from './sermon-paragraph';
 import { useTtsHighlight } from '@renderer/hooks/use-tts-highlight';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import { useAppStore } from '@renderer/stores';
+import { useAppStore, useDocumentTabsStore } from '@renderer/stores';
+import { getPendingNavigationParagraphIndex } from '@renderer/utils/pending-navigation';
 
 // ── Shared TTS controls interface ──
 
@@ -123,6 +124,7 @@ export function ZoomControls({
 interface ParagraphListProps {
     paragraphs: { paragraphIndex: number; content: string }[];
     documentKey: string;
+    documentIdentity: DocumentIdentity | null;
     search: SearchHighlightState | null;
     activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
@@ -134,6 +136,7 @@ interface ParagraphListProps {
 export function ParagraphList({
     paragraphs,
     documentKey,
+    documentIdentity,
     search,
     activeParagraphIndex,
     highlightsByParagraph,
@@ -141,6 +144,12 @@ export function ParagraphList({
     canSpeak,
     incompatibleMessage,
 }: ParagraphListProps) {
+    const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
+    const pendingNavigationParagraphIndex = getPendingNavigationParagraphIndex(
+        pendingNavigation,
+        documentIdentity,
+    );
+
     return (
         <>
             {paragraphs.map((p) => (
@@ -154,6 +163,7 @@ export function ParagraphList({
                     onPlayFromHere={onPlayFromHere}
                     canSpeak={canSpeak}
                     incompatibleMessage={incompatibleMessage}
+                    suppressAutoScroll={pendingNavigationParagraphIndex != null}
                 />
             ))}
         </>
@@ -171,6 +181,7 @@ interface TtsParagraphProps {
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
     incompatibleMessage?: string;
+    suppressAutoScroll?: boolean;
 }
 
 export function TtsParagraph({
@@ -182,15 +193,37 @@ export function TtsParagraph({
     onPlayFromHere,
     canSpeak,
     incompatibleMessage,
+    suppressAutoScroll,
 }: TtsParagraphProps) {
     const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentKey);
     const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
     const mainView = useAppStore((s) => s.mainView);
     const containerRef = useRef<HTMLDivElement>(null);
+    const previousActiveRef = useRef(false);
+    const previousAutoScrollRef = useRef(autoScroll);
+    const previousMainViewRef = useRef(mainView);
 
     useEffect(() => {
-        if (!ttsHighlight.isActive || !autoScroll || mainView !== 'document') {
+        const becameActive = ttsHighlight.isActive && !previousActiveRef.current;
+        const autoScrollEnabled = autoScroll && !previousAutoScrollRef.current;
+        const enteredDocumentView =
+            mainView === 'document' && previousMainViewRef.current !== 'document';
+
+        previousActiveRef.current = ttsHighlight.isActive;
+        previousAutoScrollRef.current = autoScroll;
+        previousMainViewRef.current = mainView;
+
+        if (
+            !ttsHighlight.isActive ||
+            !autoScroll ||
+            mainView !== 'document' ||
+            suppressAutoScroll
+        ) {
+            return;
+        }
+
+        if (!becameActive && !autoScrollEnabled && !enteredDocumentView) {
             return;
         }
 
@@ -205,7 +238,7 @@ export function TtsParagraph({
 
         alignToCurrentTtsSegment();
         return () => cancelAnimationFrame(frameId);
-    }, [ttsHighlight.isActive, autoScroll, mainView]);
+    }, [ttsHighlight.isActive, autoScroll, mainView, suppressAutoScroll]);
 
     const readFromHereLabel = t("Lire à partir d'ici");
     const tooltip = canSpeak

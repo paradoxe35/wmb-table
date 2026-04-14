@@ -49,6 +49,8 @@ interface HighlightGroup {
     groupId: string;
     documentTitle: string;
     reference: ParagraphReference;
+    paragraphIndex: number;
+    hasLeadingEllipsis: boolean;
     color: string;
     comment?: string;
     createdAt: Date;
@@ -83,6 +85,8 @@ function groupHighlights(items: HighlightItem[]): HighlightGroup[] {
                               item.languageCode,
                               item.textSnippet,
                           ),
+                paragraphIndex: item.paragraphIndex,
+                hasLeadingEllipsis: item.startOffset > 0,
                 color: item.color,
                 comment: item.comment,
                 createdAt: item.createdAt,
@@ -168,8 +172,11 @@ function HighlightListItem({
     const { resolveTitle } = useDocumentPresentation();
 
     let snippet = group.reference.textSnippet ?? '';
-    if (snippet.length > 80) {
-        snippet = snippet.slice(0, 80) + '...';
+    if (group.hasLeadingEllipsis && snippet) {
+        snippet = `...${snippet}`;
+    }
+    if (snippet.length > 200) {
+        snippet = snippet.slice(0, 200) + '...';
     }
 
     const displayTitle = resolveTitle(group.documentTitle, group.reference.documentIdentity);
@@ -208,7 +215,7 @@ function HighlightListItem({
                     <DocumentTypeTag documentType={group.reference.documentIdentity.documentType} />
                 </div>
                 <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)', lineHeight: 1.3 }}>
-                    {snippet}
+                    {group.paragraphIndex}. {snippet}
                 </Text>
                 {group.comment && (
                     <Text
