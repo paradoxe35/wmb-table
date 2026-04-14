@@ -209,6 +209,7 @@ export default function CustomDocumentView() {
             ready={!!docContent}
             containerRef={containerRef}
             contextTargetRef={contextTargetRef}
+            documentIdentity={activeDocumentIdentity}
             zoom={zoom}
             contextMenuItems={contextMenuItems}
             header={<CustomDocHeader zoom={zoom} tts={effectiveTts} paragraphs={paragraphs} />}
@@ -219,6 +220,7 @@ export default function CustomDocumentView() {
             <ParagraphList
                 paragraphs={paragraphs}
                 documentKey={ttsDocumentKey}
+                documentIdentity={activeDocumentIdentity}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}

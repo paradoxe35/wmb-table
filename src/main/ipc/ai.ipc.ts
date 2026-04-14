@@ -49,6 +49,14 @@ export function registerAiHandlers(): void {
         return getAiService().sendMessage(browserWindow, request);
     });
 
+    registerHandler(AiChannels.retryMessage, async (event, request) => {
+        const browserWindow = BrowserWindow.fromWebContents(event.sender);
+        if (!browserWindow) {
+            throw new Error('Main window not available for AI streaming.');
+        }
+        return getAiService().retryMessage(browserWindow, request);
+    });
+
     registerHandler(AiChannels.stopGeneration, async (_event, conversationId) => {
         getAiService().stopGeneration(conversationId);
     });

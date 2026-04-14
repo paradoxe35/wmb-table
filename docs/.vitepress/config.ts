@@ -64,6 +64,8 @@ const frSidebar = [
         items: [
             { text: 'Discussion IA', link: '/guide/ai-chat' },
             { text: 'Questions et dépannage', link: '/guide/troubleshooting' },
+            { text: 'Politique de confidentialité', link: '/privacy' },
+            { text: "Conditions d'utilisation", link: '/terms' },
             { text: 'Nous contacter', link: '/contact' },
         ],
     },
@@ -115,6 +117,8 @@ const enSidebar = [
         items: [
             { text: 'AI Chat', link: '/en/guide/ai-chat' },
             { text: 'Questions and Troubleshooting', link: '/en/guide/troubleshooting' },
+            { text: 'Privacy Policy', link: '/en/privacy' },
+            { text: 'Terms of Service', link: '/en/terms' },
             { text: 'Contact Us', link: '/en/contact' },
         ],
     },
@@ -166,6 +170,8 @@ const esSidebar = [
         items: [
             { text: 'Chat con IA', link: '/es/guide/ai-chat' },
             { text: 'Preguntas y solución de problemas', link: '/es/guide/troubleshooting' },
+            { text: 'Política de privacidad', link: '/es/privacy' },
+            { text: 'Términos del servicio', link: '/es/terms' },
             { text: 'Contáctenos', link: '/es/contact' },
         ],
     },

@@ -172,12 +172,139 @@ export async function startTtsPlayback(
 // ── Browser TTS ──
 
 let browserTtsGapTimer: ReturnType<typeof setTimeout> | null = null;
+let browserPendingGap: {
+    segments: TtsSegment[];
+    index: number;
+    actions: BrowserPlaybackActions;
+    getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error';
+    waitedMs: number;
+    startedAt: number | null;
+} | null = null;
 
 function clearBrowserTtsTimer(): void {
     if (browserTtsGapTimer != null) {
         clearTimeout(browserTtsGapTimer);
         browserTtsGapTimer = null;
     }
+    browserPendingGap = null;
+}
+
+function getBrowserGapRemainingMs(): number {
+    if (!browserPendingGap) {
+        return 0;
+    }
+    const gapMs = useTtsStore.getState().settings?.segmentGapMs ?? SEGMENT_GAP_MS;
+    return Math.max(0, gapMs - browserPendingGap.waitedMs);
+}
+
+function captureBrowserGapProgress(): void {
+    if (!browserPendingGap || browserPendingGap.startedAt == null) {
+        return;
+    }
+
+    browserPendingGap.waitedMs += Date.now() - browserPendingGap.startedAt;
+    browserPendingGap.startedAt = null;
+}
+
+function armBrowserGapTimer(): void {
+    if (!browserPendingGap) {
+        return;
+    }
+
+    if (browserTtsGapTimer != null) {
+        clearTimeout(browserTtsGapTimer);
+        browserTtsGapTimer = null;
+    }
+
+    const remainingMs = getBrowserGapRemainingMs();
+    if (remainingMs <= 0) {
+        const pending = browserPendingGap;
+        browserPendingGap = null;
+        if (pending.getStatus() === 'idle' || pending.getStatus() === 'paused') {
+            return;
+        }
+        playBrowserSegment(pending.segments, pending.index, pending.actions, pending.getStatus);
+        return;
+    }
+
+    browserPendingGap.startedAt = Date.now();
+    browserTtsGapTimer = setTimeout(() => {
+        browserTtsGapTimer = null;
+        captureBrowserGapProgress();
+
+        if (!browserPendingGap) {
+            return;
+        }
+        if (browserPendingGap.getStatus() === 'idle') {
+            browserPendingGap = null;
+            return;
+        }
+        if (browserPendingGap.getStatus() === 'paused') {
+            return;
+        }
+
+        if (getBrowserGapRemainingMs() > 0) {
+            armBrowserGapTimer();
+            return;
+        }
+
+        const pending = browserPendingGap;
+        browserPendingGap = null;
+        playBrowserSegment(pending.segments, pending.index, pending.actions, pending.getStatus);
+    }, remainingMs);
+}
+
+function scheduleBrowserNextSegment(
+    segments: TtsSegment[],
+    index: number,
+    actions: BrowserPlaybackActions,
+    getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error',
+    alreadyWaited = 0,
+): void {
+    browserPendingGap = {
+        segments,
+        index,
+        actions,
+        getStatus,
+        waitedMs: alreadyWaited,
+        startedAt: null,
+    };
+    armBrowserGapTimer();
+}
+
+function pauseBrowserGapTimer(): boolean {
+    if (!browserPendingGap) {
+        return false;
+    }
+    if (browserTtsGapTimer != null) {
+        clearTimeout(browserTtsGapTimer);
+        browserTtsGapTimer = null;
+    }
+    captureBrowserGapProgress();
+    return true;
+}
+
+function resumeBrowserGapTimer(): boolean {
+    if (!browserPendingGap) {
+        return false;
+    }
+    armBrowserGapTimer();
+    return true;
+}
+
+export function resyncBrowserGapTimer(): void {
+    if (!browserPendingGap) {
+        return;
+    }
+    if (browserTtsGapTimer != null) {
+        clearTimeout(browserTtsGapTimer);
+        browserTtsGapTimer = null;
+    }
+    captureBrowserGapProgress();
+    if (browserPendingGap.getStatus() === 'paused') {
+        return;
+    }
+    armBrowserGapTimer();
 }
 
 function getTtsStatusSnapshot(): 'idle' | 'loading' | 'playing' | 'paused' | 'error' {
@@ -187,11 +314,16 @@ function getTtsStatusSnapshot(): 'idle' | 'loading' | 'playing' | 'paused' | 'er
 function playBrowserSegment(
     segments: TtsSegment[],
     index: number,
-    settings: TtsSettings,
     actions: BrowserPlaybackActions,
     getStatus: () => 'idle' | 'loading' | 'playing' | 'paused' | 'error',
 ): void {
     clearBrowserTtsTimer();
+
+    const settings = useTtsStore.getState().settings;
+    if (!settings) {
+        actions.reset();
+        return;
+    }
 
     if (index >= segments.length) {
         actions.markCompletedNaturally();
@@ -207,20 +339,12 @@ function playBrowserSegment(
     });
 
     const cfg = settings.providers.browser;
-    const gapMs = settings.segmentGapMs ?? SEGMENT_GAP_MS;
 
     browserTts.setOnSegmentEnd(() => {
         // Check if we were stopped while speaking
         if (getStatus() === 'idle') return;
 
-        if (gapMs > 0) {
-            browserTtsGapTimer = setTimeout(
-                () => playBrowserSegment(segments, index + 1, settings, actions, getStatus),
-                gapMs,
-            );
-        } else {
-            playBrowserSegment(segments, index + 1, settings, actions, getStatus);
-        }
+        scheduleBrowserNextSegment(segments, index + 1, actions, getStatus);
     });
     browserTts.speak(segments[index].text, cfg?.voiceId, {
         rate: settings.rate,
@@ -251,7 +375,7 @@ function startPlaybackAtIndex(
     });
 
     if (settings.activeProvider === 'browser') {
-        playBrowserSegment(segments, startIndex, settings, actions, getStatus);
+        playBrowserSegment(segments, startIndex, actions, getStatus);
     } else {
         window.api.tts.startPlayback(segments, language, startIndex).catch((error) => {
             message.error(getTtsPlaybackErrorMessage(i18next.t, error));
@@ -303,7 +427,9 @@ export function useTts(
 
     const pause = useCallback(() => {
         if (activeProvider === 'browser') {
-            browserTts.pause();
+            if (!pauseBrowserGapTimer()) {
+                browserTts.pause();
+            }
         } else {
             window.api.tts.pausePlayback();
             ttsAudioPlayer.pause();
@@ -318,7 +444,9 @@ export function useTts(
 
     const resume = useCallback(() => {
         if (activeProvider === 'browser') {
-            browserTts.resume();
+            if (!resumeBrowserGapTimer()) {
+                browserTts.resume();
+            }
         } else {
             window.api.tts.resumePlayback();
             ttsAudioPlayer.resume();
@@ -347,7 +475,6 @@ export function useTts(
                     playBrowserSegment(
                         segs,
                         i,
-                        settings,
                         {
                             markCompletedNaturally,
                             reset,

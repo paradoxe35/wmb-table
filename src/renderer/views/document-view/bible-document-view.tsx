@@ -439,6 +439,7 @@ export default function BibleDocumentView() {
             ready
             containerRef={containerRef}
             contextTargetRef={contextTargetRef}
+            documentIdentity={activeDocumentIdentity}
             zoom={zoom}
             contextMenuItems={contextMenuItems}
             header={
@@ -464,6 +465,7 @@ export default function BibleDocumentView() {
             <ParagraphList
                 paragraphs={paragraphs}
                 documentKey={ttsDocumentKey}
+                documentIdentity={activeDocumentIdentity}
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}

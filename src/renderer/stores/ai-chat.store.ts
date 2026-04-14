@@ -4,6 +4,7 @@ import type {
     AiMessage,
     AiModelScanResult,
     AiProviderDefinition,
+    AiRetryMessageResult,
     AiProviderTestResult,
     AiSendMessageResult,
     AiSettings,
@@ -216,6 +217,27 @@ function moveConversationRun(
     return nextRuns;
 }
 
+function getLastConversationMessage(
+    messagesByConversation: MessageMap,
+    conversationId: string,
+): AiMessage | null {
+    const messages = messagesByConversation[conversationId] ?? [];
+    return messages[messages.length - 1] ?? null;
+}
+
+function resolvePersistedActiveConversationId(
+    conversations: AiConversation[],
+    activeConversationId: string | null,
+): string | null {
+    if (!activeConversationId) {
+        return null;
+    }
+
+    return conversations.some((conversation) => conversation.id === activeConversationId)
+        ? activeConversationId
+        : null;
+}
+
 let listenersBound = false;
 
 interface AiChatState {
@@ -251,7 +273,11 @@ interface AiChatState {
     clearConversations(): Promise<void>;
     sendMessage(content: string): Promise<boolean>;
     sendMessageNow(conversationId: string, messages: string[]): Promise<boolean>;
-    flushQueuedMessages(conversationId: string): Promise<boolean>;
+    flushQueuedMessages(
+        conversationId: string,
+        options?: { requeueOnFailure?: boolean },
+    ): Promise<boolean>;
+    retryLastUserMessage(conversationId: string, messageId: string): Promise<boolean>;
     removeQueuedMessage(conversationId: string, queuedMessageId: string): void;
     stopGeneration(): Promise<void>;
     scanLocalModels(): Promise<void>;
@@ -415,12 +441,40 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         state.conversationRuns,
                         conversationId,
                     );
-                    shouldFlushQueue =
-                        (state.queuedMessagesByConversation[conversationId] ?? []).length > 0;
+                    const assistantMessage = run.assistantMessageId
+                        ? (state.messagesByConversation[conversationId] ?? []).find(
+                              (message) => message.id === run.assistantMessageId,
+                          )
+                        : undefined;
+                    const completedWithEmptyAssistant = Boolean(
+                        run.assistantMessageId && isMessageEmpty(assistantMessage),
+                    );
+                    const queuedMessageCount = (
+                        state.queuedMessagesByConversation[conversationId] ?? []
+                    ).length;
+                    shouldFlushQueue = queuedMessageCount > 0;
+                    const shouldSurfaceEmptyCompletion =
+                        completedWithEmptyAssistant && queuedMessageCount === 0;
 
                     return {
                         conversationRuns,
                         sending: countRuns(conversationRuns) > 0,
+                        messagesByConversation:
+                            completedWithEmptyAssistant && run.assistantMessageId
+                                ? updateConversationMessages(
+                                      state.messagesByConversation,
+                                      conversationId,
+                                      (messages) =>
+                                          messages.filter(
+                                              (message) => message.id !== run.assistantMessageId,
+                                          ),
+                                  )
+                                : state.messagesByConversation,
+                        reasoningByMessage:
+                            completedWithEmptyAssistant && run.assistantMessageId
+                                ? removeReasoning(state.reasoningByMessage, run.assistantMessageId)
+                                : state.reasoningByMessage,
+                        error: shouldSurfaceEmptyCompletion ? 'Réponse sans texte' : state.error,
                         completionCount: state.completionCount + 1,
                         lastCompletedConversationId: conversationId,
                     };
@@ -551,14 +605,15 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
     loadConversations: async () => {
         const conversations = await window.api.ai.getConversations();
-        const activeConversationId = get().activeConversationId ?? conversations[0]?.id ?? null;
+        const activeConversationId = resolvePersistedActiveConversationId(
+            conversations,
+            get().activeConversationId,
+        );
 
-        set({ conversations });
+        set({ conversations, activeConversationId });
 
         if (activeConversationId) {
             await get().selectConversation(activeConversationId);
-        } else {
-            set({ activeConversationId: null });
         }
     },
 
@@ -738,7 +793,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             };
         });
 
-        const nextConversationId = get().activeConversationId ?? remaining[0]?.id ?? null;
+        const nextConversationId = resolvePersistedActiveConversationId(
+            remaining,
+            get().activeConversationId,
+        );
         if (nextConversationId) {
             await get().selectConversation(nextConversationId);
         }
@@ -798,6 +856,8 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             }
         }
 
+        const shouldStartImmediately = !get().conversationRuns[conversationId];
+
         const queuedMessage = createQueuedMessage(trimmed);
         set((state) => ({
             queuedMessagesByConversation: {
@@ -810,8 +870,8 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             error: null,
         }));
 
-        if (!get().conversationRuns[conversationId]) {
-            void get().flushQueuedMessages(conversationId);
+        if (shouldStartImmediately) {
+            void get().flushQueuedMessages(conversationId, { requeueOnFailure: false });
         }
 
         return true;
@@ -909,7 +969,87 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }
     },
 
-    flushQueuedMessages: async (conversationId) => {
+    retryLastUserMessage: async (conversationId, messageId) => {
+        const lastMessage = getLastConversationMessage(
+            get().messagesByConversation,
+            conversationId,
+        );
+        if (!lastMessage || lastMessage.id !== messageId || lastMessage.role !== 'user') {
+            return false;
+        }
+
+        const generationId = crypto.randomUUID();
+
+        set((state) => ({
+            conversationRuns: {
+                ...state.conversationRuns,
+                [conversationId]: {
+                    generationId,
+                    assistantMessageId: null,
+                    status: 'starting',
+                },
+            },
+            sending: true,
+            error: null,
+        }));
+
+        try {
+            const result: AiRetryMessageResult = await window.api.ai.retryMessage({
+                conversationId,
+                lastUserMessageId: messageId,
+                generationId,
+            });
+
+            set((state) => {
+                const currentRun = state.conversationRuns[conversationId];
+                if (!currentRun || currentRun.generationId !== generationId) {
+                    return state;
+                }
+
+                return {
+                    conversations: upsertConversation(state.conversations, result.conversation),
+                    activeConversationId: result.conversation.id,
+                    messagesByConversation: updateConversationMessages(
+                        state.messagesByConversation,
+                        conversationId,
+                        (messages) => upsertMessage(messages, result.assistantMessage),
+                    ),
+                    conversationRuns: {
+                        ...state.conversationRuns,
+                        [conversationId]: {
+                            ...currentRun,
+                            assistantMessageId: result.assistantMessage.id,
+                            status: 'streaming',
+                        },
+                    },
+                };
+            });
+
+            return true;
+        } catch (error) {
+            set((state) => {
+                const currentRun = state.conversationRuns[conversationId];
+                if (!currentRun || currentRun.generationId !== generationId) {
+                    return state;
+                }
+
+                const conversationRuns = removeConversationKey(
+                    state.conversationRuns,
+                    conversationId,
+                );
+
+                return {
+                    conversationRuns,
+                    sending: countRuns(conversationRuns) > 0,
+                    error: toErrorMessage(error, 'La relance de la réponse a échoué.'),
+                };
+            });
+
+            return false;
+        }
+    },
+
+    flushQueuedMessages: async (conversationId, options) => {
         if (get().conversationRuns[conversationId]) {
             return false;
         }
@@ -930,6 +1070,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
         const sent = await get().sendMessageNow(conversationId, batchMessages);
         if (!sent) {
+            const requeueOnFailure = options?.requeueOnFailure ?? true;
+            if (!requeueOnFailure) {
+                return false;
+            }
+
             set((state) => ({
                 queuedMessagesByConversation: {
                     ...state.queuedMessagesByConversation,

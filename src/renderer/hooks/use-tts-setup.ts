@@ -6,6 +6,7 @@ import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
+import { resyncBrowserGapTimer } from './use-tts';
 import {
     DEFAULT_TTS_PROVIDER,
     SEGMENT_GAP_MS,
@@ -44,6 +45,8 @@ export function useTtsSetup(): void {
     const { t } = useTranslation();
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const settings = useTtsStore((s) => s.settings);
+    const status = useTtsStore((s) => s.status);
+    const activePlaybackProvider = useTtsStore((s) => s.activeProvider);
     const setSettings = useTtsStore((s) => s.setSettings);
     const stopAndRemember = useTtsStore((s) => s.stopAndRemember);
     const setLanguageSupported = useTtsStore((s) => s.setLanguageSupported);
@@ -81,6 +84,19 @@ export function useTtsSetup(): void {
             }
         }
     }, [stopAndRemember, synthesisKey]);
+
+    useEffect(() => {
+        if (activePlaybackProvider === 'browser') {
+            if (status === 'playing' || status === 'paused') {
+                resyncBrowserGapTimer();
+            }
+            return;
+        }
+        if (status !== 'playing' && status !== 'paused') {
+            return;
+        }
+        ttsAudioPlayer.setRate(settings?.rate ?? 1);
+    }, [activePlaybackProvider, settings?.rate, settings?.segmentGapMs, status]);
 
     // Auto-switch voice on language change (provider switches handled in tts-tab)
     const prevLangRef = useRef<string | null>(null);
@@ -224,6 +240,7 @@ export function useTtsSetup(): void {
     useEffect(() => {
         let gapTimeout: ReturnType<typeof setTimeout> | null = null;
         let pausedDuringGap = false;
+        let currentGapMs = useTtsStore.getState().settings?.segmentGapMs ?? SEGMENT_GAP_MS;
 
         // The segment index we are waiting for when synthesis is still in flight.
         // -1 = not waiting. Set in onEnded; cleared when that segment's audio
@@ -285,6 +302,10 @@ export function useTtsSetup(): void {
 
         // Manage gap timer and waiting state on stop / pause / resume
         const unsubStore = useTtsStore.subscribe((state) => {
+            const nextGapMs = state.settings?.segmentGapMs ?? SEGMENT_GAP_MS;
+            const gapChanged = nextGapMs !== currentGapMs;
+            currentGapMs = nextGapMs;
+
             if (state.status === 'idle') {
                 // Hard stop: reset everything
                 clearGap();
@@ -317,6 +338,9 @@ export function useTtsSetup(): void {
                     // Resuming from a normal gap-timer pause
                     schedulePlay();
                 }
+            } else if (gapChanged && gapTimeout) {
+                clearGap();
+                schedulePlay(Date.now() - endedAt);
             }
         });
 
