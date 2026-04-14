@@ -13,7 +13,7 @@ export function buildGitHubReleaseDownloadBase(tag = GITHUB_RELEASE_TAG): string
 
 export const GITHUB_RELEASE_DOWNLOAD_BASE = buildGitHubReleaseDownloadBase();
 
-export const APP_AUTHOR = 'Paradoxe Ngwasi';
+export const APP_AUTHOR = 'Wmb Table Team';
 export const APP_AUTHOR_EMAIL = 'paradoxngwasi@gmail.com';
 export const APP_LICENSE = 'MIT';
 

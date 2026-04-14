@@ -99,6 +99,35 @@ features:
   }"
 />
 
+## Page officielle de l'application
+
+Cette page est la page d'accueil officielle de Wmb Table. Elle présente l'application, sa documentation publique, ses téléchargements et les informations utiles avant d'activer des fonctions connectées.
+
+## Utilisation des données Google
+
+Wmb Table ne demande pas de connexion Google pour lire les prédications, consulter la Bible, prendre des notes ou utiliser la majorité de l'application.
+
+L'accès Google est demandé uniquement si vous activez la sauvegarde et la synchronisation avec Google Drive. Dans ce cas, l'application utilise votre compte Google pour :
+
+- vous connecter à votre compte dans le navigateur
+- afficher votre nom et votre adresse email dans l'état de synchronisation
+- enregistrer et synchroniser vos sauvegardes dans votre espace Google Drive `appDataFolder`
+
+Selon la configuration actuelle de l'application, cette fonction peut demander l'accès à :
+
+- votre profil Google de base
+- votre adresse email Google
+- votre dossier d'application Google Drive `appDataFolder`
+
+Cette fonction reste optionnelle. Si vous ne l'activez pas, Wmb Table continue de fonctionner localement sur votre appareil.
+
+## Confidentialité et informations légales
+
+- [Politique de confidentialité](/privacy)
+- [Conditions d'utilisation](/terms)
+- [Nous contacter](/contact)
+- [Guide de sauvegarde et synchronisation](/guide/backup-and-sync)
+
 ## Ce que vous trouverez dans cette documentation
 
 <div class="doc-overview-grid">

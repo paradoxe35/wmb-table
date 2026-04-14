@@ -6,17 +6,35 @@ const frNav = [
     { text: 'Contact', link: '/contact' },
 ];
 
+const frFooter = {
+    message:
+        'Site officiel de Wmb Table. <a href="/privacy">Politique de confidentialite</a> · <a href="/terms">Conditions d\'utilisation</a> · <a href="/contact">Contact</a>',
+    copyright: 'Copyright © 2026 Wmb Table',
+};
+
 const enNav = [
     { text: 'Home', link: '/en/' },
     { text: 'Documentation', link: '/en/guide/interface-overview' },
     { text: 'Contact', link: '/en/contact' },
 ];
 
+const enFooter = {
+    message:
+        'Official Wmb Table website. <a href="/en/privacy">Privacy Policy</a> · <a href="/en/terms">Terms of Service</a> · <a href="/en/contact">Contact</a>',
+    copyright: 'Copyright © 2026 Wmb Table',
+};
+
 const esNav = [
     { text: 'Inicio', link: '/es/' },
     { text: 'Documentación', link: '/es/guide/interface-overview' },
     { text: 'Contacto', link: '/es/contact' },
 ];
+
+const esFooter = {
+    message:
+        'Sitio oficial de Wmb Table. <a href="/es/privacy">Politica de privacidad</a> · <a href="/es/terms">Terminos del servicio</a> · <a href="/es/contact">Contacto</a>',
+    copyright: 'Copyright © 2026 Wmb Table',
+};
 
 const frSidebar = [
     {
@@ -207,6 +225,7 @@ export default defineConfig({
             themeConfig: {
                 nav: frNav,
                 sidebar: frSidebar,
+                footer: frFooter,
                 outline: {
                     label: 'Sur cette page',
                 },
@@ -231,6 +250,7 @@ export default defineConfig({
             themeConfig: {
                 nav: enNav,
                 sidebar: enSidebar,
+                footer: enFooter,
             },
         },
         es: {
@@ -242,6 +262,7 @@ export default defineConfig({
             themeConfig: {
                 nav: esNav,
                 sidebar: esSidebar,
+                footer: esFooter,
             },
         },
     },

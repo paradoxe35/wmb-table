@@ -6,9 +6,9 @@
     "type": "module",
     "main": "./out/main/index.js",
     "author": {
-        "name": "Paradoxe Ngwasi",
+        "name": "Wmb Table Team",
         "email": "paradoxngwasi@gmail.com",
-        "url": "https://pngwasi.me"
+        "url": "https://wmb-table.web.app/"
     },
     "license": "MIT",
     "repository": {

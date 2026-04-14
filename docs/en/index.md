@@ -99,6 +99,35 @@ features:
   }"
 />
 
+## Official app homepage
+
+This page is the official homepage for Wmb Table. It describes the app, provides public documentation, lists downloads, and explains the connected features users can enable.
+
+## How Google user data is used
+
+Wmb Table does not require Google sign-in to read sermons, use the Bible, take notes, or use most of the application.
+
+Google account access is requested only if you enable Google Drive backup and sync. When that feature is turned on, Wmb Table uses your Google account to:
+
+- sign you in through your browser
+- show your name and email address in the sync status
+- store and sync your backups in your Google Drive `appDataFolder`
+
+Based on the current implementation, this feature may request access to:
+
+- your basic Google profile
+- your Google email address
+- your Google Drive `appDataFolder`
+
+This feature is optional. If you do not enable it, Wmb Table continues to work locally on your device.
+
+## Privacy and legal information
+
+- [Privacy Policy](/en/privacy)
+- [Terms of Service](/en/terms)
+- [Contact Us](/en/contact)
+- [Backup and Sync Guide](/en/guide/backup-and-sync)
+
 ## What you will find in this documentation
 
 <div class="doc-overview-grid">
