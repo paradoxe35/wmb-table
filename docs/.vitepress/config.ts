@@ -3,39 +3,18 @@ import { defineConfig } from 'vitepress';
 const frNav = [
     { text: 'Accueil', link: '/' },
     { text: 'Documentation', link: '/guide/interface-overview' },
-    {
-        text: 'Légal',
-        items: [
-            { text: 'Politique de confidentialité', link: '/privacy' },
-            { text: "Conditions d'utilisation", link: '/terms' },
-        ],
-    },
     { text: 'Contact', link: '/contact' },
 ];
 
 const enNav = [
     { text: 'Home', link: '/en/' },
     { text: 'Documentation', link: '/en/guide/interface-overview' },
-    {
-        text: 'Legal',
-        items: [
-            { text: 'Privacy Policy', link: '/en/privacy' },
-            { text: 'Terms of Service', link: '/en/terms' },
-        ],
-    },
     { text: 'Contact', link: '/en/contact' },
 ];
 
 const esNav = [
     { text: 'Inicio', link: '/es/' },
     { text: 'Documentación', link: '/es/guide/interface-overview' },
-    {
-        text: 'Legal',
-        items: [
-            { text: 'Política de privacidad', link: '/es/privacy' },
-            { text: 'Términos del servicio', link: '/es/terms' },
-        ],
-    },
     { text: 'Contacto', link: '/es/contact' },
 ];
 
