@@ -23,7 +23,9 @@ const en: Record<string, string> = {
     'Aucun document ajouté': 'No documents added',
     'Ajouter un document': 'Add a document',
     'Choisir un document': 'Choose a document',
+    'Mes documents': 'My documents',
     Gérer: 'Manage',
+    'Gérer mes documents': 'Manage my documents',
     Alphabet: 'Alphabet',
     Année: 'Year',
     Années: 'Years',
@@ -169,6 +171,8 @@ const en: Record<string, string> = {
         'Connect Google Drive so <u>{{feature}}</u> keeps your notes, subjects, and settings in sync.',
     'Ouvrir les réglages de sauvegarde': 'Open backup settings',
     'Posez votre question...': 'Ask your question...',
+    'Posez votre question... ({{shortcut}} pour une nouvelle ligne)':
+        'Ask your question... ({{shortcut}} for a new line)',
     'Essayez une question pour commencer': 'Try a question to get started',
     'Suggère-moi un thème à étudier.': 'Suggest a theme for me to study.',
     'Aide-moi à formuler une question de recherche.': 'Help me phrase a research question.',
@@ -184,8 +188,11 @@ const en: Record<string, string> = {
         'They will be sent as soon as this response finishes.',
     "En attente d'envoi.": 'Waiting to be sent.',
     "Ajoutez un message à la file d'attente...": 'Add a message to the queue...',
+    "Ajoutez un message à la file d'attente... ({{shortcut}} pour une nouvelle ligne)":
+        'Add a message to the queue... ({{shortcut}} for a new line)',
     "Ajouter à la file d'attente": 'Add to queue',
     'Retirer de la file': 'Remove from queue',
+    'Maj+Entrée': 'Shift+Enter',
     Conversations: 'Conversations',
     'Aucune conversation': 'No conversations',
     'Aucun sujet': 'No subjects',
@@ -242,7 +249,7 @@ const en: Record<string, string> = {
 
     // ── General tab ──
     'Langue active': 'content language',
-    'Langue des prédications': 'Sermon language',
+    'Langue de la bibliothèque': 'Library language',
     Bibliothèque: 'Library',
     'Langues installées': 'Installed languages',
     "Documentation d'utilisation": 'User documentation',
@@ -869,6 +876,32 @@ const en: Record<string, string> = {
     "Langue de l'interface": 'Interface language',
     "Détermine la langue des menus, boutons et messages de l'application.":
         'Controls the language of menus, buttons, and messages in the app.',
+    "Automatique suit la langue active de la bibliothèque quand elle est disponible pour l'interface.":
+        'Automatic follows the active library language when it is available for the interface.',
+    'Langue active de la bibliothèque : {{libraryLanguage}}.':
+        'Active library language: {{libraryLanguage}}.',
+    "Langue de l'interface actuelle : {{uiLanguage}}.":
+        'Current interface language: {{uiLanguage}}.',
+    "Comme la langue active de la bibliothèque n'est pas prise en charge pour l'interface, l'application utilise {{fallbackLanguage}}.":
+        'Because the active library language is not supported for the interface, the app uses {{fallbackLanguage}}.',
+    "Aucune langue de bibliothèque n'est définie pour le moment.":
+        'No library language is currently set.',
+    "L'interface est verrouillée sur {{uiLanguage}}.": 'The interface is locked to {{uiLanguage}}.',
+    'La langue active de la bibliothèque est aussi {{libraryLanguage}}.':
+        'The active library language is also {{libraryLanguage}}.',
+    "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.":
+        'Use Automatic if you want to keep the interface language synced with the active library language.',
+    'Automatique suit la langue active de la bibliothèque. Actuellement : {{uiLanguage}}.':
+        'Automatic follows the active library language. Currently: {{uiLanguage}}.',
+    "La langue active de la bibliothèque, {{libraryLanguage}}, n'est pas disponible pour l'interface. L'application utilise {{fallbackLanguage}}.":
+        'The active library language, {{libraryLanguage}}, is not available for the interface. The app uses {{fallbackLanguage}}.',
+    'Automatique utilise actuellement {{uiLanguage}}.':
+        'Automatic is currently using {{uiLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}. Utilisez Automatique pour la garder synchronisée avec la bibliothèque.":
+        'The interface is fixed to {{uiLanguage}}. Use Automatic to keep it synced with the library.',
+    "L'interface est fixée sur {{uiLanguage}}. Bibliothèque : {{libraryLanguage}}.":
+        'The interface is fixed to {{uiLanguage}}. Library: {{libraryLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}.": 'The interface is fixed to {{uiLanguage}}.',
     Automatique: 'Automatic',
     Petit: 'Small',
     Normal: 'Normal',

@@ -24,7 +24,9 @@ const sw: Record<string, string> = {
     'Aucun document ajouté': 'Hakuna waraka ulioongezwa',
     'Ajouter un document': 'Ongeza waraka',
     'Choisir un document': 'Chagua waraka',
+    'Mes documents': 'Nyaraka zangu',
     Gérer: 'Dhibiti',
+    'Gérer mes documents': 'Dhibiti nyaraka zangu',
     Alphabet: 'Alfabeti',
     Année: 'Mwaka',
     Années: 'Miaka',
@@ -171,6 +173,8 @@ const sw: Record<string, string> = {
         'Unganisha Google Drive ili <u>{{feature}}</u> iweke vidokezo, mada na mipangilio yako katika usawazishaji.',
     'Ouvrir les réglages de sauvegarde': 'Fungua mipangilio ya hifadhi nakala',
     'Posez votre question...': 'Uliza swali lako...',
+    'Posez votre question... ({{shortcut}} pour une nouvelle ligne)':
+        'Uliza swali lako... ({{shortcut}} kwa mstari mpya)',
     'Essayez une question pour commencer': 'Jaribu swali ili kuanza',
     'Suggère-moi un thème à étudier.': 'Nipendekezee mada ya kujifunza.',
     'Aide-moi à formuler une question de recherche.': 'Nisaidie kuunda swali la utafiti.',
@@ -186,8 +190,11 @@ const sw: Record<string, string> = {
         'Zitatumwa mara tu jibu hili litakapomalizika.',
     "En attente d'envoi.": 'Zinasubiri kutumwa.',
     "Ajoutez un message à la file d'attente...": 'Ongeza ujumbe kwenye foleni...',
+    "Ajoutez un message à la file d'attente... ({{shortcut}} pour une nouvelle ligne)":
+        'Ongeza ujumbe kwenye foleni... ({{shortcut}} kwa mstari mpya)',
     "Ajouter à la file d'attente": 'Ongeza kwenye foleni',
     'Retirer de la file': 'Ondoa kwenye foleni',
+    'Maj+Entrée': 'Shift+Enter',
     Conversations: 'Mazungumzo',
     'Aucune conversation': 'Hakuna mazungumzo',
     'Aucun sujet': 'Hakuna mada',
@@ -243,7 +250,7 @@ const sw: Record<string, string> = {
 
     // ── General tab ──
     'Langue active': 'lugha ya maudhui',
-    'Langue des prédications': 'Lugha ya mahubiri',
+    'Langue de la bibliothèque': 'Lugha ya maktaba',
     Bibliothèque: 'Maktaba',
     'Langues installées': 'Lugha zilizosakinishwa',
     "Documentation d'utilisation": 'Nyaraka za mtumiaji',
@@ -873,6 +880,33 @@ const sw: Record<string, string> = {
     "Langue de l'interface": 'Lugha ya kiolesura',
     "Détermine la langue des menus, boutons et messages de l'application.":
         'Hudhibiti lugha ya menyu, vitufe na ujumbe katika programu.',
+    "Automatique suit la langue active de la bibliothèque quand elle est disponible pour l'interface.":
+        'Kiotomatiki hufuata lugha hai ya maktaba inapopatikana kwa kiolesura.',
+    'Langue active de la bibliothèque : {{libraryLanguage}}.':
+        'Lugha hai ya maktaba: {{libraryLanguage}}.',
+    "Langue de l'interface actuelle : {{uiLanguage}}.":
+        'Lugha ya sasa ya kiolesura: {{uiLanguage}}.',
+    "Comme la langue active de la bibliothèque n'est pas prise en charge pour l'interface, l'application utilise {{fallbackLanguage}}.":
+        'Kwa kuwa lugha hai ya maktaba haitumiki kwenye kiolesura, programu hutumia {{fallbackLanguage}}.',
+    "Aucune langue de bibliothèque n'est définie pour le moment.":
+        'Hakuna lugha ya maktaba iliyowekwa kwa sasa.',
+    "L'interface est verrouillée sur {{uiLanguage}}.":
+        'Kiolesura kimefungwa kwenye {{uiLanguage}}.',
+    'La langue active de la bibliothèque est aussi {{libraryLanguage}}.':
+        'Lugha hai ya maktaba pia ni {{libraryLanguage}}.',
+    "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.":
+        'Tumia Kiotomatiki ikiwa unataka kuweka lugha ya kiolesura ilingane na lugha hai ya maktaba.',
+    'Automatique suit la langue active de la bibliothèque. Actuellement : {{uiLanguage}}.':
+        'Kiotomatiki hufuata lugha hai ya maktaba. Kwa sasa: {{uiLanguage}}.',
+    "La langue active de la bibliothèque, {{libraryLanguage}}, n'est pas disponible pour l'interface. L'application utilise {{fallbackLanguage}}.":
+        'Lugha hai ya maktaba, {{libraryLanguage}}, haipatikani kwa kiolesura. Programu hutumia {{fallbackLanguage}}.',
+    'Automatique utilise actuellement {{uiLanguage}}.':
+        'Kiotomatiki kwa sasa hutumia {{uiLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}. Utilisez Automatique pour la garder synchronisée avec la bibliothèque.":
+        'Kiolesura kimewekwa kwenye {{uiLanguage}}. Tumia Kiotomatiki kukiweka sawia na maktaba.',
+    "L'interface est fixée sur {{uiLanguage}}. Bibliothèque : {{libraryLanguage}}.":
+        'Kiolesura kimewekwa kwenye {{uiLanguage}}. Maktaba: {{libraryLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}.": 'Kiolesura kimewekwa kwenye {{uiLanguage}}.',
     Automatique: 'Kiotomatiki',
     Petit: 'Ndogo',
     Normal: 'Kawaida',

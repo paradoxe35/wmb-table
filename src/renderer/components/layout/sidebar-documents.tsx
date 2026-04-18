@@ -115,7 +115,7 @@ const DocumentsAdded = () => {
                     icon={<PlusOutlined />}
                     onClick={openCustomDocumentModal}
                 >
-                    {t('Gérer')}
+                    {t('Gérer mes documents')}
                 </Button>
             </div>
             <Divider style={{ padding: 0, margin: 0 }} />

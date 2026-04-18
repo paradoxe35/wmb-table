@@ -559,6 +559,24 @@ body {
     flex-shrink: 0;
 }
 
+.settings-page__tabs > .ant-tabs-nav {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    margin-bottom: 16px;
+    background: var(--ant-color-bg-container, #fff);
+    box-shadow: 0 1px 0 var(--ant-color-split, rgba(5, 5, 5, 0.06));
+    border-radius: var(--ant-border-radius-lg);
+}
+
+.settings-page__tabs .ant-tabs-tab:first-child {
+    margin-left: 8px;
+}
+
+.settings-page__tabs > .ant-tabs-nav::before {
+    border-bottom: 0;
+}
+
 .inline-help-trigger.ant-btn {
     width: 22px;
     min-width: 22px;
@@ -638,6 +656,21 @@ body {
 // ---------------------------------------------------------------------------
 .bible-option-page {
     padding-bottom: var(--option-page-inline-padding);
+}
+
+.bible-option-page__sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    background: var(--ant-color-bg-container, #fff);
+    box-shadow: 0 1px 0 var(--ant-color-split, rgba(5, 5, 5, 0.06));
+}
+
+.bible-option-page__menu.ant-menu {
+    margin-bottom: 7px;
+    background: transparent;
 }
 
 .bible-version-bar {

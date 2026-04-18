@@ -23,7 +23,9 @@ const es: Record<string, string> = {
     'Aucun document ajouté': 'Ningún documento añadido',
     'Ajouter un document': 'Añadir un documento',
     'Choisir un document': 'Elegir un documento',
+    'Mes documents': 'Mis documentos',
     Gérer: 'Gestionar',
+    'Gérer mes documents': 'Gestionar mis documentos',
     Alphabet: 'Alfabeto',
     Année: 'Año',
     Années: 'Años',
@@ -171,6 +173,8 @@ const es: Record<string, string> = {
         'Conecte Google Drive para que <u>{{feature}}</u> mantenga sincronizados sus notas, temas y ajustes.',
     'Ouvrir les réglages de sauvegarde': 'Abrir ajustes de copia de seguridad',
     'Posez votre question...': 'Haga su pregunta...',
+    'Posez votre question... ({{shortcut}} pour une nouvelle ligne)':
+        'Haga su pregunta... ({{shortcut}} para una nueva línea)',
     'Essayez une question pour commencer': 'Pruebe una pregunta para empezar',
     'Suggère-moi un thème à étudier.': 'Sugiérame un tema para estudiar.',
     'Aide-moi à formuler une question de recherche.':
@@ -187,8 +191,11 @@ const es: Record<string, string> = {
         'Se enviarán en cuanto termine esta respuesta.',
     "En attente d'envoi.": 'Pendientes de envío.',
     "Ajoutez un message à la file d'attente...": 'Añada un mensaje a la cola...',
+    "Ajoutez un message à la file d'attente... ({{shortcut}} pour une nouvelle ligne)":
+        'Añada un mensaje a la cola... ({{shortcut}} para una nueva línea)',
     "Ajouter à la file d'attente": 'Añadir a la cola',
     'Retirer de la file': 'Quitar de la cola',
+    'Maj+Entrée': 'Mayús+Intro',
     Conversations: 'Conversaciones',
     'Aucune conversation': 'Sin conversaciones',
     'Aucun sujet': 'Sin temas',
@@ -244,7 +251,7 @@ const es: Record<string, string> = {
 
     // ── General tab ──
     'Langue active': 'Idioma activo',
-    'Langue des prédications': 'Idioma de las predicaciones',
+    'Langue de la bibliothèque': 'Idioma de la biblioteca',
     Bibliothèque: 'Biblioteca',
     'Langues installées': 'Idiomas instalados',
     "Documentation d'utilisation": 'Documentación de uso',
@@ -878,6 +885,32 @@ const es: Record<string, string> = {
     "Langue de l'interface": 'Idioma de la interfaz',
     "Détermine la langue des menus, boutons et messages de l'application.":
         'Controla el idioma de menús, botones y mensajes de la aplicación.',
+    "Automatique suit la langue active de la bibliothèque quand elle est disponible pour l'interface.":
+        'Automático sigue el idioma activo de la biblioteca cuando está disponible para la interfaz.',
+    'Langue active de la bibliothèque : {{libraryLanguage}}.':
+        'Idioma activo de la biblioteca: {{libraryLanguage}}.',
+    "Langue de l'interface actuelle : {{uiLanguage}}.":
+        'Idioma actual de la interfaz: {{uiLanguage}}.',
+    "Comme la langue active de la bibliothèque n'est pas prise en charge pour l'interface, l'application utilise {{fallbackLanguage}}.":
+        'Como el idioma activo de la biblioteca no está disponible para la interfaz, la aplicación usa {{fallbackLanguage}}.',
+    "Aucune langue de bibliothèque n'est définie pour le moment.":
+        'No hay ningún idioma de biblioteca definido por el momento.',
+    "L'interface est verrouillée sur {{uiLanguage}}.": 'La interfaz está fijada en {{uiLanguage}}.',
+    'La langue active de la bibliothèque est aussi {{libraryLanguage}}.':
+        'El idioma activo de la biblioteca también es {{libraryLanguage}}.',
+    "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.":
+        'Use Automático si quiere mantener sincronizado el idioma de la interfaz con el idioma activo de la biblioteca.',
+    'Automatique suit la langue active de la bibliothèque. Actuellement : {{uiLanguage}}.':
+        'Automático sigue el idioma activo de la biblioteca. Actualmente: {{uiLanguage}}.',
+    "La langue active de la bibliothèque, {{libraryLanguage}}, n'est pas disponible pour l'interface. L'application utilise {{fallbackLanguage}}.":
+        'El idioma activo de la biblioteca, {{libraryLanguage}}, no está disponible para la interfaz. La aplicación usa {{fallbackLanguage}}.',
+    'Automatique utilise actuellement {{uiLanguage}}.':
+        'Automático usa actualmente {{uiLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}. Utilisez Automatique pour la garder synchronisée avec la bibliothèque.":
+        'La interfaz está fijada en {{uiLanguage}}. Use Automático para mantenerla sincronizada con la biblioteca.',
+    "L'interface est fixée sur {{uiLanguage}}. Bibliothèque : {{libraryLanguage}}.":
+        'La interfaz está fijada en {{uiLanguage}}. Biblioteca: {{libraryLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}.": 'La interfaz está fijada en {{uiLanguage}}.',
     Automatique: 'Automático',
     Petit: 'Pequeño',
     Normal: 'Normal',
