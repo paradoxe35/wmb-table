@@ -2,6 +2,7 @@ import { h } from 'vue';
 import type { Theme } from 'vitepress';
 import DefaultTheme from 'vitepress/theme';
 import Layout from './Layout.vue';
+import AppScreenshotsShowcase from './components/AppScreenshotsShowcase.vue';
 import ScreenshotPlaceholder from './components/ScreenshotPlaceholder.vue';
 import HomeFeatureCards from './components/HomeFeatureCards.vue';
 import HomeQuickSteps from './components/HomeQuickSteps.vue';
@@ -13,6 +14,7 @@ export default {
     extends: DefaultTheme,
     Layout: () => h(Layout),
     enhanceApp({ app }) {
+        app.component('AppScreenshotsShowcase', AppScreenshotsShowcase);
         app.component('ScreenshotPlaceholder', ScreenshotPlaceholder);
         app.component('HomeFeatureCards', HomeFeatureCards);
         app.component('HomeQuickSteps', HomeQuickSteps);
