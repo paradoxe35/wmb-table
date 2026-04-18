@@ -564,9 +564,13 @@ body {
     top: 0;
     z-index: 6;
     margin-bottom: 16px;
-    padding: 8px 8px 10px;
     background: var(--ant-color-bg-container, #fff);
     box-shadow: 0 1px 0 var(--ant-color-split, rgba(5, 5, 5, 0.06));
+    border-radius: var(--ant-border-radius-lg);
+}
+
+.settings-page__tabs .ant-tabs-tab:first-child {
+    margin-left: 8px;
 }
 
 .settings-page__tabs > .ant-tabs-nav::before {
