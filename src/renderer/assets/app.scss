@@ -563,14 +563,14 @@ body {
     position: sticky;
     top: 0;
     z-index: 6;
-    margin-bottom: 8px;
-    padding-bottom: 10px;
-    background: linear-gradient(
-        to bottom,
-        var(--ant-color-bg-container, #fff) 0%,
-        var(--ant-color-bg-container, #fff) calc(100% - 10px),
-        transparent 100%
-    );
+    margin-bottom: 16px;
+    padding: 8px 8px 10px;
+    background: var(--ant-color-bg-container, #fff);
+    box-shadow: 0 1px 0 var(--ant-color-split, rgba(5, 5, 5, 0.06));
+}
+
+.settings-page__tabs > .ant-tabs-nav::before {
+    border-bottom: 0;
 }
 
 .inline-help-trigger.ant-btn {
