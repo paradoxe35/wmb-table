@@ -31,6 +31,7 @@ export default function ChatInput({
     const { t } = useTranslation();
     const inputRef = useRef<InputRef>(null);
     const wasSending = useRef(false);
+    const newLineShortcut = t('Maj+Entrée');
 
     // Focus on mount and when conversation changes (new conversation or switch)
     useEffect(() => {
@@ -115,15 +116,22 @@ export default function ChatInput({
                     value={draft}
                     onChange={(e) => onDraftChange(e.target.value)}
                     onPressEnter={(e) => {
-                        if (!e.shiftKey) {
-                            e.preventDefault();
-                            onSend();
+                        if (e.shiftKey) {
+                            return;
                         }
+
+                        e.preventDefault();
+                        onSend();
                     }}
                     placeholder={
                         sending
-                            ? t("Ajoutez un message à la file d'attente...")
-                            : t('Posez votre question...')
+                            ? t(
+                                  "Ajoutez un message à la file d'attente... ({{shortcut}} pour une nouvelle ligne)",
+                                  { shortcut: newLineShortcut },
+                              )
+                            : t('Posez votre question... ({{shortcut}} pour une nouvelle ligne)', {
+                                  shortcut: newLineShortcut,
+                              })
                     }
                     variant="borderless"
                     className="ai-chat__input-textarea"

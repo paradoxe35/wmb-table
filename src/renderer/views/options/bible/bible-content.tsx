@@ -173,14 +173,6 @@ function BibleTestamentContent({
         setCurrentKey(k);
     }, []);
 
-    useEffect(() => {
-        if (currentKey) {
-            document
-                .getElementById(`book-${currentKey}`)
-                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, [currentKey]);
-
     const collapseItems = useMemo(
         () =>
             bibleIndex

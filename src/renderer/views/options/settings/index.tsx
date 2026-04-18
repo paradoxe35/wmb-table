@@ -157,6 +157,7 @@ export default function Settings() {
 
     return (
         <div
+            className="settings-page"
             style={{ padding: '16px 12px', maxWidth: 700, marginLeft: 'auto', marginRight: 'auto' }}
         >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -169,7 +170,12 @@ export default function Settings() {
                 {t('Gérez les préférences de votre application.')}
             </Text>
             <Divider style={{ margin: '12px 0' }} />
-            <Tabs items={tabItems} activeKey={activeTab} onChange={onTabChange} />
+            <Tabs
+                className="settings-page__tabs"
+                items={tabItems}
+                activeKey={activeTab}
+                onChange={onTabChange}
+            />
         </div>
     );
 }

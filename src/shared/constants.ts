@@ -94,6 +94,20 @@ const UI_LANGUAGE_CODES = new Set(
     UI_LANGUAGE_OPTIONS.map((option) => option.value).filter((value) => value !== 'auto'),
 );
 
+export function getSupportedUiLanguage(languageCode: string | null | undefined): UiLanguage | null {
+    const normalized = languageCode?.trim().toLowerCase();
+    if (!normalized) {
+        return null;
+    }
+
+    if (UI_LANGUAGE_CODES.has(normalized as UiLanguage)) {
+        return normalized as UiLanguage;
+    }
+
+    const baseLanguage = normalized.split('-')[0] as UiLanguage;
+    return UI_LANGUAGE_CODES.has(baseLanguage) ? baseLanguage : null;
+}
+
 /**
  * Resolve the effective UI language.
  * - "auto" or null → derive from content language if supported, else fallback
@@ -103,12 +117,12 @@ export function resolveUiLanguage(
     uiPreference: UiLanguagePreference | null | undefined,
     contentLanguage: string | null | undefined,
 ): UiLanguage {
-    if (uiPreference && uiPreference !== 'auto' && UI_LANGUAGE_CODES.has(uiPreference)) {
-        return uiPreference;
+    if (uiPreference && uiPreference !== 'auto') {
+        const explicitLanguage = getSupportedUiLanguage(uiPreference);
+        if (explicitLanguage) {
+            return explicitLanguage;
+        }
     }
-    // Auto mode: follow content language if it's a supported UI language
-    if (contentLanguage && UI_LANGUAGE_CODES.has(contentLanguage as UiLanguage)) {
-        return contentLanguage as UiLanguage;
-    }
-    return FALLBACK_UI_LANGUAGE;
+
+    return getSupportedUiLanguage(contentLanguage) ?? FALLBACK_UI_LANGUAGE;
 }

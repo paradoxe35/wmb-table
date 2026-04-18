@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Segmented, Select, Space, Tag, Tooltip, Typography, message } from 'antd';
 import {
@@ -7,6 +8,7 @@ import {
     ClockCircleOutlined,
     CloudSyncOutlined,
     DesktopOutlined,
+    FontSizeOutlined,
     GlobalOutlined,
     PauseCircleOutlined,
     ReloadOutlined,
@@ -14,14 +16,147 @@ import {
 } from '@ant-design/icons';
 import { MoonIcon, SunIcon } from '@renderer/components/icons';
 import type { BackupStatus, UpdaterNotification } from '@shared/types';
-import { FontSizeOutlined } from '@ant-design/icons';
 import { useAppStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { useThemeStore, type FontSizeOption, type ThemeMode } from '@renderer/stores/theme.store';
-import { UI_LANGUAGE_OPTIONS, type UiLanguagePreference } from '@shared/constants';
+import {
+    UI_LANGUAGE_OPTIONS,
+    getSupportedUiLanguage,
+    resolveUiLanguage,
+    type UiLanguagePreference,
+} from '@shared/constants';
 import { DOCS_LINK } from '@renderer/utils/constants';
 import { SYNC_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
+const UI_LANGUAGE_LABELS = UI_LANGUAGE_OPTIONS.reduce<Record<string, string>>((acc, option) => {
+    if (option.value !== 'auto') {
+        acc[option.value] = option.label;
+    }
+    return acc;
+}, {});
+const DEFAULT_UI_LANGUAGE = resolveUiLanguage('auto', null);
+
+function formatLanguageDisplay(
+    code: string | null | undefined,
+    installedLanguages: Array<{ code: string; language: string }>,
+    t: TFunction,
+): string {
+    if (!code) {
+        return t('Non défini');
+    }
+
+    const installedMatch = installedLanguages.find((language) => language.code === code);
+    const supportedUiLanguage = getSupportedUiLanguage(code);
+    const label =
+        installedMatch?.language ??
+        (supportedUiLanguage ? UI_LANGUAGE_LABELS[supportedUiLanguage] : null) ??
+        code;
+
+    return `${label} (${code})`;
+}
+
+function formatUiLanguageDisplay(code: string): string {
+    return `${UI_LANGUAGE_LABELS[code] ?? code} (${code})`;
+}
+
+function buildUiLanguageDescription({
+    contentLanguage,
+    contentLanguageDisplay,
+    supportedContentUiLanguage,
+    effectiveUiLanguageDisplay,
+    fallbackUiLanguageDisplay,
+    uiLanguagePreference,
+    t,
+}: {
+    contentLanguage: string | null;
+    contentLanguageDisplay: string;
+    supportedContentUiLanguage: string | null;
+    effectiveUiLanguageDisplay: string;
+    fallbackUiLanguageDisplay: string;
+    uiLanguagePreference: UiLanguagePreference;
+    t: TFunction;
+}): string {
+    const parts: string[] = [];
+
+    if (uiLanguagePreference === 'auto') {
+        parts.push(
+            t(
+                "Automatique suit la langue active de la bibliothèque quand elle est disponible pour l'interface.",
+            ),
+        );
+
+        if (contentLanguage) {
+            parts.push(
+                t('Langue active de la bibliothèque : {{libraryLanguage}}.', {
+                    libraryLanguage: contentLanguageDisplay,
+                }),
+            );
+
+            if (supportedContentUiLanguage) {
+                parts.push(
+                    t("Langue de l'interface actuelle : {{uiLanguage}}.", {
+                        uiLanguage: effectiveUiLanguageDisplay,
+                    }),
+                );
+            } else {
+                parts.push(
+                    t(
+                        "Comme la langue active de la bibliothèque n'est pas prise en charge pour l'interface, l'application utilise {{fallbackLanguage}}.",
+                        { fallbackLanguage: fallbackUiLanguageDisplay },
+                    ),
+                );
+            }
+        } else {
+            parts.push(t("Aucune langue de bibliothèque n'est définie pour le moment."));
+            parts.push(
+                t("Langue de l'interface actuelle : {{uiLanguage}}.", {
+                    uiLanguage: effectiveUiLanguageDisplay,
+                }),
+            );
+        }
+
+        return parts.join(' ');
+    }
+
+    parts.push(
+        t("L'interface est verrouillée sur {{uiLanguage}}.", {
+            uiLanguage: effectiveUiLanguageDisplay,
+        }),
+    );
+
+    if (contentLanguage) {
+        if (supportedContentUiLanguage === uiLanguagePreference) {
+            parts.push(
+                t('La langue active de la bibliothèque est aussi {{libraryLanguage}}.', {
+                    libraryLanguage: contentLanguageDisplay,
+                }),
+            );
+            parts.push(
+                t(
+                    "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.",
+                ),
+            );
+        } else {
+            parts.push(
+                t('Langue active de la bibliothèque : {{libraryLanguage}}.', {
+                    libraryLanguage: contentLanguageDisplay,
+                }),
+            );
+
+            if (supportedContentUiLanguage) {
+                parts.push(
+                    t(
+                        "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.",
+                    ),
+                );
+            }
+        }
+    } else {
+        parts.push(t("Aucune langue de bibliothèque n'est définie pour le moment."));
+    }
+
+    return parts.join(' ');
+}
 
 export default function GeneralTab() {
     const { t } = useTranslation();
@@ -31,7 +166,7 @@ export default function GeneralTab() {
     const [backupStatus, setBackupStatus] = useState<BackupStatus | null>(null);
 
     const installedCount = installedLanguages.length;
-    const langName = useMemo(
+    const contentLanguageName = useMemo(
         () => installedLanguages.find((l) => l.code === contentLanguage)?.language ?? '',
         [installedLanguages, contentLanguage],
     );
@@ -50,6 +185,47 @@ export default function GeneralTab() {
         },
         [setUiLanguagePreference],
     );
+
+    const effectiveUiLanguage = useMemo(
+        () => resolveUiLanguage(uiLanguagePreference, contentLanguage),
+        [contentLanguage, uiLanguagePreference],
+    );
+    const supportedContentUiLanguage = useMemo(
+        () => getSupportedUiLanguage(contentLanguage),
+        [contentLanguage],
+    );
+    const contentLanguageDisplay = useMemo(
+        () => formatLanguageDisplay(contentLanguage, installedLanguages, t),
+        [contentLanguage, installedLanguages, t],
+    );
+    const effectiveUiLanguageDisplay = useMemo(
+        () => formatUiLanguageDisplay(effectiveUiLanguage),
+        [effectiveUiLanguage],
+    );
+    const fallbackUiLanguageDisplay = useMemo(
+        () => formatUiLanguageDisplay(DEFAULT_UI_LANGUAGE),
+        [],
+    );
+
+    const uiLanguageDescription = useMemo(() => {
+        return buildUiLanguageDescription({
+            contentLanguage,
+            contentLanguageDisplay,
+            supportedContentUiLanguage,
+            effectiveUiLanguageDisplay,
+            fallbackUiLanguageDisplay,
+            uiLanguagePreference,
+            t,
+        });
+    }, [
+        contentLanguage,
+        contentLanguageDisplay,
+        supportedContentUiLanguage,
+        effectiveUiLanguageDisplay,
+        fallbackUiLanguageDisplay,
+        t,
+        uiLanguagePreference,
+    ]);
 
     const refreshBackup = useCallback(() => {
         window.api.backup.getStatus().then((s) => setBackupStatus(s ?? null));
@@ -106,8 +282,8 @@ export default function GeneralTab() {
     const items: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
         {
             icon: <TranslationOutlined />,
-            label: t('Langue des prédications'),
-            value: <Text>{langName || '—'}</Text>,
+            label: t('Langue de la bibliothèque'),
+            value: <Text>{contentLanguageName || '—'}</Text>,
         },
         {
             icon: <GlobalOutlined />,
@@ -221,7 +397,8 @@ export default function GeneralTab() {
                     style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
+                        alignItems: 'flex-start',
+                        gap: 16,
                     }}
                 >
                     <Space orientation="vertical" size={2}>
@@ -231,10 +408,8 @@ export default function GeneralTab() {
                             </Text>
                             <Text>{t("Langue de l'interface")}</Text>
                         </Space>
-                        <Text type="secondary">
-                            {t(
-                                "Détermine la langue des menus, boutons et messages de l'application.",
-                            )}
+                        <Text type="secondary" style={{ maxWidth: 460, whiteSpace: 'normal' }}>
+                            {uiLanguageDescription}
                         </Text>
                     </Space>
                     <Select

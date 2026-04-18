@@ -172,6 +172,8 @@ const pt: Record<string, string> = {
         'Conecte o Google Drive para que <u>{{feature}}</u> mantenha suas notas, assuntos e configurações sincronizados.',
     'Ouvrir les réglages de sauvegarde': 'Abrir configurações de backup',
     'Posez votre question...': 'Faça sua pergunta...',
+    'Posez votre question... ({{shortcut}} pour une nouvelle ligne)':
+        'Faça sua pergunta... ({{shortcut}} para uma nova linha)',
     'Essayez une question pour commencer': 'Experimente uma pergunta para começar',
     'Suggère-moi un thème à étudier.': 'Sugira um tema para eu estudar.',
     'Aide-moi à formuler une question de recherche.':
@@ -188,8 +190,11 @@ const pt: Record<string, string> = {
         'Elas serão enviadas assim que esta resposta terminar.',
     "En attente d'envoi.": 'Aguardando envio.',
     "Ajoutez un message à la file d'attente...": 'Adicione uma mensagem à fila...',
+    "Ajoutez un message à la file d'attente... ({{shortcut}} pour une nouvelle ligne)":
+        'Adicione uma mensagem à fila... ({{shortcut}} para uma nova linha)',
     "Ajouter à la file d'attente": 'Adicionar à fila',
     'Retirer de la file': 'Remover da fila',
+    'Maj+Entrée': 'Shift+Enter',
     Conversations: 'Conversas',
     'Aucune conversation': 'Nenhuma conversa',
     'Aucun sujet': 'Nenhum assunto',
@@ -245,7 +250,7 @@ const pt: Record<string, string> = {
 
     // ── General tab ──
     'Langue active': 'idioma do conteúdo',
-    'Langue des prédications': 'Idioma dos sermões',
+    'Langue de la bibliothèque': 'Idioma da biblioteca',
     Bibliothèque: 'Biblioteca',
     'Langues installées': 'Idiomas instalados',
     "Documentation d'utilisation": 'Documentação do usuário',
@@ -875,6 +880,21 @@ const pt: Record<string, string> = {
     "Langue de l'interface": 'Idioma da interface',
     "Détermine la langue des menus, boutons et messages de l'application.":
         'Define o idioma dos menus, botões e mensagens do aplicativo.',
+    "Automatique suit la langue active de la bibliothèque quand elle est disponible pour l'interface.":
+        'Automático segue o idioma ativo da biblioteca quando ele está disponível para a interface.',
+    'Langue active de la bibliothèque : {{libraryLanguage}}.':
+        'Idioma ativo da biblioteca: {{libraryLanguage}}.',
+    "Langue de l'interface actuelle : {{uiLanguage}}.":
+        'Idioma atual da interface: {{uiLanguage}}.',
+    "Comme la langue active de la bibliothèque n'est pas prise en charge pour l'interface, l'application utilise {{fallbackLanguage}}.":
+        'Como o idioma ativo da biblioteca não é suportado para a interface, o aplicativo usa {{fallbackLanguage}}.',
+    "Aucune langue de bibliothèque n'est définie pour le moment.":
+        'Nenhum idioma de biblioteca está definido no momento.',
+    "L'interface est verrouillée sur {{uiLanguage}}.": 'A interface está fixa em {{uiLanguage}}.',
+    'La langue active de la bibliothèque est aussi {{libraryLanguage}}.':
+        'O idioma ativo da biblioteca também é {{libraryLanguage}}.',
+    "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.":
+        'Use Automático se quiser manter o idioma da interface sincronizado com o idioma ativo da biblioteca.',
     Automatique: 'Automático',
     Petit: 'Pequeno',
     Normal: 'Normal',
