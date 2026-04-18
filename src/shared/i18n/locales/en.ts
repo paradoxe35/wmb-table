@@ -891,6 +891,17 @@ const en: Record<string, string> = {
         'The active library language is also {{libraryLanguage}}.',
     "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.":
         'Use Automatic if you want to keep the interface language synced with the active library language.',
+    'Automatique suit la langue active de la bibliothèque. Actuellement : {{uiLanguage}}.':
+        'Automatic follows the active library language. Currently: {{uiLanguage}}.',
+    "La langue active de la bibliothèque, {{libraryLanguage}}, n'est pas disponible pour l'interface. L'application utilise {{fallbackLanguage}}.":
+        'The active library language, {{libraryLanguage}}, is not available for the interface. The app uses {{fallbackLanguage}}.',
+    'Automatique utilise actuellement {{uiLanguage}}.':
+        'Automatic is currently using {{uiLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}. Utilisez Automatique pour la garder synchronisée avec la bibliothèque.":
+        'The interface is fixed to {{uiLanguage}}. Use Automatic to keep it synced with the library.',
+    "L'interface est fixée sur {{uiLanguage}}. Bibliothèque : {{libraryLanguage}}.":
+        'The interface is fixed to {{uiLanguage}}. Library: {{libraryLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}.": 'The interface is fixed to {{uiLanguage}}.',
     Automatique: 'Automatic',
     Petit: 'Small',
     Normal: 'Normal',

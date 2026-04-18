@@ -76,86 +76,51 @@ function buildUiLanguageDescription({
     uiLanguagePreference: UiLanguagePreference;
     t: TFunction;
 }): string {
-    const parts: string[] = [];
-
     if (uiLanguagePreference === 'auto') {
-        parts.push(
-            t(
-                "Automatique suit la langue active de la bibliothèque quand elle est disponible pour l'interface.",
-            ),
-        );
-
         if (contentLanguage) {
-            parts.push(
-                t('Langue active de la bibliothèque : {{libraryLanguage}}.', {
-                    libraryLanguage: contentLanguageDisplay,
-                }),
-            );
-
             if (supportedContentUiLanguage) {
-                parts.push(
-                    t("Langue de l'interface actuelle : {{uiLanguage}}.", {
-                        uiLanguage: effectiveUiLanguageDisplay,
-                    }),
+                return t(
+                    'Automatique suit la langue active de la bibliothèque. Actuellement : {{uiLanguage}}.',
+                    { uiLanguage: effectiveUiLanguageDisplay },
                 );
             } else {
-                parts.push(
-                    t(
-                        "Comme la langue active de la bibliothèque n'est pas prise en charge pour l'interface, l'application utilise {{fallbackLanguage}}.",
-                        { fallbackLanguage: fallbackUiLanguageDisplay },
-                    ),
+                return t(
+                    "La langue active de la bibliothèque, {{libraryLanguage}}, n'est pas disponible pour l'interface. L'application utilise {{fallbackLanguage}}.",
+                    {
+                        libraryLanguage: contentLanguageDisplay,
+                        fallbackLanguage: fallbackUiLanguageDisplay,
+                    },
                 );
             }
-        } else {
-            parts.push(t("Aucune langue de bibliothèque n'est définie pour le moment."));
-            parts.push(
-                t("Langue de l'interface actuelle : {{uiLanguage}}.", {
-                    uiLanguage: effectiveUiLanguageDisplay,
-                }),
-            );
         }
 
-        return parts.join(' ');
-    }
-
-    parts.push(
-        t("L'interface est verrouillée sur {{uiLanguage}}.", {
+        return t('Automatique utilise actuellement {{uiLanguage}}.', {
             uiLanguage: effectiveUiLanguageDisplay,
-        }),
-    );
+        });
+    }
 
     if (contentLanguage) {
         if (supportedContentUiLanguage === uiLanguagePreference) {
-            parts.push(
-                t('La langue active de la bibliothèque est aussi {{libraryLanguage}}.', {
-                    libraryLanguage: contentLanguageDisplay,
-                }),
-            );
-            parts.push(
-                t(
-                    "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.",
-                ),
+            return t(
+                "L'interface est fixée sur {{uiLanguage}}. Utilisez Automatique pour la garder synchronisée avec la bibliothèque.",
+                { uiLanguage: effectiveUiLanguageDisplay },
             );
         } else {
-            parts.push(
-                t('Langue active de la bibliothèque : {{libraryLanguage}}.', {
-                    libraryLanguage: contentLanguageDisplay,
-                }),
-            );
-
             if (supportedContentUiLanguage) {
-                parts.push(
-                    t(
-                        "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.",
-                    ),
+                return t(
+                    "L'interface est fixée sur {{uiLanguage}}. Bibliothèque : {{libraryLanguage}}.",
+                    {
+                        uiLanguage: effectiveUiLanguageDisplay,
+                        libraryLanguage: contentLanguageDisplay,
+                    },
                 );
             }
         }
-    } else {
-        parts.push(t("Aucune langue de bibliothèque n'est définie pour le moment."));
     }
 
-    return parts.join(' ');
+    return t("L'interface est fixée sur {{uiLanguage}}.", {
+        uiLanguage: effectiveUiLanguageDisplay,
+    });
 }
 
 export default function GeneralTab() {

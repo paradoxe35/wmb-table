@@ -900,6 +900,17 @@ const es: Record<string, string> = {
         'El idioma activo de la biblioteca también es {{libraryLanguage}}.',
     "Utilisez Automatique si vous voulez garder la langue de l'interface synchronisée avec la langue active de la bibliothèque.":
         'Use Automático si quiere mantener sincronizado el idioma de la interfaz con el idioma activo de la biblioteca.',
+    'Automatique suit la langue active de la bibliothèque. Actuellement : {{uiLanguage}}.':
+        'Automático sigue el idioma activo de la biblioteca. Actualmente: {{uiLanguage}}.',
+    "La langue active de la bibliothèque, {{libraryLanguage}}, n'est pas disponible pour l'interface. L'application utilise {{fallbackLanguage}}.":
+        'El idioma activo de la biblioteca, {{libraryLanguage}}, no está disponible para la interfaz. La aplicación usa {{fallbackLanguage}}.',
+    'Automatique utilise actuellement {{uiLanguage}}.':
+        'Automático usa actualmente {{uiLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}. Utilisez Automatique pour la garder synchronisée avec la bibliothèque.":
+        'La interfaz está fijada en {{uiLanguage}}. Use Automático para mantenerla sincronizada con la biblioteca.',
+    "L'interface est fixée sur {{uiLanguage}}. Bibliothèque : {{libraryLanguage}}.":
+        'La interfaz está fijada en {{uiLanguage}}. Biblioteca: {{libraryLanguage}}.',
+    "L'interface est fixée sur {{uiLanguage}}.": 'La interfaz está fijada en {{uiLanguage}}.',
     Automatique: 'Automático',
     Petit: 'Pequeño',
     Normal: 'Normal',
