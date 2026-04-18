@@ -99,7 +99,7 @@ const ModalTitle = ({ count }: { count: number }) => {
 
     return (
         <Space>
-            <span>{t('Documents ajoutés')}</span>
+            <span>{t('Mes documents')}</span>
             <Typography.Text type="secondary">({count})</Typography.Text>
             {!appLoaded && <Spin indicator={<LoadingOutlined spin />} size="small" />}
         </Space>
