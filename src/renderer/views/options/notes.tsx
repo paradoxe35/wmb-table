@@ -9,10 +9,17 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 const pageTransition = {
     type: 'spring',
-    stiffness: 320,
-    damping: 30,
-    mass: 0.9,
+    stiffness: 430,
+    damping: 34,
+    mass: 0.72,
 } as const;
+const animatedPageStyle = {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column' as const,
+    minHeight: 0,
+    width: '100%',
+};
 
 const pageSwitchVariants = {
     enter: (direction: number) => ({
@@ -56,7 +63,16 @@ export default function Editor() {
     }, [workingNote, setWorkingNoteId]);
 
     return (
-        <div style={{ position: 'relative', overflow: 'hidden' }}>
+        <div
+            style={{
+                position: 'relative',
+                overflow: 'hidden',
+                display: 'flex',
+                flex: 1,
+                flexDirection: 'column',
+                minHeight: 0,
+            }}
+        >
             <AnimatePresence initial={false} mode="wait" custom={direction}>
                 {workingNote ? (
                     <motion.div
@@ -67,6 +83,7 @@ export default function Editor() {
                         animate="center"
                         exit="exit"
                         transition={pageTransition}
+                        style={animatedPageStyle}
                     >
                         <EditorContent workingNoteId={workingNote} backToNotes={backToNotes} />
                     </motion.div>
@@ -79,6 +96,7 @@ export default function Editor() {
                         animate="center"
                         exit="exit"
                         transition={pageTransition}
+                        style={animatedPageStyle}
                     >
                         <OptionPageLayout title={t('Notes')} help={getNotesPageHelp(t)}>
                             <Notes setWorkingNote={openNote} />
