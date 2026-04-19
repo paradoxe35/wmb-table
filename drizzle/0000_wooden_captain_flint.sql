@@ -80,7 +80,7 @@ CREATE TABLE `configurations` (
 	`content_language` text,
 	`active_bible_version_abbreviation` text,
 	`remember_reading_position` integer DEFAULT true NOT NULL,
-	`max_tabs` integer DEFAULT 12 NOT NULL,
+	`max_tabs` integer DEFAULT 10 NOT NULL,
 	`ui_language` text,
 	`sidebar_hidden` integer DEFAULT false NOT NULL
 );
