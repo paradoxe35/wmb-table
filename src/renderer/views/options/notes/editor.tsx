@@ -34,6 +34,22 @@ import './ckeditor/ckeditor';
 // @ts-expect-error — CKEditor UMD attaches to window
 const DecoupledDocumentEditor: any = window.DecoupledDocumentEditor;
 
+function findAnchorElement(
+    target: EventTarget | null,
+    boundary?: EventTarget | null,
+): HTMLAnchorElement | null {
+    let current = target instanceof HTMLElement ? target : null;
+
+    while (current && current !== boundary) {
+        if (current instanceof HTMLAnchorElement) {
+            return current;
+        }
+        current = current.parentElement;
+    }
+
+    return null;
+}
+
 /** Dismiss CKEditor's link balloon toolbar by clearing the selection. */
 function dismissEditorBalloon(editor: any): void {
     if (!editor) return;
@@ -372,15 +388,21 @@ export default function EditorContent({
         const editor = editorRef.current;
         if (!editor || !contextEvent.current?.target) return;
 
-        let target = contextEvent.current.target as HTMLElement;
-        if (target.tagName !== 'A') target = target.parentElement as HTMLElement;
+        const target = findAnchorElement(contextEvent.current.target);
 
-        if (
-            target?.tagName === 'A' &&
-            target.getAttribute('href')?.startsWith(referenceDocumentBrandLink)
-        ) {
+        if (target?.tagName === 'A') {
             const href = target.getAttribute('href')!;
-            const refId = substrAfter(href, referenceDocumentBrandLink);
+            const isDocumentReference = href.startsWith(referenceDocumentBrandLink);
+            const isBibleReference = href.startsWith(referenceBibleBrandLink);
+
+            if (!isDocumentReference && !isBibleReference) {
+                message.warning(t('Cliquez droit sur une référence pour la supprimer'));
+                return;
+            }
+
+            const refId = isDocumentReference
+                ? substrAfter(href, referenceDocumentBrandLink)
+                : substrAfter(href, referenceBibleBrandLink);
 
             window.api.notes.deleteReference(refId).then(() => {
                 // Map the DOM <a> to a CKEditor view element, then select it and unlink
@@ -408,15 +430,16 @@ export default function EditorContent({
         } else {
             message.warning(t('Cliquez droit sur une référence pour la supprimer'));
         }
-    }, []);
+    }, [t]);
 
     const refereToDocument = useCallback(async (type: string) => {
         const editor = editorRef.current;
         if (contextEvent.current && contextEvent.current.target) {
-            const target = contextEvent.current.target as HTMLElement;
+            const target = findAnchorElement(contextEvent.current.target);
             if (
-                target.tagName === 'A' &&
-                target.getAttribute('href')?.startsWith(referenceDocumentBrandLink)
+                target?.tagName === 'A' &&
+                (target.getAttribute('href')?.startsWith(referenceDocumentBrandLink) ||
+                    target.getAttribute('href')?.startsWith(referenceBibleBrandLink))
             ) {
                 return;
             }
@@ -473,30 +496,61 @@ export default function EditorContent({
             });
     };
 
-    const syncAvalaibleReferences = async (fragment: DocumentFragment) => {
-        await window.api.notes.syncReferences(
-            workingNoteIdRef.current,
-            referencesIds(fragment, referenceDocumentBrandLink),
-        );
-        await window.api.notes.syncBibleReferences(
-            workingNoteIdRef.current,
-            referencesIds(fragment, referenceBibleBrandLink),
-        );
-    };
+    const syncAvalaibleReferences = useCallback(async (fragment: DocumentFragment) => {
+        await Promise.all([
+            window.api.notes.syncReferences(
+                workingNoteIdRef.current,
+                referencesIds(fragment, referenceDocumentBrandLink),
+            ),
+            window.api.notes.syncBibleReferences(
+                workingNoteIdRef.current,
+                referencesIds(fragment, referenceBibleBrandLink),
+            ),
+        ]);
+    }, []);
+
+    const syncAvailableReferencesFromHtml = useCallback(
+        async (html: string) => {
+            const fragment = document.createRange().createContextualFragment(html);
+            await syncAvalaibleReferences(fragment);
+        },
+        [syncAvalaibleReferences],
+    );
+
+    const copySelection = useCallback(async () => {
+        const selected = window.getSelection()?.toString().trim();
+        if (!selected) {
+            message.error(t('Impossible de copier le texte.'));
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(selected);
+            message.success(t('Texte copié'));
+        } catch {
+            message.error(t('Impossible de copier le texte.'));
+        }
+    }, [t]);
+
+    const saveEditorData = useCallback(async () => {
+        const editor = editorRef.current;
+        if (!editor) {
+            return;
+        }
+
+        const data = editor.getData();
+        await window.api.notes.updateContent(workingNoteIdRef.current, data);
+        await syncAvailableReferencesFromHtml(data);
+    }, [syncAvailableReferencesFromHtml, workingNoteIdRef]);
 
     const firstSync = useRef(false);
 
     useEffect(() => {
-        if (workingNote && workingNote.content && !firstSync.current) {
-            const fragment = document.createRange().createContextualFragment(workingNote.content);
-            syncAvalaibleReferences(fragment);
+        if (workingNote && !firstSync.current) {
+            void syncAvailableReferencesFromHtml(workingNote.content || '');
             firstSync.current = true;
         }
-    }, [workingNote]);
-
-    const onChangeData = async () => {
-        window.api.notes.updateContent(workingNoteId, editorRef.current.getData());
-    };
+    }, [workingNote, syncAvailableReferencesFromHtml]);
 
     return (
         <div className="editor-layout">
@@ -510,9 +564,10 @@ export default function EditorContent({
                 setReady={setReady}
                 workingNoteId={workingNoteId}
                 data={workingNote?.content || null}
-                onChange={onChangeData}
+                onChange={saveEditorData}
                 refereToDocument={refereToDocument}
                 deleteReference={deleteReference}
+                copySelection={copySelection}
                 contextEvent={contextEvent}
                 editorRef={editorRef}
             />
@@ -529,6 +584,7 @@ function Editor({
     setReady,
     refereToDocument,
     deleteReference,
+    copySelection,
     contextEvent,
     editorRef,
     onChange,
@@ -538,8 +594,9 @@ function Editor({
     ready: boolean;
     refereToDocument: (type: string) => void;
     deleteReference: () => void;
+    copySelection: () => void;
     setReady: React.Dispatch<React.SetStateAction<boolean>>;
-    onChange: () => void;
+    onChange: () => Promise<void>;
     contextEvent: React.RefObject<MouseEvent | null>;
     editorRef: React.RefObject<any>;
 }) {
@@ -548,11 +605,18 @@ function Editor({
     const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
     const editorUiLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
 
+    const debouncedOnChangeRef = useRef(debounce(() => {}, 1000));
+
     useEffect(() => {
-        if (editorRef.current && editorRef.current.editor) {
-            editorRef.current.editor.ui.view.toolbar.element.remove();
-        }
-    }, []);
+        const debounced = debounce(() => {
+            void onChange();
+        }, 1000);
+        debouncedOnChangeRef.current = debounced;
+
+        return () => {
+            debounced.cancel();
+        };
+    }, [onChange]);
 
     useEffect(() => {
         let chromeContextMenu: ContextMenu;
@@ -573,6 +637,12 @@ function Editor({
                         text: t('Référence biblique'),
                         onclick: () => refereToDocument('bible'),
                     },
+                    {
+                        text: t('Copier'),
+                        onclick: () => {
+                            void copySelection();
+                        },
+                    },
                     null,
                     {
                         text: t('Supprimer la référence'),
@@ -592,7 +662,8 @@ function Editor({
                 chromeContextMenu.container.removeEventListener('contextmenu', contextHandler);
             }
         };
-    }, [ready]);
+    }, [copySelection, deleteReference, ready, refereToDocument, t]);
+
     return (
         <div className="editor-scroll">
             <div
@@ -613,10 +684,12 @@ function Editor({
                     }}
                     onError={({ willEditorRestart }: { willEditorRestart: any }) => {
                         if (willEditorRestart) {
-                            editorRef.current.editor.ui.view.toolbar.element.remove();
+                            editorRef.current?.ui?.view?.toolbar?.element?.remove();
                         }
                     }}
-                    onChange={debounce(onChange, 1000)}
+                    onChange={() => {
+                        debouncedOnChangeRef.current();
+                    }}
                     editor={DecoupledDocumentEditor}
                     data={data || ''}
                     config={{

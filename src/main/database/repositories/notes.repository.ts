@@ -306,8 +306,24 @@ export function addBibleVerse(refId: string, verseId: string): BibleBook | null 
 }
 
 export function deleteReference(id: string): void {
-    getDb().delete(notesReferences).where(eq(notesReferences.id, id)).run();
-    logChange('notes_references', id, 'DELETE', { id });
+    const db = getDb();
+
+    const noteReference = db.select().from(notesReferences).where(eq(notesReferences.id, id)).get();
+    if (noteReference) {
+        db.delete(notesReferences).where(eq(notesReferences.id, id)).run();
+        logChange('notes_references', id, 'DELETE', { id });
+        return;
+    }
+
+    const bibleReference = db
+        .select()
+        .from(notesBibleReferences)
+        .where(eq(notesBibleReferences.id, id))
+        .get();
+    if (bibleReference) {
+        db.delete(notesBibleReferences).where(eq(notesBibleReferences.id, id)).run();
+        logChange('notes_bible_references', id, 'DELETE', { id });
+    }
 }
 
 export function removeBibleVerse(refId: string, verseId: string): void {
