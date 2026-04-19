@@ -40,7 +40,7 @@ export function buildResearchAgentTaskPrompt(input: {
 
     if (input.alreadyKnown?.trim()) {
         sections.push(
-            `Already known from earlier research (avoid repeating it unless needed for continuity):\n${input.alreadyKnown.trim()}`,
+            `Already known from earlier research (treat this as provisional continuity, not automatically verified truth; avoid repeating it unless needed for continuity):\n${input.alreadyKnown.trim()}`,
         );
     }
 
@@ -96,7 +96,7 @@ export function buildSermonReaderTaskPrompt(input: {
 
     if (input.alreadyKnown?.trim()) {
         sections.push(
-            `Already known from prior reading (avoid repeating it unless needed briefly):\n${input.alreadyKnown.trim()}`,
+            `Already known from prior reading (treat this as provisional continuity, not automatically verified truth; avoid repeating it unless needed briefly):\n${input.alreadyKnown.trim()}`,
         );
     }
 
@@ -149,20 +149,30 @@ export function buildResearchAgentPrompt(
         '',
         REFERENCE_FORMAT_INSTRUCTIONS,
         '',
-        '## Answer format',
-        'You are writing intermediate findings for the main assistant, not directly to the end user.',
-        'You may return structured findings, evidence, caveats, and concise internal research detail that helps the main assistant answer well.',
+        '## Response format',
+        'You are writing an internal research report for the main assistant, not directly to the end user.',
         'Do not include invalid clickable links. Only sermon, Bible, and custom document references may be clickable.',
-        'Structure your answer with references first:',
-        '1. Start with a list of all relevant references found (as clickable links)',
-        '2. Then provide the analysis and explanation',
-        '3. If this is a follow-up, clearly separate newly learned details from what was already known',
+        'Return a clearly structured text report with these sections in this order:',
+        '1. Direct answer',
+        '2. Main findings',
+        '3. Caveats or unresolved points',
+        'If this is a follow-up, clearly separate newly learned details from what was already known.',
+        'Under each main finding, include these subparts in this order:',
+        '- Explanation',
+        '- Verified references',
+        '- Exact quote or marked paraphrase when useful',
+        'Do not create a separate pooled reference section at the end.',
+        'Do not dump a bare reference list without saying what each reference supports.',
+        'Only use exact quotation marks when the exact wording came from the exact source you read.',
+        'If the wording is not verified from that exact passage, paraphrase it and explicitly say it is a paraphrase.',
+        'Search snippets are navigation hints only. Verify final sermon citations with `getSermonContent`, Bible citations with `getBiblePassage` or the returned verse text, and document quotations with `getCustomDocumentContent`.',
         '',
         '## Rules',
         '- Use the tools provided to gather information. Do NOT invent content.',
         '- If custom documents disagree with sermons or Bible passages, follow the sermons and Bible passages.',
-        '- Be concise by default, but include enough references and explanation to answer the topic well.',
-        '- Be concise and structured: use headings or bullet points.',
+        '- Be concise by default, but include enough references and explanation for the parent assistant to answer well.',
+        '- Never attach a quote, sentence, or claim to a reference unless that exact source supports it.',
+        '- Never cite a sermon paragraph number unless that exact paragraph was returned by `getSermonContent` in this run.',
         '- If you cannot find enough information, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',
         '- Use the translation returned by search results when available. If a tool falls back to another translation, mention that briefly and use the resolved translation values in references.',
@@ -196,16 +206,21 @@ export function buildSermonReaderAgentPrompt(
         '',
         REFERENCE_FORMAT_INSTRUCTIONS,
         '',
+        '## Response format',
+        'You are writing an internal sermon-reading report for the main assistant, not directly to the end user.',
+        'Match the level of detail to the request: be concise for narrow questions, and detailed for full expositions, outlines, or complete explanations.',
+        'Organize the answer so each claim or section is immediately followed by its verified references.',
+        'Only use exact quotation marks for wording you actually read in the cited paragraph(s). Otherwise paraphrase and say it is a paraphrase.',
+        '',
         '## Rules',
-        '- You are writing intermediate findings for the main assistant, not directly to the end user.',
-        '- You may return structured internal findings, evidence, and concise caveats that help the main assistant produce the final answer.',
         '- Do not include invalid clickable links. Only sermon, Bible, and custom document references may be clickable.',
         '- Use getSermonContent with maxParagraphs=20 and increment startParagraph to paginate.',
         '- Use searchSermons when the exact sermonId or translationId is missing.',
-        '- Keep your final answer under 600 words.',
         '- Use searchContent to find specific phrases if needed. Start with "exact" in most cases, especially for phrase-based questions or when checking whether something was explicitly said. If it returns `hasMore: true`, pass `nextCursor` to continue instead of repeating page one.',
         '- Ignore hits that merely share keywords with the question but do not actually answer it in context.',
         '- If prior reading context is provided, avoid repeating the whole sermon summary. Focus on the new angle, extra citations, or deeper explanation requested.',
+        '- Search snippets are navigation hints only. Verify final sermon claims and quotations with `getSermonContent` before citing them.',
+        '- Never cite a sermon paragraph number unless that exact paragraph was returned by `getSermonContent` in this run.',
         '- If getSermonContent reports a translationWarning or fallback translation, mention that briefly.',
         '- If the sermon is not found, say so honestly.',
         '- Never ask the user to choose a method — pick the best one and execute it.',

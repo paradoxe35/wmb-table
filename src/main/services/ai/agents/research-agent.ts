@@ -42,7 +42,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                 'Bible passages, and documents. Use this for broad topic exploration, cross-referencing, ' +
                 'or when the question requires reading multiple sources. For follow-ups, pass prior findings ' +
                 'in `alreadyKnown` and the new angle in `followUpGoal` so the subagent extends the research ' +
-                'instead of repeating it. Returns a concise summary.',
+                'instead of repeating it. Returns a structured text report with explanations, evidence, and references.',
             inputSchema: z.object({
                 topic: z.string().describe('The research topic or question to investigate'),
                 description: z
@@ -132,7 +132,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
 
                     return {
                         status: 'completed',
-                        summary: truncated
+                        response: truncated
                             ? `${result.text}\n\n[Research output was truncated due to length limit]`
                             : result.text,
                     };
@@ -146,7 +146,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                     log.error('Research agent failed', { topic, error: message });
                     return {
                         status: 'failed',
-                        summary: `Research failed: ${message}`,
+                        response: `Research failed: ${message}`,
                         error: message,
                     };
                 }
