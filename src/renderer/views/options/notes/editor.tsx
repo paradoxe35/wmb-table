@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 // @ts-expect-error — no type declarations for CKEditor 5 React
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import { useTranslation } from 'react-i18next';
-import { resolveUiLanguage, TEXT_PART_LANGUAGE_OPTIONS } from '@shared/constants';
+import { TEXT_PART_LANGUAGE_OPTIONS, UiLanguage } from '@shared/constants';
 
 import { ContextMenu } from '@renderer/utils/context-menu';
 import { App as AntApp, Button, Input, Space, Tooltip, message } from 'antd';
@@ -18,8 +18,7 @@ import { debounce, substrAfter } from '@renderer/utils/functions';
 import { useWmbLinkNavigate } from '@renderer/hooks/use-wmb-link';
 import { NoteItem, NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { useIpcRequestWithLoader, useValueStateRef } from '@renderer/hooks';
-import { useAppStore } from '@renderer/stores';
-import { useThemeStore } from '@renderer/stores/theme.store';
+import { registerAllCkeditorTranslations } from '@shared/i18n/ckeditor';
 import {
     referenceBibleBrandLink,
     referenceBrandLink as referenceDocumentBrandLink,
@@ -32,6 +31,7 @@ import { hasMeaningfulHtmlContent } from '@shared/html-content';
 
 // CKEditor UMD bundle — side-effect import assigns to window.DecoupledDocumentEditor
 import './ckeditor/ckeditor';
+registerAllCkeditorTranslations();
 
 // @ts-expect-error — CKEditor UMD attaches to window
 const DecoupledDocumentEditor: any = window.DecoupledDocumentEditor;
@@ -305,7 +305,9 @@ function ButtonsControllers({
 export default function EditorContent({
     workingNoteId,
     backToNotes,
+    uiLanguage,
 }: {
+    uiLanguage: UiLanguage;
     workingNoteId: string;
     backToNotes: () => void;
 }) {
@@ -685,6 +687,7 @@ export default function EditorContent({
                 ready={ready}
                 setReady={setReady}
                 workingNoteId={workingNoteId}
+                uiLanguage={uiLanguage}
                 data={workingNote?.content || null}
                 onContentPresenceChange={setHasContent}
                 onChange={saveEditorData}
@@ -712,6 +715,7 @@ function Editor({
     contextEvent,
     editorRef,
     onChange,
+    uiLanguage,
 }: {
     data: string | null;
     workingNoteId: string;
@@ -722,14 +726,11 @@ function Editor({
     setReady: React.Dispatch<React.SetStateAction<boolean>>;
     onContentPresenceChange: React.Dispatch<React.SetStateAction<boolean>>;
     onChange: () => Promise<void>;
+    uiLanguage: UiLanguage;
     contextEvent: React.RefObject<MouseEvent | null>;
     editorRef: React.RefObject<any>;
 }) {
     const { t } = useTranslation();
-    const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
-    const editorUiLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
-
     const debouncedOnChangeRef = useRef(debounce(() => {}, 1000));
 
     useEffect(() => {
@@ -798,6 +799,7 @@ function Editor({
                 <CKEditor
                     id={workingNoteId}
                     onReady={(editor: any) => {
+                        console.log('Editor is ready to use!', editor);
                         editor.ui
                             .getEditableElement()
                             .parentElement.parentElement.parentElement.insertBefore(
@@ -898,8 +900,8 @@ function Editor({
                             ],
                         },
                         language: {
-                            ui: editorUiLanguage,
-                            content: editorUiLanguage,
+                            ui: uiLanguage,
+                            content: uiLanguage,
                             textPartLanguage: TEXT_PART_LANGUAGE_OPTIONS,
                         },
                     }}

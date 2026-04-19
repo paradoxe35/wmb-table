@@ -30,6 +30,7 @@ import {
     getDocumentIdentityKey,
     getTabKey,
 } from '@shared/types';
+import { resolveUiLanguage } from '@shared/constants';
 
 export { useContainerHeight } from './use-container-height';
 export { useTabPersistence } from './use-tab-persistence';
@@ -404,4 +405,12 @@ export const useCallbackUpdater = <T extends (...args: any[]) => any>(callback?:
     return useCallback((...args: Parameters<T>): ReturnType<T> => {
         return callbackRef.current!(...args);
     }, []) as T;
+};
+
+export const useResolvedUiLanguage = () => {
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    const uiLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
+
+    return uiLanguage;
 };
