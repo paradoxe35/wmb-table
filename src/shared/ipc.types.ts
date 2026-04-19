@@ -64,6 +64,7 @@ import type {
     TtsVoice,
     TtsVoiceCloneRequest,
     TtsVoiceCloneResult,
+    TtsReferenceVoiceAudio,
     TtsModelInfo,
     TtsCompatibilityResult,
 } from './tts.types';
@@ -554,7 +555,7 @@ export interface InvokeChannelMap {
     };
     [TtsChannels.listClonedVoices]: { args: [TtsProviderType]; return: TtsVoice[] };
     [TtsChannels.deleteClonedVoice]: { args: [TtsProviderType, string]; return: void };
-    [TtsChannels.getReferenceVoiceAudio]: { args: [string]; return: string };
+    [TtsChannels.getReferenceVoiceAudio]: { args: [string]; return: TtsReferenceVoiceAudio };
     [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
     [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
     [TtsChannels.segmentParagraphs]: {
