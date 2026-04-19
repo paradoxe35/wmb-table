@@ -15,6 +15,13 @@ const SCOPES = [
 ];
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60_000;
 const tokenPersistenceBoundClients = new WeakSet<OAuth2Client>();
+const GOOGLE_DRIVE_CREDENTIALS_ENV = 'MAIN_VITE_GOOGLE_DRIVE_CREDENTIALS';
+
+type GoogleOAuthCredentials = {
+    client_id: string;
+    client_secret: string;
+    redirect_uris: string[];
+};
 
 /**
  * Detect auth-related refresh errors (revoked token, expired grant, etc.)
@@ -60,6 +67,47 @@ function writeToken(tokenPath: string, token: Credentials): void {
     writeFileSync(tokenPath, JSON.stringify(token));
 }
 
+function normalizeCredentialsPayload(raw: unknown): GoogleOAuthCredentials {
+    const payload =
+        raw && typeof raw === 'object' && ('installed' in raw || 'web' in raw)
+            ? ((raw as { installed?: unknown; web?: unknown }).installed ??
+              (raw as { installed?: unknown; web?: unknown }).web)
+            : raw;
+
+    if (!payload || typeof payload !== 'object') {
+        throw new Error('Google credentials are invalid.');
+    }
+
+    const clientId = 'client_id' in payload ? payload.client_id : undefined;
+    const clientSecret = 'client_secret' in payload ? payload.client_secret : undefined;
+    const redirectUris = 'redirect_uris' in payload ? payload.redirect_uris : undefined;
+
+    if (typeof clientId !== 'string' || !clientId.trim()) {
+        throw new Error('Google credentials are missing client_id.');
+    }
+
+    if (typeof clientSecret !== 'string' || !clientSecret.trim()) {
+        throw new Error('Google credentials are missing client_secret.');
+    }
+
+    return {
+        client_id: clientId.trim(),
+        client_secret: clientSecret.trim(),
+        redirect_uris: Array.isArray(redirectUris)
+            ? redirectUris.filter((value): value is string => typeof value === 'string')
+            : [],
+    };
+}
+
+function loadCredentialsFromEnv(): GoogleOAuthCredentials | null {
+    const raw = import.meta.env.MAIN_VITE_GOOGLE_DRIVE_CREDENTIALS?.trim();
+    if (!raw) {
+        return null;
+    }
+
+    return normalizeCredentialsPayload(JSON.parse(raw));
+}
+
 function mergeTokenState(
     savedToken: Credentials | null,
     currentCredentials: Credentials,
@@ -93,13 +141,20 @@ function bindTokenPersistence(client: OAuth2Client, tokenPath = getTokenPath()):
     });
 }
 
-function loadCredentials(): { client_id: string; client_secret: string; redirect_uris: string[] } {
+function loadCredentials(): GoogleOAuthCredentials {
     const credPath = getCredentialsPath();
-    if (!existsSync(credPath)) {
-        throw new Error(`Google credentials not found at ${credPath}`);
+    if (existsSync(credPath)) {
+        return normalizeCredentialsPayload(JSON.parse(readFileSync(credPath, 'utf-8')));
     }
-    const raw = JSON.parse(readFileSync(credPath, 'utf-8'));
-    return raw.installed || raw.web;
+
+    const envCredentials = loadCredentialsFromEnv();
+    if (envCredentials) {
+        return envCredentials;
+    }
+
+    throw new Error(
+        `Google credentials not found at ${credPath} and ${GOOGLE_DRIVE_CREDENTIALS_ENV} is empty`,
+    );
 }
 
 function createOAuth2Client(
