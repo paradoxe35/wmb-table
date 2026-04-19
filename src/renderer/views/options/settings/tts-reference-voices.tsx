@@ -2,7 +2,12 @@ import { useCallback, useRef, useState } from 'react';
 import { Button, message, Space, Tag, Typography } from 'antd';
 import { PlayCircleOutlined, PauseCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { TTS_REFERENCE_VOICES, type TtsProviderType, type TtsVoice } from '@shared/tts.types';
+import {
+    TTS_REFERENCE_VOICES,
+    type TtsProviderType,
+    type TtsReferenceVoiceAudio,
+    type TtsVoice,
+} from '@shared/tts.types';
 import { getErrorMessage } from '@renderer/utils/functions';
 import { Field } from './tts-shared';
 
@@ -33,61 +38,74 @@ export default function TtsReferenceVoices({
     const [cloningId, setCloningId] = useState<string | null>(null);
     const [playingId, setPlayingId] = useState<string | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
+    const audioUrlRef = useRef<string | null>(null);
     // Cache fetched audio to avoid re-reading for play then clone
-    const audioCache = useRef<Map<string, string>>(new Map());
+    const audioCache = useRef<Map<string, TtsReferenceVoiceAudio>>(new Map());
 
-    const fetchAudio = useCallback(async (refId: string): Promise<string> => {
+    const clearCurrentAudio = useCallback(() => {
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
+        if (audioUrlRef.current) {
+            URL.revokeObjectURL(audioUrlRef.current);
+            audioUrlRef.current = null;
+        }
+    }, []);
+
+    const fetchAudio = useCallback(async (refId: string): Promise<TtsReferenceVoiceAudio> => {
         const cached = audioCache.current.get(refId);
         if (cached) {
             return cached;
         }
-        const base64 = await window.api.tts.getReferenceVoiceAudio(refId);
-        audioCache.current.set(refId, base64);
-        return base64;
+        const audio = await window.api.tts.getReferenceVoiceAudio(refId);
+        audioCache.current.set(refId, audio);
+        return audio;
     }, []);
 
     const handlePlay = useCallback(
         async (refId: string) => {
             // If already playing this voice, stop it
             if (playingId === refId && audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
+                clearCurrentAudio();
                 setPlayingId(null);
                 return;
             }
 
             // Stop any current playback
-            if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
-            }
+            clearCurrentAudio();
 
             try {
-                const base64 = await fetchAudio(refId);
-                const audio = new Audio(`data:audio/mpeg;base64,${base64}`);
+                const { audioBase64, mimeType } = await fetchAudio(refId);
+                const bytes = Uint8Array.from(atob(audioBase64), (c) => c.charCodeAt(0));
+                const blobUrl = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
+                const audio = new Audio(blobUrl);
+
+                audioUrlRef.current = blobUrl;
                 audio.onended = () => {
+                    clearCurrentAudio();
                     setPlayingId(null);
-                    audioRef.current = null;
                 };
                 audioRef.current = audio;
                 setPlayingId(refId);
                 await audio.play();
             } catch (err) {
+                clearCurrentAudio();
                 setPlayingId(null);
                 message.error(t(getErrorMessage(err, 'Erreur lors de la lecture')));
             }
         },
-        [playingId, fetchAudio, t],
+        [clearCurrentAudio, playingId, fetchAudio, t],
     );
 
     const handleClone = useCallback(
         async (refId: string) => {
             setCloningId(refId);
             try {
-                const base64 = await fetchAudio(refId);
+                const { audioBase64 } = await fetchAudio(refId);
                 const result = await window.api.tts.cloneVoice(providerType, {
                     name: refId,
-                    audioBase64: base64,
+                    audioBase64,
                     ...(cloneLanguage ? { language: cloneLanguage } : {}),
                 });
                 message.success(t('Voix clonée avec succès'));

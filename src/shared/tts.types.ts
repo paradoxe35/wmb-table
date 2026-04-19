@@ -188,6 +188,11 @@ export interface TtsVoiceCloneResult {
     voiceId: string; // returned voice ID for use in synthesis
 }
 
+export interface TtsReferenceVoiceAudio {
+    audioBase64: string; // base64-encoded audio bytes
+    mimeType: string; // 'audio/wav', 'audio/mpeg', 'audio/mp4', etc.
+}
+
 // ── Built-in reference voices for cloning ──
 export interface TtsReferenceVoice {
     id: string; // unique key, e.g. 'francois_lepicard'

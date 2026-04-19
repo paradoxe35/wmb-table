@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 import log from 'electron-log';
 import pLimit from 'p-limit';
 import { getMainWindow } from '@main/lib/window';
@@ -30,6 +30,7 @@ import {
     type TtsVoice,
     type TtsVoiceCloneRequest,
     type TtsVoiceCloneResult,
+    type TtsReferenceVoiceAudio,
     type TtsCompatibilityResult,
     TTS_REFERENCE_VOICES,
 } from '@shared/tts.types';
@@ -42,6 +43,23 @@ type PreparedSegment = CacheHit | TtsSynthesizeResult;
 
 function isCacheHit(p: PreparedSegment): p is CacheHit {
     return 'path' in p && !('audioBase64' in p);
+}
+
+function getReferenceVoiceMimeType(fileName: string): string {
+    switch (extname(fileName).toLowerCase()) {
+        case '.mp3':
+            return 'audio/mpeg';
+        case '.wav':
+            return 'audio/wav';
+        case '.m4a':
+            return 'audio/mp4';
+        case '.aac':
+            return 'audio/aac';
+        case '.ogg':
+            return 'audio/ogg';
+        default:
+            return 'application/octet-stream';
+    }
 }
 
 export class TtsService {
@@ -435,13 +453,16 @@ export class TtsService {
         return provider.deleteClonedVoice(voiceId);
     }
 
-    getReferenceVoiceAudio(referenceId: string): string {
+    getReferenceVoiceAudio(referenceId: string): TtsReferenceVoiceAudio {
         const ref = TTS_REFERENCE_VOICES.find((v) => v.id === referenceId);
         if (!ref) {
             throw new Error('Voix de référence introuvable.');
         }
         const filePath = join(getTtsResourceDir(), ref.fileName);
-        return readFileSync(filePath).toString('base64');
+        return {
+            audioBase64: readFileSync(filePath).toString('base64'),
+            mimeType: getReferenceVoiceMimeType(ref.fileName),
+        };
     }
 
     async dispose(): Promise<void> {
