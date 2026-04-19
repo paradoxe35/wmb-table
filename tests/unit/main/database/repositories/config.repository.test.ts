@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb } from '../test-helpers';
 import * as configRepo from '@main/database/repositories/config.repository';
-import { MAX_MAX_TABS, MIN_MAX_TABS } from '@shared/constants';
+import { DEFAULT_MAX_TABS, MAX_MAX_TABS, MIN_MAX_TABS } from '@shared/constants';
 
 describe('config.repository', () => {
     beforeEach(() => {
@@ -18,6 +18,7 @@ describe('config.repository', () => {
         expect(config.initialized).toBe(false);
         expect(config.activeBibleVersionAbbreviation).toBeNull();
         expect(config.sidebarHidden).toBe(false);
+        expect(config.maxTabs).toBe(DEFAULT_MAX_TABS);
     });
 
     it('ensureConfig is idempotent', () => {

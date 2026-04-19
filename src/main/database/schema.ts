@@ -15,7 +15,7 @@ export const configurations = sqliteTable('configurations', {
     rememberReadingPosition: integer('remember_reading_position', { mode: 'boolean' })
         .notNull()
         .default(true),
-    maxTabs: integer('max_tabs').notNull().default(12),
+    maxTabs: integer('max_tabs').notNull().default(10),
     uiLanguage: text('ui_language'),
     sidebarHidden: integer('sidebar_hidden', { mode: 'boolean' }).notNull().default(false),
 });

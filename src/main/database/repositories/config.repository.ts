@@ -39,7 +39,10 @@ export function ensureConfig(): AppSettingsStatus {
 
     const id = randomUUID();
     const appId = randomUUID();
-    getDb().insert(configurations).values({ id, appId, initialized: false }).run();
+    getDb()
+        .insert(configurations)
+        .values({ id, appId, initialized: false, maxTabs: DEFAULT_MAX_TABS })
+        .run();
     return getConfig()!;
 }
 
