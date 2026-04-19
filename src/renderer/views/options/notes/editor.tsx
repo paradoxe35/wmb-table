@@ -262,14 +262,16 @@ function ButtonsControllers({
                     }}
                 />
                 {workingNote && !hasContent ? (
-                    <Button
-                        type="primary"
-                        icon={<UploadOutlined />}
-                        loading={importingDocument}
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        {t('Importer un document')}
-                    </Button>
+                    <Tooltip title={t('Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.')}>
+                        <Button
+                            type="primary"
+                            icon={<UploadOutlined />}
+                            loading={importingDocument}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {t('Importer un document')}
+                        </Button>
+                    </Tooltip>
                 ) : (
                     <>
                         <Tooltip
