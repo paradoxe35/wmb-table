@@ -90,7 +90,7 @@ export const TEXT_PART_LANGUAGE_OPTIONS = UI_LANGUAGE_OPTIONS.filter(
     languageCode: option.value,
 }));
 
-const UI_LANGUAGE_CODES = new Set(
+export const UI_LANGUAGE_CODES = new Set(
     UI_LANGUAGE_OPTIONS.map((option) => option.value).filter((value) => value !== 'auto'),
 );
 
