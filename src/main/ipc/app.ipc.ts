@@ -2,7 +2,6 @@ import { app, shell } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as configRepo from '@main/database/repositories/config.repository';
-import * as sidebarRepo from '@main/database/repositories/sidebar.repository';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import * as historyRepo from '@main/database/repositories/history.repository';
 import { refreshBibleDrizzle, switchBibleLanguage } from '@main/database/index';
@@ -87,11 +86,11 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.getSidebarStatus, async () => {
-        return sidebarRepo.getSidebarStatus();
+        return configRepo.getSidebarStatus();
     });
 
     registerHandler(AppChannels.setSidebarStatus, async (_event, hidden) => {
-        sidebarRepo.setSidebarStatus(hidden);
+        configRepo.setSidebarStatus(hidden);
     });
 
     registerHandler(AppChannels.getCustomDocuments, async () => {

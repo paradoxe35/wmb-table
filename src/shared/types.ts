@@ -840,9 +840,10 @@ export interface AppSettingsStatus {
     rememberReadingPosition: boolean;
     maxTabs: number;
     uiLanguage: UiLanguagePreference | null;
+    sidebarHidden: boolean;
 }
 
-export interface SidebarStatus extends Readonly<BaseEntity> {
+export interface SidebarStatus {
     hidden: boolean;
 }
 

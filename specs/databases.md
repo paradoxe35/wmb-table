@@ -22,7 +22,7 @@ User-created and personalized data. Managed by Drizzle ORM with migrations in `d
 
 | Table                    | Purpose                              | Synced |
 | ------------------------ | ------------------------------------ | ------ |
-| `configurations`         | App settings (single row)            | No     |
+| `configurations`         | App settings and UI preferences      | No     |
 | `history`                | Document view history                | No     |
 | `history_items`          | History entries                      | No     |
 | `notes`                  | User notes                           | Yes    |
@@ -33,7 +33,6 @@ User-created and personalized data. Managed by Drizzle ORM with migrations in `d
 | `suggestions`            | Search suggestions                   | Yes    |
 | `custom_documents`       | Uploaded PDF documents               | Yes    |
 | `tabs`                   | Open document tabs (single row)      | No     |
-| `sidebar_status`         | Sidebar visibility (single row)      | No     |
 | `audio_document_times`   | Audio playback positions             | No     |
 | `backup_status`          | Last backup timestamp                | No     |
 

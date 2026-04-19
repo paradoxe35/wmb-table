@@ -17,6 +17,7 @@ describe('config.repository', () => {
         expect(config.app_id).toBeTruthy();
         expect(config.initialized).toBe(false);
         expect(config.activeBibleVersionAbbreviation).toBeNull();
+        expect(config.sidebarHidden).toBe(false);
     });
 
     it('ensureConfig is idempotent', () => {
@@ -48,5 +49,17 @@ describe('config.repository', () => {
 
         expect(configRepo.setMaxTabs(MAX_MAX_TABS + 10)).toBe(MAX_MAX_TABS);
         expect(configRepo.getMaxTabs()).toBe(MAX_MAX_TABS);
+    });
+
+    it('persists sidebar hidden state in configuration', () => {
+        expect(configRepo.getSidebarStatus()).toBeNull();
+
+        configRepo.setSidebarStatus(true);
+        expect(configRepo.getSidebarStatus()).toEqual({ hidden: true });
+        expect(configRepo.getConfig()?.sidebarHidden).toBe(true);
+
+        configRepo.setSidebarStatus(false);
+        expect(configRepo.getSidebarStatus()).toEqual({ hidden: false });
+        expect(configRepo.getConfig()?.sidebarHidden).toBe(false);
     });
 });

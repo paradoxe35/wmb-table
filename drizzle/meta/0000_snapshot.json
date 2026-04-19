@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "d0594084-dee4-4679-b9c2-955ec001e958",
+    "id": "b3d4264a-a438-4ca3-a4c9-1444dd8b99bc",
     "prevId": "00000000-0000-0000-0000-000000000000",
     "tables": {
         "ai_conversations": {
@@ -522,6 +522,14 @@
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
+                },
+                "sidebar_hidden": {
+                    "name": "sidebar_hidden",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": false
                 }
             },
             "indexes": {},
@@ -1224,47 +1232,6 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": 0
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false,
-                    "default": "(datetime('now'))"
-                }
-            },
-            "indexes": {},
-            "foreignKeys": {},
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "checkConstraints": {}
-        },
-        "sidebar_status": {
-            "name": "sidebar_status",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "text",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "autoincrement": false
-                },
-                "hidden": {
-                    "name": "hidden",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false,
-                    "default": "(datetime('now'))"
                 },
                 "updated_at": {
                     "name": "updated_at",
