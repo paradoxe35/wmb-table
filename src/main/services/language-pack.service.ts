@@ -148,20 +148,13 @@ function hasLanguageUpdate(
     stored: StoredInstalledLanguageSource,
     remote: StoredLanguageHeaders,
 ): boolean {
-    if (stored.versionId && remote.versionId) {
-        return stored.versionId !== remote.versionId;
-    }
-
-    if (stored.etag && remote.etag) {
-        return stored.etag !== remote.etag;
-    }
-
-    if (stored.lastModified && remote.lastModified) {
-        return stored.lastModified !== remote.lastModified;
-    }
-
-    if (stored.contentLength != null && remote.contentLength != null) {
-        return stored.contentLength !== remote.contentLength;
+    const keys = ['versionId', 'etag', 'lastModified', 'contentLength'] as const;
+    for (const key of keys) {
+        const storedValue = stored[key];
+        const remoteValue = remote[key];
+        if (storedValue != null && remoteValue != null && storedValue !== remoteValue) {
+            return true;
+        }
     }
 
     return false;

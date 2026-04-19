@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import screenshotDark from '../assets/screenshot-dark.png';
+// import screenshotDark from '../assets/screenshot-dark.png';
 import screenshotLight from '../assets/screenshot-light.png';
 
 const props = defineProps<{
@@ -45,7 +45,7 @@ onBeforeUnmount(() => {
 });
 
 const screenshotSrc = computed(() =>
-    themeMode.value === 'dark' ? screenshotDark : screenshotLight,
+    themeMode.value === 'dark' ? screenshotLight : screenshotLight,
 );
 
 const screenshotAlt = computed(() =>
