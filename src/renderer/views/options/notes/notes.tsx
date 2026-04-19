@@ -1,13 +1,6 @@
 import { Button, Card, Empty, Input, Space, Spin, Typography, message } from 'antd';
 import { useTranslation } from 'react-i18next';
-import {
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-    type Dispatch,
-    type SetStateAction,
-} from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { NoteItem } from '@shared/types';
 import { PlusOutlined, EditOutlined } from '@ant-design/icons';
 import { DeleteBtn } from '@renderer/components/delete-btn';
@@ -16,11 +9,7 @@ import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AI_DATA_EVENT } from '@renderer/utils/events';
 
-export function Notes({
-    setWorkingNote,
-}: {
-    setWorkingNote: Dispatch<SetStateAction<string | null>>;
-}) {
+export function Notes({ setWorkingNote }: { setWorkingNote: (noteId: string) => void }) {
     const { t } = useTranslation();
     const [loaded, setLoaded] = useState<boolean>(false);
 
