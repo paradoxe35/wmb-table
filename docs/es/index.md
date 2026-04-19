@@ -88,8 +88,6 @@ features:
   title="Vista previa de la aplicación"
   light-label="Vista previa de la aplicación en modo claro"
   dark-label="Vista previa de la aplicación en modo oscuro"
-  light-toggle="Modo claro"
-  dark-toggle="Modo oscuro"
 />
 
 <ReleaseDownloadPanel

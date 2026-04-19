@@ -88,8 +88,6 @@ features:
   title="Application Preview"
   light-label="Application preview in light mode"
   dark-label="Application preview in dark mode"
-  light-toggle="Light mode"
-  dark-toggle="Dark mode"
 />
 
 <ReleaseDownloadPanel
