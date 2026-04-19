@@ -88,8 +88,6 @@ features:
   title="Aperçu de l’application"
   light-label="Aperçu de l’application en mode clair"
   dark-label="Aperçu de l’application en mode sombre"
-  light-toggle="Mode clair"
-  dark-toggle="Mode sombre"
 />
 
 <ReleaseDownloadPanel

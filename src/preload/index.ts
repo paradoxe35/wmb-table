@@ -127,6 +127,8 @@ const api = {
         create: (name: string) => invoke(NotesChannels.create, name),
         delete: (id: string) => invoke(NotesChannels.delete, id),
         rename: (id: string, name: string) => invoke(NotesChannels.rename, id, name),
+        importDocument: (id: string, input: CustomDocumentImportInput) =>
+            invoke(NotesChannels.importDocument, id, input),
         updateContent: (id: string, content: string) =>
             invoke(NotesChannels.updateContent, id, content),
         getReferences: (noteId: string) => invoke(NotesChannels.getReferences, noteId),

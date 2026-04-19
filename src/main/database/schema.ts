@@ -15,8 +15,9 @@ export const configurations = sqliteTable('configurations', {
     rememberReadingPosition: integer('remember_reading_position', { mode: 'boolean' })
         .notNull()
         .default(true),
-    maxTabs: integer('max_tabs').notNull().default(12),
+    maxTabs: integer('max_tabs').notNull().default(10),
     uiLanguage: text('ui_language'),
+    sidebarHidden: integer('sidebar_hidden', { mode: 'boolean' }).notNull().default(false),
 });
 
 // ---------------------------------------------------------------------------
@@ -134,18 +135,6 @@ export const suggestions = sqliteTable('suggestions', {
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });
 
-// ---------------------------------------------------------------------------
-// Sidebar Status (single-row)
-// ---------------------------------------------------------------------------
-
-export const sidebarStatus = sqliteTable('sidebar_status', {
-    id: text('id').primaryKey(),
-    hidden: integer('hidden', { mode: 'boolean' }).notNull().default(false),
-    createdAt: text('created_at').default(sql`(datetime('now'))`),
-    updatedAt: text('updated_at').default(sql`(datetime('now'))`),
-});
-
-// ---------------------------------------------------------------------------
 // Custom Documents
 // ---------------------------------------------------------------------------
 

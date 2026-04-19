@@ -94,6 +94,18 @@ describe('notes.repository', () => {
         expect(refs[0].id).toBe(ref1.id);
     });
 
+    it('deleteReference removes both document and bible references by id', () => {
+        const note = notesRepo.create('Test');
+        const documentRef = notesRepo.createReference(note.id, 'Doc');
+        const bibleRef = notesRepo.createBibleReference(note.id, 'Gen 1:1');
+
+        notesRepo.deleteReference(documentRef.id);
+        expect(notesRepo.getReferences(note.id)).toHaveLength(0);
+
+        notesRepo.deleteReference(bibleRef.id);
+        expect(notesRepo.getBibleReferences(note.id)).toHaveLength(0);
+    });
+
     it('addBibleVerse and removeBibleVerse', () => {
         const { sqlite: bibleSqlite } = createTestBibleDb();
         // Insert a test verse into the Bible DB

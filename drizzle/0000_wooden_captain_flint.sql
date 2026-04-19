@@ -80,8 +80,9 @@ CREATE TABLE `configurations` (
 	`content_language` text,
 	`active_bible_version_abbreviation` text,
 	`remember_reading_position` integer DEFAULT true NOT NULL,
-	`max_tabs` integer DEFAULT 12 NOT NULL,
-	`ui_language` text
+	`max_tabs` integer DEFAULT 10 NOT NULL,
+	`ui_language` text,
+	`sidebar_hidden` integer DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE `custom_documents` (
@@ -193,13 +194,6 @@ CREATE TABLE `reading_positions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`scroll_y` integer DEFAULT 0 NOT NULL,
 	`scroll_x` integer DEFAULT 0 NOT NULL,
-	`updated_at` text DEFAULT (datetime('now'))
-);
---> statement-breakpoint
-CREATE TABLE `sidebar_status` (
-	`id` text PRIMARY KEY NOT NULL,
-	`hidden` integer DEFAULT false NOT NULL,
-	`created_at` text DEFAULT (datetime('now')),
 	`updated_at` text DEFAULT (datetime('now'))
 );
 --> statement-breakpoint

@@ -32,6 +32,10 @@ const es: Record<string, string> = {
     'A-Z': 'A-Z',
     'Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.':
         'Formatos compatibles: PDF, TXT, MD, DOCX, EPUB.',
+    'Importer un document': 'Importar un documento',
+    'Document importé dans la note': 'Documento importado en la nota',
+    'Cette note contient déjà du contenu.': 'Esta nota ya contiene contenido.',
+    'Note introuvable.': 'Nota no encontrada.',
     "Erreur lors de l'import du document.": 'Error al importar el documento.',
     'Format de document non pris en charge.': 'Formato de documento no compatible.',
     'Le fichier est trop volumineux.': 'El archivo es demasiado grande.',

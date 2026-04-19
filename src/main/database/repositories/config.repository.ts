@@ -2,7 +2,11 @@ import { eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { getDb } from '../index';
 import { configurations } from '../schema';
-import { normalizeBibleAbbreviation, type AppSettingsStatus } from '@shared/types';
+import {
+    normalizeBibleAbbreviation,
+    type AppSettingsStatus,
+    type SidebarStatus,
+} from '@shared/types';
 import {
     DEFAULT_MAX_TABS,
     MIN_MAX_TABS,
@@ -25,6 +29,7 @@ export function getConfig(): AppSettingsStatus | null {
         rememberReadingPosition: row.rememberReadingPosition,
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
         uiLanguage: (row.uiLanguage as UiLanguagePreference) ?? null,
+        sidebarHidden: row.sidebarHidden ?? false,
     };
 }
 
@@ -34,7 +39,10 @@ export function ensureConfig(): AppSettingsStatus {
 
     const id = randomUUID();
     const appId = randomUUID();
-    getDb().insert(configurations).values({ id, appId, initialized: false }).run();
+    getDb()
+        .insert(configurations)
+        .values({ id, appId, initialized: false, maxTabs: DEFAULT_MAX_TABS })
+        .run();
     return getConfig()!;
 }
 
@@ -45,12 +53,12 @@ function getConfigId(): string {
     return ensureConfig().id;
 }
 
+function updateConfig(update: Partial<typeof configurations.$inferInsert>): void {
+    getDb().update(configurations).set(update).where(eq(configurations.id, getConfigId())).run();
+}
+
 export function markInitialized(): void {
-    getDb()
-        .update(configurations)
-        .set({ initialized: true })
-        .where(eq(configurations.id, getConfigId()))
-        .run();
+    updateConfig({ initialized: true });
 }
 
 export function getContentLanguage(): string | null {
@@ -59,11 +67,7 @@ export function getContentLanguage(): string | null {
 }
 
 export function setContentLanguage(langCode: string | null): void {
-    getDb()
-        .update(configurations)
-        .set({ contentLanguage: langCode })
-        .where(eq(configurations.id, getConfigId()))
-        .run();
+    updateConfig({ contentLanguage: langCode });
 }
 
 export function getActiveBibleVersionAbbreviation(): string | null {
@@ -71,19 +75,11 @@ export function getActiveBibleVersionAbbreviation(): string | null {
 }
 
 export function setActiveBibleVersionAbbreviation(abbreviation: string | null): void {
-    getDb()
-        .update(configurations)
-        .set({ activeBibleVersionAbbreviation: normalizeBibleAbbreviation(abbreviation) })
-        .where(eq(configurations.id, getConfigId()))
-        .run();
+    updateConfig({ activeBibleVersionAbbreviation: normalizeBibleAbbreviation(abbreviation) });
 }
 
 export function updateLastCheckBackupStatus(): void {
-    getDb()
-        .update(configurations)
-        .set({ lastCheckBackupStatus: new Date().toISOString() })
-        .where(eq(configurations.id, getConfigId()))
-        .run();
+    updateConfig({ lastCheckBackupStatus: new Date().toISOString() });
 }
 
 export function getRememberReadingPosition(): boolean {
@@ -91,11 +87,7 @@ export function getRememberReadingPosition(): boolean {
 }
 
 export function setRememberReadingPosition(value: boolean): void {
-    getDb()
-        .update(configurations)
-        .set({ rememberReadingPosition: value })
-        .where(eq(configurations.id, getConfigId()))
-        .run();
+    updateConfig({ rememberReadingPosition: value });
 }
 
 export function getMaxTabs(): number {
@@ -104,11 +96,7 @@ export function getMaxTabs(): number {
 
 export function setMaxTabs(value: number): number {
     const clamped = Math.max(MIN_MAX_TABS, Math.min(MAX_MAX_TABS, value));
-    getDb()
-        .update(configurations)
-        .set({ maxTabs: clamped })
-        .where(eq(configurations.id, getConfigId()))
-        .run();
+    updateConfig({ maxTabs: clamped });
 
     return clamped;
 }
@@ -118,9 +106,20 @@ export function getUiLanguage(): UiLanguagePreference | null {
 }
 
 export function setUiLanguage(value: UiLanguagePreference): void {
-    getDb()
-        .update(configurations)
-        .set({ uiLanguage: value === 'auto' ? null : value })
-        .where(eq(configurations.id, getConfigId()))
-        .run();
+    updateConfig({ uiLanguage: value === 'auto' ? null : value });
+}
+
+export function getSidebarStatus(): SidebarStatus | null {
+    const config = getConfig();
+    if (!config) {
+        return null;
+    }
+
+    return {
+        hidden: config.sidebarHidden,
+    };
+}
+
+export function setSidebarStatus(hidden: boolean): void {
+    updateConfig({ sidebarHidden: hidden });
 }

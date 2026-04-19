@@ -85,8 +85,8 @@ jobs:
                       args: --mac --x64
         runs-on: ${{ matrix.os }}
         env:
-            GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
             MAIN_VITE_GITHUB_TOKEN: ${{ secrets.MAIN_VITE_GITHUB_TOKEN }}
+            MAIN_VITE_GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
         steps:
             - uses: actions/checkout@v4
 
@@ -101,14 +101,6 @@ jobs:
 
             - name: Set package version from tag
               run: npm version "${{ needs.validate.outputs.version }}" --no-git-tag-version --allow-same-version
-
-            - name: Write Google credentials
-              if: env.GOOGLE_DRIVE_CREDENTIALS != ''
-              uses: jsdaniell/create-json@v1.2.3
-              with:
-                  name: google-drive-credentials.json
-                  json: ${{ env.GOOGLE_DRIVE_CREDENTIALS }}
-                  dir: resources/credentials/google/
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile

@@ -2,12 +2,11 @@ import { app, shell } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as configRepo from '@main/database/repositories/config.repository';
-import * as sidebarRepo from '@main/database/repositories/sidebar.repository';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import * as historyRepo from '@main/database/repositories/history.repository';
 import { refreshBibleDrizzle, switchBibleLanguage } from '@main/database/index';
 import { closeBibleDb } from '@main/services/bible.service';
-import { extractTextFromCustomDocument } from '@main/services/custom-document-import.service';
+import { extractTextFromImportedDocument } from '@main/services/document-import.service';
 import { getUpdateStatus, startDownload, quitAndInstall, checkForUpdates } from '@main/lib/updater';
 import i18n from '@main/lib/i18n';
 import MenuBuilder from '@main/lib/menu';
@@ -87,11 +86,11 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.getSidebarStatus, async () => {
-        return sidebarRepo.getSidebarStatus();
+        return configRepo.getSidebarStatus();
     });
 
     registerHandler(AppChannels.setSidebarStatus, async (_event, hidden) => {
-        sidebarRepo.setSidebarStatus(hidden);
+        configRepo.setSidebarStatus(hidden);
     });
 
     registerHandler(AppChannels.getCustomDocuments, async () => {
@@ -105,7 +104,7 @@ export function registerAppHandlers(): void {
     registerHandler(
         AppChannels.createCustomDocument,
         async (_event, title, input, languageCode) => {
-            const content = await extractTextFromCustomDocument(input);
+            const content = await extractTextFromImportedDocument(input);
             return customDocsRepo.createCustomDocument(title, content, languageCode);
         },
     );

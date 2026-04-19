@@ -134,6 +134,7 @@ export const NotesChannels = {
     create: 'notes:create',
     delete: 'notes:delete',
     rename: 'notes:rename',
+    importDocument: 'notes:importDocument',
     updateContent: 'notes:updateContent',
     getReferences: 'notes:getReferences',
     createReference: 'notes:createReference',
@@ -382,6 +383,10 @@ export interface InvokeChannelMap {
     [NotesChannels.create]: { args: [string]; return: NoteItem };
     [NotesChannels.delete]: { args: [string]; return: void };
     [NotesChannels.rename]: { args: [string, string]; return: NoteItem };
+    [NotesChannels.importDocument]: {
+        args: [string, CustomDocumentImportInput];
+        return: NoteItem;
+    };
     [NotesChannels.updateContent]: { args: [string, string]; return: void };
     [NotesChannels.getReferences]: { args: [string]; return: NoteItemReference[] };
     [NotesChannels.createReference]: {

@@ -2,6 +2,7 @@ import { NotesChannels } from '@shared/ipc.types';
 import { registerHandler } from './register';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
+import { importDocumentIntoNote } from '@main/services/note-import.service';
 
 function stripInternalExportLinks(html: string): string {
     return html.replace(
@@ -30,6 +31,10 @@ export function registerNotesHandlers(): void {
 
     registerHandler(NotesChannels.rename, async (_event, id, newName) => {
         return notesRepo.rename(id, newName);
+    });
+
+    registerHandler(NotesChannels.importDocument, async (_event, id, input) => {
+        return importDocumentIntoNote(id, input);
     });
 
     registerHandler(NotesChannels.updateContent, async (_event, id, content) => {
