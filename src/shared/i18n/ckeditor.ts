@@ -1,4 +1,4 @@
-import type { UiLanguage } from '@shared/constants';
+import { UI_LANGUAGE_CODES, type UiLanguage } from '@shared/constants';
 
 type CkeditorDictionary = Record<string, string>;
 type CkeditorRegistryEntry = {
@@ -1254,7 +1254,7 @@ const CKEDITOR_PLURAL_FORMS: Record<UiLanguage, (count: number) => number> = {
     sw: (count) => (count !== 1 ? 1 : 0),
 };
 
-const SUPPORTED_LANGUAGES: UiLanguage[] = ['fr', 'en', 'es', 'pt', 'sw'];
+const SUPPORTED_LANGUAGES = UI_LANGUAGE_CODES;
 
 function buildDictionary(language: UiLanguage): CkeditorDictionary {
     return Object.fromEntries(
