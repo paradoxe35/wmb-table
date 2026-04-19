@@ -105,7 +105,7 @@ describe('AI subagent execution', () => {
 
         expect(result).toEqual({
             status: 'completed',
-            summary: 'Research summary\n\n[Research output was truncated due to length limit]',
+            response: 'Research summary\n\n[Research output was truncated due to length limit]',
         });
     });
 
@@ -128,7 +128,7 @@ describe('AI subagent execution', () => {
 
         expect(result).toEqual({
             status: 'completed',
-            summary: 'Sermon summary\n\n[Sermon reading output was truncated due to length limit]',
+            response: 'Sermon summary\n\n[Sermon reading output was truncated due to length limit]',
         });
     });
 
@@ -151,7 +151,7 @@ describe('AI subagent execution', () => {
                         name: 'researchTopic',
                         output: {
                             status: 'completed',
-                            summary: 'Earlier research found references in multiple sermons.',
+                            response: 'Earlier research found references in multiple sermons.',
                         },
                     },
                 ],
@@ -226,7 +226,7 @@ describe('AI subagent execution', () => {
                         name: 'readSermon',
                         output: {
                             status: 'completed',
-                            summary: 'Earlier reading covered the first section of the sermon.',
+                            response: 'Earlier reading covered the first section of the sermon.',
                         },
                     },
                 ],

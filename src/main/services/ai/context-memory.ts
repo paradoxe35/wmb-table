@@ -85,6 +85,22 @@ function estimateTokens(text: string): number {
     }
 }
 
+function getAgentOutputText(output: any): string {
+    if (!output || typeof output !== 'object') {
+        return '';
+    }
+
+    if (typeof output.response === 'string') {
+        return output.response;
+    }
+
+    if (typeof output.summary === 'string') {
+        return output.summary;
+    }
+
+    return '';
+}
+
 // ── Tool result summarization ──
 
 function summarizeList(values: string[], label: string): string {
@@ -267,7 +283,7 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             if (output && typeof output === 'object') {
                 const status = output.status === 'failed' ? 'failed' : 'completed';
                 const label = status === 'failed' ? 'Research failed' : 'Research';
-                return `${label}: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
+                return `${label}: ${truncate(normalizeWhitespace(getAgentOutputText(output)), charLimit)}`;
             }
             break;
 
@@ -275,7 +291,7 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             if (output && typeof output === 'object') {
                 const status = output.status === 'failed' ? 'failed' : 'completed';
                 const label = status === 'failed' ? 'Read sermon failed' : 'Read sermon';
-                return `${label}: ${truncate(normalizeWhitespace(String(output.summary ?? '')), charLimit)}`;
+                return `${label}: ${truncate(normalizeWhitespace(getAgentOutputText(output)), charLimit)}`;
             }
             break;
     }
@@ -376,6 +392,19 @@ function cleanToolOutput(name: string, output: any): unknown {
 
         case 'getCustomDocumentContent':
             return { ...output, content: previewText(output.content, LONG_PREVIEW) };
+
+        case 'researchTopic':
+        case 'readSermon': {
+            const text = getAgentOutputText(output);
+            if (!text) {
+                return output;
+            }
+
+            return {
+                ...output,
+                response: previewText(text, LONG_PREVIEW),
+            };
+        }
 
         case 'getSubjectById':
             if (!Array.isArray(output.documents)) {

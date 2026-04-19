@@ -35,10 +35,10 @@ function resolveSermonReaderQuestion(input: {
 
     const sermonTarget = input.sermonId?.trim() || input.sermonQuery?.trim();
     if (sermonTarget) {
-        return `Summarize the sermon "${sermonTarget}" and answer the user's latest request as faithfully as possible.`;
+        return `Read the sermon "${sermonTarget}" and answer the user's latest request as faithfully as possible, matching the requested depth and using verified citations.`;
     }
 
-    return "Summarize the sermon and answer the user's latest request as faithfully as possible.";
+    return "Read the sermon and answer the user's latest request as faithfully as possible, matching the requested depth and using verified citations.";
 }
 
 function buildSermonReaderToolSubset(languageCode: string): Record<string, AiToolDefinition> {
@@ -60,7 +60,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 'before reading. Use this when the user asks to summarize, explain, or ' +
                 'analyze a specific sermon. For follow-ups, pass prior findings in `alreadyKnown` and the ' +
                 'new angle in `focus` so the subagent goes deeper instead of repeating a ' +
-                'general summary. Returns a concise summary with paragraph citations.',
+                'general summary. Returns a structured explanation with verified paragraph citations.',
             inputSchema: z
                 .object({
                     sermonId: z.string().optional().describe('The sermon ID to read'),
@@ -213,7 +213,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
 
                     return {
                         status: 'completed',
-                        summary: truncated
+                        response: truncated
                             ? `${result.text}\n\n[Sermon reading output was truncated due to length limit]`
                             : result.text,
                     };
@@ -227,7 +227,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                     log.error('Sermon reader agent failed', { sermonId, error: message });
                     return {
                         status: 'failed',
-                        summary: `Sermon reading failed: ${message}`,
+                        response: `Sermon reading failed: ${message}`,
                         error: message,
                     };
                 }
