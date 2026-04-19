@@ -6,7 +6,7 @@ import * as customDocsRepo from '@main/database/repositories/custom-documents.re
 import * as historyRepo from '@main/database/repositories/history.repository';
 import { refreshBibleDrizzle, switchBibleLanguage } from '@main/database/index';
 import { closeBibleDb } from '@main/services/bible.service';
-import { extractTextFromCustomDocument } from '@main/services/custom-document-import.service';
+import { extractTextFromImportedDocument } from '@main/services/document-import.service';
 import { getUpdateStatus, startDownload, quitAndInstall, checkForUpdates } from '@main/lib/updater';
 import i18n from '@main/lib/i18n';
 import MenuBuilder from '@main/lib/menu';
@@ -104,7 +104,7 @@ export function registerAppHandlers(): void {
     registerHandler(
         AppChannels.createCustomDocument,
         async (_event, title, input, languageCode) => {
-            const content = await extractTextFromCustomDocument(input);
+            const content = await extractTextFromImportedDocument(input);
             return customDocsRepo.createCustomDocument(title, content, languageCode);
         },
     );

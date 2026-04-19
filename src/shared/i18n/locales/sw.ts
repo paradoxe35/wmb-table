@@ -33,6 +33,10 @@ const sw: Record<string, string> = {
     'A-Z': 'A-Z',
     'Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.':
         'Miundo inayotumika: PDF, TXT, MD, DOCX, EPUB.',
+    'Importer un document': 'Ingiza waraka',
+    'Document importé dans la note': 'Waraka umeingizwa kwenye dokezo',
+    'Cette note contient déjà du contenu.': 'Dokezo hili tayari lina maudhui.',
+    'Note introuvable.': 'Dokezo halijapatikana.',
     "Erreur lors de l'import du document.": 'Hitilafu wakati wa kuingiza waraka.',
     'Format de document non pris en charge.': 'Muundo wa waraka hautumiki.',
     'Le fichier est trop volumineux.': 'Faili ni kubwa mno.',

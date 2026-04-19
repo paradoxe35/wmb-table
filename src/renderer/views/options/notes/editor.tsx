@@ -12,6 +12,7 @@ import {
     EditOutlined,
     ReadOutlined,
     ExclamationCircleOutlined,
+    UploadOutlined,
 } from '@ant-design/icons';
 import { debounce, substrAfter } from '@renderer/utils/functions';
 import { useWmbLinkNavigate } from '@renderer/hooks/use-wmb-link';
@@ -27,12 +28,18 @@ import {
     useShowReferenceDetail,
 } from './references';
 import { EDITOR_EVENT, type RenameNoteDetail } from '@renderer/utils/events';
+import { hasMeaningfulHtmlContent } from '@shared/html-content';
 
 // CKEditor UMD bundle — side-effect import assigns to window.DecoupledDocumentEditor
 import './ckeditor/ckeditor';
 
 // @ts-expect-error — CKEditor UMD attaches to window
 const DecoupledDocumentEditor: any = window.DecoupledDocumentEditor;
+const NOTE_IMPORT_ACCEPTED_TYPES = '.pdf,.txt,.md,.markdown,.docx,.epub';
+
+function isSupportedNoteImport(file: File): boolean {
+    return /\.(pdf|txt|md|markdown|docx|epub)$/i.test(file.name);
+}
 
 function findAnchorElement(
     target: EventTarget | null,
@@ -127,15 +134,22 @@ function ButtonsControllers({
     backToNotes,
     workingNote,
     editorRef,
+    hasContent,
+    importingDocument,
+    onImportDocument,
 }: {
     backToNotes: () => void;
     workingNote: NoteItem | null;
     editorRef: React.RefObject<any>;
+    hasContent: boolean;
+    importingDocument: boolean;
+    onImportDocument: (file: File) => Promise<void>;
 }) {
     const { t } = useTranslation();
     const openModal = useRenameNote(workingNote);
 
     const workingNoteRef = useValueStateRef(workingNote);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [loadingPdf, setLoadingPdf] = useState(false);
 
@@ -143,7 +157,7 @@ function ButtonsControllers({
 
     const exportPdf = () => {
         const editor = editorRef.current;
-        if (!editor || !editor.getData().trim()) {
+        if (!editor || !hasMeaningfulHtmlContent(editor.getData())) {
             return;
         }
         setLoadingPdf(true);
@@ -193,11 +207,30 @@ function ButtonsControllers({
 
     const onBackToNotes = useCallback(() => {
         const editor = editorRef.current;
-        if (editor && (editor.getData() || '').trim().length < 1) {
+        if (editor && !hasMeaningfulHtmlContent(editor.getData())) {
             return confirm();
         }
         backToNotes();
     }, [confirm, backToNotes]);
+
+    const handleImportFileChange = useCallback(
+        async (event: React.ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            event.currentTarget.value = '';
+
+            if (!file) {
+                return;
+            }
+
+            if (!isSupportedNoteImport(file)) {
+                message.error(t('Formats pris en charge : PDF, TXT, MD, DOCX, EPUB.'));
+                return;
+            }
+
+            await onImportDocument(file);
+        },
+        [onImportDocument, t],
+    );
 
     return (
         <div className="editor-toolbar">
@@ -219,25 +252,49 @@ function ButtonsControllers({
             </Space>
 
             <Space orientation="horizontal">
-                <Tooltip
-                    title={
-                        !readOnly ? t('Activer le mode lecture') : t('Désactiver le mode lecture')
-                    }
-                >
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={NOTE_IMPORT_ACCEPTED_TYPES}
+                    style={{ display: 'none' }}
+                    onChange={(event) => {
+                        void handleImportFileChange(event);
+                    }}
+                />
+                {workingNote && !hasContent ? (
                     <Button
-                        onClick={readOnlyMode}
-                        type={readOnly ? 'primary' : 'dashed'}
-                        icon={<ReadOutlined />}
-                    />
-                </Tooltip>
-                <Tooltip title={t('Exporter au format PDF')}>
-                    <Button
-                        type="dashed"
-                        onClick={exportPdf}
-                        loading={loadingPdf}
-                        icon={<FilePdfOutlined />}
-                    />
-                </Tooltip>
+                        type="primary"
+                        icon={<UploadOutlined />}
+                        loading={importingDocument}
+                        onClick={() => fileInputRef.current?.click()}
+                    >
+                        {t('Importer un document')}
+                    </Button>
+                ) : (
+                    <>
+                        <Tooltip
+                            title={
+                                !readOnly
+                                    ? t('Activer le mode lecture')
+                                    : t('Désactiver le mode lecture')
+                            }
+                        >
+                            <Button
+                                onClick={readOnlyMode}
+                                type={readOnly ? 'primary' : 'dashed'}
+                                icon={<ReadOutlined />}
+                            />
+                        </Tooltip>
+                        <Tooltip title={t('Exporter au format PDF')}>
+                            <Button
+                                type="dashed"
+                                onClick={exportPdf}
+                                loading={loadingPdf}
+                                icon={<FilePdfOutlined />}
+                            />
+                        </Tooltip>
+                    </>
+                )}
             </Space>
         </div>
     );
@@ -259,28 +316,50 @@ export default function EditorContent({
     const editorRef = useRef<any>(null);
 
     const contextEvent = useRef<MouseEvent | null>(null);
+    const renameTimerRef = useRef<number | null>(null);
 
     const [workingNote, setWorkingNote] = useState<NoteItem | null>(null);
+    const [hasContent, setHasContent] = useState(false);
+    const [importingDocument, setImportingDocument] = useState(false);
 
     const [ready, setReady] = useState(false);
 
     const bibleReferenceModal = useBibleReferenceModal();
 
     const ipcRequestWithLoader = useIpcRequestWithLoader();
+    const workingNoteRef = useValueStateRef(workingNote);
+    const hasContentRef = useValueStateRef(hasContent);
+
+    const clearRenameTimer = useCallback(() => {
+        if (renameTimerRef.current != null) {
+            window.clearTimeout(renameTimerRef.current);
+            renameTimerRef.current = null;
+        }
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
-        let renameTimer: ReturnType<typeof setTimeout> | number | null = null;
+
+        clearRenameTimer();
 
         window.api.notes.getById(workingNoteId).then((note) => {
             if (cancelled) {
                 return;
             }
 
+            const noteHasContent = hasMeaningfulHtmlContent(note?.content);
             setWorkingNote(note);
-            if (note?.created && note.defaultName) {
-                renameTimer = window.setTimeout(() => {
-                    if (!cancelled) {
+            setHasContent(noteHasContent);
+
+            if (note?.created && note.defaultName && !noteHasContent) {
+                renameTimerRef.current = window.setTimeout(() => {
+                    const latestNote = workingNoteRef.current;
+                    if (
+                        !cancelled &&
+                        latestNote?.created &&
+                        latestNote.defaultName &&
+                        !hasContentRef.current
+                    ) {
                         window.dispatchEvent(new Event(EDITOR_EVENT.renameNoteModal));
                     }
                 }, 1000);
@@ -289,11 +368,9 @@ export default function EditorContent({
 
         return () => {
             cancelled = true;
-            if (renameTimer != null) {
-                window.clearTimeout(renameTimer);
-            }
+            clearRenameTimer();
         };
-    }, [workingNoteId]);
+    }, [clearRenameTimer, hasContentRef, workingNoteId, workingNoteRef]);
 
     useEffect(() => {
         const renameUpdate = (e: CustomEventInit<RenameNoteDetail>) => {
@@ -311,6 +388,46 @@ export default function EditorContent({
             window.removeEventListener(EDITOR_EVENT.renameNote, renameUpdate);
         };
     }, []);
+
+    const handleImportDocument = useCallback(
+        async (file: File) => {
+            setImportingDocument(true);
+            clearRenameTimer();
+
+            try {
+                const buffer = await file.arrayBuffer();
+                const importedNote = await window.api.notes.importDocument(
+                    workingNoteIdRef.current,
+                    {
+                        fileName: file.name,
+                        mimeType: file.type || null,
+                        bytes: new Uint8Array(buffer),
+                    },
+                );
+
+                setWorkingNote(importedNote);
+                setHasContent(hasMeaningfulHtmlContent(importedNote.content));
+
+                if (
+                    editorRef.current &&
+                    editorRef.current.getData() !== (importedNote.content ?? '')
+                ) {
+                    editorRef.current.setData(importedNote.content ?? '');
+                }
+
+                message.success(t('Document importé dans la note'));
+            } catch (error) {
+                message.error(
+                    error instanceof Error
+                        ? t(error.message)
+                        : t("Erreur lors de l'import du document."),
+                );
+            } finally {
+                setImportingDocument(false);
+            }
+        },
+        [clearRenameTimer, t, workingNoteIdRef],
+    );
 
     const handleEditorLinksClick = useCallback((idRef: string) => {
         ipcRequestWithLoader<NoteItemReference | null>(async () => {
@@ -558,12 +675,16 @@ export default function EditorContent({
                 editorRef={editorRef}
                 workingNote={workingNote}
                 backToNotes={backToNotes}
+                hasContent={hasContent}
+                importingDocument={importingDocument}
+                onImportDocument={handleImportDocument}
             />
             <Editor
                 ready={ready}
                 setReady={setReady}
                 workingNoteId={workingNoteId}
                 data={workingNote?.content || null}
+                onContentPresenceChange={setHasContent}
                 onChange={saveEditorData}
                 refereToDocument={refereToDocument}
                 deleteReference={deleteReference}
@@ -585,6 +706,7 @@ function Editor({
     refereToDocument,
     deleteReference,
     copySelection,
+    onContentPresenceChange,
     contextEvent,
     editorRef,
     onChange,
@@ -596,6 +718,7 @@ function Editor({
     deleteReference: () => void;
     copySelection: () => void;
     setReady: React.Dispatch<React.SetStateAction<boolean>>;
+    onContentPresenceChange: React.Dispatch<React.SetStateAction<boolean>>;
     onChange: () => Promise<void>;
     contextEvent: React.RefObject<MouseEvent | null>;
     editorRef: React.RefObject<any>;
@@ -680,6 +803,7 @@ function Editor({
                                 editor.ui.getEditableElement().parentElement.parentElement,
                             );
                         editorRef.current = editor;
+                        onContentPresenceChange(hasMeaningfulHtmlContent(editor.getData()));
                         setReady(true);
                     }}
                     onError={({ willEditorRestart }: { willEditorRestart: any }) => {
@@ -687,7 +811,8 @@ function Editor({
                             editorRef.current?.ui?.view?.toolbar?.element?.remove();
                         }
                     }}
-                    onChange={() => {
+                    onChange={(_event: unknown, editor: any) => {
+                        onContentPresenceChange(hasMeaningfulHtmlContent(editor.getData()));
                         debouncedOnChangeRef.current();
                     }}
                     editor={DecoupledDocumentEditor}
