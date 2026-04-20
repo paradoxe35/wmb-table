@@ -561,10 +561,10 @@ export class AiService {
             providerId: environment.providerId,
             modelId: environment.modelId,
             conversationId: conversation.id,
-            contextWindow: environment.contextWindow ?? 'unknown',
-            tokenBudget: remoteTokenBudget,
-            toolTokens,
+            modelContextWindow: environment.contextWindow ?? 'unknown',
+            maxTokenBudget: remoteTokenBudget,
             historyTokenCount: historyTokenCount + systemPromptTokens + toolTokens,
+            toolTokens,
             systemPromptTokens,
         });
 
