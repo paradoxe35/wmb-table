@@ -24,6 +24,7 @@ const REFERENCE_FORMAT_INSTRUCTIONS = [
     '- The languageCode and translationId MUST be the exact values from sermon metadata returned by tool results. Never invent or guess them.',
     '- The paragraph number MUST be the exact `paragraphNumber` field from the paragraph object. Never guess or compute it.',
     '- For Bible links, use the exact tool result fields `bookCode`, `chapter`, `verse`, `bibleVersionAbbreviation`, and `bookName`. Never infer, translate, or normalize them yourself.',
+    '- Copy `bookCode` exactly as returned by the Bible tool. It must stay in canonical form like `06O` or `43N`; never remove the leading zero and never swap `O` with `N`.',
     '- Do NOT put the sermon title in the URL. The title goes only in the link text `[Title, §N](...)`.',
     '- If a tool reports `translationWarning` or a fallback translation, say that briefly and then use the resolved translation values in references.',
 ].join('\n');
