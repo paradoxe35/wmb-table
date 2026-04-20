@@ -10,8 +10,10 @@ export const SHARED_SERMON_REFERENCE_PROMPT_LINES = [
 export const SHARED_BIBLE_REFERENCE_PROMPT_LINES = [
     '### Bible references',
     'Format: `[BookName Chapter:Verse](wmb://bible/{bookCode}/{chapter}/{verse}/{bibleVersionAbbreviation}/{bookName})`',
-    'Examples: `[Jean 3:16](wmb://bible/43N/3/16/lsg/Jean)`, `[John 3:16](wmb://bible/43N/3/16/kjv/John)`, `[Jean 3:16](wmb://bible/43N/3/16/darby/Jean)`',
+    'Examples: `[Josue 1:9](wmb://bible/06O/1/9/lsg/Josue)`, `[Joshua 1:9](wmb://bible/06O/1/9/kjv/Joshua)`, `[John 3:16](wmb://bible/43N/3/16/kjv/John)`.',
     'Use exact Bible tool fields only: `bookCode` is the canonical code and `bookName` is the localized returned name.',
+    'Copy `bookCode` verbatim from the tool result. Never rewrite it, never drop a leading zero, and never change the testament suffix (`O` or `N`).',
+    'Do not reuse example codes for another book. The final link must use the exact `bookCode` returned for that exact verse.',
     'For verse ranges or chapter references, keep the range in the label but link to the first exact verse returned by the tool. Examples: `[Romains 8:29-30](wmb://bible/45N/8/29/lsg/Romains)`, `[Éphésiens 1](wmb://bible/49N/1/1/lsg/Éphésiens)`.',
 ];
 
