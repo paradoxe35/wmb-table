@@ -1,5 +1,6 @@
 import type {
     AiConversation,
+    AiConversationHistoryPage,
     AiMessageHistoryPage,
     AiMessage,
     AiModelScanResult,
@@ -11,6 +12,7 @@ import type {
 } from '@shared/ai.types';
 import type { PdfExportResult } from '@shared/ipc.types';
 import {
+    AI_CONVERSATION_HISTORY_PAGE_SIZE,
     AI_MESSAGE_HISTORY_PAGE_SIZE,
     resolveActiveModel,
     resolveProviderName,
@@ -47,6 +49,12 @@ interface ConversationHistoryState {
     hasMore: boolean;
 }
 
+interface ConversationListState {
+    loadedCount: number;
+    totalCount: number;
+    hasMore: boolean;
+}
+
 interface QueuedMessage {
     id: string;
     content: string;
@@ -61,6 +69,20 @@ function createConversationHistoryState(page: AiMessageHistoryPage): Conversatio
         loadedCount: page.loadedCount,
         hasMore: page.hasMore,
     };
+}
+
+function createConversationListState(page: AiConversationHistoryPage): ConversationListState {
+    return {
+        loadedCount: page.loadedCount,
+        totalCount: page.totalCount,
+        hasMore: page.hasMore,
+    };
+}
+
+function sortConversationsByUpdatedAt(conversations: AiConversation[]): AiConversation[] {
+    return [...conversations].sort(
+        (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    );
 }
 
 function upsertMessage(messages: AiMessage[], message: AiMessage): AiMessage[] {
@@ -78,10 +100,29 @@ function upsertConversation(
 ): AiConversation[] {
     const existing = conversations.findIndex((item) => item.id === conversation.id);
     if (existing === -1) {
-        return [conversation, ...conversations];
+        return sortConversationsByUpdatedAt([conversation, ...conversations]);
     }
 
-    return conversations.map((item, index) => (index === existing ? conversation : item));
+    return sortConversationsByUpdatedAt(
+        conversations.map((item, index) => (index === existing ? conversation : item)),
+    );
+}
+
+function mergeFetchedConversations(
+    existing: AiConversation[],
+    fetched: AiConversation[],
+): AiConversation[] {
+    const mergedById = new Map<string, AiConversation>();
+
+    for (const conversation of existing) {
+        mergedById.set(conversation.id, conversation);
+    }
+
+    for (const conversation of fetched) {
+        mergedById.set(conversation.id, conversation);
+    }
+
+    return sortConversationsByUpdatedAt([...mergedById.values()]);
 }
 
 function updateConversationMessages(
@@ -245,9 +286,12 @@ interface AiChatState {
     settings: AiSettings | null;
     providerCatalog: AiProviderDefinition[];
     conversations: AiConversation[];
+    conversationList: ConversationListState;
     activeConversationId: string | null;
     messagesByConversation: MessageMap;
     reasoningByMessage: ReasoningMap;
+    loadingConversationList: boolean;
+    loadingOlderConversationList: boolean;
     loadingConversations: LoadingConversationMap;
     loadingOlderConversations: LoadingConversationMap;
     historyByConversation: ConversationHistoryMap;
@@ -264,6 +308,7 @@ interface AiChatState {
     loadProviderCatalog(): Promise<void>;
     saveSettings(partial: Partial<AiSettings>): Promise<void>;
     loadConversations(): Promise<void>;
+    loadOlderConversations(): Promise<void>;
     selectConversation(conversationId: string): Promise<void>;
     loadOlderMessages(conversationId: string): Promise<void>;
     createConversation(title?: string): Promise<void>;
@@ -295,9 +340,16 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     settings: null,
     providerCatalog: [],
     conversations: [],
+    conversationList: {
+        loadedCount: 0,
+        totalCount: 0,
+        hasMore: false,
+    },
     activeConversationId: null,
     messagesByConversation: {},
     reasoningByMessage: {},
+    loadingConversationList: false,
+    loadingOlderConversationList: false,
     loadingConversations: {},
     loadingOlderConversations: {},
     historyByConversation: {},
@@ -572,9 +624,24 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             });
 
             window.api.on.aiConversationUpdated(({ conversation }) => {
-                set((state) => ({
-                    conversations: upsertConversation(state.conversations, conversation),
-                }));
+                set((state) => {
+                    const alreadyPresent = state.conversations.some(
+                        (item) => item.id === conversation.id,
+                    );
+
+                    return {
+                        conversations: upsertConversation(state.conversations, conversation),
+                        conversationList: {
+                            ...state.conversationList,
+                            loadedCount: alreadyPresent
+                                ? state.conversationList.loadedCount
+                                : state.conversationList.loadedCount + 1,
+                            totalCount: alreadyPresent
+                                ? state.conversationList.totalCount
+                                : state.conversationList.totalCount + 1,
+                        },
+                    };
+                });
             });
         }
 
@@ -604,16 +671,64 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     loadConversations: async () => {
-        const conversations = await window.api.ai.getConversations();
-        const activeConversationId = resolvePersistedActiveConversationId(
-            conversations,
-            get().activeConversationId,
-        );
+        set({ loadingConversationList: true, error: null });
 
-        set({ conversations, activeConversationId });
+        try {
+            const page = await window.api.ai.getConversationsPage({
+                limit: AI_CONVERSATION_HISTORY_PAGE_SIZE,
+                loadedCount: 0,
+            });
+            const activeConversationId = resolvePersistedActiveConversationId(
+                page.conversations,
+                get().activeConversationId,
+            );
 
-        if (activeConversationId) {
-            await get().selectConversation(activeConversationId);
+            set({
+                conversations: page.conversations,
+                conversationList: createConversationListState(page),
+                activeConversationId,
+                loadingConversationList: false,
+            });
+
+            if (activeConversationId) {
+                await get().selectConversation(activeConversationId);
+            }
+        } catch (error) {
+            set({
+                loadingConversationList: false,
+                error: toErrorMessage(error, 'Le chargement des conversations a échoué.'),
+            });
+        }
+    },
+
+    loadOlderConversations: async () => {
+        const state = get();
+        if (
+            !state.conversationList.hasMore ||
+            state.loadingConversationList ||
+            state.loadingOlderConversationList
+        ) {
+            return;
+        }
+
+        set({ loadingOlderConversationList: true });
+
+        try {
+            const page = await window.api.ai.getConversationsPage({
+                limit: AI_CONVERSATION_HISTORY_PAGE_SIZE,
+                loadedCount: state.conversationList.loadedCount,
+            });
+
+            set((current) => ({
+                conversations: mergeFetchedConversations(current.conversations, page.conversations),
+                conversationList: createConversationListState(page),
+                loadingOlderConversationList: false,
+            }));
+        } catch (error) {
+            set({
+                loadingOlderConversationList: false,
+                error: toErrorMessage(error, 'Le chargement des anciennes conversations a échoué.'),
+            });
         }
     },
 
@@ -732,7 +847,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     createConversation: async (title) => {
         const conversation = await window.api.ai.createConversation({ title });
         set((state) => ({
-            conversations: [conversation, ...state.conversations],
+            conversations: upsertConversation(state.conversations, conversation),
+            conversationList: {
+                loadedCount: state.conversationList.loadedCount + 1,
+                totalCount: state.conversationList.totalCount + 1,
+                hasMore: state.conversationList.hasMore,
+            },
             activeConversationId: conversation.id,
             historyByConversation: {
                 ...state.historyByConversation,
@@ -768,6 +888,13 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
             return {
                 conversations: remaining,
+                conversationList: {
+                    loadedCount: Math.max(state.conversationList.loadedCount - 1, remaining.length),
+                    totalCount: Math.max(state.conversationList.totalCount - 1, 0),
+                    hasMore:
+                        state.conversationList.totalCount - 1 >
+                        Math.max(state.conversationList.loadedCount - 1, remaining.length),
+                },
                 activeConversationId:
                     state.activeConversationId === conversationId
                         ? null
@@ -810,9 +937,16 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         await window.api.ai.clearConversations();
         set({
             conversations: [],
+            conversationList: {
+                loadedCount: 0,
+                totalCount: 0,
+                hasMore: false,
+            },
             activeConversationId: null,
             messagesByConversation: {},
             reasoningByMessage: {},
+            loadingConversationList: false,
+            loadingOlderConversationList: false,
             loadingConversations: {},
             loadingOlderConversations: {},
             historyByConversation: {},
@@ -834,7 +968,12 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 const conversation = await window.api.ai.createConversation({});
                 conversationId = conversation.id;
                 set((state) => ({
-                    conversations: [conversation, ...state.conversations],
+                    conversations: upsertConversation(state.conversations, conversation),
+                    conversationList: {
+                        loadedCount: state.conversationList.loadedCount + 1,
+                        totalCount: state.conversationList.totalCount + 1,
+                        hasMore: state.conversationList.hasMore,
+                    },
                     activeConversationId: conversation.id,
                     historyByConversation: {
                         ...state.historyByConversation,

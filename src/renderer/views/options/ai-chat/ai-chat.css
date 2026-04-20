@@ -53,6 +53,14 @@
     scrollbar-width: thin;
 }
 
+.ai-chat__sidebar-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 0 10px;
+    color: var(--ant-color-text-tertiary);
+}
+
 .ai-chat__sidebar-footer {
     padding: 6px 10px 8px;
 }

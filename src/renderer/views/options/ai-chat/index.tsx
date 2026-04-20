@@ -40,6 +40,9 @@ export default function AiChatView() {
     const initialize = useAiChatStore((s) => s.initialize);
     const settings = useAiChatStore((s) => s.settings);
     const conversations = useAiChatStore((s) => s.conversations);
+    const conversationList = useAiChatStore((s) => s.conversationList);
+    const loadingConversationList = useAiChatStore((s) => s.loadingConversationList);
+    const loadingOlderConversationList = useAiChatStore((s) => s.loadingOlderConversationList);
     const activeConversationId = useAiChatStore((s) => s.activeConversationId);
     const messagesByConversation = useAiChatStore((s) => s.messagesByConversation);
     const loadingConversations = useAiChatStore((s) => s.loadingConversations);
@@ -48,6 +51,7 @@ export default function AiChatView() {
     const conversationRuns = useAiChatStore((s) => s.conversationRuns);
     const queuedMessagesByConversation = useAiChatStore((s) => s.queuedMessagesByConversation);
     const createConversation = useAiChatStore((s) => s.createConversation);
+    const loadOlderConversations = useAiChatStore((s) => s.loadOlderConversations);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
     const loadOlderMessages = useAiChatStore((s) => s.loadOlderMessages);
     const renameConversation = useAiChatStore((s) => s.renameConversation);
@@ -113,6 +117,10 @@ export default function AiChatView() {
         void createConversation();
     }, [createConversation]);
 
+    const handleLoadOlderConversations = useCallback(() => {
+        void loadOlderConversations();
+    }, [loadOlderConversations]);
+
     const handleSelectConversation = useCallback(
         (id: string) => void selectConversation(id),
         [selectConversation],
@@ -170,7 +178,11 @@ export default function AiChatView() {
                 conversations={conversations}
                 activeConversationId={activeConversationId}
                 streamingConversations={activeConversationMap}
+                loading={loadingConversationList}
+                loadingOlder={loadingOlderConversationList}
+                hasMore={conversationList.hasMore}
                 onCreateConversation={handleCreateConversation}
+                onLoadOlderConversations={handleLoadOlderConversations}
                 onSelectConversation={handleSelectConversation}
                 onRenameConversation={handleRenameConversation}
                 onExportConversation={handleExportConversation}

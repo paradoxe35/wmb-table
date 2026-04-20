@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react';
+import { memo, useCallback, useMemo, useRef } from 'react';
 import type { MenuProps } from 'antd';
 import { App as AntApp, Button, Dropdown, Input, Popconfirm, Typography, message } from 'antd';
 import { LoadingOutlined, MoreOutlined, PlusOutlined } from '@ant-design/icons';
@@ -203,7 +203,11 @@ export default memo(function ChatConversationList({
     conversations,
     activeConversationId,
     streamingConversations,
+    loading,
+    loadingOlder,
+    hasMore,
     onCreateConversation,
+    onLoadOlderConversations,
     onSelectConversation,
     onRenameConversation,
     onExportConversation,
@@ -213,7 +217,11 @@ export default memo(function ChatConversationList({
     conversations: AiConversation[];
     activeConversationId: string | null;
     streamingConversations: StreamingConversationMap;
+    loading: boolean;
+    loadingOlder: boolean;
+    hasMore: boolean;
     onCreateConversation: () => void;
+    onLoadOlderConversations: () => void;
     onSelectConversation: (conversationId: string) => void;
     onRenameConversation: (conversationId: string, title: string) => Promise<AiConversation>;
     onExportConversation: (conversationId: string) => Promise<PdfExportResult>;
@@ -221,6 +229,19 @@ export default memo(function ChatConversationList({
     onClearConversations: () => void;
 }) {
     const { t } = useTranslation();
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+
+    const handleScroll = useCallback(() => {
+        const container = scrollRef.current;
+        if (!container || loading || loadingOlder || !hasMore) {
+            return;
+        }
+
+        const remaining = container.scrollHeight - (container.scrollTop + container.clientHeight);
+        if (remaining <= 48) {
+            onLoadOlderConversations();
+        }
+    }, [hasMore, loading, loadingOlder, onLoadOlderConversations]);
 
     return (
         <div className="ai-chat__sidebar">
@@ -237,8 +258,8 @@ export default memo(function ChatConversationList({
                 />
             </div>
 
-            <div className="ai-chat__sidebar-list">
-                {conversations.length === 0 ? (
+            <div className="ai-chat__sidebar-list" ref={scrollRef} onScroll={handleScroll}>
+                {conversations.length === 0 && !loading ? (
                     <Text
                         type="secondary"
                         style={{
@@ -250,20 +271,27 @@ export default memo(function ChatConversationList({
                         {t('Aucune conversation')}
                     </Text>
                 ) : (
-                    <AnimatePresence mode="popLayout">
-                        {conversations.map((conversation) => (
-                            <ConversationListItem
-                                key={conversation.id}
-                                conversation={conversation}
-                                isActive={conversation.id === activeConversationId}
-                                isStreaming={Boolean(streamingConversations[conversation.id])}
-                                onSelectConversation={onSelectConversation}
-                                onRenameConversation={onRenameConversation}
-                                onExportConversation={onExportConversation}
-                                onDeleteConversation={onDeleteConversation}
-                            />
-                        ))}
-                    </AnimatePresence>
+                    <>
+                        <AnimatePresence mode="popLayout">
+                            {conversations.map((conversation) => (
+                                <ConversationListItem
+                                    key={conversation.id}
+                                    conversation={conversation}
+                                    isActive={conversation.id === activeConversationId}
+                                    isStreaming={Boolean(streamingConversations[conversation.id])}
+                                    onSelectConversation={onSelectConversation}
+                                    onRenameConversation={onRenameConversation}
+                                    onExportConversation={onExportConversation}
+                                    onDeleteConversation={onDeleteConversation}
+                                />
+                            ))}
+                        </AnimatePresence>
+                        {loading || loadingOlder ? (
+                            <div className="ai-chat__sidebar-loading">
+                                <LoadingOutlined spin />
+                            </div>
+                        ) : null}
+                    </>
                 )}
             </div>
 

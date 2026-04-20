@@ -42,7 +42,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                 'Bible passages, and documents. Use this for broad topic exploration, cross-referencing, ' +
                 'or when the question requires reading multiple sources. For follow-ups, pass prior findings ' +
                 'in `alreadyKnown` and the new angle in `followUpGoal` so the subagent extends the research ' +
-                'instead of repeating it. Returns a structured text report with explanations, evidence, and references.',
+                'instead of repeating it. Returns a structured text research report.',
             inputSchema: z.object({
                 topic: z.string().describe('The research topic or question to investigate'),
                 description: z
@@ -55,7 +55,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                     .string()
                     .optional()
                     .describe(
-                        'What was already found in prior research; use this to avoid repeating the same conclusions',
+                        'Continuity hints from prior research; use this to avoid repetition, but re-check any claim that matters',
                     ),
                 followUpGoal: z
                     .string()

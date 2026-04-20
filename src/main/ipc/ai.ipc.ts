@@ -11,7 +11,9 @@ export function registerAiHandlers(): void {
         getAiService().updateSettings(partial),
     );
 
-    registerHandler(AiChannels.getConversations, async () => getAiService().getConversations());
+    registerHandler(AiChannels.getConversationsPage, async (_event, request) =>
+        getAiService().getConversationsPage(request),
+    );
 
     registerHandler(AiChannels.createConversation, async (_event, input) =>
         getAiService().createConversation(input),
