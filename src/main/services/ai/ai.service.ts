@@ -536,7 +536,7 @@ export class AiService {
             toolTokens,
             systemPromptTokens: baseSystemPromptTokens,
         });
-        const { recentMessages, summary } = buildConversationContext(
+        const { recentMessages, historyTokenCount, summary } = buildConversationContext(
             conversation.id,
             environment.isLocal,
             initialRemoteTokenBudget,
@@ -564,6 +564,7 @@ export class AiService {
             contextWindow: environment.contextWindow ?? 'unknown',
             tokenBudget: remoteTokenBudget,
             toolTokens,
+            historyTokenCount: historyTokenCount + systemPromptTokens + toolTokens,
             systemPromptTokens,
         });
 

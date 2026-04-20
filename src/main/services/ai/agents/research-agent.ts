@@ -127,6 +127,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                     log.info('Research agent completed', {
                         topic,
                         steps: result.steps.length,
+                        resultTokens: result.usage.outputTokens,
                         truncated,
                     });
 
