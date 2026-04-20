@@ -453,7 +453,12 @@ export class AiService {
 
         const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
         const isLocal = providerId === 'local';
-        const activeBibleVersion = bibleService.getActiveVersion()?.abbreviation;
+
+        const resolvedBibleVersion = bibleService.getResolvedBibleVersionForLanguage(
+            contentLanguageCode,
+            configRepo.getActiveBibleVersionAbbreviation(),
+        );
+
         const providerBaseUrl = settings.customProviders.find(
             (provider) => provider.id === providerId,
         )?.baseUrl;
@@ -489,7 +494,7 @@ export class AiService {
             contentLanguageCode,
             uiLanguageCode,
             isLocal,
-            activeBibleVersion,
+            activeBibleVersion: resolvedBibleVersion?.abbreviation,
             contextWindow,
             hasAgents,
             model,
