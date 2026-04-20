@@ -14,6 +14,8 @@ import type { PdfExportResult } from '@shared/ipc.types';
 import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import type {
     AiConversation,
+    AiConversationHistoryPage,
+    AiConversationHistoryPageRequest,
     AiMessageHistoryPage,
     AiMessageHistoryPageRequest,
     AiMessage,
@@ -129,8 +131,8 @@ export class AiService {
 
     // ── Conversations ──
 
-    getConversations(): AiConversation[] {
-        return aiRepo.getConversations();
+    getConversationsPage(request: AiConversationHistoryPageRequest): AiConversationHistoryPage {
+        return aiRepo.getConversationHistoryPage(request);
     }
 
     createConversation(input?: { title?: string }): AiConversation {
@@ -534,7 +536,7 @@ export class AiService {
             toolTokens,
             systemPromptTokens: baseSystemPromptTokens,
         });
-        const { recentMessages, summary } = buildConversationContext(
+        const { recentMessages, historyTokenCount, summary } = buildConversationContext(
             conversation.id,
             environment.isLocal,
             initialRemoteTokenBudget,
@@ -559,8 +561,9 @@ export class AiService {
             providerId: environment.providerId,
             modelId: environment.modelId,
             conversationId: conversation.id,
-            contextWindow: environment.contextWindow ?? 'unknown',
-            tokenBudget: remoteTokenBudget,
+            modelContextWindow: environment.contextWindow ?? 'unknown',
+            maxTokenBudget: remoteTokenBudget,
+            historyTokenCount: historyTokenCount + systemPromptTokens + toolTokens,
             toolTokens,
             systemPromptTokens,
         });

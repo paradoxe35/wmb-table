@@ -515,7 +515,7 @@ function splitByTokenBudget(
     messages: AiMessage[],
     tokenBudget: number,
     limits: ContextLimits,
-): { recentMessages: PromptHistoryMessage[]; summary: string | null } {
+): { recentMessages: PromptHistoryMessage[]; summary: string | null; historyTokenCount: number } {
     // Format all messages at full detail (no truncation)
     const formatted = messages.map((msg) => formatMessage(msg, Infinity, limits, false));
 
@@ -523,6 +523,7 @@ function splitByTokenBudget(
     let splitIndex = 0;
     const minRecentIndex = Math.max(0, messages.length - MIN_KEPT_TURNS * 2);
     let totalTokens = formatted.reduce((sum, m) => sum + (m ? estimateTokens(m.content) : 0), 0);
+    const historyTokenCount = totalTokens;
 
     while (totalTokens > tokenBudget && splitIndex < minRecentIndex) {
         const msg = formatted[splitIndex];
@@ -559,6 +560,7 @@ function splitByTokenBudget(
 
     return {
         recentMessages,
+        historyTokenCount,
         summary: buildSummary(olderFormatted, limits.summaryCharBudget),
     };
 }
@@ -569,7 +571,7 @@ export function buildConversationContext(
     conversationId: string,
     isLocal: boolean,
     remoteTokenBudget?: number,
-): { summary: string | null; recentMessages: PromptHistoryMessage[] } {
+) {
     const limits = isLocal ? LOCAL_LIMITS : REMOTE_LIMITS;
     const tokenBudget = isLocal
         ? LOCAL_TOKEN_BUDGET

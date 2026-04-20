@@ -42,6 +42,7 @@ import type {
     TtsVoiceCloneRequest,
 } from '@shared/tts.types';
 import type {
+    AiConversationHistoryPageRequest,
     AiMessageHistoryPageRequest,
     AiRetryMessageRequest,
     AiSendMessageRequest,
@@ -311,7 +312,8 @@ const api = {
         getProviderCatalog: () => invoke(AiChannels.getProviderCatalog),
         updateSettings: (settings: Partial<AiSettings>) =>
             invoke(AiChannels.updateSettings, settings),
-        getConversations: () => invoke(AiChannels.getConversations),
+        getConversationsPage: (request: AiConversationHistoryPageRequest) =>
+            invoke(AiChannels.getConversationsPage, request),
         createConversation: (input?: { title?: string; languageCode?: string }) =>
             invoke(AiChannels.createConversation, input),
         renameConversation: (conversationId: string, title: string) =>

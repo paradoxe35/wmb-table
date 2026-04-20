@@ -53,20 +53,23 @@ export interface FeatureReminderVisibilityInput {
 }
 
 export async function loadFeatureReminderBackendSnapshot(): Promise<FeatureReminderBackendSnapshot> {
-    const [backupStatus, aiSettings, ttsCacheSize, ttsSettings, ttsProviders, conversations] =
+    const [backupStatus, aiSettings, ttsCacheSize, ttsSettings, ttsProviders, conversationPage] =
         await Promise.all([
             window.api.backup.getStatus(),
             window.api.ai.getSettings(),
             window.api.tts.getCacheSize(),
             window.api.tts.getSettings(),
             window.api.tts.getProviders(),
-            window.api.ai.getConversations(),
+            window.api.ai.getConversationsPage({
+                limit: 1,
+                loadedCount: 0,
+            }),
         ]);
 
     return {
         backupStatus,
         aiSettings,
-        aiConversationCount: conversations.length,
+        aiConversationCount: conversationPage.totalCount,
         ttsSettings,
         ttsProviders,
         ttsCacheSize,

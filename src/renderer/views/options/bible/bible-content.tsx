@@ -90,7 +90,7 @@ export function BibleContent({
                         <Typography.Title
                             type="secondary"
                             level={5}
-                            style={compact && i === 0 ? { marginTop: 0 } : undefined}
+                            style={compact && i === 0 ? { marginTop: 0 } : { marginTop: 10 }}
                         >
                             {key === 'N' ? t('Nouveau') : t('Ancien')} {t('Testament')}
                         </Typography.Title>

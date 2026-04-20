@@ -70,6 +70,8 @@ import type {
 } from './tts.types';
 import type {
     AiConversation,
+    AiConversationHistoryPage,
+    AiConversationHistoryPageRequest,
     AiModelDownloadProgress,
     AiModelScanResult,
     AiRetryMessageRequest,
@@ -265,7 +267,7 @@ export const AiChannels = {
     getSettings: 'ai:getSettings',
     getProviderCatalog: 'ai:getProviderCatalog',
     updateSettings: 'ai:updateSettings',
-    getConversations: 'ai:getConversations',
+    getConversationsPage: 'ai:getConversationsPage',
     createConversation: 'ai:createConversation',
     renameConversation: 'ai:renameConversation',
     deleteConversation: 'ai:deleteConversation',
@@ -574,7 +576,10 @@ export interface InvokeChannelMap {
     [AiChannels.getSettings]: { args: []; return: AiSettings };
     [AiChannels.getProviderCatalog]: { args: []; return: AiProviderDefinition[] };
     [AiChannels.updateSettings]: { args: [Partial<AiSettings>]; return: AiSettings };
-    [AiChannels.getConversations]: { args: []; return: AiConversation[] };
+    [AiChannels.getConversationsPage]: {
+        args: [AiConversationHistoryPageRequest];
+        return: AiConversationHistoryPage;
+    };
     [AiChannels.createConversation]: {
         args: [{ title?: string }?];
         return: AiConversation;

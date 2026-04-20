@@ -12,8 +12,10 @@ export function buildSubjectTools(
     return {
         getSubjects: {
             description:
-                'List all subjects (topics/themes) with their IDs and names. ' +
-                'Use getSubjectById to get references for a specific subject.',
+                'List saved subjects with IDs and names. ' +
+                'They are organizational data, not the default source for open-ended theme suggestions. ' +
+                'Use for saved-subject workflows or when saved-subject context is needed. ' +
+                'Use getSubjectById for one saved subject.',
             inputSchema: z.object({}),
             execute: async () => {
                 const subjects = subjectsRepo.getAllSummary();
@@ -21,7 +23,9 @@ export function buildSubjectTools(
             },
         },
         getSubjectById: {
-            description: 'Get a single subject with all its references by ID.',
+            description:
+                'Get one saved subject and its references by ID. ' +
+                'Use when a saved-subject workflow needs inspection.',
             inputSchema: z.object({
                 subjectId: z.string().describe('The subject ID (from getSubjects)'),
             }),
@@ -43,7 +47,8 @@ export function buildSubjectTools(
             },
         },
         createSubject: {
-            description: 'Create a new subject.',
+            description:
+                'Create a saved subject when the user wants to save or organize content under a subject, or accepts that suggestion.',
             inputSchema: z.object({ name: z.string().min(2) }),
             execute: async ({ name }) => {
                 const subject = subjectsRepo.create(name.trim());
@@ -52,7 +57,8 @@ export function buildSubjectTools(
         },
         addSermonReferenceToSubject: {
             description:
-                'Add a sermon paragraph reference to a subject. Use the subject ID from getSubjects.',
+                'Add a sermon paragraph reference to a saved subject. ' +
+                'Use for saved-subject organization. Use the subject ID from getSubjects.',
             inputSchema: z.object({
                 subjectId: z.string().describe('The subject ID (from getSubjects)'),
                 sermonId: z.string(),
@@ -117,7 +123,7 @@ export function buildSubjectTools(
         },
         removeSubjectReference: {
             description:
-                'Remove a reference from a subject by its reference ID. ' +
+                'Remove a reference from an existing saved subject by its reference ID. ' +
                 'Use getSubjectById to find reference IDs. To modify a reference, remove it and add a new one.',
             inputSchema: z.object({
                 referenceId: z

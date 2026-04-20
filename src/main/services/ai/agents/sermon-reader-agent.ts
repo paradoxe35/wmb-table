@@ -60,7 +60,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                 'before reading. Use this when the user asks to summarize, explain, or ' +
                 'analyze a specific sermon. For follow-ups, pass prior findings in `alreadyKnown` and the ' +
                 'new angle in `focus` so the subagent goes deeper instead of repeating a ' +
-                'general summary. Returns a structured explanation with verified paragraph citations.',
+                'general summary. Returns a structured answer with verified paragraph citations.',
             inputSchema: z
                 .object({
                     sermonId: z.string().optional().describe('The sermon ID to read'),
@@ -102,7 +102,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         .string()
                         .optional()
                         .describe(
-                            'What was already answered previously, so this follow-up can avoid repeating the same summary',
+                            'Continuity hints from prior reading, so this follow-up can avoid repetition while re-checking important claims',
                         ),
                     focus: z
                         .string()

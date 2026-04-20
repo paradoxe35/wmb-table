@@ -5,10 +5,13 @@ import { aiConversations, aiMessages, aiSettings } from '../schema';
 import { parseJsonOrFallback } from '@main/lib/json';
 import { logChange } from '@main/services/sync/change-log.service';
 import {
+    AI_CONVERSATION_HISTORY_PAGE_SIZE,
     BUILTIN_PROVIDER_IDS,
     AI_MESSAGE_HISTORY_PAGE_SIZE,
     createDefaultAiSettings,
     type AiConversation,
+    type AiConversationHistoryPage,
+    type AiConversationHistoryPageRequest,
     type AiMessageHistoryPage,
     type AiMessageHistoryPageRequest,
     type AiMessage,
@@ -140,6 +143,39 @@ export function getConversations(): AiConversation[] {
         .orderBy(desc(aiConversations.updatedAt))
         .all()
         .map(toConversation);
+}
+
+export function getConversationHistoryPage(
+    input: AiConversationHistoryPageRequest,
+): AiConversationHistoryPage {
+    const limit = Math.max(1, input.limit ?? AI_CONVERSATION_HISTORY_PAGE_SIZE);
+    const loadedCount = Math.max(0, input.loadedCount ?? 0);
+    const totalCountRow = getDb()
+        .select({ count: sql<number>`count(*)` })
+        .from(aiConversations)
+        .get();
+
+    const totalCount = Number(totalCountRow?.count ?? 0);
+    const pageSize = Math.min(limit, Math.max(totalCount - loadedCount, 0));
+
+    const conversations =
+        pageSize === 0
+            ? []
+            : getDb()
+                  .select()
+                  .from(aiConversations)
+                  .orderBy(desc(aiConversations.updatedAt))
+                  .limit(pageSize)
+                  .offset(loadedCount)
+                  .all()
+                  .map(toConversation);
+
+    return {
+        conversations,
+        loadedCount: loadedCount + conversations.length,
+        totalCount,
+        hasMore: loadedCount + conversations.length < totalCount,
+    };
 }
 
 export function getConversation(conversationId: string): AiConversation | null {
