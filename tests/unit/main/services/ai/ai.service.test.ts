@@ -3,8 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const generateTextMock = vi.fn();
 const ensureSettingsMock = vi.fn();
 const getContentLanguageMock = vi.fn();
+const getActiveBibleVersionAbbreviationMock = vi.fn();
 const getInstalledLanguagesMock = vi.fn();
-const getActiveVersionMock = vi.fn();
+const getResolvedBibleVersionForLanguageMock = vi.fn();
 const buildAiToolsMock = vi.fn();
 const buildConversationContextMock = vi.fn();
 const resolveActiveModelMock = vi.fn();
@@ -39,6 +40,7 @@ vi.mock('@main/database/repositories/ai.repository', () => ({
 
 vi.mock('@main/database/repositories/config.repository', () => ({
     getContentLanguage: getContentLanguageMock,
+    getActiveBibleVersionAbbreviation: getActiveBibleVersionAbbreviationMock,
     getUiLanguage: vi.fn(),
 }));
 
@@ -51,7 +53,7 @@ vi.mock('@main/ipc/register', () => ({
 }));
 
 vi.mock('@main/services/bible.service', () => ({
-    getActiveVersion: getActiveVersionMock,
+    getResolvedBibleVersionForLanguage: getResolvedBibleVersionForLanguageMock,
 }));
 
 vi.mock('@main/services/ai/local/local-model.service', () => ({
@@ -141,8 +143,12 @@ describe('AiService', () => {
             customProviders: [],
         });
         getContentLanguageMock.mockReturnValue('fr');
+        getActiveBibleVersionAbbreviationMock.mockReturnValue(undefined);
         getInstalledLanguagesMock.mockResolvedValue([]);
-        getActiveVersionMock.mockReturnValue({ abbreviation: 'kjv' });
+        getResolvedBibleVersionForLanguageMock.mockReturnValue({
+            abbreviation: 'kjv',
+            langCode: 'en',
+        });
         resolveActiveModelMock.mockReturnValue('gpt-5-mini');
         resolveLanguageModelMock.mockReturnValue({ id: 'model' });
         resolveUiLanguageMock.mockReturnValue('en');
@@ -240,6 +246,29 @@ describe('AiService', () => {
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
         expect(runArgs.systemPrompt).toContain('## Delegation to subagents');
+    });
+
+    it('uses the Bible version resolved for the content language fallback, not only the active DB state', async () => {
+        getResolvedBibleVersionForLanguageMock.mockReturnValue({
+            abbreviation: 'kjv',
+            langCode: 'en',
+        });
+        const service = new AiService();
+
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+
+        expect(getResolvedBibleVersionForLanguageMock).toHaveBeenCalledWith('fr', undefined);
+
+        const runArgs = runnerRunMock.mock.calls[0]?.[0];
+        expect(runArgs.systemPrompt).toContain('The user\'s active Bible version is "kjv"');
+        expect(buildAiToolsMock).toHaveBeenCalledWith(
+            'fr',
+            expect.objectContaining({ activeBibleVersion: 'kjv' }),
+        );
     });
 
     it('persists queued batches as separate user messages before the assistant run starts', async () => {

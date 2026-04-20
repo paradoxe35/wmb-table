@@ -355,6 +355,13 @@ function resolveBibleVersionForLanguage(
     );
 }
 
+export function getResolvedBibleVersionForLanguage(
+    langCode: string,
+    preferredAbbreviation?: string | null,
+) {
+    return resolveBibleVersionForLanguage(langCode, preferredAbbreviation);
+}
+
 export function switchBibleForLanguage(
     langCode: string,
     preferredAbbreviation?: string | null,
