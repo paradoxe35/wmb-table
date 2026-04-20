@@ -5,7 +5,7 @@ const ensureSettingsMock = vi.fn();
 const getContentLanguageMock = vi.fn();
 const getActiveBibleVersionAbbreviationMock = vi.fn();
 const getInstalledLanguagesMock = vi.fn();
-const getResolvedBibleAbbreviationForLanguageMock = vi.fn();
+const getResolvedBibleVersionForLanguageMock = vi.fn();
 const buildAiToolsMock = vi.fn();
 const buildConversationContextMock = vi.fn();
 const resolveActiveModelMock = vi.fn();
@@ -53,7 +53,7 @@ vi.mock('@main/ipc/register', () => ({
 }));
 
 vi.mock('@main/services/bible.service', () => ({
-    getResolvedBibleAbbreviationForLanguage: getResolvedBibleAbbreviationForLanguageMock,
+    getResolvedBibleVersionForLanguage: getResolvedBibleVersionForLanguageMock,
 }));
 
 vi.mock('@main/services/ai/local/local-model.service', () => ({
@@ -145,7 +145,10 @@ describe('AiService', () => {
         getContentLanguageMock.mockReturnValue('fr');
         getActiveBibleVersionAbbreviationMock.mockReturnValue(undefined);
         getInstalledLanguagesMock.mockResolvedValue([]);
-        getResolvedBibleAbbreviationForLanguageMock.mockReturnValue('kjv');
+        getResolvedBibleVersionForLanguageMock.mockReturnValue({
+            abbreviation: 'kjv',
+            langCode: 'en',
+        });
         resolveActiveModelMock.mockReturnValue('gpt-5-mini');
         resolveLanguageModelMock.mockReturnValue({ id: 'model' });
         resolveUiLanguageMock.mockReturnValue('en');
@@ -246,7 +249,10 @@ describe('AiService', () => {
     });
 
     it('uses the Bible version resolved for the content language fallback, not only the active DB state', async () => {
-        getResolvedBibleAbbreviationForLanguageMock.mockReturnValue('kjv');
+        getResolvedBibleVersionForLanguageMock.mockReturnValue({
+            abbreviation: 'kjv',
+            langCode: 'en',
+        });
         const service = new AiService();
 
         await service.sendMessage({} as never, {
@@ -255,7 +261,7 @@ describe('AiService', () => {
             generationId: 'gen-1',
         });
 
-        expect(getResolvedBibleAbbreviationForLanguageMock).toHaveBeenCalledWith('fr', undefined);
+        expect(getResolvedBibleVersionForLanguageMock).toHaveBeenCalledWith('fr', undefined);
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
         expect(runArgs.systemPrompt).toContain('The user\'s active Bible version is "kjv"');
