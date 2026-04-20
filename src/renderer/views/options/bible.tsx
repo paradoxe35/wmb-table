@@ -10,11 +10,13 @@ import { BibleContent } from './bible/bible-content';
 import { SearchContent } from './bible/bible-search';
 import { getBiblePageHelp } from './components/option-help-content';
 import OptionPageLayout from './components/option-page-layout';
+import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 export { BibleContent };
 
 export default function Bible() {
     const { t } = useTranslation();
     const [menu, setMenu] = useState<string>('bible');
+    const { versions, installed } = useBibleVersions();
 
     const menuItems: MenuProps['items'] = useMemo(
         () => [
@@ -24,11 +26,17 @@ export default function Bible() {
         [t],
     );
 
+    const hiddenVersionSelector =
+        (versions.length <= 1 && installed.length === 1) || versions.length === 0;
+
     return (
         <LoadByVisibility>
             <OptionPageLayout title={t('Bible')} help={getBiblePageHelp(t)}>
                 <div className="bible-option-page">
-                    <div className="bible-option-page__sticky-header">
+                    <div
+                        className="bible-option-page__sticky-header"
+                        style={hiddenVersionSelector ? { paddingBottom: 0 } : undefined}
+                    >
                         <Menu
                             className="bible-option-page__menu"
                             mode="horizontal"
