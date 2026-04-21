@@ -53,13 +53,13 @@ export class GoogleDriveService {
         return file ? this.toDriveFile(file) : null;
     }
 
-    async saveSnapshot(content: Buffer): Promise<DriveFile> {
+    async saveSnapshot(content: NodeJS.ReadableStream): Promise<DriveFile> {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const name = `${DB_SNAPSHOT_PREFIX}${timestamp}.db.gz`;
 
         const res = await this.drive.files.create({
             requestBody: { name, parents: [PARENT_FOLDER] },
-            media: { mimeType: 'application/gzip', body: Readable.from(content) },
+            media: { mimeType: 'application/gzip', body: content },
             fields: 'id, name, createdTime',
         });
 
@@ -162,6 +162,14 @@ export class GoogleDriveService {
             { responseType: 'arraybuffer' },
         );
         return Buffer.from(res.data as ArrayBuffer);
+    }
+
+    async getFileStream(fileId: string): Promise<NodeJS.ReadableStream> {
+        const res = await this.drive.files.get(
+            { fileId, alt: 'media' },
+            { responseType: 'stream' },
+        );
+        return res.data as NodeJS.ReadableStream;
     }
 
     // -----------------------------------------------------------------------

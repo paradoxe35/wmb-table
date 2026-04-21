@@ -86,27 +86,28 @@ export default function DocumentBody({
 
     useLayoutEffect(() => {
         const el = containerRef.current;
-        if (!el || !anchorRef.current) return;
-        const target = el.querySelector<HTMLElement>(
-            `[data-paragraph-index="${anchorRef.current.index}"]`,
-        );
-        if (target) {
-            const containerTop = el.getBoundingClientRect().top;
-            const targetTop = target.getBoundingClientRect().top;
-            el.scrollTop += targetTop - containerTop - anchorRef.current.offset;
+        const anchorSnapshot = anchorRef.current;
+
+        if (el && anchorSnapshot) {
+            const target = el.querySelector<HTMLElement>(
+                `[data-paragraph-index="${anchorSnapshot.index}"]`,
+            );
+            if (target) {
+                const containerTop = el.getBoundingClientRect().top;
+                const targetTop = target.getBoundingClientRect().top;
+                el.scrollTop += targetTop - containerTop - anchorSnapshot.offset;
+            }
         }
+
         anchorRef.current = null;
-    }, [readingMode, zoom, pendingNavigation, documentIdentity]);
 
-    useLayoutEffect(() => {
-        const el = containerRef.current;
-        if (!el) {
-            anchorRef.current = null;
-            return;
-        }
-
-        anchorRef.current = findAnchorSnapshot(el, pendingParagraphIndex);
-    });
+        return () => {
+            const currentContainer = containerRef.current;
+            anchorRef.current = currentContainer
+                ? findAnchorSnapshot(currentContainer, pendingParagraphIndex)
+                : null;
+        };
+    }, [readingMode, zoom, pendingNavigation, documentIdentity, pendingParagraphIndex]);
 
     const onContextMenu = useCallback(
         (e: React.MouseEvent) => {

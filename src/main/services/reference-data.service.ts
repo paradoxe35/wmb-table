@@ -1,6 +1,7 @@
 import * as refRepo from '../database/repositories/reference.repository';
 import type { TranslationRow } from '../database/repositories/reference.repository';
 import type {
+    AvailableTranslation,
     RefSermon,
     SermonMeta,
     SermonMetaWithTranslations,
@@ -70,6 +71,57 @@ function translationToMeta(
     };
 }
 
+function compareSermonMetaDateDesc(
+    left: Pick<SermonMeta, 'dateMs'>,
+    right: Pick<SermonMeta, 'dateMs'>,
+): number {
+    return right.dateMs - left.dateMs;
+}
+
+function pushGroupedByYear<T extends SermonMeta>(grouped: Record<string, T[]>, sermon: T): void {
+    const year = sermon.sermonId.split('-')[0];
+    if (!grouped[year]) {
+        grouped[year] = [];
+    }
+    grouped[year].push(sermon);
+}
+
+function toAvailableTranslation(
+    meta: Pick<SermonMeta, 'translationId' | 'languageCode' | 'title' | 'translationName'>,
+): AvailableTranslation {
+    return {
+        translationId: meta.translationId,
+        languageCode: meta.languageCode,
+        title: meta.title,
+        translationName: meta.translationName,
+    };
+}
+
+function sortAvailableTranslations(translations: AvailableTranslation[]): AvailableTranslation[] {
+    translations.sort((left, right) => left.translationId - right.translationId);
+    return translations;
+}
+
+function updatePrimaryTranslation(
+    current: SermonMetaWithTranslations,
+    candidate: SermonMeta,
+): void {
+    if (candidate.translationId >= current.translationId) {
+        return;
+    }
+
+    current.id = candidate.id;
+    current.translationId = candidate.translationId;
+    current.title = candidate.title;
+    current.enTitle = candidate.enTitle;
+    current.audioLink = candidate.audioLink;
+    current.translationName = candidate.translationName;
+    current.dateMs = candidate.dateMs;
+    current.minutes = candidate.minutes;
+    current.location = candidate.location;
+    current.cityState = candidate.cityState;
+}
+
 /**
  * Get the full sermon list for a language.
  * - English (translationsSupport=false): one entry per sermon, tid=0
@@ -97,32 +149,52 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
  * Get sermon list deduplicated by sermon, with available translations array.
  */
 export function getSermonListDeduplicated(langCode: string): SermonMetaWithTranslations[] {
-    const allMeta = getSermonListForLanguage(langCode);
+    const lang = refRepo.getLanguageByCode(langCode);
+    if (!lang) {
+        return [];
+    }
 
-    const groups = new Map<string, SermonMeta[]>();
-    for (const meta of allMeta) {
-        const existing = groups.get(meta.sermonId);
-        if (existing) {
-            existing.push(meta);
-        } else {
-            groups.set(meta.sermonId, [meta]);
+    const audioMap = refRepo.getAudioMapForLanguage(langCode);
+
+    if (!lang.translationsSupport) {
+        return refRepo
+            .getAllSermons()
+            .map((sermon) => {
+                const meta = sermonToMeta(sermon, langCode, audioMap.get(sermon.id) ?? null);
+                return {
+                    ...meta,
+                    availableTranslations: [toAvailableTranslation(meta)],
+                };
+            })
+            .sort(compareSermonMetaDateDesc);
+    }
+
+    const grouped = new Map<string, SermonMetaWithTranslations>();
+    for (const translation of refRepo.getTranslationsForLanguage(langCode)) {
+        const meta = translationToMeta(
+            translation,
+            langCode,
+            audioMap.get(translation.sermon_id) ?? null,
+        );
+        const existing = grouped.get(meta.sermonId);
+
+        if (!existing) {
+            grouped.set(meta.sermonId, {
+                ...meta,
+                availableTranslations: [toAvailableTranslation(meta)],
+            });
+            continue;
         }
+
+        existing.availableTranslations.push(toAvailableTranslation(meta));
+        updatePrimaryTranslation(existing, meta);
     }
 
-    const result: SermonMetaWithTranslations[] = [];
-    for (const [, rows] of groups) {
-        rows.sort((a, b) => a.translationId - b.translationId);
-        const primary = rows[0];
-        const availableTranslations = rows.map((r) => ({
-            translationId: r.translationId,
-            languageCode: r.languageCode,
-            title: r.title,
-            translationName: r.translationName,
-        }));
-        result.push({ ...primary, availableTranslations });
+    const result = Array.from(grouped.values());
+    for (const sermon of result) {
+        sortAvailableTranslations(sermon.availableTranslations);
     }
-
-    result.sort((a, b) => b.dateMs - a.dateMs);
+    result.sort(compareSermonMetaDateDesc);
     return result;
 }
 
@@ -202,12 +274,33 @@ export function getTranslationsForSermon(
  * Get sermon list grouped by year.
  */
 export function getSermonsByYear(langCode: string): Record<string, SermonMeta[]> {
-    const all = getSermonListForLanguage(langCode);
-    const grouped: Record<string, SermonMeta[]> = {};
-    for (const sermon of all) {
-        const year = sermon.sermonId.split('-')[0];
-        if (!grouped[year]) grouped[year] = [];
-        grouped[year].push(sermon);
+    const lang = refRepo.getLanguageByCode(langCode);
+    if (!lang) {
+        return {};
     }
+
+    const grouped: Record<string, SermonMeta[]> = {};
+    const audioMap = refRepo.getAudioMapForLanguage(langCode);
+
+    if (!lang.translationsSupport) {
+        for (const sermon of refRepo.getAllSermons()) {
+            pushGroupedByYear(
+                grouped,
+                sermonToMeta(sermon, langCode, audioMap.get(sermon.id) ?? null),
+            );
+        }
+    } else {
+        for (const translation of refRepo.getTranslationsForLanguage(langCode)) {
+            pushGroupedByYear(
+                grouped,
+                translationToMeta(
+                    translation,
+                    langCode,
+                    audioMap.get(translation.sermon_id) ?? null,
+                ),
+            );
+        }
+    }
+
     return grouped;
 }

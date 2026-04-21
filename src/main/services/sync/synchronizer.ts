@@ -1,7 +1,9 @@
 import { join } from 'node:path';
-import { readFile, writeFile, unlink } from 'node:fs/promises';
-import { gzip as gzipCb, gunzip as gunzipCb } from 'node:zlib';
-import { promisify } from 'node:util';
+import { createReadStream, createWriteStream } from 'node:fs';
+import { unlink } from 'node:fs/promises';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import { createGzip, createGunzip } from 'node:zlib';
 import { app } from 'electron';
 import { eq, lt } from 'drizzle-orm';
 import type { OAuth2Client } from 'google-auth-library';
@@ -32,9 +34,6 @@ import * as backupRepo from '@main/database/repositories/backup.repository';
 import { hasInternet } from '@main/lib/network';
 import { pushToRenderer } from '@main/lib/push';
 import { PushChannels } from '@shared/ipc.types';
-
-const gzipAsync = promisify(gzipCb);
-const gunzipAsync = promisify(gunzipCb);
 
 const SYNC_INTERVAL_MS = 30_000;
 const MAX_CONSECUTIVE_AUTH_FAILURES = 4;
@@ -386,14 +385,18 @@ function canIgnoreRemoteApplyFailure(file: DriveFile, error: Error | null): bool
 }
 
 async function applyRemoteSnapshotFile(
-    drive: Pick<GoogleDriveService, 'getFileContent'>,
+    drive: Pick<GoogleDriveService, 'getFileContent'> &
+        Partial<Pick<GoogleDriveService, 'getFileStream'>>,
     file: DriveFile,
 ): Promise<AffectedTables> {
-    const content = await drive.getFileContent(file.id);
-    const decompressed = await gunzipAsync(content);
+    const tmpPath = join(app.getPath('temp'), `wmb-snapshot-${process.pid}-${Date.now()}.sqlite`);
 
-    const tmpPath = join(app.getPath('temp'), `wmb-snapshot-${Date.now()}.sqlite`);
-    await writeFile(tmpPath, decompressed);
+    const remoteStream =
+        typeof drive.getFileStream === 'function'
+            ? await drive.getFileStream(file.id)
+            : Readable.from(await drive.getFileContent(file.id));
+
+    await pipeline(remoteStream, createGunzip(), createWriteStream(tmpPath));
 
     try {
         const tables = applySnapshot(tmpPath, { remoteTime: file.createdTime });
@@ -545,11 +548,20 @@ async function createDbSnapshotIfNeeded(
 
     // Checkpoint WAL to ensure all data is in the main file
     mainDb.pragma('wal_checkpoint(TRUNCATE)');
+    const gzipPath = join(app.getPath('temp'), `wmb-snapshot-${process.pid}-${Date.now()}.db.gz`);
 
-    const dbContent = await readFile(mainDb.name);
-    const compressed = await gzipAsync(dbContent);
+    let newSnapshot: DriveFile;
+    try {
+        await pipeline(createReadStream(mainDb.name), createGzip(), createWriteStream(gzipPath));
+        newSnapshot = await drive.saveSnapshot(createReadStream(gzipPath));
+    } finally {
+        try {
+            await unlink(gzipPath);
+        } catch {
+            // ignore cleanup errors
+        }
+    }
 
-    const newSnapshot = await drive.saveSnapshot(compressed);
     lastSnapshotTime = now;
 
     // Record snapshot in sync state
