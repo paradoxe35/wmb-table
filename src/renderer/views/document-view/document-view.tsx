@@ -33,21 +33,21 @@ export default function DocumentView() {
         activeTabKey ? (s.searchUiByTab[activeTabKey]?.searchBarOpen ?? false) : false,
     );
 
-    const tabs = useDocumentTabsStore((s) => s.tabs);
-    const sermons = useSermonStore((s) => s.sermons);
+    const tabCount = useDocumentTabsStore((s) => s.tabs.length);
+    const firstSermon = useSermonStore((s) => s.sermons[0] ?? null);
     const addTab = useAddDocumentTab();
 
     useEffect(() => {
-        if (tabs.length === 0 && sermons.length > 0) {
+        if (tabCount === 0 && firstSermon) {
             addTab({
-                title: sermons[0].title,
-                documentId: sermons[0].sermonId,
+                title: firstSermon.title,
+                documentId: firstSermon.sermonId,
                 type: 'sermon',
-                languageCode: sermons[0].languageCode,
-                translationId: sermons[0].translationId,
+                languageCode: firstSermon.languageCode,
+                translationId: firstSermon.translationId,
             });
         }
-    }, [tabs.length, sermons, addTab]);
+    }, [tabCount, firstSermon, addTab]);
 
     // Record history when the active document changes (works for all document types)
     const prevHistorySignatureRef = useRef<string | null>(null);

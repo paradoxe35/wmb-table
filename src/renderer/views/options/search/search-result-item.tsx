@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { List, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { TantivySearchHit, SearchSnippet, SearchMode } from '@shared/types';
@@ -54,7 +54,7 @@ function SnippetRow({
     );
 }
 
-export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit; query: string }) {
+function SearchResultItem({ hit, query }: { hit: TantivySearchHit; query: string }) {
     const { t } = useTranslation();
     const setDocumentViewQuery = useSearchStore((s) => s.setDocumentViewQuery);
     const setCurrentMatchIndex = useSearchStore((s) => s.setCurrentMatchIndex);
@@ -72,6 +72,14 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
     );
 
     const displayTitle = resolveTitle(hit.title, documentIdentity);
+    const matchedParagraphs = useMemo(
+        () =>
+            hit.snippets.map((snippet) => ({
+                paragraphIndex: snippet.paragraphIndex,
+                highlights: snippet.highlights,
+            })),
+        [hit.snippets],
+    );
 
     const navigateTo = useCallback(
         (paragraphIndex: number, matchIndex: number) => {
@@ -86,10 +94,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
                 documentTitle: displayTitle,
                 textContentLength: 0,
                 matches: [],
-                matchedParagraphs: hit.snippets.map((snippet) => ({
-                    paragraphIndex: snippet.paragraphIndex,
-                    highlights: snippet.highlights,
-                })),
+                matchedParagraphs,
                 term: query,
                 mode: searchMode,
             });
@@ -108,7 +113,7 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
             setDocumentViewQuery,
             query,
             searchMode,
-            hit.languageCode,
+            matchedParagraphs,
         ],
     );
 
@@ -178,3 +183,5 @@ export default function SearchResultItem({ hit, query }: { hit: TantivySearchHit
         </List.Item>
     );
 }
+
+export default memo(SearchResultItem);
