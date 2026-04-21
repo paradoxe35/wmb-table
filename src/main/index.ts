@@ -135,7 +135,7 @@ app.whenReady().then(async () => {
         callback(join(getAudioCacheDir(), fileName));
     });
 
-    await initializeTantivy();
+    await initializeTantivy(config?.contentLanguage ?? null);
     void refreshInstalledLanguageUpdates().catch((error) => {
         log.warn('[language-pack] Background update check failed:', error);
     });
