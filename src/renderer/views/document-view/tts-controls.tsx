@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef } from 'react';
 import { Button, Tooltip } from 'antd';
 import {
     PauseOutlined,
@@ -133,7 +133,7 @@ interface ParagraphListProps {
     incompatibleMessage?: string;
 }
 
-export function ParagraphList({
+export const ParagraphList = memo(function ParagraphList({
     paragraphs,
     documentKey,
     documentIdentity,
@@ -150,25 +150,37 @@ export function ParagraphList({
         documentIdentity,
     );
 
-    return (
-        <>
-            {paragraphs.map((p) => (
+    const renderedParagraphs = useMemo(
+        () =>
+            paragraphs.map((paragraph) => (
                 <TtsParagraph
-                    key={p.paragraphIndex}
-                    paragraph={p}
+                    key={paragraph.paragraphIndex}
+                    paragraph={paragraph}
                     documentKey={documentKey}
                     search={search}
-                    isActiveMatch={p.paragraphIndex === activeParagraphIndex}
-                    highlights={highlightsByParagraph.get(p.paragraphIndex)}
+                    isActiveMatch={paragraph.paragraphIndex === activeParagraphIndex}
+                    highlights={highlightsByParagraph.get(paragraph.paragraphIndex)}
                     onPlayFromHere={onPlayFromHere}
                     canSpeak={canSpeak}
                     incompatibleMessage={incompatibleMessage}
                     suppressAutoScroll={pendingNavigationParagraphIndex != null}
                 />
-            ))}
-        </>
+            )),
+        [
+            paragraphs,
+            documentKey,
+            search,
+            activeParagraphIndex,
+            highlightsByParagraph,
+            onPlayFromHere,
+            canSpeak,
+            incompatibleMessage,
+            pendingNavigationParagraphIndex,
+        ],
     );
-}
+
+    return <>{renderedParagraphs}</>;
+});
 
 // ── Paragraph wrapper with TTS highlighting ──
 
@@ -184,7 +196,7 @@ interface TtsParagraphProps {
     suppressAutoScroll?: boolean;
 }
 
-export function TtsParagraph({
+const TtsParagraph = memo(function TtsParagraph({
     paragraph,
     documentKey,
     search,
@@ -245,6 +257,31 @@ export function TtsParagraph({
         ? readFromHereLabel
         : (incompatibleMessage ?? t('Aucune voix disponible pour cette langue.'));
 
+    const playFromHereButton = useMemo(() => {
+        if (!onPlayFromHere) {
+            return undefined;
+        }
+
+        return (
+            <Tooltip title={tooltip}>
+                <span>
+                    <button
+                        className="tts-play-from-here"
+                        disabled={!canSpeak}
+                        onClick={(e) => {
+                            if (!canSpeak) return;
+                            e.stopPropagation();
+                            onPlayFromHere(paragraph.paragraphIndex);
+                        }}
+                        aria-label={canSpeak ? readFromHereLabel : t('Lecture audio indisponible')}
+                    >
+                        <CaretRightOutlined />
+                    </button>
+                </span>
+            </Tooltip>
+        );
+    }, [canSpeak, onPlayFromHere, paragraph.paragraphIndex, readFromHereLabel, t, tooltip]);
+
     return (
         <div ref={containerRef}>
             <SermonParagraphView
@@ -253,31 +290,8 @@ export function TtsParagraph({
                 isActiveMatch={isActiveMatch}
                 highlights={highlights}
                 ttsHighlight={ttsHighlight}
-                playFromHereButton={
-                    onPlayFromHere ? (
-                        <Tooltip title={tooltip}>
-                            <span>
-                                <button
-                                    className="tts-play-from-here"
-                                    disabled={!canSpeak}
-                                    onClick={(e) => {
-                                        if (!canSpeak) return;
-                                        e.stopPropagation();
-                                        onPlayFromHere(paragraph.paragraphIndex);
-                                    }}
-                                    aria-label={
-                                        canSpeak
-                                            ? readFromHereLabel
-                                            : t('Lecture audio indisponible')
-                                    }
-                                >
-                                    <CaretRightOutlined />
-                                </button>
-                            </span>
-                        </Tooltip>
-                    ) : undefined
-                }
+                playFromHereButton={playFromHereButton}
             />
         </div>
     );
-}
+});

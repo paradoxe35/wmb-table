@@ -59,6 +59,13 @@ function getWorker(): Worker {
     return worker;
 }
 
+function rejectPendingRequests(message: string): void {
+    for (const request of pending.values()) {
+        request.reject(new Error(message));
+    }
+    pending.clear();
+}
+
 function enqueueIndexMutation<T>(operation: () => Promise<T>): Promise<T> {
     const next = indexMutationQueue.then(operation, operation);
     indexMutationQueue = next.then(
@@ -194,10 +201,12 @@ async function runWithLoadedIndex<T>(langCode: string, operation: () => Promise<
 
 export async function initializeTantivy(preloadLangCode?: string | null): Promise<void> {
     if (worker) {
+        rejectPendingRequests('Tantivy worker restarted');
         await worker.terminate();
         worker = null;
-        pending.clear();
         loadedLanguagesCache = [];
+        inFlightByLanguage.clear();
+        indexMutationQueue = Promise.resolve();
     }
 
     worker = new Worker(workerPath);
@@ -325,10 +334,12 @@ export async function findSimilarSermons(
 
 export async function terminateWorker(): Promise<void> {
     if (worker) {
+        rejectPendingRequests('Tantivy worker terminated');
         await worker.terminate();
         worker = null;
-        pending.clear();
         installedLanguagesCache = [];
         loadedLanguagesCache = [];
+        inFlightByLanguage.clear();
+        indexMutationQueue = Promise.resolve();
     }
 }

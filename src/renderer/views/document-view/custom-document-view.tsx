@@ -107,14 +107,15 @@ function CustomDocHeader({
 export default function CustomDocumentView() {
     const activeTab = useDocumentTabsStore(selectActiveCustomTab);
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
-    const customDocuments = useCustomDocumentsStore((s) => s.customDocuments);
     const containerRef = useRef<HTMLDivElement>(null);
     const contextTargetRef = useRef<Element | null>(null);
     const search = useSearchHighlight();
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
-    const customDoc = useMemo(
-        () => (activeTab ? customDocuments.find((d) => d.id === activeTab.documentId) : undefined),
-        [customDocuments, activeTab],
+    const activeCustomDocumentId = activeTab?.documentId;
+    const customDoc = useCustomDocumentsStore((s) =>
+        activeCustomDocumentId
+            ? s.customDocuments.find((document) => document.id === activeCustomDocumentId)
+            : undefined,
     );
 
     const ttsDocumentKey = activeDocumentIdentity
