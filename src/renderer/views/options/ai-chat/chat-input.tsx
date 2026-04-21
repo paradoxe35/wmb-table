@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { Button, Input, type InputRef } from 'antd';
 import { ArrowUpOutlined, CloseOutlined, StopOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 
-export default function ChatInput({
+const ChatInput = memo(function ChatInput({
     draft,
     sending,
     runStatus,
@@ -165,4 +165,6 @@ export default function ChatInput({
             </div>
         </div>
     );
-}
+});
+
+export default ChatInput;

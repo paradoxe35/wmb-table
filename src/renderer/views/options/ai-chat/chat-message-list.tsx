@@ -1,4 +1,14 @@
-import { memo, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
+import {
+    memo,
+    useCallback,
+    useDeferredValue,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+    type ComponentProps,
+} from 'react';
 import { Button, Empty, Spin, Tooltip, Typography } from 'antd';
 import {
     BulbOutlined,
@@ -20,6 +30,7 @@ import AiReferenceLink from './ai-reference-link';
 import SelectableMessageContent from './selectable-message-content';
 
 const { Text } = Typography;
+const MARKDOWN_REMARK_PLUGINS = [remarkGfm];
 
 function urlTransform(url: string): string {
     if (url.startsWith('wmb://')) {
@@ -45,6 +56,32 @@ const markdownComponents = {
         </div>
     ),
 };
+
+const AssistantMarkdown = memo(function AssistantMarkdown({
+    content,
+    streaming,
+}: {
+    content: string;
+    streaming: boolean;
+}) {
+    const deferredContent = useDeferredValue(content);
+    const markdownSource = useMemo(
+        () => sanitizeWmbLinks(streaming ? deferredContent : content),
+        [content, deferredContent, streaming],
+    );
+
+    return (
+        <div className="ai-markdown">
+            <Markdown
+                remarkPlugins={MARKDOWN_REMARK_PLUGINS}
+                components={markdownComponents}
+                urlTransform={urlTransform}
+            >
+                {markdownSource}
+            </Markdown>
+        </div>
+    );
+});
 
 const MAX_REASONING_LINES = 50;
 const LOAD_OLDER_THRESHOLD_PX = 160;
@@ -109,8 +146,7 @@ function groupToolResults(results: AiToolResult[]): GroupedToolResult[] {
 function ToolResultsList({ results }: { results: AiToolResult[] }) {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
-
-    const grouped = groupToolResults([...results].reverse());
+    const grouped = useMemo(() => groupToolResults([...results].reverse()), [results]);
     const shouldCollapse = grouped.length > VISIBLE_TOOL_RESULTS;
     const visible = shouldCollapse && !expanded ? grouped.slice(0, VISIBLE_TOOL_RESULTS) : grouped;
     const hiddenCount = grouped.length - VISIBLE_TOOL_RESULTS;
@@ -191,15 +227,7 @@ const MessageBubble = memo(function MessageBubble({
                 ) : isUser ? (
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                 ) : (
-                    <div className="ai-markdown">
-                        <Markdown
-                            remarkPlugins={[remarkGfm]}
-                            components={markdownComponents}
-                            urlTransform={urlTransform}
-                        >
-                            {sanitizeWmbLinks(message.content)}
-                        </Markdown>
-                    </div>
+                    <AssistantMarkdown content={message.content} streaming={isActive} />
                 )}
 
                 {isActive && !isWaiting ? (
@@ -234,7 +262,7 @@ const MessageBubble = memo(function MessageBubble({
     );
 });
 
-export default function ChatMessageList({
+const ChatMessageList = memo(function ChatMessageList({
     conversationId,
     messages,
     sending,
@@ -339,7 +367,27 @@ export default function ChatMessageList({
         prependScrollSnapshot.current = null;
     }, [loadingOlder, messages.length, scrollRef]);
 
-    function handleScroll(): void {
+    const lastMessageId = messages[messages.length - 1]?.id ?? null;
+    const renderedMessages = useMemo(
+        () =>
+            messages.map((msg) => (
+                <MessageBubble
+                    key={msg.id}
+                    conversationId={conversationId}
+                    message={msg}
+                    isActive={msg.id === activeAssistantMessageId}
+                    canRetryLastUserMessage={
+                        conversationId != null &&
+                        !sending &&
+                        msg.id === lastMessageId &&
+                        msg.role === 'user'
+                    }
+                />
+            )),
+        [activeAssistantMessageId, conversationId, lastMessageId, messages, sending],
+    );
+
+    const handleScroll = useCallback((): void => {
         const el = scrollRef.current;
         if (
             !el ||
@@ -356,7 +404,7 @@ export default function ChatMessageList({
             top: el.scrollTop,
         };
         void onLoadOlderMessages();
-    }
+    }, [hasMoreHistory, loading, loadingOlder, onLoadOlderMessages, scrollRef]);
 
     return (
         <div className="ai-chat__messages-wrapper">
@@ -371,22 +419,7 @@ export default function ChatMessageList({
                     (messages.length === 0 && !hasQueuedMessages && !loading) ? (
                         <EmptyChat onQuickStart={onQuickStart} />
                     ) : (
-                        <AnimatePresence initial={false}>
-                            {messages.map((msg) => (
-                                <MessageBubble
-                                    key={msg.id}
-                                    conversationId={conversationId}
-                                    message={msg}
-                                    isActive={msg.id === activeAssistantMessageId}
-                                    canRetryLastUserMessage={
-                                        conversationId != null &&
-                                        !sending &&
-                                        msg.id === messages[messages.length - 1]?.id &&
-                                        msg.role === 'user'
-                                    }
-                                />
-                            ))}
-                        </AnimatePresence>
+                        <AnimatePresence initial={false}>{renderedMessages}</AnimatePresence>
                     )}
                 </div>
             </div>
@@ -402,7 +435,9 @@ export default function ChatMessageList({
             )}
         </div>
     );
-}
+});
+
+export default ChatMessageList;
 
 function EmptyChat({ onQuickStart }: { onQuickStart: (prompt: string) => void }) {
     const { t } = useTranslation();

@@ -3,12 +3,15 @@ import { Alert, Button, Empty, Typography } from 'antd';
 import { RobotOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
+import type { AiMessage } from '@shared/ai.types';
 import ChatConversationList from './chat-conversation-list';
 import ChatInput from './chat-input';
 import ChatMessageList from './chat-message-list';
 import './ai-chat.css';
 
 const { Text } = Typography;
+const EMPTY_MESSAGES: AiMessage[] = [];
+const EMPTY_QUEUED_MESSAGES: { id: string; content: string }[] = [];
 
 function DisabledState() {
     const { t } = useTranslation();
@@ -44,12 +47,29 @@ export default function AiChatView() {
     const loadingConversationList = useAiChatStore((s) => s.loadingConversationList);
     const loadingOlderConversationList = useAiChatStore((s) => s.loadingOlderConversationList);
     const activeConversationId = useAiChatStore((s) => s.activeConversationId);
-    const messagesByConversation = useAiChatStore((s) => s.messagesByConversation);
-    const loadingConversations = useAiChatStore((s) => s.loadingConversations);
-    const loadingOlderConversations = useAiChatStore((s) => s.loadingOlderConversations);
-    const historyByConversation = useAiChatStore((s) => s.historyByConversation);
+    const activeMessages = useAiChatStore((s) =>
+        activeConversationId
+            ? (s.messagesByConversation[activeConversationId] ?? EMPTY_MESSAGES)
+            : EMPTY_MESSAGES,
+    );
+    const activeRun = useAiChatStore((s) =>
+        activeConversationId ? (s.conversationRuns[activeConversationId] ?? null) : null,
+    );
+    const activeQueuedMessages = useAiChatStore((s) =>
+        activeConversationId
+            ? (s.queuedMessagesByConversation[activeConversationId] ?? EMPTY_QUEUED_MESSAGES)
+            : EMPTY_QUEUED_MESSAGES,
+    );
+    const activeLoading = useAiChatStore((s) =>
+        Boolean(activeConversationId && s.loadingConversations[activeConversationId]),
+    );
+    const activeLoadingOlder = useAiChatStore((s) =>
+        Boolean(activeConversationId && s.loadingOlderConversations[activeConversationId]),
+    );
+    const activeHasMoreHistory = useAiChatStore((s) =>
+        Boolean(activeConversationId && s.historyByConversation[activeConversationId]?.hasMore),
+    );
     const conversationRuns = useAiChatStore((s) => s.conversationRuns);
-    const queuedMessagesByConversation = useAiChatStore((s) => s.queuedMessagesByConversation);
     const createConversation = useAiChatStore((s) => s.createConversation);
     const loadOlderConversations = useAiChatStore((s) => s.loadOlderConversations);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
@@ -69,30 +89,7 @@ export default function AiChatView() {
     useEffect(() => {
         void initialize();
     }, [initialize]);
-
-    const activeMessages = useMemo(
-        () => (activeConversationId ? (messagesByConversation[activeConversationId] ?? []) : []),
-        [activeConversationId, messagesByConversation],
-    );
-    const activeRun = useMemo(
-        () => (activeConversationId ? (conversationRuns[activeConversationId] ?? null) : null),
-        [activeConversationId, conversationRuns],
-    );
-    const activeQueuedMessages = useMemo(
-        () =>
-            activeConversationId ? (queuedMessagesByConversation[activeConversationId] ?? []) : [],
-        [activeConversationId, queuedMessagesByConversation],
-    );
     const activeSending = Boolean(activeRun);
-    const activeLoading = Boolean(
-        activeConversationId && loadingConversations[activeConversationId],
-    );
-    const activeLoadingOlder = Boolean(
-        activeConversationId && loadingOlderConversations[activeConversationId],
-    );
-    const activeHasMoreHistory = Boolean(
-        activeConversationId && historyByConversation[activeConversationId]?.hasMore,
-    );
     const activeConversationMap = useMemo(
         () =>
             Object.fromEntries(
