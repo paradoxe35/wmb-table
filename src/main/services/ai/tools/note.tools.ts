@@ -11,6 +11,10 @@ const htmlToMarkdown = (html: string) => {
     return markdown.replace(/\n+/g, '\n').trim();
 };
 
+const NOTE_CONTENT_RULES =
+    'Write only the note content itself. Do not include assistant-style remarks, ' +
+    'follow-up invitations, user instructions, or meta/workflow text.';
+
 export function buildNoteTools(_defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
         getNotes: {
@@ -47,7 +51,8 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
         createNote: {
             description:
                 'Create a new note. Content MUST be markdown (not HTML). ' +
-                'You can include wmb:// reference links',
+                'You can include wmb:// reference links. ' +
+                NOTE_CONTENT_RULES,
             inputSchema: z.object({
                 name: z.string().min(2).describe('note name/title'),
                 content: z.string().describe('note content in markdown format, NOT HTML'),
@@ -73,7 +78,8 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
         updateNoteContent: {
             description:
                 'Replace the content of a note. Content MUST be markdown (not HTML). ' +
-                'You can include wmb:// reference links.',
+                'You can include wmb:// reference links. ' +
+                NOTE_CONTENT_RULES,
             inputSchema: z.object({
                 noteId: z.string(),
                 content: z.string().describe('note content in markdown format, NOT HTML'),
