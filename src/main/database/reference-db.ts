@@ -2,6 +2,9 @@ import { app } from 'electron';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 
+const READONLY_SQLITE_MMAP_SIZE = 64 * 1024 * 1024;
+const READONLY_SQLITE_CACHE_SIZE = -4000;
+
 let refSqlite: Database.Database | null = null;
 
 function getRefDbPath(): string {
@@ -14,8 +17,8 @@ function getRefDbPath(): string {
 export function initializeReferenceDb(): void {
     const dbPath = getRefDbPath();
     refSqlite = new Database(dbPath, { readonly: true, fileMustExist: true });
-    refSqlite.pragma('mmap_size = 268435456'); // 256MB mmap for fast reads
-    refSqlite.pragma('cache_size = -10000');
+    refSqlite.pragma(`mmap_size = ${READONLY_SQLITE_MMAP_SIZE}`);
+    refSqlite.pragma(`cache_size = ${READONLY_SQLITE_CACHE_SIZE}`);
 }
 
 export function getRefDb(): Database.Database {

@@ -86,7 +86,7 @@ export function switchBibleLanguage(langCode: string): void {
  * Re-sync the Drizzle wrapper after bible.service state changes (e.g., version switch).
  */
 export function refreshBibleDrizzle(): void {
-    const sqlite = bibleService.getActiveBibleDb();
+    const sqlite = bibleService.peekActiveBibleDb();
     bibleDb = sqlite ? drizzle(sqlite, { schema: bibleSchema }) : null;
 }
 
@@ -96,10 +96,16 @@ export function getDb(): BetterSQLite3Database<typeof schema> {
 }
 
 export function getBibleDb(): BetterSQLite3Database<typeof bibleSchema> {
-    if (!bibleDb)
+    const sqlite = bibleService.getActiveBibleDb();
+    if (!sqlite) {
         throw new Error(
             'Bible database not initialized. No Bible version available for current language.',
         );
+    }
+
+    if (!bibleDb) {
+        bibleDb = drizzle(sqlite, { schema: bibleSchema });
+    }
     return bibleDb;
 }
 

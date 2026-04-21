@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { extname, join } from 'node:path';
+import { extname, join, relative, sep } from 'node:path';
 import log from 'electron-log';
 import pLimit from 'p-limit';
 import { getMainWindow } from '@main/lib/window';
@@ -15,7 +15,7 @@ import { SherpaProvider } from './sherpa.provider';
 import { ElevenLabsProvider } from './elevenlabs.provider';
 import { EdgeProvider } from './edge.provider';
 import { CartesiaProvider } from './cartesia.provider';
-import { getTtsResourceDir } from '@main/lib/app-paths';
+import { getTtsCacheDir, getTtsResourceDir } from '@main/lib/app-paths';
 import * as ttsRepo from '@main/database/repositories/tts.repository';
 import {
     type TtsProviderType,
@@ -35,15 +35,8 @@ import {
     TTS_REFERENCE_VOICES,
 } from '@shared/tts.types';
 
-/**
- * A prepared segment is either a disk cache reference (no RAM used)
- * or an already-synthesized result waiting to be sent.
- */
-type PreparedSegment = CacheHit | TtsSynthesizeResult;
-
-function isCacheHit(p: PreparedSegment): p is CacheHit {
-    return 'path' in p && !('audioBase64' in p);
-}
+/** A prepared playback segment is always a disk cache reference. */
+type PreparedSegment = CacheHit;
 
 function getReferenceVoiceMimeType(fileName: string): string {
     switch (extname(fileName).toLowerCase()) {
@@ -500,17 +493,13 @@ export class TtsService {
                 const prepared = await this.prepareSegment(segment);
                 if (generation !== this.playbackGeneration) return;
 
-                const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
-                if (generation !== this.playbackGeneration) return;
-
                 const win = getMainWindow();
                 if (win) {
-                    sendToRenderer(win, PushChannels.ttsSegmentAudio, {
-                        segmentIndex: index,
-                        audioBase64: result.audioBase64,
-                        mimeType: result.mimeType,
-                        queued: true,
-                    });
+                    sendToRenderer(
+                        win,
+                        PushChannels.ttsSegmentAudio,
+                        this.toSegmentAudioPayload(index, prepared, true),
+                    );
                 }
                 return; // success
             } catch (err) {
@@ -536,7 +525,7 @@ export class TtsService {
             const prepared = await this.prepareSegment(this.segments[index]);
             if (generation !== this.playbackGeneration) return;
 
-            await this.playPreparedSegment(index, prepared, generation);
+            await this.playPreparedSegment(index, prepared);
         } catch (err) {
             if (generation !== this.playbackGeneration) return;
             log.error('TTS playSegment error:', err);
@@ -546,24 +535,16 @@ export class TtsService {
         }
     }
 
-    private async playPreparedSegment(
-        index: number,
-        prepared: PreparedSegment,
-        generation: number,
-    ): Promise<void> {
+    private async playPreparedSegment(index: number, prepared: PreparedSegment): Promise<void> {
         this.currentIndex = index;
-
-        const result = isCacheHit(prepared) ? await this.cache.read(prepared) : prepared;
-        if (generation !== this.playbackGeneration) return;
 
         const win = getMainWindow();
         if (win) {
-            sendToRenderer(win, PushChannels.ttsSegmentAudio, {
-                segmentIndex: index,
-                audioBase64: result.audioBase64,
-                mimeType: result.mimeType,
-                // No `queued` flag — renderer plays this immediately.
-            });
+            sendToRenderer(
+                win,
+                PushChannels.ttsSegmentAudio,
+                this.toSegmentAudioPayload(index, prepared),
+            );
         }
 
         this.status = 'playing';
@@ -571,8 +552,8 @@ export class TtsService {
     }
 
     /**
-     * Synthesize a segment: returns a disk CacheHit (zero RAM) if cached,
-     * or a fresh TtsSynthesizeResult after network/local synthesis.
+     * Synthesize a segment and materialize it into the disk cache so playback
+     * can use file-backed audio instead of base64 IPC payloads.
      */
     private async prepareSegment(segment: TtsSegment): Promise<PreparedSegment> {
         const s = this.playbackSettings ?? this.settings;
@@ -602,8 +583,21 @@ export class TtsService {
             model: cfg?.model,
             rate: 1,
         });
-        this.cache.set(cacheKey, result).catch(() => {});
-        return result;
+        return this.cache.set(cacheKey, result);
+    }
+
+    private toSegmentAudioPayload(index: number, hit: CacheHit, queued = false) {
+        const relativePath = relative(getTtsCacheDir(), hit.path)
+            .split(sep)
+            .map((part) => encodeURIComponent(part))
+            .join('/');
+
+        return {
+            segmentIndex: index,
+            audioUrl: `tts-cache://file/${relativePath}`,
+            mimeType: hit.mimeType,
+            ...(queued ? { queued: true } : {}),
+        };
     }
 
     private buildCacheKey(
