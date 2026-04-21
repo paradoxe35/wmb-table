@@ -86,17 +86,18 @@ describe('bible.service lazy active db opening', () => {
         mockDb.close.mockClear();
     });
 
-    it('selects the active Bible version without opening it until first access', async () => {
+    it('validates the active Bible version eagerly but does not keep it resident until first access', async () => {
         const bibleService = await import('@main/services/bible.service');
 
         expect(bibleService.switchBibleVersion('kjv')?.abbreviation).toBe('kjv');
-        expect(DatabaseMock).not.toHaveBeenCalled();
+        expect(DatabaseMock).toHaveBeenCalledTimes(1);
+        expect(mockDb.close).toHaveBeenCalledTimes(1);
         expect(bibleService.peekActiveBibleDb()).toBeNull();
 
         const db = bibleService.getActiveBibleDb();
 
         expect(db).toBe(mockDb);
-        expect(DatabaseMock).toHaveBeenCalledTimes(1);
+        expect(DatabaseMock).toHaveBeenCalledTimes(2);
         expect(mockDb.pragma).toHaveBeenCalledWith(expect.stringContaining('mmap_size'));
         expect(mockDb.pragma).toHaveBeenCalledWith(expect.stringContaining('cache_size'));
     });
