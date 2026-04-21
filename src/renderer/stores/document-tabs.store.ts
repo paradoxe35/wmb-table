@@ -9,10 +9,13 @@ import type {
 import { createStore } from './create-store';
 import {
     getDocumentIdentityFromTab,
+    getDocumentIdentityKey,
     getTabKey,
     normalizeBibleAbbreviation,
     tabMatches,
 } from '@shared/types';
+import { useTtsStore } from './tts.store';
+import { useAudioStore } from './audio.store';
 
 export type PendingNavigation = {
     target: DocumentIdentity;
@@ -118,13 +121,71 @@ function createTab(tab: NewDocumentTab): DocumentTab {
     };
 }
 
+function findAutoProtectedTabKey(tabs: DocumentTab[]): string | null {
+    const ttsState = useTtsStore.getState();
+    const audioState = useAudioStore.getState();
+
+    const ttsDocumentKey =
+        ttsState.status === 'playing' || ttsState.status === 'loading'
+            ? ttsState.documentKey
+            : null;
+
+    if (ttsDocumentKey) {
+        const ttsTab = tabs.find(
+            (tab) => getDocumentIdentityKey(getDocumentIdentityFromTab(tab)) === ttsDocumentKey,
+        );
+        if (ttsTab) {
+            return getTabKey(ttsTab);
+        }
+    }
+
+    if (audioState.currentPlay?.status !== 'play') {
+        return null;
+    }
+
+    const audioTab = tabs.find(
+        (tab) =>
+            tab.type === 'sermon' &&
+            audioState.sermonId === tab.documentId &&
+            audioState.translationId === tab.translationId &&
+            audioState.languageCode === tab.languageCode,
+    );
+
+    return audioTab ? getTabKey(audioTab) : null;
+}
+
+function isAutoProtectedTab(tab: DocumentTab, protectedKey: string | null): boolean {
+    if (!protectedKey) {
+        return false;
+    }
+
+    return getTabKey(tab) === protectedKey;
+}
+
 export function clampTabsToLimit(tabs: DocumentTab[], maxTabs: number): DocumentTab[] {
     if (tabs.length <= maxTabs) {
         return tabs;
     }
 
-    const keptTabs = tabs.slice(tabs.length - maxTabs);
+    const protectedKey = findAutoProtectedTabKey(tabs);
+    const keptTabs = [...tabs];
+    let overflow = keptTabs.length - maxTabs;
+
+    for (let index = 0; index < keptTabs.length && overflow > 0; index++) {
+        if (isAutoProtectedTab(keptTabs[index], protectedKey)) {
+            continue;
+        }
+
+        keptTabs.splice(index, 1);
+        index--;
+        overflow--;
+    }
+
     if (keptTabs.some((tab) => tab.active)) {
+        return keptTabs;
+    }
+
+    if (keptTabs.length === 0) {
         return keptTabs;
     }
 
