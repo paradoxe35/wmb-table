@@ -82,6 +82,21 @@ describe('language-pack.service', () => {
         }
     });
 
+    it('getInstalledLanguages can skip stats for startup calls', async () => {
+        const refRepo = await import('@main/database/repositories/reference.repository');
+        const { getInstalledLanguages } = await import('@main/services/language-pack.service');
+        const allSermonsSpy = vi.spyOn(refRepo, 'getAllSermons');
+        const uniqueCountSpy = vi.spyOn(refRepo, 'getUniqueSermonCountForLanguage');
+
+        const installed = await getInstalledLanguages({ includeStats: false });
+
+        expect(installed).toHaveLength(2);
+        expect(installed.every((language) => language.sermonsCount === 0)).toBe(true);
+        expect(installed.every((language) => language.sizeOnDisk === 0)).toBe(true);
+        expect(allSermonsSpy).not.toHaveBeenCalled();
+        expect(uniqueCountSpy).not.toHaveBeenCalled();
+    });
+
     it('getDownloadableLanguages returns all languages from data.sqlite', async () => {
         const { getDownloadableLanguages } = await import('@main/services/language-pack.service');
         const downloadable = await getDownloadableLanguages();

@@ -46,6 +46,7 @@ type RemoteLanguageSource = {
 export interface GetInstalledLanguagesOptions {
     checkForUpdates?: boolean;
     force?: boolean;
+    includeStats?: boolean;
 }
 
 export interface LanguageInstallResult {
@@ -460,20 +461,23 @@ export async function getInstalledLanguages(
 
     const codes = tantivyService.getInstalledLanguages();
     const indexesDir = getIndexesDir();
+    const includeStats = options.includeStats !== false;
+    const allSermonsCount = includeStats ? refRepo.getAllSermons().length : 0;
 
     return codes.map((code) => {
         const lang = refRepo.getLanguageByCode(code);
         const source = languageSourcesRepo.getInstalledLanguageSource(code);
         const dirPath = join(indexesDir, code);
-        const translationCount = lang?.translationsSupport
-            ? refRepo.getUniqueSermonCountForLanguage(code)
-            : refRepo.getAllSermons().length;
         return {
             code,
             language: lang?.nativeTitle ?? code,
             enLanguage: lang?.title ?? code,
-            sermonsCount: translationCount,
-            sizeOnDisk: getDirectorySize(dirPath),
+            sermonsCount: includeStats
+                ? lang?.translationsSupport
+                    ? refRepo.getUniqueSermonCountForLanguage(code)
+                    : allSermonsCount
+                : 0,
+            sizeOnDisk: includeStats ? getDirectorySize(dirPath) : 0,
             updateAvailable: source?.updateAvailable ?? false,
         };
     });

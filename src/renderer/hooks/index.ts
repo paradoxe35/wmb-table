@@ -216,7 +216,7 @@ export function useInitApp() {
     useEffect(() => {
         (async () => {
             try {
-                const installed = await window.api.languages.getInstalled();
+                const installed = await window.api.languages.getInstalled({ includeStats: false });
 
                 // No languages installed — language modal auto-opens itself
                 if (installed.length === 0) {

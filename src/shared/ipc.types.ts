@@ -356,7 +356,7 @@ export interface InvokeChannelMap {
 
     // Languages
     [LanguageChannels.getInstalled]: {
-        args: [{ checkForUpdates?: boolean; force?: boolean }?];
+        args: [{ checkForUpdates?: boolean; force?: boolean; includeStats?: boolean }?];
         return: InstalledLanguage[];
     };
     [LanguageChannels.getAvailable]: { args: []; return: DownloadableLanguage[] };
