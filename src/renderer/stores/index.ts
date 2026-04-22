@@ -1,5 +1,11 @@
 export { useAppStore } from './app.store';
-export { useSermonStore } from './sermon.store';
+export {
+    getSermonDerivedCollections,
+    useSermonDerivedCollections,
+    useSermonsById,
+    useSermonsByYear,
+    useSermonStore,
+} from './sermon.store';
 export {
     clampTabsToLimit,
     useDocumentTabsStore,

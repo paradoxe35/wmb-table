@@ -10,6 +10,7 @@ import ContainerScrollY from '../container-scroll-y';
 import {
     useDocumentTabsStore,
     useSermonStore,
+    useSermonsByYear,
     useCustomDocumentsStore,
     selectActiveTab,
 } from '@renderer/stores';
@@ -200,7 +201,7 @@ const DocumentByAlphabetic = () => {
 
 const DocumentByYears = () => {
     const { t } = useTranslation();
-    const sermonsByYear = useSermonStore((s) => s.sermonsByYear);
+    const sermonsByYear = useSermonsByYear();
     const [datas, setDatas] = useState<SermonMetaWithTranslations[]>([]);
     const selectedYear = useRef<string>('');
 

@@ -5,6 +5,7 @@ import {
     clampTabsToLimit,
     useDocumentTabsStore,
     useSermonStore,
+    useSermonsById,
     useSearchStore,
 } from '@renderer/stores';
 import type { NewDocumentTab } from '@renderer/stores/document-tabs.store';
@@ -372,7 +373,7 @@ export function useShowOptions() {
 }
 
 export function useSermonLookup() {
-    const sermonsById = useSermonStore((s) => s.sermonsById);
+    const sermonsById = useSermonsById();
 
     const getSermonById = useCallback(
         (sermonId: string): SermonMetaWithTranslations | undefined => sermonsById[sermonId],

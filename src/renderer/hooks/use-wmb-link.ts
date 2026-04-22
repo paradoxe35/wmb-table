@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { buildPendingNavigation, useDocumentPresentation, useOpenDocumentRequest } from './index';
-import { useDocumentTabsStore, useSermonStore } from '@renderer/stores';
+import { useDocumentTabsStore, useSermonsById } from '@renderer/stores';
 import {
     buildParagraphReference,
     buildBibleDocumentTitle,
@@ -26,7 +26,7 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
     const { buildOpenRequest } = useDocumentPresentation();
     const openDocumentRequest = useOpenDocumentRequest();
     const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
-    const sermonsById = useSermonStore((s) => s.sermonsById);
+    const sermonsById = useSermonsById();
 
     return useCallback(
         (href: string): boolean => {

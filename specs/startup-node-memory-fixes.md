@@ -124,7 +124,7 @@ Why this matters:
 
 ## Recommended Fixes
 
-### [ ] Priority 1 - Decouple installed-language discovery from opened Tantivy indexes
+### [x] Priority 1 - Decouple installed-language discovery from opened Tantivy indexes
 
 Implementation:
 
@@ -143,7 +143,12 @@ Expected impact:
 
 - Enables the next fix: lazy index opening at the service level.
 
-### [ ] Priority 2 - Open only the active language Tantivy index at startup
+Status:
+
+- Implemented.
+- Installed languages are now discovered from disk instead of worker-opened indexes.
+
+### [x] Priority 2 - Open only the active language Tantivy index at startup
 
 Implementation:
 
@@ -167,6 +172,12 @@ Watchpoints:
 Expected impact:
 
 - Highest likely main-process startup RAM win.
+
+Status:
+
+- Implemented.
+- Startup preloads only the active content language index.
+- Other indexes load on demand and idle indexes are evicted instead of accumulating.
 
 ### [ ] Priority 3 - Stop using full sermon workspace as the boot payload
 
@@ -195,7 +206,12 @@ Expected impact:
 
 - Large renderer boot-memory reduction.
 
-### [ ] Priority 4 - Remove renderer duplication of sermon metadata at startup
+Status:
+
+- Not done yet.
+- `documents.getTitles()` still loads the full deduplicated sermon workspace for the active language at boot.
+
+### [x] Priority 4 - Remove renderer duplication of sermon metadata at startup
 
 Implementation:
 
@@ -211,6 +227,11 @@ Why this is safe:
 Expected impact:
 
 - Direct reduction in retained renderer heap after boot.
+
+Status:
+
+- Implemented.
+- Renderer store now keeps one canonical sermon list, and the ID/year views are derived from that list instead of being retained as duplicate store state.
 
 ### [ ] Priority 5 - Shrink or defer startup `audioLink` materialization
 
@@ -237,7 +258,12 @@ Expected impact:
 
 - Moderate to high if sermon lists are large, because repeated long strings are expensive.
 
-### [ ] Priority 6 - Reduce or delay reference/Bible DB mmap budgets
+Status:
+
+- Not done yet.
+- Boot metadata still includes `audioLink`.
+
+### [~] Priority 6 - Reduce or delay reference/Bible DB mmap budgets
 
 Implementation:
 
@@ -257,6 +283,13 @@ Watchpoints:
 - Bible chapter open latency
 - sermon metadata query latency
 - low-memory systems
+
+Status:
+
+- Partially implemented.
+- Reference DB and Bible DB mmap/cache defaults were reduced.
+- Active Bible DB opening is now delayed until first actual Bible access.
+- Reference DB is still opened at startup, so this area is improved but not fully minimized.
 
 Expected impact:
 
