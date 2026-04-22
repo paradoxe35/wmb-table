@@ -148,13 +148,12 @@ Status:
 - Implemented.
 - Installed languages are now discovered from disk instead of worker-opened indexes.
 
-### [x] Priority 2 - Open only the active language Tantivy index at startup
+### [x] Priority 2 - Do not preload Tantivy indexes at startup
 
 Implementation:
 
-- Change startup so `initializeTantivy()` creates the worker but does not open all indexes.
-- Open the active content-language index only.
-- Open other indexes on demand when language changes or a cross-language operation requires them.
+- Change startup so `initializeTantivy()` creates the worker but does not open any indexes.
+- Open the requested language on demand when a search or sermon-content operation requires it.
 - Add an explicit close policy for inactive indexes, ideally LRU or “active-only”.
 
 Why this is safe:
@@ -176,10 +175,10 @@ Expected impact:
 Status:
 
 - Implemented.
-- Startup preloads only the active content language index.
-- Other indexes load on demand and idle indexes are evicted instead of accumulating.
+- Startup now initializes the Tantivy worker with zero loaded indexes.
+- Language indexes load only on demand and idle indexes are evicted instead of accumulating.
 
-### [ ] Priority 3 - Stop using full sermon workspace as the boot payload
+### [x] Priority 3 - Stop using full sermon workspace as the boot payload
 
 Implementation:
 
@@ -208,8 +207,9 @@ Expected impact:
 
 Status:
 
-- Not done yet.
-- `documents.getTitles()` still loads the full deduplicated sermon workspace for the active language at boot.
+- Implemented.
+- `documents.getTitles()` now returns a lighter sermon summary payload for boot hydration instead of the full sermon meta shape.
+- Full sermon audio URLs stay in the per-sermon content/meta fetch path instead of the startup workspace payload.
 
 ### [x] Priority 4 - Remove renderer duplication of sermon metadata at startup
 
@@ -233,7 +233,7 @@ Status:
 - Implemented.
 - Renderer store now keeps one canonical sermon list, and the ID/year views are derived from that list instead of being retained as duplicate store state.
 
-### [ ] Priority 5 - Shrink or defer startup `audioLink` materialization
+### [x] Priority 5 - Shrink or defer startup `audioLink` materialization
 
 Implementation:
 
@@ -260,7 +260,8 @@ Expected impact:
 
 Status:
 
-- Not done yet.
+- Implemented.
+- Startup sermon boot payload now carries `hasAudio` for sidebar display and defers full `audioLink` resolution to `getSermonContent()` and other targeted meta lookups.
 - Boot metadata still includes `audioLink`.
 
 ### [~] Priority 6 - Reduce or delay reference/Bible DB mmap budgets

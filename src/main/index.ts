@@ -155,7 +155,7 @@ app.whenReady().then(async () => {
     registerLocalMediaProtocol('audio-cache', getAudioCacheDir());
     registerLocalMediaProtocol('tts-cache', getTtsCacheDir());
 
-    await initializeTantivy(config?.contentLanguage ?? null);
+    await initializeTantivy();
     void refreshInstalledLanguageUpdates().catch((error) => {
         log.warn('[language-pack] Background update check failed:', error);
     });

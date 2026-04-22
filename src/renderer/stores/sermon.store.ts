@@ -1,28 +1,28 @@
 import { useMemo } from 'react';
-import type { SermonContent, SermonMetaWithTranslations } from '@shared/types';
+import type { SermonContent, SermonListItemWithTranslations } from '@shared/types';
 import { getSermonYear } from '@renderer/utils/sermon-utils';
 import { createStore } from './create-store';
 
 export type SermonDerivedCollections = {
-    sermonsById: Record<string, SermonMetaWithTranslations>;
-    sermonsByYear: Record<string, SermonMetaWithTranslations[]>;
+    sermonsById: Record<string, SermonListItemWithTranslations>;
+    sermonsByYear: Record<string, SermonListItemWithTranslations[]>;
 };
 
-let cachedSermonsRef: SermonMetaWithTranslations[] | null = null;
+let cachedSermonsRef: SermonListItemWithTranslations[] | null = null;
 let cachedDerivedCollections: SermonDerivedCollections = {
     sermonsById: {},
     sermonsByYear: {},
 };
 
 export function getSermonDerivedCollections(
-    sermons: SermonMetaWithTranslations[],
+    sermons: SermonListItemWithTranslations[],
 ): SermonDerivedCollections {
     if (sermons === cachedSermonsRef) {
         return cachedDerivedCollections;
     }
 
-    const sermonsById: Record<string, SermonMetaWithTranslations> = {};
-    const sermonsByYear: Record<string, SermonMetaWithTranslations[]> = {};
+    const sermonsById: Record<string, SermonListItemWithTranslations> = {};
+    const sermonsByYear: Record<string, SermonListItemWithTranslations[]> = {};
 
     for (const sermon of sermons) {
         sermonsById[sermon.sermonId] = sermon;
@@ -46,20 +46,20 @@ export function useSermonDerivedCollections(): SermonDerivedCollections {
     return useMemo(() => getSermonDerivedCollections(sermons), [sermons]);
 }
 
-export function useSermonsById(): Record<string, SermonMetaWithTranslations> {
+export function useSermonsById(): Record<string, SermonListItemWithTranslations> {
     return useSermonDerivedCollections().sermonsById;
 }
 
-export function useSermonsByYear(): Record<string, SermonMetaWithTranslations[]> {
+export function useSermonsByYear(): Record<string, SermonListItemWithTranslations[]> {
     return useSermonDerivedCollections().sermonsByYear;
 }
 
 interface SermonState {
-    sermons: SermonMetaWithTranslations[];
+    sermons: SermonListItemWithTranslations[];
     activeContent: SermonContent | null;
     error: string | null;
 
-    setSermons(s: SermonMetaWithTranslations[]): void;
+    setSermons(s: SermonListItemWithTranslations[]): void;
     setActiveContent(c: SermonContent | null): void;
     setError(error: string | null): void;
 }

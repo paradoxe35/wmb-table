@@ -199,7 +199,7 @@ async function runWithLoadedIndex<T>(langCode: string, operation: () => Promise<
     }
 }
 
-export async function initializeTantivy(preloadLangCode?: string | null): Promise<void> {
+export async function initializeTantivy(): Promise<void> {
     if (worker) {
         rejectPendingRequests('Tantivy worker restarted');
         await worker.terminate();
@@ -227,12 +227,7 @@ export async function initializeTantivy(preloadLangCode?: string | null): Promis
     const indexesDir = getIndexesDir();
     const langTitles = getLangTitlesMap();
     installedLanguagesCache = getInstalledLanguageCodesOnDisk();
-    const preloadCodes =
-        preloadLangCode && installedLanguagesCache.includes(preloadLangCode)
-            ? [preloadLangCode]
-            : [];
-
-    await call('initialize', indexesDir, langTitles, preloadCodes);
+    await call('initialize', indexesDir, langTitles, []);
     await syncLoadedLanguagesCache();
     log.info(
         `[tantivy] Worker initialized, ${loadedLanguagesCache.length} index(es) loaded out of ${installedLanguagesCache.length} installed`,

@@ -3,8 +3,9 @@ import type { TranslationRow } from '../database/repositories/reference.reposito
 import type {
     AvailableTranslation,
     RefSermon,
+    SermonListItem,
+    SermonListItemWithTranslations,
     SermonMeta,
-    SermonMetaWithTranslations,
     SermonTranslation,
 } from '@shared/types';
 
@@ -46,6 +47,20 @@ function sermonToMeta(s: RefSermon, langCode: string, audioLink: string | null):
     };
 }
 
+function sermonToListItem(s: RefSermon, langCode: string, hasAudio: boolean): SermonListItem {
+    return {
+        translationId: 0,
+        languageCode: langCode,
+        sermonId: s.id,
+        title: s.title,
+        enTitle: s.title,
+        hasAudio,
+        dateMs: s.dateMs,
+        location: s.location,
+        cityState: s.cityState,
+    };
+}
+
 function translationToMeta(
     t: TranslationMeta,
     langCode: string,
@@ -71,9 +86,31 @@ function translationToMeta(
     };
 }
 
-function compareSermonMetaDateDesc(
-    left: Pick<SermonMeta, 'dateMs'>,
-    right: Pick<SermonMeta, 'dateMs'>,
+function translationToListItem(
+    t: TranslationMeta,
+    langCode: string,
+    hasAudio: boolean,
+): SermonListItem {
+    return {
+        translationId: t.translator_id,
+        languageCode: langCode,
+        sermonId: t.sermon_id,
+        title: t.title,
+        enTitle: t.sermon_title,
+        hasAudio,
+        dateMs: t.sermon_date_ms,
+        location: t.location_name,
+        cityState: t.city_name
+            ? t.state_abbr
+                ? `${t.city_name}, ${t.state_abbr}`
+                : t.city_name
+            : null,
+    };
+}
+
+function compareSermonDateDesc(
+    left: Pick<SermonListItem, 'dateMs'>,
+    right: Pick<SermonListItem, 'dateMs'>,
 ): number {
     return right.dateMs - left.dateMs;
 }
@@ -86,14 +123,17 @@ function pushGroupedByYear<T extends SermonMeta>(grouped: Record<string, T[]>, s
     grouped[year].push(sermon);
 }
 
-function toAvailableTranslation(
-    meta: Pick<SermonMeta, 'translationId' | 'languageCode' | 'title' | 'translationName'>,
-): AvailableTranslation {
+function toAvailableTranslation(meta: {
+    translationId: number;
+    languageCode: string;
+    title: string;
+    translationName?: string | null;
+}): AvailableTranslation {
     return {
         translationId: meta.translationId,
         languageCode: meta.languageCode,
         title: meta.title,
-        translationName: meta.translationName,
+        translationName: meta.translationName ?? null,
     };
 }
 
@@ -102,22 +142,19 @@ function sortAvailableTranslations(translations: AvailableTranslation[]): Availa
     return translations;
 }
 
-function updatePrimaryTranslation(
-    current: SermonMetaWithTranslations,
-    candidate: SermonMeta,
+function updatePrimaryListItem(
+    current: SermonListItemWithTranslations,
+    candidate: SermonListItem,
 ): void {
     if (candidate.translationId >= current.translationId) {
         return;
     }
 
-    current.id = candidate.id;
     current.translationId = candidate.translationId;
     current.title = candidate.title;
     current.enTitle = candidate.enTitle;
-    current.audioLink = candidate.audioLink;
-    current.translationName = candidate.translationName;
+    current.hasAudio = candidate.hasAudio;
     current.dateMs = candidate.dateMs;
-    current.minutes = candidate.minutes;
     current.location = candidate.location;
     current.cityState = candidate.cityState;
 }
@@ -148,53 +185,69 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
 /**
  * Get sermon list deduplicated by sermon, with available translations array.
  */
-export function getSermonListDeduplicated(langCode: string): SermonMetaWithTranslations[] {
+export function getSermonListDeduplicated(langCode: string): SermonListItemWithTranslations[] {
     const lang = refRepo.getLanguageByCode(langCode);
     if (!lang) {
         return [];
     }
 
-    const audioMap = refRepo.getAudioMapForLanguage(langCode);
+    const audioSermonIds = refRepo.getAudioSermonIdsForLanguage(langCode);
 
     if (!lang.translationsSupport) {
         return refRepo
             .getAllSermons()
             .map((sermon) => {
-                const meta = sermonToMeta(sermon, langCode, audioMap.get(sermon.id) ?? null);
+                const meta = sermonToListItem(sermon, langCode, audioSermonIds.has(sermon.id));
                 return {
                     ...meta,
-                    availableTranslations: [toAvailableTranslation(meta)],
+                    availableTranslations: [
+                        toAvailableTranslation({ ...meta, translationName: null }),
+                    ],
                 };
             })
-            .sort(compareSermonMetaDateDesc);
+            .sort(compareSermonDateDesc);
     }
 
-    const grouped = new Map<string, SermonMetaWithTranslations>();
+    const grouped = new Map<string, SermonListItemWithTranslations>();
     for (const translation of refRepo.getTranslationsForLanguage(langCode)) {
-        const meta = translationToMeta(
+        const meta = translationToListItem(
             translation,
             langCode,
-            audioMap.get(translation.sermon_id) ?? null,
+            audioSermonIds.has(translation.sermon_id),
         );
         const existing = grouped.get(meta.sermonId);
 
         if (!existing) {
             grouped.set(meta.sermonId, {
                 ...meta,
-                availableTranslations: [toAvailableTranslation(meta)],
+                availableTranslations: [
+                    toAvailableTranslation({
+                        translationId: meta.translationId,
+                        languageCode: meta.languageCode,
+                        title: meta.title,
+                        translationName: translation.translator_name,
+                    }),
+                ],
             });
             continue;
         }
 
-        existing.availableTranslations.push(toAvailableTranslation(meta));
-        updatePrimaryTranslation(existing, meta);
+        existing.availableTranslations.push(
+            toAvailableTranslation({
+                translationId: meta.translationId,
+                languageCode: meta.languageCode,
+                title: meta.title,
+                translationName: translation.translator_name,
+            }),
+        );
+        updatePrimaryListItem(existing, meta);
     }
 
     const result = Array.from(grouped.values());
     for (const sermon of result) {
         sortAvailableTranslations(sermon.availableTranslations);
     }
-    result.sort(compareSermonMetaDateDesc);
+    result.sort(compareSermonDateDesc);
     return result;
 }
 

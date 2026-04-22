@@ -1,15 +1,18 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import type { SermonMetaWithTranslations } from '@shared/types';
+import type { SermonListItemWithTranslations } from '@shared/types';
 import { getSermonDerivedCollections, useSermonStore } from '@renderer/stores/sermon.store';
 
-const sermons: SermonMetaWithTranslations[] = [
+const sermons: SermonListItemWithTranslations[] = [
     {
-        sermonId: '63-0101',
         translationId: 1,
         languageCode: 'fr',
+        sermonId: '63-0101',
         title: 'Premier sermon',
-        date: new Date('1963-01-01T00:00:00.000Z').getTime(),
-        audioLink: null,
+        enTitle: 'Premier sermon',
+        hasAudio: false,
+        dateMs: new Date('1963-01-01T00:00:00.000Z').getTime(),
+        location: null,
+        cityState: null,
         availableTranslations: [
             {
                 translationId: 1,
@@ -19,12 +22,15 @@ const sermons: SermonMetaWithTranslations[] = [
         ],
     },
     {
-        sermonId: '63-0201',
         translationId: 2,
         languageCode: 'fr',
+        sermonId: '63-0201',
         title: 'Deuxième sermon',
-        date: new Date('1963-02-01T00:00:00.000Z').getTime(),
-        audioLink: null,
+        enTitle: 'Deuxième sermon',
+        hasAudio: true,
+        dateMs: new Date('1963-02-01T00:00:00.000Z').getTime(),
+        location: 'Jeffersonville',
+        cityState: 'Jeffersonville, IN',
         availableTranslations: [
             {
                 translationId: 2,
@@ -34,12 +40,15 @@ const sermons: SermonMetaWithTranslations[] = [
         ],
     },
     {
-        sermonId: '64-0101',
         translationId: 3,
         languageCode: 'fr',
+        sermonId: '64-0101',
         title: 'Troisième sermon',
-        date: new Date('1964-01-01T00:00:00.000Z').getTime(),
-        audioLink: null,
+        enTitle: 'Troisième sermon',
+        hasAudio: false,
+        dateMs: new Date('1964-01-01T00:00:00.000Z').getTime(),
+        location: null,
+        cityState: null,
         availableTranslations: [
             {
                 translationId: 3,

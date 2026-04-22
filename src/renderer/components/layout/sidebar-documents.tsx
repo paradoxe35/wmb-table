@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Input, Button, Card, Divider, Segmented, Select, Tag, Typography } from 'antd';
 import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
 import { Virtuoso } from 'react-virtuoso';
-import type { SermonMetaWithTranslations } from '@shared/types';
+import type { SermonListItemWithTranslations } from '@shared/types';
 import { getTabKey } from '@shared/types';
 import { getLanguageDisplayName } from '@shared/tts.types';
 import ContainerScrollY from '../container-scroll-y';
@@ -161,7 +161,7 @@ const alphabets = alpha.map((x) => String.fromCharCode(x));
 const DocumentByAlphabetic = () => {
     const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
-    const [datas, setDatas] = useState<SermonMetaWithTranslations[]>([]);
+    const [datas, setDatas] = useState<SermonListItemWithTranslations[]>([]);
     const alphabet = useRef(alphabets[0]);
 
     const onSearch = useCallback(() => {
@@ -202,7 +202,7 @@ const DocumentByAlphabetic = () => {
 const DocumentByYears = () => {
     const { t } = useTranslation();
     const sermonsByYear = useSermonsByYear();
-    const [datas, setDatas] = useState<SermonMetaWithTranslations[]>([]);
+    const [datas, setDatas] = useState<SermonListItemWithTranslations[]>([]);
     const selectedYear = useRef<string>('');
 
     const years = useMemo(
@@ -291,7 +291,7 @@ const ContentLanguageBar = () => {
 const DocumentSearch = () => {
     const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
-    const [datas, setDatas] = useState<SermonMetaWithTranslations[]>([]);
+    const [datas, setDatas] = useState<SermonListItemWithTranslations[]>([]);
 
     useEffect(() => {
         setDatas(sermons);
@@ -364,7 +364,7 @@ function SermonsTab() {
     );
 }
 
-const DocumentList = ({ datas }: { datas: SermonMetaWithTranslations[] }) => {
+const DocumentList = ({ datas }: { datas: SermonListItemWithTranslations[] }) => {
     const openDocumentRequest = useOpenDocumentRequest();
     const activeTab = useDocumentTabsStore(selectActiveTab);
     const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
@@ -415,7 +415,7 @@ const DocumentList = ({ datas }: { datas: SermonMetaWithTranslations[] }) => {
 };
 
 const ItemOutline = React.memo<{
-    sermon: SermonMetaWithTranslations;
+    sermon: SermonListItemWithTranslations;
     active?: boolean;
     isEnglish: boolean;
     formatDate: (dateMs: number) => string;
@@ -447,7 +447,7 @@ const ItemOutline = React.memo<{
             </div>
             <div className="sidebar-item__right">
                 {sermon.cityState && <div className="sidebar-item__city">{sermon.cityState}</div>}
-                {sermon.audioLink && (
+                {sermon.hasAudio && (
                     <div className="sidebar-item__audio">
                         <SoundOutlined />
                     </div>

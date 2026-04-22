@@ -365,6 +365,18 @@ export function getAudioMapForLanguage(langCode: string): Map<string, string> {
     return map;
 }
 
+export function getAudioSermonIdsForLanguage(langCode: string): Set<string> {
+    const stmt = getRefDb().prepare(`
+        SELECT DISTINCT s.id as sermon_id
+        FROM audio a
+        JOIN sermon s ON a.sermon_id = s.isar_id
+        JOIN language lang ON a.language_id = lang.isar_id
+        WHERE lang.code = ?
+    `);
+    const rows = stmt.all(langCode) as { sermon_id: string }[];
+    return new Set(rows.map((row) => row.sermon_id));
+}
+
 export function getAudioCountForLanguage(langCode: string): number {
     const stmt = getRefDb().prepare(`
         SELECT COUNT(*) as cnt

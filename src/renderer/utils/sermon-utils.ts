@@ -1,6 +1,8 @@
-import type { SermonMeta } from '@shared/types';
+import type { SermonListItem, SermonMeta } from '@shared/types';
 
-export function getSermonYear(sermon: SermonMeta): string | null {
+export function getSermonYear(
+    sermon: Pick<SermonMeta | SermonListItem, 'sermonId'>,
+): string | null {
     if (!sermon.sermonId) return null;
     return '19' + sermon.sermonId.split('-')[0];
 }

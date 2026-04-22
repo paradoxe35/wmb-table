@@ -94,6 +94,24 @@ describe('reference-data.service', () => {
             const uniqueCount = refRepo.getUniqueSermonCountForLanguage('fr');
             expect(list.length).toBe(uniqueCount);
         });
+
+        it(
+            'uses hasAudio instead of materialized audioLink in the boot payload',
+            {
+                timeout: 30000,
+            },
+            () => {
+                const list = refDataService.getSermonListDeduplicated('en');
+                const withAudio = list.filter((entry) => entry.hasAudio);
+                expect(withAudio.length).toBeGreaterThan(100);
+
+                for (const entry of withAudio.slice(0, 10)) {
+                    expect(refRepo.getAudioForSermonByIds(entry.sermonId, 'en')).toMatch(
+                        /^https:\/\//,
+                    );
+                }
+            },
+        );
     });
 
     describe('getSermonListForLanguage', () => {

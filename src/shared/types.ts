@@ -61,7 +61,19 @@ export interface AvailableTranslation {
     translationName: string | null;
 }
 
-export interface SermonMetaWithTranslations extends SermonMeta {
+export interface SermonListItem {
+    translationId: number;
+    languageCode: string;
+    sermonId: string;
+    title: string;
+    enTitle: string;
+    hasAudio: boolean;
+    dateMs: number;
+    location: string | null;
+    cityState: string | null;
+}
+
+export interface SermonListItemWithTranslations extends SermonListItem {
     availableTranslations: AvailableTranslation[];
 }
 
