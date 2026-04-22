@@ -5,6 +5,7 @@ import {
     clampTabsToLimit,
     useDocumentTabsStore,
     useSermonStore,
+    useSermonsById,
     useSearchStore,
 } from '@renderer/stores';
 import type { NewDocumentTab } from '@renderer/stores/document-tabs.store';
@@ -18,7 +19,7 @@ import type {
     DocumentIdentity,
     DocumentTab,
     NoteItemReference,
-    SermonMetaWithTranslations,
+    SermonListItemWithTranslations,
     SubjectDocumentItem,
 } from '@shared/types';
 import { formatSermonDate } from '@renderer/utils/sermon-utils';
@@ -43,7 +44,7 @@ type PresentationSource =
     | NoteItemReference['documentReference'];
 
 type LanguageWorkspace = {
-    sermons: SermonMetaWithTranslations[];
+    sermons: SermonListItemWithTranslations[];
     tabs: DocumentTab[];
     activeBibleVersion: BibleVersionInfo | null;
 };
@@ -91,7 +92,7 @@ function getDocumentIdentityFromSource(source: PresentationSource): DocumentIden
 function resolveOpenRequestTitle(
     title: string,
     documentIdentity: DocumentIdentity,
-    getSermonById: (sermonId: string) => SermonMetaWithTranslations | undefined,
+    getSermonById: (sermonId: string) => SermonListItemWithTranslations | undefined,
 ): string {
     if (documentIdentity.documentType !== 'sermon') {
         return formatDocumentTitle(title, documentIdentity);
@@ -215,7 +216,7 @@ export function useInitApp() {
     useEffect(() => {
         (async () => {
             try {
-                const installed = await window.api.languages.getInstalled();
+                const installed = await window.api.languages.getInstalled({ includeStats: false });
 
                 // No languages installed — language modal auto-opens itself
                 if (installed.length === 0) {
@@ -372,10 +373,10 @@ export function useShowOptions() {
 }
 
 export function useSermonLookup() {
-    const sermonsById = useSermonStore((s) => s.sermonsById);
+    const sermonsById = useSermonsById();
 
     const getSermonById = useCallback(
-        (sermonId: string): SermonMetaWithTranslations | undefined => sermonsById[sermonId],
+        (sermonId: string): SermonListItemWithTranslations | undefined => sermonsById[sermonId],
         [sermonsById],
     );
 

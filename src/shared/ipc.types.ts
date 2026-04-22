@@ -33,8 +33,8 @@ import type {
     UpdaterNotification,
     ViewMenuValue,
     DocumentReference,
+    SermonListItemWithTranslations,
     SermonMeta,
-    SermonMetaWithTranslations,
     SermonContent,
     InstalledLanguage,
     DownloadableLanguage,
@@ -331,7 +331,7 @@ export const PushChannels = {
 /** Maps each invoke channel to its argument tuple and return type. */
 export interface InvokeChannelMap {
     // Documents
-    [DocumentChannels.getTitles]: { args: [string]; return: SermonMetaWithTranslations[] };
+    [DocumentChannels.getTitles]: { args: [string]; return: SermonListItemWithTranslations[] };
     [DocumentChannels.getSermonContent]: {
         args: [string, number, string];
         return: SermonContent;
@@ -356,7 +356,7 @@ export interface InvokeChannelMap {
 
     // Languages
     [LanguageChannels.getInstalled]: {
-        args: [{ checkForUpdates?: boolean; force?: boolean }?];
+        args: [{ checkForUpdates?: boolean; force?: boolean; includeStats?: boolean }?];
         return: InstalledLanguage[];
     };
     [LanguageChannels.getAvailable]: { args: []; return: DownloadableLanguage[] };

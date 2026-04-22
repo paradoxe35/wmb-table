@@ -276,7 +276,7 @@ export default function LibraryModal() {
         let cancelled = false;
 
         Promise.all([
-            window.api.languages.getInstalled(),
+            window.api.languages.getInstalled({ includeStats: false }),
             window.api.app.getContentLanguage(),
         ]).then(([inst, contentLang]) => {
             if (!cancelled && (inst.length === 0 || !contentLang)) {
@@ -403,7 +403,7 @@ export default function LibraryModal() {
     const handleDelete = async (langCode: string) => {
         await window.api.languages.delete(langCode);
         if (contentLanguage === langCode) {
-            const remaining = await window.api.languages.getInstalled();
+            const remaining = await window.api.languages.getInstalled({ includeStats: false });
             if (remaining.length > 0) {
                 await handleSelectLanguage(remaining[0].code, { preserveCurrentTabs: false });
             } else {

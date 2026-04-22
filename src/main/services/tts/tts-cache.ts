@@ -61,7 +61,7 @@ export class TtsCache {
     }
 
     /** Store a synthesis result to disk cache. */
-    async set(key: TtsCacheKey, result: TtsSynthesizeResult): Promise<void> {
+    async set(key: TtsCacheKey, result: TtsSynthesizeResult): Promise<CacheHit> {
         const dir = join(getTtsCacheDir(), key.provider, key.model, key.voiceId, key.language);
         await mkdir(dir, { recursive: true });
         const ext = result.mimeType.split('/')[1] || 'bin';
@@ -78,6 +78,7 @@ export class TtsCache {
             createdAt: now,
         });
         await this.evictIfNeeded();
+        return { path: filePath, mimeType: result.mimeType };
     }
 
     async clear(): Promise<void> {

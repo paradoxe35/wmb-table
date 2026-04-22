@@ -1,5 +1,6 @@
 import { parentPort } from 'node:worker_threads';
 import {
+    closeIndexEntry,
     closeAllIndexes,
     getInstalledLanguages,
     initializeIndexes,
@@ -33,12 +34,20 @@ interface WorkerResponse {
 // Methods exposed to main process
 // ---------------------------------------------------------------------------
 
-function initialize(indexesDir: string, langTitles: Record<string, string>): void {
-    initializeIndexes(indexesDir, langTitles);
+function initialize(
+    indexesDir: string,
+    langTitles: Record<string, string>,
+    preloadLangCodes: string[] = [],
+): void {
+    initializeIndexes(indexesDir, langTitles, preloadLangCodes);
 }
 
 function openIndex(indexesDir: string, langCode: string, langEnglishTitle: string | null): void {
     openIndexEntry(indexesDir, langCode, langEnglishTitle);
+}
+
+function closeIndex(langCode: string): void {
+    closeIndexEntry(langCode);
 }
 
 // ---------------------------------------------------------------------------
@@ -48,6 +57,7 @@ function openIndex(indexesDir: string, langCode: string, langEnglishTitle: strin
 const methods: Record<string, (...args: never[]) => unknown> = {
     initialize,
     openIndex,
+    closeIndex,
     closeAllIndexes,
     getInstalledLanguages,
     getSermonParagraphs,

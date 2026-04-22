@@ -170,7 +170,8 @@ export interface TtsSynthesizeResult {
 // ── Segment audio pushed to renderer ──
 export interface TtsSegmentAudio {
     segmentIndex: number;
-    audioBase64: string;
+    audioBase64?: string;
+    audioUrl?: string;
     mimeType: string;
     duration?: number;
     /** When true, the renderer should pre-decode this audio but not play it yet. */

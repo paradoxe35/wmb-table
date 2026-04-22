@@ -1,6 +1,7 @@
 interface PreloadedEntry {
     audio: HTMLAudioElement;
-    blobUrl: string;
+    sourceUrl: string;
+    revokeOnClear: boolean;
     segmentIndex: number;
 }
 
@@ -11,7 +12,8 @@ interface PreloadedEntry {
  */
 export class TtsAudioPlayer {
     private audio: HTMLAudioElement | null = null;
-    private blobUrl: string | null = null;
+    private sourceUrl: string | null = null;
+    private revokeSourceOnStop = false;
     private onEndedCb: (() => void) | null = null;
     private onErrorCb: ((err?: unknown) => void) | null = null;
     private isPlaying = false;
@@ -26,24 +28,53 @@ export class TtsAudioPlayer {
         return URL.createObjectURL(blob);
     }
 
-    async play(audioBase64: string, mimeType: string, rate: number = 1): Promise<void> {
+    private static resolveAudioSource(
+        audioBase64: string | undefined,
+        mimeType: string,
+        audioUrl?: string,
+    ): { url: string; revokeOnStop: boolean } {
+        if (audioUrl) {
+            return { url: audioUrl, revokeOnStop: false };
+        }
+
+        if (!audioBase64) {
+            throw new Error('Missing TTS audio payload');
+        }
+
+        return {
+            url: TtsAudioPlayer.base64ToBlobUrl(audioBase64, mimeType),
+            revokeOnStop: true,
+        };
+    }
+
+    async play(
+        audioBase64: string | undefined,
+        mimeType: string,
+        rate: number = 1,
+        audioUrl?: string,
+    ): Promise<void> {
         this.stopSource();
 
-        const url = TtsAudioPlayer.base64ToBlobUrl(audioBase64, mimeType);
+        const source = TtsAudioPlayer.resolveAudioSource(audioBase64, mimeType, audioUrl);
         this.currentRate = rate;
         this.isPaused = false;
-        this.playUrl(url, rate);
+        this.playUrl(source.url, rate, source.revokeOnStop);
     }
 
     /**
      * Eagerly create an Audio element and pre-buffer the data so playback
      * starts instantly when the segment's turn comes.
      */
-    async preload(audioBase64: string, mimeType: string, segmentIndex: number): Promise<void> {
+    async preload(
+        audioBase64: string | undefined,
+        mimeType: string,
+        segmentIndex: number,
+        audioUrl?: string,
+    ): Promise<void> {
         if (this.preloadedQueue.some((e) => e.segmentIndex === segmentIndex)) return;
 
-        const blobUrl = TtsAudioPlayer.base64ToBlobUrl(audioBase64, mimeType);
-        const audio = new Audio(blobUrl);
+        const source = TtsAudioPlayer.resolveAudioSource(audioBase64, mimeType, audioUrl);
+        const audio = new Audio(source.url);
         audio.preload = 'auto';
 
         // Wait for the browser to buffer enough data for instant playback
@@ -53,7 +84,12 @@ export class TtsAudioPlayer {
             audio.load();
         });
 
-        this.preloadedQueue.push({ audio, blobUrl, segmentIndex });
+        this.preloadedQueue.push({
+            audio,
+            sourceUrl: source.url,
+            revokeOnClear: source.revokeOnStop,
+            segmentIndex,
+        });
         this.preloadedQueue.sort((a, b) => a.segmentIndex - b.segmentIndex);
     }
 
@@ -75,7 +111,8 @@ export class TtsAudioPlayer {
         const entry = this.preloadedQueue.shift()!;
 
         this.stopSource();
-        this.blobUrl = entry.blobUrl;
+        this.sourceUrl = entry.sourceUrl;
+        this.revokeSourceOnStop = entry.revokeOnClear;
         this.currentRate = rate;
         this.isPaused = false;
         this.attachAndPlay(entry.audio, rate);
@@ -84,14 +121,17 @@ export class TtsAudioPlayer {
 
     clearPreloaded(): void {
         for (const entry of this.preloadedQueue) {
-            URL.revokeObjectURL(entry.blobUrl);
+            if (entry.revokeOnClear) {
+                URL.revokeObjectURL(entry.sourceUrl);
+            }
         }
         this.preloadedQueue = [];
     }
 
-    private playUrl(url: string, rate: number): void {
-        this.revokeBlobUrl();
-        this.blobUrl = url;
+    private playUrl(url: string, rate: number, revokeOnStop: boolean): void {
+        this.revokeSourceUrl();
+        this.sourceUrl = url;
+        this.revokeSourceOnStop = revokeOnStop;
         const audio = new Audio(url);
         this.attachAndPlay(audio, rate);
     }
@@ -103,7 +143,7 @@ export class TtsAudioPlayer {
         audio.onended = () => {
             if (this.isPlaying && !this.isPaused) {
                 this.isPlaying = false;
-                this.revokeBlobUrl();
+                this.revokeSourceUrl();
                 this.onEndedCb?.();
             }
         };
@@ -178,14 +218,15 @@ export class TtsAudioPlayer {
             this.audio.removeAttribute('src');
             this.audio = null;
         }
-        this.revokeBlobUrl();
+        this.revokeSourceUrl();
     }
 
-    private revokeBlobUrl(): void {
-        if (this.blobUrl) {
-            URL.revokeObjectURL(this.blobUrl);
-            this.blobUrl = null;
+    private revokeSourceUrl(): void {
+        if (this.sourceUrl && this.revokeSourceOnStop) {
+            URL.revokeObjectURL(this.sourceUrl);
         }
+        this.sourceUrl = null;
+        this.revokeSourceOnStop = false;
     }
 }
 

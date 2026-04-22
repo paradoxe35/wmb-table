@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dropdown, message, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
@@ -190,7 +190,10 @@ const SermonParagraphView = memo(function SermonParagraphView({
     ttsHighlight?: { isActive: boolean; highlightRange: { start: number; end: number } | null };
     playFromHereButton?: React.ReactNode;
 }) {
-    const renderContent = () => {
+    const paragraphContent = paragraph.content;
+    const paragraphIndex = paragraph.paragraphIndex;
+
+    const renderedContent = useMemo(() => {
         const searchRanges: HighlightRange[] = [];
         const persistentRanges: HighlightRange[] = [];
         const ttsRanges: HighlightRange[] = [];
@@ -198,7 +201,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
         if (ttsHighlight?.isActive && ttsHighlight.highlightRange) {
             ttsRanges.push({
                 start: ttsHighlight.highlightRange.start,
-                end: Math.min(ttsHighlight.highlightRange.end, paragraph.content.length),
+                end: Math.min(ttsHighlight.highlightRange.end, paragraphContent.length),
                 color: '',
                 type: 'tts',
             });
@@ -206,8 +209,8 @@ const SermonParagraphView = memo(function SermonParagraphView({
 
         if (search) {
             const paragraphSearchRanges =
-                search.highlightsByParagraph.get(paragraph.paragraphIndex) ??
-                getHighlightRanges(paragraph.content, search.term, search.mode);
+                search.highlightsByParagraph.get(paragraphIndex) ??
+                getHighlightRanges(paragraphContent, search.term, search.mode);
 
             for (const r of paragraphSearchRanges) {
                 searchRanges.push({ start: r.start, end: r.end, color: '', type: 'search' });
@@ -219,7 +222,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
             for (const h of highlights) {
                 persistentRanges.push({
                     start: h.startOffset,
-                    end: Math.min(h.endOffset, paragraph.content.length),
+                    end: Math.min(h.endOffset, paragraphContent.length),
                     color: h.color,
                     comment: h.comment,
                     highlightId: h.id,
@@ -229,22 +232,24 @@ const SermonParagraphView = memo(function SermonParagraphView({
         }
 
         const allRanges = mergeRanges(searchRanges, [...persistentRanges, ...ttsRanges]);
-        if (allRanges.length === 0) return paragraph.content;
+        if (allRanges.length === 0) {
+            return paragraphContent;
+        }
 
-        return renderWithRanges(paragraph.content, allRanges, isActiveMatch);
-    };
+        return renderWithRanges(paragraphContent, allRanges, isActiveMatch);
+    }, [paragraphContent, paragraphIndex, search, highlights, ttsHighlight, isActiveMatch]);
 
     const className = ttsHighlight?.isActive
         ? 'sermon-paragraph tts-active-paragraph'
         : 'sermon-paragraph';
 
     return (
-        <p data-paragraph-index={paragraph.paragraphIndex} className={className}>
+        <p data-paragraph-index={paragraphIndex} className={className}>
             <span className="line-number">
-                {paragraph.paragraphIndex}
+                {paragraphIndex}
                 {playFromHereButton}
             </span>
-            <span className="paragraph-content">{renderContent()}</span>
+            <span className="paragraph-content">{renderedContent}</span>
         </p>
     );
 });

@@ -1,7 +1,7 @@
 import '@main/lib/sentry';
 
 import { app, BrowserWindow, protocol, session, shell } from 'electron';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import { APP_NAME } from '@shared/constants';
 import { initializeIpc } from '@main/ipc/register';
@@ -16,7 +16,7 @@ import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/sync
 import { disposeTtsService } from '@main/services/tts';
 import { disposeAiService } from '@main/services/ai';
 import * as configRepo from '@main/database/repositories/config.repository';
-import { getAudioCacheDir } from '@main/lib/app-paths';
+import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
 import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
@@ -39,6 +39,10 @@ protocol.registerSchemesAsPrivileged([
         scheme: 'audio-cache',
         privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
     },
+    {
+        scheme: 'tts-cache',
+        privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+    },
 ]);
 
 // Register all IPC handlers before window creation
@@ -57,7 +61,7 @@ function setupCSP(): void {
                         "style-src 'self' 'unsafe-inline'",
                         "img-src 'self' data: https:",
                         "font-src 'self' data:",
-                        "media-src 'self' blob: https: audio-cache:",
+                        "media-src 'self' blob: https: audio-cache: tts-cache:",
                         "connect-src 'self' https:",
                     ].join('; '),
                 ],
@@ -125,15 +129,31 @@ function createWindow(): void {
 app.whenReady().then(async () => {
     setupCSP();
 
+    const registerLocalMediaProtocol = (scheme: 'audio-cache' | 'tts-cache', rootDir: string) => {
+        protocol.registerFileProtocol(scheme, (request, callback) => {
+            const { pathname } = new URL(request.url);
+            const relativePath = pathname
+                .split('/')
+                .filter(Boolean)
+                .map((part) => decodeURIComponent(part))
+                .join('/');
+            const filePath = resolve(rootDir, relativePath);
+
+            if (!filePath.startsWith(resolve(rootDir))) {
+                callback({ error: -10 });
+                return;
+            }
+
+            callback(filePath);
+        });
+    };
+
     // Serve cached audio files via audio-cache://file/<filename>.
     // registerFileProtocol delegates file serving to Chromium which handles
     // range requests and seeking natively (protocol.handle has a known
     // seeking bug: https://github.com/electron/electron/issues/38749).
-    protocol.registerFileProtocol('audio-cache', (request, callback) => {
-        const { pathname } = new URL(request.url);
-        const fileName = decodeURIComponent(pathname.substring(1));
-        callback(join(getAudioCacheDir(), fileName));
-    });
+    registerLocalMediaProtocol('audio-cache', getAudioCacheDir());
+    registerLocalMediaProtocol('tts-cache', getTtsCacheDir());
 
     await initializeTantivy();
     void refreshInstalledLanguageUpdates().catch((error) => {

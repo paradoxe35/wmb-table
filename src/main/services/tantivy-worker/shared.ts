@@ -126,7 +126,11 @@ export function getIndexCapabilities(langCode: string): IndexCapabilities {
     return indexCapabilitiesCache.get(langCode) ?? DEFAULT_INDEX_CAPABILITIES;
 }
 
-export function initializeIndexes(indexesDir: string, langTitles: Record<string, string>): void {
+export function initializeIndexes(
+    indexesDir: string,
+    langTitles: Record<string, string>,
+    preloadLangCodes: string[] = [],
+): void {
     if (!existsSync(indexesDir)) {
         console.warn(`[tantivy-worker] Index directory not found: ${indexesDir}`);
         return;
@@ -142,7 +146,13 @@ export function initializeIndexes(indexesDir: string, langTitles: Record<string,
         return;
     }
 
+    const preloadSet = new Set(preloadLangCodes);
+
     for (const langCode of entries) {
+        if (preloadSet.size > 0 && !preloadSet.has(langCode)) {
+            continue;
+        }
+
         const indexPath = join(indexesDir, langCode);
         const metaPath = join(indexPath, 'meta.json');
         if (!existsSync(metaPath)) {
@@ -163,6 +173,10 @@ export function openIndexEntry(
     langCode: string,
     langEnglishTitle: string | null,
 ): void {
+    if (indexCache.has(langCode)) {
+        return;
+    }
+
     const indexPath = join(indexesDir, langCode);
     const metaPath = join(indexPath, 'meta.json');
     if (!existsSync(metaPath)) {
@@ -181,6 +195,11 @@ export function openIndexEntry(
             `[tantivy-worker] Index "${langCode}" uses legacy schema: paragraph_index is not indexed`,
         );
     }
+}
+
+export function closeIndexEntry(langCode: string): void {
+    indexCache.delete(langCode);
+    indexCapabilitiesCache.delete(langCode);
 }
 
 export function closeAllIndexes(): void {

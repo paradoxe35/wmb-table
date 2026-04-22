@@ -1,9 +1,11 @@
 import * as refRepo from '../database/repositories/reference.repository';
 import type { TranslationRow } from '../database/repositories/reference.repository';
 import type {
+    AvailableTranslation,
     RefSermon,
+    SermonListItem,
+    SermonListItemWithTranslations,
     SermonMeta,
-    SermonMetaWithTranslations,
     SermonTranslation,
 } from '@shared/types';
 
@@ -45,6 +47,20 @@ function sermonToMeta(s: RefSermon, langCode: string, audioLink: string | null):
     };
 }
 
+function sermonToListItem(s: RefSermon, langCode: string, hasAudio: boolean): SermonListItem {
+    return {
+        translationId: 0,
+        languageCode: langCode,
+        sermonId: s.id,
+        title: s.title,
+        enTitle: s.title,
+        hasAudio,
+        dateMs: s.dateMs,
+        location: s.location,
+        cityState: s.cityState,
+    };
+}
+
 function translationToMeta(
     t: TranslationMeta,
     langCode: string,
@@ -68,6 +84,79 @@ function translationToMeta(
                 : t.city_name
             : null,
     };
+}
+
+function translationToListItem(
+    t: TranslationMeta,
+    langCode: string,
+    hasAudio: boolean,
+): SermonListItem {
+    return {
+        translationId: t.translator_id,
+        languageCode: langCode,
+        sermonId: t.sermon_id,
+        title: t.title,
+        enTitle: t.sermon_title,
+        hasAudio,
+        dateMs: t.sermon_date_ms,
+        location: t.location_name,
+        cityState: t.city_name
+            ? t.state_abbr
+                ? `${t.city_name}, ${t.state_abbr}`
+                : t.city_name
+            : null,
+    };
+}
+
+function compareSermonDateDesc(
+    left: Pick<SermonListItem, 'dateMs'>,
+    right: Pick<SermonListItem, 'dateMs'>,
+): number {
+    return right.dateMs - left.dateMs;
+}
+
+function pushGroupedByYear<T extends SermonMeta>(grouped: Record<string, T[]>, sermon: T): void {
+    const year = sermon.sermonId.split('-')[0];
+    if (!grouped[year]) {
+        grouped[year] = [];
+    }
+    grouped[year].push(sermon);
+}
+
+function toAvailableTranslation(meta: {
+    translationId: number;
+    languageCode: string;
+    title: string;
+    translationName?: string | null;
+}): AvailableTranslation {
+    return {
+        translationId: meta.translationId,
+        languageCode: meta.languageCode,
+        title: meta.title,
+        translationName: meta.translationName ?? null,
+    };
+}
+
+function sortAvailableTranslations(translations: AvailableTranslation[]): AvailableTranslation[] {
+    translations.sort((left, right) => left.translationId - right.translationId);
+    return translations;
+}
+
+function updatePrimaryListItem(
+    current: SermonListItemWithTranslations,
+    candidate: SermonListItem,
+): void {
+    if (candidate.translationId >= current.translationId) {
+        return;
+    }
+
+    current.translationId = candidate.translationId;
+    current.title = candidate.title;
+    current.enTitle = candidate.enTitle;
+    current.hasAudio = candidate.hasAudio;
+    current.dateMs = candidate.dateMs;
+    current.location = candidate.location;
+    current.cityState = candidate.cityState;
 }
 
 /**
@@ -96,33 +185,69 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
 /**
  * Get sermon list deduplicated by sermon, with available translations array.
  */
-export function getSermonListDeduplicated(langCode: string): SermonMetaWithTranslations[] {
-    const allMeta = getSermonListForLanguage(langCode);
+export function getSermonListDeduplicated(langCode: string): SermonListItemWithTranslations[] {
+    const lang = refRepo.getLanguageByCode(langCode);
+    if (!lang) {
+        return [];
+    }
 
-    const groups = new Map<string, SermonMeta[]>();
-    for (const meta of allMeta) {
-        const existing = groups.get(meta.sermonId);
-        if (existing) {
-            existing.push(meta);
-        } else {
-            groups.set(meta.sermonId, [meta]);
+    const audioSermonIds = refRepo.getAudioSermonIdsForLanguage(langCode);
+
+    if (!lang.translationsSupport) {
+        return refRepo
+            .getAllSermons()
+            .map((sermon) => {
+                const meta = sermonToListItem(sermon, langCode, audioSermonIds.has(sermon.id));
+                return {
+                    ...meta,
+                    availableTranslations: [
+                        toAvailableTranslation({ ...meta, translationName: null }),
+                    ],
+                };
+            })
+            .sort(compareSermonDateDesc);
+    }
+
+    const grouped = new Map<string, SermonListItemWithTranslations>();
+    for (const translation of refRepo.getTranslationsForLanguage(langCode)) {
+        const meta = translationToListItem(
+            translation,
+            langCode,
+            audioSermonIds.has(translation.sermon_id),
+        );
+        const existing = grouped.get(meta.sermonId);
+
+        if (!existing) {
+            grouped.set(meta.sermonId, {
+                ...meta,
+                availableTranslations: [
+                    toAvailableTranslation({
+                        translationId: meta.translationId,
+                        languageCode: meta.languageCode,
+                        title: meta.title,
+                        translationName: translation.translator_name,
+                    }),
+                ],
+            });
+            continue;
         }
+
+        existing.availableTranslations.push(
+            toAvailableTranslation({
+                translationId: meta.translationId,
+                languageCode: meta.languageCode,
+                title: meta.title,
+                translationName: translation.translator_name,
+            }),
+        );
+        updatePrimaryListItem(existing, meta);
     }
 
-    const result: SermonMetaWithTranslations[] = [];
-    for (const [, rows] of groups) {
-        rows.sort((a, b) => a.translationId - b.translationId);
-        const primary = rows[0];
-        const availableTranslations = rows.map((r) => ({
-            translationId: r.translationId,
-            languageCode: r.languageCode,
-            title: r.title,
-            translationName: r.translationName,
-        }));
-        result.push({ ...primary, availableTranslations });
+    const result = Array.from(grouped.values());
+    for (const sermon of result) {
+        sortAvailableTranslations(sermon.availableTranslations);
     }
-
-    result.sort((a, b) => b.dateMs - a.dateMs);
+    result.sort(compareSermonDateDesc);
     return result;
 }
 
@@ -202,12 +327,33 @@ export function getTranslationsForSermon(
  * Get sermon list grouped by year.
  */
 export function getSermonsByYear(langCode: string): Record<string, SermonMeta[]> {
-    const all = getSermonListForLanguage(langCode);
-    const grouped: Record<string, SermonMeta[]> = {};
-    for (const sermon of all) {
-        const year = sermon.sermonId.split('-')[0];
-        if (!grouped[year]) grouped[year] = [];
-        grouped[year].push(sermon);
+    const lang = refRepo.getLanguageByCode(langCode);
+    if (!lang) {
+        return {};
     }
+
+    const grouped: Record<string, SermonMeta[]> = {};
+    const audioMap = refRepo.getAudioMapForLanguage(langCode);
+
+    if (!lang.translationsSupport) {
+        for (const sermon of refRepo.getAllSermons()) {
+            pushGroupedByYear(
+                grouped,
+                sermonToMeta(sermon, langCode, audioMap.get(sermon.id) ?? null),
+            );
+        }
+    } else {
+        for (const translation of refRepo.getTranslationsForLanguage(langCode)) {
+            pushGroupedByYear(
+                grouped,
+                translationToMeta(
+                    translation,
+                    langCode,
+                    audioMap.get(translation.sermon_id) ?? null,
+                ),
+            );
+        }
+    }
+
     return grouped;
 }

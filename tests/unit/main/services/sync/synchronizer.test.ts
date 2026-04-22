@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { Readable } from 'node:stream';
 import { gzipSync } from 'node:zlib';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
@@ -110,8 +111,8 @@ vi.mock('@main/services/sync/drive.service', () => ({
             return mockDriveState.latestSnapshot;
         }
 
-        async saveSnapshot(content: Buffer) {
-            mockDriveState.savedSnapshots.push(content);
+        async saveSnapshot(content: NodeJS.ReadableStream) {
+            mockDriveState.savedSnapshots.push(await streamToBuffer(content));
             const file = {
                 id: `snapshot-${mockDriveState.savedSnapshots.length}`,
                 name: `snapshot_${mockDriveState.savedSnapshots.length}.db.gz`,
@@ -154,6 +155,14 @@ vi.mock('@main/services/sync/drive.service', () => ({
                 throw new Error(`file not found: ${fileId}`);
             }
             return content;
+        }
+
+        async getFileStream(fileId: string) {
+            const content = mockDriveState.fileContents.get(fileId);
+            if (!content) {
+                throw new Error(`file not found: ${fileId}`);
+            }
+            return Readable.from(content);
         }
 
         async pruneOldChanges(before: string) {
@@ -207,6 +216,14 @@ function createDeferred<T>() {
         reject = rej;
     });
     return { promise, resolve, reject };
+}
+
+async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+        chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+    return Buffer.concat(chunks);
 }
 
 describe('synchronizer', () => {
@@ -702,7 +719,7 @@ describe('synchronizer', () => {
                 return deferred.promise;
             }),
             getLatestSnapshot: vi.fn(async () => null),
-            saveSnapshot: vi.fn(async (_content: Buffer) => ({
+            saveSnapshot: vi.fn(async (_content: NodeJS.ReadableStream) => ({
                 id: 'snapshot-new',
                 name: 'snapshot_new.db.gz',
                 isSnapshot: true,
@@ -748,5 +765,72 @@ describe('synchronizer', () => {
 
         await expect(runPromise).resolves.toBeUndefined();
         expect(notesRepo.getById(noteId)?.name).toBe('Recovered after stop');
+    });
+
+    it('runSyncCycle applies snapshot files from buffered content when getFileStream is unavailable', async () => {
+        const snapshotNoteId = 'snapshot-buffer-fallback';
+        const { content, cleanup } = createCompressedSnapshot((sqlite) => {
+            sqlite
+                .prepare(
+                    `
+                        INSERT INTO notes (
+                            id,
+                            name,
+                            content,
+                            default_name,
+                            created,
+                            created_at,
+                            updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                    `,
+                )
+                .run(
+                    snapshotNoteId,
+                    'Restored from buffer fallback',
+                    null,
+                    1,
+                    1,
+                    '2026-01-01T00:00:00.000Z',
+                    '2026-02-14T00:00:00.000Z',
+                );
+        });
+
+        try {
+            const drive = {
+                getChangeFilesAfterTimeOffset: vi.fn(async () => [
+                    {
+                        id: 'buffer-snapshot',
+                        name: 'snapshot_buffer_fallback.db.gz',
+                        isSnapshot: true,
+                        createdTime: '2026-02-14T00:00:00.000Z',
+                    } satisfies DriveFile,
+                ]),
+                getFileContent: vi.fn(async () => content),
+                getLatestSnapshot: vi.fn(async () => null),
+                saveSnapshot: vi.fn(async (_content: NodeJS.ReadableStream) => ({
+                    id: 'snapshot-new',
+                    name: 'snapshot_new.db.gz',
+                    isSnapshot: true,
+                    createdTime: '2026-02-15T00:00:00.000Z',
+                })),
+                pruneOldChanges: vi.fn(async () => {}),
+                deleteChangeLog: vi.fn(async () => [] as DriveFile[]),
+                uploadChangeLog: vi.fn(async () => ({
+                    id: 'upload-id',
+                    name: 'upload.json',
+                    isSnapshot: false,
+                    createdTime: '2026-02-15T00:00:00.000Z',
+                })),
+            };
+
+            const { __testing } = await import('@main/services/sync/synchronizer');
+            __testing.resetRuntimeState();
+            __testing.setDriveService(drive as never);
+
+            await expect(__testing.runSyncCycle()).resolves.toBeUndefined();
+            expect(notesRepo.getById(snapshotNoteId)?.name).toBe('Restored from buffer fallback');
+        } finally {
+            cleanup();
+        }
     });
 });

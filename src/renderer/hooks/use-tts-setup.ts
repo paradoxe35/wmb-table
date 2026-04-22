@@ -351,7 +351,7 @@ export function useTtsSetup(): void {
 
             if (data.queued) {
                 ttsAudioPlayer
-                    .preload(data.audioBase64, data.mimeType, data.segmentIndex)
+                    .preload(data.audioBase64, data.mimeType, data.segmentIndex, data.audioUrl)
                     .then(() => {
                         // Only act if we're waiting and the correct segment just arrived.
                         if (waitingForSegmentIndex < 0) return;
@@ -371,7 +371,7 @@ export function useTtsSetup(): void {
                 lastPlayedSegmentIndex = data.segmentIndex;
                 ttsAudioPlayer.clearPreloaded();
                 const rate = state.settings?.rate ?? 1;
-                ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate);
+                ttsAudioPlayer.play(data.audioBase64, data.mimeType, rate, data.audioUrl);
             }
         });
 

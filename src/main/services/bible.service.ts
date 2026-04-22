@@ -11,6 +11,8 @@ import { SimpleCache } from '@main/lib/simple-cache';
 import { normalizeBibleAbbreviation } from '@shared/types';
 
 const BIBLE_INDEX_FILE = 'bible-index.json';
+const READONLY_SQLITE_MMAP_SIZE = 64 * 1024 * 1024;
+const READONLY_SQLITE_CACHE_SIZE = -4000;
 
 // Cache the remote index fetch for 24 hours to avoid unnecessary network requests
 const remoteIndexCache = new SimpleCache<BibleVersion[]>('bible-remote-index', 24 * 60 * 60 * 1000);
@@ -301,24 +303,39 @@ function openBibleDb(version: BibleVersion): Database.Database {
         throw new Error(`Bible database file not found: ${dbPath}`);
     }
     const db = new Database(dbPath, { readonly: true, fileMustExist: true });
-    db.pragma('mmap_size = 268435456');
-    db.pragma('cache_size = -10000');
+    db.pragma(`mmap_size = ${READONLY_SQLITE_MMAP_SIZE}`);
+    db.pragma(`cache_size = ${READONLY_SQLITE_CACHE_SIZE}`);
     return db;
+}
+
+function ensureActiveBibleDb(): Database.Database | null {
+    if (activeBibleDb || !activeVersion) {
+        return activeBibleDb;
+    }
+
+    try {
+        activeBibleDb = openBibleDb(activeVersion);
+        return activeBibleDb;
+    } catch (err) {
+        log.error('Failed to lazily open active Bible database:', err);
+        return null;
+    }
 }
 
 function replaceActiveBible(version: BibleVersion): BibleVersion | null {
     try {
-        const nextDb = openBibleDb(version);
+        const validatedDb = openBibleDb(version);
         const previousDb = activeBibleDb;
+        validatedDb.close();
 
-        activeBibleDb = nextDb;
+        activeBibleDb = null;
         activeVersion = version;
         previousDb?.close();
 
-        log.info(`Switched Bible to ${version.name} (${version.fileName})`);
+        log.info(`Selected Bible ${version.name} (${version.fileName})`);
         return version;
     } catch (err) {
-        log.error('Failed to open Bible database:', err);
+        log.error('Failed to switch Bible database:', err);
         return null;
     }
 }
@@ -408,11 +425,13 @@ export function withBibleDb<T>(
 ): T | null {
     const normalized = normalizeBibleAbbreviation(abbreviation);
     if (!normalized) {
-        return activeBibleDb ? reader(activeBibleDb) : null;
+        const db = ensureActiveBibleDb();
+        return db ? reader(db) : null;
     }
 
     if (activeVersion && normalizeBibleAbbreviation(activeVersion.abbreviation) === normalized) {
-        return activeBibleDb ? reader(activeBibleDb) : null;
+        const db = ensureActiveBibleDb();
+        return db ? reader(db) : null;
     }
 
     const version = findBibleVersion(normalized);
@@ -484,6 +503,10 @@ export async function downloadBibleVersion(
 }
 
 export function getActiveBibleDb(): Database.Database | null {
+    return ensureActiveBibleDb();
+}
+
+export function peekActiveBibleDb(): Database.Database | null {
     return activeBibleDb;
 }
 

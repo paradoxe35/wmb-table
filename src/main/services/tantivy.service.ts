@@ -1,4 +1,6 @@
 import { Worker } from 'node:worker_threads';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import log from 'electron-log';
 import type { SermonParagraph, MatchingParagraphSnippet, SimilarParagraph } from '@shared/types';
 import * as refRepo from '@main/database/repositories/reference.repository';
@@ -44,13 +46,51 @@ export interface FindSimilarRawResult {
 let worker: Worker | null = null;
 let requestId = 0;
 const pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
+const inFlightByLanguage = new Map<string, number>();
+const MAX_LOADED_INDEXES = 1;
+let indexMutationQueue: Promise<void> = Promise.resolve();
 
-// Installed languages cache (kept in sync via lifecycle calls)
+// Installed languages are discovered from disk. Loaded languages track worker residency.
 let installedLanguagesCache: string[] = [];
+let loadedLanguagesCache: string[] = [];
 
 function getWorker(): Worker {
     if (!worker) throw new Error('Tantivy worker not initialized');
     return worker;
+}
+
+function rejectPendingRequests(message: string): void {
+    for (const request of pending.values()) {
+        request.reject(new Error(message));
+    }
+    pending.clear();
+}
+
+function enqueueIndexMutation<T>(operation: () => Promise<T>): Promise<T> {
+    const next = indexMutationQueue.then(operation, operation);
+    indexMutationQueue = next.then(
+        () => undefined,
+        () => undefined,
+    );
+    return next;
+}
+
+function getInstalledLanguageCodesOnDisk(): string[] {
+    const indexesDir = getIndexesDir();
+    if (!existsSync(indexesDir)) {
+        return [];
+    }
+
+    try {
+        return readdirSync(indexesDir, { withFileTypes: true })
+            .filter((entry) => entry.isDirectory())
+            .map((entry) => entry.name)
+            .filter((langCode) => existsSync(join(indexesDir, langCode, 'meta.json')))
+            .sort((left, right) => left.localeCompare(right));
+    } catch (error) {
+        log.warn('[tantivy] Failed to scan installed indexes:', error);
+        return [];
+    }
 }
 
 function call<T>(method: string, ...args: unknown[]): Promise<T> {
@@ -82,7 +122,93 @@ function getLangTitlesMap(): Record<string, string> {
 // Public API
 // ---------------------------------------------------------------------------
 
+async function syncLoadedLanguagesCache(): Promise<void> {
+    loadedLanguagesCache = await call<string[]>('getInstalledLanguages');
+}
+
+function incrementInFlight(langCode: string): void {
+    inFlightByLanguage.set(langCode, (inFlightByLanguage.get(langCode) ?? 0) + 1);
+}
+
+async function closeIndexNoLock(langCode: string): Promise<void> {
+    if (!loadedLanguagesCache.includes(langCode)) {
+        return;
+    }
+
+    await call('closeIndex', langCode);
+    await syncLoadedLanguagesCache();
+}
+
+async function evictIdleIndexesNoLock(): Promise<void> {
+    if (loadedLanguagesCache.length <= MAX_LOADED_INDEXES) {
+        return;
+    }
+
+    for (const langCode of [...loadedLanguagesCache]) {
+        if (loadedLanguagesCache.length <= MAX_LOADED_INDEXES) {
+            break;
+        }
+        if ((inFlightByLanguage.get(langCode) ?? 0) > 0) {
+            continue;
+        }
+        await closeIndexNoLock(langCode);
+    }
+}
+
+async function ensureIndexLoadedNoLock(langCode: string): Promise<void> {
+    if (loadedLanguagesCache.includes(langCode)) {
+        return;
+    }
+
+    installedLanguagesCache = getInstalledLanguageCodesOnDisk();
+    if (!installedLanguagesCache.includes(langCode)) {
+        throw new Error(`No Tantivy index installed for language "${langCode}"`);
+    }
+
+    const lang = refRepo.getLanguageByCode(langCode);
+    await call('openIndex', getIndexesDir(), langCode, lang?.title ?? null);
+    await syncLoadedLanguagesCache();
+}
+
+async function ensureIndexLoaded(langCode: string): Promise<void> {
+    await enqueueIndexMutation(async () => {
+        await ensureIndexLoadedNoLock(langCode);
+        await evictIdleIndexesNoLock();
+    });
+}
+
+async function releaseIdleIndexes(): Promise<void> {
+    await enqueueIndexMutation(async () => {
+        await evictIdleIndexesNoLock();
+    });
+}
+
+async function runWithLoadedIndex<T>(langCode: string, operation: () => Promise<T>): Promise<T> {
+    incrementInFlight(langCode);
+    try {
+        await ensureIndexLoaded(langCode);
+        return await operation();
+    } finally {
+        const nextCount = (inFlightByLanguage.get(langCode) ?? 1) - 1;
+        if (nextCount > 0) {
+            inFlightByLanguage.set(langCode, nextCount);
+        } else {
+            inFlightByLanguage.delete(langCode);
+        }
+        await releaseIdleIndexes();
+    }
+}
+
 export async function initializeTantivy(): Promise<void> {
+    if (worker) {
+        rejectPendingRequests('Tantivy worker restarted');
+        await worker.terminate();
+        worker = null;
+        loadedLanguagesCache = [];
+        inFlightByLanguage.clear();
+        indexMutationQueue = Promise.resolve();
+    }
+
     worker = new Worker(workerPath);
     worker.on('message', (msg: { id: number; result?: unknown; error?: string }) => {
         const p = pending.get(msg.id);
@@ -100,24 +226,35 @@ export async function initializeTantivy(): Promise<void> {
 
     const indexesDir = getIndexesDir();
     const langTitles = getLangTitlesMap();
-    await call('initialize', indexesDir, langTitles);
-    installedLanguagesCache = await call<string[]>('getInstalledLanguages');
-    log.info(`[tantivy] Worker initialized, ${installedLanguagesCache.length} indexes loaded`);
+    installedLanguagesCache = getInstalledLanguageCodesOnDisk();
+    await call('initialize', indexesDir, langTitles, []);
+    await syncLoadedLanguagesCache();
+    log.info(
+        `[tantivy] Worker initialized, ${loadedLanguagesCache.length} index(es) loaded out of ${installedLanguagesCache.length} installed`,
+    );
 }
 
 export async function openIndex(langCode: string): Promise<void> {
-    const lang = refRepo.getLanguageByCode(langCode);
-    await call('openIndex', getIndexesDir(), langCode, lang?.title ?? null);
-    installedLanguagesCache = await call<string[]>('getInstalledLanguages');
+    await enqueueIndexMutation(async () => {
+        await ensureIndexLoadedNoLock(langCode);
+        await evictIdleIndexesNoLock();
+    });
 }
 
 export async function closeAllIndexes(): Promise<void> {
-    await call('closeAllIndexes');
-    installedLanguagesCache = [];
+    await enqueueIndexMutation(async () => {
+        await call('closeAllIndexes');
+        loadedLanguagesCache = [];
+        installedLanguagesCache = getInstalledLanguageCodesOnDisk();
+    });
 }
 
 export function getInstalledLanguages(): string[] {
     return installedLanguagesCache;
+}
+
+export function getLoadedLanguages(): string[] {
+    return loadedLanguagesCache;
 }
 
 export async function getSermonParagraphs(
@@ -125,7 +262,9 @@ export async function getSermonParagraphs(
     translationId: number,
     sermonId?: number,
 ): Promise<SermonParagraph[]> {
-    return call<SermonParagraph[]>('getSermonParagraphs', langCode, translationId, sermonId);
+    return runWithLoadedIndex(langCode, () =>
+        call<SermonParagraph[]>('getSermonParagraphs', langCode, translationId, sermonId),
+    );
 }
 
 export async function searchSermons(
@@ -135,7 +274,9 @@ export async function searchSermons(
     offset: number,
     mode: 'any' | 'all' | 'exact' = 'all',
 ): Promise<SearchSermonResult> {
-    return call<SearchSermonResult>('searchSermons', langCode, queryText, limit, offset, mode);
+    return runWithLoadedIndex(langCode, () =>
+        call<SearchSermonResult>('searchSermons', langCode, queryText, limit, offset, mode),
+    );
 }
 
 export async function getSearchSnippet(
@@ -143,7 +284,9 @@ export async function getSearchSnippet(
     queryText: string,
     docAddress: { segmentOrd: number; doc: number },
 ): Promise<string> {
-    return call<string>('getSearchSnippet', langCode, queryText, docAddress);
+    return runWithLoadedIndex(langCode, () =>
+        call<string>('getSearchSnippet', langCode, queryText, docAddress),
+    );
 }
 
 export async function getMatchingParagraphs(
@@ -153,13 +296,15 @@ export async function getMatchingParagraphs(
     sermonDate: number,
     mode: 'any' | 'all' | 'exact' = 'all',
 ): Promise<MatchingParagraphSnippet[]> {
-    return call<MatchingParagraphSnippet[]>(
-        'getMatchingParagraphs',
-        langCode,
-        queryText,
-        translationId,
-        sermonDate,
-        mode,
+    return runWithLoadedIndex(langCode, () =>
+        call<MatchingParagraphSnippet[]>(
+            'getMatchingParagraphs',
+            langCode,
+            queryText,
+            translationId,
+            sermonDate,
+            mode,
+        ),
     );
 }
 
@@ -170,21 +315,26 @@ export async function findSimilarSermons(
     paragraphIndex: number,
     limit?: number,
 ): Promise<FindSimilarRawResult> {
-    return call<FindSimilarRawResult>(
-        'findSimilarSermons',
-        langCode,
-        translationId,
-        sermonDate,
-        paragraphIndex,
-        limit,
+    return runWithLoadedIndex(langCode, () =>
+        call<FindSimilarRawResult>(
+            'findSimilarSermons',
+            langCode,
+            translationId,
+            sermonDate,
+            paragraphIndex,
+            limit,
+        ),
     );
 }
 
 export async function terminateWorker(): Promise<void> {
     if (worker) {
+        rejectPendingRequests('Tantivy worker terminated');
         await worker.terminate();
         worker = null;
-        pending.clear();
         installedLanguagesCache = [];
+        loadedLanguagesCache = [];
+        inFlightByLanguage.clear();
+        indexMutationQueue = Promise.resolve();
     }
 }

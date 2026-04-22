@@ -7,16 +7,25 @@ export function useTtsHighlight(
     isActive: boolean;
     highlightRange: { start: number; end: number } | null;
 } {
-    const currentSegment = useTtsStore(selectCurrentTtsSegment);
-    const status = useTtsStore((s) => s.status);
-    const storeDocumentKey = useTtsStore((s) => s.documentKey);
-    const isActive =
-        storeDocumentKey === documentKey &&
-        (status === 'playing' || status === 'loading') &&
-        currentSegment?.paragraphIndex === paragraphIndex;
-    const highlightRange =
-        isActive && currentSegment
-            ? { start: currentSegment.startOffset, end: currentSegment.endOffset }
-            : null;
-    return { isActive, highlightRange };
+    const { isActive, startOffset, endOffset } = useTtsStore((s) => {
+        const currentSegment = selectCurrentTtsSegment(s);
+        const active =
+            s.documentKey === documentKey &&
+            (s.status === 'playing' || s.status === 'loading') &&
+            currentSegment?.paragraphIndex === paragraphIndex;
+
+        return {
+            isActive: active,
+            startOffset: active && currentSegment ? currentSegment.startOffset : null,
+            endOffset: active && currentSegment ? currentSegment.endOffset : null,
+        };
+    });
+
+    return {
+        isActive,
+        highlightRange:
+            isActive && startOffset != null && endOffset != null
+                ? { start: startOffset, end: endOffset }
+                : null,
+    };
 }

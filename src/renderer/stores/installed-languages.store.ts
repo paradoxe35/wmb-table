@@ -4,6 +4,7 @@ import { createStore } from './create-store';
 export interface RefreshInstalledLanguagesOptions {
     checkForUpdates?: boolean;
     force?: boolean;
+    includeStats?: boolean;
 }
 
 interface InstalledLanguagesState {
