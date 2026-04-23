@@ -28,6 +28,22 @@ function toNoteItem(row: typeof notes.$inferSelect): NoteItem {
     };
 }
 
+function toNoteSummary(
+    row: Pick<
+        typeof notes.$inferSelect,
+        'id' | 'name' | 'defaultName' | 'created' | 'createdAt' | 'updatedAt'
+    >,
+): NoteItem {
+    return {
+        id: row.id,
+        name: row.name,
+        defaultName: row.defaultName,
+        created: row.created,
+        createdAt: new Date(row.createdAt ?? Date.now()),
+        updatedAt: new Date(row.updatedAt ?? Date.now()),
+    };
+}
+
 function toNoteRef(row: typeof notesReferences.$inferSelect): NoteItemReference {
     return {
         id: row.id,
@@ -66,8 +82,18 @@ export function getAllSummary(): { id: string; name: string }[] {
 }
 
 export function getAll(): NoteItem[] {
-    const rows = getDb().select().from(notes).all();
-    return rows.map(toNoteItem);
+    const rows = getDb()
+        .select({
+            id: notes.id,
+            name: notes.name,
+            defaultName: notes.defaultName,
+            created: notes.created,
+            createdAt: notes.createdAt,
+            updatedAt: notes.updatedAt,
+        })
+        .from(notes)
+        .all();
+    return rows.map(toNoteSummary);
 }
 
 export function getById(id: string): NoteItem | null {
