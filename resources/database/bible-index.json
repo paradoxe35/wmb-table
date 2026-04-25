@@ -1,16 +1,16 @@
 [
     {
-        "langCode": "fr",
-        "abbreviation": "lsg",
-        "name": "Louis Segond",
-        "fileName": "bible.fr-lsg.sqlite",
-        "type": "local"
-    },
-    {
         "langCode": "en",
         "abbreviation": "kjv",
         "name": "King James Version",
         "fileName": "bible.en-kjv.sqlite",
+        "type": "local"
+    },
+    {
+        "langCode": "fr",
+        "abbreviation": "lsg",
+        "name": "Louis Segond",
+        "fileName": "bible.fr-lsg.sqlite",
         "type": "local"
     }
 ]
