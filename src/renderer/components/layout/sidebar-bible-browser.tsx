@@ -24,12 +24,38 @@ function CompactVersionSelector() {
         handleSwitch,
         handleDownload,
     } = useBibleVersions();
+    const [selectedDownloadVersion, setSelectedDownloadVersion] = useState<string>();
 
     useEffect(() => {
         requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     }, [installed, downloadable]);
 
+    useEffect(() => {
+        if (downloadable.length === 0) {
+            setSelectedDownloadVersion(undefined);
+            return;
+        }
+
+        setSelectedDownloadVersion((current) => {
+            if (current && downloadable.some((version) => version.abbreviation === current)) {
+                return current;
+            }
+
+            return downloadable[0]?.abbreviation;
+        });
+    }, [downloadable]);
+
     if (versions.length === 0) return null;
+
+    const activeDownloads = downloadable
+        .filter((version) => downloadProgress[version.abbreviation] != null)
+        .map((version) => ({
+            ...version,
+            progress: downloadProgress[version.abbreviation] ?? 0,
+        }));
+
+    const canDownloadSelected =
+        selectedDownloadVersion != null && downloadProgress[selectedDownloadVersion] == null;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -44,35 +70,79 @@ function CompactVersionSelector() {
                 />
             )}
             {downloadable.length > 0 && (
-                <Space size="small" wrap>
-                    {downloadable.map((v) => {
-                        const progress = downloadProgress[v.abbreviation];
-                        const isDownloading = progress != null;
-                        return (
-                            <Button
-                                key={v.abbreviation}
-                                size="small"
-                                type="dashed"
-                                disabled={isDownloading}
-                                icon={
-                                    isDownloading ? (
-                                        <Progress
-                                            type="circle"
-                                            size={14}
-                                            percent={progress}
-                                            showInfo={false}
-                                        />
-                                    ) : (
-                                        <CloudDownloadOutlined />
-                                    )
+                <div
+                    style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 6,
+                        padding: '6px 8px',
+                        borderRadius: 8,
+                        background: 'rgba(127, 127, 127, 0.08)',
+                    }}
+                >
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                        {downloadable.length === 1
+                            ? t('1 version disponible au téléchargement')
+                            : t('{{count}} versions disponibles au téléchargement', {
+                                  count: downloadable.length,
+                              })}
+                    </Typography.Text>
+                    <Space.Compact block>
+                        <Select
+                            size="small"
+                            className="w-100"
+                            value={selectedDownloadVersion}
+                            onChange={setSelectedDownloadVersion}
+                            options={downloadable.map((version) => ({
+                                value: version.abbreviation,
+                                label: `${version.name} (${version.abbreviation.toUpperCase()})`,
+                                disabled: downloadProgress[version.abbreviation] != null,
+                            }))}
+                            placeholder={t('Choisir une version')}
+                            showSearch
+                            optionFilterProp="label"
+                        />
+                        <Button
+                            size="small"
+                            type="dashed"
+                            disabled={!canDownloadSelected}
+                            icon={<CloudDownloadOutlined />}
+                            onClick={() => {
+                                if (selectedDownloadVersion) {
+                                    handleDownload(selectedDownloadVersion);
                                 }
-                                onClick={() => handleDownload(v.abbreviation)}
-                            >
-                                {v.name}
-                            </Button>
-                        );
-                    })}
-                </Space>
+                            }}
+                        >
+                            {t('Télécharger')}
+                        </Button>
+                    </Space.Compact>
+                    {activeDownloads.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                            {activeDownloads.map((version) => (
+                                <div
+                                    key={version.abbreviation}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 8,
+                                    }}
+                                >
+                                    <Typography.Text
+                                        ellipsis
+                                        style={{ flex: 1, minWidth: 0, fontSize: 12 }}
+                                    >
+                                        {version.name}
+                                    </Typography.Text>
+                                    <Progress
+                                        percent={version.progress}
+                                        size="small"
+                                        style={{ width: 84, margin: 0 }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             )}
         </div>
     );
