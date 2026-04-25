@@ -109,6 +109,11 @@ upload_file() {
     fi
 }
 
+remove_existing_asset_name() {
+    local file_name="$1"
+    EXISTING_ASSETS=$(printf '%s\n' "$EXISTING_ASSETS" | grep -vx "$file_name" || true)
+}
+
 # --- Download and upload language index files --------------------------------
 
 echo ""
@@ -163,6 +168,7 @@ if [ -d "$BIBLE_DIR" ]; then
             echo "  Replacing existing bible-index.json (asset $INDEX_ASSET_ID)..."
             curl --silent -X DELETE -H "$AUTH_HEADER" \
                 "$API/repos/$REPO/releases/assets/$INDEX_ASSET_ID" >/dev/null
+            remove_existing_asset_name "bible-index.json"
         fi
         upload_file "$INDEX_FILE" "application/json"
     fi
