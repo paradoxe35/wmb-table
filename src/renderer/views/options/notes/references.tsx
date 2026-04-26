@@ -1,4 +1,4 @@
-import { App as AntApp, Button, Col, message, Modal, Row, Typography } from 'antd';
+import { Button, Col, message, Modal, Row, Typography } from 'antd';
 import {
     type Dispatch,
     type SetStateAction,
@@ -9,124 +9,14 @@ import {
 } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlusOutlined } from '@ant-design/icons';
-import { useDocumentTabsStore } from '@renderer/stores';
-import {
-    BibleBook,
-    NoteItemReference,
-    NoteItemReferenceBible,
-    hasReferenceAssignment,
-    isParagraphReference,
-} from '@shared/types';
+import { BibleBook, NoteItemReferenceBible } from '@shared/types';
 import { BibleContent } from '../bible';
 import { DeleteBtn } from '@renderer/components/delete-btn';
-import {
-    buildPendingNavigation,
-    useDocumentPresentation,
-    useFormatSermonDate,
-    useOpenDocumentRequest,
-    useSermonLookup,
-    useValueStateRef,
-} from '@renderer/hooks';
+import { useValueStateRef } from '@renderer/hooks';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
-
-export const useShowReferenceDetail = () => {
-    const { t } = useTranslation();
-    const { modal: appModal } = AntApp.useApp();
-    const openDocumentRequest = useOpenDocumentRequest();
-    const { buildOpenRequest, resolveTitle } = useDocumentPresentation();
-    const setPendingNavigation = useDocumentTabsStore((s) => s.setPendingNavigation);
-
-    const { getSermonById } = useSermonLookup();
-    const formatDate = useFormatSermonDate();
-
-    const showReferenceDetail = useCallback(
-        (reference: NoteItemReference) => {
-            const ref = reference.documentReference;
-            const assigned = hasReferenceAssignment(ref);
-            const documentIdentity = ref?.documentIdentity;
-
-            const openDocument = () => {
-                if (reference.documentReference) {
-                    const request = buildOpenRequest(
-                        reference.documentTitle,
-                        reference.documentReference,
-                    );
-                    setPendingNavigation(
-                        buildPendingNavigation(request, reference.documentReference),
-                    );
-                    openDocumentRequest(request);
-                }
-            };
-
-            const sermon =
-                documentIdentity?.documentType === 'sermon'
-                    ? getSermonById(documentIdentity.sermonId)
-                    : undefined;
-            const displayTitle = documentIdentity
-                ? resolveTitle(reference.documentTitle, reference.documentReference)
-                : reference.documentTitle;
-            const paragraphRef = ref && isParagraphReference(ref) ? ref : null;
-            const paragraphNum = paragraphRef ? paragraphRef.paragraphIndex : null;
-
-            appModal[assigned ? 'info' : 'warning']({
-                closable: true,
-                onOk: assigned ? openDocument : undefined,
-                okText: assigned ? t('Ouvrir le document') : t('Fermer'),
-                title: (
-                    <span style={{ fontSize: 'var(--fs-md)', fontWeight: 500 }}>
-                        {t('Référence: {{label}}', { label: reference.label })}
-                    </span>
-                ),
-                content: assigned ? (
-                    <div>
-                        <span style={{ fontWeight: 600, fontSize: 'var(--fs-xl)' }}>
-                            {displayTitle}
-                        </span>
-                        {sermon && (
-                            <p
-                                style={{
-                                    fontSize: 'var(--fs-rel-xl)',
-                                    color: 'var(--ant-color-text-secondary)',
-                                    marginTop: 5,
-                                }}
-                            >
-                                {formatDate(sermon.dateMs)}
-                                {sermon.location ? ` — ${sermon.location}` : ''}
-                            </p>
-                        )}
-                        {reference.textContent && (
-                            <p>
-                                {paragraphNum != null && (
-                                    <Typography.Text strong>{paragraphNum}.</Typography.Text>
-                                )}{' '}
-                                {reference.textContent}
-                            </p>
-                        )}
-                    </div>
-                ) : (
-                    <div>
-                        <p>{t("Aucun document n'a été attribué pour cette référence")}</p>
-                    </div>
-                ),
-            });
-        },
-        [
-            buildOpenRequest,
-            appModal,
-            formatDate,
-            getSermonById,
-            openDocumentRequest,
-            resolveTitle,
-            setPendingNavigation,
-            t,
-        ],
-    );
-
-    return showReferenceDetail;
-};
 
 export const useBibleReferenceModal = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -224,14 +114,16 @@ export function ReferenceBibleModal({
     );
 
     const verses = reference ? (reference.references as BibleBook[]) : [];
-    const hasVerses = verses.length > 0;
     const [showBible, setShowBible] = useState(false);
 
-    // Reset bible picker visibility when modal opens/closes or reference changes
+    // Pick an initial Bible-picker visibility when the modal opens or a different reference is
+    // shown — but never re-toggle on verse add/remove (that would close the picker mid-add).
     useEffect(() => {
-        const nextVisible = !hasVerses;
-        setShowBible((current) => (current === nextVisible ? current : nextVisible));
-    }, [hasVerses, isModalVisible, reference?.id]);
+        if (!isModalVisible) return;
+        const initialHasVerses = (referenceRef.current?.references?.length ?? 0) > 0;
+        setShowBible(!initialHasVerses);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isModalVisible, reference?.id]);
 
     return (
         <Modal
@@ -245,7 +137,7 @@ export function ReferenceBibleModal({
                             color: 'var(--ant-color-text-secondary)',
                         }}
                     >
-                        {t('Référence biblique')}
+                        {t('Référence Bible')}
                     </div>
                     {reference && (
                         <div>
@@ -267,15 +159,22 @@ export function ReferenceBibleModal({
                                 {t('Aucun verset sélectionné')}
                             </Typography.Text>
                         )}
-                        <AnimatePresence mode="popLayout">
+                        <AnimatePresence
+                            key={reference?.id ?? 'none'}
+                            mode="popLayout"
+                            initial={false}
+                        >
                             {verses.map((ref) => (
                                 <motion.div
                                     key={ref.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -50 }}
-                                    transition={{ duration: 0.2 }}
+                                    layout="position"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{
+                                        opacity: { duration: 0.22, ease: 'easeOut' },
+                                        layout: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+                                    }}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'flex-start',

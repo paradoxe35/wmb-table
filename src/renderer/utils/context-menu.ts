@@ -1,5 +1,5 @@
 /**
- * Custom context menu for CKEditor notes — ported from modules/context-menu/context.js
+ * Custom context menu for the notes editor — ported from modules/context-menu/context.js
  * Original author: @UnrealSec
  */
 

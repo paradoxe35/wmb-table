@@ -6,6 +6,20 @@ TAG="v1.0.0"
 TMP_DIR="tmp/release-assets"
 API="https://api.github.com"
 UPLOAD_API="https://uploads.github.com"
+FORCE_PUSH_BIBLE=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --force-push-bible)
+            FORCE_PUSH_BIBLE=1
+            ;;
+        *)
+            echo "ERROR: Unknown option: $arg" >&2
+            echo "Usage: $0 [--force-push-bible]" >&2
+            exit 1
+            ;;
+    esac
+done
 
 # --- Prerequisites -----------------------------------------------------------
 
@@ -114,6 +128,24 @@ remove_existing_asset_name() {
     EXISTING_ASSETS=$(printf '%s\n' "$EXISTING_ASSETS" | grep -vx "$file_name" || true)
 }
 
+delete_release_asset_by_name() {
+    local file_name="$1"
+    local asset_id
+    asset_id=$(curl --silent \
+        -H "$AUTH_HEADER" \
+        "$API/repos/$REPO/releases/$RELEASE_ID/assets?per_page=200" \
+        | jq -r ".[] | select(.name == \"$file_name\") | .id // empty")
+
+    if [ -z "$asset_id" ]; then
+        return 0
+    fi
+
+    echo "  Replacing existing $file_name (asset $asset_id)..."
+    curl --silent -X DELETE -H "$AUTH_HEADER" \
+        "$API/repos/$REPO/releases/assets/$asset_id" >/dev/null
+    remove_existing_asset_name "$file_name"
+}
+
 # --- Download and upload language index files --------------------------------
 
 echo ""
@@ -160,21 +192,19 @@ if [ -d "$BIBLE_DIR" ]; then
     # Always re-upload bible-index.json (it changes when versions are added/removed)
     INDEX_FILE="$BIBLE_DIR/bible-index.json"
     if [ -f "$INDEX_FILE" ]; then
-        INDEX_ASSET_ID=$(curl --silent \
-            -H "$AUTH_HEADER" \
-            "$API/repos/$REPO/releases/$RELEASE_ID/assets?per_page=200" \
-            | jq -r '.[] | select(.name == "bible-index.json") | .id // empty')
-        if [ -n "$INDEX_ASSET_ID" ]; then
-            echo "  Replacing existing bible-index.json (asset $INDEX_ASSET_ID)..."
-            curl --silent -X DELETE -H "$AUTH_HEADER" \
-                "$API/repos/$REPO/releases/assets/$INDEX_ASSET_ID" >/dev/null
-            remove_existing_asset_name "bible-index.json"
-        fi
+        delete_release_asset_by_name "bible-index.json"
         upload_file "$INDEX_FILE" "application/json"
+    fi
+
+    if [ "$FORCE_PUSH_BIBLE" -eq 1 ]; then
+        echo "  Force push enabled for Bible SQLite assets."
     fi
 
     for bible_file in "$BIBLE_DIR"/*.sqlite; do
         [ -f "$bible_file" ] || continue
+        if [ "$FORCE_PUSH_BIBLE" -eq 1 ]; then
+            delete_release_asset_by_name "$(basename "$bible_file")"
+        fi
         upload_file "$bible_file"
     done
 else

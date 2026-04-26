@@ -15,10 +15,12 @@ import { ReadingModeToggle } from '@renderer/components/reading-mode-toggle';
 import { TtsButton, ZoomControls, ParagraphList } from './tts-controls';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import DocumentBody from './document-body';
+import { DocumentHeaderTitle } from './document-header-title';
 import {
     resolveCustomDocumentScrollPersistence,
     useCustomDocumentContent,
     useScrollAndZoom,
+    useScrolledPastTitle,
     useSearchHighlight,
     useMatchNavigation,
     useContextMenuItems,
@@ -56,10 +58,14 @@ function CustomDocHeader({
     zoom,
     tts,
     paragraphs,
+    compactTitle,
+    showCompactTitle,
 }: {
     zoom: number;
     tts: ReturnType<typeof useTts>;
     paragraphs: DocumentParagraph[];
+    compactTitle: string;
+    showCompactTitle: boolean;
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
@@ -70,7 +76,7 @@ function CustomDocHeader({
     return (
         <>
             <div className="sermon-header">
-                <div style={{ flex: 1 }} />
+                <DocumentHeaderTitle title={compactTitle} visible={showCompactTitle} />
                 <Space size="small">
                     <TtsButton tts={tts} />
                     <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
@@ -180,6 +186,9 @@ export default function CustomDocumentView() {
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, docLang),
     });
 
+    const showCompactTitle = useScrolledPastTitle(containerRef, !!docContent);
+    const compactTitle = docContent?.title ?? '';
+
     // Disable TTS when document language doesn't match the active content language
     const effectiveTts = useMemo(() => {
         const langMismatch =
@@ -213,7 +222,15 @@ export default function CustomDocumentView() {
             documentIdentity={activeDocumentIdentity}
             zoom={zoom}
             contextMenuItems={contextMenuItems}
-            header={<CustomDocHeader zoom={zoom} tts={effectiveTts} paragraphs={paragraphs} />}
+            header={
+                <CustomDocHeader
+                    zoom={zoom}
+                    tts={effectiveTts}
+                    paragraphs={paragraphs}
+                    compactTitle={compactTitle}
+                    showCompactTitle={showCompactTitle}
+                />
+            }
         >
             <div className="sermon-content-header">
                 <h2 className="sermon-content-header__title">{docContent?.title}</h2>

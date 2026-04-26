@@ -10,6 +10,7 @@ import ptBR from 'antd/locale/pt_BR';
 
 import { useTranslation } from 'react-i18next';
 import { useInitApp } from './hooks/index';
+import { useBibleSetup } from './hooks/use-bible-setup';
 import { useTtsSetup } from './hooks/use-tts-setup';
 import { useThemeSync } from './hooks/use-theme';
 import { useThemeStore, FONT_SIZE_MAP } from './stores/theme.store';
@@ -52,6 +53,7 @@ function useAntdLocale(): Locale {
 
 export default function App() {
     useInitApp();
+    useBibleSetup();
     useTtsSetup();
     useThemeSync();
     const antdLocale = useAntdLocale();

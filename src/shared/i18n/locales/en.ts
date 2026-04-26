@@ -625,6 +625,9 @@ const en: Record<string, string> = {
     // ── Bible version selector ──
     'Version:': 'Version:',
     'Télécharger {{name}}': 'Download {{name}}',
+    'Télécharger une version': 'Download a version',
+    "Télécharger d'autres versions": 'Download other versions',
+    '{{count}} versions à télécharger': '{{count}} versions to download',
 
     // ── Delete button ──
     'Confirmer la suppression?': 'Confirm deletion?',
@@ -771,11 +774,11 @@ const en: Record<string, string> = {
     'La référence biblique est invalide': 'The biblical reference is invalid',
     'Référence supprimée': 'Reference deleted',
     'Cliquez droit sur une référence pour la supprimer': 'Right-click on a reference to delete it',
-    'Référence document: {{label}}': 'Document reference: {{label}}',
-    'Référence biblique: {{label}}': 'Biblical reference: {{label}}',
+    'Référence sermon: {{label}}': 'Sermon reference: {{label}}',
+    'Référence Bible: {{label}}': 'Bible reference: {{label}}',
     'Aucune sélection trouvée pour la référence': 'No selection found for the reference',
-    'Référence document': 'Document reference',
-    'Référence biblique': 'Biblical reference',
+    'Référence sermon': 'Sermon reference',
+    'Référence Bible': 'Bible reference',
     'Supprimer la référence': 'Delete reference',
     Français: 'French',
     English: 'English',
@@ -1066,6 +1069,46 @@ const en: Record<string, string> = {
         'It helps you review your findings without reopening every document one by one.',
     'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
         'It also lets you filter, reopen the exact source, or export the list as PDF.',
+
+    // ── Notes editor toolbar (Tiptap) ──
+    'Annuler la modification': 'Undo',
+    Rétablir: 'Redo',
+    Gras: 'Bold',
+    Italique: 'Italic',
+    Souligné: 'Underline',
+    Barré: 'Strikethrough',
+    Indice: 'Subscript',
+    Exposant: 'Superscript',
+    'Couleur du texte': 'Text color',
+    Surlignage: 'Highlight',
+    'Aligner à gauche': 'Align left',
+    Centrer: 'Center',
+    'Aligner à droite': 'Align right',
+    Justifier: 'Justify',
+    'Liste à puces': 'Bulleted list',
+    'Liste numérotée': 'Numbered list',
+    'Liste de tâches': 'Task list',
+    'Réduire le retrait': 'Decrease indent',
+    'Augmenter le retrait': 'Increase indent',
+    'Supprimer le lien': 'Remove link',
+    'Ajouter un lien': 'Add link',
+    Citation: 'Quote',
+    'Insérer un tableau': 'Insert table',
+    'Ligne horizontale': 'Horizontal line',
+    'Saut de page': 'Page break',
+    'Adresse du lien': 'Link URL',
+    'Langue par défaut': 'Default language',
+    'Commencez à écrire votre note…': 'Start writing your note…',
+    'Code en ligne': 'Inline code',
+    'Bloc de code': 'Code block',
+    'Effacer la mise en forme': 'Clear formatting',
+
+    // ── wmb:// reference modal ──
+    'Référence introuvable': 'Reference not found',
+    'Chargement de la référence…': 'Loading reference…',
+    'Paragraphe {{n}}': 'Paragraph {{n}}',
+    Sermon: 'Sermon',
+    'Document personnalisé': 'Custom document',
 };
 
 export default en;

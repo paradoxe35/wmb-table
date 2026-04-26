@@ -39,6 +39,72 @@ function canonicalBookNumbers(numbers) {
     return numbers.filter((number) => Number.isInteger(number) && number >= 1 && number <= 66);
 }
 
+function hasCompleteCanonicalBookSet(bookNumbers) {
+    const canonicalNumbers = canonicalBookNumbers(bookNumbers);
+    return (
+        canonicalNumbers.length === CANONICAL_BOOK_COUNT &&
+        canonicalNumbers.every((number, index) => number === index + 1)
+    );
+}
+
+function isObject(value) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isPositiveInteger(value) {
+    const number = Number(value);
+    return Number.isInteger(number) && number > 0;
+}
+
+function isGetBibleVerse(value) {
+    return (
+        isObject(value) &&
+        isPositiveInteger(value.chapter) &&
+        isPositiveInteger(value.verse) &&
+        typeof value.text === 'string'
+    );
+}
+
+function isGetBibleChapter(value) {
+    return (
+        isObject(value) &&
+        isPositiveInteger(value.chapter) &&
+        Array.isArray(value.verses) &&
+        value.verses.length > 0 &&
+        value.verses.every(isGetBibleVerse)
+    );
+}
+
+function isGetBibleBook(value) {
+    return (
+        isObject(value) &&
+        isPositiveInteger(value.nr) &&
+        typeof value.name === 'string' &&
+        Array.isArray(value.chapters) &&
+        value.chapters.length > 0 &&
+        value.chapters.every(isGetBibleChapter)
+    );
+}
+
+function summarizeGetBibleTranslation(value) {
+    if (!isObject(value) || !Array.isArray(value.books) || !value.books.every(isGetBibleBook)) {
+        return null;
+    }
+
+    const allBookNumbers = getGetBibleBookNumbers(value.books);
+    const totalChapters = value.books.reduce((total, book) => total + book.chapters.length, 0);
+
+    return {
+        books: value.books,
+        allBookNumbers,
+        canonicalBookNumbers: canonicalBookNumbers(allBookNumbers),
+        isCanonicalComplete:
+            hasCompleteCanonicalBookSet(allBookNumbers) &&
+            totalChapters === CANONICAL_CHAPTER_COUNT,
+        totalChapters,
+    };
+}
+
 export async function fetchHelloaoTranslationCatalog() {
     const data = await fetchJson(`${HELLOAO_BASE_URL}/available_translations.json`);
     return data?.translations ?? [];
@@ -49,29 +115,19 @@ export async function getGetBibleAvailability(versionId) {
         return GETBIBLE_AVAILABILITY_CACHE.get(versionId);
     }
 
-    const books = await fetchJson(`${GETBIBLE_BASE_URL}/${versionId}/books.json`);
-    if (!books) {
+    const fullTranslation = await fetchJson(`${GETBIBLE_BASE_URL}/${versionId}.json`);
+    const summary = summarizeGetBibleTranslation(fullTranslation);
+    if (!summary) {
         GETBIBLE_AVAILABILITY_CACHE.set(versionId, null);
         return null;
     }
 
-    const canonicalNumbers = canonicalBookNumbers(
-        Object.keys(books)
-            .map(Number)
-            .sort((left, right) => left - right),
-    );
-    const allBookNumbers = Object.keys(books)
-        .map(Number)
-        .filter((number) => Number.isInteger(number) && number > 0)
-        .sort((left, right) => left - right);
-    const isCanonicalComplete =
-        canonicalNumbers.length === CANONICAL_BOOK_COUNT &&
-        canonicalNumbers.every((number, index) => number === index + 1);
     const result = {
         versionId,
-        allBookNumbers,
-        canonicalBookNumbers,
-        isCanonicalComplete,
+        allBookNumbers: summary.allBookNumbers,
+        canonicalBookNumbers: summary.canonicalBookNumbers,
+        totalChapters: summary.totalChapters,
+        isCanonicalComplete: summary.isCanonicalComplete,
     };
     GETBIBLE_AVAILABILITY_CACHE.set(versionId, result);
     return result;
@@ -142,39 +198,12 @@ export function buildGetBibleRowsFromBooks(books, sourceVersionId) {
 
 export async function fetchGetBibleVersionData(config) {
     const fullTranslation = await fetchJson(`${GETBIBLE_BASE_URL}/${config.sourceVersionId}.json`);
-    if (Array.isArray(fullTranslation?.books)) {
-        const canonicalNumbers = canonicalBookNumbers(
-            getGetBibleBookNumbers(fullTranslation.books),
-        );
-        const isCanonicalComplete =
-            canonicalNumbers.length === CANONICAL_BOOK_COUNT &&
-            canonicalNumbers.every((number, index) => number === index + 1);
-
-        if (!isCanonicalComplete) {
-            return null;
-        }
-
-        return buildGetBibleRowsFromBooks(fullTranslation.books, config.sourceVersionId);
-    }
-
-    const availability = await getGetBibleAvailability(config.sourceVersionId);
-    if (!availability?.isCanonicalComplete) {
+    const summary = summarizeGetBibleTranslation(fullTranslation);
+    if (!summary?.isCanonicalComplete) {
         return null;
     }
 
-    const books = [];
-
-    for (const bookNumber of availability.allBookNumbers) {
-        const book = await fetchJson(
-            `${GETBIBLE_BASE_URL}/${config.sourceVersionId}/${bookNumber}.json`,
-        );
-        if (!book) {
-            return null;
-        }
-        books.push(book);
-    }
-
-    return buildGetBibleRowsFromBooks(books, config.sourceVersionId);
+    return buildGetBibleRowsFromBooks(summary.books, config.sourceVersionId);
 }
 
 export async function fetchHelloaoVersionData(config) {

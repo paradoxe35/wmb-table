@@ -13,6 +13,7 @@ import type {
     TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { normalizeLanguageCode } from '@shared/tts.types';
+import { fetchTtsWithRetry } from './network-retry';
 
 const ELEVENLABS_API_BASE = 'https://api.elevenlabs.io/v1';
 
@@ -286,14 +287,18 @@ export class ElevenLabsProvider implements TtsProvider {
             body.language_code = normalizeLanguageCode(request.language);
         }
 
-        const response = await fetch(url.toString(), {
-            method: 'POST',
-            headers: {
-                'xi-api-key': this.apiKey,
-                'Content-Type': 'application/json',
+        const response = await fetchTtsWithRetry(
+            url.toString(),
+            {
+                method: 'POST',
+                headers: {
+                    'xi-api-key': this.apiKey,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
             },
-            body: JSON.stringify(body),
-        });
+            { label: 'ElevenLabs TTS synthesis' },
+        );
 
         if (!response.ok) {
             const errText = await response.text().catch(() => '');

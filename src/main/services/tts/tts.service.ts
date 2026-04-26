@@ -522,7 +522,7 @@ export class TtsService {
         this.pushState();
 
         try {
-            const prepared = await this.prepareSegment(this.segments[index]);
+            const prepared = await this.prepareSegmentForPlayback(index, generation);
             if (generation !== this.playbackGeneration) return;
 
             await this.playPreparedSegment(index, prepared);
@@ -533,6 +533,35 @@ export class TtsService {
             this.lastError = err instanceof Error ? err.message : 'Erreur inconnue';
             this.pushState();
         }
+    }
+
+    private async prepareSegmentForPlayback(
+        index: number,
+        generation: number,
+    ): Promise<PreparedSegment> {
+        let lastError: unknown;
+
+        for (let attempt = 0; attempt < 2; attempt++) {
+            if (generation !== this.playbackGeneration) {
+                throw new Error('Lecture TTS interrompue.');
+            }
+
+            try {
+                const segment = this.segments[index];
+                if (!segment) {
+                    throw new Error('Segment TTS introuvable.');
+                }
+
+                return await this.prepareSegment(segment);
+            } catch (error) {
+                lastError = error;
+                if (attempt === 0) {
+                    log.warn(`TTS segment ${index} failed, retrying:`, error);
+                }
+            }
+        }
+
+        throw lastError;
     }
 
     private async playPreparedSegment(index: number, prepared: PreparedSegment): Promise<void> {

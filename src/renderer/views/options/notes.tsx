@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import EditorContent from './notes/editor';
+import EditorContent from './notes/editor-tiptap';
 import { Notes } from './notes/notes';
 import { useNotesStore } from '@renderer/stores';
 import { getNotesPageHelp } from './components/option-help-content';

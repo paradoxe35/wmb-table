@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { type RefObject, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import {
     useAppStore,
     useSearchStore,
@@ -252,4 +252,47 @@ export function useScrollAndZoom(
     ]);
 
     return { zoom };
+}
+
+// ---------------------------------------------------------------------------
+// Sticky header title — show compact title in the header once the in-content
+// title scrolls out of view.
+// ---------------------------------------------------------------------------
+
+/**
+ * Watch whether the in-content document title (e.g. `.sermon-content-header`) has
+ * scrolled out of the body. When it leaves view, the toolbar can reveal a compact
+ * fallback title for context.
+ */
+export function useScrolledPastTitle(
+    containerRef: RefObject<HTMLElement | null>,
+    contentReady: boolean,
+    titleSelector: string = '.sermon-content-header',
+): boolean {
+    const [scrolledPast, setScrolledPast] = useState(false);
+
+    useEffect(() => {
+        if (!contentReady) {
+            setScrolledPast(false);
+            return;
+        }
+        const container = containerRef.current;
+        if (!container) return;
+
+        const titleEl = container.querySelector(titleSelector);
+        if (!titleEl) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                const entry = entries[0];
+                if (entry) setScrolledPast(!entry.isIntersecting);
+            },
+            { root: container, threshold: 0 },
+        );
+        observer.observe(titleEl);
+
+        return () => observer.disconnect();
+    }, [contentReady, containerRef, titleSelector]);
+
+    return scrolledPast;
 }

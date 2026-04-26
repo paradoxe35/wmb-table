@@ -2,7 +2,12 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Button, Divider, Empty, Progress, Select, Space, Typography, message } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { buildBibleDocumentTitle, type BibleIndex, type BibleIndexValue } from '@shared/types';
+import {
+    buildBibleDocumentTitle,
+    type BibleIndex,
+    type BibleIndexValue,
+    type BibleVersionInfo,
+} from '@shared/types';
 import { useOpenDocumentRequest } from '@renderer/hooks';
 import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 import { useAppStore } from '@renderer/stores';
@@ -13,8 +18,41 @@ import { interactiveProps } from '@renderer/utils/interactive';
 // Compact version selector (Select dropdown for sidebar)
 // ---------------------------------------------------------------------------
 
+function DownloadVersionButton({
+    version,
+    progress,
+    onDownload,
+}: {
+    version: BibleVersionInfo;
+    progress: number | undefined;
+    onDownload: (abbreviation: string) => void;
+}) {
+    const isDownloading = progress != null;
+
+    return (
+        <Button
+            size="small"
+            type="dashed"
+            disabled={isDownloading}
+            icon={
+                isDownloading ? (
+                    <Progress type="circle" size={14} percent={progress} showInfo={false} />
+                ) : (
+                    <CloudDownloadOutlined />
+                )
+            }
+            onClick={() => onDownload(version.abbreviation)}
+        >
+            {version.name}
+        </Button>
+    );
+}
+
 function CompactVersionSelector() {
     const { t } = useTranslation();
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const showOptions = useAppStore((s) => s.showOptions);
     const {
         versions,
         activeVersion,
@@ -24,12 +62,20 @@ function CompactVersionSelector() {
         handleSwitch,
         handleDownload,
     } = useBibleVersions();
-
     useEffect(() => {
         requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     }, [installed, downloadable]);
 
     if (versions.length === 0) return null;
+
+    const activeLanguageMatchesContent =
+        !!contentLanguage && activeBibleVersion?.langCode === contentLanguage;
+    const downloadableForContentLanguage = contentLanguage
+        ? downloadable.filter((version) => version.langCode === contentLanguage)
+        : downloadable;
+    const suggestedDownload = activeLanguageMatchesContent
+        ? null
+        : (downloadableForContentLanguage[0] ?? downloadable[0]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -43,35 +89,25 @@ function CompactVersionSelector() {
                     placeholder={t('Version')}
                 />
             )}
-            {downloadable.length > 0 && (
+            {suggestedDownload && (
                 <Space size="small" wrap>
-                    {downloadable.map((v) => {
-                        const progress = downloadProgress[v.abbreviation];
-                        const isDownloading = progress != null;
-                        return (
-                            <Button
-                                key={v.abbreviation}
-                                size="small"
-                                type="dashed"
-                                disabled={isDownloading}
-                                icon={
-                                    isDownloading ? (
-                                        <Progress
-                                            type="circle"
-                                            size={14}
-                                            percent={progress}
-                                            showInfo={false}
-                                        />
-                                    ) : (
-                                        <CloudDownloadOutlined />
-                                    )
-                                }
-                                onClick={() => handleDownload(v.abbreviation)}
-                            >
-                                {v.name}
-                            </Button>
-                        );
-                    })}
+                    <DownloadVersionButton
+                        version={suggestedDownload}
+                        progress={downloadProgress[suggestedDownload.abbreviation]}
+                        onDownload={handleDownload}
+                    />
+                </Space>
+            )}
+            {!suggestedDownload && activeLanguageMatchesContent && downloadable.length > 0 && (
+                <Space size="small" wrap>
+                    <Button
+                        size="small"
+                        type="dashed"
+                        icon={<CloudDownloadOutlined />}
+                        onClick={() => showOptions('bible')}
+                    >
+                        {t("Télécharger d'autres versions")}
+                    </Button>
                 </Space>
             )}
         </div>

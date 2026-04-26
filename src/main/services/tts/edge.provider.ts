@@ -16,6 +16,7 @@ import type {
     TtsVoice,
 } from '@shared/tts.types';
 import { normalizeLanguageCode } from '@shared/tts.types';
+import { retryTtsNetworkCall } from './network-retry';
 
 // ── Voice listing ──
 
@@ -116,7 +117,9 @@ export class EdgeProvider implements TtsProvider {
 
         const tmpPath = tempMp3Path();
         try {
-            await tts.ttsPromise(request.text, tmpPath);
+            await retryTtsNetworkCall(() => tts.ttsPromise(request.text, tmpPath), {
+                label: 'Edge TTS synthesis',
+            });
             const audioBuffer = await readFile(tmpPath);
 
             if (audioBuffer.length === 0) {
