@@ -1,8 +1,13 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Divider, Empty, Dropdown, Progress, Select, Typography, message } from 'antd';
-import { CloudDownloadOutlined, DownOutlined, LeftOutlined } from '@ant-design/icons';
+import { Button, Divider, Empty, Progress, Select, Space, Typography, message } from 'antd';
+import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { buildBibleDocumentTitle, type BibleIndex, type BibleIndexValue } from '@shared/types';
+import {
+    buildBibleDocumentTitle,
+    type BibleIndex,
+    type BibleIndexValue,
+    type BibleVersionInfo,
+} from '@shared/types';
 import { useOpenDocumentRequest } from '@renderer/hooks';
 import { useBibleVersions } from '@renderer/hooks/use-bible-versions';
 import { useAppStore } from '@renderer/stores';
@@ -13,8 +18,41 @@ import { interactiveProps } from '@renderer/utils/interactive';
 // Compact version selector (Select dropdown for sidebar)
 // ---------------------------------------------------------------------------
 
+function DownloadVersionButton({
+    version,
+    progress,
+    onDownload,
+}: {
+    version: BibleVersionInfo;
+    progress: number | undefined;
+    onDownload: (abbreviation: string) => void;
+}) {
+    const isDownloading = progress != null;
+
+    return (
+        <Button
+            size="small"
+            type="dashed"
+            disabled={isDownloading}
+            icon={
+                isDownloading ? (
+                    <Progress type="circle" size={14} percent={progress} showInfo={false} />
+                ) : (
+                    <CloudDownloadOutlined />
+                )
+            }
+            onClick={() => onDownload(version.abbreviation)}
+        >
+            {version.name}
+        </Button>
+    );
+}
+
 function CompactVersionSelector() {
     const { t } = useTranslation();
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const activeBibleVersion = useAppStore((s) => s.activeBibleVersion);
+    const showOptions = useAppStore((s) => s.showOptions);
     const {
         versions,
         activeVersion,
@@ -30,12 +68,14 @@ function CompactVersionSelector() {
 
     if (versions.length === 0) return null;
 
-    const activeDownloads = downloadable
-        .filter((version) => downloadProgress[version.abbreviation] != null)
-        .map((version) => ({
-            ...version,
-            progress: downloadProgress[version.abbreviation] ?? 0,
-        }));
+    const activeLanguageMatchesContent =
+        !!contentLanguage && activeBibleVersion?.langCode === contentLanguage;
+    const downloadableForContentLanguage = contentLanguage
+        ? downloadable.filter((version) => version.langCode === contentLanguage)
+        : downloadable;
+    const suggestedDownload = activeLanguageMatchesContent
+        ? null
+        : (downloadableForContentLanguage[0] ?? downloadable[0]);
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -49,94 +89,26 @@ function CompactVersionSelector() {
                     placeholder={t('Version')}
                 />
             )}
-            {downloadable.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <Dropdown
-                        trigger={['click']}
-                        menu={{
-                            items: downloadable.map((version) => {
-                                const progress = downloadProgress[version.abbreviation];
-
-                                return {
-                                    key: version.abbreviation,
-                                    disabled: progress != null,
-                                    label: (
-                                        <div
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                gap: 8,
-                                                minWidth: 180,
-                                                maxWidth: 260,
-                                            }}
-                                        >
-                                            <CloudDownloadOutlined />
-                                            <div style={{ minWidth: 0, flex: 1 }}>
-                                                <Typography.Text ellipsis>
-                                                    {version.name}
-                                                </Typography.Text>
-                                                <Typography.Text
-                                                    type="secondary"
-                                                    style={{
-                                                        display: 'block',
-                                                        fontSize: 11,
-                                                        textTransform: 'uppercase',
-                                                    }}
-                                                >
-                                                    {version.abbreviation}
-                                                </Typography.Text>
-                                            </div>
-                                        </div>
-                                    ),
-                                };
-                            }),
-                            onClick: ({ key }) => handleDownload(String(key)),
-                        }}
+            {suggestedDownload && (
+                <Space size="small" wrap>
+                    <DownloadVersionButton
+                        version={suggestedDownload}
+                        progress={downloadProgress[suggestedDownload.abbreviation]}
+                        onDownload={handleDownload}
+                    />
+                </Space>
+            )}
+            {!suggestedDownload && activeLanguageMatchesContent && downloadable.length > 0 && (
+                <Space size="small" wrap>
+                    <Button
+                        size="small"
+                        type="dashed"
+                        icon={<CloudDownloadOutlined />}
+                        onClick={() => showOptions('bible')}
                     >
-                        <Button
-                            size="small"
-                            type="text"
-                            block
-                            icon={<CloudDownloadOutlined />}
-                            style={{ justifyContent: 'space-between' }}
-                        >
-                            <span>
-                                {downloadable.length === 1
-                                    ? t('Télécharger une version')
-                                    : t('{{count}} versions à télécharger', {
-                                          count: downloadable.length,
-                                      })}
-                            </span>
-                            <DownOutlined style={{ fontSize: 10 }} />
-                        </Button>
-                    </Dropdown>
-                    {activeDownloads.length > 0 && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                            {activeDownloads.map((version) => (
-                                <div
-                                    key={version.abbreviation}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 8,
-                                    }}
-                                >
-                                    <Typography.Text
-                                        ellipsis
-                                        style={{ flex: 1, minWidth: 0, fontSize: 12 }}
-                                    >
-                                        {version.name}
-                                    </Typography.Text>
-                                    <Progress
-                                        percent={version.progress}
-                                        size="small"
-                                        style={{ width: 84, margin: 0 }}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                        {t("Télécharger d'autres versions")}
+                    </Button>
+                </Space>
             )}
         </div>
     );

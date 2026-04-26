@@ -1074,6 +1074,7 @@ const sw: Record<string, string> = {
     'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
         'Pia kinakuruhusu kuchuja, kufungua tena chanzo halisi au kuhamisha orodha kuwa PDF.',
     'Télécharger une version': 'Pakua toleo',
+    "Télécharger d'autres versions": 'Pakua matoleo mengine',
     '{{count}} versions à télécharger': 'Matoleo {{count}} ya kupakua',
 };
 

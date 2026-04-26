@@ -1078,6 +1078,7 @@ const es: Record<string, string> = {
     'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
         'También permite filtrar, reabrir la fuente exacta o exportar la lista en PDF.',
     'Télécharger une version': 'Descargar una versión',
+    "Télécharger d'autres versions": 'Descargar otras versiones',
     '{{count}} versions à télécharger': '{{count}} versiones para descargar',
 };
 

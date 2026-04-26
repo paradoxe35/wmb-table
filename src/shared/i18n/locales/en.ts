@@ -626,6 +626,7 @@ const en: Record<string, string> = {
     'Version:': 'Version:',
     'Télécharger {{name}}': 'Download {{name}}',
     'Télécharger une version': 'Download a version',
+    "Télécharger d'autres versions": 'Download other versions',
     '{{count}} versions à télécharger': '{{count}} versions to download',
 
     // ── Delete button ──
