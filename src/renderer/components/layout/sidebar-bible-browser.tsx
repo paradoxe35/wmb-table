@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Divider, Empty, Progress, Select, Space, Typography, message } from 'antd';
-import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
+import { Button, Divider, Empty, Dropdown, Progress, Select, Typography, message } from 'antd';
+import { CloudDownloadOutlined, DownOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { buildBibleDocumentTitle, type BibleIndex, type BibleIndexValue } from '@shared/types';
 import { useOpenDocumentRequest } from '@renderer/hooks';
@@ -24,26 +24,9 @@ function CompactVersionSelector() {
         handleSwitch,
         handleDownload,
     } = useBibleVersions();
-    const [selectedDownloadVersion, setSelectedDownloadVersion] = useState<string>();
-
     useEffect(() => {
         requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
     }, [installed, downloadable]);
-
-    useEffect(() => {
-        if (downloadable.length === 0) {
-            setSelectedDownloadVersion(undefined);
-            return;
-        }
-
-        setSelectedDownloadVersion((current) => {
-            if (current && downloadable.some((version) => version.abbreviation === current)) {
-                return current;
-            }
-
-            return downloadable[0]?.abbreviation;
-        });
-    }, [downloadable]);
 
     if (versions.length === 0) return null;
 
@@ -53,9 +36,6 @@ function CompactVersionSelector() {
             ...version,
             progress: downloadProgress[version.abbreviation] ?? 0,
         }));
-
-    const canDownloadSelected =
-        selectedDownloadVersion != null && downloadProgress[selectedDownloadVersion] == null;
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -70,52 +50,66 @@ function CompactVersionSelector() {
                 />
             )}
             {downloadable.length > 0 && (
-                <div
-                    style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 6,
-                        padding: '6px 8px',
-                        borderRadius: 8,
-                        background: 'rgba(127, 127, 127, 0.08)',
-                    }}
-                >
-                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                        {downloadable.length === 1
-                            ? t('1 version disponible au téléchargement')
-                            : t('{{count}} versions disponibles au téléchargement', {
-                                  count: downloadable.length,
-                              })}
-                    </Typography.Text>
-                    <Space.Compact block>
-                        <Select
-                            size="small"
-                            className="w-100"
-                            value={selectedDownloadVersion}
-                            onChange={setSelectedDownloadVersion}
-                            options={downloadable.map((version) => ({
-                                value: version.abbreviation,
-                                label: `${version.name} (${version.abbreviation.toUpperCase()})`,
-                                disabled: downloadProgress[version.abbreviation] != null,
-                            }))}
-                            placeholder={t('Choisir une version')}
-                            showSearch
-                            optionFilterProp="label"
-                        />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <Dropdown
+                        trigger={['click']}
+                        menu={{
+                            items: downloadable.map((version) => {
+                                const progress = downloadProgress[version.abbreviation];
+
+                                return {
+                                    key: version.abbreviation,
+                                    disabled: progress != null,
+                                    label: (
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 8,
+                                                minWidth: 180,
+                                                maxWidth: 260,
+                                            }}
+                                        >
+                                            <CloudDownloadOutlined />
+                                            <div style={{ minWidth: 0, flex: 1 }}>
+                                                <Typography.Text ellipsis>
+                                                    {version.name}
+                                                </Typography.Text>
+                                                <Typography.Text
+                                                    type="secondary"
+                                                    style={{
+                                                        display: 'block',
+                                                        fontSize: 11,
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                >
+                                                    {version.abbreviation}
+                                                </Typography.Text>
+                                            </div>
+                                        </div>
+                                    ),
+                                };
+                            }),
+                            onClick: ({ key }) => handleDownload(String(key)),
+                        }}
+                    >
                         <Button
                             size="small"
-                            type="dashed"
-                            disabled={!canDownloadSelected}
+                            type="text"
+                            block
                             icon={<CloudDownloadOutlined />}
-                            onClick={() => {
-                                if (selectedDownloadVersion) {
-                                    handleDownload(selectedDownloadVersion);
-                                }
-                            }}
+                            style={{ justifyContent: 'space-between' }}
                         >
-                            {t('Télécharger')}
+                            <span>
+                                {downloadable.length === 1
+                                    ? t('Télécharger une version')
+                                    : t('{{count}} versions à télécharger', {
+                                          count: downloadable.length,
+                                      })}
+                            </span>
+                            <DownOutlined style={{ fontSize: 10 }} />
                         </Button>
-                    </Space.Compact>
+                    </Dropdown>
                     {activeDownloads.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {activeDownloads.map((version) => (

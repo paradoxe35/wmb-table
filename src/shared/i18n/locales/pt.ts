@@ -1074,6 +1074,8 @@ const pt: Record<string, string> = {
         'Ela ajuda a revisar suas descobertas sem reabrir cada documento um por um.',
     'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
         'Ela também permite filtrar, reabrir a fonte exata ou exportar a lista em PDF.',
+    'Télécharger une version': 'Baixar uma versão',
+    '{{count}} versions à télécharger': '{{count}} versões para baixar',
 };
 
 export default pt;

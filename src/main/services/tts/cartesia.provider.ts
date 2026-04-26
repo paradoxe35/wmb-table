@@ -14,6 +14,7 @@ import type {
     TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { normalizeLanguageCode } from '@shared/tts.types';
+import { fetchTtsWithRetry } from './network-retry';
 
 const CARTESIA_API_BASE = 'https://api.cartesia.ai';
 const CARTESIA_VERSION = '2025-04-16';
@@ -170,14 +171,18 @@ export class CartesiaProvider implements TtsProvider {
             },
         };
 
-        const response = await fetch(`${CARTESIA_API_BASE}/tts/bytes`, {
-            method: 'POST',
-            headers: {
-                ...this.authHeaders(),
-                'Content-Type': 'application/json',
+        const response = await fetchTtsWithRetry(
+            `${CARTESIA_API_BASE}/tts/bytes`,
+            {
+                method: 'POST',
+                headers: {
+                    ...this.authHeaders(),
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(body),
             },
-            body: JSON.stringify(body),
-        });
+            { label: 'Cartesia TTS synthesis' },
+        );
 
         if (!response.ok) {
             const errText = await response.text().catch(() => '');

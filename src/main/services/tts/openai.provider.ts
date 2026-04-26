@@ -9,6 +9,7 @@ import type {
     TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { normalizeLanguageCode } from '@shared/tts.types';
+import { fetchTtsWithRetry } from './network-retry';
 
 const OPENAI_VOICES = [
     'alloy',
@@ -125,20 +126,24 @@ export class OpenAiProvider implements TtsProvider {
         const voice = request.voiceId ?? this.voiceId;
         const speed = request.rate ?? 1;
 
-        const response = await fetch('https://api.openai.com/v1/audio/speech', {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
+        const response = await fetchTtsWithRetry(
+            'https://api.openai.com/v1/audio/speech',
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    model,
+                    input: request.text,
+                    voice,
+                    response_format: 'mp3',
+                    speed: Math.max(0.25, Math.min(4.0, speed)),
+                }),
             },
-            body: JSON.stringify({
-                model,
-                input: request.text,
-                voice,
-                response_format: 'mp3',
-                speed: Math.max(0.25, Math.min(4.0, speed)),
-            }),
-        });
+            { label: 'OpenAI TTS synthesis' },
+        );
 
         if (!response.ok) {
             const errText = await response.text().catch(() => 'Unknown error');

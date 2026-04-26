@@ -257,6 +257,7 @@ export function useTtsSetup(): void {
         // `expected` to point to the segment that was just played instead of the next one,
         // which produces a deadlock where we wait forever for audio that already played.
         let lastPlayedSegmentIndex = -1;
+        let retriedAudioErrorForSegment = -1;
 
         const clearGap = () => {
             if (gapTimeout) {
@@ -312,6 +313,7 @@ export function useTtsSetup(): void {
                 waitingForSegmentIndex = -1;
                 pausedDuringGap = false;
                 lastPlayedSegmentIndex = -1;
+                retriedAudioErrorForSegment = -1;
             } else if (state.status === 'paused') {
                 if (gapTimeout) {
                     clearGap();
@@ -375,8 +377,31 @@ export function useTtsSetup(): void {
             }
         });
 
-        // When audio playback fails, reset TTS to idle so the user isn't stuck
-        ttsAudioPlayer.setOnError(() => {
+        // Local media decode/load errors are rare, but retrying the current segment
+        // once avoids dropping playback because of a transient tts-cache URL hiccup.
+        ttsAudioPlayer.setOnError((error) => {
+            const state = useTtsStore.getState();
+            const segmentIndex = state.currentSegmentIndex;
+
+            if (
+                state.status !== 'idle' &&
+                segmentIndex >= 0 &&
+                retriedAudioErrorForSegment !== segmentIndex
+            ) {
+                retriedAudioErrorForSegment = segmentIndex;
+                clearGap();
+                waitingForSegmentIndex = -1;
+                pausedDuringGap = false;
+                ttsAudioPlayer.clearPreloaded();
+                window.api.tts.seekToSegment(segmentIndex).catch((seekError) => {
+                    message.error(getTtsPlaybackErrorMessage(t, seekError));
+                    stopAllTtsPlayback();
+                    reset();
+                });
+                return;
+            }
+
+            message.error(getTtsPlaybackErrorMessage(t, error));
             stopAllTtsPlayback();
             reset();
         });
@@ -388,6 +413,7 @@ export function useTtsSetup(): void {
 
             clearGap();
             endedAt = Date.now();
+            retriedAudioErrorForSegment = -1;
 
             const expected = lastPlayedSegmentIndex + 1;
 

@@ -625,6 +625,8 @@ const en: Record<string, string> = {
     // ── Bible version selector ──
     'Version:': 'Version:',
     'Télécharger {{name}}': 'Download {{name}}',
+    'Télécharger une version': 'Download a version',
+    '{{count}} versions à télécharger': '{{count}} versions to download',
 
     // ── Delete button ──
     'Confirmer la suppression?': 'Confirm deletion?',

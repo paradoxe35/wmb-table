@@ -1073,6 +1073,8 @@ const sw: Record<string, string> = {
         'Kinasaidia kupitia tena uliyogundua bila kufungua upya kila hati moja moja.',
     'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
         'Pia kinakuruhusu kuchuja, kufungua tena chanzo halisi au kuhamisha orodha kuwa PDF.',
+    'Télécharger une version': 'Pakua toleo',
+    '{{count}} versions à télécharger': 'Matoleo {{count}} ya kupakua',
 };
 
 export default sw;
