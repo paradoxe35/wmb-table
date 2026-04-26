@@ -7,7 +7,7 @@ export type ThemeMode = 'auto' | 'system' | 'light' | 'dark';
 export type FontSizeOption = 'small' | 'default' | 'large' | 'x-large';
 
 export const FONT_SIZE_MAP: Record<FontSizeOption, number> = {
-    small: 13,
+    small: 14,
     default: 16,
     large: 18,
     'x-large': 20,
