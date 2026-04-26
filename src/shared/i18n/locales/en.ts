@@ -1069,6 +1069,36 @@ const en: Record<string, string> = {
         'It helps you review your findings without reopening every document one by one.',
     'Elle permet aussi de filtrer, rouvrir la source exacte ou exporter la liste en PDF.':
         'It also lets you filter, reopen the exact source, or export the list as PDF.',
+
+    // ── Notes editor toolbar (Tiptap) ──
+    'Annuler la modification': 'Undo',
+    Rétablir: 'Redo',
+    Gras: 'Bold',
+    Italique: 'Italic',
+    Souligné: 'Underline',
+    Barré: 'Strikethrough',
+    Indice: 'Subscript',
+    Exposant: 'Superscript',
+    'Couleur du texte': 'Text color',
+    Surlignage: 'Highlight',
+    'Aligner à gauche': 'Align left',
+    Centrer: 'Center',
+    'Aligner à droite': 'Align right',
+    Justifier: 'Justify',
+    'Liste à puces': 'Bulleted list',
+    'Liste numérotée': 'Numbered list',
+    'Liste de tâches': 'Task list',
+    'Réduire le retrait': 'Decrease indent',
+    'Augmenter le retrait': 'Increase indent',
+    'Supprimer le lien': 'Remove link',
+    'Ajouter un lien': 'Add link',
+    Citation: 'Quote',
+    'Insérer un tableau': 'Insert table',
+    'Ligne horizontale': 'Horizontal line',
+    'Saut de page': 'Page break',
+    'Adresse du lien': 'Link URL',
+    'Langue par défaut': 'Default language',
+    'Commencez à écrire votre note…': 'Start writing your note…',
 };
 
 export default en;
