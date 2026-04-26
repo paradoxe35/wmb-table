@@ -159,15 +159,18 @@ export function ReferenceBibleModal({
                                 {t('Aucun verset sélectionné')}
                             </Typography.Text>
                         )}
-                        <AnimatePresence mode="popLayout">
+                        <AnimatePresence mode="popLayout" initial={false}>
                             {verses.map((ref) => (
                                 <motion.div
                                     key={ref.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -50 }}
-                                    transition={{ duration: 0.2 }}
+                                    layout="position"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{
+                                        opacity: { duration: 0.22, ease: 'easeOut' },
+                                        layout: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+                                    }}
                                     style={{
                                         display: 'flex',
                                         alignItems: 'flex-start',
