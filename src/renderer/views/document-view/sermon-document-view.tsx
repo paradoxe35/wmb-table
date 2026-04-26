@@ -201,7 +201,7 @@ export default function SermonDocumentView() {
     const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
     const showCompactTitle = useScrolledPastTitle(containerRef, !!content);
-    const formatDateShort = useFormatSermonDateShort();
+    const formatDateShort = useFormatSermonDateShort(content?.meta.languageCode);
     const compactTitle = useMemo(() => {
         if (!content?.meta.title) return '';
         const dateLabel = content.meta.dateMs ? formatDateShort(content.meta.dateMs) : '';

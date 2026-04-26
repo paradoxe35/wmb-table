@@ -388,9 +388,8 @@ export default function BibleDocumentView() {
         return getBibleIndexEntry(bibleIndex, bookCode)?.bookName ?? '';
     }, [bibleIndex, bookCode]);
 
-    // Gate on bookName too — the `.sermon-content-header` only renders once the
-    // book name resolves (separate async fetch from `verses`), so the observer
-    // must wait for that element to actually exist in the DOM.
+    // Gate on bookName: the title element only renders once it resolves (separate
+    // async fetch from verses), so the observer must wait for it to exist.
     const showCompactTitle = useScrolledPastTitle(
         containerRef,
         verses.length > 0 && !loading && !!bookName,

@@ -129,10 +129,6 @@ export function resolveUiLanguage(
 
 // ── Date / locale formatting ──
 
-/**
- * BCP 47 locale tags for each supported UI language. Used by `Intl.DateTimeFormat`
- * and other `toLocale*` APIs to pick the right month names, week-day order, etc.
- */
 export const UI_LANGUAGE_LOCALES: Record<UiLanguage, string> = {
     fr: 'fr-FR',
     en: 'en-US',
@@ -141,7 +137,6 @@ export const UI_LANGUAGE_LOCALES: Record<UiLanguage, string> = {
     sw: 'sw-KE',
 };
 
-/** Map any language code to a BCP 47 tag we ship date-formatting for. */
 export function resolveDateLocale(languageCode: string | null | undefined): string {
     const supported = getSupportedUiLanguage(languageCode);
     return UI_LANGUAGE_LOCALES[supported ?? FALLBACK_UI_LANGUAGE];

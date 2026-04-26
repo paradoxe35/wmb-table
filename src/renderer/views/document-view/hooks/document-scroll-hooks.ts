@@ -254,16 +254,6 @@ export function useScrollAndZoom(
     return { zoom };
 }
 
-// ---------------------------------------------------------------------------
-// Sticky header title — show compact title in the header once the in-content
-// title scrolls out of view.
-// ---------------------------------------------------------------------------
-
-/**
- * Watch whether the in-content document title (e.g. `.sermon-content-header`) has
- * scrolled out of the body. When it leaves view, the toolbar can reveal a compact
- * fallback title for context.
- */
 export function useScrolledPastTitle(
     containerRef: RefObject<HTMLElement | null>,
     contentReady: boolean,

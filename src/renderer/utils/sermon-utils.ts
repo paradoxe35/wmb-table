@@ -33,11 +33,7 @@ export function formatSermonDate(dateMs: number, locale: string = 'en'): string 
     });
 }
 
-/**
- * Compact `dd/MMM/yy` form using the localized abbreviated month — e.g.
- * `12/Jun/64` (en), `12/Juin/64` (fr), `12/Jun/64` (es), `12/Jun/64` (pt),
- * `12/Jun/64` (sw). Used in toolbar hints where a long date wouldn't fit.
- */
+/** Compact `dd/MMM/yy` with the locale's abbreviated month. */
 export function formatSermonDateShort(dateMs: number, locale: string = 'en'): string {
     const d = new Date(dateMs);
     const monthRaw = d.toLocaleDateString(resolveDateLocale(locale), {

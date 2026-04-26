@@ -383,23 +383,18 @@ export function useSermonLookup() {
     return { sermonsById, getSermonById };
 }
 
-export function useFormatSermonDate() {
+export function useFormatSermonDate(languageOverride?: string | null) {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const locale = languageOverride ?? contentLanguage ?? 'en';
 
-    return useCallback(
-        (dateMs: number) => capitalize(formatSermonDate(dateMs, contentLanguage ?? 'en')),
-        [contentLanguage],
-    );
+    return useCallback((dateMs: number) => capitalize(formatSermonDate(dateMs, locale)), [locale]);
 }
 
-/** Compact `dd/MMM/yy` formatter localized via the active content language. */
-export function useFormatSermonDateShort() {
+export function useFormatSermonDateShort(languageOverride?: string | null) {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const locale = languageOverride ?? contentLanguage ?? 'en';
 
-    return useCallback(
-        (dateMs: number) => formatSermonDateShort(dateMs, contentLanguage ?? 'en'),
-        [contentLanguage],
-    );
+    return useCallback((dateMs: number) => formatSermonDateShort(dateMs, locale), [locale]);
 }
 
 export function useModalVisible() {
