@@ -1,4 +1,4 @@
-import { App as AntApp, Button, Col, message, Modal, Row, Typography } from 'antd';
+import { App as AntApp, Badge, Button, Empty, message, Modal, Tooltip, Typography } from 'antd';
 import {
     type Dispatch,
     type SetStateAction,
@@ -8,7 +8,7 @@ import {
     useCallback,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { PlusOutlined } from '@ant-design/icons';
+import { BookOutlined, EyeInvisibleOutlined } from '@ant-design/icons';
 import { useDocumentTabsStore } from '@renderer/stores';
 import {
     BibleBook,
@@ -27,7 +27,7 @@ import {
     useSermonLookup,
     useValueStateRef,
 } from '@renderer/hooks';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export const referenceBrandLink = 'http://w.t/#reference-document-';
 export const referenceBibleBrandLink = 'http://w.t/#reference-bible-';
@@ -224,98 +224,106 @@ export function ReferenceBibleModal({
     );
 
     const verses = reference ? (reference.references as BibleBook[]) : [];
-    const hasVerses = verses.length > 0;
     const [showBible, setShowBible] = useState(false);
 
-    // Reset bible picker visibility when modal opens/closes or reference changes
+    // Pick an initial Bible-picker visibility when the modal opens or a different reference is
+    // shown — but never re-toggle on verse add/remove (that would close the picker mid-add).
     useEffect(() => {
-        const nextVisible = !hasVerses;
-        setShowBible((current) => (current === nextVisible ? current : nextVisible));
-    }, [hasVerses, isModalVisible, reference?.id]);
+        if (!isModalVisible) return;
+        const initialHasVerses = (referenceRef.current?.references?.length ?? 0) > 0;
+        setShowBible(!initialHasVerses);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isModalVisible, reference?.id]);
+
+    const toggleBible = () => setShowBible((v) => !v);
 
     return (
         <Modal
-            width={showBible ? '80%' : undefined}
+            width={showBible ? 920 : 560}
             title={
-                <div>
-                    <div
-                        style={{
-                            fontSize: 'var(--fs-sm)',
-                            fontWeight: 400,
-                            color: 'var(--ant-color-text-secondary)',
-                        }}
-                    >
-                        {t('Référence Bible')}
+                <div className="bible-ref-modal__header">
+                    <span className="bible-ref-modal__eyebrow">{t('Référence Bible')}</span>
+                    <div className="bible-ref-modal__title-row">
+                        <span className="bible-ref-modal__title">{reference?.label ?? ''}</span>
+                        <Badge
+                            count={verses.length}
+                            showZero
+                            color={verses.length > 0 ? undefined : 'var(--ant-color-fill)'}
+                            style={{ color: 'var(--ant-color-text-secondary)' }}
+                        />
                     </div>
-                    {reference && (
-                        <div>
-                            {reference.label} ({verses.length})
-                        </div>
-                    )}
                 </div>
             }
             open={isModalVisible}
-            footer={[]}
+            footer={[
+                <Button
+                    key="toggle"
+                    type={showBible ? 'primary' : 'default'}
+                    icon={showBible ? <EyeInvisibleOutlined /> : <BookOutlined />}
+                    onClick={toggleBible}
+                    style={{ float: 'left' }}
+                >
+                    {showBible ? t('Masquer la Bible') : t('Afficher la Bible')}
+                </Button>,
+                <Button key="close" onClick={handleCancel}>
+                    {t('Fermer')}
+                </Button>,
+            ]}
             onOk={handleOk}
             onCancel={handleCancel}
         >
-            <Row gutter={showBible ? 16 : 0}>
-                <Col span={showBible ? 11 : 24}>
-                    <div ref={versesRef} style={{ overflow: 'auto', maxHeight: 400 }}>
-                        {verses.length === 0 && !showBible && (
-                            <Typography.Text type="secondary">
-                                {t('Aucun verset sélectionné')}
-                            </Typography.Text>
-                        )}
-                        <AnimatePresence mode="popLayout">
-                            {verses.map((ref) => (
-                                <motion.div
-                                    key={ref.id}
-                                    layout
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, x: -50 }}
-                                    transition={{ duration: 0.2 }}
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: 8,
-                                        padding: '10px 0',
-                                        borderBottom: '1px solid var(--ant-color-border)',
-                                    }}
-                                >
-                                    <DeleteBtn confirm={() => handleDeletionRef(ref)} />
-                                    <div>
-                                        <span style={{ color: 'var(--ant-color-text-secondary)' }}>
-                                            {ref.bookName} {ref.chapter}:{ref.verse}
-                                        </span>
-                                        {' — '}
-                                        <span>{ref.content}</span>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
+            <div className={`bible-ref-modal__body ${showBible ? 'is-split' : ''}`}>
+                <section className="bible-ref-modal__verses">
+                    <h4 className="bible-ref-modal__section-label">{t('Versets sélectionnés')}</h4>
+                    <div ref={versesRef} className="bible-ref-modal__verse-list">
+                        {verses.length === 0 ? (
+                            <Empty
+                                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                description={t('Aucun verset sélectionné')}
+                            />
+                        ) : null}
+                        {verses.map((ref) => (
+                            <VerseRow
+                                key={ref.id}
+                                verse={ref}
+                                onDelete={() => handleDeletionRef(ref)}
+                            />
+                        ))}
                     </div>
-                    {!showBible && (
-                        <Button
-                            type="dashed"
-                            icon={<PlusOutlined />}
-                            onClick={() => setShowBible(true)}
-                            style={{ marginTop: 12 }}
-                            block
-                        >
-                            {t('Ajouter des versets')}
-                        </Button>
-                    )}
-                </Col>
+                </section>
                 {showBible && (
-                    <Col span={13}>
-                        <div style={{ overflow: 'auto', maxHeight: 400 }}>
+                    <section className="bible-ref-modal__picker">
+                        <h4 className="bible-ref-modal__section-label">{t('Choisir un verset')}</h4>
+                        <div className="bible-ref-modal__picker-scroll">
                             <BibleContent onClick={onClickVerse} compact />
                         </div>
-                    </Col>
+                    </section>
                 )}
-            </Row>
+            </div>
         </Modal>
+    );
+}
+
+function VerseRow({ verse, onDelete }: { verse: BibleBook; onDelete: () => void }) {
+    const { t } = useTranslation();
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, x: -32 }}
+            transition={{ duration: 0.18 }}
+            className="bible-ref-modal__verse-row"
+        >
+            <Typography.Text strong className="bible-ref-modal__verse-ref">
+                {verse.bookName} {verse.chapter}:{verse.verse}
+            </Typography.Text>
+            <span className="bible-ref-modal__verse-text">{verse.content}</span>
+            <Tooltip title={t('Supprimer')}>
+                <span className="bible-ref-modal__verse-actions">
+                    <DeleteBtn confirm={onDelete} />
+                </span>
+            </Tooltip>
+        </motion.div>
     );
 }

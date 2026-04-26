@@ -1486,6 +1486,114 @@ body {
 }
 
 // ---------------------------------------------------------------------------
+// Bible reference modal (saved note Bible references)
+// ---------------------------------------------------------------------------
+.bible-ref-modal {
+    &__header {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    &__eyebrow {
+        font-size: var(--fs-xs);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ant-color-text-tertiary);
+    }
+
+    &__title-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    &__title {
+        font-size: var(--fs-xl);
+        font-weight: 600;
+        line-height: 1.3;
+    }
+
+    &__body {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+
+        &.is-split {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        }
+    }
+
+    &__section-label {
+        font-size: var(--fs-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--ant-color-text-tertiary);
+        margin: 0 0 8px;
+    }
+
+    &__verses {
+        min-width: 0;
+    }
+
+    &__verse-list {
+        max-height: 400px;
+        overflow-y: auto;
+        padding-right: 4px;
+        scrollbar-width: thin;
+    }
+
+    &__verse-row {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: start;
+        padding: 10px 12px;
+        border-radius: 6px;
+        background: var(--ant-color-fill-quaternary, rgba(0, 0, 0, 0.02));
+        margin-bottom: 6px;
+        transition: background-color var(--transition-fast, 0.15s ease);
+
+        &:hover {
+            background: var(--ant-color-fill-tertiary, rgba(0, 0, 0, 0.04));
+        }
+    }
+
+    &__verse-ref {
+        font-size: var(--fs-sm);
+        color: var(--ant-color-text-secondary);
+        white-space: nowrap;
+    }
+
+    &__verse-text {
+        line-height: 1.55;
+    }
+
+    &__verse-actions {
+        opacity: 0.55;
+        transition: opacity var(--transition-fast, 0.15s ease);
+
+        .bible-ref-modal__verse-row:hover & {
+            opacity: 1;
+        }
+    }
+
+    &__picker {
+        min-width: 0;
+        border-left: 1px solid var(--ant-color-border-secondary, #f0f0f0);
+        padding-left: 16px;
+    }
+
+    &__picker-scroll {
+        max-height: 400px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // wmb:// reference modal
 // ---------------------------------------------------------------------------
 .wmb-reference {
