@@ -28,6 +28,41 @@
     color: var(--ant-color-text-secondary, #6b7280);
 }
 
+// Compact contextual title shown in the document header once the user has
+// scrolled past the in-content title.
+.document-header-title {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    overflow: hidden;
+
+    &__text {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: var(--fs-md);
+        font-weight: 500;
+        color: var(--ant-color-text);
+        opacity: 0;
+        transform: translateY(-3px);
+        transition:
+            opacity 0.22s ease-out,
+            transform 0.22s ease-out;
+        pointer-events: none;
+        user-select: none;
+
+        &.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+    }
+}
+
 .bible-chapter-nav {
     display: inline-flex;
     align-items: center;

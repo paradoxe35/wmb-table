@@ -15,6 +15,7 @@ import {
     resolveSermonScrollPersistence,
     useSermonContent,
     useScrollAndZoom,
+    useScrolledPastTitle,
     useSearchHighlight,
     useReferenceNavigation,
     useContextMenuItems,
@@ -199,6 +200,15 @@ export default function SermonDocumentView() {
     );
     const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
+    const showCompactTitle = useScrolledPastTitle(containerRef, !!content);
+    const compactTitle = useMemo(() => {
+        if (!content?.meta.title) return '';
+        const year = content.meta.dateMs
+            ? new Date(content.meta.dateMs).getFullYear().toString()
+            : '';
+        return year ? `${content.meta.title} — ${year}` : content.meta.title;
+    }, [content?.meta.title, content?.meta.dateMs]);
+
     return (
         <DocumentBody
             loading={loading}
@@ -217,6 +227,8 @@ export default function SermonDocumentView() {
                         currentTranslationId={tabTranslationId ?? content.meta.translationId}
                         paragraphs={content.paragraphs}
                         tts={effectiveTts}
+                        compactTitle={compactTitle}
+                        showCompactTitle={showCompactTitle}
                     />
                 )
             }

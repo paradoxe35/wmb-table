@@ -31,6 +31,7 @@ import { getLanguageDisplayName } from '@shared/tts.types';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import { TtsButton, ZoomControls, type TtsControls } from './tts-controls';
 import { useDocumentZoom } from './hooks';
+import { DocumentHeaderTitle } from './document-header-title';
 
 export default function SermonHeader({
     meta,
@@ -39,6 +40,8 @@ export default function SermonHeader({
     currentTranslationId,
     paragraphs,
     tts,
+    compactTitle,
+    showCompactTitle,
 }: {
     meta: SermonMeta;
     zoom: number;
@@ -46,6 +49,8 @@ export default function SermonHeader({
     currentTranslationId: number;
     paragraphs: SermonParagraph[];
     tts?: TtsControls;
+    compactTitle: string;
+    showCompactTitle: boolean;
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
@@ -157,7 +162,7 @@ export default function SermonHeader({
                     onChange={handleTranslationChange}
                 />
             )}
-            <div style={{ flex: 1 }} />
+            <DocumentHeaderTitle title={compactTitle} visible={showCompactTitle} />
             <Space size="small">
                 {meta.audioLink && (
                     <Tooltip title={isPlaying ? t('Pause audio') : t("Écouter l'audio")}>

@@ -23,11 +23,13 @@ import {
 import { TtsButton, ZoomControls, ParagraphList, type TtsControls } from './tts-controls';
 import ParagraphNavigatorModal from './paragraph-navigator-modal';
 import DocumentBody from './document-body';
+import { DocumentHeaderTitle } from './document-header-title';
 import {
     buildBibleChapterKey,
     resolveBibleScrollPersistence,
     useBibleChapterContent,
     useScrollAndZoom,
+    useScrolledPastTitle,
     useSearchHighlight,
     useMatchNavigation,
     useContextMenuItems,
@@ -205,6 +207,8 @@ function BibleHeader({
     onNext,
     paragraphs,
     tts,
+    compactTitle,
+    showCompactTitle,
 }: {
     title: string;
     zoom: number;
@@ -214,6 +218,8 @@ function BibleHeader({
     onNext: () => void;
     paragraphs: { paragraphIndex: number }[];
     tts?: TtsControls;
+    compactTitle: string;
+    showCompactTitle: boolean;
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
@@ -247,7 +253,7 @@ function BibleHeader({
                         />
                     </Tooltip>
                 </div>
-                <div style={{ flex: 1 }} />
+                <DocumentHeaderTitle title={compactTitle} visible={showCompactTitle} />
                 <Space size="small">
                     {tts && <TtsButton tts={tts} />}
                     <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
@@ -382,6 +388,13 @@ export default function BibleDocumentView() {
         return getBibleIndexEntry(bibleIndex, bookCode)?.bookName ?? '';
     }, [bibleIndex, bookCode]);
 
+    const showCompactTitle = useScrolledPastTitle(containerRef, verses.length > 0 && !loading);
+    const compactTitle = useMemo(() => {
+        if (!bookName) return '';
+        if (!chapter) return bookName;
+        return `${bookName} — ${getChapterLabel(bibleLang)} ${chapter}`;
+    }, [bookName, chapter, bibleLang]);
+
     const introText = useMemo(() => {
         if (!bookName || !chapter) return undefined;
         return buildBibleChapterIntro(bookName, chapter, bibleLang);
@@ -452,6 +465,8 @@ export default function BibleDocumentView() {
                     onNext={goNext}
                     paragraphs={paragraphs}
                     tts={effectiveTts}
+                    compactTitle={compactTitle}
+                    showCompactTitle={showCompactTitle}
                 />
             }
         >
