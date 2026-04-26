@@ -1,9 +1,7 @@
-import { Tooltip } from 'antd';
-
 /**
  * Compact contextual title shown in the document header toolbar once the user has
  * scrolled past the in-content title. Truncates long titles with ellipsis and shows
- * the full text in a tooltip on hover.
+ * the full text via the native browser tooltip on hover.
  */
 export function DocumentHeaderTitle({ title, visible }: { title: string; visible: boolean }) {
     if (!title) {
@@ -12,14 +10,13 @@ export function DocumentHeaderTitle({ title, visible }: { title: string; visible
 
     return (
         <div className="document-header-title">
-            <Tooltip title={visible ? title : ''} mouseEnterDelay={0.4} placement="bottom">
-                <span
-                    className={`document-header-title__text ${visible ? 'is-visible' : ''}`}
-                    aria-hidden={!visible}
-                >
-                    {title}
-                </span>
-            </Tooltip>
+            <span
+                className={`document-header-title__text ${visible ? 'is-visible' : ''}`}
+                title={visible ? title : undefined}
+                aria-hidden={!visible}
+            >
+                {title}
+            </span>
         </div>
     );
 }
