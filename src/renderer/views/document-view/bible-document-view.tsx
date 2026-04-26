@@ -388,7 +388,13 @@ export default function BibleDocumentView() {
         return getBibleIndexEntry(bibleIndex, bookCode)?.bookName ?? '';
     }, [bibleIndex, bookCode]);
 
-    const showCompactTitle = useScrolledPastTitle(containerRef, verses.length > 0 && !loading);
+    // Gate on bookName too — the `.sermon-content-header` only renders once the
+    // book name resolves (separate async fetch from `verses`), so the observer
+    // must wait for that element to actually exist in the DOM.
+    const showCompactTitle = useScrolledPastTitle(
+        containerRef,
+        verses.length > 0 && !loading && !!bookName,
+    );
     const compactTitle = useMemo(() => {
         if (!bookName) return '';
         if (!chapter) return bookName;
