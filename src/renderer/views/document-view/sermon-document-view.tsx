@@ -23,7 +23,7 @@ import {
     useDocumentHighlights,
 } from './hooks';
 import { useTts } from '@renderer/hooks/use-tts';
-import { useFormatSermonDate } from '@renderer/hooks';
+import { useFormatSermonDate, useFormatSermonDateShort } from '@renderer/hooks';
 import {
     buildSegmentAnnouncement,
     buildSermonIntroText,
@@ -201,13 +201,12 @@ export default function SermonDocumentView() {
     const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
     const showCompactTitle = useScrolledPastTitle(containerRef, !!content);
+    const formatDateShort = useFormatSermonDateShort();
     const compactTitle = useMemo(() => {
         if (!content?.meta.title) return '';
-        const year = content.meta.dateMs
-            ? new Date(content.meta.dateMs).getFullYear().toString()
-            : '';
-        return year ? `${content.meta.title} — ${year}` : content.meta.title;
-    }, [content?.meta.title, content?.meta.dateMs]);
+        const dateLabel = content.meta.dateMs ? formatDateShort(content.meta.dateMs) : '';
+        return dateLabel ? `${content.meta.title} — ${dateLabel}` : content.meta.title;
+    }, [content?.meta.title, content?.meta.dateMs, formatDateShort]);
 
     return (
         <DocumentBody

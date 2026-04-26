@@ -22,7 +22,7 @@ import type {
     SermonListItemWithTranslations,
     SubjectDocumentItem,
 } from '@shared/types';
-import { formatSermonDate } from '@renderer/utils/sermon-utils';
+import { formatSermonDate, formatSermonDateShort } from '@renderer/utils/sermon-utils';
 import { capitalize } from 'lodash';
 import {
     buildBibleDocumentId,
@@ -388,6 +388,16 @@ export function useFormatSermonDate() {
 
     return useCallback(
         (dateMs: number) => capitalize(formatSermonDate(dateMs, contentLanguage ?? 'en')),
+        [contentLanguage],
+    );
+}
+
+/** Compact `dd/MMM/yy` formatter localized via the active content language. */
+export function useFormatSermonDateShort() {
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+
+    return useCallback(
+        (dateMs: number) => formatSermonDateShort(dateMs, contentLanguage ?? 'en'),
         [contentLanguage],
     );
 }
