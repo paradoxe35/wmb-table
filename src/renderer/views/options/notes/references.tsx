@@ -159,7 +159,11 @@ export function ReferenceBibleModal({
                                 {t('Aucun verset sélectionné')}
                             </Typography.Text>
                         )}
-                        <AnimatePresence mode="popLayout" initial={false}>
+                        <AnimatePresence
+                            key={reference?.id ?? 'none'}
+                            mode="popLayout"
+                            initial={false}
+                        >
                             {verses.map((ref) => (
                                 <motion.div
                                     key={ref.id}
