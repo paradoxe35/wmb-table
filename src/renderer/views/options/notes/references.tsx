@@ -245,7 +245,7 @@ export function ReferenceBibleModal({
                             color: 'var(--ant-color-text-secondary)',
                         }}
                     >
-                        {t('Référence biblique')}
+                        {t('Référence Bible')}
                     </div>
                     {reference && (
                         <div>

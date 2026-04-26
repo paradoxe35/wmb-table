@@ -250,10 +250,10 @@ export function TiptapEditorView({
                         target: null,
                         // @ts-expect-error — extra attributes added via custom extension
                         reference: 'true',
-                        title: t('Référence document'),
+                        title: t('Référence sermon'),
                     })
                     .run();
-                message.success(t('Référence document: {{label}}', { label: ref.label }));
+                message.success(t('Référence sermon: {{label}}', { label: ref.label }));
             } else {
                 const ref = await ipcRequestWithLoader<NoteItemReferenceBible>(() =>
                     window.api.notes.createBibleReference(workingNoteId, selected),
@@ -268,10 +268,10 @@ export function TiptapEditorView({
                         // @ts-expect-error — extra attributes added via custom extension
                         reference: 'true',
                         bible: 'true',
-                        title: t('Référence biblique'),
+                        title: t('Référence Bible'),
                     })
                     .run();
-                message.success(t('Référence biblique: {{label}}', { label: ref.label }));
+                message.success(t('Référence Bible: {{label}}', { label: ref.label }));
                 showBibleModalRef.current(ref);
             }
         };
@@ -332,8 +332,8 @@ export function TiptapEditorView({
         };
 
         const menu = new ContextMenu(container, [
-            { text: t('Référence document'), onclick: () => void refereToDocument('document') },
-            { text: t('Référence biblique'), onclick: () => void refereToDocument('bible') },
+            { text: t('Référence sermon'), onclick: () => void refereToDocument('document') },
+            { text: t('Référence Bible'), onclick: () => void refereToDocument('bible') },
             { text: t('Copier'), onclick: () => void copySelection() },
             null,
             {
