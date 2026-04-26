@@ -1107,6 +1107,9 @@ const pt: Record<string, string> = {
     'Adresse du lien': 'URL do link',
     'Langue par défaut': 'Idioma padrão',
     'Commencez à écrire votre note…': 'Comece a escrever sua nota…',
+    'Code en ligne': 'Código em linha',
+    'Bloc de code': 'Bloco de código',
+    'Effacer la mise en forme': 'Limpar formatação',
 };
 
 export default pt;

@@ -24,6 +24,8 @@ import {
     BgColorsOutlined,
     FontColorsOutlined,
     FontSizeOutlined,
+    CodeOutlined,
+    ClearOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { TEXT_PART_LANGUAGE_OPTIONS } from '@shared/constants';
@@ -76,6 +78,8 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
             isOrderedList: ed.isActive('orderedList'),
             isTaskList: ed.isActive('taskList'),
             isBlockquote: ed.isActive('blockquote'),
+            isCode: ed.isActive('code'),
+            isCodeBlock: ed.isActive('codeBlock'),
             isLink: ed.isActive('link'),
             alignLeft: ed.isActive({ textAlign: 'left' }),
             alignCenter: ed.isActive({ textAlign: 'center' }),
@@ -299,6 +303,15 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                     onClick={() => editor.chain().focus().toggleStrike().run()}
                 />
             </Tooltip>
+            <Tooltip title={t('Code en ligne')}>
+                <Button
+                    type={state.isCode ? 'primary' : 'text'}
+                    size="small"
+                    style={SMALL_BUTTON_STYLE}
+                    icon={<CodeOutlined />}
+                    onClick={() => editor.chain().focus().toggleCode().run()}
+                />
+            </Tooltip>
 
             <Divider type="vertical" />
 
@@ -461,6 +474,16 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                     {'❝'}
                 </Button>
             </Tooltip>
+            <Tooltip title={t('Bloc de code')}>
+                <Button
+                    type={state.isCodeBlock ? 'primary' : 'text'}
+                    size="small"
+                    style={SMALL_BUTTON_STYLE}
+                    onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                >
+                    {'</>'}
+                </Button>
+            </Tooltip>
             <Tooltip title={t('Insérer un tableau')}>
                 <Button
                     type="text"
@@ -486,6 +509,15 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                     style={SMALL_BUTTON_STYLE}
                     icon={<FileTextOutlined />}
                     onClick={() => editor.chain().focus().insertPageBreak().run()}
+                />
+            </Tooltip>
+            <Tooltip title={t('Effacer la mise en forme')}>
+                <Button
+                    type="text"
+                    size="small"
+                    style={SMALL_BUTTON_STYLE}
+                    icon={<ClearOutlined />}
+                    onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
                 />
             </Tooltip>
 

@@ -1,18 +1,17 @@
-import { useEditor, EditorContent, type Editor } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
 import { getMarkRange } from '@tiptap/core';
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { message } from 'antd';
 import { StarterKit } from '@tiptap/starter-kit';
 import { TextStyleKit } from '@tiptap/extension-text-style';
-import { TaskList, TaskItem } from '@tiptap/extension-list';
 import { TableKit } from '@tiptap/extension-table';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { Placeholder } from '@tiptap/extension-placeholder';
+import { Image } from '@tiptap/extension-image';
 
-import { TEXT_PART_LANGUAGE_OPTIONS } from '@shared/constants';
 import type { NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { ContextMenu } from '@renderer/utils/context-menu';
 import { debounce, substrAfter } from '@renderer/utils/functions';
@@ -24,6 +23,7 @@ import { ReferenceLink } from './extensions/reference-link';
 import { PageBreak } from './extensions/page-break';
 import { TextPartLanguage } from './extensions/text-part-language';
 import { Indent } from './extensions/indent';
+import { TaskListCompat, TaskItemCompat } from './extensions/task-list-compat';
 import { EditorToolbar } from './toolbar';
 import {
     referenceBibleBrandLink,
@@ -43,39 +43,30 @@ function findAnchorElement(target: EventTarget | null): HTMLAnchorElement | null
     return null;
 }
 
-export type TiptapEditorHandle = {
-    editor: Editor | null;
-    getHTML: () => string;
-    setHTML: (html: string, opts?: { emitUpdate?: boolean }) => void;
-    setEditable: (editable: boolean) => void;
-};
-
 export function TiptapEditorView({
     workingNoteId,
     initialContent,
     uiLanguage,
+    editable,
     onChange,
     onContentPresenceChange,
-    onReady,
     bibleReferenceModal,
 }: {
     workingNoteId: string;
-    initialContent: string | null;
+    initialContent: string;
     uiLanguage: string;
+    editable: boolean;
     onChange: (html: string) => void;
     onContentPresenceChange: (hasContent: boolean) => void;
-    onReady: (editor: Editor) => void;
     bibleReferenceModal: ReturnType<typeof useBibleReferenceModal>;
 }) {
     const { t } = useTranslation();
     const showReferenceDetail = useShowReferenceDetail();
     const navigateWmbLink = useWmbLinkNavigate();
     const ipcRequestWithLoader = useIpcRequestWithLoader();
-    const workingNoteIdRef = useValueStateRef(workingNoteId);
 
     const onChangeRef = useValueStateRef(onChange);
     const onContentPresenceChangeRef = useValueStateRef(onContentPresenceChange);
-    const onReadyRef = useValueStateRef(onReady);
     const navigateWmbLinkRef = useValueStateRef(navigateWmbLink);
     const showReferenceDetailRef = useValueStateRef(showReferenceDetail);
     const showBibleModalRef = useValueStateRef(bibleReferenceModal.showModal);
@@ -83,8 +74,8 @@ export function TiptapEditorView({
     const contextEventRef = useRef<MouseEvent | null>(null);
     const debouncedChangeRef = useRef(debounce(() => {}, 1000));
 
-    // Note: extensions list is intentionally a stable reference for the editor's lifetime;
-    // language-specific config (textPartLanguage options) is read via TEXT_PART_LANGUAGE_OPTIONS at render-time.
+    // Stable for the editor's lifetime — the parent remounts this component (via key) when
+    // the underlying note content changes (initial load, import).
     const extensions = useMemo(
         () => [
             StarterKit.configure({
@@ -98,11 +89,12 @@ export function TiptapEditorView({
                 fontSize: { types: ['textStyle'] },
             }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
-            TaskList,
-            TaskItem.configure({ nested: true }),
+            TaskListCompat,
+            TaskItemCompat.configure({ nested: true }),
             TableKit.configure({ table: { resizable: true } }),
             Subscript,
             Superscript,
+            Image.configure({ inline: false, allowBase64: true }),
             ReferenceLink.configure({
                 openOnClick: false,
                 autolink: true,
@@ -121,29 +113,34 @@ export function TiptapEditorView({
         [],
     );
 
-    const editor = useEditor(
-        {
-            extensions,
-            content: initialContent ?? '',
-            editorProps: {
-                attributes: {
-                    class: 'tiptap-prose cke5-decoupled-custom-document-editable',
-                    spellcheck: 'false',
-                    lang: uiLanguage,
-                },
+    const editor = useEditor({
+        extensions,
+        content: initialContent,
+        editable,
+        editorProps: {
+            attributes: {
+                class: 'tiptap-prose cke5-decoupled-custom-document-editable',
+                spellcheck: 'false',
+                lang: uiLanguage,
             },
-            onCreate: ({ editor: ed }) => {
-                onContentPresenceChangeRef.current(hasMeaningfulHtmlContent(ed.getHTML()));
-                onReadyRef.current(ed);
-            },
-            onUpdate: ({ editor: ed }) => {
-                onContentPresenceChangeRef.current(hasMeaningfulHtmlContent(ed.getHTML()));
-                debouncedChangeRef.current();
-            },
-            immediatelyRender: false,
         },
-        [workingNoteId],
-    );
+        onCreate: ({ editor: ed }) => {
+            onContentPresenceChangeRef.current(hasMeaningfulHtmlContent(ed.getHTML()));
+        },
+        onUpdate: ({ editor: ed }) => {
+            onContentPresenceChangeRef.current(hasMeaningfulHtmlContent(ed.getHTML()));
+            debouncedChangeRef.current();
+        },
+        immediatelyRender: false,
+    });
+
+    // Sync editable prop with the editor instance.
+    useEffect(() => {
+        if (!editor) return;
+        if (editor.isEditable !== editable) {
+            editor.setEditable(editable);
+        }
+    }, [editor, editable]);
 
     // Build the debounced save bound to the live editor.
     useEffect(() => {
@@ -215,7 +212,7 @@ export function TiptapEditorView({
         t,
     ]);
 
-    // Right-click context menu mirroring the legacy behavior.
+    // Right-click context menu mirroring the legacy CKEditor behavior.
     useEffect(() => {
         if (!editor) return;
         const dom = editor.view.dom as HTMLElement;
@@ -242,7 +239,7 @@ export function TiptapEditorView({
 
             if (type === 'document') {
                 const ref = await ipcRequestWithLoader<NoteItemReference>(() =>
-                    window.api.notes.createReference(workingNoteIdRef.current, selected),
+                    window.api.notes.createReference(workingNoteId, selected),
                 );
                 editor
                     .chain()
@@ -259,7 +256,7 @@ export function TiptapEditorView({
                 message.success(t('Référence document: {{label}}', { label: ref.label }));
             } else {
                 const ref = await ipcRequestWithLoader<NoteItemReferenceBible>(() =>
-                    window.api.notes.createBibleReference(workingNoteIdRef.current, selected),
+                    window.api.notes.createBibleReference(workingNoteId, selected),
                 );
                 editor
                     .chain()
@@ -352,7 +349,7 @@ export function TiptapEditorView({
             menu.uninstall();
             menu.container.removeEventListener('contextmenu', captureContext);
         };
-    }, [editor, ipcRequestWithLoader, showBibleModalRef, t, workingNoteIdRef]);
+    }, [editor, ipcRequestWithLoader, showBibleModalRef, t, workingNoteId]);
 
     if (!editor) {
         return <div className="editor-scroll" />;
@@ -369,6 +366,3 @@ export function TiptapEditorView({
         </>
     );
 }
-
-// Re-export so consumers can ensure the language list is in sync.
-export const TIPTAP_TEXT_PART_LANGUAGES = TEXT_PART_LANGUAGE_OPTIONS;

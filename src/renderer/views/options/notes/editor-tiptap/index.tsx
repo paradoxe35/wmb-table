@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { App as AntApp, Button, Input, Space, Tooltip, message } from 'antd';
+import { App as AntApp, Button, Input, Space, Spin, Tooltip, message } from 'antd';
 import {
     LeftOutlined,
     FilePdfOutlined,
@@ -9,11 +9,10 @@ import {
     ExclamationCircleOutlined,
     UploadOutlined,
 } from '@ant-design/icons';
-import type { Editor } from '@tiptap/react';
 
 import type { UiLanguage } from '@shared/constants';
 import type { NoteItem } from '@shared/types';
-import { useIpcRequestWithLoader, useValueStateRef } from '@renderer/hooks';
+import { useValueStateRef } from '@renderer/hooks';
 import { hasMeaningfulHtmlContent } from '@shared/html-content';
 import { EDITOR_EVENT, type RenameNoteDetail } from '@renderer/utils/events';
 import {
@@ -89,16 +88,18 @@ const useRenameNote = (note: NoteItem | null) => {
 function ButtonsControllers({
     backToNotes,
     workingNote,
-    editorRef,
     hasContent,
     importingDocument,
+    editable,
+    onEditableChange,
     onImportDocument,
 }: {
     backToNotes: () => void;
     workingNote: NoteItem | null;
-    editorRef: React.RefObject<Editor | null>;
     hasContent: boolean;
     importingDocument: boolean;
+    editable: boolean;
+    onEditableChange: (editable: boolean) => void;
     onImportDocument: (file: File) => Promise<void>;
 }) {
     const { t } = useTranslation();
@@ -106,13 +107,10 @@ function ButtonsControllers({
     const workingNoteRef = useValueStateRef(workingNote);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [loadingPdf, setLoadingPdf] = useState(false);
-    const [readOnly, setReadOnly] = useState(false);
+    const readOnly = !editable;
 
     const exportPdf = () => {
-        const editor = editorRef.current;
-        if (!editor || !hasMeaningfulHtmlContent(editor.getHTML())) {
-            return;
-        }
+        if (!hasContent) return;
         setLoadingPdf(true);
         window.api.notes
             .exportPdf(workingNoteRef.current?.id ?? '')
@@ -130,14 +128,6 @@ function ButtonsControllers({
             window.removeEventListener(EDITOR_EVENT.renameNoteModal, openModal);
         };
     }, [openModal]);
-
-    const readOnlyMode = () => {
-        const editor = editorRef.current;
-        if (!editor) return;
-        const next = !readOnly;
-        setReadOnly(next);
-        editor.setEditable(!next);
-    };
 
     const { modal: antModal } = AntApp.useApp();
 
@@ -160,12 +150,11 @@ function ButtonsControllers({
     }, [antModal, backToNotes, t, workingNoteRef]);
 
     const onBackToNotes = useCallback(() => {
-        const editor = editorRef.current;
-        if (editor && !hasMeaningfulHtmlContent(editor.getHTML())) {
+        if (workingNote && !hasContent) {
             return confirm();
         }
         backToNotes();
-    }, [backToNotes, confirm, editorRef]);
+    }, [backToNotes, confirm, hasContent, workingNote]);
 
     const handleImportFileChange = useCallback(
         async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -232,7 +221,7 @@ function ButtonsControllers({
                             }
                         >
                             <Button
-                                onClick={readOnlyMode}
+                                onClick={() => onEditableChange(!editable)}
                                 type={readOnly ? 'primary' : 'dashed'}
                                 icon={<ReadOutlined />}
                             />
@@ -263,15 +252,18 @@ export default function EditorContent({
 }) {
     const { t } = useTranslation();
     const workingNoteIdRef = useValueStateRef(workingNoteId);
-    const editorRef = useRef<Editor | null>(null);
     const renameTimerRef = useRef<number | null>(null);
 
     const [workingNote, setWorkingNote] = useState<NoteItem | null>(null);
     const [hasContent, setHasContent] = useState(false);
     const [importingDocument, setImportingDocument] = useState(false);
+    const [editable, setEditable] = useState(true);
+
+    // Bumped on initial load and on import — used as the editor's React key so the editor
+    // remounts with fresh content (no imperative setContent dance, no hydration race).
+    const [contentVersion, setContentVersion] = useState(0);
 
     const bibleReferenceModal = useBibleReferenceModal();
-    const ipcRequestWithLoader = useIpcRequestWithLoader();
 
     const workingNoteRef = useValueStateRef(workingNote);
     const hasContentRef = useValueStateRef(hasContent);
@@ -292,6 +284,7 @@ export default function EditorContent({
             const noteHasContent = hasMeaningfulHtmlContent(note?.content);
             setWorkingNote(note);
             setHasContent(noteHasContent);
+            setContentVersion((v) => v + 1);
 
             if (note?.created && note.defaultName && !noteHasContent) {
                 renameTimerRef.current = window.setTimeout(() => {
@@ -358,10 +351,6 @@ export default function EditorContent({
         [syncAvailableReferencesFromHtml, workingNoteIdRef],
     );
 
-    const handleEditorReady = useCallback((editor: Editor) => {
-        editorRef.current = editor;
-    }, []);
-
     const handleImportDocument = useCallback(
         async (file: File) => {
             setImportingDocument(true);
@@ -380,11 +369,8 @@ export default function EditorContent({
 
                 setWorkingNote(importedNote);
                 setHasContent(hasMeaningfulHtmlContent(importedNote.content));
-
-                const editor = editorRef.current;
-                if (editor && editor.getHTML() !== (importedNote.content ?? '')) {
-                    editor.commands.setContent(importedNote.content ?? '', { emitUpdate: false });
-                }
+                // Force the editor to remount with the imported content.
+                setContentVersion((v) => v + 1);
 
                 message.success(t('Document importé dans la note'));
             } catch (error) {
@@ -400,6 +386,8 @@ export default function EditorContent({
         [clearRenameTimer, t, workingNoteIdRef],
     );
 
+    // Sync references with the DB once when the note first loads, so removed
+    // references in saved HTML are cleaned up before the user makes any edit.
     const firstSync = useRef(false);
     useEffect(() => {
         if (workingNote && !firstSync.current) {
@@ -408,28 +396,35 @@ export default function EditorContent({
         }
     }, [workingNote, syncAvailableReferencesFromHtml]);
 
-    // Suppress unused-warning while preserving the request hook for parity with the legacy module.
-    void ipcRequestWithLoader;
-
     return (
         <div className="editor-layout">
             <ButtonsControllers
-                editorRef={editorRef}
                 workingNote={workingNote}
                 backToNotes={backToNotes}
                 hasContent={hasContent}
                 importingDocument={importingDocument}
+                editable={editable}
+                onEditableChange={setEditable}
                 onImportDocument={handleImportDocument}
             />
-            <TiptapEditorView
-                workingNoteId={workingNoteId}
-                initialContent={workingNote?.content ?? null}
-                uiLanguage={uiLanguage}
-                onChange={handleEditorChange}
-                onContentPresenceChange={setHasContent}
-                onReady={handleEditorReady}
-                bibleReferenceModal={bibleReferenceModal}
-            />
+            {workingNote ? (
+                <TiptapEditorView
+                    key={contentVersion}
+                    workingNoteId={workingNoteId}
+                    initialContent={workingNote.content ?? ''}
+                    uiLanguage={uiLanguage}
+                    editable={editable}
+                    onChange={handleEditorChange}
+                    onContentPresenceChange={setHasContent}
+                    bibleReferenceModal={bibleReferenceModal}
+                />
+            ) : (
+                <div className="editor-scroll">
+                    <div className="flex flex-center" style={{ marginTop: '2rem' }}>
+                        <Spin />
+                    </div>
+                </div>
+            )}
             <ReferenceBibleModal {...bibleReferenceModal} />
         </div>
     );

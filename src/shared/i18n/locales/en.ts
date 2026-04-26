@@ -1099,6 +1099,9 @@ const en: Record<string, string> = {
     'Adresse du lien': 'Link URL',
     'Langue par défaut': 'Default language',
     'Commencez à écrire votre note…': 'Start writing your note…',
+    'Code en ligne': 'Inline code',
+    'Bloc de code': 'Code block',
+    'Effacer la mise en forme': 'Clear formatting',
 };
 
 export default en;

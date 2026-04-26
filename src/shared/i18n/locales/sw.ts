@@ -1106,6 +1106,9 @@ const sw: Record<string, string> = {
     'Adresse du lien': 'Anwani ya kiungo',
     'Langue par défaut': 'Lugha chaguomsingi',
     'Commencez à écrire votre note…': 'Anza kuandika maelezo yako…',
+    'Code en ligne': 'Msimbo wa ndani',
+    'Bloc de code': 'Kizuizi cha msimbo',
+    'Effacer la mise en forme': 'Futa muundo',
 };
 
 export default sw;

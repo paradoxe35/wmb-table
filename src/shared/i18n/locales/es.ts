@@ -1110,6 +1110,9 @@ const es: Record<string, string> = {
     'Adresse du lien': 'URL del enlace',
     'Langue par défaut': 'Idioma predeterminado',
     'Commencez à écrire votre note…': 'Empieza a escribir tu nota…',
+    'Code en ligne': 'Código en línea',
+    'Bloc de code': 'Bloque de código',
+    'Effacer la mise en forme': 'Borrar formato',
 };
 
 export default es;
