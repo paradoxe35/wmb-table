@@ -1110,6 +1110,13 @@ const pt: Record<string, string> = {
     'Code en ligne': 'Código em linha',
     'Bloc de code': 'Bloco de código',
     'Effacer la mise en forme': 'Limpar formatação',
+
+    // ── wmb:// reference modal ──
+    'Référence introuvable': 'Referência não encontrada',
+    'Chargement de la référence…': 'Carregando referência…',
+    'Paragraphe {{n}}': 'Parágrafo {{n}}',
+    Sermon: 'Sermão',
+    'Document personnalisé': 'Documento personalizado',
 };
 
 export default pt;

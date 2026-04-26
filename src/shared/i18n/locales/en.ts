@@ -1102,6 +1102,13 @@ const en: Record<string, string> = {
     'Code en ligne': 'Inline code',
     'Bloc de code': 'Code block',
     'Effacer la mise en forme': 'Clear formatting',
+
+    // ── wmb:// reference modal ──
+    'Référence introuvable': 'Reference not found',
+    'Chargement de la référence…': 'Loading reference…',
+    'Paragraphe {{n}}': 'Paragraph {{n}}',
+    Sermon: 'Sermon',
+    'Document personnalisé': 'Custom document',
 };
 
 export default en;

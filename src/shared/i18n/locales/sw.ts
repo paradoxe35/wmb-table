@@ -1109,6 +1109,13 @@ const sw: Record<string, string> = {
     'Code en ligne': 'Msimbo wa ndani',
     'Bloc de code': 'Kizuizi cha msimbo',
     'Effacer la mise en forme': 'Futa muundo',
+
+    // ── wmb:// reference modal ──
+    'Référence introuvable': 'Rejeo halijapatikana',
+    'Chargement de la référence…': 'Inapakia rejeo…',
+    'Paragraphe {{n}}': 'Aya {{n}}',
+    Sermon: 'Mahubiri',
+    'Document personnalisé': 'Hati maalum',
 };
 
 export default sw;

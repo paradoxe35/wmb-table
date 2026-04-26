@@ -17,8 +17,8 @@ import type { NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { ContextMenu } from '@renderer/utils/context-menu';
 import { debounce, substrAfter } from '@renderer/utils/functions';
 import { useIpcRequestWithLoader, useValueStateRef } from '@renderer/hooks';
-import { useWmbLinkNavigate } from '@renderer/hooks/use-wmb-link';
 import { hasMeaningfulHtmlContent } from '@shared/html-content';
+import { useWmbReferenceModal, WmbReferenceModal } from '@renderer/components/wmb-reference';
 
 import { ReferenceLink } from './extensions/reference-link';
 import { PageBreak } from './extensions/page-break';
@@ -62,14 +62,14 @@ export function TiptapEditorView({
 }) {
     const { t } = useTranslation();
     const showReferenceDetail = useShowReferenceDetail();
-    const navigateWmbLink = useWmbLinkNavigate();
+    const wmbReferenceModal = useWmbReferenceModal();
     const ipcRequestWithLoader = useIpcRequestWithLoader();
 
     const onChangeRef = useValueStateRef(onChange);
     const onContentPresenceChangeRef = useValueStateRef(onContentPresenceChange);
-    const navigateWmbLinkRef = useValueStateRef(navigateWmbLink);
     const showReferenceDetailRef = useValueStateRef(showReferenceDetail);
     const showBibleModalRef = useValueStateRef(bibleReferenceModal.showModal);
+    const showWmbReferenceRef = useValueStateRef(wmbReferenceModal.showWmbReference);
 
     const contextEventRef = useRef<MouseEvent | null>(null);
     const debouncedChangeRef = useRef(debounce(() => {}, 1000));
@@ -193,9 +193,9 @@ export function TiptapEditorView({
                     else message.error(t('La référence biblique est invalide'));
                 });
             } else if (href.startsWith(WMB_BRAND_LINK)) {
-                navigateWmbLinkRef.current('wmb://' + substrAfter(href, WMB_BRAND_LINK));
+                showWmbReferenceRef.current('wmb://' + substrAfter(href, WMB_BRAND_LINK));
             } else {
-                navigateWmbLinkRef.current(href);
+                showWmbReferenceRef.current(href);
             }
         };
 
@@ -206,9 +206,9 @@ export function TiptapEditorView({
     }, [
         editor,
         ipcRequestWithLoader,
-        navigateWmbLinkRef,
         showBibleModalRef,
         showReferenceDetailRef,
+        showWmbReferenceRef,
         t,
     ]);
 
@@ -363,6 +363,7 @@ export function TiptapEditorView({
                     <EditorContent editor={editor} />
                 </div>
             </div>
+            <WmbReferenceModal {...wmbReferenceModal} />
         </>
     );
 }
