@@ -7,10 +7,10 @@ export type ThemeMode = 'auto' | 'system' | 'light' | 'dark';
 export type FontSizeOption = 'small' | 'default' | 'large' | 'x-large';
 
 export const FONT_SIZE_MAP: Record<FontSizeOption, number> = {
-    small: 12,
-    default: 14,
-    large: 16,
-    'x-large': 18,
+    small: 13,
+    default: 16,
+    large: 18,
+    'x-large': 20,
 };
 
 interface ThemeState {
