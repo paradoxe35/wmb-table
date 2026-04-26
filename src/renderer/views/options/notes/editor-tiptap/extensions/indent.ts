@@ -15,18 +15,10 @@ const MAX_INDENT = 10;
 
 function parseIndent(style: string | null): number {
     if (!style) return 0;
-    const emMatch = /margin-left:\s*(-?\d+(?:\.\d+)?)em/i.exec(style);
-    if (emMatch) {
-        const value = parseFloat(emMatch[1]);
-        return Number.isFinite(value) ? Math.round(value / INDENT_STEP) : 0;
-    }
-    // CKEditor 5 emits margin-left in px (default step ~40px).
-    const pxMatch = /margin-left:\s*(-?\d+(?:\.\d+)?)px/i.exec(style);
-    if (pxMatch) {
-        const value = parseFloat(pxMatch[1]);
-        return Number.isFinite(value) ? Math.max(0, Math.round(value / 16 / INDENT_STEP)) : 0;
-    }
-    return 0;
+    const match = /margin-left:\s*(-?\d+(?:\.\d+)?)em/i.exec(style);
+    if (!match) return 0;
+    const value = parseFloat(match[1]);
+    return Number.isFinite(value) ? Math.max(0, Math.round(value / INDENT_STEP)) : 0;
 }
 
 export const Indent = Extension.create({

@@ -18,18 +18,7 @@ export const PageBreak = Node.create({
     selectable: true,
 
     parseHTML() {
-        return [
-            { tag: 'div.page-break' },
-            { tag: 'div[data-page-break]' },
-            {
-                tag: 'div',
-                getAttrs: (node) => {
-                    if (!(node instanceof HTMLElement)) return false;
-                    const style = node.getAttribute('style') ?? '';
-                    return /page-break-(?:after|before):\s*always/i.test(style) ? {} : false;
-                },
-            },
-        ];
+        return [{ tag: 'div[data-page-break]' }];
     },
 
     renderHTML({ HTMLAttributes }) {
@@ -38,7 +27,6 @@ export const PageBreak = Node.create({
             mergeAttributes(HTMLAttributes, {
                 class: 'page-break',
                 'data-page-break': 'true',
-                style: 'page-break-after: always;',
             }),
         ];
     },

@@ -104,7 +104,7 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
 }
 
 /**
- * Convert wmb:// URLs to http://w.t/#wmb/ format that CKEditor allows,
+ * Convert wmb:// URLs to the http://w.t/#wmb/ format used by the notes editor,
  * and encode spaces so the markdown parser doesn't break them.
  */
 function sanitizeWmbLinks(content: string): string {

@@ -28,9 +28,6 @@ importers:
             '@ant-design/icons':
                 specifier: ^6.1.1
                 version: 6.1.1(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
-            '@ckeditor/ckeditor5-react':
-                specifier: 5.0.2
-                version: 5.0.2(react@19.2.5)
             '@googleapis/drive':
                 specifier: ^20.1.0
                 version: 20.1.0
@@ -573,15 +570,6 @@ packages:
                 integrity: sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==,
             }
         engines: { node: '>=6.9.0' }
-
-    '@ckeditor/ckeditor5-react@5.0.2':
-        resolution:
-            {
-                integrity: sha512-pN4acvCAIsuXaZDMttqy4dNBKXiJ6AS6P8NM3ggMc/rQkMIPp3YPhDWWf+pyQLUiewj1Bfr5EFeBfcXPQTOn+Q==,
-            }
-        engines: { node: '>=14.0.0', npm: '>=5.7.1' }
-        peerDependencies:
-            react: ^16.13.1 || ^17.0.0 || ^18.0.0
 
     '@csstools/color-helpers@5.1.0':
         resolution:
@@ -9882,11 +9870,6 @@ snapshots:
         dependencies:
             '@babel/helper-string-parser': 7.27.1
             '@babel/helper-validator-identifier': 7.28.5
-
-    '@ckeditor/ckeditor5-react@5.0.2(react@19.2.5)':
-        dependencies:
-            prop-types: 15.8.1
-            react: 19.2.5
 
     '@csstools/color-helpers@5.1.0':
         optional: true

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { message } from 'antd';
 import { StarterKit } from '@tiptap/starter-kit';
 import { TextStyleKit } from '@tiptap/extension-text-style';
+import { TaskList, TaskItem } from '@tiptap/extension-list';
 import { TableKit } from '@tiptap/extension-table';
 import { TextAlign } from '@tiptap/extension-text-align';
 import { Subscript } from '@tiptap/extension-subscript';
@@ -23,7 +24,6 @@ import { ReferenceLink } from './extensions/reference-link';
 import { PageBreak } from './extensions/page-break';
 import { TextPartLanguage } from './extensions/text-part-language';
 import { Indent } from './extensions/indent';
-import { TaskListCompat, TaskItemCompat } from './extensions/task-list-compat';
 import { EditorToolbar } from './toolbar';
 import {
     referenceBibleBrandLink,
@@ -89,8 +89,8 @@ export function TiptapEditorView({
                 fontSize: { types: ['textStyle'] },
             }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
-            TaskListCompat,
-            TaskItemCompat.configure({ nested: true }),
+            TaskList,
+            TaskItem.configure({ nested: true }),
             TableKit.configure({ table: { resizable: true } }),
             Subscript,
             Superscript,
@@ -119,7 +119,7 @@ export function TiptapEditorView({
         editable,
         editorProps: {
             attributes: {
-                class: 'tiptap-prose cke5-decoupled-custom-document-editable',
+                class: 'tiptap-prose',
                 spellcheck: 'false',
                 lang: uiLanguage,
             },
@@ -212,7 +212,7 @@ export function TiptapEditorView({
         t,
     ]);
 
-    // Right-click context menu mirroring the legacy CKEditor behavior.
+    // Right-click context menu for managing references inline.
     useEffect(() => {
         if (!editor) return;
         const dom = editor.view.dom as HTMLElement;

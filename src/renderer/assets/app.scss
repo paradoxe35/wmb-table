@@ -1120,47 +1120,6 @@ body {
 }
 
 // ---------------------------------------------------------------------------
-// CKEditor 5 custom styles
-// ---------------------------------------------------------------------------
-.cke5-decoupled-custom-document-editable {
-    font-size: var(--fs-lg);
-    line-height: 1.6rem;
-    h1 {
-        display: block;
-        font-size: var(--fs-rel-8xl);
-        margin-block-start: 0.67em;
-        margin-block-end: 0.67em;
-        font-weight: bold;
-    }
-    a[reference='true'] {
-        color: var(--reference-link-color);
-        background-color: var(--reference-link-bg);
-        padding: 0 2px;
-        border-radius: 3px;
-        text-decoration: none;
-        &::after {
-            content: '❡';
-            font-size: var(--fs-sm);
-            margin-left: 3px;
-            opacity: 0.85;
-            font-weight: 600;
-            vertical-align: baseline;
-        }
-    }
-    a[reference='true'][bible='true'] {
-        &::after {
-            content: '†';
-            font-size: var(--fs-md);
-        }
-    }
-}
-
-:root {
-    --ck-sample-editor-min-height: 400px;
-    --ck-sample-editor-z-index: 10;
-}
-
-// ---------------------------------------------------------------------------
 // Tiptap editor — clean, professional toolbar + content surface
 // ---------------------------------------------------------------------------
 .tiptap-toolbar {
@@ -1199,7 +1158,7 @@ body {
 
 .tiptap-editor-frame {
     padding: 24px 28px;
-    min-height: var(--ck-sample-editor-min-height, 400px);
+    min-height: 400px;
 }
 
 .tiptap-prose {
@@ -1586,16 +1545,6 @@ body {
     &:hover {
         text-decoration: underline;
     }
-}
-
-.ck.editor__editable[role='textbox'],
-.ck.ck-editor__editable[role='textbox'] {
-    width: 100%;
-    background: var(--ant-color-bg-container, #fff);
-    font-size: var(--fs-base);
-    line-height: 1.6em;
-    min-height: var(--ck-sample-editor-min-height);
-    padding: 1.5em 2em;
 }
 
 // ---------------------------------------------------------------------------
