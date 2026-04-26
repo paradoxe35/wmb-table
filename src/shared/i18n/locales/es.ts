@@ -1120,12 +1120,6 @@ const es: Record<string, string> = {
     'Paragraphe {{n}}': 'Párrafo {{n}}',
     Sermon: 'Sermón',
     'Document personnalisé': 'Documento personalizado',
-
-    // ── Bible reference modal ──
-    'Versets sélectionnés': 'Versículos seleccionados',
-    'Choisir un verset': 'Elegir un versículo',
-    'Afficher la Bible': 'Mostrar la Biblia',
-    'Masquer la Bible': 'Ocultar la Biblia',
 };
 
 export default es;

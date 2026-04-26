@@ -4,9 +4,7 @@ import { motion } from 'framer-motion';
 
 import { useFormatSermonDate } from '@renderer/hooks';
 
-import type { BibleReferenceData, DocReferenceData, SermonReferenceData } from './resolvers';
-
-const DOC_PREVIEW_MAX_CHARS = 500;
+import type { BibleReferenceContent, DocReferenceContent, SermonReferenceContent } from './content';
 
 function ReferenceCard({
     label,
@@ -33,55 +31,52 @@ function ReferenceCard({
     );
 }
 
-function NotFoundEmpty() {
-    const { t } = useTranslation();
-    return <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('Référence introuvable')} />;
-}
-
-export function SermonReferenceView({ data }: { data: SermonReferenceData }) {
+export function SermonReferenceView({ content }: { content: SermonReferenceContent }) {
     const { t } = useTranslation();
     const formatDate = useFormatSermonDate();
-    const { meta, paragraph, ref } = data;
 
-    if (!meta) return <NotFoundEmpty />;
-
-    const metaLine = `${formatDate(meta.dateMs)}${meta.location ? ` — ${meta.location}` : ''}`;
+    const metaLine =
+        content.dateMs != null
+            ? `${formatDate(content.dateMs)}${content.location ? ` — ${content.location}` : ''}`
+            : (content.location ?? undefined);
 
     return (
-        <ReferenceCard label={t('Sermon')} title={meta.title} meta={metaLine}>
-            {paragraph ? (
+        <ReferenceCard label={t('Sermon')} title={content.title} meta={metaLine}>
+            {content.paragraphText ? (
                 <>
-                    <Typography.Text strong>
-                        {t('Paragraphe {{n}}', { n: paragraph.paragraphIndex })}
-                    </Typography.Text>
-                    <p className="wmb-reference__paragraph">{paragraph.content}</p>
+                    {content.paragraphIndex != null && (
+                        <Typography.Text strong>
+                            {t('Paragraphe {{n}}', { n: content.paragraphIndex })}
+                        </Typography.Text>
+                    )}
+                    <p className="wmb-reference__paragraph">{content.paragraphText}</p>
                 </>
             ) : (
                 <Typography.Text type="secondary">
-                    {t('Paragraphe {{n}}', { n: ref.paragraphIndex })} —{' '}
-                    {t('Référence introuvable')}
+                    {content.paragraphIndex != null
+                        ? `${t('Paragraphe {{n}}', { n: content.paragraphIndex })} — ${t('Référence introuvable')}`
+                        : t('Référence introuvable')}
                 </Typography.Text>
             )}
         </ReferenceCard>
     );
 }
 
-export function BibleReferenceView({ data }: { data: BibleReferenceData }) {
+export function BibleReferenceView({ content }: { content: BibleReferenceContent }) {
     const { t } = useTranslation();
-    const { ref, verses } = data;
-
-    const title = `${ref.bookName} ${ref.chapter}${ref.verse ? `:${ref.verse}` : ''}`;
-
     return (
         <ReferenceCard
             label={t('Bible')}
-            title={title}
-            meta={ref.bibleVersionAbbreviation.toUpperCase()}
+            title={content.label}
+            meta={content.versionAbbreviation.toUpperCase()}
         >
-            {verses.length === 0 ? (
-                <NotFoundEmpty />
+            {content.verses.length === 0 ? (
+                <Empty
+                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                    description={t('Référence introuvable')}
+                />
             ) : (
-                verses.map((verse) => (
+                content.verses.map((verse) => (
                     <div key={verse.id} className="wmb-reference__verse">
                         <Typography.Text strong className="wmb-reference__verse-ref">
                             {verse.bookName} {verse.chapter}:{verse.verse}
@@ -94,20 +89,17 @@ export function BibleReferenceView({ data }: { data: BibleReferenceData }) {
     );
 }
 
-export function DocReferenceView({ data }: { data: DocReferenceData }) {
+export function DocReferenceView({ content }: { content: DocReferenceContent }) {
     const { t } = useTranslation();
-    const { ref, document } = data;
-
-    if (!document) return <NotFoundEmpty />;
-
-    const snippet =
-        document.content.length > DOC_PREVIEW_MAX_CHARS
-            ? `${document.content.slice(0, DOC_PREVIEW_MAX_CHARS).trimEnd()}…`
-            : document.content;
-
     return (
-        <ReferenceCard label={t('Document personnalisé')} title={document.title || ref.title}>
-            <p className="wmb-reference__paragraph">{snippet}</p>
+        <ReferenceCard label={t('Document personnalisé')} title={content.title}>
+            {content.contentSnippet ? (
+                <p className="wmb-reference__paragraph">{content.contentSnippet}</p>
+            ) : (
+                <Typography.Text type="secondary">
+                    {t("Aucun document n'a été attribué pour cette référence")}
+                </Typography.Text>
+            )}
         </ReferenceCard>
     );
 }

@@ -29,7 +29,6 @@ import {
     referenceBibleBrandLink,
     referenceBrandLink as referenceDocumentBrandLink,
     useBibleReferenceModal,
-    useShowReferenceDetail,
 } from '../references';
 
 const WMB_BRAND_LINK = 'http://w.t/#wmb/';
@@ -61,15 +60,14 @@ export function TiptapEditorView({
     bibleReferenceModal: ReturnType<typeof useBibleReferenceModal>;
 }) {
     const { t } = useTranslation();
-    const showReferenceDetail = useShowReferenceDetail();
     const wmbReferenceModal = useWmbReferenceModal();
     const ipcRequestWithLoader = useIpcRequestWithLoader();
 
     const onChangeRef = useValueStateRef(onChange);
     const onContentPresenceChangeRef = useValueStateRef(onContentPresenceChange);
-    const showReferenceDetailRef = useValueStateRef(showReferenceDetail);
     const showBibleModalRef = useValueStateRef(bibleReferenceModal.showModal);
-    const showWmbReferenceRef = useValueStateRef(wmbReferenceModal.showWmbReference);
+    const showFromWmbHrefRef = useValueStateRef(wmbReferenceModal.showFromWmbHref);
+    const showFromNoteReferenceRef = useValueStateRef(wmbReferenceModal.showFromNoteReference);
 
     const contextEventRef = useRef<MouseEvent | null>(null);
     const debouncedChangeRef = useRef(debounce(() => {}, 1000));
@@ -178,12 +176,7 @@ export function TiptapEditorView({
 
             if (href.startsWith(referenceDocumentBrandLink)) {
                 const refId = substrAfter(href, referenceDocumentBrandLink);
-                ipcRequestWithLoader<NoteItemReference | null>(() =>
-                    window.api.notes.getReference(refId),
-                ).then((data) => {
-                    if (data) showReferenceDetailRef.current(data);
-                    else message.error(t('La référence est invalide'));
-                });
+                showFromNoteReferenceRef.current(refId);
             } else if (href.startsWith(referenceBibleBrandLink)) {
                 const refId = substrAfter(href, referenceBibleBrandLink);
                 ipcRequestWithLoader<NoteItemReferenceBible | null>(() =>
@@ -193,9 +186,9 @@ export function TiptapEditorView({
                     else message.error(t('La référence biblique est invalide'));
                 });
             } else if (href.startsWith(WMB_BRAND_LINK)) {
-                showWmbReferenceRef.current('wmb://' + substrAfter(href, WMB_BRAND_LINK));
+                showFromWmbHrefRef.current('wmb://' + substrAfter(href, WMB_BRAND_LINK));
             } else {
-                showWmbReferenceRef.current(href);
+                showFromWmbHrefRef.current(href);
             }
         };
 
@@ -207,8 +200,8 @@ export function TiptapEditorView({
         editor,
         ipcRequestWithLoader,
         showBibleModalRef,
-        showReferenceDetailRef,
-        showWmbReferenceRef,
+        showFromNoteReferenceRef,
+        showFromWmbHrefRef,
         t,
     ]);
 

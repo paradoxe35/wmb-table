@@ -1109,12 +1109,6 @@ const en: Record<string, string> = {
     'Paragraphe {{n}}': 'Paragraph {{n}}',
     Sermon: 'Sermon',
     'Document personnalisé': 'Custom document',
-
-    // ── Bible reference modal ──
-    'Versets sélectionnés': 'Selected verses',
-    'Choisir un verset': 'Pick a verse',
-    'Afficher la Bible': 'Show Bible',
-    'Masquer la Bible': 'Hide Bible',
 };
 
 export default en;

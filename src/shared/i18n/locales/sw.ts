@@ -1116,12 +1116,6 @@ const sw: Record<string, string> = {
     'Paragraphe {{n}}': 'Aya {{n}}',
     Sermon: 'Mahubiri',
     'Document personnalisé': 'Hati maalum',
-
-    // ── Bible reference modal ──
-    'Versets sélectionnés': 'Aya zilizochaguliwa',
-    'Choisir un verset': 'Chagua aya',
-    'Afficher la Bible': 'Onyesha Biblia',
-    'Masquer la Bible': 'Ficha Biblia',
 };
 
 export default sw;
