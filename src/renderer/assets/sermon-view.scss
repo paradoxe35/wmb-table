@@ -18,7 +18,8 @@
 }
 
 .sermon-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(max-content, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
     align-items: center;
     padding: 6px 16px;
     border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
@@ -28,8 +29,7 @@
 }
 
 .sermon-header__side {
-    flex: 1 1 0;
-    min-width: 0;
+    min-width: max-content;
     display: flex;
     align-items: center;
 
@@ -47,14 +47,12 @@
 }
 
 .document-header-title {
-    flex: 0 1 auto;
     min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0 12px;
     overflow: hidden;
-    max-width: min(60vw, 720px);
 
     &__text {
         max-width: 100%;
