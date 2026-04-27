@@ -95,6 +95,46 @@ describe('model-fetcher', () => {
         ]);
     });
 
+    it('uses top_provider context length when the root context length is missing', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({
+                data: [
+                    {
+                        id: 'model-a',
+                        name: 'Model A',
+                        top_provider: {
+                            context_length: 123_456,
+                            max_completion_tokens: 4_096,
+                        },
+                    },
+                ],
+            }),
+        }) as typeof fetch;
+
+        const models = await fetchProviderModels(createSettings(), {
+            providerId: 'custom-a',
+            baseUrl: 'https://example-a.test/v1',
+        });
+
+        expect(models).toEqual([
+            {
+                id: 'model-a',
+                name: 'Model A',
+                contextWindow: 123_456,
+                maxOutputTokens: 4_096,
+            },
+        ]);
+        expect(cacheSetCalls).toContainEqual({
+            key: 'ai-model-context:model-a',
+            value: 123_456,
+        });
+        expect(cacheSetCalls).toContainEqual({
+            key: 'ai-model-output:model-a',
+            value: 4_096,
+        });
+    });
+
     it('checks the dedicated model context cache before the model list cache', async () => {
         cacheData.set('ai-model-context:model-a', 123_456);
 

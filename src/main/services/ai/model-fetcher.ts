@@ -95,6 +95,7 @@ interface OpenAICompatibleModelEntry {
     name?: string;
     context_length?: number;
     top_provider?: {
+        context_length?: number;
         max_completion_tokens?: number;
     };
 }
@@ -159,7 +160,7 @@ async function fetchOpenAICompatibleModels(
         .map((m) => ({
             id: m.id,
             name: m.name ?? m.id,
-            contextWindow: toPositiveInt(m.context_length),
+            contextWindow: toPositiveInt(m.context_length ?? m.top_provider?.context_length),
             maxOutputTokens: toPositiveInt(m.top_provider?.max_completion_tokens),
         }))
         .sort((a, b) => a.id.localeCompare(b.id));

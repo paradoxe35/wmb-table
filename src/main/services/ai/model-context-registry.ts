@@ -19,6 +19,7 @@ interface OpenRouterModel {
     id: string;
     context_length?: number;
     top_provider?: {
+        context_length?: number;
         max_completion_tokens?: number;
     };
 }
@@ -221,7 +222,7 @@ function mergeLimits(...limits: Array<ModelLimits | undefined>): ModelLimits | u
 
 function openRouterModelLimits(model: OpenRouterModel): ModelLimits | undefined {
     return mergeLimits({
-        contextWindow: toPositiveInt(model.context_length),
+        contextWindow: toPositiveInt(model.context_length ?? model.top_provider?.context_length),
         maxOutputTokens: toPositiveInt(model.top_provider?.max_completion_tokens),
     });
 }

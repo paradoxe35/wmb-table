@@ -40,6 +40,7 @@ const OPEN_ROUTER_MODELS = [
     { id: 'mistralai/mistral-large-latest', context_length: 128_000 },
     { id: 'microsoft/phi-4', context_length: 16_384 },
     { id: 'deepseek/deepseek-coder-v2', context_length: 128_000 },
+    { id: 'openai/top-provider-context-only', top_provider: { context_length: 64_000 } },
 ];
 
 const MODELS_DEV_REGISTRY: Record<string, { contextWindow?: number; maxOutputTokens?: number }> = {
@@ -121,6 +122,11 @@ describe('model-context-registry', () => {
                 contextWindow: 128_000,
                 maxOutputTokens: 16_384,
             });
+        });
+
+        it('falls back to top_provider context length when root context length is missing', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('top-provider-context-only')).toBe(64_000);
         });
     });
 
