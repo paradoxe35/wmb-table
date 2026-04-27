@@ -346,30 +346,9 @@ const ChatMessageList = memo(function ChatMessageList({
         if (queuedMessageCount > prevQueuedMessageCount.current) {
             scrollToBottom();
         }
+
         prevQueuedMessageCount.current = queuedMessageCount;
     }, [queuedMessageCount, scrollToBottom]);
-
-    const prevConversationLastId = useRef<{ id: string | null; lastMessageId: string | null }>({
-        id: null,
-        lastMessageId: null,
-    });
-    useEffect(() => {
-        const currentLastId = messages[messages.length - 1]?.id ?? null;
-        const prev = prevConversationLastId.current;
-
-        if (
-            conversationId === prev.id &&
-            currentLastId !== null &&
-            currentLastId !== prev.lastMessageId
-        ) {
-            scrollToBottom();
-        }
-
-        prevConversationLastId.current = {
-            id: conversationId,
-            lastMessageId: currentLastId,
-        };
-    }, [conversationId, messages, scrollToBottom]);
 
     useLayoutEffect(() => {
         if (loadingOlder || !prependScrollSnapshot.current) {
