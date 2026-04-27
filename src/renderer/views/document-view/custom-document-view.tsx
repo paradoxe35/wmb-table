@@ -76,8 +76,12 @@ function CustomDocHeader({
     return (
         <>
             <div className="sermon-header">
+                <div
+                    className="sermon-header__side sermon-header__side--left sermon-header__side--placeholder"
+                    aria-hidden
+                />
                 <DocumentHeaderTitle title={compactTitle} visible={showCompactTitle} />
-                <Space size="small">
+                <Space size="small" className="sermon-header__side sermon-header__side--right">
                     <TtsButton tts={tts} />
                     <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
                     <Tooltip title={t('Sélectionnez un paragraphe')}>

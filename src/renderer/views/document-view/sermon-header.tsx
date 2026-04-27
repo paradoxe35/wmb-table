@@ -151,19 +151,28 @@ export default function SermonHeader({
     }, [availableTranslations]);
 
     const canOpenTranslations = Boolean(meta.sermonId);
+    const leftSlotClass = [
+        'sermon-header__side',
+        'sermon-header__side--left',
+        !hasMultipleTranslations ? 'sermon-header__side--placeholder' : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
         <div className="sermon-header">
-            {hasMultipleTranslations && (
-                <Segmented
-                    size="small"
-                    options={translationOptions}
-                    value={currentTranslationId}
-                    onChange={handleTranslationChange}
-                />
-            )}
+            <div className={leftSlotClass} aria-hidden={!hasMultipleTranslations || undefined}>
+                {hasMultipleTranslations && (
+                    <Segmented
+                        size="small"
+                        options={translationOptions}
+                        value={currentTranslationId}
+                        onChange={handleTranslationChange}
+                    />
+                )}
+            </div>
             <DocumentHeaderTitle title={compactTitle} visible={showCompactTitle} />
-            <Space size="small">
+            <Space size="small" className="sermon-header__side sermon-header__side--right">
                 {meta.audioLink && (
                     <Tooltip title={isPlaying ? t('Pause audio') : t("Écouter l'audio")}>
                         <Button

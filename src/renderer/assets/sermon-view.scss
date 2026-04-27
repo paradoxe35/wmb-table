@@ -20,7 +20,6 @@
 .sermon-header {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     padding: 6px 16px;
     border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
     gap: 8px;
@@ -28,14 +27,34 @@
     color: var(--ant-color-text-secondary, #6b7280);
 }
 
+.sermon-header__side {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+
+    &--left {
+        justify-content: flex-start;
+    }
+
+    &--right {
+        justify-content: flex-end;
+    }
+
+    &--placeholder {
+        visibility: hidden;
+    }
+}
+
 .document-header-title {
-    flex: 1;
+    flex: 0 1 auto;
     min-width: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0 12px;
     overflow: hidden;
+    max-width: min(60vw, 720px);
 
     &__text {
         max-width: 100%;
