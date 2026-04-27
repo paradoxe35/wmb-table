@@ -292,5 +292,28 @@ export async function getModelContextWindow(
     modelId: string,
     baseUrl?: string,
 ): Promise<number | undefined> {
-    return (await getModelLimits(providerId, modelId, baseUrl)).contextWindow;
+    if (providerId === 'local') {
+        return undefined;
+    }
+
+    const cachedContextWindow = getCachedContextWindow(modelId);
+    if (cachedContextWindow) {
+        return cachedContextWindow;
+    }
+
+    const cachedModels = getCachedProviderModels(
+        providerId,
+        baseUrl ?? BUILTIN_BASE_URLS[providerId],
+    );
+    const fromApi = cachedModels?.find((m) => m.id === modelId)?.contextWindow;
+    if (fromApi && fromApi > 0) {
+        cacheContextWindow(modelId, fromApi);
+        return fromApi;
+    }
+
+    const fromRegistry = await lookupModelLimits(modelId, providerId);
+    if (fromRegistry?.contextWindow) {
+        cacheContextWindow(modelId, fromRegistry.contextWindow);
+    }
+    return fromRegistry?.contextWindow;
 }

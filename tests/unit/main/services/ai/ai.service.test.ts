@@ -10,7 +10,7 @@ const buildAiToolsMock = vi.fn();
 const buildConversationContextMock = vi.fn();
 const resolveActiveModelMock = vi.fn();
 const resolveLanguageModelMock = vi.fn();
-const getModelContextWindowMock = vi.fn();
+const getModelLimitsMock = vi.fn();
 const resolveUiLanguageMock = vi.fn();
 const calculateRemoteTokenBudgetMock = vi.fn();
 const measurePromptTokensMock = vi.fn();
@@ -99,7 +99,7 @@ vi.mock('@main/services/ai/provider-catalog', () => ({
 
 vi.mock('@main/services/ai/model-fetcher', () => ({
     fetchProviderModels: vi.fn(),
-    getModelContextWindow: getModelContextWindowMock,
+    getModelLimits: getModelLimitsMock,
 }));
 
 const runnerRunMock = vi.fn();
@@ -152,7 +152,7 @@ describe('AiService', () => {
         resolveActiveModelMock.mockReturnValue('gpt-5-mini');
         resolveLanguageModelMock.mockReturnValue({ id: 'model' });
         resolveUiLanguageMock.mockReturnValue('en');
-        getModelContextWindowMock.mockResolvedValue(undefined);
+        getModelLimitsMock.mockResolvedValue({});
         buildAiToolsMock.mockReturnValue({
             searchContent: { description: 'search', inputSchema: { type: 'object' } },
         });
@@ -221,7 +221,7 @@ describe('AiService', () => {
     });
 
     it('omits delegation instructions for small remote context windows', async () => {
-        getModelContextWindowMock.mockResolvedValue(8_000);
+        getModelLimitsMock.mockResolvedValue({ contextWindow: 8_000 });
         const service = new AiService();
 
         await service.sendMessage({} as never, {
@@ -235,7 +235,7 @@ describe('AiService', () => {
     });
 
     it('keeps delegation instructions for larger remote context windows', async () => {
-        getModelContextWindowMock.mockResolvedValue(64_000);
+        getModelLimitsMock.mockResolvedValue({ contextWindow: 64_000 });
         const service = new AiService();
 
         await service.sendMessage({} as never, {

@@ -22,6 +22,7 @@ vi.mock('@main/lib/simple-cache', () => ({
 
         get = () => (cacheData.has(this.key) ? cacheData.get(this.key) : null);
         getStale = () => (cacheData.has(this.key) ? cacheData.get(this.key) : null);
+        getOrFetch = async () => this.get();
         set = (value: unknown) => {
             cacheData.set(this.key, value);
             cacheSetCalls.push({ key: this.key, value });

@@ -16,12 +16,17 @@ vi.mock('@main/lib/logger', () => ({
     default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-const { lookupContextWindow } = await import('@main/services/ai/model-context-registry');
+const { lookupContextWindow, lookupModelLimits } =
+    await import('@main/services/ai/model-context-registry');
 
 // ── Fixtures ──
 
 const OPEN_ROUTER_MODELS = [
-    { id: 'openai/gpt-5-mini', context_length: 128_000 },
+    {
+        id: 'openai/gpt-5-mini',
+        context_length: 128_000,
+        top_provider: { max_completion_tokens: 16_384 },
+    },
     { id: 'openai/gpt-5', context_length: 400_000 },
     { id: 'anthropic/claude-sonnet-4-6', context_length: 1_000_000 },
     { id: 'qwen/qwen3.6-plus:free', context_length: 1_000_000 },
@@ -37,13 +42,13 @@ const OPEN_ROUTER_MODELS = [
     { id: 'deepseek/deepseek-coder-v2', context_length: 128_000 },
 ];
 
-const LITELLM_REGISTRY: Record<string, number> = {
-    'groq/llama-3.3-70b-versatile': 128_000,
-    'anyscale/mistralai/Mixtral-8x22B-Instruct-v0.1': 65_536,
-    'together_ai/Qwen/Qwen2.5-72B-Instruct-Turbo': 32_768,
-    'ollama/deepseek-coder-v2-lite-instruct': 32_768,
-    'ollama/bakllava': 4_096,
-    'ollama/phi3': 128_000,
+const MODELS_DEV_REGISTRY: Record<string, { contextWindow?: number; maxOutputTokens?: number }> = {
+    'groq/llama-3.3-70b-versatile': { contextWindow: 128_000 },
+    'anyscale/mistralai/Mixtral-8x22B-Instruct-v0.1': { contextWindow: 65_536 },
+    'together_ai/Qwen/Qwen2.5-72B-Instruct-Turbo': { contextWindow: 32_768 },
+    'ollama/deepseek-coder-v2-lite-instruct': { contextWindow: 32_768 },
+    'ollama/bakllava': { contextWindow: 4_096 },
+    'ollama/phi3': { contextWindow: 128_000 },
 };
 
 // ── Helpers ──
@@ -56,11 +61,11 @@ function setupOpenRouter() {
     });
 }
 
-function setupLiteLLM() {
+function setupModelsDev() {
     let callCount = 0;
     getMock.mockImplementation(() => {
         callCount++;
-        return callCount === 2 ? LITELLM_REGISTRY : null;
+        return callCount === 2 ? MODELS_DEV_REGISTRY : null;
     });
 }
 
@@ -69,7 +74,7 @@ function setupBoth() {
     getMock.mockImplementation(() => {
         callCount++;
         if (callCount === 1) return OPEN_ROUTER_MODELS;
-        if (callCount === 2) return LITELLM_REGISTRY;
+        if (callCount === 2) return MODELS_DEV_REGISTRY;
         return null;
     });
 }
@@ -109,6 +114,14 @@ describe('model-context-registry', () => {
             setupOpenRouter();
             expect(await lookupContextWindow('qwen/qwen3.6-plus:free')).toBe(1_000_000);
         });
+
+        it('returns context and output limits from OpenRouter', async () => {
+            setupOpenRouter();
+            expect(await lookupModelLimits('gpt-5-mini', 'openai')).toEqual({
+                contextWindow: 128_000,
+                maxOutputTokens: 16_384,
+            });
+        });
     });
 
     describe('Ollama param-size-aware matching', () => {
@@ -147,15 +160,15 @@ describe('model-context-registry', () => {
             expect(await lookupContextWindow('gemma-3:27b')).toBe(128_000);
         });
 
-        it('bakllava:7b falls through to LiteLLM', async () => {
-            setupLiteLLM();
+        it('bakllava:7b falls through to models.dev', async () => {
+            setupModelsDev();
             expect(await lookupContextWindow('bakllava:7b')).toBe(4_096);
         });
     });
 
     describe('Ollama complex tags', () => {
         it('deepseek-coder-v2:16b-lite-instruct-q2_K extracts variant from tag', async () => {
-            setupLiteLLM();
+            setupModelsDev();
             expect(await lookupContextWindow('deepseek-coder-v2:16b-lite-instruct-q2_K')).toBe(
                 32_768,
             );
@@ -166,25 +179,25 @@ describe('model-context-registry', () => {
             expect(await lookupContextWindow('deepseek-coder-v2:latest')).toBe(128_000);
         });
 
-        it('phi3:latest matches LiteLLM ollama/phi3', async () => {
-            setupLiteLLM();
+        it('phi3:latest matches models.dev ollama/phi3', async () => {
+            setupModelsDev();
             expect(await lookupContextWindow('phi3:latest')).toBe(128_000);
         });
     });
 
-    describe('LiteLLM fallback', () => {
+    describe('models.dev fallback', () => {
         it('matches by base name across providers', async () => {
-            setupLiteLLM();
+            setupModelsDev();
             expect(await lookupContextWindow('llama-3.3-70b-versatile')).toBe(128_000);
         });
 
         it('matches deeply nested keys', async () => {
-            setupLiteLLM();
+            setupModelsDev();
             expect(await lookupContextWindow('Mixtral-8x22B-Instruct-v0.1')).toBe(65_536);
         });
 
-        it('matches Ollama :latest tag against LiteLLM', async () => {
-            setupLiteLLM();
+        it('matches Ollama :latest tag against models.dev', async () => {
+            setupModelsDev();
             expect(await lookupContextWindow('Qwen2.5-72B-Instruct-Turbo:latest')).toBe(32_768);
         });
     });
@@ -216,7 +229,7 @@ describe('model-context-registry', () => {
             expect(await lookupContextWindow('gpt-5-mini')).toBeUndefined();
         });
 
-        it('prefers OpenRouter over LiteLLM when both have the model', async () => {
+        it('prefers OpenRouter over models.dev when both have the model', async () => {
             setupBoth();
             expect(await lookupContextWindow('llama-3.3-70b-instruct')).toBe(128_000);
         });
