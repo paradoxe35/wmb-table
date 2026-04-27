@@ -126,7 +126,10 @@ export default function SermonHeader({
                 return;
             }
 
-            prepareTabIdentityChange(activeTabKey);
+            prepareTabIdentityChange(activeTabKey, {
+                stopTts: true,
+                ttsStopMode: 'remember',
+            });
             updateSermonTab(activeTabKey, {
                 title: nextTranslation.title,
                 documentId: meta.sermonId,

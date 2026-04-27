@@ -339,11 +339,12 @@ export function useOpenDocumentRequest() {
 export function usePrepareTabIdentityChange() {
     const cleanupTabs = useSearchStore((s) => s.cleanupTabs);
     const resetTts = useTtsStore((s) => s.reset);
+    const stopAndRememberTts = useTtsStore((s) => s.stopAndRemember);
     const ttsDocumentKey = useTtsStore((s) => s.documentKey);
     const ttsStatus = useTtsStore((s) => s.status);
 
     return useCallback(
-        (tabKey: string, options?: { stopTts?: boolean }) => {
+        (tabKey: string, options?: { stopTts?: boolean; ttsStopMode?: 'reset' | 'remember' }) => {
             cleanupTabs([tabKey]);
 
             const tab = useDocumentTabsStore
@@ -360,10 +361,14 @@ export function usePrepareTabIdentityChange() {
                 ttsStatus !== 'idle'
             ) {
                 stopAllTtsPlayback();
-                resetTts();
+                if (options.ttsStopMode === 'remember') {
+                    stopAndRememberTts();
+                } else {
+                    resetTts();
+                }
             }
         },
-        [cleanupTabs, resetTts, ttsDocumentKey, ttsStatus],
+        [cleanupTabs, resetTts, stopAndRememberTts, ttsDocumentKey, ttsStatus],
     );
 }
 

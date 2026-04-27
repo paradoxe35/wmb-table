@@ -406,7 +406,8 @@ export function useTts(
     const markCompletedNaturally = useTtsStore((s) => s.markCompletedNaturally);
     const activeProvider = settings?.activeProvider;
 
-    // Stop TTS on language change (ignore empty transitions during tab switches)
+    // Stop TTS on in-place language changes, but keep playback running when
+    // opening or activating a different document tab.
     const prevLanguageRef = useRef(language);
     useEffect(() => {
         if (!language || prevLanguageRef.current === language) {
@@ -415,11 +416,11 @@ export function useTts(
 
         const hadLanguage = !!prevLanguageRef.current;
         prevLanguageRef.current = language;
-        if (hadLanguage && status !== 'idle') {
+        if (hadLanguage && currentDocumentKey === documentKey && status !== 'idle') {
             stopAllTtsPlayback();
             reset();
         }
-    }, [language, reset, status]);
+    }, [currentDocumentKey, documentKey, language, reset, status]);
 
     const play = useCallback(async () => {
         await startTtsPlayback(paragraphs, language, documentKey, options);

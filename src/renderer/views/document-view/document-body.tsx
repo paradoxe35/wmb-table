@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import { getPendingNavigationParagraphIndex } from '@renderer/utils/pending-navigation';
@@ -73,6 +73,7 @@ export default function DocumentBody({
     );
     const readingMode = useAppStore((s) => s.readingMode);
     const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
+    const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
     // Preserve the active TTS paragraph, or the first visible paragraph, across
     // layout shifts such as reading mode toggles and zoom changes.
@@ -127,12 +128,20 @@ export default function DocumentBody({
                 <>
                     {header}
                     {searchBarOpen && <InlineSearchBar />}
-                    <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
+                    <Dropdown
+                        menu={{ items: contextMenuItems }}
+                        trigger={['contextMenu']}
+                        open={contextMenuOpen}
+                        onOpenChange={setContextMenuOpen}
+                    >
                         <div
                             ref={containerRef}
                             id={DOCUMENT_CONTAINER_ID}
                             className="sermon-body"
-                            style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
+                            style={{
+                                fontSize: `${1.2 * (zoom / 100)}em`,
+                                overflowY: contextMenuOpen ? 'hidden' : undefined,
+                            }}
                             onContextMenu={onContextMenu}
                         >
                             {children}
