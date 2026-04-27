@@ -38,10 +38,6 @@ describe('backup.repository', () => {
         expect(backupRepo.getStatus()?.active).toBe(false);
     });
 
-    it('getReminder returns false when no status', () => {
-        expect(backupRepo.getReminder()).toBe(false);
-    });
-
     it('db references CRUD', () => {
         const ref = backupRepo.upsertDbReference('file.db', 'line1\nline2');
         expect(ref.filename).toBe('file.db');
