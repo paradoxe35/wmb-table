@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Button, Divider, Empty, Progress, Select, Typography, message } from 'antd';
+import { Button, Divider, Empty, Progress, Select, Tooltip, Typography, message } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,13 +18,18 @@ import { interactiveProps } from '@renderer/utils/interactive';
 // Compact version selector (Select dropdown for sidebar)
 // ---------------------------------------------------------------------------
 
-const wrappingButtonStyle: CSSProperties = {
+const ellipsisButtonStyle: CSSProperties = {
     width: '100%',
-    height: 'auto',
-    minHeight: 24,
-    whiteSpace: 'normal',
+    minWidth: 0,
     textAlign: 'left',
-    wordBreak: 'break-word',
+};
+
+const ellipsisLabelStyle: CSSProperties = {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
 };
 
 function DownloadVersionButton({
@@ -39,22 +44,24 @@ function DownloadVersionButton({
     const isDownloading = progress != null;
 
     return (
-        <Button
-            size="small"
-            type="dashed"
-            disabled={isDownloading}
-            icon={
-                isDownloading ? (
-                    <Progress type="circle" size={14} percent={progress} showInfo={false} />
-                ) : (
-                    <CloudDownloadOutlined />
-                )
-            }
-            onClick={() => onDownload(version.abbreviation)}
-            style={wrappingButtonStyle}
-        >
-            {version.name}
-        </Button>
+        <Tooltip title={version.name} placement="right">
+            <Button
+                size="small"
+                type="dashed"
+                disabled={isDownloading}
+                icon={
+                    isDownloading ? (
+                        <Progress type="circle" size={14} percent={progress} showInfo={false} />
+                    ) : (
+                        <CloudDownloadOutlined />
+                    )
+                }
+                onClick={() => onDownload(version.abbreviation)}
+                style={ellipsisButtonStyle}
+            >
+                <span style={ellipsisLabelStyle}>{version.name}</span>
+            </Button>
+        </Tooltip>
     );
 }
 
@@ -107,15 +114,17 @@ function CompactVersionSelector() {
                 />
             )}
             {!suggestedDownload && activeLanguageMatchesContent && downloadable.length > 0 && (
-                <Button
-                    size="small"
-                    type="dashed"
-                    icon={<CloudDownloadOutlined />}
-                    onClick={() => showOptions('bible')}
-                    style={wrappingButtonStyle}
-                >
-                    {t("Télécharger d'autres versions")}
-                </Button>
+                <Tooltip title={t("Télécharger d'autres versions")} placement="right">
+                    <Button
+                        size="small"
+                        type="dashed"
+                        icon={<CloudDownloadOutlined />}
+                        onClick={() => showOptions('bible')}
+                        style={ellipsisButtonStyle}
+                    >
+                        <span style={ellipsisLabelStyle}>{t("Télécharger d'autres versions")}</span>
+                    </Button>
+                </Tooltip>
             )}
         </div>
     );
