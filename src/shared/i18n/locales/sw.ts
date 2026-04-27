@@ -1099,6 +1099,7 @@ const sw: Record<string, string> = {
     'Augmenter le retrait': 'Ongeza nafasi',
     'Supprimer le lien': 'Ondoa kiungo',
     'Ajouter un lien': 'Ongeza kiungo',
+    'Modifier le lien': 'Hariri kiungo',
     Citation: 'Nukuu',
     'Insérer un tableau': 'Ingiza jedwali',
     'Supprimer le tableau': 'Futa jedwali',

@@ -1103,6 +1103,7 @@ const es: Record<string, string> = {
     'Augmenter le retrait': 'Aumentar sangría',
     'Supprimer le lien': 'Quitar enlace',
     'Ajouter un lien': 'Añadir enlace',
+    'Modifier le lien': 'Editar enlace',
     Citation: 'Cita',
     'Insérer un tableau': 'Insertar tabla',
     'Supprimer le tableau': 'Eliminar tabla',

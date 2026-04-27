@@ -1092,6 +1092,7 @@ const en: Record<string, string> = {
     'Augmenter le retrait': 'Increase indent',
     'Supprimer le lien': 'Remove link',
     'Ajouter un lien': 'Add link',
+    'Modifier le lien': 'Edit link',
     Citation: 'Quote',
     'Insérer un tableau': 'Insert table',
     'Supprimer le tableau': 'Delete table',

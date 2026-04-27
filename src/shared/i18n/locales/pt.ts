@@ -1100,6 +1100,7 @@ const pt: Record<string, string> = {
     'Augmenter le retrait': 'Aumentar recuo',
     'Supprimer le lien': 'Remover link',
     'Ajouter un lien': 'Adicionar link',
+    'Modifier le lien': 'Editar link',
     Citation: 'Citação',
     'Insérer un tableau': 'Inserir tabela',
     'Supprimer le tableau': 'Excluir tabela',

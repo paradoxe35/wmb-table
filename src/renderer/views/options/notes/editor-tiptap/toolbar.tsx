@@ -20,8 +20,6 @@ import {
     AlignCenterOutlined,
     AlignRightOutlined,
     MenuOutlined,
-    LinkOutlined,
-    DisconnectOutlined,
     TableOutlined,
     SplitCellsOutlined,
     UndoOutlined,
@@ -37,6 +35,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import { TEXT_PART_LANGUAGE_OPTIONS } from '@shared/constants';
 import { BlockquoteIcon } from './icons';
+import { LinkPopoverButton } from './link-popover-button';
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -175,27 +174,6 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
         },
         [editor],
     );
-
-    const onLinkClick = useCallback(() => {
-        if (editor.isActive('link')) {
-            editor.chain().focus().extendMarkRange('link').unsetLink().run();
-            return;
-        }
-        const previous = editor.getAttributes('link').href as string | undefined;
-        const url = window.prompt(t('Adresse du lien'), previous ?? 'https://');
-        if (url == null) return;
-        const trimmed = url.trim();
-        if (!trimmed) {
-            editor.chain().focus().extendMarkRange('link').unsetLink().run();
-            return;
-        }
-        editor
-            .chain()
-            .focus()
-            .extendMarkRange('link')
-            .setLink({ href: trimmed, target: '_blank' })
-            .run();
-    }, [editor, t]);
 
     const onInsertTable = useCallback(() => {
         editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
@@ -490,15 +468,11 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
 
             <Divider type="vertical" />
 
-            <Tooltip title={state.isLink ? t('Supprimer le lien') : t('Ajouter un lien')}>
-                <Button
-                    type={state.isLink ? 'primary' : 'text'}
-                    size="small"
-                    style={SMALL_BUTTON_STYLE}
-                    icon={state.isLink ? <DisconnectOutlined /> : <LinkOutlined />}
-                    onClick={onLinkClick}
-                />
-            </Tooltip>
+            <LinkPopoverButton
+                editor={editor}
+                active={state.isLink}
+                buttonStyle={SMALL_BUTTON_STYLE}
+            />
             <Tooltip title={t('Citation')}>
                 <Button
                     type={state.isBlockquote ? 'primary' : 'text'}
