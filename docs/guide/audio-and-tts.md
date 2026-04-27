@@ -184,7 +184,7 @@ Si vous préférez défiler vous-même, vous pouvez désactiver cette option.
 
 ## Commencer depuis un endroit précis
 
-Dans la vue de lecture, un petit bouton peut apparaître sur un paragraphe pour commencer la lecture à partir de cet endroit précis.
+Dans la vue de lecture, faites un clic droit sur un paragraphe puis choisissez `Lire à partir d'ici` pour commencer la lecture à partir de cet endroit précis.
 
 Cela est utile si vous ne voulez pas reprendre depuis le début.
 

@@ -98,7 +98,6 @@ type BaseDocumentTab = {
     scrollY?: number;
     scrollX?: number;
     active: boolean;
-    zoom?: number;
 };
 
 export type SermonTab = BaseDocumentTab & {

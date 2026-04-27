@@ -128,12 +128,12 @@ La lecture à voix haute est aussi utile pour :
 - les documents personnels
 - les prédications sans enregistrement audio
 
-Sur certains paragraphes, un petit bouton permet aussi de commencer la lecture à partir de cet endroit précis.
+Pour commencer la lecture à un endroit précis, faites un clic droit sur un paragraphe puis choisissez `Lire à partir d'ici`.
 
 <ScreenshotPlaceholder
   file="fr-document-view-audio-reading.png"
   label="Lecture audio ou lecture à voix haute"
-  hint="Montrer soit le bouton d’écoute audio d’un sermon, soit le bouton de voix, et si possible un bouton 'lire à partir d’ici' sur un paragraphe."
+  hint="Montrer le bouton d’écoute audio ou le bouton de voix dans la barre du haut, avec le menu clic droit contenant Lire à partir d'ici."
 />
 
 ## Changer de traduction d’un sermon
@@ -177,6 +177,7 @@ Ce menu sert à travailler rapidement sur un passage pendant la lecture.
 Les choix les plus importants sont :
 
 - `Copier`
+- `Lire à partir d'ici` quand la lecture audio est disponible
 - `Souligner`
 - `Ajouter au sujet`
 - `Ajouter à la note`
@@ -185,7 +186,7 @@ Les choix les plus importants sont :
 <ScreenshotPlaceholder
   file="fr-document-view-right-click-menu.png"
   label="Menu du clic droit dans la vue de lecture"
-  hint="Montrer un texte sélectionné avec le menu qui contient Copier, Souligner, Ajouter au sujet et Ajouter à la note."
+  hint="Montrer un texte sélectionné avec le menu qui contient Copier, Lire à partir d'ici, Souligner, Ajouter au sujet et Ajouter à la note."
 />
 
 ## Copier un passage
