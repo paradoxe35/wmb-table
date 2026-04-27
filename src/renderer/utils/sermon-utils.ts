@@ -22,9 +22,13 @@ export function simpleMatch(query: string, text: string): boolean {
     return normalized.includes(q);
 }
 
-export function formatSermonDate(dateMs: number, locale: string = 'en'): string {
+export function formatSermonDate(
+    dateMs: number,
+    locale: string = 'en',
+    fallbackLocale?: string | null,
+): string {
     const d = new Date(dateMs);
-    return d.toLocaleDateString(resolveDateLocale(locale), {
+    return d.toLocaleDateString(resolveDateLocale(locale, fallbackLocale), {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -34,9 +38,13 @@ export function formatSermonDate(dateMs: number, locale: string = 'en'): string 
 }
 
 /** Compact `dd/MMM/yy` with the locale's abbreviated month. */
-export function formatSermonDateShort(dateMs: number, locale: string = 'en'): string {
+export function formatSermonDateShort(
+    dateMs: number,
+    locale: string = 'en',
+    fallbackLocale?: string | null,
+): string {
     const d = new Date(dateMs);
-    const monthRaw = d.toLocaleDateString(resolveDateLocale(locale), {
+    const monthRaw = d.toLocaleDateString(resolveDateLocale(locale, fallbackLocale), {
         month: 'short',
         timeZone: 'UTC',
     });

@@ -70,7 +70,8 @@ export default function SermonDocumentView() {
         [content?.paragraphs],
     );
 
-    const formatDate = useFormatSermonDate();
+    const documentLanguage = content?.meta.languageCode;
+    const formatDate = useFormatSermonDate(documentLanguage);
     const contentMatchesActiveTab =
         !!activeTab &&
         !!content &&
@@ -147,7 +148,7 @@ export default function SermonDocumentView() {
     }, [content?.meta, formatDate]);
 
     const contentLanguage = useAppStore((s) => s.contentLanguage);
-    const langCode = content?.meta.languageCode ?? '';
+    const langCode = documentLanguage ?? '';
     const tts = useTts(ttsParagraphs, langCode, ttsDocumentKey, {
         introText: ttsIntroText,
         getSegmentLabel: (n) => buildSegmentAnnouncement('paragraph', n, langCode),
@@ -201,7 +202,7 @@ export default function SermonDocumentView() {
     const { highlightsByParagraph } = useDocumentHighlights(activeDocumentIdentity ?? undefined);
 
     const showCompactTitle = useScrolledPastTitle(containerRef, !!content);
-    const formatDateShort = useFormatSermonDateShort(content?.meta.languageCode);
+    const formatDateShort = useFormatSermonDateShort(documentLanguage);
     const compactTitle = useMemo(() => {
         if (!content?.meta.title) return '';
         const dateLabel = content.meta.dateMs ? formatDateShort(content.meta.dateMs) : '';

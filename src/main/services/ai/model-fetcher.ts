@@ -178,7 +178,7 @@ function getCachedProviderModels(
         buildProviderModelsListCacheKey(providerId, normalizedBaseUrl),
         CACHE_TTL_MS,
     );
-    return cache.get() ?? cache.getStale();
+    return cache.get() ?? cache.getStale() ?? undefined;
 }
 
 function applyModelLimits(target: ModelLimits, modelId: string, limits: ModelLimits | undefined) {

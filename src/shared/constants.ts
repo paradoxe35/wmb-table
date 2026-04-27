@@ -137,7 +137,11 @@ export const UI_LANGUAGE_LOCALES: Record<UiLanguage, string> = {
     sw: 'sw-KE',
 };
 
-export function resolveDateLocale(languageCode: string | null | undefined): string {
+export function resolveDateLocale(
+    languageCode: string | null | undefined,
+    fallbackLanguageCode: string | null | undefined = FALLBACK_UI_LANGUAGE,
+): string {
     const supported = getSupportedUiLanguage(languageCode);
-    return UI_LANGUAGE_LOCALES[supported ?? FALLBACK_UI_LANGUAGE];
+    const fallbackLanguage = getSupportedUiLanguage(fallbackLanguageCode) ?? FALLBACK_UI_LANGUAGE;
+    return UI_LANGUAGE_LOCALES[supported ?? fallbackLanguage];
 }
