@@ -117,23 +117,23 @@ function SubjectToolbar({
     );
 }
 
-export function useSubjectsDatas() {
-    const odatas = useRef<SubjectDocument[]>([]);
-    const [datas, setDatas] = useState<SubjectDocument[]>([]);
+export function useSubjectsData() {
+    const odata = useRef<SubjectDocument[]>([]);
+    const [data, setData] = useState<SubjectDocument[]>([]);
     const setSubjects = useSubjectsStore((s) => s.setSubjects);
 
     const onSearch = useCallback(
         (value: string) => {
-            if (odatas.current.length) {
-                setDatas(
-                    odatas.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))),
+            if (odata.current.length) {
+                setData(
+                    odata.current.filter((d) => simpleRegExp(value).test(strNormalize(d.name))),
                 );
             }
         },
-        [setDatas],
+        [setData],
     );
 
-    return { odatas, datas, setDatas, setSubjects, onSearch };
+    return { odata, data, setData, setSubjects, onSearch };
 }
 
 function normalizeSubjectSelection(
@@ -157,7 +157,7 @@ function normalizeSubjectSelection(
 
 export default function Subject() {
     const { t } = useTranslation();
-    const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
+    const { odata, data, setData, setSubjects, onSearch } = useSubjectsData();
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
     const [loadingItems, setLoadingItems] = useState(false);
 
@@ -165,16 +165,16 @@ export default function Subject() {
         window.api.subjects
             .getAll()
             .then((subjects) => {
-                const preferredId = odatas.current.find((subject) => subject.active)?.id ?? null;
+                const preferredId = odata.current.find((subject) => subject.active)?.id ?? null;
                 const normalized = normalizeSubjectSelection(subjects, preferredId);
-                odatas.current = normalized;
-                setDatas(normalized);
+                odata.current = normalized;
+                setData(normalized);
                 setSubjects(normalized);
             })
             .catch(() => {
                 message.error(t('Erreur lors du chargement des sujets'));
             });
-    }, [odatas, setDatas, setSubjects, t]);
+    }, [odata, setData, setSubjects, t]);
 
     useEffect(() => {
         loadSubjects();
@@ -196,16 +196,16 @@ export default function Subject() {
         const focusSubject = (event: Event) => {
             const id = (event as CustomEvent<FocusSubjectDetail>).detail?.id;
             if (!id) return;
-            const normalized = normalizeSubjectSelection(odatas.current, id);
-            odatas.current = normalized;
-            setDatas(normalized);
+            const normalized = normalizeSubjectSelection(odata.current, id);
+            odata.current = normalized;
+            setData(normalized);
             setSubjects(normalized);
         };
         window.addEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
-    }, [odatas, setDatas, setSubjects]);
+    }, [odata, setData, setSubjects]);
 
-    const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
+    const activeDocument = useMemo(() => data.find((d) => d.active), [data]);
     const activeSubjectId = activeDocument?.id;
 
     useEffect(() => {
@@ -250,25 +250,25 @@ export default function Subject() {
 
     const onSelectItem = useCallback(
         (id: string) => {
-            const normalized = normalizeSubjectSelection(odatas.current, id);
-            odatas.current = normalized;
-            setDatas(normalized);
+            const normalized = normalizeSubjectSelection(odata.current, id);
+            odata.current = normalized;
+            setData(normalized);
             setSubjects(normalized);
         },
-        [odatas, setDatas, setSubjects],
+        [odata, setData, setSubjects],
     );
 
     const saveNewSubject = (searchValue: string) => {
         const value = searchValue.trim();
-        if (value.length < 2 || odatas.current.some((d) => d.name === value)) return;
+        if (value.length < 2 || odata.current.some((d) => d.name === value)) return;
 
         window.api.subjects
             .create(value)
             .then((subject) => {
                 const active = { ...subject, active: true };
-                odatas.current = [active, ...odatas.current.map((d) => ({ ...d, active: false }))];
-                setDatas(odatas.current);
-                setSubjects(odatas.current);
+                odata.current = [active, ...odata.current.map((d) => ({ ...d, active: false }))];
+                setData(odata.current);
+                setSubjects(odata.current);
                 message.success(t('Sujet créé'));
             })
             .catch(() => {
@@ -278,11 +278,11 @@ export default function Subject() {
 
     const handleSubjectDeletion = (item: SubjectDocument) => {
         window.api.subjects.delete(item.id).then(() => {
-            odatas.current = normalizeSubjectSelection(
-                odatas.current.filter((d) => d.id !== item.id),
+            odata.current = normalizeSubjectSelection(
+                odata.current.filter((d) => d.id !== item.id),
             );
-            setDatas(odatas.current);
-            setSubjects(odatas.current);
+            setData(odata.current);
+            setSubjects(odata.current);
             message.success(t('Supprimé'));
         });
     };
@@ -313,22 +313,22 @@ export default function Subject() {
                     if (
                         newName.length < 2 ||
                         newName === item.name ||
-                        odatas.current.some((d) => d.name === newName)
+                        odata.current.some((d) => d.name === newName)
                     )
                         return;
 
                     window.api.subjects.rename(item.id, newName).then(() => {
-                        odatas.current = odatas.current.map((d) =>
+                        odata.current = odata.current.map((d) =>
                             d.id === item.id ? { ...d, name: newName } : d,
                         );
-                        setDatas([...odatas.current]);
-                        setSubjects(odatas.current);
+                        setData([...odata.current]);
+                        setSubjects(odata.current);
                         message.success(t('Sujet renommé'));
                     });
                 },
             });
         },
-        [modal, t, odatas, setDatas, setSubjects],
+        [modal, t, odata, setData, setSubjects],
     );
 
     return (
@@ -352,7 +352,7 @@ export default function Subject() {
                         style={{ flex: 1, minHeight: 0, padding: '22px', overflowX: 'hidden' }}
                     >
                         <AnimatePresence mode="popLayout">
-                            {datas.map((item) => (
+                            {data.map((item) => (
                                 <motion.div
                                     key={item.name}
                                     layout
@@ -544,70 +544,73 @@ function ShowActiveDocuments({
         }
     }, [setDocuments, subject.id, t]);
 
-    if (loading) {
-        return (
-            <div
-                style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    padding: '32px 0',
-                }}
-            >
-                <Spin />
-            </div>
-        );
-    }
-
-    return (
+    const content = (
         <>
             {documents.length > 0 ? (
-                <>
-                    <div className="flex flex-center" style={{ gap: 8 }}>
-                        <Text type="secondary">
-                            {subject.name} ({documents.length})
-                        </Text>
-                        <Tooltip title={t('Exporter en PDF')}>
-                            <Button
-                                type="text"
-                                size="small"
-                                icon={<FilePdfOutlined />}
-                                onClick={handleExportPdf}
-                                aria-label={t('Exporter en PDF')}
-                            />
-                        </Tooltip>
-                    </div>
-                    <Reorder.Group
-                        axis="y"
-                        values={documents}
-                        onReorder={setDocuments}
-                        as="div"
-                        className="subject-ref-list"
-                    >
-                        {documents.map((item) => (
-                            <Reorder.Item
-                                key={item.id}
-                                value={item}
-                                as="div"
-                                layout="position"
-                                transition={{
-                                    layout: {
-                                        duration: 0.28,
-                                        ease: [0.22, 1, 0.36, 1],
-                                    },
-                                }}
-                                onDragEnd={() => void persistOrder()}
-                            >
-                                <ItemFromSelectedSubject item={item} confirm={confirm} />
-                            </Reorder.Item>
-                        ))}
-                    </Reorder.Group>
-                </>
+                <Reorder.Group
+                    axis="y"
+                    values={documents}
+                    onReorder={setDocuments}
+                    as="div"
+                    className="subject-ref-list"
+                >
+                    {documents.map((item) => (
+                        <Reorder.Item
+                            key={item.id}
+                            value={item}
+                            as="div"
+                            layout="position"
+                            transition={{
+                                layout: {
+                                    duration: 0.28,
+                                    ease: [0.22, 1, 0.36, 1],
+                                },
+                            }}
+                            onDragEnd={() => void persistOrder()}
+                        >
+                            <ItemFromSelectedSubject item={item} confirm={confirm} />
+                        </Reorder.Item>
+                    ))}
+                </Reorder.Group>
             ) : (
                 <Empty
                     description={t('Aucune référence trouvée dans le sujet: {{name}}', {
                         name: subject.name,
                     })}
                 />
+            )}
+        </>
+    );
+
+    return (
+        <>
+            <div className="flex flex-center" style={{ gap: 8 }}>
+                <Text type="secondary">
+                    {subject.name} ({documents.length})
+                </Text>
+                <Tooltip title={t('Exporter en PDF')}>
+                    <Button
+                        type="text"
+                        size="small"
+                        icon={<FilePdfOutlined />}
+                        onClick={handleExportPdf}
+                        aria-label={t('Exporter en PDF')}
+                    />
+                </Tooltip>
+            </div>
+
+            {loading ? (
+                <div
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        padding: '32px 0',
+                    }}
+                >
+                    <Spin />
+                </div>
+            ) : (
+                content
             )}
         </>
     );
