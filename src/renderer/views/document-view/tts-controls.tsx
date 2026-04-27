@@ -130,7 +130,6 @@ interface ParagraphListProps {
     highlightsByParagraph: Map<number, HighlightItem[]>;
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
-    incompatibleMessage?: string;
 }
 
 export const ParagraphList = memo(function ParagraphList({
@@ -142,7 +141,6 @@ export const ParagraphList = memo(function ParagraphList({
     highlightsByParagraph,
     onPlayFromHere,
     canSpeak,
-    incompatibleMessage,
 }: ParagraphListProps) {
     const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
     const pendingNavigationParagraphIndex = getPendingNavigationParagraphIndex(
@@ -162,7 +160,6 @@ export const ParagraphList = memo(function ParagraphList({
                     highlights={highlightsByParagraph.get(paragraph.paragraphIndex)}
                     onPlayFromHere={onPlayFromHere}
                     canSpeak={canSpeak}
-                    incompatibleMessage={incompatibleMessage}
                     suppressAutoScroll={pendingNavigationParagraphIndex != null}
                 />
             )),
@@ -174,7 +171,6 @@ export const ParagraphList = memo(function ParagraphList({
             highlightsByParagraph,
             onPlayFromHere,
             canSpeak,
-            incompatibleMessage,
             pendingNavigationParagraphIndex,
         ],
     );
@@ -192,7 +188,6 @@ interface TtsParagraphProps {
     highlights?: HighlightItem[];
     onPlayFromHere?: (paragraphIndex: number) => void;
     canSpeak?: boolean;
-    incompatibleMessage?: string;
     suppressAutoScroll?: boolean;
 }
 
@@ -204,7 +199,6 @@ const TtsParagraph = memo(function TtsParagraph({
     highlights,
     onPlayFromHere,
     canSpeak,
-    incompatibleMessage,
     suppressAutoScroll,
 }: TtsParagraphProps) {
     const { t } = useTranslation();
@@ -253,34 +247,28 @@ const TtsParagraph = memo(function TtsParagraph({
     }, [ttsHighlight.isActive, autoScroll, mainView, suppressAutoScroll]);
 
     const readFromHereLabel = t("Lire à partir d'ici");
-    const tooltip = canSpeak
-        ? readFromHereLabel
-        : (incompatibleMessage ?? t('Aucune voix disponible pour cette langue.'));
 
     const playFromHereButton = useMemo(() => {
-        if (!onPlayFromHere) {
+        if (!onPlayFromHere || !canSpeak) {
             return undefined;
         }
 
         return (
-            <Tooltip title={tooltip}>
-                <span>
-                    <button
-                        className="tts-play-from-here"
-                        disabled={!canSpeak}
-                        onClick={(e) => {
-                            if (!canSpeak) return;
-                            e.stopPropagation();
-                            onPlayFromHere(paragraph.paragraphIndex);
-                        }}
-                        aria-label={canSpeak ? readFromHereLabel : t('Lecture audio indisponible')}
-                    >
-                        <CaretRightOutlined />
-                    </button>
-                </span>
+            <Tooltip title={readFromHereLabel}>
+                <Button
+                    type="text"
+                    size="small"
+                    className="tts-play-from-here"
+                    icon={<CaretRightOutlined />}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onPlayFromHere(paragraph.paragraphIndex);
+                    }}
+                    aria-label={readFromHereLabel}
+                />
             </Tooltip>
         );
-    }, [canSpeak, onPlayFromHere, paragraph.paragraphIndex, readFromHereLabel, t, tooltip]);
+    }, [canSpeak, onPlayFromHere, paragraph.paragraphIndex, readFromHereLabel]);
 
     return (
         <div ref={containerRef}>

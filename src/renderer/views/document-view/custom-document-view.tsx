@@ -248,7 +248,6 @@ export default function CustomDocumentView() {
                 highlightsByParagraph={highlightsByParagraph}
                 onPlayFromHere={effectiveTts.playFromParagraph}
                 canSpeak={effectiveTts.canSpeak}
-                incompatibleMessage={effectiveTts.incompatibleMessage}
             />
         </DocumentBody>
     );

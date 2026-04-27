@@ -103,33 +103,49 @@
 }
 
 .sermon-paragraph {
-    padding: 2px 16px 2px 48px;
+    display: grid;
+    --paragraph-gutter-width: clamp(46px, 8vw, 58px);
+    grid-template-columns: var(--paragraph-gutter-width) minmax(0, 1fr) var(
+            --paragraph-gutter-width
+        );
+    column-gap: 8px;
+    padding: 2px 8px;
     margin: 0;
     line-height: 1.8;
-    position: relative;
     white-space: pre-wrap;
 
     .line-number {
-        position: absolute;
-        left: 8px;
-        width: 32px;
-        text-align: right;
+        position: relative;
+        grid-column: 1;
+        width: var(--paragraph-gutter-width);
+        display: grid;
+        grid-template-columns: 18px 4px minmax(4ch, 1fr);
+        align-items: baseline;
         color: var(--ant-color-text-secondary, #6b7280);
         font-family: monospace;
+        font-variant-numeric: tabular-nums;
         font-size: var(--fs-rel-xl);
         user-select: none;
+
+        &__value {
+            margin-top: 2px;
+            line-height: inherit;
+            grid-column: 3;
+            min-width: 0;
+            text-align: right;
+        }
 
         .tts-play-from-here {
             display: none;
             position: absolute;
-            right: -4px;
-            top: 50%;
-            transform: translateY(-50%);
+            left: 0;
+            top: 6px;
             background: var(--ant-color-primary-bg, #e6f4ff);
             color: var(--ant-color-primary, #1677ff);
             border: none;
             border-radius: 50%;
             width: 18px;
+            min-width: 18px;
             height: 18px;
             padding: 0;
             cursor: pointer;
@@ -146,8 +162,24 @@
         }
     }
 
-    &:hover .tts-play-from-here {
+    .paragraph-content {
+        grid-column: 2;
+        min-width: 0;
+    }
+
+    &--with-tts-control:hover .tts-play-from-here {
         display: inline-flex;
+    }
+
+    @media (max-width: 520px) {
+        --paragraph-gutter-width: 42px;
+        column-gap: 6px;
+        padding-inline: 6px;
+
+        .line-number {
+            grid-template-columns: 18px 2px minmax(0, 1fr);
+            font-size: var(--fs-rel-lg);
+        }
     }
 
     mark {

@@ -239,14 +239,18 @@ const SermonParagraphView = memo(function SermonParagraphView({
         return renderWithRanges(paragraphContent, allRanges, isActiveMatch);
     }, [paragraphContent, paragraphIndex, search, highlights, ttsHighlight, isActiveMatch]);
 
-    const className = ttsHighlight?.isActive
-        ? 'sermon-paragraph tts-active-paragraph'
-        : 'sermon-paragraph';
+    const className = [
+        'sermon-paragraph',
+        ttsHighlight?.isActive ? 'tts-active-paragraph' : null,
+        playFromHereButton ? 'sermon-paragraph--with-tts-control' : null,
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
         <p data-paragraph-index={paragraphIndex} className={className}>
             <span className="line-number">
-                {paragraphIndex}
+                <span className="line-number__value">{paragraphIndex}</span>
                 {playFromHereButton}
             </span>
             <span className="paragraph-content">{renderedContent}</span>

@@ -3,6 +3,7 @@ import type { MenuProps } from 'antd';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildParagraphReference } from '@shared/types';
+import { resolveUiLanguage } from '@shared/constants';
 import {
     type AddDocumentReferenceDetail,
     CHILD_PARENT_WINDOW_EVENT,
@@ -19,6 +20,9 @@ import type {
     HighlightParagraphRange,
     ParagraphReference,
 } from '@shared/types';
+import { useAppStore } from '@renderer/stores';
+import { useThemeStore } from '@renderer/stores/theme.store';
+import { formatDocumentSelectionForClipboard } from '../copy-format';
 
 const PARAGRAPH_SELECTOR = '[data-paragraph-index]';
 
@@ -48,6 +52,9 @@ export function useContextMenuItems(
     bibleVerses?: BibleBook[],
 ): MenuProps['items'] {
     const { t } = useTranslation();
+    const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    const fallbackLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
 
     return useMemo(() => {
         if (!content) return [];
@@ -142,6 +149,25 @@ export function useContextMenuItems(
             return result.length > 0 ? result : null;
         };
 
+        const getCopyParagraphs = (): HighlightParagraphRange[] | null => {
+            const selectionParagraphs = getSelectionParagraphs();
+            if (selectionParagraphs) {
+                return selectionParagraphs;
+            }
+
+            const target = contextTargetRef.current;
+            const paragraph = target instanceof Element ? target.closest(PARAGRAPH_SELECTOR) : null;
+            if (!paragraph) return null;
+
+            const paragraphIndex = parseParagraphIndex(paragraph);
+            const content =
+                paragraphs.find((p) => p.paragraphIndex === paragraphIndex)?.content ??
+                paragraph.textContent ??
+                '';
+
+            return [{ paragraphIndex, startOffset: 0, endOffset: content.length }];
+        };
+
         const getBibleVerse = (paragraphIndex: number): BibleBook | undefined =>
             bibleVerses?.find((v) => +v.verse === paragraphIndex);
 
@@ -182,11 +208,28 @@ export function useContextMenuItems(
             {
                 key: 'copy-text',
                 label: t('Copier'),
-                onClick: () => {
-                    const ref = buildRef();
-                    if (!ref) return;
-                    navigator.clipboard.writeText(ref.text);
-                    message.success(t('Texte copié'));
+                onClick: async () => {
+                    const copyParagraphs = getCopyParagraphs();
+                    if (!copyParagraphs) {
+                        return;
+                    }
+                    const text = formatDocumentSelectionForClipboard({
+                        context: {
+                            documentType,
+                            documentTitle,
+                            languageCode,
+                            sermonDateMs: content.sermonDateMs,
+                            fallbackLanguage,
+                        },
+                        paragraphs,
+                        ranges: copyParagraphs,
+                    });
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        message.success(t('Texte copié'));
+                    } catch {
+                        message.error(t('Impossible de copier le texte.'));
+                    }
                 },
             },
         ];
@@ -305,7 +348,7 @@ export function useContextMenuItems(
             ...noteItem,
             ...similarItem,
         ];
-    }, [content, contextTargetRef, documentType, bibleVerses, t]);
+    }, [content, contextTargetRef, documentType, bibleVerses, t, fallbackLanguage]);
 }
 
 export function useDocumentHighlights(documentIdentity: DocumentIdentity | undefined) {
