@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import { getPendingNavigationParagraphIndex } from '@renderer/utils/pending-navigation';
@@ -11,6 +11,8 @@ import {
 import type { DocumentIdentity } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
+
+const CONTEXT_PARAGRAPH_CLASS = 'sermon-paragraph--context-target';
 
 interface DocumentBodyProps {
     loading: boolean;
@@ -73,6 +75,7 @@ export default function DocumentBody({
     );
     const readingMode = useAppStore((s) => s.readingMode);
     const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
+    const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
     // Preserve the active TTS paragraph, or the first visible paragraph, across
     // layout shifts such as reading mode toggles and zoom changes.
@@ -109,11 +112,35 @@ export default function DocumentBody({
         };
     }, [readingMode, zoom, pendingNavigation, documentIdentity, pendingParagraphIndex]);
 
+    const clearContextParagraph = useCallback(() => {
+        containerRef.current
+            ?.querySelector(`.${CONTEXT_PARAGRAPH_CLASS}`)
+            ?.classList.remove(CONTEXT_PARAGRAPH_CLASS);
+    }, [containerRef]);
+
+    const handleContextMenuOpenChange = useCallback(
+        (open: boolean) => {
+            setContextMenuOpen(open);
+            if (!open) {
+                clearContextParagraph();
+            }
+        },
+        [clearContextParagraph],
+    );
+
     const onContextMenu = useCallback(
         (e: React.MouseEvent) => {
             contextTargetRef.current = e.target as Element;
+            clearContextParagraph();
+            const selection = window.getSelection();
+            if (selection && !selection.isCollapsed) {
+                return;
+            }
+            (e.target as Element)
+                .closest('[data-paragraph-index]')
+                ?.classList.add(CONTEXT_PARAGRAPH_CLASS);
         },
-        [contextTargetRef],
+        [clearContextParagraph, contextTargetRef],
     );
 
     return (
@@ -127,12 +154,20 @@ export default function DocumentBody({
                 <>
                     {header}
                     {searchBarOpen && <InlineSearchBar />}
-                    <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
+                    <Dropdown
+                        menu={{ items: contextMenuItems }}
+                        trigger={['contextMenu']}
+                        open={contextMenuOpen}
+                        onOpenChange={handleContextMenuOpenChange}
+                    >
                         <div
                             ref={containerRef}
                             id={DOCUMENT_CONTAINER_ID}
                             className="sermon-body"
-                            style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
+                            style={{
+                                fontSize: `${1.2 * (zoom / 100)}em`,
+                                overflowY: contextMenuOpen ? 'hidden' : undefined,
+                            }}
                             onContextMenu={onContextMenu}
                         >
                             {children}
