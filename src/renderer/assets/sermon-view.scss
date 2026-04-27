@@ -102,8 +102,18 @@
     user-select: text;
 }
 
+.document-context-menu__item-with-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 150px;
+    width: 100%;
+}
+
 .sermon-paragraph {
-    padding: 2px 16px 2px 48px;
+    --paragraph-number-gutter: 1.55em;
+    padding: 2px 12px;
     margin: 0;
     line-height: 1.8;
     position: relative;
@@ -111,43 +121,19 @@
 
     .line-number {
         position: absolute;
-        left: 8px;
-        width: 32px;
+        left: 12px;
+        margin-top: 1.5px;
+        width: var(--paragraph-number-gutter);
         text-align: right;
         color: var(--ant-color-text-secondary, #6b7280);
         font-family: monospace;
         font-size: var(--fs-rel-xl);
         user-select: none;
-
-        .tts-play-from-here {
-            display: none;
-            position: absolute;
-            right: -4px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: var(--ant-color-primary-bg, #e6f4ff);
-            color: var(--ant-color-primary, #1677ff);
-            border: none;
-            border-radius: 50%;
-            width: 18px;
-            height: 18px;
-            padding: 0;
-            cursor: pointer;
-            font-size: var(--fs-2xs);
-            line-height: 1;
-            align-items: center;
-            justify-content: center;
-            z-index: 1;
-
-            &:hover {
-                background: var(--ant-color-primary, #1677ff);
-                color: #fff;
-            }
-        }
     }
 
-    &:hover .tts-play-from-here {
-        display: inline-flex;
+    .paragraph-content {
+        display: block;
+        margin-left: calc(var(--paragraph-number-gutter) + 0.3em);
     }
 
     mark {

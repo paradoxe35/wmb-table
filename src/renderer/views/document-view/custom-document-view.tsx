@@ -167,20 +167,6 @@ export default function CustomDocumentView() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const docLang = docContent?.languageCode ?? contentLanguage ?? 'en';
 
-    const contextMenuContent = useMemo(() => {
-        if (!docContent || !customDoc || !activeDocumentIdentity) {
-            return null;
-        }
-
-        return {
-            documentTitle: docContent.title,
-            documentIdentity: activeDocumentIdentity,
-            languageCode: docLang,
-            paragraphs,
-        };
-    }, [docContent, customDoc, activeDocumentIdentity, docLang, paragraphs]);
-
-    const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef, 'custom');
     const { highlightsByParagraph } = useDocumentHighlights(
         customDoc ? (activeDocumentIdentity ?? undefined) : undefined,
     );
@@ -217,6 +203,23 @@ export default function CustomDocumentView() {
         };
     }, [tts, docContent?.languageCode, contentLanguage, t]);
 
+    const contextMenuContent = useMemo(() => {
+        if (!docContent || !customDoc || !activeDocumentIdentity) {
+            return null;
+        }
+
+        return {
+            documentTitle: docContent.title,
+            documentIdentity: activeDocumentIdentity,
+            languageCode: docLang,
+            paragraphs,
+            canPlayFromParagraph: effectiveTts.canSpeak,
+            playFromParagraph: effectiveTts.playFromParagraph,
+        };
+    }, [docContent, customDoc, activeDocumentIdentity, docLang, paragraphs, effectiveTts]);
+
+    const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef, 'custom');
+
     return (
         <DocumentBody
             loading={loading}
@@ -246,9 +249,6 @@ export default function CustomDocumentView() {
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
-                onPlayFromHere={effectiveTts.playFromParagraph}
-                canSpeak={effectiveTts.canSpeak}
-                incompatibleMessage={effectiveTts.incompatibleMessage}
             />
         </DocumentBody>
     );

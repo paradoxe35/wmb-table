@@ -181,14 +181,12 @@ const SermonParagraphView = memo(function SermonParagraphView({
     isActiveMatch,
     highlights,
     ttsHighlight,
-    playFromHereButton,
 }: {
     paragraph: ParagraphProp;
     search: SearchHighlightState | null;
     isActiveMatch?: boolean;
     highlights?: HighlightItem[];
     ttsHighlight?: { isActive: boolean; highlightRange: { start: number; end: number } | null };
-    playFromHereButton?: React.ReactNode;
 }) {
     const paragraphContent = paragraph.content;
     const paragraphIndex = paragraph.paragraphIndex;
@@ -245,10 +243,7 @@ const SermonParagraphView = memo(function SermonParagraphView({
 
     return (
         <p data-paragraph-index={paragraphIndex} className={className}>
-            <span className="line-number">
-                {paragraphIndex}
-                {playFromHereButton}
-            </span>
+            <span className="line-number">{paragraphIndex}</span>
             <span className="paragraph-content">{renderedContent}</span>
         </p>
     );

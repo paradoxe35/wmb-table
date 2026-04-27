@@ -187,8 +187,10 @@ export default function SermonDocumentView() {
             paragraphs: ttsParagraphs,
             sermonDateMs: content.meta.dateMs,
             sermonTranslationId: content.meta.translationId,
+            canPlayFromParagraph: effectiveTts.canSpeak,
+            playFromParagraph: effectiveTts.playFromParagraph,
         };
-    }, [content, activeDocumentIdentity, ttsParagraphs]);
+    }, [content, activeDocumentIdentity, ttsParagraphs, effectiveTts]);
 
     const contextMenuItems = useContextMenuItems(contextMenuContent, contextTargetRef);
 
@@ -242,9 +244,6 @@ export default function SermonDocumentView() {
                     search={search}
                     activeParagraphIndex={activeParagraphIndex}
                     highlightsByParagraph={highlightsByParagraph}
-                    onPlayFromHere={effectiveTts.playFromParagraph}
-                    canSpeak={effectiveTts.canSpeak}
-                    incompatibleMessage={effectiveTts.incompatibleMessage}
                 />
             )}
         </DocumentBody>

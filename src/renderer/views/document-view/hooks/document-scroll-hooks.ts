@@ -3,6 +3,7 @@ import {
     useAppStore,
     useSearchStore,
     useDocumentTabsStore,
+    useDocumentViewStore,
     selectActiveTab,
     selectActiveTabKey,
 } from '@renderer/stores';
@@ -83,16 +84,15 @@ function buildRestoreState({
 }
 
 export function useDocumentZoom(zoom: number) {
-    const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
-    const updateTabZoom = useDocumentTabsStore((s) => s.updateTabZoom);
+    const setZoom = useDocumentViewStore((s) => s.setZoom);
 
     const zoomIn = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.min(zoom + 10, 200));
-    }, [activeTabKey, zoom, updateTabZoom]);
+        setZoom(Math.min(zoom + 10, 200));
+    }, [zoom, setZoom]);
 
     const zoomOut = useCallback(() => {
-        if (activeTabKey) updateTabZoom(activeTabKey, Math.max(zoom - 10, 50));
-    }, [activeTabKey, zoom, updateTabZoom]);
+        setZoom(Math.max(zoom - 10, 50));
+    }, [zoom, setZoom]);
 
     return { zoomIn, zoomOut };
 }
@@ -105,13 +105,13 @@ export function useScrollAndZoom(
     const updateTabScroll = useDocumentTabsStore((s) => s.updateTabScroll);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const rememberReadingPosition = useAppStore((s) => s.rememberReadingPosition);
+    const zoom = useDocumentViewStore((s) => s.zoom);
     const lastRestoredKeyRef = useRef<string | null>(null);
     const [savedPosition, setSavedPosition] = useState<ReadingPosition | null>(null);
     const [savedPositionLoaded, setSavedPositionLoaded] = useState(false);
     const resolvedOptions = resolveScrollRestoreOptions(options, rememberReadingPosition);
     const { contentReady, restoreIdentity, readingPositionKey } = resolvedOptions;
 
-    const zoom = activeTab?.zoom ?? 100;
     const { restoreScrollRatio, restoreToken, saveToken } = buildRestoreState({
         activeTabKey,
         activeTabScrollY: activeTab?.scrollY,

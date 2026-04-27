@@ -128,12 +128,12 @@ Read aloud is also helpful for:
 - personal documents
 - sermons that do not have an audio recording
 
-On some paragraphs, a small button also lets you start reading from that exact place.
+To start reading from a specific place, right-click a paragraph and choose `Read from here`.
 
 <ScreenshotPlaceholder
   file="en-document-view-audio-reading.png"
   label="Audio or read-aloud controls"
-  hint="Show either the sermon audio button or the voice button, and if possible a 'read from here' button on a paragraph."
+  hint="Show either the sermon audio button or the voice button in the top bar, with the right-click menu containing Read from here."
 />
 
 ## Changing sermon translation
@@ -177,6 +177,7 @@ This menu helps you work quickly while reading.
 The most important choices are:
 
 - `Copy`
+- `Read from here` when audio reading is available
 - `Highlight`
 - `Add to subject`
 - `Add to note`
@@ -185,7 +186,7 @@ The most important choices are:
 <ScreenshotPlaceholder
   file="en-document-view-right-click-menu.png"
   label="Right-click menu in the reading view"
-  hint="Show selected text with the menu containing Copy, Highlight, Add to subject, and Add to note."
+  hint="Show selected text with the menu containing Copy, Read from here, Highlight, Add to subject, and Add to note."
 />
 
 ## Copying a passage

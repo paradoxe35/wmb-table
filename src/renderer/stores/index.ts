@@ -22,6 +22,7 @@ export {
     selectPendingNavigation,
 } from './document-tabs.store';
 export { useSearchStore } from './search.store';
+export { useDocumentViewStore } from './document-view.store';
 export { useSubjectsStore } from './subjects.store';
 export { useNotesStore } from './notes.store';
 export { useAudioStore } from './audio.store';

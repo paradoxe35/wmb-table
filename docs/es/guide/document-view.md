@@ -128,12 +128,12 @@ La lectura en voz alta también es útil para:
 - documentos personales
 - predicaciones sin grabación de audio
 
-En algunos párrafos, un pequeño botón también permite empezar la lectura exactamente desde ese lugar.
+Para empezar la lectura desde un lugar preciso, haga clic derecho sobre un párrafo y elija `Leer desde aquí`.
 
 <ScreenshotPlaceholder
   file="es-document-view-audio-reading.png"
   label="Controles de audio o lectura en voz alta"
-  hint="Mostrar el botón de audio del sermón o el botón de voz y, si es posible, un botón de 'leer desde aquí' en un párrafo."
+  hint="Mostrar el botón de audio del sermón o el botón de voz en la barra superior, con el menú de clic derecho que contiene Leer desde aquí."
 />
 
 ## Cambiar la traducción de un sermón
@@ -177,6 +177,7 @@ Ese menú le ayuda a trabajar rápidamente mientras lee.
 Las opciones más importantes son:
 
 - `Copiar`
+- `Leer desde aquí` cuando la lectura en audio está disponible
 - `Souligner`
 - `Ajouter au sujet`
 - `Ajouter à la note`
@@ -185,7 +186,7 @@ Las opciones más importantes son:
 <ScreenshotPlaceholder
   file="es-document-view-right-click-menu.png"
   label="Menú de clic derecho en la vista de lectura"
-  hint="Mostrar texto seleccionado con el menú que contiene Copiar, Souligner, Ajouter au sujet y Ajouter à la note."
+  hint="Mostrar texto seleccionado con el menú que contiene Copiar, Leer desde aquí, Souligner, Ajouter au sujet y Ajouter à la note."
 />
 
 ## Copiar un pasaje

@@ -1,12 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Button, Tooltip } from 'antd';
-import {
-    PauseOutlined,
-    SoundOutlined,
-    CaretRightOutlined,
-    ZoomInOutlined,
-    ZoomOutOutlined,
-} from '@ant-design/icons';
+import { PauseOutlined, SoundOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { DocumentIdentity, HighlightItem } from '@shared/types';
 import type { SearchHighlightState } from './hooks';
@@ -128,9 +122,6 @@ interface ParagraphListProps {
     search: SearchHighlightState | null;
     activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
-    onPlayFromHere?: (paragraphIndex: number) => void;
-    canSpeak?: boolean;
-    incompatibleMessage?: string;
 }
 
 export const ParagraphList = memo(function ParagraphList({
@@ -140,9 +131,6 @@ export const ParagraphList = memo(function ParagraphList({
     search,
     activeParagraphIndex,
     highlightsByParagraph,
-    onPlayFromHere,
-    canSpeak,
-    incompatibleMessage,
 }: ParagraphListProps) {
     const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
     const pendingNavigationParagraphIndex = getPendingNavigationParagraphIndex(
@@ -160,9 +148,6 @@ export const ParagraphList = memo(function ParagraphList({
                     search={search}
                     isActiveMatch={paragraph.paragraphIndex === activeParagraphIndex}
                     highlights={highlightsByParagraph.get(paragraph.paragraphIndex)}
-                    onPlayFromHere={onPlayFromHere}
-                    canSpeak={canSpeak}
-                    incompatibleMessage={incompatibleMessage}
                     suppressAutoScroll={pendingNavigationParagraphIndex != null}
                 />
             )),
@@ -172,9 +157,6 @@ export const ParagraphList = memo(function ParagraphList({
             search,
             activeParagraphIndex,
             highlightsByParagraph,
-            onPlayFromHere,
-            canSpeak,
-            incompatibleMessage,
             pendingNavigationParagraphIndex,
         ],
     );
@@ -190,9 +172,6 @@ interface TtsParagraphProps {
     search: SearchHighlightState | null;
     isActiveMatch?: boolean;
     highlights?: HighlightItem[];
-    onPlayFromHere?: (paragraphIndex: number) => void;
-    canSpeak?: boolean;
-    incompatibleMessage?: string;
     suppressAutoScroll?: boolean;
 }
 
@@ -202,12 +181,8 @@ const TtsParagraph = memo(function TtsParagraph({
     search,
     isActiveMatch,
     highlights,
-    onPlayFromHere,
-    canSpeak,
-    incompatibleMessage,
     suppressAutoScroll,
 }: TtsParagraphProps) {
-    const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentKey);
     const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
     const mainView = useAppStore((s) => s.mainView);
@@ -252,36 +227,6 @@ const TtsParagraph = memo(function TtsParagraph({
         return () => cancelAnimationFrame(frameId);
     }, [ttsHighlight.isActive, autoScroll, mainView, suppressAutoScroll]);
 
-    const readFromHereLabel = t("Lire à partir d'ici");
-    const tooltip = canSpeak
-        ? readFromHereLabel
-        : (incompatibleMessage ?? t('Aucune voix disponible pour cette langue.'));
-
-    const playFromHereButton = useMemo(() => {
-        if (!onPlayFromHere) {
-            return undefined;
-        }
-
-        return (
-            <Tooltip title={tooltip}>
-                <span>
-                    <button
-                        className="tts-play-from-here"
-                        disabled={!canSpeak}
-                        onClick={(e) => {
-                            if (!canSpeak) return;
-                            e.stopPropagation();
-                            onPlayFromHere(paragraph.paragraphIndex);
-                        }}
-                        aria-label={canSpeak ? readFromHereLabel : t('Lecture audio indisponible')}
-                    >
-                        <CaretRightOutlined />
-                    </button>
-                </span>
-            </Tooltip>
-        );
-    }, [canSpeak, onPlayFromHere, paragraph.paragraphIndex, readFromHereLabel, t, tooltip]);
-
     return (
         <div ref={containerRef}>
             <SermonParagraphView
@@ -290,7 +235,6 @@ const TtsParagraph = memo(function TtsParagraph({
                 isActiveMatch={isActiveMatch}
                 highlights={highlights}
                 ttsHighlight={ttsHighlight}
-                playFromHereButton={playFromHereButton}
             />
         </div>
     );
