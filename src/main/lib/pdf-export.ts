@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { PdfExportResult } from '@shared/ipc.types';
 import { getMainWindow } from './window';
+import { slugifyFilename } from './slugify';
 
 export type PdfExportDirectory = 'subjects' | 'notes' | 'ai' | 'highlights';
 
@@ -43,9 +44,10 @@ export async function exportHtmlToPdf({
 
     await mkdir(exportDirectory, { recursive: true });
 
+    const safeName = slugifyFilename(defaultName);
     const { canceled, filePath } = await dialog.showSaveDialog(win, {
         title: 'Exporter PDF',
-        defaultPath: join(exportDirectory, `${defaultName}.pdf`),
+        defaultPath: join(exportDirectory, `${safeName}.pdf`),
         filters: [{ name: 'PDF', extensions: ['pdf'] }],
     });
 

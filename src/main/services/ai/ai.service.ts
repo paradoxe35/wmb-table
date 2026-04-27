@@ -186,7 +186,7 @@ export class AiService {
         const html = await buildAiConversationExportHtml(conversation, messages);
         return exportHtmlToPdf({
             html,
-            defaultName: this.getConversationPdfName(conversation),
+            defaultName: conversation.title?.trim() || `conversation-${conversation.createdAt}`,
             directory: 'ai',
             parentWindow: browserWindow,
         });
@@ -413,17 +413,6 @@ export class AiService {
             }
             seen.add(provider.id);
         }
-    }
-
-    private getConversationPdfName(conversation: AiConversation): string {
-        const baseTitle = conversation.title?.trim() || 'conversation - ' + conversation.createdAt;
-        return (
-            baseTitle
-                .toLowerCase()
-                .replace(/[^\p{L}\p{N}]+/gu, '-')
-                .replace(/^-+|-+$/g, '')
-                .slice(0, 80) || 'conversation'
-        );
     }
 
     private async resolveGenerationEnvironment(): Promise<GenerationEnvironment> {

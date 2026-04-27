@@ -351,6 +351,34 @@ const ChatMessageList = memo(function ChatMessageList({
         prevQueuedMessageCount.current = queuedMessageCount;
     }, [queuedMessageCount, scrollToBottom]);
 
+    // When the IPC reply lands (new user/assistant messages appended and
+    // the head trimmed by keepRecentMessages), the prior triggers above have
+    // already fired against the stale list. Re-scroll on lastMessageId change
+    // within the same conversation so the new bottom is reached.
+    const prevConversationLastId = useRef<{ id: string | null; lastMessageId: string | null }>({
+        id: null,
+        lastMessageId: null,
+    });
+    useEffect(() => {
+        const currentLastId = messages[messages.length - 1]?.id ?? null;
+        const prev = prevConversationLastId.current;
+        const sameConversation = conversationId === prev.id;
+
+        if (
+            sameConversation &&
+            prev.lastMessageId !== null &&
+            currentLastId !== null &&
+            currentLastId !== prev.lastMessageId
+        ) {
+            scrollToBottom();
+        }
+
+        prevConversationLastId.current = {
+            id: conversationId,
+            lastMessageId: currentLastId,
+        };
+    }, [conversationId, messages, scrollToBottom]);
+
     useLayoutEffect(() => {
         if (loadingOlder || !prependScrollSnapshot.current) {
             return;

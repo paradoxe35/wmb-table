@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Button, Divider, Empty, Progress, Select, Space, Typography, message } from 'antd';
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { Button, Divider, Empty, Progress, Select, Typography, message } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -17,6 +17,15 @@ import { interactiveProps } from '@renderer/utils/interactive';
 // ---------------------------------------------------------------------------
 // Compact version selector (Select dropdown for sidebar)
 // ---------------------------------------------------------------------------
+
+const wrappingButtonStyle: CSSProperties = {
+    width: '100%',
+    height: 'auto',
+    minHeight: 24,
+    whiteSpace: 'normal',
+    textAlign: 'left',
+    wordBreak: 'break-word',
+};
 
 function DownloadVersionButton({
     version,
@@ -42,6 +51,7 @@ function DownloadVersionButton({
                 )
             }
             onClick={() => onDownload(version.abbreviation)}
+            style={wrappingButtonStyle}
         >
             {version.name}
         </Button>
@@ -90,25 +100,22 @@ function CompactVersionSelector() {
                 />
             )}
             {suggestedDownload && (
-                <Space size="small" wrap>
-                    <DownloadVersionButton
-                        version={suggestedDownload}
-                        progress={downloadProgress[suggestedDownload.abbreviation]}
-                        onDownload={handleDownload}
-                    />
-                </Space>
+                <DownloadVersionButton
+                    version={suggestedDownload}
+                    progress={downloadProgress[suggestedDownload.abbreviation]}
+                    onDownload={handleDownload}
+                />
             )}
             {!suggestedDownload && activeLanguageMatchesContent && downloadable.length > 0 && (
-                <Space size="small" wrap>
-                    <Button
-                        size="small"
-                        type="dashed"
-                        icon={<CloudDownloadOutlined />}
-                        onClick={() => showOptions('bible')}
-                    >
-                        {t("Télécharger d'autres versions")}
-                    </Button>
-                </Space>
+                <Button
+                    size="small"
+                    type="dashed"
+                    icon={<CloudDownloadOutlined />}
+                    onClick={() => showOptions('bible')}
+                    style={wrappingButtonStyle}
+                >
+                    {t("Télécharger d'autres versions")}
+                </Button>
             )}
         </div>
     );
