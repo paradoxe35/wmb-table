@@ -1081,6 +1081,10 @@ const pt: Record<string, string> = {
     // ── Notes editor toolbar (Tiptap) ──
     'Annuler la modification': 'Desfazer',
     Rétablir: 'Refazer',
+    'Style de paragraphe': 'Estilo de parágrafo',
+    Police: 'Fonte',
+    'Taille de la police': 'Tamanho da fonte',
+    'Langue du texte': 'Idioma do texto',
     Gras: 'Negrito',
     Italique: 'Itálico',
     Souligné: 'Sublinhado',

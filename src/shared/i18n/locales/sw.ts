@@ -1080,6 +1080,10 @@ const sw: Record<string, string> = {
     // ── Notes editor toolbar (Tiptap) ──
     'Annuler la modification': 'Tendua',
     Rétablir: 'Rejesha',
+    'Style de paragraphe': 'Mtindo wa aya',
+    Police: 'Fonti',
+    'Taille de la police': 'Saizi ya fonti',
+    'Langue du texte': 'Lugha ya maandishi',
     Gras: 'Nzito',
     Italique: 'Mlazo',
     Souligné: 'Pigia mstari',

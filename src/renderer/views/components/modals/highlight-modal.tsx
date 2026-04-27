@@ -89,7 +89,7 @@ function HighlightColorSwatch({
                         display: 'grid',
                         placeItems: 'center',
                         color: 'rgba(0, 0, 0, 0.65)',
-                        fontSize: 14,
+                        fontSize: 'var(--fs-base)',
                     }}
                 />
             )}
