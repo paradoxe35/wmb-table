@@ -72,6 +72,9 @@ vi.mock('@main/lib/simple-cache', () => ({
         get() {
             return null;
         }
+        getStale() {
+            return null;
+        }
         set() {
             return;
         }

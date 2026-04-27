@@ -126,3 +126,22 @@ export function resolveUiLanguage(
 
     return getSupportedUiLanguage(contentLanguage) ?? FALLBACK_UI_LANGUAGE;
 }
+
+// ── Date / locale formatting ──
+
+export const UI_LANGUAGE_LOCALES: Record<UiLanguage, string> = {
+    fr: 'fr-FR',
+    en: 'en-US',
+    es: 'es-ES',
+    pt: 'pt-BR',
+    sw: 'sw-KE',
+};
+
+export function resolveDateLocale(
+    languageCode: string | null | undefined,
+    fallbackLanguageCode: string | null | undefined = FALLBACK_UI_LANGUAGE,
+): string {
+    const supported = getSupportedUiLanguage(languageCode);
+    const fallbackLanguage = getSupportedUiLanguage(fallbackLanguageCode) ?? FALLBACK_UI_LANGUAGE;
+    return UI_LANGUAGE_LOCALES[supported ?? fallbackLanguage];
+}

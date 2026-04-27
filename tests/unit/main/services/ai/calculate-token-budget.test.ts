@@ -16,69 +16,105 @@ const {
 describe('calculateRemoteTokenBudget', () => {
     it('returns default 32k when context window is undefined', () => {
         expect(
-            calculateRemoteTokenBudget(undefined, {
-                toolTokens: 5_000,
-                systemPromptTokens: 2_000,
+            calculateRemoteTokenBudget({
+                modelLimits: { contextWindow: undefined },
+                prompt: {
+                    toolTokens: 5_000,
+                    systemPromptTokens: 2_000,
+                },
             }),
         ).toBe(32_000);
     });
 
     it('returns default 32k when context window is 0', () => {
         expect(
-            calculateRemoteTokenBudget(0, {
-                toolTokens: 5_000,
-                systemPromptTokens: 2_000,
+            calculateRemoteTokenBudget({
+                modelLimits: { contextWindow: 0 },
+                prompt: {
+                    toolTokens: 5_000,
+                    systemPromptTokens: 2_000,
+                },
             }),
         ).toBe(32_000);
     });
 
     it('calculates budget for 128k model', () => {
-        const budget = calculateRemoteTokenBudget(128_000, {
-            toolTokens: 5_000,
-            systemPromptTokens: 2_000,
+        const budget = calculateRemoteTokenBudget({
+            modelLimits: { contextWindow: 128_000 },
+            prompt: {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            },
         });
         expect(budget).toBe(112_296);
     });
 
     it('calculates budget for 200k model', () => {
-        const budget = calculateRemoteTokenBudget(200_000, {
-            toolTokens: 5_000,
-            systemPromptTokens: 2_000,
+        const budget = calculateRemoteTokenBudget({
+            modelLimits: { contextWindow: 200_000 },
+            prompt: {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            },
         });
         expect(budget).toBe(184_296);
     });
 
     it('caps at MAX_HISTORY_BUDGET for 1M+ models', () => {
-        const budget = calculateRemoteTokenBudget(1_000_000, {
-            toolTokens: 5_000,
-            systemPromptTokens: 2_000,
+        const budget = calculateRemoteTokenBudget({
+            modelLimits: { contextWindow: 1_000_000 },
+            prompt: {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            },
         });
         expect(budget).toBe(200_000);
     });
 
     it('floors at MIN_HISTORY_BUDGET for very small models', () => {
-        const budget = calculateRemoteTokenBudget(8_000, {
-            toolTokens: 5_000,
-            systemPromptTokens: 2_000,
+        const budget = calculateRemoteTokenBudget({
+            modelLimits: { contextWindow: 8_000 },
+            prompt: {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            },
         });
         expect(budget).toBe(4_000);
     });
 
     it('handles edge case where overhead exceeds context window', () => {
-        const budget = calculateRemoteTokenBudget(5_000, {
-            toolTokens: 5_000,
-            systemPromptTokens: 2_000,
+        const budget = calculateRemoteTokenBudget({
+            modelLimits: { contextWindow: 5_000 },
+            prompt: {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            },
         });
         expect(budget).toBe(4_000);
     });
 
     it('uses explicit prompt and tool tokens when reserving output space', () => {
-        const maxOutputTokens = resolveRemoteOutputTokens(16_000, {
-            toolTokens: 5_000,
-            systemPromptTokens: 2_000,
+        const maxOutputTokens = resolveRemoteOutputTokens({
+            modelLimits: { contextWindow: 16_000 },
+            prompt: {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            },
         });
 
         expect(maxOutputTokens).toBe(4_488);
+    });
+
+    it('caps output tokens to the provider model output limit', () => {
+        const maxOutputTokens = resolveRemoteOutputTokens({
+            modelLimits: { contextWindow: 128_000, maxOutputTokens: 4_096 },
+            prompt: {
+                toolTokens: 5_000,
+                systemPromptTokens: 2_000,
+            },
+        });
+
+        expect(maxOutputTokens).toBe(4_096);
     });
 
     it('measures prompt tokens from the actual prompt text', () => {

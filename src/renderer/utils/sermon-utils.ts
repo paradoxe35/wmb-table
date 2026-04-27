@@ -1,3 +1,4 @@
+import { resolveDateLocale } from '@shared/constants';
 import type { SermonListItem, SermonMeta } from '@shared/types';
 
 export function getSermonYear(
@@ -21,15 +22,36 @@ export function simpleMatch(query: string, text: string): boolean {
     return normalized.includes(q);
 }
 
-export function formatSermonDate(dateMs: number, locale: string = 'en'): string {
+export function formatSermonDate(
+    dateMs: number,
+    locale: string = 'en',
+    fallbackLocale?: string | null,
+): string {
     const d = new Date(dateMs);
-    return d.toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', {
+    return d.toLocaleDateString(resolveDateLocale(locale, fallbackLocale), {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
         day: 'numeric',
         timeZone: 'UTC',
     });
+}
+
+/** Compact `dd/MMM/yy` with the locale's abbreviated month. */
+export function formatSermonDateShort(
+    dateMs: number,
+    locale: string = 'en',
+    fallbackLocale?: string | null,
+): string {
+    const d = new Date(dateMs);
+    const monthRaw = d.toLocaleDateString(resolveDateLocale(locale, fallbackLocale), {
+        month: 'short',
+        timeZone: 'UTC',
+    });
+    const month = (monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1)).replace(/\.$/, '');
+    const day = d.getUTCDate();
+    const year = String(d.getUTCFullYear()).slice(-2).padStart(2, '0');
+    return `${day}/${month}/${year}`;
 }
 
 export function formatShortDate(sermonId: string): string {

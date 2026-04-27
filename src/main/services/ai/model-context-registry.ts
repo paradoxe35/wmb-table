@@ -1,5 +1,5 @@
 /**
- * Model context window resolution via OpenRouter + LiteLLM registries (cached 24h).
+ * Model limit resolution via OpenRouter + models.dev registries (cached 24h).
  */
 
 import log from '@main/lib/logger';
@@ -8,37 +8,57 @@ import { SimpleCache } from '@main/lib/simple-cache';
 // ── Configuration ──
 
 const OPENROUTER_MODELS_URL = 'https://openrouter.ai/api/v1/models';
-const LITELLM_REGISTRY_URL =
-    'https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json';
+const MODELS_DEV_REGISTRY_URL = 'https://models.dev/api.json';
 
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 const FETCH_TIMEOUT_MS = 10_000;
-const CHAT_MODES = new Set<string | undefined>(['chat', 'completion', undefined]);
 
 // ── Types ──
 
 interface OpenRouterModel {
     id: string;
     context_length?: number;
+    top_provider?: {
+        context_length?: number;
+        max_completion_tokens?: number;
+    };
 }
 
-interface LiteLLMRawEntry {
-    max_input_tokens?: number;
-    max_tokens?: number;
-    mode?: string;
+interface ModelsDevModel {
+    id: string;
+    limit?: {
+        context?: number;
+        output?: number;
+    };
 }
 
-type ContextWindowMap = Record<string, number>;
+interface ModelsDevProvider {
+    id: string;
+    models?: Record<string, ModelsDevModel>;
+}
+
+export interface ModelLimits {
+    contextWindow?: number;
+    maxOutputTokens?: number;
+}
+
+type ModelLimitMap = Record<string, ModelLimits>;
 
 // ── Caches ──
 
 const openRouterCache = new SimpleCache<OpenRouterModel[]>('ctx-registry:openrouter', CACHE_TTL_MS);
-const litellmCache = new SimpleCache<ContextWindowMap>('ctx-registry:litellm', CACHE_TTL_MS);
+const modelsDevCache = new SimpleCache<ModelLimitMap>('ctx-registry:models-dev', CACHE_TTL_MS);
 
 // ── Normalization ──
 
 const QUANT_PATTERN = /[-_](?:q\d[_a-z0-9]*|fp16|fp32|bf16|f16|f32|gguf|iq\d[_a-z0-9]*)$/i;
 const PARAM_SIZE_PATTERN = /^(\d+\.?\d*[bm](?:-a\d+[bm])?)/i;
+const PROVIDER_ALIASES: Record<string, string[]> = {
+    claude: ['anthropic'],
+    gemini: ['google'],
+    openai: ['openai'],
+    openrouter: ['openrouter'],
+};
 
 /**
  * Build candidate names ordered most-specific first.
@@ -48,11 +68,12 @@ const PARAM_SIZE_PATTERN = /^(\d+\.?\d*[bm](?:-a\d+[bm])?)/i;
  * `"openai/gpt-5-mini"`                     → `["gpt-5-mini"]`
  */
 function buildCandidates(modelId: string): string[] {
+    const full = modelId.toLowerCase();
     const afterSlash = modelId.includes('/') ? modelId.split('/').pop()! : modelId;
     const lower = afterSlash.toLowerCase();
 
     if (!lower.includes(':')) {
-        return [lower];
+        return full === lower ? [lower] : [full, lower];
     }
 
     const [base, tag] = lower.split(':', 2);
@@ -78,6 +99,17 @@ function buildCandidates(modelId: string): string[] {
 
     candidates.push(base);
     return candidates;
+}
+
+function buildProviderCandidates(providerId: string | undefined, modelCandidates: string[]) {
+    if (!providerId) {
+        return [];
+    }
+
+    const aliases = [providerId, ...(PROVIDER_ALIASES[providerId] ?? [])];
+    return aliases.flatMap((provider) =>
+        modelCandidates.map((candidate) => `${provider}/${candidate}`.toLowerCase()),
+    );
 }
 
 function extractBaseName(id: string): string {
@@ -107,22 +139,43 @@ async function fetchOpenRouterModels(): Promise<OpenRouterModel[]> {
     return Array.isArray(body?.data) ? body.data : [];
 }
 
-async function fetchLiteLLMRegistry(): Promise<ContextWindowMap> {
-    const response = await fetchWithTimeout(LITELLM_REGISTRY_URL);
+function toPositiveInt(value: unknown): number | undefined {
+    return typeof value === 'number' && value > 0 ? Math.floor(value) : undefined;
+}
+
+function addModelLimits(registry: ModelLimitMap, keys: string[], limits: ModelLimits): void {
+    for (const key of keys) {
+        registry[key] = limits;
+    }
+}
+
+async function fetchModelsDevRegistry(): Promise<ModelLimitMap> {
+    const response = await fetchWithTimeout(MODELS_DEV_REGISTRY_URL);
     if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
     }
 
-    const raw = (await response.json()) as Record<string, LiteLLMRawEntry>;
-    const result: ContextWindowMap = {};
+    const raw = (await response.json()) as Record<string, ModelsDevProvider>;
+    const result: ModelLimitMap = {};
 
-    for (const [key, entry] of Object.entries(raw)) {
-        if (!CHAT_MODES.has(entry.mode)) {
+    for (const [providerKey, provider] of Object.entries(raw)) {
+        if (!provider?.models) {
             continue;
         }
-        const tokens = entry.max_input_tokens ?? entry.max_tokens;
-        if (typeof tokens === 'number' && tokens > 0) {
-            result[key] = tokens;
+
+        for (const [modelKey, model] of Object.entries(provider.models)) {
+            const contextWindow = toPositiveInt(model.limit?.context);
+            const maxOutputTokens = toPositiveInt(model.limit?.output);
+            if (!contextWindow && !maxOutputTokens) {
+                continue;
+            }
+
+            const limits = { contextWindow, maxOutputTokens };
+            addModelLimits(
+                result,
+                [model.id, modelKey, `${provider.id}/${model.id}`, `${providerKey}/${model.id}`],
+                limits,
+            );
         }
     }
 
@@ -131,14 +184,14 @@ async function fetchLiteLLMRegistry(): Promise<ContextWindowMap> {
 
 async function ensureRegistries(): Promise<void> {
     const logError = (source: string) => (err: unknown) => {
-        log.warn(`Context registry fetch failed: ${source}`, {
+        log.warn(`Model limit registry fetch failed: ${source}`, {
             error: err instanceof Error ? err.message : String(err),
         });
     };
 
     await Promise.all([
         openRouterCache.getOrFetch(fetchOpenRouterModels).catch(logError('OpenRouter')),
-        litellmCache.getOrFetch(fetchLiteLLMRegistry).catch(logError('LiteLLM')),
+        modelsDevCache.getOrFetch(fetchModelsDevRegistry).catch(logError('models.dev')),
     ]);
 }
 
@@ -155,40 +208,68 @@ function isMatch(registryBaseName: string, candidate: string): boolean {
     return false;
 }
 
-function findInModels(candidates: string[], models: OpenRouterModel[]): number | undefined {
+function mergeLimits(...limits: Array<ModelLimits | undefined>): ModelLimits | undefined {
+    const merged: ModelLimits = {};
+    for (const limit of limits) {
+        if (!limit) {
+            continue;
+        }
+        merged.contextWindow ??= limit.contextWindow;
+        merged.maxOutputTokens ??= limit.maxOutputTokens;
+    }
+    return merged.contextWindow || merged.maxOutputTokens ? merged : undefined;
+}
+
+function openRouterModelLimits(model: OpenRouterModel): ModelLimits | undefined {
+    return mergeLimits({
+        contextWindow: toPositiveInt(model.context_length ?? model.top_provider?.context_length),
+        maxOutputTokens: toPositiveInt(model.top_provider?.max_completion_tokens),
+    });
+}
+
+function findInModels(candidates: string[], models: OpenRouterModel[]): ModelLimits | undefined {
     for (const candidate of candidates) {
         for (const model of models) {
-            if (!model.context_length || model.context_length <= 0) {
+            const limits = openRouterModelLimits(model);
+            if (!limits) {
                 continue;
             }
             if (extractBaseName(model.id) === candidate) {
-                return model.context_length;
+                return limits;
             }
         }
 
         for (const model of models) {
-            if (!model.context_length || model.context_length <= 0) {
+            const limits = openRouterModelLimits(model);
+            if (!limits) {
                 continue;
             }
             if (isMatch(extractBaseName(model.id), candidate)) {
-                return model.context_length;
+                return limits;
             }
         }
     }
     return undefined;
 }
 
-function findInRegistry(candidates: string[], registry: ContextWindowMap): number | undefined {
+function findInRegistry(candidates: string[], registry: ModelLimitMap): ModelLimits | undefined {
     for (const candidate of candidates) {
-        for (const [key, contextWindow] of Object.entries(registry)) {
+        const exact = registry[candidate];
+        if (exact) {
+            return exact;
+        }
+    }
+
+    for (const candidate of candidates) {
+        for (const [key, limits] of Object.entries(registry)) {
             if (extractBaseName(key) === candidate) {
-                return contextWindow;
+                return limits;
             }
         }
 
-        for (const [key, contextWindow] of Object.entries(registry)) {
+        for (const [key, limits] of Object.entries(registry)) {
             if (isMatch(extractBaseName(key), candidate)) {
-                return contextWindow;
+                return limits;
             }
         }
     }
@@ -197,23 +278,36 @@ function findInRegistry(candidates: string[], registry: ContextWindowMap): numbe
 
 // ── Public API ──
 
-export async function lookupContextWindow(modelId: string): Promise<number | undefined> {
+export async function lookupModelLimits(
+    modelId: string,
+    providerId?: string,
+): Promise<ModelLimits | undefined> {
     await ensureRegistries();
 
-    const candidates = buildCandidates(modelId);
+    const modelCandidates = buildCandidates(modelId);
+    const providerCandidates = buildProviderCandidates(providerId, modelCandidates);
+    const candidates = [...providerCandidates, ...modelCandidates];
+    const matches: ModelLimits[] = [];
 
     const openRouterModels = openRouterCache.get() ?? openRouterCache.getStale();
     if (openRouterModels) {
         const result = findInModels(candidates, openRouterModels);
         if (result) {
-            return result;
+            matches.push(result);
         }
     }
 
-    const litellmRegistry = litellmCache.get() ?? litellmCache.getStale();
-    if (litellmRegistry) {
-        return findInRegistry(candidates, litellmRegistry);
+    const modelsDevRegistry = modelsDevCache.get() ?? modelsDevCache.getStale();
+    if (modelsDevRegistry) {
+        const result = findInRegistry(candidates, modelsDevRegistry);
+        if (result) {
+            matches.push(result);
+        }
     }
 
-    return undefined;
+    return mergeLimits(...matches);
+}
+
+export async function lookupContextWindow(modelId: string): Promise<number | undefined> {
+    return (await lookupModelLimits(modelId))?.contextWindow;
 }

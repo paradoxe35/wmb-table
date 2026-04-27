@@ -4,7 +4,7 @@ import { useFormatSermonDate } from '@renderer/hooks';
 
 export default function SermonContentHeader({ meta }: { meta: SermonMeta }) {
     const { t } = useTranslation();
-    const formatDate = useFormatSermonDate();
+    const formatDate = useFormatSermonDate(meta.languageCode);
 
     return (
         <div className="sermon-content-header">

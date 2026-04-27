@@ -14,6 +14,7 @@ export interface BuildAiToolsOptions {
     isLocal?: boolean;
     uiLanguage?: string;
     activeBibleVersion?: string;
+    maxOutputTokens?: number;
     abortSignal?: AbortSignal;
     /** Required for subagent progress dispatch to the renderer. */
     browserWindow?: BrowserWindow;
@@ -59,6 +60,7 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
                   contentLanguage: defaultContentLanguage,
                   uiLanguage: options.uiLanguage ?? defaultContentLanguage,
                   activeBibleVersion: options.activeBibleVersion,
+                  maxOutputTokens: options.maxOutputTokens,
                   abortSignal: options.abortSignal,
                   dispatch,
               })

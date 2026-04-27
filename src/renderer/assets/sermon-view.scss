@@ -28,8 +28,6 @@
     color: var(--ant-color-text-secondary, #6b7280);
 }
 
-// Compact contextual title shown in the document header once the user has
-// scrolled past the in-content title.
 .document-header-title {
     flex: 1;
     min-width: 0;
@@ -44,9 +42,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        // --fs-rel-3xs is calibrated for nested contexts; combined with the
-        // toolbar's --fs-4xl em base it lands a touch below body size, so the
-        // hint scales naturally with the user's body font-size preference.
+        // --fs-rel-3xs against the toolbar's --fs-4xl base lands a touch below body size.
         font-size: var(--fs-rel-3xs);
         font-weight: 400;
         line-height: 1.3;

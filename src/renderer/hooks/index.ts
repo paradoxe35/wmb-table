@@ -22,7 +22,7 @@ import type {
     SermonListItemWithTranslations,
     SubjectDocumentItem,
 } from '@shared/types';
-import { formatSermonDate } from '@renderer/utils/sermon-utils';
+import { formatSermonDate, formatSermonDateShort } from '@renderer/utils/sermon-utils';
 import { capitalize } from 'lodash';
 import {
     buildBibleDocumentId,
@@ -383,12 +383,32 @@ export function useSermonLookup() {
     return { sermonsById, getSermonById };
 }
 
-export function useFormatSermonDate() {
+function useSermonDateLanguages(languageOverride?: string | null) {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
+    const fallbackLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
+
+    return {
+        language: languageOverride ?? contentLanguage ?? fallbackLanguage,
+        fallbackLanguage,
+    };
+}
+
+export function useFormatSermonDate(languageOverride?: string | null) {
+    const { language, fallbackLanguage } = useSermonDateLanguages(languageOverride);
 
     return useCallback(
-        (dateMs: number) => capitalize(formatSermonDate(dateMs, contentLanguage ?? 'en')),
-        [contentLanguage],
+        (dateMs: number) => capitalize(formatSermonDate(dateMs, language, fallbackLanguage)),
+        [language, fallbackLanguage],
+    );
+}
+
+export function useFormatSermonDateShort(languageOverride?: string | null) {
+    const { language, fallbackLanguage } = useSermonDateLanguages(languageOverride);
+
+    return useCallback(
+        (dateMs: number) => formatSermonDateShort(dateMs, language, fallbackLanguage),
+        [language, fallbackLanguage],
     );
 }
 
