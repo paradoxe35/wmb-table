@@ -156,6 +156,11 @@
     border-radius: 4px;
 }
 
+.sermon-paragraph--context-target {
+    background-color: var(--ant-color-fill-secondary, rgba(0, 0, 0, 0.06));
+    border-radius: 4px;
+}
+
 .tts-active-sentence {
     background-color: var(--ant-color-warning-bg, #fff7e6);
     color: var(--ant-color-text, inherit);
@@ -177,6 +182,10 @@
     .tts-active-paragraph {
         background-color: rgba(22, 119, 255, 0.18);
         color: #e8e8e8;
+    }
+
+    .sermon-paragraph--context-target {
+        background-color: rgba(255, 255, 255, 0.08);
     }
 
     .tts-active-sentence {

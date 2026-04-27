@@ -12,6 +12,8 @@ import type { DocumentIdentity } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 
+const CONTEXT_PARAGRAPH_CLASS = 'sermon-paragraph--context-target';
+
 interface DocumentBodyProps {
     loading: boolean;
     ready: boolean;
@@ -110,11 +112,35 @@ export default function DocumentBody({
         };
     }, [readingMode, zoom, pendingNavigation, documentIdentity, pendingParagraphIndex]);
 
+    const clearContextParagraph = useCallback(() => {
+        containerRef.current
+            ?.querySelector(`.${CONTEXT_PARAGRAPH_CLASS}`)
+            ?.classList.remove(CONTEXT_PARAGRAPH_CLASS);
+    }, [containerRef]);
+
+    const handleContextMenuOpenChange = useCallback(
+        (open: boolean) => {
+            setContextMenuOpen(open);
+            if (!open) {
+                clearContextParagraph();
+            }
+        },
+        [clearContextParagraph],
+    );
+
     const onContextMenu = useCallback(
         (e: React.MouseEvent) => {
             contextTargetRef.current = e.target as Element;
+            clearContextParagraph();
+            const selection = window.getSelection();
+            if (selection && !selection.isCollapsed) {
+                return;
+            }
+            (e.target as Element)
+                .closest('[data-paragraph-index]')
+                ?.classList.add(CONTEXT_PARAGRAPH_CLASS);
         },
-        [contextTargetRef],
+        [clearContextParagraph, contextTargetRef],
     );
 
     return (
@@ -132,7 +158,7 @@ export default function DocumentBody({
                         menu={{ items: contextMenuItems }}
                         trigger={['contextMenu']}
                         open={contextMenuOpen}
-                        onOpenChange={setContextMenuOpen}
+                        onOpenChange={handleContextMenuOpenChange}
                     >
                         <div
                             ref={containerRef}
