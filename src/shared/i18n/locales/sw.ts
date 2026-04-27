@@ -1120,7 +1120,6 @@ const sw: Record<string, string> = {
     'Séparer la cellule': 'Gawanya kisanduku',
     "La note n'a pas de contenu à exporter": 'Dokezo halina maudhui ya kuhamisha',
     "Impossible d'exporter la note en PDF": 'Imeshindikana kuhamisha dokezo kama PDF',
-
     // ── wmb:// reference modal ──
     'Référence introuvable': 'Rejeo halijapatikana',
     'Chargement de la référence…': 'Inapakia rejeo…',

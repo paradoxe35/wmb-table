@@ -1113,7 +1113,6 @@ const en: Record<string, string> = {
     'Séparer la cellule': 'Split cell',
     "La note n'a pas de contenu à exporter": 'The note has no content to export',
     "Impossible d'exporter la note en PDF": 'Unable to export the note as PDF',
-
     // ── wmb:// reference modal ──
     'Référence introuvable': 'Reference not found',
     'Chargement de la référence…': 'Loading reference…',

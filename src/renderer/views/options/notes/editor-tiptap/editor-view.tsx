@@ -11,7 +11,6 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { Placeholder } from '@tiptap/extension-placeholder';
-import { Image } from '@tiptap/extension-image';
 
 import type { NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { ContextMenu } from '@renderer/utils/context-menu';
@@ -99,7 +98,6 @@ export function TiptapEditorView({
             Subscript,
             Superscript,
             Underline,
-            Image.configure({ inline: false, allowBase64: true }),
             ReferenceLink.configure({
                 openOnClick: false,
                 autolink: true,
