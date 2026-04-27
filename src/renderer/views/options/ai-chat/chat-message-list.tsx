@@ -333,7 +333,6 @@ const ChatMessageList = memo(function ChatMessageList({
         pendingInitialScrollConversation.current = null;
     }, [conversationKey, loading, scrollRef, stopScroll]);
 
-    // Scroll to bottom when user sends a new message
     const prevSending = useRef(sending);
     useEffect(() => {
         if (sending && !prevSending.current) {

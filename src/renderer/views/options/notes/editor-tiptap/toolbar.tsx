@@ -252,31 +252,37 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
 
             <Divider type="vertical" />
 
-            <Select
-                size="small"
-                style={{ width: 130 }}
-                value={headingValue}
-                options={headingOptions}
-                onChange={onHeadingChange}
-            />
+            <Tooltip title={t('Style de paragraphe')}>
+                <Select
+                    size="small"
+                    style={{ width: 130 }}
+                    value={headingValue}
+                    options={headingOptions}
+                    onChange={onHeadingChange}
+                />
+            </Tooltip>
 
-            <Select
-                size="small"
-                style={{ width: 140 }}
-                value={state.fontFamily}
-                options={fontFamilyOptions}
-                onChange={onFontFamilyChange}
-                suffixIcon={<FontColorsOutlined />}
-            />
+            <Tooltip title={t('Police')}>
+                <Select
+                    size="small"
+                    style={{ width: 140 }}
+                    value={state.fontFamily}
+                    options={fontFamilyOptions}
+                    onChange={onFontFamilyChange}
+                    suffixIcon={<FontColorsOutlined />}
+                />
+            </Tooltip>
 
-            <Select
-                size="small"
-                style={{ width: 90 }}
-                value={state.fontSize}
-                options={fontSizeOptions}
-                onChange={onFontSizeChange}
-                suffixIcon={<FontSizeOutlined />}
-            />
+            <Tooltip title={t('Taille de la police')}>
+                <Select
+                    size="small"
+                    style={{ width: 90 }}
+                    value={state.fontSize}
+                    options={fontSizeOptions}
+                    onChange={onFontSizeChange}
+                    suffixIcon={<FontSizeOutlined />}
+                />
+            </Tooltip>
 
             <Divider type="vertical" />
 
@@ -351,28 +357,28 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
 
             <Divider type="vertical" />
 
-            <Tooltip title={t('Couleur du texte')}>
-                <ColorPicker
-                    size="small"
-                    value={state.color || '#000000'}
-                    onChangeComplete={(c) => onColorChange(c.toHexString())}
-                    allowClear
-                    onClear={() => onColorChange('')}
-                >
+            <ColorPicker
+                size="small"
+                value={state.color || '#000000'}
+                onChangeComplete={(c) => onColorChange(c.toHexString())}
+                allowClear
+                onClear={() => onColorChange('')}
+            >
+                <Tooltip title={t('Couleur du texte')}>
                     <Button type="text" size="small" icon={<FontColorsOutlined />} />
-                </ColorPicker>
-            </Tooltip>
-            <Tooltip title={t('Surlignage')}>
-                <ColorPicker
-                    size="small"
-                    value={state.backgroundColor || '#ffff00'}
-                    onChangeComplete={(c) => onBackgroundColorChange(c.toHexString())}
-                    allowClear
-                    onClear={() => onBackgroundColorChange('')}
-                >
+                </Tooltip>
+            </ColorPicker>
+            <ColorPicker
+                size="small"
+                value={state.backgroundColor || '#ffff00'}
+                onChangeComplete={(c) => onBackgroundColorChange(c.toHexString())}
+                allowClear
+                onClear={() => onBackgroundColorChange('')}
+            >
+                <Tooltip title={t('Surlignage')}>
                     <Button type="text" size="small" icon={<BgColorsOutlined />} />
-                </ColorPicker>
-            </Tooltip>
+                </Tooltip>
+            </ColorPicker>
 
             <Divider type="vertical" />
 
@@ -606,14 +612,16 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
 
             <Divider type="vertical" />
 
-            <Select
-                size="small"
-                style={{ width: 140 }}
-                value={state.textPartLanguage}
-                options={languageOptions}
-                onChange={onTextPartLanguageChange}
-                placeholder={t('Langue')}
-            />
+            <Tooltip title={t('Langue du texte')}>
+                <Select
+                    size="small"
+                    style={{ width: 140 }}
+                    value={state.textPartLanguage}
+                    options={languageOptions}
+                    onChange={onTextPartLanguageChange}
+                    placeholder={t('Langue')}
+                />
+            </Tooltip>
         </div>
     );
 }

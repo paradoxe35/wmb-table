@@ -95,7 +95,7 @@ export function registerNotesHandlers(): void {
             return { status: 'empty' } as const;
         }
 
-        const defaultName = (note.name || 'note').replace(/\s+/g, '-').toLowerCase();
+        const defaultName = note.name || 'note';
 
         const html = `<!DOCTYPE html>
 <html><head>

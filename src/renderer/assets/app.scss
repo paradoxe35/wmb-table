@@ -596,7 +596,7 @@ body {
 }
 
 .inline-help-trigger.ant-btn .anticon {
-    font-size: 13px;
+    font-size: var(--fs-md);
     line-height: 1;
 }
 
@@ -610,7 +610,7 @@ body {
 }
 
 .settings-doc-button.ant-btn .anticon {
-    font-size: 12px;
+    font-size: var(--fs-sm);
     line-height: 1;
 }
 
@@ -1141,17 +1141,17 @@ body {
     }
 
     .ant-btn {
-        height: 28px;
-        min-width: 28px;
+        height: 2em;
+        min-width: 2em;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
+        font-size: var(--fs-md);
     }
 
     .ant-select {
         .ant-select-selector {
-            height: 28px;
+            height: 2em;
         }
     }
 }

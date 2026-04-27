@@ -1073,6 +1073,10 @@ const en: Record<string, string> = {
     // ── Notes editor toolbar (Tiptap) ──
     'Annuler la modification': 'Undo',
     Rétablir: 'Redo',
+    'Style de paragraphe': 'Paragraph style',
+    Police: 'Font',
+    'Taille de la police': 'Font size',
+    'Langue du texte': 'Text language',
     Gras: 'Bold',
     Italique: 'Italic',
     Souligné: 'Underline',

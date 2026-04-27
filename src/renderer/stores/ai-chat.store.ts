@@ -644,10 +644,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         state.conversationRuns,
                         conversationId,
                     );
+                    const currentMessages = state.messagesByConversation[conversationId] ?? [];
+
                     const assistantMessage = run.assistantMessageId
-                        ? (state.messagesByConversation[conversationId] ?? []).find(
-                              (message) => message.id === run.assistantMessageId,
-                          )
+                        ? currentMessages.find((message) => message.id === run.assistantMessageId)
                         : undefined;
                     const completedWithEmptyAssistant = Boolean(
                         run.assistantMessageId && isMessageEmpty(assistantMessage),
@@ -659,24 +659,38 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     const shouldSurfaceEmptyCompletion =
                         completedWithEmptyAssistant && queuedMessageCount === 0;
 
+                    const baseMessages =
+                        completedWithEmptyAssistant && run.assistantMessageId
+                            ? currentMessages.filter(
+                                  (message) => message.id !== run.assistantMessageId,
+                              )
+                            : currentMessages;
+
+                    const recentWindow = keepRecentMessages(baseMessages);
+                    const reasoningAfterTrim = removeReasoningByMessageIds(
+                        state.reasoningByMessage,
+                        recentWindow.removedMessageIds,
+                    );
+
                     return {
                         conversationRuns,
                         sending: countRuns(conversationRuns) > 0,
-                        messagesByConversation:
-                            completedWithEmptyAssistant && run.assistantMessageId
-                                ? updateConversationMessages(
-                                      state.messagesByConversation,
-                                      conversationId,
-                                      (messages) =>
-                                          messages.filter(
-                                              (message) => message.id !== run.assistantMessageId,
-                                          ),
-                                  )
-                                : state.messagesByConversation,
+                        messagesByConversation: {
+                            ...state.messagesByConversation,
+                            [conversationId]: recentWindow.messages,
+                        },
                         reasoningByMessage:
                             completedWithEmptyAssistant && run.assistantMessageId
-                                ? removeReasoning(state.reasoningByMessage, run.assistantMessageId)
-                                : state.reasoningByMessage,
+                                ? removeReasoning(reasoningAfterTrim, run.assistantMessageId)
+                                : reasoningAfterTrim,
+                        historyByConversation: {
+                            ...state.historyByConversation,
+                            [conversationId]: updateRecentHistoryWindow(
+                                state.historyByConversation[conversationId],
+                                recentWindow.messages.length,
+                                recentWindow.wasTrimmed,
+                            ),
+                        },
                         error: shouldSurfaceEmptyCompletion ? 'Réponse sans texte' : state.error,
                         completionCount: state.completionCount + 1,
                         lastCompletedConversationId: conversationId,
@@ -702,13 +716,14 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         conversationId,
                     );
                     const currentMessages = state.messagesByConversation[conversationId] ?? [];
-                    const nextMessages = currentMessages.filter((message) => {
+                    const baseMessages = currentMessages.filter((message) => {
                         if (message.id !== messageId) {
                             return true;
                         }
 
                         return !isMessageEmpty(message);
                     });
+                    const recentWindow = keepRecentMessages(baseMessages);
 
                     shouldFlushQueue =
                         (state.queuedMessagesByConversation[conversationId] ?? []).length > 0;
@@ -718,9 +733,23 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         sending: countRuns(conversationRuns) > 0,
                         messagesByConversation: {
                             ...state.messagesByConversation,
-                            [conversationId]: nextMessages,
+                            [conversationId]: recentWindow.messages,
                         },
-                        reasoningByMessage: removeReasoning(state.reasoningByMessage, messageId),
+                        reasoningByMessage: removeReasoning(
+                            removeReasoningByMessageIds(
+                                state.reasoningByMessage,
+                                recentWindow.removedMessageIds,
+                            ),
+                            messageId,
+                        ),
+                        historyByConversation: {
+                            ...state.historyByConversation,
+                            [conversationId]: updateRecentHistoryWindow(
+                                state.historyByConversation[conversationId],
+                                recentWindow.messages.length,
+                                recentWindow.wasTrimmed,
+                            ),
+                        },
                         completionCount: state.completionCount + 1,
                         lastCompletedConversationId: conversationId,
                     };
@@ -747,22 +776,37 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     shouldFlushQueue =
                         (state.queuedMessagesByConversation[conversationId] ?? []).length > 0;
                     const currentMessages = state.messagesByConversation[conversationId] ?? [];
-                    const nextMessages = currentMessages.filter((message) => {
+                    const baseMessages = currentMessages.filter((message) => {
                         if (message.id !== messageId) {
                             return true;
                         }
 
                         return !isMessageEmpty(message);
                     });
+                    const recentWindow = keepRecentMessages(baseMessages);
 
                     return {
                         conversationRuns,
                         sending: countRuns(conversationRuns) > 0,
                         messagesByConversation: {
                             ...state.messagesByConversation,
-                            [conversationId]: nextMessages,
+                            [conversationId]: recentWindow.messages,
                         },
-                        reasoningByMessage: removeReasoning(state.reasoningByMessage, messageId),
+                        reasoningByMessage: removeReasoning(
+                            removeReasoningByMessageIds(
+                                state.reasoningByMessage,
+                                recentWindow.removedMessageIds,
+                            ),
+                            messageId,
+                        ),
+                        historyByConversation: {
+                            ...state.historyByConversation,
+                            [conversationId]: updateRecentHistoryWindow(
+                                state.historyByConversation[conversationId],
+                                recentWindow.messages.length,
+                                recentWindow.wasTrimmed,
+                            ),
+                        },
                         error,
                         completionCount: state.completionCount + 1,
                         lastCompletedConversationId: conversationId,
@@ -1244,25 +1288,19 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 }
 
                 const nextMessages = upsertMessage(messagesWithUsers, minimizedAssistantMessage);
-                const recentWindow = keepRecentMessages(nextMessages);
 
                 return {
                     conversations: upsertConversation(state.conversations, result.conversation),
                     messagesByConversation: {
                         ...state.messagesByConversation,
-                        [resolvedConversationId]: recentWindow.messages,
+                        [resolvedConversationId]: nextMessages,
                     },
-                    reasoningByMessage: removeReasoningByMessageIds(
-                        state.reasoningByMessage,
-                        recentWindow.removedMessageIds,
-                    ),
                     historyByConversation: {
                         ...state.historyByConversation,
-                        [resolvedConversationId]: updateRecentHistoryWindow(
-                            existingHistory,
-                            recentWindow.messages.length,
-                            recentWindow.wasTrimmed,
-                        ),
+                        [resolvedConversationId]: {
+                            loadedCount: nextMessages.length,
+                            hasMore: existingHistory?.hasMore ?? false,
+                        },
                     },
                     activeConversationId: resolvedConversationId,
                     conversationRuns: moveConversationRun(
@@ -1342,26 +1380,20 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     state.messagesByConversation[conversationId] ?? [],
                     minimizeMessageForRenderer(result.assistantMessage),
                 );
-                const recentWindow = keepRecentMessages(nextMessages);
 
                 return {
                     conversations: upsertConversation(state.conversations, result.conversation),
                     activeConversationId: result.conversation.id,
                     messagesByConversation: {
                         ...state.messagesByConversation,
-                        [conversationId]: recentWindow.messages,
+                        [conversationId]: nextMessages,
                     },
-                    reasoningByMessage: removeReasoningByMessageIds(
-                        state.reasoningByMessage,
-                        recentWindow.removedMessageIds,
-                    ),
                     historyByConversation: {
                         ...state.historyByConversation,
-                        [conversationId]: updateRecentHistoryWindow(
-                            state.historyByConversation[conversationId],
-                            recentWindow.messages.length,
-                            recentWindow.wasTrimmed,
-                        ),
+                        [conversationId]: {
+                            loadedCount: nextMessages.length,
+                            hasMore: state.historyByConversation[conversationId]?.hasMore ?? false,
+                        },
                     },
                     conversationRuns: {
                         ...state.conversationRuns,
