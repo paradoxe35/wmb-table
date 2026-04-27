@@ -443,8 +443,10 @@ export default function BibleDocumentView() {
             documentIdentity: activeDocumentIdentity,
             languageCode: bibleLang,
             paragraphs,
+            canPlayFromParagraph: effectiveTts.canSpeak,
+            playFromParagraph: effectiveTts.playFromParagraph,
         };
-    }, [activeTab, activeDocumentIdentity, bibleLang, paragraphs]);
+    }, [activeTab, activeDocumentIdentity, bibleLang, paragraphs, effectiveTts]);
     const contextMenuItems = useContextMenuItems(
         contextMenuContent,
         contextTargetRef,
@@ -491,8 +493,6 @@ export default function BibleDocumentView() {
                 search={search}
                 activeParagraphIndex={activeParagraphIndex}
                 highlightsByParagraph={highlightsByParagraph}
-                onPlayFromHere={effectiveTts.playFromParagraph}
-                canSpeak={effectiveTts.canSpeak}
             />
         </DocumentBody>
     );

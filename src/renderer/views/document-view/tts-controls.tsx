@@ -1,12 +1,6 @@
 import { memo, useEffect, useMemo, useRef } from 'react';
 import { Button, Tooltip } from 'antd';
-import {
-    PauseOutlined,
-    SoundOutlined,
-    CaretRightOutlined,
-    ZoomInOutlined,
-    ZoomOutOutlined,
-} from '@ant-design/icons';
+import { PauseOutlined, SoundOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { DocumentIdentity, HighlightItem } from '@shared/types';
 import type { SearchHighlightState } from './hooks';
@@ -128,8 +122,6 @@ interface ParagraphListProps {
     search: SearchHighlightState | null;
     activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
-    onPlayFromHere?: (paragraphIndex: number) => void;
-    canSpeak?: boolean;
 }
 
 export const ParagraphList = memo(function ParagraphList({
@@ -139,8 +131,6 @@ export const ParagraphList = memo(function ParagraphList({
     search,
     activeParagraphIndex,
     highlightsByParagraph,
-    onPlayFromHere,
-    canSpeak,
 }: ParagraphListProps) {
     const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
     const pendingNavigationParagraphIndex = getPendingNavigationParagraphIndex(
@@ -158,8 +148,6 @@ export const ParagraphList = memo(function ParagraphList({
                     search={search}
                     isActiveMatch={paragraph.paragraphIndex === activeParagraphIndex}
                     highlights={highlightsByParagraph.get(paragraph.paragraphIndex)}
-                    onPlayFromHere={onPlayFromHere}
-                    canSpeak={canSpeak}
                     suppressAutoScroll={pendingNavigationParagraphIndex != null}
                 />
             )),
@@ -169,8 +157,6 @@ export const ParagraphList = memo(function ParagraphList({
             search,
             activeParagraphIndex,
             highlightsByParagraph,
-            onPlayFromHere,
-            canSpeak,
             pendingNavigationParagraphIndex,
         ],
     );
@@ -186,8 +172,6 @@ interface TtsParagraphProps {
     search: SearchHighlightState | null;
     isActiveMatch?: boolean;
     highlights?: HighlightItem[];
-    onPlayFromHere?: (paragraphIndex: number) => void;
-    canSpeak?: boolean;
     suppressAutoScroll?: boolean;
 }
 
@@ -197,11 +181,8 @@ const TtsParagraph = memo(function TtsParagraph({
     search,
     isActiveMatch,
     highlights,
-    onPlayFromHere,
-    canSpeak,
     suppressAutoScroll,
 }: TtsParagraphProps) {
-    const { t } = useTranslation();
     const ttsHighlight = useTtsHighlight(paragraph.paragraphIndex, documentKey);
     const autoScroll = useTtsStore((s) => s.settings?.autoScrollToHighlight ?? true);
     const mainView = useAppStore((s) => s.mainView);
@@ -246,30 +227,6 @@ const TtsParagraph = memo(function TtsParagraph({
         return () => cancelAnimationFrame(frameId);
     }, [ttsHighlight.isActive, autoScroll, mainView, suppressAutoScroll]);
 
-    const readFromHereLabel = t("Lire à partir d'ici");
-
-    const playFromHereButton = useMemo(() => {
-        if (!onPlayFromHere || !canSpeak) {
-            return undefined;
-        }
-
-        return (
-            <Tooltip title={readFromHereLabel}>
-                <Button
-                    type="text"
-                    size="small"
-                    className="tts-play-from-here"
-                    icon={<CaretRightOutlined />}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onPlayFromHere(paragraph.paragraphIndex);
-                    }}
-                    aria-label={readFromHereLabel}
-                />
-            </Tooltip>
-        );
-    }, [canSpeak, onPlayFromHere, paragraph.paragraphIndex, readFromHereLabel]);
-
     return (
         <div ref={containerRef}>
             <SermonParagraphView
@@ -278,7 +235,6 @@ const TtsParagraph = memo(function TtsParagraph({
                 isActiveMatch={isActiveMatch}
                 highlights={highlights}
                 ttsHighlight={ttsHighlight}
-                playFromHereButton={playFromHereButton}
             />
         </div>
     );

@@ -1,6 +1,7 @@
 import { message } from 'antd';
 import type { MenuProps } from 'antd';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { SoundOutlined } from '@ant-design/icons';
+import { createElement, useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { buildParagraphReference } from '@shared/types';
 import { resolveUiLanguage } from '@shared/constants';
@@ -43,6 +44,8 @@ type ContextMenuContent = {
     paragraphs: { paragraphIndex: number; content: string }[];
     sermonDateMs?: number;
     sermonTranslationId?: number;
+    canPlayFromParagraph?: boolean;
+    playFromParagraph?: (paragraphIndex: number) => void;
 };
 
 export function useContextMenuItems(
@@ -168,6 +171,20 @@ export function useContextMenuItems(
             return [{ paragraphIndex, startOffset: 0, endOffset: content.length }];
         };
 
+        const getContextParagraphIndex = (): number | null => {
+            const sel = window.getSelection();
+            if (sel && !sel.isCollapsed) {
+                const anchor = sel.anchorNode?.parentElement?.closest(PARAGRAPH_SELECTOR);
+                if (anchor) {
+                    return parseParagraphIndex(anchor);
+                }
+            }
+
+            const target = contextTargetRef.current;
+            const paragraph = target instanceof Element ? target.closest(PARAGRAPH_SELECTOR) : null;
+            return paragraph ? parseParagraphIndex(paragraph) : null;
+        };
+
         const getBibleVerse = (paragraphIndex: number): BibleBook | undefined =>
             bibleVerses?.find((v) => +v.verse === paragraphIndex);
 
@@ -233,6 +250,28 @@ export function useContextMenuItems(
                 },
             },
         ];
+
+        const ttsItem: MenuProps['items'] =
+            content.canPlayFromParagraph && content.playFromParagraph
+                ? [
+                      {
+                          key: 'tts-play-from-here',
+                          label: createElement(
+                              'span',
+                              { className: 'document-context-menu__item-with-icon' },
+                              createElement('span', null, t("Lire à partir d'ici")),
+                              createElement(SoundOutlined),
+                          ),
+                          onClick: () => {
+                              const paragraphIndex = getContextParagraphIndex();
+                              if (paragraphIndex == null) {
+                                  return;
+                              }
+                              content.playFromParagraph?.(paragraphIndex);
+                          },
+                      },
+                  ]
+                : [];
 
         const highlightItem: MenuProps['items'] = [
             {
@@ -341,6 +380,7 @@ export function useContextMenuItems(
 
         return [
             ...copyItem,
+            ...ttsItem,
             { type: 'divider' as const, key: 'divider-1' },
             ...highlightItem,
             { type: 'divider' as const, key: 'divider-2' },
