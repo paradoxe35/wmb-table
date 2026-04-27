@@ -225,7 +225,6 @@ const api = {
     backup: {
         getStatus: () => invoke(BackupChannels.getStatus),
         toggleStatus: (active: boolean) => invoke(BackupChannels.toggleStatus, active),
-        getReminder: () => invoke(BackupChannels.getReminder),
         login: () => invoke(BackupChannels.login),
         logout: () => invoke(BackupChannels.logout),
     },
@@ -353,9 +352,6 @@ const api = {
         backupAccessStatus: (
             cb: (p: PushEventMap[typeof PushChannels.backupAccessStatus]) => void,
         ) => onPush(PushChannels.backupAccessStatus, cb),
-        openBackupModalFromMain: (
-            cb: (p: PushEventMap[typeof PushChannels.openBackupModalFromMain]) => void,
-        ) => onPush(PushChannels.openBackupModalFromMain, cb),
         appUpdateMenu: (cb: (p: PushEventMap[typeof PushChannels.appUpdateMenu]) => void) =>
             onPush(PushChannels.appUpdateMenu, cb),
         toggleSidebar: (cb: (p: PushEventMap[typeof PushChannels.toggleSidebar]) => void) =>

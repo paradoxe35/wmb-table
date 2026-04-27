@@ -26,10 +26,6 @@ export function registerBackupHandlers(): void {
         }
     });
 
-    registerHandler(BackupChannels.getReminder, async () => {
-        return backupRepo.getReminder();
-    });
-
     registerHandler(BackupChannels.login, async () => {
         const result = await authenticateWithGoogle();
 

@@ -69,15 +69,6 @@ export function deleteStatus(): void {
     getDb().delete(backupStatus).run();
 }
 
-export function getReminder(): boolean {
-    const status = getStatus();
-    if (!status || !status.active) return false;
-    // Check if last backup was more than 7 days ago
-    const lastUpdate = status.lastUpdate.getTime();
-    const sevenDays = 7 * 24 * 60 * 60 * 1000;
-    return Date.now() - lastUpdate > sevenDays;
-}
-
 export function getDbReferences(): BackupDbReference[] {
     return getDb()
         .select()

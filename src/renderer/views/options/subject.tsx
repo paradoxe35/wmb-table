@@ -17,6 +17,7 @@ import {
     Button,
     Dropdown,
     Empty,
+    Spin,
     Tooltip,
     message,
     Typography,
@@ -158,6 +159,7 @@ export default function Subject() {
     const { t } = useTranslation();
     const { odatas, datas, setDatas, setSubjects, onSearch } = useSubjectsDatas();
     const [subjectItemsData, setSubjectItemData] = useState<SubjectDocumentItem[]>([]);
+    const [loadingItems, setLoadingItems] = useState(false);
 
     const loadSubjects = useCallback(() => {
         window.api.subjects
@@ -203,19 +205,38 @@ export default function Subject() {
         return () => window.removeEventListener(SUBJECT_EVENT.focusSubject, focusSubject);
     }, [odatas, setDatas, setSubjects]);
 
-    useEffect(() => {
-        const subject = datas.find((d) => d.active);
-        if (subject) {
-            window.api.subjects
-                .getItems(subject.id)
-                .then(setSubjectItemData)
-                .catch(() => {
-                    message.error(t('Erreur lors du chargement des éléments du sujet'));
-                });
-        }
-    }, [datas, itemsRefreshKey, t]);
-
     const activeDocument = useMemo(() => datas.find((d) => d.active), [datas]);
+    const activeSubjectId = activeDocument?.id;
+
+    useEffect(() => {
+        if (!activeSubjectId) {
+            setSubjectItemData([]);
+            setLoadingItems(false);
+            return;
+        }
+
+        let cancelled = false;
+        setSubjectItemData([]);
+        setLoadingItems(true);
+
+        window.api.subjects
+            .getItems(activeSubjectId)
+            .then((items) => {
+                if (cancelled) return;
+                setSubjectItemData(items);
+            })
+            .catch(() => {
+                if (cancelled) return;
+                message.error(t('Erreur lors du chargement des éléments du sujet'));
+            })
+            .finally(() => {
+                if (!cancelled) setLoadingItems(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [activeSubjectId, itemsRefreshKey, t]);
     const refPanelRef = useRef<HTMLDivElement>(null);
 
     // Reset reference panel scroll when switching subjects
@@ -361,6 +382,7 @@ export default function Subject() {
                             subject={activeDocument}
                             documents={subjectItemsData}
                             setDocuments={setSubjectItemData}
+                            loading={loadingItems}
                         />
                     )}
                 </div>
@@ -459,10 +481,12 @@ function ShowActiveDocuments({
     subject,
     documents,
     setDocuments,
+    loading,
 }: {
     subject: SubjectDocument;
     documents: SubjectDocumentItem[];
     setDocuments: Dispatch<SetStateAction<SubjectDocumentItem[]>>;
+    loading: boolean;
 }) {
     const { t } = useTranslation();
     const documentsRef = useRef(documents);
@@ -520,6 +544,20 @@ function ShowActiveDocuments({
         }
     }, [setDocuments, subject.id, t]);
 
+    if (loading) {
+        return (
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    padding: '32px 0',
+                }}
+            >
+                <Spin />
+            </div>
+        );
+    }
+
     return (
         <>
             {documents.length > 0 ? (
@@ -545,29 +583,23 @@ function ShowActiveDocuments({
                         as="div"
                         className="subject-ref-list"
                     >
-                        <AnimatePresence initial={false}>
-                            {documents.map((item) => (
-                                <Reorder.Item
-                                    key={item.id}
-                                    value={item}
-                                    as="div"
-                                    layout="position"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{
-                                        opacity: { duration: 0.22, ease: 'easeOut' },
-                                        layout: {
-                                            duration: 0.28,
-                                            ease: [0.22, 1, 0.36, 1],
-                                        },
-                                    }}
-                                    onDragEnd={() => void persistOrder()}
-                                >
-                                    <ItemFromSelectedSubject item={item} confirm={confirm} />
-                                </Reorder.Item>
-                            ))}
-                        </AnimatePresence>
+                        {documents.map((item) => (
+                            <Reorder.Item
+                                key={item.id}
+                                value={item}
+                                as="div"
+                                layout="position"
+                                transition={{
+                                    layout: {
+                                        duration: 0.28,
+                                        ease: [0.22, 1, 0.36, 1],
+                                    },
+                                }}
+                                onDragEnd={() => void persistOrder()}
+                            >
+                                <ItemFromSelectedSubject item={item} confirm={confirm} />
+                            </Reorder.Item>
+                        ))}
                     </Reorder.Group>
                 </>
             ) : (
