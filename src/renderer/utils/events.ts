@@ -64,7 +64,6 @@ export const AI_DATA_EVENT = {
 
 export const APP_UI_EVENT = {
     aiSettingsUpdated: 'ai-settings-updated',
-    openBackupModalFromMain: 'open-backup-modal-from-main',
 } as const;
 
 export const DOCUMENT_CONTAINER_ID = 'page-container';

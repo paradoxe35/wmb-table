@@ -19,7 +19,6 @@ import {
 } from '@renderer/stores';
 import { SETTINGS_TAB_KEYS, type SettingsTabValue } from '@renderer/stores/app.store';
 import { UPDATE_TAB_EVENT } from '@renderer/components/update-notifier';
-import { APP_UI_EVENT } from '@renderer/utils/events';
 import GeneralTab from './general-tab';
 import LibraryTab from './library-tab';
 import BackupTab from './backup-tab';
@@ -56,20 +55,6 @@ export default function Settings() {
         return window.api.on.openSettings(() => {
             showOptions('settings');
         });
-    }, [showOptions]);
-
-    useEffect(() => {
-        const goToBackup = () => {
-            showOptions('settings');
-            setSettingsTab(SETTINGS_TAB_KEYS.backup);
-        };
-        const cleanupIpc = window.api.on.openBackupModalFromMain(goToBackup);
-        window.addEventListener(APP_UI_EVENT.openBackupModalFromMain, goToBackup);
-        window.api.backup.getReminder().then((canOpen) => canOpen && goToBackup());
-        return () => {
-            cleanupIpc();
-            window.removeEventListener(APP_UI_EVENT.openBackupModalFromMain, goToBackup);
-        };
     }, [showOptions]);
 
     useEffect(() => {

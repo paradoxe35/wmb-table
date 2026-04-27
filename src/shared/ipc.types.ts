@@ -197,7 +197,6 @@ export const AudioChannels = {
 export const BackupChannels = {
     getStatus: 'backup:getStatus',
     toggleStatus: 'backup:toggleStatus',
-    getReminder: 'backup:getReminder',
     login: 'backup:login',
     logout: 'backup:logout',
 } as const;
@@ -291,7 +290,6 @@ export const PushChannels = {
     openModalDocumentFromMain: 'push:openModalDocumentFromMain',
     backupProgression: 'push:backupProgression',
     backupAccessStatus: 'push:backupAccessStatus',
-    openBackupModalFromMain: 'push:openBackupModalFromMain',
     appUpdateMenu: 'push:appUpdateMenu',
     toggleSidebar: 'push:toggleSidebar',
     switchOnMenu: 'push:switchOnMenu',
@@ -489,7 +487,6 @@ export interface InvokeChannelMap {
     // Backup
     [BackupChannels.getStatus]: { args: []; return: BackupStatus | null };
     [BackupChannels.toggleStatus]: { args: [boolean]; return: void };
-    [BackupChannels.getReminder]: { args: []; return: boolean };
     [BackupChannels.login]: { args: []; return: BackupStatus | null };
     [BackupChannels.logout]: { args: []; return: void };
 
@@ -615,7 +612,6 @@ export interface PushEventMap {
     [PushChannels.openModalDocumentFromMain]: void;
     [PushChannels.backupProgression]: RestoreProgressEvent;
     [PushChannels.backupAccessStatus]: boolean;
-    [PushChannels.openBackupModalFromMain]: void;
     [PushChannels.appUpdateMenu]: void;
     [PushChannels.toggleSidebar]: void;
     [PushChannels.switchOnMenu]: void;

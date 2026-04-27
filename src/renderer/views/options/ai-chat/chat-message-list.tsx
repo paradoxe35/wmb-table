@@ -84,7 +84,7 @@ const AssistantMarkdown = memo(function AssistantMarkdown({
 });
 
 const MAX_REASONING_LINES = 50;
-const LOAD_OLDER_THRESHOLD_PX = 160;
+const LOAD_OLDER_THRESHOLD_PX = 200;
 
 function ReasoningBlock({ messageId }: { messageId: string }) {
     const { t } = useTranslation();
