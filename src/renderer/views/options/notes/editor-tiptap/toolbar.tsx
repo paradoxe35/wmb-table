@@ -7,6 +7,12 @@ import {
     ItalicOutlined,
     UnderlineOutlined,
     StrikethroughOutlined,
+    DeleteOutlined,
+    DeleteColumnOutlined,
+    DeleteRowOutlined,
+    InsertRowBelowOutlined,
+    InsertRowRightOutlined,
+    MergeCellsOutlined,
     OrderedListOutlined,
     UnorderedListOutlined,
     CheckSquareOutlined,
@@ -17,6 +23,7 @@ import {
     LinkOutlined,
     DisconnectOutlined,
     TableOutlined,
+    SplitCellsOutlined,
     UndoOutlined,
     RedoOutlined,
     MinusOutlined,
@@ -29,6 +36,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { TEXT_PART_LANGUAGE_OPTIONS } from '@shared/constants';
+import { BlockquoteIcon } from './icons';
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -77,6 +85,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
             isBulletList: ed.isActive('bulletList'),
             isOrderedList: ed.isActive('orderedList'),
             isTaskList: ed.isActive('taskList'),
+            isTable: ed.isActive('table'),
             isBlockquote: ed.isActive('blockquote'),
             isCode: ed.isActive('code'),
             isCodeBlock: ed.isActive('codeBlock'),
@@ -95,6 +104,13 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                 (ed.getAttributes('textPartLanguage').lang as string | undefined) ?? '',
             canUndo: ed.can().undo(),
             canRedo: ed.can().redo(),
+            canDeleteTable: ed.can().deleteTable(),
+            canAddRowAfter: ed.can().addRowAfter(),
+            canAddColumnAfter: ed.can().addColumnAfter(),
+            canDeleteRow: ed.can().deleteRow(),
+            canDeleteColumn: ed.can().deleteColumn(),
+            canMergeCells: ed.can().mergeCells(),
+            canSplitCell: ed.can().splitCell(),
         }),
     });
 
@@ -200,7 +216,26 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
     const headingOptions = useMemo(
         () => [
             { value: 'p', label: t('Paragraphe') },
-            ...HEADING_LEVELS.map((level) => ({ value: `h${level}`, label: `H${level}` })),
+            ...HEADING_LEVELS.map((level) => ({
+                value: `h${level}`,
+                label: t('Titre {{n}}', { n: level }),
+            })),
+        ],
+        [t],
+    );
+
+    const fontFamilyOptions = useMemo(
+        () => [
+            { label: t('Par défaut'), value: '' },
+            ...FONT_FAMILIES.filter((option) => option.value),
+        ],
+        [t],
+    );
+
+    const fontSizeOptions = useMemo(
+        () => [
+            { label: t('Par défaut'), value: '' },
+            ...FONT_SIZES.filter((option) => option.value),
         ],
         [t],
     );
@@ -251,7 +286,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                 size="small"
                 style={{ width: 140 }}
                 value={state.fontFamily}
-                options={FONT_FAMILIES}
+                options={fontFamilyOptions}
                 onChange={onFontFamilyChange}
                 suffixIcon={<FontColorsOutlined />}
             />
@@ -260,7 +295,7 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                 size="small"
                 style={{ width: 90 }}
                 value={state.fontSize}
-                options={FONT_SIZES}
+                options={fontSizeOptions}
                 onChange={onFontSizeChange}
                 suffixIcon={<FontSizeOutlined />}
             />
@@ -469,10 +504,9 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                     type={state.isBlockquote ? 'primary' : 'text'}
                     size="small"
                     style={SMALL_BUTTON_STYLE}
+                    icon={<BlockquoteIcon />}
                     onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                >
-                    {'❝'}
-                </Button>
+                />
             </Tooltip>
             <Tooltip title={t('Bloc de code')}>
                 <Button
@@ -493,6 +527,81 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
                     onClick={onInsertTable}
                 />
             </Tooltip>
+            {state.isTable ? (
+                <>
+                    <Tooltip title={t('Ajouter une ligne')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            style={SMALL_BUTTON_STYLE}
+                            icon={<InsertRowBelowOutlined />}
+                            disabled={!state.canAddRowAfter}
+                            onClick={() => editor.chain().focus().addRowAfter().run()}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Ajouter une colonne')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            style={SMALL_BUTTON_STYLE}
+                            icon={<InsertRowRightOutlined />}
+                            disabled={!state.canAddColumnAfter}
+                            onClick={() => editor.chain().focus().addColumnAfter().run()}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Supprimer la ligne')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            style={SMALL_BUTTON_STYLE}
+                            icon={<DeleteRowOutlined />}
+                            disabled={!state.canDeleteRow}
+                            onClick={() => editor.chain().focus().deleteRow().run()}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Supprimer la colonne')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            style={SMALL_BUTTON_STYLE}
+                            icon={<DeleteColumnOutlined />}
+                            disabled={!state.canDeleteColumn}
+                            onClick={() => editor.chain().focus().deleteColumn().run()}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Fusionner les cellules')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            style={SMALL_BUTTON_STYLE}
+                            icon={<MergeCellsOutlined />}
+                            disabled={!state.canMergeCells}
+                            onClick={() => editor.chain().focus().mergeCells().run()}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Séparer la cellule')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            style={SMALL_BUTTON_STYLE}
+                            icon={<SplitCellsOutlined />}
+                            disabled={!state.canSplitCell}
+                            onClick={() => editor.chain().focus().splitCell().run()}
+                        />
+                    </Tooltip>
+                    <Tooltip title={t('Supprimer le tableau')}>
+                        <Button
+                            danger
+                            type="text"
+                            size="small"
+                            style={SMALL_BUTTON_STYLE}
+                            icon={<DeleteOutlined />}
+                            disabled={!state.canDeleteTable}
+                            onClick={() => editor.chain().focus().deleteTable().run()}
+                        />
+                    </Tooltip>
+                </>
+            ) : null}
             <Tooltip title={t('Ligne horizontale')}>
                 <Button
                     type="text"

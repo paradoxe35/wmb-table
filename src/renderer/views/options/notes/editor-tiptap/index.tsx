@@ -117,7 +117,12 @@ function ButtonsControllers({
             .then((result) => {
                 if (result.status === 'success') {
                     message.success(t('Enregistré'));
+                } else if (result.status === 'empty') {
+                    message.warning(t("La note n'a pas de contenu à exporter"));
                 }
+            })
+            .catch(() => {
+                message.error(t("Impossible d'exporter la note en PDF"));
             })
             .finally(() => setLoadingPdf(false));
     };
@@ -182,11 +187,15 @@ function ButtonsControllers({
             <Space orientation="horizontal">
                 <span>{workingNote?.name}</span>
                 {workingNote && (
-                    <a onClick={openModal}>
-                        <Tooltip title={t('Renommer')}>
-                            <EditOutlined />
-                        </Tooltip>
-                    </a>
+                    <Tooltip title={t('Renommer')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            aria-label={t('Renommer')}
+                            onClick={openModal}
+                        />
+                    </Tooltip>
                 )}
             </Space>
 

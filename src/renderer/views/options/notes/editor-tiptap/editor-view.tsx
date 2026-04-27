@@ -90,7 +90,12 @@ export function TiptapEditorView({
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             TaskList,
             TaskItem.configure({ nested: true }),
-            TableKit.configure({ table: { resizable: true } }),
+            TableKit.configure({
+                table: {
+                    resizable: true,
+                    allowTableNodeSelection: true,
+                },
+            }),
             Subscript,
             Superscript,
             Underline,
