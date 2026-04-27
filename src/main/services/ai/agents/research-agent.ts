@@ -13,6 +13,7 @@ import { capAgentOutputTokens } from './output-limit';
 const AGENT_NAME = 'researchTopic';
 const MAX_STEPS = 40;
 const MAX_OUTPUT_TOKENS = 3000;
+const AGENT_MAX_RETRIES = 3;
 
 function buildResearchToolSubset(
     languageCode: string,
@@ -99,6 +100,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                             MAX_OUTPUT_TOKENS,
                             ctx.maxOutputTokens,
                         ),
+                        maxRetries: AGENT_MAX_RETRIES,
                         abortSignal: ctx.abortSignal,
                         experimental_onToolCallStart(event) {
                             if (ctx.dispatch) {

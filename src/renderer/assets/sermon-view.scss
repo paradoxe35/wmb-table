@@ -18,9 +18,9 @@
 }
 
 .sermon-header {
-    display: flex;
+    display: grid;
+    grid-template-columns: minmax(max-content, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
     align-items: center;
-    justify-content: flex-end;
     padding: 6px 16px;
     border-bottom: 1px solid var(--ant-color-border, #e8e8e8);
     gap: 8px;
@@ -28,8 +28,25 @@
     color: var(--ant-color-text-secondary, #6b7280);
 }
 
+.sermon-header__side {
+    min-width: max-content;
+    display: flex;
+    align-items: center;
+
+    &--left {
+        justify-content: flex-start;
+    }
+
+    &--right {
+        justify-content: flex-end;
+    }
+
+    &--placeholder {
+        visibility: hidden;
+    }
+}
+
 .document-header-title {
-    flex: 1;
     min-width: 0;
     display: flex;
     align-items: center;

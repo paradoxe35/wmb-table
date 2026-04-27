@@ -11,7 +11,6 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { Placeholder } from '@tiptap/extension-placeholder';
-import { Image } from '@tiptap/extension-image';
 
 import type { NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { ContextMenu } from '@renderer/utils/context-menu';
@@ -24,6 +23,7 @@ import { ReferenceLink } from './extensions/reference-link';
 import { PageBreak } from './extensions/page-break';
 import { TextPartLanguage } from './extensions/text-part-language';
 import { Indent } from './extensions/indent';
+import { Underline } from './extensions/underline';
 import { EditorToolbar } from './toolbar';
 import {
     referenceBibleBrandLink,
@@ -89,10 +89,15 @@ export function TiptapEditorView({
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             TaskList,
             TaskItem.configure({ nested: true }),
-            TableKit.configure({ table: { resizable: true } }),
+            TableKit.configure({
+                table: {
+                    resizable: true,
+                    allowTableNodeSelection: true,
+                },
+            }),
             Subscript,
             Superscript,
-            Image.configure({ inline: false, allowBase64: true }),
+            Underline,
             ReferenceLink.configure({
                 openOnClick: false,
                 autolink: true,
@@ -241,10 +246,9 @@ export function TiptapEditorView({
                     .setLink({
                         href: referenceDocumentBrandLink + ref.id,
                         target: null,
-                        // @ts-expect-error — extra attributes added via custom extension
-                        reference: 'true',
                         title: t('Référence sermon'),
                     })
+                    .updateAttributes('link', { reference: 'true' })
                     .run();
                 message.success(t('Référence sermon: {{label}}', { label: ref.label }));
             } else {
@@ -258,11 +262,9 @@ export function TiptapEditorView({
                     .setLink({
                         href: referenceBibleBrandLink + ref.id,
                         target: null,
-                        // @ts-expect-error — extra attributes added via custom extension
-                        reference: 'true',
-                        bible: 'true',
                         title: t('Référence Bible'),
                     })
+                    .updateAttributes('link', { reference: 'true', bible: 'true' })
                     .run();
                 message.success(t('Référence Bible: {{label}}', { label: ref.label }));
                 showBibleModalRef.current(ref);
@@ -324,17 +326,20 @@ export function TiptapEditorView({
             }
         };
 
-        const menu = new ContextMenu(container, [
-            { text: t('Référence sermon'), onclick: () => void refereToDocument('document') },
-            { text: t('Référence Bible'), onclick: () => void refereToDocument('bible') },
-            { text: t('Copier'), onclick: () => void copySelection() },
-            null,
-            {
-                text: t('Supprimer la référence'),
-                onclick: () => void deleteReference(),
-                color: 'var(--ant-color-error)',
-            },
-        ]);
+        const menuItems = editable
+            ? [
+                  { text: t('Référence sermon'), onclick: () => void refereToDocument('document') },
+                  { text: t('Référence Bible'), onclick: () => void refereToDocument('bible') },
+                  { text: t('Copier'), onclick: () => void copySelection() },
+                  null,
+                  {
+                      text: t('Supprimer la référence'),
+                      onclick: () => void deleteReference(),
+                      color: 'var(--ant-color-error)',
+                  },
+              ]
+            : [{ text: t('Copier'), onclick: () => void copySelection() }];
+        const menu = new ContextMenu(container, menuItems);
         menu.container.addEventListener('contextmenu', captureContext);
         menu.install();
 
@@ -342,7 +347,7 @@ export function TiptapEditorView({
             menu.uninstall();
             menu.container.removeEventListener('contextmenu', captureContext);
         };
-    }, [editor, ipcRequestWithLoader, showBibleModalRef, t, workingNoteId]);
+    }, [editable, editor, ipcRequestWithLoader, showBibleModalRef, t, workingNoteId]);
 
     if (!editor) {
         return <div className="editor-scroll" />;
@@ -350,7 +355,7 @@ export function TiptapEditorView({
 
     return (
         <>
-            <EditorToolbar editor={editor} />
+            {editable ? <EditorToolbar editor={editor} /> : null}
             <div className="editor-scroll">
                 <div className="tiptap-editor-frame">
                     <EditorContent editor={editor} />

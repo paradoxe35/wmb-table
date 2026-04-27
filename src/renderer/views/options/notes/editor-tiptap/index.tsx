@@ -36,7 +36,7 @@ const useRenameNote = (note: NoteItem | null) => {
     const workingNote = useValueStateRef<NoteItem | null>(note);
     const { modal } = AntApp.useApp();
 
-    const onSave = () => {
+    const onSave = useCallback(() => {
         if (!workingNote.current) return;
         window.api.notes
             .rename(workingNote.current.id, searchValue.current.trim())
@@ -51,7 +51,7 @@ const useRenameNote = (note: NoteItem | null) => {
                     message.success(t('Modifié'));
                 }
             });
-    };
+    }, [searchValue, t, workingNote]);
 
     const openModal = useCallback(() => {
         const modalInstance = modal.info({
@@ -74,13 +74,13 @@ const useRenameNote = (note: NoteItem | null) => {
                         defaultValue={workingNote.current?.name}
                         minLength={3}
                         allowClear
-                        onKeyUp={(e) => (searchValue.current = e.currentTarget.value)}
+                        onChange={(e) => (searchValue.current = e.currentTarget.value)}
                         placeholder={t('Nom sujet')}
                     />
                 </form>
             ),
         });
-    }, [modal]);
+    }, [modal, onSave, searchValue, t, workingNote]);
 
     return openModal;
 };
@@ -117,7 +117,12 @@ function ButtonsControllers({
             .then((result) => {
                 if (result.status === 'success') {
                     message.success(t('Enregistré'));
+                } else if (result.status === 'empty') {
+                    message.warning(t("La note n'a pas de contenu à exporter"));
                 }
+            })
+            .catch(() => {
+                message.error(t("Impossible d'exporter la note en PDF"));
             })
             .finally(() => setLoadingPdf(false));
     };
@@ -182,11 +187,15 @@ function ButtonsControllers({
             <Space orientation="horizontal">
                 <span>{workingNote?.name}</span>
                 {workingNote && (
-                    <a onClick={openModal}>
-                        <Tooltip title={t('Renommer')}>
-                            <EditOutlined />
-                        </Tooltip>
-                    </a>
+                    <Tooltip title={t('Renommer')}>
+                        <Button
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            aria-label={t('Renommer')}
+                            onClick={openModal}
+                        />
+                    </Tooltip>
                 )}
             </Space>
 
@@ -369,6 +378,7 @@ export default function EditorContent({
 
                 setWorkingNote(importedNote);
                 setHasContent(hasMeaningfulHtmlContent(importedNote.content));
+                await syncAvailableReferencesFromHtml(importedNote.content ?? '');
                 // Force the editor to remount with the imported content.
                 setContentVersion((v) => v + 1);
 
@@ -383,7 +393,7 @@ export default function EditorContent({
                 setImportingDocument(false);
             }
         },
-        [clearRenameTimer, t, workingNoteIdRef],
+        [clearRenameTimer, syncAvailableReferencesFromHtml, t, workingNoteIdRef],
     );
 
     // Sync references with the DB once when the note first loads, so removed

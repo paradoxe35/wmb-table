@@ -1161,6 +1161,13 @@ body {
     min-height: 400px;
 }
 
+.tiptap-link-popover {
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .tiptap-prose {
     outline: none;
     min-height: 320px;

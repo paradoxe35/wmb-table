@@ -260,12 +260,42 @@ export function useScrolledPastTitle(
     titleSelector: string = '.sermon-content-header',
 ): boolean {
     const [scrolledPast, setScrolledPast] = useState(false);
+    const mainView = useAppStore((s) => s.mainView);
 
-    useEffect(() => {
-        if (!contentReady) {
+    const measureTitleVisibility = useCallback(() => {
+        const container = containerRef.current;
+        if (!container) {
+            return false;
+        }
+
+        const titleEl = container.querySelector<HTMLElement>(titleSelector);
+        if (!titleEl) {
+            return false;
+        }
+
+        const containerRect = container.getBoundingClientRect();
+        const titleRect = titleEl.getBoundingClientRect();
+        const isIntersecting =
+            titleRect.bottom > containerRect.top && titleRect.top < containerRect.bottom;
+
+        return !isIntersecting;
+    }, [containerRef, titleSelector]);
+
+    useLayoutEffect(() => {
+        if (!contentReady || mainView !== 'document') {
             setScrolledPast(false);
             return;
         }
+
+        setScrolledPast(measureTitleVisibility());
+    }, [contentReady, mainView, measureTitleVisibility]);
+
+    useEffect(() => {
+        if (!contentReady || mainView !== 'document') {
+            setScrolledPast(false);
+            return;
+        }
+
         const container = containerRef.current;
         if (!container) return;
 
@@ -282,7 +312,7 @@ export function useScrolledPastTitle(
         observer.observe(titleEl);
 
         return () => observer.disconnect();
-    }, [contentReady, containerRef, titleSelector]);
+    }, [contentReady, containerRef, mainView, titleSelector]);
 
     return scrolledPast;
 }

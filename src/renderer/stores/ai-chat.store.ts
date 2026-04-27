@@ -174,6 +174,41 @@ function mergeFetchedMessages(existing: AiMessage[], fetched: AiMessage[]): AiMe
     );
 }
 
+function keepRecentMessages(
+    messages: AiMessage[],
+    maxMessages = AI_MESSAGE_HISTORY_PAGE_SIZE,
+): {
+    messages: AiMessage[];
+    removedMessageIds: string[];
+    wasTrimmed: boolean;
+} {
+    if (messages.length <= maxMessages) {
+        return {
+            messages,
+            removedMessageIds: [],
+            wasTrimmed: false,
+        };
+    }
+
+    const removed = messages.slice(0, messages.length - maxMessages);
+    return {
+        messages: messages.slice(-maxMessages),
+        removedMessageIds: removed.map((message) => message.id),
+        wasTrimmed: true,
+    };
+}
+
+function updateRecentHistoryWindow(
+    history: ConversationHistoryState | undefined,
+    messageCount: number,
+    wasTrimmed: boolean,
+): ConversationHistoryState {
+    return {
+        loadedCount: messageCount,
+        hasMore: Boolean(history?.hasMore || wasTrimmed),
+    };
+}
+
 function minimizeMessageForRenderer(message: AiMessage): AiMessage {
     return {
         ...message,
@@ -1186,6 +1221,9 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     state.messagesByConversation[resolvedConversationId] ??
                     state.messagesByConversation[conversationId] ??
                     [];
+                const existingHistory =
+                    state.historyByConversation[resolvedConversationId] ??
+                    state.historyByConversation[conversationId];
                 const messagesWithUsers = result.userMessages.reduce(
                     (acc, message) => upsertMessage(acc, message),
                     existingMessages,
@@ -1206,12 +1244,25 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 }
 
                 const nextMessages = upsertMessage(messagesWithUsers, minimizedAssistantMessage);
+                const recentWindow = keepRecentMessages(nextMessages);
 
                 return {
                     conversations: upsertConversation(state.conversations, result.conversation),
                     messagesByConversation: {
                         ...state.messagesByConversation,
-                        [resolvedConversationId]: nextMessages,
+                        [resolvedConversationId]: recentWindow.messages,
+                    },
+                    reasoningByMessage: removeReasoningByMessageIds(
+                        state.reasoningByMessage,
+                        recentWindow.removedMessageIds,
+                    ),
+                    historyByConversation: {
+                        ...state.historyByConversation,
+                        [resolvedConversationId]: updateRecentHistoryWindow(
+                            existingHistory,
+                            recentWindow.messages.length,
+                            recentWindow.wasTrimmed,
+                        ),
                     },
                     activeConversationId: resolvedConversationId,
                     conversationRuns: moveConversationRun(
@@ -1287,18 +1338,31 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     return state;
                 }
 
+                const nextMessages = upsertMessage(
+                    state.messagesByConversation[conversationId] ?? [],
+                    minimizeMessageForRenderer(result.assistantMessage),
+                );
+                const recentWindow = keepRecentMessages(nextMessages);
+
                 return {
                     conversations: upsertConversation(state.conversations, result.conversation),
                     activeConversationId: result.conversation.id,
-                    messagesByConversation: updateConversationMessages(
-                        state.messagesByConversation,
-                        conversationId,
-                        (messages) =>
-                            upsertMessage(
-                                messages,
-                                minimizeMessageForRenderer(result.assistantMessage),
-                            ),
+                    messagesByConversation: {
+                        ...state.messagesByConversation,
+                        [conversationId]: recentWindow.messages,
+                    },
+                    reasoningByMessage: removeReasoningByMessageIds(
+                        state.reasoningByMessage,
+                        recentWindow.removedMessageIds,
                     ),
+                    historyByConversation: {
+                        ...state.historyByConversation,
+                        [conversationId]: updateRecentHistoryWindow(
+                            state.historyByConversation[conversationId],
+                            recentWindow.messages.length,
+                            recentWindow.wasTrimmed,
+                        ),
+                    },
                     conversationRuns: {
                         ...state.conversationRuns,
                         [conversationId]: {

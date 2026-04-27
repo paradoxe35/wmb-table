@@ -230,31 +230,33 @@ function BibleHeader({
     return (
         <>
             <div className="sermon-header">
-                <div className="bible-chapter-nav">
-                    <Tooltip title={t('Chapitre précédent')}>
-                        <Button
-                            type="text"
-                            size="small"
-                            icon={<LeftOutlined />}
-                            disabled={!hasPrev}
-                            onClick={onPrev}
-                            aria-label={t('Chapitre précédent')}
-                        />
-                    </Tooltip>
-                    <span className="bible-chapter-nav__title">{title}</span>
-                    <Tooltip title={t('Chapitre suivant')}>
-                        <Button
-                            type="text"
-                            size="small"
-                            icon={<RightOutlined />}
-                            disabled={!hasNext}
-                            onClick={onNext}
-                            aria-label={t('Chapitre suivant')}
-                        />
-                    </Tooltip>
+                <div className="sermon-header__side sermon-header__side--left">
+                    <div className="bible-chapter-nav">
+                        <Tooltip title={t('Chapitre précédent')}>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<LeftOutlined />}
+                                disabled={!hasPrev}
+                                onClick={onPrev}
+                                aria-label={t('Chapitre précédent')}
+                            />
+                        </Tooltip>
+                        <span className="bible-chapter-nav__title">{title}</span>
+                        <Tooltip title={t('Chapitre suivant')}>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<RightOutlined />}
+                                disabled={!hasNext}
+                                onClick={onNext}
+                                aria-label={t('Chapitre suivant')}
+                            />
+                        </Tooltip>
+                    </div>
                 </div>
                 <DocumentHeaderTitle title={compactTitle} visible={showCompactTitle} />
-                <Space size="small">
+                <Space size="small" className="sermon-header__side sermon-header__side--right">
                     {tts && <TtsButton tts={tts} />}
                     <ZoomControls zoom={zoom} onZoomIn={zoomIn} onZoomOut={zoomOut} />
                     <Tooltip title={t('Sélectionnez un verset')}>

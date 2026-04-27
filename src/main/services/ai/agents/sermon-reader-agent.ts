@@ -11,6 +11,7 @@ import { capAgentOutputTokens } from './output-limit';
 const AGENT_NAME = 'readSermon';
 const MAX_STEPS = 20;
 const MAX_OUTPUT_TOKENS = 2400;
+const AGENT_MAX_RETRIES = 3;
 
 function resolveSermonReaderQuestion(input: {
     question?: string;
@@ -180,6 +181,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                             MAX_OUTPUT_TOKENS,
                             ctx.maxOutputTokens,
                         ),
+                        maxRetries: AGENT_MAX_RETRIES,
                         abortSignal: ctx.abortSignal,
                         experimental_onToolCallStart(event) {
                             if (ctx.dispatch) {

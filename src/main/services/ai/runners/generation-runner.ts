@@ -13,6 +13,7 @@ const TRUNCATION_NOTICE = '\n\n---\n*[Response truncated due to length limit]*';
 const REMOTE_MAX_STEPS = 40;
 const LOCAL_MAX_STEPS = 15;
 const LOCAL_MAX_OUTPUT_TOKENS = 1024;
+const AI_STREAM_MAX_RETRIES = 3;
 
 function normalizeToolCallInput(input: unknown): Record<string, unknown> {
     if (input && typeof input === 'object' && !Array.isArray(input)) {
@@ -57,6 +58,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
             messages: ctx.history,
             tools: ctx.tools,
             maxOutputTokens,
+            maxRetries: AI_STREAM_MAX_RETRIES,
             stopWhen: stepCountIs(maxSteps),
             abortSignal: ctx.abortSignal,
         });
