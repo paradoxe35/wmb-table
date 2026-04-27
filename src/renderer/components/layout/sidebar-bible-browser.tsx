@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Button, Divider, Empty, Progress, Select, Tooltip, Typography, message } from 'antd';
+import { Button, Divider, Empty, Progress, Select, Typography, message } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import {
@@ -44,24 +44,23 @@ function DownloadVersionButton({
     const isDownloading = progress != null;
 
     return (
-        <Tooltip title={version.name} placement="right">
-            <Button
-                size="small"
-                type="dashed"
-                disabled={isDownloading}
-                icon={
-                    isDownloading ? (
-                        <Progress type="circle" size={14} percent={progress} showInfo={false} />
-                    ) : (
-                        <CloudDownloadOutlined />
-                    )
-                }
-                onClick={() => onDownload(version.abbreviation)}
-                style={ellipsisButtonStyle}
-            >
-                <span style={ellipsisLabelStyle}>{version.name}</span>
-            </Button>
-        </Tooltip>
+        <Button
+            size="small"
+            type="dashed"
+            disabled={isDownloading}
+            icon={
+                isDownloading ? (
+                    <Progress type="circle" size={14} percent={progress} showInfo={false} />
+                ) : (
+                    <CloudDownloadOutlined />
+                )
+            }
+            onClick={() => onDownload(version.abbreviation)}
+            style={ellipsisButtonStyle}
+            title={version.name}
+        >
+            <span style={ellipsisLabelStyle}>{version.name}</span>
+        </Button>
     );
 }
 
@@ -114,17 +113,16 @@ function CompactVersionSelector() {
                 />
             )}
             {!suggestedDownload && activeLanguageMatchesContent && downloadable.length > 0 && (
-                <Tooltip title={t("Télécharger d'autres versions")} placement="right">
-                    <Button
-                        size="small"
-                        type="dashed"
-                        icon={<CloudDownloadOutlined />}
-                        onClick={() => showOptions('bible')}
-                        style={ellipsisButtonStyle}
-                    >
-                        <span style={ellipsisLabelStyle}>{t("Télécharger d'autres versions")}</span>
-                    </Button>
-                </Tooltip>
+                <Button
+                    size="small"
+                    type="dashed"
+                    icon={<CloudDownloadOutlined />}
+                    onClick={() => showOptions('bible')}
+                    style={ellipsisButtonStyle}
+                    title={t("Télécharger d'autres versions")}
+                >
+                    <span style={ellipsisLabelStyle}>{t("Télécharger d'autres versions")}</span>
+                </Button>
             )}
         </div>
     );
