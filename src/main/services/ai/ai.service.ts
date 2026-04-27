@@ -43,7 +43,7 @@ import {
 } from './token-budget';
 import { resolveActiveModel, resolveLanguageModel } from './provider-resolver';
 import { getAiProviderCatalog } from './provider-catalog';
-import { fetchProviderModels, getModelContextWindow } from './model-fetcher';
+import { fetchProviderModels, getModelLimits } from './model-fetcher';
 import { GenerationRunnerImpl } from './runners';
 import { shouldGenerateTitle, generateConversationTitle } from './title-generator';
 import { resolveUiLanguage } from '@shared/constants';
@@ -63,6 +63,7 @@ interface RunGenerationOptions {
     isLocal: boolean;
     remoteTokenBudget?: number;
     contextWindow?: number;
+    maxOutputTokens?: number;
     toolTokens: number;
     systemPromptTokens: number;
     contentLanguageCode: string;
@@ -78,6 +79,7 @@ interface GenerationEnvironment {
     isLocal: boolean;
     activeBibleVersion?: string;
     contextWindow?: number;
+    maxOutputTokens?: number;
     hasAgents: boolean;
     model: ReturnType<typeof resolveLanguageModel>;
     installedLanguages: InstalledLanguage[];
@@ -462,9 +464,10 @@ export class AiService {
         const providerBaseUrl = settings.customProviders.find(
             (provider) => provider.id === providerId,
         )?.baseUrl;
-        const contextWindow = isLocal
-            ? undefined
-            : await getModelContextWindow(providerId, modelId, providerBaseUrl);
+        const modelLimits = isLocal
+            ? {}
+            : await getModelLimits(providerId, modelId, providerBaseUrl);
+        const contextWindow = modelLimits.contextWindow;
         const smallContext =
             !isLocal && contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
         const hasAgents = !isLocal && !smallContext;
@@ -496,6 +499,7 @@ export class AiService {
             isLocal,
             activeBibleVersion: resolvedBibleVersion?.abbreviation,
             contextWindow,
+            maxOutputTokens: modelLimits.maxOutputTokens,
             hasAgents,
             model,
             installedLanguages,
@@ -520,6 +524,7 @@ export class AiService {
             isLocal: localExecution,
             uiLanguage: environment.uiLanguageCode,
             activeBibleVersion: environment.activeBibleVersion,
+            maxOutputTokens: environment.maxOutputTokens,
             abortSignal: controller.signal,
             browserWindow,
             conversationId: conversation.id,
@@ -537,9 +542,15 @@ export class AiService {
         });
         const toolTokens = measureToolTokens(tools);
         const baseSystemPromptTokens = measurePromptTokens(system);
-        const initialRemoteTokenBudget = calculateRemoteTokenBudget(environment.contextWindow, {
-            toolTokens,
-            systemPromptTokens: baseSystemPromptTokens,
+        const initialRemoteTokenBudget = calculateRemoteTokenBudget({
+            modelLimits: {
+                contextWindow: environment.contextWindow,
+                maxOutputTokens: environment.maxOutputTokens,
+            },
+            prompt: {
+                toolTokens,
+                systemPromptTokens: baseSystemPromptTokens,
+            },
         });
         const { recentMessages, historyTokenCount, summary } = buildConversationContext(
             conversation.id,
@@ -548,9 +559,15 @@ export class AiService {
         );
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
         const systemPromptTokens = measurePromptTokens(systemPrompt);
-        const remoteTokenBudget = calculateRemoteTokenBudget(environment.contextWindow, {
-            toolTokens,
-            systemPromptTokens,
+        const remoteTokenBudget = calculateRemoteTokenBudget({
+            modelLimits: {
+                contextWindow: environment.contextWindow,
+                maxOutputTokens: environment.maxOutputTokens,
+            },
+            prompt: {
+                toolTokens,
+                systemPromptTokens,
+            },
         });
         const runner = new GenerationRunnerImpl(environment.isLocal);
 
@@ -567,6 +584,7 @@ export class AiService {
             modelId: environment.modelId,
             conversationId: conversation.id,
             modelContextWindow: environment.contextWindow ?? 'unknown',
+            modelMaxOutputTokens: environment.maxOutputTokens ?? 'unknown',
             maxTokenBudget: remoteTokenBudget,
             historyTokenCount: historyTokenCount + systemPromptTokens + toolTokens,
             toolTokens,
@@ -587,6 +605,7 @@ export class AiService {
             isLocal: environment.isLocal,
             remoteTokenBudget,
             contextWindow: environment.contextWindow,
+            maxOutputTokens: environment.maxOutputTokens,
             toolTokens,
             systemPromptTokens,
             contentLanguageCode: environment.contentLanguageCode,
@@ -609,6 +628,7 @@ export class AiService {
             isLocal,
             remoteTokenBudget,
             contextWindow,
+            maxOutputTokens,
             toolTokens,
             systemPromptTokens,
             contentLanguageCode,
@@ -639,6 +659,7 @@ export class AiService {
                         delta,
                     ),
                 contextWindow,
+                maxOutputTokens,
                 toolTokens,
                 systemPromptTokens,
             });

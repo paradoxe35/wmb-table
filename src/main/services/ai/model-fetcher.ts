@@ -5,10 +5,12 @@ import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import {
     buildProviderModelsListCacheKey,
     cacheContextWindow,
-    cacheResolvedContextWindows,
+    cacheMaxOutputTokens,
+    cacheResolvedModelLimits,
+    getCachedMaxOutputTokens,
     getCachedContextWindow,
 } from './model-context-cache';
-import { lookupContextWindow } from './model-context-registry';
+import { lookupModelLimits, type ModelLimits } from './model-context-registry';
 
 // ── Constants ──
 
@@ -92,6 +94,9 @@ interface OpenAICompatibleModelEntry {
     id: string;
     name?: string;
     context_length?: number;
+    top_provider?: {
+        max_completion_tokens?: number;
+    };
 }
 
 interface OpenAICompatibleModelsResponse {
@@ -155,8 +160,36 @@ async function fetchOpenAICompatibleModels(
             id: m.id,
             name: m.name ?? m.id,
             contextWindow: toPositiveInt(m.context_length),
+            maxOutputTokens: toPositiveInt(m.top_provider?.max_completion_tokens),
         }))
         .sort((a, b) => a.id.localeCompare(b.id));
+}
+
+function getCachedProviderModels(
+    providerId: string,
+    baseUrl: string | undefined,
+): AiRemoteModel[] | undefined {
+    const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
+    if (!normalizedBaseUrl) {
+        return undefined;
+    }
+
+    const cache = new SimpleCache<AiRemoteModel[]>(
+        buildProviderModelsListCacheKey(providerId, normalizedBaseUrl),
+        CACHE_TTL_MS,
+    );
+    return cache.get() ?? cache.getStale();
+}
+
+function applyModelLimits(target: ModelLimits, modelId: string, limits: ModelLimits | undefined) {
+    if (limits?.contextWindow && limits.contextWindow > 0) {
+        target.contextWindow ??= limits.contextWindow;
+        cacheContextWindow(modelId, limits.contextWindow);
+    }
+    if (limits?.maxOutputTokens && limits.maxOutputTokens > 0) {
+        target.maxOutputTokens ??= limits.maxOutputTokens;
+        cacheMaxOutputTokens(modelId, limits.maxOutputTokens);
+    }
 }
 
 // ── Public API ──
@@ -203,7 +236,7 @@ export async function fetchProviderModels(
 
         if (models.length > 0) {
             cache.set(models);
-            cacheResolvedContextWindows(models);
+            cacheResolvedModelLimits(models);
         }
         return models;
     } catch (err) {
@@ -213,43 +246,51 @@ export async function fetchProviderModels(
 }
 
 /**
- * Resolve the context window size for a model.
+ * Resolve known limits for a model.
  *
  * Resolution chain:
- * 1. Cached API response (provider returned contextWindow)
- * 2. Static registry (known model prefix match)
- * 3. undefined (caller should use a safe default)
+ * 1. Cached API response (provider returned limits)
+ * 2. External registries (OpenRouter + models.dev)
+ * 3. undefined values (caller should use safe defaults)
  */
+export async function getModelLimits(
+    providerId: string,
+    modelId: string,
+    baseUrl?: string,
+): Promise<ModelLimits> {
+    if (providerId === 'local') {
+        return {};
+    }
+
+    const limits: ModelLimits = {
+        contextWindow: getCachedContextWindow(modelId),
+        maxOutputTokens: getCachedMaxOutputTokens(modelId),
+    };
+
+    if (limits.contextWindow && limits.maxOutputTokens) {
+        return limits;
+    }
+
+    const cachedModels = getCachedProviderModels(
+        providerId,
+        baseUrl ?? BUILTIN_BASE_URLS[providerId],
+    );
+    const fromApi = cachedModels?.find((m) => m.id === modelId);
+    applyModelLimits(limits, modelId, fromApi);
+
+    if (limits.contextWindow && limits.maxOutputTokens) {
+        return limits;
+    }
+
+    applyModelLimits(limits, modelId, await lookupModelLimits(modelId, providerId));
+
+    return limits;
+}
+
 export async function getModelContextWindow(
     providerId: string,
     modelId: string,
     baseUrl?: string,
 ): Promise<number | undefined> {
-    if (providerId === 'local') {
-        return undefined;
-    }
-
-    const resolvedBaseUrl = baseUrl ?? BUILTIN_BASE_URLS[providerId];
-
-    const cachedContextWindow = getCachedContextWindow(modelId);
-    if (cachedContextWindow) {
-        return cachedContextWindow;
-    }
-
-    const cache = new SimpleCache<AiRemoteModel[]>(
-        buildProviderModelsListCacheKey(providerId, resolvedBaseUrl),
-        CACHE_TTL_MS,
-    );
-    const cachedModels = cache.get() ?? cache.getStale();
-    const fromApiContextWindow = cachedModels?.find((m) => m.id === modelId)?.contextWindow;
-    if (fromApiContextWindow && fromApiContextWindow > 0) {
-        cacheContextWindow(modelId, fromApiContextWindow);
-        return fromApiContextWindow;
-    }
-
-    const fromRegistry = await lookupContextWindow(modelId);
-    if (fromRegistry) {
-        cacheContextWindow(modelId, fromRegistry);
-    }
-    return fromRegistry;
+    return (await getModelLimits(providerId, modelId, baseUrl)).contextWindow;
 }

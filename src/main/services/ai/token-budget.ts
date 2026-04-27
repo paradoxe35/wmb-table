@@ -16,33 +16,47 @@ interface TokenOverheadInput {
     toolTokens: number;
 }
 
+interface RemoteTokenBudgetInput {
+    modelLimits: {
+        contextWindow?: number;
+        maxOutputTokens?: number;
+    };
+    prompt: TokenOverheadInput;
+}
+
 function computeOverhead({ systemPromptTokens, toolTokens }: TokenOverheadInput): number {
     return systemPromptTokens + toolTokens + BUDGET_SAFETY_MARGIN;
 }
 
-export function resolveRemoteOutputTokens(
-    contextWindow: number | undefined,
-    input: TokenOverheadInput,
-): number {
-    if (!contextWindow) return REMOTE_MAX_OUTPUT_TOKENS;
-
-    const overhead = computeOverhead(input);
-    const available = contextWindow - overhead - MIN_HISTORY_BUDGET;
-    if (available >= REMOTE_MAX_OUTPUT_TOKENS) return REMOTE_MAX_OUTPUT_TOKENS;
-
-    return Math.max(REMOTE_MIN_OUTPUT_TOKENS, available);
+function resolveOutputCap(maxOutputTokens: number | undefined): number | undefined {
+    return maxOutputTokens && maxOutputTokens > 0 ? maxOutputTokens : undefined;
 }
 
-export function calculateRemoteTokenBudget(
-    contextWindow: number | undefined,
-    input: TokenOverheadInput,
-): number {
+export function resolveRemoteOutputTokens(input: RemoteTokenBudgetInput): number {
+    const { contextWindow, maxOutputTokens } = input.modelLimits;
+    const cap = resolveOutputCap(maxOutputTokens);
+    if (!contextWindow) {
+        return cap ? Math.min(REMOTE_MAX_OUTPUT_TOKENS, cap) : REMOTE_MAX_OUTPUT_TOKENS;
+    }
+
+    const overhead = computeOverhead(input.prompt);
+    const available = contextWindow - overhead - MIN_HISTORY_BUDGET;
+    const resolved =
+        available >= REMOTE_MAX_OUTPUT_TOKENS
+            ? REMOTE_MAX_OUTPUT_TOKENS
+            : Math.max(REMOTE_MIN_OUTPUT_TOKENS, available);
+
+    return cap ? Math.max(1, Math.min(resolved, cap)) : resolved;
+}
+
+export function calculateRemoteTokenBudget(input: RemoteTokenBudgetInput): number {
+    const { contextWindow } = input.modelLimits;
     if (!contextWindow) {
         return DEFAULT_REMOTE_TOKEN_BUDGET;
     }
 
-    const overhead = computeOverhead(input);
-    const outputReserve = resolveRemoteOutputTokens(contextWindow, input);
+    const overhead = computeOverhead(input.prompt);
+    const outputReserve = resolveRemoteOutputTokens(input);
     const budget = contextWindow - overhead - outputReserve;
 
     return Math.max(MIN_HISTORY_BUDGET, Math.min(budget, MAX_HISTORY_BUDGET));

@@ -7,6 +7,7 @@ export interface AgentContext {
     uiLanguage: string;
     /** Active Bible version abbreviation (e.g. "lsg", "kjv") so agents use the user's selected version. */
     activeBibleVersion?: string;
+    maxOutputTokens?: number;
     abortSignal?: AbortSignal;
     /** When provided, subagent tool progress is dispatched to the renderer. */
     dispatch?: AgentDispatch;

@@ -17,6 +17,7 @@ export interface GenerationContext {
     isCurrentRun: RunDispatchGuard;
     dispatchTextDelta: (delta: string) => void;
     contextWindow?: number;
+    maxOutputTokens?: number;
     toolTokens: number;
     systemPromptTokens: number;
 }

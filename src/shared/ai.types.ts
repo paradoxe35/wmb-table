@@ -56,6 +56,7 @@ export interface AiRemoteModel {
     id: string;
     name: string;
     contextWindow?: number;
+    maxOutputTokens?: number;
 }
 
 // ---------------------------------------------------------------------------

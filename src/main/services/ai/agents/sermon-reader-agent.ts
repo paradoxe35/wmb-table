@@ -6,6 +6,7 @@ import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
 import { buildSermonReaderAgentPrompt, buildSermonReaderTaskPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
+import { capAgentOutputTokens } from './output-limit';
 
 const AGENT_NAME = 'readSermon';
 const MAX_STEPS = 20;
@@ -175,7 +176,10 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         prompt,
                         tools: agentTools,
                         stopWhen: stepCountIs(MAX_STEPS),
-                        maxOutputTokens: MAX_OUTPUT_TOKENS,
+                        maxOutputTokens: capAgentOutputTokens(
+                            MAX_OUTPUT_TOKENS,
+                            ctx.maxOutputTokens,
+                        ),
                         abortSignal: ctx.abortSignal,
                         experimental_onToolCallStart(event) {
                             if (ctx.dispatch) {

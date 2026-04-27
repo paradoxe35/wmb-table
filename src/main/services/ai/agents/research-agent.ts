@@ -8,6 +8,7 @@ import type { AiToolDefinition } from '../tools/types';
 import type { AgentContext } from './types';
 import { buildResearchAgentPrompt, buildResearchAgentTaskPrompt } from './agent-prompts';
 import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispatcher';
+import { capAgentOutputTokens } from './output-limit';
 
 const AGENT_NAME = 'researchTopic';
 const MAX_STEPS = 40;
@@ -94,7 +95,10 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                         prompt,
                         tools: agentTools,
                         stopWhen: stepCountIs(MAX_STEPS),
-                        maxOutputTokens: MAX_OUTPUT_TOKENS,
+                        maxOutputTokens: capAgentOutputTokens(
+                            MAX_OUTPUT_TOKENS,
+                            ctx.maxOutputTokens,
+                        ),
                         abortSignal: ctx.abortSignal,
                         experimental_onToolCallStart(event) {
                             if (ctx.dispatch) {

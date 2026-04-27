@@ -40,9 +40,15 @@ export class GenerationRunnerImpl implements GenerationRunner {
         const maxSteps = this.isLocal ? LOCAL_MAX_STEPS : REMOTE_MAX_STEPS;
         const maxOutputTokens = this.isLocal
             ? LOCAL_MAX_OUTPUT_TOKENS
-            : resolveRemoteOutputTokens(ctx.contextWindow, {
-                  toolTokens: ctx.toolTokens,
-                  systemPromptTokens: ctx.systemPromptTokens,
+            : resolveRemoteOutputTokens({
+                  modelLimits: {
+                      contextWindow: ctx.contextWindow,
+                      maxOutputTokens: ctx.maxOutputTokens,
+                  },
+                  prompt: {
+                      toolTokens: ctx.toolTokens,
+                      systemPromptTokens: ctx.systemPromptTokens,
+                  },
               });
 
         const result = streamText({

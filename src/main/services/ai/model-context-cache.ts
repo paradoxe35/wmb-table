@@ -13,6 +13,10 @@ function buildModelContextCacheKey(modelId: string): string {
     return `ai-model-context:${encodeURIComponent(modelId)}`;
 }
 
+function buildModelOutputCacheKey(modelId: string): string {
+    return `ai-model-output:${encodeURIComponent(modelId)}`;
+}
+
 function toPositiveInt(value: unknown): number | undefined {
     return typeof value === 'number' && value > 0 ? Math.floor(value) : undefined;
 }
@@ -32,10 +36,26 @@ export function cacheContextWindow(modelId: string, contextWindow: number | unde
     cache.set(normalized);
 }
 
-export function cacheResolvedContextWindows(
-    models: Array<{ id: string; contextWindow?: number }>,
+export function getCachedMaxOutputTokens(modelId: string): number | undefined {
+    const cache = new SimpleCache<number>(buildModelOutputCacheKey(modelId));
+    return toPositiveInt(cache.get() ?? cache.getStale());
+}
+
+export function cacheMaxOutputTokens(modelId: string, maxOutputTokens: number | undefined): void {
+    const normalized = toPositiveInt(maxOutputTokens);
+    if (!normalized) {
+        return;
+    }
+
+    const cache = new SimpleCache<number>(buildModelOutputCacheKey(modelId));
+    cache.set(normalized);
+}
+
+export function cacheResolvedModelLimits(
+    models: Array<{ id: string; contextWindow?: number; maxOutputTokens?: number }>,
 ): void {
     for (const model of models) {
         cacheContextWindow(model.id, model.contextWindow);
+        cacheMaxOutputTokens(model.id, model.maxOutputTokens);
     }
 }
