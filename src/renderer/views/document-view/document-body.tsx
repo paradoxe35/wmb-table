@@ -11,6 +11,7 @@ import {
 import type { DocumentIdentity } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
+import { useScrollLock } from '@renderer/hooks/use-scroll-lock';
 
 const CONTEXT_PARAGRAPH_CLASS = 'sermon-paragraph--context-target';
 
@@ -76,6 +77,8 @@ export default function DocumentBody({
     const readingMode = useAppStore((s) => s.readingMode);
     const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
     const [contextMenuOpen, setContextMenuOpen] = useState(false);
+
+    useScrollLock(containerRef, contextMenuOpen);
 
     // Preserve the active TTS paragraph, or the first visible paragraph, across
     // layout shifts such as reading mode toggles and zoom changes.
@@ -164,10 +167,7 @@ export default function DocumentBody({
                             ref={containerRef}
                             id={DOCUMENT_CONTAINER_ID}
                             className="sermon-body"
-                            style={{
-                                fontSize: `${1.2 * (zoom / 100)}em`,
-                                overflowY: contextMenuOpen ? 'hidden' : undefined,
-                            }}
+                            style={{ fontSize: `${1.2 * (zoom / 100)}em` }}
                             onContextMenu={onContextMenu}
                         >
                             {children}
