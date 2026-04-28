@@ -1,1 +1,0 @@
-ALTER TABLE `configurations` ADD `theme_mode` text;

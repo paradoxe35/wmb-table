@@ -82,7 +82,8 @@ CREATE TABLE `configurations` (
 	`remember_reading_position` integer DEFAULT true NOT NULL,
 	`max_tabs` integer DEFAULT 10 NOT NULL,
 	`ui_language` text,
-	`sidebar_hidden` integer DEFAULT false NOT NULL
+	`sidebar_hidden` integer DEFAULT false NOT NULL,
+	`theme_mode` text
 );
 --> statement-breakpoint
 CREATE TABLE `custom_documents` (
