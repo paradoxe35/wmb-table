@@ -174,6 +174,7 @@ export function OtherTranslationsModal() {
                                         onClick={() => handleSelectTranslation(translation)}
                                         shape="circle"
                                         icon={<EyeOutlined />}
+                                        style={{ marginRight: '5px' }}
                                     />
                                 </Tooltip>
                             </div>
@@ -228,6 +229,7 @@ export function OtherTranslationsModal() {
                                     onClick={() => handleSelectTranslation(tr)}
                                     shape="circle"
                                     icon={<EyeOutlined />}
+                                    style={{ marginRight: '5px' }}
                                 />
                             </Tooltip>
                         </div>
