@@ -1,59 +1,64 @@
 import { useEffect } from 'react';
-import {
-    getAutoTheme,
-    getNextAutoThemeChangeTime,
-    useThemeStore,
-} from '@renderer/stores/theme.store';
+import { getAutoTheme, getNextAutoThemeChangeTime } from '@shared/theme';
+import { useThemeStore } from '@renderer/stores/theme.store';
 
-/**
- * Listens for system and auto theme changes and keeps the resolved theme in sync.
- * Also sets `data-theme` attribute on <html> for CSS targeting.
- */
 export function useThemeSync(): void {
     const themeMode = useThemeStore((s) => s.themeMode);
     const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
     const setResolvedTheme = useThemeStore((s) => s.setResolvedTheme);
 
-    // Listen for system theme changes
+    useEffect(() => {
+        let cancelled = false;
+        window.api.app.getThemeState().then((state) => {
+            if (cancelled) return;
+            if (state.themeMode !== useThemeStore.getState().themeMode) {
+                useThemeStore.setState({
+                    themeMode: state.themeMode,
+                    resolvedTheme: state.resolvedTheme,
+                });
+            } else if (state.resolvedTheme !== useThemeStore.getState().resolvedTheme) {
+                setResolvedTheme(state.resolvedTheme);
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [setResolvedTheme]);
+
     useEffect(() => {
         if (themeMode !== 'system') return;
 
         const mql = window.matchMedia('(prefers-color-scheme: dark)');
-        setResolvedTheme(mql.matches ? 'dark' : 'light');
-        const handler = (e: MediaQueryListEvent) => {
-            setResolvedTheme(e.matches ? 'dark' : 'light');
+        const apply = (isDark: boolean) => {
+            setResolvedTheme(isDark ? 'dark' : 'light');
+            window.api.app.refreshNativeTheme();
         };
+        apply(mql.matches);
+        const handler = (e: MediaQueryListEvent) => apply(e.matches);
         mql.addEventListener('change', handler);
         return () => mql.removeEventListener('change', handler);
     }, [themeMode, setResolvedTheme]);
 
     useEffect(() => {
-        if (themeMode !== 'auto') {
-            return;
-        }
+        if (themeMode !== 'auto') return;
 
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
-        const scheduleNextChange = () => {
+        const tick = () => {
             setResolvedTheme(getAutoTheme());
+            window.api.app.refreshNativeTheme();
 
             const now = new Date();
-            const nextChangeAt = getNextAutoThemeChangeTime(now);
-            const delay = Math.max(1000, nextChangeAt.getTime() - now.getTime());
-
-            timeoutId = setTimeout(scheduleNextChange, delay);
+            const delay = Math.max(1000, getNextAutoThemeChangeTime(now).getTime() - now.getTime());
+            timeoutId = setTimeout(tick, delay);
         };
 
-        scheduleNextChange();
-
+        tick();
         return () => {
-            if (timeoutId !== null) {
-                clearTimeout(timeoutId);
-            }
+            if (timeoutId !== null) clearTimeout(timeoutId);
         };
     }, [themeMode, setResolvedTheme]);
 
-    // Set data-theme attribute on <html>
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', resolvedTheme);
     }, [resolvedTheme]);

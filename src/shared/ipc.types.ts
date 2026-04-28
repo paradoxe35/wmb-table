@@ -93,6 +93,7 @@ import type {
     AiConversationUpdatedEvent,
 } from './ai.types';
 import type { UiLanguagePreference } from './constants';
+import type { ThemeMode, ThemeState } from './theme';
 
 // ---------------------------------------------------------------------------
 // Invoke channels — renderer → main (request/response via ipcRenderer.invoke)
@@ -235,6 +236,9 @@ export const AppChannels = {
     getHistoryItems: 'app:getHistoryItems',
     getUiLanguage: 'app:getUiLanguage',
     setUiLanguage: 'app:setUiLanguage',
+    getThemeState: 'app:getThemeState',
+    setThemeMode: 'app:setThemeMode',
+    refreshNativeTheme: 'app:refreshNativeTheme',
 } as const;
 
 export const TtsChannels = {
@@ -531,6 +535,9 @@ export interface InvokeChannelMap {
     };
     [AppChannels.getUiLanguage]: { args: []; return: UiLanguagePreference | null };
     [AppChannels.setUiLanguage]: { args: [UiLanguagePreference]; return: void };
+    [AppChannels.getThemeState]: { args: []; return: ThemeState };
+    [AppChannels.setThemeMode]: { args: [ThemeMode]; return: ThemeState };
+    [AppChannels.refreshNativeTheme]: { args: []; return: ThemeState };
 
     // TTS
     [TtsChannels.getProviders]: { args: []; return: TtsProviderInfo[] };

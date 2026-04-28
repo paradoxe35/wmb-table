@@ -13,6 +13,7 @@ import {
     MAX_MAX_TABS,
     type UiLanguagePreference,
 } from '@shared/constants';
+import type { ThemeMode } from '@shared/theme';
 
 export function getConfig(): AppSettingsStatus | null {
     const row = getDb().select().from(configurations).get();
@@ -30,6 +31,7 @@ export function getConfig(): AppSettingsStatus | null {
         maxTabs: row.maxTabs ?? DEFAULT_MAX_TABS,
         uiLanguage: (row.uiLanguage as UiLanguagePreference) ?? null,
         sidebarHidden: row.sidebarHidden ?? false,
+        themeMode: (row.themeMode as ThemeMode | null) ?? null,
     };
 }
 
@@ -122,4 +124,12 @@ export function getSidebarStatus(): SidebarStatus | null {
 
 export function setSidebarStatus(hidden: boolean): void {
     updateConfig({ sidebarHidden: hidden });
+}
+
+export function getThemeMode(): ThemeMode | null {
+    return getConfig()?.themeMode ?? null;
+}
+
+export function setThemeMode(mode: ThemeMode): void {
+    updateConfig({ themeMode: mode });
 }

@@ -8,6 +8,13 @@
             "when": 1776612559888,
             "tag": "0000_wooden_captain_flint",
             "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1777416829337,
+            "tag": "0001_bright_bastion",
+            "breakpoints": true
         }
     ]
 }

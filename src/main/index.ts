@@ -17,6 +17,8 @@ import { disposeTtsService } from '@main/services/tts';
 import { disposeAiService } from '@main/services/ai';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
+import { applyNativeThemeSource, getThemeState } from '@main/lib/native-theme';
+import { THEME_BACKGROUND } from '@shared/theme';
 import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
@@ -31,6 +33,9 @@ initializeDatabase();
 const config = configRepo.getConfig();
 const uiLang = resolveUiLanguage(config?.uiLanguage, config?.contentLanguage);
 i18n.changeLanguage(uiLang);
+
+const initialTheme = getThemeState();
+applyNativeThemeSource(initialTheme.resolvedTheme);
 
 // Register custom protocol for serving cached audio files.
 // Must be called before app.whenReady().
@@ -78,7 +83,7 @@ function createWindow(): void {
         minWidth: 933,
         minHeight: 572,
         title: APP_NAME,
-        backgroundColor: '#001529',
+        backgroundColor: THEME_BACKGROUND[initialTheme.resolvedTheme],
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             nodeIntegration: false,

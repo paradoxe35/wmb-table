@@ -18,6 +18,7 @@ export const configurations = sqliteTable('configurations', {
     maxTabs: integer('max_tabs').notNull().default(10),
     uiLanguage: text('ui_language'),
     sidebarHidden: integer('sidebar_hidden', { mode: 'boolean' }).notNull().default(false),
+    themeMode: text('theme_mode'),
 });
 
 // ---------------------------------------------------------------------------
