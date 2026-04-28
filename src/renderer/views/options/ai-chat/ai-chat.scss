@@ -1,3 +1,5 @@
+@use '../../../assets/scrollbar' as *;
+
 /* Prevent double scrollbar — chat manages its own scroll */
 .ai-chat__option__content.view-panel--scrollable {
     overflow-y: hidden;
@@ -50,7 +52,7 @@
     overflow-y: auto;
     overflow-x: hidden;
     padding: 6px;
-    scrollbar-width: thin;
+    @include thin-scrollbar;
 }
 
 .ai-chat__sidebar-loading {
@@ -207,7 +209,7 @@
 .ai-chat__messages {
     height: 100%;
     overflow-y: auto;
-    scrollbar-width: thin;
+    @include thin-scrollbar;
 }
 
 .ai-chat__messages-content {
@@ -442,7 +444,7 @@
     overflow-y: hidden;
     margin: 0.5rem 0;
     padding-bottom: 2px;
-    scrollbar-width: thin;
+    @include thin-scrollbar;
 }
 
 .ai-markdown__table-wrap table {
@@ -587,7 +589,7 @@
     max-height: clamp(88px, 22vh, 168px);
     overflow-y: auto;
     padding-right: 2px;
-    scrollbar-width: thin;
+    @include thin-scrollbar;
 }
 
 .ai-chat__queue-item {
@@ -714,7 +716,7 @@
     border-radius: 6px;
     max-height: 200px;
     overflow-y: auto;
-    scrollbar-width: thin;
+    @include thin-scrollbar;
 }
 
 .ai-reasoning__content pre {

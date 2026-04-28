@@ -460,7 +460,7 @@ export default function LibraryModal() {
                         value={searchQuery}
                         style={{ marginBottom: 12 }}
                     />
-                    <div style={{ maxHeight: 400, overflow: 'auto' }}>
+                    <div className="modal-scroll-area">
                         {filteredLanguages.length === 0 ? (
                             <div
                                 style={{

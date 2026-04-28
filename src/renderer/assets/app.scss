@@ -3,6 +3,7 @@
 // ============================================================================
 
 @use './chrome-tabs' as *;
+@use './scrollbar' as *;
 
 // ---------------------------------------------------------------------------
 // Transition tokens & theme variables
@@ -170,6 +171,12 @@ body {
     }
 }
 
+.modal-scroll-area {
+    max-height: min(400px, calc(100vh - 260px));
+    overflow: auto;
+    @include thin-scrollbar;
+}
+
 .hover-underline:hover {
     text-decoration: underline;
 }
@@ -246,29 +253,7 @@ body {
 .container-y {
     overflow-y: auto;
     height: 100%;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
-
-    &:hover {
-        scrollbar-color: var(--scrollbar-thumb-hover) transparent;
-    }
-
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb);
-        border-radius: 3px;
-    }
-
-    &:hover::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb-hover);
-    }
+    @include thin-scrollbar;
 }
 
 .layout__sidebar {
@@ -492,6 +477,7 @@ body {
     overflow: auto;
     flex: 1;
     padding: 0.5em;
+    @include thin-scrollbar;
 }
 
 // Blink highlight for navigated-to paragraphs
@@ -749,29 +735,7 @@ body {
 .view-panel--scrollable {
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
-
-    &:hover {
-        scrollbar-color: var(--scrollbar-thumb-hover) transparent;
-    }
-
-    &::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-        background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb);
-        border-radius: 3px;
-    }
-
-    &:hover::-webkit-scrollbar-thumb {
-        background: var(--scrollbar-thumb-hover);
-    }
+    @include thin-scrollbar;
 }
 
 .view-panel--hidden {
@@ -865,6 +829,11 @@ body {
 .document-list {
     padding-left: 10px;
     padding-right: 4px;
+
+    // Virtuoso renders its own scroll container as a child div
+    [data-testid='virtuoso-scroller'] {
+        @include thin-scrollbar;
+    }
 }
 
 .sidebar-item {
@@ -961,10 +930,7 @@ body {
 // Subject select modal
 // ---------------------------------------------------------------------------
 .subject-select-list {
-    max-height: 320px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
+    @extend .modal-scroll-area;
 }
 
 .subject-select-item {
@@ -1003,10 +969,7 @@ body {
 // Note reference select modal
 // ---------------------------------------------------------------------------
 .note-ref-select-list {
-    max-height: 360px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb) transparent;
+    @extend .modal-scroll-area;
 }
 
 .note-ref-select-item {
@@ -1115,7 +1078,7 @@ body {
     min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
-    scrollbar-width: thin;
+    @include thin-scrollbar;
     background: var(--ant-color-bg-container, #fff);
 }
 
@@ -1288,6 +1251,7 @@ body {
         padding: 12px 14px;
         margin: 0.8em 0;
         overflow-x: auto;
+        @include thin-scrollbar;
         font-family: 'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace;
         font-size: 0.9em;
         line-height: 1.5;
@@ -1352,6 +1316,7 @@ body {
 
     .tableWrapper {
         overflow-x: auto;
+        @include thin-scrollbar;
         margin: 0.8em 0;
     }
 
@@ -1531,6 +1496,7 @@ body {
         border: 1px solid var(--ant-color-border-secondary, #f0f0f0);
         max-height: 360px;
         overflow-y: auto;
+        @include thin-scrollbar;
         font-size: var(--fs-md);
         line-height: 1.6;
     }
@@ -1707,6 +1673,7 @@ body {
 .history-timeline {
     flex: 1;
     overflow-y: auto;
+    @include thin-scrollbar;
     padding: 4px 0;
 }
 

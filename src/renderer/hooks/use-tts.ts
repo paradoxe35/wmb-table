@@ -5,6 +5,7 @@ import { useTtsStore } from '@renderer/stores/tts.store';
 import { browserTts } from '@renderer/services/browser-tts';
 import { ttsAudioPlayer, stopAllTtsPlayback } from '@renderer/services/tts-audio-player';
 import { getTtsPlaybackErrorMessage } from '@renderer/lib/tts-error';
+import { segmentParagraphsBySentence } from '@renderer/lib/tts-segmentation';
 import {
     type TtsHighlightMode,
     type TtsSegment,
@@ -61,7 +62,7 @@ async function segmentText(
             });
         }
     } else {
-        contentSegments = await window.api.tts.segmentParagraphs(paragraphs, language);
+        contentSegments = await segmentParagraphsBySentence(paragraphs, language);
     }
 
     if (!announceEnabled || !getSegmentLabel) {

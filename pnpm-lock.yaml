@@ -148,9 +148,9 @@ importers:
             remark-gfm:
                 specifier: ^4.0.1
                 version: 4.0.1
-            sentencex:
-                specifier: ^1.0.20
-                version: 1.0.20
+            sentencex-wasm:
+                specifier: ^0.1.23
+                version: 0.1.23
             sherpa-onnx:
                 specifier: ^1.12.37
                 version: 1.12.37
@@ -8307,52 +8307,11 @@ packages:
         engines: { node: '>=10' }
         hasBin: true
 
-    sentencex-darwin-arm64@1.0.20:
+    sentencex-wasm@0.1.23:
         resolution:
             {
-                integrity: sha512-8khIdI+5iz/34SNFbrQhYz/nRdjxn3o9H8dZ5dGzVoKLVMRThyNsfN31YdTA7sUmGiT86Z5iVWTF1kvudZ/PFg==,
+                integrity: sha512-Ae87+YaZ06eXoEvcO4A5O/CSIR9LKM7pLUfUqTRIzWVEY/RSn3zPUAY7wbu1jJA9fXfk20HWehKcL1PXTq5uCg==,
             }
-        cpu: [arm64]
-        os: [darwin]
-
-    sentencex-darwin-x64@1.0.20:
-        resolution:
-            {
-                integrity: sha512-flXaPnDt55WqWXZP440iReXRJmuEcGIzxkx7KAU5GiAQFxHvMwwGRL/P2I9ZRz0buUJCU6WAQBIGRrs3tnstDQ==,
-            }
-        cpu: [x64]
-        os: [darwin]
-
-    sentencex-linux-arm64@1.0.20:
-        resolution:
-            {
-                integrity: sha512-7pZ+DLJyuCC0mwNJTQc7e6dwTWu+d3NLIjM/FgytNsYFrqLxE6sHq+nKzTGCoBAgoMdpCAqbk5W/dAZH0mvDvw==,
-            }
-        cpu: [arm64]
-        os: [linux]
-
-    sentencex-linux-x64@1.0.20:
-        resolution:
-            {
-                integrity: sha512-ZUmtm8BvtaXf7HgFkrXBw7rxIY4uCLvyJOgszMnDgtxAyPNMM42YZfzqLY+M9IlylbtCpfXInAFBtAAvJLgKxA==,
-            }
-        cpu: [x64]
-        os: [linux]
-
-    sentencex-win32-x64@1.0.20:
-        resolution:
-            {
-                integrity: sha512-s2lylzbQZV1e6RaXz2HyyV9EDyFT6rBGz4/oOv5Sx43OZWU1b/3f7pL4iwgAPE92xBvvBgy66VvynumYEBtz1w==,
-            }
-        cpu: [x64]
-        os: [win32]
-
-    sentencex@1.0.20:
-        resolution:
-            {
-                integrity: sha512-ONk70bN0xdq9jKhH5nx88MmTDR7MB/ui0ebtUkrsQZPjXLOcxCAlEv3J9IH2dkGNQVkaGcrjxiEQl1WVoCPr1A==,
-            }
-        engines: { node: '>=20' }
 
     serialize-error@7.0.1:
         resolution:
@@ -15093,28 +15052,7 @@ snapshots:
 
     semver@7.7.4: {}
 
-    sentencex-darwin-arm64@1.0.20:
-        optional: true
-
-    sentencex-darwin-x64@1.0.20:
-        optional: true
-
-    sentencex-linux-arm64@1.0.20:
-        optional: true
-
-    sentencex-linux-x64@1.0.20:
-        optional: true
-
-    sentencex-win32-x64@1.0.20:
-        optional: true
-
-    sentencex@1.0.20:
-        optionalDependencies:
-            sentencex-darwin-arm64: 1.0.20
-            sentencex-darwin-x64: 1.0.20
-            sentencex-linux-arm64: 1.0.20
-            sentencex-linux-x64: 1.0.20
-            sentencex-win32-x64: 1.0.20
+    sentencex-wasm@0.1.23: {}
 
     serialize-error@7.0.1:
         dependencies:
