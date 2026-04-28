@@ -28,6 +28,12 @@ export default defineConfig({
     },
     renderer: {
         plugins: [react()],
+        build: {
+            assetsInlineLimit: (filePath) => !filePath.endsWith('.wasm'),
+        },
+        optimizeDeps: {
+            exclude: ['sentencex-wasm'],
+        },
         resolve: {
             alias: {
                 '@renderer': resolve('src/renderer'),

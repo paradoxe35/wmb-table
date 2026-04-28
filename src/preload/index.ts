@@ -300,10 +300,6 @@ const api = {
         getProviderModels: (p: TtsProviderType) => invoke(TtsChannels.getProviderModels, p),
         deleteProviderModel: (p: TtsProviderType, modelName: string) =>
             invoke(TtsChannels.deleteProviderModel, p, modelName),
-        segmentParagraphs: (
-            paragraphs: { paragraphIndex: number; content: string }[],
-            language: string,
-        ) => invoke(TtsChannels.segmentParagraphs, paragraphs, language),
         previewVoice: (language: string) => invoke(TtsChannels.previewVoice, language),
         resolveConfigForLanguage: (language: string) =>
             invoke(TtsChannels.resolveConfigForLanguage, language),
