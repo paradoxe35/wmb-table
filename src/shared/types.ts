@@ -1,4 +1,5 @@
 import { UiLanguagePreference } from './constants';
+import type { ThemeMode } from './theme';
 
 export interface BaseEntity {
     id: string;
@@ -852,6 +853,7 @@ export interface AppSettingsStatus {
     maxTabs: number;
     uiLanguage: UiLanguagePreference | null;
     sidebarHidden: boolean;
+    themeMode: ThemeMode | null;
 }
 
 export interface SidebarStatus {

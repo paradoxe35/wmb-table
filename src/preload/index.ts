@@ -20,6 +20,7 @@ import {
     type PushEventMap,
 } from '@shared/ipc.types';
 import { DEFAULT_SEARCH_MODE, type UiLanguagePreference } from '@shared/constants';
+import type { ThemeMode } from '@shared/theme';
 import type {
     BookRequest,
     DocumentIdentity,
@@ -270,6 +271,9 @@ const api = {
         getHistoryItems: (historyId: string) => invoke(AppChannels.getHistoryItems, historyId),
         getUiLanguage: () => invoke(AppChannels.getUiLanguage),
         setUiLanguage: (pref: UiLanguagePreference) => invoke(AppChannels.setUiLanguage, pref),
+        getThemeState: () => invoke(AppChannels.getThemeState),
+        setThemeMode: (mode: ThemeMode) => invoke(AppChannels.setThemeMode, mode),
+        refreshNativeTheme: () => invoke(AppChannels.refreshNativeTheme),
         openExternal: (url: string) => invoke(AppChannels.openExternal, url),
     },
 

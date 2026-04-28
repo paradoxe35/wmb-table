@@ -1,5 +1,6 @@
 import { app, shell } from 'electron';
 import { AppChannels } from '@shared/ipc.types';
+import { applyResolvedTheme, getThemeState } from '@main/lib/native-theme';
 import { registerHandler } from './register';
 import * as configRepo from '@main/database/repositories/config.repository';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
@@ -158,5 +159,20 @@ export function registerAppHandlers(): void {
         if (win) {
             new MenuBuilder(win).buildMenu();
         }
+    });
+
+    registerHandler(AppChannels.getThemeState, async () => getThemeState());
+
+    registerHandler(AppChannels.setThemeMode, async (_event, mode) => {
+        configRepo.setThemeMode(mode);
+        const state = getThemeState();
+        applyResolvedTheme(state.resolvedTheme);
+        return state;
+    });
+
+    registerHandler(AppChannels.refreshNativeTheme, async () => {
+        const state = getThemeState();
+        applyResolvedTheme(state.resolvedTheme);
+        return state;
     });
 }
