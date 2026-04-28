@@ -57,7 +57,7 @@ function setupCSP(): void {
                 'Content-Security-Policy': [
                     [
                         "default-src 'self'",
-                        "script-src 'self'",
+                        "script-src 'self' 'wasm-unsafe-eval'",
                         "style-src 'self' 'unsafe-inline'",
                         "img-src 'self' data: https:",
                         "font-src 'self' data:",
