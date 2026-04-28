@@ -169,7 +169,7 @@ function DocumentList({
                 </Button>
             </div>
 
-            <div style={{ overflow: 'auto', maxHeight: 350 }}>
+            <div className="modal-scroll-area">
                 {filtered.length === 0 && (
                     <div
                         style={{

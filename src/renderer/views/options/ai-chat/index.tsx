@@ -7,7 +7,7 @@ import type { AiMessage } from '@shared/ai.types';
 import ChatConversationList from './chat-conversation-list';
 import ChatInput from './chat-input';
 import ChatMessageList from './chat-message-list';
-import './ai-chat.css';
+import './ai-chat.scss';
 
 const { Text } = Typography;
 const EMPTY_MESSAGES: AiMessage[] = [];

@@ -1,3 +1,5 @@
+@use './scrollbar' as *;
+
 .ai-markdown {
     font-size: var(--fs-rel-4xl);
     line-height: 1.5;
@@ -42,6 +44,7 @@
     border-radius: 6px;
     background: var(--ant-color-fill-tertiary);
     overflow-x: auto;
+    @include thin-scrollbar;
 }
 
 .ai-markdown pre code {
@@ -129,6 +132,7 @@
 .ai-markdown .overflow-x-auto {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    @include thin-scrollbar;
     margin: 6px -14px;
     padding: 6px 14px;
 }
