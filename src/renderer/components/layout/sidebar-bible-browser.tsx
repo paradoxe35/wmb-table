@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState, type CSSProperties } fr
 import { Button, Divider, Empty, Progress, Select, Typography, message } from 'antd';
 import { CloudDownloadOutlined, LeftOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
     buildBibleDocumentTitle,
     type BibleIndex,
@@ -136,14 +137,17 @@ type BookEntry = { bookName: string; bookCode: string; testament: string; chapte
 
 const BookListItem = memo(function BookListItem({
     book,
+    flashing,
     onSelect,
 }: {
     book: BookEntry;
+    flashing: boolean;
     onSelect: (book: BookEntry) => void;
 }) {
     const { t } = useTranslation();
+    const className = flashing ? 'sidebar-item sidebar-item--flash' : 'sidebar-item';
     return (
-        <div className="sidebar-item" {...interactiveProps(() => onSelect(book))}>
+        <div className={className} {...interactiveProps(() => onSelect(book))}>
             <div className="sidebar-item__left">
                 <div className="sidebar-item__title">{book.bookName}</div>
                 <div className="sidebar-item__date">
@@ -238,7 +242,26 @@ export default function SidebarBibleBrowser() {
     const [books, setBooks] = useState<BookEntry[]>([]);
     const [noBible, setNoBible] = useState(false);
     const [selectedBook, setSelectedBook] = useState<BookEntry | null>(null);
+    const [flashBookCode, setFlashBookCode] = useState<string | null>(null);
     const prevVersionRef = useRef(activeBibleVersion?.abbreviation);
+
+    const handleSelectBook = useCallback((book: BookEntry) => {
+        setSelectedBook(book);
+        setFlashBookCode(null);
+    }, []);
+
+    const handleBack = useCallback(() => {
+        if (selectedBook) {
+            setFlashBookCode(selectedBook.bookCode);
+        }
+        setSelectedBook(null);
+    }, [selectedBook]);
+
+    useEffect(() => {
+        if (!flashBookCode) return;
+        const id = window.setTimeout(() => setFlashBookCode(null), 1200);
+        return () => window.clearTimeout(id);
+    }, [flashBookCode]);
 
     const loadIndex = useCallback(() => {
         window.api.bible
@@ -314,32 +337,41 @@ export default function SidebarBibleBrowser() {
                             <BookSection
                                 label={t('Ancien Testament')}
                                 books={oldTestament}
-                                onSelect={setSelectedBook}
+                                flashBookCode={flashBookCode}
+                                onSelect={handleSelectBook}
                             />
                         )}
                         {newTestament.length > 0 && (
                             <BookSection
                                 label={t('Nouveau Testament')}
                                 books={newTestament}
-                                onSelect={setSelectedBook}
+                                flashBookCode={flashBookCode}
+                                onSelect={handleSelectBook}
                             />
                         )}
                     </ContainerScrollY>
                 </div>
             </div>
-            {selectedBook && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'var(--ant-color-bg-container, #fff)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                    }}
-                >
-                    <ChapterView book={selectedBook} onBack={() => setSelectedBook(null)} />
-                </div>
-            )}
+            <AnimatePresence>
+                {selectedBook && (
+                    <motion.div
+                        key="chapter-view"
+                        initial={{ x: '100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '100%' }}
+                        transition={{ duration: 0.22, ease: 'easeOut' }}
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'var(--ant-color-bg-container, #fff)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                        }}
+                    >
+                        <ChapterView book={selectedBook} onBack={handleBack} />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
@@ -347,10 +379,12 @@ export default function SidebarBibleBrowser() {
 function BookSection({
     label,
     books,
+    flashBookCode,
     onSelect,
 }: {
     label: string;
     books: BookEntry[];
+    flashBookCode: string | null;
     onSelect: (book: BookEntry) => void;
 }) {
     return (
@@ -361,7 +395,12 @@ function BookSection({
                 </Typography.Text>
             </div>
             {books.map((book) => (
-                <BookListItem key={book.bookCode} book={book} onSelect={onSelect} />
+                <BookListItem
+                    key={book.bookCode}
+                    book={book}
+                    flashing={flashBookCode === book.bookCode}
+                    onSelect={onSelect}
+                />
             ))}
         </>
     );
