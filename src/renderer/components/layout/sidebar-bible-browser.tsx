@@ -290,37 +290,56 @@ export default function SidebarBibleBrowser() {
         );
     }
 
-    if (selectedBook) {
-        return <ChapterView book={selectedBook} onBack={() => setSelectedBook(null)} />;
-    }
-
     const oldTestament = books.filter((b) => b.testament !== 'N');
     const newTestament = books.filter((b) => b.testament === 'N');
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-            <div style={{ padding: '8px 10px 4px' }}>
-                <CompactVersionSelector />
+        <div
+            style={{
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                flex: 1,
+                overflow: 'hidden',
+            }}
+        >
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+                <div style={{ padding: '8px 10px 4px' }}>
+                    <CompactVersionSelector />
+                </div>
+                <Divider style={{ margin: '4px 0 0' }} />
+                <div className="document-list" style={{ flex: 1 }}>
+                    <ContainerScrollY>
+                        {oldTestament.length > 0 && (
+                            <BookSection
+                                label={t('Ancien Testament')}
+                                books={oldTestament}
+                                onSelect={setSelectedBook}
+                            />
+                        )}
+                        {newTestament.length > 0 && (
+                            <BookSection
+                                label={t('Nouveau Testament')}
+                                books={newTestament}
+                                onSelect={setSelectedBook}
+                            />
+                        )}
+                    </ContainerScrollY>
+                </div>
             </div>
-            <Divider style={{ margin: '4px 0 0' }} />
-            <div className="document-list" style={{ flex: 1 }}>
-                <ContainerScrollY>
-                    {oldTestament.length > 0 && (
-                        <BookSection
-                            label={t('Ancien Testament')}
-                            books={oldTestament}
-                            onSelect={setSelectedBook}
-                        />
-                    )}
-                    {newTestament.length > 0 && (
-                        <BookSection
-                            label={t('Nouveau Testament')}
-                            books={newTestament}
-                            onSelect={setSelectedBook}
-                        />
-                    )}
-                </ContainerScrollY>
-            </div>
+            {selectedBook && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'var(--ant-color-bg-container, #fff)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <ChapterView book={selectedBook} onBack={() => setSelectedBook(null)} />
+                </div>
+            )}
         </div>
     );
 }
