@@ -33,3 +33,8 @@ export { useAiChatStore } from './ai-chat.store';
 export { useThemeStore } from './theme.store';
 export { useFeatureRemindersStore } from './feature-reminders.store';
 export { useInstalledLanguagesStore, selectHasLanguageUpdates } from './installed-languages.store';
+export {
+    useSidebarDocumentsStore,
+    type SidebarPanelTab,
+    type SermonFilterMode,
+} from './sidebar-documents.store';

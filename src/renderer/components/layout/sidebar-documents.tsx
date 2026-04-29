@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input, Button, Card, Divider, Segmented, Select, Tag, Typography } from 'antd';
 import { SoundOutlined, GlobalOutlined, PlusOutlined, FileTextOutlined } from '@ant-design/icons';
@@ -13,6 +13,9 @@ import {
     useSermonsByYear,
     useCustomDocumentsStore,
     selectActiveTab,
+    useSidebarDocumentsStore,
+    type SermonFilterMode,
+    type SidebarPanelTab,
 } from '@renderer/stores';
 import { useAppStore, useInstalledLanguagesStore } from '@renderer/stores';
 import { useOpenDocumentRequest, useFormatSermonDate } from '@renderer/hooks';
@@ -31,6 +34,8 @@ const { Search } = Input;
 export default function SidebarDocuments() {
     const { t } = useTranslation();
     const sidebarHidden = useAppStore((s) => s.sidebarHidden);
+    const panelTab = useSidebarDocumentsStore((s) => s.panelTab);
+    const setPanelTab = useSidebarDocumentsStore((s) => s.setPanelTab);
 
     return (
         <div
@@ -47,11 +52,9 @@ export default function SidebarDocuments() {
             className="layout__sidebar"
         >
             <PanelGroup
-                tabs={[
-                    { name: t('Prédications'), active: true },
-                    { name: t('Bible'), active: false },
-                    { name: t('Documents'), active: false },
-                ]}
+                tabs={[{ name: t('Prédications') }, { name: t('Bible') }, { name: t('Documents') }]}
+                activeIndex={panelTab}
+                onChange={(i) => setPanelTab(i as SidebarPanelTab)}
             >
                 {(index: number) => (
                     <div
@@ -161,27 +164,13 @@ const alphabets = alpha.map((x) => String.fromCharCode(x));
 const DocumentByAlphabetic = () => {
     const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
-    const [datas, setDatas] = useState<SermonListItemWithTranslations[]>([]);
-    const alphabet = useRef(alphabets[0]);
+    const alphabet = useSidebarDocumentsStore((s) => s.sermonAlphabet);
+    const setAlphabet = useSidebarDocumentsStore((s) => s.setSermonAlphabet);
 
-    const onSearch = useCallback(() => {
-        const newDocs = sermons.filter((d) => {
-            return strNormalize(d.title).charAt(0).toUpperCase() === alphabet.current;
-        });
-        setDatas(newDocs);
-    }, [sermons]);
-
-    const onChangeAlphabetic = useCallback(
-        (value: string) => {
-            alphabet.current = value;
-            onSearch();
-        },
-        [onSearch],
+    const items = useMemo(
+        () => sermons.filter((d) => strNormalize(d.title).charAt(0).toUpperCase() === alphabet),
+        [sermons, alphabet],
     );
-
-    useEffect(() => {
-        onSearch();
-    }, [onSearch]);
 
     return (
         <>
@@ -189,12 +178,12 @@ const DocumentByAlphabetic = () => {
                 <Select
                     className="w-100 max-w-100"
                     placeholder={t('Alphabet')}
-                    defaultValue={alphabets[0]}
-                    onChange={onChangeAlphabetic}
+                    value={alphabet}
+                    onChange={setAlphabet}
                     options={alphabets.map((al) => ({ value: al, label: al }))}
                 />
             </Card>
-            <DocumentList datas={datas} />
+            <DocumentList items={items} />
         </>
     );
 };
@@ -202,28 +191,16 @@ const DocumentByAlphabetic = () => {
 const DocumentByYears = () => {
     const { t } = useTranslation();
     const sermonsByYear = useSermonsByYear();
-    const [datas, setDatas] = useState<SermonListItemWithTranslations[]>([]);
-    const selectedYear = useRef<string>('');
+    const selectedYear = useSidebarDocumentsStore((s) => s.sermonSelectedYear);
+    const setSelectedYear = useSidebarDocumentsStore((s) => s.setSermonSelectedYear);
 
     const years = useMemo(
         () => Object.keys(sermonsByYear).sort((a, b) => b.localeCompare(a)),
         [sermonsByYear],
     );
 
-    const onChangeYear = useCallback(
-        (value: string) => {
-            selectedYear.current = value;
-            setDatas(sermonsByYear[value] ?? []);
-        },
-        [sermonsByYear],
-    );
-
-    // Auto-select first year on load
-    useEffect(() => {
-        if (years.length > 0 && !selectedYear.current) {
-            onChangeYear(years[0]);
-        }
-    }, [years, onChangeYear]);
+    const effectiveYear = selectedYear ?? years[0] ?? null;
+    const items = effectiveYear ? (sermonsByYear[effectiveYear] ?? []) : [];
 
     const yearOptions = useMemo(
         () =>
@@ -240,12 +217,12 @@ const DocumentByYears = () => {
                 <Select
                     className="w-100 max-w-100"
                     placeholder={t('Année')}
-                    value={selectedYear.current || undefined}
-                    onChange={onChangeYear}
+                    value={effectiveYear ?? undefined}
+                    onChange={setSelectedYear}
                     options={yearOptions}
                 />
             </Card>
-            <DocumentList datas={datas} />
+            <DocumentList items={items} />
         </>
     );
 };
@@ -291,36 +268,27 @@ const ContentLanguageBar = () => {
 const DocumentSearch = () => {
     const { t } = useTranslation();
     const sermons = useSermonStore((s) => s.sermons);
-    const [datas, setDatas] = useState<SermonListItemWithTranslations[]>([]);
+    const query = useSidebarDocumentsStore((s) => s.sermonSearchQuery);
+    const setQuery = useSidebarDocumentsStore((s) => s.setSermonSearchQuery);
 
-    useEffect(() => {
-        setDatas(sermons);
-    }, [sermons]);
-
-    const onSearch = useCallback(
-        (value: string) => {
-            if (sermons.length) {
-                const filtered = sermons.filter((d) => {
-                    return simpleRegExp(value).test(strNormalize(d.title));
-                });
-                setDatas(filtered);
-            }
-        },
-        [sermons],
-    );
+    const items = useMemo(() => {
+        if (!query) return sermons;
+        const matcher = simpleRegExp(query);
+        return sermons.filter((d) => matcher.test(strNormalize(d.title)));
+    }, [sermons, query]);
 
     return (
         <>
             <Card variant="borderless" styles={{ body: { paddingBottom: 8 } }}>
                 <Search
-                    key={sermons.length}
                     placeholder={t('Recherche')}
                     allowClear
-                    onSearch={onSearch}
+                    defaultValue={query}
+                    onSearch={setQuery}
                 />
                 <ContentLanguageBar />
             </Card>
-            <DocumentList datas={datas} />
+            <DocumentList items={items} />
         </>
     );
 };
@@ -329,23 +297,30 @@ const DocumentSearch = () => {
 // Sermon filter modes for the Prédications tab
 // ---------------------------------------------------------------------------
 
-type SermonFilterMode = 'Recherche' | 'Années' | 'A-Z';
-
-const SERMON_FILTER_OPTIONS: SermonFilterMode[] = ['Recherche', 'Années', 'A-Z'];
+const SERMON_FILTER_OPTIONS: { mode: SermonFilterMode; labelKey: string }[] = [
+    { mode: 'search', labelKey: 'Recherche' },
+    { mode: 'years', labelKey: 'Années' },
+    { mode: 'alphabet', labelKey: 'A-Z' },
+];
 
 const SermonFilterContent: Record<SermonFilterMode, React.FC> = {
-    Recherche: DocumentSearch,
-    Années: DocumentByYears,
-    'A-Z': DocumentByAlphabetic,
+    search: DocumentSearch,
+    years: DocumentByYears,
+    alphabet: DocumentByAlphabetic,
 };
 
 function SermonsTab() {
     const { t } = useTranslation();
-    const [filterMode, setFilterMode] = useState<SermonFilterMode>('Recherche');
+    const filterMode = useSidebarDocumentsStore((s) => s.sermonFilter);
+    const setFilterMode = useSidebarDocumentsStore((s) => s.setSermonFilter);
     const FilterComponent = SermonFilterContent[filterMode];
 
     const segmentedOptions = useMemo(
-        () => SERMON_FILTER_OPTIONS.map((key) => ({ label: t(key), value: key })),
+        () =>
+            SERMON_FILTER_OPTIONS.map(({ mode, labelKey }) => ({
+                label: t(labelKey),
+                value: mode,
+            })),
         [t],
     );
 
@@ -364,7 +339,7 @@ function SermonsTab() {
     );
 }
 
-const DocumentList = ({ datas }: { datas: SermonListItemWithTranslations[] }) => {
+const DocumentList = ({ items }: { items: SermonListItemWithTranslations[] }) => {
     const openDocumentRequest = useOpenDocumentRequest();
     const activeTab = useDocumentTabsStore(selectActiveTab);
     const activeTabKeyStr = activeTab ? getTabKey(activeTab) : null;
@@ -372,8 +347,8 @@ const DocumentList = ({ datas }: { datas: SermonListItemWithTranslations[] }) =>
     const formatDate = useFormatSermonDate();
 
     const sorted = useMemo(
-        () => datas.slice().sort((a, b) => a.title.localeCompare(b.title)),
-        [datas],
+        () => items.slice().sort((a, b) => a.title.localeCompare(b.title)),
+        [items],
     );
 
     return (
