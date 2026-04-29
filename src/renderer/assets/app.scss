@@ -512,6 +512,19 @@ body {
     animation: audio-indicator-pulse 2s ease-out infinite;
 }
 
+@keyframes sidebar-item-flash {
+    0% {
+        background-color: var(--ant-color-primary-bg, rgba(24, 143, 255, 0.25));
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.sidebar-item--flash {
+    animation: sidebar-item-flash 1.2s ease-out;
+}
+
 // ---------------------------------------------------------------------------
 // Content descriptions
 // ---------------------------------------------------------------------------
