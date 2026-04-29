@@ -13,6 +13,7 @@ import { useInitApp } from './hooks/index';
 import { useBibleSetup } from './hooks/use-bible-setup';
 import { useTtsSetup } from './hooks/use-tts-setup';
 import { useThemeSync } from './hooks/use-theme';
+import { startPowerSaveController } from './services/power-save-controller';
 import { useThemeStore, FONT_SIZE_MAP } from './stores/theme.store';
 import AppLayout from './components/layout';
 import { ContentApp } from './content-app';
@@ -56,6 +57,9 @@ export default function App() {
     useBibleSetup();
     useTtsSetup();
     useThemeSync();
+    useEffect(() => {
+        startPowerSaveController();
+    }, []);
     const antdLocale = useAntdLocale();
     const resolvedTheme = useThemeStore((s) => s.resolvedTheme);
     const fontSizeOption = useThemeStore((s) => s.fontSizeOption);

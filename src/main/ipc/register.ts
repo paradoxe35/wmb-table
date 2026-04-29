@@ -13,6 +13,7 @@ import { registerSyncHandlers } from './sync.ipc';
 import { registerHighlightsHandlers } from './highlights.ipc';
 import { registerTtsHandlers } from './tts.ipc';
 import { registerAiHandlers } from './ai.ipc';
+import { registerPowerHandlers } from './power.ipc';
 
 /**
  * Type-safe wrapper around `ipcMain.handle`.
@@ -85,4 +86,5 @@ export function initializeIpc(): void {
     registerHighlightsHandlers();
     registerTtsHandlers();
     registerAiHandlers();
+    registerPowerHandlers();
 }

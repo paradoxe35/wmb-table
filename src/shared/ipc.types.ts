@@ -209,6 +209,10 @@ export const SyncChannels = {
     syncNow: 'sync:syncNow',
 } as const;
 
+export const PowerChannels = {
+    setActive: 'power:setActive',
+} as const;
+
 export const AppChannels = {
     isInitialized: 'app:isInitialized',
     initialize: 'app:initialize',
@@ -498,6 +502,9 @@ export interface InvokeChannelMap {
     [SyncChannels.start]: { args: []; return: void };
     [SyncChannels.stop]: { args: []; return: void };
     [SyncChannels.syncNow]: { args: []; return: void };
+
+    // Power save
+    [PowerChannels.setActive]: { args: [boolean]; return: void };
 
     // App
     [AppChannels.isInitialized]: { args: []; return: boolean };

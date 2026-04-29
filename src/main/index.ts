@@ -15,6 +15,7 @@ import { refreshInstalledLanguageUpdates } from '@main/services/language-pack.se
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 import { disposeTtsService } from '@main/services/tts';
 import { disposeAiService } from '@main/services/ai';
+import { disposePowerSaveBlocker } from '@main/services/power-save.service';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
 import { applyNativeThemeSource, getThemeState } from '@main/lib/native-theme';
@@ -94,6 +95,9 @@ function createWindow(): void {
     });
 
     setMainWindow(mainWindow);
+
+    mainWindow.on('closed', disposePowerSaveBlocker);
+    mainWindow.webContents.on('render-process-gone', disposePowerSaveBlocker);
 
     // Show window when ready, maximized (matches legacy behavior)
     mainWindow.on('ready-to-show', () => {
@@ -179,6 +183,7 @@ app.on('will-quit', () => {
     terminateWorker();
     disposeTtsService();
     disposeAiService();
+    disposePowerSaveBlocker();
     closeDatabase();
 });
 

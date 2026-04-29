@@ -13,6 +13,7 @@ import {
     LanguageChannels,
     TtsChannels,
     AiChannels,
+    PowerChannels,
     PushChannels,
     type InvokeChannel,
     type InvokeChannelMap,
@@ -307,6 +308,10 @@ const api = {
         previewVoice: (language: string) => invoke(TtsChannels.previewVoice, language),
         resolveConfigForLanguage: (language: string) =>
             invoke(TtsChannels.resolveConfigForLanguage, language),
+    },
+
+    power: {
+        setActive: (active: boolean) => invoke(PowerChannels.setActive, active),
     },
 
     ai: {
