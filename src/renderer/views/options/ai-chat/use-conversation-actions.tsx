@@ -1,9 +1,19 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, type ComponentProps } from 'react';
 import { App as AntApp, Input, message } from 'antd';
+import type { InputRef } from 'antd';
 import { useTranslation } from 'react-i18next';
 import type { AiConversation } from '@shared/ai.types';
 import type { PdfExportResult } from '@shared/ipc.types';
 import { useAiChatStore } from '@renderer/stores/ai-chat.store';
+
+function AutoFocusInput(props: ComponentProps<typeof Input>) {
+    const ref = useRef<InputRef>(null);
+    useEffect(() => {
+        const id = window.setTimeout(() => ref.current?.focus({ cursor: 'all' }), 50);
+        return () => window.clearTimeout(id);
+    }, []);
+    return <Input {...props} ref={ref} />;
+}
 
 export interface ConversationActionCallbacks {
     onRenameConversation: (conversationId: string, title: string) => Promise<AiConversation>;
@@ -66,8 +76,7 @@ export function useConversationActions(
                             .catch(() => {});
                     }}
                 >
-                    <Input
-                        autoFocus
+                    <AutoFocusInput
                         size="large"
                         defaultValue={conversation.title ?? ''}
                         allowClear
