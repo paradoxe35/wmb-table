@@ -201,6 +201,8 @@ const es: Record<string, string> = {
     'Retirer de la file': 'Quitar de la cola',
     'Maj+Entrée': 'Mayús+Intro',
     Conversations: 'Conversaciones',
+    'Nouvelle conversation': 'Nueva conversación',
+    'Conversation renommée': 'Conversación renombrada',
     'Aucune conversation': 'Sin conversaciones',
     'Aucun sujet': 'Sin temas',
     'Sélectionner ou saisir un modèle': 'Seleccionar o escribir un modelo',

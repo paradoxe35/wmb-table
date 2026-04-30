@@ -198,6 +198,8 @@ const en: Record<string, string> = {
     'Retirer de la file': 'Remove from queue',
     'Maj+Entrée': 'Shift+Enter',
     Conversations: 'Conversations',
+    'Nouvelle conversation': 'New conversation',
+    'Conversation renommée': 'Conversation renamed',
     'Aucune conversation': 'No conversations',
     'Aucun sujet': 'No subjects',
     'Sélectionner ou saisir un modèle': 'Select or type a model',

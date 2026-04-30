@@ -202,6 +202,8 @@ const pt: Record<string, string> = {
     'Retirer de la file': 'Remover da fila',
     'Maj+Entrée': 'Shift+Enter',
     Conversations: 'Conversas',
+    'Nouvelle conversation': 'Nova conversa',
+    'Conversation renommée': 'Conversa renomeada',
     'Aucune conversation': 'Nenhuma conversa',
     'Aucun sujet': 'Nenhum assunto',
     'Sélectionner ou saisir un modèle': 'Selecionar ou digitar um modelo',

@@ -199,6 +199,87 @@
     background: var(--ant-color-bg-container);
 }
 
+/* ── Conversation header ─────────────────────────────────────── */
+.ai-chat__header {
+    display: grid;
+    grid-template-columns: minmax(max-content, 1fr) minmax(0, 2fr) minmax(max-content, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 4px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--ant-color-split) 60%, transparent);
+    background: var(--ant-color-bg-container);
+    flex-shrink: 0;
+    min-height: 36px;
+}
+
+.ai-chat__header-side {
+    min-width: max-content;
+    display: flex;
+    align-items: center;
+
+    &--left {
+        justify-content: flex-start;
+    }
+
+    &--right {
+        justify-content: flex-end;
+        gap: 0;
+        opacity: 0.55;
+        transition: opacity 0.15s ease;
+    }
+
+    &--placeholder {
+        visibility: hidden;
+    }
+}
+
+.ai-chat__header:hover .ai-chat__header-side--right,
+.ai-chat__header:focus-within .ai-chat__header-side--right {
+    opacity: 1;
+}
+
+.ai-chat__header-side--right .ant-btn {
+    color: var(--ant-color-text-secondary);
+}
+
+.ai-chat__header-side--right .ant-btn:hover,
+.ai-chat__header-side--right .ant-btn:focus-visible {
+    color: var(--ant-color-text);
+    background: var(--ant-color-fill-quaternary);
+}
+
+.ai-chat__header-side--right .ant-btn-dangerous:hover,
+.ai-chat__header-side--right .ant-btn-dangerous:focus-visible {
+    color: var(--ant-color-error);
+}
+
+.ai-chat__header-title {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 0 12px;
+    overflow: hidden;
+}
+
+.ai-chat__header-title-text {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--fs-rel-base);
+    font-weight: 500;
+    line-height: 1.3;
+    color: var(--ant-color-text);
+}
+
+.ai-chat__header-streaming {
+    color: var(--ant-color-primary);
+    font-size: var(--fs-sm);
+    flex-shrink: 0;
+}
+
 /* ── Message list ────────────────────────────────────────────── */
 .ai-chat__messages-wrapper {
     flex: 1;

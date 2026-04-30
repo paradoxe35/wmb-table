@@ -1056,6 +1056,19 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     createConversation: async (title) => {
+        if (!title) {
+            const { conversations, messagesByConversation, activeConversationId } = get();
+            const reusable = conversations.find(
+                (conversation) => messagesByConversation[conversation.id]?.length === 0,
+            );
+            if (reusable) {
+                if (reusable.id !== activeConversationId) {
+                    await get().selectConversation(reusable.id);
+                }
+                return;
+            }
+        }
+
         const conversation = await window.api.ai.createConversation({ title });
         set((state) => ({
             conversations: upsertConversation(state.conversations, conversation),

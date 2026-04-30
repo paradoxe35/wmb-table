@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
 import type { AiMessage } from '@shared/ai.types';
 import ChatConversationList from './chat-conversation-list';
+import ChatHeader from './chat-header';
 import ChatInput from './chat-input';
 import ChatMessageList from './chat-message-list';
 import './ai-chat.scss';
@@ -90,6 +91,11 @@ export default function AiChatView() {
         void initialize();
     }, [initialize]);
     const activeSending = Boolean(activeRun);
+    const activeConversation = useMemo(
+        () =>
+            conversations.find((conversation) => conversation.id === activeConversationId) ?? null,
+        [activeConversationId, conversations],
+    );
     const activeConversationMap = useMemo(
         () =>
             Object.fromEntries(
@@ -188,6 +194,16 @@ export default function AiChatView() {
             />
 
             <div className="ai-chat__main">
+                {activeConversation ? (
+                    <ChatHeader
+                        conversation={activeConversation}
+                        isStreaming={activeSending}
+                        onRenameConversation={handleRenameConversation}
+                        onExportConversation={handleExportConversation}
+                        onDeleteConversation={handleDeleteConversation}
+                    />
+                ) : null}
+
                 {error ? (
                     <Alert
                         type="error"

@@ -200,6 +200,8 @@ const sw: Record<string, string> = {
     'Retirer de la file': 'Ondoa kwenye foleni',
     'Maj+Entrée': 'Shift+Enter',
     Conversations: 'Mazungumzo',
+    'Nouvelle conversation': 'Mazungumzo mapya',
+    'Conversation renommée': 'Mazungumzo yamebadilishwa jina',
     'Aucune conversation': 'Hakuna mazungumzo',
     'Aucun sujet': 'Hakuna mada',
     'Sélectionner ou saisir un modèle': 'Chagua au andika mfano',
