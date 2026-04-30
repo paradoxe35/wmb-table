@@ -311,6 +311,31 @@
     color: var(--ant-color-text-tertiary);
 }
 
+.ai-chat__edge-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 28px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+}
+
+.ai-chat__edge-fade.is-visible {
+    opacity: 1;
+}
+
+.ai-chat__edge-fade--top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--ant-color-bg-container) 0%, transparent 100%);
+}
+
+.ai-chat__edge-fade--bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--ant-color-bg-container) 0%, transparent 100%);
+}
+
 .ai-chat__scroll-bottom {
     position: absolute;
     bottom: 8px;
@@ -331,7 +356,7 @@
     transition:
         background 0.15s,
         color 0.15s;
-    z-index: 1;
+    z-index: 2;
 }
 
 .ai-chat__scroll-bottom:hover {
