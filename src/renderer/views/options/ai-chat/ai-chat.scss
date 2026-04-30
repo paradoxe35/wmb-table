@@ -43,8 +43,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 12px;
+    padding: 4px 12px;
+    min-height: 36px;
     border-bottom: 1px solid var(--ant-color-split);
+    flex-shrink: 0;
 }
 
 .ai-chat__sidebar-list {
