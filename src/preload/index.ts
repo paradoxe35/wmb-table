@@ -157,6 +157,7 @@ const api = {
             invoke(NotesChannels.removeBibleVerse, id, verseId),
         deleteReference: (id: string) => invoke(NotesChannels.deleteReference, id),
         exportPdf: (noteId: string) => invoke(NotesChannels.exportPdf, noteId),
+        exportDocx: (noteId: string) => invoke(NotesChannels.exportDocx, noteId),
     },
 
     bible: {

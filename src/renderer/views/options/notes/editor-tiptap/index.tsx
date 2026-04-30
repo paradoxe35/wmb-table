@@ -1,14 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { App as AntApp, Button, Input, Space, Spin, Tooltip, message } from 'antd';
+import { App as AntApp, Button, Dropdown, Input, Space, Spin, Tooltip, message } from 'antd';
+import type { MenuProps } from 'antd';
 import {
     LeftOutlined,
+    ExportOutlined,
     FilePdfOutlined,
+    FileWordOutlined,
     EditOutlined,
     ReadOutlined,
     ExclamationCircleOutlined,
     UploadOutlined,
 } from '@ant-design/icons';
+import type { PdfExportResult } from '@shared/ipc.types';
 
 import type { UiLanguage } from '@shared/constants';
 import type { NoteItem } from '@shared/types';
@@ -106,26 +110,59 @@ function ButtonsControllers({
     const openModal = useRenameNote(workingNote);
     const workingNoteRef = useValueStateRef(workingNote);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [loadingPdf, setLoadingPdf] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const readOnly = !editable;
 
-    const exportPdf = () => {
-        if (!hasContent) return;
-        setLoadingPdf(true);
-        window.api.notes
-            .exportPdf(workingNoteRef.current?.id ?? '')
-            .then((result) => {
+    const runExport = useCallback(
+        async (
+            invoke: (id: string) => Promise<PdfExportResult>,
+            errorMessage: string,
+        ): Promise<void> => {
+            if (!hasContent) return;
+            setExporting(true);
+            try {
+                const result = await invoke(workingNoteRef.current?.id ?? '');
                 if (result.status === 'success') {
                     message.success(t('Enregistré'));
                 } else if (result.status === 'empty') {
                     message.warning(t("La note n'a pas de contenu à exporter"));
                 }
-            })
-            .catch(() => {
-                message.error(t("Impossible d'exporter la note en PDF"));
-            })
-            .finally(() => setLoadingPdf(false));
-    };
+            } catch {
+                message.error(errorMessage);
+            } finally {
+                setExporting(false);
+            }
+        },
+        [hasContent, t, workingNoteRef],
+    );
+
+    const exportMenu = useMemo<MenuProps>(
+        () => ({
+            items: [
+                {
+                    key: 'pdf',
+                    icon: <FilePdfOutlined />,
+                    label: t('Exporter au format PDF'),
+                    onClick: () =>
+                        void runExport(
+                            window.api.notes.exportPdf,
+                            t("Impossible d'exporter la note en PDF"),
+                        ),
+                },
+                {
+                    key: 'docx',
+                    icon: <FileWordOutlined />,
+                    label: t('Exporter au format DOCX'),
+                    onClick: () =>
+                        void runExport(
+                            window.api.notes.exportDocx,
+                            t("Impossible d'exporter la note en DOCX"),
+                        ),
+                },
+            ],
+        }),
+        [runExport, t],
+    );
 
     useEffect(() => {
         window.addEventListener(EDITOR_EVENT.renameNoteModal, openModal);
@@ -235,14 +272,16 @@ function ButtonsControllers({
                                 icon={<ReadOutlined />}
                             />
                         </Tooltip>
-                        <Tooltip title={t('Exporter au format PDF')}>
-                            <Button
-                                type="dashed"
-                                onClick={exportPdf}
-                                loading={loadingPdf}
-                                icon={<FilePdfOutlined />}
-                            />
-                        </Tooltip>
+                        <Dropdown menu={exportMenu} trigger={['click']} disabled={!hasContent}>
+                            <Tooltip title={t('Exporter')}>
+                                <Button
+                                    type="dashed"
+                                    loading={exporting}
+                                    icon={<ExportOutlined />}
+                                    aria-label={t('Exporter')}
+                                />
+                            </Tooltip>
+                        </Dropdown>
                     </>
                 )}
             </Space>

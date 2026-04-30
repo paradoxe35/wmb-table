@@ -767,7 +767,9 @@ const sw: Record<string, string> = {
     Continuer: 'Endelea',
     'Activer le mode lecture': 'Washa hali ya kusoma',
     'Désactiver le mode lecture': 'Zima hali ya kusoma',
+    Exporter: 'Hamisha',
     'Exporter au format PDF': 'Hamisha kama PDF',
+    'Exporter au format DOCX': 'Hamisha kama DOCX',
     'Exporter en PDF': 'Hamisha kama PDF',
     "Erreur lors de l'export PDF": 'Hitilafu wakati wa kuhamisha PDF',
     'PDF exporté avec succès': 'PDF imehamishwa kwa mafanikio',
@@ -1125,6 +1127,7 @@ const sw: Record<string, string> = {
     'Séparer la cellule': 'Gawanya kisanduku',
     "La note n'a pas de contenu à exporter": 'Dokezo halina maudhui ya kuhamisha',
     "Impossible d'exporter la note en PDF": 'Imeshindikana kuhamisha dokezo kama PDF',
+    "Impossible d'exporter la note en DOCX": 'Imeshindikana kuhamisha dokezo kama DOCX',
     // ── wmb:// reference modal ──
     'Référence introuvable': 'Rejeo halijapatikana',
     'Chargement de la référence…': 'Inapakia rejeo…',

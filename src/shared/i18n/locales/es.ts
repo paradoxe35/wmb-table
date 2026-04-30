@@ -771,7 +771,9 @@ const es: Record<string, string> = {
     Continuer: 'Continuar',
     'Activer le mode lecture': 'Activar modo lectura',
     'Désactiver le mode lecture': 'Desactivar modo lectura',
+    Exporter: 'Exportar',
     'Exporter au format PDF': 'Exportar a PDF',
+    'Exporter au format DOCX': 'Exportar a DOCX',
     'Exporter en PDF': 'Exportar a PDF',
     "Erreur lors de l'export PDF": 'Error al exportar PDF',
     'PDF exporté avec succès': 'PDF exportado con éxito',
@@ -1129,6 +1131,7 @@ const es: Record<string, string> = {
     'Séparer la cellule': 'Dividir celda',
     "La note n'a pas de contenu à exporter": 'La nota no tiene contenido para exportar',
     "Impossible d'exporter la note en PDF": 'No se pudo exportar la nota como PDF',
+    "Impossible d'exporter la note en DOCX": 'No se pudo exportar la nota como DOCX',
     // ── wmb:// reference modal ──
     'Référence introuvable': 'Referencia no encontrada',
     'Chargement de la référence…': 'Cargando referencia…',

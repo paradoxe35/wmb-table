@@ -1,7 +1,9 @@
 import { NotesChannels } from '@shared/ipc.types';
+import type { NoteItem } from '@shared/types';
 import { registerHandler } from './register';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import { exportHtmlToPdf } from '@main/lib/pdf-export';
+import { exportHtmlToDocx } from '@main/lib/docx-export';
 import { importDocumentIntoNote } from '@main/services/note-import.service';
 
 function stripInternalExportLinks(html: string): string {
@@ -10,6 +12,24 @@ function stripInternalExportLinks(html: string): string {
         (_match, _before, _quote, _href, _after, content: string) =>
             `<span class="reference-link">${content}</span>`,
     );
+}
+
+function buildExportHtml(note: NoteItem): string {
+    return `<!DOCTYPE html>
+<html><head>
+<meta charset="utf-8">
+<title>${note.name}</title>
+<style>
+  body { font-family: serif; font-size: 14px; padding: 20px; color: #333; }
+  h1, h2, h3 { font-family: sans-serif; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #ccc; padding: 6px; }
+  blockquote { border-left: 3px solid #ccc; margin-left: 0; padding-left: 12px; color: #555; }
+  a, .reference-link { color: #1f4b99; text-decoration: none; }
+</style>
+</head><body>
+${note.content}
+</body></html>`;
 }
 
 export function registerNotesHandlers(): void {
@@ -95,27 +115,22 @@ export function registerNotesHandlers(): void {
             return { status: 'empty' } as const;
         }
 
-        const defaultName = note.name || 'note';
-
-        const html = `<!DOCTYPE html>
-<html><head>
-<meta charset="utf-8">
-<title>${note.name}</title>
-<style>
-  body { font-family: serif; font-size: 14px; padding: 20px; color: #333; }
-  h1, h2, h3 { font-family: sans-serif; }
-  table { border-collapse: collapse; width: 100%; }
-  td, th { border: 1px solid #ccc; padding: 6px; }
-  blockquote { border-left: 3px solid #ccc; margin-left: 0; padding-left: 12px; color: #555; }
-  a, .reference-link { color: #1f4b99; text-decoration: none; }
-</style>
-</head><body>
-${note.content}
-</body></html>`;
-
         return exportHtmlToPdf({
-            html: stripInternalExportLinks(html),
-            defaultName,
+            html: stripInternalExportLinks(buildExportHtml(note)),
+            defaultName: note.name || 'note',
+            directory: 'notes',
+        });
+    });
+
+    registerHandler(NotesChannels.exportDocx, async (_event, noteId) => {
+        const note = notesRepo.getById(noteId);
+        if (!note?.content) {
+            return { status: 'empty' } as const;
+        }
+
+        return exportHtmlToDocx({
+            html: stripInternalExportLinks(buildExportHtml(note)),
+            defaultName: note.name || 'note',
             directory: 'notes',
         });
     });
