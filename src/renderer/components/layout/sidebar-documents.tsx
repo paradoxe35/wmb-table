@@ -37,6 +37,12 @@ export default function SidebarDocuments() {
     const panelTab = useSidebarDocumentsStore((s) => s.panelTab);
     const setPanelTab = useSidebarDocumentsStore((s) => s.setPanelTab);
 
+    const tabs = [
+        <SermonsTab key="sermons" />,
+        <SidebarBibleBrowser key="bible" />,
+        <DocumentsAdded key="documents" />,
+    ];
+
     return (
         <div
             style={{
@@ -56,20 +62,21 @@ export default function SidebarDocuments() {
                 activeIndex={panelTab}
                 onChange={(i) => setPanelTab(i as SidebarPanelTab)}
             >
-                {(index: number) => (
-                    <div
-                        style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            flex: 1,
-                            overflow: 'hidden',
-                        }}
-                    >
-                        {index === 0 && <SermonsTab />}
-                        {index === 1 && <SidebarBibleBrowser />}
-                        {index === 2 && <DocumentsAdded />}
-                    </div>
-                )}
+                {(index: number) =>
+                    tabs.map((TabContent, i) => (
+                        <div
+                            key={i}
+                            style={{
+                                display: index === i ? 'flex' : 'none',
+                                flexDirection: 'column',
+                                flex: 1,
+                                overflow: 'hidden',
+                            }}
+                        >
+                            {TabContent}
+                        </div>
+                    ))
+                }
             </PanelGroup>
         </div>
     );
