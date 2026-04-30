@@ -3,7 +3,7 @@ import { selectIsTtsPlaying, useTtsStore } from '@renderer/stores/tts.store';
 
 let started = false;
 let lastSent: boolean | null = null;
-let inFlight: Promise<unknown> | null = null;
+let inFlight: Promise<void> | null = null;
 
 function isAudibleNow(): boolean {
     return (
@@ -13,19 +13,27 @@ function isAudibleNow(): boolean {
 }
 
 function sync(): void {
+    if (inFlight) return;
+
     const desired = isAudibleNow();
     if (desired === lastSent) return;
-    lastSent = desired;
-    const send = () => window.api.power.setActive(desired).catch(() => {});
-    inFlight = inFlight ? inFlight.then(send, send) : send();
+
+    inFlight = (async () => {
+        try {
+            await window.api.power.setActive(desired);
+            lastSent = desired;
+        } catch (err) {
+            console.warn('[power-save] setActive failed', err);
+        } finally {
+            inFlight = null;
+            sync();
+        }
+    })();
 }
 
 export function startPowerSaveController(): void {
     if (started) return;
     started = true;
-
-    lastSent = null;
-    window.api.power.setActive(false).catch(() => {});
 
     useTtsStore.subscribe(sync);
     useAudioStore.subscribe(sync);
