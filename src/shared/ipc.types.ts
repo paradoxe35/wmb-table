@@ -152,6 +152,7 @@ export const NotesChannels = {
     removeBibleVerse: 'notes:removeBibleVerse',
     deleteReference: 'notes:deleteReference',
     exportPdf: 'notes:exportPdf',
+    exportDocx: 'notes:exportDocx',
 } as const;
 
 export const BibleChannels = {
@@ -207,6 +208,10 @@ export const SyncChannels = {
     start: 'sync:start',
     stop: 'sync:stop',
     syncNow: 'sync:syncNow',
+} as const;
+
+export const PowerChannels = {
+    setActive: 'power:setActive',
 } as const;
 
 export const AppChannels = {
@@ -431,6 +436,7 @@ export interface InvokeChannelMap {
     };
     [NotesChannels.deleteReference]: { args: [string]; return: void };
     [NotesChannels.exportPdf]: { args: [string]; return: PdfExportResult };
+    [NotesChannels.exportDocx]: { args: [string]; return: PdfExportResult };
 
     // Bible
     [BibleChannels.getIndexes]: { args: [string?]; return: BibleIndex };
@@ -498,6 +504,9 @@ export interface InvokeChannelMap {
     [SyncChannels.start]: { args: []; return: void };
     [SyncChannels.stop]: { args: []; return: void };
     [SyncChannels.syncNow]: { args: []; return: void };
+
+    // Power save
+    [PowerChannels.setActive]: { args: [boolean]; return: void };
 
     // App
     [AppChannels.isInitialized]: { args: []; return: boolean };

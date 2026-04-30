@@ -1,111 +1,40 @@
 import { memo, useCallback, useMemo, useRef } from 'react';
 import type { MenuProps } from 'antd';
-import { App as AntApp, Button, Dropdown, Input, Popconfirm, Typography, message } from 'antd';
+import { Button, Dropdown, Popconfirm, Tooltip, Typography } from 'antd';
 import { LoadingOutlined, MoreOutlined, PlusOutlined } from '@ant-design/icons';
 import type { AiConversation } from '@shared/ai.types';
 import type { PdfExportResult } from '@shared/ipc.types';
 import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import RelativeTime from '@renderer/components/relative-time';
+import {
+    useConversationActions,
+    type ConversationActionCallbacks,
+} from './use-conversation-actions';
 
 const { Text } = Typography;
 type StreamingConversationMap = Readonly<Record<string, true>>;
+
+interface ConversationListItemProps extends ConversationActionCallbacks {
+    conversation: AiConversation;
+    isActive: boolean;
+    isStreaming: boolean;
+    onSelectConversation: (conversationId: string) => void;
+}
 
 const ConversationListItem = memo(function ConversationListItem({
     conversation,
     isActive,
     isStreaming,
     onSelectConversation,
-    onRenameConversation,
-    onExportConversation,
-    onDeleteConversation,
-}: {
-    conversation: AiConversation;
-    isActive: boolean;
-    isStreaming: boolean;
-    onSelectConversation: (conversationId: string) => void;
-    onRenameConversation: (conversationId: string, title: string) => Promise<AiConversation>;
-    onExportConversation: (conversationId: string) => Promise<PdfExportResult>;
-    onDeleteConversation: (conversationId: string) => void;
-}) {
+    ...callbacks
+}: ConversationListItemProps) {
     const { t } = useTranslation();
-    const { modal } = AntApp.useApp();
     const showStreamingStatus = isStreaming && !isActive;
-
-    const openRenameModal = useCallback(() => {
-        let nextTitle = conversation.title ?? '';
-
-        const save = async () => {
-            const trimmedTitle = nextTitle.trim();
-            if (!trimmedTitle) {
-                message.error(t('Le nom entré est invalid'));
-                throw new Error('invalid-title');
-            }
-
-            try {
-                await onRenameConversation(conversation.id, trimmedTitle);
-                message.success(t('Modifié'));
-            } catch (error) {
-                const errorMessage =
-                    error instanceof Error && error.message
-                        ? error.message
-                        : 'Conversation introuvable.';
-                message.error(t(errorMessage));
-                throw error;
-            }
-        };
-
-        const modalInstance = modal.info({
-            closable: true,
-            icon: null,
-            title: t('Renommer'),
-            okText: t('Enregistrer'),
-            content: (
-                <form
-                    onSubmit={(event) => {
-                        event.preventDefault();
-                        void save()
-                            .then(() => modalInstance.destroy())
-                            .catch(() => {});
-                    }}
-                >
-                    <Input
-                        autoFocus
-                        size="large"
-                        defaultValue={conversation.title ?? ''}
-                        allowClear
-                        onChange={(event) => {
-                            nextTitle = event.currentTarget.value;
-                        }}
-                        placeholder={t('Nom de la conversation')}
-                    />
-                </form>
-            ),
-            onOk: save,
-        });
-    }, [conversation.id, conversation.title, modal, onRenameConversation, t]);
-
-    const confirmDelete = useCallback(() => {
-        modal.confirm({
-            title: t('Supprimer cette conversation ?'),
-            okText: t('Oui'),
-            cancelText: t('Non'),
-            onOk: () => onDeleteConversation(conversation.id),
-        });
-    }, [conversation.id, modal, onDeleteConversation, t]);
-
-    const handleExport = useCallback(async () => {
-        try {
-            const result = await onExportConversation(conversation.id);
-            if (result.status === 'success') {
-                message.success(t('PDF exporté avec succès'));
-            } else if (result.status === 'empty') {
-                message.warning(t('Cette conversation est vide.'));
-            }
-        } catch {
-            message.error(t("Erreur lors de l'export PDF"));
-        }
-    }, [conversation.id, onExportConversation, t]);
+    const { openRenameModal, confirmDelete, handleExport } = useConversationActions(
+        conversation,
+        callbacks,
+    );
 
     const menuItems = useMemo<MenuProps['items']>(
         () => [
@@ -249,13 +178,15 @@ export default memo(function ChatConversationList({
                 <Text strong style={{ fontSize: 'var(--fs-rel-xl)' }}>
                     {t('Conversations')}
                 </Text>
-                <Button
-                    size="small"
-                    type="text"
-                    icon={<PlusOutlined />}
-                    onClick={onCreateConversation}
-                    title={t('Nouveau')}
-                />
+                <Tooltip title={t('Nouvelle conversation')}>
+                    <Button
+                        size="small"
+                        type="text"
+                        icon={<PlusOutlined />}
+                        onClick={onCreateConversation}
+                        aria-label={t('Nouvelle conversation')}
+                    />
+                </Tooltip>
             </div>
 
             <div className="ai-chat__sidebar-list" ref={scrollRef} onScroll={handleScroll}>

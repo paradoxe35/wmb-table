@@ -405,6 +405,8 @@ const ChatMessageList = memo(function ChatMessageList({
         void onLoadOlderMessages();
     }, [hasMoreHistory, loading, loadingOlder, onLoadOlderMessages, scrollRef]);
 
+    const showEdgeFades = !isAtBottom;
+
     return (
         <div className="ai-chat__messages-wrapper">
             <div className="ai-chat__messages" ref={scrollRef} onScroll={handleScroll}>
@@ -422,6 +424,14 @@ const ChatMessageList = memo(function ChatMessageList({
                     )}
                 </div>
             </div>
+            <div
+                className={`ai-chat__edge-fade ai-chat__edge-fade--top ${showEdgeFades ? 'is-visible' : ''}`}
+                aria-hidden="true"
+            />
+            <div
+                className={`ai-chat__edge-fade ai-chat__edge-fade--bottom ${showEdgeFades ? 'is-visible' : ''}`}
+                aria-hidden="true"
+            />
             {loading && (
                 <div className="ai-chat__loading-overlay" aria-hidden="true">
                     <Spin indicator={<LoadingOutlined spin />} size="large" />
