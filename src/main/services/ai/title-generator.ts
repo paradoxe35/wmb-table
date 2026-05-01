@@ -45,7 +45,7 @@ export async function generateConversationTitle(
         });
 
         const title = text
-            .replace(/<think>[\s\S]*?<\/think>/gi, '')
+            .replace(/<(think|thinking|reflection)>[\s\S]*?<\/\1>/gi, '')
             .trim()
             .replace(/[."]+$/, '');
         return title.length >= 2 ? title.slice(0, 80) : null;

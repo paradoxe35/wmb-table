@@ -15,6 +15,9 @@ const NOTE_CONTENT_RULES =
     'Write only the note content itself. Do not include assistant-style remarks, ' +
     'follow-up invitations, user instructions, or meta/workflow text.';
 
+const NOTE_WMB_LINK_RULE =
+    'Always render sermon, Bible, and document references as `wmb://` markdown links when tool data exists — never as plain text or raw IDs.';
+
 export function buildNoteTools(_defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
         getNotes: {
@@ -51,7 +54,8 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
         createNote: {
             description:
                 'Create a new note. Content MUST be markdown (not HTML). ' +
-                'You can include wmb:// reference links. ' +
+                NOTE_WMB_LINK_RULE +
+                ' ' +
                 NOTE_CONTENT_RULES,
             inputSchema: z.object({
                 name: z.string().min(2).describe('note name/title'),
@@ -78,7 +82,8 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
         updateNoteContent: {
             description:
                 'Replace the content of a note. Content MUST be markdown (not HTML). ' +
-                'You can include wmb:// reference links. ' +
+                NOTE_WMB_LINK_RULE +
+                ' ' +
                 NOTE_CONTENT_RULES,
             inputSchema: z.object({
                 noteId: z.string(),
