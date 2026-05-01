@@ -1,7 +1,7 @@
 import { app, BrowserWindow, dialog } from 'electron';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import htmlToDocx from 'html-to-docx';
+import htmlToDocx from '@turbodocx/html-to-docx';
 import type { PdfExportResult } from '@shared/ipc.types';
 import { getMainWindow } from './window';
 import { slugifyFilename } from './slugify';
@@ -53,10 +53,11 @@ export async function exportHtmlToDocx({
         return { status: 'canceled' };
     }
 
-    const docxBuffer = await htmlToDocx(html, null, {
+    const docx = await htmlToDocx(html, null, {
         orientation: 'portrait',
         margins: { top: 720, bottom: 720, left: 720, right: 720 },
     });
+    const docxBuffer = Buffer.isBuffer(docx) ? docx : Buffer.from(docx as ArrayBuffer);
     await writeFile(filePath, docxBuffer);
     return { status: 'success', filePath };
 }
