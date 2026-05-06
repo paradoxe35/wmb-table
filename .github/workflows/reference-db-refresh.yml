@@ -13,8 +13,108 @@ concurrency:
     group: reference-db-refresh
     cancel-in-progress: true
 
+env:
+    ANDROID_APP_ID: com.vlqdo.little_storehouse
+    APKEEP_VERSION: '1.0.0'
+    APKEEP_ASSET: apkeep-x86_64-unknown-linux-gnu
+    APKEEP_SHA256: a23579a3ba366d25a6d69848189b983d65662f4ecf4b9e11e16510811659de4e
+    JADX_VERSION: 1.5.5
+    ISAR_ARTIFACT_NAME: reference-db-isar
+
 jobs:
+    extract-db-isar:
+        name: Extract db.isar
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/setup-java@v4
+              with:
+                  distribution: temurin
+                  java-version: '17'
+
+            - name: Download Android extraction tools
+              run: |
+                  set -euo pipefail
+
+                  mkdir -p tmp/tools
+
+                  curl --fail --location --show-error --silent \
+                    --retry 3 --retry-delay 5 \
+                    --output "tmp/tools/${APKEEP_ASSET}" \
+                    "https://github.com/EFForg/apkeep/releases/download/${APKEEP_VERSION}/${APKEEP_ASSET}"
+                  echo "${APKEEP_SHA256}  tmp/tools/${APKEEP_ASSET}" | sha256sum --check -
+                  chmod +x "tmp/tools/${APKEEP_ASSET}"
+                  ln -sf "${APKEEP_ASSET}" tmp/tools/apkeep
+
+                  curl --fail --location --show-error --silent \
+                    --retry 3 --retry-delay 5 \
+                    --output tmp/tools/jadx.zip \
+                    "https://github.com/skylot/jadx/releases/download/v${JADX_VERSION}/jadx-${JADX_VERSION}.zip"
+                  unzip -q -o tmp/tools/jadx.zip -d tmp/tools/jadx
+                  tmp/tools/jadx/bin/jadx --version
+
+            - name: Download Little Storehouse Android package
+              run: |
+                  set -euo pipefail
+
+                  rm -rf tmp/android-source
+                  mkdir -p tmp/android-source/apkeep
+
+                  tmp/tools/apkeep --app "${ANDROID_APP_ID}" tmp/android-source/apkeep
+
+                  xapk_file="tmp/android-source/apkeep/${ANDROID_APP_ID}.xapk"
+                  if [ ! -f "${xapk_file}" ]; then
+                    xapk_file="$(find tmp/android-source/apkeep -maxdepth 1 -type f -name "${ANDROID_APP_ID}*.xapk" | sort | tail -n 1)"
+                  fi
+
+                  if [ -z "${xapk_file}" ] || [ ! -f "${xapk_file}" ]; then
+                    echo "apkeep completed but no ${ANDROID_APP_ID}.xapk file was produced." >&2
+                    find tmp/android-source/apkeep -maxdepth 2 -type f -print >&2
+                    exit 1
+                  fi
+
+                  echo "XAPK_FILE=${xapk_file}" >> "${GITHUB_ENV}"
+                  ls -lh "${xapk_file}"
+
+            - name: Extract db.isar from APK resources
+              run: |
+                  set -euo pipefail
+
+                  mkdir -p tmp/android-source/xapk tmp/android-source/jadx tmp/msix-out
+                  unzip -q -o "${XAPK_FILE}" -d "tmp/android-source/xapk/${ANDROID_APP_ID}"
+
+                  base_apk="tmp/android-source/xapk/${ANDROID_APP_ID}/${ANDROID_APP_ID}.apk"
+                  if [ ! -f "${base_apk}" ]; then
+                    echo "The XAPK did not contain the expected base APK: ${base_apk}" >&2
+                    find "tmp/android-source/xapk/${ANDROID_APP_ID}" -maxdepth 2 -type f -print >&2
+                    exit 1
+                  fi
+
+                  tmp/tools/jadx/bin/jadx \
+                    --no-src \
+                    --output-dir tmp/android-source/jadx \
+                    "${base_apk}"
+
+                  isar_file="tmp/android-source/jadx/resources/assets/flutter_assets/assets/database/db.isar"
+                  if [ ! -f "${isar_file}" ]; then
+                    echo "JADX completed but db.isar was not found at ${isar_file}." >&2
+                    echo "The Android package resource layout may have changed." >&2
+                    find tmp/android-source/jadx \( -name "db.isar" -o -name "*.isar" \) -print >&2
+                    exit 1
+                  fi
+
+                  cp "${isar_file}" tmp/msix-out/db.isar
+                  ls -lh tmp/msix-out/db.isar
+
+            - name: Upload db.isar artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ env.ISAR_ARTIFACT_NAME }}
+                  path: tmp/msix-out/db.isar
+                  if-no-files-found: error
+                  retention-days: 7
+
     refresh-reference-db:
+        needs: extract-db-isar
         runs-on: ubuntu-latest
         env:
             REFRESH_BRANCH: automation/reference-db-refresh
@@ -59,25 +159,20 @@ jobs:
               working-directory: tmp/isar-to-sqlite
               run: dart analyze
 
-            - name: Download latest Isar snapshot
+            - name: Download extracted Isar snapshot
+              uses: actions/download-artifact@v4
+              with:
+                  name: ${{ env.ISAR_ARTIFACT_NAME }}
+                  path: tmp/msix-out
+
+            - name: Verify extracted Isar snapshot
               run: |
-                  set +e
-                  bash scripts/extract-msix-resources.sh tmp/msix-out
-                  extract_exit=$?
-                  set -e
-
-                  if [ "${extract_exit}" -ne 0 ]; then
-                    echo "Failed to download or extract the latest Microsoft Store package." >&2
-                    echo "The upstream Store endpoint or rg-adguard bridge may be blocked, rate-limited, or temporarily unavailable." >&2
-                    echo "You can reproduce locally with: bash scripts/extract-msix-resources.sh tmp/msix-out" >&2
-                    exit "${extract_exit}"
-                  fi
-
+                  set -euo pipefail
                   if [ ! -f tmp/msix-out/db.isar ]; then
-                    echo "Extraction completed but tmp/msix-out/db.isar was not produced." >&2
-                    echo "The package layout may have changed and the extractor script likely needs an update." >&2
+                    echo "Downloaded artifact did not contain tmp/msix-out/db.isar." >&2
                     exit 1
                   fi
+                  ls -lh tmp/msix-out/db.isar
 
             - name: Compare current SQLite against latest Isar
               id: compare
@@ -188,6 +283,7 @@ jobs:
                     echo
                     echo "- Trigger: \`${{ github.event_name }}\`"
                     echo "- Workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                    echo "- Source app: \`${ANDROID_APP_ID}\`"
                     echo "- Source Isar: \`tmp/msix-out/db.isar\`"
                     echo
                     cat .github/reference-db-refresh/latest-summary.md
