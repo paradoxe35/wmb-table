@@ -346,18 +346,28 @@ export class AiService {
             throw new Error('Conversation introuvable.');
         }
 
-        const lastMessage = aiRepo.getRecentMessages(conversation.id, 1)[0];
-        if (
-            !lastMessage ||
-            lastMessage.id !== request.lastUserMessageId ||
-            lastMessage.role !== 'user'
-        ) {
+        const messages = aiRepo.getMessages(conversation.id);
+        const userMessageIndex = messages.findIndex(
+            (message) => message.id === request.lastUserMessageId,
+        );
+        const userMessage = messages[userMessageIndex];
+        const trailingMessages = messages.slice(userMessageIndex + 1);
+        const canRetry =
+            userMessage?.role === 'user' &&
+            trailingMessages.every(
+                (message) => message.role === 'assistant' && !message.content.trim(),
+            );
+
+        if (!canRetry) {
             throw new Error(
                 'La relance est disponible uniquement pour le dernier message utilisateur.',
             );
         }
 
         this.stopGeneration(conversation.id);
+        for (const message of trailingMessages) {
+            aiRepo.deleteMessage(message.id);
+        }
 
         const assistantMessage = aiRepo.createMessage({
             conversationId: conversation.id,

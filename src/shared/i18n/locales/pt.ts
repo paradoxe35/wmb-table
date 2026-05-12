@@ -227,6 +227,8 @@ const pt: Record<string, string> = {
     'Mis à jour le': 'Atualizado em',
     'Exporté le': 'Exportado em',
     'Réponse sans texte': 'Resposta sem texto',
+    'Aller en bas': 'Ir para baixo',
+    'Une génération est en cours.': 'Há uma geração em andamento.',
     Réessayer: 'Tentar novamente',
     'Conversation introuvable.': 'Conversa não encontrada.',
     'Supprimer cette conversation ?': 'Excluir esta conversa?',

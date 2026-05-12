@@ -1567,6 +1567,16 @@ body {
     width: 100%;
 }
 
+.highlight-delete-button {
+    color: var(--ant-color-text-quaternary);
+
+    &:hover,
+    &:focus-visible {
+        color: #fff !important;
+        background-color: var(--ant-color-error) !important;
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Search results
 // ---------------------------------------------------------------------------

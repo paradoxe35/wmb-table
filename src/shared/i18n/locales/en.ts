@@ -223,6 +223,8 @@ const en: Record<string, string> = {
     'Mis à jour le': 'Updated on',
     'Exporté le': 'Exported on',
     'Réponse sans texte': 'Response without text',
+    'Aller en bas': 'Go to bottom',
+    'Une génération est en cours.': 'A generation is in progress.',
     Réessayer: 'Retry',
     'Conversation introuvable.': 'Conversation not found.',
     'Supprimer cette conversation ?': 'Delete this conversation?',

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { MenuProps } from 'antd';
 import { App as AntApp, Dropdown } from 'antd';
 import { useTranslation } from 'react-i18next';
@@ -55,6 +55,22 @@ export default function SelectableMessageContent({
         setContextMenuOpen(true);
     }, [closeContextMenu]);
 
+    const handleKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+
+        const container = contentRef.current;
+        const text = container ? getSelectedTextInContainer(container) : '';
+        if (!text) {
+            return;
+        }
+
+        event.preventDefault();
+        setSelectedText(text);
+        setContextMenuOpen(true);
+    }, []);
+
     const handleCopySelectedText = useCallback(async () => {
         if (!selectedText) {
             return;
@@ -94,7 +110,13 @@ export default function SelectableMessageContent({
                 }
             }}
         >
-            <div ref={contentRef} className={className} onContextMenu={handleContextMenu}>
+            <div
+                ref={contentRef}
+                className={className}
+                onContextMenu={handleContextMenu}
+                onKeyDown={handleKeyDown}
+                tabIndex={0}
+            >
                 {children}
             </div>
         </Dropdown>

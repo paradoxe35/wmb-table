@@ -409,12 +409,16 @@ function pruneConversationCache(
     };
 }
 
-function getLastConversationMessage(
-    messagesByConversation: MessageMap,
-    conversationId: string,
-): AiMessage | null {
-    const messages = messagesByConversation[conversationId] ?? [];
-    return messages[messages.length - 1] ?? null;
+function canRetryUserMessage(messages: AiMessage[], messageId: string): boolean {
+    const messageIndex = messages.findIndex((message) => message.id === messageId);
+    if (messageIndex === -1 || messages[messageIndex].role !== 'user') {
+        return false;
+    }
+
+    const trailingMessages = messages.slice(messageIndex + 1);
+    return trailingMessages.every(
+        (message) => message.role === 'assistant' && !message.content.trim(),
+    );
 }
 
 function resolvePersistedActiveConversationId(
@@ -964,6 +968,15 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             });
             const minimizedMessages = minimizeMessagesForRenderer(page.messages);
             set((state) => {
+                if (state.activeConversationId !== conversationId) {
+                    return {
+                        loadingConversations: removeConversationKey(
+                            state.loadingConversations,
+                            conversationId,
+                        ),
+                    };
+                }
+
                 const nextState = {
                     ...state,
                     activeConversationId: conversationId,
@@ -1101,6 +1114,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     deleteConversation: async (conversationId) => {
+        if (get().conversationRuns[conversationId]) {
+            set({ error: 'Une génération est en cours.' });
+            return;
+        }
+
         await window.api.ai.deleteConversation(conversationId);
 
         const remaining = get().conversations.filter(
@@ -1165,6 +1183,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     clearConversations: async () => {
+        if (countRuns(get().conversationRuns) > 0) {
+            set({ error: 'Une génération est en cours.' });
+            return;
+        }
+
         await window.api.ai.clearConversations();
         set({
             conversations: [],
@@ -1241,7 +1264,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }));
 
         if (shouldStartImmediately) {
-            void get().flushQueuedMessages(conversationId, { requeueOnFailure: false });
+            void get().flushQueuedMessages(conversationId);
         }
 
         return true;
@@ -1353,11 +1376,8 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     retryLastUserMessage: async (conversationId, messageId) => {
-        const lastMessage = getLastConversationMessage(
-            get().messagesByConversation,
-            conversationId,
-        );
-        if (!lastMessage || lastMessage.id !== messageId || lastMessage.role !== 'user') {
+        const messages = get().messagesByConversation[conversationId] ?? [];
+        if (!canRetryUserMessage(messages, messageId)) {
             return false;
         }
 
