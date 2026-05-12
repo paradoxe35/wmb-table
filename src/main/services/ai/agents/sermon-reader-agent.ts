@@ -89,7 +89,7 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
                         .min(1)
                         .max(50)
                         .optional()
-                        .describe('Optional page size hint for sermon pagination'),
+                        .describe('Optional page size hint for sermon pagination (min 1, max 50)'),
                     question: z
                         .string()
                         .optional()

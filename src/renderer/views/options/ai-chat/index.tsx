@@ -103,6 +103,7 @@ export default function AiChatView() {
             ) as Readonly<Record<string, true>>,
         [conversationRuns],
     );
+    const hasStreamingConversations = Object.keys(conversationRuns).length > 0;
 
     const handleSend = useCallback(() => {
         const trimmed = draft.trim();
@@ -191,6 +192,7 @@ export default function AiChatView() {
                 onExportConversation={handleExportConversation}
                 onDeleteConversation={handleDeleteConversation}
                 onClearConversations={handleClearConversations}
+                hasStreamingConversations={hasStreamingConversations}
             />
 
             <div className="ai-chat__main">

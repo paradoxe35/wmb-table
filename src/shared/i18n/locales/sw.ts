@@ -225,6 +225,8 @@ const sw: Record<string, string> = {
     'Mis à jour le': 'Imesasishwa tarehe',
     'Exporté le': 'Imehamishwa tarehe',
     'Réponse sans texte': 'Jibu lisilo na maandishi',
+    'Aller en bas': 'Nenda chini',
+    'Une génération est en cours.': 'Uundaji unaendelea.',
     Réessayer: 'Jaribu tena',
     'Conversation introuvable.': 'Mazungumzo hayajapatikana.',
     'Supprimer cette conversation ?': 'Futa mazungumzo haya?',

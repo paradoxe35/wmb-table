@@ -1,6 +1,7 @@
 import {
     type Dispatch,
     type FC,
+    type PointerEvent,
     type SetStateAction,
     useCallback,
     useEffect,
@@ -8,7 +9,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import { AnimatePresence, motion, Reorder } from 'framer-motion';
+import { AnimatePresence, motion, Reorder, useDragControls } from 'framer-motion';
 import {
     Card,
     Input,
@@ -394,9 +395,11 @@ export default function Subject() {
 function ItemFromSelectedSubject({
     item,
     confirm,
+    onDragHandlePointerDown,
 }: {
     item: SubjectDocumentItem;
     confirm: (item: SubjectDocumentItem) => void;
+    onDragHandlePointerDown: (event: PointerEvent) => void;
 }) {
     const { getSermonById } = useSermonLookup();
     const formatDate = useFormatSermonDate();
@@ -427,11 +430,13 @@ function ItemFromSelectedSubject({
             <div className="subject-ref-card">
                 <div className="subject-ref-card__header">
                     <HolderOutlined
+                        onPointerDown={onDragHandlePointerDown}
                         style={{
                             fontSize: 'var(--fs-base)',
                             cursor: 'grab',
                             opacity: 0.5,
                             flexShrink: 0,
+                            touchAction: 'none',
                         }}
                     />
                     <BibleIcons />
@@ -449,11 +454,13 @@ function ItemFromSelectedSubject({
         <div className="subject-ref-card">
             <div className="subject-ref-card__header">
                 <HolderOutlined
+                    onPointerDown={onDragHandlePointerDown}
                     style={{
                         fontSize: 'var(--fs-base)',
                         cursor: 'grab',
                         opacity: 0.5,
                         flexShrink: 0,
+                        touchAction: 'none',
                     }}
                 />
                 <BookOutlined style={{ fontSize: 'var(--fs-base)' }} />
@@ -474,6 +481,42 @@ function ItemFromSelectedSubject({
                 </div>
             )}
         </div>
+    );
+}
+
+function SubjectDocumentReorderItem({
+    item,
+    confirm,
+    persistOrder,
+}: {
+    item: SubjectDocumentItem;
+    confirm: (item: SubjectDocumentItem) => void;
+    persistOrder: () => Promise<void>;
+}) {
+    const dragControls = useDragControls();
+
+    return (
+        <Reorder.Item
+            key={item.id}
+            value={item}
+            as="div"
+            layout="position"
+            dragListener={false}
+            dragControls={dragControls}
+            transition={{
+                layout: {
+                    duration: 0.28,
+                    ease: [0.22, 1, 0.36, 1],
+                },
+            }}
+            onDragEnd={() => void persistOrder()}
+        >
+            <ItemFromSelectedSubject
+                item={item}
+                confirm={confirm}
+                onDragHandlePointerDown={(event) => dragControls.start(event)}
+            />
+        </Reorder.Item>
     );
 }
 
@@ -555,21 +598,12 @@ function ShowActiveDocuments({
                     className="subject-ref-list"
                 >
                     {documents.map((item) => (
-                        <Reorder.Item
+                        <SubjectDocumentReorderItem
                             key={item.id}
-                            value={item}
-                            as="div"
-                            layout="position"
-                            transition={{
-                                layout: {
-                                    duration: 0.28,
-                                    ease: [0.22, 1, 0.36, 1],
-                                },
-                            }}
-                            onDragEnd={() => void persistOrder()}
-                        >
-                            <ItemFromSelectedSubject item={item} confirm={confirm} />
-                        </Reorder.Item>
+                            item={item}
+                            confirm={confirm}
+                            persistOrder={persistOrder}
+                        />
                     ))}
                 </Reorder.Group>
             ) : (

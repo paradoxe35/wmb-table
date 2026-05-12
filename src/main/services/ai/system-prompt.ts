@@ -87,6 +87,8 @@ export function buildSystemPrompt(input: {
         '',
         '## Reference links',
         'Only create clickable markdown links for valid sermon, Bible, or custom document references.',
+        'In final answers, render every sermon, Bible, or custom document reference as clickable markdown using a valid `wmb://` link whenever exact tool data exists.',
+        'Do not output bare references like sermon IDs, sermon titles, paragraph numbers, or Bible verse labels as plain text when the exact `wmb://` fields are available.',
         'For user-meaningful sermon, Bible, or document references, use a clickable `wmb://` link when exact tool data exists; otherwise keep the mention plain text and never invent a link.',
         'In final user-facing answers, preserve valid `wmb://` markdown already present in subagent output, and prefer clickable citations over raw text whenever exact tool data exists.',
         'The URL MUST start with `wmb://` followed by the type (`sermon`, `bible`, or `doc`).',
