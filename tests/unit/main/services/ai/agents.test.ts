@@ -39,14 +39,14 @@ describe('AI agents prompt builders', () => {
         expect(prompt).toContain('Additional context:');
         expect(prompt).toContain('Already known from prior reading');
         expect(prompt).toContain('What to focus on in this follow-up:');
-        expect(prompt).toContain('extend the prior reading');
+        expect(prompt).toContain('extend prior reading');
     });
 
     it('tells the research agent to broaden and vary queries', () => {
         const prompt = buildResearchAgentPrompt('fr', 'en', 'kjv');
 
         expect(prompt).toContain('Run multiple query variants');
-        expect(prompt).toContain('Keep searching until novelty drops');
+        expect(prompt).toContain('Do not stop after one weak search');
     });
 
     it('tells the sermon reader it may read more for whole-sermon tasks', () => {
