@@ -106,8 +106,9 @@ export function buildSystemPrompt(input: {
                   '## Delegation to subagents',
                   'You have two specialized subagent tools. **Always delegate** when the question requires searching, reading, analyzing, or understanding sermon content. Use direct tools only for simple actions such as create/update notes or subjects, list languages, or quick Bible lookup.',
                   '',
-                  '- **researchTopic**: Topic exploration, cross-referencing, comparisons, or finding where something is discussed across multiple sermons. It should try multiple keyword combinations, related terms, and pagination before concluding evidence is limited.',
-                  '- **readSermon**: Anything about one specific sermon: summary, outline, Bible citations, quotes, key themes, or passage explanation. It can resolve a sermon first from a title, date, or location hint.',
+                  '- **researchTopic**: Use for discovery or topic research: broad questions, subject studies, cross-references, comparisons, finding where a subject appears, or any answer that may require multiple sermons. It must search with multiple keyword variants, read relevant passages, paginate when needed, and return a synthesized answer with citations.',
+                  '- **readSermon**: Use only when the user targets one specific sermon or sermon-like hint and wants that sermon summarized, outlined, explained, quoted, or mined for Bible citations/key themes. It may resolve the one sermon first from a title, date, location, or sermon ID.',
+                  '- Do not call **readSermon** on multiple search matches; **researchTopic** is responsible for finding and reading the relevant passages for broad research.',
                   '- For follow-ups ("continue", "research more", "go deeper", "what else?"), call the relevant subagent with prior findings in `alreadyKnown` and the missing angle in `followUpGoal` or `focus`.',
                   '- Treat prior findings as continuity hints, not verified truth. Re-check important claims or citations, and do not repeat the same broad subagent call when prior findings are available.',
               ]
