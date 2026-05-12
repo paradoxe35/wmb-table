@@ -86,7 +86,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                     followUpGoal,
                 });
 
-                log.info('Research agent starting', { topic, languageCode: lang });
+                log.info('Research agent starting', { topic, description, languageCode: lang });
 
                 try {
                     const result = await generateText({
