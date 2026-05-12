@@ -113,7 +113,13 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 languageCode: z.string().optional(),
                 translationId: z.number().int().optional(),
                 startParagraph: z.number().int().min(0).optional(),
-                maxParagraphs: z.number().int().min(1).max(50).optional(),
+                maxParagraphs: z
+                    .number()
+                    .int()
+                    .min(1)
+                    .max(50)
+                    .optional()
+                    .describe('Max paragraphs to return (default 15, max 50)'),
             }),
             execute: async ({
                 sermonId: rawSermonId,

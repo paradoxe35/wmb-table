@@ -237,11 +237,14 @@ function HighlightListItem({
                 okText={t('Supprimer')}
                 cancelText={t('Annuler')}
             >
-                <DeleteOutlined
+                <Button
+                    type="text"
+                    size="small"
+                    className="highlight-delete-button"
+                    icon={<DeleteOutlined />}
+                    aria-label={t('Supprimer')}
                     onClick={(e) => e.stopPropagation()}
                     style={{
-                        color: 'var(--ant-color-text-quaternary)',
-                        fontSize: 'var(--fs-sm)',
                         marginTop: 3,
                         flexShrink: 0,
                     }}

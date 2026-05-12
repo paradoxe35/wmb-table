@@ -142,6 +142,7 @@ export default memo(function ChatConversationList({
     onExportConversation,
     onDeleteConversation,
     onClearConversations,
+    hasStreamingConversations,
 }: {
     conversations: AiConversation[];
     activeConversationId: string | null;
@@ -156,6 +157,7 @@ export default memo(function ChatConversationList({
     onExportConversation: (conversationId: string) => Promise<PdfExportResult>;
     onDeleteConversation: (conversationId: string) => void;
     onClearConversations: () => void;
+    hasStreamingConversations: boolean;
 }) {
     const { t } = useTranslation();
     const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -237,6 +239,7 @@ export default memo(function ChatConversationList({
                             type="text"
                             danger
                             block
+                            disabled={hasStreamingConversations}
                             style={{ fontSize: 'var(--fs-rel-base)' }}
                         >
                             {t("Vider l'historique")}

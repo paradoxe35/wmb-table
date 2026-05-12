@@ -626,11 +626,21 @@
 }
 
 .ai-chat__retry-button.ant-btn {
-    color: color-mix(in srgb, #fff 84%, transparent);
+    color: var(--ant-color-text-secondary);
 }
 
 .ai-chat__retry-button.ant-btn:hover,
 .ai-chat__retry-button.ant-btn:focus-visible {
+    color: var(--ant-color-primary);
+    background: var(--ant-color-primary-bg);
+}
+
+.ai-chat__retry-button--user.ant-btn {
+    color: color-mix(in srgb, #fff 84%, transparent);
+}
+
+.ai-chat__retry-button--user.ant-btn:hover,
+.ai-chat__retry-button--user.ant-btn:focus-visible {
     color: #fff;
     background: color-mix(in srgb, #fff 14%, transparent);
 }
@@ -644,6 +654,8 @@
 }
 
 .ai-chat__tool-results-more {
+    border: 0;
+    background: transparent;
     font-size: 0.75em;
     color: var(--ant-color-primary);
     cursor: pointer;

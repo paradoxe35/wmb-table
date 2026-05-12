@@ -143,6 +143,58 @@ function groupToolResults(results: AiToolResult[]): GroupedToolResult[] {
     return [...map.entries()].map(([name, count]) => ({ name, count }));
 }
 
+function canRetryUserMessageAtIndex(messages: AiMessage[], index: number): boolean {
+    const message = messages[index];
+    if (!message || message.role !== 'user') {
+        return false;
+    }
+
+    const followingMessages = messages.slice(index + 1);
+    return followingMessages.every(
+        (following) => following.role === 'assistant' && !following.content.trim(),
+    );
+}
+
+function isEmptyAssistantMessage(message: AiMessage | undefined): boolean {
+    return Boolean(message && message.role === 'assistant' && !message.content.trim());
+}
+
+function findRetryableUserMessageIdForEmptyAssistant(
+    messages: AiMessage[],
+    index: number,
+): string | null {
+    if (!isEmptyAssistantMessage(messages[index])) {
+        return null;
+    }
+
+    for (let cursor = index - 1; cursor >= 0; cursor -= 1) {
+        if (messages[cursor].role !== 'user') {
+            continue;
+        }
+
+        return canRetryUserMessageAtIndex(messages, cursor) ? messages[cursor].id : null;
+    }
+
+    return null;
+}
+
+function resolveRetryUserMessageId(
+    messages: AiMessage[],
+    index: number,
+    lastMessageId: string | null,
+): string | null {
+    const message = messages[index];
+    if (!message) {
+        return null;
+    }
+
+    if (message.role === 'user') {
+        return message.id === lastMessageId ? message.id : null;
+    }
+
+    return findRetryableUserMessageIdForEmptyAssistant(messages, index);
+}
+
 function ToolResultsList({ results }: { results: AiToolResult[] }) {
     const { t } = useTranslation();
     const [expanded, setExpanded] = useState(false);
@@ -157,13 +209,17 @@ function ToolResultsList({ results }: { results: AiToolResult[] }) {
                 <ChatToolResult key={g.name} name={g.name} count={g.count} />
             ))}
             {shouldCollapse && (
-                <span className="ai-chat__tool-results-more" onClick={() => setExpanded((e) => !e)}>
+                <button
+                    type="button"
+                    className="ai-chat__tool-results-more"
+                    onClick={() => setExpanded((e) => !e)}
+                >
                     {expanded
                         ? t('Voir moins')
                         : t(hiddenCount === 1 ? '+{{count}} autre' : '+{{count}} autres', {
                               count: hiddenCount,
                           })}
-                </span>
+                </button>
             )}
         </div>
     );
@@ -173,26 +229,21 @@ const MessageBubble = memo(function MessageBubble({
     conversationId,
     message,
     isActive,
-    canRetryLastUserMessage,
+    retryUserMessageId,
 }: {
     conversationId: string | null;
     message: AiMessage;
     isActive: boolean;
-    canRetryLastUserMessage: boolean;
+    retryUserMessageId: string | null;
 }) {
     const { t } = useTranslation();
     const isUser = message.role === 'user';
+    const isEmptyAssistant = !isUser && !isActive && !message.content.trim();
     const providerLabel = useAiChatStore(selectActiveProviderLabel);
     const retryLastUserMessage = useAiChatStore((s) => s.retryLastUserMessage);
     const providerTooltip = isUser ? '' : providerLabel;
 
-    if (
-        !isUser &&
-        !isActive &&
-        !message.content.trim() &&
-        message.toolCalls.length === 0 &&
-        message.toolResults.length === 0
-    ) {
+    if (isEmptyAssistant && !retryUserMessageId) {
         return null;
     }
 
@@ -224,7 +275,7 @@ const MessageBubble = memo(function MessageBubble({
                 {!isUser && <ReasoningBlock messageId={message.id} />}
                 {isWaiting ? (
                     <Spin indicator={<LoadingOutlined spin />} size="small" />
-                ) : isUser ? (
+                ) : isEmptyAssistant ? null : isUser ? (
                     <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
                 ) : (
                     <AssistantMarkdown content={message.content} streaming={isActive} />
@@ -240,18 +291,20 @@ const MessageBubble = memo(function MessageBubble({
                     <ToolResultsList results={message.toolResults} />
                 ) : null}
 
-                {canRetryLastUserMessage && conversationId ? (
-                    <div className="ai-chat__bubble-actions ai-chat__bubble-actions--user">
+                {retryUserMessageId && conversationId ? (
+                    <div
+                        className={`ai-chat__bubble-actions ${isUser ? 'ai-chat__bubble-actions--user' : ''}`}
+                    >
                         <Tooltip title={t('Réessayer')}>
                             <Button
                                 type="text"
                                 size="small"
                                 shape="circle"
-                                className="ai-chat__retry-button"
+                                className={`ai-chat__retry-button ${isUser ? 'ai-chat__retry-button--user' : ''}`}
                                 icon={<ReloadOutlined />}
                                 aria-label={t('Réessayer')}
                                 onClick={() =>
-                                    void retryLastUserMessage(conversationId, message.id)
+                                    void retryLastUserMessage(conversationId, retryUserMessageId)
                                 }
                             />
                         </Tooltip>
@@ -287,6 +340,7 @@ const ChatMessageList = memo(function ChatMessageList({
     onLoadOlderMessages: () => Promise<void>;
     onQuickStart: (prompt: string) => void;
 }) {
+    const { t } = useTranslation();
     const mainView = useAppStore((s) => s.mainView);
     const optionView = useAppStore((s) => s.optionView);
 
@@ -369,20 +423,22 @@ const ChatMessageList = memo(function ChatMessageList({
     const lastMessageId = messages[messages.length - 1]?.id ?? null;
     const renderedMessages = useMemo(
         () =>
-            messages.map((msg) => (
-                <MessageBubble
-                    key={msg.id}
-                    conversationId={conversationId}
-                    message={msg}
-                    isActive={msg.id === activeAssistantMessageId}
-                    canRetryLastUserMessage={
-                        conversationId != null &&
-                        !sending &&
-                        msg.id === lastMessageId &&
-                        msg.role === 'user'
-                    }
-                />
-            )),
+            messages.map((msg, index) => {
+                let retryUserMessageId: string | null = null;
+                if (conversationId && !sending) {
+                    retryUserMessageId = resolveRetryUserMessageId(messages, index, lastMessageId);
+                }
+
+                return (
+                    <MessageBubble
+                        key={msg.id}
+                        conversationId={conversationId}
+                        message={msg}
+                        isActive={msg.id === activeAssistantMessageId}
+                        retryUserMessageId={retryUserMessageId}
+                    />
+                );
+            }),
         [activeAssistantMessageId, conversationId, lastMessageId, messages, sending],
     );
 
@@ -438,7 +494,12 @@ const ChatMessageList = memo(function ChatMessageList({
                 </div>
             )}
             {!isAtBottom && (
-                <button className="ai-chat__scroll-bottom" onClick={() => scrollToBottom()}>
+                <button
+                    className="ai-chat__scroll-bottom"
+                    onClick={() => scrollToBottom()}
+                    title={t('Aller en bas')}
+                    aria-label={t('Aller en bas')}
+                >
                     ↓
                 </button>
             )}

@@ -160,7 +160,7 @@ export function buildBibleTools(
                     .min(1)
                     .max(40)
                     .optional()
-                    .describe('Max results (default 20)'),
+                    .describe('Max results (default 20, max 40)'),
             }),
             execute: async ({ languageCode, abbreviation, ...rest }) => {
                 const lang = languageCode ?? defaultContentLanguage;
