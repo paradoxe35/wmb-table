@@ -54,6 +54,8 @@ export default function SermonHeader({
 }) {
     const { t } = useTranslation();
     const [paragraphModalOpen, setParagraphModalOpen] = useState(false);
+    const [audioTooltipOpen, setAudioTooltipOpen] = useState(false);
+    const [audioTooltipSuppressed, setAudioTooltipSuppressed] = useState(false);
     const updateSermonTab = useDocumentTabsStore((s) => s.updateSermonTab);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const prepareTabIdentityChange = usePrepareTabIdentityChange();
@@ -74,6 +76,9 @@ export default function SermonHeader({
 
     const handleAudioPlay = useCallback(() => {
         if (!meta.audioLink) return;
+
+        setAudioTooltipOpen(false);
+        setAudioTooltipSuppressed(true);
 
         const detail: AudioDocumentPlayRequest = {
             title: meta.title,
@@ -178,12 +183,21 @@ export default function SermonHeader({
             <DocumentHeaderTitle title={compactTitle} visible={showCompactTitle} />
             <Space size="small" className="sermon-header__side sermon-header__side--right">
                 {meta.audioLink && (
-                    <Tooltip title={isPlaying ? t('Pause audio') : t("Écouter l'audio")}>
+                    <Tooltip
+                        title={isPlaying ? t('Pause audio') : t("Écouter l'audio")}
+                        open={audioTooltipOpen}
+                        onOpenChange={(open) => {
+                            setAudioTooltipOpen(open && !audioTooltipSuppressed);
+                        }}
+                    >
                         <Button
                             type="text"
                             size="small"
                             icon={isPlaying ? <PauseCircleOutlined /> : <PlayCircleOutlined />}
                             onClick={handleAudioPlay}
+                            onMouseLeave={() => {
+                                setAudioTooltipSuppressed(false);
+                            }}
                             aria-label={isPlaying ? t('Pause audio') : t("Écouter l'audio")}
                             style={
                                 isCurrentDocument
