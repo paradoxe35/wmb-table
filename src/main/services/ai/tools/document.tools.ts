@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import type { SearchMode } from '@shared/types';
+import { buildDocWmbLink } from '@shared/wmb-link';
 import type { AiToolDefinition, CustomDocumentSearchToolResponse } from './types';
 
 const SEARCH_LIMIT_SCHEMA = z.number().int().min(1).max(20);
@@ -93,18 +94,27 @@ function resolveSearchPage(input: {
 export function buildDocumentTools(): Record<string, AiToolDefinition> {
     return {
         getCustomDocuments: {
-            description: 'List user-imported custom documents (PDF, text files, etc.).',
+            description:
+                'List user-imported custom documents (PDF, text files, etc.). Each document includes wmbUrl for markdown reference links.',
             inputSchema: z.object({}),
             execute: async () => {
                 const docs = customDocsRepo.getCustomDocuments();
                 if (docs.length === 0) return { error: 'No custom documents found.' };
-                return docs.map((d) => ({ documentId: d.id, title: d.title }));
+                return docs.map((d) => ({
+                    documentId: d.id,
+                    title: d.title,
+                    wmbUrl: buildDocWmbLink({
+                        type: 'doc',
+                        documentId: d.id,
+                        title: d.title,
+                    }),
+                }));
             },
         },
         searchCustomDocuments: {
             description:
                 'Search inside user-imported custom documents by text. ' +
-                'Returns matching documents with line snippets. ' +
+                'Returns matching documents with line snippets and wmbUrl for markdown reference links. ' +
                 'Use this before getCustomDocumentContent when you need to find where a topic appears in custom documents. ' +
                 'Mode controls precision: "exact" for phrase-like matching, "all" for all words in any order, "any" for broader exploration. ' +
                 'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one.',
@@ -128,6 +138,14 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
 
                 const response: CustomDocumentSearchToolResponse = {
                     ...result,
+                    results: result.results.map((item) => ({
+                        ...item,
+                        wmbUrl: buildDocWmbLink({
+                            type: 'doc',
+                            documentId: item.documentId,
+                            title: item.title,
+                        }),
+                    })),
                     hasMore,
                     nextCursor: hasMore
                         ? encodeCursor({
@@ -146,7 +164,8 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
         getCustomDocumentContent: {
             description:
                 'Retrieve the text content of a custom document by its id. ' +
-                'Supports pagination via startLine and maxLines to avoid loading the entire document at once.',
+                'Supports pagination via startLine and maxLines to avoid loading the entire document at once. ' +
+                'Includes wmbUrl for markdown reference links.',
             inputSchema: z.object({
                 documentId: z.string(),
                 startLine: z
@@ -175,6 +194,11 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
 
                 return {
                     ...doc,
+                    wmbUrl: buildDocWmbLink({
+                        type: 'doc',
+                        documentId: doc.id,
+                        title: doc.title,
+                    }),
                     content: slice,
                     totalLines,
                     startLine,

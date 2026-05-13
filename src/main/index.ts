@@ -5,7 +5,7 @@ import { join, resolve } from 'node:path';
 import { is } from '@electron-toolkit/utils';
 import { APP_NAME } from '@shared/constants';
 import { initializeIpc } from '@main/ipc/register';
-import { setMainWindow } from '@main/lib/window';
+import { getMainWindow, setMainWindow } from '@main/lib/window';
 import MenuBuilder from '@main/lib/menu';
 import { initializeLogger } from '@main/lib/logger';
 import { initializeUpdater } from '@main/lib/updater';
@@ -19,7 +19,7 @@ import { disposePowerSaveBlocker } from '@main/services/power-save.service';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
 import { applyNativeThemeSource, getThemeState } from '@main/lib/native-theme';
-import { THEME_BACKGROUND } from '@shared/theme';
+import { THEME_BACKGROUND, type ResolvedTheme } from '@shared/theme';
 import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
@@ -27,32 +27,78 @@ import { resolveUiLanguage } from '@shared/constants';
 // Initialize logger first
 initializeLogger();
 
-// Initialize database before IPC handlers
-initializeDatabase();
+if (!app.requestSingleInstanceLock()) {
+    app.quit();
+} else {
+    bootstrapPrimaryInstance();
+}
 
-// Set backend i18n language from DB before building menu
-const config = configRepo.getConfig();
-const uiLang = resolveUiLanguage(config?.uiLanguage, config?.contentLanguage);
-i18n.changeLanguage(uiLang);
+function bootstrapPrimaryInstance(): void {
+    // Initialize database before IPC handlers
+    initializeDatabase();
 
-const initialTheme = getThemeState();
-applyNativeThemeSource(initialTheme.resolvedTheme);
+    // Set backend i18n language from DB before building menu
+    const config = configRepo.getConfig();
+    const uiLang = resolveUiLanguage(config?.uiLanguage, config?.contentLanguage);
+    i18n.changeLanguage(uiLang);
 
-// Register custom protocol for serving cached audio files.
-// Must be called before app.whenReady().
-protocol.registerSchemesAsPrivileged([
-    {
-        scheme: 'audio-cache',
-        privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
-    },
-    {
-        scheme: 'tts-cache',
-        privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
-    },
-]);
+    const initialTheme = getThemeState();
+    applyNativeThemeSource(initialTheme.resolvedTheme);
 
-// Register all IPC handlers before window creation
-initializeIpc();
+    registerPrivilegedSchemes();
+    initializeIpc();
+
+    const createMainWindow = () => createWindow(initialTheme.resolvedTheme);
+
+    app.on('second-instance', () => focusMainWindow(createMainWindow));
+
+    app.whenReady().then(async () => {
+        setupCSP();
+        registerLocalMediaProtocols();
+
+        await initializeTantivy();
+        void refreshInstalledLanguageUpdates().catch((error) => {
+            log.warn('[language-pack] Background update check failed:', error);
+        });
+        createMainWindow();
+        tryStartSynchronizer();
+
+        app.on('activate', () => {
+            if (BrowserWindow.getAllWindows().length === 0) {
+                createMainWindow();
+            }
+        });
+    });
+
+    app.on('will-quit', () => {
+        stopSynchronizer();
+        terminateWorker();
+        disposeTtsService();
+        disposeAiService();
+        disposePowerSaveBlocker();
+        closeDatabase();
+    });
+
+    app.on('window-all-closed', () => {
+        if (process.platform !== 'darwin') {
+            app.quit();
+        }
+    });
+}
+
+function registerPrivilegedSchemes(): void {
+    // Must be called before app.whenReady().
+    protocol.registerSchemesAsPrivileged([
+        {
+            scheme: 'audio-cache',
+            privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+        },
+        {
+            scheme: 'tts-cache',
+            privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true },
+        },
+    ]);
+}
 
 function setupCSP(): void {
     if (is.dev) return;
@@ -76,7 +122,55 @@ function setupCSP(): void {
     });
 }
 
-function createWindow(): void {
+function registerLocalMediaProtocols(): void {
+    // registerFileProtocol delegates file serving to Chromium which handles
+    // range requests and seeking natively (protocol.handle has a known
+    // seeking bug: https://github.com/electron/electron/issues/38749).
+    registerLocalMediaProtocol('audio-cache', getAudioCacheDir());
+    registerLocalMediaProtocol('tts-cache', getTtsCacheDir());
+}
+
+function registerLocalMediaProtocol(scheme: 'audio-cache' | 'tts-cache', rootDir: string): void {
+    protocol.registerFileProtocol(scheme, (request, callback) => {
+        const { pathname } = new URL(request.url);
+        const relativePath = pathname
+            .split('/')
+            .filter(Boolean)
+            .map((part) => decodeURIComponent(part))
+            .join('/');
+        const filePath = resolve(rootDir, relativePath);
+
+        if (!filePath.startsWith(resolve(rootDir))) {
+            callback({ error: -10 });
+            return;
+        }
+
+        callback(filePath);
+    });
+}
+
+function focusMainWindow(createMainWindow: () => void): void {
+    const mainWindow = getMainWindow();
+
+    if (!mainWindow) {
+        if (app.isReady()) {
+            createMainWindow();
+        }
+        return;
+    }
+
+    if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+    }
+
+    if (!mainWindow.isVisible()) {
+        mainWindow.show();
+    }
+
+    mainWindow.focus();
+}
+
+function createWindow(resolvedTheme: ResolvedTheme): void {
     const mainWindow = new BrowserWindow({
         show: false,
         width: 1024,
@@ -84,7 +178,7 @@ function createWindow(): void {
         minWidth: 933,
         minHeight: 572,
         title: APP_NAME,
-        backgroundColor: THEME_BACKGROUND[initialTheme.resolvedTheme],
+        backgroundColor: THEME_BACKGROUND[resolvedTheme],
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             nodeIntegration: false,
@@ -134,61 +228,3 @@ function createWindow(): void {
         mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
     }
 }
-
-app.whenReady().then(async () => {
-    setupCSP();
-
-    const registerLocalMediaProtocol = (scheme: 'audio-cache' | 'tts-cache', rootDir: string) => {
-        protocol.registerFileProtocol(scheme, (request, callback) => {
-            const { pathname } = new URL(request.url);
-            const relativePath = pathname
-                .split('/')
-                .filter(Boolean)
-                .map((part) => decodeURIComponent(part))
-                .join('/');
-            const filePath = resolve(rootDir, relativePath);
-
-            if (!filePath.startsWith(resolve(rootDir))) {
-                callback({ error: -10 });
-                return;
-            }
-
-            callback(filePath);
-        });
-    };
-
-    // Serve cached audio files via audio-cache://file/<filename>.
-    // registerFileProtocol delegates file serving to Chromium which handles
-    // range requests and seeking natively (protocol.handle has a known
-    // seeking bug: https://github.com/electron/electron/issues/38749).
-    registerLocalMediaProtocol('audio-cache', getAudioCacheDir());
-    registerLocalMediaProtocol('tts-cache', getTtsCacheDir());
-
-    await initializeTantivy();
-    void refreshInstalledLanguageUpdates().catch((error) => {
-        log.warn('[language-pack] Background update check failed:', error);
-    });
-    createWindow();
-    tryStartSynchronizer();
-
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
-        }
-    });
-});
-
-app.on('will-quit', () => {
-    stopSynchronizer();
-    terminateWorker();
-    disposeTtsService();
-    disposeAiService();
-    disposePowerSaveBlocker();
-    closeDatabase();
-});
-
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
-});
