@@ -94,7 +94,13 @@ describe('sermon.tools', () => {
             hasMore: boolean;
             nextCursor?: string;
             totalSermons: number;
-            results: Array<{ sermonId: string; translationId: number; location?: string }>;
+            results: Array<{
+                sermonId: string;
+                translationId: number;
+                languageCode: string;
+                location?: string;
+                matches: Array<{ paragraphNumber: number; snippet: string; wmbUrl: string }>;
+            }>;
         };
 
         expect(first.totalSermons).toBe(3);
@@ -104,6 +110,11 @@ describe('sermon.tools', () => {
         expect(first.results.map((item) => item.sermonId)).toEqual(['56-0101', '56-0102']);
         expect(first.results[0].languageCode).toBe('fr');
         expect(first.results[0].location).toBe('Location 1');
+        expect(first.results[0].matches[0]).toEqual({
+            paragraphNumber: 11,
+            snippet: 'Dieu a dit...',
+            wmbUrl: 'wmb://sermon/56-0101/fr/1/11',
+        });
 
         const second = (await tools.searchContent.execute({
             cursor: first.nextCursor,
@@ -224,7 +235,7 @@ describe('sermon.tools', () => {
             resolvedTranslationId?: number;
             fallbackTranslationId?: number;
             translationWarning?: string;
-            paragraphs: Array<{ paragraphNumber: number; content: string }>;
+            paragraphs: Array<{ paragraphNumber: number; content: string; wmbUrl: string }>;
         };
 
         expect(result.meta.translationId).toBe(3);
@@ -233,6 +244,17 @@ describe('sermon.tools', () => {
         expect(result.resolvedTranslationId).toBe(3);
         expect(result.fallbackTranslationId).toBe(3);
         expect(result.translationWarning).toContain('Requested translation 9 was not found');
-        expect(result.paragraphs).toHaveLength(2);
+        expect(result.paragraphs).toEqual([
+            {
+                paragraphNumber: 0,
+                content: 'Premier paragraphe',
+                wmbUrl: 'wmb://sermon/56-0101/fr/3/0',
+            },
+            {
+                paragraphNumber: 1,
+                content: 'Deuxieme paragraphe',
+                wmbUrl: 'wmb://sermon/56-0101/fr/3/1',
+            },
+        ]);
     });
 });

@@ -3,6 +3,7 @@ import * as referenceDataService from '@main/services/reference-data.service';
 import * as tantivyService from '@main/services/tantivy.service';
 import * as searchService from '@main/services/search.service';
 import { strNormalize, simpleRegExp } from '@shared/searchable';
+import { buildSermonWmbLink } from '@shared/wmb-link';
 import type {
     AiToolDefinition,
     SermonSearchResult,
@@ -106,7 +107,7 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 'You MUST pass sermonId (and translationId if available from searchSermons results). ' +
                 'Use startParagraph and maxParagraphs to paginate through long sermons. ' +
                 'To get a general overview, read the first 15 paragraphs. ' +
-                'Each paragraph has a paragraphNumber field — always use that value when building wmb:// reference links. ' +
+                'Each paragraph includes wmbUrl for markdown reference links. ' +
                 'If the requested translation is unavailable, the response will include translationWarning and the resolved translationId.',
             inputSchema: z.object({
                 sermonId: z.string(),
@@ -191,6 +192,13 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                         .map((p) => ({
                             paragraphNumber: p.paragraphIndex,
                             content: p.content,
+                            wmbUrl: buildSermonWmbLink({
+                                type: 'sermon',
+                                sermonId: meta.sermonId,
+                                languageCode: lang,
+                                translationId: meta.translationId,
+                                paragraphIndex: p.paragraphIndex,
+                            }),
                         }));
 
                     const response: SermonContentResponse = {
@@ -226,7 +234,7 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                 'Full-text search inside sermon content. Use this when searching for specific words, ' +
                 'phrases, or quotes within the text of sermons (not titles). ' +
                 'Returns matching sermons with relevant paragraph snippets. ' +
-                'Each match has a paragraphNumber — use it for wmb:// reference links. ' +
+                'Each match includes wmbUrl for markdown reference links. ' +
                 'Mode controls precision: "exact" (default) finds words in order as a phrase, ' +
                 '"all" requires all words present in any order, "any" matches at least one word. ' +
                 'If nextCursor is returned, pass it back to continue from the next page instead of repeating page one.',
@@ -274,6 +282,13 @@ export function buildSermonTools(defaultContentLanguage: string): Record<string,
                         matches: m.snippets.slice(0, 5).map((p) => ({
                             paragraphNumber: p.paragraphIndex,
                             snippet: p.snippet,
+                            wmbUrl: buildSermonWmbLink({
+                                type: 'sermon',
+                                sermonId: m.sermonId,
+                                languageCode: page.languageCode,
+                                translationId: m.translationId,
+                                paragraphIndex: p.paragraphIndex,
+                            }),
                         })),
                         totalMatches: m.snippets.length,
                     }));

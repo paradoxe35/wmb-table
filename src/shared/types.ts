@@ -600,6 +600,7 @@ export interface CustomDocumentContent {
     title: string;
     content: string;
     languageCode: string;
+    wmbUrl?: string;
 }
 
 export interface CustomDocumentSearchMatch {
@@ -611,6 +612,7 @@ export interface CustomDocumentSearchHit {
     documentId: string;
     title: string;
     languageCode?: string;
+    wmbUrl?: string;
     matches: CustomDocumentSearchMatch[];
     totalMatches: number;
 }

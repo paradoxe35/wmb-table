@@ -35,6 +35,7 @@ export interface SermonContentMeta {
 export interface SermonParagraphResult {
     paragraphNumber: number;
     content: string;
+    wmbUrl: string;
 }
 
 export interface SermonContentResponse {
@@ -51,6 +52,7 @@ export interface SermonContentResponse {
 export interface SearchContentMatch {
     paragraphNumber: number;
     snippet: string;
+    wmbUrl: string;
 }
 
 export interface SearchContentHit {
@@ -105,6 +107,7 @@ export interface BibleVerseResult {
     testament: string;
     bibleVersionAbbreviation: string;
     content: string;
+    wmbUrl: string;
 }
 
 export interface BiblePassageToolResponse {
