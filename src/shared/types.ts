@@ -59,7 +59,7 @@ export interface AvailableTranslation {
     translationId: number;
     languageCode: string;
     title: string;
-    translationName?: string | null;
+    translationName: string | null;
 }
 
 export interface SermonListItem {
@@ -82,7 +82,7 @@ export interface SermonTranslation {
     translationId: number;
     languageCode: string;
     title: string;
-    translationName: string | null;
+    translationName?: string | null;
 }
 
 export type DocumentType = 'sermon' | 'custom' | 'bible';
