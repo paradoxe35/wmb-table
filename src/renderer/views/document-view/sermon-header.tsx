@@ -82,6 +82,7 @@ export default function SermonHeader({
             languageCode: meta.languageCode,
             sermonId: meta.sermonId,
             translationId: meta.translationId,
+            translationName: meta.translationName,
             autoplay: true,
         };
 

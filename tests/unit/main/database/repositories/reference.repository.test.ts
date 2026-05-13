@@ -102,6 +102,19 @@ describe('reference.repository', () => {
         }
     });
 
+    it('getAudioForTranslationByIds prefers matching audio title over generic audio', () => {
+        const url = refRepo.getAudioForTranslationByIds('47-0412', 'fr', 'VGR');
+        expect(url).not.toBeNull();
+        expect(url).toContain('VGR.m4a');
+    });
+
+    it('getAudioForTranslationByIds falls back to generic audio for translations without a matching audio title', () => {
+        const url = refRepo.getAudioForTranslationByIds('47-0412', 'fr', 'SHP');
+        expect(url).not.toBeNull();
+        expect(url).toContain('47-0412.mp3');
+        expect(url).not.toContain('VGR.m4a');
+    });
+
     it('getTranslationCountForLanguage returns count', () => {
         const count = refRepo.getTranslationCountForLanguage('fr');
         expect(count).toBeGreaterThan(100);
