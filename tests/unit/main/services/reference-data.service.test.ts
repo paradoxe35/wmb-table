@@ -161,6 +161,16 @@ describe('reference-data.service', () => {
                 expect(meta.audioLink).toMatch(/^https:\/\//);
             }
         });
+
+        it('French audio links are selected by translation source', { timeout: 30000 }, () => {
+            const list = refDataService.getSermonListForLanguage('fr');
+            const shp = list.find((m) => m.sermonId === '47-0412' && m.translationName === 'SHP');
+            const vgr = list.find((m) => m.sermonId === '47-0412' && m.translationName === 'VGR');
+
+            expect(shp?.audioLink).toContain('47-0412.mp3');
+            expect(shp?.audioLink).not.toContain('VGR.m4a');
+            expect(vgr?.audioLink).toContain('VGR.m4a');
+        });
     });
 
     describe('getTranslationsForSermonInLanguage', () => {
@@ -218,6 +228,25 @@ describe('reference-data.service', () => {
                 expect(t.audioLink).toMatch(/^https:\/\//);
             }
         });
+
+        it(
+            'returns translation-specific audio links for same-language translations',
+            {
+                timeout: 30000,
+            },
+            () => {
+                const sermonTranslations = refDataService.getTranslationsForSermonInLanguage(
+                    '47-0412',
+                    'fr',
+                );
+                const shp = sermonTranslations.find((m) => m.translationName === 'SHP');
+                const vgr = sermonTranslations.find((m) => m.translationName === 'VGR');
+
+                expect(shp?.audioLink).toContain('47-0412.mp3');
+                expect(shp?.audioLink).not.toContain('VGR.m4a');
+                expect(vgr?.audioLink).toContain('VGR.m4a');
+            },
+        );
 
         it('matches getSermonListForLanguage filtered result', { timeout: 30000 }, () => {
             const translations = refRepo.getTranslationsForLanguage('fr');

@@ -168,17 +168,20 @@ export function getSermonListForLanguage(langCode: string): SermonMeta[] {
     const lang = refRepo.getLanguageByCode(langCode);
     if (!lang) return [];
 
-    // Single batch query for all audio links in this language
-    const audioMap = refRepo.getAudioMapForLanguage(langCode);
-
     if (!lang.translationsSupport) {
+        const audioMap = refRepo.getAudioMapForLanguage(langCode);
         const sermons = refRepo.getAllSermons();
         return sermons.map((s) => sermonToMeta(s, langCode, audioMap.get(s.id) ?? null));
     }
 
+    const audioMap = refRepo.getAudioTitleMapForLanguage(langCode);
     const translations = refRepo.getTranslationsForLanguage(langCode);
     return translations.map((t) =>
-        translationToMeta(t, langCode, audioMap.get(t.sermon_id) ?? null),
+        translationToMeta(
+            t,
+            langCode,
+            refRepo.getAudioFromTitleMap(audioMap, t.sermon_id, t.translator_name),
+        ),
     );
 }
 
@@ -191,9 +194,8 @@ export function getSermonListDeduplicated(langCode: string): SermonListItemWithT
         return [];
     }
 
-    const audioSermonIds = refRepo.getAudioSermonIdsForLanguage(langCode);
-
     if (!lang.translationsSupport) {
+        const audioSermonIds = refRepo.getAudioSermonIdsForLanguage(langCode);
         return refRepo
             .getAllSermons()
             .map((sermon) => {
@@ -208,12 +210,17 @@ export function getSermonListDeduplicated(langCode: string): SermonListItemWithT
             .sort(compareSermonDateDesc);
     }
 
+    const audioMap = refRepo.getAudioTitleMapForLanguage(langCode);
     const grouped = new Map<string, SermonListItemWithTranslations>();
     for (const translation of refRepo.getTranslationsForLanguage(langCode)) {
         const meta = translationToListItem(
             translation,
             langCode,
-            audioSermonIds.has(translation.sermon_id),
+            refRepo.getAudioFromTitleMap(
+                audioMap,
+                translation.sermon_id,
+                translation.translator_name,
+            ) !== null,
         );
         const existing = grouped.get(meta.sermonId);
 
@@ -272,7 +279,11 @@ export function getSermonMeta(
     if (!sermonId) return null;
     const row = refRepo.getTranslationByIds(translatorId, sermonId, langCode);
     if (!row) return null;
-    return translationToMeta(row, langCode, refRepo.getAudioForSermonByIds(sermonId, langCode));
+    return translationToMeta(
+        row,
+        langCode,
+        refRepo.getAudioForTranslationByIds(sermonId, langCode, row.translator_name),
+    );
 }
 
 /**
@@ -297,10 +308,15 @@ export function getTranslationsForSermonInLanguage(
         return [];
     }
 
-    // All translations share the same sermon_id — audio URL is identical, query once
-    const audioLink = refRepo.getAudioForSermonByIds(sermonId, langCode);
+    const audioMap = refRepo.getAudioTitleMapForLanguage(langCode);
     return translations
-        .map((t) => translationToMeta(t, langCode, audioLink))
+        .map((t) =>
+            translationToMeta(
+                t,
+                langCode,
+                refRepo.getAudioFromTitleMap(audioMap, sermonId, t.translator_name),
+            ),
+        )
         .sort((left, right) => left.translationId - right.translationId);
 }
 
@@ -333,9 +349,9 @@ export function getSermonsByYear(langCode: string): Record<string, SermonMeta[]>
     }
 
     const grouped: Record<string, SermonMeta[]> = {};
-    const audioMap = refRepo.getAudioMapForLanguage(langCode);
 
     if (!lang.translationsSupport) {
+        const audioMap = refRepo.getAudioMapForLanguage(langCode);
         for (const sermon of refRepo.getAllSermons()) {
             pushGroupedByYear(
                 grouped,
@@ -343,13 +359,18 @@ export function getSermonsByYear(langCode: string): Record<string, SermonMeta[]>
             );
         }
     } else {
+        const audioMap = refRepo.getAudioTitleMapForLanguage(langCode);
         for (const translation of refRepo.getTranslationsForLanguage(langCode)) {
             pushGroupedByYear(
                 grouped,
                 translationToMeta(
                     translation,
                     langCode,
-                    audioMap.get(translation.sermon_id) ?? null,
+                    refRepo.getAudioFromTitleMap(
+                        audioMap,
+                        translation.sermon_id,
+                        translation.translator_name,
+                    ),
                 ),
             );
         }

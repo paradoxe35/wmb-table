@@ -20,13 +20,20 @@ import { AUDIO_SPEEDS } from '@renderer/utils/constants';
 function TrackInfo({
     title,
     languageLabel,
+    translationName,
     onTitleClick,
 }: {
     title: string;
     languageLabel: string | null;
+    translationName: string | null;
     onTitleClick: () => void;
 }) {
     const { t } = useTranslation();
+    const details = [
+        languageLabel ? t('Langue: {{name}}', { name: languageLabel }) : null,
+        translationName ? `${t('Traduction:')} ${translationName}` : null,
+    ].filter(Boolean);
+
     return (
         <>
             <h3
@@ -36,7 +43,7 @@ function TrackInfo({
             >
                 {title}
             </h3>
-            {languageLabel && (
+            {details.length > 0 && (
                 <div
                     style={{
                         color: 'var(--ant-color-text-secondary)',
@@ -44,7 +51,7 @@ function TrackInfo({
                         marginBottom: 16,
                     }}
                 >
-                    {t('Langue: {{name}}', { name: languageLabel })}
+                    {details.join(' · ')}
                 </div>
             )}
         </>
@@ -173,6 +180,7 @@ export default function DocumentAudioPlayer() {
     const closeModal = useAudioStore((s) => s.closeModal);
     const title = useAudioStore((s) => s.title);
     const languageLabel = useAudioStore((s) => s.languageLabel);
+    const translationName = useAudioStore((s) => s.translationName);
     const currentTime = useAudioStore((s) => s.currentTime);
     const duration = useAudioStore((s) => s.duration);
     const playbackRate = useAudioStore((s) => s.playbackRate);
@@ -210,6 +218,7 @@ export default function DocumentAudioPlayer() {
                     <TrackInfo
                         title={title}
                         languageLabel={languageLabel}
+                        translationName={translationName}
                         onTitleClick={handleTitleClick}
                     />
                     <SeekBar currentTime={currentTime} duration={duration} onSeek={controls.seek} />

@@ -59,7 +59,7 @@ export interface AvailableTranslation {
     translationId: number;
     languageCode: string;
     title: string;
-    translationName: string | null;
+    translationName?: string | null;
 }
 
 export interface SermonListItem {
@@ -570,6 +570,7 @@ export type AudioDocumentPlayRequest = {
     translationId: number | null;
     languageCode: string | null;
     languageLabel: string | null;
+    translationName: string | null;
     autoplay?: boolean;
 };
 
