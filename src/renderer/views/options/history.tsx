@@ -11,6 +11,7 @@ import {
     CalendarOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
+import dayjs from 'dayjs';
 import { type DocumentType, type HistoryData, type HistoryDataItem } from '@shared/types';
 import { useAppStore } from '@renderer/stores';
 import { useDocumentPresentation, useOpenDocumentRequest } from '@renderer/hooks';
@@ -73,6 +74,17 @@ export default function History() {
     }, [histories]);
     const availableHistoryDays = useMemo(() => {
         return new Set(histories.map((history) => history.milliseconds));
+    }, [histories]);
+    const historyDateBounds = useMemo(() => {
+        if (histories.length === 0) {
+            return null;
+        }
+
+        const timestamps = histories.map((history) => history.milliseconds);
+        return {
+            min: dayjs(Math.min(...timestamps)),
+            max: dayjs(Math.max(...timestamps)),
+        };
     }, [histories]);
 
     const loadHistories = useCallback(() => {
@@ -224,6 +236,8 @@ export default function History() {
                             className="history-date-picker"
                             disabledDate={disableUnavailableDate}
                             inputReadOnly
+                            maxDate={historyDateBounds?.max}
+                            minDate={historyDateBounds?.min}
                             onChange={handleDateChange}
                             onOpenChange={setDatePickerOpen}
                             open={datePickerOpen}
