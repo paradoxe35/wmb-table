@@ -873,6 +873,7 @@ export interface SyncFailureEvent {
     message: string;
     isAuthError: boolean;
     consecutiveFailures: number;
+    affectedTables?: string[];
     /** True when the backend has removed auth & backup status (user must re-login). */
     disconnected?: boolean;
 }

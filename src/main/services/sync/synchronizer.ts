@@ -232,7 +232,16 @@ async function runSyncCycle(): Promise<void> {
         failure = err instanceof Error ? err : new Error(String(err));
     }
 
-    // Emit success/failure before push
+    // Push only if pull/snapshot succeeded. A push failure should be visible to
+    // the UI, but it must not undo remote data already applied locally.
+    if (!failure) {
+        try {
+            await syncChangesToDrive(drive);
+        } catch (err) {
+            failure = err instanceof Error ? err : new Error(String(err));
+        }
+    }
+
     if (failure) {
         lastError = failure.message;
         log.error('Sync cycle error:', failure.message);
@@ -249,6 +258,7 @@ async function runSyncCycle(): Promise<void> {
             message: failure.message,
             isAuthError,
             consecutiveFailures: consecutiveAuthFailures,
+            affectedTables: Object.keys(affectedTables),
             disconnected: shouldDisconnect,
         });
 
@@ -270,15 +280,7 @@ async function runSyncCycle(): Promise<void> {
         pushToRenderer(PushChannels.newSynchronizedDatas, Object.keys(affectedTables));
     }
 
-    // Push only if pull succeeded — prevents pushing stale/partial data
-    // that could overwrite valid data on Drive
-    try {
-        if (!failure) {
-            await syncChangesToDrive(drive);
-        }
-    } finally {
-        isSyncRunning = false;
-    }
+    isSyncRunning = false;
 }
 
 // -----------------------------------------------------------------------
@@ -472,6 +474,7 @@ async function pushChangesToDrive(
     changes: ChangeLogRecord[],
 ): Promise<void> {
     const groups = groupChangesByRow(changes);
+    const uploadFailures: Error[] = [];
     const CONCURRENCY = 20;
     for (let i = 0; i < groups.length; i += CONCURRENCY) {
         const batch = groups.slice(i, i + CONCURRENCY);
@@ -498,10 +501,19 @@ async function pushChangesToDrive(
                         markSyncedIfNotChanged(change);
                     } catch (err) {
                         log.warn(`Failed to upload change ${change.changeId}:`, err);
+                        uploadFailures.push(
+                            err instanceof Error
+                                ? err
+                                : new Error(`Failed to upload change ${change.changeId}`),
+                        );
                     }
                 }
             }),
         );
+    }
+
+    if (uploadFailures.length > 0) {
+        throw new Error(`Failed to upload ${uploadFailures.length} local sync change(s) to Drive.`);
     }
 }
 

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type {
     AiConversation,
+    AiConversationHistoryPage,
     AiMessageHistoryPage,
     AiMessageHistoryPageRequest,
     AiMessage,
@@ -37,6 +38,7 @@ interface StoreHarness {
     getMessagesPageMock: ReturnType<
         typeof vi.fn<[AiMessageHistoryPageRequest], Promise<AiMessageHistoryPage>>
     >;
+    getConversationsPageMock: ReturnType<typeof vi.fn<[], Promise<AiConversationHistoryPage>>>;
     sendMessageMock: ReturnType<typeof vi.fn<[AiSendMessageRequest], Promise<AiSendMessageResult>>>;
 }
 
@@ -125,6 +127,18 @@ function createHistoryPage(
     };
 }
 
+function createConversationHistoryPage(
+    conversations: AiConversation[],
+    partial?: Partial<Pick<AiConversationHistoryPage, 'loadedCount' | 'totalCount' | 'hasMore'>>,
+): AiConversationHistoryPage {
+    return {
+        conversations,
+        loadedCount: partial?.loadedCount ?? conversations.length,
+        totalCount: partial?.totalCount ?? conversations.length,
+        hasMore: partial?.hasMore ?? false,
+    };
+}
+
 async function flushAsync(): Promise<void> {
     await Promise.resolve();
     await Promise.resolve();
@@ -159,6 +173,9 @@ async function createHarness(options?: {
         async (request) =>
             options?.getMessagesPageImpl?.(request) ?? createHistoryPage([], { totalCount: 0 }),
     );
+    const getConversationsPageMock = vi.fn(async () =>
+        createConversationHistoryPage([conversation]),
+    );
 
     vi.stubGlobal('window', {
         api: {
@@ -166,7 +183,7 @@ async function createHarness(options?: {
                 getSettings: vi.fn().mockResolvedValue(createSettings()),
                 getProviderCatalog: vi.fn().mockResolvedValue([]),
                 updateSettings: vi.fn(),
-                getConversations: vi.fn().mockResolvedValue([]),
+                getConversationsPage: getConversationsPageMock,
                 createConversation: vi.fn().mockResolvedValue(conversation),
                 deleteConversation: vi.fn().mockResolvedValue(undefined),
                 clearConversations: vi.fn().mockResolvedValue(undefined),
@@ -233,7 +250,7 @@ async function createHarness(options?: {
         error: null,
     });
 
-    return { store, listeners, getMessagesPageMock, sendMessageMock };
+    return { store, listeners, getMessagesPageMock, getConversationsPageMock, sendMessageMock };
 }
 
 describe('ai-chat.store queue behavior', () => {
@@ -434,6 +451,49 @@ describe('ai-chat.store queue behavior', () => {
         await store.getState().selectConversation('conv-1');
 
         expect(getMessagesPageMock).not.toHaveBeenCalled();
+    });
+
+    it('refreshAfterSync reloads the cached active conversation from the database', async () => {
+        const conversation = createConversation({
+            id: 'conv-1',
+            title: 'Synced conversation',
+            updatedAt: '2026-04-09T10:00:00.000Z',
+        });
+        const syncedMessage = createMessage({
+            id: 'synced-message',
+            conversationId: conversation.id,
+            role: 'assistant',
+            content: 'remote content',
+        });
+        const { store, getConversationsPageMock, getMessagesPageMock } = await createHarness({
+            getMessagesPageImpl: async () => createHistoryPage([syncedMessage]),
+        });
+
+        getConversationsPageMock.mockResolvedValue(createConversationHistoryPage([conversation]));
+        store.setState({
+            conversations: [createConversation({ title: 'Stale conversation' })],
+            activeConversationId: conversation.id,
+            messagesByConversation: {
+                [conversation.id]: [
+                    createMessage({
+                        id: 'stale-message',
+                        conversationId: conversation.id,
+                        role: 'assistant',
+                        content: 'stale content',
+                    }),
+                ],
+            },
+        });
+
+        await store.getState().refreshAfterSync();
+
+        expect(store.getState().conversations[0].title).toBe('Synced conversation');
+        expect(store.getState().messagesByConversation[conversation.id]).toEqual([syncedMessage]);
+        expect(getMessagesPageMock).toHaveBeenCalledWith({
+            conversationId: conversation.id,
+            limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+            loadedCount: 0,
+        });
     });
 
     it('keeps the local assistant placeholder when conversation history finishes loading after send', async () => {
