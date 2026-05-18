@@ -1,4 +1,4 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Dropdown, Spin } from 'antd';
 import type { MenuProps } from 'antd';
 import { getPendingNavigationParagraphIndex } from '@renderer/utils/pending-navigation';
@@ -12,6 +12,7 @@ import type { DocumentIdentity } from '@shared/types';
 import { DOCUMENT_CONTAINER_ID } from '@renderer/utils/events';
 import InlineSearchBar from '../components/inline-search-bar';
 import { useScrollLock } from '@renderer/hooks/use-scroll-lock';
+import { useDocumentParagraphAnchor } from './hooks/use-document-paragraph-anchor';
 
 const CONTEXT_PARAGRAPH_CLASS = 'sermon-paragraph--context-target';
 
@@ -25,38 +26,6 @@ interface DocumentBodyProps {
     contextMenuItems: MenuProps['items'];
     header: React.ReactNode;
     children: React.ReactNode;
-}
-
-interface AnchorSnapshot {
-    index: string;
-    offset: number;
-}
-
-function findAnchorSnapshot(
-    container: HTMLDivElement,
-    pendingParagraphIndex: number | null,
-): AnchorSnapshot | null {
-    const containerTop = container.getBoundingClientRect().top;
-
-    const anchorParagraph =
-        (pendingParagraphIndex != null
-            ? container.querySelector<HTMLElement>(
-                  `[data-paragraph-index="${pendingParagraphIndex}"]`,
-              )
-            : null) ??
-        container.querySelector<HTMLElement>('.tts-active-paragraph[data-paragraph-index]') ??
-        Array.from(container.querySelectorAll<HTMLElement>('[data-paragraph-index]')).find(
-            (paragraph) => paragraph.getBoundingClientRect().bottom > containerTop,
-        );
-
-    if (!anchorParagraph?.dataset.paragraphIndex) {
-        return null;
-    }
-
-    return {
-        index: anchorParagraph.dataset.paragraphIndex,
-        offset: anchorParagraph.getBoundingClientRect().top - containerTop,
-    };
 }
 
 export default function DocumentBody({
@@ -80,40 +49,19 @@ export default function DocumentBody({
 
     useScrollLock(containerRef, contextMenuOpen);
 
-    // Preserve the active TTS paragraph, or the first visible paragraph, across
-    // layout shifts such as reading mode toggles and zoom changes.
-    // When an explicit paragraph navigation is pending, anchor to that target
-    // instead of the currently playing TTS paragraph.
-    const anchorRef = useRef<AnchorSnapshot | null>(null);
     const pendingParagraphIndex = getPendingNavigationParagraphIndex(
         pendingNavigation,
         documentIdentity,
     );
 
-    useLayoutEffect(() => {
-        const el = containerRef.current;
-        const anchorSnapshot = anchorRef.current;
-
-        if (el && anchorSnapshot) {
-            const target = el.querySelector<HTMLElement>(
-                `[data-paragraph-index="${anchorSnapshot.index}"]`,
-            );
-            if (target) {
-                const containerTop = el.getBoundingClientRect().top;
-                const targetTop = target.getBoundingClientRect().top;
-                el.scrollTop += targetTop - containerTop - anchorSnapshot.offset;
-            }
-        }
-
-        anchorRef.current = null;
-
-        return () => {
-            const currentContainer = containerRef.current;
-            anchorRef.current = currentContainer
-                ? findAnchorSnapshot(currentContainer, pendingParagraphIndex)
-                : null;
-        };
-    }, [readingMode, zoom, pendingNavigation, documentIdentity, pendingParagraphIndex]);
+    useDocumentParagraphAnchor({
+        containerRef,
+        documentIdentity,
+        pendingParagraphIndex,
+        readingMode,
+        ready,
+        zoom,
+    });
 
     const clearContextParagraph = useCallback(() => {
         containerRef.current
