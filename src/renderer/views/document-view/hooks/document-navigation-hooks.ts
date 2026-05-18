@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo } from 'react';
 import { useSearchStore, useDocumentTabsStore, selectActiveTabKey } from '@renderer/stores';
 import type { DocumentIdentity } from '@shared/types';
 import { pendingNavigationMatchesDocument } from '@renderer/utils/pending-navigation';
-import { paragraphHasMatch } from '@renderer/utils/searchable';
+import { paragraphContainsAllWords } from '@renderer/utils/searchable';
 import { scrollToParagraph } from '@renderer/utils/scroll-to-paragraph';
 import type { DocumentSearchParagraphMatch, HighlightRange, SearchMode } from '@shared/types';
 import { isParagraphReference } from '@shared/types';
@@ -132,7 +132,7 @@ export function useMatchNavigation(
         if (!enabled || !search || paragraphs.length === 0) return [] as number[];
         if (search.matchedParagraphIndices) return search.matchedParagraphIndices;
         return paragraphs
-            .filter((p) => paragraphHasMatch(p.content, search.term, search.mode))
+            .filter((p) => paragraphContainsAllWords(p.content, search.term, search.mode))
             .map((p) => p.paragraphIndex);
     }, [enabled, search, paragraphs]);
 

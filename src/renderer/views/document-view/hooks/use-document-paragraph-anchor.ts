@@ -102,11 +102,8 @@ export function useDocumentParagraphAnchor({
     const anchorRef = useRef<ParagraphAnchor | null>(null);
     const initializedDocumentKeyRef = useRef<string | null>(null);
 
-    // Capture synchronously during render. At this point the DOM reflects the
-    // previously-committed layout — i.e. the layout *before* any state change
-    // in this render is applied. This is what makes restoration after a
-    // layout-shifting toggle reliable: by the time useLayoutEffect runs,
-    // the DOM has shifted, but anchorRef still holds the pre-shift offset.
+    // Sync capture during render reads the DOM before the new layout commits,
+    // so the anchor reflects the pre-shift offset by the time useLayoutEffect runs.
     const container = containerRef.current;
     if (ready && container && documentKey) {
         const captured = captureAnchor(
@@ -128,8 +125,6 @@ export function useDocumentParagraphAnchor({
             return;
         }
 
-        // First mount or document switch: skip restoration so other handlers
-        // (saved reading position, pending navigation) own initial scroll.
         if (initializedDocumentKeyRef.current !== documentKey) {
             initializedDocumentKeyRef.current = documentKey;
             return;
@@ -141,8 +136,6 @@ export function useDocumentParagraphAnchor({
 
         restoreAnchor(el, anchor);
 
-        // Second pass after the next frame catches late layout settling
-        // (font loading, transitions, etc.).
         const frameId = requestAnimationFrame(() => {
             const currentAnchor = anchorRef.current;
             if (currentAnchor && currentAnchor.documentKey === documentKey) {
