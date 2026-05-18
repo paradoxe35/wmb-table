@@ -23,6 +23,7 @@ const pt: Record<string, string> = {
     'Aucun document ajouté': 'Nenhum documento adicionado',
     'Ajouter un document': 'Adicionar um documento',
     'Choisir un document': 'Escolher um documento',
+    'Choisir une date': 'Escolher uma data',
     'Mes documents': 'Meus documentos',
     Gérer: 'Gerenciar',
     'Gérer mes documents': 'Gerenciar meus documentos',
@@ -1133,6 +1134,20 @@ const pt: Record<string, string> = {
     "La note n'a pas de contenu à exporter": 'A nota não tem conteúdo para exportar',
     "Impossible d'exporter la note en PDF": 'Não foi possível exportar a nota como PDF',
     "Impossible d'exporter la note en DOCX": 'Não foi possível exportar a nota como DOCX',
+
+    // ── Misc UI labels ──
+    'Aucun résultat pour "{{query}}"': 'Nenhum resultado para "{{query}}"',
+    'Connexion réussie': 'Conexão bem-sucedida',
+    'Échec de la connexion': 'Falha na conexão',
+    'Génération en cours': 'Geração em andamento',
+    "La version {{version}} est disponible. La mise à jour automatique n'est pas prise en charge pour votre type d'installation. Veuillez télécharger la nouvelle version depuis le site.":
+        'A versão {{version}} está disponível. A atualização automática não é compatível com o seu tipo de instalação. Baixe a nova versão pelo site.',
+    Langue: 'Idioma',
+    'Le chargement des anciens messages a échoué.': 'Falha ao carregar as mensagens antigas.',
+    'Non défini': 'Não definido',
+    'Notes et sujets': 'Notas e assuntos',
+    'Télécharger depuis le site': 'Baixar pelo site',
+
     // ── wmb:// reference modal ──
     'Référence introuvable': 'Referência não encontrada',
     'Chargement de la référence…': 'Carregando referência…',

@@ -24,6 +24,7 @@ const sw: Record<string, string> = {
     'Aucun document ajouté': 'Hakuna waraka ulioongezwa',
     'Ajouter un document': 'Ongeza waraka',
     'Choisir un document': 'Chagua waraka',
+    'Choisir une date': 'Chagua tarehe',
     'Mes documents': 'Nyaraka zangu',
     Gérer: 'Dhibiti',
     'Gérer mes documents': 'Dhibiti nyaraka zangu',
@@ -1132,6 +1133,20 @@ const sw: Record<string, string> = {
     "La note n'a pas de contenu à exporter": 'Dokezo halina maudhui ya kuhamisha',
     "Impossible d'exporter la note en PDF": 'Imeshindikana kuhamisha dokezo kama PDF',
     "Impossible d'exporter la note en DOCX": 'Imeshindikana kuhamisha dokezo kama DOCX',
+
+    // ── Misc UI labels ──
+    'Aucun résultat pour "{{query}}"': 'Hakuna matokeo ya "{{query}}"',
+    'Connexion réussie': 'Muunganisho umefanikiwa',
+    'Échec de la connexion': 'Muunganisho umeshindikana',
+    'Génération en cours': 'Uzalishaji unaendelea',
+    "La version {{version}} est disponible. La mise à jour automatique n'est pas prise en charge pour votre type d'installation. Veuillez télécharger la nouvelle version depuis le site.":
+        'Toleo {{version}} linapatikana. Sasisho la kiotomatiki halitumiki kwa aina yako ya usakinishaji. Tafadhali pakua toleo jipya kutoka kwenye tovuti.',
+    Langue: 'Lugha',
+    'Le chargement des anciens messages a échoué.': 'Imeshindikana kupakia ujumbe wa zamani.',
+    'Non défini': 'Haijawekwa',
+    'Notes et sujets': 'Vidokezo na mada',
+    'Télécharger depuis le site': 'Pakua kutoka kwenye tovuti',
+
     // ── wmb:// reference modal ──
     'Référence introuvable': 'Rejeo halijapatikana',
     'Chargement de la référence…': 'Inapakia rejeo…',

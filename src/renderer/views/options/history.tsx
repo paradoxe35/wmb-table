@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Card, Empty, Tag, Timeline, Typography } from 'antd';
+import { Button, Calendar, Card, Empty, Popover, Tag, Timeline, Tooltip, Typography } from 'antd';
 import {
     LeftOutlined,
     RightOutlined,
@@ -7,6 +7,7 @@ import {
     BookOutlined,
     FileTextOutlined,
     ClockCircleOutlined,
+    CalendarOutlined,
 } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { type DocumentType, type HistoryData, type HistoryDataItem } from '@shared/types';
@@ -15,6 +16,8 @@ import { useDocumentPresentation, useOpenDocumentRequest } from '@renderer/hooks
 import { HISTORY_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
+type CalendarComponentProps = React.ComponentProps<typeof Calendar>;
+type PickerDate = Parameters<NonNullable<CalendarComponentProps['disabledDate']>>[0];
 
 function titleCase(str: string): string {
     return str.replace(/\b\w/g, (c) => c.toUpperCase());
@@ -57,6 +60,7 @@ export default function History() {
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
+    const [calendarOpen, setCalendarOpen] = useState(false);
     const selectedHistoryIdRef = useRef<string | null>(null);
     const openHistoryItem = useHistoryItemOpen();
     const { resolveTitle } = useDocumentPresentation();
@@ -64,6 +68,12 @@ export default function History() {
         (item: HistoryDataItem) => resolveTitle(item.documentTitle, item.documentIdentity),
         [resolveTitle],
     );
+    const availableHistoryByDay = useMemo(() => {
+        return new Map(histories.map((history) => [history.milliseconds, history]));
+    }, [histories]);
+    const availableHistoryDays = useMemo(() => {
+        return new Set(histories.map((history) => history.milliseconds));
+    }, [histories]);
 
     const loadHistories = useCallback(() => {
         let cancelled = false;
@@ -136,6 +146,7 @@ export default function History() {
 
     const canGoPrev = selectedIndex < histories.length - 1;
     const canGoNext = selectedIndex > 0;
+    const selectedDate = titleCase(selectedHistory?.date ?? '');
 
     const isToday = useMemo(() => {
         if (!selectedHistory) return false;
@@ -146,6 +157,28 @@ export default function History() {
         ).getTime();
         return selectedHistory.milliseconds === todayMs;
     }, [selectedHistory]);
+    const disableUnavailableDate = useCallback(
+        (current: PickerDate) => {
+            if (!current) return true;
+            return !availableHistoryDays.has(current.startOf('day').valueOf());
+        },
+        [availableHistoryDays],
+    );
+    const handleDateSelect = useCallback(
+        (date) => {
+            if (!date || Array.isArray(date)) return;
+
+            const history = availableHistoryByDay.get(date.startOf('day').valueOf());
+            if (!history) return;
+
+            const nextIndex = histories.findIndex((item) => item.id === history.id);
+            if (nextIndex >= 0) {
+                setSelectedIndex(nextIndex);
+                setCalendarOpen(false);
+            }
+        },
+        [availableHistoryByDay, histories],
+    ) satisfies NonNullable<CalendarComponentProps['onSelect']>;
 
     if (histories.length === 0) {
         return (
@@ -166,29 +199,49 @@ export default function History() {
                 {/* Date navigator */}
                 <div className="history-date-nav">
                     <Button
+                        className="history-date-nav__button"
                         type="text"
-                        size="small"
                         icon={<LeftOutlined />}
                         disabled={!canGoPrev}
                         onClick={() => setSelectedIndex((i) => i + 1)}
                     />
                     <div className="history-date-label">
-                        <Text strong>
-                            {isToday ? t("Aujourd'hui") : titleCase(selectedHistory?.date ?? '')}
+                        <Text strong className="history-date-label__primary">
+                            {isToday ? t("Aujourd'hui") : selectedDate}
                         </Text>
-                        {isToday && (
-                            <Text type="secondary" style={{ fontSize: 'var(--fs-rel-lg)' }}>
-                                {titleCase(selectedHistory?.date ?? '')}
-                            </Text>
-                        )}
+                        {isToday && <Text type="secondary">{selectedDate}</Text>}
                     </div>
                     <Button
+                        className="history-date-nav__button"
                         type="text"
-                        size="small"
                         icon={<RightOutlined />}
                         disabled={!canGoNext}
                         onClick={() => setSelectedIndex((i) => i - 1)}
                     />
+                    <Popover
+                        arrow={false}
+                        content={
+                            <Calendar
+                                className="history-calendar"
+                                disabledDate={disableUnavailableDate}
+                                fullscreen={false}
+                                onSelect={handleDateSelect}
+                            />
+                        }
+                        onOpenChange={setCalendarOpen}
+                        open={calendarOpen}
+                        placement="bottom"
+                        trigger="click"
+                    >
+                        <Tooltip title={t('Choisir une date')}>
+                            <Button
+                                aria-label={t('Choisir une date')}
+                                className="history-date-nav__button history-calendar-button"
+                                icon={<CalendarOutlined />}
+                                type="text"
+                            />
+                        </Tooltip>
+                    </Popover>
                 </div>
 
                 {/* Timeline items */}
