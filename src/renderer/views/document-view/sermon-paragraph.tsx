@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Dropdown, message, Tooltip } from 'antd';
 import type { MenuProps } from 'antd';
@@ -46,6 +46,7 @@ function PersistentHighlight({
     reactKey: string;
 }) {
     const { t } = useTranslation();
+    const [menuOpen, setMenuOpen] = useState(false);
     const handleDelete = useCallback(async () => {
         if (!highlightId) return;
         try {
@@ -85,6 +86,9 @@ function PersistentHighlight({
     const stopPropagation = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
     }, []);
+    const handleOpenChange = useCallback((open: boolean) => {
+        setMenuOpen(open);
+    }, []);
 
     const bgColor = hexToRgba(color, 0.4);
 
@@ -101,11 +105,21 @@ function PersistentHighlight({
         </mark>
     );
 
-    const wrapped = comment ? <Tooltip title={comment}>{markEl}</Tooltip> : markEl;
+    const wrapped = comment ? (
+        <Tooltip open={menuOpen ? false : undefined} title={comment}>
+            {markEl}
+        </Tooltip>
+    ) : (
+        markEl
+    );
 
     return (
         <span key={`dd-${reactKey}`} onContextMenu={stopPropagation}>
-            <Dropdown menu={{ items: menuItems }} trigger={['contextMenu']}>
+            <Dropdown
+                menu={{ items: menuItems }}
+                onOpenChange={handleOpenChange}
+                trigger={['contextMenu']}
+            >
                 {wrapped}
             </Dropdown>
         </span>
