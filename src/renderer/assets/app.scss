@@ -921,6 +921,7 @@ body {
 }
 
 .subject-ref-card {
+    background: var(--ant-color-bg-layout, #f5f5f5);
     border: 1px solid var(--subject-ref-card-border);
     border-radius: var(--ant-border-radius, 6px);
     padding: 10px 12px;
