@@ -463,6 +463,7 @@ interface AiChatState {
     loadProviderCatalog(): Promise<void>;
     saveSettings(partial: Partial<AiSettings>): Promise<void>;
     loadConversations(): Promise<void>;
+    refreshAfterSync(): Promise<void>;
     loadOlderConversations(): Promise<void>;
     selectConversation(conversationId: string): Promise<void>;
     loadOlderMessages(conversationId: string): Promise<void>;
@@ -896,6 +897,63 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             set({
                 loadingConversationList: false,
                 error: toErrorMessage(error, 'Le chargement des conversations a échoué.'),
+            });
+        }
+    },
+
+    refreshAfterSync: async () => {
+        const previousActiveConversationId = get().activeConversationId;
+
+        try {
+            const page = await window.api.ai.getConversationsPage({
+                limit: AI_CONVERSATION_HISTORY_PAGE_SIZE,
+                loadedCount: 0,
+            });
+            const activeConversationId = resolvePersistedActiveConversationId(
+                page.conversations,
+                previousActiveConversationId,
+            );
+
+            set((state) => ({
+                conversations: page.conversations,
+                conversationList: createConversationListState(page),
+                activeConversationId,
+                ...pruneConversationCache(state, activeConversationId),
+            }));
+
+            if (!activeConversationId || get().conversationRuns[activeConversationId]) {
+                return;
+            }
+
+            const messagePage = await window.api.ai.getMessagesPage({
+                conversationId: activeConversationId,
+                limit: AI_MESSAGE_HISTORY_PAGE_SIZE,
+                loadedCount: 0,
+            });
+            const minimizedMessages = minimizeMessagesForRenderer(messagePage.messages);
+
+            set((state) => {
+                if (state.activeConversationId !== activeConversationId) {
+                    return {};
+                }
+
+                const nextState = {
+                    ...state,
+                    historyByConversation: {
+                        ...state.historyByConversation,
+                        [activeConversationId]: createConversationHistoryState(messagePage),
+                    },
+                    messagesByConversation: {
+                        ...state.messagesByConversation,
+                        [activeConversationId]: minimizedMessages,
+                    },
+                };
+
+                return pruneConversationCache(nextState, activeConversationId);
+            });
+        } catch (error) {
+            set({
+                error: toErrorMessage(error, 'Le rafraîchissement des conversations a échoué.'),
             });
         }
     },

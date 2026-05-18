@@ -17,11 +17,10 @@ export default function SyncListener() {
     const setNotes = useNotesStore((s) => s.setNotes);
     const setSyncing = useAppStore((s) => s.setSyncing);
     const aiInitialized = useAiChatStore((s) => s.initialized);
-    const loadConversations = useAiChatStore((s) => s.loadConversations);
+    const refreshAiAfterSync = useAiChatStore((s) => s.refreshAfterSync);
 
     useEffect(() => {
-        const cleanupSuccess = window.api.on.newSynchronizedDatas((tables) => {
-            setSyncing(false);
+        const refreshChangedTables = (tables: string[]) => {
             if (tables.includes('highlights')) {
                 window.dispatchEvent(new Event(HIGHLIGHT_EVENT.highlightsUpdated));
             }
@@ -42,15 +41,23 @@ export default function SyncListener() {
             }
             if (tables.includes('ai_conversations') || tables.includes('ai_messages')) {
                 if (aiInitialized) {
-                    loadConversations();
+                    void refreshAiAfterSync();
                 }
                 window.dispatchEvent(new Event(AI_DATA_EVENT.conversationsChanged));
             }
+        };
+
+        const cleanupSuccess = window.api.on.newSynchronizedDatas((tables) => {
+            setSyncing(false);
+            refreshChangedTables(tables);
             window.dispatchEvent(new Event(SYNC_EVENT.syncCompleted));
         });
 
         const cleanupFailure = window.api.on.syncFailure((event) => {
             setSyncing(false);
+            if (event.affectedTables?.length) {
+                refreshChangedTables(event.affectedTables);
+            }
             window.dispatchEvent(new Event(SYNC_EVENT.syncFailed));
 
             if (event.disconnected) {
@@ -63,18 +70,37 @@ export default function SyncListener() {
             }
         });
 
-        // Trigger immediate sync when browser comes back online
-        const onOnline = () => window.api.sync.syncNow();
+        let lastWakeSyncAt = 0;
+        const syncAfterWake = () => {
+            const now = Date.now();
+            if (now - lastWakeSyncAt < 15_000) return;
+            lastWakeSyncAt = now;
+            void window.api.sync.syncNow();
+        };
+
+        // Browser "online" is not guaranteed after system sleep. Focus and
+        // visibility changes cover the common wake/resume path.
+        const onOnline = () => syncAfterWake();
+        const onFocus = () => syncAfterWake();
+        const onVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                syncAfterWake();
+            }
+        };
         window.addEventListener('online', onOnline);
+        window.addEventListener('focus', onFocus);
+        document.addEventListener('visibilitychange', onVisibilityChange);
 
         return () => {
             cleanupSuccess();
             cleanupFailure();
             window.removeEventListener('online', onOnline);
+            window.removeEventListener('focus', onFocus);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
         };
     }, [
         aiInitialized,
-        loadConversations,
+        refreshAiAfterSync,
         setSubjects,
         setCustomDocuments,
         setNotes,

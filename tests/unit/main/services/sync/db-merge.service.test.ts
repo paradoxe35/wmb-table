@@ -8,10 +8,17 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { createTestDb } from '../../database/test-helpers';
 import { getSyncDb } from '@main/database';
 import { changeLogs } from '@main/database/sync-schema';
-import { applyChangeLog, applySnapshot } from '@main/services/sync/db-merge.service';
+import {
+    applyChangeLog,
+    applySnapshot,
+    clearCascadeRelationsCache,
+    clearLocalColumnsCache,
+} from '@main/services/sync/db-merge.service';
 import { getAllChangeLogs, setSyncing } from '@main/services/sync/change-log.service';
 import * as notesRepo from '@main/database/repositories/notes.repository';
 import * as readingPositionsRepo from '@main/database/repositories/reading-positions.repository';
+import * as subjectsRepo from '@main/database/repositories/subjects.repository';
+import * as aiRepo from '@main/database/repositories/ai.repository';
 
 function clearPendingChanges(): void {
     getSyncDb().delete(changeLogs).run();
@@ -40,6 +47,8 @@ describe('db-merge.service', () => {
     beforeEach(() => {
         createTestDb();
         setSyncing(false);
+        clearLocalColumnsCache();
+        clearCascadeRelationsCache();
     });
 
     it('applyChangeLog SAVE upserts a record into the target table', () => {
@@ -212,6 +221,67 @@ describe('db-merge.service', () => {
                 notes: [note.id],
                 notes_references: [reference.id],
                 notes_bible_references: [bibleReference.id],
+            }),
+        );
+    });
+
+    it('applyChangeLog DELETE cascades subject_items derived from foreign keys', () => {
+        const subject = subjectsRepo.create('Parent subject');
+        const item = subjectsRepo.createItem(
+            subject.id,
+            'Doc title',
+            { type: 'document', identity: 'doc-1', languageCode: 'fr' } as never,
+            'Snippet',
+        );
+        clearPendingChanges();
+
+        const affected = applyChangeLog(
+            {
+                changeId: `subjects-${subject.id}-DELETE`,
+                tableName: 'subjects',
+                rowId: subject.id,
+                operation: 'DELETE',
+                newData: JSON.stringify({ id: subject.id }),
+            },
+            { remoteTime: '2026-02-01T00:00:00.000Z' },
+        );
+
+        expect(subjectsRepo.getById(subject.id)).toBeNull();
+        expect(subjectsRepo.getItems(subject.id)).toHaveLength(0);
+        expect(affected).toEqual(
+            expect.objectContaining({
+                subjects: [subject.id],
+                subject_items: [item.id],
+            }),
+        );
+    });
+
+    it('applyChangeLog DELETE cascades ai_messages derived from foreign keys', () => {
+        const conversation = aiRepo.createConversation('fr', 'Parent conversation');
+        const message = aiRepo.createMessage({
+            conversationId: conversation.id,
+            role: 'user',
+            content: 'Hello',
+        });
+        clearPendingChanges();
+
+        const affected = applyChangeLog(
+            {
+                changeId: `ai_conversations-${conversation.id}-DELETE`,
+                tableName: 'ai_conversations',
+                rowId: conversation.id,
+                operation: 'DELETE',
+                newData: JSON.stringify({ id: conversation.id }),
+            },
+            { remoteTime: '2026-02-01T00:00:00.000Z' },
+        );
+
+        expect(aiRepo.getConversation(conversation.id)).toBeNull();
+        expect(aiRepo.getMessages(conversation.id)).toHaveLength(0);
+        expect(affected).toEqual(
+            expect.objectContaining({
+                ai_conversations: [conversation.id],
+                ai_messages: [message.id],
             }),
         );
     });

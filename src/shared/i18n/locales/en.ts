@@ -23,6 +23,7 @@ const en: Record<string, string> = {
     'Aucun document ajouté': 'No documents added',
     'Ajouter un document': 'Add a document',
     'Choisir un document': 'Choose a document',
+    'Choisir une date': 'Choose a date',
     'Mes documents': 'My documents',
     Gérer: 'Manage',
     'Gérer mes documents': 'Manage my documents',
@@ -1125,6 +1126,19 @@ const en: Record<string, string> = {
     "La note n'a pas de contenu à exporter": 'The note has no content to export',
     "Impossible d'exporter la note en PDF": 'Unable to export the note as PDF',
     "Impossible d'exporter la note en DOCX": 'Unable to export the note as DOCX',
+
+    // ── Misc UI labels ──
+    'Aucun résultat pour "{{query}}"': 'No results for "{{query}}"',
+    'Connexion réussie': 'Connection successful',
+    'Échec de la connexion': 'Connection failed',
+    'Génération en cours': 'Generation in progress',
+    "La version {{version}} est disponible. La mise à jour automatique n'est pas prise en charge pour votre type d'installation. Veuillez télécharger la nouvelle version depuis le site.":
+        'Version {{version}} is available. Automatic updates are not supported for your installation type. Please download the new version from the website.',
+    Langue: 'Language',
+    'Non défini': 'Not set',
+    'Notes et sujets': 'Notes and subjects',
+    'Télécharger depuis le site': 'Download from the website',
+
     // ── wmb:// reference modal ──
     'Référence introuvable': 'Reference not found',
     'Chargement de la référence…': 'Loading reference…',

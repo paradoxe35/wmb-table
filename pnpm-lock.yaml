@@ -88,6 +88,9 @@ importers:
             better-sqlite3:
                 specifier: ^12.9.0
                 version: 12.9.0
+            dayjs:
+                specifier: ^1.11.20
+                version: 1.11.20
             drizzle-orm:
                 specifier: ^0.45.2
                 version: 0.45.2(@opentelemetry/api@1.9.1)(@types/better-sqlite3@7.6.13)(@types/pg@8.15.6)(better-sqlite3@12.9.0)

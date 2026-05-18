@@ -33,14 +33,19 @@ function quoteColumn(name: string): string {
 /** Cache of local table columns to avoid repeated PRAGMA calls. */
 const localColumnsCache = new Map<string, Set<string>>();
 
-const CASCADE_RELATIONS: Record<string, { childTable: string; foreignKey: string }[]> = {
-    notes: [
-        { childTable: 'notes_references', foreignKey: 'note_id' },
-        { childTable: 'notes_bible_references', foreignKey: 'note_id' },
-    ],
-    subjects: [{ childTable: 'subject_items', foreignKey: 'subject_id' }],
-    ai_conversations: [{ childTable: 'ai_messages', foreignKey: 'conversation_id' }],
-};
+interface CascadeRelation {
+    childTable: string;
+    foreignKey: string;
+}
+
+interface ForeignKeyPragmaRow {
+    table: string;
+    from: string;
+    on_delete: string;
+}
+
+const cascadeRelationsCache = new Map<string, CascadeRelation[]>();
+let cascadeRelationsBuilt = false;
 
 /** Get the set of column names for a local table. */
 function getLocalColumns(tableName: string): Set<string> {
@@ -56,6 +61,48 @@ function getLocalColumns(tableName: string): Set<string> {
 /** Invalidate local columns cache (e.g. after a migration). */
 export function clearLocalColumnsCache(): void {
     localColumnsCache.clear();
+}
+
+/**
+ * Build the parent → children cascade map by introspecting foreign keys
+ * of every synced table. Only relations with ON DELETE CASCADE where the
+ * parent is also a synced table are included.
+ */
+function buildCascadeRelations(db: Database.Database): void {
+    cascadeRelationsCache.clear();
+
+    for (const childTable of SYNCED_TABLE_NAMES) {
+        if (!isValidIdentifier(childTable)) continue;
+
+        const fks = db
+            .prepare(`PRAGMA foreign_key_list("${childTable}")`)
+            .all() as ForeignKeyPragmaRow[];
+
+        for (const fk of fks) {
+            if (fk.on_delete !== 'CASCADE') continue;
+            if (!SYNCED_TABLE_NAMES.has(fk.table)) continue;
+            if (!isValidIdentifier(fk.from)) continue;
+
+            const list = cascadeRelationsCache.get(fk.table) ?? [];
+            list.push({ childTable, foreignKey: fk.from });
+            cascadeRelationsCache.set(fk.table, list);
+        }
+    }
+
+    cascadeRelationsBuilt = true;
+}
+
+function getCascadeRelations(db: Database.Database, parentTable: string): CascadeRelation[] {
+    if (!cascadeRelationsBuilt) {
+        buildCascadeRelations(db);
+    }
+    return cascadeRelationsCache.get(parentTable) ?? [];
+}
+
+/** Invalidate cascade relations cache (e.g. after a migration). */
+export function clearCascadeRelationsCache(): void {
+    cascadeRelationsCache.clear();
+    cascadeRelationsBuilt = false;
 }
 
 function mergeAffectedTables(target: AffectedTables, source: AffectedTables): void {
@@ -133,7 +180,7 @@ function deleteRowWithManualCascades(
 ): AffectedTables {
     const affectedTables: AffectedTables = {};
 
-    for (const relation of CASCADE_RELATIONS[tableName] ?? []) {
+    for (const relation of getCascadeRelations(db, tableName)) {
         const childRows = db
             .prepare(`SELECT id FROM "${relation.childTable}" WHERE "${relation.foreignKey}" = ?`)
             .all(rowId) as { id: string }[];

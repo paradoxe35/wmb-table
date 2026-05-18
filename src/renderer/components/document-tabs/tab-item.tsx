@@ -4,11 +4,11 @@ import { FileOutlined, SnippetsOutlined, SoundOutlined } from '@ant-design/icons
 import Icon from '@ant-design/icons';
 import { Dropdown } from 'antd';
 import type { MenuProps } from 'antd';
-import type { DocumentTab } from '@shared/types';
+import type { DocumentTab, SermonListItemWithTranslations } from '@shared/types';
 import { getDocumentIdentityFromTab, getDocumentIdentityKey } from '@shared/types';
 import { formatShortDate } from '@renderer/utils/sermon-utils';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import { useAudioStore } from '@renderer/stores';
+import { useAudioStore, useSermonsById } from '@renderer/stores';
 import { BibleIcons } from '../icons';
 
 const SpeakerSvg = () => (
@@ -55,19 +55,45 @@ function useTabAudioState(tab: DocumentTab) {
     return { isPlaying, isPaused, isTts };
 }
 
-function getTabLabel(tab: DocumentTab) {
+function getSermonTranslationName(
+    tab: DocumentTab,
+    sermonsById: Record<string, SermonListItemWithTranslations>,
+): string | null {
     if (tab.type !== 'sermon') {
-        return tab.title;
+        return null;
     }
 
-    return `${tab.title} - ${formatShortDate(tab.documentId)}`;
+    const sermon = sermonsById[tab.documentId];
+    const translation = sermon?.availableTranslations.find(
+        (item) =>
+            item.translationId === tab.translationId && item.languageCode === tab.languageCode,
+    );
+
+    return translation?.translationName?.trim() || null;
 }
 
-function getTabTooltip(tab: DocumentTab) {
+function getTabLabel(
+    tab: DocumentTab,
+    sermonsById: Record<string, SermonListItemWithTranslations>,
+) {
     if (tab.type !== 'sermon') {
         return tab.title;
     }
-    return `${tab.title} - ${formatShortDate(tab.documentId)}`;
+
+    const translationName = getSermonTranslationName(tab, sermonsById);
+    const translationLabel = translationName ? ` (${translationName})` : '';
+
+    return `${tab.title}${translationLabel} - ${formatShortDate(tab.documentId)}`;
+}
+
+function getTabTooltip(
+    tab: DocumentTab,
+    sermonsById: Record<string, SermonListItemWithTranslations>,
+) {
+    if (tab.type !== 'sermon') {
+        return tab.title;
+    }
+    return getTabLabel(tab, sermonsById);
 }
 
 function TabItem({
@@ -84,6 +110,9 @@ function TabItem({
     contextMenuItems: MenuProps['items'];
 }) {
     const { isPlaying, isPaused, isTts } = useTabAudioState(tab);
+    const sermonsById = useSermonsById();
+    const tabTooltip = getTabTooltip(tab, sermonsById);
+    const tabLabel = getTabLabel(tab, sermonsById);
 
     return (
         <Dropdown menu={{ items: contextMenuItems }} trigger={['contextMenu']}>
@@ -94,7 +123,7 @@ function TabItem({
                 data-active={isActive}
                 initial={false}
                 onClick={onActivate}
-                title={getTabTooltip(tab)}
+                title={tabTooltip}
                 onMouseDown={(e) => {
                     if (e.button === 1) {
                         e.preventDefault();
@@ -153,8 +182,8 @@ function TabItem({
                             getTabIcon(tab)
                         )}
                     </div>
-                    <div className="chrome-tab-title" title={getTabTooltip(tab)}>
-                        {getTabLabel(tab)}
+                    <div className="chrome-tab-title" title={tabTooltip}>
+                        {tabLabel}
                     </div>
                     <div className="chrome-tab-drag-handle" />
                     <div

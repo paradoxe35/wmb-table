@@ -126,8 +126,12 @@ export function getHighlightRanges(
     return findWordMatches(normalized, words);
 }
 
-export function paragraphHasMatch(text: string, query: string, mode: SearchMode): boolean {
-    return getHighlightRanges(text, query, mode).length > 0;
+/** True only when every tokenized query word appears (as a whole word) in the text. */
+export function paragraphContainsAllWords(text: string, query: string, mode: SearchMode): boolean {
+    const words = tokenizeQuery(query, mode);
+    if (words.length === 0) return false;
+    const normalized = strNormalizeNoLower(text);
+    return words.every((w) => buildWordRegex(w).test(normalized));
 }
 
 /**

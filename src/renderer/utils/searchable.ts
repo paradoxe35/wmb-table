@@ -6,7 +6,7 @@ export {
     matchesQuery,
     buildHighlightRegex,
     getHighlightRanges,
-    paragraphHasMatch,
+    paragraphContainsAllWords,
 } from '@shared/searchable';
 
 // DOM-specific utility (cannot live in shared)
