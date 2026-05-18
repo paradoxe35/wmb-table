@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useLayoutEffect, useMemo, useRef } from 'react';
 import type { RefObject } from 'react';
 import { getDocumentIdentityKey, type DocumentIdentity } from '@shared/types';
 import { selectCurrentTtsSegment, useTtsStore } from '@renderer/stores/tts.store';
@@ -98,66 +98,38 @@ export function useDocumentParagraphAnchor({
 
         return currentSegment.paragraphIndex;
     });
-    const latestAnchorRef = useRef<ParagraphAnchor | null>(null);
+
+    const anchorRef = useRef<ParagraphAnchor | null>(null);
     const initializedDocumentKeyRef = useRef<string | null>(null);
 
-    useLayoutEffect(() => {
-        const container = containerRef.current;
-        if (!ready || !container) {
-            latestAnchorRef.current = null;
-            return;
-        }
-
-        latestAnchorRef.current = captureAnchor(
+    // Capture synchronously during render. At this point the DOM reflects the
+    // previously-committed layout — i.e. the layout *before* any state change
+    // in this render is applied. This is what makes restoration after a
+    // layout-shifting toggle reliable: by the time useLayoutEffect runs,
+    // the DOM has shifted, but anchorRef still holds the pre-shift offset.
+    const container = containerRef.current;
+    if (ready && container && documentKey) {
+        const captured = captureAnchor(
             container,
             documentKey,
             pendingParagraphIndex,
             ttsParagraphIndex,
         );
-    }, [containerRef, documentKey, pendingParagraphIndex, ready, ttsParagraphIndex]);
-
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!ready || !container) {
-            return;
+        if (captured) {
+            anchorRef.current = captured;
         }
-
-        let frameId = 0;
-        const updateAnchor = () => {
-            frameId = 0;
-            latestAnchorRef.current = captureAnchor(
-                container,
-                documentKey,
-                pendingParagraphIndex,
-                ttsParagraphIndex,
-            );
-        };
-        const handleScroll = () => {
-            if (frameId) {
-                return;
-            }
-            frameId = requestAnimationFrame(updateAnchor);
-        };
-
-        updateAnchor();
-        container.addEventListener('scroll', handleScroll, { passive: true });
-
-        return () => {
-            if (frameId) {
-                cancelAnimationFrame(frameId);
-            }
-            container.removeEventListener('scroll', handleScroll);
-        };
-    }, [containerRef, documentKey, pendingParagraphIndex, ready, ttsParagraphIndex]);
+    }
 
     useLayoutEffect(() => {
-        const container = containerRef.current;
-        const anchor = latestAnchorRef.current;
+        const el = containerRef.current;
+        const anchor = anchorRef.current;
 
-        if (!ready || !container || !documentKey) {
+        if (!ready || !el || !documentKey) {
             return;
         }
 
+        // First mount or document switch: skip restoration so other handlers
+        // (saved reading position, pending navigation) own initial scroll.
         if (initializedDocumentKeyRef.current !== documentKey) {
             initializedDocumentKeyRef.current = documentKey;
             return;
@@ -167,10 +139,15 @@ export function useDocumentParagraphAnchor({
             return;
         }
 
-        restoreAnchor(container, anchor);
+        restoreAnchor(el, anchor);
 
+        // Second pass after the next frame catches late layout settling
+        // (font loading, transitions, etc.).
         const frameId = requestAnimationFrame(() => {
-            restoreAnchor(container, anchor);
+            const currentAnchor = anchorRef.current;
+            if (currentAnchor && currentAnchor.documentKey === documentKey) {
+                restoreAnchor(el, currentAnchor);
+            }
         });
 
         return () => cancelAnimationFrame(frameId);
