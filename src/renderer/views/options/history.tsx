@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Calendar, Card, Empty, Popover, Tag, Timeline, Tooltip, Typography } from 'antd';
+import { Button, Card, DatePicker, Empty, Tag, Timeline, Tooltip, Typography } from 'antd';
+import type { DatePickerProps } from 'antd';
 import {
     LeftOutlined,
     RightOutlined,
@@ -16,8 +17,7 @@ import { useDocumentPresentation, useOpenDocumentRequest } from '@renderer/hooks
 import { HISTORY_EVENT } from '@renderer/utils/events';
 
 const { Text } = Typography;
-type CalendarComponentProps = React.ComponentProps<typeof Calendar>;
-type PickerDate = Parameters<NonNullable<CalendarComponentProps['disabledDate']>>[0];
+type PickerDate = Parameters<NonNullable<DatePickerProps['disabledDate']>>[0];
 
 function titleCase(str: string): string {
     return str.replace(/\b\w/g, (c) => c.toUpperCase());
@@ -60,7 +60,7 @@ export default function History() {
     const [histories, setHistories] = useState<HistoryData[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [historyItems, setHistoryItems] = useState<HistoryDataItem[]>([]);
-    const [calendarOpen, setCalendarOpen] = useState(false);
+    const [datePickerOpen, setDatePickerOpen] = useState(false);
     const selectedHistoryIdRef = useRef<string | null>(null);
     const openHistoryItem = useHistoryItemOpen();
     const { resolveTitle } = useDocumentPresentation();
@@ -164,7 +164,7 @@ export default function History() {
         },
         [availableHistoryDays],
     );
-    const handleDateSelect = useCallback(
+    const handleDateChange: NonNullable<DatePickerProps['onChange']> = useCallback(
         (date) => {
             if (!date || Array.isArray(date)) return;
 
@@ -174,11 +174,11 @@ export default function History() {
             const nextIndex = histories.findIndex((item) => item.id === history.id);
             if (nextIndex >= 0) {
                 setSelectedIndex(nextIndex);
-                setCalendarOpen(false);
+                setDatePickerOpen(false);
             }
         },
         [availableHistoryByDay, histories],
-    ) satisfies NonNullable<CalendarComponentProps['onSelect']>;
+    );
 
     if (histories.length === 0) {
         return (
@@ -218,30 +218,28 @@ export default function History() {
                         disabled={!canGoNext}
                         onClick={() => setSelectedIndex((i) => i - 1)}
                     />
-                    <Popover
-                        arrow={false}
-                        content={
-                            <Calendar
-                                className="history-calendar"
-                                disabledDate={disableUnavailableDate}
-                                fullscreen={false}
-                                onSelect={handleDateSelect}
-                            />
-                        }
-                        onOpenChange={setCalendarOpen}
-                        open={calendarOpen}
-                        placement="bottom"
-                        trigger="click"
-                    >
+                    <span className="history-date-picker-anchor">
+                        <DatePicker
+                            allowClear={false}
+                            className="history-date-picker"
+                            disabledDate={disableUnavailableDate}
+                            inputReadOnly
+                            onChange={handleDateChange}
+                            onOpenChange={setDatePickerOpen}
+                            open={datePickerOpen}
+                            classNames={{ popup: { root: 'history-date-picker-popup' } }}
+                            value={null}
+                        />
                         <Tooltip title={t('Choisir une date')}>
                             <Button
                                 aria-label={t('Choisir une date')}
                                 className="history-date-nav__button history-calendar-button"
                                 icon={<CalendarOutlined />}
+                                onClick={() => setDatePickerOpen((open) => !open)}
                                 type="text"
                             />
                         </Tooltip>
-                    </Popover>
+                    </span>
                 </div>
 
                 {/* Timeline items */}

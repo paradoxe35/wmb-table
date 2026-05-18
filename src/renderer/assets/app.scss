@@ -1743,21 +1743,32 @@ body {
     flex-shrink: 0;
 }
 
-.history-calendar {
-    width: 300px;
-    flex-shrink: 0;
+.history-date-picker-anchor {
+    position: relative;
+    display: inline-flex;
+    width: 32px;
+    height: 32px;
+}
 
-    .ant-picker-calendar-header {
-        padding: 6px 4px 4px;
-    }
+.history-date-picker {
+    position: absolute;
+    inset: 0;
+    width: 32px;
+    height: 32px;
+    opacity: 0;
+    pointer-events: none;
+}
 
-    .ant-picker-panel {
-        border-top: 0;
-    }
-
-    .ant-picker-content th,
-    .ant-picker-cell {
-        font-size: var(--fs-rel-sm);
+.history-date-picker-popup {
+    .ant-picker-header-super-prev-btn,
+    .ant-picker-header-super-next-btn,
+    .ant-picker-super-prev-icon,
+    .ant-picker-super-next-icon,
+    .ant-picker-footer,
+    .ant-picker-now,
+    .ant-picker-now-btn,
+    .ant-picker-today-btn {
+        display: none !important;
     }
 }
 
