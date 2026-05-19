@@ -66,7 +66,8 @@ function unique(values: string[]): string[] {
 
 function buildBaseVariants(base: string): string[] {
     const normalizedLetterVersion = base.replace(/([a-z])(?=\d)/gi, '$1-');
-    const initial = unique([base, normalizedLetterVersion]);
+    const compactLetterVersion = base.replace(/([a-z])-(?=\d)/gi, '$1');
+    const initial = unique([base, normalizedLetterVersion, compactLetterVersion]);
     return unique(
         initial.flatMap((variant) => [
             variant,

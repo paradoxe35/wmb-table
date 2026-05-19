@@ -31,6 +31,7 @@ const OPEN_ROUTER_MODELS = [
     { id: 'openai/gpt-4.1-mini', context_length: 1_047_576 },
     { id: 'anthropic/claude-sonnet-4-6', context_length: 1_000_000 },
     { id: 'qwen/qwen3.6-plus:free', context_length: 1_000_000 },
+    { id: 'z-ai/glm4.5-air', context_length: 131_072 },
     { id: 'ibm-granite/granite-4.1-8b', context_length: 128_000 },
     { id: 'ibm-granite/granite-4.1-2b', context_length: 32_000 },
     { id: 'meta-llama/llama-3.3-70b-instruct', context_length: 128_000 },
@@ -121,6 +122,11 @@ describe('model-context-registry', () => {
         it('matches OpenRouter free-tier suffix IDs', async () => {
             setupOpenRouter();
             expect(await lookupContextWindow('qwen/qwen3.6-plus:free')).toBe(1_000_000);
+        });
+
+        it('matches compact letter/version boundary variants', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('z-ai/glm-4.5-air')).toBe(131_072);
         });
 
         it('returns context and output limits from OpenRouter', async () => {
