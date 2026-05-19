@@ -60,12 +60,31 @@ const PROVIDER_ALIASES: Record<string, string[]> = {
     openrouter: ['openrouter'],
 };
 
+function unique(values: string[]): string[] {
+    return [...new Set(values.filter(Boolean))];
+}
+
+function buildBaseVariants(base: string): string[] {
+    const normalizedLetterVersion = base.replace(/([a-z])(?=\d)/gi, '$1-');
+    const compactLetterVersion = base.replace(/([a-z])-(?=\d)/gi, '$1');
+    const initial = unique([base, normalizedLetterVersion, compactLetterVersion]);
+    return unique(
+        initial.flatMap((variant) => [
+            variant,
+            variant.replace(/\./g, '-'),
+            variant.replace(/(\d)-(?=\d)/g, '$1.'),
+        ]),
+    );
+}
+
 /**
- * Build candidate names ordered most-specific first.
+ * Build candidate names ordered most-specific first. Letter/version separator variants are
+ * included where useful, e.g. `granite4.1` also tries `granite-4.1`.
  *
- * `"qwen3.5:9b"`                            → `["qwen3.5-9b", "qwen3.5"]`
- * `"deepseek-coder-v2:16b-lite-instruct-q2_K"` → `["deepseek-coder-v2-16b-lite-instruct", "deepseek-coder-v2-16b", "deepseek-coder-v2"]`
- * `"openai/gpt-5-mini"`                     → `["gpt-5-mini"]`
+ * `"qwen3.5:9b"`                            includes `qwen3.5:9b`, `qwen-3.5:9b`, `qwen-3-5-9b`
+ * `"deepseek-coder-v2:16b-lite-instruct-q2_K"` includes `deepseek-coder-v2-16b-lite-instruct`, `deepseek-coder-v2-16b`
+ * `"granite4.1:8b"`                         includes `granite4.1-8b`, `granite-4.1-8b`
+ * `"openai/gpt-5-mini"`                     includes `gpt-5-mini`
  */
 function buildCandidates(modelId: string): string[] {
     const full = modelId.toLowerCase();
@@ -73,12 +92,14 @@ function buildCandidates(modelId: string): string[] {
     const lower = afterSlash.toLowerCase();
 
     if (!lower.includes(':')) {
-        return full === lower ? [lower] : [full, lower];
+        const lowerVariants = buildBaseVariants(lower);
+        return unique(full === lower ? lowerVariants : [full, ...lowerVariants]);
     }
 
     const [base, tag] = lower.split(':', 2);
+    const tagBaseVariants = buildBaseVariants(base);
     if (!tag || tag === 'latest') {
-        return [base];
+        return tagBaseVariants;
     }
 
     const cleanTag = tag.replace(QUANT_PATTERN, '').replace(/-$/, '');
@@ -89,16 +110,24 @@ function buildCandidates(modelId: string): string[] {
         const paramSize = paramMatch[1];
         const rest = cleanTag.slice(paramSize.length).replace(/^-/, '');
 
-        if (rest) {
-            candidates.push(`${base}-${paramSize}-${rest}`);
+        for (const baseVariant of tagBaseVariants) {
+            if (rest) {
+                candidates.push(`${baseVariant}:${paramSize}-${rest}`);
+                candidates.push(`${baseVariant}-${paramSize}-${rest}`);
+            } else {
+                candidates.push(`${baseVariant}:${paramSize}`);
+            }
+            candidates.push(`${baseVariant}-${paramSize}`);
         }
-        candidates.push(`${base}-${paramSize}`);
     } else if (cleanTag) {
-        candidates.push(`${base}-${cleanTag}`);
+        for (const baseVariant of tagBaseVariants) {
+            candidates.push(`${baseVariant}:${cleanTag}`);
+            candidates.push(`${baseVariant}-${cleanTag}`);
+        }
     }
 
-    candidates.push(base);
-    return candidates;
+    candidates.push(...tagBaseVariants);
+    return unique(candidates);
 }
 
 function buildProviderCandidates(providerId: string | undefined, modelCandidates: string[]) {
@@ -145,7 +174,7 @@ function toPositiveInt(value: unknown): number | undefined {
 
 function addModelLimits(registry: ModelLimitMap, keys: string[], limits: ModelLimits): void {
     for (const key of keys) {
-        registry[key] = limits;
+        registry[key.toLowerCase()] = limits;
     }
 }
 
@@ -227,7 +256,23 @@ function openRouterModelLimits(model: OpenRouterModel): ModelLimits | undefined 
     });
 }
 
-function findInModels(candidates: string[], models: OpenRouterModel[]): ModelLimits | undefined {
+function findInModels(
+    candidates: string[],
+    models: OpenRouterModel[],
+    allowPrefixFallback: boolean,
+): ModelLimits | undefined {
+    for (const candidate of candidates) {
+        for (const model of models) {
+            const limits = openRouterModelLimits(model);
+            if (!limits) {
+                continue;
+            }
+            if (model.id.toLowerCase() === candidate) {
+                return limits;
+            }
+        }
+    }
+
     for (const candidate of candidates) {
         for (const model of models) {
             const limits = openRouterModelLimits(model);
@@ -238,21 +283,33 @@ function findInModels(candidates: string[], models: OpenRouterModel[]): ModelLim
                 return limits;
             }
         }
+    }
 
-        for (const model of models) {
-            const limits = openRouterModelLimits(model);
-            if (!limits) {
-                continue;
-            }
-            if (isMatch(extractBaseName(model.id), candidate)) {
-                return limits;
+    if (allowPrefixFallback) {
+        for (const candidate of candidates) {
+            for (const model of models) {
+                const limits = openRouterModelLimits(model);
+                if (!limits) {
+                    continue;
+                }
+                const modelId = model.id.toLowerCase();
+                if (candidate.includes('/') && isMatch(modelId, candidate)) {
+                    return limits;
+                }
+                if (!candidate.includes('/') && isMatch(extractBaseName(model.id), candidate)) {
+                    return limits;
+                }
             }
         }
     }
     return undefined;
 }
 
-function findInRegistry(candidates: string[], registry: ModelLimitMap): ModelLimits | undefined {
+function findInRegistry(
+    candidates: string[],
+    registry: ModelLimitMap,
+    allowPrefixFallback: boolean,
+): ModelLimits | undefined {
     for (const candidate of candidates) {
         const exact = registry[candidate];
         if (exact) {
@@ -266,10 +323,17 @@ function findInRegistry(candidates: string[], registry: ModelLimitMap): ModelLim
                 return limits;
             }
         }
+    }
 
-        for (const [key, limits] of Object.entries(registry)) {
-            if (isMatch(extractBaseName(key), candidate)) {
-                return limits;
+    if (allowPrefixFallback) {
+        for (const candidate of candidates) {
+            for (const [key, limits] of Object.entries(registry)) {
+                if (candidate.includes('/') && isMatch(key.toLowerCase(), candidate)) {
+                    return limits;
+                }
+                if (!candidate.includes('/') && isMatch(extractBaseName(key), candidate)) {
+                    return limits;
+                }
             }
         }
     }
@@ -287,11 +351,12 @@ export async function lookupModelLimits(
     const modelCandidates = buildCandidates(modelId);
     const providerCandidates = buildProviderCandidates(providerId, modelCandidates);
     const candidates = [...providerCandidates, ...modelCandidates];
+    const allowPrefixFallback = modelId.includes(':');
     const matches: ModelLimits[] = [];
 
     const openRouterModels = openRouterCache.get() ?? openRouterCache.getStale();
     if (openRouterModels) {
-        const result = findInModels(candidates, openRouterModels);
+        const result = findInModels(candidates, openRouterModels, allowPrefixFallback);
         if (result) {
             matches.push(result);
         }
@@ -299,7 +364,7 @@ export async function lookupModelLimits(
 
     const modelsDevRegistry = modelsDevCache.get() ?? modelsDevCache.getStale();
     if (modelsDevRegistry) {
-        const result = findInRegistry(candidates, modelsDevRegistry);
+        const result = findInRegistry(candidates, modelsDevRegistry, allowPrefixFallback);
         if (result) {
             matches.push(result);
         }

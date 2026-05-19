@@ -232,6 +232,28 @@ describe('AiService', () => {
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
         expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
+        expect(buildAiToolsMock).toHaveBeenCalledWith(
+            'fr',
+            expect.objectContaining({ isLocal: true }),
+        );
+    });
+
+    it('disables delegation and agent tools when remote context window is unknown', async () => {
+        getModelLimitsMock.mockResolvedValue({});
+        const service = new AiService();
+
+        await service.sendMessage({} as never, {
+            conversationId: 'conv-1',
+            messages: ['hello world'],
+            generationId: 'gen-1',
+        });
+
+        const runArgs = runnerRunMock.mock.calls[0]?.[0];
+        expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
+        expect(buildAiToolsMock).toHaveBeenCalledWith(
+            'fr',
+            expect.objectContaining({ isLocal: true }),
+        );
     });
 
     it('keeps delegation instructions for larger remote context windows', async () => {

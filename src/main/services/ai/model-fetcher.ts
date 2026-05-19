@@ -4,6 +4,7 @@ import type { AiRemoteModel, AiSettings } from '@shared/ai.types';
 import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
 import {
     buildProviderModelsListCacheKey,
+    buildModelLimitCacheScope,
     cacheContextWindow,
     cacheMaxOutputTokens,
     cacheResolvedModelLimits,
@@ -182,14 +183,23 @@ function getCachedProviderModels(
     return cache.get() ?? cache.getStale() ?? undefined;
 }
 
-function applyModelLimits(target: ModelLimits, modelId: string, limits: ModelLimits | undefined) {
+function getModelLimitCacheScope(providerId: string, baseUrl?: string): string {
+    return buildModelLimitCacheScope(providerId, normalizeBaseUrl(baseUrl));
+}
+
+function applyModelLimits(
+    target: ModelLimits,
+    modelId: string,
+    limits: ModelLimits | undefined,
+    scope: string,
+) {
     if (limits?.contextWindow && limits.contextWindow > 0) {
         target.contextWindow ??= limits.contextWindow;
-        cacheContextWindow(modelId, limits.contextWindow);
+        cacheContextWindow(modelId, limits.contextWindow, scope);
     }
     if (limits?.maxOutputTokens && limits.maxOutputTokens > 0) {
         target.maxOutputTokens ??= limits.maxOutputTokens;
-        cacheMaxOutputTokens(modelId, limits.maxOutputTokens);
+        cacheMaxOutputTokens(modelId, limits.maxOutputTokens, scope);
     }
 }
 
@@ -237,7 +247,7 @@ export async function fetchProviderModels(
 
         if (models.length > 0) {
             cache.set(models);
-            cacheResolvedModelLimits(models);
+            cacheResolvedModelLimits(models, getModelLimitCacheScope(providerId, base));
         }
         return models;
     } catch (err) {
@@ -263,27 +273,26 @@ export async function getModelLimits(
         return {};
     }
 
+    const resolvedBaseUrl = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
+    const cacheScope = getModelLimitCacheScope(providerId, resolvedBaseUrl);
     const limits: ModelLimits = {
-        contextWindow: getCachedContextWindow(modelId),
-        maxOutputTokens: getCachedMaxOutputTokens(modelId),
+        contextWindow: getCachedContextWindow(modelId, cacheScope),
+        maxOutputTokens: getCachedMaxOutputTokens(modelId, cacheScope),
     };
 
     if (limits.contextWindow && limits.maxOutputTokens) {
         return limits;
     }
 
-    const cachedModels = getCachedProviderModels(
-        providerId,
-        baseUrl ?? BUILTIN_BASE_URLS[providerId],
-    );
+    const cachedModels = getCachedProviderModels(providerId, resolvedBaseUrl);
     const fromApi = cachedModels?.find((m) => m.id === modelId);
-    applyModelLimits(limits, modelId, fromApi);
+    applyModelLimits(limits, modelId, fromApi, cacheScope);
 
     if (limits.contextWindow && limits.maxOutputTokens) {
         return limits;
     }
 
-    applyModelLimits(limits, modelId, await lookupModelLimits(modelId, providerId));
+    applyModelLimits(limits, modelId, await lookupModelLimits(modelId, providerId), cacheScope);
 
     return limits;
 }
@@ -297,24 +306,23 @@ export async function getModelContextWindow(
         return undefined;
     }
 
-    const cachedContextWindow = getCachedContextWindow(modelId);
+    const resolvedBaseUrl = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
+    const cacheScope = getModelLimitCacheScope(providerId, resolvedBaseUrl);
+    const cachedContextWindow = getCachedContextWindow(modelId, cacheScope);
     if (cachedContextWindow) {
         return cachedContextWindow;
     }
 
-    const cachedModels = getCachedProviderModels(
-        providerId,
-        baseUrl ?? BUILTIN_BASE_URLS[providerId],
-    );
+    const cachedModels = getCachedProviderModels(providerId, resolvedBaseUrl);
     const fromApi = cachedModels?.find((m) => m.id === modelId)?.contextWindow;
     if (fromApi && fromApi > 0) {
-        cacheContextWindow(modelId, fromApi);
+        cacheContextWindow(modelId, fromApi, cacheScope);
         return fromApi;
     }
 
     const fromRegistry = await lookupModelLimits(modelId, providerId);
     if (fromRegistry?.contextWindow) {
-        cacheContextWindow(modelId, fromRegistry.contextWindow);
+        cacheContextWindow(modelId, fromRegistry.contextWindow, cacheScope);
     }
     return fromRegistry?.contextWindow;
 }

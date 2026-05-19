@@ -469,7 +469,8 @@ export class AiService {
         const contextWindow = modelLimits.contextWindow;
         const smallContext =
             !isLocal && contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
-        const hasAgents = !isLocal && !smallContext;
+        const unknownRemoteContext = !isLocal && contextWindow == null;
+        const hasAgents = !isLocal && !smallContext && !unknownRemoteContext;
 
         if (smallContext) {
             log.warn('Small context window detected — agents disabled', {
@@ -477,6 +478,11 @@ export class AiService {
                 modelId,
                 contextWindow,
                 minRequired: MIN_REMOTE_CONTEXT_WINDOW,
+            });
+        } else if (unknownRemoteContext) {
+            log.warn('Unknown context window — agents disabled', {
+                providerId,
+                modelId,
             });
         }
 
@@ -515,6 +521,7 @@ export class AiService {
         const controller = new AbortController();
         const localExecution =
             environment.isLocal ||
+            !environment.hasAgents ||
             (environment.contextWindow != null &&
                 environment.contextWindow < MIN_REMOTE_CONTEXT_WINDOW);
 
