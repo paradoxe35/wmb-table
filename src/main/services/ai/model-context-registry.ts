@@ -66,14 +66,21 @@ function unique(values: string[]): string[] {
 
 function buildBaseVariants(base: string): string[] {
     const normalizedLetterVersion = base.replace(/([a-z])(?=\d)/gi, '$1-');
-    return unique([base, normalizedLetterVersion]);
+    const initial = unique([base, normalizedLetterVersion]);
+    return unique(
+        initial.flatMap((variant) => [
+            variant,
+            variant.replace(/\./g, '-'),
+            variant.replace(/(\d)-(?=\d)/g, '$1.'),
+        ]),
+    );
 }
 
 /**
  * Build candidate names ordered most-specific first. Letter/version separator variants are
  * included where useful, e.g. `granite4.1` also tries `granite-4.1`.
  *
- * `"qwen3.5:9b"`                            includes `qwen3.5:9b`, `qwen-3.5:9b`, `qwen3.5-9b`, `qwen-3.5-9b`
+ * `"qwen3.5:9b"`                            includes `qwen3.5:9b`, `qwen-3.5:9b`, `qwen-3-5-9b`
  * `"deepseek-coder-v2:16b-lite-instruct-q2_K"` includes `deepseek-coder-v2-16b-lite-instruct`, `deepseek-coder-v2-16b`
  * `"granite4.1:8b"`                         includes `granite4.1-8b`, `granite-4.1-8b`
  * `"openai/gpt-5-mini"`                     includes `gpt-5-mini`
