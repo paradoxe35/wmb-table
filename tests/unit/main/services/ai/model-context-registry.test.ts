@@ -28,8 +28,11 @@ const OPEN_ROUTER_MODELS = [
         top_provider: { max_completion_tokens: 16_384 },
     },
     { id: 'openai/gpt-5', context_length: 400_000 },
+    { id: 'openai/gpt-4.1-mini', context_length: 1_047_576 },
     { id: 'anthropic/claude-sonnet-4-6', context_length: 1_000_000 },
     { id: 'qwen/qwen3.6-plus:free', context_length: 1_000_000 },
+    { id: 'ibm-granite/granite-4.1-8b', context_length: 128_000 },
+    { id: 'ibm-granite/granite-4.1-2b', context_length: 32_000 },
     { id: 'meta-llama/llama-3.3-70b-instruct', context_length: 128_000 },
     { id: 'meta-llama/llama-3.3-8b-instruct', context_length: 32_000 },
     { id: 'qwen/qwen3.5-27b', context_length: 262_144 },
@@ -136,6 +139,16 @@ describe('model-context-registry', () => {
             expect(await lookupContextWindow('qwen3.5:9b')).toBe(131_072);
         });
 
+        it('granite4.1:8b matches granite-4.1-8b with inserted family/version separator', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('granite4.1:8b')).toBe(128_000);
+        });
+
+        it('granite4.1:2b keeps the parameter size specific', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('granite4.1:2b')).toBe(32_000);
+        });
+
         it('qwen3.5:27b matches qwen3.5-27b', async () => {
             setupOpenRouter();
             expect(await lookupContextWindow('qwen3.5:27b')).toBe(262_144);
@@ -238,6 +251,11 @@ describe('model-context-registry', () => {
         it('prefers OpenRouter over models.dev when both have the model', async () => {
             setupBoth();
             expect(await lookupContextWindow('llama-3.3-70b-instruct')).toBe(128_000);
+        });
+
+        it('does not prefix-match plain model ids to sibling models', async () => {
+            setupOpenRouter();
+            expect(await lookupContextWindow('gpt-4.1')).toBeUndefined();
         });
     });
 });

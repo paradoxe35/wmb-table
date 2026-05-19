@@ -34,7 +34,7 @@ vi.mock('@main/lib/logger', () => ({
     default: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-const { fetchProviderModels, getModelContextWindow } =
+const { fetchProviderModels, getModelContextWindow, getModelLimits } =
     await import('@main/services/ai/model-fetcher');
 
 function createSettings(): AiSettings {
@@ -89,9 +89,9 @@ describe('model-fetcher', () => {
 
         expect(cacheKeys).toEqual([
             'ai-models:custom-a:https%3A%2F%2Fexample-a.test%2Fv1',
-            'ai-model-context:model-a',
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
             'ai-models:custom-a:https%3A%2F%2Fexample-b.test%2Fv1',
-            'ai-model-context:model-a',
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-b.test%2Fv1:model-a',
         ]);
     });
 
@@ -126,17 +126,20 @@ describe('model-fetcher', () => {
             },
         ]);
         expect(cacheSetCalls).toContainEqual({
-            key: 'ai-model-context:model-a',
+            key: 'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
             value: 123_456,
         });
         expect(cacheSetCalls).toContainEqual({
-            key: 'ai-model-output:model-a',
+            key: 'ai-model-output:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
             value: 4_096,
         });
     });
 
     it('checks the dedicated model context cache before the model list cache', async () => {
-        cacheData.set('ai-model-context:model-a', 123_456);
+        cacheData.set(
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
+            123_456,
+        );
 
         const contextWindow = await getModelContextWindow(
             'custom-a',
@@ -145,7 +148,9 @@ describe('model-fetcher', () => {
         );
 
         expect(contextWindow).toBe(123_456);
-        expect(cacheKeys).toEqual(['ai-model-context:model-a']);
+        expect(cacheKeys).toEqual([
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
+        ]);
     });
 
     it('persists a permanent model context cache entry from the model list cache', async () => {
@@ -161,13 +166,40 @@ describe('model-fetcher', () => {
 
         expect(contextWindow).toBe(123_456);
         expect(cacheKeys).toEqual([
-            'ai-model-context:model-a',
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
             'ai-models:custom-a:https%3A%2F%2Fexample-a.test%2Fv1',
-            'ai-model-context:model-a',
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
         ]);
         expect(cacheSetCalls).toContainEqual({
-            key: 'ai-model-context:model-a',
+            key: 'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
             value: 123_456,
         });
+    });
+
+    it('does not reuse context/output limits across custom provider baseUrls', async () => {
+        cacheData.set(
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
+            123_456,
+        );
+        cacheData.set(
+            'ai-model-output:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
+            4_096,
+        );
+        cacheData.set('ai-models:custom-a:https%3A%2F%2Fexample-b.test%2Fv1', [
+            {
+                id: 'model-a',
+                name: 'Model A',
+                contextWindow: 8_192,
+                maxOutputTokens: 1_024,
+            },
+        ]);
+
+        const limits = await getModelLimits('custom-a', 'model-a', 'https://example-b.test/v1');
+
+        expect(limits).toEqual({ contextWindow: 8_192, maxOutputTokens: 1_024 });
+        expect(cacheKeys).toContain(
+            'ai-model-context:custom-a%3Ahttps%3A%2F%2Fexample-b.test%2Fv1:model-a',
+        );
+        expect(cacheKeys).not.toContain('ai-model-context:model-a');
     });
 });
