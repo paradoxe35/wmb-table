@@ -32,6 +32,13 @@ const ChatInput = memo(function ChatInput({
     const inputRef = useRef<InputRef>(null);
     const wasSending = useRef(false);
     const newLineShortcut = t('Maj+Entrée');
+    const placeholderText = sending
+        ? t("Ajoutez un message à la file d'attente... ({{shortcut}} pour une nouvelle ligne)", {
+              shortcut: newLineShortcut,
+          })
+        : t('Posez votre question... ({{shortcut}} pour une nouvelle ligne)', {
+              shortcut: newLineShortcut,
+          });
 
     // Focus on mount and when conversation changes (new conversation or switch)
     useEffect(() => {
@@ -123,19 +130,12 @@ const ChatInput = memo(function ChatInput({
                         e.preventDefault();
                         onSend();
                     }}
-                    placeholder={
-                        sending
-                            ? t(
-                                  "Ajoutez un message à la file d'attente... ({{shortcut}} pour une nouvelle ligne)",
-                                  { shortcut: newLineShortcut },
-                              )
-                            : t('Posez votre question... ({{shortcut}} pour une nouvelle ligne)', {
-                                  shortcut: newLineShortcut,
-                              })
-                    }
+                    placeholder=""
+                    aria-label={placeholderText}
                     variant="borderless"
                     className="ai-chat__input-textarea"
                 />
+                {!draft && <span className="ai-chat__input-placeholder">{placeholderText}</span>}
                 <div className="ai-chat__input-actions">
                     {sending ? (
                         <Button

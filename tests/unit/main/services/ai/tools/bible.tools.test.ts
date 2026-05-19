@@ -117,6 +117,7 @@ describe('bible.tools', () => {
                     testament: 'N',
                     bibleVersionAbbreviation: 'lsg',
                     content: 'Car Dieu a tant aime le monde...',
+                    wmbUrl: 'wmb://bible/43N/3/16/lsg/Jean',
                 },
                 {
                     bookCode: '43N',
@@ -126,6 +127,7 @@ describe('bible.tools', () => {
                     testament: 'N',
                     bibleVersionAbbreviation: 'lsg',
                     content: 'Dieu, en effet, n a pas envoye...',
+                    wmbUrl: 'wmb://bible/43N/3/17/lsg/Jean',
                 },
             ],
         });
@@ -198,6 +200,7 @@ describe('bible.tools', () => {
                     testament: 'N',
                     bibleVersionAbbreviation: 'kjv',
                     content: 'For God so loved the world...',
+                    wmbUrl: 'wmb://bible/43N/3/16/kjv/John',
                 },
                 {
                     bookCode: '62N',
@@ -207,6 +210,7 @@ describe('bible.tools', () => {
                     testament: 'N',
                     bibleVersionAbbreviation: 'kjv',
                     content: 'God is love.',
+                    wmbUrl: 'wmb://bible/62N/4/8/kjv/1%20John',
                 },
             ],
         });

@@ -41,10 +41,13 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
         researchTopic: {
             description:
                 'Delegate a research task to a specialized subagent that searches across sermons, ' +
-                'Bible passages, and documents. Use this for broad topic exploration, cross-referencing, ' +
-                'or when the question requires reading multiple sources. For follow-ups, pass prior findings ' +
-                'in `alreadyKnown` and the new angle in `followUpGoal` so the subagent extends the research ' +
-                'instead of repeating it. Returns a structured text research report.',
+                'Bible passages, and documents. Use this for discovery or topic research: broad questions, ' +
+                'subject studies, cross-references, comparisons, finding where a subject appears, or any ' +
+                'answer that may require multiple sermons. It is responsible for finding and reading the ' +
+                'relevant passages; do not call readSermon on multiple search matches for broad research. ' +
+                'For follow-ups, pass prior findings in `alreadyKnown` and the new angle in `followUpGoal` ' +
+                'so the subagent extends the research instead of repeating it. Returns a structured text ' +
+                'research report with verified citations.',
             inputSchema: z.object({
                 topic: z.string().describe('The research topic or question to investigate'),
                 description: z
@@ -83,7 +86,7 @@ export function buildResearchAgentTool(ctx: AgentContext): Record<string, AiTool
                     followUpGoal,
                 });
 
-                log.info('Research agent starting', { topic, languageCode: lang });
+                log.info('Research agent starting', { topic, description, languageCode: lang });
 
                 try {
                     const result = await generateText({

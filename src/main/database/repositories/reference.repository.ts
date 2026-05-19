@@ -84,6 +84,16 @@ interface AudioRow {
     storage_bucket: string;
 }
 
+interface AudioTitleRow extends AudioRow {
+    sermon_id: string;
+    audio_title: string | null;
+}
+
+export interface AudioTitleMap {
+    exact: Map<string, string>;
+    generic: Map<string, string>;
+}
+
 interface CrossLangTranslationRow {
     translation_id: number;
     lang_code: string;
@@ -318,6 +328,22 @@ function buildAudioUrl(row: AudioRow): string {
     return `https://s3.eu-central-1.wasabisys.com/${row.storage_bucket}/${row.audio_path}${encodedPath}`;
 }
 
+function makeAudioTitleKey(sermonId: string, audioTitle: string): string {
+    return `${sermonId}\u0000${audioTitle}`;
+}
+
+export function getAudioFromTitleMap(
+    map: AudioTitleMap,
+    sermonId: string,
+    translatorName: string,
+): string | null {
+    return (
+        map.exact.get(makeAudioTitleKey(sermonId, translatorName)) ??
+        map.generic.get(sermonId) ??
+        null
+    );
+}
+
 export function getAudioForSermon(sermonIsarId: number, langIsarId: number): AudioRow[] {
     const stmt = getRefDb().prepare(`
         SELECT a.path, lang.audio_path, lang.storage_bucket
@@ -338,6 +364,30 @@ export function getAudioForSermonByIds(sermonId: string, langCode: string): stri
         LIMIT 1
     `);
     const row = stmt.get(sermonId, langCode) as AudioRow | undefined;
+    if (!row) return null;
+    return buildAudioUrl(row);
+}
+
+export function getAudioForTranslationByIds(
+    sermonId: string,
+    langCode: string,
+    translatorName: string,
+): string | null {
+    const stmt = getRefDb().prepare(`
+        SELECT a.path, lang.audio_path, lang.storage_bucket
+        FROM audio a
+        JOIN sermon s ON a.sermon_id = s.isar_id
+        JOIN language lang ON a.language_id = lang.isar_id
+        LEFT JOIN audio_title at ON a.title_id = at.isar_id
+        WHERE s.id = ?
+          AND lang.code = ?
+          AND (at.value = ? OR a.title_id IS NULL)
+        ORDER BY CASE WHEN at.value = ? THEN 0 ELSE 1 END, a.isar_id
+        LIMIT 1
+    `);
+    const row = stmt.get(sermonId, langCode, translatorName, translatorName) as
+        | AudioRow
+        | undefined;
     if (!row) return null;
     return buildAudioUrl(row);
 }
@@ -363,6 +413,39 @@ export function getAudioMapForLanguage(langCode: string): Map<string, string> {
         }
     }
     return map;
+}
+
+export function getAudioTitleMapForLanguage(langCode: string): AudioTitleMap {
+    const stmt = getRefDb().prepare(`
+        SELECT s.id as sermon_id,
+               at.value as audio_title,
+               a.path,
+               lang.audio_path,
+               lang.storage_bucket
+        FROM audio a
+        JOIN sermon s ON a.sermon_id = s.isar_id
+        JOIN language lang ON a.language_id = lang.isar_id
+        LEFT JOIN audio_title at ON a.title_id = at.isar_id
+        WHERE lang.code = ?
+        ORDER BY a.isar_id
+    `);
+    const rows = stmt.all(langCode) as AudioTitleRow[];
+    const exact = new Map<string, string>();
+    const generic = new Map<string, string>();
+    for (const row of rows) {
+        if (row.audio_title) {
+            const key = makeAudioTitleKey(row.sermon_id, row.audio_title);
+            if (!exact.has(key)) {
+                exact.set(key, buildAudioUrl(row));
+            }
+            continue;
+        }
+
+        if (!generic.has(row.sermon_id)) {
+            generic.set(row.sermon_id, buildAudioUrl(row));
+        }
+    }
+    return { exact, generic };
 }
 
 export function getAudioSermonIdsForLanguage(langCode: string): Set<string> {

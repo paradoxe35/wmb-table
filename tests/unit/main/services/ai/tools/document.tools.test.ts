@@ -77,6 +77,7 @@ describe('document.tools', () => {
             results: Array<{
                 documentId: string;
                 title: string;
+                wmbUrl: string;
                 matches: Array<{ lineIndex: number; snippet: string }>;
                 totalMatches: number;
             }>;
@@ -88,6 +89,7 @@ describe('document.tools', () => {
         expect(first.returned).toBe(1);
         expect(first.hasMore).toBe(true);
         expect(first.results[0].documentId).toBe('doc-1');
+        expect(first.results[0].wmbUrl).toBe('wmb://doc/doc-1/Open%20Book%20Notes');
         expect(first.results[0].totalMatches).toBe(2);
         expect(first.results[0].matches[0].lineIndex).toBe(0);
         expect(first.results[0].matches[0].snippet).toContain('open book');

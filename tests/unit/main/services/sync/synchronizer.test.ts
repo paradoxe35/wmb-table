@@ -49,6 +49,7 @@ const mockDriveState = vi.hoisted(() => ({
         createdTime: string;
     },
     uploadedChanges: [] as Array<{ changeId: string; rowId: string; operation: string }>,
+    failedUploadChangeIds: new Set<string>(),
     deletedChangeIds: [] as string[],
     savedSnapshots: [] as Buffer[],
     prunedBefore: [] as string[],
@@ -57,6 +58,7 @@ const mockDriveState = vi.hoisted(() => ({
         this.fileContents = new Map();
         this.latestSnapshot = null;
         this.uploadedChanges = [];
+        this.failedUploadChangeIds = new Set();
         this.deletedChangeIds = [];
         this.savedSnapshots = [];
         this.prunedBefore = [];
@@ -130,6 +132,10 @@ vi.mock('@main/services/sync/drive.service', () => ({
         }
 
         async uploadChangeLog(change: ChangeLogRecord) {
+            if (mockDriveState.failedUploadChangeIds.has(change.changeId)) {
+                throw new Error(`upload failed: ${change.changeId}`);
+            }
+
             mockDriveState.uploadedChanges.push({
                 changeId: change.changeId,
                 rowId: change.rowId,
@@ -651,6 +657,45 @@ describe('synchronizer', () => {
             expect.objectContaining({
                 isAuthError: false,
             }),
+        );
+    });
+
+    it('runSyncCycle reports local upload failures and leaves failed changes pending', async () => {
+        const note = notesRepo.create('Local upload failure');
+        clearPendingChanges();
+        notesRepo.updateContent(note.id, 'Pending upload');
+        mockDriveState.failedUploadChangeIds.add(`notes-${note.id}-SAVE`);
+        mockDriveState.latestSnapshot = {
+            id: 'existing-latest',
+            name: 'snapshot_recent.db.gz',
+            isSnapshot: true,
+            createdTime: new Date().toISOString(),
+        };
+
+        const { GoogleDriveService } = await import('@main/services/sync/drive.service');
+        const { __testing, getSyncStatus } = await import('@main/services/sync/synchronizer');
+        const { pushToRenderer } = await import('@main/lib/push');
+
+        __testing.resetRuntimeState();
+        __testing.setDriveService(new GoogleDriveService({} as never));
+
+        await __testing.runSyncCycle();
+
+        expect(mockDriveState.uploadedChanges).toHaveLength(0);
+        expect(getSyncStatus().error).toContain('Failed to upload 1 local sync change');
+        expect(getUnsyncedChanges().map((change) => change.changeId)).toContain(
+            `notes-${note.id}-SAVE`,
+        );
+        expect(pushToRenderer).toHaveBeenCalledWith(
+            PushChannels.syncFailure,
+            expect.objectContaining({
+                message: expect.stringContaining('Failed to upload 1 local sync change'),
+                isAuthError: false,
+            }),
+        );
+        expect(pushToRenderer).not.toHaveBeenCalledWith(
+            PushChannels.newSynchronizedDatas,
+            expect.any(Array),
         );
     });
 

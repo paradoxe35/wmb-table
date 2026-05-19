@@ -231,7 +231,7 @@ describe('AiService', () => {
         });
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
-        expect(runArgs.systemPrompt).not.toContain('## Delegation to subagents');
+        expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
         expect(buildAiToolsMock).toHaveBeenCalledWith(
             'fr',
             expect.objectContaining({ isLocal: true }),
@@ -249,7 +249,7 @@ describe('AiService', () => {
         });
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
-        expect(runArgs.systemPrompt).not.toContain('## Delegation to subagents');
+        expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
         expect(buildAiToolsMock).toHaveBeenCalledWith(
             'fr',
             expect.objectContaining({ isLocal: true }),
@@ -267,7 +267,10 @@ describe('AiService', () => {
         });
 
         const runArgs = runnerRunMock.mock.calls[0]?.[0];
-        expect(runArgs.systemPrompt).toContain('## Delegation to subagents');
+        expect(runArgs.systemPrompt).toContain('## Tool routing priority');
+        expect(runArgs.systemPrompt).toContain(
+            'When subagents are available, use them as the primary path for sermon-content research.',
+        );
     });
 
     it('uses the Bible version resolved for the content language fallback, not only the active DB state', async () => {

@@ -20,33 +20,29 @@ function isSameAudioDocument(
     },
     next: AudioDocumentPlayDetail,
 ): boolean {
-    if (current.audioLink && current.audioLink === next.audioLink) {
-        return true;
+    if (current.sermonId && next.sermonId) {
+        if (current.sermonId !== next.sermonId) {
+            return false;
+        }
+
+        if (current.translationId == null || next.translationId == null) {
+            return current.languageCode == null || next.languageCode == null
+                ? true
+                : current.languageCode === next.languageCode;
+        }
+
+        if (current.translationId !== next.translationId) {
+            return false;
+        }
+
+        if (current.languageCode == null || next.languageCode == null) {
+            return true;
+        }
+
+        return current.languageCode === next.languageCode;
     }
 
-    if (!current.sermonId || !next.sermonId) {
-        return false;
-    }
-
-    if (current.sermonId !== next.sermonId) {
-        return false;
-    }
-
-    if (current.translationId == null || next.translationId == null) {
-        return current.languageCode == null || next.languageCode == null
-            ? true
-            : current.languageCode === next.languageCode;
-    }
-
-    if (current.translationId !== next.translationId) {
-        return false;
-    }
-
-    if (current.languageCode == null || next.languageCode == null) {
-        return true;
-    }
-
-    return current.languageCode === next.languageCode;
+    return Boolean(current.audioLink && current.audioLink === next.audioLink);
 }
 
 export default function MiniPlayerBar() {
@@ -63,6 +59,7 @@ export default function MiniPlayerBar() {
     const sermonId = useAudioStore((s) => s.sermonId);
     const translationId = useAudioStore((s) => s.translationId);
     const languageCode = useAudioStore((s) => s.languageCode);
+    const translationName = useAudioStore((s) => s.translationName);
 
     const setCurrentTime = useAudioStore((s) => s.setCurrentTime);
     const setDuration = useAudioStore((s) => s.setDuration);
@@ -230,6 +227,7 @@ export default function MiniPlayerBar() {
                 detail.sermonId,
                 detail.translationId,
                 detail.languageCode,
+                detail.translationName ?? null,
             );
 
             el.src = src;
@@ -324,8 +322,37 @@ export default function MiniPlayerBar() {
                 onClick={controls.playPause}
                 style={{ fontSize: 'var(--fs-5xl)' }}
             />
-            <span className="mini-player-title" onClick={openModal} title={title ?? ''}>
-                {title}
+            <span
+                className="mini-player-title"
+                onClick={openModal}
+                style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    minWidth: 0,
+                    maxWidth: '28vw',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                }}
+                title={
+                    translationName
+                        ? `${title ?? ''} - ${t('Traduction:')} ${translationName}`
+                        : (title ?? '')
+                }
+            >
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</span>
+                {translationName && (
+                    <span
+                        style={{
+                            marginLeft: 8,
+                            color: 'var(--ant-color-text-secondary)',
+                            fontSize: 'var(--fs-rel-lg)',
+                            whiteSpace: 'nowrap',
+                        }}
+                    >
+                        {translationName}
+                    </span>
+                )}
             </span>
             <Slider
                 min={0}

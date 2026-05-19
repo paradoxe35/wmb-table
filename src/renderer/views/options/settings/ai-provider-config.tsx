@@ -96,12 +96,14 @@ function TestButton({
 function ModelSelect({
     providerId,
     value,
+    defaultModel,
     apiKey,
     baseUrl,
     onChange,
 }: {
     providerId: string;
     value: string | null | undefined;
+    defaultModel?: string | null;
     apiKey?: string;
     baseUrl?: string;
     onChange: (model: string) => void;
@@ -137,6 +139,16 @@ function ModelSelect({
         },
         [onChange, debouncedOnChange],
     );
+
+    const handleBlur = useCallback(() => {
+        if (localValue.trim() || !defaultModel) {
+            return;
+        }
+
+        debouncedOnChange.cancel();
+        setLocalValue(defaultModel);
+        onChange(defaultModel);
+    }, [localValue, defaultModel, debouncedOnChange, onChange]);
 
     const fetchModels = useCallback(async () => {
         if (providerId === 'local') return;
@@ -182,6 +194,7 @@ function ModelSelect({
             placeholder={t('Sélectionner ou saisir un modèle')}
             onChange={handleChange}
             onSelect={handleSelect}
+            onBlur={handleBlur}
             options={allOptions}
             filterOption={(input, option) => {
                 return (
@@ -281,7 +294,8 @@ export function BuiltinProviderConfig({
                         >
                             <ModelSelect
                                 providerId={provider.id}
-                                value={activeModel}
+                                value={config?.model ?? ''}
+                                defaultModel={DEFAULT_MODELS[provider.id]}
                                 apiKey={config?.apiKey}
                                 baseUrl={config?.baseUrl}
                                 onChange={(model) => updateField('model', model)}
@@ -360,7 +374,8 @@ export function CustomProviderConfig({
                 <Field label={t('Modèle')} hint={defaultModelHint(t, provider.defaultModel)}>
                     <ModelSelect
                         providerId={provider.id}
-                        value={activeModel}
+                        value={provider.model ?? ''}
+                        defaultModel={provider.defaultModel}
                         apiKey={provider.apiKey}
                         baseUrl={provider.baseUrl}
                         onChange={(model) => updateCustom({ model })}

@@ -44,6 +44,23 @@ export function buildSermonWmbLink(ref: SermonWmbRef): string {
     ].join('/');
 }
 
+export function buildBibleWmbLink(ref: BibleWmbRef): string {
+    return [
+        'wmb://bible',
+        encodeURIComponent(ref.bookCode),
+        encodeURIComponent(ref.chapter),
+        encodeURIComponent(ref.verse ?? ''),
+        encodeURIComponent(normalizeBibleAbbreviation(ref.bibleVersionAbbreviation)),
+        encodeURIComponent(ref.bookName),
+    ].join('/');
+}
+
+export function buildDocWmbLink(ref: DocWmbRef): string {
+    return ['wmb://doc', encodeURIComponent(ref.documentId), encodeURIComponent(ref.title)].join(
+        '/',
+    );
+}
+
 export function parseWmbLink(href: string): WmbRef | null {
     if (!href.startsWith('wmb://')) {
         return null;

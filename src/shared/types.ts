@@ -82,7 +82,7 @@ export interface SermonTranslation {
     translationId: number;
     languageCode: string;
     title: string;
-    translationName: string | null;
+    translationName?: string | null;
 }
 
 export type DocumentType = 'sermon' | 'custom' | 'bible';
@@ -570,6 +570,7 @@ export type AudioDocumentPlayRequest = {
     translationId: number | null;
     languageCode: string | null;
     languageLabel: string | null;
+    translationName: string | null;
     autoplay?: boolean;
 };
 
@@ -600,6 +601,7 @@ export interface CustomDocumentContent {
     title: string;
     content: string;
     languageCode: string;
+    wmbUrl?: string;
 }
 
 export interface CustomDocumentSearchMatch {
@@ -611,6 +613,7 @@ export interface CustomDocumentSearchHit {
     documentId: string;
     title: string;
     languageCode?: string;
+    wmbUrl?: string;
     matches: CustomDocumentSearchMatch[];
     totalMatches: number;
 }
@@ -873,6 +876,7 @@ export interface SyncFailureEvent {
     message: string;
     isAuthError: boolean;
     consecutiveFailures: number;
+    affectedTables?: string[];
     /** True when the backend has removed auth & backup status (user must re-login). */
     disconnected?: boolean;
 }

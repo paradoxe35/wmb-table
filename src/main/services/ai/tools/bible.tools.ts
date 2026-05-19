@@ -3,6 +3,7 @@ import * as aiBibleRepo from '@main/database/repositories/ai-bible.repository';
 import * as subjectsRepo from '@main/database/repositories/subjects.repository';
 import type { BibleBook } from '@shared/types';
 import { buildParagraphReference } from '@shared/types';
+import { buildBibleWmbLink } from '@shared/wmb-link';
 import type {
     AiToolDefinition,
     BiblePassageToolResponse,
@@ -35,6 +36,14 @@ function toBibleVerseResult(verse: BibleBook, bibleVersionAbbreviation: string):
         testament: verse.testament,
         bibleVersionAbbreviation,
         content: verse.content,
+        wmbUrl: buildBibleWmbLink({
+            type: 'bible',
+            bookCode: verse.book,
+            chapter: verse.chapter,
+            verse: verse.verse,
+            bibleVersionAbbreviation,
+            bookName: verse.bookName,
+        }),
     };
 }
 
@@ -117,7 +126,7 @@ export function buildBibleTools(
                 '(e.g. "Genesis", "Revelation", "Jean", "Matthieu", "Apocalypse"). ' +
                 'Provide chapter and verse numbers as digits. ' +
                 'Use getBibleVersions first to find available abbreviations if needed. ' +
-                'Returns verse objects with exact link fields: bookCode, chapter, verse, bibleVersionAbbreviation, and bookName.',
+                'Returns verse objects with exact link fields and wmbUrl for markdown reference links.',
             inputSchema: z.object({
                 book: z
                     .string()
@@ -145,7 +154,7 @@ export function buildBibleTools(
             description:
                 'Full-text search across Bible verses. Returns matching verses ranked by relevance. ' +
                 'Use this to find verses containing specific words or phrases. ' +
-                'Returns only the fields needed for clean citation and wmb://bible link generation.',
+                'Returns clean citation fields and wmbUrl for markdown reference links.',
             inputSchema: z.object({
                 query: z.string().min(3).describe('Search query (min 3 characters)'),
                 testament: z

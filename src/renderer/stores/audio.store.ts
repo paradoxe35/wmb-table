@@ -10,6 +10,7 @@ interface AudioState {
     translationId: number | null;
     languageCode: string | null;
     languageLabel: string | null;
+    translationName: string | null;
     currentTime: number;
     duration: number;
     playbackRate: number;
@@ -26,6 +27,7 @@ interface AudioState {
         sermonId: string,
         translationId: number | null,
         languageCode: string | null,
+        translationName: string | null,
     ): void;
     setCurrentTime(t: number): void;
     setDuration(d: number): void;
@@ -48,6 +50,7 @@ export const useAudioStore = createStore<AudioState>((set) => ({
     translationId: null,
     languageCode: null,
     languageLabel: null,
+    translationName: null,
     currentTime: 0,
     duration: 0,
     playbackRate: 1,
@@ -65,6 +68,7 @@ export const useAudioStore = createStore<AudioState>((set) => ({
         sermonId,
         translationId,
         languageCode,
+        translationName,
     ) =>
         set({
             audioSrc: src,
@@ -74,6 +78,7 @@ export const useAudioStore = createStore<AudioState>((set) => ({
             translationId,
             languageCode,
             languageLabel,
+            translationName,
             defaultTime,
             currentTime: defaultTime,
         }),
@@ -93,6 +98,7 @@ export const useAudioStore = createStore<AudioState>((set) => ({
             translationId: null,
             languageCode: null,
             languageLabel: null,
+            translationName: null,
             currentTime: 0,
             duration: 0,
             defaultTime: 0,

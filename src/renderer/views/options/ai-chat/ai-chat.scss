@@ -772,6 +772,7 @@
 }
 
 .ai-chat__input-box {
+    position: relative;
     display: flex;
     align-items: stretch;
     border-radius: 12px;
@@ -800,6 +801,21 @@
     font-size: 0.88em;
     line-height: 1.5;
     resize: none;
+}
+
+.ai-chat__input-placeholder {
+    position: absolute;
+    left: 14px;
+    right: 52px;
+    top: 50%;
+    transform: translateY(-50%);
+    overflow: hidden;
+    color: var(--ant-color-text-placeholder);
+    font-size: 0.88em;
+    line-height: 1.5;
+    pointer-events: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ai-chat__input-actions {

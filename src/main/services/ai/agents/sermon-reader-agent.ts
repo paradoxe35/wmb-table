@@ -58,11 +58,13 @@ export function buildSermonReaderAgentTool(ctx: AgentContext): Record<string, Ai
         readSermon: {
             description:
                 'Delegate sermon reading to a specialized subagent that paginates through sermon content ' +
-                'and answers a specific question. It can first resolve a sermon by title, date, or location hint ' +
-                'before reading. Use this when the user asks to summarize, explain, or ' +
-                'analyze a specific sermon. For follow-ups, pass prior findings in `alreadyKnown` and the ' +
-                'new angle in `focus` so the subagent goes deeper instead of repeating a ' +
-                'general summary. Returns a structured answer with verified paragraph citations.',
+                'and answers a question about one specific sermon. Use only when the user targets a single ' +
+                'sermon or sermon-like hint and wants that sermon summarized, outlined, explained, quoted, ' +
+                'or mined for Bible citations/key themes. Do not use this for broad topic research, subject ' +
+                'discovery, or multiple search matches; use researchTopic instead because it finds and reads ' +
+                'the relevant passages itself. For follow-ups, pass prior findings in `alreadyKnown` and the ' +
+                'new angle in `focus` so the subagent goes deeper instead of repeating a general summary. ' +
+                'Returns a structured answer with verified paragraph citations.',
             inputSchema: z
                 .object({
                     sermonId: z.string().optional().describe('The sermon ID to read'),
