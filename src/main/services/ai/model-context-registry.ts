@@ -73,7 +73,7 @@ function buildBaseVariants(base: string): string[] {
  * Build candidate names ordered most-specific first. Letter/version separator variants are
  * included where useful, e.g. `granite4.1` also tries `granite-4.1`.
  *
- * `"qwen3.5:9b"`                            includes `qwen3.5-9b`, `qwen3.5`
+ * `"qwen3.5:9b"`                            includes `qwen3.5:9b`, `qwen-3.5:9b`, `qwen3.5-9b`, `qwen-3.5-9b`
  * `"deepseek-coder-v2:16b-lite-instruct-q2_K"` includes `deepseek-coder-v2-16b-lite-instruct`, `deepseek-coder-v2-16b`
  * `"granite4.1:8b"`                         includes `granite4.1-8b`, `granite-4.1-8b`
  * `"openai/gpt-5-mini"`                     includes `gpt-5-mini`
@@ -104,12 +104,16 @@ function buildCandidates(modelId: string): string[] {
 
         for (const baseVariant of tagBaseVariants) {
             if (rest) {
+                candidates.push(`${baseVariant}:${paramSize}-${rest}`);
                 candidates.push(`${baseVariant}-${paramSize}-${rest}`);
+            } else {
+                candidates.push(`${baseVariant}:${paramSize}`);
             }
             candidates.push(`${baseVariant}-${paramSize}`);
         }
     } else if (cleanTag) {
         for (const baseVariant of tagBaseVariants) {
+            candidates.push(`${baseVariant}:${cleanTag}`);
             candidates.push(`${baseVariant}-${cleanTag}`);
         }
     }

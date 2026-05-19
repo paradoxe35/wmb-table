@@ -58,10 +58,14 @@ const MODELS_DEV_REGISTRY: Record<string, { contextWindow?: number; maxOutputTok
 // ── Helpers ──
 
 function setupOpenRouter() {
+    setupOpenRouterModels(OPEN_ROUTER_MODELS);
+}
+
+function setupOpenRouterModels(models: typeof OPEN_ROUTER_MODELS) {
     let callCount = 0;
     getMock.mockImplementation(() => {
         callCount++;
-        return callCount === 1 ? OPEN_ROUTER_MODELS : null;
+        return callCount === 1 ? models : null;
     });
 }
 
@@ -137,6 +141,16 @@ describe('model-context-registry', () => {
         it('qwen3.5:9b matches qwen3.5-9b (not qwen3.5-27b)', async () => {
             setupOpenRouter();
             expect(await lookupContextWindow('qwen3.5:9b')).toBe(131_072);
+        });
+
+        it('qwen3.5:9b matches qwen-3.5:9b when the registry uses a family/version separator', async () => {
+            setupOpenRouterModels([{ id: 'qwen/qwen-3.5:9b', context_length: 98_304 }]);
+            expect(await lookupContextWindow('qwen3.5:9b')).toBe(98_304);
+        });
+
+        it('qwen3.5:9b matches qwen-3.5-9b when the registry uses dash separators', async () => {
+            setupOpenRouterModels([{ id: 'qwen/qwen-3.5-9b', context_length: 65_536 }]);
+            expect(await lookupContextWindow('qwen3.5:9b')).toBe(65_536);
         });
 
         it('granite4.1:8b matches granite-4.1-8b with inserted family/version separator', async () => {
