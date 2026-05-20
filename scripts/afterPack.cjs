@@ -1,5 +1,45 @@
 const { execSync } = require('child_process')
+const fs = require('fs')
 const path = require('path')
+
+const CHROMIUM_LOCALES_TO_KEEP = new Set([
+  'en-US.pak',
+  'en-GB.pak',
+  'es.pak',
+  'es-419.pak',
+  'fr.pak',
+  'pt-BR.pak',
+  'pt-PT.pak',
+  'sw.pak',
+])
+
+function removeIfExists(targetPath) {
+  fs.rmSync(targetPath, { recursive: true, force: true })
+}
+
+function pruneLinuxPayload(appOutDir) {
+  const localesDir = path.join(appOutDir, 'locales')
+  if (fs.existsSync(localesDir)) {
+    for (const localeFile of fs.readdirSync(localesDir)) {
+      if (!CHROMIUM_LOCALES_TO_KEEP.has(localeFile)) {
+        removeIfExists(path.join(localesDir, localeFile))
+      }
+    }
+  }
+
+  const betterSqliteDir = path.join(
+    appOutDir,
+    'resources',
+    'app.asar.unpacked',
+    'node_modules',
+    'better-sqlite3',
+  )
+
+  removeIfExists(path.join(betterSqliteDir, 'deps'))
+  removeIfExists(path.join(betterSqliteDir, 'src'))
+  removeIfExists(path.join(betterSqliteDir, 'binding.gyp'))
+  removeIfExists(path.join(betterSqliteDir, 'README.md'))
+}
 
 /**
  * Re-sign the entire .app bundle with a consistent ad-hoc identity after packing.
@@ -17,6 +57,11 @@ const path = require('path')
  * electron-builder handles signing itself, so this hook is skipped.
  */
 exports.default = async function afterPack(context) {
+  if (context.electronPlatformName === 'linux') {
+    pruneLinuxPayload(context.appOutDir)
+    return
+  }
+
   if (process.platform !== 'darwin') return
 
   // Skip if a real signing identity is configured via electron-builder

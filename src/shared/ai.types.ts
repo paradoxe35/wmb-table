@@ -2,7 +2,7 @@
 // Provider IDs & basic types
 // ---------------------------------------------------------------------------
 
-export const BUILTIN_PROVIDER_IDS = ['local', 'openrouter', 'openai', 'gemini', 'claude'] as const;
+export const BUILTIN_PROVIDER_IDS = ['openrouter', 'openai', 'gemini', 'claude'] as const;
 export type AiBuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[number];
 export type AiProviderId = AiBuiltinProviderId | string;
 export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';
@@ -19,7 +19,6 @@ export interface AiProviderConfig {
     apiKey?: string;
     baseUrl?: string;
     model?: string | null;
-    gpuEnabled?: boolean;
 }
 
 export interface AiCustomProviderConfig {
@@ -35,7 +34,7 @@ export type AiProviders = Record<AiBuiltinProviderId, AiProviderConfig>;
 
 export type AiProviderFieldKey = 'apiKey' | 'baseUrl' | 'model';
 export type AiProviderFieldKind = 'secret' | 'text';
-export type AiProviderKind = 'remote' | 'local';
+export type AiProviderKind = 'remote';
 
 export interface AiProviderFieldDefinition {
     key: AiProviderFieldKey;
@@ -73,7 +72,6 @@ export interface AiSettings {
 }
 
 export const DEFAULT_MODELS: Record<AiBuiltinProviderId, string | null> = {
-    local: null,
     openrouter: 'openai/gpt-5-mini',
     openai: 'gpt-5-mini',
     gemini: 'gemini-2.5-flash',
@@ -222,49 +220,6 @@ export interface AiRetryMessageResult {
 
 export interface AiProviderTestResult {
     valid: boolean;
-    error?: string;
-}
-
-// ---------------------------------------------------------------------------
-// Local models
-// ---------------------------------------------------------------------------
-
-export interface AiLocalModelInfo {
-    id: string;
-    name: string;
-    family: 'qwen' | 'gemma' | 'other';
-    fileName: string;
-    quantization: string;
-    sizeBytes: number;
-    downloaded: boolean;
-    localPath?: string;
-    recommended: boolean;
-    contextSize?: number;
-}
-
-export interface AiSupportedLocalModel {
-    id: string;
-    name: string;
-    family: 'qwen' | 'gemma' | 'other';
-    description: string;
-    quantization: string;
-    recommended: boolean;
-    downloadUrl: string;
-    approximateSizeMb: number;
-    installed: boolean;
-    installedModel?: AiLocalModelInfo;
-}
-
-export interface AiModelScanResult {
-    models: AiLocalModelInfo[];
-    supportedModels: AiSupportedLocalModel[];
-    scannedPath: string;
-}
-
-export interface AiModelDownloadProgress {
-    modelId: string;
-    percentage: number;
-    status: 'downloading' | 'complete' | 'error';
     error?: string;
 }
 

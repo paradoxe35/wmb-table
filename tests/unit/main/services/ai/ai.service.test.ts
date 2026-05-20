@@ -56,23 +56,6 @@ vi.mock('@main/services/bible.service', () => ({
     getResolvedBibleVersionForLanguage: getResolvedBibleVersionForLanguageMock,
 }));
 
-vi.mock('@main/services/ai/local/local-model.service', () => ({
-    scanLocalModels: vi.fn(),
-}));
-
-vi.mock('@main/services/ai/local/model-download.service', () => ({
-    downloadLocalModel: vi.fn(),
-}));
-
-vi.mock('@main/services/ai/local/local-runtime.service', () => ({
-    LocalRuntimeService: class {
-        setGpuEnabled() {}
-        dispose() {
-            return Promise.resolve();
-        }
-    },
-}));
-
 vi.mock('@main/services/ai/tools', () => ({
     buildAiTools: buildAiToolsMock,
 }));
@@ -105,7 +88,6 @@ vi.mock('@main/services/ai/model-fetcher', () => ({
 const runnerRunMock = vi.fn();
 vi.mock('@main/services/ai/runners', () => ({
     GenerationRunnerImpl: class {
-        constructor(_isLocal: boolean) {}
         run = runnerRunMock;
     },
 }));
@@ -134,7 +116,6 @@ describe('AiService', () => {
             languagePreference: 'active',
             maxHistoryConversations: 20,
             providers: {
-                local: { enabled: true, model: null, gpuEnabled: false },
                 openrouter: { enabled: true, model: 'openai/gpt-5-mini', apiKey: 'or-key' },
                 openai: { enabled: true, model: 'gpt-5-mini', apiKey: 'oa-key' },
                 gemini: { enabled: true, model: 'gemini-2.5-flash', apiKey: 'gm-key' },
@@ -190,7 +171,7 @@ describe('AiService', () => {
         }));
     });
 
-    it('returns a concrete validation error when no content language is configured', async () => {
+    it('tests a provider without requiring a configured content language', async () => {
         getContentLanguageMock.mockReturnValue(null);
         const service = new AiService();
 
@@ -199,9 +180,13 @@ describe('AiService', () => {
             model: 'gpt-5-mini',
         });
 
-        expect(result.valid).toBe(false);
-        expect(result.error).toContain('Aucune langue sélectionnée');
-        expect(generateTextMock).not.toHaveBeenCalled();
+        expect(result.valid).toBe(true);
+        expect(generateTextMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                model: { id: 'model' },
+                prompt: 'Reply with the single word OK.',
+            }),
+        );
     });
 
     it('does not persist queued user messages when send setup fails before generation can start', async () => {
@@ -234,7 +219,7 @@ describe('AiService', () => {
         expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
         expect(buildAiToolsMock).toHaveBeenCalledWith(
             'fr',
-            expect.objectContaining({ isLocal: true }),
+            expect.objectContaining({ disableAgentTools: true }),
         );
     });
 
@@ -252,7 +237,7 @@ describe('AiService', () => {
         expect(runArgs.systemPrompt).not.toContain('## Tool routing priority');
         expect(buildAiToolsMock).toHaveBeenCalledWith(
             'fr',
-            expect.objectContaining({ isLocal: true }),
+            expect.objectContaining({ disableAgentTools: true }),
         );
     });
 

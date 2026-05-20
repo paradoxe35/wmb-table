@@ -186,9 +186,6 @@ export function isAiConfigured(settings: AiSettings | null): boolean {
         if (!providerConfig?.enabled) {
             return false;
         }
-        if (providerId === 'local') {
-            return true;
-        }
         return Boolean(providerConfig.apiKey?.trim());
     }
 

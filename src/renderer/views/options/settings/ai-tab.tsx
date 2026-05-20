@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Card, Divider, Select, Space, Switch, Tag, Typography } from 'antd';
-import { BookOutlined, CloudOutlined, LaptopOutlined, PlusOutlined } from '@ant-design/icons';
+import { BookOutlined, CloudOutlined, PlusOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import type { AiCustomProviderConfig } from '@shared/ai.types';
 import { useAiChatStore, useAppStore } from '@renderer/stores';
@@ -8,7 +8,6 @@ import { buildDocsGuideLink } from '@renderer/utils/constants';
 import { Field, Hint } from './ai-shared';
 import { BuiltinProviderConfig, CustomProviderConfig } from './ai-provider-config';
 import AiCustomProviderModal from './ai-custom-provider';
-import AiLocalModels from './ai-local-models';
 import InlineHelpPopover from '../components/inline-help-popover';
 import { getAiSettingsHelp } from '../components/option-help-content';
 
@@ -19,9 +18,7 @@ export default function AiTab() {
     const initialize = useAiChatStore((s) => s.initialize);
     const settings = useAiChatStore((s) => s.settings);
     const providerCatalog = useAiChatStore((s) => s.providerCatalog);
-    const localModels = useAiChatStore((s) => s.localModels);
     const saveSettings = useAiChatStore((s) => s.saveSettings);
-    const scanLocalModels = useAiChatStore((s) => s.scanLocalModels);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const [customModalOpen, setCustomModalOpen] = useState(false);
 
@@ -37,19 +34,9 @@ export default function AiTab() {
             label: (
                 <span>
                     {p.name}{' '}
-                    {p.kind === 'local' ? (
-                        <Tag
-                            color="green"
-                            icon={<LaptopOutlined />}
-                            style={{ marginInlineStart: 4 }}
-                        >
-                            {t('Local')}
-                        </Tag>
-                    ) : (
-                        <Tag color="blue" icon={<CloudOutlined />} style={{ marginInlineStart: 4 }}>
-                            {t('Cloud')}
-                        </Tag>
-                    )}
+                    <Tag color="blue" icon={<CloudOutlined />} style={{ marginInlineStart: 4 }}>
+                        {t('Cloud')}
+                    </Tag>
                 </span>
             ),
             value: p.id,
@@ -166,22 +153,11 @@ export default function AiTab() {
             </Card>
 
             {/* Active provider config: builtin cloud */}
-            {activeBuiltinProvider && activeBuiltinProvider.id !== 'local' ? (
+            {activeBuiltinProvider ? (
                 <BuiltinProviderConfig
                     provider={activeBuiltinProvider}
                     settings={settings}
                     onSave={(p) => void saveSettings(p)}
-                />
-            ) : null}
-
-            {/* Local models */}
-            {settings.activeProvider === 'local' ? (
-                <AiLocalModels
-                    settings={settings}
-                    models={localModels?.models ?? []}
-                    supportedModels={localModels?.supportedModels ?? []}
-                    onRefresh={() => void scanLocalModels()}
-                    onUpdate={(p) => void saveSettings(p)}
                 />
             ) : null}
 

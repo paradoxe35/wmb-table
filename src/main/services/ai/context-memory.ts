@@ -1,4 +1,3 @@
-import type { ChatHistoryItem } from 'node-llama-cpp';
 import { estimateTokenCount } from 'tokenx';
 import lodash from 'lodash';
 import type { AiMessage, AiToolResult } from '@shared/ai.types';
@@ -13,12 +12,7 @@ export type PromptHistoryMessage = {
     content: string;
 };
 
-// ── Local-only constants ──
-
-const LOCAL_TOKEN_BUDGET = 3_000;
 const MAX_LOADED_MESSAGES = 40;
-const LOCAL_GENERATION_RESERVE = 1024;
-const LOCAL_CONTEXT_OVERHEAD = 128;
 const MIN_KEPT_TURNS = 4;
 
 // ── Per-message formatting limits ──
@@ -41,16 +35,6 @@ export const REMOTE_LIMITS: ContextLimits = {
     compactedAssistantCharLimit: 500,
     toolResultCharLimit: 600,
     toolResultCountLimit: 6,
-};
-
-export const LOCAL_LIMITS: ContextLimits = {
-    summaryCharBudget: 4000,
-    userCharLimit: 280,
-    assistantCharLimit: 400,
-    compactedUserCharLimit: 150,
-    compactedAssistantCharLimit: 200,
-    toolResultCharLimit: 180,
-    toolResultCountLimit: 3,
 };
 
 const TOOL_LIST_PREVIEW_LIMIT = 3;
@@ -567,64 +551,9 @@ function splitByTokenBudget(
 
 // ── Public API ──
 
-export function buildConversationContext(
-    conversationId: string,
-    isLocal: boolean,
-    remoteTokenBudget?: number,
-) {
-    const limits = isLocal ? LOCAL_LIMITS : REMOTE_LIMITS;
-    const tokenBudget = isLocal
-        ? LOCAL_TOKEN_BUDGET
-        : (remoteTokenBudget ?? DEFAULT_REMOTE_TOKEN_BUDGET);
+export function buildConversationContext(conversationId: string, remoteTokenBudget?: number) {
+    const limits = REMOTE_LIMITS;
+    const tokenBudget = remoteTokenBudget ?? DEFAULT_REMOTE_TOKEN_BUDGET;
     const messages = aiRepo.getRecentMessages(conversationId, MAX_LOADED_MESSAGES);
     return splitByTokenBudget(messages, tokenBudget, limits);
-}
-
-/**
- * Compact local model chat history to fit within the model's context window.
- * Used by the local llama.cpp provider after the AI SDK history is built.
- */
-export function compactLocalHistory(
-    systemPrompt: string,
-    history: ChatHistoryItem[],
-    prompt: string,
-    contextSize: number,
-): ChatHistoryItem[] {
-    const available = contextSize - LOCAL_GENERATION_RESERVE - LOCAL_CONTEXT_OVERHEAD;
-    const fixedTokens = estimateTokens(systemPrompt) + estimateTokens(prompt);
-
-    if (fixedTokens >= available) {
-        log.warn('System prompt + user prompt alone exceed context budget, sending empty history');
-        return [];
-    }
-
-    let budget = available - fixedTokens;
-    const result: ChatHistoryItem[] = [];
-
-    for (let i = history.length - 1; i >= 0; i--) {
-        const cost = historyItemTokens(history[i]);
-        if (cost > budget) break;
-        budget -= cost;
-        result.unshift(history[i]);
-    }
-
-    if (result.length < history.length) {
-        log.info('Local history compacted', {
-            original: history.length,
-            kept: result.length,
-            contextSize,
-        });
-    }
-
-    return result;
-}
-
-function historyItemTokens(item: ChatHistoryItem): number {
-    if (item.type === 'user') return estimateTokens(item.text);
-    if (item.type === 'model') {
-        return item.response.reduce((tokens, part) => {
-            return tokens + estimateTokens(typeof part === 'string' ? part : JSON.stringify(part));
-        }, 0);
-    }
-    return 0;
 }

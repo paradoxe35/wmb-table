@@ -3,7 +3,6 @@ import type {
     AiConversationHistoryPage,
     AiMessageHistoryPage,
     AiMessage,
-    AiModelScanResult,
     AiProviderDefinition,
     AiRetryMessageResult,
     AiProviderTestResult,
@@ -452,7 +451,6 @@ interface AiChatState {
     historyByConversation: ConversationHistoryMap;
     conversationRuns: ConversationRunMap;
     queuedMessagesByConversation: QueuedMessageMap;
-    localModels: AiModelScanResult | null;
     sending: boolean;
     error: string | null;
     completionCount: number;
@@ -481,14 +479,12 @@ interface AiChatState {
     retryLastUserMessage(conversationId: string, messageId: string): Promise<boolean>;
     removeQueuedMessage(conversationId: string, queuedMessageId: string): void;
     stopGeneration(): Promise<void>;
-    scanLocalModels(): Promise<void>;
     testProvider(input: {
         providerId: string;
         model: string;
         apiKey?: string;
         baseUrl?: string;
     }): Promise<AiProviderTestResult>;
-    downloadModel(modelId: string): Promise<void>;
 }
 
 export const useAiChatStore = createStore<AiChatState>((set, get) => ({
@@ -511,7 +507,6 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     historyByConversation: {},
     conversationRuns: {},
     queuedMessagesByConversation: {},
-    localModels: null,
     sending: false,
     error: null,
     completionCount: 0,
@@ -849,7 +844,6 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             get().loadSettings(),
             get().loadProviderCatalog(),
             get().loadConversations(),
-            get().scanLocalModels(),
         ]);
         set({ initialized: true });
     },
@@ -1622,23 +1616,8 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }
     },
 
-    scanLocalModels: async () => {
-        try {
-            const localModels = await window.api.ai.scanLocalModels();
-            set({ localModels });
-        } catch (error) {
-            set({
-                error: toErrorMessage(error, 'Le scan des modèles locaux a échoué.'),
-            });
-        }
-    },
-
     testProvider: async (input) => {
         return window.api.ai.testProvider(input);
-    },
-
-    downloadModel: async (modelId) => {
-        await window.api.ai.downloadModel(modelId);
     },
 }));
 

@@ -29,9 +29,6 @@ import type {
 } from '@shared/ai.types';
 import type { InstalledLanguage } from '@shared/types';
 import { buildSystemPrompt } from './system-prompt';
-import { scanLocalModels } from './local/local-model.service';
-import { downloadLocalModel } from './local/model-download.service';
-import { LocalRuntimeService } from './local/local-runtime.service';
 import { buildAiTools } from './tools';
 import { sendToRenderer } from '@main/ipc/register';
 import { buildConversationContext } from './context-memory';
@@ -60,7 +57,6 @@ interface RunGenerationOptions {
     history: ReturnType<typeof buildConversationContext>['recentMessages'];
     tools: ReturnType<typeof buildAiTools>;
     abortSignal: AbortSignal;
-    isLocal: boolean;
     remoteTokenBudget?: number;
     contextWindow?: number;
     maxOutputTokens?: number;
@@ -76,7 +72,6 @@ interface GenerationEnvironment {
     modelId: string;
     contentLanguageCode: string;
     uiLanguageCode: string;
-    isLocal: boolean;
     activeBibleVersion?: string;
     contextWindow?: number;
     maxOutputTokens?: number;
@@ -105,16 +100,13 @@ interface BufferedAssistantText {
 export class AiService {
     private activeRuns = new Map<string, ActiveRun>();
     private bufferedAssistantText = new Map<string, BufferedAssistantText>();
-    private localRuntime = new LocalRuntimeService();
     private static readonly TEXT_FLUSH_INTERVAL_MS = 40;
     private static readonly TEXT_FLUSH_THRESHOLD_CHARS = 160;
 
     // ── Settings & catalog ──
 
     getSettings(): AiSettings {
-        const settings = aiRepo.ensureSettings();
-        this.localRuntime.setGpuEnabled(settings.providers.local.gpuEnabled ?? false);
-        return settings;
+        return aiRepo.ensureSettings();
     }
 
     getProviderCatalog() {
@@ -127,7 +119,6 @@ export class AiService {
         }
         const settings = aiRepo.updateSettings(partial);
         aiRepo.trimConversationHistory(settings.maxHistoryConversations);
-        this.localRuntime.setGpuEnabled(settings.providers.local.gpuEnabled ?? false);
         return settings;
     }
 
@@ -203,16 +194,6 @@ export class AiService {
         return aiRepo.getMessageHistoryPage(request);
     }
 
-    // ── Local models ──
-
-    async scanLocalModels() {
-        return scanLocalModels();
-    }
-
-    async downloadModel(browserWindow: BrowserWindow, modelId: string): Promise<void> {
-        await downloadLocalModel(browserWindow, modelId);
-    }
-
     // ── Generation control ──
 
     stopGeneration(conversationId: string): void {
@@ -240,19 +221,10 @@ export class AiService {
         baseUrl?: string;
     }): Promise<AiProviderTestResult> {
         try {
-            const defaultLanguage = configRepo.getContentLanguage();
-            if (!defaultLanguage) {
-                throw new Error(
-                    'Aucune langue sélectionnée. Veuillez choisir une langue dans les paramètres.',
-                );
-            }
-
             const model = resolveLanguageModel({
                 settings: this.getSettings(),
                 providerId: input.providerId,
                 modelId: input.model,
-                defaultContentLanguage: defaultLanguage,
-                localRuntime: this.localRuntime,
                 apiKey: input.apiKey,
                 baseUrl: input.baseUrl,
             });
@@ -399,7 +371,6 @@ export class AiService {
         for (const messageId of this.bufferedAssistantText.keys()) {
             this.clearAssistantTextTimer(messageId);
         }
-        void this.localRuntime.dispose();
     }
 
     // ── Private ──
@@ -453,7 +424,6 @@ export class AiService {
         }
 
         const uiLanguageCode = resolveUiLanguage(configRepo.getUiLanguage(), contentLanguageCode);
-        const isLocal = providerId === 'local';
 
         const resolvedBibleVersion = bibleService.getResolvedBibleVersionForLanguage(
             contentLanguageCode,
@@ -463,14 +433,11 @@ export class AiService {
         const providerBaseUrl = settings.customProviders.find(
             (provider) => provider.id === providerId,
         )?.baseUrl;
-        const modelLimits = isLocal
-            ? {}
-            : await getModelLimits(providerId, modelId, providerBaseUrl);
+        const modelLimits = await getModelLimits(providerId, modelId, providerBaseUrl);
         const contextWindow = modelLimits.contextWindow;
-        const smallContext =
-            !isLocal && contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
-        const unknownRemoteContext = !isLocal && contextWindow == null;
-        const hasAgents = !isLocal && !smallContext && !unknownRemoteContext;
+        const smallContext = contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
+        const unknownRemoteContext = contextWindow == null;
+        const hasAgents = !smallContext && !unknownRemoteContext;
 
         if (smallContext) {
             log.warn('Small context window detected — agents disabled', {
@@ -490,8 +457,6 @@ export class AiService {
             settings,
             providerId,
             modelId,
-            defaultContentLanguage: contentLanguageCode,
-            localRuntime: this.localRuntime,
         });
         const installedLanguages = await languagePackService.getInstalledLanguages();
 
@@ -501,7 +466,6 @@ export class AiService {
             modelId,
             contentLanguageCode,
             uiLanguageCode,
-            isLocal,
             activeBibleVersion: resolvedBibleVersion?.abbreviation,
             contextWindow,
             maxOutputTokens: modelLimits.maxOutputTokens,
@@ -519,15 +483,14 @@ export class AiService {
         environment: GenerationEnvironment,
     ): void {
         const controller = new AbortController();
-        const localExecution =
-            environment.isLocal ||
+        const disableAgentTools =
             !environment.hasAgents ||
             (environment.contextWindow != null &&
                 environment.contextWindow < MIN_REMOTE_CONTEXT_WINDOW);
 
         const tools = buildAiTools(environment.contentLanguageCode, {
             model: environment.model,
-            isLocal: localExecution,
+            disableAgentTools,
             uiLanguage: environment.uiLanguageCode,
             activeBibleVersion: environment.activeBibleVersion,
             maxOutputTokens: environment.maxOutputTokens,
@@ -560,7 +523,6 @@ export class AiService {
         });
         const { recentMessages, historyTokenCount, summary } = buildConversationContext(
             conversation.id,
-            environment.isLocal,
             initialRemoteTokenBudget,
         );
         const systemPrompt = summary ? `${system}\n\nConversation memory:\n${summary}` : system;
@@ -575,7 +537,7 @@ export class AiService {
                 systemPromptTokens,
             },
         });
-        const runner = new GenerationRunnerImpl(environment.isLocal);
+        const runner = new GenerationRunnerImpl();
 
         this.activeRuns.set(conversation.id, {
             browserWindow,
@@ -608,7 +570,6 @@ export class AiService {
             history: recentMessages,
             tools,
             abortSignal: controller.signal,
-            isLocal: environment.isLocal,
             remoteTokenBudget,
             contextWindow: environment.contextWindow,
             maxOutputTokens: environment.maxOutputTokens,
@@ -631,7 +592,6 @@ export class AiService {
             history,
             tools,
             abortSignal,
-            isLocal,
             remoteTokenBudget,
             contextWindow,
             maxOutputTokens,
@@ -675,11 +635,7 @@ export class AiService {
                 return;
             }
 
-            const nextContext = buildConversationContext(
-                conversation.id,
-                isLocal,
-                remoteTokenBudget,
-            );
+            const nextContext = buildConversationContext(conversation.id, remoteTokenBudget);
             aiRepo.updateConversation(conversation.id, {
                 summary: nextContext.summary,
             });

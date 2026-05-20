@@ -44,7 +44,6 @@ function createSettings(): AiSettings {
         languagePreference: 'active',
         maxHistoryConversations: 20,
         providers: {
-            local: { enabled: true, model: null },
             openrouter: { enabled: true, model: 'openai/gpt-5-mini', apiKey: 'or-key' },
             openai: { enabled: true, model: 'gpt-5-mini', apiKey: 'oa-key' },
             gemini: { enabled: true, model: 'gemini-2.5-flash', apiKey: 'gm-key' },

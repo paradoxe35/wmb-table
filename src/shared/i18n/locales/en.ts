@@ -86,27 +86,6 @@ const en: Record<string, string> = {
     'Les modèles Gemini de Google.': 'Google Gemini models.',
     "Les modèles Claude d'Anthropic.": 'Anthropic Claude models.',
 
-    // ── AI local models ──
-    'Modèle local': 'Local model',
-    Actualiser: 'Refresh',
-    'Choisir un modèle': 'Choose a model',
-    Utiliser: 'Use',
-    'Modèle téléchargé': 'Model downloaded',
-    'Le téléchargement a échoué.': 'Download failed.',
-    '~{{size}} Mo': '~{{size}} MB',
-    'Léger et rapide. Idéal pour un usage quotidien sur la plupart des ordinateurs.':
-        'Lightweight and fast. Ideal for daily use on most computers.',
-    'Plus complet, meilleure compréhension. Nécessite un peu plus de mémoire.':
-        'More capable, better understanding. Requires a bit more memory.',
-    'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
-        'Works offline, directly on your computer. Download a model to get started.',
-    'Le mode local est plus limité': 'Local mode is more limited',
-    'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.':
-        'Local mode may respond more slowly and with less accuracy, especially for long or difficult questions.',
-    'Utiliser la carte graphique (GPU)': 'Use graphics card (GPU)',
-    'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
-        'Speeds up responses if your computer has a compatible graphics card. Disable this option if you experience issues.',
-
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Add a provider',
     'Ajouter un fournisseur personnalisé': 'Add a custom provider',
@@ -124,8 +103,6 @@ const en: Record<string, string> = {
     'La clé API est manquante pour ce fournisseur.': 'The API key is missing for this provider.',
     'Fournisseur IA inconnu.': 'Unknown AI provider.',
     'Validation du fournisseur impossible.': 'Unable to validate the provider.',
-    'Le mode local nécessite une langue par défaut et un moteur local actif.':
-        'Local mode requires a default language and an active local runtime.',
     'La synthèse du navigateur est gérée dans le processus renderer.':
         'Browser speech synthesis is handled in the renderer process.',
     'La prévisualisation du navigateur est gérée dans le processus renderer.':

@@ -11,8 +11,6 @@ import {
 const TRUNCATION_NOTICE = '\n\n---\n*[Response truncated due to length limit]*';
 
 const REMOTE_MAX_STEPS = 40;
-const LOCAL_MAX_STEPS = 15;
-const LOCAL_MAX_OUTPUT_TOKENS = 1024;
 const AI_STREAM_MAX_RETRIES = 3;
 
 function normalizeToolCallInput(input: unknown): Record<string, unknown> {
@@ -35,22 +33,17 @@ function normalizeToolCallInput(input: unknown): Record<string, unknown> {
 }
 
 export class GenerationRunnerImpl implements GenerationRunner {
-    constructor(private readonly isLocal: boolean) {}
-
     async run(ctx: GenerationContext): Promise<void> {
-        const maxSteps = this.isLocal ? LOCAL_MAX_STEPS : REMOTE_MAX_STEPS;
-        const maxOutputTokens = this.isLocal
-            ? LOCAL_MAX_OUTPUT_TOKENS
-            : resolveRemoteOutputTokens({
-                  modelLimits: {
-                      contextWindow: ctx.contextWindow,
-                      maxOutputTokens: ctx.maxOutputTokens,
-                  },
-                  prompt: {
-                      toolTokens: ctx.toolTokens,
-                      systemPromptTokens: ctx.systemPromptTokens,
-                  },
-              });
+        const maxOutputTokens = resolveRemoteOutputTokens({
+            modelLimits: {
+                contextWindow: ctx.contextWindow,
+                maxOutputTokens: ctx.maxOutputTokens,
+            },
+            prompt: {
+                toolTokens: ctx.toolTokens,
+                systemPromptTokens: ctx.systemPromptTokens,
+            },
+        });
 
         const result = streamText({
             model: ctx.model,
@@ -59,7 +52,7 @@ export class GenerationRunnerImpl implements GenerationRunner {
             tools: ctx.tools,
             maxOutputTokens,
             maxRetries: AI_STREAM_MAX_RETRIES,
-            stopWhen: stepCountIs(maxSteps),
+            stopWhen: stepCountIs(REMOTE_MAX_STEPS),
             abortSignal: ctx.abortSignal,
         });
 
