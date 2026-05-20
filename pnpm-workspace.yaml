@@ -1,0 +1,10 @@
+allowBuilds:
+    '@pngwasi/node-tantivy-binding': true
+    '@parcel/watcher': true
+    'better-sqlite3': true
+    'electron': true
+    'electron-winstaller': true
+    'esbuild': true
+    'sherpa-onnx': true
+    'simple-git-hooks': true
+    '@turbodocx/html-to-docx': false

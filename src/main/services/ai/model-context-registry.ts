@@ -51,7 +51,7 @@ const modelsDevCache = new SimpleCache<ModelLimitMap>('ctx-registry:models-dev',
 
 // ── Normalization ──
 
-const QUANT_PATTERN = /[-_](?:q\d[_a-z0-9]*|fp16|fp32|bf16|f16|f32|gguf|iq\d[_a-z0-9]*)$/i;
+const QUANT_PATTERN = /[-_](?:q\d[_a-z0-9]*|fp16|fp32|bf16|f16|f32|iq\d[_a-z0-9]*)$/i;
 const PARAM_SIZE_PATTERN = /^(\d+\.?\d*[bm](?:-a\d+[bm])?)/i;
 const PROVIDER_ALIASES: Record<string, string[]> = {
     claude: ['anthropic'],

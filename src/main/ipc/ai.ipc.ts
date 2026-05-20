@@ -63,8 +63,6 @@ export function registerAiHandlers(): void {
         getAiService().stopGeneration(conversationId);
     });
 
-    registerHandler(AiChannels.scanLocalModels, async () => getAiService().scanLocalModels());
-
     registerHandler(AiChannels.testProvider, async (_event, input) =>
         getAiService().testProvider(input),
     );
@@ -72,12 +70,4 @@ export function registerAiHandlers(): void {
     registerHandler(AiChannels.fetchProviderModels, async (_event, input) =>
         getAiService().fetchProviderModels(input),
     );
-
-    registerHandler(AiChannels.downloadModel, async (event, modelId) => {
-        const browserWindow = BrowserWindow.fromWebContents(event.sender);
-        if (!browserWindow) {
-            throw new Error('Main window not available for model download.');
-        }
-        return getAiService().downloadModel(browserWindow, modelId);
-    });
 }

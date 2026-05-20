@@ -87,27 +87,6 @@ const pt: Record<string, string> = {
     'Les modèles Gemini de Google.': 'Os modelos Gemini do Google.',
     "Les modèles Claude d'Anthropic.": 'Os modelos Claude da Anthropic.',
 
-    // ── AI local models ──
-    'Modèle local': 'Modelo local',
-    Actualiser: 'Atualizar',
-    'Choisir un modèle': 'Escolher um modelo',
-    Utiliser: 'Usar',
-    'Modèle téléchargé': 'Modelo baixado',
-    'Le téléchargement a échoué.': 'O download falhou.',
-    '~{{size}} Mo': '~{{size}} MB',
-    'Léger et rapide. Idéal pour un usage quotidien sur la plupart des ordinateurs.':
-        'Leve e rápido. Ideal para uso diário na maioria dos computadores.',
-    'Plus complet, meilleure compréhension. Nécessite un peu plus de mémoire.':
-        'Mais completo, melhor compreensão. Requer um pouco mais de memória.',
-    'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
-        'Funciona sem conexão com a internet, diretamente no seu computador. Baixe um modelo para começar.',
-    'Le mode local est plus limité': 'O modo local é mais limitado',
-    'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.':
-        'O modo local pode responder mais lentamente e com menos precisão, especialmente para perguntas longas ou difíceis.',
-    'Utiliser la carte graphique (GPU)': 'Usar placa gráfica (GPU)',
-    'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
-        'Acelera as respostas se o seu computador tiver uma placa gráfica compatível. Desative esta opção se houver problemas.',
-
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Adicionar um provedor',
     'Ajouter un fournisseur personnalisé': 'Adicionar um provedor personalizado',
@@ -126,8 +105,6 @@ const pt: Record<string, string> = {
         'A chave de API está faltando para este provedor.',
     'Fournisseur IA inconnu.': 'Provedor de IA desconhecido.',
     'Validation du fournisseur impossible.': 'Não foi possível validar o provedor.',
-    'Le mode local nécessite une langue par défaut et un moteur local actif.':
-        'O modo local exige um idioma padrão e um mecanismo local ativo.',
     'La synthèse du navigateur est gérée dans le processus renderer.':
         'A síntese de voz do navegador é gerenciada no processo renderer.',
     'La prévisualisation du navigateur est gérée dans le processus renderer.':

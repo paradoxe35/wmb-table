@@ -4,8 +4,6 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
 import type { AiProviderConfig, AiSettings } from '@shared/ai.types';
-import type { LocalRuntimeService } from './local/local-runtime.service';
-import { createLocalProvider } from './local/local-provider';
 import { wrapReasoningFilteredModel } from './model-wrapper';
 
 interface ProviderFactory {
@@ -44,24 +42,10 @@ export function resolveLanguageModel(input: {
     settings: AiSettings;
     providerId: string;
     modelId: string;
-    defaultContentLanguage?: string;
-    localRuntime?: LocalRuntimeService;
     apiKey?: string;
     baseUrl?: string;
 }): LanguageModel {
     const { providerId, modelId, settings } = input;
-
-    if (providerId === 'local') {
-        if (!input.localRuntime || !input.defaultContentLanguage) {
-            throw new Error(
-                'Le mode local nécessite une langue par défaut et un moteur local actif.',
-            );
-        }
-        return createLocalProvider({
-            runtime: input.localRuntime,
-            defaultContentLanguage: input.defaultContentLanguage,
-        }).languageModel(modelId);
-    }
 
     const builtinFactory = BUILTIN_PROVIDERS[providerId];
     if (builtinFactory) {

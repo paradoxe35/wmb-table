@@ -72,8 +72,6 @@ import type {
     AiConversation,
     AiConversationHistoryPage,
     AiConversationHistoryPageRequest,
-    AiModelDownloadProgress,
-    AiModelScanResult,
     AiRetryMessageRequest,
     AiRetryMessageResult,
     AiProviderTestResult,
@@ -284,9 +282,7 @@ export const AiChannels = {
     sendMessage: 'ai:sendMessage',
     retryMessage: 'ai:retryMessage',
     stopGeneration: 'ai:stopGeneration',
-    scanLocalModels: 'ai:scanLocalModels',
     testProvider: 'ai:testProvider',
-    downloadModel: 'ai:downloadModel',
     fetchProviderModels: 'ai:fetchProviderModels',
 } as const;
 
@@ -324,7 +320,6 @@ export const PushChannels = {
     aiStreamError: 'push:aiStreamError',
     aiToolCallStart: 'push:aiToolCallStart',
     aiToolCallComplete: 'push:aiToolCallComplete',
-    aiModelDownloadProgress: 'push:aiModelDownloadProgress',
     aiReasoningDelta: 'push:aiReasoningDelta',
     aiConversationUpdated: 'push:aiConversationUpdated',
     toggleReadingMode: 'push:toggleReadingMode',
@@ -606,12 +601,10 @@ export interface InvokeChannelMap {
     [AiChannels.sendMessage]: { args: [AiSendMessageRequest]; return: AiSendMessageResult };
     [AiChannels.retryMessage]: { args: [AiRetryMessageRequest]; return: AiRetryMessageResult };
     [AiChannels.stopGeneration]: { args: [string]; return: void };
-    [AiChannels.scanLocalModels]: { args: []; return: AiModelScanResult };
     [AiChannels.testProvider]: {
         args: [{ providerId: string; model: string; apiKey?: string; baseUrl?: string }];
         return: AiProviderTestResult;
     };
-    [AiChannels.downloadModel]: { args: [string]; return: void };
     [AiChannels.fetchProviderModels]: {
         args: [{ providerId: string; apiKey?: string; baseUrl?: string }];
         return: AiRemoteModel[];
@@ -649,7 +642,6 @@ export interface PushEventMap {
     [PushChannels.aiStreamError]: AiStreamErrorEvent;
     [PushChannels.aiToolCallStart]: AiToolEvent;
     [PushChannels.aiToolCallComplete]: AiToolEvent;
-    [PushChannels.aiModelDownloadProgress]: AiModelDownloadProgress;
     [PushChannels.aiReasoningDelta]: AiReasoningEvent;
     [PushChannels.aiConversationUpdated]: AiConversationUpdatedEvent;
     [PushChannels.toggleReadingMode]: void;

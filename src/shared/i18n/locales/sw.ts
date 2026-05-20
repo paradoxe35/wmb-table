@@ -88,27 +88,6 @@ const sw: Record<string, string> = {
     'Les modèles Gemini de Google.': 'Mifano ya Gemini ya Google.',
     "Les modèles Claude d'Anthropic.": 'Mifano ya Claude ya Anthropic.',
 
-    // ── AI local models ──
-    'Modèle local': 'Mfano wa ndani',
-    Actualiser: 'Onyesha upya',
-    'Choisir un modèle': 'Chagua mfano',
-    Utiliser: 'Tumia',
-    'Modèle téléchargé': 'Mfano umepakuliwa',
-    'Le téléchargement a échoué.': 'Upakuaji umeshindwa.',
-    '~{{size}} Mo': '~{{size}} MB',
-    'Léger et rapide. Idéal pour un usage quotidien sur la plupart des ordinateurs.':
-        'Mwepesi na wa haraka. Bora kwa matumizi ya kila siku kwenye kompyuta nyingi.',
-    'Plus complet, meilleure compréhension. Nécessite un peu plus de mémoire.':
-        'Una uwezo zaidi na uelewa bora. Unahitaji kumbukumbu zaidi kidogo.',
-    'Fonctionne sans connexion internet, directement sur votre ordinateur. Téléchargez un modèle pour commencer.':
-        'Hufanya kazi bila intaneti, moja kwa moja kwenye kompyuta yako. Pakua mfano ili kuanza.',
-    'Le mode local est plus limité': 'Hali ya ndani ina mipaka zaidi',
-    'Le mode local peut répondre plus lentement et avec moins de précision, surtout pour les questions longues ou difficiles.':
-        'Hali ya ndani inaweza kujibu polepole zaidi na kwa usahihi mdogo, hasa kwa maswali marefu au magumu.',
-    'Utiliser la carte graphique (GPU)': 'Tumia kadi ya picha (GPU)',
-    'Accélère les réponses si votre ordinateur possède une carte graphique compatible. Désactivez cette option en cas de problème.':
-        'Huongeza kasi ya majibu ikiwa kompyuta yako ina kadi ya picha inayotumika. Zima chaguo hili ukipata matatizo.',
-
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Ongeza mtoa huduma',
     'Ajouter un fournisseur personnalisé': 'Ongeza mtoa huduma maalum',
@@ -126,8 +105,6 @@ const sw: Record<string, string> = {
     'La clé API est manquante pour ce fournisseur.': 'Ufunguo wa API haupo kwa mtoa huduma huyu.',
     'Fournisseur IA inconnu.': 'Mtoa huduma wa AI hajulikani.',
     'Validation du fournisseur impossible.': 'Haiwezekani kuthibitisha mtoa huduma.',
-    'Le mode local nécessite une langue par défaut et un moteur local actif.':
-        'Hali ya ndani inahitaji lugha chaguomsingi na injini ya ndani inayofanya kazi.',
     'La synthèse du navigateur est gérée dans le processus renderer.':
         'Usanisi wa sauti wa kivinjari unasimamiwa katika mchakato wa renderer.',
     'La prévisualisation du navigateur est gérée dans le processus renderer.':

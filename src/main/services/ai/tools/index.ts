@@ -11,7 +11,7 @@ import { buildAgentTools } from '../agents';
 
 export interface BuildAiToolsOptions {
     model?: LanguageModel;
-    isLocal?: boolean;
+    disableAgentTools?: boolean;
     uiLanguage?: string;
     activeBibleVersion?: string;
     maxOutputTokens?: number;
@@ -54,7 +54,7 @@ export function buildAiTools(defaultContentLanguage: string, options?: BuildAiTo
             : undefined;
 
     const agentExecutors =
-        options?.model && !options.isLocal
+        options?.model && !options.disableAgentTools
             ? buildAgentTools({
                   model: options.model,
                   contentLanguage: defaultContentLanguage,

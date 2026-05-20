@@ -2,13 +2,6 @@ import type { AiProviderDefinition } from '@shared/ai.types';
 
 const PROVIDER_DEFINITIONS: AiProviderDefinition[] = [
     {
-        id: 'local',
-        kind: 'local',
-        name: 'Local',
-        description: 'Fonctionne sans connexion internet, directement sur votre ordinateur.',
-        configurableFields: [{ key: 'model', kind: 'text' }],
-    },
-    {
         id: 'openrouter',
         kind: 'remote',
         name: 'OpenRouter',

@@ -210,10 +210,6 @@ export async function fetchProviderModels(
     input: { providerId: string; apiKey?: string; baseUrl?: string },
 ): Promise<AiRemoteModel[]> {
     const { providerId } = input;
-    if (providerId === 'local') {
-        return [];
-    }
-
     const { apiKey, baseUrl } = resolveCredentials(settings, providerId, input);
     const base = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
     if (!base) {
@@ -269,10 +265,6 @@ export async function getModelLimits(
     modelId: string,
     baseUrl?: string,
 ): Promise<ModelLimits> {
-    if (providerId === 'local') {
-        return {};
-    }
-
     const resolvedBaseUrl = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
     const cacheScope = getModelLimitCacheScope(providerId, resolvedBaseUrl);
     const limits: ModelLimits = {
@@ -302,10 +294,6 @@ export async function getModelContextWindow(
     modelId: string,
     baseUrl?: string,
 ): Promise<number | undefined> {
-    if (providerId === 'local') {
-        return undefined;
-    }
-
     const resolvedBaseUrl = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
     const cacheScope = getModelLimitCacheScope(providerId, resolvedBaseUrl);
     const cachedContextWindow = getCachedContextWindow(modelId, cacheScope);

@@ -151,7 +151,6 @@ function ModelSelect({
     }, [localValue, defaultModel, debouncedOnChange, onChange]);
 
     const fetchModels = useCallback(async () => {
-        if (providerId === 'local') return;
         try {
             const models = await window.api.ai.fetchProviderModels({
                 providerId,
