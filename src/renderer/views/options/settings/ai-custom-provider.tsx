@@ -92,7 +92,12 @@ export default function AiCustomProviderModal({
                         placeholder={t('ex: Mon Service IA')}
                     />
                 </Form.Item>
-                <Form.Item label={t('URL de base')} style={{ marginBottom: 12 }} required>
+                <Form.Item
+                    label={t('URL de base')}
+                    style={{ marginBottom: 12 }}
+                    required
+                    extra={t('Compatible avec l’API OpenAI.')}
+                >
                     <Input
                         value={draft.baseUrl}
                         onChange={(e) => setDraft((d) => ({ ...d, baseUrl: e.target.value }))}

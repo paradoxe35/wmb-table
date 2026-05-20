@@ -45,6 +45,18 @@ const PROVIDER_DEFINITIONS: AiProviderDefinition[] = [
             { key: 'model', kind: 'text' },
         ],
     },
+    {
+        id: 'ollama',
+        kind: 'remote',
+        name: 'Ollama',
+        description:
+            'Utilisez Ollama via son API compatible OpenAI, en local ou avec une URL cloud.',
+        configurableFields: [
+            { key: 'baseUrl', kind: 'text' },
+            { key: 'apiKey', kind: 'secret' },
+            { key: 'model', kind: 'text' },
+        ],
+    },
 ];
 
 export function getAiProviderCatalog(): AiProviderDefinition[] {

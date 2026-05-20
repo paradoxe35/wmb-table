@@ -120,6 +120,7 @@ describe('AiService', () => {
                 openai: { enabled: true, model: 'gpt-5-mini', apiKey: 'oa-key' },
                 gemini: { enabled: true, model: 'gemini-2.5-flash', apiKey: 'gm-key' },
                 claude: { enabled: true, model: 'claude-haiku-4-5', apiKey: 'cl-key' },
+                ollama: { enabled: true, model: 'llama3.2' },
             },
             customProviders: [],
         });
