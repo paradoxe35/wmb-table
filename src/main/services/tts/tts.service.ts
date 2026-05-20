@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { extname, join, relative, sep } from 'node:path';
 import log from 'electron-log';
-import pLimit from 'p-limit';
+import pLimitModule from 'p-limit';
 import { getMainWindow } from '@main/lib/window';
 import { sendToRenderer } from '@main/ipc/register';
 import { PushChannels } from '@shared/ipc.types';
@@ -34,6 +34,9 @@ import {
     type TtsCompatibilityResult,
     TTS_REFERENCE_VOICES,
 } from '@shared/tts.types';
+import { resolveDefaultExport } from '@main/lib/module-interop';
+
+const pLimit = resolveDefaultExport(pLimitModule);
 
 /** A prepared playback segment is always a disk cache reference. */
 type PreparedSegment = CacheHit;

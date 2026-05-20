@@ -1,5 +1,5 @@
 import log from 'electron-log';
-import pLimit from 'p-limit';
+import pLimitModule from 'p-limit';
 import { SimpleCache } from '@main/lib/simple-cache';
 import type { TtsProvider } from './provider';
 import type {
@@ -15,6 +15,9 @@ import type {
 } from '@shared/tts.types';
 import { normalizeLanguageCode } from '@shared/tts.types';
 import { fetchTtsWithRetry } from './network-retry';
+import { resolveDefaultExport } from '@main/lib/module-interop';
+
+const pLimit = resolveDefaultExport(pLimitModule);
 
 const CARTESIA_API_BASE = 'https://api.cartesia.ai';
 const CARTESIA_VERSION = '2025-04-16';

@@ -24,6 +24,10 @@ import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
 
+if (process.platform === 'linux' && process.env.APPIMAGE) {
+    app.commandLine.appendSwitch('no-sandbox');
+}
+
 // Initialize logger first
 initializeLogger();
 

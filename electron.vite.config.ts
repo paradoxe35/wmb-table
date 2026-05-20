@@ -4,6 +4,9 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
     main: {
+        build: {
+            bytecode: true,
+        },
         resolve: {
             alias: {
                 '@main': resolve('src/main'),

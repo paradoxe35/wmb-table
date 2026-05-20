@@ -1,6 +1,6 @@
 import { extname } from 'node:path';
 import mammoth from 'mammoth';
-import EPub from 'epub';
+import EPubModule from 'epub';
 import { marked } from 'marked';
 import {
     extractPdfParagraphs,
@@ -9,6 +9,9 @@ import {
     buildParagraphsFromLines,
 } from './pdf-extract.service';
 import type { CustomDocumentImportInput, CustomDocumentImportFormat } from '@shared/types';
+import { resolveDefaultExport } from '@main/lib/module-interop';
+
+const EPub = resolveDefaultExport(EPubModule);
 
 const MAX_DOCUMENT_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
 const TEXT_DECODER = new TextDecoder('utf-8');

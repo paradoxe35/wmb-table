@@ -3,7 +3,6 @@
     "version": "2.0.0",
     "productName": "Wmb Table",
     "description": "Application de lecture et d'étude des prédications de William Marrion Branham, avec Bible intégrée, notes, synthèse vocale et recherche avancée.",
-    "type": "module",
     "main": "./out/main/index.js",
     "author": {
         "name": "Wmb Table Team",
