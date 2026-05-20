@@ -3,35 +3,45 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createOpenAI } from '@ai-sdk/openai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModel } from 'ai';
-import type { AiProviderConfig, AiSettings } from '@shared/ai.types';
+import {
+    BUILTIN_PROVIDER_REQUIRES_API_KEY,
+    DEFAULT_PROVIDER_BASE_URLS,
+    resolveProviderApiKey,
+    resolveProviderBaseUrl,
+    type AiBuiltinProviderId,
+    type AiSettings,
+} from '@shared/ai.types';
 import { wrapReasoningFilteredModel } from './model-wrapper';
 
 interface ProviderFactory {
     create(apiKey: string, modelId: string, baseUrl?: string): LanguageModel;
-    requiresApiKey: boolean;
 }
 
 const BUILTIN_PROVIDERS: Record<string, ProviderFactory> = {
     openrouter: {
-        requiresApiKey: true,
         create: (apiKey, modelId) =>
             createOpenAICompatible({
                 name: 'openrouter',
                 apiKey,
-                baseURL: 'https://openrouter.ai/api/v1',
+                baseURL: DEFAULT_PROVIDER_BASE_URLS.openrouter,
             })(modelId),
     },
     openai: {
-        requiresApiKey: true,
         create: (apiKey, modelId) => createOpenAI({ apiKey })(modelId),
     },
     gemini: {
-        requiresApiKey: true,
         create: (apiKey, modelId) => createGoogleGenerativeAI({ apiKey })(modelId),
     },
     claude: {
-        requiresApiKey: true,
         create: (apiKey, modelId) => createAnthropic({ apiKey })(modelId),
+    },
+    ollama: {
+        create: (apiKey, modelId, baseUrl) =>
+            createOpenAICompatible({
+                name: 'ollama',
+                apiKey: apiKey || 'ollama',
+                baseURL: baseUrl || DEFAULT_PROVIDER_BASE_URLS.ollama,
+            })(modelId),
     },
 };
 
@@ -49,14 +59,13 @@ export function resolveLanguageModel(input: {
 
     const builtinFactory = BUILTIN_PROVIDERS[providerId];
     if (builtinFactory) {
-        const providerConfig = settings.providers[providerId as keyof AiSettings['providers']] as
-            | AiProviderConfig
-            | undefined;
-        const apiKey = input.apiKey ?? providerConfig?.apiKey;
-        if (builtinFactory.requiresApiKey && !apiKey) {
+        const builtinId = providerId as AiBuiltinProviderId;
+        const apiKey = input.apiKey ?? resolveProviderApiKey(settings, providerId);
+        if (BUILTIN_PROVIDER_REQUIRES_API_KEY[builtinId] && !apiKey) {
             throw new Error('La clé API est manquante pour ce fournisseur.');
         }
-        return wrapReasoningFilteredModel(builtinFactory.create(apiKey ?? '', modelId));
+        const baseUrl = input.baseUrl ?? resolveProviderBaseUrl(settings, providerId);
+        return wrapReasoningFilteredModel(builtinFactory.create(apiKey ?? '', modelId, baseUrl));
     }
 
     const customProvider = settings.customProviders.find((p) => p.id === providerId);

@@ -1,7 +1,12 @@
 import log from '@main/lib/logger';
 import { SimpleCache } from '@main/lib/simple-cache';
 import type { AiRemoteModel, AiSettings } from '@shared/ai.types';
-import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
+import {
+    BUILTIN_PROVIDER_IDS,
+    BUILTIN_PROVIDER_REQUIRES_API_KEY,
+    resolveProviderApiKey,
+    resolveProviderBaseUrl,
+} from '@shared/ai.types';
 import {
     buildProviderModelsListCacheKey,
     buildModelLimitCacheScope,
@@ -13,16 +18,7 @@ import {
 } from './model-context-cache';
 import { lookupModelLimits, type ModelLimits } from './model-context-registry';
 
-// ── Constants ──
-
 const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
-
-const BUILTIN_BASE_URLS: Record<string, string> = {
-    openai: 'https://api.openai.com/v1',
-    openrouter: 'https://openrouter.ai/api/v1',
-    gemini: 'https://generativelanguage.googleapis.com/v1beta',
-    claude: 'https://api.anthropic.com/v1',
-};
 
 // ── Credential resolution ──
 
@@ -41,20 +37,10 @@ function resolveCredentials(
     providerId: string,
     input: { apiKey?: string; baseUrl?: string },
 ): ResolvedCredentials {
-    if ((BUILTIN_PROVIDER_IDS as readonly string[]).includes(providerId)) {
-        const config = settings.providers[providerId as keyof AiSettings['providers']];
-        return { apiKey: input.apiKey ?? config?.apiKey, baseUrl: undefined };
-    }
-
-    const custom = settings.customProviders.find((p) => p.id === providerId);
-    if (custom) {
-        return {
-            apiKey: input.apiKey ?? custom.apiKey,
-            baseUrl: input.baseUrl ?? custom.baseUrl,
-        };
-    }
-
-    return { apiKey: input.apiKey, baseUrl: input.baseUrl };
+    return {
+        apiKey: input.apiKey ?? resolveProviderApiKey(settings, providerId),
+        baseUrl: input.baseUrl ?? resolveProviderBaseUrl(settings, providerId),
+    };
 }
 
 // ── Helpers ──
@@ -211,13 +197,19 @@ export async function fetchProviderModels(
 ): Promise<AiRemoteModel[]> {
     const { providerId } = input;
     const { apiKey, baseUrl } = resolveCredentials(settings, providerId, input);
-    const base = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
+    const base = normalizeBaseUrl(baseUrl);
     if (!base) {
         return [];
     }
 
     const isBuiltin = (BUILTIN_PROVIDER_IDS as readonly string[]).includes(providerId);
-    if (isBuiltin && !apiKey) {
+    if (
+        isBuiltin &&
+        BUILTIN_PROVIDER_REQUIRES_API_KEY[
+            providerId as keyof typeof BUILTIN_PROVIDER_REQUIRES_API_KEY
+        ] &&
+        !apiKey
+    ) {
         return [];
     }
 
@@ -265,7 +257,7 @@ export async function getModelLimits(
     modelId: string,
     baseUrl?: string,
 ): Promise<ModelLimits> {
-    const resolvedBaseUrl = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
+    const resolvedBaseUrl = normalizeBaseUrl(baseUrl);
     const cacheScope = getModelLimitCacheScope(providerId, resolvedBaseUrl);
     const limits: ModelLimits = {
         contextWindow: getCachedContextWindow(modelId, cacheScope),
@@ -294,7 +286,7 @@ export async function getModelContextWindow(
     modelId: string,
     baseUrl?: string,
 ): Promise<number | undefined> {
-    const resolvedBaseUrl = normalizeBaseUrl(baseUrl ?? BUILTIN_BASE_URLS[providerId]);
+    const resolvedBaseUrl = normalizeBaseUrl(baseUrl);
     const cacheScope = getModelLimitCacheScope(providerId, resolvedBaseUrl);
     const cachedContextWindow = getCachedContextWindow(modelId, cacheScope);
     if (cachedContextWindow) {

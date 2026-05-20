@@ -62,6 +62,7 @@ const sw: Record<string, string> = {
     'Nom affiché': 'Jina linaloonekana',
     Optionnel: 'Hiari',
     'Modèle par défaut': 'Mfano chaguomsingi',
+    'URL par défaut': 'URL chaguomsingi',
     Recommandé: 'Inapendekezwa',
     Installé: 'Imesakinishwa',
     Nouveau: 'Mpya',
@@ -87,10 +88,13 @@ const sw: Record<string, string> = {
     'ChatGPT et autres modèles OpenAI.': 'ChatGPT na mifano mingine ya OpenAI.',
     'Les modèles Gemini de Google.': 'Mifano ya Gemini ya Google.',
     "Les modèles Claude d'Anthropic.": 'Mifano ya Claude ya Anthropic.',
+    'Utilisez Ollama via son API compatible OpenAI, en local ou avec une URL cloud.':
+        'Tumia Ollama kupitia API yake inayolingana na OpenAI, ndani ya kompyuta au kwa URL ya cloud.',
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Ongeza mtoa huduma',
     'Ajouter un fournisseur personnalisé': 'Ongeza mtoa huduma maalum',
+    'Compatible avec l’API OpenAI.': 'Inalingana na API ya OpenAI.',
     'Supprimer ce fournisseur ?': 'Futa mtoa huduma huyu?',
     'Un fournisseur avec ce nom existe déjà.': 'Mtoa huduma mwenye jina hili tayari yupo.',
     'ex: Mon Service IA': 'mf.: Huduma Yangu ya AI',

@@ -48,6 +48,7 @@ function createSettings(): AiSettings {
             openai: { enabled: true, model: 'gpt-5-mini', apiKey: 'oa-key' },
             gemini: { enabled: true, model: 'gemini-2.5-flash', apiKey: 'gm-key' },
             claude: { enabled: true, model: 'claude-haiku-4-5', apiKey: 'cl-key' },
+            ollama: { enabled: true, model: 'llama3.2' },
         },
         customProviders: [
             {
@@ -132,6 +133,27 @@ describe('model-fetcher', () => {
             key: 'ai-model-output:custom-a%3Ahttps%3A%2F%2Fexample-a.test%2Fv1:model-a',
             value: 4_096,
         });
+    });
+
+    it('fetches Ollama models from the configured OpenAI-compatible base URL without an API key', async () => {
+        const settings = createSettings();
+        settings.providers.ollama.baseUrl = 'http://localhost:11434/v1';
+
+        const models = await fetchProviderModels(settings, {
+            providerId: 'ollama',
+        });
+
+        expect(globalThis.fetch).toHaveBeenCalledWith('http://localhost:11434/v1/models', {
+            headers: {},
+        });
+        expect(models).toEqual([
+            {
+                id: 'model-a',
+                name: 'Model A',
+                contextWindow: 123_456,
+                maxOutputTokens: undefined,
+            },
+        ]);
     });
 
     it('checks the dedicated model context cache before the model list cache', async () => {

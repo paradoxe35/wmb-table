@@ -11,7 +11,7 @@ import * as configRepo from '@main/database/repositories/config.repository';
 import * as languagePackService from '@main/services/language-pack.service';
 import { PushChannels } from '@shared/ipc.types';
 import type { PdfExportResult } from '@shared/ipc.types';
-import { BUILTIN_PROVIDER_IDS } from '@shared/ai.types';
+import { BUILTIN_PROVIDER_IDS, resolveProviderBaseUrl } from '@shared/ai.types';
 import type {
     AiConversation,
     AiConversationHistoryPage,
@@ -430,9 +430,8 @@ export class AiService {
             configRepo.getActiveBibleVersionAbbreviation(),
         );
 
-        const providerBaseUrl = settings.customProviders.find(
-            (provider) => provider.id === providerId,
-        )?.baseUrl;
+        const providerBaseUrl = resolveProviderBaseUrl(settings, providerId);
+
         const modelLimits = await getModelLimits(providerId, modelId, providerBaseUrl);
         const contextWindow = modelLimits.contextWindow;
         const smallContext = contextWindow != null && contextWindow < MIN_REMOTE_CONTEXT_WINDOW;
@@ -457,6 +456,7 @@ export class AiService {
             settings,
             providerId,
             modelId,
+            baseUrl: providerBaseUrl,
         });
         const installedLanguages = await languagePackService.getInstalledLanguages();
 

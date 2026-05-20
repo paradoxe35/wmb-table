@@ -10,6 +10,8 @@ import { useTranslation } from 'react-i18next';
 import {
     resolveActiveModel,
     DEFAULT_MODELS,
+    DEFAULT_PROVIDER_BASE_URLS,
+    BUILTIN_PROVIDER_REQUIRES_API_KEY,
     type AiBuiltinProviderId,
     type AiCustomProviderConfig,
     type AiProviderDefinition,
@@ -216,6 +218,10 @@ function defaultModelHint(
     return defaultModel ? `${t('Modèle par défaut')}: ${defaultModel}` : undefined;
 }
 
+function defaultBaseUrlHint(t: (k: string) => string, defaultBaseUrl?: string): string | undefined {
+    return defaultBaseUrl ? `${t('URL par défaut')}: ${defaultBaseUrl}` : undefined;
+}
+
 // ── Provider configs ──
 
 export function BuiltinProviderConfig({
@@ -230,6 +236,9 @@ export function BuiltinProviderConfig({
     const { t } = useTranslation();
     const config = settings.providers[provider.id as AiBuiltinProviderId];
     const activeModel = resolveActiveModel(settings);
+
+    const requiresApiKey =
+        BUILTIN_PROVIDER_REQUIRES_API_KEY[provider.id as AiBuiltinProviderId] ?? true;
 
     function updateField(key: string, value: string) {
         onSave({
@@ -264,20 +273,37 @@ export function BuiltinProviderConfig({
                                         password
                                         value={config?.apiKey ?? ''}
                                         onChange={(val) => updateField('apiKey', val)}
-                                        placeholder={t('Clé API')}
+                                        placeholder={requiresApiKey ? t('Clé API') : t('Optionnel')}
                                     />
-                                    <ApiKeyLink provider={provider} />
+                                    {provider.apiKeyUrl ? <ApiKeyLink provider={provider} /> : null}
                                 </>
                             </Field>
                         );
                     }
                     if (field.key === 'baseUrl') {
                         return (
-                            <Field key={field.key} label={t('URL de base')}>
+                            <Field
+                                key={field.key}
+                                label={t('URL de base')}
+                                hint={defaultBaseUrlHint(
+                                    t,
+                                    DEFAULT_PROVIDER_BASE_URLS[provider.id as AiBuiltinProviderId],
+                                )}
+                            >
                                 <DebouncedInput
-                                    value={config?.baseUrl ?? ''}
+                                    value={
+                                        config?.baseUrl ??
+                                        DEFAULT_PROVIDER_BASE_URLS[
+                                            provider.id as AiBuiltinProviderId
+                                        ] ??
+                                        ''
+                                    }
                                     onChange={(val) => updateField('baseUrl', val)}
-                                    placeholder="https://..."
+                                    placeholder={
+                                        DEFAULT_PROVIDER_BASE_URLS[
+                                            provider.id as AiBuiltinProviderId
+                                        ] ?? 'https://...'
+                                    }
                                 />
                             </Field>
                         );
@@ -296,7 +322,10 @@ export function BuiltinProviderConfig({
                                 value={config?.model ?? ''}
                                 defaultModel={DEFAULT_MODELS[provider.id]}
                                 apiKey={config?.apiKey}
-                                baseUrl={config?.baseUrl}
+                                baseUrl={
+                                    config?.baseUrl ??
+                                    DEFAULT_PROVIDER_BASE_URLS[provider.id as AiBuiltinProviderId]
+                                }
                                 onChange={(model) => updateField('model', model)}
                             />
                         </Field>
@@ -306,7 +335,10 @@ export function BuiltinProviderConfig({
                     providerId={provider.id}
                     model={activeModel}
                     apiKey={config?.apiKey}
-                    baseUrl={config?.baseUrl}
+                    baseUrl={
+                        config?.baseUrl ??
+                        DEFAULT_PROVIDER_BASE_URLS[provider.id as AiBuiltinProviderId]
+                    }
                 />
             </Space>
         </Card>

@@ -61,6 +61,7 @@ const pt: Record<string, string> = {
     'Nom affiché': 'Nome exibido',
     Optionnel: 'Opcional',
     'Modèle par défaut': 'Modelo padrão',
+    'URL par défaut': 'URL padrão',
     Recommandé: 'Recomendado',
     Installé: 'Instalado',
     Nouveau: 'Novo',
@@ -86,10 +87,13 @@ const pt: Record<string, string> = {
     'ChatGPT et autres modèles OpenAI.': 'ChatGPT e outros modelos OpenAI.',
     'Les modèles Gemini de Google.': 'Os modelos Gemini do Google.',
     "Les modèles Claude d'Anthropic.": 'Os modelos Claude da Anthropic.',
+    'Utilisez Ollama via son API compatible OpenAI, en local ou avec une URL cloud.':
+        'Use o Ollama por sua API compatível com OpenAI, localmente ou com uma URL cloud.',
 
     // ── AI custom providers ──
     'Ajouter un fournisseur': 'Adicionar um provedor',
     'Ajouter un fournisseur personnalisé': 'Adicionar um provedor personalizado',
+    'Compatible avec l’API OpenAI.': 'Compatível com a API da OpenAI.',
     'Supprimer ce fournisseur ?': 'Excluir este provedor?',
     'Un fournisseur avec ce nom existe déjà.': 'Já existe um provedor com este nome.',
     'ex: Mon Service IA': 'ex.: Meu Serviço de IA',

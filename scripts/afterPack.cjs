@@ -1,44 +1,60 @@
-const { execSync } = require('child_process')
-const fs = require('fs')
-const path = require('path')
+const { execSync } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 const CHROMIUM_LOCALES_TO_KEEP = new Set([
-  'en-US.pak',
-  'en-GB.pak',
-  'es.pak',
-  'es-419.pak',
-  'fr.pak',
-  'pt-BR.pak',
-  'pt-PT.pak',
-  'sw.pak',
-])
+    'en-US.pak',
+    'en-GB.pak',
+    'es.pak',
+    'es-419.pak',
+    'fr.pak',
+    'pt-BR.pak',
+    'pt-PT.pak',
+    'sw.pak',
+]);
 
 function removeIfExists(targetPath) {
-  fs.rmSync(targetPath, { recursive: true, force: true })
+    fs.rmSync(targetPath, { recursive: true, force: true });
 }
 
-function pruneLinuxPayload(appOutDir) {
-  const localesDir = path.join(appOutDir, 'locales')
-  if (fs.existsSync(localesDir)) {
-    for (const localeFile of fs.readdirSync(localesDir)) {
-      if (!CHROMIUM_LOCALES_TO_KEEP.has(localeFile)) {
-        removeIfExists(path.join(localesDir, localeFile))
-      }
+function pruneChromiumLocales(appOutDir) {
+    const localeDirs = [
+        path.join(appOutDir, 'locales'),
+        path.join(
+            appOutDir,
+            'Wmb Table.app',
+            'Contents',
+            'Frameworks',
+            'Electron Framework.framework',
+            'Resources',
+            'locales',
+        ),
+    ];
+
+    for (const localesDir of localeDirs) {
+        if (!fs.existsSync(localesDir)) continue;
+
+        for (const localeFile of fs.readdirSync(localesDir)) {
+            if (!CHROMIUM_LOCALES_TO_KEEP.has(localeFile)) {
+                removeIfExists(path.join(localesDir, localeFile));
+            }
+        }
     }
-  }
+}
 
-  const betterSqliteDir = path.join(
-    appOutDir,
-    'resources',
-    'app.asar.unpacked',
-    'node_modules',
-    'better-sqlite3',
-  )
+function pruneBetterSqlitePayload(appOutDir) {
+    const betterSqliteDir = path.join(
+        appOutDir,
+        'resources',
+        'app.asar.unpacked',
+        'node_modules',
+        'better-sqlite3',
+    );
 
-  removeIfExists(path.join(betterSqliteDir, 'deps'))
-  removeIfExists(path.join(betterSqliteDir, 'src'))
-  removeIfExists(path.join(betterSqliteDir, 'binding.gyp'))
-  removeIfExists(path.join(betterSqliteDir, 'README.md'))
+    removeIfExists(path.join(betterSqliteDir, 'deps'));
+    removeIfExists(path.join(betterSqliteDir, 'src'));
+    removeIfExists(path.join(betterSqliteDir, 'binding.gyp'));
+    removeIfExists(path.join(betterSqliteDir, 'README.md'));
 }
 
 /**
@@ -57,28 +73,31 @@ function pruneLinuxPayload(appOutDir) {
  * electron-builder handles signing itself, so this hook is skipped.
  */
 exports.default = async function afterPack(context) {
-  if (context.electronPlatformName === 'linux') {
-    pruneLinuxPayload(context.appOutDir)
-    return
-  }
+    pruneChromiumLocales(context.appOutDir);
 
-  if (process.platform !== 'darwin') return
+    if (context.electronPlatformName === 'linux') {
+        pruneBetterSqlitePayload(context.appOutDir);
+    }
 
-  // Skip if a real signing identity is configured via electron-builder
-  if (process.env.CSC_LINK || process.env.CSC_NAME) {
-    console.log('afterPack: Skipping ad-hoc re-signing (CSC_LINK/CSC_NAME is set)')
-    return
-  }
+    if (process.platform !== 'darwin') return;
 
-  const appName = context.packager.appInfo.productFilename
-  const appPath = path.join(context.appOutDir, `${appName}.app`)
+    // Skip if a real signing identity is configured via electron-builder
+    if (process.env.CSC_LINK || process.env.CSC_NAME) {
+        console.log('afterPack: Skipping ad-hoc re-signing (CSC_LINK/CSC_NAME is set)');
+        return;
+    }
 
-  console.log(`afterPack: Re-signing "${appPath}" with ad-hoc identity for Team ID consistency...`)
+    const appName = context.packager.appInfo.productFilename;
+    const appPath = path.join(context.appOutDir, `${appName}.app`);
 
-  execSync(
-    `codesign --force --deep --sign - --entitlements "${path.resolve(__dirname, '../resources/entitlements.mac.plist')}" "${appPath}"`,
-    { stdio: 'inherit' }
-  )
+    console.log(
+        `afterPack: Re-signing "${appPath}" with ad-hoc identity for Team ID consistency...`,
+    );
 
-  console.log('afterPack: Ad-hoc re-signing complete')
-}
+    execSync(
+        `codesign --force --deep --sign - --entitlements "${path.resolve(__dirname, '../resources/entitlements.mac.plist')}" "${appPath}"`,
+        { stdio: 'inherit' },
+    );
+
+    console.log('afterPack: Ad-hoc re-signing complete');
+};

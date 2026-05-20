@@ -2,7 +2,7 @@
 // Provider IDs & basic types
 // ---------------------------------------------------------------------------
 
-export const BUILTIN_PROVIDER_IDS = ['openrouter', 'openai', 'gemini', 'claude'] as const;
+export const BUILTIN_PROVIDER_IDS = ['openrouter', 'openai', 'gemini', 'claude', 'ollama'] as const;
 export type AiBuiltinProviderId = (typeof BUILTIN_PROVIDER_IDS)[number];
 export type AiProviderId = AiBuiltinProviderId | string;
 export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';
@@ -76,12 +76,33 @@ export const DEFAULT_MODELS: Record<AiBuiltinProviderId, string | null> = {
     openai: 'gpt-5-mini',
     gemini: 'gemini-2.5-flash',
     claude: 'claude-haiku-4-5',
+    ollama: 'llama3.2',
+};
+
+export const DEFAULT_PROVIDER_BASE_URLS: Record<AiBuiltinProviderId, string> = {
+    openai: 'https://api.openai.com/v1',
+    openrouter: 'https://openrouter.ai/api/v1',
+    gemini: 'https://generativelanguage.googleapis.com/v1beta',
+    claude: 'https://api.anthropic.com/v1',
+    ollama: 'http://localhost:11434/v1',
+};
+
+export const BUILTIN_PROVIDER_REQUIRES_API_KEY: Record<AiBuiltinProviderId, boolean> = {
+    openrouter: true,
+    openai: true,
+    gemini: true,
+    claude: true,
+    ollama: false,
 };
 
 export function createDefaultAiSettings(): AiSettings {
     const providers = {} as AiProviders;
     for (const id of BUILTIN_PROVIDER_IDS) {
-        providers[id] = { enabled: false, model: DEFAULT_MODELS[id] };
+        providers[id] = {
+            enabled: false,
+            model: DEFAULT_MODELS[id],
+            baseUrl: DEFAULT_PROVIDER_BASE_URLS[id],
+        };
     }
     return {
         enabled: false,
@@ -111,6 +132,32 @@ export function resolveActiveModel(settings: AiSettings): string | null {
 
     const custom = settings.customProviders.find((p) => p.id === providerId);
     return custom?.model || custom?.defaultModel || null;
+}
+
+export function isBuiltinProviderId(providerId: string): providerId is AiBuiltinProviderId {
+    return (BUILTIN_PROVIDER_IDS as readonly string[]).includes(providerId);
+}
+
+export function resolveProviderBaseUrl(
+    settings: AiSettings,
+    providerId: string,
+): string | undefined {
+    if (isBuiltinProviderId(providerId)) {
+        return settings.providers[providerId]?.baseUrl ?? DEFAULT_PROVIDER_BASE_URLS[providerId];
+    }
+
+    return settings.customProviders.find((provider) => provider.id === providerId)?.baseUrl;
+}
+
+export function resolveProviderApiKey(
+    settings: AiSettings,
+    providerId: string,
+): string | undefined {
+    if (isBuiltinProviderId(providerId)) {
+        return settings.providers[providerId]?.apiKey;
+    }
+
+    return settings.customProviders.find((provider) => provider.id === providerId)?.apiKey;
 }
 
 /** Resolve the display name of the active provider. */
