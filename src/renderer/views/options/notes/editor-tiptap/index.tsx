@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { App as AntApp, Button, Dropdown, Input, Space, Spin, Tooltip, message } from 'antd';
+import { App as AntApp, Button, Dropdown, Space, Spin, Tooltip, message } from 'antd';
 import type { MenuProps } from 'antd';
 import {
     LeftOutlined,
@@ -17,6 +17,7 @@ import type { PdfExportResult } from '@shared/ipc.types';
 import type { UiLanguage } from '@shared/constants';
 import type { NoteItem } from '@shared/types';
 import { useValueStateRef } from '@renderer/hooks';
+import { AutoFocusInput } from '@renderer/components/auto-focus-input';
 import { hasMeaningfulHtmlContent } from '@shared/html-content';
 import { EDITOR_EVENT, type RenameNoteDetail } from '@renderer/utils/events';
 import {
@@ -72,8 +73,7 @@ const useRenameNote = (note: NoteItem | null) => {
                         modalInstance.destroy();
                     }}
                 >
-                    <Input
-                        autoFocus={true}
+                    <AutoFocusInput
                         size="large"
                         defaultValue={workingNote.current?.name}
                         minLength={3}

@@ -31,6 +31,7 @@ import {
 } from '@shared/types';
 
 import { DeleteBtn } from '@renderer/components/delete-btn';
+import { AutoFocusInput } from '@renderer/components/auto-focus-input';
 import { useDocumentTabsStore, useSubjectsStore } from '@renderer/stores';
 import {
     BookOutlined,
@@ -299,8 +300,7 @@ export default function Subject() {
                 okText: t('Enregistrer'),
                 title: t('Renommer le sujet'),
                 content: (
-                    <Input
-                        autoFocus
+                    <AutoFocusInput
                         size="large"
                         minLength={2}
                         defaultValue={item.name}
