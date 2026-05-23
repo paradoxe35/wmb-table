@@ -18,7 +18,7 @@ import { disposeAiService } from '@main/services/ai';
 import { disposePowerSaveBlocker } from '@main/services/power-save.service';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
-import { applyNativeThemeSource, getThemeState } from '@main/lib/native-theme';
+import { applyNativeChromeTheme, getThemeState } from '@main/lib/native-theme';
 import { THEME_BACKGROUND, type ResolvedTheme } from '@shared/theme';
 import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
@@ -47,7 +47,7 @@ function bootstrapPrimaryInstance(): void {
     i18n.changeLanguage(uiLang);
 
     const initialTheme = getThemeState();
-    applyNativeThemeSource(initialTheme.resolvedTheme);
+    applyNativeChromeTheme();
 
     registerPrivilegedSchemes();
     initializeIpc();

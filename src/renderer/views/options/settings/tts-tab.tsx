@@ -123,6 +123,11 @@ export default function TtsTab() {
         const language = contentLanguage ?? fallbackLanguage;
         setPreviewing(true);
         try {
+            const pendingSave = debouncedSaveRef.current.flush();
+            if (pendingSave) {
+                await pendingSave;
+            }
+
             if (settings.activeProvider === 'browser') {
                 const cfg = settings.providers.browser;
                 browserTts.speak(getTtsDemoText(language), cfg?.voiceId, {
@@ -207,14 +212,19 @@ export default function TtsTab() {
     // Provider switches and API key changes bypass this and save immediately.
     const debouncedSave = useMemo(() => {
         return debounce((partial: Partial<TtsSettings>, changeId: number) => {
-            void persistSettings(partial, changeId);
-        }, 1000);
+            return persistSettings(partial, changeId);
+        }, 500);
     }, [persistSettings]);
 
     // Cleanup debounce on unmount
     const debouncedSaveRef = useRef(debouncedSave);
     debouncedSaveRef.current = debouncedSave;
-    useEffect(() => () => debouncedSaveRef.current.cancel(), []);
+
+    useEffect(() => {
+        return () => {
+            debouncedSaveRef.current.cancel();
+        };
+    }, []);
 
     const handleUpdate = useCallback(
         (partial: Partial<TtsSettings>) => {
