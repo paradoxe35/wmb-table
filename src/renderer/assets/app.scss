@@ -1193,6 +1193,7 @@ body {
     outline: none;
     min-height: 320px;
     caret-color: var(--ant-color-primary, #1677ff);
+    user-select: text;
 
     &.ProseMirror-focused {
         outline: none;
