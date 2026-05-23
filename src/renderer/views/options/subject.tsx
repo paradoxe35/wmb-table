@@ -534,12 +534,18 @@ function ShowActiveDocuments({
     const { t } = useTranslation();
     const documentsRef = useRef(documents);
     const persistedOrderRef = useRef(documents.map((item) => item.id));
+    const localReorderRef = useRef(false);
 
     useEffect(() => {
         documentsRef.current = documents;
     }, [documents]);
 
     useEffect(() => {
+        if (localReorderRef.current) {
+            localReorderRef.current = false;
+            return;
+        }
+
         persistedOrderRef.current = documents.map((item) => item.id);
     }, [documents, subject.id]);
 
@@ -561,6 +567,15 @@ function ShowActiveDocuments({
             message.error(t("Erreur lors de l'export PDF"));
         }
     }, [subject.id, t]);
+
+    const handleReorder = useCallback(
+        (nextDocuments: SubjectDocumentItem[]) => {
+            localReorderRef.current = true;
+            documentsRef.current = nextDocuments;
+            setDocuments(nextDocuments);
+        },
+        [setDocuments],
+    );
 
     const persistOrder = useCallback(async () => {
         const nextIds = documentsRef.current.map((item) => item.id);
@@ -593,7 +608,7 @@ function ShowActiveDocuments({
                 <Reorder.Group
                     axis="y"
                     values={documents}
-                    onReorder={setDocuments}
+                    onReorder={handleReorder}
                     as="div"
                     className="subject-ref-list"
                 >
