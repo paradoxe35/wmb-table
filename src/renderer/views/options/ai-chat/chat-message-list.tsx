@@ -85,6 +85,7 @@ const AssistantMarkdown = memo(function AssistantMarkdown({
 
 const MAX_REASONING_LINES = 50;
 const LOAD_OLDER_THRESHOLD_PX = 200;
+const SCROLL_TOP_FADE_THRESHOLD_PX = 2;
 
 function ReasoningBlock({ messageId }: { messageId: string }) {
     const { t } = useTranslation();
@@ -353,11 +354,22 @@ const ChatMessageList = memo(function ChatMessageList({
     const conversationKey = conversationId ?? 'empty';
     const pendingInitialScrollConversation = useRef<string | null>(null);
     const prependScrollSnapshot = useRef<{ height: number; top: number } | null>(null);
+    const showTopFadeRef = useRef(false);
+    const [showTopFade, setShowTopFade] = useState(false);
 
     // When leaving options view, break the sticky lock so the ResizeObserver
     // doesn't auto-scroll to bottom when the chat becomes visible again.
     const prevMainView = useRef(mainView);
     const prevOptionView = useRef(optionView);
+
+    const updateTopFade = useCallback(() => {
+        const nextShowTopFade = (scrollRef.current?.scrollTop ?? 0) > SCROLL_TOP_FADE_THRESHOLD_PX;
+        if (showTopFadeRef.current === nextShowTopFade) {
+            return;
+        }
+        showTopFadeRef.current = nextShowTopFade;
+        setShowTopFade(nextShowTopFade);
+    }, [scrollRef]);
 
     useEffect(() => {
         if (prevMainView.current !== 'options' && mainView === 'options') {
@@ -384,8 +396,9 @@ const ChatMessageList = memo(function ChatMessageList({
         if (el) {
             el.scrollTop = el.scrollHeight;
         }
+        updateTopFade();
         pendingInitialScrollConversation.current = null;
-    }, [conversationKey, loading, scrollRef, stopScroll]);
+    }, [conversationKey, loading, scrollRef, stopScroll, updateTopFade]);
 
     const prevSending = useRef(sending);
     useEffect(() => {
@@ -417,8 +430,9 @@ const ChatMessageList = memo(function ChatMessageList({
 
         const snapshot = prependScrollSnapshot.current;
         el.scrollTop = el.scrollHeight - snapshot.height + snapshot.top;
+        updateTopFade();
         prependScrollSnapshot.current = null;
-    }, [loadingOlder, messages.length, scrollRef]);
+    }, [loadingOlder, messages.length, scrollRef, updateTopFade]);
 
     const lastMessageId = messages[messages.length - 1]?.id ?? null;
     const renderedMessages = useMemo(
@@ -444,6 +458,7 @@ const ChatMessageList = memo(function ChatMessageList({
 
     const handleScroll = useCallback((): void => {
         const el = scrollRef.current;
+        updateTopFade();
         if (
             !el ||
             loading ||
@@ -459,9 +474,7 @@ const ChatMessageList = memo(function ChatMessageList({
             top: el.scrollTop,
         };
         void onLoadOlderMessages();
-    }, [hasMoreHistory, loading, loadingOlder, onLoadOlderMessages, scrollRef]);
-
-    const showEdgeFades = !isAtBottom;
+    }, [hasMoreHistory, loading, loadingOlder, onLoadOlderMessages, scrollRef, updateTopFade]);
 
     return (
         <div className="ai-chat__messages-wrapper">
@@ -481,11 +494,11 @@ const ChatMessageList = memo(function ChatMessageList({
                 </div>
             </div>
             <div
-                className={`ai-chat__edge-fade ai-chat__edge-fade--top ${showEdgeFades ? 'is-visible' : ''}`}
+                className={`ai-chat__edge-fade ai-chat__edge-fade--top ${showTopFade ? 'is-visible' : ''}`}
                 aria-hidden="true"
             />
             <div
-                className={`ai-chat__edge-fade ai-chat__edge-fade--bottom ${showEdgeFades ? 'is-visible' : ''}`}
+                className={`ai-chat__edge-fade ai-chat__edge-fade--bottom ${!isAtBottom ? 'is-visible' : ''}`}
                 aria-hidden="true"
             />
             {loading && (
