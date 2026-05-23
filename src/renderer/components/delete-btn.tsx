@@ -1,10 +1,11 @@
 import { Button, Popconfirm, Tooltip } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 export function DeleteBtn({ confirm, loading }: { confirm: () => void; loading?: boolean }) {
     const { t } = useTranslation();
+    const popRef = useRef(false);
     const [tooltipOpen, setTooltipOpen] = useState(false);
 
     return (
@@ -12,6 +13,7 @@ export function DeleteBtn({ confirm, loading }: { confirm: () => void; loading?:
             title={t('Confirmer la suppression?')}
             onConfirm={() => confirm()}
             onOpenChange={(open) => {
+                popRef.current = open;
                 if (open) {
                     setTooltipOpen(false);
                 }
@@ -22,7 +24,11 @@ export function DeleteBtn({ confirm, loading }: { confirm: () => void; loading?:
             <Tooltip
                 title={t('Supprimer')}
                 open={tooltipOpen}
-                onOpenChange={(open) => setTooltipOpen(open)}
+                onOpenChange={(open) => {
+                    if (!popRef.current) {
+                        setTooltipOpen(open);
+                    }
+                }}
             >
                 <Button
                     shape="circle"
