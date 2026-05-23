@@ -497,10 +497,6 @@ const ChatMessageList = memo(function ChatMessageList({
                 className={`ai-chat__edge-fade ai-chat__edge-fade--top ${showTopFade ? 'is-visible' : ''}`}
                 aria-hidden="true"
             />
-            <div
-                className={`ai-chat__edge-fade ai-chat__edge-fade--bottom ${!isAtBottom ? 'is-visible' : ''}`}
-                aria-hidden="true"
-            />
             {loading && (
                 <div className="ai-chat__loading-overlay" aria-hidden="true">
                     <Spin indicator={<LoadingOutlined spin />} size="large" />

@@ -1,6 +1,6 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import { getMarkRange } from '@tiptap/core';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { message } from 'antd';
 import { StarterKit } from '@tiptap/starter-kit';
@@ -32,6 +32,7 @@ import {
 } from '../references';
 
 const WMB_BRAND_LINK = 'http://w.t/#wmb/';
+const EDITOR_TOP_FADE_THRESHOLD_PX = 2;
 
 function findAnchorElement(target: EventTarget | null): HTMLAnchorElement | null {
     let current = target instanceof HTMLElement ? target : null;
@@ -71,6 +72,18 @@ export function TiptapEditorView({
 
     const contextEventRef = useRef<MouseEvent | null>(null);
     const debouncedChangeRef = useRef(debounce(() => {}, 1000));
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const showTopFadeRef = useRef(false);
+    const [showTopFade, setShowTopFade] = useState(false);
+
+    const updateTopFade = useCallback(() => {
+        const nextShowTopFade = (scrollRef.current?.scrollTop ?? 0) > EDITOR_TOP_FADE_THRESHOLD_PX;
+        if (showTopFadeRef.current === nextShowTopFade) {
+            return;
+        }
+        showTopFadeRef.current = nextShowTopFade;
+        setShowTopFade(nextShowTopFade);
+    }, []);
 
     // Stable for the editor's lifetime — the parent remounts this component (via key) when
     // the underlying note content changes (initial load, import).
@@ -356,10 +369,16 @@ export function TiptapEditorView({
     return (
         <>
             {editable ? <EditorToolbar editor={editor} /> : null}
-            <div className="editor-scroll">
-                <div className="tiptap-editor-frame">
-                    <EditorContent editor={editor} />
+            <div className="editor-scroll-wrapper">
+                <div ref={scrollRef} className="editor-scroll" onScroll={updateTopFade}>
+                    <div className="tiptap-editor-frame">
+                        <EditorContent editor={editor} />
+                    </div>
                 </div>
+                <div
+                    className={`editor-edge-fade editor-edge-fade--top ${showTopFade ? 'is-visible' : ''}`}
+                    aria-hidden="true"
+                />
             </div>
             <WmbReferenceModal {...wmbReferenceModal} />
         </>
