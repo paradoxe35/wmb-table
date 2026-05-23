@@ -333,11 +333,6 @@
     background: linear-gradient(to bottom, var(--ant-color-bg-container) 0%, transparent 100%);
 }
 
-.ai-chat__edge-fade--bottom {
-    bottom: 0;
-    background: linear-gradient(to top, var(--ant-color-bg-container) 0%, transparent 100%);
-}
-
 .ai-chat__scroll-bottom {
     position: absolute;
     bottom: 8px;

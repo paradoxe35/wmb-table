@@ -1103,6 +1103,14 @@ body {
     overflow: hidden;
 }
 
+.editor-scroll-wrapper {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
 .editor-scroll {
     flex: 1;
     min-height: 0;
@@ -1110,6 +1118,26 @@ body {
     overflow-x: hidden;
     @include thin-scrollbar;
     background: var(--ant-color-bg-container, #fff);
+}
+
+.editor-edge-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 28px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 1;
+}
+
+.editor-edge-fade.is-visible {
+    opacity: 1;
+}
+
+.editor-edge-fade--top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--ant-color-bg-container) 0%, transparent 100%);
 }
 
 // ---------------------------------------------------------------------------
@@ -1165,6 +1193,7 @@ body {
     outline: none;
     min-height: 320px;
     caret-color: var(--ant-color-primary, #1677ff);
+    user-select: text;
 
     &.ProseMirror-focused {
         outline: none;
@@ -1524,7 +1553,7 @@ body {
         border-radius: 6px;
         background: var(--ant-color-fill-quaternary, rgba(0, 0, 0, 0.02));
         border: 1px solid var(--ant-color-border-secondary, #f0f0f0);
-        max-height: 360px;
+        max-height: 300px;
         overflow-y: auto;
         @include thin-scrollbar;
         font-size: var(--fs-md);

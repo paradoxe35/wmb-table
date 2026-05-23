@@ -45,6 +45,7 @@ export default function SidebarMenu({
     onCollapse?: (collapsed: boolean) => void;
 }) {
     const { t } = useTranslation();
+    const mainView = useAppStore((s) => s.mainView);
     const optionView = useAppStore((s) => s.optionView);
     const showOptions = useAppStore((s) => s.showOptions);
     const [aiEnabled, setAiEnabled] = React.useState(false);
@@ -105,6 +106,8 @@ export default function SidebarMenu({
         });
     }, [showOptions]);
 
+    const selectedKeys = mainView === 'options' ? [optionView] : [];
+
     return (
         <Sider
             className="layout__sidebar"
@@ -118,7 +121,7 @@ export default function SidebarMenu({
                     <Menu
                         mode="inline"
                         style={{ borderInlineEnd: 'none' }}
-                        selectedKeys={[optionView]}
+                        selectedKeys={selectedKeys}
                         items={menuItems}
                     />
                     <div style={{ flex: 1 }} />
@@ -126,7 +129,7 @@ export default function SidebarMenu({
                     <Menu
                         mode="inline"
                         style={{ borderInlineEnd: 'none' }}
-                        selectedKeys={[optionView]}
+                        selectedKeys={selectedKeys}
                         items={bottomMenuItems}
                     />
                 </div>

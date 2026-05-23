@@ -78,12 +78,12 @@ export default function App() {
             },
             components: {
                 Layout: {
-                    headerBg: isDark ? '#141414' : '#001529',
+                    headerBg: '#141414',
                     headerPadding: '0',
                     siderBg: isDark ? '#1f1f1f' : '#ffffff',
                 },
                 Menu: {
-                    darkItemBg: isDark ? '#141414' : '#001529',
+                    darkItemBg: '#141414',
                     darkItemSelectedBg: '#1990ff',
                 },
             },

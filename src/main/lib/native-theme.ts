@@ -9,6 +9,8 @@ import {
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getMainWindow } from './window';
 
+const NATIVE_CHROME_THEME: ResolvedTheme = 'dark';
+
 function systemPrefersDark(): boolean {
     return nativeTheme.shouldUseDarkColors;
 }
@@ -19,12 +21,12 @@ export function getThemeState(): ThemeState {
     return { themeMode, resolvedTheme };
 }
 
-export function applyNativeThemeSource(resolvedTheme: ResolvedTheme): void {
-    nativeTheme.themeSource = resolvedTheme;
+export function applyNativeChromeTheme(): void {
+    nativeTheme.themeSource = NATIVE_CHROME_THEME;
 }
 
 export function applyResolvedTheme(resolvedTheme: ResolvedTheme): void {
-    applyNativeThemeSource(resolvedTheme);
+    applyNativeChromeTheme();
     const win = getMainWindow();
     if (win && !win.isDestroyed()) {
         win.setBackgroundColor(THEME_BACKGROUND[resolvedTheme]);
