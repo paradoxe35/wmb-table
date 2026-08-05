@@ -426,28 +426,22 @@ function canRetryUserMessage(messages: AiMessage[], messageId: string): boolean 
     );
 }
 
-/** Conversations reached through search are not necessarily in the paged list */
+/**
+ * A conversation opened from search may sit outside the paged window. Looking it
+ * up here keeps `conversations` a faithful view of that window instead of a
+ * general lookup table.
+ */
 function findKnownConversation(
-    state: Pick<AiChatState, 'conversations' | 'searchResults'>,
+    state: Pick<AiChatState, 'conversations' | 'searchResults' | 'activeConversationRecord'>,
     conversationId: string,
 ): AiConversation | null {
     return (
         state.conversations.find((conversation) => conversation.id === conversationId) ??
         state.searchResults?.find((conversation) => conversation.id === conversationId) ??
-        null
+        (state.activeConversationRecord?.id === conversationId
+            ? state.activeConversationRecord
+            : null)
     );
-}
-
-/** Keeps the open conversation listed when a refreshed page no longer contains it */
-function withConversation(
-    conversations: AiConversation[],
-    conversation: AiConversation | null,
-): AiConversation[] {
-    if (!conversation || conversations.some((item) => item.id === conversation.id)) {
-        return conversations;
-    }
-
-    return sortConversationsByUpdatedAt([...conversations, conversation]);
 }
 
 function resolvePersistedActiveConversationId(
@@ -486,6 +480,8 @@ interface AiChatState {
     completionCount: number;
     lastCompletedConversationId: string | null;
     conversationSearch: string;
+    /** Metadata for the open conversation when it falls outside the paged window */
+    activeConversationRecord: AiConversation | null;
     /** Null while no search is active, so the sidebar can fall back to `conversations` */
     searchResults: AiConversation[] | null;
     searchList: ConversationListState;
@@ -550,6 +546,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     completionCount: 0,
     lastCompletedConversationId: null,
     conversationSearch: '',
+    activeConversationRecord: null,
     searchResults: null,
     searchList: EMPTY_CONVERSATION_LIST,
     loadingConversationSearch: false,
@@ -869,6 +866,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
                     return {
                         conversations: upsertConversation(state.conversations, conversation),
+                        activeConversationRecord:
+                            state.activeConversationRecord?.id === conversation.id
+                                ? conversation
+                                : state.activeConversationRecord,
                         conversationList: {
                             ...state.conversationList,
                             loadedCount: alreadyPresent
@@ -949,16 +950,20 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             const activeRecord = previousActiveConversationId
                 ? findKnownConversation(get(), previousActiveConversationId)
                 : null;
-            const conversations = withConversation(page.conversations, activeRecord);
-            const activeConversationId = resolvePersistedActiveConversationId(
-                conversations,
-                previousActiveConversationId,
-            );
+            // A conversation outside the refreshed page is still open, so keep it
+            // selected rather than deselecting on every sync
+            const activeConversationId = activeRecord
+                ? previousActiveConversationId
+                : resolvePersistedActiveConversationId(
+                      page.conversations,
+                      previousActiveConversationId,
+                  );
 
             set((state) => ({
-                conversations,
+                conversations: page.conversations,
                 conversationList: createConversationListState(page),
                 activeConversationId,
+                activeConversationRecord: activeRecord,
                 ...pruneConversationCache(state, activeConversationId),
             }));
 
@@ -1118,18 +1123,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     },
 
     selectConversation: async (conversationId) => {
-        // Promote a search-only result into the paged list so the header and its
-        // actions resolve, and it stays listed once the search is cleared
-        set((current) => {
-            if (current.conversations.some((item) => item.id === conversationId)) {
-                return {};
-            }
-
-            const fromSearch = current.searchResults?.find((item) => item.id === conversationId);
-            return fromSearch
-                ? { conversations: upsertConversation(current.conversations, fromSearch) }
-                : {};
-        });
+        // Remember the metadata without touching the paged list, so a conversation
+        // opened from search does not appear out of order once the search clears
+        set((current) => ({
+            activeConversationRecord: findKnownConversation(current, conversationId),
+        }));
 
         const state = get();
         const alreadyLoaded = conversationId in state.messagesByConversation;
@@ -1290,6 +1288,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 hasMore: state.conversationList.hasMore,
             },
             activeConversationId: conversation.id,
+            activeConversationRecord: conversation,
             historyByConversation: {
                 ...state.historyByConversation,
                 [conversation.id]: {
@@ -1312,6 +1311,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 state.searchResults?.map((item) =>
                     item.id === conversation.id ? conversation : item,
                 ) ?? null,
+            activeConversationRecord:
+                state.activeConversationRecord?.id === conversation.id
+                    ? conversation
+                    : state.activeConversationRecord,
         }));
         return conversation;
     },
@@ -1351,6 +1354,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                     state.activeConversationId === conversationId
                         ? null
                         : state.activeConversationId,
+                activeConversationRecord:
+                    state.activeConversationRecord?.id === conversationId
+                        ? null
+                        : state.activeConversationRecord,
                 messagesByConversation: nextMessages,
                 reasoningByMessage: removeReasoningByMessageIds(
                     state.reasoningByMessage,
@@ -1404,6 +1411,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 hasMore: false,
             },
             activeConversationId: null,
+            activeConversationRecord: null,
             messagesByConversation: {},
             reasoningByMessage: {},
             loadingConversationList: false,
@@ -1441,6 +1449,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         hasMore: state.conversationList.hasMore,
                     },
                     activeConversationId: conversation.id,
+                    activeConversationRecord: conversation,
                     historyByConversation: {
                         ...state.historyByConversation,
                         [conversation.id]: {
@@ -1551,6 +1560,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         },
                     },
                     activeConversationId: resolvedConversationId,
+                    activeConversationRecord: result.conversation,
                     conversationRuns: moveConversationRun(
                         state.conversationRuns,
                         conversationId,
@@ -1629,6 +1639,7 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 return {
                     conversations: upsertConversation(state.conversations, result.conversation),
                     activeConversationId: result.conversation.id,
+                    activeConversationRecord: result.conversation,
                     messagesByConversation: {
                         ...state.messagesByConversation,
                         [conversationId]: nextMessages,

@@ -48,6 +48,7 @@ export default function AiChatView() {
     const loadingConversationList = useAiChatStore((s) => s.loadingConversationList);
     const loadingOlderConversationList = useAiChatStore((s) => s.loadingOlderConversationList);
     const activeConversationId = useAiChatStore((s) => s.activeConversationId);
+    const activeConversationRecord = useAiChatStore((s) => s.activeConversationRecord);
     const activeMessages = useAiChatStore((s) =>
         activeConversationId
             ? (s.messagesByConversation[activeConversationId] ?? EMPTY_MESSAGES)
@@ -98,10 +99,14 @@ export default function AiChatView() {
         void initialize();
     }, [initialize]);
     const activeSending = Boolean(activeRun);
+    // Falls back to the stored record for a conversation outside the paged window
     const activeConversation = useMemo(
         () =>
-            conversations.find((conversation) => conversation.id === activeConversationId) ?? null,
-        [activeConversationId, conversations],
+            conversations.find((conversation) => conversation.id === activeConversationId) ??
+            (activeConversationRecord?.id === activeConversationId
+                ? activeConversationRecord
+                : null),
+        [activeConversationId, activeConversationRecord, conversations],
     );
     const activeConversationMap = useMemo(
         () =>
