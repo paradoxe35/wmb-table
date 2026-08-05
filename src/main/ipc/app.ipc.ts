@@ -75,7 +75,7 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.startDownloadUpdate, async () => {
-        startDownload();
+        return startDownload();
     });
 
     registerHandler(AppChannels.quitAndInstallUpdate, async () => {
@@ -83,7 +83,7 @@ export function registerAppHandlers(): void {
     });
 
     registerHandler(AppChannels.checkForUpdates, async () => {
-        checkForUpdates();
+        return checkForUpdates();
     });
 
     registerHandler(AppChannels.getSidebarStatus, async () => {

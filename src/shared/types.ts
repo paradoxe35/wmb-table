@@ -904,11 +904,26 @@ export type UpdateInfo = {
     releaseNotes?: string | null;
 };
 
+export type UpdaterStatus =
+    | 'none'
+    | 'checking'
+    | 'noUpdate'
+    | 'hasUpdate'
+    | 'downloading'
+    | 'downloaded'
+    | 'error';
+
 export type UpdaterNotification = {
-    type: 'none' | 'noUpdate' | 'hasUpdate' | 'downloading' | 'downloaded' | 'error';
+    type: UpdaterStatus;
     updateInfo?: UpdateInfo;
     progress?: UpdaterProgress;
     message?: string;
     /** False on Linux deb/tar.gz where auto-update is not supported */
     canAutoUpdate?: boolean;
+    /** False when the updater never started (dev / unpackaged build) */
+    updaterEnabled?: boolean;
+    /** True on Linux deb/rpm/pacman, where installing prompts for a sudo password */
+    requiresElevatedInstall?: boolean;
+    /** Version of the running application */
+    currentVersion?: string;
 };

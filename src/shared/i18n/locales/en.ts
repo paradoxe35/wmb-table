@@ -546,6 +546,18 @@ const en: Record<string, string> = {
     "La mise à jour a été téléchargée. Elle sera installée au prochain redémarrage, ou vous pouvez l'installer maintenant.":
         'The update has been downloaded. It will be installed on the next restart, or you can install it now.',
     'Redémarrer et installer': 'Restart and install',
+    'Aucune vérification effectuée': 'No check performed yet',
+    'Vérifiez si une nouvelle version est disponible.': 'Check whether a new version is available.',
+    'Préparation du téléchargement...': 'Preparing download...',
+    'Mise à jour automatique indisponible': 'Automatic update unavailable',
+    "Les mises à jour automatiques sont disponibles uniquement dans l'application installée.":
+        'Automatic updates are only available in the installed application.',
+    'Version actuelle': 'Current version',
+    'Nouvelle version': 'New version',
+    "La mise à jour automatique n'est pas prise en charge pour votre type d'installation. Veuillez télécharger la dernière version depuis le site.":
+        'Automatic updates are not supported for your installation type. Please download the latest version from the website.',
+    "Votre mot de passe administrateur sera demandé pour terminer l'installation.":
+        'Your administrator password will be requested to complete the installation.',
 
     // ── Language manager modal ──
     'Supprimer cette langue ?': 'Delete this language?',

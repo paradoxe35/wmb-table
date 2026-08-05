@@ -548,6 +548,19 @@ const es: Record<string, string> = {
     "La mise à jour a été téléchargée. Elle sera installée au prochain redémarrage, ou vous pouvez l'installer maintenant.":
         'La actualización se ha descargado. Se instalará en el próximo reinicio, o puede instalarla ahora.',
     'Redémarrer et installer': 'Reiniciar e instalar',
+    'Aucune vérification effectuée': 'Aún no se ha realizado ninguna comprobación',
+    'Vérifiez si une nouvelle version est disponible.':
+        'Compruebe si hay una nueva versión disponible.',
+    'Préparation du téléchargement...': 'Preparando la descarga...',
+    'Mise à jour automatique indisponible': 'Actualización automática no disponible',
+    "Les mises à jour automatiques sont disponibles uniquement dans l'application installée.":
+        'Las actualizaciones automáticas solo están disponibles en la aplicación instalada.',
+    'Version actuelle': 'Versión actual',
+    'Nouvelle version': 'Nueva versión',
+    "La mise à jour automatique n'est pas prise en charge pour votre type d'installation. Veuillez télécharger la dernière version depuis le site.":
+        'Las actualizaciones automáticas no son compatibles con su tipo de instalación. Descargue la última versión desde el sitio web.',
+    "Votre mot de passe administrateur sera demandé pour terminer l'installation.":
+        'Se solicitará su contraseña de administrador para completar la instalación.',
 
     // ── Language manager modal ──
     'Supprimer cette langue ?': '¿Eliminar este idioma?',

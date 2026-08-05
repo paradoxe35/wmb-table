@@ -102,6 +102,10 @@ jobs:
             - name: Set package version from tag
               run: npm version "${{ needs.validate.outputs.version }}" --no-git-tag-version --allow-same-version
 
+            - name: Install Linux packaging tools
+              if: matrix.platform == 'linux'
+              run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
+
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
 
@@ -125,7 +129,9 @@ jobs:
                       release/*.exe
                       release/*.AppImage
                       release/*.deb
-                      release/*.tar.gz
+                      release/*.rpm
+                      release/*.pacman
+                      release/*.pkg.tar.zst
                       release/*.zip
                       release/*.blockmap
                       release/latest*.yml
