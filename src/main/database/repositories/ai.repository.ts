@@ -1,8 +1,10 @@
-import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { getDb } from '../index';
+import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
+import { getDb, SQL_NORMALIZE_FUNCTION } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
 import { parseJsonOrFallback } from '@main/lib/json';
+import { strNormalize } from '@shared/searchable';
 import { logChange } from '@main/services/sync/change-log.service';
 import {
     AI_CONVERSATION_HISTORY_PAGE_SIZE,
@@ -145,22 +147,73 @@ export function getConversations(): AiConversation[] {
         .map(toConversation);
 }
 
-/** Escapes LIKE wildcards so a user typing "%" searches for a literal "%" */
-function toLikePattern(term: string): string {
-    return `%${term.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+const EXCERPT_RADIUS = 70;
+
+/**
+ * Case/accent-insensitive `LIKE` over a column. Both sides go through the same
+ * normalization, so "bapteme" finds "baptême" and CJK still matches by substring.
+ */
+function normalizedLike(column: SQLiteColumn, search: string) {
+    const pattern = `%${strNormalize(search).replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+    return sql`${sql.raw(SQL_NORMALIZE_FUNCTION)}(${column}) LIKE ${pattern} ESCAPE '\\'`;
 }
 
-/** Title match, or any message in the conversation containing the term */
+/** Matches the conversation title, or any message it contains */
 function conversationSearchCondition(search: string) {
-    const pattern = toLikePattern(search);
     return sql`(
-        ${aiConversations.title} LIKE ${pattern} ESCAPE '\\'
+        ${normalizedLike(aiConversations.title, search)}
         OR EXISTS (
             SELECT 1 FROM ${aiMessages}
             WHERE ${aiMessages.conversationId} = ${aiConversations.id}
-              AND ${aiMessages.content} LIKE ${pattern} ESCAPE '\\'
+              AND ${normalizedLike(aiMessages.content, search)}
         )
     )`;
+}
+
+/** Trims the message down to the text around the match so the reason is visible */
+function buildExcerpt(content: string, search: string): string {
+    const collapsed = content.replace(/\s+/g, ' ').trim();
+    const index = strNormalize(collapsed).indexOf(strNormalize(search));
+
+    if (index === -1) {
+        return collapsed.slice(0, EXCERPT_RADIUS * 2);
+    }
+
+    const start = Math.max(0, index - EXCERPT_RADIUS);
+    const end = Math.min(collapsed.length, index + search.length + EXCERPT_RADIUS);
+    return `${start > 0 ? '…' : ''}${collapsed.slice(start, end)}${end < collapsed.length ? '…' : ''}`;
+}
+
+/** Earliest matching message per conversation, so each hit can show its context */
+function getSearchExcerpts(
+    conversationIds: string[],
+    search: string,
+): Record<string, string> | undefined {
+    if (conversationIds.length === 0) {
+        return undefined;
+    }
+
+    const rows = getDb()
+        .select({
+            conversationId: aiMessages.conversationId,
+            content: aiMessages.content,
+            firstCreatedAt: sql<string>`min(${aiMessages.createdAt})`,
+        })
+        .from(aiMessages)
+        .where(
+            and(
+                inArray(aiMessages.conversationId, conversationIds),
+                normalizedLike(aiMessages.content, search),
+            ),
+        )
+        .groupBy(aiMessages.conversationId)
+        .all();
+
+    const excerpts: Record<string, string> = {};
+    for (const row of rows) {
+        excerpts[row.conversationId] = buildExcerpt(row.content, search);
+    }
+    return excerpts;
 }
 
 export function getConversationHistoryPage(
@@ -195,6 +248,14 @@ export function getConversationHistoryPage(
 
     return {
         conversations,
+        ...(search
+            ? {
+                  searchExcerpts: getSearchExcerpts(
+                      conversations.map((conversation) => conversation.id),
+                      search,
+                  ),
+              }
+            : {}),
         loadedCount: loadedCount + conversations.length,
         totalCount,
         hasMore: loadedCount + conversations.length < totalCount,

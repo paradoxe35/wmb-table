@@ -19,6 +19,7 @@ interface ConversationListItemProps extends ConversationActionCallbacks {
     conversation: AiConversation;
     isActive: boolean;
     isStreaming: boolean;
+    searchExcerpt: string | undefined;
     onSelectConversation: (conversationId: string) => void;
 }
 
@@ -26,6 +27,7 @@ const ConversationListItem = memo(function ConversationListItem({
     conversation,
     isActive,
     isStreaming,
+    searchExcerpt,
     onSelectConversation,
     ...callbacks
 }: ConversationListItemProps) {
@@ -90,6 +92,11 @@ const ConversationListItem = memo(function ConversationListItem({
                 >
                     {conversation.title || t('Conversation')}
                 </Text>
+                {searchExcerpt ? (
+                    <Text type="secondary" className="ai-chat__conv-excerpt">
+                        {searchExcerpt}
+                    </Text>
+                ) : null}
                 <Text type="secondary" className="ai-chat__conv-date">
                     <RelativeTime date={conversation.updatedAt} />
                 </Text>
@@ -145,6 +152,7 @@ export default memo(function ChatConversationList({
     hasStreamingConversations,
     searchTerm,
     isSearching,
+    searchExcerpts,
     onSearchChange,
 }: {
     conversations: AiConversation[];
@@ -155,6 +163,7 @@ export default memo(function ChatConversationList({
     hasMore: boolean;
     searchTerm: string;
     isSearching: boolean;
+    searchExcerpts: Record<string, string>;
     onSearchChange: (term: string) => void;
     onCreateConversation: () => void;
     onLoadOlderConversations: () => void;
@@ -242,6 +251,9 @@ export default memo(function ChatConversationList({
                                     conversation={conversation}
                                     isActive={conversation.id === activeConversationId}
                                     isStreaming={Boolean(streamingConversations[conversation.id])}
+                                    searchExcerpt={
+                                        isSearching ? searchExcerpts[conversation.id] : undefined
+                                    }
                                     onSelectConversation={onSelectConversation}
                                     onRenameConversation={onRenameConversation}
                                     onExportConversation={onExportConversation}

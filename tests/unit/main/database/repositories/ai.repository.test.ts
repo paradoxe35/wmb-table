@@ -150,6 +150,70 @@ describe('ai.repository', () => {
             expect(new Set(ids).size).toBe(3);
         });
 
+        it('returns an excerpt showing why a content-only hit matched', () => {
+            const conv = aiRepo.createConversation('en', 'Untitled notes');
+            aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'user',
+                content: `${'padding '.repeat(30)}the baptism question${' trailing'.repeat(30)}`,
+            });
+
+            const page = aiRepo.getConversationHistoryPage({ search: 'baptism' });
+            const excerpt = page.searchExcerpts?.[conv.id];
+
+            expect(excerpt).toBeDefined();
+            expect(excerpt).toContain('baptism');
+            // Trimmed around the match rather than returning the whole message
+            expect(excerpt!.length).toBeLessThan(200);
+            expect(excerpt!.startsWith('…')).toBe(true);
+            expect(excerpt!.endsWith('…')).toBe(true);
+        });
+
+        it('omits the excerpt when only the title matched', () => {
+            const conv = aiRepo.createConversation('en', 'baptism study');
+            aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'user',
+                content: 'nothing relevant in here',
+            });
+
+            const page = aiRepo.getConversationHistoryPage({ search: 'baptism' });
+            expect(page.conversations.map((c) => c.id)).toEqual([conv.id]);
+            expect(page.searchExcerpts?.[conv.id]).toBeUndefined();
+        });
+
+        it.each([
+            ['accents in stored text', 'Le baptême du Saint-Esprit', 'bapteme'],
+            ['accents in the query', 'Le bapteme du Saint-Esprit', 'baptême'],
+            ['case across accents', 'ÉGLISE de Dieu', 'église'],
+            ['portuguese cedilla/tilde', 'Ação e reação', 'acao'],
+            ['cyrillic case', 'Привет мир', 'ПРИВЕТ'],
+            ['chinese substring', '我们讨论洗礼的意义', '洗礼'],
+        ])('matches %s', (_label, content, query) => {
+            const conv = aiRepo.createConversation('en', 'Untitled');
+            aiRepo.createMessage({ conversationId: conv.id, role: 'user', content });
+
+            const page = aiRepo.getConversationHistoryPage({ search: query });
+            expect(page.conversations.map((c) => c.id)).toEqual([conv.id]);
+        });
+
+        it('keeps Japanese voiced marks distinct', () => {
+            const conv = aiRepo.createConversation('en', 'だから');
+
+            expect(
+                aiRepo.getConversationHistoryPage({ search: 'だから' }).conversations,
+            ).toHaveLength(1);
+            expect(
+                aiRepo.getConversationHistoryPage({ search: 'たから' }).conversations,
+            ).toHaveLength(0);
+            expect(conv.title).toBe('だから');
+        });
+
+        it('does not attach excerpts when not searching', () => {
+            seed();
+            expect(aiRepo.getConversationHistoryPage({}).searchExcerpts).toBeUndefined();
+        });
+
         it('ignores search when the term is blank', () => {
             seed();
             const page = aiRepo.getConversationHistoryPage({ search: '   ' });

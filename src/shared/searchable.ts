@@ -16,15 +16,22 @@ export function escapeHtml(str: string): string {
         .replace(/"/g, '&quot;');
 }
 
+/**
+ * Strips Latin, Greek and Cyrillic diacritics only. The Japanese voiced-sound
+ * marks (U+3099\u2013U+309A) are left alone \u2014 removing those would turn \u3060 into \u305f.
+ * Chinese has neither case nor combining marks, so it passes through untouched
+ * and still matches by substring.
+ */
+function stripDiacritics(str: string): string {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 export function strNormalize(str: string): string {
-    return str
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLocaleLowerCase();
+    return stripDiacritics(str).toLocaleLowerCase();
 }
 
 export function strNormalizeNoLower(str: string | null): string {
-    return str ? str.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : '';
+    return str ? stripDiacritics(str) : '';
 }
 
 export function simpleRegExp(term: string): RegExp {
