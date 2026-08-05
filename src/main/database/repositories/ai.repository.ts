@@ -1,8 +1,9 @@
 import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import { getDb } from '../index';
+import { getDb, SQL_NORMALIZE_FUNCTION } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
 import { parseJsonOrFallback } from '@main/lib/json';
+import { strNormalize } from '@shared/searchable';
 import { logChange } from '@main/services/sync/change-log.service';
 import {
     AI_CONVERSATION_HISTORY_PAGE_SIZE,
@@ -145,14 +146,27 @@ export function getConversations(): AiConversation[] {
         .map(toConversation);
 }
 
+/**
+ * Case/accent-insensitive title match. Both sides go through the same
+ * normalization, so "eglise" finds "Église" and CJK matches by substring.
+ */
+function conversationSearchCondition(search: string) {
+    const pattern = `%${strNormalize(search).replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+    return sql`${sql.raw(SQL_NORMALIZE_FUNCTION)}(${aiConversations.title}) LIKE ${pattern} ESCAPE '\\'`;
+}
+
 export function getConversationHistoryPage(
     input: AiConversationHistoryPageRequest,
 ): AiConversationHistoryPage {
     const limit = Math.max(1, input.limit ?? AI_CONVERSATION_HISTORY_PAGE_SIZE);
     const loadedCount = Math.max(0, input.loadedCount ?? 0);
+    const search = input.search?.trim() ?? '';
+    const condition = search ? conversationSearchCondition(search) : undefined;
+
     const totalCountRow = getDb()
         .select({ count: sql<number>`count(*)` })
         .from(aiConversations)
+        .where(condition)
         .get();
 
     const totalCount = Number(totalCountRow?.count ?? 0);
@@ -164,6 +178,7 @@ export function getConversationHistoryPage(
             : getDb()
                   .select()
                   .from(aiConversations)
+                  .where(condition)
                   .orderBy(desc(aiConversations.updatedAt))
                   .limit(pageSize)
                   .offset(loadedCount)

@@ -49,6 +49,12 @@
     flex-shrink: 0;
 }
 
+.ai-chat__sidebar-search {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--ant-color-split);
+    flex-shrink: 0;
+}
+
 .ai-chat__sidebar-list {
     flex: 1;
     overflow-y: auto;

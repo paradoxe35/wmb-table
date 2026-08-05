@@ -48,6 +48,7 @@ export default function AiChatView() {
     const loadingConversationList = useAiChatStore((s) => s.loadingConversationList);
     const loadingOlderConversationList = useAiChatStore((s) => s.loadingOlderConversationList);
     const activeConversationId = useAiChatStore((s) => s.activeConversationId);
+    const activeConversationRecord = useAiChatStore((s) => s.activeConversationRecord);
     const activeMessages = useAiChatStore((s) =>
         activeConversationId
             ? (s.messagesByConversation[activeConversationId] ?? EMPTY_MESSAGES)
@@ -73,6 +74,13 @@ export default function AiChatView() {
     const conversationRuns = useAiChatStore((s) => s.conversationRuns);
     const createConversation = useAiChatStore((s) => s.createConversation);
     const loadOlderConversations = useAiChatStore((s) => s.loadOlderConversations);
+    const conversationSearch = useAiChatStore((s) => s.conversationSearch);
+    const searchResults = useAiChatStore((s) => s.searchResults);
+    const searchList = useAiChatStore((s) => s.searchList);
+    const loadingConversationSearch = useAiChatStore((s) => s.loadingConversationSearch);
+    const loadingOlderConversationSearch = useAiChatStore((s) => s.loadingOlderConversationSearch);
+    const searchConversations = useAiChatStore((s) => s.searchConversations);
+    const loadOlderSearchResults = useAiChatStore((s) => s.loadOlderSearchResults);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
     const loadOlderMessages = useAiChatStore((s) => s.loadOlderMessages);
     const renameConversation = useAiChatStore((s) => s.renameConversation);
@@ -91,10 +99,14 @@ export default function AiChatView() {
         void initialize();
     }, [initialize]);
     const activeSending = Boolean(activeRun);
+    // Falls back to the stored record for a conversation outside the paged window
     const activeConversation = useMemo(
         () =>
-            conversations.find((conversation) => conversation.id === activeConversationId) ?? null,
-        [activeConversationId, conversations],
+            conversations.find((conversation) => conversation.id === activeConversationId) ??
+            (activeConversationRecord?.id === activeConversationId
+                ? activeConversationRecord
+                : null),
+        [activeConversationId, activeConversationRecord, conversations],
     );
     const activeConversationMap = useMemo(
         () =>
@@ -121,9 +133,16 @@ export default function AiChatView() {
         void createConversation();
     }, [createConversation]);
 
+    const isSearching = searchResults !== null;
+
     const handleLoadOlderConversations = useCallback(() => {
-        void loadOlderConversations();
-    }, [loadOlderConversations]);
+        void (isSearching ? loadOlderSearchResults() : loadOlderConversations());
+    }, [isSearching, loadOlderConversations, loadOlderSearchResults]);
+
+    const handleSearchChange = useCallback(
+        (term: string) => void searchConversations(term),
+        [searchConversations],
+    );
 
     const handleSelectConversation = useCallback(
         (id: string) => void selectConversation(id),
@@ -179,12 +198,17 @@ export default function AiChatView() {
     return (
         <div className="ai-chat">
             <ChatConversationList
-                conversations={conversations}
+                conversations={searchResults ?? conversations}
                 activeConversationId={activeConversationId}
                 streamingConversations={activeConversationMap}
-                loading={loadingConversationList}
-                loadingOlder={loadingOlderConversationList}
-                hasMore={conversationList.hasMore}
+                loading={isSearching ? loadingConversationSearch : loadingConversationList}
+                loadingOlder={
+                    isSearching ? loadingOlderConversationSearch : loadingOlderConversationList
+                }
+                hasMore={isSearching ? searchList.hasMore : conversationList.hasMore}
+                searchTerm={conversationSearch}
+                isSearching={isSearching}
+                onSearchChange={handleSearchChange}
                 onCreateConversation={handleCreateConversation}
                 onLoadOlderConversations={handleLoadOlderConversations}
                 onSelectConversation={handleSelectConversation}
@@ -211,7 +235,7 @@ export default function AiChatView() {
                         type="error"
                         showIcon
                         closable
-                        message={t(error)}
+                        title={t(error)}
                         style={{ margin: '12px 16px 0' }}
                     />
                 ) : null}

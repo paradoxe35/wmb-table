@@ -11,8 +11,12 @@ import { initializeReferenceDb, closeReferenceDb } from './reference-db';
 import * as bibleService from '@main/services/bible.service';
 import * as configRepo from './repositories/config.repository';
 import { getDatabaseDir } from '@main/lib/app-paths';
+import { strNormalize } from '@shared/searchable';
 
 export { getRefDb } from './reference-db';
+
+/** Case/accent folding exposed to SQL, matching `strNormalize` exactly */
+export const SQL_NORMALIZE_FUNCTION = 'wmb_normalize';
 
 let mainSqlite: Database.Database | null = null;
 let mainDb: BetterSQLite3Database<typeof schema> | null = null;
@@ -23,6 +27,16 @@ let bibleDb: BetterSQLite3Database<typeof bibleSchema> | null = null;
 // Sync database (change tracking, separate from user data)
 let syncSqlite: Database.Database | null = null;
 let syncDb: BetterSQLite3Database<typeof syncSchema> | null = null;
+
+/**
+ * Lets SQL reuse the renderer's normalization, so search matches across case and
+ * accents without persisting a second copy of every message.
+ */
+function registerSqlFunctions(db: Database.Database): void {
+    db.function(SQL_NORMALIZE_FUNCTION, { deterministic: true }, (value: unknown) =>
+        typeof value === 'string' ? strNormalize(value) : null,
+    );
+}
 
 function setPragmas(db: Database.Database): void {
     db.pragma('journal_mode = WAL');
@@ -46,6 +60,7 @@ export function initializeDatabase(): void {
     const mainPath = join(dbDir, 'wmb-table.sqlite');
     mainSqlite = new Database(mainPath);
     setPragmas(mainSqlite);
+    registerSqlFunctions(mainSqlite);
     mainDb = drizzle(mainSqlite, { schema });
 
     // Run Drizzle migrations
@@ -187,7 +202,10 @@ export function _setDbForTesting(
     sqlite?: Database.Database,
 ): void {
     mainDb = db;
-    if (sqlite) mainSqlite = sqlite;
+    if (sqlite) {
+        mainSqlite = sqlite;
+        registerSqlFunctions(sqlite);
+    }
 }
 
 export function _setBibleDbForTesting(

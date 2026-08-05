@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { notification, Button } from 'antd';
+import { App as AntApp, Button } from 'antd';
 import { useAppStore } from '@renderer/stores';
 import { buildDownloadPageLink } from '@shared/constants';
 import type { UpdaterNotification } from '@shared/types';
@@ -16,6 +16,9 @@ const version = (data: UpdaterNotification) => data.updateInfo?.version ?? 'unkn
  */
 export default function UpdateNotifier() {
     const { t } = useTranslation();
+    // Context-aware instance: the static antd API renders outside ConfigProvider
+    // and would ignore the app theme
+    const { notification } = AntApp.useApp();
     const showOptions = useAppStore((s) => s.showOptions);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const shownRef = useRef<Set<string>>(new Set());
@@ -98,7 +101,7 @@ export default function UpdateNotifier() {
         // A check can complete before this mounts, so read what is already known
         window.api.app.getUpdateStatus().then(handle);
         return window.api.on.notifyForNewUpdate(handle);
-    }, [contentLanguage, goToUpdateTab, t]);
+    }, [contentLanguage, goToUpdateTab, notification, t]);
 
     return null;
 }

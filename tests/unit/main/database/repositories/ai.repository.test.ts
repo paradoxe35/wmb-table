@@ -66,6 +66,107 @@ describe('ai.repository', () => {
         });
     });
 
+    describe('conversation search', () => {
+        function seed() {
+            const study = aiRepo.createConversation('en', 'Study on faith');
+            const notes = aiRepo.createConversation('en', 'Untitled notes');
+            const other = aiRepo.createConversation('en', 'Something else');
+            return { study, notes, other };
+        }
+
+        it('matches on conversation title', () => {
+            const { study } = seed();
+            const page = aiRepo.getConversationHistoryPage({ search: 'Study' });
+
+            expect(page.conversations.map((c) => c.id)).toEqual([study.id]);
+            expect(page.totalCount).toBe(1);
+        });
+
+        it('ignores message content', () => {
+            const conv = aiRepo.createConversation('en', 'Untitled');
+            aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'user',
+                content: 'tell me about grace',
+            });
+
+            expect(
+                aiRepo.getConversationHistoryPage({ search: 'grace' }).conversations,
+            ).toHaveLength(0);
+        });
+
+        it('returns an empty page when nothing matches', () => {
+            seed();
+            const page = aiRepo.getConversationHistoryPage({ search: 'zzz-no-match' });
+
+            expect(page.conversations).toHaveLength(0);
+            expect(page.totalCount).toBe(0);
+            expect(page.hasMore).toBe(false);
+        });
+
+        it('treats LIKE wildcards as literal characters', () => {
+            const literal = aiRepo.createConversation('en', '100% guaranteed');
+            aiRepo.createConversation('en', 'no percent sign here');
+
+            const page = aiRepo.getConversationHistoryPage({ search: '%' });
+            expect(page.conversations.map((c) => c.id)).toEqual([literal.id]);
+        });
+
+        it('paginates search results', () => {
+            for (let i = 0; i < 3; i += 1) {
+                aiRepo.createConversation('en', `faith topic ${i}`);
+            }
+
+            const first = aiRepo.getConversationHistoryPage({ search: 'faith', limit: 2 });
+            expect(first.conversations).toHaveLength(2);
+            expect(first.hasMore).toBe(true);
+
+            const second = aiRepo.getConversationHistoryPage({
+                search: 'faith',
+                limit: 2,
+                loadedCount: first.loadedCount,
+            });
+            expect(second.conversations).toHaveLength(1);
+            expect(second.hasMore).toBe(false);
+
+            expect(
+                new Set([...first.conversations, ...second.conversations].map((c) => c.id)).size,
+            ).toBe(3);
+        });
+
+        it.each([
+            ['accents in stored text', 'Le baptême du Saint-Esprit', 'bapteme'],
+            ['accents in the query', 'Le bapteme du Saint-Esprit', 'baptême'],
+            ['case across accents', 'ÉGLISE de Dieu', 'église'],
+            ['portuguese cedilla/tilde', 'Ação e reação', 'acao'],
+            ['cyrillic case', 'Привет мир', 'ПРИВЕТ'],
+            ['chinese substring', '我们讨论洗礼的意义', '洗礼'],
+        ])('matches %s', (_label, title, query) => {
+            const conv = aiRepo.createConversation('en', title);
+            const page = aiRepo.getConversationHistoryPage({ search: query });
+
+            expect(page.conversations.map((c) => c.id)).toEqual([conv.id]);
+        });
+
+        it('keeps Japanese voiced marks distinct', () => {
+            aiRepo.createConversation('en', 'だから');
+
+            expect(
+                aiRepo.getConversationHistoryPage({ search: 'だから' }).conversations,
+            ).toHaveLength(1);
+            expect(
+                aiRepo.getConversationHistoryPage({ search: 'たから' }).conversations,
+            ).toHaveLength(0);
+        });
+
+        it('ignores search when the term is blank', () => {
+            seed();
+            expect(aiRepo.getConversationHistoryPage({ search: '   ' }).conversations).toHaveLength(
+                3,
+            );
+        });
+    });
+
     describe('messages', () => {
         it('createMessage and getMessages', () => {
             const conv = aiRepo.createConversation('en');

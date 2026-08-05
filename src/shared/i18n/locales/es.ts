@@ -1141,6 +1141,17 @@ const es: Record<string, string> = {
         'La versión {{version}} está disponible. La actualización automática no es compatible con su tipo de instalación. Descargue la nueva versión desde el sitio web.',
     Langue: 'Idioma',
     'Le chargement des anciens messages a échoué.': 'No se pudieron cargar los mensajes antiguos.',
+    'Rechercher une conversation': 'Buscar conversaciones',
+    'La recherche de conversations a échoué.': 'No se pudieron buscar las conversaciones.',
+    "L'arrêt de la génération a échoué.": 'No se pudo detener la generación.',
+    "L'envoi du message a échoué.": 'No se pudo enviar el mensaje.',
+    'La création de la conversation a échoué.': 'No se pudo crear la conversación.',
+    'Le chargement de la conversation a échoué.': 'No se pudo cargar la conversación.',
+    'Le chargement des anciennes conversations a échoué.':
+        'No se pudieron cargar las conversaciones antiguas.',
+    'Le chargement des conversations a échoué.': 'No se pudieron cargar las conversaciones.',
+    'Le rafraîchissement des conversations a échoué.':
+        'No se pudieron actualizar las conversaciones.',
     'Non défini': 'No definido',
     'Notes et sujets': 'Notas y temas',
     'Télécharger depuis le site': 'Descargar desde el sitio web',

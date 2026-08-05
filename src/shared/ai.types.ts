@@ -218,6 +218,8 @@ export interface AiMessage {
 export interface AiConversationHistoryPageRequest {
     limit?: number;
     loadedCount?: number;
+    /** Case- and accent-insensitive match on the conversation title */
+    search?: string;
 }
 
 export interface AiConversationHistoryPage {
