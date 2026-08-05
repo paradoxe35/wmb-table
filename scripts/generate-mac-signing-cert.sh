@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 #
 # Generates the self-signed code-signing certificate used to sign macOS builds.
+# Squirrel.Mac validates updates against the running app's designated requirement
+# and never checks the trust chain, so no Apple Developer ID is needed — only that
+# every release is signed by the same certificate.
 #
-# macOS auto-update does not need an Apple Developer ID: Squirrel.Mac checks the
-# update against the running app's designated requirement and never validates the
-# trust chain. It does need every release signed by the SAME certificate, which is
-# exactly what ad-hoc signing cannot provide.
-#
-# Run once, keep the output safe, and store the printed files as the CSC_LINK and
-# CSC_KEY_PASSWORD repository secrets. See .github/variables.md
+# Run once, then store the printed files as the CSC_LINK and CSC_KEY_PASSWORD
+# repository secrets. See .github/variables.md
 #
 set -euo pipefail
 

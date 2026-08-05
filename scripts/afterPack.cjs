@@ -69,11 +69,9 @@ function pruneBetterSqlitePayload(appOutDir) {
  * This hook re-signs everything with `codesign --force --deep --sign -` so all
  * binaries share the same (empty) ad-hoc Team ID. The app launches, but macOS
  * auto-update cannot work: an ad-hoc designated requirement pins the cdhash, which
- * changes every build, so Squirrel.Mac rejects the update.
- *
- * Setting CSC_LINK/CSC_NAME hands signing to electron-builder and skips this hook.
- * The certificate does NOT have to come from Apple — a self-signed one is enough
- * for updates, as long as every release uses it. See .github/variables.md
+ * changes every build, so Squirrel.Mac rejects the update. Setting CSC_LINK/CSC_NAME
+ * hands signing to electron-builder instead; the certificate does not have to come
+ * from Apple, only stay the same across releases. See .github/variables.md
  */
 exports.default = async function afterPack(context) {
     pruneChromiumLocales(context.appOutDir);
