@@ -55,17 +55,6 @@
     flex-shrink: 0;
 }
 
-.ai-chat__conv-excerpt {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    margin-top: 2px;
-    font-size: var(--fs-rel-base);
-    line-height: 1.35;
-}
-
 .ai-chat__sidebar-list {
     flex: 1;
     overflow-y: auto;

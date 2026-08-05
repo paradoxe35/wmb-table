@@ -76,7 +76,6 @@ export default function AiChatView() {
     const loadOlderConversations = useAiChatStore((s) => s.loadOlderConversations);
     const conversationSearch = useAiChatStore((s) => s.conversationSearch);
     const searchResults = useAiChatStore((s) => s.searchResults);
-    const searchExcerpts = useAiChatStore((s) => s.searchExcerpts);
     const searchList = useAiChatStore((s) => s.searchList);
     const loadingConversationSearch = useAiChatStore((s) => s.loadingConversationSearch);
     const loadingOlderConversationSearch = useAiChatStore((s) => s.loadingOlderConversationSearch);
@@ -209,7 +208,6 @@ export default function AiChatView() {
                 hasMore={isSearching ? searchList.hasMore : conversationList.hasMore}
                 searchTerm={conversationSearch}
                 isSearching={isSearching}
-                searchExcerpts={searchExcerpts}
                 onSearchChange={handleSearchChange}
                 onCreateConversation={handleCreateConversation}
                 onLoadOlderConversations={handleLoadOlderConversations}

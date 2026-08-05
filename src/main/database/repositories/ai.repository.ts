@@ -1,6 +1,5 @@
-import { and, asc, desc, eq, inArray, sql } from 'drizzle-orm';
+import { asc, desc, eq, inArray, sql } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
-import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 import { getDb, SQL_NORMALIZE_FUNCTION } from '../index';
 import { aiConversations, aiMessages, aiSettings } from '../schema';
 import { parseJsonOrFallback } from '@main/lib/json';
@@ -147,73 +146,13 @@ export function getConversations(): AiConversation[] {
         .map(toConversation);
 }
 
-const EXCERPT_RADIUS = 70;
-
 /**
- * Case/accent-insensitive `LIKE` over a column. Both sides go through the same
- * normalization, so "bapteme" finds "baptême" and CJK still matches by substring.
+ * Case/accent-insensitive title match. Both sides go through the same
+ * normalization, so "eglise" finds "Église" and CJK matches by substring.
  */
-function normalizedLike(column: SQLiteColumn, search: string) {
-    const pattern = `%${strNormalize(search).replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
-    return sql`${sql.raw(SQL_NORMALIZE_FUNCTION)}(${column}) LIKE ${pattern} ESCAPE '\\'`;
-}
-
-/** Matches the conversation title, or any message it contains */
 function conversationSearchCondition(search: string) {
-    return sql`(
-        ${normalizedLike(aiConversations.title, search)}
-        OR EXISTS (
-            SELECT 1 FROM ${aiMessages}
-            WHERE ${aiMessages.conversationId} = ${aiConversations.id}
-              AND ${normalizedLike(aiMessages.content, search)}
-        )
-    )`;
-}
-
-/** Trims the message down to the text around the match so the reason is visible */
-function buildExcerpt(content: string, search: string): string {
-    const collapsed = content.replace(/\s+/g, ' ').trim();
-    const index = strNormalize(collapsed).indexOf(strNormalize(search));
-
-    if (index === -1) {
-        return collapsed.slice(0, EXCERPT_RADIUS * 2);
-    }
-
-    const start = Math.max(0, index - EXCERPT_RADIUS);
-    const end = Math.min(collapsed.length, index + search.length + EXCERPT_RADIUS);
-    return `${start > 0 ? '…' : ''}${collapsed.slice(start, end)}${end < collapsed.length ? '…' : ''}`;
-}
-
-/** Earliest matching message per conversation, so each hit can show its context */
-function getSearchExcerpts(
-    conversationIds: string[],
-    search: string,
-): Record<string, string> | undefined {
-    if (conversationIds.length === 0) {
-        return undefined;
-    }
-
-    const rows = getDb()
-        .select({
-            conversationId: aiMessages.conversationId,
-            content: aiMessages.content,
-            firstCreatedAt: sql<string>`min(${aiMessages.createdAt})`,
-        })
-        .from(aiMessages)
-        .where(
-            and(
-                inArray(aiMessages.conversationId, conversationIds),
-                normalizedLike(aiMessages.content, search),
-            ),
-        )
-        .groupBy(aiMessages.conversationId)
-        .all();
-
-    const excerpts: Record<string, string> = {};
-    for (const row of rows) {
-        excerpts[row.conversationId] = buildExcerpt(row.content, search);
-    }
-    return excerpts;
+    const pattern = `%${strNormalize(search).replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+    return sql`${sql.raw(SQL_NORMALIZE_FUNCTION)}(${aiConversations.title}) LIKE ${pattern} ESCAPE '\\'`;
 }
 
 export function getConversationHistoryPage(
@@ -248,14 +187,6 @@ export function getConversationHistoryPage(
 
     return {
         conversations,
-        ...(search
-            ? {
-                  searchExcerpts: getSearchExcerpts(
-                      conversations.map((conversation) => conversation.id),
-                      search,
-                  ),
-              }
-            : {}),
         loadedCount: loadedCount + conversations.length,
         totalCount,
         hasMore: loadedCount + conversations.length < totalCount,

@@ -218,17 +218,12 @@ export interface AiMessage {
 export interface AiConversationHistoryPageRequest {
     limit?: number;
     loadedCount?: number;
-    /** Matches the conversation title or any message it contains */
+    /** Case- and accent-insensitive match on the conversation title */
     search?: string;
 }
 
 export interface AiConversationHistoryPage {
     conversations: AiConversation[];
-    /**
-     * Excerpt of the message that matched, keyed by conversation id. Only set for
-     * searches, and absent when the title alone matched.
-     */
-    searchExcerpts?: Record<string, string>;
     loadedCount: number;
     totalCount: number;
     hasMore: boolean;

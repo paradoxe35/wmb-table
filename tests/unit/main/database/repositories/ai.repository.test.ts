@@ -68,48 +68,31 @@ describe('ai.repository', () => {
 
     describe('conversation search', () => {
         function seed() {
-            const byTitle = aiRepo.createConversation('en', 'Study on faith');
-            const byMessage = aiRepo.createConversation('en', 'Untitled notes');
-            const unrelated = aiRepo.createConversation('en', 'Something else');
-
-            aiRepo.createMessage({
-                conversationId: byMessage.id,
-                role: 'user',
-                content: 'tell me about faith and grace',
-            });
-            aiRepo.createMessage({
-                conversationId: unrelated.id,
-                role: 'user',
-                content: 'a totally different topic',
-            });
-
-            return { byTitle, byMessage, unrelated };
+            const study = aiRepo.createConversation('en', 'Study on faith');
+            const notes = aiRepo.createConversation('en', 'Untitled notes');
+            const other = aiRepo.createConversation('en', 'Something else');
+            return { study, notes, other };
         }
 
         it('matches on conversation title', () => {
-            const { byTitle } = seed();
+            const { study } = seed();
             const page = aiRepo.getConversationHistoryPage({ search: 'Study' });
 
-            expect(page.conversations.map((c) => c.id)).toEqual([byTitle.id]);
+            expect(page.conversations.map((c) => c.id)).toEqual([study.id]);
             expect(page.totalCount).toBe(1);
         });
 
-        it('matches on message content', () => {
-            const { byMessage } = seed();
-            const page = aiRepo.getConversationHistoryPage({ search: 'grace' });
+        it('ignores message content', () => {
+            const conv = aiRepo.createConversation('en', 'Untitled');
+            aiRepo.createMessage({
+                conversationId: conv.id,
+                role: 'user',
+                content: 'tell me about grace',
+            });
 
-            expect(page.conversations.map((c) => c.id)).toEqual([byMessage.id]);
-        });
-
-        it('matches title and message content together', () => {
-            const { byTitle, byMessage, unrelated } = seed();
-            const ids = aiRepo
-                .getConversationHistoryPage({ search: 'faith' })
-                .conversations.map((c) => c.id);
-
-            expect(ids).toHaveLength(2);
-            expect(ids).toEqual(expect.arrayContaining([byTitle.id, byMessage.id]));
-            expect(ids).not.toContain(unrelated.id);
+            expect(
+                aiRepo.getConversationHistoryPage({ search: 'grace' }).conversations,
+            ).toHaveLength(0);
         });
 
         it('returns an empty page when nothing matches', () => {
@@ -146,40 +129,9 @@ describe('ai.repository', () => {
             expect(second.conversations).toHaveLength(1);
             expect(second.hasMore).toBe(false);
 
-            const ids = [...first.conversations, ...second.conversations].map((c) => c.id);
-            expect(new Set(ids).size).toBe(3);
-        });
-
-        it('returns an excerpt showing why a content-only hit matched', () => {
-            const conv = aiRepo.createConversation('en', 'Untitled notes');
-            aiRepo.createMessage({
-                conversationId: conv.id,
-                role: 'user',
-                content: `${'padding '.repeat(30)}the baptism question${' trailing'.repeat(30)}`,
-            });
-
-            const page = aiRepo.getConversationHistoryPage({ search: 'baptism' });
-            const excerpt = page.searchExcerpts?.[conv.id];
-
-            expect(excerpt).toBeDefined();
-            expect(excerpt).toContain('baptism');
-            // Trimmed around the match rather than returning the whole message
-            expect(excerpt!.length).toBeLessThan(200);
-            expect(excerpt!.startsWith('…')).toBe(true);
-            expect(excerpt!.endsWith('…')).toBe(true);
-        });
-
-        it('omits the excerpt when only the title matched', () => {
-            const conv = aiRepo.createConversation('en', 'baptism study');
-            aiRepo.createMessage({
-                conversationId: conv.id,
-                role: 'user',
-                content: 'nothing relevant in here',
-            });
-
-            const page = aiRepo.getConversationHistoryPage({ search: 'baptism' });
-            expect(page.conversations.map((c) => c.id)).toEqual([conv.id]);
-            expect(page.searchExcerpts?.[conv.id]).toBeUndefined();
+            expect(
+                new Set([...first.conversations, ...second.conversations].map((c) => c.id)).size,
+            ).toBe(3);
         });
 
         it.each([
@@ -189,16 +141,15 @@ describe('ai.repository', () => {
             ['portuguese cedilla/tilde', 'Ação e reação', 'acao'],
             ['cyrillic case', 'Привет мир', 'ПРИВЕТ'],
             ['chinese substring', '我们讨论洗礼的意义', '洗礼'],
-        ])('matches %s', (_label, content, query) => {
-            const conv = aiRepo.createConversation('en', 'Untitled');
-            aiRepo.createMessage({ conversationId: conv.id, role: 'user', content });
-
+        ])('matches %s', (_label, title, query) => {
+            const conv = aiRepo.createConversation('en', title);
             const page = aiRepo.getConversationHistoryPage({ search: query });
+
             expect(page.conversations.map((c) => c.id)).toEqual([conv.id]);
         });
 
         it('keeps Japanese voiced marks distinct', () => {
-            const conv = aiRepo.createConversation('en', 'だから');
+            aiRepo.createConversation('en', 'だから');
 
             expect(
                 aiRepo.getConversationHistoryPage({ search: 'だから' }).conversations,
@@ -206,18 +157,13 @@ describe('ai.repository', () => {
             expect(
                 aiRepo.getConversationHistoryPage({ search: 'たから' }).conversations,
             ).toHaveLength(0);
-            expect(conv.title).toBe('だから');
-        });
-
-        it('does not attach excerpts when not searching', () => {
-            seed();
-            expect(aiRepo.getConversationHistoryPage({}).searchExcerpts).toBeUndefined();
         });
 
         it('ignores search when the term is blank', () => {
             seed();
-            const page = aiRepo.getConversationHistoryPage({ search: '   ' });
-            expect(page.conversations).toHaveLength(3);
+            expect(aiRepo.getConversationHistoryPage({ search: '   ' }).conversations).toHaveLength(
+                3,
+            );
         });
     });
 

@@ -484,8 +484,6 @@ interface AiChatState {
     activeConversationRecord: AiConversation | null;
     /** Null while no search is active, so the sidebar can fall back to `conversations` */
     searchResults: AiConversation[] | null;
-    /** Why each result matched, keyed by conversation id */
-    searchExcerpts: Record<string, string>;
     searchList: ConversationListState;
     loadingConversationSearch: boolean;
     loadingOlderConversationSearch: boolean;
@@ -550,7 +548,6 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     conversationSearch: '',
     activeConversationRecord: null,
     searchResults: null,
-    searchExcerpts: {},
     searchList: EMPTY_CONVERSATION_LIST,
     loadingConversationSearch: false,
     loadingOlderConversationSearch: false,
@@ -1045,7 +1042,6 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         if (!trimmed) {
             set({
                 searchResults: null,
-                searchExcerpts: {},
                 searchList: EMPTY_CONVERSATION_LIST,
                 loadingConversationSearch: false,
                 loadingOlderConversationSearch: false,
@@ -1070,7 +1066,6 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
                 return {
                     searchResults: page.conversations,
-                    searchExcerpts: page.searchExcerpts ?? {},
                     searchList: createConversationListState(page),
                     loadingConversationSearch: false,
                 };
@@ -1115,10 +1110,6 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                         current.searchResults ?? [],
                         page.conversations,
                     ),
-                    searchExcerpts: {
-                        ...current.searchExcerpts,
-                        ...(page.searchExcerpts ?? {}),
-                    },
                     searchList: createConversationListState(page),
                     loadingOlderConversationSearch: false,
                 };
@@ -1433,7 +1424,6 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             sending: false,
             conversationSearch: '',
             searchResults: null,
-            searchExcerpts: {},
             searchList: EMPTY_CONVERSATION_LIST,
             loadingConversationSearch: false,
             loadingOlderConversationSearch: false,
