@@ -54,6 +54,49 @@ Notes:
 - The release workflow already treats this as optional
 - If your app build does not need bundled Google Drive credentials, leave it unset
 
+### `CSC_LINK` and `CSC_KEY_PASSWORD`
+
+What they are:
+
+- `CSC_LINK` — a base64-encoded `.p12` code-signing certificate for macOS
+- `CSC_KEY_PASSWORD` — the password protecting that `.p12`
+
+What they do:
+
+- electron-builder imports the certificate into a temporary keychain and signs the whole
+  macOS bundle with it
+- Without them, [scripts/afterPack.cjs](afterPack.cjs) falls back to ad-hoc signing
+  (`codesign --sign -`) and **macOS auto-update cannot work**
+
+Why a free self-signed certificate is enough:
+
+- Squirrel.Mac verifies an update with `SecStaticCodeCheckValidityWithErrors` against the
+  running app's _designated requirement_. It does not check the trust chain, so the
+  certificate does not have to be issued by Apple.
+- A certificate-backed signature yields a requirement pinned to the certificate, which stays
+  stable across releases. An ad-hoc signature has no certificate, so the requirement pins the
+  `cdhash` instead — that changes every build, and every update is rejected.
+- The only thing a paid Developer ID buys here is Gatekeeper/notarization, i.e. installing
+  without the manual right-click -> Open. Updates themselves do not need it.
+
+How to create one (once, on a Mac):
+
+1. `Keychain Access` -> `Certificate Assistant` -> `Create a Certificate...`
+2. Name it e.g. `WMB Table`, Identity Type `Self Signed Root`, Certificate Type
+   `Code Signing`, and tick `Let me override defaults` so you can set a long validity
+3. Find it under `login` -> `My Certificates`, right-click -> `Export...`, save as `.p12`
+   with a password
+4. `base64 -i certificate.p12 | pbcopy` and store the result in `CSC_LINK`
+5. Store the export password in `CSC_KEY_PASSWORD`
+
+Notes:
+
+- **Keep this certificate.** Every release must be signed with the same one, or already
+  installed apps can no longer update and users must reinstall manually.
+- electron-builder falls back to any valid non-Apple identity in the keychain, so no
+  `mac.identity` entry is needed in `package.json`.
+- Both secrets are optional; leaving them unset keeps the current ad-hoc behaviour.
+
 ### `MAIN_VITE_GITHUB_TOKEN`
 
 What it is:

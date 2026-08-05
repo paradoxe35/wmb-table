@@ -61,16 +61,19 @@ function pruneBetterSqlitePayload(appOutDir) {
  * Re-sign the entire .app bundle with a consistent ad-hoc identity after packing.
  *
  * On macOS 26+, dyld strictly enforces that all binaries in a process share the
- * same Team ID. Without a paid Developer ID certificate, electron-builder produces
- * a bundle where the main binary is ad-hoc signed (no Team ID) but the embedded
- * Electron Framework retains Electron's original signature (different Team ID).
- * This causes a SIGABRT at launch with "different Team IDs".
+ * same Team ID. Without a signing certificate, electron-builder produces a bundle
+ * where the main binary is ad-hoc signed (no Team ID) but the embedded Electron
+ * Framework retains Electron's original signature (different Team ID). This causes
+ * a SIGABRT at launch with "different Team IDs".
  *
  * This hook re-signs everything with `codesign --force --deep --sign -` so all
- * binaries share the same (empty) ad-hoc Team ID.
+ * binaries share the same (empty) ad-hoc Team ID. The app launches, but macOS
+ * auto-update cannot work: an ad-hoc designated requirement pins the cdhash, which
+ * changes every build, so Squirrel.Mac rejects the update.
  *
- * When a proper Developer ID certificate is available (CSC_LINK is set),
- * electron-builder handles signing itself, so this hook is skipped.
+ * Setting CSC_LINK/CSC_NAME hands signing to electron-builder and skips this hook.
+ * The certificate does NOT have to come from Apple — a self-signed one is enough
+ * for updates, as long as every release uses it. See .github/variables.md
  */
 exports.default = async function afterPack(context) {
     pruneChromiumLocales(context.appOutDir);

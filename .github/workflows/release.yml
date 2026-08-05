@@ -75,18 +75,23 @@ jobs:
                       platform: windows
                       arch: x64
                       args: --win --x64
+                    # Both arches must come from ONE electron-builder run: the
+                    # arch suffix in latest-*.yml is Linux-only, so split jobs
+                    # each emit `latest-mac.yml` and the merge overwrites one.
                     - os: macos-latest
-                      platform: mac-arm64
-                      arch: arm64
-                      args: --mac --arm64
-                    - os: macos-latest
-                      platform: mac-x64
-                      arch: x64
-                      args: --mac --x64
+                      platform: mac
+                      arch: arm64,x64
+                      args: --mac --arm64 --x64
         runs-on: ${{ matrix.os }}
         env:
             MAIN_VITE_GITHUB_TOKEN: ${{ secrets.MAIN_VITE_GITHUB_TOKEN }}
             MAIN_VITE_GOOGLE_DRIVE_CREDENTIALS: ${{ secrets.GOOGLE_DRIVE_CREDENTIALS }}
+            # macOS auto-update needs every release signed by the SAME certificate.
+            # A self-signed one is enough (Squirrel.Mac checks the designated
+            # requirement, not the trust chain); without these the afterPack hook
+            # ad-hoc signs instead and updates cannot validate. see .github/variables.md
+            CSC_LINK: ${{ secrets.CSC_LINK }}
+            CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
         steps:
             - uses: actions/checkout@v4
 
