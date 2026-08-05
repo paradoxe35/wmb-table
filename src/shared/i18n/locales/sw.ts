@@ -549,6 +549,18 @@ const sw: Record<string, string> = {
     "La mise à jour a été téléchargée. Elle sera installée au prochain redémarrage, ou vous pouvez l'installer maintenant.":
         'Sasisho limepakuliwa. Litasakinishwa kwenye kuwasha upya ijayo, au unaweza kulisakinisha sasa.',
     'Redémarrer et installer': 'Anzisha upya na usakinishe',
+    'Aucune vérification effectuée': 'Hakuna ukaguzi uliofanywa',
+    'Vérifiez si une nouvelle version est disponible.': 'Angalia kama toleo jipya linapatikana.',
+    'Préparation du téléchargement...': 'Inaandaa upakuaji...',
+    'Mise à jour automatique indisponible': 'Sasisho la kiotomatiki halipatikani',
+    "Les mises à jour automatiques sont disponibles uniquement dans l'application installée.":
+        'Masasisho ya kiotomatiki yanapatikana tu katika programu iliyosakinishwa.',
+    'Version actuelle': 'Toleo la sasa',
+    'Nouvelle version': 'Toleo jipya',
+    "La mise à jour automatique n'est pas prise en charge pour votre type d'installation. Veuillez télécharger la dernière version depuis le site.":
+        'Masasisho ya kiotomatiki hayatumiki kwa aina yako ya usakinishaji. Tafadhali pakua toleo jipya zaidi kutoka kwenye tovuti.',
+    "Votre mot de passe administrateur sera demandé pour terminer l'installation.":
+        'Nenosiri lako la msimamizi litaombwa ili kukamilisha usakinishaji.',
 
     // ── Language manager modal ──
     'Supprimer cette langue ?': 'Futa lugha hii?',

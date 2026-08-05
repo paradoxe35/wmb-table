@@ -75,14 +75,12 @@ jobs:
                       platform: windows
                       arch: x64
                       args: --win --x64
+                    # Both arches in ONE run: the arch suffix in latest-*.yml is
+                    # Linux-only, so split jobs both emit latest-mac.yml
                     - os: macos-latest
-                      platform: mac-arm64
-                      arch: arm64
-                      args: --mac --arm64
-                    - os: macos-latest
-                      platform: mac-x64
-                      arch: x64
-                      args: --mac --x64
+                      platform: mac
+                      arch: arm64,x64
+                      args: --mac --arm64 --x64
         runs-on: ${{ matrix.os }}
         env:
             MAIN_VITE_GITHUB_TOKEN: ${{ secrets.MAIN_VITE_GITHUB_TOKEN }}
@@ -101,6 +99,29 @@ jobs:
 
             - name: Set package version from tag
               run: npm version "${{ needs.validate.outputs.version }}" --no-git-tag-version --allow-same-version
+
+            - name: Install Linux packaging tools
+              if: matrix.platform == 'linux'
+              run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
+
+            # Only exported for macOS: Windows falls back to CSC_LINK when
+            # WIN_CSC_LINK is unset and would sign the installer with this
+            # untrusted cert, which makes electron-updater reject every Windows
+            # update. Exported only when non-empty: macPackager checks for null,
+            # not "", so an empty value fails the build. See .github/variables.md
+            - name: Configure macOS signing
+              if: matrix.platform == 'mac'
+              env:
+                  MAC_CSC_LINK: ${{ secrets.CSC_LINK }}
+                  MAC_CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+              run: |
+                  if [ -n "$MAC_CSC_LINK" ]; then
+                    echo "CSC_LINK=$MAC_CSC_LINK" >> "$GITHUB_ENV"
+                    echo "CSC_KEY_PASSWORD=$MAC_CSC_KEY_PASSWORD" >> "$GITHUB_ENV"
+                    echo "Signing with the configured certificate"
+                  else
+                    echo "No CSC_LINK secret: ad-hoc signing, macOS auto-update will not work"
+                  fi
 
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
@@ -125,7 +146,9 @@ jobs:
                       release/*.exe
                       release/*.AppImage
                       release/*.deb
-                      release/*.tar.gz
+                      release/*.rpm
+                      release/*.pacman
+                      release/*.pkg.tar.zst
                       release/*.zip
                       release/*.blockmap
                       release/latest*.yml

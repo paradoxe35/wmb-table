@@ -54,6 +54,62 @@ Notes:
 - The release workflow already treats this as optional
 - If your app build does not need bundled Google Drive credentials, leave it unset
 
+### `CSC_LINK` and `CSC_KEY_PASSWORD`
+
+What they are:
+
+- `CSC_LINK` — a base64-encoded `.p12` code-signing certificate for macOS
+- `CSC_KEY_PASSWORD` — the password protecting that `.p12`
+
+What they do:
+
+- electron-builder imports the certificate into a temporary keychain and signs the whole
+  macOS bundle with it
+- Without them, [scripts/afterPack.cjs](afterPack.cjs) falls back to ad-hoc signing
+  (`codesign --sign -`) and **macOS auto-update cannot work**
+
+Why a free self-signed certificate is enough:
+
+- Squirrel.Mac verifies an update with `SecStaticCodeCheckValidityWithErrors` against the
+  running app's _designated requirement_. It does not check the trust chain, so the
+  certificate does not have to be issued by Apple.
+- A certificate-backed signature yields a requirement pinned to the certificate, which stays
+  stable across releases. An ad-hoc signature has no certificate, so the requirement pins the
+  `cdhash` instead — that changes every build, and every update is rejected.
+- The only thing a paid Developer ID buys here is Gatekeeper/notarization, i.e. installing
+  without the manual right-click -> Open. Updates themselves do not need it.
+
+How to create one (once, any OS — a Mac is not needed):
+
+```sh
+./scripts/generate-mac-signing-cert.sh
+```
+
+It writes to `~/wmb-table-signing/` and prints which file goes into which secret. It refuses
+to run if that directory already exists, so it cannot silently replace a certificate in use.
+
+Notes:
+
+- **Keep this certificate.** Every release must be signed with the same one, or already
+  installed apps can no longer update and users must reinstall manually. Back up
+  `~/wmb-table-signing/` somewhere safe.
+- The certificate must carry the `codeSigning` extended key usage. Without it macOS reports
+  the identity as `(Missing required extension)` and electron-builder discards it.
+- The `.p12` must use legacy PBE (`openssl pkcs12 -export -legacy`). OpenSSL 3 otherwise
+  defaults to AES-256-CBC, which `security import` cannot read.
+- electron-builder falls back to any valid non-Apple identity in the keychain, so no
+  `mac.identity` entry is needed in `package.json`.
+- Both secrets are optional; leaving them unset keeps the current ad-hoc behaviour.
+
+Verifying the first signed build:
+
+- The build log should show electron-builder signing with `WMB Table` rather than skipping.
+- `security find-identity -v -p codesigning` must list the identity — that is the list
+  electron-builder reads. If it is missing, the temporary keychain needs the certificate
+  trusted first: `security add-trusted-cert -r trustRoot -k <keychain> signing.cer`.
+- The real test is publishing two signed releases and confirming the first updates to the
+  second. An unsigned or differently-signed build cannot update.
+
 ### `MAIN_VITE_GITHUB_TOKEN`
 
 What it is:

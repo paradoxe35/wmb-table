@@ -233,16 +233,32 @@ export default function GeneralTab() {
         <Text type="secondary">{t('Non connecté')}</Text>
     );
 
-    const updateValue =
-        updateInfo?.type === 'hasUpdate' ? (
-            <Tag color="blue">
-                v{updateInfo.updateInfo?.version} {t('disponible')}
-            </Tag>
-        ) : (
-            <Tag color="green" icon={<CheckCircleOutlined />}>
-                {t('À jour')}
-            </Tag>
-        );
+    const updateValue = (() => {
+        switch (updateInfo?.type) {
+            case 'hasUpdate':
+                return (
+                    <Tag color="blue">
+                        v{updateInfo.updateInfo?.version} {t('disponible')}
+                    </Tag>
+                );
+            case 'downloading':
+                return <Tag color="blue">{t('Téléchargement de la mise à jour')}</Tag>;
+            case 'downloaded':
+                return <Tag color="blue">{t('Mise à jour prête')}</Tag>;
+            case 'checking':
+                return <Tag>{t('Vérification des mises à jour...')}</Tag>;
+            case 'error':
+                return <Tag color="red">{t('Erreur !')}</Tag>;
+            case 'noUpdate':
+                return (
+                    <Tag color="green" icon={<CheckCircleOutlined />}>
+                        {t('À jour')}
+                    </Tag>
+                );
+            default:
+                return <Text type="secondary">—</Text>;
+        }
+    })();
 
     const items: { icon: React.ReactNode; label: string; value: React.ReactNode }[] = [
         {

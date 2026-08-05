@@ -16,14 +16,18 @@ function normalize(name) {
     return name.toLowerCase();
 }
 
+const LINUX_EXTENSIONS = ['.appimage', '.deb', '.rpm', '.pacman', '.pkg.tar.zst'];
+
+function hasExtension(lower, extensions) {
+    return extensions.some((ext) => lower.endsWith(ext));
+}
+
 function isVisibleDownload(name) {
     const lower = normalize(name);
     return (
         lower.endsWith('.exe') ||
         lower.endsWith('.dmg') ||
-        lower.endsWith('.appimage') ||
-        lower.endsWith('.deb') ||
-        lower.endsWith('.tar.gz') ||
+        hasExtension(lower, LINUX_EXTENSIONS) ||
         lower.endsWith('-win.zip') ||
         lower.endsWith('-mac.zip')
     );
@@ -33,7 +37,7 @@ function detectPlatform(name) {
     const lower = normalize(name);
     if (lower.endsWith('.exe') || lower.endsWith('-win.zip')) return 'windows';
     if (lower.endsWith('.dmg') || lower.endsWith('-mac.zip')) return 'mac';
-    if (lower.endsWith('.appimage') || lower.endsWith('.deb') || lower.endsWith('.tar.gz')) return 'linux';
+    if (hasExtension(lower, LINUX_EXTENSIONS)) return 'linux';
     return 'other';
 }
 
@@ -48,8 +52,8 @@ function detectArch(name, platform) {
 function detectKind(name) {
     const lower = normalize(name);
     if (lower.endsWith('.exe') || lower.endsWith('.dmg')) return 'installer';
-    if (lower.endsWith('.deb')) return 'package';
-    if (lower.endsWith('.appimage') || lower.endsWith('.tar.gz') || lower.endsWith('.zip')) return 'portable';
+    if (hasExtension(lower, ['.deb', '.rpm', '.pacman', '.pkg.tar.zst'])) return 'package';
+    if (lower.endsWith('.appimage') || lower.endsWith('.zip')) return 'portable';
     return 'download';
 }
 
@@ -59,8 +63,9 @@ function extensionRank(name) {
     if (lower.endsWith('.dmg')) return 0;
     if (lower.endsWith('.appimage')) return 0;
     if (lower.endsWith('.deb')) return 1;
-    if (lower.endsWith('.tar.gz')) return 2;
-    if (lower.endsWith('.zip')) return 3;
+    if (lower.endsWith('.rpm')) return 2;
+    if (hasExtension(lower, ['.pacman', '.pkg.tar.zst'])) return 3;
+    if (lower.endsWith('.zip')) return 4;
     return 99;
 }
 
@@ -101,14 +106,14 @@ const assets = await Promise.all(
 );
 
 assets.sort((left, right) => {
-        const platformDiff = platformRank(left.platform) - platformRank(right.platform);
-        if (platformDiff !== 0) return platformDiff;
+    const platformDiff = platformRank(left.platform) - platformRank(right.platform);
+    if (platformDiff !== 0) return platformDiff;
 
-        const extDiff = extensionRank(left.name) - extensionRank(right.name);
-        if (extDiff !== 0) return extDiff;
+    const extDiff = extensionRank(left.name) - extensionRank(right.name);
+    if (extDiff !== 0) return extDiff;
 
-        return left.name.localeCompare(right.name);
-    });
+    return left.name.localeCompare(right.name);
+});
 
 const manifest = {
     version: releaseVersion,

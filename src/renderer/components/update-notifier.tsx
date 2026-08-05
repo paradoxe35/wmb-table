@@ -1,10 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { notification, Button } from 'antd';
 import { useAppStore } from '@renderer/stores';
 import { buildDownloadPageLink } from '@shared/constants';
+import type { UpdaterNotification } from '@shared/types';
 
 export const UPDATE_TAB_EVENT = 'go-to-update-tab';
+
+const version = (data: UpdaterNotification) => data.updateInfo?.version ?? 'unknown';
 
 /**
  * Global listener for update notifications.
@@ -17,15 +20,15 @@ export default function UpdateNotifier() {
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const shownRef = useRef<Set<string>>(new Set());
 
-    const goToUpdateTab = () => {
+    const goToUpdateTab = useCallback(() => {
         showOptions('settings');
         window.dispatchEvent(new Event(UPDATE_TAB_EVENT));
-    };
+    }, [showOptions]);
 
     useEffect(() => {
-        return window.api.on.notifyForNewUpdate((data) => {
-            if (data.type === 'hasUpdate' && !shownRef.current.has('hasUpdate')) {
-                shownRef.current.add('hasUpdate');
+        const handle = (data: UpdaterNotification) => {
+            if (data.type === 'hasUpdate' && !shownRef.current.has(`hasUpdate:${version(data)}`)) {
+                shownRef.current.add(`hasUpdate:${version(data)}`);
                 const key = 'update-available';
                 const canAuto = data.canAutoUpdate !== false;
 
@@ -64,8 +67,11 @@ export default function UpdateNotifier() {
                 });
             }
 
-            if (data.type === 'downloaded' && !shownRef.current.has('downloaded')) {
-                shownRef.current.add('downloaded');
+            if (
+                data.type === 'downloaded' &&
+                !shownRef.current.has(`downloaded:${version(data)}`)
+            ) {
+                shownRef.current.add(`downloaded:${version(data)}`);
                 const key = 'update-downloaded';
                 notification.success({
                     key,
@@ -87,8 +93,12 @@ export default function UpdateNotifier() {
                     ),
                 });
             }
-        });
-    }, [contentLanguage, showOptions, t]);
+        };
+
+        // A check can complete before this mounts, so read what is already known
+        window.api.app.getUpdateStatus().then(handle);
+        return window.api.on.notifyForNewUpdate(handle);
+    }, [contentLanguage, goToUpdateTab, t]);
 
     return null;
 }

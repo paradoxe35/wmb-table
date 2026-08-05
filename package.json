@@ -212,7 +212,8 @@
             "target": [
                 "AppImage",
                 "deb",
-                "tar.gz"
+                "rpm",
+                "pacman"
             ],
             "category": "Education"
         },

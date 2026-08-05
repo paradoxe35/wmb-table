@@ -9,8 +9,10 @@ export interface ThemeState {
     resolvedTheme: ResolvedTheme;
 }
 
-export const THEME_BACKGROUND: Record<ResolvedTheme, string> = {
-    light: '#ffffff',
+/** Dark in both themes to match the native chrome; also the window background,
+ * a sliver of which shows under the Windows menu bar (electron/electron#45199) */
+export const HEADER_BACKGROUND: Record<ResolvedTheme, string> = {
+    light: '#001529',
     dark: '#141414',
 };
 

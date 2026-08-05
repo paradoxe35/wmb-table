@@ -515,9 +515,9 @@ export interface InvokeChannelMap {
     [AppChannels.openExternal]: { args: [string]; return: void };
     [AppChannels.restart]: { args: []; return: void };
     [AppChannels.getUpdateStatus]: { args: []; return: UpdaterNotification };
-    [AppChannels.startDownloadUpdate]: { args: []; return: void };
+    [AppChannels.startDownloadUpdate]: { args: []; return: UpdaterNotification };
     [AppChannels.quitAndInstallUpdate]: { args: []; return: void };
-    [AppChannels.checkForUpdates]: { args: []; return: void };
+    [AppChannels.checkForUpdates]: { args: []; return: UpdaterNotification };
     [AppChannels.getSidebarStatus]: { args: []; return: SidebarStatus | null };
     [AppChannels.setSidebarStatus]: { args: [boolean]; return: void };
     [AppChannels.getCustomDocuments]: { args: []; return: CustomDocument[] };
