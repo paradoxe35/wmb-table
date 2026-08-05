@@ -145,14 +145,36 @@ export function getConversations(): AiConversation[] {
         .map(toConversation);
 }
 
+/** Escapes LIKE wildcards so a user typing "%" searches for a literal "%" */
+function toLikePattern(term: string): string {
+    return `%${term.replace(/[\\%_]/g, (char) => `\\${char}`)}%`;
+}
+
+/** Title match, or any message in the conversation containing the term */
+function conversationSearchCondition(search: string) {
+    const pattern = toLikePattern(search);
+    return sql`(
+        ${aiConversations.title} LIKE ${pattern} ESCAPE '\\'
+        OR EXISTS (
+            SELECT 1 FROM ${aiMessages}
+            WHERE ${aiMessages.conversationId} = ${aiConversations.id}
+              AND ${aiMessages.content} LIKE ${pattern} ESCAPE '\\'
+        )
+    )`;
+}
+
 export function getConversationHistoryPage(
     input: AiConversationHistoryPageRequest,
 ): AiConversationHistoryPage {
     const limit = Math.max(1, input.limit ?? AI_CONVERSATION_HISTORY_PAGE_SIZE);
     const loadedCount = Math.max(0, input.loadedCount ?? 0);
+    const search = input.search?.trim() ?? '';
+    const condition = search ? conversationSearchCondition(search) : undefined;
+
     const totalCountRow = getDb()
         .select({ count: sql<number>`count(*)` })
         .from(aiConversations)
+        .where(condition)
         .get();
 
     const totalCount = Number(totalCountRow?.count ?? 0);
@@ -164,6 +186,7 @@ export function getConversationHistoryPage(
             : getDb()
                   .select()
                   .from(aiConversations)
+                  .where(condition)
                   .orderBy(desc(aiConversations.updatedAt))
                   .limit(pageSize)
                   .offset(loadedCount)

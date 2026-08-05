@@ -73,6 +73,13 @@ export default function AiChatView() {
     const conversationRuns = useAiChatStore((s) => s.conversationRuns);
     const createConversation = useAiChatStore((s) => s.createConversation);
     const loadOlderConversations = useAiChatStore((s) => s.loadOlderConversations);
+    const conversationSearch = useAiChatStore((s) => s.conversationSearch);
+    const searchResults = useAiChatStore((s) => s.searchResults);
+    const searchList = useAiChatStore((s) => s.searchList);
+    const loadingConversationSearch = useAiChatStore((s) => s.loadingConversationSearch);
+    const loadingOlderConversationSearch = useAiChatStore((s) => s.loadingOlderConversationSearch);
+    const searchConversations = useAiChatStore((s) => s.searchConversations);
+    const loadOlderSearchResults = useAiChatStore((s) => s.loadOlderSearchResults);
     const selectConversation = useAiChatStore((s) => s.selectConversation);
     const loadOlderMessages = useAiChatStore((s) => s.loadOlderMessages);
     const renameConversation = useAiChatStore((s) => s.renameConversation);
@@ -121,9 +128,16 @@ export default function AiChatView() {
         void createConversation();
     }, [createConversation]);
 
+    const isSearching = searchResults !== null;
+
     const handleLoadOlderConversations = useCallback(() => {
-        void loadOlderConversations();
-    }, [loadOlderConversations]);
+        void (isSearching ? loadOlderSearchResults() : loadOlderConversations());
+    }, [isSearching, loadOlderConversations, loadOlderSearchResults]);
+
+    const handleSearchChange = useCallback(
+        (term: string) => void searchConversations(term),
+        [searchConversations],
+    );
 
     const handleSelectConversation = useCallback(
         (id: string) => void selectConversation(id),
@@ -179,12 +193,18 @@ export default function AiChatView() {
     return (
         <div className="ai-chat">
             <ChatConversationList
-                conversations={conversations}
+                conversations={searchResults ?? conversations}
                 activeConversationId={activeConversationId}
                 streamingConversations={activeConversationMap}
-                loading={loadingConversationList}
-                loadingOlder={loadingOlderConversationList}
-                hasMore={conversationList.hasMore}
+                loading={isSearching ? loadingConversationSearch : loadingConversationList}
+                loadingOlder={
+                    isSearching ? loadingOlderConversationSearch : loadingOlderConversationList
+                }
+                hasMore={isSearching ? searchList.hasMore : conversationList.hasMore}
+                searchTerm={conversationSearch}
+                isSearching={isSearching}
+                searchResultCount={searchList.totalCount}
+                onSearchChange={handleSearchChange}
                 onCreateConversation={handleCreateConversation}
                 onLoadOlderConversations={handleLoadOlderConversations}
                 onSelectConversation={handleSelectConversation}
@@ -211,7 +231,7 @@ export default function AiChatView() {
                         type="error"
                         showIcon
                         closable
-                        message={t(error)}
+                        title={t(error)}
                         style={{ margin: '12px 16px 0' }}
                     />
                 ) : null}

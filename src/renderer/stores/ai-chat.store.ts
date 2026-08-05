@@ -63,6 +63,12 @@ interface QueuedMessage {
 type ConversationRunMap = Record<string, ConversationRunState>;
 type QueuedMessageMap = Record<string, QueuedMessage[]>;
 
+const EMPTY_CONVERSATION_LIST: ConversationListState = {
+    loadedCount: 0,
+    totalCount: 0,
+    hasMore: false,
+};
+
 function createConversationHistoryState(page: AiMessageHistoryPage): ConversationHistoryState {
     return {
         loadedCount: page.loadedCount,
@@ -420,6 +426,30 @@ function canRetryUserMessage(messages: AiMessage[], messageId: string): boolean 
     );
 }
 
+/** Conversations reached through search are not necessarily in the paged list */
+function findKnownConversation(
+    state: Pick<AiChatState, 'conversations' | 'searchResults'>,
+    conversationId: string,
+): AiConversation | null {
+    return (
+        state.conversations.find((conversation) => conversation.id === conversationId) ??
+        state.searchResults?.find((conversation) => conversation.id === conversationId) ??
+        null
+    );
+}
+
+/** Keeps the open conversation listed when a refreshed page no longer contains it */
+function withConversation(
+    conversations: AiConversation[],
+    conversation: AiConversation | null,
+): AiConversation[] {
+    if (!conversation || conversations.some((item) => item.id === conversation.id)) {
+        return conversations;
+    }
+
+    return sortConversationsByUpdatedAt([...conversations, conversation]);
+}
+
 function resolvePersistedActiveConversationId(
     conversations: AiConversation[],
     activeConversationId: string | null,
@@ -455,6 +485,12 @@ interface AiChatState {
     error: string | null;
     completionCount: number;
     lastCompletedConversationId: string | null;
+    conversationSearch: string;
+    /** Null while no search is active, so the sidebar can fall back to `conversations` */
+    searchResults: AiConversation[] | null;
+    searchList: ConversationListState;
+    loadingConversationSearch: boolean;
+    loadingOlderConversationSearch: boolean;
 
     initialize(): Promise<void>;
     loadSettings(): Promise<void>;
@@ -463,6 +499,8 @@ interface AiChatState {
     loadConversations(): Promise<void>;
     refreshAfterSync(): Promise<void>;
     loadOlderConversations(): Promise<void>;
+    searchConversations(term: string): Promise<void>;
+    loadOlderSearchResults(): Promise<void>;
     selectConversation(conversationId: string): Promise<void>;
     loadOlderMessages(conversationId: string): Promise<void>;
     createConversation(title?: string): Promise<void>;
@@ -511,6 +549,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
     error: null,
     completionCount: 0,
     lastCompletedConversationId: null,
+    conversationSearch: '',
+    searchResults: null,
+    searchList: EMPTY_CONVERSATION_LIST,
+    loadingConversationSearch: false,
+    loadingOlderConversationSearch: false,
 
     initialize: async () => {
         if (!listenersBound) {
@@ -903,13 +946,17 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
                 limit: AI_CONVERSATION_HISTORY_PAGE_SIZE,
                 loadedCount: 0,
             });
+            const activeRecord = previousActiveConversationId
+                ? findKnownConversation(get(), previousActiveConversationId)
+                : null;
+            const conversations = withConversation(page.conversations, activeRecord);
             const activeConversationId = resolvePersistedActiveConversationId(
-                page.conversations,
+                conversations,
                 previousActiveConversationId,
             );
 
             set((state) => ({
-                conversations: page.conversations,
+                conversations,
                 conversationList: createConversationListState(page),
                 activeConversationId,
                 ...pruneConversationCache(state, activeConversationId),
@@ -983,7 +1030,107 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         }
     },
 
+    searchConversations: async (term) => {
+        const trimmed = term.trim();
+        set({ conversationSearch: term });
+
+        if (!trimmed) {
+            set({
+                searchResults: null,
+                searchList: EMPTY_CONVERSATION_LIST,
+                loadingConversationSearch: false,
+                loadingOlderConversationSearch: false,
+            });
+            return;
+        }
+
+        set({ loadingConversationSearch: true });
+
+        try {
+            const page = await window.api.ai.getConversationsPage({
+                limit: AI_CONVERSATION_HISTORY_PAGE_SIZE,
+                loadedCount: 0,
+                search: trimmed,
+            });
+
+            set((state) => {
+                // A later keystroke already replaced this query
+                if (state.conversationSearch.trim() !== trimmed) {
+                    return {};
+                }
+
+                return {
+                    searchResults: page.conversations,
+                    searchList: createConversationListState(page),
+                    loadingConversationSearch: false,
+                };
+            });
+        } catch (error) {
+            set({
+                loadingConversationSearch: false,
+                error: toErrorMessage(error, 'La recherche de conversations a échoué.'),
+            });
+        }
+    },
+
+    loadOlderSearchResults: async () => {
+        const state = get();
+        const term = state.conversationSearch.trim();
+
+        if (
+            !term ||
+            !state.searchList.hasMore ||
+            state.loadingConversationSearch ||
+            state.loadingOlderConversationSearch
+        ) {
+            return;
+        }
+
+        set({ loadingOlderConversationSearch: true });
+
+        try {
+            const page = await window.api.ai.getConversationsPage({
+                limit: AI_CONVERSATION_HISTORY_PAGE_SIZE,
+                loadedCount: state.searchList.loadedCount,
+                search: term,
+            });
+
+            set((current) => {
+                if (current.conversationSearch.trim() !== term) {
+                    return { loadingOlderConversationSearch: false };
+                }
+
+                return {
+                    searchResults: mergeFetchedConversations(
+                        current.searchResults ?? [],
+                        page.conversations,
+                    ),
+                    searchList: createConversationListState(page),
+                    loadingOlderConversationSearch: false,
+                };
+            });
+        } catch (error) {
+            set({
+                loadingOlderConversationSearch: false,
+                error: toErrorMessage(error, 'La recherche de conversations a échoué.'),
+            });
+        }
+    },
+
     selectConversation: async (conversationId) => {
+        // Promote a search-only result into the paged list so the header and its
+        // actions resolve, and it stays listed once the search is cleared
+        set((current) => {
+            if (current.conversations.some((item) => item.id === conversationId)) {
+                return {};
+            }
+
+            const fromSearch = current.searchResults?.find((item) => item.id === conversationId);
+            return fromSearch
+                ? { conversations: upsertConversation(current.conversations, fromSearch) }
+                : {};
+        });
+
         const state = get();
         const alreadyLoaded = conversationId in state.messagesByConversation;
         const alreadyLoading = conversationId in state.loadingConversations;
@@ -1161,6 +1308,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
         const conversation = await window.api.ai.renameConversation(conversationId, title);
         set((state) => ({
             conversations: upsertConversation(state.conversations, conversation),
+            searchResults:
+                state.searchResults?.map((item) =>
+                    item.id === conversation.id ? conversation : item,
+                ) ?? null,
         }));
         return conversation;
     },
@@ -1185,6 +1336,10 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
 
             return {
                 conversations: remaining,
+                searchResults:
+                    state.searchResults?.filter(
+                        (conversation) => conversation.id !== conversationId,
+                    ) ?? null,
                 conversationList: {
                     loadedCount: Math.max(state.conversationList.loadedCount - 1, remaining.length),
                     totalCount: Math.max(state.conversationList.totalCount - 1, 0),
@@ -1259,6 +1414,11 @@ export const useAiChatStore = createStore<AiChatState>((set, get) => ({
             conversationRuns: {},
             queuedMessagesByConversation: {},
             sending: false,
+            conversationSearch: '',
+            searchResults: null,
+            searchList: EMPTY_CONVERSATION_LIST,
+            loadingConversationSearch: false,
+            loadingOlderConversationSearch: false,
         });
     },
 

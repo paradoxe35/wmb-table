@@ -66,6 +66,97 @@ describe('ai.repository', () => {
         });
     });
 
+    describe('conversation search', () => {
+        function seed() {
+            const byTitle = aiRepo.createConversation('en', 'Study on faith');
+            const byMessage = aiRepo.createConversation('en', 'Untitled notes');
+            const unrelated = aiRepo.createConversation('en', 'Something else');
+
+            aiRepo.createMessage({
+                conversationId: byMessage.id,
+                role: 'user',
+                content: 'tell me about faith and grace',
+            });
+            aiRepo.createMessage({
+                conversationId: unrelated.id,
+                role: 'user',
+                content: 'a totally different topic',
+            });
+
+            return { byTitle, byMessage, unrelated };
+        }
+
+        it('matches on conversation title', () => {
+            const { byTitle } = seed();
+            const page = aiRepo.getConversationHistoryPage({ search: 'Study' });
+
+            expect(page.conversations.map((c) => c.id)).toEqual([byTitle.id]);
+            expect(page.totalCount).toBe(1);
+        });
+
+        it('matches on message content', () => {
+            const { byMessage } = seed();
+            const page = aiRepo.getConversationHistoryPage({ search: 'grace' });
+
+            expect(page.conversations.map((c) => c.id)).toEqual([byMessage.id]);
+        });
+
+        it('matches title and message content together', () => {
+            const { byTitle, byMessage, unrelated } = seed();
+            const ids = aiRepo
+                .getConversationHistoryPage({ search: 'faith' })
+                .conversations.map((c) => c.id);
+
+            expect(ids).toHaveLength(2);
+            expect(ids).toEqual(expect.arrayContaining([byTitle.id, byMessage.id]));
+            expect(ids).not.toContain(unrelated.id);
+        });
+
+        it('returns an empty page when nothing matches', () => {
+            seed();
+            const page = aiRepo.getConversationHistoryPage({ search: 'zzz-no-match' });
+
+            expect(page.conversations).toHaveLength(0);
+            expect(page.totalCount).toBe(0);
+            expect(page.hasMore).toBe(false);
+        });
+
+        it('treats LIKE wildcards as literal characters', () => {
+            const literal = aiRepo.createConversation('en', '100% guaranteed');
+            aiRepo.createConversation('en', 'no percent sign here');
+
+            const page = aiRepo.getConversationHistoryPage({ search: '%' });
+            expect(page.conversations.map((c) => c.id)).toEqual([literal.id]);
+        });
+
+        it('paginates search results', () => {
+            for (let i = 0; i < 3; i += 1) {
+                aiRepo.createConversation('en', `faith topic ${i}`);
+            }
+
+            const first = aiRepo.getConversationHistoryPage({ search: 'faith', limit: 2 });
+            expect(first.conversations).toHaveLength(2);
+            expect(first.hasMore).toBe(true);
+
+            const second = aiRepo.getConversationHistoryPage({
+                search: 'faith',
+                limit: 2,
+                loadedCount: first.loadedCount,
+            });
+            expect(second.conversations).toHaveLength(1);
+            expect(second.hasMore).toBe(false);
+
+            const ids = [...first.conversations, ...second.conversations].map((c) => c.id);
+            expect(new Set(ids).size).toBe(3);
+        });
+
+        it('ignores search when the term is blank', () => {
+            seed();
+            const page = aiRepo.getConversationHistoryPage({ search: '   ' });
+            expect(page.conversations).toHaveLength(3);
+        });
+    });
+
     describe('messages', () => {
         it('createMessage and getMessages', () => {
             const conv = aiRepo.createConversation('en');

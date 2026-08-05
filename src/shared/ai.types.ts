@@ -218,6 +218,8 @@ export interface AiMessage {
 export interface AiConversationHistoryPageRequest {
     limit?: number;
     loadedCount?: number;
+    /** Matches the conversation title or any message it contains */
+    search?: string;
 }
 
 export interface AiConversationHistoryPage {

@@ -92,6 +92,19 @@ export default function App() {
         };
     }, [resolvedTheme, fontSizeOption]);
 
+    // antd's static APIs (message/notification/Modal) render into a detached
+    // holder outside this provider, so they need the theme and locale registered
+    // globally or they always paint in the default light theme.
+    useEffect(() => {
+        ConfigProvider.config({
+            holderRender: (children) => (
+                <ConfigProvider locale={antdLocale} theme={appTheme}>
+                    {children}
+                </ConfigProvider>
+            ),
+        });
+    }, [antdLocale, appTheme]);
+
     return (
         <ErrorBoundary>
             <ConfigProvider locale={antdLocale} theme={appTheme}>

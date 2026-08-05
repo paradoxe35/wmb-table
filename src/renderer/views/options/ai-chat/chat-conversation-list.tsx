@@ -1,7 +1,7 @@
-import { memo, useCallback, useMemo, useRef } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { MenuProps } from 'antd';
-import { Button, Dropdown, Popconfirm, Tooltip, Typography } from 'antd';
-import { LoadingOutlined, MoreOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Dropdown, Input, Popconfirm, Tooltip, Typography } from 'antd';
+import { LoadingOutlined, MoreOutlined, PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import type { AiConversation } from '@shared/ai.types';
 import type { PdfExportResult } from '@shared/ipc.types';
 import { useTranslation } from 'react-i18next';
@@ -143,6 +143,10 @@ export default memo(function ChatConversationList({
     onDeleteConversation,
     onClearConversations,
     hasStreamingConversations,
+    searchTerm,
+    isSearching,
+    searchResultCount,
+    onSearchChange,
 }: {
     conversations: AiConversation[];
     activeConversationId: string | null;
@@ -150,6 +154,10 @@ export default memo(function ChatConversationList({
     loading: boolean;
     loadingOlder: boolean;
     hasMore: boolean;
+    searchTerm: string;
+    isSearching: boolean;
+    searchResultCount: number;
+    onSearchChange: (term: string) => void;
     onCreateConversation: () => void;
     onLoadOlderConversations: () => void;
     onSelectConversation: (conversationId: string) => void;
@@ -161,6 +169,17 @@ export default memo(function ChatConversationList({
 }) {
     const { t } = useTranslation();
     const scrollRef = useRef<HTMLDivElement | null>(null);
+    const [draftSearch, setDraftSearch] = useState(searchTerm);
+
+    // Debounce so typing doesn't fire a query per keystroke
+    useEffect(() => {
+        if (draftSearch === searchTerm) {
+            return;
+        }
+
+        const timer = window.setTimeout(() => onSearchChange(draftSearch), 250);
+        return () => window.clearTimeout(timer);
+    }, [draftSearch, onSearchChange, searchTerm]);
 
     const handleScroll = useCallback(() => {
         const container = scrollRef.current;
@@ -191,6 +210,30 @@ export default memo(function ChatConversationList({
                 </Tooltip>
             </div>
 
+            <div className="ai-chat__sidebar-search">
+                <Input
+                    allowClear
+                    size="small"
+                    value={draftSearch}
+                    onChange={(event) => setDraftSearch(event.target.value)}
+                    prefix={<SearchOutlined style={{ color: 'var(--ant-color-text-tertiary)' }} />}
+                    suffix={isSearching && loading ? <LoadingOutlined spin /> : null}
+                    placeholder={t('Rechercher une conversation')}
+                    aria-label={t('Rechercher une conversation')}
+                />
+            </div>
+
+            {isSearching && !loading && searchResultCount > 0 ? (
+                <Text type="secondary" className="ai-chat__sidebar-search-count">
+                    {t(
+                        searchResultCount === 1
+                            ? '{{count}} conversation trouvée'
+                            : '{{count}} conversations trouvées',
+                        { count: searchResultCount },
+                    )}
+                </Text>
+            ) : null}
+
             <div className="ai-chat__sidebar-list" ref={scrollRef} onScroll={handleScroll}>
                 {conversations.length === 0 && !loading ? (
                     <Text
@@ -201,7 +244,7 @@ export default memo(function ChatConversationList({
                             padding: '16px 10px',
                         }}
                     >
-                        {t('Aucune conversation')}
+                        {isSearching ? t('Aucun résultat') : t('Aucune conversation')}
                     </Text>
                 ) : (
                     <>
@@ -228,7 +271,7 @@ export default memo(function ChatConversationList({
                 )}
             </div>
 
-            {conversations.length > 0 ? (
+            {conversations.length > 0 && !isSearching ? (
                 <div className="ai-chat__sidebar-footer">
                     <Popconfirm
                         title={t('Supprimer toutes les conversations ?')}
