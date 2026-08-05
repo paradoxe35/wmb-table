@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { App as AntApp, ConfigProvider, theme } from 'antd';
 import { resolveUiLanguage, type UiLanguage } from '@shared/constants';
+import { HEADER_BACKGROUND } from '@shared/theme';
 import { useAppStore } from './stores';
 import type { Locale } from 'antd/es/locale';
 import 'dayjs/locale/es';
@@ -69,6 +70,7 @@ export default function App() {
 
     const appTheme = useMemo(() => {
         const isDark = resolvedTheme === 'dark';
+        const headerBg = HEADER_BACKGROUND[resolvedTheme];
         return {
             algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
             cssVar: { prefix: 'ant' },
@@ -78,12 +80,12 @@ export default function App() {
             },
             components: {
                 Layout: {
-                    headerBg: isDark ? '#141414' : '#001529',
+                    headerBg,
                     headerPadding: '0',
                     siderBg: isDark ? '#1f1f1f' : '#ffffff',
                 },
                 Menu: {
-                    darkItemBg: isDark ? '#141414' : '#001529',
+                    darkItemBg: headerBg,
                     darkItemSelectedBg: '#1990ff',
                 },
             },

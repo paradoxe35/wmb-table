@@ -19,7 +19,7 @@ import { disposePowerSaveBlocker } from '@main/services/power-save.service';
 import * as configRepo from '@main/database/repositories/config.repository';
 import { getAudioCacheDir, getTtsCacheDir } from '@main/lib/app-paths';
 import { applyNativeChromeTheme, getThemeState } from '@main/lib/native-theme';
-import { THEME_BACKGROUND, type ResolvedTheme } from '@shared/theme';
+import { HEADER_BACKGROUND, type ResolvedTheme } from '@shared/theme';
 import i18n from '@main/lib/i18n';
 import log from '@main/lib/logger';
 import { resolveUiLanguage } from '@shared/constants';
@@ -182,7 +182,7 @@ function createWindow(resolvedTheme: ResolvedTheme): void {
         minWidth: 933,
         minHeight: 572,
         title: APP_NAME,
-        backgroundColor: THEME_BACKGROUND[resolvedTheme],
+        backgroundColor: HEADER_BACKGROUND[resolvedTheme],
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             nodeIntegration: false,

@@ -1,7 +1,7 @@
 import { nativeTheme } from 'electron';
 import {
     DEFAULT_THEME_MODE,
-    THEME_BACKGROUND,
+    HEADER_BACKGROUND,
     resolveThemeMode,
     type ResolvedTheme,
     type ThemeState,
@@ -29,6 +29,6 @@ export function applyResolvedTheme(resolvedTheme: ResolvedTheme): void {
     applyNativeChromeTheme();
     const win = getMainWindow();
     if (win && !win.isDestroyed()) {
-        win.setBackgroundColor(THEME_BACKGROUND[resolvedTheme]);
+        win.setBackgroundColor(HEADER_BACKGROUND[resolvedTheme]);
     }
 }
