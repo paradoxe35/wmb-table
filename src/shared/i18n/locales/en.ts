@@ -215,8 +215,6 @@ const en: Record<string, string> = {
     'Le chargement des anciens messages a échoué.': 'Loading older messages failed.',
     'Rechercher une conversation': 'Search conversations',
     'La recherche de conversations a échoué.': 'Searching conversations failed.',
-    '{{count}} conversation trouvée': '{{count}} conversation found',
-    '{{count}} conversations trouvées': '{{count}} conversations found',
     "L'arrêt de la génération a échoué.": 'Stopping the generation failed.',
     "L'envoi du message a échoué.": 'Sending the message failed.',
     'La création de la conversation a échoué.': 'Creating the conversation failed.',

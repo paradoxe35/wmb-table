@@ -1143,8 +1143,6 @@ const es: Record<string, string> = {
     'Le chargement des anciens messages a échoué.': 'No se pudieron cargar los mensajes antiguos.',
     'Rechercher une conversation': 'Buscar conversaciones',
     'La recherche de conversations a échoué.': 'No se pudieron buscar las conversaciones.',
-    '{{count}} conversation trouvée': '{{count}} conversación encontrada',
-    '{{count}} conversations trouvées': '{{count}} conversaciones encontradas',
     "L'arrêt de la génération a échoué.": 'No se pudo detener la generación.',
     "L'envoi du message a échoué.": 'No se pudo enviar el mensaje.',
     'La création de la conversation a échoué.': 'No se pudo crear la conversación.',

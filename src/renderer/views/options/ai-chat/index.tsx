@@ -203,7 +203,6 @@ export default function AiChatView() {
                 hasMore={isSearching ? searchList.hasMore : conversationList.hasMore}
                 searchTerm={conversationSearch}
                 isSearching={isSearching}
-                searchResultCount={searchList.totalCount}
                 onSearchChange={handleSearchChange}
                 onCreateConversation={handleCreateConversation}
                 onLoadOlderConversations={handleLoadOlderConversations}

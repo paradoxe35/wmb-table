@@ -1140,8 +1140,6 @@ const pt: Record<string, string> = {
     'Le chargement des anciens messages a échoué.': 'Falha ao carregar as mensagens antigas.',
     'Rechercher une conversation': 'Pesquisar conversas',
     'La recherche de conversations a échoué.': 'Falha ao pesquisar as conversas.',
-    '{{count}} conversation trouvée': '{{count}} conversa encontrada',
-    '{{count}} conversations trouvées': '{{count}} conversas encontradas',
     "L'arrêt de la génération a échoué.": 'Falha ao interromper a geração.',
     "L'envoi du message a échoué.": 'Falha ao enviar a mensagem.',
     'La création de la conversation a échoué.': 'Falha ao criar a conversa.',

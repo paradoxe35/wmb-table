@@ -1138,8 +1138,6 @@ const sw: Record<string, string> = {
     'Le chargement des anciens messages a échoué.': 'Imeshindikana kupakia ujumbe wa zamani.',
     'Rechercher une conversation': 'Tafuta mazungumzo',
     'La recherche de conversations a échoué.': 'Imeshindikana kutafuta mazungumzo.',
-    '{{count}} conversation trouvée': 'Mazungumzo {{count}} yamepatikana',
-    '{{count}} conversations trouvées': 'Mazungumzo {{count}} yamepatikana',
     "L'arrêt de la génération a échoué.": 'Imeshindikana kusimamisha uzalishaji.',
     "L'envoi du message a échoué.": 'Imeshindikana kutuma ujumbe.',
     'La création de la conversation a échoué.': 'Imeshindikana kuunda mazungumzo.',

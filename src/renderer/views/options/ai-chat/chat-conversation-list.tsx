@@ -145,7 +145,6 @@ export default memo(function ChatConversationList({
     hasStreamingConversations,
     searchTerm,
     isSearching,
-    searchResultCount,
     onSearchChange,
 }: {
     conversations: AiConversation[];
@@ -156,7 +155,6 @@ export default memo(function ChatConversationList({
     hasMore: boolean;
     searchTerm: string;
     isSearching: boolean;
-    searchResultCount: number;
     onSearchChange: (term: string) => void;
     onCreateConversation: () => void;
     onLoadOlderConversations: () => void;
@@ -222,17 +220,6 @@ export default memo(function ChatConversationList({
                     aria-label={t('Rechercher une conversation')}
                 />
             </div>
-
-            {isSearching && !loading && searchResultCount > 0 ? (
-                <Text type="secondary" className="ai-chat__sidebar-search-count">
-                    {t(
-                        searchResultCount === 1
-                            ? '{{count}} conversation trouvée'
-                            : '{{count}} conversations trouvées',
-                        { count: searchResultCount },
-                    )}
-                </Text>
-            ) : null}
 
             <div className="ai-chat__sidebar-list" ref={scrollRef} onScroll={handleScroll}>
                 {conversations.length === 0 && !loading ? (
