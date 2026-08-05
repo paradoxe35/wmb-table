@@ -59,3 +59,9 @@ docs/.vitepress/cache
 
 # Codex
 .codex
+
+# Code-signing material — never commit
+*.p12
+*.cer
+*.pem
+wmb-table-signing/

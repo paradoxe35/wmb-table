@@ -79,23 +79,36 @@ Why a free self-signed certificate is enough:
 - The only thing a paid Developer ID buys here is Gatekeeper/notarization, i.e. installing
   without the manual right-click -> Open. Updates themselves do not need it.
 
-How to create one (once, on a Mac):
+How to create one (once, any OS — a Mac is not needed):
 
-1. `Keychain Access` -> `Certificate Assistant` -> `Create a Certificate...`
-2. Name it e.g. `WMB Table`, Identity Type `Self Signed Root`, Certificate Type
-   `Code Signing`, and tick `Let me override defaults` so you can set a long validity
-3. Find it under `login` -> `My Certificates`, right-click -> `Export...`, save as `.p12`
-   with a password
-4. `base64 -i certificate.p12 | pbcopy` and store the result in `CSC_LINK`
-5. Store the export password in `CSC_KEY_PASSWORD`
+```sh
+./scripts/generate-mac-signing-cert.sh
+```
+
+It writes to `~/wmb-table-signing/` and prints which file goes into which secret. It refuses
+to run if that directory already exists, so it cannot silently replace a certificate in use.
 
 Notes:
 
 - **Keep this certificate.** Every release must be signed with the same one, or already
-  installed apps can no longer update and users must reinstall manually.
+  installed apps can no longer update and users must reinstall manually. Back up
+  `~/wmb-table-signing/` somewhere safe.
+- The certificate must carry the `codeSigning` extended key usage. Without it macOS reports
+  the identity as `(Missing required extension)` and electron-builder discards it.
+- The `.p12` must use legacy PBE (`openssl pkcs12 -export -legacy`). OpenSSL 3 otherwise
+  defaults to AES-256-CBC, which `security import` cannot read.
 - electron-builder falls back to any valid non-Apple identity in the keychain, so no
   `mac.identity` entry is needed in `package.json`.
 - Both secrets are optional; leaving them unset keeps the current ad-hoc behaviour.
+
+Verifying the first signed build:
+
+- The build log should show electron-builder signing with `WMB Table` rather than skipping.
+- `security find-identity -v -p codesigning` must list the identity — that is the list
+  electron-builder reads. If it is missing, the temporary keychain needs the certificate
+  trusted first: `security add-trusted-cert -r trustRoot -k <keychain> signing.cer`.
+- The real test is publishing two signed releases and confirming the first updates to the
+  second. An unsigned or differently-signed build cannot update.
 
 ### `MAIN_VITE_GITHUB_TOKEN`
 
