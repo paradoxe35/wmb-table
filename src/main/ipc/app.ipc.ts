@@ -8,7 +8,13 @@ import * as historyRepo from '@main/database/repositories/history.repository';
 import { refreshBibleDrizzle, switchBibleLanguage } from '@main/database/index';
 import { closeBibleDb } from '@main/services/bible.service';
 import { buildImportedDocumentContent } from '@main/services/book/book-import.service';
-import { getUpdateStatus, startDownload, quitAndInstall, checkForUpdates } from '@main/lib/updater';
+import {
+    getUpdateStatus,
+    startDownload,
+    cancelDownload,
+    quitAndInstall,
+    checkForUpdates,
+} from '@main/lib/updater';
 import i18n from '@main/lib/i18n';
 import MenuBuilder from '@main/lib/menu';
 import { getMainWindow } from '@main/lib/window';
@@ -76,6 +82,10 @@ export function registerAppHandlers(): void {
 
     registerHandler(AppChannels.startDownloadUpdate, async () => {
         return startDownload();
+    });
+
+    registerHandler(AppChannels.cancelDownloadUpdate, async () => {
+        return cancelDownload();
     });
 
     registerHandler(AppChannels.quitAndInstallUpdate, async () => {
