@@ -4,9 +4,11 @@ import { getDb } from '../index';
 import { customDocuments } from '../schema';
 import { logChange } from '@main/services/sync/change-log.service';
 import { extractSnippetWindow, matchesQuery } from '@shared/searchable';
+import { documentContentToParagraphTexts } from '@shared/book-content';
 import type {
     CustomDocument,
     CustomDocumentContent,
+    CustomDocumentKind,
     CustomDocumentSearchHit,
     CustomDocumentSearchResult,
     SearchMode,
@@ -18,6 +20,7 @@ export function getCustomDocuments(): CustomDocument[] {
             id: customDocuments.id,
             title: customDocuments.title,
             languageCode: customDocuments.languageCode,
+            kind: customDocuments.kind,
             createdAt: customDocuments.createdAt,
             updatedAt: customDocuments.updatedAt,
         })
@@ -27,15 +30,22 @@ export function getCustomDocuments(): CustomDocument[] {
         id: row.id,
         title: row.title,
         languageCode: row.languageCode ?? '',
+        ...readKind(row.kind),
         createdAt: new Date(row.createdAt ?? Date.now()),
         updatedAt: new Date(row.updatedAt ?? Date.now()),
     }));
+}
+
+/** Unknown values from a newer client sync back as plain, never as a broken kind. */
+function readKind(value: string | null): { kind?: CustomDocumentKind } {
+    return value === 'book' ? { kind: 'book' } : {};
 }
 
 export function createCustomDocument(
     title: string,
     content: string,
     languageCode = '',
+    kind: CustomDocumentKind | null = null,
 ): CustomDocument {
     const db = getDb();
     const existing = db
@@ -50,13 +60,14 @@ export function createCustomDocument(
     const id = randomUUID();
     const now = new Date().toISOString();
     db.insert(customDocuments)
-        .values({ id, title, content, languageCode, createdAt: now, updatedAt: now })
+        .values({ id, title, content, languageCode, kind, createdAt: now, updatedAt: now })
         .run();
     logChange('custom_documents', id, 'SAVE', {
         id,
         title,
         content,
         languageCode,
+        kind,
         createdAt: now,
         updatedAt: now,
     });
@@ -64,6 +75,7 @@ export function createCustomDocument(
         id,
         title,
         languageCode,
+        ...(kind ? { kind } : {}),
         createdAt: new Date(now),
         updatedAt: new Date(now),
     };
@@ -87,19 +99,6 @@ export function getCustomDocumentContent(id: string): CustomDocumentContent | nu
         content: row.content,
         languageCode: row.languageCode ?? '',
     };
-}
-
-function toDocumentLines(content: string): string[] {
-    try {
-        const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-            return parsed.map((line) => String(line));
-        }
-    } catch {
-        // Stored content can also be plain text.
-    }
-
-    return content.split('\n');
 }
 
 function searchDocumentLines(
@@ -151,7 +150,11 @@ export function searchCustomDocuments(input: {
         const fullDoc = getCustomDocumentContent(doc.id);
         if (!fullDoc?.content) continue;
 
-        const lineMatches = searchDocumentLines(toDocumentLines(fullDoc.content), query, mode);
+        const lineMatches = searchDocumentLines(
+            documentContentToParagraphTexts(fullDoc.content),
+            query,
+            mode,
+        );
         if (lineMatches.length === 0) continue;
 
         hits.push({

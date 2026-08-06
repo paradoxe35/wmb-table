@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { parseWmbLink } from '@shared/wmb-link';
+import { documentContentToParagraphTexts } from '@shared/book-content';
 import { isParagraphReference, type NoteItemReference } from '@shared/types';
 
 import { useWmbLinkNavigate } from '@renderer/hooks/use-wmb-link';
@@ -13,6 +14,7 @@ import { useDocumentTabsStore } from '@renderer/stores';
 
 import {
     resolveBibleFromWmb,
+    resolveBookFromWmb,
     resolveDocFromWmb,
     resolveSermonFromWmb,
     truncate,
@@ -72,7 +74,9 @@ export function useWmbReferenceModal(): UseWmbReferenceModalResult {
                     ? resolveSermonFromWmb(ref)
                     : ref.type === 'bible'
                       ? resolveBibleFromWmb(ref)
-                      : resolveDocFromWmb(ref);
+                      : ref.type === 'book'
+                        ? resolveBookFromWmb(ref)
+                        : resolveDocFromWmb(ref);
 
             promise.then((content) => {
                 if (requestIdRef.current !== requestId) return;
@@ -171,7 +175,12 @@ async function mapNoteReferenceToContent(
                 const document = await window.api.app.getCustomDocumentContent(
                     documentIdentity.customDocumentId,
                 );
-                snippet = document ? truncate(document.content, DOC_PREVIEW_MAX_CHARS) : null;
+                snippet = document
+                    ? truncate(
+                          documentContentToParagraphTexts(document.content).join('\n'),
+                          DOC_PREVIEW_MAX_CHARS,
+                      )
+                    : null;
             } catch {
                 snippet = null;
             }

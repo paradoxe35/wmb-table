@@ -2,6 +2,7 @@ import { z } from 'zod';
 import * as customDocsRepo from '@main/database/repositories/custom-documents.repository';
 import type { SearchMode } from '@shared/types';
 import { buildDocWmbLink } from '@shared/wmb-link';
+import { documentContentToParagraphTexts } from '@shared/book-content';
 import type { AiToolDefinition, CustomDocumentSearchToolResponse } from './types';
 
 const SEARCH_LIMIT_SCHEMA = z.number().int().min(1).max(20);
@@ -25,19 +26,6 @@ const customDocumentSearchInputSchema = z
         message: 'Either query or cursor is required.',
         path: ['query'],
     });
-
-function toDocumentLines(content: string): string[] {
-    try {
-        const parsed = JSON.parse(content);
-        if (Array.isArray(parsed)) {
-            return parsed.map((line) => String(line));
-        }
-    } catch {
-        // Stored content can also be plain text.
-    }
-
-    return content.split('\n');
-}
 
 function encodeCursor(payload: z.infer<typeof customDocumentSearchCursorSchema>): string {
     return Buffer.from(JSON.stringify(payload), 'utf8').toString('base64url');
@@ -188,7 +176,7 @@ export function buildDocumentTools(): Record<string, AiToolDefinition> {
                 if (!doc) return { error: `Document "${documentId}" not found.` };
                 if (!doc.content) return { error: 'Document has no text content.' };
 
-                const lines = toDocumentLines(doc.content);
+                const lines = documentContentToParagraphTexts(doc.content);
                 const totalLines = lines.length;
                 const slice = lines.slice(startLine, startLine + maxLines).join('\n');
 

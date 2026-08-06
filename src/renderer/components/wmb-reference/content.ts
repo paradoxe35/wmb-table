@@ -25,6 +25,8 @@ export type DocReferenceContent = {
     type: 'doc';
     title: string;
     contentSnippet: string | null;
+    /** `page · paragraph` for a book reference; absent for a plain document. */
+    citation?: string;
 };
 
 export type ReferenceContent = SermonReferenceContent | BibleReferenceContent | DocReferenceContent;

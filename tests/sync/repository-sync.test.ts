@@ -42,6 +42,7 @@ function createMainSchema(db: SqliteDb): void {
             title TEXT NOT NULL,
             content TEXT NOT NULL DEFAULT '',
             language_code TEXT NOT NULL DEFAULT '',
+            kind TEXT,
             created_at TEXT,
             updated_at TEXT
         );

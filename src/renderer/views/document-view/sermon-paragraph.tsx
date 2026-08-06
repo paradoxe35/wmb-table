@@ -8,7 +8,11 @@ import { hexToRgba } from '@renderer/utils/functions';
 import type { SearchHighlightState } from './hooks';
 import type { SermonParagraph as SermonParagraphType, HighlightItem } from '@shared/types';
 
-type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'>;
+type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'> & {
+    /** Gutter number when it differs from the index — books count per printed page. */
+    label?: string;
+    heading?: boolean;
+};
 
 interface HighlightRange {
     start: number;
@@ -251,13 +255,17 @@ const SermonParagraphView = memo(function SermonParagraphView({
         return renderWithRanges(paragraphContent, allRanges, isActiveMatch);
     }, [paragraphContent, paragraphIndex, search, highlights, ttsHighlight, isActiveMatch]);
 
-    const className = ttsHighlight?.isActive
-        ? 'sermon-paragraph tts-active-paragraph'
-        : 'sermon-paragraph';
+    const className = [
+        'sermon-paragraph',
+        paragraph.heading ? 'sermon-paragraph--heading' : '',
+        ttsHighlight?.isActive ? 'tts-active-paragraph' : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
 
     return (
         <p data-paragraph-index={paragraphIndex} className={className}>
-            <span className="line-number">{paragraphIndex}</span>
+            <span className="line-number">{paragraph.label ?? paragraphIndex}</span>
             <span className="paragraph-content">{renderedContent}</span>
         </p>
     );

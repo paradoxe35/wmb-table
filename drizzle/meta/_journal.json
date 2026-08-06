@@ -8,6 +8,13 @@
             "when": 1777418769605,
             "tag": "0000_lean_alex_power",
             "breakpoints": true
+        },
+        {
+            "idx": 1,
+            "version": "6",
+            "when": 1785975512552,
+            "tag": "0001_petite_old_lace",
+            "breakpoints": true
         }
     ]
 }

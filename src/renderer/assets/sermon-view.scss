@@ -149,6 +149,60 @@
     }
 }
 
+// ── Book documents ──
+
+.sermon-paragraph--heading {
+    font-weight: 600;
+    font-size: 1.1em;
+    margin-top: 1em;
+}
+
+// Marks where the printed page turns. Not selectable, so it never lands in a quote.
+.book-page-break {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 12px 4px;
+    color: var(--ant-color-text-tertiary, #9ca3af);
+    font-size: var(--fs-rel-lg);
+    user-select: none;
+
+    &::before,
+    &::after {
+        content: '';
+        flex: 1;
+        border-top: 1px dashed var(--ant-color-border-secondary, var(--ant-color-border, #e8e8e8));
+    }
+}
+
+.book-page-break__number {
+    font-family: monospace;
+}
+
+.book-citation {
+    font-family: monospace;
+    font-size: var(--fs-rel-lg);
+    color: var(--ant-color-text-secondary, #6b7280);
+    user-select: none;
+}
+
+.chapter-navigator__item {
+    display: block;
+    width: 100%;
+    text-align: start;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--ant-color-fill-tertiary, rgba(0, 0, 0, 0.04));
+    }
+}
+
 .tts-active-paragraph {
     background-color: var(--ant-color-primary-bg, #e6f4ff);
     color: var(--ant-color-text, inherit);

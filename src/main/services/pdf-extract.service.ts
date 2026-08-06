@@ -9,12 +9,14 @@ import { getDocumentProxy } from 'unpdf';
  */
 const MAX_PDF_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
 
-type PdfTextItem = {
+export type PdfTextItem = {
     str?: string;
     hasEOL?: boolean;
     transform?: number[];
     width?: number;
     height?: number;
+    fontName?: string;
+    dir?: string;
 };
 
 type PositionedText = {
@@ -24,18 +26,39 @@ type PositionedText = {
     width: number;
     height: number;
     hasEOL: boolean;
+    font: string;
+    rtl: boolean;
 };
 
-type PositionedLine = {
+export type PositionedLine = {
     text: string;
     x: number;
     y: number;
+    width: number;
     height: number;
+    /**
+     * The PDF's own font identifier for most of the line. It is opaque — PDF.js
+     * reports a generated name, not the typeface — but it is stable within a
+     * document, which is all that comparing a line against the body text needs.
+     */
+    font?: string;
+    /** The line reads right to left. */
+    rtl?: boolean;
+};
+
+/**
+ * Media box plus the page's own `/Rotate`. Text item coordinates are stored
+ * unrotated, so anything reasoning about visual layout has to rotate them back.
+ */
+export type PageGeometry = {
+    width: number;
+    height: number;
+    rotate: number;
 };
 
 type PageMode = 'prose' | 'structured';
 
-function normalizeInlineWhitespace(text: string): string {
+export function normalizeInlineWhitespace(text: string): string {
     return text
         .replace(/\u00a0/g, ' ')
         .split('\t')
@@ -45,10 +68,10 @@ function normalizeInlineWhitespace(text: string): string {
         .trim();
 }
 
-function normalizeMarginCandidate(text: string): string {
+export function normalizeMarginCandidate(text: string): string {
     return text
         .toLowerCase()
-        .replace(/\d+/g, '#')
+        .replace(/\p{Nd}+/gu, '#')
         .replace(/[^\p{L}\p{N}# ]+/gu, ' ')
         .replace(/\s+/g, ' ')
         .trim();
@@ -59,15 +82,16 @@ function isTableLikeLine(text: string): boolean {
 }
 
 function isBulletLikeLine(text: string): boolean {
-    return /^([-*•▪◦]|\d+[.)]|\p{L}[.)])\s+/u.test(text);
+    return /^([-*•▪◦]|\p{Nd}+[.)]|\p{L}[.)])\s+/u.test(text);
 }
 
-function isLikelyTocLine(text: string): boolean {
+/** Digits are `\p{Nd}`: a Persian book prints `۱`, which `\d` never matches. */
+export function isLikelyTocLine(text: string): boolean {
     return (
         /\t/.test(text) ||
-        /\.{2,}\s*\d+\s*$/.test(text) ||
-        /^(chapter|part|section|appendix)\b.+\d+\s*$/i.test(text) ||
-        /^(?:\d+|[ivxlcdm]+)\b.+\d+\s*$/i.test(text)
+        /\.{2,}\s*\p{Nd}+\s*$/u.test(text) ||
+        /^(?:\p{Nd}+|[ivxlcdm]+)\b.+\p{Nd}+\s*$/iu.test(text) ||
+        /^\p{L}+\s+(?:\p{Nd}+|[ivxlcdm]+)\b.+\p{Nd}+\s*$/iu.test(text)
     );
 }
 
@@ -85,11 +109,13 @@ function isLikelyHeading(text: string): boolean {
     return uppercaseLetters / letters.length > 0.8;
 }
 
-function isStandalonePageNumber(text: string): boolean {
-    return /^(page\s+)?\d+([/-]\d+)?$/i.test(text) || /^\d+\s+of\s+\d+$/i.test(text);
+export function isStandalonePageNumber(text: string): boolean {
+    return (
+        /^(page\s+)?\p{Nd}+([/-]\p{Nd}+)?$/iu.test(text) || /^\p{Nd}+\s+of\s+\p{Nd}+$/iu.test(text)
+    );
 }
 
-function countMatches(text: string, pattern: RegExp): number {
+export function countMatches(text: string, pattern: RegExp): number {
     return [...text.matchAll(pattern)].length;
 }
 
@@ -109,7 +135,7 @@ function endsWithTerminalPunctuation(text: string): boolean {
 }
 
 function startsLikeSentence(text: string): boolean {
-    return /^[\p{Lu}0-9«"'(“‘「『（《【\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(
+    return /^[\p{Lu}\p{Nd}«"'(“‘「『（《【\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u.test(
         text,
     );
 }
@@ -133,14 +159,41 @@ function shouldPreferCjkParagraphBreak(
     return startsWithQuote(nextLine) || previousWasShort || nextWasShort;
 }
 
-function median(values: number[]): number {
+export function median(values: number[]): number {
     if (values.length === 0) return 0;
     const sorted = [...values].sort((a, b) => a - b);
     const middle = Math.floor(sorted.length / 2);
     return sorted.length % 2 === 0 ? (sorted[middle - 1] + sorted[middle]) / 2 : sorted[middle];
 }
 
-function joinTextSegments(items: PositionedText[]): string {
+/**
+ * PDF text items are laid out in visual order. In a right-to-left line that is
+ * the reverse of reading order, so the items are flipped — except for runs that
+ * are themselves left-to-right (numbers, Latin names), which keep their order.
+ * This is the reordering step of the bidirectional algorithm, and it needs no
+ * knowledge of the language: PDF.js reports the direction of every item.
+ */
+function toLogicalOrder(items: PositionedText[]): PositionedText[] {
+    if (items.filter((item) => item.rtl).length * 2 <= items.length) return items;
+
+    const logical: PositionedText[] = [];
+    let embedded: PositionedText[] = [];
+
+    for (const item of [...items].reverse()) {
+        if (item.rtl) {
+            logical.push(...embedded.reverse(), item);
+            embedded = [];
+            continue;
+        }
+        embedded.push(item);
+    }
+
+    logical.push(...embedded.reverse());
+    return logical;
+}
+
+function joinTextSegments(rawItems: PositionedText[]): string {
+    const items = toLogicalOrder(rawItems);
     let result = '';
     let previous: PositionedText | null = null;
 
@@ -154,8 +207,12 @@ function joinTextSegments(items: PositionedText[]): string {
             continue;
         }
 
-        const previousEndX = previous.x + previous.width;
-        const gap = item.x - previousEndX;
+        // Measured between the facing edges, so it holds whichever way the
+        // line runs: in a right-to-left line the previous item sits to the right.
+        const gap =
+            item.x >= previous.x
+                ? item.x - (previous.x + previous.width)
+                : previous.x - (item.x + item.width);
         const avgCharWidth =
             previous.text.length > 0 ? Math.max(previous.width / previous.text.length, 1.5) : 4;
 
@@ -173,17 +230,65 @@ function joinTextSegments(items: PositionedText[]): string {
     return result.trim();
 }
 
-export function groupPdfItemsIntoLines(items: PdfTextItem[]): PositionedLine[] {
+/** Maps unrotated PDF coordinates onto the page as the reader sees it. */
+function toVisualPosition(x: number, y: number, geometry?: PageGeometry): { x: number; y: number } {
+    switch (geometry ? ((geometry.rotate % 360) + 360) % 360 : 0) {
+        case 90:
+            return { x: y, y: geometry!.width - x };
+        case 180:
+            return { x: geometry!.width - x, y: geometry!.height - y };
+        case 270:
+            return { x: geometry!.height - y, y: x };
+        default:
+            return { x, y };
+    }
+}
+
+/** Blank runs carry no direction and no typeface worth counting. */
+function charactersWritten(items: PositionedText[]): number {
+    return items.reduce((total, item) => total + item.text.trim().length, 0);
+}
+
+function dominantFont(items: PositionedText[]): string {
+    const weights = new Map<string, number>();
+    for (const item of items) {
+        const written = item.text.trim().length;
+        if (written === 0 || !item.font) continue;
+        weights.set(item.font, (weights.get(item.font) ?? 0) + written);
+    }
+
+    let dominant = '';
+    let best = 0;
+    for (const [font, weight] of weights) {
+        if (weight > best) {
+            dominant = font;
+            best = weight;
+        }
+    }
+    return dominant;
+}
+
+export function groupPdfItemsIntoLines(
+    items: PdfTextItem[],
+    geometry?: PageGeometry,
+): PositionedLine[] {
     const positioned: PositionedText[] = items
         .map((item) => {
             const transform = Array.isArray(item.transform) ? item.transform : [];
+            const position = toVisualPosition(
+                Number(transform[4] ?? 0),
+                Number(transform[5] ?? 0),
+                geometry,
+            );
             return {
                 text: item.str ?? '',
-                x: Number(transform[4] ?? 0),
-                y: Number(transform[5] ?? 0),
+                x: position.x,
+                y: position.y,
                 width: Math.abs(Number(item.width ?? 0)),
                 height: Math.abs(Number(item.height ?? transform[0] ?? 0)),
                 hasEOL: Boolean(item.hasEOL),
+                font: item.fontName ?? '',
+                rtl: item.dir === 'rtl',
             };
         })
         .filter((item) => normalizeInlineWhitespace(item.text).length > 0)
@@ -202,11 +307,17 @@ export function groupPdfItemsIntoLines(items: PdfTextItem[]): PositionedLine[] {
         currentItems.sort((left, right) => left.x - right.x);
         const text = joinTextSegments(currentItems);
         if (text) {
+            const characters = charactersWritten(currentItems);
+            const left = Math.min(...currentItems.map((item) => item.x));
+            const right = Math.max(...currentItems.map((item) => item.x + item.width));
             lines.push({
                 text,
-                x: currentItems[0]?.x ?? 0,
+                x: left,
                 y: currentY,
+                width: Math.max(right - left, 0),
                 height: currentHeight,
+                font: dominantFont(currentItems),
+                rtl: charactersWritten(currentItems.filter((item) => item.rtl)) * 2 > characters,
             });
         }
         currentItems = [];
@@ -344,7 +455,7 @@ function detectPageMode(lines: string[]): PageMode {
     }
 
     const structuredCount = visibleLines.filter((line) => {
-        const shortIndexedLine = line.length < 70 && /\d+\s*$/.test(line);
+        const shortIndexedLine = line.length < 70 && /\p{Nd}+\s*$/u.test(line);
         return isTableLikeLine(line) || isLikelyTocLine(line) || shortIndexedLine;
     }).length;
 
@@ -384,6 +495,23 @@ function shouldStartNewParagraph(
 
 function isSoftHyphenation(previousLine: string, nextLine: string): boolean {
     return /[\p{Ll}]{2,}-$/u.test(previousLine) && /^[\p{Ll}]/u.test(nextLine);
+}
+
+/** Reflows wrapped lines into one run of text, healing hyphenated word breaks. */
+export function joinWrappedLines(lines: string[]): string {
+    let result = '';
+
+    for (const rawLine of lines) {
+        const line = normalizeInlineWhitespace(rawLine);
+        if (!line) continue;
+        if (!result) {
+            result = line;
+            continue;
+        }
+        result = isSoftHyphenation(result, line) ? result.slice(0, -1) + line : `${result} ${line}`;
+    }
+
+    return normalizeInlineWhitespace(result);
 }
 
 export function buildParagraphsFromLines(lines: string[], pageMode: PageMode = 'prose'): string[] {
@@ -460,36 +588,126 @@ export function serializeParagraphs(paragraphs: string[]): string {
     return paragraphs.join('\n');
 }
 
-export async function extractPdfParagraphs(pdfBytes: Uint8Array): Promise<string[]> {
+export type PdfPageLayout = PageGeometry & {
+    index: number;
+    lines: PositionedLine[];
+};
+
+/** One entry of the PDF's own bookmark tree, resolved to a page. */
+export type PdfOutlineEntry = {
+    title: string;
+    /** 1-based page index, as `PdfPageLayout.index`. */
+    page: number;
+    /** 1 for a top-level bookmark, deeper for its children. */
+    level: number;
+};
+
+export type PdfDocumentContent = {
+    layouts: PdfPageLayout[];
+    outline: PdfOutlineEntry[];
+};
+
+/**
+ * Single entry point for positional PDF text so callers that need layout
+ * (book structure) and callers that need prose share one traversal.
+ */
+export async function extractPdfDocument(pdfBytes: Uint8Array): Promise<PdfDocumentContent> {
     if (pdfBytes.byteLength > MAX_PDF_SIZE_BYTES) {
         throw new Error('Le fichier est trop volumineux.');
     }
 
-    const normalizedBytes = new Uint8Array(pdfBytes);
-    const pdf = await getDocumentProxy(normalizedBytes);
+    const pdf = await getDocumentProxy(new Uint8Array(pdfBytes));
 
     try {
-        const pageLines: PositionedLine[][] = [];
+        const layouts: PdfPageLayout[] = [];
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
             const page = await pdf.getPage(pageNumber);
+            const view = page.view as number[];
+            const geometry: PageGeometry = {
+                width: Math.abs(Number(view?.[2] ?? 0) - Number(view?.[0] ?? 0)),
+                height: Math.abs(Number(view?.[3] ?? 0) - Number(view?.[1] ?? 0)),
+                rotate: Number((page as { rotate?: number }).rotate ?? 0),
+            };
             const content = await page.getTextContent();
-            pageLines.push(groupPdfItemsIntoLines(content.items as PdfTextItem[]));
+            layouts.push({
+                index: pageNumber,
+                ...geometry,
+                lines: groupPdfItemsIntoLines(content.items as PdfTextItem[], geometry),
+            });
+            page.cleanup();
         }
-
-        const repeatedMargins = detectRepeatedMarginLines(pageLines);
-        return pageLines.flatMap((page) => {
-            const lines = reorderPageLinesForReading(page)
-                .map((line) => normalizeInlineWhitespace(line))
-                .filter((line) => {
-                    const normalized = normalizeMarginCandidate(line);
-                    return normalized ? !repeatedMargins.has(normalized) : false;
-                });
-
-            return buildParagraphsFromLines(lines, detectPageMode(lines));
-        });
+        return { layouts, outline: await readPdfOutline(pdf as OutlineSource) };
     } finally {
-        await pdf.destroy();
+        // Not every release of the PDF.js wrapper exposes destroy().
+        await (pdf as { destroy?: () => Promise<void> }).destroy?.();
     }
+}
+
+export async function extractPdfPageLayouts(pdfBytes: Uint8Array): Promise<PdfPageLayout[]> {
+    return (await extractPdfDocument(pdfBytes)).layouts;
+}
+
+type OutlineNode = { title?: string; dest?: unknown; items?: OutlineNode[] };
+type OutlineSource = {
+    getOutline?: () => Promise<OutlineNode[] | null>;
+    getDestination?: (name: string) => Promise<unknown[] | null>;
+    getPageIndex?: (ref: never) => Promise<number>;
+};
+
+/**
+ * The bookmark tree a typesetter writes into the file. It names the chapters in
+ * the original script, and survives the broken font encodings that make the
+ * printed titles unreadable — so where it exists it is better evidence than
+ * anything recoverable from the page.
+ */
+async function readPdfOutline(pdf: OutlineSource): Promise<PdfOutlineEntry[]> {
+    const roots = await pdf.getOutline?.().catch(() => null);
+    if (!roots || roots.length === 0) return [];
+
+    const entries: PdfOutlineEntry[] = [];
+    const walk = async (nodes: OutlineNode[], level: number): Promise<void> => {
+        for (const node of nodes) {
+            const page = await resolveOutlinePage(pdf, node.dest);
+            const title = normalizeInlineWhitespace(node.title ?? '');
+            if (page !== null && title) entries.push({ title, page, level });
+            if (node.items?.length) await walk(node.items, level + 1);
+        }
+    };
+
+    await walk(roots, 1);
+    return entries;
+}
+
+async function resolveOutlinePage(pdf: OutlineSource, dest: unknown): Promise<number | null> {
+    try {
+        const explicit = typeof dest === 'string' ? await pdf.getDestination?.(dest) : dest;
+        const target = Array.isArray(explicit) ? explicit[0] : null;
+        if (target === null || target === undefined) return null;
+        if (typeof target === 'number') return target + 1;
+        return ((await pdf.getPageIndex?.(target as never)) ?? -1) + 1 || null;
+    } catch {
+        return null;
+    }
+}
+
+export async function extractPdfParagraphs(pdfBytes: Uint8Array): Promise<string[]> {
+    return buildParagraphsFromPageLayouts(await extractPdfPageLayouts(pdfBytes));
+}
+
+export function buildParagraphsFromPageLayouts(layouts: PdfPageLayout[]): string[] {
+    const pageLines = layouts.map((layout) => layout.lines);
+
+    const repeatedMargins = detectRepeatedMarginLines(pageLines);
+    return pageLines.flatMap((page) => {
+        const lines = reorderPageLinesForReading(page)
+            .map((line) => normalizeInlineWhitespace(line))
+            .filter((line) => {
+                const normalized = normalizeMarginCandidate(line);
+                return normalized ? !repeatedMargins.has(normalized) : false;
+            });
+
+        return buildParagraphsFromLines(lines, detectPageMode(lines));
+    });
 }
 
 export async function extractTextFromPdf(pdfBytes: Uint8Array): Promise<string> {

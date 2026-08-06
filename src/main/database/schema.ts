@@ -144,6 +144,8 @@ export const customDocuments = sqliteTable('custom_documents', {
     title: text('title').notNull(),
     content: text('content').notNull().default(''),
     languageCode: text('language_code').notNull().default(''),
+    /** `null` means a plain document, so existing rows need no backfill. */
+    kind: text('kind'),
     createdAt: text('created_at').default(sql`(datetime('now'))`),
     updatedAt: text('updated_at').default(sql`(datetime('now'))`),
 });

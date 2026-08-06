@@ -6,6 +6,7 @@ const REF_COLORS = {
     sermon: 'blue',
     bible: 'green',
     doc: 'orange',
+    book: 'purple',
 };
 
 export default function AiReferenceLink(

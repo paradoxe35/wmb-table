@@ -31,22 +31,78 @@ function parseParagraphIndex(el: Element): number {
     return parseInt(el.getAttribute('data-paragraph-index') ?? '0', 10);
 }
 
+/** Paragraph the user has selected text in, or `null` when nothing is selected. */
+export function selectedParagraphIndex(): number | null {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) return null;
+
+    const anchor = selection.anchorNode?.parentElement?.closest(PARAGRAPH_SELECTOR);
+    const paragraphIndex = anchor ? parseParagraphIndex(anchor) : Number.NaN;
+    return Number.isFinite(paragraphIndex) ? paragraphIndex : null;
+}
+
+/** Paragraph the user is acting on: the selected one, else the one under `target`. */
+function paragraphIndexAt(target: Element | null): number | null {
+    const selected = selectedParagraphIndex();
+    if (selected !== null) return selected;
+
+    const paragraph = target?.closest(PARAGRAPH_SELECTOR) ?? null;
+    return paragraph ? parseParagraphIndex(paragraph) : null;
+}
+
 function createContentRange(el: Element): Range {
     const r = document.createRange();
     r.selectNodeContents(el);
     return r;
 }
 
+/**
+ * Structural citation of a paragraph — books cite `page · paragraph`, which no
+ * other document type has. Absent for sermons, Bible chapters and plain documents.
+ */
+export type ContextMenuCitation = {
+    label: (paragraphIndex: number) => string | null;
+    link: (paragraphIndex: number) => string | null;
+};
+
 type ContextMenuContent = {
     documentTitle: string;
     documentIdentity: DocumentIdentity;
     languageCode: string;
-    paragraphs: { paragraphIndex: number; content: string }[];
+    paragraphs: { paragraphIndex: number; content: string; label?: string }[];
     sermonDateMs?: number;
     sermonTranslationId?: number;
     canPlayFromParagraph?: boolean;
     playFromParagraph?: (paragraphIndex: number) => void;
+    citation?: ContextMenuCitation;
 };
+
+/**
+ * The menu items are memoised, so the citation of the paragraph under the
+ * cursor has to be captured as state before the dropdown renders them.
+ */
+function useContextParagraphCitation(citation: ContextMenuCitation | undefined): string | null {
+    const [label, setLabel] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!citation) {
+            setLabel(null);
+            return;
+        }
+
+        const handler = (event: MouseEvent) => {
+            const paragraphIndex = paragraphIndexAt(
+                event.target instanceof Element ? event.target : null,
+            );
+            setLabel(paragraphIndex === null ? null : citation.label(paragraphIndex));
+        };
+
+        document.addEventListener('contextmenu', handler, true);
+        return () => document.removeEventListener('contextmenu', handler, true);
+    }, [citation]);
+
+    return label;
+}
 
 export function useContextMenuItems(
     content: ContextMenuContent | null,
@@ -58,6 +114,7 @@ export function useContextMenuItems(
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const uiLanguagePreference = useThemeStore((s) => s.uiLanguagePreference);
     const fallbackLanguage = resolveUiLanguage(uiLanguagePreference, contentLanguage);
+    const contextCitation = useContextParagraphCitation(content?.citation);
 
     return useMemo(() => {
         if (!content) return [];
@@ -68,18 +125,18 @@ export function useContextMenuItems(
             const sel = window.getSelection();
 
             if (sel && !sel.isCollapsed) {
-                const anchor = sel.anchorNode?.parentElement?.closest(PARAGRAPH_SELECTOR);
+                const selected = selectedParagraphIndex() ?? 0;
                 return {
                     ref:
                         documentIdentity.documentType === 'sermon'
                             ? buildParagraphReference(
                                   documentIdentity,
-                                  anchor ? parseParagraphIndex(anchor) : 0,
+                                  selected,
                                   sel.toString().slice(0, 200),
                               )
                             : buildParagraphReference(
                                   documentIdentity,
-                                  anchor ? parseParagraphIndex(anchor) : 0,
+                                  selected,
                                   languageCode,
                                   sel.toString().slice(0, 200),
                               ),
@@ -171,19 +228,8 @@ export function useContextMenuItems(
             return [{ paragraphIndex, startOffset: 0, endOffset: content.length }];
         };
 
-        const getContextParagraphIndex = (): number | null => {
-            const sel = window.getSelection();
-            if (sel && !sel.isCollapsed) {
-                const anchor = sel.anchorNode?.parentElement?.closest(PARAGRAPH_SELECTOR);
-                if (anchor) {
-                    return parseParagraphIndex(anchor);
-                }
-            }
-
-            const target = contextTargetRef.current;
-            const paragraph = target instanceof Element ? target.closest(PARAGRAPH_SELECTOR) : null;
-            return paragraph ? parseParagraphIndex(paragraph) : null;
-        };
+        const getContextParagraphIndex = (): number | null =>
+            paragraphIndexAt(contextTargetRef.current);
 
         const getBibleVerse = (paragraphIndex: number): BibleBook | undefined =>
             bibleVerses?.find((v) => +v.verse === paragraphIndex);
@@ -250,6 +296,42 @@ export function useContextMenuItems(
                 },
             },
         ];
+
+        const citationItems: MenuProps['items'] = content.citation
+            ? [
+                  ...(contextCitation
+                      ? [
+                            {
+                                key: 'citation',
+                                label: contextCitation,
+                                disabled: true,
+                                style: { fontStyle: 'italic' as const },
+                            },
+                        ]
+                      : []),
+                  {
+                      key: 'copy-citation-link',
+                      label: t('Copier le lien de la référence'),
+                      onClick: async () => {
+                          const paragraphIndex = getContextParagraphIndex();
+                          const link =
+                              paragraphIndex == null
+                                  ? null
+                                  : content.citation?.link(paragraphIndex);
+                          if (!link) {
+                              return;
+                          }
+                          try {
+                              await navigator.clipboard.writeText(link);
+                              message.success(t('Lien copié'));
+                          } catch {
+                              message.error(t('Impossible de copier le texte.'));
+                          }
+                      },
+                  },
+                  { type: 'divider' as const, key: 'divider-citation' },
+              ]
+            : [];
 
         const ttsItem: MenuProps['items'] =
             content.canPlayFromParagraph && content.playFromParagraph
@@ -379,6 +461,7 @@ export function useContextMenuItems(
             : [];
 
         return [
+            ...citationItems,
             ...copyItem,
             ...ttsItem,
             { type: 'divider' as const, key: 'divider-1' },
@@ -388,7 +471,15 @@ export function useContextMenuItems(
             ...noteItem,
             ...similarItem,
         ];
-    }, [content, contextTargetRef, documentType, bibleVerses, t, fallbackLanguage]);
+    }, [
+        content,
+        contextTargetRef,
+        documentType,
+        bibleVerses,
+        t,
+        fallbackLanguage,
+        contextCitation,
+    ]);
 }
 
 export function useDocumentHighlights(documentIdentity: DocumentIdentity | undefined) {

@@ -583,9 +583,13 @@ export type CurrentAudioDocumentPlay = {
 // Custom documents
 // ---------------------------------------------------------------------------
 
+/** `null` in the database means the plain, unstructured document of previous versions. */
+export type CustomDocumentKind = 'book';
+
 export interface CustomDocument extends Readonly<BaseEntity> {
     title: string;
     languageCode: string;
+    kind?: CustomDocumentKind;
 }
 
 export type CustomDocumentImportFormat = 'pdf' | 'txt' | 'md' | 'docx' | 'epub';
@@ -596,12 +600,76 @@ export interface CustomDocumentImportInput {
     bytes: Uint8Array;
 }
 
+export interface CustomDocumentImportOptions {
+    /**
+     * `auto` keeps the detector's verdict. `book` and `plain` are the user's
+     * override of it, offered once the import reports what it found.
+     */
+    structure?: 'auto' | 'book' | 'plain';
+    /** Opt-in refinement of detected chapter titles by the configured AI provider. */
+    aiRefinement?: boolean;
+}
+
 export interface CustomDocumentContent {
     id: string;
     title: string;
     content: string;
     languageCode: string;
     wmbUrl?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Structured (book) document content model
+//
+// Stored inside `custom_documents.content` rather than in tables of its own so
+// that it travels with the row through the existing sync pipeline.
+// ---------------------------------------------------------------------------
+
+export const STRUCTURED_DOCUMENT_VERSION = 2;
+
+export interface BookParagraph {
+    /** Document-wide, 1-based and contiguous. Anchors highlights, notes and TTS. */
+    index: number;
+    text: string;
+    /** `BookPage.index` of the page the paragraph starts on. */
+    page: number;
+    /** Ordinal among the paragraphs starting on that page — the citation number. */
+    pageParagraph: number;
+    chapterId?: string;
+    /** Set on chapter and section titles so the reader can style them. */
+    heading?: boolean;
+}
+
+export interface BookPage {
+    /** Source page ordinal, 1-based. Never a printed label. */
+    index: number;
+    /** Label read off the page itself. Absent when the page carries none. */
+    printed?: string;
+    firstParagraph: number;
+    frontMatter?: boolean;
+}
+
+export interface BookChapter {
+    id: string;
+    title: string;
+    page: number;
+    firstParagraph: number;
+    level: number;
+}
+
+export interface DocumentStructureDetection {
+    confidence: number;
+    signals: string[];
+    aiAssisted: boolean;
+}
+
+export interface StructuredDocumentContent {
+    version: typeof STRUCTURED_DOCUMENT_VERSION;
+    kind: CustomDocumentKind;
+    paragraphs: BookParagraph[];
+    pages: BookPage[];
+    chapters: BookChapter[];
+    detection: DocumentStructureDetection;
 }
 
 export interface CustomDocumentSearchMatch {

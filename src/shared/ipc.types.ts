@@ -20,6 +20,7 @@ import type {
     CustomDocument,
     CustomDocumentContent,
     CustomDocumentImportInput,
+    CustomDocumentImportOptions,
     DocumentIdentity,
     HistoryData,
     HistoryDataItem,
@@ -523,7 +524,7 @@ export interface InvokeChannelMap {
     [AppChannels.getCustomDocuments]: { args: []; return: CustomDocument[] };
     [AppChannels.deleteCustomDocument]: { args: [string]; return: void };
     [AppChannels.createCustomDocument]: {
-        args: [string, CustomDocumentImportInput, string];
+        args: [string, CustomDocumentImportInput, string, CustomDocumentImportOptions?];
         return: CustomDocument;
     };
     [AppChannels.getCustomDocumentContent]: {

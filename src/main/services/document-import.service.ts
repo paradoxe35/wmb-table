@@ -113,6 +113,19 @@ export function htmlToParagraphs(html: string): string[] {
     return buildParagraphsFromLines(text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n'));
 }
 
+export interface HtmlHeading {
+    title: string;
+    level: number;
+}
+
+/** Heading elements in document order — the only structure HTML formats expose. */
+export function htmlToHeadingOutline(html: string): HtmlHeading[] {
+    return [...html.matchAll(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1\s*>/gi)].flatMap((match) => {
+        const [title] = htmlToParagraphs(match[2]);
+        return title ? [{ title, level: Number(match[1]) }] : [];
+    });
+}
+
 export function extractParagraphsFromPlainText(text: string): string[] {
     return buildParagraphsFromLines(text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n'));
 }
@@ -157,32 +170,30 @@ async function extractHtmlFromDocx(bytes: Uint8Array): Promise<string> {
     );
 }
 
-async function extractTextFromEpub(bytes: Uint8Array): Promise<string> {
+/** The spine documents of an EPUB, in reading order — its real chapter division. */
+async function readEpubSections(bytes: Uint8Array): Promise<string[]> {
     const epub = new EPub(Buffer.from(bytes));
     await epub.parse();
 
-    const paragraphs: string[] = [];
+    const sections: string[] = [];
     for (const chapter of epub.flow) {
-        const html = await epub.getChapter(chapter.id);
-        paragraphs.push(...htmlToParagraphs(html));
+        sections.push(await epub.getChapter(chapter.id));
     }
+    return sections;
+}
 
-    return serializeParagraphs(paragraphs);
+async function extractTextFromEpub(bytes: Uint8Array): Promise<string> {
+    const sections = await readEpubSections(bytes);
+    return serializeParagraphs(sections.flatMap((html) => htmlToParagraphs(html)));
 }
 
 async function extractHtmlFromEpub(bytes: Uint8Array): Promise<string> {
-    const epub = new EPub(Buffer.from(bytes));
-    await epub.parse();
-
-    const chapters: string[] = [];
-    for (const chapter of epub.flow) {
-        const html = await epub.getChapter(chapter.id);
-        if (html.trim()) {
-            chapters.push(`<section>${html}</section>`);
-        }
-    }
-
-    return chapters.join('\n').trim();
+    const sections = await readEpubSections(bytes);
+    return sections
+        .filter((html) => html.trim())
+        .map((html) => `<section>${html}</section>`)
+        .join('\n')
+        .trim();
 }
 
 function ensureDocumentSize(input: CustomDocumentImportInput): void {

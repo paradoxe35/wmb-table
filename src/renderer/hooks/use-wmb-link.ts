@@ -16,6 +16,7 @@ import { parseWmbLink } from '@shared/wmb-link';
  * - wmb://sermon/<sermonId>/<languageCode>/<translationId>/<paragraphIndex>
  * - wmb://bible/<bookCode>/<chapter>/<verse>/<bibleVersionAbbreviation>/<bookName>
  * - wmb://doc/<documentId>/<title>
+ * - wmb://book/<documentId>/<paragraphIndex>/<printedPage>/<pageParagraph>/<title>
  */
 
 /**
@@ -95,6 +96,25 @@ export function useWmbLinkNavigate(): (href: string) => boolean {
                         customDocumentId: ref.documentId,
                     });
                     return true;
+                case 'book': {
+                    const request = {
+                        title: ref.title,
+                        documentType: 'custom',
+                        customDocumentId: ref.documentId,
+                    } as const;
+
+                    // Anchored on the document-wide index; the printed page and the
+                    // per-page ordinal in the link are for display, not for lookup.
+                    setPendingNavigation(
+                        buildPendingNavigation(request, {
+                            kind: 'tree',
+                            documentIdentity: request,
+                            tree: [ref.paragraphIndex],
+                        }),
+                    );
+                    openDocumentRequest(request);
+                    return true;
+                }
             }
         },
         [buildOpenRequest, sermonsById, setPendingNavigation, openDocumentRequest],

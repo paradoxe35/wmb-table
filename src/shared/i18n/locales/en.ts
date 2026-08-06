@@ -213,6 +213,10 @@ const en: Record<string, string> = {
     'Supprimer toutes les conversations ?': 'Delete all conversations?',
     "Vider l'historique": 'Clear history',
     'Le chargement des anciens messages a échoué.': 'Loading older messages failed.',
+    "L'assistant IA n'est pas configuré": 'The AI assistant is not configured',
+    "L'import fonctionnera sans l'IA. Configurez un fournisseur pour affiner les titres de chapitres.":
+        'The import will work without AI. Configure a provider to refine chapter titles.',
+    Configurer: 'Configure',
     'Rechercher une conversation': 'Search conversations',
     'La recherche de conversations a échoué.': 'Searching conversations failed.',
     "L'arrêt de la génération a échoué.": 'Stopping the generation failed.',
@@ -688,6 +692,19 @@ const en: Record<string, string> = {
     'Aucun paragraphe': 'No paragraphs',
     'Sélectionnez un verset': 'Select a verse',
     'Aucun verset': 'No verses',
+
+    // ── Book documents ──
+    'Sélectionnez un chapitre': 'Select a chapter',
+    'Aucun chapitre': 'No chapters',
+    'Page {{page}}': 'Page {{page}}',
+    'Copier le lien de la référence': 'Copy reference link',
+    'Lien copié': 'Link copied',
+    Livre: 'Book',
+    'Structure du document': 'Document structure',
+    'Détection automatique': 'Auto-detect',
+    'Texte simple': 'Plain text',
+    "Affiner les titres de chapitres avec l'IA": 'Refine chapter titles with AI',
+    'Document ajouté — structure de livre détectée': 'Document added — book structure detected',
 
     // ── Sermon paragraph ──
     'Surlignage supprimé': 'Highlight deleted',

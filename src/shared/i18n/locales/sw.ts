@@ -680,6 +680,20 @@ const sw: Record<string, string> = {
     'Sélectionnez un verset': 'Chagua mstari',
     'Aucun verset': 'Hakuna mistari',
 
+    // ── Book documents ──
+    'Sélectionnez un chapitre': 'Chagua sura',
+    'Aucun chapitre': 'Hakuna sura',
+    'Page {{page}}': 'Ukurasa {{page}}',
+    'Copier le lien de la référence': 'Nakili kiungo cha marejeo',
+    'Lien copié': 'Kiungo kimenakiliwa',
+    Livre: 'Kitabu',
+    'Structure du document': 'Muundo wa hati',
+    'Détection automatique': 'Utambuzi otomatiki',
+    'Texte simple': 'Maandishi sahili',
+    "Affiner les titres de chapitres avec l'IA": 'Boresha vichwa vya sura kwa AI',
+    'Document ajouté — structure de livre détectée':
+        'Hati imeongezwa — muundo wa kitabu umetambuliwa',
+
     // ── Sermon paragraph ──
     'Surlignage supprimé': 'Uangaziaji umefutwa',
     'Erreur lors de la suppression': 'Hitilafu wakati wa kufuta',
@@ -1136,6 +1150,10 @@ const sw: Record<string, string> = {
         'Toleo {{version}} linapatikana. Sasisho la kiotomatiki halitumiki kwa aina yako ya usakinishaji. Tafadhali pakua toleo jipya kutoka kwenye tovuti.',
     Langue: 'Lugha',
     'Le chargement des anciens messages a échoué.': 'Imeshindikana kupakia ujumbe wa zamani.',
+    "L'assistant IA n'est pas configuré": 'Msaidizi wa AI haujasanidiwa',
+    "L'import fonctionnera sans l'IA. Configurez un fournisseur pour affiner les titres de chapitres.":
+        'Uingizaji utafanya kazi bila AI. Sanidi mtoa huduma ili kuboresha vichwa vya sura.',
+    Configurer: 'Sanidi',
     'Rechercher une conversation': 'Tafuta mazungumzo',
     'La recherche de conversations a échoué.': 'Imeshindikana kutafuta mazungumzo.',
     "L'arrêt de la génération a échoué.": 'Imeshindikana kusimamisha uzalishaji.',
