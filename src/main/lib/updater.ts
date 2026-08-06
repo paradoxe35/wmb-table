@@ -113,7 +113,15 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     if (initialized) return;
     initialized = true;
 
-    autoUpdater.logger = log;
+    // electron-updater reports the resolved asset URL, redirects and HTTP statuses
+    // at debug level, which the file transport drops. Promote them: without this a
+    // stalled download leaves no evidence of what it was talking to.
+    autoUpdater.logger = {
+        debug: (message: string) => log.info(`[updater] ${message}`),
+        info: (message: string) => log.info(`[updater] ${message}`),
+        warn: (message: string) => log.warn(`[updater] ${message}`),
+        error: (message: string) => log.error(`[updater] ${message}`),
+    };
     autoUpdater.autoDownload = false;
     // Differential downloads are the common cause of a transfer that emits no
     // progress and never settles
@@ -204,6 +212,10 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     };
 
     // An install that cannot self-update has nothing to act on, so don't poll
+    log.info(
+        `[updater] platform=${process.platform} feed=${GITHUB_TOKEN ? 'github-api (private)' : 'github public'} version=${app.getVersion()}`,
+    );
+
     if (canAutoUpdate()) {
         firstCheckTimer = setTimeout(check, FIRST_CHECK_DELAY_MS);
         periodicTimer = setInterval(check, CHECK_INTERVAL_MS);
