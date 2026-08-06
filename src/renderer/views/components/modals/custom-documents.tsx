@@ -329,7 +329,10 @@ function UploadForm({
     const [structure, setStructure] = useState<StructureChoice>('auto');
     const [aiRefinement, setAiRefinement] = useState(false);
     const aiSettings = useAiChatStore((s) => s.settings);
-    const aiConfigured = Boolean(aiSettings?.enabled && aiSettings.activeProvider);
+    const loadAiSettings = useAiChatStore((s) => s.loadSettings);
+    // Null means "not loaded yet", not "not configured": the AI store only
+    // initializes when its own views mount, which may never have happened here.
+    const aiUnconfigured = aiSettings != null && !(aiSettings.enabled && aiSettings.activeProvider);
     const showOptions = useAppStore((s) => s.showOptions);
     const setSettingsTab = useAppStore((s) => s.setSettingsTab);
     const openAiSettings = () => {
@@ -337,6 +340,10 @@ function UploadForm({
         showOptions('settings');
     };
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (aiSettings == null) void loadAiSettings();
+    }, [aiSettings, loadAiSettings]);
 
     const nameExists = customDocuments.some(
         (d) => d.title.toLowerCase() === name.trim().toLowerCase(),
@@ -476,7 +483,7 @@ function UploadForm({
                                 {t("Affiner les titres de chapitres avec l'IA")}
                             </Typography.Text>
                         </div>
-                        {aiRefinement && !aiConfigured && (
+                        {aiRefinement && aiUnconfigured && (
                             <Alert
                                 type="warning"
                                 showIcon
