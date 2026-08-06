@@ -10,8 +10,10 @@ import { buildBookWmbLink } from '@shared/wmb-link';
 export type ReaderParagraph = {
     paragraphIndex: number;
     content: string;
-    /** Gutter number. Books count per printed page, so it is not the index. */
+    /** Citation ordinal used when copying. Books count per printed page. */
     label?: string;
+    /** Books hide it: the ordinal is derived, not printed, so it must not look canonical. */
+    showNumber?: boolean;
     heading?: boolean;
 };
 
@@ -80,8 +82,11 @@ function buildBookReaderContent(structure: StructuredDocumentContent): ReaderCon
         paragraphs.push({
             paragraphIndex: paragraph.index,
             content: paragraph.text,
-            label: formatGutterLabel(citation),
-            ...(paragraph.heading ? { heading: true as const } : {}),
+            showNumber: false,
+            // A heading is not a citable paragraph, so it carries no ordinal at all
+            ...(paragraph.heading
+                ? { heading: true as const }
+                : { label: formatCitationOrdinal(citation) }),
         });
     }
 
@@ -92,7 +97,7 @@ function buildBookReaderContent(structure: StructuredDocumentContent): ReaderCon
 }
 
 /** The number printed beside the paragraph — the one a reader counts on the page. */
-function formatGutterLabel(citation: BookCitation): string {
+function formatCitationOrdinal(citation: BookCitation): string {
     return citation.printedPage ? String(citation.pageParagraph) : String(citation.paragraphIndex);
 }
 

@@ -136,6 +136,11 @@
         margin-left: calc(var(--paragraph-number-gutter) + 0.3em);
     }
 
+    /* Reclaim the gutter when no ordinal is drawn, so text is not indented for nothing */
+    &:not(:has(> .line-number)) .paragraph-content {
+        margin-left: 0;
+    }
+
     mark {
         background-color: var(--ant-color-warning-bg, #ffe58f);
         color: var(--ant-color-text, inherit);

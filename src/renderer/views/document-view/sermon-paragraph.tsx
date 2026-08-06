@@ -9,8 +9,10 @@ import type { SearchHighlightState } from './hooks';
 import type { SermonParagraph as SermonParagraphType, HighlightItem } from '@shared/types';
 
 type ParagraphProp = Pick<SermonParagraphType, 'paragraphIndex' | 'content'> & {
-    /** Gutter number when it differs from the index — books count per printed page. */
+    /** Citation ordinal used when copying — books count per printed page. */
     label?: string;
+    /** Books hide it: the ordinal is derived, not printed, so it must not look canonical. */
+    showNumber?: boolean;
     heading?: boolean;
 };
 
@@ -265,7 +267,9 @@ const SermonParagraphView = memo(function SermonParagraphView({
 
     return (
         <p data-paragraph-index={paragraphIndex} className={className}>
-            <span className="line-number">{paragraph.label ?? paragraphIndex}</span>
+            {paragraph.showNumber === false ? null : (
+                <span className="line-number">{paragraph.label ?? paragraphIndex}</span>
+            )}
             <span className="paragraph-content">{renderedContent}</span>
         </p>
     );

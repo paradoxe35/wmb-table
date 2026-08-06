@@ -54,15 +54,35 @@ describe('custom document content model', () => {
         ]);
     });
 
-    it('numbers book paragraphs by their printed page', () => {
+    it('carries a per-page citation ordinal but never draws it', () => {
         const parsed = parseCustomDocumentContent(serializeStructuredContent(structure));
 
         expect(parsed.paragraphs).toEqual([
-            { paragraphIndex: 1, content: 'Chapter One', label: '1', heading: true },
-            { paragraphIndex: 2, content: 'First body paragraph.', label: '2' },
-            { paragraphIndex: 3, content: 'Second page opens here.', label: '1' },
+            // A heading is not citable, so it gets no ordinal at all
+            { paragraphIndex: 1, content: 'Chapter One', showNumber: false, heading: true },
+            { paragraphIndex: 2, content: 'First body paragraph.', showNumber: false, label: '2' },
+            {
+                paragraphIndex: 3,
+                content: 'Second page opens here.',
+                showNumber: false,
+                label: '1',
+            },
             // No printed number on that page, so the document-wide index stands in.
-            { paragraphIndex: 4, content: 'A page with no printed number.', label: '4' },
+            {
+                paragraphIndex: 4,
+                content: 'A page with no printed number.',
+                showNumber: false,
+                label: '4',
+            },
+        ]);
+    });
+
+    it('keeps plain documents numbered as before', () => {
+        const parsed = parseCustomDocumentContent(JSON.stringify(['One.', 'Two.']));
+
+        expect(parsed.paragraphs).toEqual([
+            { paragraphIndex: 1, content: 'One.' },
+            { paragraphIndex: 2, content: 'Two.' },
         ]);
     });
 
