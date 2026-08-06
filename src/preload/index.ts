@@ -253,6 +253,7 @@ const api = {
         restart: () => invoke(AppChannels.restart),
         getUpdateStatus: () => invoke(AppChannels.getUpdateStatus),
         startDownloadUpdate: () => invoke(AppChannels.startDownloadUpdate),
+        cancelDownloadUpdate: () => invoke(AppChannels.cancelDownloadUpdate),
         quitAndInstallUpdate: () => invoke(AppChannels.quitAndInstallUpdate),
         checkForUpdates: () => invoke(AppChannels.checkForUpdates),
         getSidebarStatus: () => invoke(AppChannels.getSidebarStatus),

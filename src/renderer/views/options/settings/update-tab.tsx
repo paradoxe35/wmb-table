@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, Button, Card, Progress, Space, Spin, Typography } from 'antd';
 import {
     CloudDownloadOutlined,
+    StopOutlined,
     DownloadOutlined,
     LoadingOutlined,
     ReloadOutlined,
@@ -55,6 +56,10 @@ export default function UpdateTab() {
         lastActionRef.current = 'check';
         setPending('check');
         window.api.app.checkForUpdates().then(apply, () => setPending(null));
+    }, [apply]);
+
+    const cancelDownload = useCallback(() => {
+        window.api.app.cancelDownloadUpdate().then(apply, () => setPending(null));
     }, [apply]);
 
     const startDownload = useCallback(() => {
@@ -164,6 +169,14 @@ export default function UpdateTab() {
                                     ` · ${formatBytes(progress.bytesPerSecond, t)}/s`}
                             </Text>
                         )}
+                        <Button
+                            size="small"
+                            icon={<StopOutlined />}
+                            onClick={cancelDownload}
+                            style={{ alignSelf: 'flex-start', marginTop: 4 }}
+                        >
+                            {t('Annuler')}
+                        </Button>
                     </Space>
                 );
                 break;
