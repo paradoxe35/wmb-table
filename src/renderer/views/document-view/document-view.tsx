@@ -2,18 +2,22 @@ import { useEffect, useRef } from 'react';
 import DocumentTabs from '../../components/document-tabs';
 import { useAddDocumentTab } from '@renderer/hooks';
 import {
+    useCustomDocumentsStore,
     useDocumentTabsStore,
     useSermonStore,
     useSearchStore,
     useAppStore,
     selectActiveTab,
+    selectActiveCustomTab,
     selectActiveDocumentIdentity,
     selectActiveTabKey,
     selectActiveTabType,
 } from '@renderer/stores';
 import SermonDocumentView from './sermon-document-view';
 import CustomDocumentView from './custom-document-view';
+import BookDocumentView from './book-document-view';
 import BibleDocumentView from './bible-document-view';
+import { selectCustomDocumentReader } from './book-structure';
 import SimilarSermonsModal from './similar-sermons-modal';
 import { HISTORY_EVENT } from '@renderer/utils/events';
 import { getDocumentIdentityKey } from '@shared/types';
@@ -24,6 +28,12 @@ export default function DocumentView() {
 
     const tabType = useDocumentTabsStore(selectActiveTabType);
     const activeTab = useDocumentTabsStore(selectActiveTab);
+    const activeCustomTab = useDocumentTabsStore(selectActiveCustomTab);
+    const customDocumentKind = useCustomDocumentsStore((s) =>
+        activeCustomTab
+            ? s.customDocuments.find((document) => document.id === activeCustomTab.documentId)?.kind
+            : undefined,
+    );
     const activeDocumentIdentity = useDocumentTabsStore(selectActiveDocumentIdentity);
     const activeTabKey = useDocumentTabsStore(selectActiveTabKey);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
@@ -116,7 +126,11 @@ export default function DocumentView() {
                 {tabType === 'bible' ? (
                     <BibleDocumentView />
                 ) : tabType === 'custom' ? (
-                    <CustomDocumentView />
+                    selectCustomDocumentReader(customDocumentKind) === 'book' ? (
+                        <BookDocumentView />
+                    ) : (
+                        <CustomDocumentView />
+                    )
                 ) : (
                     <SermonDocumentView />
                 )}

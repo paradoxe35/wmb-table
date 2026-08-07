@@ -4,6 +4,8 @@ import { formatSermonDateShort } from '@renderer/utils/sermon-utils';
 export type CopyParagraph = {
     paragraphIndex: number;
     content: string;
+    /** Books number paragraphs per printed page, so the copied line follows the page. */
+    label?: string;
 };
 
 export type CopyDocumentContext = {
@@ -32,7 +34,7 @@ function formatCopyLine(paragraph: CopyParagraph, range: HighlightParagraphRange
     const prefix = startsInsideParagraph ? '... ' : '';
     const suffix = endsInsideParagraph ? ' ...' : '';
 
-    return `${paragraph.paragraphIndex}. ${prefix}${selectedText}${suffix}`;
+    return `${paragraph.label ?? paragraph.paragraphIndex}. ${prefix}${selectedText}${suffix}`;
 }
 
 function formatCopySource(context: CopyDocumentContext): string {

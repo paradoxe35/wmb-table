@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo, useRef } from 'react';
+import { Fragment, memo, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Button, Tooltip } from 'antd';
 import { PauseOutlined, SoundOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -115,13 +115,22 @@ export function ZoomControls({
 
 // ── Paragraph list ──
 
+type ParagraphInput = {
+    paragraphIndex: number;
+    content: string;
+    label?: string;
+    heading?: boolean;
+};
+
 interface ParagraphListProps {
-    paragraphs: { paragraphIndex: number; content: string }[];
+    paragraphs: ParagraphInput[];
     documentKey: string;
     documentIdentity: DocumentIdentity | null;
     search: SearchHighlightState | null;
     activeParagraphIndex: number;
     highlightsByParagraph: Map<number, HighlightItem[]>;
+    /** Lets a reader insert structure between paragraphs, such as a book page break. */
+    renderBeforeParagraph?: (paragraphIndex: number) => ReactNode;
 }
 
 export const ParagraphList = memo(function ParagraphList({
@@ -131,6 +140,7 @@ export const ParagraphList = memo(function ParagraphList({
     search,
     activeParagraphIndex,
     highlightsByParagraph,
+    renderBeforeParagraph,
 }: ParagraphListProps) {
     const pendingNavigation = useDocumentTabsStore((s) => s.pendingNavigation);
     const pendingNavigationParagraphIndex = getPendingNavigationParagraphIndex(
@@ -140,17 +150,29 @@ export const ParagraphList = memo(function ParagraphList({
 
     const renderedParagraphs = useMemo(
         () =>
-            paragraphs.map((paragraph) => (
-                <TtsParagraph
-                    key={paragraph.paragraphIndex}
-                    paragraph={paragraph}
-                    documentKey={documentKey}
-                    search={search}
-                    isActiveMatch={paragraph.paragraphIndex === activeParagraphIndex}
-                    highlights={highlightsByParagraph.get(paragraph.paragraphIndex)}
-                    suppressAutoScroll={pendingNavigationParagraphIndex != null}
-                />
-            )),
+            paragraphs.map((paragraph) => {
+                const rendered = (
+                    <TtsParagraph
+                        key={paragraph.paragraphIndex}
+                        paragraph={paragraph}
+                        documentKey={documentKey}
+                        search={search}
+                        isActiveMatch={paragraph.paragraphIndex === activeParagraphIndex}
+                        highlights={highlightsByParagraph.get(paragraph.paragraphIndex)}
+                        suppressAutoScroll={pendingNavigationParagraphIndex != null}
+                    />
+                );
+
+                const before = renderBeforeParagraph?.(paragraph.paragraphIndex);
+                return before ? (
+                    <Fragment key={paragraph.paragraphIndex}>
+                        {before}
+                        {rendered}
+                    </Fragment>
+                ) : (
+                    rendered
+                );
+            }),
         [
             paragraphs,
             documentKey,
@@ -158,6 +180,7 @@ export const ParagraphList = memo(function ParagraphList({
             activeParagraphIndex,
             highlightsByParagraph,
             pendingNavigationParagraphIndex,
+            renderBeforeParagraph,
         ],
     );
 
@@ -167,7 +190,7 @@ export const ParagraphList = memo(function ParagraphList({
 // ── Paragraph wrapper with TTS highlighting ──
 
 interface TtsParagraphProps {
-    paragraph: { paragraphIndex: number; content: string };
+    paragraph: ParagraphInput;
     documentKey: string;
     search: SearchHighlightState | null;
     isActiveMatch?: boolean;

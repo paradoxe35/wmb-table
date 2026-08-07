@@ -7,7 +7,7 @@ import * as customDocsRepo from '@main/database/repositories/custom-documents.re
 import * as historyRepo from '@main/database/repositories/history.repository';
 import { refreshBibleDrizzle, switchBibleLanguage } from '@main/database/index';
 import { closeBibleDb } from '@main/services/bible.service';
-import { extractTextFromImportedDocument } from '@main/services/document-import.service';
+import { buildImportedDocumentContent } from '@main/services/book/book-import.service';
 import {
     getUpdateStatus,
     startDownload,
@@ -114,9 +114,9 @@ export function registerAppHandlers(): void {
 
     registerHandler(
         AppChannels.createCustomDocument,
-        async (_event, title, input, languageCode) => {
-            const content = await extractTextFromImportedDocument(input);
-            return customDocsRepo.createCustomDocument(title, content, languageCode);
+        async (_event, title, input, languageCode, options) => {
+            const { content, kind } = await buildImportedDocumentContent(input, options);
+            return customDocsRepo.createCustomDocument(title, content, languageCode, kind);
         },
     );
 

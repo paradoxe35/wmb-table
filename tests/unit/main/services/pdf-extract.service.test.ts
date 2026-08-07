@@ -181,3 +181,71 @@ describe('pdf-extract.service', () => {
         expect(repeated.size).toBe(0);
     });
 });
+
+describe('line metadata', () => {
+    const item = (
+        str: string,
+        x: number,
+        y: number,
+        extra: { width?: number; fontName?: string; dir?: string; height?: number } = {},
+    ) => ({
+        str,
+        transform: [extra.height ?? 10, 0, 0, extra.height ?? 10, x, y],
+        width: extra.width ?? str.length * 5,
+        height: extra.height ?? 10,
+        fontName: extra.fontName ?? 'g_d0_f2',
+        dir: extra.dir ?? 'ltr',
+        hasEOL: false,
+    });
+
+    it('carries the font most of the line is set in', () => {
+        const [line] = groupPdfItemsIntoLines([
+            item('A long stretch of body text', 40, 500),
+            item('!', 180, 500, { width: 4, fontName: 'g_d0_f5' }),
+        ]);
+
+        expect(line.font).toBe('g_d0_f2');
+    });
+
+    it('reads a right-to-left line back into reading order', () => {
+        // Items are laid out visually, so the first word sits furthest right.
+        const [line] = groupPdfItemsIntoLines([
+            item('ثالث', 40, 500, { width: 30, dir: 'rtl' }),
+            item('ثاني', 80, 500, { width: 30, dir: 'rtl' }),
+            item('أول', 120, 500, { width: 30, dir: 'rtl' }),
+        ]);
+
+        expect(line.rtl).toBe(true);
+        expect(line.text).toBe('أول ثاني ثالث');
+    });
+
+    it('keeps an embedded left-to-right run in its own order', () => {
+        const [line] = groupPdfItemsIntoLines([
+            item('العربية', 40, 500, { width: 40, dir: 'rtl' }),
+            item('LaTeX', 90, 500, { width: 30 }),
+            item('نص', 130, 500, { width: 20, dir: 'rtl' }),
+        ]);
+
+        expect(line.text).toBe('نص LaTeX العربية');
+    });
+
+    it('measures a line from its outermost edges', () => {
+        const [line] = groupPdfItemsIntoLines([
+            item('right', 200, 500, { width: 40 }),
+            item('left', 40, 500, { width: 40 }),
+        ]);
+
+        expect(line.x).toBe(40);
+        expect(line.width).toBe(200);
+    });
+
+    it('leaves a left-to-right line untouched', () => {
+        const [line] = groupPdfItemsIntoLines([
+            item('first', 40, 500, { width: 30 }),
+            item('second', 80, 500, { width: 40 }),
+        ]);
+
+        expect(line.rtl).toBeFalsy();
+        expect(line.text).toBe('first second');
+    });
+});

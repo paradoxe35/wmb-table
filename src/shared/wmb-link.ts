@@ -23,7 +23,24 @@ export interface DocWmbRef {
     title: string;
 }
 
-export type WmbRef = SermonWmbRef | BibleWmbRef | DocWmbRef;
+/**
+ * Books are cited as `page · paragraph`, so the link carries both the printed
+ * label and the per-page ordinal a reader would count. `paragraphIndex` stays
+ * document-wide because that is what anchors scrolling and highlights.
+ *
+ * Kept apart from `doc` so that existing `wmb://doc` links parse unchanged.
+ */
+export interface BookWmbRef {
+    type: 'book';
+    documentId: string;
+    paragraphIndex: number;
+    /** Absent when the source page carries no number — never invented. */
+    printedPage?: string;
+    pageParagraph: number;
+    title: string;
+}
+
+export type WmbRef = SermonWmbRef | BibleWmbRef | DocWmbRef | BookWmbRef;
 
 function parseIntegerSegment(segment: string | undefined): number | null {
     if (!segment) {
@@ -59,6 +76,17 @@ export function buildDocWmbLink(ref: DocWmbRef): string {
     return ['wmb://doc', encodeURIComponent(ref.documentId), encodeURIComponent(ref.title)].join(
         '/',
     );
+}
+
+export function buildBookWmbLink(ref: BookWmbRef): string {
+    return [
+        'wmb://book',
+        encodeURIComponent(ref.documentId),
+        String(ref.paragraphIndex),
+        encodeURIComponent(ref.printedPage ?? ''),
+        String(ref.pageParagraph),
+        encodeURIComponent(ref.title),
+    ].join('/');
 }
 
 export function parseWmbLink(href: string): WmbRef | null {
@@ -114,6 +142,34 @@ export function parseWmbLink(href: string): WmbRef | null {
             return {
                 type: 'doc',
                 documentId,
+                title: titleParts.join('/') || documentId,
+            };
+        }
+        case 'book': {
+            const [
+                ,
+                documentId,
+                paragraphIndexSegment,
+                printedPage,
+                pageParagraphSegment,
+                ...titleParts
+            ] = parts;
+            if (!documentId) {
+                return null;
+            }
+
+            const paragraphIndex = parseIntegerSegment(paragraphIndexSegment);
+            const pageParagraph = parseIntegerSegment(pageParagraphSegment);
+            if (paragraphIndex == null || pageParagraph == null) {
+                return null;
+            }
+
+            return {
+                type: 'book',
+                documentId,
+                paragraphIndex,
+                printedPage: printedPage || undefined,
+                pageParagraph,
                 title: titleParts.join('/') || documentId,
             };
         }

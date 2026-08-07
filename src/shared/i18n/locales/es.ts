@@ -685,6 +685,20 @@ const es: Record<string, string> = {
     'Sélectionnez un verset': 'Seleccione un versículo',
     'Aucun verset': 'Sin versículos',
 
+    // ── Book documents ──
+    'Sélectionnez un chapitre': 'Seleccione un capítulo',
+    'Aucun chapitre': 'Sin capítulos',
+    'Page {{page}}': 'Página {{page}}',
+    'Copier le lien de la référence': 'Copiar el enlace de la referencia',
+    'Lien copié': 'Enlace copiado',
+    Livre: 'Libro',
+    'Structure du document': 'Estructura del documento',
+    'Détection automatique': 'Detección automática',
+    'Texte simple': 'Texto simple',
+    "Affiner les titres de chapitres avec l'IA": 'Refinar los títulos de capítulos con IA',
+    'Document ajouté — structure de livre détectée':
+        'Documento añadido — estructura de libro detectada',
+
     // ── Sermon paragraph ──
     'Surlignage supprimé': 'Resaltado eliminado',
     'Erreur lors de la suppression': 'Error al eliminar',
@@ -1141,6 +1155,10 @@ const es: Record<string, string> = {
         'La versión {{version}} está disponible. La actualización automática no es compatible con su tipo de instalación. Descargue la nueva versión desde el sitio web.',
     Langue: 'Idioma',
     'Le chargement des anciens messages a échoué.': 'No se pudieron cargar los mensajes antiguos.',
+    "L'assistant IA n'est pas configuré": 'El asistente de IA no está configurado',
+    "L'import fonctionnera sans l'IA. Configurez un fournisseur pour affiner les titres de chapitres.":
+        'La importación funcionará sin IA. Configure un proveedor para refinar los títulos de capítulos.',
+    Configurer: 'Configurar',
     'Connexion indisponible': 'Conexión no disponible',
     'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
         'No se pudo contactar con el servidor de actualizaciones. Compruebe su conexión e inténtelo de nuevo.',

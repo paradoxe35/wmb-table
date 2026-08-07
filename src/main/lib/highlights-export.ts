@@ -3,6 +3,11 @@ import * as tantivyService from '@main/services/tantivy.service';
 import * as bibleRepo from '@main/database/repositories/bible.repository';
 import * as customDocRepo from '@main/database/repositories/custom-documents.repository';
 import i18n from '@main/lib/i18n';
+import {
+    bookCitationsByParagraph,
+    formatBookCitation,
+    parseDocumentContent,
+} from '@shared/book-content';
 import { escapeHtml } from '@shared/searchable';
 import { formatDocumentTitle, getDocumentIdentityKey, type HighlightItem } from '@shared/types';
 
@@ -14,6 +19,8 @@ interface DocumentContext {
     title: string;
     meta?: string;
     paragraphContents: Map<number, string>;
+    /** Set only where a paragraph is cited as something other than its index. */
+    paragraphLabels?: Map<number, string>;
 }
 
 interface HighlightSection {
@@ -133,18 +140,25 @@ function fetchCustomDocContext(first: HighlightItem): Partial<DocumentContext> {
     const paragraphContents = new Map<number, string>();
     if (first.documentIdentity.documentType !== 'custom') return { paragraphContents };
     const doc = customDocRepo.getCustomDocumentContent(first.documentIdentity.customDocumentId);
-    if (doc?.content) {
-        try {
-            const lines: string[] = JSON.parse(doc.content);
-            lines.forEach((text, i) => paragraphContents.set(i + 1, text));
-        } catch {
-            doc.content
-                .split('\n')
-                .filter((l) => l.trim())
-                .forEach((text, i) => paragraphContents.set(i + 1, text));
-        }
+    if (!doc?.content) return { paragraphContents };
+
+    const parsed = parseDocumentContent(doc.content);
+    if (parsed.kind !== 'book') {
+        parsed.paragraphs.forEach((text, index) => paragraphContents.set(index + 1, text));
+        return { paragraphContents };
     }
-    return { paragraphContents };
+
+    // A book is quoted by its printed page, so the export has to cite what the
+    // reader saw rather than the document-wide anchor the highlight is keyed on.
+    const citations = bookCitationsByParagraph(parsed.structure);
+    const paragraphLabels = new Map<number, string>();
+    for (const paragraph of parsed.structure.paragraphs) {
+        paragraphContents.set(paragraph.index, paragraph.text);
+        const citation = citations.get(paragraph.index);
+        if (citation) paragraphLabels.set(paragraph.index, formatBookCitation(citation));
+    }
+
+    return { paragraphContents, paragraphLabels };
 }
 
 async function fetchDocumentContext(items: HighlightItem[]): Promise<DocumentContext> {
@@ -163,6 +177,7 @@ async function fetchDocumentContext(items: HighlightItem[]): Promise<DocumentCon
         title: formatDocumentTitle(partial.title ?? first.documentTitle, first.documentIdentity),
         meta: partial.meta,
         paragraphContents: partial.paragraphContents ?? new Map(),
+        paragraphLabels: partial.paragraphLabels,
     };
 }
 
@@ -182,20 +197,19 @@ function renderParagraphWithMark(fullContent: string, snippet: string, color: st
     return `${before}<mark style="background:${escapeHtml(color)}30;">${marked}</mark>${after}`;
 }
 
-function renderHighlightCard(
-    h: DeduplicatedHighlight,
-    paragraphContents: Map<number, string>,
-): string {
-    const fullContent = paragraphContents.get(h.paragraphIndex);
+function renderHighlightCard(h: DeduplicatedHighlight, context: DocumentContext): string {
+    const fullContent = context.paragraphContents.get(h.paragraphIndex);
     const lines: string[] = [`<div class="highlight-card">`];
 
     // Left color accent is handled by border-left in CSS via inline style
     lines[0] = `<div class="highlight-card" style="border-left: 3px solid ${escapeHtml(h.color)};">`;
 
-    // Header: paragraph number
+    const label = context.paragraphLabels?.get(h.paragraphIndex);
     if (h.paragraphIndex > 0) {
         lines.push(
-            `<div class="highlight-header"><span class="paragraph-num">&sect;${h.paragraphIndex}</span></div>`,
+            `<div class="highlight-header"><span class="paragraph-num">${
+                label ? escapeHtml(label) : `&sect;${h.paragraphIndex}`
+            }</span></div>`,
         );
     }
 
@@ -227,9 +241,7 @@ function renderSection(section: HighlightSection): string {
         `</div>`,
     ].join('\n');
 
-    const cards = section.highlights
-        .map((h) => renderHighlightCard(h, section.context.paragraphContents))
-        .join('\n');
+    const cards = section.highlights.map((h) => renderHighlightCard(h, section.context)).join('\n');
 
     return `${header}\n${cards}\n</div>`;
 }

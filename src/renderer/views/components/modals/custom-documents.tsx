@@ -1,23 +1,44 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Input, Modal, Select, Space, Typography, message, Spin } from 'antd';
+import {
+    Alert,
+    Button,
+    Input,
+    Modal,
+    Segmented,
+    Select,
+    Space,
+    Switch,
+    Typography,
+    message,
+    Spin,
+} from 'antd';
 import { useTranslation } from 'react-i18next';
-import type { CustomDocument, InstalledLanguage } from '@shared/types';
+import type { CustomDocument, CustomDocumentImportOptions, InstalledLanguage } from '@shared/types';
 import {
     EyeOutlined,
     FileTextOutlined,
     LoadingOutlined,
     PlusOutlined,
+    ReadOutlined,
     UploadOutlined,
 } from '@ant-design/icons';
 
 import { useModalVisible, useIpcRequestWithLoader, useOpenDocumentRequest } from '@renderer/hooks';
 import { CUSTOM_DOCUMENT_EVENT } from '@renderer/utils/events';
 import { simpleRegExp, strNormalize } from '@renderer/utils/searchable';
-import { useAppStore, useCustomDocumentsStore, useInstalledLanguagesStore } from '@renderer/stores';
+import {
+    useAiChatStore,
+    useAppStore,
+    useCustomDocumentsStore,
+    useInstalledLanguagesStore,
+} from '@renderer/stores';
+import { SETTINGS_TAB_KEYS } from '@renderer/stores/app.store';
 import { DeleteBtn } from '@renderer/components/delete-btn';
 import { invalidateCustomDocumentContentCache } from '@renderer/views/document-view/hooks/document-content-hooks';
 
 const ACCEPTED_CUSTOM_DOCUMENT_TYPES = '.pdf,.txt,.md,.markdown,.docx,.epub';
+
+type StructureChoice = NonNullable<CustomDocumentImportOptions['structure']>;
 
 function isSupportedCustomDocument(file: File): boolean {
     return /\.(pdf|txt|md|markdown|docx|epub)$/i.test(file.name);
@@ -218,6 +239,8 @@ const DocumentItem = React.memo<{
     onDelete: () => void;
     onLanguageChange: (languageCode: string) => void;
 }>(({ document, installedLanguages, onView, onDelete, onLanguageChange }) => {
+    const { t } = useTranslation();
+
     return (
         <div
             style={{
@@ -229,7 +252,16 @@ const DocumentItem = React.memo<{
                 gap: 10,
             }}
         >
-            <FileTextOutlined style={{ fontSize: 'var(--fs-xl)', opacity: 0.45, flexShrink: 0 }} />
+            {document.kind === 'book' ? (
+                <ReadOutlined
+                    title={t('Livre')}
+                    style={{ fontSize: 'var(--fs-xl)', opacity: 0.45, flexShrink: 0 }}
+                />
+            ) : (
+                <FileTextOutlined
+                    style={{ fontSize: 'var(--fs-xl)', opacity: 0.45, flexShrink: 0 }}
+                />
+            )}
             <div
                 style={{
                     flex: 1,
@@ -294,7 +326,24 @@ function UploadForm({
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [nameTouched, setNameTouched] = useState(false);
+    const [structure, setStructure] = useState<StructureChoice>('auto');
+    const [aiRefinement, setAiRefinement] = useState(false);
+    const aiSettings = useAiChatStore((s) => s.settings);
+    const loadAiSettings = useAiChatStore((s) => s.loadSettings);
+    // Null means "not loaded yet", not "not configured": the AI store only
+    // initializes when its own views mount, which may never have happened here.
+    const aiUnconfigured = aiSettings != null && !(aiSettings.enabled && aiSettings.activeProvider);
+    const showOptions = useAppStore((s) => s.showOptions);
+    const setSettingsTab = useAppStore((s) => s.setSettingsTab);
+    const openAiSettings = () => {
+        setSettingsTab(SETTINGS_TAB_KEYS.ai);
+        showOptions('settings');
+    };
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (aiSettings == null) void loadAiSettings();
+    }, [aiSettings, loadAiSettings]);
 
     const nameExists = customDocuments.some(
         (d) => d.title.toLowerCase() === name.trim().toLowerCase(),
@@ -333,9 +382,14 @@ function UploadForm({
                     bytes: fileBytes,
                 },
                 languageCode,
+                { structure, aiRefinement: structure === 'plain' ? false : aiRefinement },
             );
             onAdded(doc);
-            message.success(t('Document ajouté'));
+            message.success(
+                doc.kind === 'book'
+                    ? t('Document ajouté — structure de livre détectée')
+                    : t('Document ajouté'),
+            );
         } catch (err) {
             message.error(
                 err instanceof Error ? t(err.message) : t("Erreur lors de l'import du document."),
@@ -388,6 +442,65 @@ function UploadForm({
                         value: l.code,
                     }))}
                 />
+            </div>
+
+            <div>
+                <Typography.Text
+                    strong
+                    style={{ fontSize: 'var(--fs-rel-xl)', display: 'block', marginBottom: 4 }}
+                >
+                    {t('Structure du document')}
+                </Typography.Text>
+                <Segmented
+                    block
+                    value={structure}
+                    onChange={(value) => setStructure(value as StructureChoice)}
+                    options={[
+                        { label: t('Détection automatique'), value: 'auto' },
+                        { label: t('Livre'), value: 'book' },
+                        { label: t('Texte simple'), value: 'plain' },
+                    ]}
+                />
+                {structure !== 'plain' && (
+                    <>
+                        <div
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                marginTop: 8,
+                            }}
+                        >
+                            <Switch
+                                size="small"
+                                checked={aiRefinement}
+                                onChange={setAiRefinement}
+                            />
+                            <Typography.Text
+                                type="secondary"
+                                style={{ fontSize: 'var(--fs-rel-lg)' }}
+                            >
+                                {t("Affiner les titres de chapitres avec l'IA")}
+                            </Typography.Text>
+                        </div>
+                        {aiRefinement && aiUnconfigured && (
+                            <Alert
+                                type="warning"
+                                showIcon
+                                style={{ marginTop: 8 }}
+                                title={t("L'assistant IA n'est pas configuré")}
+                                description={t(
+                                    "L'import fonctionnera sans l'IA. Configurez un fournisseur pour affiner les titres de chapitres.",
+                                )}
+                                action={
+                                    <Button size="small" onClick={openAiSettings}>
+                                        {t('Configurer')}
+                                    </Button>
+                                }
+                            />
+                        )}
+                    </>
+                )}
             </div>
 
             <div>

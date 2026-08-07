@@ -92,7 +92,11 @@ export function BibleReferenceView({ content }: { content: BibleReferenceContent
 export function DocReferenceView({ content }: { content: DocReferenceContent }) {
     const { t } = useTranslation();
     return (
-        <ReferenceCard label={t('Document personnalisé')} title={content.title}>
+        <ReferenceCard
+            label={t('Document personnalisé')}
+            title={content.title}
+            meta={content.citation}
+        >
             {content.contentSnippet ? (
                 <p className="wmb-reference__paragraph">{content.contentSnippet}</p>
             ) : (

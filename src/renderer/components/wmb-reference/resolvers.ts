@@ -1,4 +1,9 @@
-import type { BibleWmbRef, DocWmbRef, SermonWmbRef } from '@shared/wmb-link';
+import type { BibleWmbRef, BookWmbRef, DocWmbRef, SermonWmbRef } from '@shared/wmb-link';
+import {
+    documentContentToParagraphTexts,
+    formatBookCitation,
+    parseDocumentContent,
+} from '@shared/book-content';
 
 import type { BibleReferenceContent, DocReferenceContent, SermonReferenceContent } from './content';
 
@@ -69,10 +74,42 @@ export async function resolveDocFromWmb(ref: DocWmbRef): Promise<DocReferenceCon
         return {
             type: 'doc',
             title: document?.title || ref.title,
-            contentSnippet: document ? truncate(document.content, DOC_PREVIEW_MAX_CHARS) : null,
+            contentSnippet: document
+                ? truncate(
+                      documentContentToParagraphTexts(document.content).join('\n'),
+                      DOC_PREVIEW_MAX_CHARS,
+                  )
+                : null,
         };
     } catch {
         return { type: 'doc', title: ref.title, contentSnippet: null };
+    }
+}
+
+export async function resolveBookFromWmb(ref: BookWmbRef): Promise<DocReferenceContent> {
+    const citation = formatBookCitation({
+        paragraphIndex: ref.paragraphIndex,
+        pageParagraph: ref.pageParagraph,
+        ...(ref.printedPage ? { printedPage: ref.printedPage } : {}),
+    });
+
+    try {
+        const document = await window.api.app.getCustomDocumentContent(ref.documentId);
+        const parsed = document ? parseDocumentContent(document.content) : null;
+        const text =
+            parsed?.kind === 'book'
+                ? parsed.structure.paragraphs.find((entry) => entry.index === ref.paragraphIndex)
+                      ?.text
+                : parsed?.paragraphs[ref.paragraphIndex - 1];
+
+        return {
+            type: 'doc',
+            title: document?.title || ref.title,
+            citation,
+            contentSnippet: text ? truncate(text, DOC_PREVIEW_MAX_CHARS) : null,
+        };
+    } catch {
+        return { type: 'doc', title: ref.title, citation, contentSnippet: null };
     }
 }
 

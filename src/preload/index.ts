@@ -36,6 +36,7 @@ import type {
     SearchMode,
     DocumentReferenceSelection,
     CustomDocumentImportInput,
+    CustomDocumentImportOptions,
 } from '@shared/types';
 import type {
     TtsProviderType,
@@ -264,7 +265,8 @@ const api = {
             title: string,
             input: CustomDocumentImportInput,
             languageCode: string,
-        ) => invoke(AppChannels.createCustomDocument, title, input, languageCode),
+            options?: CustomDocumentImportOptions,
+        ) => invoke(AppChannels.createCustomDocument, title, input, languageCode, options),
         getCustomDocumentContent: (id: string) => invoke(AppChannels.getCustomDocumentContent, id),
         updateCustomDocumentLanguage: (id: string, languageCode: string) =>
             invoke(AppChannels.updateCustomDocumentLanguage, id, languageCode),
