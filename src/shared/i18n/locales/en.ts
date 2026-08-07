@@ -213,6 +213,9 @@ const en: Record<string, string> = {
     'Supprimer toutes les conversations ?': 'Delete all conversations?',
     "Vider l'historique": 'Clear history',
     'Le chargement des anciens messages a échoué.': 'Loading older messages failed.',
+    'Connexion indisponible': 'Connection unavailable',
+    'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
+        'Could not reach the update server. Check your connection and try again.',
     'Rechercher une conversation': 'Search conversations',
     'La recherche de conversations a échoué.': 'Searching conversations failed.',
     "L'arrêt de la génération a échoué.": 'Stopping the generation failed.',

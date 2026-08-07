@@ -918,6 +918,8 @@ export type UpdaterNotification = {
     updateInfo?: UpdateInfo;
     progress?: UpdaterProgress;
     message?: string;
+    /** Lets the UI soften a dropped connection instead of showing a failure */
+    errorKind?: 'network' | 'generic';
     /** False on Linux deb/tar.gz where auto-update is not supported */
     canAutoUpdate?: boolean;
     /** False when the updater never started (dev / unpackaged build) */

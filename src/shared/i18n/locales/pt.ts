@@ -1138,6 +1138,9 @@ const pt: Record<string, string> = {
         'A versão {{version}} está disponível. A atualização automática não é compatível com o seu tipo de instalação. Baixe a nova versão pelo site.',
     Langue: 'Idioma',
     'Le chargement des anciens messages a échoué.': 'Falha ao carregar as mensagens antigas.',
+    'Connexion indisponible': 'Conexão indisponível',
+    'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
+        'Não foi possível contactar o servidor de atualizações. Verifique a sua ligação e tente novamente.',
     'Rechercher une conversation': 'Pesquisar conversas',
     'La recherche de conversations a échoué.': 'Falha ao pesquisar as conversas.',
     "L'arrêt de la génération a échoué.": 'Falha ao interromper a geração.',
