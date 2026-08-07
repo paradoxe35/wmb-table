@@ -1136,6 +1136,9 @@ const sw: Record<string, string> = {
         'Toleo {{version}} linapatikana. Sasisho la kiotomatiki halitumiki kwa aina yako ya usakinishaji. Tafadhali pakua toleo jipya kutoka kwenye tovuti.',
     Langue: 'Lugha',
     'Le chargement des anciens messages a échoué.': 'Imeshindikana kupakia ujumbe wa zamani.',
+    'Connexion indisponible': 'Muunganisho haupatikani',
+    'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
+        'Imeshindikana kuwasiliana na seva ya masasisho. Angalia muunganisho wako kisha ujaribu tena.',
     'Rechercher une conversation': 'Tafuta mazungumzo',
     'La recherche de conversations a échoué.': 'Imeshindikana kutafuta mazungumzo.',
     "L'arrêt de la génération a échoué.": 'Imeshindikana kusimamisha uzalishaji.',

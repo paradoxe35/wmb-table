@@ -1141,6 +1141,9 @@ const es: Record<string, string> = {
         'La versión {{version}} está disponible. La actualización automática no es compatible con su tipo de instalación. Descargue la nueva versión desde el sitio web.',
     Langue: 'Idioma',
     'Le chargement des anciens messages a échoué.': 'No se pudieron cargar los mensajes antiguos.',
+    'Connexion indisponible': 'Conexión no disponible',
+    'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
+        'No se pudo contactar con el servidor de actualizaciones. Compruebe su conexión e inténtelo de nuevo.',
     'Rechercher une conversation': 'Buscar conversaciones',
     'La recherche de conversations a échoué.': 'No se pudieron buscar las conversaciones.',
     "L'arrêt de la génération a échoué.": 'No se pudo detener la generación.',

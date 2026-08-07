@@ -28,6 +28,7 @@ let downloading = false;
 let downloaded = false;
 let downloadCancellation: InstanceType<typeof CancellationToken> | null = null;
 let stallTimer: NodeJS.Timeout | null = null;
+let silentCheck = false;
 
 function isBusy(): boolean {
     return downloading || downloaded;
@@ -50,6 +51,18 @@ function toUpdateInfo(info: {
 function errorMessage(err: unknown): string {
     if (err instanceof Error) return err.message;
     return String(err);
+}
+
+/** Chromium and Node surface a lot of names for "the network moved under us" */
+function isTransientNetworkError(message: string): boolean {
+    return /net::ERR_|ENOTFOUND|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|socket hang up|getaddrinfo/i.test(
+        message,
+    );
+}
+
+/** electron-updater appends a stack; only the first line is fit for a user */
+function firstLine(message: string): string {
+    return message.split('\n')[0].trim();
 }
 
 function decorate(notification: UpdaterNotification): UpdaterNotification {
@@ -203,12 +216,24 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
             if (!downloaded) notify({ type: 'noUpdate' });
             return;
         }
+        if (isTransientNetworkError(message)) {
+            log.warn(`[updater] network unavailable: ${firstLine(message)}`);
+            // A background check must not interrupt the user over a dropped wifi
+            if (silentCheck) return;
+            notify({
+                type: 'error',
+                errorKind: 'network',
+                message: 'Connexion indisponible',
+            });
+            return;
+        }
+
         log.error('Updater error', err);
-        notify({ type: 'error', message });
+        notify({ type: 'error', errorKind: 'generic', message: firstLine(message) });
     });
 
     const check = () => {
-        checkForUpdates().catch(() => {});
+        checkForUpdates({ silent: true }).catch(() => {});
     };
 
     // An install that cannot self-update has nothing to act on, so don't poll
@@ -262,21 +287,36 @@ async function runCheck(): Promise<UpdaterNotification> {
         return lastNotification;
     } catch (err) {
         if (lastNotification.type === 'checking') {
-            return notify({ type: 'error', message: errorMessage(err) });
+            const message = errorMessage(err);
+            if (isTransientNetworkError(message)) {
+                log.warn(`[updater] network unavailable: ${firstLine(message)}`);
+                return silentCheck
+                    ? notify({ type: 'none' })
+                    : notify({
+                          type: 'error',
+                          errorKind: 'network',
+                          message: 'Connexion indisponible',
+                      });
+            }
+            return notify({ type: 'error', errorKind: 'generic', message: firstLine(message) });
         }
         return lastNotification;
     }
 }
 
-export async function checkForUpdates(): Promise<UpdaterNotification> {
+export async function checkForUpdates(options?: {
+    silent?: boolean;
+}): Promise<UpdaterNotification> {
     if (!initialized) return getUpdateStatus();
     // Re-asserting `downloaded` also brings the install button back after an error
     if (downloaded) return notify({ type: 'downloaded' });
     if (downloading) return lastNotification;
     if (checkPromise) return checkPromise;
 
+    silentCheck = options?.silent ?? false;
     checkPromise = runCheck().finally(() => {
         checkPromise = null;
+        silentCheck = false;
     });
     return checkPromise;
 }
