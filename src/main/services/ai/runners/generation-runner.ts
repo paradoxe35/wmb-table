@@ -10,7 +10,7 @@ import {
 
 const TRUNCATION_NOTICE = '\n\n---\n*[Response truncated due to length limit]*';
 
-const REMOTE_MAX_STEPS = 40;
+const REMOTE_MAX_STEPS = 50;
 const AI_STREAM_MAX_RETRIES = 3;
 
 function normalizeToolCallInput(input: unknown): Record<string, unknown> {
