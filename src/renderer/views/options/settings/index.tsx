@@ -18,7 +18,6 @@ import {
     selectHasLanguageUpdates,
 } from '@renderer/stores';
 import { SETTINGS_TAB_KEYS, type SettingsTabValue } from '@renderer/stores/app.store';
-import { UPDATE_TAB_EVENT } from '@renderer/components/update-notifier';
 import GeneralTab from './general-tab';
 import LibraryTab from './library-tab';
 import BackupTab from './backup-tab';
@@ -48,6 +47,7 @@ function LibraryTabLabel() {
 export default function Settings() {
     const { t } = useTranslation();
     const showOptions = useAppStore((s) => s.showOptions);
+    const openSettingsTab = useAppStore((s) => s.openSettingsTab);
     const activeTab = useAppStore((s) => s.settingsTab);
     const setSettingsTab = useAppStore((s) => s.setSettingsTab);
 
@@ -58,17 +58,8 @@ export default function Settings() {
     }, [showOptions]);
 
     useEffect(() => {
-        return window.api.on.appUpdateMenu(() => {
-            showOptions('settings');
-            setSettingsTab(SETTINGS_TAB_KEYS.update);
-        });
-    }, [setSettingsTab, showOptions]);
-
-    useEffect(() => {
-        const handler = () => setSettingsTab(SETTINGS_TAB_KEYS.update);
-        window.addEventListener(UPDATE_TAB_EVENT, handler);
-        return () => window.removeEventListener(UPDATE_TAB_EVENT, handler);
-    }, [setSettingsTab]);
+        return window.api.on.appUpdateMenu(() => openSettingsTab(SETTINGS_TAB_KEYS.update));
+    }, [openSettingsTab]);
 
     const onTabChange = useCallback(
         (key: string) => setSettingsTab(key as SettingsTabValue),

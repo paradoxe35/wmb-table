@@ -213,7 +213,7 @@ function Versions({ info }: { info: UpdaterNotification | undefined }) {
     const next = info?.updateInfo?.version;
 
     return (
-        <>
+        <Space orientation="vertical" size="small">
             {info?.currentVersion && (
                 <Text type="secondary">
                     {t('Version actuelle')}: {info.currentVersion}
@@ -224,7 +224,7 @@ function Versions({ info }: { info: UpdaterNotification | undefined }) {
                     {t('Nouvelle version')}: {next}
                 </Text>
             )}
-        </>
+        </Space>
     );
 }
 
