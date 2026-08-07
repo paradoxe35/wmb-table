@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { App as AntApp, Button } from 'antd';
 import { useAppStore } from '@renderer/stores';
+import { SETTINGS_TAB_KEYS } from '@renderer/stores/app.store';
 import { buildDownloadPageLink } from '@shared/constants';
 import type { UpdaterNotification } from '@shared/types';
-
-export const UPDATE_TAB_EVENT = 'go-to-update-tab';
 
 const version = (data: UpdaterNotification) => data.updateInfo?.version ?? 'unknown';
 
@@ -19,14 +18,9 @@ export default function UpdateNotifier() {
     // Context-aware instance: the static antd API renders outside ConfigProvider
     // and would ignore the app theme
     const { notification } = AntApp.useApp();
-    const showOptions = useAppStore((s) => s.showOptions);
+    const openSettingsTab = useAppStore((s) => s.openSettingsTab);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
     const shownRef = useRef<Set<string>>(new Set());
-
-    const goToUpdateTab = useCallback(() => {
-        showOptions('settings');
-        window.dispatchEvent(new Event(UPDATE_TAB_EVENT));
-    }, [showOptions]);
 
     useEffect(() => {
         const handle = (data: UpdaterNotification) => {
@@ -49,7 +43,7 @@ export default function UpdateNotifier() {
                             type="primary"
                             size="small"
                             onClick={() => {
-                                goToUpdateTab();
+                                openSettingsTab(SETTINGS_TAB_KEYS.update);
                                 notification.destroy(key);
                             }}
                         >
@@ -101,7 +95,7 @@ export default function UpdateNotifier() {
         // A check can complete before this mounts, so read what is already known
         window.api.app.getUpdateStatus().then(handle);
         return window.api.on.notifyForNewUpdate(handle);
-    }, [contentLanguage, goToUpdateTab, notification, t]);
+    }, [contentLanguage, notification, openSettingsTab, t]);
 
     return null;
 }
