@@ -65,6 +65,32 @@ function firstLine(message: string): string {
     return message.split('\n')[0].trim();
 }
 
+/** The single place a failure becomes what the reader sees, whoever caught it */
+function classifyError(err: unknown): UpdaterNotification {
+    const message = errorMessage(err);
+    const lower = message.toLowerCase();
+    // A missing release is a normal state when checking, but never mid-transfer
+    if (
+        !downloading &&
+        (lower.includes('404') || lower.includes('no published') || lower.includes('not found'))
+    ) {
+        log.info('Updater: no published release found');
+        return { type: 'noUpdate' };
+    }
+    if (isTransientNetworkError(message)) {
+        log.warn(`[updater] network unavailable: ${firstLine(message)}`);
+        return { type: 'error', errorKind: 'network', message: 'Connexion indisponible' };
+    }
+    // Keep the stack: it is the only thing that names the provider that failed
+    log.error('Updater error', err);
+    return { type: 'error', errorKind: 'generic', message: firstLine(message) };
+}
+
+/** A background check must not interrupt the reader over a dropped wifi */
+function isSuppressed(result: UpdaterNotification): boolean {
+    return silentCheck && !downloading && result.errorKind === 'network';
+}
+
 function decorate(notification: UpdaterNotification): UpdaterNotification {
     return {
         ...notification,
@@ -110,6 +136,7 @@ function armStallWatchdog(): void {
         downloadCancellation?.cancel();
         endDownload({
             type: 'error',
+            errorKind: 'generic',
             message: `No data received for ${DOWNLOAD_STALL_MS / 1000}s — the download was cancelled`,
         });
     }, DOWNLOAD_STALL_MS);
@@ -202,34 +229,10 @@ export function initializeUpdater(mainWindow: BrowserWindow): void {
     });
 
     autoUpdater.on('error', (err) => {
-        const message = errorMessage(err);
-        const lower = message.toLowerCase();
-        downloading = false;
-        clearStallWatchdog();
-        // A missing release is a normal state, not a failure worth showing
-        if (
-            lower.includes('404') ||
-            lower.includes('no published') ||
-            lower.includes('not found')
-        ) {
-            log.info('Updater: no published release found');
-            if (!downloaded) notify({ type: 'noUpdate' });
-            return;
-        }
-        if (isTransientNetworkError(message)) {
-            log.warn(`[updater] network unavailable: ${firstLine(message)}`);
-            // A background check must not interrupt the user over a dropped wifi
-            if (silentCheck) return;
-            notify({
-                type: 'error',
-                errorKind: 'network',
-                message: 'Connexion indisponible',
-            });
-            return;
-        }
-
-        log.error('Updater error', err);
-        notify({ type: 'error', errorKind: 'generic', message: firstLine(message) });
+        const result = classifyError(err);
+        // An already-downloaded update stays installable whatever happens next
+        if (downloaded || isSuppressed(result)) return;
+        if (!endDownload(result)) notify(result);
     });
 
     const check = () => {
@@ -274,7 +277,11 @@ async function runCheck(): Promise<UpdaterNotification> {
     try {
         const result = await withTimeout(autoUpdater.checkForUpdates(), CHECK_TIMEOUT_MS);
         if (result === TIMED_OUT) {
-            return notify({ type: 'error', message: 'Update check timed out' });
+            return notify({
+                type: 'error',
+                errorKind: 'generic',
+                message: 'Update check timed out',
+            });
         }
         // null means electron-updater declined to check for this install type
         if (result === null) {
@@ -286,21 +293,10 @@ async function runCheck(): Promise<UpdaterNotification> {
         }
         return lastNotification;
     } catch (err) {
-        if (lastNotification.type === 'checking') {
-            const message = errorMessage(err);
-            if (isTransientNetworkError(message)) {
-                log.warn(`[updater] network unavailable: ${firstLine(message)}`);
-                return silentCheck
-                    ? notify({ type: 'none' })
-                    : notify({
-                          type: 'error',
-                          errorKind: 'network',
-                          message: 'Connexion indisponible',
-                      });
-            }
-            return notify({ type: 'error', errorKind: 'generic', message: firstLine(message) });
-        }
-        return lastNotification;
+        // The 'error' event already reported anything that reached a later state
+        if (lastNotification.type !== 'checking') return lastNotification;
+        const result = classifyError(err);
+        return notify(isSuppressed(result) ? { type: 'none' } : result);
     }
 }
 
@@ -324,7 +320,11 @@ export async function checkForUpdates(options?: {
 export async function startDownload(): Promise<UpdaterNotification> {
     if (!initialized) return getUpdateStatus();
     if (!canAutoUpdate()) {
-        return notify({ type: 'error', message: 'Auto-update is not supported by this install' });
+        return notify({
+            type: 'error',
+            errorKind: 'generic',
+            message: 'Auto-update is not supported by this install',
+        });
     }
     if (downloaded) return notify({ type: 'downloaded' });
     if (downloading) return lastNotification;
@@ -351,19 +351,22 @@ export async function startDownload(): Promise<UpdaterNotification> {
         },
     });
 
-    autoUpdater
-        .downloadUpdate(downloadCancellation)
-        .then(() => {
+    // downloadUpdate() resolves the release asset synchronously, so a bad manifest
+    // throws before any promise exists to catch. An async scope turns that back
+    // into a rejection instead of leaving the UI on a spinner until the watchdog.
+    void (async () => {
+        try {
+            await autoUpdater.downloadUpdate(downloadCancellation);
             // 'update-downloaded' owns success; reaching here means no file was produced
             endDownload({
                 type: 'error',
+                errorKind: 'generic',
                 message: 'The download completed but produced no installer',
             });
-        })
-        .catch((err) => {
-            log.error('Updater: failed to download update', err);
-            endDownload({ type: 'error', message: errorMessage(err) });
-        });
+        } catch (err) {
+            endDownload(classifyError(err));
+        }
+    })();
 
     return pending;
 }
