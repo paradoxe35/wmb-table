@@ -1159,6 +1159,9 @@ const es: Record<string, string> = {
     "L'import fonctionnera sans l'IA. Configurez un fournisseur pour affiner les titres de chapitres.":
         'La importación funcionará sin IA. Configure un proveedor para refinar los títulos de capítulos.',
     Configurer: 'Configurar',
+    'Connexion indisponible': 'Conexión no disponible',
+    'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
+        'No se pudo contactar con el servidor de actualizaciones. Compruebe su conexión e inténtelo de nuevo.',
     'Rechercher une conversation': 'Buscar conversaciones',
     'La recherche de conversations a échoué.': 'No se pudieron buscar las conversaciones.',
     "L'arrêt de la génération a échoué.": 'No se pudo detener la generación.',

@@ -217,6 +217,9 @@ const en: Record<string, string> = {
     "L'import fonctionnera sans l'IA. Configurez un fournisseur pour affiner les titres de chapitres.":
         'The import will work without AI. Configure a provider to refine chapter titles.',
     Configurer: 'Configure',
+    'Connexion indisponible': 'Connection unavailable',
+    'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
+        'Could not reach the update server. Check your connection and try again.',
     'Rechercher une conversation': 'Search conversations',
     'La recherche de conversations a échoué.': 'Searching conversations failed.',
     "L'arrêt de la génération a échoué.": 'Stopping the generation failed.',

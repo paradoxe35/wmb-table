@@ -172,6 +172,10 @@ jobs:
                   path: artifacts
                   merge-multiple: true
 
+            # Must run before every upload: latest*.yml references the safe names
+            - name: Normalize artifact names
+              run: node scripts/rename-release-artifacts.mjs artifacts
+
             - name: List artifacts
               run: find artifacts -type f | sort
 

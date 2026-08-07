@@ -1154,6 +1154,9 @@ const sw: Record<string, string> = {
     "L'import fonctionnera sans l'IA. Configurez un fournisseur pour affiner les titres de chapitres.":
         'Uingizaji utafanya kazi bila AI. Sanidi mtoa huduma ili kuboresha vichwa vya sura.',
     Configurer: 'Sanidi',
+    'Connexion indisponible': 'Muunganisho haupatikani',
+    'Impossible de contacter le serveur de mise à jour. Vérifiez votre connexion, puis réessayez.':
+        'Imeshindikana kuwasiliana na seva ya masasisho. Angalia muunganisho wako kisha ujaribu tena.',
     'Rechercher une conversation': 'Tafuta mazungumzo',
     'La recherche de conversations a échoué.': 'Imeshindikana kutafuta mazungumzo.',
     "L'arrêt de la génération a échoué.": 'Imeshindikana kusimamisha uzalishaji.',

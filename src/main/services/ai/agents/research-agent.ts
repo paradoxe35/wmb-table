@@ -11,8 +11,8 @@ import { dispatchAgentToolStart, dispatchAgentToolComplete } from './agent-dispa
 import { capAgentOutputTokens } from './output-limit';
 
 const AGENT_NAME = 'researchTopic';
-const MAX_STEPS = 40;
-const MAX_OUTPUT_TOKENS = 3000;
+const MAX_STEPS = 50;
+const MAX_OUTPUT_TOKENS = 3072;
 const AGENT_MAX_RETRIES = 3;
 
 function buildResearchToolSubset(

@@ -61,7 +61,7 @@
         "better-sqlite3": "^12.9.0",
         "drizzle-orm": "^0.45.2",
         "electron-log": "^5.4.3",
-        "electron-updater": "^6.8.3",
+        "electron-updater": "^6.8.9",
         "epub": "^2.1.1",
         "google-auth-library": "^10.6.2",
         "i18next": "^25.10.10",
