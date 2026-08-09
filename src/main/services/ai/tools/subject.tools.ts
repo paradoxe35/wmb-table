@@ -51,8 +51,14 @@ export function buildSubjectTools(
                 'Create a saved subject when the user wants to save or organize content under a subject, or accepts that suggestion.',
             inputSchema: z.object({ name: z.string().min(2) }),
             execute: async ({ name }) => {
-                const subject = subjectsRepo.create(name.trim());
-                return { subjectId: subject.id, name: subject.name };
+                try {
+                    const subject = subjectsRepo.create(name.trim());
+                    return { subjectId: subject.id, name: subject.name };
+                } catch (err) {
+                    return {
+                        error: `Failed to create subject: ${err instanceof Error ? err.message : String(err)}`,
+                    };
+                }
             },
         },
         addSermonReferenceToSubject: {
@@ -75,6 +81,10 @@ export function buildSubjectTools(
             }) => {
                 const subjectId = rawSubjectId.trim();
                 const sermonId = rawSermonId.trim();
+                if (!subjectsRepo.exists(subjectId)) {
+                    return { error: `Subject "${subjectId}" not found.` };
+                }
+
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) return langError;

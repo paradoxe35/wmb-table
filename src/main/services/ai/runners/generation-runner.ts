@@ -32,6 +32,12 @@ function normalizeToolCallInput(input: unknown): Record<string, unknown> {
     return {};
 }
 
+function toErrorMessage(error: unknown, fallback = 'Tool execution failed.'): string {
+    if (typeof error === 'string') return error;
+    if (error instanceof Error) return error.message;
+    return fallback;
+}
+
 export class GenerationRunnerImpl implements GenerationRunner {
     async run(ctx: GenerationContext): Promise<void> {
         const maxOutputTokens = resolveRemoteOutputTokens({
@@ -107,18 +113,25 @@ export class GenerationRunnerImpl implements GenerationRunner {
                         toolName: part.toolName,
                         error: part.error,
                     });
+                    dispatchToolCallComplete(
+                        ctx.browserWindow,
+                        ctx.conversationId,
+                        ctx.generationId,
+                        ctx.assistantMessageId,
+                        {
+                            toolCallId: part.toolCallId,
+                            name: part.toolName,
+                            output: { error: toErrorMessage(part.error) },
+                            isError: true,
+                        },
+                        ctx.isCurrentRun,
+                    );
                     break;
                 case 'finish-step':
                     lastFinishReason = part.finishReason;
                     break;
                 case 'error':
-                    throw new Error(
-                        typeof part.error === 'string'
-                            ? part.error
-                            : part.error instanceof Error
-                              ? part.error.message
-                              : 'AI stream failed.',
-                    );
+                    throw new Error(toErrorMessage(part.error, 'AI stream failed.'));
                 default:
                     break;
             }
