@@ -16,60 +16,214 @@ vi.mock('@main/database/repositories/notes.repository', () => ({
 
 const { buildNoteTools } = await import('@main/services/ai/tools/note.tools');
 
+const tools = buildNoteTools('fr');
+
+const NOTE_HTML =
+    '<h1>Etude</h1><p>Premier paragraphe.</p><p>Deuxieme paragraphe.</p><ul><li>Alpha</li><li>Beta</li></ul>';
+
+function mockNote(content: string, name = 'Etude', id = 'note-1') {
+    getByIdMock.mockReturnValue({ id, name, content });
+}
+
 describe('note.tools', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.resetAllMocks();
     });
 
-    it('converts stored note HTML into markdown for the AI', async () => {
-        getByIdMock.mockReturnValue({
-            id: 'note-1',
-            name: 'Study',
-            content:
-                '<h1>Study</h1><p>Hello <a href="http://w.t/#wmb/sermon/1/2/3">world</a></p><p>Second line</p>',
+    describe('getNoteById', () => {
+        it('returns the canonical markdown projection of the stored HTML', async () => {
+            mockNote(NOTE_HTML);
+
+            const result = await tools.getNoteById.execute({ noteId: 'note-1' });
+
+            expect(result).toMatchObject({
+                noteId: 'note-1',
+                name: 'Etude',
+                content:
+                    '# Etude\n\nPremier paragraphe.\n\nDeuxieme paragraphe.\n\n-   Alpha\n-   Beta',
+                hasMore: false,
+            });
         });
 
-        const tools = buildNoteTools('fr');
-        const result = await tools.getNoteById.execute({ noteId: 'note-1' });
+        it('keeps reference links and inline marks readable', async () => {
+            mockNote('<p>Voir <a href="http://w.t/#wmb/sermon/1/fr/2/3">le sermon</a> ici</p>');
 
-        expect(result).toEqual({
-            noteId: 'note-1',
-            name: 'Study',
-            content: 'Study\n=====\nHello [world](http://w.t/#wmb/sermon/1/2/3)\nSecond line',
+            const result = await tools.getNoteById.execute({ noteId: 'note-1' });
+
+            expect(result).toMatchObject({
+                content: 'Voir [le sermon](http://w.t/#wmb/sermon/1/fr/2/3) ici',
+            });
+        });
+
+        it('paginates long notes by line', async () => {
+            mockNote(NOTE_HTML);
+
+            const result = await tools.getNoteById.execute({
+                noteId: 'note-1',
+                startLine: 2,
+                maxLines: 1,
+            });
+
+            expect(result).toMatchObject({
+                content: 'Premier paragraphe.',
+                totalLines: 8,
+                startLine: 2,
+                returnedLines: 1,
+                hasMore: true,
+            });
+        });
+
+        it('reports an unknown note', async () => {
+            getByIdMock.mockReturnValue(null);
+
+            expect(await tools.getNoteById.execute({ noteId: 'missing' })).toEqual({
+                error: 'Note "missing" not found.',
+            });
         });
     });
 
-    it('getNoteById preserves markdown formatting produced from stored HTML', async () => {
-        getByIdMock.mockReturnValue({
-            id: 'note-2',
-            name: 'Title',
-            content: '<h1>Title</h1><p>Alpha <strong>Beta</strong></p><p>Gamma</p>',
+    describe('createNote', () => {
+        it('stores the markdown as HTML and adds the title heading', async () => {
+            createMock.mockReturnValue({ id: 'note-1' });
+
+            const result = await tools.createNote.execute({
+                name: 'Etude',
+                content: 'Premier\n\nDeuxieme',
+            });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude' });
+            expect(updateContentMock).toHaveBeenCalledWith(
+                'note-1',
+                expect.stringContaining('<h1>Etude</h1>'),
+            );
+            expect(updateContentMock.mock.calls[0][1]).toContain('<p>Deuxieme</p>');
         });
 
-        const tools = buildNoteTools('fr');
-        const result = await tools.getNoteById.execute({ noteId: 'note-2' });
+        it('escapes the title it injects', async () => {
+            createMock.mockReturnValue({ id: 'note-1' });
 
-        expect(result).toEqual({
-            noteId: 'note-2',
-            name: 'Title',
-            content: 'Title\n=====\nAlpha **Beta**\nGamma',
+            await tools.createNote.execute({ name: '<script>x</script>', content: 'Texte' });
+
+            expect(updateContentMock.mock.calls[0][1]).not.toContain('<script>');
+        });
+
+        it('returns the note id when writing the content fails so it can be retried', async () => {
+            createMock.mockReturnValue({ id: 'note-1' });
+            updateContentMock.mockImplementation(() => {
+                throw new Error('disk full');
+            });
+
+            const result = (await tools.createNote.execute({
+                name: 'Etude',
+                content: 'Texte',
+            })) as { noteId: string; error: string };
+
+            expect(result).toMatchObject({ noteId: 'note-1', name: 'Etude' });
+            expect(result.error).toContain('disk full');
         });
     });
 
-    it('getNoteById keeps turndown list and entity output', async () => {
-        getByIdMock.mockReturnValue({
-            id: 'note-3',
-            name: 'List',
-            content: '<ul><li>Alpha &amp; Beta</li><li>Gamma&nbsp;Delta</li></ul>',
+    describe('editNote', () => {
+        it('applies an anchored edit and keeps the untouched blocks', async () => {
+            mockNote(NOTE_HTML);
+
+            const result = await tools.editNote.execute({
+                noteId: 'note-1',
+                edits: [{ oldText: 'Deuxieme paragraphe.', newText: 'Second paragraphe.' }],
+            });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude', replacements: 1 });
+
+            const [, savedHtml] = updateContentMock.mock.calls[0];
+            expect(savedHtml).toContain('<p>Second paragraphe.</p>');
+            expect(savedHtml).toContain('<h1>Etude</h1>');
+            expect(savedHtml).toContain('<li>Alpha</li>');
         });
 
-        const tools = buildNoteTools('fr');
-        const result = await tools.getNoteById.execute({ noteId: 'note-3' });
+        it('does not save when an edit cannot be applied', async () => {
+            mockNote(NOTE_HTML);
 
-        expect(result).toEqual({
-            noteId: 'note-3',
-            name: 'List',
-            content: '*   Alpha & Beta\n*   Gamma\u00A0Delta',
+            const result = await tools.editNote.execute({
+                noteId: 'note-1',
+                edits: [{ oldText: 'Absent du document', newText: 'X' }],
+            });
+
+            expect(result).toEqual({ error: expect.stringContaining('was not found') });
+            expect(updateContentMock).not.toHaveBeenCalled();
+        });
+
+        it('points to the other tools when the note has no content yet', async () => {
+            mockNote('');
+
+            const result = await tools.editNote.execute({
+                noteId: 'note-1',
+                edits: [{ oldText: 'Alpha', newText: 'Beta' }],
+            });
+
+            expect(result).toEqual({ error: expect.stringContaining('is empty') });
+            expect(updateContentMock).not.toHaveBeenCalled();
+        });
+
+        it('reports an unknown note', async () => {
+            getByIdMock.mockReturnValue(null);
+
+            expect(
+                await tools.editNote.execute({
+                    noteId: 'missing',
+                    edits: [{ oldText: 'A', newText: 'B' }],
+                }),
+            ).toEqual({ error: 'Note "missing" not found.' });
+        });
+    });
+
+    describe('appendToNote', () => {
+        it('adds content after the existing HTML without rewriting it', async () => {
+            mockNote(NOTE_HTML);
+
+            const result = await tools.appendToNote.execute({
+                noteId: 'note-1',
+                content: '## Conclusion\n\nDerniere pensee.',
+            });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude' });
+
+            const [, savedHtml] = updateContentMock.mock.calls[0];
+            expect(savedHtml.startsWith(NOTE_HTML)).toBe(true);
+            expect(savedHtml).toContain('<h2>Conclusion</h2>');
+            expect(savedHtml).toContain('<p>Derniere pensee.</p>');
+        });
+
+        it('does not add a title heading when the note is empty', async () => {
+            mockNote('');
+
+            await tools.appendToNote.execute({ noteId: 'note-1', content: 'Texte' });
+
+            expect(updateContentMock).toHaveBeenCalledWith('note-1', '<p>Texte</p>');
+        });
+    });
+
+    describe('updateNoteContent', () => {
+        it('replaces the whole note and keeps the existing name as heading', async () => {
+            mockNote(NOTE_HTML);
+
+            const result = await tools.updateNoteContent.execute({
+                noteId: 'note-1',
+                content: 'Nouveau contenu',
+            });
+
+            expect(result).toEqual({ noteId: 'note-1', name: 'Etude' });
+            expect(updateContentMock).toHaveBeenCalledWith(
+                'note-1',
+                '<h1>Etude</h1>\n<p>Nouveau contenu</p>',
+            );
+        });
+    });
+
+    describe('getNotes', () => {
+        it('lists notes with their ids', async () => {
+            getAllSummaryMock.mockReturnValue([{ id: 'note-1', name: 'Etude' }]);
+
+            expect(await tools.getNotes.execute({})).toEqual([{ noteId: 'note-1', name: 'Etude' }]);
         });
     });
 });

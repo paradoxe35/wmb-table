@@ -94,6 +94,12 @@ export function getAll(): SubjectDocument[] {
         .map((row) => toSubjectDocument(row));
 }
 
+export function exists(id: string): boolean {
+    return Boolean(
+        getDb().select({ id: subjects.id }).from(subjects).where(eq(subjects.id, id)).get(),
+    );
+}
+
 export function getById(id: string): SubjectDocument | null {
     const db = getDb();
     const row = db.select().from(subjects).where(eq(subjects.id, id)).get();

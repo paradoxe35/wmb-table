@@ -23,7 +23,8 @@ import { markFeatureReminderUsed } from '@renderer/lib/feature-reminders';
 const TOOL_TO_EVENT: Record<string, string> = {
     createNote: AI_DATA_EVENT.notesChanged,
     updateNoteContent: AI_DATA_EVENT.notesChanged,
-    addSermonReferenceToNote: AI_DATA_EVENT.notesChanged,
+    editNote: AI_DATA_EVENT.notesChanged,
+    appendToNote: AI_DATA_EVENT.notesChanged,
     createSubject: AI_DATA_EVENT.subjectsChanged,
     addSermonReferenceToSubject: AI_DATA_EVENT.subjectsChanged,
     addBibleReferenceToSubject: AI_DATA_EVENT.subjectsChanged,

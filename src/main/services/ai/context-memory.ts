@@ -232,12 +232,26 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
             break;
 
         case 'getNoteById':
-        case 'createNote':
-        case 'updateNoteContent':
             if (output && typeof output === 'object') {
-                const title = String(output.name ?? output.id ?? 'note');
+                const title = String(output.name ?? output.noteId ?? 'note');
                 return `${title}: ${truncate(normalizeWhitespace(String(output.content ?? '')), charLimit)}`;
             }
+            break;
+
+        case 'createNote':
+            if (output && typeof output === 'object')
+                return `Created note: ${String(output.name ?? output.noteId ?? 'note')}`;
+            break;
+
+        case 'updateNoteContent':
+        case 'appendToNote':
+            if (output && typeof output === 'object')
+                return `Note updated: ${String(output.name ?? output.noteId ?? 'note')}`;
+            break;
+
+        case 'editNote':
+            if (output && typeof output === 'object')
+                return `Note edited: ${String(output.name ?? output.noteId ?? 'note')} (${String(output.replacements ?? 0)} replacement(s))`;
             break;
 
         case 'getSubjectById':
@@ -256,11 +270,6 @@ function summarizeToolResult(result: AiToolResult, charLimit: number): string {
         case 'removeSubjectReference':
             if (output && typeof output === 'object' && output.success)
                 return `Reference removed: ${String(output.deletedId ?? 'done')}`;
-            break;
-
-        case 'addSermonReferenceToNote':
-            if (output && typeof output === 'object')
-                return `Note updated: ${String(output.label ?? output.noteId ?? 'reference added')}`;
             break;
 
         case 'researchTopic':
@@ -407,8 +416,6 @@ function cleanToolOutput(name: string, output: any): unknown {
             return omit(output, ['documentReference', 'textContent', 'bible']);
 
         case 'getNoteById':
-        case 'createNote':
-        case 'updateNoteContent':
             if (typeof output.content !== 'string') {
                 return output;
             }

@@ -1,15 +1,9 @@
 import { z } from 'zod';
-import { marked } from 'marked';
-import TurndownService from 'turndown';
 import * as notesRepo from '@main/database/repositories/notes.repository';
+import { applyNoteEdits } from '@main/lib/note-edit';
+import { markdownToNoteHtml, noteHtmlToMarkdown } from '@main/lib/note-markdown';
+import { escapeHtml } from '@shared/searchable';
 import type { AiToolDefinition } from './types';
-
-const turndownService = new TurndownService();
-const htmlToMarkdown = (html: string) => {
-    // Convert HTML to markdown first to preserve some structure
-    const markdown = turndownService.turndown(html);
-    return markdown.replace(/\n+/g, '\n').trim();
-};
 
 const NOTE_CONTENT_RULES =
     'Write only the note content itself. Do not include assistant-style remarks, ' +
@@ -17,6 +11,25 @@ const NOTE_CONTENT_RULES =
 
 const NOTE_WMB_LINK_RULE =
     'Always render sermon, Bible, and document references as `wmb://` markdown links when tool data exists — never as plain text or raw IDs.';
+
+const MARKDOWN_INPUT_DESCRIPTION = 'note content in markdown format, NOT HTML';
+
+const DEFAULT_MAX_LINES = 200;
+const MAX_LINES = 400;
+const MAX_EDITS = 20;
+
+function noteNotFound(noteId: string) {
+    return { error: `Note "${noteId}" not found.` };
+}
+
+function failureMessage(err: unknown): string {
+    return err instanceof Error ? err.message : String(err);
+}
+
+async function buildNoteHtml(markdown: string, title: string): Promise<string> {
+    const html = await markdownToNoteHtml(markdown);
+    return html.includes('<h1>') ? html : `<h1>${escapeHtml(title)}</h1>\n${html}`;
+}
 
 export function buildNoteTools(_defaultContentLanguage: string): Record<string, AiToolDefinition> {
     return {
@@ -32,22 +45,42 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
         },
         getNoteById: {
             description:
-                'Get a note by id with model-friendly readable text content. ' +
-                'Returns markdown text extracted from the stored editor HTML so it is easier to read, summarize, and edit.',
-            inputSchema: z.object({ noteId: z.string() }),
-            execute: async ({ noteId: rawNoteId }) => {
+                'Get a note by id as markdown text. ' +
+                'Long notes are paginated with startLine and maxLines. ' +
+                'Copy snippets from this content verbatim when calling editNote.',
+            inputSchema: z.object({
+                noteId: z.string(),
+                startLine: z
+                    .number()
+                    .int()
+                    .min(0)
+                    .optional()
+                    .describe('Line offset to start from (default 0)'),
+                maxLines: z
+                    .number()
+                    .int()
+                    .min(1)
+                    .max(MAX_LINES)
+                    .optional()
+                    .describe(`Maximum number of lines to return (default ${DEFAULT_MAX_LINES})`),
+            }),
+            execute: async ({ noteId: rawNoteId, startLine = 0, maxLines = DEFAULT_MAX_LINES }) => {
                 const noteId = rawNoteId.trim();
                 const note = notesRepo.getById(noteId);
-                if (!note) {
-                    return {
-                        error: `Note "${noteId}" not found.`,
-                    };
-                }
+                if (!note) return noteNotFound(noteId);
+
+                const markdown = noteHtmlToMarkdown(note.content ?? '');
+                const lines = markdown ? markdown.split('\n') : [];
+                const visible = lines.slice(startLine, startLine + maxLines);
 
                 return {
                     noteId: note.id,
                     name: note.name,
-                    content: htmlToMarkdown(note.content ?? ''),
+                    content: visible.join('\n'),
+                    totalLines: lines.length,
+                    startLine,
+                    returnedLines: visible.length,
+                    hasMore: startLine + visible.length < lines.length,
                 };
             },
         },
@@ -59,81 +92,145 @@ export function buildNoteTools(_defaultContentLanguage: string): Record<string, 
                 NOTE_CONTENT_RULES,
             inputSchema: z.object({
                 name: z.string().min(2).describe('note name/title'),
-                content: z.string().describe('note content in markdown format, NOT HTML'),
+                content: z.string().describe(MARKDOWN_INPUT_DESCRIPTION),
             }),
             execute: async ({ name, content }) => {
-                const note = notesRepo.create(name.trim());
-                notesRepo.rename(note.id, name.trim());
+                const title = name.trim();
+                const note = notesRepo.create(title);
+                notesRepo.rename(note.id, title);
 
-                if (content) {
+                if (content.trim()) {
                     try {
-                        const htmlContent = await parseNoteMarkdown(content, name);
-                        notesRepo.updateContent(note.id, htmlContent);
+                        notesRepo.updateContent(note.id, await buildNoteHtml(content, title));
                     } catch (err) {
                         return {
-                            error: `Note created but content failed: ${err instanceof Error ? err.message : String(err)}`,
+                            noteId: note.id,
+                            name: title,
+                            error: `Note created but empty — writing its content failed: ${failureMessage(err)}. Add the content with updateNoteContent.`,
                         };
                     }
                 }
 
-                return { noteId: note.id, name: name.trim() };
+                return { noteId: note.id, name: title };
             },
         },
-        updateNoteContent: {
+        editNote: {
             description:
-                'Replace the content of a note. Content MUST be markdown (not HTML). ' +
+                'Make targeted edits to an existing note without rewriting it. ' +
+                'Prefer this over updateNoteContent for any change to an existing note. ' +
+                'Each edit replaces an exact markdown snippet copied from getNoteById. ' +
+                'oldText must match exactly one place: include surrounding text to make it unique, ' +
+                'or set replaceAll to change every occurrence. ' +
+                'An empty newText deletes the snippet. Edits apply in order and all-or-nothing — ' +
+                'if any edit fails, the note is left untouched. ' +
+                'Keep whole `[label](url)` links inside oldText: an anchor that cuts a link is refused. ' +
                 NOTE_WMB_LINK_RULE +
                 ' ' +
                 NOTE_CONTENT_RULES,
             inputSchema: z.object({
                 noteId: z.string(),
-                content: z.string().describe('note content in markdown format, NOT HTML'),
+                edits: z
+                    .array(
+                        z.object({
+                            oldText: z
+                                .string()
+                                .min(1)
+                                .describe(
+                                    'exact markdown snippet to replace, copied from getNoteById',
+                                ),
+                            newText: z
+                                .string()
+                                .describe('replacement markdown; empty string deletes the snippet'),
+                            replaceAll: z
+                                .boolean()
+                                .optional()
+                                .describe(
+                                    'replace every occurrence instead of failing on multiple matches',
+                                ),
+                        }),
+                    )
+                    .min(1)
+                    .max(MAX_EDITS),
+            }),
+            execute: async ({ noteId: rawNoteId, edits }) => {
+                const noteId = rawNoteId.trim();
+                const note = notesRepo.getById(noteId);
+                if (!note) return noteNotFound(noteId);
+                if (!note.content?.trim()) {
+                    return {
+                        error: `Note "${noteId}" is empty. Use appendToNote or updateNoteContent to add content.`,
+                    };
+                }
+
+                const result = await applyNoteEdits(note.content, edits);
+                if ('error' in result) return result;
+
+                try {
+                    notesRepo.updateContent(noteId, result.html);
+                } catch (err) {
+                    return { error: `Failed to save the note: ${failureMessage(err)}` };
+                }
+
+                return { noteId: note.id, name: note.name, replacements: result.replacements };
+            },
+        },
+        appendToNote: {
+            description:
+                'Append markdown content to the end of a note, leaving existing content untouched. ' +
+                'Use this to add a new section instead of rewriting the note. ' +
+                NOTE_WMB_LINK_RULE +
+                ' ' +
+                NOTE_CONTENT_RULES,
+            inputSchema: z.object({
+                noteId: z.string(),
+                content: z.string().min(1).describe(MARKDOWN_INPUT_DESCRIPTION),
             }),
             execute: async ({ noteId: rawNoteId, content }) => {
                 const noteId = rawNoteId.trim();
                 const note = notesRepo.getById(noteId);
-                if (!note) return { error: `Note "${noteId}" not found.` };
+                if (!note) return noteNotFound(noteId);
+
+                const appended = await markdownToNoteHtml(content);
+                if (!appended) return { error: 'The content to append is empty.' };
+
+                const existing = note.content?.trim();
+                try {
+                    notesRepo.updateContent(
+                        noteId,
+                        existing ? `${existing}\n${appended}` : appended,
+                    );
+                } catch (err) {
+                    return { error: `Failed to save the note: ${failureMessage(err)}` };
+                }
+
+                return { noteId: note.id, name: note.name };
+            },
+        },
+        updateNoteContent: {
+            description:
+                'Replace the entire content of a note. Only use this for a full rewrite — ' +
+                'use editNote for targeted changes and appendToNote to add a section. ' +
+                'Content MUST be markdown (not HTML). ' +
+                NOTE_WMB_LINK_RULE +
+                ' ' +
+                NOTE_CONTENT_RULES,
+            inputSchema: z.object({
+                noteId: z.string(),
+                content: z.string().describe(MARKDOWN_INPUT_DESCRIPTION),
+            }),
+            execute: async ({ noteId: rawNoteId, content }) => {
+                const noteId = rawNoteId.trim();
+                const note = notesRepo.getById(noteId);
+                if (!note) return noteNotFound(noteId);
 
                 try {
-                    const htmlContent = await parseNoteMarkdown(content, note.name);
-                    notesRepo.updateContent(noteId, htmlContent);
+                    notesRepo.updateContent(noteId, await buildNoteHtml(content, note.name));
                 } catch (err) {
-                    return {
-                        error: `Failed to update note: ${err instanceof Error ? err.message : String(err)}`,
-                    };
+                    return { error: `Failed to update note: ${failureMessage(err)}` };
                 }
+
                 return { noteId: note.id, name: note.name };
             },
         },
     };
-}
-
-/**
- * Convert wmb:// URLs to the http://w.t/#wmb/ format used by the notes editor,
- * and encode spaces so the markdown parser doesn't break them.
- */
-function sanitizeWmbLinks(content: string): string {
-    return content
-        .replace(/`(\[[^\]]+\]\(wmb:\/\/[^)]+\))`/g, '$1')
-        .replace(
-            /\]\(wmb:\/\/([^)]+)\)/g,
-            (_, path: string) => `](http://w.t/#wmb/${path.replace(/ /g, '%20')})`,
-        );
-}
-
-function convertWmbHrefLinks(html: string): string {
-    return html.replace(
-        /href="wmb:\/\/([^"]+)"/g,
-        (_, path: string) => `href="http://w.t/#wmb/${path}"`,
-    );
-}
-
-async function parseNoteMarkdown(content: string, title: string): Promise<string> {
-    let html = await marked.parse(sanitizeWmbLinks(content));
-    html = convertWmbHrefLinks(html);
-
-    if (!html.includes('<h1>')) {
-        html = `<h1>${title}</h1>\n${html}`;
-    }
-    return html;
 }

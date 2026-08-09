@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useAiChatStore, selectActiveProviderLabel } from '@renderer/stores/ai-chat.store';
 import ChatToolResult from './chat-tool-result';
+import { groupToolResults } from './tool-results';
 import AiReferenceLink from './ai-reference-link';
 import SelectableMessageContent from './selectable-message-content';
 
@@ -130,19 +131,6 @@ function ReasoningBlock({ messageId }: { messageId: string }) {
 }
 
 const VISIBLE_TOOL_RESULTS = 3;
-
-interface GroupedToolResult {
-    name: string;
-    count: number;
-}
-
-function groupToolResults(results: AiToolResult[]): GroupedToolResult[] {
-    const map = new Map<string, number>();
-    for (const r of results) {
-        map.set(r.name, (map.get(r.name) ?? 0) + 1);
-    }
-    return [...map.entries()].map(([name, count]) => ({ name, count }));
-}
 
 function canRetryUserMessageAtIndex(messages: AiMessage[], index: number): boolean {
     const message = messages[index];

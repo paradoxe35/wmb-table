@@ -225,6 +225,10 @@ export function buildBibleTools(
             }),
             execute: async ({ subjectId: rawSubjectId, languageCode, abbreviation, ...rest }) => {
                 const subjectId = rawSubjectId.trim();
+                if (!subjectsRepo.exists(subjectId)) {
+                    return { error: `Subject "${subjectId}" not found.` };
+                }
+
                 const lang = languageCode ?? defaultContentLanguage;
                 const langError = validateLanguage(lang);
                 if (langError) {
