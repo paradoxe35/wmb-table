@@ -121,11 +121,16 @@ export function simpleRegExp(term: string): RegExp {
     return new RegExp(wordPattern(term), 'gi');
 }
 
-/** Split query like Tantivy's SimpleTokenizer. Drops single-char noise tokens for all/any. */
+/**
+ * Split a query the way Tantivy's SimpleTokenizer does, so the terms we search for are the
+ * terms the index holds. It breaks on anything Rust calls non-alphanumeric, which is
+ * Unicode Alphabetic plus Number — `\p{L}` alone would shatter Indic words at their vowel
+ * signs. Drops single-character noise tokens for the all/any modes.
+ */
 export function tokenizeQuery(query: string, mode: SearchMode = 'all'): string[] {
     const words = query
         .trim()
-        .split(/[^\p{L}\p{N}]+/u)
+        .split(/[^\p{Alphabetic}\p{N}]+/u)
         .filter(Boolean);
     if (mode === 'exact') return words;
     return words.filter((w) => w.length > 1);
@@ -143,9 +148,9 @@ function wordPattern(word: string): string {
         .replace(/(œ|oe)/g, '(œ|oe)');
 }
 
-/** \b is ASCII-only; these boundaries treat any script's letters and digits as word characters. */
-const WORD_START = '(?<![\\p{L}\\p{N}])';
-const WORD_END = '(?![\\p{L}\\p{N}])';
+/** \b is ASCII-only; these treat every script's word characters as such, matching the tokenizer. */
+const WORD_START = '(?<![\\p{Alphabetic}\\p{N}])';
+const WORD_END = '(?![\\p{Alphabetic}\\p{N}])';
 
 /** Scripts written without spaces, where a word boundary would never match mid-sentence. */
 const SCRIPTIO_CONTINUA =
@@ -307,7 +312,7 @@ export function toSearchableTerms(term: string): string {
 export function regexpMatcher(pattern: string | RegExp, haystack: string): SearchMatchersValue[] {
     const regexp = new RegExp(
         typeof pattern === 'string'
-            ? pattern.replace(/['|']/g, "[''']").replace(/(œ|oe)/g, '(œ|oe)')
+            ? pattern.replace(APOSTROPHE_PATTERN, `[${APOSTROPHES}]`).replace(/(œ|oe)/g, '(œ|oe)')
             : pattern,
         'gi',
     );
