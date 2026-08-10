@@ -127,7 +127,7 @@ export function TiptapEditorView({
             Placeholder.configure({
                 placeholder: t('Commencez à écrire votre note…'),
             }),
-            FindAndReplace.configure({ injectCSS: false }),
+            FindAndReplace.configure({ injectCSS: false, useRegex: true }),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [],

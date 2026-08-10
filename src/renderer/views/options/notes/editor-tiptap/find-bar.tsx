@@ -11,6 +11,9 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
+import { accentInsensitivePattern } from '@shared/searchable';
+
+const CURRENT_RESULT_SELECTOR = '.find-and-replace-result-current';
 
 function selectedText(editor: Editor): string {
     const { from, to } = editor.state.selection;
@@ -32,16 +35,32 @@ export function EditorFindBar({ editor, onClose }: { editor: Editor; onClose: ()
         }),
     });
 
+    const search = useCallback(
+        (term: string) => {
+            editor.commands.setSearchTerm(term ? accentInsensitivePattern(term) : '');
+        },
+        [editor],
+    );
+
     useEffect(() => {
         const initialTerm = selectedText(editor);
-        if (initialTerm) {
-            editor.commands.setSearchTerm(initialTerm);
-        }
-        searchInputRef.current?.focus({ cursor: 'all' });
         if (searchInputRef.current?.input) {
             searchInputRef.current.input.value = initialTerm;
         }
-    }, [editor]);
+        if (initialTerm) search(initialTerm);
+        searchInputRef.current?.focus({ cursor: 'all' });
+    }, [editor, search]);
+
+    // The extension moves the current result but leaves scrolling to the host application.
+    useEffect(() => {
+        if (currentIndex === null) return;
+        const frame = requestAnimationFrame(() => {
+            editor.view.dom
+                .querySelector(CURRENT_RESULT_SELECTOR)
+                ?.scrollIntoView({ block: 'center' });
+        });
+        return () => cancelAnimationFrame(frame);
+    }, [editor, currentIndex, total]);
 
     const handleKeyDown = useCallback(
         (event: React.KeyboardEvent) => {
@@ -62,6 +81,9 @@ export function EditorFindBar({ editor, onClose }: { editor: Editor; onClose: ()
         [editor, onClose],
     );
 
+    // Keeping focus in the input lets Enter keep cycling through results after a click.
+    const keepFocus = (event: React.MouseEvent) => event.preventDefault();
+
     const resultLabel = () => {
         if (total > 0) return `${(currentIndex ?? 0) + 1} / ${total}`;
         return hasSearchTerm ? t('Aucun résultat') : '';
@@ -74,7 +96,7 @@ export function EditorFindBar({ editor, onClose }: { editor: Editor; onClose: ()
                     ref={searchInputRef}
                     size="small"
                     placeholder={t('Rechercher dans la note…')}
-                    onChange={(e) => editor.commands.setSearchTerm(e.target.value)}
+                    onChange={(e) => search(e.target.value)}
                     onKeyDown={handleKeyDown}
                     style={{ width: 240 }}
                     allowClear
@@ -85,6 +107,7 @@ export function EditorFindBar({ editor, onClose }: { editor: Editor; onClose: ()
                         type={caseSensitive ? 'primary' : 'text'}
                         size="small"
                         icon={<FontSizeOutlined />}
+                        onMouseDown={keepFocus}
                         onClick={() => editor.commands.setCaseSensitive(!caseSensitive)}
                     />
                 </Tooltip>
@@ -94,6 +117,7 @@ export function EditorFindBar({ editor, onClose }: { editor: Editor; onClose: ()
                         size="small"
                         icon={<UpOutlined />}
                         disabled={total === 0}
+                        onMouseDown={keepFocus}
                         onClick={() => editor.commands.goToPreviousResult()}
                     />
                 </Tooltip>
@@ -103,6 +127,7 @@ export function EditorFindBar({ editor, onClose }: { editor: Editor; onClose: ()
                         size="small"
                         icon={<DownOutlined />}
                         disabled={total === 0}
+                        onMouseDown={keepFocus}
                         onClick={() => editor.commands.goToNextResult()}
                     />
                 </Tooltip>
