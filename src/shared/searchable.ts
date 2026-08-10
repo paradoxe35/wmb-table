@@ -34,6 +34,89 @@ export function strNormalizeNoLower(str: string | null): string {
     return str ? stripDiacritics(str) : '';
 }
 
+const APOSTROPHES = "'\u2019\u2018\u02bc";
+
+/**
+ * Every codepoint carrying a combining mark lives below U+2000: Latin-1 Supplement and the
+ * Latin extensions, Greek and its polytonic block, Cyrillic, and Latin Extended Additional.
+ */
+const LAST_COMPOSED_CODEPOINT = 0x1fff;
+
+let diacriticVariants: Map<string, string> | null = null;
+
+/** Base character -> every codepoint stripDiacritics reduces to it, so both stay in step. */
+function getDiacriticVariants(): Map<string, string> {
+    if (diacriticVariants) return diacriticVariants;
+
+    diacriticVariants = new Map();
+    for (let code = 0x00c0; code <= LAST_COMPOSED_CODEPOINT; code++) {
+        const char = String.fromCodePoint(code);
+        const base = stripDiacritics(char);
+        if (base === char || base.length !== 1) continue;
+        diacriticVariants.set(base, (diacriticVariants.get(base) ?? base) + char);
+    }
+
+    return diacriticVariants;
+}
+
+function characterClass(char: string): string {
+    const variants = getDiacriticVariants().get(stripDiacritics(char));
+    return variants ? `[${variants}]` : escapeRegExp(char);
+}
+
+function ligatureAt(term: string, index: number): { pattern: string; length: number } | null {
+    const oe = `(?:\u0153|${characterClass('o')}${characterClass('e')})`;
+    const upperOe = `(?:\u0152|${characterClass('O')}[Ee])`;
+
+    if (term[index] === '\u0153') return { pattern: oe, length: 1 };
+    if (term[index] === '\u0152') return { pattern: upperOe, length: 1 };
+
+    const pair = term.slice(index, index + 2);
+    if (pair === 'oe') return { pattern: oe, length: 2 };
+    if (pair === 'OE' || pair === 'Oe') return { pattern: upperOe, length: 2 };
+
+    return null;
+}
+
+/**
+ * Diacritics reach the text two ways: precomposed (\u00e9) or a base letter followed by a
+ * combining mark (e + U+0301). Cyrillic stress marks only ever take the second form.
+ */
+const COMBINING_MARKS_PATTERN = '[̀-ͯ]*';
+
+function isCombiningMark(char: string): boolean {
+    const code = char.codePointAt(0) ?? 0;
+    return code >= 0x0300 && code <= 0x036f;
+}
+
+/**
+ * Regex source matching `term` whatever its diacritics, apostrophe style or oe ligature.
+ * The document view normalises the text instead, but the notes editor searches the
+ * ProseMirror document directly, so the tolerance has to live in the pattern.
+ * Case is left to the caller: each class keeps the case of its input character.
+ */
+export function accentInsensitivePattern(term: string): string {
+    const normalized = term.normalize('NFC');
+    let pattern = '';
+
+    for (let index = 0; index < normalized.length; index++) {
+        const char = normalized[index];
+        if (isCombiningMark(char)) continue;
+
+        const ligature = ligatureAt(normalized, index);
+        if (ligature) {
+            pattern += ligature.pattern + COMBINING_MARKS_PATTERN;
+            index += ligature.length - 1;
+            continue;
+        }
+
+        const base = APOSTROPHES.includes(char) ? `[${APOSTROPHES}]` : characterClass(char);
+        pattern += base + COMBINING_MARKS_PATTERN;
+    }
+
+    return pattern;
+}
+
 export function simpleRegExp(term: string): RegExp {
     return new RegExp(wordPattern(term), 'gi');
 }

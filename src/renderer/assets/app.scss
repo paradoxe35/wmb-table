@@ -1143,6 +1143,40 @@ body {
 // ---------------------------------------------------------------------------
 // Tiptap editor — clean, professional toolbar + content surface
 // ---------------------------------------------------------------------------
+.editor-find-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 10px;
+    margin: 0 0 8px;
+    border: 1px solid var(--ant-color-border, #e8e8e8);
+    border-radius: 6px;
+    background: var(--ant-color-bg-layout, #fafafa);
+
+    &__row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    &__counter {
+        min-width: 96px;
+        font-size: var(--fs-rel-lg);
+        color: var(--ant-color-text-secondary);
+        white-space: nowrap;
+    }
+}
+
+.find-and-replace-result {
+    border-radius: 2px;
+    background: var(--ant-color-warning-bg, rgb(255 225 0 / 0.4));
+}
+
+.find-and-replace-result-current {
+    background: var(--ant-color-warning-border, rgb(255 165 0 / 0.55));
+    box-shadow: 0 0 0 1px var(--ant-color-warning, #faad14);
+}
+
 .tiptap-toolbar {
     display: flex;
     flex-wrap: wrap;
