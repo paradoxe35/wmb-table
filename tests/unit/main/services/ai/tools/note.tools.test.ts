@@ -51,7 +51,7 @@ describe('note.tools', () => {
             const result = await tools.getNoteById.execute({ noteId: 'note-1' });
 
             expect(result).toMatchObject({
-                content: 'Voir [le sermon](http://w.t/#wmb/sermon/1/fr/2/3) ici',
+                content: 'Voir [le sermon](wmb://sermon/1/fr/2/3) ici',
             });
         });
 
@@ -225,5 +225,61 @@ describe('note.tools', () => {
 
             expect(await tools.getNotes.execute({})).toEqual([{ noteId: 'note-1', name: 'Etude' }]);
         });
+    });
+});
+
+/**
+ * getNoteById is the only thing the model sees before writing an anchor, so its content
+ * must be exactly what editNote matches against. Any divergence makes anchors unfindable.
+ */
+describe('read and edit share one projection', () => {
+    const NOTES = [
+        NOTE_HTML,
+        '<p>Voir <a href="http://w.t/#wmb/sermon/56-0805/fr/3/45">le sermon</a> ici</p>',
+        '<ul><li><p>Alpha</p></li><li><p>Beta</p></li></ul><blockquote><p>Cite</p></blockquote>',
+        '<section><h1>Chapitre</h1><p>Importe.</p></section>',
+        '<p>Ligne un<br>Ligne deux</p>',
+    ];
+
+    beforeEach(() => {
+        vi.resetAllMocks();
+    });
+
+    it.each(NOTES)(
+        'anchors copied from the read output resolve when editing (%#)',
+        async (html) => {
+            mockNote(html);
+
+            const page = (await tools.getNoteById.execute({ noteId: 'note-1' })) as {
+                content: string;
+            };
+            const anchor = page.content
+                .split('\n')
+                .find((line) => line.trim().length > 3)
+                ?.trim();
+            expect(anchor, 'no usable anchor in the read output').toBeTruthy();
+
+            const result = await tools.editNote.execute({
+                noteId: 'note-1',
+                edits: [{ oldText: anchor!, newText: anchor! }],
+            });
+
+            expect(result).not.toHaveProperty('error');
+        },
+    );
+
+    it('hands the assistant wmb:// links it can copy straight back', async () => {
+        mockNote('<p>Voir <a href="http://w.t/#wmb/sermon/56-0805/fr/3/45">le sermon</a></p>');
+
+        const page = (await tools.getNoteById.execute({ noteId: 'note-1' })) as { content: string };
+        expect(page.content).toContain('(wmb://sermon/56-0805/fr/3/45)');
+
+        const result = await tools.editNote.execute({
+            noteId: 'note-1',
+            edits: [{ oldText: page.content, newText: 'Voir ailleurs' }],
+        });
+
+        expect(result).toMatchObject({ replacements: 1 });
+        expect(updateContentMock.mock.calls[0][1]).toBe('<p>Voir ailleurs</p>');
     });
 });
