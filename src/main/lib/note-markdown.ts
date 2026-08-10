@@ -264,8 +264,8 @@ function toEditorMarkdownLinks(markdown: string): string {
 
 function toEditorHtmlLinks(html: string): string {
     return html.replace(
-        /href="wmb:\/\/([^"]+)"/g,
-        (_, path: string) => `href="${EDITOR_LINK_PREFIX}${path}"`,
+        /href=(["'])wmb:\/\/(.*?)\1/g,
+        (_, quote: string, path: string) => `href=${quote}${EDITOR_LINK_PREFIX}${path}${quote}`,
     );
 }
 

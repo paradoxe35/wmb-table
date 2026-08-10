@@ -125,7 +125,7 @@ export function simpleRegExp(term: string): RegExp {
 export function tokenizeQuery(query: string, mode: SearchMode = 'all'): string[] {
     const words = query
         .trim()
-        .split(/[^a-zA-Z0-9\u00C0-\u024F]+/)
+        .split(/[^\p{L}\p{N}]+/u)
         .filter(Boolean);
     if (mode === 'exact') return words;
     return words.filter((w) => w.length > 1);
@@ -135,14 +135,30 @@ export function tokenizeQuery(query: string, mode: SearchMode = 'all'): string[]
 // Pattern builders
 // ---------------------------------------------------------------------------
 
+const APOSTROPHE_PATTERN = new RegExp(`[${APOSTROPHES}]`, 'g');
+
 function wordPattern(word: string): string {
     return strNormalize(escapeRegExp(word))
-        .replace(/['|']/g, "[''']")
+        .replace(APOSTROPHE_PATTERN, `[${APOSTROPHES}]`)
         .replace(/(œ|oe)/g, '(œ|oe)');
 }
 
+/** \b is ASCII-only; these boundaries treat any script's letters and digits as word characters. */
+const WORD_START = '(?<![\\p{L}\\p{N}])';
+const WORD_END = '(?![\\p{L}\\p{N}])';
+
+/** Scripts written without spaces, where a word boundary would never match mid-sentence. */
+const SCRIPTIO_CONTINUA =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Khmer}\p{Script=Lao}\p{Script=Myanmar}]/u;
+
+/** Anchor a word to its edges, except in scripts that run words together. */
+function boundedWordPattern(word: string): string {
+    const pattern = wordPattern(word);
+    return SCRIPTIO_CONTINUA.test(word) ? pattern : WORD_START + pattern + WORD_END;
+}
+
 function buildWordRegex(word: string): RegExp {
-    return new RegExp('\\b' + wordPattern(word) + '\\b', 'gi');
+    return new RegExp(boundedWordPattern(word), 'giu');
 }
 
 /**
@@ -154,10 +170,8 @@ const MAX_PHRASE_GAP = 80;
 function buildPhraseSpanRegex(words: string[]): RegExp | null {
     if (words.length === 0) return null;
     if (words.length === 1) return buildWordRegex(words[0]);
-    const pattern = words
-        .map((w) => '\\b' + wordPattern(w) + '\\b')
-        .join(`[\\s\\S]{0,${MAX_PHRASE_GAP}}?`);
-    return new RegExp(pattern, 'gi');
+    const pattern = words.map(boundedWordPattern).join(`[\\s\\S]{0,${MAX_PHRASE_GAP}}?`);
+    return new RegExp(pattern, 'giu');
 }
 
 // ---------------------------------------------------------------------------
@@ -274,10 +288,8 @@ export function extractSnippetWindow(
 export function buildHighlightRegex(query: string, _mode: SearchMode, stem = true): RegExp | null {
     const words = tokenizeQuery(query, 'all');
     if (words.length === 0) return null;
-    const patterns = stem
-        ? words.map((w) => '\\b' + wordPattern(w) + '\\b')
-        : words.map((w) => wordPattern(w));
-    return new RegExp(patterns.join('|'), 'gi');
+    const patterns = stem ? words.map(boundedWordPattern) : words.map(wordPattern);
+    return new RegExp(patterns.join('|'), 'giu');
 }
 
 // ---------------------------------------------------------------------------

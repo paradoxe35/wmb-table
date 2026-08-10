@@ -228,3 +228,16 @@ describe('reference link dialect', () => {
         expect(noteHtmlToMarkdown(html)).toBe('[r](http://w.t/#reference-document-7)');
     });
 });
+
+describe('raw HTML links the assistant may write', () => {
+    it.each([
+        ['double quotes', '<a href="wmb://sermon/56-0805/fr/3/45">le sermon</a>'],
+        ['single quotes', "<a href='wmb://sermon/56-0805/fr/3/45'>le sermon</a>"],
+    ])('rewrites %s to the editor prefix', async (_style, markdown) => {
+        const html = await markdownToNoteHtml(markdown);
+
+        expect(html).toContain('http://w.t/#wmb/sermon/56-0805/fr/3/45');
+        expect(html).not.toContain('wmb://sermon');
+        expect(noteHtmlToMarkdown(html)).toBe('[le sermon](wmb://sermon/56-0805/fr/3/45)');
+    });
+});
