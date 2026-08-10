@@ -121,28 +121,62 @@ export function simpleRegExp(term: string): RegExp {
     return new RegExp(wordPattern(term), 'gi');
 }
 
-/** Split query like Tantivy's SimpleTokenizer. Drops single-char noise tokens for all/any. */
+/** Scripts written without spaces, where one character is already a whole word. */
+const SCRIPTIO_CONTINUA =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Khmer}\p{Script=Lao}\p{Script=Myanmar}]/u;
+
+const MIN_QUERY_LENGTH = 3;
+
+/**
+ * Whether a query is long enough to be worth running. Space-delimited scripts need a few
+ * characters before the results mean anything, but in scripts written without spaces a
+ * single character is a word in its own right.
+ */
+export function hasSearchableLength(query: string): boolean {
+    const trimmed = query.trim();
+    if (!trimmed) return false;
+    return SCRIPTIO_CONTINUA.test(trimmed) || trimmed.length >= MIN_QUERY_LENGTH;
+}
+
+/**
+ * Split a query the way Tantivy's SimpleTokenizer does, so the terms we search for are the
+ * terms the index holds. It breaks on anything Rust calls non-alphanumeric, which is
+ * Unicode Alphabetic plus Number — `\p{L}` alone would shatter Indic words at their vowel
+ * signs. Drops single-character noise tokens for the all/any modes.
+ */
 export function tokenizeQuery(query: string, mode: SearchMode = 'all'): string[] {
     const words = query
         .trim()
-        .split(/[^a-zA-Z0-9\u00C0-\u024F]+/)
+        .split(/[^\p{Alphabetic}\p{N}]+/u)
         .filter(Boolean);
     if (mode === 'exact') return words;
-    return words.filter((w) => w.length > 1);
+    return words.filter((word) => word.length > 1 || SCRIPTIO_CONTINUA.test(word));
 }
 
 // ---------------------------------------------------------------------------
 // Pattern builders
 // ---------------------------------------------------------------------------
 
+const APOSTROPHE_PATTERN = new RegExp(`[${APOSTROPHES}]`, 'g');
+
 function wordPattern(word: string): string {
     return strNormalize(escapeRegExp(word))
-        .replace(/['|']/g, "[''']")
+        .replace(APOSTROPHE_PATTERN, `[${APOSTROPHES}]`)
         .replace(/(œ|oe)/g, '(œ|oe)');
 }
 
+/** \b is ASCII-only; these treat every script's word characters as such, matching the tokenizer. */
+const WORD_START = '(?<![\\p{Alphabetic}\\p{N}])';
+const WORD_END = '(?![\\p{Alphabetic}\\p{N}])';
+
+/** Anchor a word to its edges, except in scripts that run words together. */
+function boundedWordPattern(word: string): string {
+    const pattern = wordPattern(word);
+    return SCRIPTIO_CONTINUA.test(word) ? pattern : WORD_START + pattern + WORD_END;
+}
+
 function buildWordRegex(word: string): RegExp {
-    return new RegExp('\\b' + wordPattern(word) + '\\b', 'gi');
+    return new RegExp(boundedWordPattern(word), 'giu');
 }
 
 /**
@@ -154,10 +188,8 @@ const MAX_PHRASE_GAP = 80;
 function buildPhraseSpanRegex(words: string[]): RegExp | null {
     if (words.length === 0) return null;
     if (words.length === 1) return buildWordRegex(words[0]);
-    const pattern = words
-        .map((w) => '\\b' + wordPattern(w) + '\\b')
-        .join(`[\\s\\S]{0,${MAX_PHRASE_GAP}}?`);
-    return new RegExp(pattern, 'gi');
+    const pattern = words.map(boundedWordPattern).join(`[\\s\\S]{0,${MAX_PHRASE_GAP}}?`);
+    return new RegExp(pattern, 'giu');
 }
 
 // ---------------------------------------------------------------------------
@@ -274,10 +306,8 @@ export function extractSnippetWindow(
 export function buildHighlightRegex(query: string, _mode: SearchMode, stem = true): RegExp | null {
     const words = tokenizeQuery(query, 'all');
     if (words.length === 0) return null;
-    const patterns = stem
-        ? words.map((w) => '\\b' + wordPattern(w) + '\\b')
-        : words.map((w) => wordPattern(w));
-    return new RegExp(patterns.join('|'), 'gi');
+    const patterns = stem ? words.map(boundedWordPattern) : words.map(wordPattern);
+    return new RegExp(patterns.join('|'), 'giu');
 }
 
 // ---------------------------------------------------------------------------
@@ -295,7 +325,7 @@ export function toSearchableTerms(term: string): string {
 export function regexpMatcher(pattern: string | RegExp, haystack: string): SearchMatchersValue[] {
     const regexp = new RegExp(
         typeof pattern === 'string'
-            ? pattern.replace(/['|']/g, "[''']").replace(/(œ|oe)/g, '(œ|oe)')
+            ? pattern.replace(APOSTROPHE_PATTERN, `[${APOSTROPHES}]`).replace(/(œ|oe)/g, '(œ|oe)')
             : pattern,
         'gi',
     );

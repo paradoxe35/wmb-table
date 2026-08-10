@@ -70,9 +70,7 @@ describe('noteHtmlToMarkdown', () => {
             '<p>Voir <a href="http://w.t/#wmb/sermon/56-0805/fr/3/45">le sermon</a> et <strong>ceci</strong></p>',
         );
 
-        expect(markdown).toBe(
-            'Voir [le sermon](http://w.t/#wmb/sermon/56-0805/fr/3/45) et **ceci**',
-        );
+        expect(markdown).toBe('Voir [le sermon](wmb://sermon/56-0805/fr/3/45) et **ceci**');
     });
 
     it('is identical whether a note or a single block is converted', () => {
@@ -208,5 +206,38 @@ describe('imported document HTML', () => {
         const nested = `${'<div>'.repeat(40)}<p>A</p>${'</div>'.repeat(40)}`;
 
         expect(splitHtmlBlocks(nested)).toHaveLength(1);
+    });
+});
+
+describe('reference link dialect', () => {
+    const STORED = '<p>Voir <a href="http://w.t/#wmb/sermon/56-0805/fr/3/45">le sermon</a></p>';
+
+    it('reads back as wmb:// so the assistant sees the form it is told to write', () => {
+        expect(noteHtmlToMarkdown(STORED)).toBe('Voir [le sermon](wmb://sermon/56-0805/fr/3/45)');
+    });
+
+    it('stores wmb:// back as the editor link the click handler understands', async () => {
+        const html = await markdownToNoteHtml(noteHtmlToMarkdown(STORED));
+
+        expect(html).toBe(STORED);
+    });
+
+    it('leaves note-internal reference links alone', () => {
+        const html = '<p><a href="http://w.t/#reference-document-7">r</a></p>';
+
+        expect(noteHtmlToMarkdown(html)).toBe('[r](http://w.t/#reference-document-7)');
+    });
+});
+
+describe('raw HTML links the assistant may write', () => {
+    it.each([
+        ['double quotes', '<a href="wmb://sermon/56-0805/fr/3/45">le sermon</a>'],
+        ['single quotes', "<a href='wmb://sermon/56-0805/fr/3/45'>le sermon</a>"],
+    ])('rewrites %s to the editor prefix', async (_style, markdown) => {
+        const html = await markdownToNoteHtml(markdown);
+
+        expect(html).toContain('http://w.t/#wmb/sermon/56-0805/fr/3/45');
+        expect(html).not.toContain('wmb://sermon');
+        expect(noteHtmlToMarkdown(html)).toBe('[le sermon](wmb://sermon/56-0805/fr/3/45)');
     });
 });

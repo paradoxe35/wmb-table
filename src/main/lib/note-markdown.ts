@@ -1,5 +1,6 @@
 import { marked } from 'marked';
 import TurndownService from 'turndown';
+import { escapeRegExp } from '@shared/searchable';
 
 /** A top-level element of the stored note HTML, paired with its markdown projection. */
 export interface NoteBlock {
@@ -206,16 +207,32 @@ function splitBlocks(html: string, depth: number): string[] {
 }
 
 /**
+ * The editor stores references as `http://w.t/#wmb/…` so its click handler can pick them
+ * up, but `wmb://` is the form the assistant reads and writes. Converting here keeps the
+ * projection in one dialect, so an anchor copied from a note also matches when editing.
+ */
+function toAssistantMarkdownLinks(markdown: string): string {
+    return markdown
+        .replace(
+            new RegExp(`\\]\\(${escapeRegExp(EDITOR_LINK_PREFIX)}([^)]+)\\)`, 'g'),
+            '](wmb://$1)',
+        )
+        .replace(new RegExp(`<${escapeRegExp(EDITOR_LINK_PREFIX)}([^>]+)>`, 'g'), '<wmb://$1>');
+}
+
+/**
  * Trailing whitespace carries no meaning here and the editor emits plenty of it
  * (list items are wrapped in paragraphs), so drop it to keep the projection stable.
  */
 function toBlockMarkdown(blockHtml: string): string {
-    return turndown
+    const markdown = turndown
         .turndown(blockHtml)
         .split('\n')
         .map((line) => line.trimEnd())
         .join('\n')
         .trim();
+
+    return toAssistantMarkdownLinks(markdown);
 }
 
 export function noteHtmlToBlocks(html: string): NoteBlock[] {
@@ -247,8 +264,8 @@ function toEditorMarkdownLinks(markdown: string): string {
 
 function toEditorHtmlLinks(html: string): string {
     return html.replace(
-        /href="wmb:\/\/([^"]+)"/g,
-        (_, path: string) => `href="${EDITOR_LINK_PREFIX}${path}"`,
+        /href=(["'])wmb:\/\/(.*?)\1/g,
+        (_, quote: string, path: string) => `href=${quote}${EDITOR_LINK_PREFIX}${path}${quote}`,
     );
 }
 

@@ -182,7 +182,7 @@ describe('applyNoteEdits', () => {
         const result = expectSuccess(
             await edit(html, [
                 {
-                    oldText: '[le sermon](http://w.t/#wmb/sermon/56-0805/fr/3/45)',
+                    oldText: '[le sermon](wmb://sermon/56-0805/fr/3/45)',
                     newText: '[Jean 3:16](wmb://bible/43N/3/16/lsg/Jean)',
                 },
             ]),

@@ -7,6 +7,7 @@ import SearchInput from './search-input';
 import SearchResultList from './search-result-list';
 import { getSearchPageHelp } from '../components/option-help-content';
 import OptionPageLayout from '../components/option-page-layout';
+import { hasSearchableLength } from '@shared/searchable';
 
 function useSearch() {
     const { t } = useTranslation();
@@ -20,7 +21,7 @@ function useSearch() {
 
     const fetchResults = useCallback(
         (term: string, page: number) => {
-            if (!contentLanguage || term.trim().length < 3) return;
+            if (!contentLanguage || !hasSearchableLength(term)) return;
             const gen = ++generationRef.current;
             setLoading(true);
             window.api.search
@@ -42,7 +43,7 @@ function useSearch() {
 
     const onSearch = useCallback(
         (value: string) => {
-            if (value.trim().length < 3) {
+            if (!hasSearchableLength(value)) {
                 message.warning(t('Votre recherche doit comporter au moins trois caractères'));
                 return;
             }
@@ -58,7 +59,7 @@ function useSearch() {
             isFirstRender.current = false;
             return;
         }
-        if (lastSearch.current.trim().length >= 3) {
+        if (hasSearchableLength(lastSearch.current)) {
             fetchResults(lastSearch.current, 1);
         }
     }, [fetchResults, searchMode]);

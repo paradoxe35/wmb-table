@@ -1,4 +1,5 @@
 import { Index, Query } from '@pngwasi/node-tantivy-binding';
+import { tokenizeQuery } from '@shared/searchable';
 import { getTextFieldNames } from './shared';
 
 const PHRASE_SLOP = 25;
@@ -16,18 +17,13 @@ function getSearchField(index: Index): string {
     return fields.includes('unstemmed_content') ? 'unstemmed_content' : fields[0];
 }
 
-/** Must match tokenizeQuery() in shared/searchable.ts. */
 export function buildModeQuery(
     index: Index,
     queryText: string,
     mode: 'any' | 'all' | 'exact',
 ): Query {
     const schema = index.schema;
-    const allTokens = queryText
-        .trim()
-        .split(/[^a-zA-Z0-9\u00C0-\u024F]+/)
-        .filter(Boolean);
-    const words = mode === 'exact' ? allTokens : allTokens.filter((w) => w.length > 1);
+    const words = tokenizeQuery(queryText, mode);
     const field = getSearchField(index);
 
     if (words.length === 0) return Query.allQuery();

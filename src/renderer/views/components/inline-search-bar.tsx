@@ -10,6 +10,7 @@ import {
     useDocumentTabsStore,
 } from '@renderer/stores';
 import { debounce } from '@renderer/utils/functions';
+import { hasSearchableLength } from '@shared/searchable';
 
 export default function InlineSearchBar() {
     const { t } = useTranslation();
@@ -50,7 +51,7 @@ export default function InlineSearchBar() {
                 clearSearch: clearActiveSearch,
             } = latestRef.current;
             if (!title || !tabKey) return;
-            if (value.trim().length < 3) {
+            if (!hasSearchableLength(value)) {
                 clearActiveSearch(tabKey);
                 return;
             }
@@ -86,7 +87,7 @@ export default function InlineSearchBar() {
             const value = e.target.value;
             searchTermRef.current = value;
             // Clear immediately when input is empty (allowClear X button or manual delete)
-            if (value.trim().length < 3) {
+            if (!hasSearchableLength(value)) {
                 debouncedSearch.cancel();
                 if (activeTabKey) clearSearch(activeTabKey);
                 return;

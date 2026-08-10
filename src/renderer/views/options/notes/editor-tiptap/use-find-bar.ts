@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useAppStore } from '@renderer/stores';
 
-function isFindShortcut(event: KeyboardEvent): boolean {
+export function isFindShortcut(
+    event: Pick<KeyboardEvent, 'ctrlKey' | 'metaKey' | 'shiftKey' | 'altKey' | 'key'>,
+): boolean {
     return (
         (event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key === 'f'
     );
