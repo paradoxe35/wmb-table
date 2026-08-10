@@ -268,6 +268,37 @@ describe('read and edit share one projection', () => {
         },
     );
 
+    it('edits a line holding a citation and stores the editor link back', async () => {
+        mockNote(
+            '<h1>Etude</h1>' +
+                '<p>Voir <a href="http://w.t/#wmb/sermon/56-0805/fr/3/45">le sermon</a> sur la foi.</p>' +
+                '<p>Et <a href="http://w.t/#reference-document-7">ma reference</a> perso.</p>',
+        );
+
+        const page = (await tools.getNoteById.execute({ noteId: 'note-1' })) as { content: string };
+        const anchor = page.content.split('\n').find((line) => line.includes('le sermon'));
+        expect(anchor).toBe('Voir [le sermon](wmb://sermon/56-0805/fr/3/45) sur la foi.');
+
+        const result = await tools.editNote.execute({
+            noteId: 'note-1',
+            edits: [
+                {
+                    oldText: anchor!,
+                    newText: 'Voir [le sermon](wmb://sermon/56-0805/fr/3/45) sur la grace.',
+                },
+            ],
+        });
+
+        expect(result).toMatchObject({ replacements: 1 });
+
+        const [, savedHtml] = updateContentMock.mock.calls[0];
+        expect(savedHtml).toContain(
+            '<a href="http://w.t/#wmb/sermon/56-0805/fr/3/45">le sermon</a> sur la grace.',
+        );
+        expect(savedHtml).toContain('<a href="http://w.t/#reference-document-7">ma reference</a>');
+        expect(savedHtml).toContain('<h1>Etude</h1>');
+    });
+
     it('hands the assistant wmb:// links it can copy straight back', async () => {
         mockNote('<p>Voir <a href="http://w.t/#wmb/sermon/56-0805/fr/3/45">le sermon</a></p>');
 
