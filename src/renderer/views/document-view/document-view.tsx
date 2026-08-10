@@ -74,6 +74,7 @@ export default function DocumentView() {
             });
     }, [activeTab, activeDocumentIdentity, contentLanguage]);
 
+    const isDocumentView = useAppStore((s) => s.mainView === 'document');
     const readingMode = useAppStore((s) => s.readingMode);
     const setReadingMode = useAppStore((s) => s.setReadingMode);
     const toggleReadingMode = useAppStore((s) => s.toggleReadingMode);
@@ -87,6 +88,7 @@ export default function DocumentView() {
                 e.preventDefault();
                 setReadingMode(false);
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                if (!isDocumentView) return;
                 e.preventDefault();
                 if (activeTabKey) openSearchBar(activeTabKey);
             } else if (e.key === 'Escape' && searchBarOpen) {
@@ -100,6 +102,7 @@ export default function DocumentView() {
         closeSearchBar,
         searchBarOpen,
         activeTabKey,
+        isDocumentView,
         readingMode,
         setReadingMode,
         toggleReadingMode,

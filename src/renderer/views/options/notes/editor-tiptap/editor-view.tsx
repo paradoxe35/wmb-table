@@ -11,6 +11,7 @@ import { TextAlign } from '@tiptap/extension-text-align';
 import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { Placeholder } from '@tiptap/extension-placeholder';
+import { FindAndReplace } from '@tiptap/extension-find-and-replace';
 
 import type { NoteItemReference, NoteItemReferenceBible } from '@shared/types';
 import { ContextMenu } from '@renderer/utils/context-menu';
@@ -25,6 +26,8 @@ import { TextPartLanguage } from './extensions/text-part-language';
 import { Indent } from './extensions/indent';
 import { Underline } from './extensions/underline';
 import { EditorToolbar } from './toolbar';
+import { EditorFindBar } from './find-bar';
+import { useFindBar } from './use-find-bar';
 import {
     referenceBibleBrandLink,
     referenceBrandLink as referenceDocumentBrandLink,
@@ -124,6 +127,7 @@ export function TiptapEditorView({
             Placeholder.configure({
                 placeholder: t('Commencez à écrire votre note…'),
             }),
+            FindAndReplace.configure({ injectCSS: false }),
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
@@ -149,6 +153,8 @@ export function TiptapEditorView({
         },
         immediatelyRender: false,
     });
+
+    const findBar = useFindBar(editor);
 
     // Sync editable prop with the editor instance.
     useEffect(() => {
@@ -368,7 +374,8 @@ export function TiptapEditorView({
 
     return (
         <>
-            {editable ? <EditorToolbar editor={editor} /> : null}
+            {editable ? <EditorToolbar editor={editor} onFind={findBar.toggle} /> : null}
+            {findBar.open ? <EditorFindBar editor={editor} onClose={findBar.close} /> : null}
             <div className="editor-scroll-wrapper">
                 <div ref={scrollRef} className="editor-scroll" onScroll={updateTopFade}>
                     <div className="tiptap-editor-frame">

@@ -3,6 +3,7 @@ import type { Editor } from '@tiptap/react';
 import { useEditorState } from '@tiptap/react';
 import { Button, ColorPicker, Divider, Select, Tooltip } from 'antd';
 import {
+    SearchOutlined,
     BoldOutlined,
     ItalicOutlined,
     UnderlineOutlined,
@@ -69,7 +70,7 @@ const FONT_SIZES = [
 
 const SMALL_BUTTON_STYLE: React.CSSProperties = { padding: '0 8px' };
 
-export function EditorToolbar({ editor }: { editor: Editor }) {
+export function EditorToolbar({ editor, onFind }: { editor: Editor; onFind: () => void }) {
     const { t } = useTranslation();
 
     const state = useEditorState({
@@ -611,6 +612,16 @@ export function EditorToolbar({ editor }: { editor: Editor }) {
             </Tooltip>
 
             <Divider type="vertical" />
+
+            <Tooltip title={t('Rechercher dans la note')}>
+                <Button
+                    type="text"
+                    size="small"
+                    style={SMALL_BUTTON_STYLE}
+                    icon={<SearchOutlined />}
+                    onClick={onFind}
+                />
+            </Tooltip>
 
             <Tooltip title={t('Langue du texte')}>
                 <Select
