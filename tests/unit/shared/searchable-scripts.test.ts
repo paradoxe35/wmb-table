@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     getHighlightRanges,
+    hasSearchableLength,
     matchesQuery,
     paragraphContainsAllWords,
     tokenizeQuery,
@@ -47,5 +48,32 @@ describe('search across scripts', () => {
     it('treats an apostrophe as a separator whichever style is typed', () => {
         expect(tokenizeQuery("l'Agneau", 'exact')).toEqual(['l', 'Agneau']);
         expect(tokenizeQuery('l’Agneau', 'exact')).toEqual(['l', 'Agneau']);
+    });
+});
+
+describe('short queries', () => {
+    it('needs three characters in space-delimited scripts', () => {
+        expect(hasSearchableLength('fo')).toBe(false);
+        expect(hasSearchableLength('foi')).toBe(true);
+        expect(hasSearchableLength('  a  ')).toBe(false);
+        expect(hasSearchableLength('')).toBe(false);
+        expect(hasSearchableLength('Ии')).toBe(false);
+    });
+
+    it('accepts one character where a character is a word', () => {
+        expect(hasSearchableLength('神')).toBe(true);
+        expect(hasSearchableLength('恩典')).toBe(true);
+        expect(hasSearchableLength('神の')).toBe(true);
+        expect(hasSearchableLength('은혜')).toBe(false);
+    });
+
+    it('keeps single-character words of continuous scripts as tokens', () => {
+        expect(tokenizeQuery('神', 'all')).toEqual(['神']);
+        expect(tokenizeQuery('神 恩典', 'all')).toEqual(['神', '恩典']);
+    });
+
+    it('still drops single-letter noise in space-delimited scripts', () => {
+        expect(tokenizeQuery("l'Agneau", 'all')).toEqual(['Agneau']);
+        expect(tokenizeQuery("l'Agneau", 'exact')).toEqual(['l', 'Agneau']);
     });
 });

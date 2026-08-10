@@ -121,6 +121,23 @@ export function simpleRegExp(term: string): RegExp {
     return new RegExp(wordPattern(term), 'gi');
 }
 
+/** Scripts written without spaces, where one character is already a whole word. */
+const SCRIPTIO_CONTINUA =
+    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Khmer}\p{Script=Lao}\p{Script=Myanmar}]/u;
+
+const MIN_QUERY_LENGTH = 3;
+
+/**
+ * Whether a query is long enough to be worth running. Space-delimited scripts need a few
+ * characters before the results mean anything, but in scripts written without spaces a
+ * single character is a word in its own right.
+ */
+export function hasSearchableLength(query: string): boolean {
+    const trimmed = query.trim();
+    if (!trimmed) return false;
+    return SCRIPTIO_CONTINUA.test(trimmed) || trimmed.length >= MIN_QUERY_LENGTH;
+}
+
 /**
  * Split a query the way Tantivy's SimpleTokenizer does, so the terms we search for are the
  * terms the index holds. It breaks on anything Rust calls non-alphanumeric, which is
@@ -133,7 +150,7 @@ export function tokenizeQuery(query: string, mode: SearchMode = 'all'): string[]
         .split(/[^\p{Alphabetic}\p{N}]+/u)
         .filter(Boolean);
     if (mode === 'exact') return words;
-    return words.filter((w) => w.length > 1);
+    return words.filter((word) => word.length > 1 || SCRIPTIO_CONTINUA.test(word));
 }
 
 // ---------------------------------------------------------------------------
@@ -151,10 +168,6 @@ function wordPattern(word: string): string {
 /** \b is ASCII-only; these treat every script's word characters as such, matching the tokenizer. */
 const WORD_START = '(?<![\\p{Alphabetic}\\p{N}])';
 const WORD_END = '(?![\\p{Alphabetic}\\p{N}])';
-
-/** Scripts written without spaces, where a word boundary would never match mid-sentence. */
-const SCRIPTIO_CONTINUA =
-    /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Khmer}\p{Script=Lao}\p{Script=Myanmar}]/u;
 
 /** Anchor a word to its edges, except in scripts that run words together. */
 function boundedWordPattern(word: string): string {
