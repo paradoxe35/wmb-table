@@ -488,7 +488,7 @@ export async function extractPdfParagraphs(pdfBytes: Uint8Array): Promise<string
             return buildParagraphsFromLines(lines, detectPageMode(lines));
         });
     } finally {
-        await pdf.destroy();
+        await pdf.loadingTask?.destroy();
     }
 }
 
