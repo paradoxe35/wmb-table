@@ -6,8 +6,7 @@ export interface SherpaCatalogEntry {
     id: string;
     engine: string;
     name: string;
-    langCode: string | string[];
-    langName: string;
+    langCode: string[];
     quality: string;
     numSpeakers: number;
     filesizeMb: number;
@@ -15,10 +14,9 @@ export interface SherpaCatalogEntry {
     modelName: string;
 }
 
-/** Normalize langCode (string or array) to a flat array of ISO 639-1 codes. */
-export function normalizeLangCodes(langCode: string | string[]): string[] {
-    const codes = Array.isArray(langCode) ? langCode : [langCode];
-    return codes.map(normalizeLanguageCode);
+/** Fold a catalog entry's codes to ISO 639-1 so they compare against app language codes. */
+export function normalizeLangCodes(langCode: string[]): string[] {
+    return langCode.map(normalizeLanguageCode);
 }
 
 /** Check if a catalog entry supports a given normalized language code. */

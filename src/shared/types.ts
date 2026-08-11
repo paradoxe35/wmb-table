@@ -677,12 +677,7 @@ export interface BackupStatus {
 }
 
 export type RestoreProgressEventType =
-    | 'start'
-    | 'complete'
-    | 'error'
-    | 'prepare'
-    | 'sauvegarde'
-    | `progress-${number}`;
+    'start' | 'complete' | 'error' | 'prepare' | 'sauvegarde' | `progress-${number}`;
 
 export interface RestoreProgressEvent {
     type: RestoreProgressEventType;
@@ -905,13 +900,7 @@ export type UpdateInfo = {
 };
 
 export type UpdaterStatus =
-    | 'none'
-    | 'checking'
-    | 'noUpdate'
-    | 'hasUpdate'
-    | 'downloading'
-    | 'downloaded'
-    | 'error';
+    'none' | 'checking' | 'noUpdate' | 'hasUpdate' | 'downloading' | 'downloaded' | 'error';
 
 export type UpdaterNotification = {
     type: UpdaterStatus;

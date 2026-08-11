@@ -3,21 +3,37 @@ import { join } from 'node:path';
 import { normalizeLanguageCode } from '@shared/tts.types';
 import type { SherpaCatalogEntry } from './sherpa-catalog';
 import { entrySupportsLang } from './sherpa-catalog';
+import { getRemoteCatalogEntries } from './sherpa-catalog-remote';
 import { getTtsResourceDir } from '@main/lib/app-paths';
 
-// ── Lazy-loaded catalog (single source of truth) ──
+let bundled: SherpaCatalogEntry[] | null = null;
+let merged: { entries: SherpaCatalogEntry[]; remoteCount: number } | null = null;
 
-let _catalog: SherpaCatalogEntry[] | null = null;
-
-function loadCatalog(): SherpaCatalogEntry[] {
-    if (!_catalog) {
+function loadBundled(): SherpaCatalogEntry[] {
+    if (!bundled) {
         const filePath = join(getTtsResourceDir(), 'sherpa-catalog.json');
-        _catalog = JSON.parse(readFileSync(filePath, 'utf-8')) as SherpaCatalogEntry[];
+        bundled = JSON.parse(readFileSync(filePath, 'utf-8')) as SherpaCatalogEntry[];
     }
-    return _catalog;
+    return bundled;
 }
 
-// ── Lookup functions ──
+/**
+ * The bundled catalog carries curated metadata (speaker counts, language pairs) that cannot
+ * be derived from an asset name, so it wins wherever the two overlap; the refreshed list
+ * only contributes models the bundle has never heard of.
+ */
+function loadCatalog(): SherpaCatalogEntry[] {
+    const base = loadBundled();
+    const remote = getRemoteCatalogEntries();
+
+    if (merged && merged.remoteCount === remote.length) return merged.entries;
+
+    const known = new Set(base.map((entry) => entry.modelName));
+    const entries = [...base, ...remote.filter((entry) => !known.has(entry.modelName))];
+
+    merged = { entries, remoteCount: remote.length };
+    return entries;
+}
 
 export function getAllCatalogModels(): SherpaCatalogEntry[] {
     return loadCatalog();

@@ -331,8 +331,7 @@ export class CartesiaProvider implements TtsProvider {
                 }
 
                 const json = (await response.json()) as
-                    | CartesiaVoiceEntry[]
-                    | { data?: CartesiaVoiceEntry[]; has_more?: boolean };
+                    CartesiaVoiceEntry[] | { data?: CartesiaVoiceEntry[]; has_more?: boolean };
 
                 const voices: CartesiaVoiceEntry[] = Array.isArray(json) ? json : (json.data ?? []);
                 const hasMore = Array.isArray(json) ? false : (json.has_more ?? false);

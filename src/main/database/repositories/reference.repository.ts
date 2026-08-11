@@ -386,8 +386,7 @@ export function getAudioForTranslationByIds(
         LIMIT 1
     `);
     const row = stmt.get(sermonId, langCode, translatorName, translatorName) as
-        | AudioRow
-        | undefined;
+        AudioRow | undefined;
     if (!row) return null;
     return buildAudioUrl(row);
 }

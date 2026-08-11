@@ -211,9 +211,7 @@ export const TTS_REFERENCE_VOICES: TtsReferenceVoice[] = [
 
 // ── Per-language model info (for providers with multiple downloadable models) ──
 export interface TtsModelInfo {
-    langCode: string | string[];
-    langLabel: string;
-    langName?: string;
+    langCode: string[];
     modelName: string;
     voiceName: string;
     installed: boolean;
@@ -595,10 +593,6 @@ export const LANG_LABELS_NATIVE: Record<string, string> = {
     sd: 'سنڌي',
 };
 
-export function getLanguageLabelFr(languageCode: string): string {
-    return resolveLanguageLabel(LANG_LABELS_FR, languageCode) ?? languageCode;
-}
-
 export function getLanguageLabelNative(languageCode: string): string {
     return resolveLanguageLabel(LANG_LABELS_NATIVE, languageCode) ?? languageCode;
 }
@@ -607,8 +601,27 @@ export function getLanguageDisplayName(languageCode: string): string {
     return (
         resolveLanguageLabel(LANG_LABELS_NATIVE, languageCode) ??
         resolveLanguageLabel(LANG_LABELS_FR, languageCode) ??
+        intlLanguageName(languageCode) ??
         languageCode
     );
+}
+
+/**
+ * Language name from the platform's own ICU data, so a model for a language nobody has
+ * translated a label for still shows a real name instead of a bare code.
+ */
+export function intlLanguageName(languageCode: string, locale = 'fr'): string | undefined {
+    try {
+        const names = new Intl.DisplayNames([locale], { type: 'language', fallback: 'none' });
+        return names.of(languageCode) ?? undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+/** Whether a token is a language subtag ICU recognises, rather than part of a model name. */
+export function isLanguageCode(token: string): boolean {
+    return intlLanguageName(token, 'en') !== undefined;
 }
 
 // ── Text helpers ──

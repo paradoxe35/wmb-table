@@ -98,8 +98,7 @@ import type { ThemeMode, ThemeState } from './theme';
 // ---------------------------------------------------------------------------
 
 export type PdfExportResult =
-    | { status: 'success'; filePath: string }
-    | { status: 'canceled' | 'empty' };
+    { status: 'success'; filePath: string } | { status: 'canceled' | 'empty' };
 
 export const DocumentChannels = {
     getTitles: 'documents:getTitles',

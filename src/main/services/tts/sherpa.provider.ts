@@ -13,7 +13,7 @@ import type {
     TtsVoice,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { getLanguageLabelFr, normalizeLanguageCode } from '@shared/tts.types';
+import { normalizeLanguageCode } from '@shared/tts.types';
 import { entrySupportsLang, normalizeLangCodes } from './sherpa-catalog';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
 import { getTtsModelsDir } from '@main/lib/app-paths';
@@ -136,15 +136,6 @@ function getLangCodesForModel(modelName: string): string[] {
         }
     }
     return ['en'];
-}
-
-function getModelLangLabel(langCode: string | string[], langName?: string): string {
-    if (Array.isArray(langCode) && langCode.length > 1) {
-        return 'Multilingue';
-    }
-
-    const primaryLang = Array.isArray(langCode) ? langCode[0] : langCode;
-    return getLanguageLabelFr(primaryLang) || langName || primaryLang;
 }
 
 // ---------------------------------------------------------------------------
@@ -301,8 +292,6 @@ export class SherpaProvider implements TtsProvider {
         return getAllCatalogModels().map((entry) => {
             return {
                 langCode: entry.langCode,
-                langLabel: getModelLangLabel(entry.langCode, entry.langName),
-                langName: entry.langName,
                 modelName: entry.modelName,
                 voiceName: entry.name,
                 installed: installedSet.has(entry.modelName),

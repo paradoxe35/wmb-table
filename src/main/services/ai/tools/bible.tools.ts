@@ -111,13 +111,11 @@ export function buildBibleTools(
                 if ('error' in versions) {
                     return versions;
                 }
-                return versions.map(
-                    (version): BibleVersionOption => ({
-                        abbreviation: version.abbreviation,
-                        languageCode: version.languageCode,
-                        name: version.name,
-                    }),
-                );
+                return versions.map((version): BibleVersionOption => ({
+                    abbreviation: version.abbreviation,
+                    languageCode: version.languageCode,
+                    name: version.name,
+                }));
             },
         },
         getBiblePassage: {

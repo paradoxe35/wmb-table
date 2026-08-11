@@ -4,8 +4,9 @@ import { DownloadOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
-import { LANG_LABELS_FR } from '@shared/tts.types';
+import { intlLanguageName, LANG_LABELS_FR } from '@shared/tts.types';
 import type { TtsModelDownloadProgress, TtsModelInfo, TtsProviderInfo } from '@shared/tts.types';
+import { useResolvedUiLanguage } from '@renderer/hooks';
 import { getErrorMessage } from '@renderer/utils/functions';
 import { strNormalize } from '@shared/searchable';
 import { DeleteBtn } from '@renderer/components/delete-btn';
@@ -13,22 +14,30 @@ import { Field, groupVoicesByLanguage, type ProviderConfigProps } from './tts-sh
 
 const { Text } = Typography;
 
-function matchesLang(langCode: string | string[], target: string): boolean {
-    if (Array.isArray(langCode)) return langCode.includes(target);
-    return langCode === target;
+function matchesLang(langCode: string[], target: string): boolean {
+    return langCode.includes(target);
 }
 
-function langCodeToString(langCode: string | string[]): string {
-    return Array.isArray(langCode) ? langCode.join(', ') : langCode;
-}
+/**
+ * Model languages are stored as codes and named at render time, so the list reads in the
+ * interface language rather than the language the catalog happened to be written in.
+ */
+function useLanguageNames() {
+    const uiLanguage = useResolvedUiLanguage();
+    const { t } = useTranslation();
 
-function langLabels(langCode: string | string[]): string[] {
-    const codes = Array.isArray(langCode) ? langCode : [langCode];
-    return codes.map((c) => LANG_LABELS_FR[c] ?? c);
-}
+    const nameOf = useCallback(
+        (code: string) => intlLanguageName(code, uiLanguage) ?? LANG_LABELS_FR[code] ?? code,
+        [uiLanguage],
+    );
 
-function translateLangLabel(label: string, t: (key: string) => string): string {
-    return label === 'Multilingue' ? t(label) : label;
+    const labelOf = useCallback(
+        (langCode: string[]) =>
+            langCode.length > 1 ? t('Multilingue') : (nameOf(langCode[0]) ?? ''),
+        [nameOf, t],
+    );
+
+    return { nameOf, labelOf };
 }
 
 const QUALITY_META: Record<string, { label: string; color: string }> = {
@@ -85,6 +94,7 @@ function getDownloadPhaseLabel(
 
 export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigProps) {
     const { t } = useTranslation();
+    const { nameOf, labelOf } = useLanguageNames();
     const cfg = settings.providers.sherpa;
     const setProviders = useTtsStore((s) => s.setProviders);
     const contentLanguage = useAppStore((s) => s.contentLanguage);
@@ -216,10 +226,9 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
         const terms = strNormalize(search).split(/\s+/).filter(Boolean);
         return models
             .filter((m) => {
-                const codes = Array.isArray(m.langCode) ? m.langCode : [m.langCode];
-                const allLabels = codes.map((c) => LANG_LABELS_FR[c] ?? '').join(' ');
+                const names = m.langCode.map(nameOf).join(' ');
                 const haystack = strNormalize(
-                    `${m.voiceName} ${m.langLabel} ${allLabels} ${m.langName ?? ''} ${langCodeToString(m.langCode)} ${m.engine ?? ''} ${m.quality ?? ''}`,
+                    `${m.voiceName} ${names} ${m.langCode.join(' ')} ${m.engine ?? ''} ${m.quality ?? ''}`,
                 );
                 return terms.every((term) => haystack.includes(term));
             })
@@ -227,7 +236,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 if (a.installed !== b.installed) return a.installed ? -1 : 1;
                 return (a.filesizeMb ?? Infinity) - (b.filesizeMb ?? Infinity);
             });
-    }, [models, search]);
+    }, [models, search, nameOf]);
 
     // ── Render helpers ──
 
@@ -271,7 +280,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
             {suggestedModel && (
                 <Field
                     label={t('Voix disponible — {{lang}}', {
-                        lang: translateLangLabel(suggestedModel.langLabel, t),
+                        lang: labelOf(suggestedModel.langCode),
                     })}
                     hint={t('Téléchargez une voix pour la langue active du document.')}
                 >
@@ -346,9 +355,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                 <div>
                                     <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
                                         {m.voiceName}{' '}
-                                        <Text type="secondary">
-                                            ({translateLangLabel(m.langLabel, t)})
-                                        </Text>
+                                        <Text type="secondary">({labelOf(m.langCode)})</Text>
                                         {m.engine && (
                                             <Text
                                                 type="secondary"
@@ -369,13 +376,13 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                         )}{' '}
                                         <QualityTag quality={m.quality} />
                                     </Text>
-                                    {Array.isArray(m.langCode) && m.langCode.length > 1 && (
+                                    {m.langCode.length > 1 && (
                                         <div>
                                             <Text
                                                 type="secondary"
                                                 style={{ fontSize: 'var(--fs-rel-lg)' }}
                                             >
-                                                {t('Langues')}: {langLabels(m.langCode).join(', ')}
+                                                {t('Langues')}: {m.langCode.map(nameOf).join(', ')}
                                             </Text>
                                         </div>
                                     )}
@@ -423,7 +430,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             <List.Item.Meta
                                 title={
                                     <Text style={{ fontSize: 'var(--fs-rel-3xl)' }}>
-                                        {translateLangLabel(m.langLabel, t)}
+                                        {labelOf(m.langCode)}
                                         {m.installed && <Text type="success"> ✓</Text>}
                                     </Text>
                                 }
@@ -439,14 +446,14 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                                                 ` · ~${Math.round(m.filesizeMb)} ${t('Mo')}`}
                                         </Text>{' '}
                                         <QualityTag quality={m.quality} />
-                                        {Array.isArray(m.langCode) && m.langCode.length > 1 && (
+                                        {m.langCode.length > 1 && (
                                             <div style={{ marginTop: 2 }}>
                                                 <Text
                                                     type="secondary"
                                                     style={{ fontSize: 'var(--fs-rel-3xl)' }}
                                                 >
                                                     {t('Langues')}:{' '}
-                                                    {langLabels(m.langCode).join(', ')}
+                                                    {m.langCode.map(nameOf).join(', ')}
                                                 </Text>
                                             </div>
                                         )}

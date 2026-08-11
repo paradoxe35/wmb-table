@@ -8,3 +8,5 @@ allowBuilds:
     'sherpa-onnx': true
     'simple-git-hooks': true
     '@turbodocx/html-to-docx': false
+minimumReleaseAgeExclude:
+    - sherpa-onnx@1.13.5

@@ -11,6 +11,7 @@ import { initializeLogger } from '@main/lib/logger';
 import { initializeUpdater } from '@main/lib/updater';
 import { initializeDatabase, closeDatabase } from '@main/database';
 import { initializeTantivy, terminateWorker } from '@main/services/tantivy.service';
+import { refreshSherpaCatalog } from '@main/services/tts/sherpa-catalog-remote';
 import { refreshInstalledLanguageUpdates } from '@main/services/language-pack.service';
 import { tryStartSynchronizer, stopSynchronizer } from '@main/services/sync/synchronizer';
 import { disposeTtsService } from '@main/services/tts';
@@ -66,6 +67,7 @@ function bootstrapPrimaryInstance(): void {
         });
         createMainWindow();
         tryStartSynchronizer();
+        void refreshSherpaCatalog();
 
         app.on('activate', () => {
             if (BrowserWindow.getAllWindows().length === 0) {
