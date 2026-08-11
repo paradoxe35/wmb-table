@@ -16,6 +16,7 @@ import type {
 import { normalizeLanguageCode } from '@shared/tts.types';
 import { entrySupportsLang, normalizeLangCodes } from './sherpa-catalog';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
+import { refreshSherpaCatalog } from './sherpa-catalog-remote';
 import { getTtsModelsDir } from '@main/lib/app-paths';
 import { WorkerRpc } from './worker-rpc';
 import type { TtsProviderDownloadProgress } from './provider';
@@ -287,6 +288,9 @@ export class SherpaProvider implements TtsProvider {
     }
 
     getAvailableModels(): TtsModelInfo[] {
+        // Only this screen needs the upstream list, so this is where it is worth fetching.
+        void refreshSherpaCatalog();
+
         const installedSet = new Set(getInstalledModelNames());
 
         return getAllCatalogModels().map((entry) => {
