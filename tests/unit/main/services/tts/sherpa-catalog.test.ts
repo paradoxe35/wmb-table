@@ -82,6 +82,16 @@ describe('withoutRedundantHalfPrecision', () => {
         expect(withoutRedundantHalfPrecision(entries)).toHaveLength(2);
     });
 
+    it('never mistakes an unrelated voice for a build of the same one', () => {
+        // Three different icefall models are all displayed as "ljspeech".
+        const entries = [
+            build('matcha-icefall-en_US-ljspeech', 'ljspeech', 'icefall'),
+            build('vits-icefall-en_US-ljspeech-low-fp16', 'ljspeech', 'icefall'),
+        ];
+
+        expect(withoutRedundantHalfPrecision(entries)).toHaveLength(2);
+    });
+
     it('tells apart voices that share a name in another language', () => {
         const french = build('vits-piper-fr_FR-miro-high-fp16', 'miro');
         const portuguese = { ...build('vits-piper-pt_BR-miro-high', 'miro'), langCode: ['pt-BR'] };

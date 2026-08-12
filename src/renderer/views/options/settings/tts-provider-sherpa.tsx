@@ -5,6 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { useAppStore } from '@renderer/stores';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { languageLabel, normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
+import {
+    isSherpaVoiceOf,
+    sherpaVoiceId,
+    sherpaVoiceModel,
+    sherpaVoiceSpeaker,
+} from '@shared/sherpa-voice-id';
 import type {
     TtsModelDownloadProgress,
     TtsModelInfo,
@@ -70,7 +76,7 @@ function useLanguageNames(models: TtsModelInfo[]) {
 }
 
 function speakerIndexOf(voice: TtsVoice): number {
-    return Number(voice.id.split(':')[1] ?? 0);
+    return sherpaVoiceSpeaker(voice.id);
 }
 
 const TAG_STYLE = { fontSize: 'var(--fs-rel-md)', lineHeight: '16px', padding: '0 4px' };
@@ -222,16 +228,14 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 message.success(t('Voix supprimée'));
                 loadModels();
                 window.api.tts.getProviders().then(setProviders);
-                if (cfg.model === modelName || cfg.voiceId?.startsWith(`${modelName}:`)) {
+                if (isSherpaVoiceOf(cfg.voiceId ?? '', modelName)) {
                     onUpdate({
                         providers: {
                             ...settings.providers,
                             sherpa: {
                                 ...settings.providers.sherpa,
-                                model: cfg.model === modelName ? undefined : cfg.model,
-                                voiceId: cfg.voiceId?.startsWith(`${modelName}:`)
-                                    ? undefined
-                                    : cfg.voiceId,
+                                voiceId: undefined,
+                                model: undefined,
                             },
                         },
                     });
@@ -240,7 +244,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                 message.error(t('Erreur: {{error}}', { error: t(getErrorMessage(err)) }));
             }
         },
-        [cfg.model, cfg.voiceId, loadModels, onUpdate, setProviders, settings, t],
+        [cfg.voiceId, loadModels, onUpdate, setProviders, settings, t],
     );
 
     // ── Derived data ──
@@ -251,10 +255,10 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
 
     // ── Voice selection: pick the voice pack, then the speaker inside it ──
 
-    const activeModel = cfg.voiceId?.split(':')[0] ?? installed[0]?.modelName ?? '';
+    const activeModel = cfg.model ?? installed[0]?.modelName ?? '';
 
     const modelVoices = useMemo(
-        () => allVoices.filter((v) => v.id.startsWith(`${activeModel}:`)),
+        () => allVoices.filter((v) => isSherpaVoiceOf(v.id, activeModel)),
         [allVoices, activeModel],
     );
 
@@ -293,7 +297,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                     sherpa: {
                         ...settings.providers.sherpa,
                         voiceId,
-                        model: voiceId.split(':')[0] || undefined,
+                        model: sherpaVoiceModel(voiceId),
                     },
                 },
             });
@@ -418,7 +422,7 @@ export default function SherpaConfig({ settings, info, onUpdate }: SherpaConfigP
                             showSearch
                             optionFilterProp="label"
                             placeholder={t('Choisir une voix')}
-                            onChange={(modelName) => selectVoice(`${modelName}:0`)}
+                            onChange={(modelName) => selectVoice(sherpaVoiceId(modelName))}
                             options={installed.map((m) => ({
                                 value: m.modelName,
                                 label: [m.voiceName, labelOf(m.langCode), m.engine]

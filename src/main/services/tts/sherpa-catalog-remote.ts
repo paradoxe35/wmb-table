@@ -52,8 +52,3 @@ export function refreshSherpaCatalog(options?: { force?: boolean }): Promise<voi
 
     return refreshing;
 }
-
-export function _resetSherpaCatalogCacheForTesting(): void {
-    memo = null;
-    refreshing = null;
-}

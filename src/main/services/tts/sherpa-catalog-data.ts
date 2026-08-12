@@ -1,12 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { voiceLanguageCode } from '@shared/tts.types';
 import type { SherpaCatalogEntry } from './sherpa-catalog';
-import {
-    entrySupportsLang,
-    isPlayableEntry,
-    withoutRedundantHalfPrecision,
-} from './sherpa-catalog';
+import { isPlayableEntry, withoutRedundantHalfPrecision } from './sherpa-catalog';
 import { getRemoteCatalogEntries } from './sherpa-catalog-remote';
 import { getTtsResourceDir } from '@main/lib/app-paths';
 
@@ -54,9 +49,4 @@ export function getAllCatalogModels(): SherpaCatalogEntry[] {
 /** Searches every model, so one already installed keeps its name once no longer offered. */
 export function findCatalogModelByModelName(modelName: string): SherpaCatalogEntry | undefined {
     return knownModels().find((m) => m.modelName === modelName);
-}
-
-export function findCatalogModelsByLangCode(langCode: string): SherpaCatalogEntry[] {
-    const code = voiceLanguageCode(langCode);
-    return offeredModels().filter((m) => entrySupportsLang(m, code));
 }

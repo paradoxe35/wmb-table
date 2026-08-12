@@ -14,6 +14,7 @@ import type {
     TtsCompatibilityResult,
 } from '@shared/tts.types';
 import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
+import { sherpaVoiceId, sherpaVoiceModel, sherpaVoiceSpeaker } from '@shared/sherpa-voice-id';
 import { entrySupportsLang, normalizeLangCodes, resolveSpeakerCount } from './sherpa-catalog';
 import { SimpleCache } from '@main/lib/simple-cache';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
@@ -185,7 +186,7 @@ export class SherpaProvider implements TtsProvider {
 
             if (numSpeakers <= 1) {
                 voices.push({
-                    id: `${name}:0`,
+                    id: sherpaVoiceId(name),
                     name: entry?.name ?? name.replace(/[-_]/g, ' '),
                     languageCodes: langCodes,
                 });
@@ -195,7 +196,7 @@ export class SherpaProvider implements TtsProvider {
                     const speakerName = speakerNames.find((k) => speakerIdMap[k] === i);
                     voices.push({
                         // Unnamed speakers are numbered by the interface, in its own language.
-                        id: `${name}:${i}`,
+                        id: sherpaVoiceId(name, i),
                         name: speakerName ?? '',
                         languageCodes: langCodes,
                     });
@@ -233,8 +234,8 @@ export class SherpaProvider implements TtsProvider {
         }
 
         // If a specific voice is configured, validate that model's language
-        if (cfg?.voiceId) {
-            const modelName = cfg.voiceId.split(':')[0];
+        if (cfg?.model) {
+            const modelName = cfg.model;
             if (modelName && installed.includes(modelName)) {
                 return getLangCodesForModel(modelName).includes(code)
                     ? { supported: true }
@@ -249,14 +250,9 @@ export class SherpaProvider implements TtsProvider {
     }
 
     async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        // Extract model name from voiceId (format: "modelName:speakerId")
-        let modelName = request.model;
-        let sid = this.speakerId;
-        if (request.voiceId?.includes(':')) {
-            const [voiceModel, speakerStr] = request.voiceId.split(':');
-            modelName = voiceModel || modelName;
-            sid = parseInt(speakerStr, 10) || 0;
-        }
+        // A voice id names its own model, so auditioning one needs no `model` alongside it.
+        const modelName = request.voiceId ? sherpaVoiceModel(request.voiceId) : request.model;
+        const sid = request.voiceId ? sherpaVoiceSpeaker(request.voiceId) : this.speakerId;
 
         await this.ensureInitialized(modelName, request.language);
         const speed = request.rate ?? this.speed;
@@ -358,8 +354,7 @@ export class SherpaProvider implements TtsProvider {
 
     setConfig(settings: TtsProviderSettings): void {
         if (settings.voiceId) {
-            const parts = settings.voiceId.split(':');
-            this.speakerId = parseInt(parts[1] ?? '0', 10) || 0;
+            this.speakerId = sherpaVoiceSpeaker(settings.voiceId);
         }
         if (settings.model && settings.model !== this.activeModel) {
             this.activeModel = settings.model;
@@ -374,9 +369,9 @@ export class SherpaProvider implements TtsProvider {
         const code = voiceLanguageCode(langCode);
         const installed = getInstalledModelNames();
 
-        // If the configured voiceId already points to an installed model for this language, no change needed
-        if (cfg?.voiceId) {
-            const modelName = cfg.voiceId.split(':')[0];
+        // If the configured model already serves this language, no change needed
+        if (cfg?.model) {
+            const modelName = cfg.model;
             if (modelName && installed.includes(modelName)) {
                 if (getLangCodesForModel(modelName).includes(code)) {
                     return null;
@@ -392,7 +387,7 @@ export class SherpaProvider implements TtsProvider {
             return { voiceId: '', model: '' };
         }
 
-        return { voiceId: `${compatibleModel}:0`, model: compatibleModel };
+        return { voiceId: sherpaVoiceId(compatibleModel), model: compatibleModel };
     }
 
     async previewVoice(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
