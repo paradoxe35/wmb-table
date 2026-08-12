@@ -1,33 +1,62 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { normalizeLanguageCode } from '@shared/tts.types';
+import { voiceLanguageCode } from '@shared/tts.types';
 import type { SherpaCatalogEntry } from './sherpa-catalog';
-import { entrySupportsLang } from './sherpa-catalog';
+import {
+    entrySupportsLang,
+    isPlayableEntry,
+    withoutRedundantHalfPrecision,
+} from './sherpa-catalog';
+import { getRemoteCatalogEntries } from './sherpa-catalog-remote';
 import { getTtsResourceDir } from '@main/lib/app-paths';
 
-// ── Lazy-loaded catalog (single source of truth) ──
+let bundled: SherpaCatalogEntry[] | null = null;
+let known: { entries: SherpaCatalogEntry[]; remoteCount: number } | null = null;
+let offered: { entries: SherpaCatalogEntry[]; remoteCount: number } | null = null;
 
-let _catalog: SherpaCatalogEntry[] | null = null;
-
-function loadCatalog(): SherpaCatalogEntry[] {
-    if (!_catalog) {
+function loadBundled(): SherpaCatalogEntry[] {
+    if (!bundled) {
         const filePath = join(getTtsResourceDir(), 'sherpa-catalog.json');
-        _catalog = JSON.parse(readFileSync(filePath, 'utf-8')) as SherpaCatalogEntry[];
+        bundled = JSON.parse(readFileSync(filePath, 'utf-8')) as SherpaCatalogEntry[];
     }
-    return _catalog;
+    return bundled;
 }
 
-// ── Lookup functions ──
+/** The bundled catalog wins wherever the two overlap; the refresh only adds what is new. */
+function knownModels(): SherpaCatalogEntry[] {
+    const base = loadBundled();
+    const remote = getRemoteCatalogEntries();
+
+    if (known && known.remoteCount === remote.length) return known.entries;
+
+    const names = new Set(base.map((entry) => entry.modelName));
+    const entries = [...base, ...remote.filter((entry) => !names.has(entry.modelName))];
+
+    known = { entries, remoteCount: remote.length };
+    return entries;
+}
+
+/** The models worth putting in front of a reader: those that play, once per voice. */
+function offeredModels(): SherpaCatalogEntry[] {
+    const remote = getRemoteCatalogEntries();
+    if (offered && offered.remoteCount === remote.length) return offered.entries;
+
+    const entries = withoutRedundantHalfPrecision(knownModels().filter(isPlayableEntry));
+
+    offered = { entries, remoteCount: remote.length };
+    return entries;
+}
 
 export function getAllCatalogModels(): SherpaCatalogEntry[] {
-    return loadCatalog();
+    return offeredModels();
 }
 
+/** Searches every model, so one already installed keeps its name once no longer offered. */
 export function findCatalogModelByModelName(modelName: string): SherpaCatalogEntry | undefined {
-    return loadCatalog().find((m) => m.modelName === modelName);
+    return knownModels().find((m) => m.modelName === modelName);
 }
 
 export function findCatalogModelsByLangCode(langCode: string): SherpaCatalogEntry[] {
-    const code = normalizeLanguageCode(langCode);
-    return loadCatalog().filter((m) => entrySupportsLang(m, code));
+    const code = voiceLanguageCode(langCode);
+    return offeredModels().filter((m) => entrySupportsLang(m, code));
 }

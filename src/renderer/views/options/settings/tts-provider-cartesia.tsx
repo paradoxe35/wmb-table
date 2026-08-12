@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { TtsProviderInfo, TtsVoice } from '@shared/tts.types';
 import { useTtsStore } from '@renderer/stores/tts.store';
 import { useAppStore } from '@renderer/stores/app.store';
+import { useResolvedUiLanguage } from '@renderer/hooks';
 import { getErrorMessage } from '@renderer/utils/functions';
 import DebouncedInput from '@renderer/components/debounced-input';
 import {
@@ -72,11 +73,12 @@ export default function CartesiaConfig({ settings, info, onUpdate }: CartesiaCon
     );
 
     const contentLanguage = useAppStore((s) => s.contentLanguage);
+    const uiLanguage = useResolvedUiLanguage();
     const allVoices = [
         ...(info?.voices ?? []),
         ...clonedVoices.filter((c) => !info?.voices.some((v) => v.id === c.id)),
     ];
-    const voiceGroups = groupVoicesByLanguage(allVoices, contentLanguage ?? undefined);
+    const voiceGroups = groupVoicesByLanguage(allVoices, uiLanguage, contentLanguage ?? undefined);
 
     return (
         <Space orientation="vertical" style={{ width: '100%' }} size="small">

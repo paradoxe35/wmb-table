@@ -13,7 +13,7 @@ import type {
     TtsVoiceCloneResult,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { normalizeLanguageCode } from '@shared/tts.types';
+import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
 import { fetchTtsWithRetry } from './network-retry';
 import { resolveDefaultExport } from '@main/lib/module-interop';
 
@@ -133,7 +133,7 @@ export class CartesiaProvider implements TtsProvider {
         if (!this.apiKey) {
             return { supported: false, reason: 'not_configured' };
         }
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         if (!SUPPORTED_LANGUAGES.includes(code)) {
             return { supported: false, reason: 'unsupported_language' };
         }
@@ -286,7 +286,7 @@ export class CartesiaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Promise<Partial<TtsProviderSettings> | null> {
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         const voices = await this.fetchVoices();
 
         // If current voice already matches language, keep it
@@ -331,8 +331,7 @@ export class CartesiaProvider implements TtsProvider {
                 }
 
                 const json = (await response.json()) as
-                    | CartesiaVoiceEntry[]
-                    | { data?: CartesiaVoiceEntry[]; has_more?: boolean };
+                    CartesiaVoiceEntry[] | { data?: CartesiaVoiceEntry[]; has_more?: boolean };
 
                 const voices: CartesiaVoiceEntry[] = Array.isArray(json) ? json : (json.data ?? []);
                 const hasMore = Array.isArray(json) ? false : (json.has_more ?? false);

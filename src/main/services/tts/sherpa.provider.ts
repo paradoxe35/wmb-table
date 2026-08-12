@@ -13,9 +13,11 @@ import type {
     TtsVoice,
     TtsCompatibilityResult,
 } from '@shared/tts.types';
-import { getLanguageLabelFr, normalizeLanguageCode } from '@shared/tts.types';
-import { entrySupportsLang, normalizeLangCodes } from './sherpa-catalog';
+import { normalizeLanguageCode, voiceLanguageCode } from '@shared/tts.types';
+import { entrySupportsLang, normalizeLangCodes, resolveSpeakerCount } from './sherpa-catalog';
+import { SimpleCache } from '@main/lib/simple-cache';
 import { getAllCatalogModels, findCatalogModelByModelName } from './sherpa-catalog-data';
+import { refreshSherpaCatalog } from './sherpa-catalog-remote';
 import { getTtsModelsDir } from '@main/lib/app-paths';
 import { WorkerRpc } from './worker-rpc';
 import type { TtsProviderDownloadProgress } from './provider';
@@ -64,6 +66,11 @@ function findAcousticModelFile(dir: string): string | null {
 }
 
 function isModelInstalled(modelDir: string): boolean {
+    // Supertonic splits the voice across four models and ships no `tokens.txt`.
+    if (existsSync(join(modelDir, 'tts.json')) && existsSync(join(modelDir, 'voice.bin'))) {
+        return findOnnxFiles(modelDir).length >= 4;
+    }
+
     if (!existsSync(join(modelDir, 'tokens.txt'))) {
         return false;
     }
@@ -93,6 +100,19 @@ function getSherpaModelsDir(): string {
 interface ModelMeta {
     numSpeakers: number;
     speakerIdMap: Record<string, number>;
+}
+
+/** The engine reports its speaker count once loaded; remember it so the list is right after. */
+const speakerCountCache = (modelName: string) =>
+    new SimpleCache<number>(`sherpa-speakers:${modelName}`);
+
+function getLearnedSpeakerCount(modelName: string): number | undefined {
+    const value = speakerCountCache(modelName).getStale();
+    return typeof value === 'number' && value > 0 ? value : undefined;
+}
+
+function rememberSpeakerCount(modelName: string, count: number): void {
+    if (count > 0) speakerCountCache(modelName).set(count);
 }
 
 function readModelMeta(modelName: string): ModelMeta {
@@ -138,15 +158,6 @@ function getLangCodesForModel(modelName: string): string[] {
     return ['en'];
 }
 
-function getModelLangLabel(langCode: string | string[], langName?: string): string {
-    if (Array.isArray(langCode) && langCode.length > 1) {
-        return 'Multilingue';
-    }
-
-    const primaryLang = Array.isArray(langCode) ? langCode[0] : langCode;
-    return getLanguageLabelFr(primaryLang) || langName || primaryLang;
-}
-
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
@@ -168,7 +179,9 @@ export class SherpaProvider implements TtsProvider {
         for (const name of installed) {
             const langCodes = getLangCodesForModel(name);
             const entry = findCatalogModelByModelName(name);
-            const { numSpeakers, speakerIdMap } = readModelMeta(name);
+            const meta = readModelMeta(name);
+            const speakerIdMap = meta.speakerIdMap;
+            const numSpeakers = resolveSpeakerCount(getLearnedSpeakerCount(name), meta.numSpeakers);
 
             if (numSpeakers <= 1) {
                 voices.push({
@@ -181,8 +194,9 @@ export class SherpaProvider implements TtsProvider {
                 for (let i = 0; i < numSpeakers; i++) {
                     const speakerName = speakerNames.find((k) => speakerIdMap[k] === i);
                     voices.push({
+                        // Unnamed speakers are numbered by the interface, in its own language.
                         id: `${name}:${i}`,
-                        name: speakerName ?? `Speaker ${i + 1}`,
+                        name: speakerName ?? '',
                         languageCodes: langCodes,
                     });
                 }
@@ -211,7 +225,7 @@ export class SherpaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Promise<TtsCompatibilityResult> {
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         const installed = getInstalledModelNames();
 
         if (installed.length === 0) {
@@ -286,8 +300,22 @@ export class SherpaProvider implements TtsProvider {
             }
 
             // Worker already sends 100% progress via RPC — no need to call again
+            await this.learnVoices(modelName);
         } finally {
             this.rpc.onProgressEvent = null;
+        }
+    }
+
+    /**
+     * Loads a freshly installed model once so the engine can report how many voices it
+     * holds. Only the loaded engine knows: an asset name never carries the count, so
+     * without this a multi-voice model offers a single voice until it is first spoken.
+     */
+    private async learnVoices(modelName: string): Promise<void> {
+        try {
+            await this.ensureInitialized(modelName);
+        } catch (error) {
+            log.warn(`Lecture des voix de ${modelName} impossible`, error);
         }
     }
 
@@ -296,33 +324,35 @@ export class SherpaProvider implements TtsProvider {
     }
 
     getAvailableModels(): TtsModelInfo[] {
+        // Only this screen needs the upstream list, so this is where it is worth fetching.
+        void refreshSherpaCatalog();
+
         const installedSet = new Set(getInstalledModelNames());
 
         return getAllCatalogModels().map((entry) => {
             return {
                 langCode: entry.langCode,
-                langLabel: getModelLangLabel(entry.langCode, entry.langName),
-                langName: entry.langName,
                 modelName: entry.modelName,
                 voiceName: entry.name,
                 installed: installedSet.has(entry.modelName),
                 engine: entry.engine,
                 quality: entry.quality,
                 filesizeMb: entry.filesizeMb,
-                numSpeakers: entry.numSpeakers,
             };
         });
     }
 
     async deleteModel(modelName: string): Promise<void> {
-        const dir = join(getSherpaModelsDir(), modelName);
-        if (existsSync(dir)) {
-            await rm(dir, { recursive: true, force: true });
-        }
+        // The engine holds the model files open, and Windows refuses to unlink an open file.
         if (this.activeModel === modelName) {
             this.initialized = false;
             this.activeModel = '';
-            this.rpc.call('dispose').catch(() => {});
+            await this.rpc.call('dispose').catch(() => {});
+        }
+
+        const dir = join(getSherpaModelsDir(), modelName);
+        if (existsSync(dir)) {
+            await rm(dir, { recursive: true, force: true });
         }
     }
 
@@ -341,7 +371,7 @@ export class SherpaProvider implements TtsProvider {
         langCode: string,
         cfg?: TtsProviderSettings,
     ): Partial<TtsProviderSettings> | null {
-        const code = normalizeLanguageCode(langCode);
+        const code = voiceLanguageCode(langCode);
         const installed = getInstalledModelNames();
 
         // If the configured voiceId already points to an installed model for this language, no change needed
@@ -397,7 +427,7 @@ export class SherpaProvider implements TtsProvider {
 
     private findModelForLanguage(language?: string): string | undefined {
         if (!language) return undefined;
-        const code = normalizeLanguageCode(language);
+        const code = voiceLanguageCode(language);
         const installed = getInstalledModelNames();
 
         // Prefer non-MMS model (typically higher quality)
@@ -415,9 +445,18 @@ export class SherpaProvider implements TtsProvider {
         if (!isModelInstalled(modelDir)) {
             throw new Error(`Modèle Sherpa-ONNX non trouvé: ${modelName}`);
         }
-        const ok = await this.rpc.call<boolean>('initialize', modelDir, language);
+        const engine = findCatalogModelByModelName(modelName)?.engine;
+        const ok = await this.rpc.call<boolean>('initialize', modelDir, language, engine);
         if (!ok) throw new Error(`Échec d'initialisation du modèle: ${modelName}`);
         this.activeModel = modelName;
         this.initialized = true;
+
+        // The loaded engine is the only exact source; remember it so the voice list is
+        // right from now on, whatever the model shipped as metadata.
+        try {
+            rememberSpeakerCount(modelName, await this.rpc.call<number>('getNumSpeakers'));
+        } catch {
+            // A model that cannot report its speakers keeps the catalog estimate.
+        }
     }
 }

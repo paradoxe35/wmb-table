@@ -132,6 +132,8 @@ const pt: Record<string, string> = {
     'Le nom du modèle est requis pour le téléchargement Sherpa.':
         'O nome do modelo é obrigatório para o download do Sherpa.',
     'Modèle Sherpa inconnu.': 'Modelo Sherpa desconhecido.',
+    'Cette voix ne peut pas être lue sur cet ordinateur.':
+        'Esta voz não pode ser reproduzida neste computador.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":
@@ -373,6 +375,9 @@ const pt: Record<string, string> = {
     'Recherchez une langue ou un nom de voix.': 'Pesquise um idioma ou um nome de voz.',
     'Ex: arabe, portugais, swahili…': 'Ex.: árabe, português, suaíli…',
     'Voix installée': 'Voz instalada',
+    'Voix {{number}}': 'Voz {{number}}',
+    '{{count}} voix dans ce pack': '{{count}} vozes neste pacote',
+    'Choisir une voix': 'Escolher uma voz',
     'Voix supprimée': 'Voz removida',
     Télécharger: 'Baixar',
     Téléchargement: 'Baixando',
@@ -384,6 +389,7 @@ const pt: Record<string, string> = {
     'Haute qualité': 'Alta qualidade',
     'Qualité moyenne': 'Qualidade média',
     'Qualité légère': 'Qualidade leve',
+    'Qualité minimale': 'Qualidade mínima',
     Multilingue: 'Multilíngue',
 
     // ── TTS provider ElevenLabs ──

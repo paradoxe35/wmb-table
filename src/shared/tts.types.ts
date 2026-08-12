@@ -209,18 +209,28 @@ export const TTS_REFERENCE_VOICES: TtsReferenceVoice[] = [
     },
 ];
 
+// ── Voice quality ──
+
+/** How the voice was trained. A higher tier sounds better and weighs more. */
+export const TTS_VOICE_QUALITIES = ['x_low', 'low', 'medium', 'high'] as const;
+export type TtsVoiceQuality = (typeof TTS_VOICE_QUALITIES)[number];
+
+/** Never shown — the download size already says it. Listed to keep it out of a voice name. */
+export const TTS_MODEL_PRECISIONS = ['fp32', 'fp16', 'int8'] as const;
+
+export function isVoiceQuality(token: string): token is TtsVoiceQuality {
+    return (TTS_VOICE_QUALITIES as readonly string[]).includes(token);
+}
+
 // ── Per-language model info (for providers with multiple downloadable models) ──
 export interface TtsModelInfo {
-    langCode: string | string[];
-    langLabel: string;
-    langName?: string;
+    langCode: string[];
     modelName: string;
     voiceName: string;
     installed: boolean;
     engine?: string;
-    quality?: string;
+    quality?: TtsVoiceQuality;
     filesizeMb?: number;
-    numSpeakers?: number;
 }
 
 // ── Language compatibility ──
@@ -347,6 +357,27 @@ const ISO3_TO_ISO1: Record<string, string> = {
     che: 'ce',
     chv: 'cv',
     oss: 'os',
+    tsn: 'tn',
+    twi: 'tw',
+    xho: 'xh',
+    zul: 'zu',
+    ssw: 'ss',
+    ven: 've',
+    hye: 'hy',
+};
+
+/**
+ * Content languages no voice names the same way. `ua` and `cre` are the app's own spellings
+ * of Ukrainian and Haitian Creole; the rest name the nearest language a voice exists for.
+ * Kept apart from the codes above, which normalise a language rather than substitute one.
+ */
+const VOICE_LANGUAGE_FALLBACKS: Record<string, string> = {
+    ua: 'uk',
+    cre: 'ht',
+    nn: 'no',
+    tw: 'ak',
+    kya: 'nyy',
+    emk: 'vmw',
 };
 
 export function iso3ToIso1LanguageCode(code: string): string {
@@ -357,6 +388,12 @@ export function normalizeLanguageCode(code: string): string {
     return iso3ToIso1LanguageCode(code.split('-')[0]);
 }
 
+/** The code to look a voice up under, for a language the app can open a document in. */
+export function voiceLanguageCode(code: string): string {
+    const normalized = normalizeLanguageCode(code);
+    return VOICE_LANGUAGE_FALLBACKS[normalized] ?? normalized;
+}
+
 function resolveLanguageLabel(
     labels: Record<string, string>,
     languageCode: string,
@@ -364,131 +401,6 @@ function resolveLanguageLabel(
     const normalizedCode = normalizeLanguageCode(languageCode);
     return labels[languageCode] ?? labels[normalizedCode];
 }
-
-// ── French language labels (shared across main + renderer) ──
-export const LANG_LABELS_FR: Record<string, string> = {
-    en: 'Anglais',
-    fr: 'Français',
-    de: 'Allemand',
-    es: 'Espagnol',
-    it: 'Italien',
-    pt: 'Portugais',
-    ru: 'Russe',
-    zh: 'Chinois',
-    nl: 'Néerlandais',
-    pl: 'Polonais',
-    uk: 'Ukrainien',
-    sv: 'Suédois',
-    da: 'Danois',
-    no: 'Norvégien',
-    fi: 'Finnois',
-    tr: 'Turc',
-    cs: 'Tchèque',
-    ro: 'Roumain',
-    hu: 'Hongrois',
-    el: 'Grec',
-    ar: 'Arabe',
-    hi: 'Hindi',
-    vi: 'Vietnamien',
-    id: 'Indonésien',
-    ka: 'Géorgien',
-    sk: 'Slovaque',
-    sr: 'Serbe',
-    ca: 'Catalan',
-    sw: 'Swahili',
-    is: 'Islandais',
-    bg: 'Bulgare',
-    bn: 'Bengali',
-    fa: 'Persan',
-    ja: 'Japonais',
-    ko: 'Coréen',
-    th: 'Thaï',
-    he: 'Hébreu',
-    ms: 'Malais',
-    ta: 'Tamoul',
-    te: 'Télougou',
-    ml: 'Malayalam',
-    mr: 'Marathi',
-    ne: 'Népalais',
-    si: 'Cingalais',
-    lb: 'Luxembourgeois',
-    mk: 'Macédonien',
-    lt: 'Lituanien',
-    lv: 'Letton',
-    et: 'Estonien',
-    gl: 'Galicien',
-    eu: 'Basque',
-    gu: 'Gujarati',
-    kn: 'Kannada',
-    ha: 'Haoussa',
-    am: 'Amharique',
-    cy: 'Gallois',
-    be: 'Biélorusse',
-    sl: 'Slovène',
-    hr: 'Croate',
-    sq: 'Albanais',
-    yue: 'Cantonais',
-    my: 'Birman',
-    ur: 'Ourdou',
-    pa: 'Pendjabi',
-    af: 'Afrikaans',
-    az: 'Azerbaïdjanais',
-    bs: 'Bosnien',
-    fil: 'Filipino',
-    ga: 'Irlandais',
-    jv: 'Javanais',
-    km: 'Khmer',
-    lo: 'Lao',
-    mn: 'Mongol',
-    mt: 'Maltais',
-    nb: 'Norvégien bokmål',
-    ps: 'Pachto',
-    so: 'Somali',
-    su: 'Soundanais',
-    uz: 'Ouzbek',
-    zu: 'Zoulou',
-    wuu: 'Chinois wu',
-    // Additional languages
-    hy: 'Arménien',
-    kk: 'Kazakh',
-    ky: 'Kirghize',
-    tg: 'Tadjik',
-    tk: 'Turkmène',
-    tt: 'Tatar',
-    yo: 'Yoruba',
-    ig: 'Igbo',
-    xh: 'Xhosa',
-    sn: 'Shona',
-    rw: 'Kinyarwanda',
-    mg: 'Malgache',
-    eo: 'Espéranto',
-    la: 'Latin',
-    tl: 'Tagalog',
-    ht: 'Créole haïtien',
-    ku: 'Kurde',
-    sd: 'Sindhi',
-    or: 'Odia',
-    as: 'Assamais',
-    fy: 'Frison',
-    gd: 'Gaélique écossais',
-    mi: 'Maori',
-    sm: 'Samoan',
-    to: 'Tongien',
-    haw: 'Hawaïen',
-    ceb: 'Cebuano',
-    ny: 'Chichewa',
-    co: 'Corse',
-    hmn: 'Hmong',
-    st: 'Sotho',
-    ts: 'Tsonga',
-    tn: 'Tswana',
-    ak: 'Akan',
-    ln: 'Lingala',
-    om: 'Oromo',
-    ti: 'Tigrinya',
-    wo: 'Wolof',
-    ii: 'Yi',
-};
 
 // ── Native language labels (each language name in its own script) ──
 export const LANG_LABELS_NATIVE: Record<string, string> = {
@@ -595,10 +507,6 @@ export const LANG_LABELS_NATIVE: Record<string, string> = {
     sd: 'سنڌي',
 };
 
-export function getLanguageLabelFr(languageCode: string): string {
-    return resolveLanguageLabel(LANG_LABELS_FR, languageCode) ?? languageCode;
-}
-
 export function getLanguageLabelNative(languageCode: string): string {
     return resolveLanguageLabel(LANG_LABELS_NATIVE, languageCode) ?? languageCode;
 }
@@ -606,9 +514,42 @@ export function getLanguageLabelNative(languageCode: string): string {
 export function getLanguageDisplayName(languageCode: string): string {
     return (
         resolveLanguageLabel(LANG_LABELS_NATIVE, languageCode) ??
-        resolveLanguageLabel(LANG_LABELS_FR, languageCode) ??
+        intlLanguageName(languageCode) ??
         languageCode
     );
+}
+
+/**
+ * Language name from the platform's own ICU data, which knows every code the catalog can
+ * hold — including a region or script tag — in every language the interface speaks.
+ */
+export function intlLanguageName(languageCode: string, locale = 'fr'): string | undefined {
+    try {
+        const names = new Intl.DisplayNames([locale], { type: 'language', fallback: 'none' });
+        return names.of(languageCode) ?? undefined;
+    } catch {
+        return undefined;
+    }
+}
+
+/**
+ * A language named in the reader's own language, capitalised to head a list or a row.
+ *
+ * Only where a capital belongs: `isiZulu` and `chiShona` carry a noun-class prefix that is
+ * lowercase on purpose, and Georgian capitals are a separate script nobody writes a name in.
+ */
+export function languageLabel(languageCode: string, locale: string): string {
+    const name = intlLanguageName(languageCode, locale) ?? languageCode;
+    const [firstWord] = name.split(' ');
+    const casedScript = /^(?=\p{Ll})[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}]/u;
+    const capitalise = casedScript.test(name) && !/\p{Lu}/u.test(firstWord);
+
+    return capitalise ? name.charAt(0).toUpperCase() + name.slice(1) : name;
+}
+
+/** Whether a token is a language subtag ICU recognises, rather than part of a model name. */
+export function isLanguageCode(token: string): boolean {
+    return intlLanguageName(token, 'en') !== undefined;
 }
 
 // ── Text helpers ──

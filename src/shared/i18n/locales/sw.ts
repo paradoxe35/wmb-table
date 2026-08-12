@@ -131,6 +131,8 @@ const sw: Record<string, string> = {
     'Le nom du modèle est requis pour le téléchargement Sherpa.':
         'Jina la mfano linahitajika kwa upakuaji wa Sherpa.',
     'Modèle Sherpa inconnu.': 'Mfano wa Sherpa haujulikani.',
+    'Cette voix ne peut pas être lue sur cet ordinateur.':
+        'Sauti hii haiwezi kuchezwa kwenye kompyuta hii.',
 
     // ── AI errors ──
     "L'assistant IA est désactivé dans les paramètres.":
@@ -370,6 +372,9 @@ const sw: Record<string, string> = {
     'Recherchez une langue ou un nom de voix.': 'Tafuta lugha au jina la sauti.',
     'Ex: arabe, portugais, swahili…': 'Mf.: Kiarabu, Kireno, Kiswahili…',
     'Voix installée': 'Sauti imesakinishwa',
+    'Voix {{number}}': 'Sauti {{number}}',
+    '{{count}} voix dans ce pack': 'Sauti {{count}} katika kifurushi hiki',
+    'Choisir une voix': 'Chagua sauti',
     'Voix supprimée': 'Sauti imeondolewa',
     Télécharger: 'Pakua',
     Téléchargement: 'Inapakua',
@@ -381,6 +386,7 @@ const sw: Record<string, string> = {
     'Haute qualité': 'Ubora wa juu',
     'Qualité moyenne': 'Ubora wa kati',
     'Qualité légère': 'Ubora mwepesi',
+    'Qualité minimale': 'Ubora wa chini kabisa',
     Multilingue: 'Lugha nyingi',
 
     // ── TTS provider ElevenLabs ──

@@ -3,14 +3,7 @@ import { DEFAULT_MAX_TABS } from '@shared/constants';
 import { createStore } from './create-store';
 
 type OptionViewValue =
-    | 'search'
-    | 'subject'
-    | 'history'
-    | 'editor'
-    | 'highlights'
-    | 'bible'
-    | 'settings'
-    | 'ai-chat';
+    'search' | 'subject' | 'history' | 'editor' | 'highlights' | 'bible' | 'settings' | 'ai-chat';
 
 export const SETTINGS_TAB_KEYS = {
     general: 'general',

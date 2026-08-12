@@ -307,7 +307,8 @@ const api = {
         getProviderModels: (p: TtsProviderType) => invoke(TtsChannels.getProviderModels, p),
         deleteProviderModel: (p: TtsProviderType, modelName: string) =>
             invoke(TtsChannels.deleteProviderModel, p, modelName),
-        previewVoice: (language: string) => invoke(TtsChannels.previewVoice, language),
+        previewVoice: (language: string, voiceId?: string) =>
+            invoke(TtsChannels.previewVoice, language, voiceId),
         resolveConfigForLanguage: (language: string) =>
             invoke(TtsChannels.resolveConfigForLanguage, language),
     },

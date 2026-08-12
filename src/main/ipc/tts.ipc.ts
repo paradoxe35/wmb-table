@@ -82,8 +82,8 @@ export function registerTtsHandlers(): void {
         await getTtsService().deleteProviderModel(provider, modelName);
     });
 
-    registerHandler(TtsChannels.previewVoice, async (_event, language) => {
-        return getTtsService().previewVoice(language);
+    registerHandler(TtsChannels.previewVoice, async (_event, language, voiceId) => {
+        return getTtsService().previewVoice(language, voiceId);
     });
 
     registerHandler(TtsChannels.resolveConfigForLanguage, async (_event, language) => {

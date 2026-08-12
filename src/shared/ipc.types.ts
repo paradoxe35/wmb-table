@@ -98,8 +98,7 @@ import type { ThemeMode, ThemeState } from './theme';
 // ---------------------------------------------------------------------------
 
 export type PdfExportResult =
-    | { status: 'success'; filePath: string }
-    | { status: 'canceled' | 'empty' };
+    { status: 'success'; filePath: string } | { status: 'canceled' | 'empty' };
 
 export const DocumentChannels = {
     getTitles: 'documents:getTitles',
@@ -574,7 +573,7 @@ export interface InvokeChannelMap {
     [TtsChannels.getReferenceVoiceAudio]: { args: [string]; return: TtsReferenceVoiceAudio };
     [TtsChannels.getProviderModels]: { args: [TtsProviderType]; return: TtsModelInfo[] };
     [TtsChannels.deleteProviderModel]: { args: [TtsProviderType, string]; return: void };
-    [TtsChannels.previewVoice]: { args: [string]; return: TtsSynthesizeResult };
+    [TtsChannels.previewVoice]: { args: [string, string?]; return: TtsSynthesizeResult };
     [TtsChannels.resolveConfigForLanguage]: { args: [string]; return: TtsSettings | null };
 
     // AI assistant
