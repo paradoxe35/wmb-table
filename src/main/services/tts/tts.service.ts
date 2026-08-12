@@ -22,7 +22,6 @@ import {
     type TtsProviderInfo,
     type TtsSettings,
     type TtsSegment,
-    type TtsSynthesizeRequest,
     type TtsSynthesizeResult,
     type TtsPlaybackStatus,
     type TtsCacheKey,
@@ -141,33 +140,6 @@ export class TtsService {
             [...this.providers.values()].map((p) => p.getInfo()),
         );
         return [browserInfo, ...providerInfos];
-    }
-
-    async synthesize(request: TtsSynthesizeRequest): Promise<TtsSynthesizeResult> {
-        const providerType = request.provider ?? this.settings.activeProvider;
-        if (providerType === 'browser') {
-            throw new Error('La synthèse du navigateur est gérée dans le processus renderer.');
-        }
-        const provider = this.providers.get(providerType);
-        if (!provider) {
-            throw new Error('Fournisseur TTS inconnu.');
-        }
-
-        const cfg = this.settings.providers[providerType];
-        const cacheKey = this.buildCacheKey(
-            providerType,
-            request.text,
-            request.language,
-            request.voiceId ?? cfg?.voiceId ?? '',
-            request.model ?? cfg?.model ?? '',
-            request.rate ?? this.settings.rate,
-        );
-        const hit = await this.cache.lookup(cacheKey);
-        if (hit) return await this.cache.read(hit);
-
-        const result = await provider.synthesize(request);
-        await this.cache.set(cacheKey, result);
-        return result;
     }
 
     async startPlayback(segments: TtsSegment[], language: string, startIndex = 0): Promise<void> {
@@ -436,7 +408,7 @@ export class TtsService {
             text,
             language,
             voiceId: voiceId ?? cfg?.voiceId,
-            model: (voiceId ?? cfg?.voiceId)?.split(':')[0] || cfg?.model,
+            model: cfg?.model,
             rate: 1,
         });
     }

@@ -380,7 +380,7 @@ const VOICE_LANGUAGE_FALLBACKS: Record<string, string> = {
     emk: 'vmw',
 };
 
-export function iso3ToIso1LanguageCode(code: string): string {
+function iso3ToIso1LanguageCode(code: string): string {
     return ISO3_TO_ISO1[code.toLowerCase()] ?? code.toLowerCase();
 }
 

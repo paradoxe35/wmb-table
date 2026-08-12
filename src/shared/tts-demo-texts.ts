@@ -3,7 +3,7 @@
  * Used to preview TTS voices in settings.
  * Source: John 3:16 adapted per language.
  */
-export const TTS_DEMO_TEXTS: Record<string, string> = {
+const TTS_DEMO_TEXTS: Record<string, string> = {
     fr: "Car Dieu a tant aimé le monde qu'il a donné son Fils unique.",
     en: 'For God so loved the world that he gave his only Son.',
     de: 'Denn Gott hat die Welt so sehr geliebt, dass er seinen einzigen Sohn gab.',
