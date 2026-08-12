@@ -28,7 +28,6 @@ async function fileExists(path: string): Promise<boolean> {
  * can hold one of these.
  */
 export function pathSafe(segment: string): string {
-     
     return segment.replace(/[<>:"/\\|?*\u0000-\u001f]/g, '_') || '_';
 }
 
